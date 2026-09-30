@@ -218,8 +218,11 @@ test.describe('a widened READ rule is recorded before it is shipped', () => {
     // afterwards `deployed` carries it and this line reads ACCOUNT_ACTIVE_READ.
     const liveOrPending = record.pending?.projectDocumentReadRule ?? record.deployed.projectDocumentReadRule;
     expect(liveOrPending, 'and it is the working copy, not a third text').toBe(parseProjectReadRule(rules()));
-    expect([NEW_READ, ACCOUNT_ACTIVE_READ], 'production serves 5.4 or its 3.0.12 narrowing')
-      .toContain(record.deployed.projectDocumentReadRule);
+    // The 3.0.12 narrowing was deployed on 30.09.2026 (rules def53aa1). From
+    // then on a record whose deployed read rule is the wider 5.4 text is a
+    // regression, not a window: a suspended owner with a live ID token could
+    // read the project again (QA slice review of c053fc5909c1, e0dcde0b638f).
+    expect(record.deployed.projectDocumentReadRule, 'production serves the 3.0.12 narrowing').toBe(ACCOUNT_ACTIVE_READ);
 
     // Turned over once more on 18.09.2026, in the evening. The version above
     // this also demanded `record.pending` be absent and the deployed hash be

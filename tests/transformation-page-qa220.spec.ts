@@ -48,6 +48,12 @@ test('6d411bca538c · a path answered twice is found, in every spelling', () => 
   expect(
     duplicatePaths([{ path: 'src/ZCL_A.clas.abap' }, { path: 'src/zcl_a.clas.abap' }, { path: 'src/zcl_a.clas.abap' }]),
   ).toEqual(['src/zcl_a.clas.abap']);
+  // Interior `.` and `..` segments name the same file too (QA slice review of
+  // ad155b478e36, 6dc1260fefb2) — and a `..` that leaves the package does not
+  // fold into a path inside it.
+  expect(duplicatePaths([{ path: 'src/../shared.ts' }, { path: 'shared.ts' }])).toEqual(['shared.ts']);
+  expect(duplicatePaths([{ path: 'a/./b.ts' }, { path: 'a//b.ts' }, { path: 'a/b.ts' }])).toEqual(['a//b.ts', 'a/b.ts']);
+  expect(duplicatePaths([{ path: '../shared.ts' }, { path: 'shared.ts' }])).toEqual([]);
 });
 
 test('6d411bca538c · the page refuses a package with a repeated path before storing it', () => {

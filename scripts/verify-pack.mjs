@@ -23,7 +23,7 @@
  */
 
 import { createHash, createPublicKey, verify as cryptoVerify } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -449,9 +449,15 @@ async function main() {
     process.exit(CANNOT_CHECK);
   }
 
+  // The size is asked of the file system before the file is read: reading first
+  // would hold the whole archive in memory just to find out it is too large
+  // (QA slice review of ad155b478e36). The length check after the read stays,
+  // for a file that grew in between.
+  const tooLarge = `the archive is larger than ${PACK_LIMITS.archiveBytes / (1024 * 1024)} MB; no genuine pack comes near that`;
+  if ((await stat(packPath)).size > PACK_LIMITS.archiveBytes) throw new Error(tooLarge);
   const packBytes = await readFile(packPath);
   if (packBytes.length > PACK_LIMITS.archiveBytes) {
-    throw new Error(`the archive is larger than ${PACK_LIMITS.archiveBytes / (1024 * 1024)} MB; no genuine pack comes near that`);
+    throw new Error(tooLarge);
   }
   const zip = await JSZip.loadAsync(packBytes);
   if (Object.keys(zip.files).length > PACK_LIMITS.entries) {

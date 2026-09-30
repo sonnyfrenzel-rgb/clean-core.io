@@ -318,6 +318,12 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
   try {
     // 1. Load ZIP (converting Blobs to ArrayBuffer for Node.js compatibility in tests)
     let inputData: any = zipBlob;
+    // A Blob knows its size before it is read; asking first keeps an oversized
+    // file out of memory (QA slice review of ad155b478e36, 33d5babb43a6).
+    const declaredSize = (zipBlob as { size?: unknown } | null)?.size;
+    if (typeof declaredSize === 'number' && declaredSize > PACK_LIMITS.archiveBytes) {
+      throw new Error(`The archive is larger than ${PACK_LIMITS.archiveBytes / (1024 * 1024)} MB; no pack this service issues comes near that.`);
+    }
     if (zipBlob && typeof (zipBlob as any).arrayBuffer === 'function') {
       inputData = await (zipBlob as any).arrayBuffer();
     }

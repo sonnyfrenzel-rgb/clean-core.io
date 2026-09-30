@@ -233,8 +233,12 @@ test('an adoption whose answer is lost is asked again, and an "already adopted" 
   const end = src.indexOf('if (!adopted.ok) {', start);
   expect(end).toBeGreaterThan(start);
   const block = src.slice(start, end);
-  // The first call sits in a try, and its catch asks the same thing again.
-  expect(block).toMatch(/try \{\s*adopted = await repairDraftCall\(adoption\);\s*\} catch \{[\s\S]*adopted = await repairDraftCall\(adoption\);/);
+  // The first call sits in a try, and its catch asks the same thing again. Both
+  // go through `adopt`, which sends the adoption and turns a 5xx into the same
+  // lost answer as a rejected fetch (QA slice review of 81810c8026e0,
+  // 95912ce88e0d).
+  expect(block).toMatch(/const adopt = async \(\) => \{\s*const answer = await repairDraftCall\(adoption\);\s*if \(answer\.status >= 500\) throw/);
+  expect(block).toMatch(/try \{\s*adopted = await adopt\(\);\s*\} catch \{[\s\S]*adopted = await adopt\(\);/);
   // The server's "already adopted" is resolved against the project it wrote,
   // and only when the stored receipt names this draft.
   expect(block).toContain("adopted.data?.code === 'already-adopted'");

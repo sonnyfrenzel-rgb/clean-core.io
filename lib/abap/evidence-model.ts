@@ -176,8 +176,10 @@ export function redactCredentials(snippet: string | undefined): string {
     .replace(/\b(password|passwd|pwd)=([^;&'"\s]+)/gi, '$1=…<redacted>')
     .replace(/(\/\/[^\s/:@'"]+):([^\s/@'"]+)@/g, '$1:…<redacted>@')
     // A password or token assigned to a literal in ABAP — of any length: a short
-    // secret is still a secret.
-    .replace(/\b(PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY)\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi,
+    // secret is still a secret. The name may carry a prefix (`lv_password`,
+    // `gv_api_key`): `_` is a word character, so a bare `\bPASSWORD` never
+    // matched inside one (QA slice review of 953575fcc9bf, 21933f60c24d).
+    .replace(/\b([\w/]*?(?:PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi,
       (_m, word, mid) => `${word}${mid}'…<redacted>'`);
 }
 

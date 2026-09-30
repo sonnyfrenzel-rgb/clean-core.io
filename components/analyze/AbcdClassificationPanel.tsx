@@ -83,6 +83,22 @@ export default function AbcdClassificationPanel({
     .map((i) => gradeKey(i.name, i.use))
     .join('|');
 
+  // A lookup answers for one set of objects on one target. When either moves,
+  // what the last one said goes with it — grades, snapshot, coverage and a
+  // refusal alike — so a failed or refused lookup for the new target never
+  // stands beside the previous target's catalog grades (QA slice review of
+  // e7372791c70d, 0e5a2deebd7a). Reset while rendering, as React prescribes
+  // for state that follows a prop.
+  const lookupTarget = `${lookupKey}#${deployment ?? ''}#${release ?? ''}`;
+  const [lookupFor, setLookupFor] = useState(lookupTarget);
+  if (lookupFor !== lookupTarget) {
+    setLookupFor(lookupTarget);
+    setSapGrades({});
+    setLookupSnapshot(null);
+    setLookupCoverage(null);
+    setLookupRefusal(null);
+  }
+
   useEffect(() => {
     const keys = lookupKey ? lookupKey.split('|') : [];
     if (keys.length === 0) return;

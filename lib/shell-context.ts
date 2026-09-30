@@ -50,6 +50,19 @@ export function announceShellProject(projectId: string, name: unknown): void {
   window.dispatchEvent(new CustomEvent(SHELL_PROJECT_EVENT, { detail: announcedProject }));
 }
 
+/**
+ * Forgets the announced name. Called when the signed-in account changes: the
+ * name lives in this module for the page view, and a client-side sign-out
+ * keeps the module, so the next account opening the same project address was
+ * shown a name its own read had refused (QA slice review of 094ef824c55e,
+ * 528688d033bd).
+ */
+export function forgetShellProject(): void {
+  if (!hasWindow() || !announcedProject) return;
+  announcedProject = null;
+  window.dispatchEvent(new CustomEvent(SHELL_PROJECT_EVENT, { detail: null }));
+}
+
 const subscribeProject = (onChange: () => void) => {
   window.addEventListener(SHELL_PROJECT_EVENT, onChange);
   return () => window.removeEventListener(SHELL_PROJECT_EVENT, onChange);

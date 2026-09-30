@@ -150,7 +150,15 @@ function andWaitOf(statement: AbapStatement, kind: LuwEventKind): boolean | null
   if (kind === 'rollback') return null;
   if (/^COMMIT\s+WORK\s+AND\s+WAIT\b/i.test(statement.text)) return true;
   if (/^CALL\s+FUNCTION\b/i.test(statement.text)) {
-    return /\bWAIT\s*=\s*('X'|abap_true)/i.test(statement.text);
+    // A literal or constant decides; a variable does not, and is reported as
+    // undetermined rather than as "does not wait" (QA slice review of
+    // 81810c8026e0, b99ee9f51490).
+    const wait = /\bWAIT\s*=\s*('[^']*'|[^\s.]+)/i.exec(statement.text);
+    if (!wait) return false;
+    const value = wait[1].toLowerCase();
+    if (value === "'x'" || value === 'abap_true') return true;
+    if (value === "' '" || value === "''" || value === 'abap_false' || value === 'space') return false;
+    return null;
   }
   return false;
 }
@@ -524,6 +532,9 @@ class LuwReader {
   private subrcReadAfter(index: number): boolean {
     const { statements } = this.facts;
     for (let i = index + 1; i <= index + 2 && i < statements.length; i++) {
+      // Clearing the field discards the commit's code; it does not read it
+      // (QA slice review of ad155b478e36, e631e5c76d7c).
+      if (/^(?:CLEAR|FREE)\b[^.]*\bsy-subrc\b/i.test(statements[i].text)) return false;
       if (/\bsy-subrc\b/i.test(statements[i].text)) return true;
       if (!SUBRC_NEUTRAL.test(statements[i].text)) return false;
     }

@@ -123,11 +123,22 @@ test.describe('object sites', () => {
   });
 
   test('a possible target of an unresolved dynamic name is not a site (R26)', () => {
-    const { source } = fixture();
+    // A source written to have one: the 1.000-line example names its tables
+    // statically, so a test on it skipped every time and the rule went
+    // unexercised (QA slice review of f03c6c53294a, 53d424ccfcea).
+    const source = [
+      'REPORT zcc_input.',
+      "PARAMETERS p_tab TYPE c LENGTH 30 DEFAULT 'KNA1'.",
+      'DATA lv_count TYPE i.',
+      'START-OF-SELECTION.',
+      '  SELECT COUNT(*)',
+      '    FROM (p_tab)',
+      '    INTO @lv_count.',
+    ].join('\n');
     const report = readTableDependencies(source);
     const possible = report.dependencies.filter((dependency) => dependency.possibleTargetOf);
-    test.skip(possible.length === 0, 'this example shows no possible target for a dynamic name');
-    const found = sites();
+    expect(possible.map((d) => d.table.toUpperCase()), 'the source no longer yields a possible target').toEqual(['KNA1']);
+    const found = objectSites(report, readCallGraph(source));
     for (const dependency of possible) {
       const leaked = found.some(
         (site) => site.line === dependency.line && site.name === dependency.table.toUpperCase(),

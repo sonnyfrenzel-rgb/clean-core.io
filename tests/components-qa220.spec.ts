@@ -68,6 +68,8 @@ test.describe('accessibility', () => {
 
   test('0050e1b8e1c0 · a glossary term is described by its explanation', () => {
     expect(code('components/workspace/GlossaryText.tsx')).toContain('aria-describedby={open ? id : undefined}');
+    // The desktop term had the same gap (QA slice review of 97c740cc5e71, d65581573fa9).
+    expect(code('components/GlossaryTerm.tsx')).toContain('aria-describedby={open ? id : undefined}');
   });
 });
 

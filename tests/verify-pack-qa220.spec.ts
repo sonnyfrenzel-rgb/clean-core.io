@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import { createHash, generateKeyPairSync, sign } from 'crypto';
 import { spawnSync } from 'child_process';
-import { mkdtempSync, writeFileSync } from 'fs';
+import { mkdtempSync, rmSync, truncateSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
@@ -81,6 +81,33 @@ test('the web verifier stops expanding an entry past the ceiling and fails close
   expect(result.success).toBe(false);
   expect(result.status).toBe('failed');
   expect(result.errors.join('\n')).toContain('expands beyond the size a pack may have');
+});
+
+// QA slice review of ad155b478e36 (1e51e2bc78b8): the CLI read the whole file
+// and only then compared its length with the ceiling. A preload replaces
+// `readFile` with one that refuses, so the run shows whether the size was asked
+// before the bytes were read.
+test('the CLI refuses an archive over the size ceiling without reading it', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'verify-pack-size-'));
+  const packPath = join(dir, 'pack.zip');
+  writeFileSync(packPath, '');
+  truncateSync(packPath, PACK_LIMITS.archiveBytes + 1);
+  const preload = join(dir, 'no-read.cjs');
+  writeFileSync(
+    preload,
+    [
+      "const fs = require('fs');",
+      'const real = fs.promises.readFile;',
+      "fs.promises.readFile = async (p, ...rest) => { if (String(p).endsWith('pack.zip')) throw new Error('READ-BEFORE-SIZE'); return real(p, ...rest); };",
+      "require('module').syncBuiltinESMExports();",
+    ].join('\n'),
+  );
+  const r = spawnSync(process.execPath, ['-r', preload, SCRIPT, packPath, '--key', 'AAAA'], { encoding: 'utf8', cwd: process.cwd() });
+  const out = `${r.stdout || ''}${r.stderr || ''}`;
+  rmSync(dir, { recursive: true, force: true });
+  expect(out).not.toContain('READ-BEFORE-SIZE');
+  expect(out).toContain('the archive is larger than');
+  expect(r.status).toBe(2);
 });
 
 test('a pack within the limits still verifies in both verifiers', async () => {

@@ -4,7 +4,7 @@ import { User, RotateCw, LogOut, Settings, Shield, HelpCircle, X, ChevronDown, C
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getAuth } from '@/lib/firebase';
-import { signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import ShellHelpMenu, {
   SHELL_MENU_ITEMS,
@@ -30,7 +30,7 @@ import { runsAreSelfFunded, runsRemaining } from '@/lib/run-quota-rule';
 import { Lightbulb } from 'lucide-react';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { showTipsAgain } from '@/lib/show-tips-again';
-import { openProjectSearch, useProjectSearchAvailable, useShellProjectName } from '@/lib/shell-context';
+import { forgetShellProject, openProjectSearch, useProjectSearchAvailable, useShellProjectName } from '@/lib/shell-context';
 import { workspaceBackHref } from '@/lib/workspace-back-href';
 import { wt } from '@/lib/workspace-messages';
 
@@ -119,6 +119,16 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
+  // A project name announced for one account is not shown to the next one.
+  useEffect(() => {
+    let uid: string | null | undefined;
+    return onAuthStateChanged(getAuth(), (user) => {
+      const next = user?.uid ?? null;
+      if (uid !== undefined && next !== uid) forgetShellProject();
+      uid = next;
+    });
+  }, []);
 
   const handleLogout = async () => {
     try {
