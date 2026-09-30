@@ -64,7 +64,7 @@ export default function SectionHeader({
         id={titleId}
         data-section-heading
         className={`text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 tracking-[-0.03em] leading-[1.1] text-balance ${
-          tone === 'dark' ? 'text-white' : 'text-cc-ink'
+          tone === 'dark' ? 'text-cc-on-dark' : 'text-cc-ink'
         }`}
       >
         {title}

@@ -23,9 +23,13 @@ interface QuickAnswerProps {
  *
  * Block D, D.8 (`DESIGN.md` §1.1, ADR-051): tokens instead of the green panel —
  * green means proven, and a quick answer is not a proof. The heading holds the
- * button rather than the other way round (a disclosure: `h3 > button`, since a
+ * button rather than the other way round (a disclosure: `h2 > button`, since a
  * heading is not allowed inside a button), and the body id comes from `useId`, so
  * two of these on one page do not share an id.
+ *
+ * An `h2` (D.33): on every page that uses it the block stands right under the
+ * page's `h1`, and as an `h3` it skipped a level there (§1.2, the rendered
+ * heading check). Where it follows an `h2` it is simply that section's sibling.
  */
 export default function QuickAnswer({ question, answer }: QuickAnswerProps) {
   const [open, setOpen] = useState<boolean | null>(null);
@@ -48,7 +52,7 @@ export default function QuickAnswer({ question, answer }: QuickAnswerProps) {
       </span>
 
       {/* Question — always visible; also the expand/collapse control on every viewport. */}
-      <h3 className="m-0 text-[15px] font-bold text-cc-ink leading-tight md:text-center">
+      <h2 className="m-0 text-[15px] font-bold text-cc-ink leading-tight md:text-center">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
@@ -64,7 +68,7 @@ export default function QuickAnswer({ question, answer }: QuickAnswerProps) {
             className={clsx('w-5 h-5 text-cc-ink-muted shrink-0 transition-transform duration-300 motion-reduce:transition-none', chevronRot)}
           />
         </button>
-      </h3>
+      </h2>
 
       {/* Answer — always in the DOM for crawlers; visually collapsed via CSS height only. */}
       <div
