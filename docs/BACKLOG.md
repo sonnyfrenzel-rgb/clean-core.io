@@ -3,6 +3,25 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+## Sitzung 30.09.2026 — Block D, Welle 2
+
+**Fertig (auf dev):** D.6 Shell Bar (56 px, Pfad statt „Back to My Workspace", ARIA-Menüs, Abmelden als
+Message Box, `MotionConfig reducedMotion="user"` app-weit) · D.10b Analyse-Seite (CcDialog, CcTabs,
+CcTable, Radio-Karten, Dropzone per Tastatur, Ladeetappen nur nach echten Ereignissen) · D.11
+Evidenz-Komponenten (kein 6-s-Sweep mehr, A blau, CcTable/CcDialog, Why an jeder Zahl) · D.13
+Strategie-Komponenten (390 → 0) · D.20a Einstellungen (13 native Dialoge und 2 Overlays → cc; MFA-
+und Löschablauf Zeile für Zeile gleich, nur ein leeres Passwort wird früher abgelehnt).
+Zwei echte Fehler dabei gefunden und behoben: Komplexität/Kritikalität (1–10) standen als „/100"
+(`d3b88233`); eine Modell-Lücke ohne `strategy` legte die Arbeitsliste lahm (`26e3ba43`).
+
+**Test-Audit:** Sonny gab am 30.09. **alle drei Stufen** frei; Stufe 1 läuft (`tests/audit-stufe1`).
+
+**Offen aus der Welle:** Banner-Satz „Powered by Generative AI" (§3.1 oder Offenlegung — Sonny) ·
+Sign-offs in `ConstructFindings` sind nur lokaler State · Hinweis „Konto gelöscht" wird von
+`UserOnboarding` verdeckt (→ D.7) · Ctrl K und Projektname im Shell-Pfad (→ D.29) · zwei
+Assistenten-Einstiege (→ D.8) · Tooltip in `TargetScopeMapping` nur per Hover · R3/R11 des
+Confluence-Exports (→ D.28) · `ABCD_META.color`/`LEVEL_EMOJI` prüfen (→ D.29).
+
 ## Feierabend 28.09.2026 (Sitzung 27./28.09.)
 
 **Ausgeliefert:** **v2.20.0** auf `main` (`fc787674`, clean-core.io). Enthält alles seit v2.19.0:
