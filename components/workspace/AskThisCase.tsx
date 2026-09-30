@@ -64,7 +64,7 @@ export default function AskThisCase({ answer }: { answer: PreAnswered }) {
           <GlossaryText>{answer.reason}</GlossaryText>
         </p>
       ) : (
-        <div data-ask-this-case="answered" data-node={answer.nodeId} className="flex flex-col gap-2.5">
+        <div data-ask-this-case="answered" data-node={answer.nodeId} className="flex flex-col gap-3">
           <p className="m-0 flex flex-wrap items-center gap-2 text-[13px] leading-snug font-semibold text-cc-ink">
             <span data-ask-question="">
               <GlossaryText>{answer.question}</GlossaryText>
@@ -76,7 +76,7 @@ export default function AskThisCase({ answer }: { answer: PreAnswered }) {
             )}
           </p>
 
-          <ul className="m-0 list-none space-y-1.5 p-0">
+          <ul className="m-0 list-none space-y-2 p-0">
             {answer.branches.map((branch, i) => (
               <li
                 key={`${answer.nodeId}-${i}`}
@@ -110,7 +110,7 @@ export default function AskThisCase({ answer }: { answer: PreAnswered }) {
                 {askRulesLabel(answer.rules.length)}
               </span>
               {answer.rules.map((rule) => (
-                <span key={rule.id} data-ask-rule={rule.id} className="flex items-center gap-1.5">
+                <span key={rule.id} data-ask-rule={rule.id} className="flex items-center gap-2">
                   <span className="font-cc-mono text-[12px] text-cc-ink">
                     <GlossaryText>{rule.label}</GlossaryText>
                   </span>

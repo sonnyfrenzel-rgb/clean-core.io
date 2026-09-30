@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { X } from 'lucide-react';
 import CcCodeSurface from '@/components/cc/CodeSurface';
+import CcIconButton from '@/components/cc/IconButton';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { codeCardLabel, codeCardLines, type ProcessMapElement } from '@/lib/process-map';
 import { mapSourceForLabel, wt } from '@/lib/workspace-messages';
@@ -60,25 +61,23 @@ export default function ProcessCodeCard({ element, source, fileName, onClose }: 
       className="flex min-w-0 flex-col gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-3"
     >
       <div className="flex items-start justify-between gap-2">
-        <div ref={headingRef} tabIndex={-1} className="min-w-0 outline-none">
+        <div
+          ref={headingRef}
+          tabIndex={-1}
+          className="min-w-0 rounded-cc-row focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus focus-visible:outline-solid"
+        >
           <h4 className="text-[14px] font-bold text-cc-ink">{element.label}</h4>
-          <p className="mt-0.5 text-[12px] font-medium text-cc-ink-muted">
+          <p className="mt-1 text-[12px] font-medium text-cc-ink-muted">
             {element.kind}
             {element.businessName ? ` · ${element.technicalName}` : ''}
             {element.anchor ? ` · ${codeCardLabel(fileName, element.anchor)}` : ''}
           </p>
         </div>
-        <span className="flex shrink-0 items-center gap-1.5">
+        <span className="flex shrink-0 items-center gap-2">
           <CcProvenanceChip value={element.status} />
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={wt('map.closeSource')}
-            data-process-code-card-close=""
-            className="inline-flex h-8 w-8 items-center justify-center rounded-cc-row border border-cc-field-border bg-cc-surface text-cc-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
-          >
+          <CcIconButton onClick={onClose} label={wt('map.closeSource')} data-process-code-card-close="">
             <X size={16} aria-hidden={true} />
-          </button>
+          </CcIconButton>
         </span>
       </div>
 

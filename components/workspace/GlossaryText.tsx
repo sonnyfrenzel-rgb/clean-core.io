@@ -35,19 +35,19 @@ function Popover({ item, id }: { item: GlossaryItem; id: string }) {
       role="tooltip"
       id={id}
       data-glossary-popover=""
-      className="absolute bottom-full left-0 z-50 mb-1.5 block w-72 max-w-[min(18rem,80vw)] rounded-cc border border-cc-field-border bg-cc-surface p-3 text-left shadow-lg"
+      className="absolute bottom-full left-0 z-50 mb-2 block w-72 max-w-[min(18rem,80vw)] rounded-cc border border-cc-field-border bg-cc-surface p-3 text-left shadow-cc-dialog"
     >
       <span className="block text-[11px] font-semibold tracking-wide text-cc-ink-muted uppercase">
         {item.category}
       </span>
-      <span className="mt-0.5 block text-[12px] font-semibold text-cc-ink">{item.term}</span>
+      <span className="mt-1 block text-[12px] font-semibold text-cc-ink">{item.term}</span>
       <span data-glossary-popover-body="" className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink">
         {glossaryAnswerText(item)}
       </span>
       <span
         data-glossary-popover-source=""
         data-source-origin={item.sourceRef.origin}
-        className="mt-1.5 block text-[11px] leading-snug font-semibold text-cc-ink-muted"
+        className="mt-2 block text-[11px] leading-snug font-semibold text-cc-ink-muted"
       >
         {glossarySourceText(item)}
       </span>

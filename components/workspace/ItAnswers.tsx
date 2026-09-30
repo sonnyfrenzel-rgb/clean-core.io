@@ -153,7 +153,7 @@ export default function ItAnswers({
       <h2
         id="it-answers-heading"
         data-it-headline=""
-        className="m-0 text-[16px] leading-snug font-bold text-cc-ink"
+        className="m-0 cc-text-h2 text-cc-ink"
       >
         {view.headline}
       </h2>
@@ -183,7 +183,7 @@ export default function ItAnswers({
         >
           {chain ? (
             <>
-              <p className="m-0 mb-2.5 text-[12px] leading-snug font-medium text-cc-ink-muted">
+              <p className="m-0 mb-3 text-[12px] leading-snug font-medium text-cc-ink-muted">
                 {wt('it.chainHint')}
               </p>
               <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2 lg:grid-cols-4">
@@ -208,14 +208,14 @@ export default function ItAnswers({
                     {link.value === null ? (
                       <span
                         data-it-chain-absent=""
-                        className="mt-0.5 block text-[13px] font-semibold text-cc-ink-muted"
+                        className="mt-1 block text-[13px] font-semibold text-cc-ink-muted"
                       >
                         {wt('it.notDetermined')}
                       </span>
                     ) : (
                       <span
                         data-it-chain-value=""
-                        className="mt-0.5 block text-[13px] font-bold text-cc-ink"
+                        className="mt-1 block text-[13px] font-bold text-cc-ink"
                       >
                         {link.value}
                       </span>
@@ -235,7 +235,7 @@ export default function ItAnswers({
               </ul>
               <p
                 data-it-requirement-note=""
-                className="m-0 mt-2.5 text-[12px] leading-snug font-medium text-cc-ink-muted"
+                className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink-muted"
               >
                 {view.requirementNote}
               </p>
@@ -336,7 +336,7 @@ export default function ItAnswers({
                         className="block min-h-6 text-left text-[13px] font-semibold text-cc-ink"
                       >
                         {row.objectName ?? row.title}
-                        <span className="mt-0.5 block text-[11px] font-medium text-cc-ink-muted">
+                        <span className="mt-1 block text-[11px] font-medium text-cc-ink-muted">
                           {row.id} · <Severity value={row.severity} />
                           {row.routine ? ` · ${row.routine}` : ''}
                         </span>
@@ -354,7 +354,7 @@ export default function ItAnswers({
                         <span
                           data-it-level={row.id}
                           className={cn(
-                            'inline-block rounded-cc-row border px-1.5 text-[12px] font-bold',
+                            'inline-block rounded-cc-row border px-2 text-[12px] font-bold',
                             STATE_CLASSES[gradeState(row.level)].bg,
                             STATE_CLASSES[gradeState(row.level)].border,
                             STATE_CLASSES[gradeState(row.level)].text,
@@ -453,7 +453,7 @@ function Figure({ figure }: { figure: ItFigure }) {
             {wt('it.notDetermined')}
           </span>
         ) : (
-          <span data-figure-value="" className="text-[18px] leading-none font-bold text-cc-ink">
+          <span data-figure-value="" className="cc-text-figure leading-none text-cc-ink">
             {figure.value}
           </span>
         )}

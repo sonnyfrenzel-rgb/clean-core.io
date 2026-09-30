@@ -65,7 +65,7 @@ export default function WorkspaceLayerSection({ layer }: { layer: WorkspaceLayer
         <>
           <ul
             data-workspace-layer-rows={layer.key}
-            className="m-0 mt-2 list-none space-y-1.5 p-0"
+            className="m-0 mt-2 list-none space-y-2 p-0"
           >
             {layer.rows.map((row) => (
               <li
@@ -91,7 +91,7 @@ export default function WorkspaceLayerSection({ layer }: { layer: WorkspaceLayer
             // statement of fact, not a button, until there is a place to open.
             <p
               data-workspace-layer-more-count=""
-              className="m-0 mt-1.5 text-[12px] font-medium text-cc-ink-muted"
+              className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted"
             >
               {layerSectionShowing(layer.rows.length, layer.total)}
             </p>

@@ -197,7 +197,7 @@ function Figure({ figure }: { figure: ManagementFigure }) {
             {wt('mgmtAnswers.notDetermined')}
           </span>
         ) : (
-          <span data-figure-value="" className="text-[18px] leading-none font-bold text-cc-ink">
+          <span data-figure-value="" className="cc-text-figure leading-none text-cc-ink">
             {figure.value}
           </span>
         )}

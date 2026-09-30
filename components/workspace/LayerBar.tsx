@@ -74,7 +74,7 @@ export default function WorkspaceLayerBar({
             aria-current={on ? 'true' : undefined}
             onClick={() => onSelect(layer.key)}
             className={cn(
-              'inline-flex items-center gap-1.5 border-b-2 px-2.5 py-2 text-[13px] whitespace-nowrap pointer-coarse:min-h-11',
+              'inline-flex items-center gap-1 border-b-2 px-3 py-2 text-[13px] whitespace-nowrap pointer-coarse:min-h-11',
               on
                 ? 'border-cc-ink font-bold text-cc-ink'
                 : 'border-transparent font-medium text-cc-ink-muted',
@@ -97,7 +97,7 @@ export default function WorkspaceLayerBar({
             aria-expanded={moreOpen}
             aria-controls={moreOpen ? panelId : undefined}
             onClick={() => setMoreOpen((v) => !v)}
-            className="inline-flex items-center gap-1.5 border-b-2 border-transparent px-2.5 py-2 text-[13px] font-medium text-cc-ink-muted whitespace-nowrap pointer-coarse:min-h-11"
+            className="inline-flex items-center gap-1 border-b-2 border-transparent px-3 py-2 text-[13px] font-medium text-cc-ink-muted whitespace-nowrap pointer-coarse:min-h-11"
           >
             {wt('layerBar.more')}
             <span className="font-cc-mono text-[11px] font-semibold">{layerBarEmptyCount(empty.length)}</span>
@@ -109,7 +109,7 @@ export default function WorkspaceLayerBar({
               data-workspace-layer-more-panel=""
               className="absolute top-full right-0 z-20 mt-1 w-80 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc-dialog"
             >
-              <ul className="m-0 list-none space-y-2.5 p-0">
+              <ul className="m-0 list-none space-y-3 p-0">
                 {empty.map((layer) => (
                   <li key={layer.key} data-workspace-layer-empty={layer.key}>
                     {/* An empty layer can be opened. Until roadmap 6.2 this menu
@@ -131,7 +131,7 @@ export default function WorkspaceLayerBar({
                       <span className="block text-[13px] font-bold text-cc-ink underline underline-offset-2">
                         {layer.label}
                       </span>
-                      <span className="mt-0.5 block text-[12px] leading-snug font-medium text-cc-ink-muted">
+                      <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">
                         {layer.missing}
                       </span>
                     </button>

@@ -635,7 +635,9 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
     await expect(trigger, 'no visible way into the search that does not need a keyboard shortcut').toBeVisible();
     await trigger.click();
 
-    const dialog = page.locator('[data-command-search]');
+    // Since D.32 the search is a `CcDialog`: `data-command-search` names the
+    // layer, and the element inside it with the dialog role is the modal.
+    const dialog = page.locator('[data-command-search] [role="dialog"]');
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveAttribute('role', 'dialog');
     await expect(dialog).toHaveAttribute('aria-modal', 'true');

@@ -89,7 +89,7 @@ export default function WorkspaceShellSwitch() {
           </p>
         )}
         {error && (
-          <div className="mt-2.5">
+          <div className="mt-3">
             <CcMessageStrip state="error" headline={wt('shellSwitch.notSaved')} announce>
               {error}
             </CcMessageStrip>

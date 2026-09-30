@@ -90,7 +90,7 @@ export default function NextStepCard({
             >
               {point.selection}
             </p>
-            <div className="mt-2.5">
+            <div className="mt-3">
               <CcLinkButton
                 href={stageHref({ base: `/project/${projectId}`, path: point.path, view, from: WORKSPACE_RETURN.nextStep })}
                 variant="primary"

@@ -32,17 +32,17 @@ export default function ProcessMapLegend({ entries, unanchored, unanchoredLabel 
   const empty = entries.filter((entry) => entry.count === 0).map((entry) => entry.label);
 
   return (
-    <div data-process-map-legend="" className="flex flex-col gap-1.5">
-      <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+    <div data-process-map-legend="" className="flex flex-col gap-2">
+      <ul className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {entries.map((entry) => (
-          <li key={entry.value} data-legend-entry={entry.value} className="flex items-center gap-1.5">
+          <li key={entry.value} data-legend-entry={entry.value} className="flex items-center gap-2">
             <CcProvenanceChip value={entry.value} />
             <span className="text-[12px] font-semibold text-cc-ink" data-legend-count={entry.value}>
               {entry.count}
             </span>
           </li>
         ))}
-        <li data-legend-entry="unanchored" className="flex items-center gap-1.5">
+        <li data-legend-entry="unanchored" className="flex items-center gap-2">
           <CcTag>{unanchoredLabel}</CcTag>
           <span className="text-[12px] font-semibold text-cc-ink" data-legend-count="unanchored">
             {unanchored}
