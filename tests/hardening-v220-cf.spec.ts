@@ -6,6 +6,7 @@ import { withPreviewPolicy } from '../lib/export-preview';
 import { getPublishedKeyring, resetSigningKeypairCache } from '../lib/audit-signing-keypair';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { readTableDependencies } from '../lib/abap/table-dependencies';
+import { applyRunnerVerdicts, parseTapOutput } from '../lib/test-verdicts';
 
 /**
  * Hardening that shipped with the v2.20 security steps C and F.
@@ -78,7 +79,8 @@ test.describe('the list of retired signing keys', () => {
     const retiredPrivate = pem();
     try {
       process.env.AUDIT_SIGNING_PRIVATE_KEY = Buffer.from(pem()).toString('base64');
-      for (const shape of [retiredPrivate, retiredPrivate.replace(/\n/g, '\n')]) {
+      // As written, and with its newlines as the two characters \ and n.
+      for (const shape of [retiredPrivate, retiredPrivate.split('\n').join(String.raw`\n`)]) {
         process.env.AUDIT_SIGNING_PUBLIC_KEYS_RETIRED = shape;
         resetSigningKeypairCache();
         const ring = getPublishedKeyring();
@@ -135,5 +137,22 @@ test.describe('the reading of typed data objects', () => {
     // Not vacuous: a selected structure is still read as the type reference it is.
     expect(report.dependencies.some((d) => d.table === 'ZCC_ROW_TYPE0' && d.access === 'reference')).toBe(true);
     expect(took, `reading ${Math.round(source.length / 1024)} kB of declarations took ${took} ms`).toBeLessThan(1000);
+  });
+});
+
+test.describe('the verdicts read from a test run', () => {
+  test('keep a failure a failure, whatever the case is called', () => {
+    const tap = [
+      'TAP version 13',
+      'not ok 1 - TC-001: totals add up',
+      // Node's reporter writes a `#` inside a name as `\#`.
+      String.raw`not ok 2 - TC.002: rounding \# todo later`,
+      'ok 3 - TC_003: first attempt',
+      'not ok 4 - TC_003: second attempt',
+      'ok 5 - TC_004: needs a tenant # SKIP no tenant',
+    ].join('\n');
+    const cases = [{ id: 'TC-001' }, { id: 'TC.002' }, { id: 'TC_003' }, { id: 'TC_004' }];
+    const byId = Object.fromEntries(applyRunnerVerdicts(cases, parseTapOutput(tap), 1).map((c) => [c.id, c.status]));
+    expect(byId).toEqual({ 'TC-001': 'Failed', 'TC.002': 'Failed', TC_003: 'Failed', TC_004: 'Skipped' });
   });
 });
