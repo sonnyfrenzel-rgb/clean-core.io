@@ -41,10 +41,10 @@ declare global {
   }
 }
 
-/** The chart below is drawn with the options components/MermaidDiagram.tsx uses. */
+/** The chart below is drawn with the options components/MermaidDiagram.tsx uses (it adds token colours as themeVariables at runtime). */
 const MERMAID_OPTIONS = {
   startOnLoad: false,
-  theme: 'neutral',
+  theme: 'base',
   securityLevel: 'strict',
   flowchart: { useMaxWidth: false, htmlLabels: true, curve: 'basis', padding: 15, nodeSpacing: 30, rankSpacing: 40 },
 };

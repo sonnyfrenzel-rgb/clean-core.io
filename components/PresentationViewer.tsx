@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, FileText, Maximize2, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, ExternalLink } from 'lucide-react';
 import { safeHttpHref } from '@/lib/export-safety';
+import { formatTextDate } from '@/lib/format';
+import type { SemanticState } from '@/lib/provenance';
+import CcButton from '@/components/cc/Button';
+import CcIconButton from '@/components/cc/IconButton';
+import CcTable, { type CcTableColumn } from '@/components/cc/Table';
+import { STATE_CLASSES } from '@/components/cc/state';
+import { cn } from '@/lib/utils';
 
 export interface SlideData {
   title: string;
@@ -32,22 +39,22 @@ export interface PresentationData {
 
 const renderFormattedText = (text: string | undefined) => {
   if (!text) return null;
-  
+
   const lines = text.split('\n');
-  
+
   return lines.map((line, lineIdx) => {
     // Split by markdown bold (**text**), italic (*text*), and code (`text`) syntax
     const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
-    
+
     const renderedLine = parts.map((part, partIdx) => {
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={partIdx} className="font-extrabold">{part.slice(2, -2)}</strong>;
+        return <strong key={partIdx} className="font-bold">{part.slice(2, -2)}</strong>;
       }
       if (part.startsWith('*') && part.endsWith('*')) {
         return <em key={partIdx} className="italic">{part.slice(1, -1)}</em>;
       }
       if (part.startsWith('`') && part.endsWith('`')) {
-        return <code key={partIdx} className="px-1.5 py-0.5 rounded bg-gray-100 text-red-600 font-mono text-[0.85em] border border-gray-200">{part.slice(1, -1)}</code>;
+        return <code key={partIdx} className="px-1 rounded bg-cc-surface-muted border border-cc-line font-cc-mono text-[0.9em] text-cc-ink">{part.slice(1, -1)}</code>;
       }
       return part;
     });
@@ -61,51 +68,95 @@ const renderFormattedText = (text: string | undefined) => {
   });
 };
 
+/** A row's `status` as one of the five states of §1.1 — an unknown value is neutral. */
+function rowState(status: string | undefined): SemanticState {
+  if (status === 'success') return 'success';
+  if (status === 'warning') return 'warning';
+  if (status === 'danger') return 'error';
+  if (status === 'info') return 'information';
+  return 'neutral';
+}
+
+/** The state of a row as a mark and its words — the dot never stands alone (§1.1). */
+function RowStatus({ status, children }: { status?: string; children: React.ReactNode }) {
+  const state = rowState(status);
+  return (
+    <span data-slide-row-status={state} className={cn('inline-flex items-center gap-2 cc-text-meta', STATE_CLASSES[state].text)}>
+      <span aria-hidden className={cn('inline-block h-2 w-2 shrink-0 rounded-full', STATE_CLASSES[state].mark)} />
+      <span>{children}</span>
+    </span>
+  );
+}
+
+/** One heading form for every slide type: the slide is content in the page, not a poster. */
+const SLIDE_HEADING = 'text-2xl sm:text-3xl font-extrabold text-cc-ink tracking-tight mb-2 pb-2 border-b border-cc-line self-start';
+const SLIDE_SUBTITLE = 'cc-text-label text-cc-ink-muted mb-4';
+const SLIDE_ENTER = 'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300';
+const LINK = 'inline-flex items-center gap-1 cc-text-meta text-cc-brand-strong underline underline-offset-2 hover:text-cc-brand-deep';
+
+const MATRIX_COLUMNS: readonly CcTableColumn[] = [
+  { key: 'construct', label: 'Construct' },
+  { key: 'occurrences', label: 'Occurrences' },
+  { key: 'recommendation', label: 'Recommendation' },
+  { key: 'level', label: 'Level' },
+  { key: 'spec', label: 'Spec', numeric: true },
+];
+
+const RISK_COLUMNS: readonly CcTableColumn[] = [
+  { key: 'risk', label: 'Identified Risk' },
+  { key: 'owner', label: 'Owner' },
+  { key: 'mitigation', label: 'Mitigation Strategy' },
+  { key: 'gate', label: 'Quality Gate / Condition' },
+];
+
 export const PresentationViewer = ({ data }: { data: PresentationData }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showNotes, setShowNotes] = useState(false);
 
   if (!data || !data.slides || data.slides.length === 0) {
-    return <div className="p-8 text-center text-gray-500">No presentation data available.</div>;
+    return <div className="p-8 text-center cc-text-body text-cc-ink-muted">No presentation data available.</div>;
   }
 
   const slide = data.slides[currentSlide];
+  const total = data.slides.length;
+  const previous = currentSlide > 0 ? data.slides[currentSlide - 1] : null;
+  const following = currentSlide < total - 1 ? data.slides[currentSlide + 1] : null;
 
-  const nextSlide = () => setCurrentSlide((prev) => Math.min(prev + 1, data.slides.length - 1));
+  const nextSlide = () => setCurrentSlide((prev) => Math.min(prev + 1, total - 1));
   const prevSlide = () => setCurrentSlide((prev) => Math.max(prev - 1, 0));
 
   return (
-    <div className="flex flex-col w-full max-w-5xl mx-auto bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-gray-100">
+    <div data-presentation-viewer="" className="flex flex-col w-full max-w-5xl mx-auto bg-cc-surface rounded-cc-card shadow-cc overflow-hidden border border-cc-line">
       {/* Slide Content Area */}
-      <div className="relative aspect-auto min-h-[300px] sm:aspect-video bg-gradient-to-br from-gray-50 to-gray-100 p-6 sm:p-8 md:p-12 flex flex-col justify-center">
+      <div className="relative aspect-auto min-h-[300px] sm:aspect-video bg-cc-surface p-6 sm:p-8 md:p-12 flex flex-col justify-center">
         {/* Slide Number */}
-        <div aria-live="polite" className="absolute top-4 right-4 sm:top-6 sm:right-8 text-xs sm:text-sm font-bold text-gray-400">
-          <span className="sr-only">Slide </span>{currentSlide + 1} / {data.slides.length}
+        <div aria-live="polite" className="absolute top-4 right-4 sm:top-6 sm:right-8 cc-text-meta text-cc-ink-muted tabular-nums">
+          <span className="sr-only">Slide </span>{currentSlide + 1} / {total}
         </div>
-        
+
         {/* Company/Project Branding */}
-        <div className="absolute top-4 left-4 sm:top-6 sm:left-8 text-xs sm:text-sm font-black text-gray-300 uppercase tracking-widest truncate max-w-[60%]">
+        <div className="absolute top-4 left-4 sm:top-6 sm:left-8 cc-text-label text-cc-ink-muted truncate max-w-[60%]">
           {data.title}
         </div>
 
         {/* Slide Layouts */}
         {slide.type === 'title' && (
-          <div className="text-center animate-in fade-in zoom-in-95 duration-500 mt-8 sm:mt-0">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 tracking-tight mb-4 sm:mb-6">{slide.title}</h1>
-            {slide.subtitle && <p className="text-lg sm:text-xl md:text-2xl text-gray-500 font-medium">{slide.subtitle}</p>}
-            <div className="mt-8 sm:mt-12 text-xs sm:text-sm text-gray-400 font-bold uppercase tracking-widest">
-              {data.author} • {new Date().toLocaleDateString()}
+          <div className={cn('text-center mt-8 sm:mt-0', SLIDE_ENTER)}>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-cc-ink tracking-tight mb-4">{slide.title}</h1>
+            {slide.subtitle && <p className="text-lg sm:text-xl text-cc-ink-muted font-medium">{slide.subtitle}</p>}
+            <div className="mt-8 cc-text-meta text-cc-ink-muted">
+              {data.author} • {formatTextDate(new Date())}
             </div>
           </div>
         )}
 
         {slide.type === 'bullets' && (
-          <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 mt-8 sm:mt-0">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-6 sm:mb-10 border-b-4 border-green-500 pb-2 sm:pb-4 inline-block self-start">{slide.title}</h2>
-            <ul className="space-y-4 sm:space-y-6 flex-grow">
+          <div className={cn('h-full flex flex-col mt-8 sm:mt-0', SLIDE_ENTER)}>
+            <h2 className={cn(SLIDE_HEADING, 'mb-6')}>{slide.title}</h2>
+            <ul className="space-y-4 flex-grow">
               {slide.content?.map((point, idx) => (
-                <li key={idx} className="flex items-start gap-3 sm:gap-4 text-base sm:text-lg md:text-xl text-gray-700">
-                  <span className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500 mt-2 sm:mt-2.5 flex-shrink-0" />
+                <li key={idx} className="flex items-start gap-3 text-base sm:text-lg text-cc-ink">
+                  <span aria-hidden className="w-2 h-2 rounded-full bg-cc-ink-muted mt-2 flex-shrink-0" />
                   <span className="leading-relaxed">{renderFormattedText(point)}</span>
                 </li>
               ))}
@@ -114,13 +165,13 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
         )}
 
         {slide.type === 'split' && (
-          <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 mt-8 sm:mt-0">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-6 sm:mb-10 border-b-4 border-blue-500 pb-2 sm:pb-4 inline-block self-start">{slide.title}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 md:gap-12 flex-grow items-center">
-              <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 h-full flex items-center text-base sm:text-lg md:text-xl text-gray-700 leading-relaxed">
+          <div className={cn('h-full flex flex-col mt-8 sm:mt-0', SLIDE_ENTER)}>
+            <h2 className={cn(SLIDE_HEADING, 'mb-6')}>{slide.title}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 flex-grow items-center">
+              <div className="bg-cc-surface-muted p-6 sm:p-8 rounded-cc-card border border-cc-line h-full flex items-center text-base sm:text-lg text-cc-ink leading-relaxed">
                 <div className="w-full">{renderFormattedText(slide.leftContent)}</div>
               </div>
-              <div className="bg-gray-900 text-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-xl h-full flex items-center text-base sm:text-lg md:text-xl leading-relaxed">
+              <div className="bg-cc-surface p-6 sm:p-8 rounded-cc-card border border-cc-field-border h-full flex items-center text-base sm:text-lg text-cc-ink leading-relaxed">
                 <div className="w-full">{renderFormattedText(slide.rightContent)}</div>
               </div>
             </div>
@@ -128,35 +179,35 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
         )}
 
         {slide.type === 'quote' && (
-          <div className="h-full flex flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 duration-500 px-4 sm:px-8 md:px-12 mt-8 sm:mt-0">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-400 uppercase tracking-widest mb-6 sm:mb-8">{slide.title}</h2>
-            <blockquote className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 leading-tight mb-6 sm:mb-8">
+          <div className={cn('h-full flex flex-col items-center justify-center text-center px-4 sm:px-8 md:px-12 mt-8 sm:mt-0', SLIDE_ENTER)}>
+            <h2 className="cc-text-label text-cc-ink-muted mb-6">{slide.title}</h2>
+            <blockquote className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-cc-ink leading-tight mb-6">
               &quot;{slide.quote}&quot;
             </blockquote>
-            {slide.author && <cite className="text-base sm:text-lg md:text-xl text-gray-500 font-medium not-italic">— {slide.author}</cite>}
+            {slide.author && <cite className="text-base sm:text-lg text-cc-ink-muted font-medium not-italic">— {slide.author}</cite>}
           </div>
         )}
 
         {slide.type === 'metrics' && (
-          <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 mt-8 sm:mt-0">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-2 border-b-4 border-green-500 pb-2 sm:pb-3 inline-block self-start">
+          <div className={cn('h-full flex flex-col mt-8 sm:mt-0', SLIDE_ENTER)}>
+            <h2 className={SLIDE_HEADING}>
               {slide.title}
             </h2>
             {slide.subtitle && (
-              <p className="text-xs sm:text-sm text-gray-500 font-bold mb-4 uppercase tracking-wider">{slide.subtitle}</p>
+              <p className={SLIDE_SUBTITLE}>{slide.subtitle}</p>
             )}
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-4">
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
               {slide.metrics?.map((metric, idx) => (
-                <div key={idx} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center text-center">
-                  <span className="text-2xl sm:text-4xl font-black text-green-600 tracking-tight mb-1">
+                <div key={idx} className="bg-cc-surface-muted p-4 rounded-cc-card border border-cc-line flex flex-col justify-center text-center">
+                  <span className="text-2xl sm:text-3xl font-bold text-cc-ink tracking-tight tabular-nums mb-1">
                     {metric.value}
                   </span>
-                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <span className="cc-text-label text-cc-ink-muted">
                     {metric.label}
                   </span>
                   {metric.sub && (
-                    <span className="text-[10px] text-gray-400 mt-0.5 font-medium leading-tight">
+                    <span className="cc-text-meta font-medium text-cc-ink-muted mt-1 leading-tight">
                       {metric.sub}
                     </span>
                   )}
@@ -165,10 +216,10 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
             </div>
 
             {slide.content && slide.content.length > 0 && (
-              <ul className="space-y-1.5 sm:space-y-2 mt-2 flex-grow">
+              <ul className="space-y-2 mt-2 flex-grow">
                 {slide.content.map((point, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-gray-700">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0" />
+                  <li key={idx} className="flex items-start gap-2 cc-text-body text-cc-ink">
+                    <span aria-hidden className="w-2 h-2 rounded-full bg-cc-ink-muted mt-2 flex-shrink-0" />
                     <span className="leading-relaxed">{renderFormattedText(point)}</span>
                   </li>
                 ))}
@@ -178,150 +229,129 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
         )}
 
         {slide.type === 'matrix' && (
-          <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 mt-8 sm:mt-0">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-2 border-b-4 border-blue-500 pb-2 sm:pb-3 inline-block self-start">
+          <div className={cn('h-full flex flex-col mt-8 sm:mt-0', SLIDE_ENTER)}>
+            <h2 className={SLIDE_HEADING}>
               {slide.title}
             </h2>
             {slide.subtitle && (
-              <p className="text-xs sm:text-sm text-gray-500 font-bold mb-4 uppercase tracking-wider">{slide.subtitle}</p>
+              <p className={SLIDE_SUBTITLE}>{slide.subtitle}</p>
             )}
-            
-            <div className="overflow-x-auto rounded-2xl border border-gray-150 shadow-sm bg-white flex-grow">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-150 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    <th className="p-3 sm:p-4">Construct</th>
-                    <th className="p-3 sm:p-4 text-center">Occurrences</th>
-                    <th className="p-3 sm:p-4">Recommendation</th>
-                    <th className="p-3 sm:p-4">Level</th>
-                    <th className="p-3 sm:p-4 text-right">Spec</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 text-xs">
-                  {slide.rows?.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-3 sm:p-4 font-bold text-gray-900">{renderFormattedText(row.col1)}</td>
-                      <td className="p-3 sm:p-4 text-center font-bold text-gray-500">{row.col2}</td>
-                      <td className="p-3 sm:p-4 text-gray-600 font-medium leading-relaxed">{renderFormattedText(row.col3)}</td>
-                      <td className="p-3 sm:p-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold leading-none ${
-                          row.status === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
-                          row.status === 'warning' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                          row.status === 'danger' ? 'bg-red-50 text-red-700 border border-red-200' :
-                          'bg-gray-100 text-gray-700 border border-gray-200'
-                        }`}>
-                          {row.col4}
-                        </span>
-                      </td>
-                      <td className="p-3 sm:p-4 text-right">
-                        {/* `row.url` is model-supplied. It goes on an anchor only as
-                            an http(s) URL - React renders a `javascript:` href with
-                            nothing more than a development warning (security audit
-                            of b88c77b, SEC-2026-152). Anything else is shown as no
-                            link rather than a link that runs. */}
-                        {safeHttpHref(row.url) ? (
-                          <a
-                            href={safeHttpHref(row.url)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-0.5 text-[9px] font-black text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-widest"
-                          >
-                            Doc <ExternalLink size={10} />
-                          </a>
-                        ) : (
-                          <span className="text-gray-300" title={row.url ? 'The document link the model supplied is not an http(s) address and was not rendered.' : undefined}>—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+            <div className="rounded-cc-card border border-cc-line bg-cc-surface flex-grow">
+              <CcTable
+                caption={slide.title}
+                columns={MATRIX_COLUMNS}
+                rows={(slide.rows ?? []).map((row, idx) => ({
+                  key: String(idx),
+                  cells: {
+                    construct: <span className="font-semibold">{renderFormattedText(row.col1)}</span>,
+                    occurrences: <span className="text-cc-ink-muted">{row.col2}</span>,
+                    recommendation: <span className="text-cc-ink-muted leading-relaxed">{renderFormattedText(row.col3)}</span>,
+                    level: <RowStatus status={row.status}>{row.col4}</RowStatus>,
+                    // `row.url` is model-supplied. It goes on an anchor only as
+                    // an http(s) URL - React renders a `javascript:` href with
+                    // nothing more than a development warning (security audit
+                    // of b88c77b, SEC-2026-152). Anything else is shown as no
+                    // link rather than a link that runs.
+                    spec: safeHttpHref(row.url) ? (
+                      <a
+                        href={safeHttpHref(row.url)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={LINK}
+                      >
+                        Doc <ExternalLink size={12} aria-hidden />
+                      </a>
+                    ) : (
+                      <span className="text-cc-ink-muted" title={row.url ? 'The document link the model supplied is not an http(s) address and was not rendered.' : undefined}>—</span>
+                    ),
+                  },
+                }))}
+              />
             </div>
           </div>
         )}
 
         {slide.type === 'risk' && (
-          <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 mt-8 sm:mt-0">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight mb-2 border-b-4 border-red-500 pb-2 sm:pb-3 inline-block self-start">
+          <div className={cn('h-full flex flex-col mt-8 sm:mt-0', SLIDE_ENTER)}>
+            <h2 className={SLIDE_HEADING}>
               {slide.title}
             </h2>
             {slide.subtitle && (
-              <p className="text-xs sm:text-sm text-gray-500 font-bold mb-4 uppercase tracking-wider">{slide.subtitle}</p>
+              <p className={SLIDE_SUBTITLE}>{slide.subtitle}</p>
             )}
-            
-            <div className="overflow-x-auto rounded-2xl border border-gray-150 shadow-sm bg-white flex-grow">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-150 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    <th className="p-3 sm:p-4">Identified Risk</th>
-                    <th className="p-3 sm:p-4">Owner</th>
-                    <th className="p-3 sm:p-4">Mitigation Strategy</th>
-                    <th className="p-3 sm:p-4">Quality Gate / Condition</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 text-xs">
-                  {slide.rows?.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-3 sm:p-4 font-bold text-gray-900 flex items-center gap-2">
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                          row.status === 'success' ? 'bg-green-500' :
-                          row.status === 'warning' ? 'bg-amber-500' :
-                          'bg-red-500'
-                        }`} />
-                        {renderFormattedText(row.col1)}
-                      </td>
-                      <td className="p-3 sm:p-4 font-bold text-gray-500">{row.col2}</td>
-                      <td className="p-3 sm:p-4 text-gray-600 font-medium leading-relaxed">{renderFormattedText(row.col3)}</td>
-                      <td className="p-3 sm:p-4 font-bold text-gray-800">{renderFormattedText(row.col4)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+            <div className="rounded-cc-card border border-cc-line bg-cc-surface flex-grow">
+              <CcTable
+                caption={slide.title}
+                columns={RISK_COLUMNS}
+                rows={(slide.rows ?? []).map((row, idx) => ({
+                  key: String(idx),
+                  cells: {
+                    risk: (
+                      <span className="inline-flex items-start gap-2 font-semibold">
+                        {/* As before: success and warning keep their state, anything else reads as an error. */}
+                        <span
+                          aria-hidden
+                          className={cn(
+                            'w-2 h-2 mt-1 rounded-full flex-shrink-0',
+                            STATE_CLASSES[row.status === 'success' || row.status === 'warning' ? rowState(row.status) : 'error'].mark,
+                          )}
+                        />
+                        <span>{renderFormattedText(row.col1)}</span>
+                      </span>
+                    ),
+                    owner: <span className="text-cc-ink-muted">{row.col2}</span>,
+                    mitigation: <span className="text-cc-ink-muted leading-relaxed">{renderFormattedText(row.col3)}</span>,
+                    gate: <span className="font-semibold">{renderFormattedText(row.col4)}</span>,
+                  },
+                }))}
+              />
             </div>
           </div>
         )}
       </div>
 
       {/* Controls & Speaker Notes */}
-      <div className="bg-gray-900 text-white p-4 sm:p-6 flex flex-col gap-4">
+      <div className="border-t border-cc-line bg-cc-surface-muted p-4 flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <button
-            type="button"
+          <CcButton
+            density="cozy"
             onClick={() => setShowNotes(!showNotes)}
             aria-pressed={showNotes}
-            className={`focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${showNotes ? 'bg-white text-gray-900' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+            icon={<FileText size={16} aria-hidden />}
           >
-            <FileText size={16} aria-hidden /> Speaker Notes
-          </button>
-          
+            Speaker Notes
+          </CcButton>
+
+          {/* UX-033: each slide switch says where it goes. UX-068: 44 px targets and the visible focus of §1.6. */}
           <div className="flex items-center gap-4 w-full sm:w-auto justify-center">
-            {/* UX-033: the two slide switches had no name at all. */}
-            <button
-              type="button"
+            <CcIconButton
+              density="cozy"
               onClick={prevSlide}
-              disabled={currentSlide === 0}
-              aria-label="Previous slide"
-              className="p-3 rounded-full bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              disabled={!previous}
+              label={previous ? `Previous slide: ${previous.title}` : 'Previous slide'}
+              title={previous ? `Previous slide: ${previous.title}` : undefined}
             >
-              <ChevronLeft size={24} aria-hidden />
-            </button>
-            <button
-              type="button"
+              <ChevronLeft size={20} aria-hidden />
+            </CcIconButton>
+            <CcIconButton
+              density="cozy"
               onClick={nextSlide}
-              disabled={currentSlide === data.slides.length - 1}
-              aria-label="Next slide"
-              className="p-3 rounded-full bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              disabled={!following}
+              label={following ? `Next slide: ${following.title}` : 'Next slide'}
+              title={following ? `Next slide: ${following.title}` : undefined}
             >
-              <ChevronRight size={24} aria-hidden />
-            </button>
+              <ChevronRight size={20} aria-hidden />
+            </CcIconButton>
           </div>
         </div>
 
         {/* Speaker Notes Panel */}
         {showNotes && (
-          <div className="mt-2 sm:mt-4 p-4 sm:p-6 bg-gray-800 rounded-2xl border border-gray-700 animate-in slide-in-from-top-2">
-            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Speaker Notes</h4>
-            <p className="text-gray-300 leading-relaxed text-sm">
+          <div className="p-4 sm:p-6 bg-cc-surface rounded-cc-card border border-cc-line">
+            <h4 className="cc-text-label text-cc-ink-muted mb-2">Speaker Notes</h4>
+            <p className="cc-text-body text-cc-ink leading-relaxed">
               {renderFormattedText(slide.speakerNotes || "No speaker notes for this slide.")}
             </p>
           </div>
