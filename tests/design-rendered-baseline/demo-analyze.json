@@ -3,9 +3,6 @@
   "route": "/demo/[stage] (analyze)",
   "step": "D.22b",
   "ceilings": {
-    "small": 4,
-    "contrast": 1,
-    "headings": 1,
-    "heavy": 4
+    "headings": 1
   }
 }
