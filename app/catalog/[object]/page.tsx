@@ -4,6 +4,19 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { resolveApi, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses, getObjectDimensions } from '@/lib/abap/catalog-service';
 import { ABCD_META, CLOUD_VIEW_META, CLASSIC_VIEW_META } from '@/lib/abap/abcd-classification';
+import { CcCleanCoreLevel } from '@/components/cc/Identifier';
+import CcTag from '@/components/cc/Tag';
+import { publicButton } from '@/components/landing/public-button';
+import {
+  CATALOG_CARD,
+  CATALOG_CRUMBS,
+  CATALOG_CRUMB_LINK,
+  CATALOG_LABEL,
+  CATALOG_LINK,
+  CATALOG_TILE_ITEM,
+  CATALOG_TILE_LINK,
+  CATALOG_TITLE,
+} from '@/components/catalog/catalog-style';
 import {
   slugToObject,
   objectToSlug,
@@ -166,24 +179,24 @@ export default async function CatalogObjectPage({
     <main className="max-w-3xl mx-auto px-6 py-16">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
 
-      <nav className="text-sm text-slate-500 mb-6">
-        <Link href="/catalog" className="hover:text-slate-700">Catalog</Link>
+      <nav aria-label="Breadcrumb" className={CATALOG_CRUMBS}>
+        <Link href="/catalog" className={CATALOG_CRUMB_LINK}>Catalog</Link>
         {areaMeta && (
           <>
             <span className="mx-2">/</span>
             <Link
               href={`/catalog/module/${areaMeta.code.toLowerCase()}`}
-              className="hover:text-slate-700"
+              className={CATALOG_CRUMB_LINK}
             >
               {areaMeta.name} ({areaMeta.code})
             </Link>
           </>
         )}
         <span className="mx-2">/</span>
-        <span className="font-mono font-bold text-slate-700">{name}</span>
+        <span aria-current="page" className="font-cc-mono font-semibold text-cc-ink">{name}</span>
       </nav>
 
-      <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2 font-mono">{name}</h1>
+      <h1 className={`${CATALOG_TITLE} text-4xl mb-3 font-cc-mono break-all`}>{name}</h1>
 
       {/*
         The clean core level, shown with the SAP state that produced it. These
@@ -205,26 +218,22 @@ export default async function CatalogObjectPage({
               ['written directly', byUse.write.grade],
             ] as const).map(([access, grade]) => (
               <span key={access} className="inline-flex items-center gap-2">
-                <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-black border ${ABCD_META[grade].badge}`}>
-                  {grade}
-                </span>
-                <span className="text-sm font-bold text-slate-700">
+                <CcCleanCoreLevel value={grade} />
+                <span className="text-sm font-bold text-cc-ink">
                   {access} &mdash; {ABCD_META[grade].short}
                 </span>
               </span>
             ))}
             {graded.state && (
-              <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
-                SAP state: {graded.state}
-              </span>
+              <CcTag>SAP state: {graded.state}</CcTag>
             )}
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed">
+          <p className="text-xs text-cc-ink-muted leading-relaxed">
             The level depends on what your code does with it. Reading an object SAP will not release
             uses an internal SAP object: level {byUse.read.grade}, with a check against SAP&apos;s
             changelog before each upgrade. Writing to it directly is level {byUse.write.grade}.
             {successor && (
-              <> SAP names <span className="font-mono">{successor}</span> as its successor; that says
+              <> SAP names <span className="font-cc-mono">{successor}</span> as its successor; that says
               where to look, not that it is a drop-in replacement.</>
             )}
           </p>
@@ -232,17 +241,15 @@ export default async function CatalogObjectPage({
       )}
       {!byUse && graded.grade !== 'Unknown' && (
         <div className="flex flex-wrap items-center gap-2 mb-6">
-          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-black border ${ABCD_META[graded.grade].badge}`}>
-            {graded.grade}
-          </span>
-          <span className="text-sm font-bold text-slate-700">
+          <CcCleanCoreLevel value={graded.grade} />
+          <span className="text-sm font-bold text-cc-ink">
             Clean core level {graded.grade} &mdash; {ABCD_META[graded.grade].short}
           </span>
-          <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
+          <CcTag>
             {graded.state
               ? `SAP state: ${graded.state}`
               : 'listed in neither SAP file — SAP-internal'}
-          </span>
+          </CcTag>
         </div>
       )}
 
@@ -257,7 +264,7 @@ export default async function CatalogObjectPage({
         reader checks the answer instead of reconstructing it from the source.
       */}
       {graded.cloudView && graded.classicView && (
-        <div className="border border-slate-200 rounded-2xl overflow-hidden mb-8">
+        <div className={`${CATALOG_CARD} overflow-hidden mb-8`}>
           {/*
             Roadmap 7.9 (CR-01), decision §9 no. 18: the letter is the clean core
             TARGET reference, not a statement about classic usability. Said here,
@@ -265,36 +272,36 @@ export default async function CatalogObjectPage({
             columns below only make sense once a reader knows the letter is not a
             summary of them.
           */}
-          <p className="bg-slate-50 border-b border-slate-200 px-4 py-2 text-xs text-slate-600 leading-relaxed">
-            <span className="font-bold text-slate-800">Two questions, two answers.</span>{' '}
+          <p className="bg-cc-surface-muted border-b border-cc-line px-4 py-2 text-xs text-cc-ink-muted leading-relaxed">
+            <span className="font-bold text-cc-ink">Two questions, two answers.</span>{' '}
             The level {graded.grade} above answers the clean core target question &mdash; what this
             object is worth in an ABAP Cloud target. Whether classic ABAP may still call it is a
             separate property, and it is the right-hand column.
           </p>
-          <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
+          <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-cc-line">
             <div className="p-4">
-              <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+              <p className={CATALOG_LABEL}>
                 ABAP Cloud view
               </p>
-              <p className="text-sm font-bold text-slate-800 mt-1">
+              <p className="text-sm font-bold text-cc-ink mt-1">
                 {CLOUD_VIEW_META[graded.cloudView].label}
               </p>
-              <p className="text-xs text-slate-500 leading-relaxed mt-1">
+              <p className="text-xs text-cc-ink-muted leading-relaxed mt-1">
                 {CLOUD_VIEW_META[graded.cloudView].detail}
               </p>
-              <p className="text-[10px] text-slate-400 mt-2 font-mono">objectReleaseInfo</p>
+              <p className="text-xs text-cc-ink-muted mt-2 font-cc-mono">objectReleaseInfo</p>
             </div>
             <div className="p-4">
-              <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+              <p className={CATALOG_LABEL}>
                 Classic view
               </p>
-              <p className="text-sm font-bold text-slate-800 mt-1">
+              <p className="text-sm font-bold text-cc-ink mt-1">
                 {CLASSIC_VIEW_META[graded.classicView].label}
               </p>
-              <p className="text-xs text-slate-500 leading-relaxed mt-1">
+              <p className="text-xs text-cc-ink-muted leading-relaxed mt-1">
                 {CLASSIC_VIEW_META[graded.classicView].detail}
               </p>
-              <p className="text-[10px] text-slate-400 mt-2 font-mono">objectClassifications_SAP</p>
+              <p className="text-xs text-cc-ink-muted mt-2 font-cc-mono">objectClassifications_SAP</p>
             </div>
           </div>
 
@@ -307,14 +314,14 @@ export default async function CatalogObjectPage({
             a classic-classification pointer look like a released-API mapping.
           */}
           {dimensions.successors.length > 0 && (
-            <div className="border-t border-slate-200 p-4">
-              <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+            <div className="border-t border-cc-line p-4">
+              <p className={CATALOG_LABEL}>
                 SAP names as successor
               </p>
-              <p className="text-sm font-bold text-emerald-700 font-mono mt-1">
+              <p className="text-sm font-bold text-cc-ink font-cc-mono mt-1">
                 {dimensions.successors.map((sx) => sx.name).join(', ')}
               </p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-cc-ink-muted mt-1">
                 {dimensions.successorSource === 'release'
                   ? 'From objectReleaseInfo — SAP names this as the released replacement.'
                   : 'From objectClassifications_SAP — SAP points classic use here; it is not necessarily a released API.'}
@@ -332,8 +339,8 @@ export default async function CatalogObjectPage({
             on.
           */}
           {dimensions.needsCheck && (
-            <div className="bg-amber-50 border-t border-amber-200 p-4">
-              <p className="text-xs text-amber-900 leading-relaxed">
+            <div className="bg-cc-warning-bg border-t border-cc-warning-border p-4">
+              <p className="text-xs text-cc-ink leading-relaxed">
                 <span className="font-bold">Deprecated, with no successor named &mdash; check this one.</span>{' '}
                 {dimensions.checkNote}
               </p>
@@ -347,13 +354,13 @@ export default async function CatalogObjectPage({
           */}
           {graded.classicView === 'classic-api' &&
             (graded.cloudView === 'not-usable' || graded.cloudView === 'deprecated') && (
-              <div className="bg-amber-50 border-t border-amber-200 p-4">
-                <p className="text-xs text-amber-900 leading-relaxed">
+              <div className="bg-cc-warning-bg border-t border-cc-warning-border p-4">
+                <p className="text-xs text-cc-ink leading-relaxed">
                   <span className="font-bold">The two files disagree here, and the release state decides.</span>{' '}
                   Level B means &ldquo;acceptable where no level A path exists&rdquo;. SAP names a
                   successor for this object, so a level A path does exist and B would be the wrong
                   answer — which is why the level is {graded.grade} and not B.{' '}
-                  <Link href="/method/levels" className="font-bold underline underline-offset-2">
+                  <Link href="/method/levels" className="font-bold underline underline-offset-2 hover:text-cc-ink-muted">
                     The full rule, and the objects it applies to
                   </Link>
                   .
@@ -365,51 +372,49 @@ export default async function CatalogObjectPage({
 
       {successor ? (
         <>
-          <p className="text-lg text-slate-600 mb-8">
-            Released S/4HANA Clean Core successor for <span className="font-mono font-bold">{name}</span>.
+          <p className="text-lg text-cc-ink-muted mb-8">
+            Released S/4HANA Clean Core successor for <span className="font-cc-mono font-bold text-cc-ink">{name}</span>.
           </p>
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-6">
-            <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">
+          <div className={`${CATALOG_CARD} p-6 mb-6`}>
+            <span className={CATALOG_LABEL}>
               Released successor
             </span>
-            <div className="flex items-baseline gap-3 mt-2">
-              <span className="text-2xl font-black text-emerald-700 font-mono">{successor}</span>
+            <div className="flex flex-wrap items-baseline gap-3 mt-2">
+              <span className="text-2xl font-extrabold text-cc-ink font-cc-mono break-all">{successor}</span>
               {successorType && (
-                <span className="text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  {successorType}
-                </span>
+                <CcTag>{successorType}</CcTag>
               )}
             </div>
             {allSuccessors.length > 1 && (
-              <p className="text-sm text-slate-500 mt-3">
+              <p className="text-sm text-cc-ink-muted mt-3">
                 Additional successors: {allSuccessors.slice(1).join(', ')}
               </p>
             )}
             {entry?.releaseState && (
-              <p className="text-xs text-slate-400 mt-3">Repository state: {entry.releaseState}</p>
+              <p className="text-xs text-cc-ink-muted mt-3">Repository state: {entry.releaseState}</p>
             )}
             {entry?.confidence && (
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-cc-ink-muted mt-1">
                 Source: {entry.confidence === 'curated' ? 'Clean-Core.io curated (field-level)' : 'SAP official (Cloudification Repository)'}
               </p>
             )}
             {entry?.conceptNote && (
-              <p className="text-sm text-slate-600 mt-3">Note: {entry.conceptNote}</p>
+              <p className="text-sm text-cc-ink-muted mt-3">Note: {entry.conceptNote}</p>
             )}
           </div>
         </>
       ) : (
         <>
-          <p className="text-lg text-slate-600 mb-8">
-            <span className="font-mono font-bold">{name}</span> has{' '}
-            <span className="font-bold text-amber-700">no released API successor</span> in the SAP
+          <p className="text-lg text-cc-ink-muted mb-8">
+            <span className="font-cc-mono font-bold text-cc-ink">{name}</span> has{' '}
+            <span className="font-bold text-cc-warning">no released API successor</span> in the SAP
             Cloudification Repository.
           </p>
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-6">
-            <span className="text-xs font-bold tracking-widest text-amber-600 uppercase">
+          <div className="bg-cc-warning-bg border border-cc-warning-border rounded-2xl p-6 mb-6">
+            <span className="cc-text-label text-cc-warning">
               No clean path
             </span>
-            <p className="text-slate-700 mt-2 leading-relaxed">
+            <p className="text-cc-ink mt-2 leading-relaxed">
               {/*
                 Finding 20fe6d7b4308: since this page also covers the 359 objects
                 that are listed ONLY in the classification file, the wording has
@@ -425,60 +430,55 @@ export default async function CatalogObjectPage({
         </>
       )}
 
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-6">
-        <h2 className="font-black text-slate-900 mb-2">See how your code uses {name}</h2>
-        <p className="text-sm text-slate-600 leading-relaxed mb-4">
+      <div className="bg-cc-surface-muted border border-cc-line rounded-2xl p-6 mb-6">
+        <h2 className="font-extrabold text-cc-ink mb-2">See how your code uses {name}</h2>
+        <p className="text-sm text-cc-ink-muted leading-relaxed mb-4">
           This is the object-level answer. To see, per object, whether your actual ABAP can move to the
           successor or needs an architect — with evidence — run a free{' '}
-          <Link href="/abap-custom-code-analysis" className="text-emerald-700 font-bold hover:underline">ABAP static code analysis</Link>.
+          <Link href="/abap-custom-code-analysis" className={CATALOG_LINK}>ABAP static code analysis</Link>.
         </p>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm px-5 py-3 rounded-xl transition-colors"
-        >
+        <Link href="/" className={publicButton('primary', 'sm')}>
           Analyze free at clean-core.io
         </Link>
       </div>
 
-      <div className="border border-slate-200 rounded-2xl p-6 mb-6">
-        <h2 className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-3">Related</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-bold">
-          <Link href="/abap-custom-code-analysis" className="text-emerald-700 hover:underline">→ ABAP static code analysis</Link>
-          <Link href="/sap-clean-core-object-classification" className="text-emerald-700 hover:underline">→ Clean Core object classification (A–D)</Link>
-          <Link href="/clean-core-score" className="text-emerald-700 hover:underline">→ What is the Clean Core Score?</Link>
-          <Link href="/sap-cloudification" className="text-emerald-700 hover:underline">→ SAP cloudification explained</Link>
-          <Link href="/knowledge" className="text-emerald-700 hover:underline">→ Clean Core guide (RAP vs CAP)</Link>
-          <Link href="/catalog" className="text-emerald-700 hover:underline">→ Browse the full catalog</Link>
+      <div className={`${CATALOG_CARD} p-6 mb-6`}>
+        <h2 className={`${CATALOG_LABEL} mb-3`}>Related</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+          <Link href="/abap-custom-code-analysis" className={CATALOG_LINK}>→ ABAP static code analysis</Link>
+          <Link href="/sap-clean-core-object-classification" className={CATALOG_LINK}>→ Clean Core object classification (A–D)</Link>
+          <Link href="/clean-core-score" className={CATALOG_LINK}>→ What is the Clean Core Score?</Link>
+          <Link href="/sap-cloudification" className={CATALOG_LINK}>→ SAP cloudification explained</Link>
+          <Link href="/knowledge" className={CATALOG_LINK}>→ Clean Core guide (RAP vs CAP)</Link>
+          <Link href="/catalog" className={CATALOG_LINK}>→ Browse the full catalog</Link>
         </div>
       </div>
 
       {(areaMeta || component) && (
-        <section className="mt-14 border-t border-slate-200 pt-8">
-          <h2 className="text-lg font-black text-gray-900 mb-1">
+        <section className="mt-14 border-t border-cc-line pt-8">
+          <h2 className="text-lg font-extrabold text-cc-ink mb-1">
             {areaMeta ? `More from SAP ${areaMeta.name}` : 'Application component'}
           </h2>
           {component && (
-            <p className="text-sm text-slate-500 mb-4">
-              Application component: <span className="font-mono">{component}</span>
+            <p className="text-sm text-cc-ink-muted mb-4">
+              Application component: <span className="font-cc-mono">{component}</span>
             </p>
           )}
           {related.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+            <ul className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
               {related.map((n) => (
-                <Link
-                  key={n}
-                  href={`/catalog/${objectToSlug(n)}`}
-                  className="px-3 py-2 rounded-lg border border-slate-100 bg-white font-mono text-sm font-bold text-slate-700 hover:border-emerald-400 hover:text-emerald-700 truncate"
-                >
-                  {n}
-                </Link>
+                <li key={n} className={CATALOG_TILE_ITEM}>
+                  <Link href={`/catalog/${objectToSlug(n)}`} className={CATALOG_TILE_LINK}>
+                    {n}
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
           {areaMeta && (
             <Link
               href={`/catalog/module/${areaMeta.code.toLowerCase()}`}
-              className="inline-flex items-center gap-1 text-sm font-bold text-emerald-700 hover:underline"
+              className={`inline-flex items-center gap-1 text-sm ${CATALOG_LINK}`}
             >
               All {areaMeta.name} objects &rarr;
             </Link>

@@ -10,8 +10,17 @@ import {
   objectToSlug,
 } from '@/lib/abap/catalog-index';
 import { resolveApi, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses } from '@/lib/abap/catalog-service';
-import { ABCD_META } from '@/lib/abap/abcd-classification';
 import CatalogAttribution from '@/components/catalog/CatalogAttribution';
+import CcTable from '@/components/cc/Table';
+import { CcCleanCoreLevel } from '@/components/cc/Identifier';
+import { publicButton } from '@/components/landing/public-button';
+import {
+  CATALOG_CARD,
+  CATALOG_CRUMBS,
+  CATALOG_CRUMB_LINK,
+  CATALOG_H2,
+  CATALOG_TITLE,
+} from '@/components/catalog/catalog-style';
 import { jsonLdHtml } from '@/lib/json-ld';
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
@@ -109,98 +118,82 @@ export default async function CatalogModulePage({
     <main className="max-w-4xl mx-auto px-6 py-16">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
 
-      <nav className="text-sm text-slate-500 mb-6">
-        <Link href="/catalog" className="hover:text-slate-700">Catalog</Link>
+      <nav aria-label="Breadcrumb" className={CATALOG_CRUMBS}>
+        <Link href="/catalog" className={CATALOG_CRUMB_LINK}>Catalog</Link>
         <span className="mx-2">/</span>
-        <span className="font-bold text-slate-700">{meta.code}</span>
+        <span aria-current="page" className="font-semibold text-cc-ink">{meta.code}</span>
       </nav>
 
-      <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight mb-3">
+      <h1 className={`${CATALOG_TITLE} text-3xl sm:text-4xl mb-3`}>
         SAP {meta.name}{' '}
-        <span className="text-slate-400 font-bold">({meta.code})</span>
+        <span className="text-cc-ink-muted font-bold">({meta.code})</span>
       </h1>
-      <p className="text-lg text-slate-600 mb-2">{meta.blurb}</p>
-      <p className="text-sm text-slate-500 mb-10">
+      <p className="text-lg text-cc-ink-muted mb-2">{meta.blurb}</p>
+      <p className="text-sm text-cc-ink-muted mb-10">
         {rows.length} object{rows.length === 1 ? '' : 's'} in this area, {rows.filter((r) => r.successor).length} of
         them with a released S/4HANA successor. The sentence used to claim all of them did, while
         the table below marked some &ldquo;no released path&rdquo; two lines further down. Each row
         shows the clean core level derived from SAP&apos;s own published state for that object.
       </p>
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 mb-10">
-        <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500">
-            <tr>
-              <th scope="col" className="px-4 py-3 font-black">Object</th>
-              <th scope="col" className="px-4 py-3 font-black">Level</th>
-              <th scope="col" className="px-4 py-3 font-black">Released successor</th>
-              <th scope="col" className="px-4 py-3 font-black hidden sm:table-cell">Component</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {rows.map((r) => (
-              <tr key={r.name} className="hover:bg-slate-50/60">
-                <td className="px-4 py-2.5">
-                  <Link
-                    href={`/catalog/${objectToSlug(r.name)}`}
-                    className="font-mono font-bold text-slate-800 hover:text-emerald-700 hover:underline"
-                  >
-                    {r.name}
-                  </Link>
-                </td>
-                <td className="px-4 py-2.5">
-                  {/* A table SAP will not release is one level to read and
-                      another to write; the row shows both rather than the
-                      stricter one alone (roadmap 2.11). */}
-                  {r.byUse ? (
-                    <span
-                      className="inline-flex items-center gap-1 whitespace-nowrap"
-                      title={`SAP state: ${r.graded.state} · ${r.byUse.read.grade} to read directly, ${r.byUse.write.grade} to write directly`}
-                    >
-                      {[r.byUse.read.grade, r.byUse.write.grade].map((grade, i) => (
-                        <span
-                          key={i}
-                          className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[11px] font-black border ${ABCD_META[grade].badge}`}
-                        >
-                          {grade}
-                        </span>
-                      ))}
-                      <span className="text-[10px] font-semibold text-slate-500">read/write</span>
-                    </span>
-                  ) : r.graded.grade !== 'Unknown' && (
-                    <span
-                      className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-[11px] font-black border ${ABCD_META[r.graded.grade].badge}`}
-                      title={r.graded.state ? `SAP state: ${r.graded.state}` : 'Listed in neither SAP file — SAP-internal'}
-                    >
-                      {r.graded.grade}
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-2.5 font-mono text-emerald-700">
-                  {r.successor || <span className="text-slate-400 font-sans">no released path</span>}
-                </td>
-                <td className="px-4 py-2.5 text-slate-500 font-mono text-xs hidden sm:table-cell">
-                  {r.component || '—'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className={`${CATALOG_CARD} px-2 pt-3 pb-1 mb-10`}>
+        <CcTable
+          caption={`SAP ${meta.name} (${meta.code}) objects`}
+          columns={[
+            { key: 'object', label: 'Object' },
+            { key: 'level', label: 'Level' },
+            { key: 'successor', label: 'Released successor' },
+            { key: 'component', label: 'Component' },
+          ]}
+          // Every cell carries a key: the rows are built here, in a server
+          // component, and React checks elements that arrive inside an array
+          // for keys when the client table renders them.
+          rows={rows.map((r) => ({
+            key: r.name,
+            cells: {
+              object: (
+                <Link key="object" href={`/catalog/${objectToSlug(r.name)}`} className="font-cc-mono font-semibold text-cc-ink underline-offset-4 hover:underline">
+                  {r.name}
+                </Link>
+              ),
+              // A table SAP will not release is one level to read and another
+              // to write; the row shows both rather than the stricter one
+              // alone (roadmap 2.11).
+              level: r.byUse ? (
+                <span key="level"
+                  className="inline-flex items-center gap-1 whitespace-nowrap"
+                  title={`SAP state: ${r.graded.state} · ${r.byUse.read.grade} to read directly, ${r.byUse.write.grade} to write directly`}
+                >
+                  <CcCleanCoreLevel value={r.byUse.read.grade} />
+                  <CcCleanCoreLevel value={r.byUse.write.grade} />
+                  <span className="text-xs font-semibold text-cc-ink-muted">read/write</span>
+                </span>
+              ) : r.graded.grade !== 'Unknown' ? (
+                <span key="level" title={r.graded.state ? `SAP state: ${r.graded.state}` : 'Listed in neither SAP file — SAP-internal'}>
+                  <CcCleanCoreLevel value={r.graded.grade} />
+                </span>
+              ) : null,
+              successor: r.successor ? (
+                <span key="successor" className="font-cc-mono">{r.successor}</span>
+              ) : (
+                <span key="successor" className="text-cc-ink-muted">no released path</span>
+              ),
+              component: <span key="component" className="font-cc-mono text-xs text-cc-ink-muted">{r.component || '—'}</span>,
+            },
+          }))}
+        />
       </div>
 
-      <h2 className="text-lg font-black text-gray-900 mb-4">Other SAP areas</h2>
+      <h2 className={`${CATALOG_H2} text-lg mb-4`}>Other SAP areas</h2>
       <div className="flex flex-wrap gap-2 mb-10">
         {areas.map((a) => (
           <Link
             key={a.code}
             href={`/catalog/module/${a.code.toLowerCase()}`}
-            className={`px-3 py-1.5 rounded-lg border text-sm font-bold transition-colors ${
-              a.code === meta.code
-                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-400'
-            }`}
+            aria-current={a.code === meta.code ? 'page' : undefined}
+            className={publicButton(a.code === meta.code ? 'secondary' : 'ghost', 'sm')}
           >
-            {a.code} <span className="text-slate-400 font-normal">{a.objectCount}</span>
+            {a.code} <span className="text-cc-ink-muted font-normal">{a.objectCount}</span>
           </Link>
         ))}
       </div>

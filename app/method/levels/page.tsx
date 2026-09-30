@@ -10,7 +10,10 @@ import {
   getLevelRuleVersion,
   type LevelRuleArtifact,
 } from '@/lib/abap/catalog-service';
-import { ABCD_META, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
+import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
+import CcTable from '@/components/cc/Table';
+import { CcCleanCoreLevel } from '@/components/cc/Identifier';
+import { CATALOG_CARD, CATALOG_EYEBROW, CATALOG_H2, CATALOG_TITLE } from '@/components/catalog/catalog-style';
 
 /**
  * How the A–D level is derived — the rule, published.
@@ -90,44 +93,44 @@ export default function LevelDerivationPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-12 animate-in fade-in duration-300 bg-white min-h-screen text-gray-900 font-sans">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-12 motion-safe:animate-in fade-in duration-300 text-cc-ink font-sans">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson) }} />
 
       <div>
         <Link
           href="/sap-clean-core-object-classification"
-          className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-bold text-cc-ink-muted hover:text-cc-ink transition-colors"
         >
-          <ArrowLeft size={16} /> Clean core levels A–D
+          <ArrowLeft size={16} aria-hidden="true" /> Clean core levels A–D
         </Link>
       </div>
 
       <header className="space-y-4">
-        <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-gray-500">
+        <span className={CATALOG_EYEBROW}>
           Method
         </span>
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-[1.05] text-gray-950">
+        <h1 className={`${CATALOG_TITLE} text-4xl sm:text-5xl`}>
           How the A–D level is derived
         </h1>
-        <p className="text-lg text-gray-600 leading-relaxed max-w-3xl">
+        <p className="text-lg text-cc-ink-muted leading-relaxed max-w-3xl">
           SAP publishes two files that answer two different questions. The level is a merge of
           both, and the order the merge happens in decides the answer for{' '}
-          <span className="font-bold text-gray-950">{contestedTotal} objects</span> where the two
+          <span className="font-bold text-cc-ink">{contestedTotal} objects</span> where the two
           files disagree. That order is written out here, in the sequence the code checks it, with
           every count taken from the catalog rather than typed in.
         </p>
 
-        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 space-y-3">
-          <div className="flex items-center gap-2 text-gray-500">
-            <Fingerprint size={16} />
-            <span className="text-[11px] font-black uppercase tracking-widest">
+        <div className="rounded-2xl border border-cc-line bg-cc-surface p-5 space-y-3">
+          <div className="flex items-center gap-2 text-cc-ink-muted">
+            <Fingerprint size={16} aria-hidden="true" />
+            <span className="cc-text-label">
               The version of the rule you are reading
             </span>
           </div>
-          <p data-level-rule-version className="font-mono text-sm font-bold text-gray-950 break-all">
+          <p data-level-rule-version className="font-mono text-sm font-bold text-cc-ink break-all">
             {ruleVersion.version}
           </p>
-          <p className="text-sm text-gray-600 leading-relaxed max-w-3xl">
+          <p className="text-sm text-cc-ink-muted leading-relaxed max-w-3xl">
             The first part is the rule, the two after it are the data. The fingerprint is a hash over
             every one of the {ruleVersion.decisions} inputs this derivation can tell apart and the
             level it returns for each, so changing one branch of the table below changes this string
@@ -145,12 +148,12 @@ export default function LevelDerivationPage() {
 
       {/* ---------------------------------------------------------------- */}
       <section className="space-y-5">
-        <h2 className="text-2xl font-black tracking-tight text-gray-950">The two files</h2>
-        <p className="text-gray-600 leading-relaxed max-w-3xl">
+        <h2 className={CATALOG_H2}>The two files</h2>
+        <p className="text-cc-ink-muted leading-relaxed max-w-3xl">
           Both come from SAP&rsquo;s{' '}
           <a
             href="https://github.com/SAP/abap-atc-cr-cv-s4hc"
-            className="font-semibold text-gray-900 underline underline-offset-2 hover:text-gray-600"
+            className="font-semibold text-cc-ink underline underline-offset-2 hover:text-cc-ink-muted"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -162,44 +165,44 @@ export default function LevelDerivationPage() {
         </p>
 
         <div className="grid md:grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-gray-200 p-5">
-            <div className="flex items-center gap-2 text-gray-400">
-              <FileCode2 size={16} />
+          <div className={`${CATALOG_CARD} p-5`}>
+            <div className="flex items-center gap-2 text-cc-ink-muted">
+              <FileCode2 size={16} aria-hidden="true" />
               <span className="font-mono text-xs font-bold">objectReleaseInfo</span>
             </div>
-            <p className="mt-2 font-bold text-gray-950">Can ABAP Cloud use this object?</p>
-            <p className="mt-1 text-sm text-gray-600 leading-relaxed">
+            <p className="mt-2 font-bold text-cc-ink">Can ABAP Cloud use this object?</p>
+            <p className="mt-1 text-sm text-cc-ink-muted leading-relaxed">
               States <span className="font-mono text-xs">released</span>,{' '}
               <span className="font-mono text-xs">deprecated</span> and{' '}
               <span className="font-mono text-xs">notToBeReleased</span>, and the successors SAP
               names for the objects it is retiring.
             </p>
-            <p className="mt-3 text-2xl font-black text-gray-950 tabular-nums">
+            <p className="mt-3 text-2xl font-extrabold text-cc-ink tabular-nums">
               {(census.releaseFileOnly + census.inBoth).toLocaleString('en-US')}
             </p>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">objects</p>
+            <p className="cc-text-label text-cc-ink-muted">objects</p>
             <Provenance artifact={ruleVersion.artifacts[0]} />
           </div>
 
-          <div className="rounded-2xl border border-gray-200 p-5">
-            <div className="flex items-center gap-2 text-gray-400">
-              <FileCode2 size={16} />
+          <div className={`${CATALOG_CARD} p-5`}>
+            <div className="flex items-center gap-2 text-cc-ink-muted">
+              <FileCode2 size={16} aria-hidden="true" />
               <span className="font-mono text-xs font-bold">objectClassifications_SAP</span>
             </div>
-            <p className="mt-2 font-bold text-gray-950">What does classic ABAP using it count as?</p>
-            <p className="mt-1 text-sm text-gray-600 leading-relaxed">
+            <p className="mt-2 font-bold text-cc-ink">What does classic ABAP using it count as?</p>
+            <p className="mt-1 text-sm text-cc-ink-muted leading-relaxed">
               States <span className="font-mono text-xs">classicAPI</span> and{' '}
               <span className="font-mono text-xs">noAPI</span> — whether SAP considers the object
               fair game for classic extensions, or not for customer use at all.
             </p>
-            <p className="mt-3 text-2xl font-black text-gray-950 tabular-nums">
+            <p className="mt-3 text-2xl font-extrabold text-cc-ink tabular-nums">
               {(census.classificationFileOnly + census.inBoth).toLocaleString('en-US')}
             </p>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">objects</p>
+            <p className="cc-text-label text-cc-ink-muted">objects</p>
             <Provenance artifact={ruleVersion.artifacts[1]} />
           </div>
         </div>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-cc-ink-muted">
           Synced from the repository; catalog as of {stats.syncDate || 'the last sync'}. Those two
           checksums are the ones shortened into the rule version at the top of this page, so a level
           quoted with its version can be traced back to the exact bytes it was derived from.
@@ -208,47 +211,40 @@ export default function LevelDerivationPage() {
 
       {/* ---------------------------------------------------------------- */}
       <section className="space-y-5">
-        <h2 className="text-2xl font-black tracking-tight text-gray-950">
+        <h2 className={CATALOG_H2}>
           The rule, in the order it is checked
         </h2>
-        <p className="text-gray-600 leading-relaxed max-w-3xl">
+        <p className="text-cc-ink-muted leading-relaxed max-w-3xl">
           Each row is one branch. The first one that matches decides, so a row only sees the
           objects the rows above it did not claim — which is what makes the order a decision rather
           than a formatting choice.
         </p>
 
-        <div className="overflow-x-auto rounded-2xl border border-gray-200">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-left">
-                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">#</th>
-                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">SAP state</th>
-                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Level</th>
-                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Why</th>
-              </tr>
-            </thead>
-            <tbody>
-              {RULES.map((rule, i) => (
-                <tr key={rule.state} className="border-t border-gray-100 align-top">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-400 tabular-nums">{i + 1}</td>
-                  <td className="px-4 py-3 font-mono text-xs font-bold text-gray-900 whitespace-nowrap">
-                    {rule.state}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black border ${ABCD_META[rule.grade].badge}`}
-                    >
-                      {rule.grade}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 leading-relaxed">{rule.why}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className={`${CATALOG_CARD} px-2 pt-3 pb-1`}>
+          <CcTable
+            caption="The rule, in the order it is checked"
+            columns={[
+              { key: 'n', label: '#', width: '48px' },
+              { key: 'state', label: 'SAP state' },
+              { key: 'level', label: 'Level' },
+              { key: 'why', label: 'Why' },
+            ]}
+            // Every cell carries a key: these rows are built in a server
+            // component, and React checks elements that arrive inside an
+            // array for keys when the client table renders them.
+            rows={RULES.map((rule, i) => ({
+              key: rule.state,
+              cells: {
+                n: <span key="n" className="font-cc-mono text-xs text-cc-ink-muted tabular-nums">{i + 1}</span>,
+                state: <span key="state" className="font-cc-mono text-xs font-bold text-cc-ink sm:whitespace-nowrap">{rule.state}</span>,
+                level: <Level key="level" grade={rule.grade} />,
+                why: <span key="why" className="text-cc-ink-muted leading-relaxed">{rule.why}</span>,
+              },
+            }))}
+          />
         </div>
 
-        <p className="text-sm text-gray-500 leading-relaxed max-w-3xl">
+        <p className="text-sm text-cc-ink-muted leading-relaxed max-w-3xl">
           A customer object (Z*, Y*) carries no SAP classification at all, and neither does a
           namespaced object SAP does not list — those fall through to the engine&rsquo;s own
           evidence and are labelled as estimated rather than looked up, with the one exception
@@ -258,10 +254,10 @@ export default function LevelDerivationPage() {
 
       {/* ---------------------------------------------------------------- */}
       <section className="space-y-5">
-        <h2 className="text-2xl font-black tracking-tight text-gray-950">
+        <h2 className={CATALOG_H2}>
           When the code&rsquo;s access changes the level
         </h2>
-        <p className="text-gray-600 leading-relaxed max-w-3xl">
+        <p className="text-cc-ink-muted leading-relaxed max-w-3xl">
           The table above grades an object by its name. An analysis also knows what the code does
           with a table — reads it, writes to it, or depends on its type without touching a row —
           and in the cases below that decides the level it shows. Everywhere else the access
@@ -269,34 +265,26 @@ export default function LevelDerivationPage() {
           version at the top of this page.
         </p>
 
-        <div className="overflow-x-auto rounded-2xl border border-gray-200">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-left">
-                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Object and access</th>
-                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Level</th>
-                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Why</th>
-              </tr>
-            </thead>
-            <tbody>
-              {USE_RULES.map((rule) => (
-                <tr key={rule.use} className="border-t border-gray-100 align-top">
-                  <td className="px-4 py-3 font-mono text-xs font-bold text-gray-900">{rule.use}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black border ${ABCD_META[rule.grade].badge}`}
-                    >
-                      {rule.grade}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 leading-relaxed">{rule.why}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className={`${CATALOG_CARD} px-2 pt-3 pb-1`}>
+          <CcTable
+            caption="When the code's access changes the level"
+            columns={[
+              { key: 'use', label: 'Object and access' },
+              { key: 'level', label: 'Level' },
+              { key: 'why', label: 'Why' },
+            ]}
+            rows={USE_RULES.map((rule) => ({
+              key: rule.use,
+              cells: {
+                use: <span key="use" className="font-cc-mono text-xs font-bold text-cc-ink">{rule.use}</span>,
+                level: <Level key="level" grade={rule.grade} />,
+                why: <span key="why" className="text-cc-ink-muted leading-relaxed">{rule.why}</span>,
+              },
+            }))}
+          />
         </div>
 
-        <p className="text-sm text-gray-500 leading-relaxed max-w-3xl">
+        <p className="text-sm text-cc-ink-muted leading-relaxed max-w-3xl">
           Each level belongs to one object and one access. There is no level here for a program as a
           whole: a report that only reads released views still runs as classic ABAP.
         </p>
@@ -304,68 +292,57 @@ export default function LevelDerivationPage() {
 
       {/* ---------------------------------------------------------------- */}
       <section className="space-y-5">
-        <h2 className="text-2xl font-black tracking-tight text-gray-950">
+        <h2 className={CATALOG_H2}>
           What that produces, counted
         </h2>
-        <p className="text-gray-600 leading-relaxed max-w-3xl">
+        <p className="text-cc-ink-muted leading-relaxed max-w-3xl">
           Every pairing that occurs in the data, with the level it produces. Computed from the
           artifacts when this page was built — not maintained by hand.
         </p>
 
-        <div className="overflow-x-auto rounded-2xl border border-gray-200">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-left">
-                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Pairing</th>
-                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Level</th>
-                <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500 text-right">Objects</th>
-              </tr>
-            </thead>
-            <tbody>
-              {census.combinations.map((c) => {
-                const disputed = Boolean(c.releaseState && c.classificationState && c.grade !== 'A');
-                return (
-                  <tr
-                    key={`${c.releaseState}-${c.classificationState}-${c.grade}`}
-                    className={`border-t border-gray-100 ${disputed ? 'bg-amber-50' : ''}`}
-                  >
-                    <td className="px-4 py-3 font-mono text-xs text-gray-900">
+        <div className={`${CATALOG_CARD} px-2 pt-3 pb-1`}>
+          <CcTable
+            caption="What that produces, counted"
+            columns={[
+              { key: 'pairing', label: 'Pairing' },
+              { key: 'level', label: 'Level' },
+              { key: 'objects', label: 'Objects', numeric: true },
+            ]}
+            rows={census.combinations.map((c) => {
+              const disputed = Boolean(c.releaseState && c.classificationState && c.grade !== 'A');
+              return {
+                key: `${c.releaseState}-${c.classificationState}-${c.grade}`,
+                cells: {
+                  pairing: (
+                    <span key="pairing" className="font-cc-mono text-xs text-cc-ink">
                       {describe(c.releaseState, c.classificationState)}
                       {disputed && (
-                        <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-800">
-                          <GitMerge size={10} /> files disagree
+                        <span className="ml-2 inline-flex items-center gap-1 rounded-[4px] border border-cc-warning-line bg-cc-warning-bg px-2 align-middle font-sans text-xs font-semibold leading-[18px] text-cc-warning">
+                          <GitMerge size={12} aria-hidden="true" /> files disagree
                         </span>
                       )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black border ${ABCD_META[c.grade].badge}`}
-                      >
-                        {c.grade}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-bold text-gray-900 tabular-nums">
-                      {c.objects.toLocaleString('en-US')}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </span>
+                  ),
+                  level: <Level key="level" grade={c.grade} />,
+                  objects: <span key="objects" className="font-bold">{c.objects.toLocaleString('en-US')}</span>,
+                },
+              };
+            })}
+          />
         </div>
       </section>
 
       {/* ---------------------------------------------------------------- */}
       <section className="space-y-5">
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
-          <div className="flex items-center gap-2 text-amber-800">
-            <AlertTriangle size={18} />
-            <h2 className="text-xl font-black tracking-tight">
+        <div className="rounded-2xl border border-cc-warning-border bg-cc-warning-bg p-6">
+          <div className="flex items-center gap-2 text-cc-warning">
+            <AlertTriangle size={18} aria-hidden="true" />
+            <h2 className="text-xl font-extrabold tracking-[-0.02em]">
               The {contestedTotal} objects that look like a bug
             </h2>
           </div>
 
-          <p className="mt-3 text-amber-900 leading-relaxed">
+          <p className="mt-3 text-cc-ink leading-relaxed">
             Take <span className="font-mono font-bold">CL_BCS</span>, the classic class for sending
             mail. The classification file calls it <span className="font-mono">classicAPI</span> —
             an API classic ABAP may use, which on its own is level B. The release file calls it{' '}
@@ -374,7 +351,7 @@ export default function LevelDerivationPage() {
             publish D.
           </p>
 
-          <p className="mt-3 text-amber-900 leading-relaxed">
+          <p className="mt-3 text-cc-ink leading-relaxed">
             That reads as the release state wrongly overruling SAP&rsquo;s own classification, and
             it is the reading two independent code reviews of this project arrived at in September
             2026. The answer is in what level B means:{' '}
@@ -386,7 +363,7 @@ export default function LevelDerivationPage() {
             {contestedWithout === 1 ? ' and one does not' : contestedWithout > 1 ? ` and ${contestedWithout} do not` : ''}.
           </p>
 
-          <p className="mt-3 text-amber-900 leading-relaxed">
+          <p className="mt-3 text-cc-ink leading-relaxed">
             Reasonable people can disagree with that call — it is an interpretation of SAP&rsquo;s
             level definitions, not a quotation of them. What should not happen is disagreeing with
             it by accident, which is why the object pages now show both files side by side and why
@@ -397,12 +374,12 @@ export default function LevelDerivationPage() {
 
       {/* ---------------------------------------------------------------- */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-black tracking-tight text-gray-950">What this level is not</h2>
-        <ul className="space-y-3 text-gray-600 leading-relaxed max-w-3xl">
+        <h2 className={CATALOG_H2}>What this level is not</h2>
+        <ul className="space-y-3 text-cc-ink-muted leading-relaxed max-w-3xl">
           <li className="flex gap-3">
-            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+            <span aria-hidden="true" className="mt-2 w-1.5 h-1.5 rounded-full bg-cc-field-border shrink-0" />
             <span>
-              <span className="font-bold text-gray-950">Not an ATC verdict.</span> Each level
+              <span className="font-bold text-cc-ink">Not an ATC verdict.</span> Each level
               carries an ATC severity in our data, and it is labelled as{' '}
               <em>our reading</em> rather than SAP doctrine. We have not found an SAP source that
               states the mapping outright. ADT/ATC against your target release is the authority;
@@ -410,17 +387,17 @@ export default function LevelDerivationPage() {
             </span>
           </li>
           <li className="flex gap-3">
-            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+            <span aria-hidden="true" className="mt-2 w-1.5 h-1.5 rounded-full bg-cc-field-border shrink-0" />
             <span>
-              <span className="font-bold text-gray-950">Not part of the signed audit pack.</span>{' '}
+              <span className="font-bold text-cc-ink">Not part of the signed audit pack.</span>{' '}
               The level is an orientation aid. A wrong grade must never become signed material, so
               it is deliberately excluded from what the signature covers.
             </span>
           </li>
           <li className="flex gap-3">
-            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+            <span aria-hidden="true" className="mt-2 w-1.5 h-1.5 rounded-full bg-cc-field-border shrink-0" />
             <span>
-              <span className="font-bold text-gray-950">Not a guess when the data is missing.</span>{' '}
+              <span className="font-bold text-cc-ink">Not a guess when the data is missing.</span>{' '}
               An object SAP lists nowhere returns <span className="font-mono text-xs">Unknown</span>{' '}
               rather than a plausible-looking letter.
             </span>
@@ -428,22 +405,32 @@ export default function LevelDerivationPage() {
         </ul>
       </section>
 
-      <footer className="border-t border-gray-200 pt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-        <Link href="/catalog" className="font-bold text-gray-900 hover:text-gray-600">
+      <footer className="border-t border-cc-line pt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+        <Link href="/catalog" className="font-bold text-cc-ink hover:text-cc-ink-muted">
           Browse the object catalog →
         </Link>
         <Link
           href="/sap-clean-core-object-classification"
-          className="font-bold text-gray-900 hover:text-gray-600"
+          className="font-bold text-cc-ink hover:text-cc-ink-muted"
         >
           What the levels mean →
         </Link>
-        <span className="text-gray-400 ml-auto">
+        <span className="text-cc-ink-muted ml-auto">
           {APP_VERSION} · {APP_RELEASE_DATE}
         </span>
       </footer>
     </div>
   );
+}
+
+/**
+ * A level in a table row: the identifier of `DESIGN.md` §4.1 with its §1.8
+ * colour (A information, never green). "Unknown" is not a level and has no
+ * letter, so it stays the word the rule table has always printed.
+ */
+function Level({ grade }: { grade: CloudReadinessGrade }) {
+  if (grade === 'Unknown') return <span className="font-cc-mono text-xs font-semibold text-cc-ink-muted">Unknown</span>;
+  return <CcCleanCoreLevel value={grade} />;
 }
 
 /**
@@ -456,7 +443,7 @@ export default function LevelDerivationPage() {
  */
 function Provenance({ artifact }: { artifact: LevelRuleArtifact }) {
   return (
-    <p className="mt-3 border-t border-gray-100 pt-3 font-mono text-[11px] leading-relaxed text-gray-500 break-all">
+    <p className="mt-3 border-t border-cc-line pt-3 font-cc-mono text-[11px] leading-relaxed text-cc-ink-muted break-all">
       {artifact.file}
       <br />
       {artifact.release}@{artifact.sha256} · {artifact.entries.toLocaleString('en-US')} entries ·

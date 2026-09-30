@@ -46,23 +46,23 @@ export default function CatalogSearch({ names }: CatalogSearchProps) {
   return (
     <div className="w-full max-w-xl">
       <div className="relative">
-        <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+        <Search aria-hidden="true" className="w-5 h-5 text-cc-ink-muted absolute left-4 top-1/2 -translate-y-1/2" />
         <input
           type="text"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search an SAP object (e.g. MARA, BSEG, VBAK)…"
-          className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-slate-900 font-medium"
+          className="w-full min-h-12 pl-12 pr-4 py-3 rounded-2xl border border-cc-field-border bg-cc-surface text-cc-ink font-medium placeholder:text-cc-ink-muted focus-visible:border-cc-focus focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
           aria-label="Search SAP objects"
         />
       </div>
       {results.length > 0 && (
-        <div className="mt-3 bg-white border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100">
+        <div className="mt-3 bg-cc-surface border border-cc-line rounded-2xl overflow-hidden divide-y divide-cc-line">
           {results.map((n) => (
             <Link
               key={n}
               href={`/catalog/${objectToSlug(n)}`}
-              className="block px-4 py-3 hover:bg-slate-50 font-mono text-sm font-bold text-slate-800"
+              className="block px-4 py-3 font-cc-mono text-sm font-semibold text-cc-ink underline-offset-4 hover:underline"
             >
               {n}
             </Link>
@@ -70,7 +70,7 @@ export default function CatalogSearch({ names }: CatalogSearchProps) {
         </div>
       )}
       {q.trim().length >= 2 && results.length === 0 && (
-        <p className="mt-3 text-sm text-slate-500">No object matching “{q}”. Try the A–Z index below.</p>
+        <p className="mt-3 text-sm text-cc-ink-muted">No object matching “{q}”. Try the A–Z index below.</p>
       )}
     </div>
   );

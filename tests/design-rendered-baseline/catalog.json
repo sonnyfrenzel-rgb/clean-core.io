@@ -3,8 +3,6 @@
   "route": "/catalog",
   "step": "D.25a",
   "ceilings": {
-    "small": 5,
-    "contrast": 1,
-    "heavy": 47
+    "contrast": 1
   }
 }
