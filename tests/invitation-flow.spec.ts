@@ -455,8 +455,15 @@ test('the invitation subcollection is not client-readable and `readers` is not c
   const block = new RegExp(
     `match\\s+/projects/\\{[^}]+\\}/${INVITATION_COLLECTION}/\\{[^}]+\\}\\s*\\{\\s*allow\\s+read\\s*,\\s*write\\s*:\\s*if\\s+false\\s*;`,
   );
+  // Read against the rules with their comments removed: a denial that survives
+  // only as an example in a comment refuses nothing (QA full review of
+  // fc787674705f, d682fa155a5b).
+  const withoutComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  const denial = `match /projects/{projectId}/${INVITATION_COLLECTION}/{invitationId} {\n  allow read, write: if false;\n}`;
+  expect(withoutComments(denial), 'the pattern no longer matches the denial it is for').toMatch(block);
+  expect(withoutComments(denial.replace(/^/gm, '// ')), 'a commented-out denial still counts').not.toMatch(block);
   expect(
-    rules,
+    withoutComments(rules),
     'the invitation subcollection has no rule that refuses it out loud — it carries the e-mail ' +
       'addresses of other invited people, and a later catch-all match would open it silently',
   ).toMatch(block);

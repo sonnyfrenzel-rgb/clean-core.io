@@ -99,6 +99,24 @@ for (const route of ROUTES) {
         });
         expect(cardPadding, `${label} card padding`).toBeLessThanOrEqual(24);
       });
+
+      // A mail client is free to drop the <style> block, and then the media
+      // query that fixes the phone layout above is gone with it. What is left
+      // must still not scroll sideways (QA full review of fc787674705f,
+      // 4f7610c11db2).
+      test(`renders without sideways scroll with its <style> stripped — ${label}`, async ({ page }) => {
+        const source = fs.readFileSync(route.file, 'utf8');
+        const html = wrapEmailDocument(extractTemplate(source, varName)).replace(/<style[\s\S]*?<\/style>/gi, '');
+        expect(html).not.toContain('<style');
+
+        await page.setViewportSize({ width, height: 900 });
+        await page.setContent(html, { waitUntil: 'load' });
+
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        expect(overflow, `${label} without its stylesheet overflows by ${overflow}px`).toBeLessThanOrEqual(0);
+      });
     }
   }
 }

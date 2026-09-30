@@ -256,12 +256,14 @@ test.describe('what could not be read says so', () => {
 test.describe('the route’s own derivation, on the product’s largest example', () => {
   const EXAMPLE = 'public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 
-  test('42 findings, 25 with an object, and not one requirement borrowed from a neighbour', () => {
+  test('41 findings, 25 with an object, and not one requirement borrowed from a neighbour', () => {
     const built = findingsOf(read(EXAMPLE), 'ZLEGACY_ORDER_FULFILLMENT_AUDIT.abap');
     const view = itFindingsView(built);
 
-    // The premise, measured rather than assumed.
-    expect(built.rows.length).toBe(42);
+    // The premise, measured rather than assumed. 41 since 30.09.2026: the
+    // PERFORM add_log USING 'WARN' 'GUI_DOWNLOAD' literal at line 553 no longer
+    // counts as a GUI download (QA full review of fc787674705f, 90cdec9128c9).
+    expect(built.rows.length).toBe(41);
     expect(built.rows.filter((r) => r.objectName !== null).length).toBe(25);
     expect(built.rulesDerived).toBe(16);
 
@@ -285,15 +287,15 @@ test.describe('the route’s own derivation, on the product’s largest example'
     // The honest state of the chain today: nothing is complete, and every chain
     // stops at the requirement. 17 of them have a rule in the same routine, and
     // that is reported as a neighbourhood and counted nowhere else.
-    expect(view.chainEnds.find((e) => e.link === 'requirement')?.count).toBe(42);
+    expect(view.chainEnds.find((e) => e.link === 'requirement')?.count).toBe(41);
     expect(view.chainCoverage.counted).toBe(0);
-    expect(view.requirementNote).toContain('17 of 42');
+    expect(view.requirementNote).toContain('17 of 41');
     expect(view.requirementNote).toContain('neighbourhood, not a cause');
 
     // C 22, B 2, Unknown 1 — measured 23.09.2026.
     const dist = Object.fromEntries(view.distribution.slices.map((s) => [s.grade, s.count]));
     expect(dist).toMatchObject({ A: 0, B: 2, C: 22, D: 0, Unknown: 1 });
-    expect(view.distribution.coverage.sentence).toContain('25 of 42');
+    expect(view.distribution.coverage.sentence).toContain('25 of 41');
   });
 });
 

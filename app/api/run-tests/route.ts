@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied, assertAccountActive, getAdminDb } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
-import { isUrlSafe } from '@/lib/url-validation';
+import { isUrlSafe, readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { parseTapOutput, applyRunnerVerdicts } from '@/lib/test-verdicts';
@@ -12,7 +12,7 @@ import { loadDraftForRun, recordDraftExecution } from '@/lib/repair-draft-store'
 import type { RepairDraft } from '@/lib/repair-draft';
 import { executeSandboxRun } from '@/lib/test-sandbox/core';
 import { sandboxFilesFromStoredCode, sandboxPatterns } from '@/lib/test-sandbox/files';
-import { hashRunInputs, MAX_RUN_INPUT_BYTES, type RunnerProxy } from '@/lib/test-sandbox/protocol';
+import { hashRunInputs, MAX_RUN_INPUT_BYTES, MAX_RUN_PATTERNS, type RunnerProxy } from '@/lib/test-sandbox/protocol';
 import { readRunnerConfig, resolveRunnerTarget, callIsolatedRunner, proxyBaseFor } from '@/lib/test-runner-client';
 import { fetchMetadataIdToken } from '@/lib/google-id-token';
 import { capabilityKeyFromEnv, mintCapability } from '@/lib/s4-proxy-capability';
@@ -62,6 +62,15 @@ const MAX_CONCURRENT_RUNS = 4;             // per-instance cap on simultaneous h
 // firing many runs in parallel (Audit F-01 sub-finding).
 let activeRuns = 0;
 
+// What a run request may be, read before anything is parsed. The body names a
+// project, its selected cases and an environment; the client also still sends
+// the project's code and suite, which are ignored (see below) but have to fit.
+// Four times the runner's own input ceiling leaves room for both copies and
+// their JSON escaping, and replaces "whatever the platform accepts" as the
+// bound on what an approved caller can make this route buffer (QA full review
+// of fc787674705f, 1988ea0fc1b6).
+const RUN_REQUEST_BODY_LIMITS = { maxBytes: 4 * MAX_RUN_INPUT_BYTES, timeoutMs: 30_000 };
+
 /** What an execution produced, whichever executor produced it. */
 interface Execution {
   buildError: string | null;
@@ -109,7 +118,24 @@ export async function POST(req: Request) {
   // a repair draft the server itself wrote (`lib/repair-draft.ts`). With it the
   // runner executes exactly that draft and records the receipt on the draft,
   // never on the project; see the draft block below and step 6.
-  const { projectId, selectedTestIds, s4Environment, draftId: rawDraftId } = await req.json();
+  let runRequest: any;
+  try {
+    runRequest = await readBoundedJson(new Response(req.body, { headers: req.headers }), RUN_REQUEST_BODY_LIMITS);
+  } catch (bodyErr) {
+    const tooLarge = bodyErr instanceof ResponseLimitError;
+    return NextResponse.json(
+      { output: '', error: tooLarge ? 'The run request is too large.' : 'Invalid request body.', exitCode: 1 },
+      { status: tooLarge ? 413 : 400 },
+    );
+  }
+  const { projectId, selectedTestIds, s4Environment, draftId: rawDraftId } = runRequest ?? {};
+  // The runner refuses more patterns than this; refused here, before any work.
+  if (Array.isArray(selectedTestIds) && selectedTestIds.length > MAX_RUN_PATTERNS) {
+    return NextResponse.json(
+      { output: '', error: 'Too many test cases selected.', exitCode: 1 },
+      { status: 400 },
+    );
+  }
   // Checked before the id forms any document path (SEC-2026-514).
   const draftId = isFirestoreId(rawDraftId) ? rawDraftId : '';
   if (rawDraftId !== undefined && rawDraftId !== null && !draftId) {

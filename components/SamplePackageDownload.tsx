@@ -65,7 +65,8 @@ CLASS zcl_salesorder_read DEFINITION
            END OF ty_order,
            tt_orders TYPE STANDARD TABLE OF ty_order WITH EMPTY KEY.
 
-    "! Read open standard sales orders via released CDS view
+    "! Read standard sales orders (type OR) via released CDS view.
+    "! Every processing status is returned - ProcessStatus carries it.
     "! @parameter rt_orders | Table of sales orders (type OR)
     METHODS get_open_orders
       RETURNING VALUE(rt_orders) TYPE tt_orders.

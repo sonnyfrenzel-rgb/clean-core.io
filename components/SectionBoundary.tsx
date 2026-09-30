@@ -26,9 +26,11 @@ interface SectionBoundaryProps {
 export default function SectionBoundary({ name, children, silent = false }: SectionBoundaryProps) {
   // Neutral, not error: nothing the reader did failed, and the rest of the page
   // stands (Block D, D.9 — a Message Strip like every other notice, §2.6).
+  // No cause is named: the boundary catches any render error and knows none of
+  // them. It used to blame "an older analysis run" for every one of them.
   const fallback = silent ? null : (
-    <CcMessageStrip state="neutral" headline={`${name} could not be rendered —`}>
-      likely incomplete data from an older analysis run. The rest of the page is unaffected.
+    <CcMessageStrip state="neutral" headline={`${name} could not be rendered.`}>
+      The rest of the page is unaffected.
     </CcMessageStrip>
   );
 

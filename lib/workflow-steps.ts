@@ -157,6 +157,13 @@ export interface TestEvidence {
    * which is the conservative direction: no record, no execution.
    */
   attestedPasses: number;
+  /**
+   * The same, for failures: how many cases the covering receipt reports as
+   * failed. `failed` above counts `status` strings the owner can write, so a
+   * `Failures` badge on it alone reported an execution nobody recorded (QA full
+   * review of v2.20.0).
+   */
+  attestedFailures: number;
 }
 
 /**
@@ -171,6 +178,9 @@ export function testEvidence(project: Project | null): TestEvidence {
   const failed = cases.filter((t) => t?.status === 'Failed').length;
   const simulated = cases.filter((t) => t?.status === 'Simulated').length;
   const connectivity = cases.filter((t) => t?.status === 'Connectivity').length;
+  const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
+  const ids = cases.map((t) => String(t?.id ?? ''));
+  const failedInReceipt = new Set((receipt?.verdicts ?? []).filter((v) => v.status === 'Failed').map((v) => v.id));
   return {
     total: cases.length,
     passed,
@@ -178,10 +188,8 @@ export function testEvidence(project: Project | null): TestEvidence {
     simulated,
     connectivity,
     withoutVerdict: cases.length - passed - failed - simulated - connectivity,
-    attestedPasses: executedPasses(
-      coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]),
-      cases.map((t) => String(t?.id ?? '')),
-    ),
+    attestedPasses: executedPasses(receipt, ids),
+    attestedFailures: ids.filter((id) => failedInReceipt.has(id)).length,
   };
 }
 
@@ -315,7 +323,7 @@ const present = (project: Project | null) => {
   const has = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
   return {
     design: has(project?.solutionDesign),
-    code: has(project?.generatedCode),
+    code: hasGeneratedPackage(project?.generatedCode),
     tests: Array.isArray(project?.testCases) && project!.testCases!.length > 0,
     docs: has(project?.documentation),
   };
@@ -371,6 +379,32 @@ export function generationBlockers(
   return out;
 }
 
+/**
+ * Whether `generatedCode` holds code. A non-empty string was enough, so a
+ * serialised package with no files — `'[]'` — marked Transformation generated
+ * and let Delivery count code that was not there (QA full review of v2.20.0).
+ * A package counts once it has one file with a path and content; a string that
+ * is not a JSON array is the flat source of a project from before packages,
+ * and counts as it always did.
+ */
+function hasGeneratedPackage(code: unknown): boolean {
+  if (typeof code !== 'string' || code.trim().length === 0) return false;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(code);
+  } catch {
+    return true;
+  }
+  if (!Array.isArray(parsed)) return true;
+  return parsed.some(
+    (f) =>
+      !!f &&
+      typeof f === 'object' &&
+      typeof (f as { path?: unknown }).path === 'string' &&
+      typeof (f as { content?: unknown }).content === 'string',
+  );
+}
+
 export function workflowSteps(project: Project | null): RailStep[] {
   const has = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
 
@@ -382,7 +416,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
   const score = typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : null;
   const hasDesign = has(project?.solutionDesign);
   const signedOff = project?.approvedByArchitect === true;
-  const hasGenerated = has(project?.generatedCode);
+  const hasGenerated = hasGeneratedPackage(project?.generatedCode);
   const hasDocs = has(project?.documentation);
   const tests = testEvidence(project);
   const executed = tests.passed + tests.failed;
@@ -532,10 +566,16 @@ export function workflowSteps(project: Project | null): RailStep[] {
   } else {
     testing = phase('testing', {
       state: 'partial',
-      badge: tests.failed > 0 ? 'Failures' : 'Partly run',
+      // A failure on the case list alone is the owner's label, as a pass is
+      // above: `Failures` is for failures a recorded run reported.
+      badge: tests.attestedFailures > 0 ? 'Failures' : tests.failed > 0 ? 'Self-reported' : 'Partly run',
       detail: [
         `${tests.passed} of ${tests.total} passed`,
-        tests.failed > 0 ? `${tests.failed} failed` : null,
+        tests.failed > 0
+          ? tests.attestedFailures > 0
+            ? `${tests.failed} failed`
+            : `${tests.failed} marked as failed with no test run on record`
+          : null,
         tests.simulated > 0 ? `${tests.simulated} simulated` : null,
         tests.withoutVerdict > 0 ? `${tests.withoutVerdict} not run` : null,
       ]
@@ -557,7 +597,10 @@ export function workflowSteps(project: Project | null): RailStep[] {
     ? phase('tco', {
         state: 'partial',
         badge: 'Model estimate',
-        detail: 'A model estimate from assumed effort coefficients, not observed costs.',
+        // The run is the baseline, not an estimate: the cost figures are
+        // entered on the Economics stage and not stored, so nothing here knows
+        // whether an estimate was ever computed (QA full review of v2.20.0).
+        detail: 'The signed run is the baseline. An estimate needs your cost figures and uses assumed effort coefficients, not observed costs.',
       })
     : phase('tco', {
         state: 'empty',

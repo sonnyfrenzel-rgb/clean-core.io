@@ -85,6 +85,36 @@ function declaredTokens(): Map<string, string> {
   return tokens;
 }
 
+/**
+ * The selector each `--cc-*` declaration stands under, comments removed. The
+ * browser check below reads the tokens off `:root`; a token declared under
+ * another selector would be absent there for a reason that has nothing to do
+ * with the utility that names it.
+ */
+function tokenSelectors(): Map<string, Set<string>> {
+  const css = read('app/globals.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  const out = new Map<string, Set<string>>();
+  const stack: string[] = [];
+  let buf = '';
+  for (const ch of css) {
+    if (ch === '{') {
+      stack.push(buf.trim().split(/[;}]/).pop()!.trim());
+      buf = '';
+      continue;
+    }
+    if (ch === '}') {
+      stack.pop();
+      buf = '';
+      continue;
+    }
+    buf += ch;
+    if (ch !== ';') continue;
+    const m = /(--cc-[a-z0-9-]+):\s*[^;]+;$/.exec(buf);
+    if (m) out.set(m[1], (out.get(m[1]) ?? new Set()).add(stack.join(' > ')));
+  }
+  return out;
+}
+
 /** Every Tailwind theme alias — what `bg-cc-*`, `rounded-cc-*` etc. may name. */
 function declaredUtilityNames(): Set<string> {
   const css = read('app/globals.css');
@@ -159,6 +189,15 @@ test.describe('the new namespace uses tokens and nothing else', () => {
 
   test('the type floor is written down as a token', () => {
     expect(declaredTokens().get('--cc-text-min')).toBe('11px');
+  });
+
+  test('every token is declared on :root, where the browser check reads it', () => {
+    const selectors = tokenSelectors();
+    expect(selectors.size, 'no --cc-* declaration parsed').toBe(declaredTokens().size);
+    const elsewhere = [...selectors]
+      .filter(([, where]) => ![...where].includes(':root'))
+      .map(([name, where]) => `${name} under ${[...where].join(', ')}`);
+    expect(elsewhere, `declared, but not on :root:\n${elsewhere.join('\n')}`).toEqual([]);
   });
 });
 
@@ -248,9 +287,13 @@ test.describe('the tokens as the browser sees them', () => {
     test.setTimeout(180 * 1000);
     await openGallery(page, admin);
 
-    const tokens = await page.evaluate(() => {
+    // Every token `app/globals.css` declares, not only the ones named below:
+    // a fixed list never learns about the token added after it (QA full review
+    // of fc787674705f, 0fb61160c83d).
+    const declared = [...declaredTokens().keys()].map((name) => name.slice(2));
+    const tokens = await page.evaluate((declaredNames: string[]) => {
       const style = getComputedStyle(document.documentElement);
-      const names = [
+      const listed = [
         'cc-page', 'cc-surface', 'cc-surface-muted', 'cc-surface-dark', 'cc-ink', 'cc-ink-muted',
         'cc-line', 'cc-field-border', 'cc-brand', 'cc-brand-strong', 'cc-brand-deep',
         'cc-brand-surface', 'cc-focus', 'cc-on-dark',
@@ -262,10 +305,11 @@ test.describe('the tokens as the browser sees them', () => {
         'cc-overlay', 'cc-code-bg', 'cc-code-ink', 'cc-code-muted',
         'cc-code-keyword', 'cc-code-literal', 'cc-code-name',
       ];
+      const names = [...new Set([...listed, ...declaredNames])];
       const out: Record<string, string> = {};
       for (const name of names) out[name] = style.getPropertyValue(`--${name}`).trim();
       return out;
-    });
+    }, declared);
 
     const missing = Object.entries(tokens)
       .filter(([, value]) => value === '')
@@ -489,7 +533,12 @@ test.describe('the tokens as the browser sees them', () => {
       });
       if (!ring) continue;
       seen += 1;
-      if (parseFloat(ring.width) < 2 || ring.style === 'none') {
+      // A 2px solid outline in a transparent colour is width and style and
+      // nothing to see (QA full review of fc787674705f, b29315df0a7e). A colour
+      // this parser does not read (`oklch(…)` from a Tailwind utility) is not
+      // taken for invisible.
+      const drawn = parseColor(ring.color);
+      if (parseFloat(ring.width) < 2 || ring.style === 'none' || (drawn !== null && drawn[3] < 0.5)) {
         ringless.push(
           `<${ring.tag.toLowerCase()} class="${ring.cls.slice(0, 60)}"> outline ${ring.width} ${ring.style} ${ring.color}`,
         );

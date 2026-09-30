@@ -426,7 +426,7 @@ export default function TransformationShowroom() {
     `}<span className="text-blue-700 font-bold">key</span>{` AccountingDocument,
     `}<span className="text-blue-700 font-bold">key</span>{` FiscalYear,
         AmountInCompanyCodeCurrency
-  }
+  } where CompanyCode = '1000';
 }`}
                     </code>
                   </pre>

@@ -23,7 +23,7 @@ const trustCards = [
   {
     icon: Globe,
     title: 'European Hosting',
-    description: 'All infrastructure runs in the GCP europe-west1 (Belgium) region.',
+    description: 'Hosting, sign-in and the database run in the GCP europe-west1 (Belgium) region. The Gemini API and the mail provider are separate subprocessors, listed in the privacy policy.',
   },
   {
     icon: Server,
@@ -89,7 +89,7 @@ export default function AboutPage() {
           The Mission
         </h2>
         <p className="text-gray-700 leading-relaxed font-medium max-w-3xl">
-          Clean-Core.io exists to solve one of the hardest problems in the SAP ecosystem: transforming decades of custom ABAP code into cloud-compliant architectures. Instead of replacing the expert, we hand them something to start from — the first Clean-Core-compliant draft, with the evidence behind it, for review and approval. We do not claim it saves you days: what takes time is the decisions, and those stay with you.
+          Clean-Core.io exists to solve one of the hardest problems in the SAP ecosystem: transforming decades of custom ABAP code into cloud-compliant architectures. Instead of replacing the expert, we hand them something to start from — a first draft aimed at Clean Core, with the evidence behind it, for review and approval. We do not claim it saves you days: what takes time is the decisions, and those stay with you.
         </p>
       </section>
 

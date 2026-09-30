@@ -179,6 +179,7 @@ test.describe('the unsubscribe token is not written into the history and the log
 
     expect(await run(req({ t: 'in-body' }, '')), 'our page').toBe('in-body');
     expect(await run(req(undefined, 't=in-query')), 'one-click, no body').toBe('in-query');
+    expect(await run(req('List-Unsubscribe=One-Click', 't=in-query')), 'one-click, form body').toBe('in-query');
     expect(await run(req({}, 't=in-query')), 'a body without a token').toBe('in-query');
     expect(await run(req(undefined, '')), 'neither').toBe('');
     // A body past the bound is not read, and the query decides.

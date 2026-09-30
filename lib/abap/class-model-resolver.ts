@@ -102,7 +102,21 @@ export function buildClassModel(
     }
   }
 
-  const resolved = missing.filter(m => m.impact === 'blocks-resolution').length === 0;
+  // A class that is its own ancestor (A inherits B, B inherits A) has no
+  // hierarchy to resolve: the walk above stops at the cycle and still lists the
+  // nodes, so a linearization exists, but it is not a resolved one.
+  const cyclic = allNodes.some((node) => {
+    const chain = new Set<string>([node.key]);
+    let parent = node.superClass;
+    while (parent && nodesMap[parent]) {
+      if (chain.has(parent)) return true;
+      chain.add(parent);
+      parent = nodesMap[parent].superClass;
+    }
+    return false;
+  });
+
+  const resolved = !cyclic && missing.filter(m => m.impact === 'blocks-resolution').length === 0;
 
   return {
     root,

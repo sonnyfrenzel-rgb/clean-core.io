@@ -281,8 +281,21 @@ test.describe('no model call and no knowledge base, by construction', () => {
     const src = read('components/GlossaryChatbot.tsx');
     const branchAt = src.indexOf('if (projectId) {\n      try {');
     const knowledgeAt = src.indexOf('buildKnowledgeBase()');
-    expect(branchAt, 'the in-project branch is gone — check this test, not the component').toBeGreaterThan(-1);
-    expect(knowledgeAt, 'the knowledge base is gone — check this test, not the component').toBeGreaterThan(-1);
+    // A missing anchor is one of two things, and only reading the component says
+    // which: the code was reformatted (move the anchor), or the branch that keeps
+    // a question about this project out of general knowledge was removed (a
+    // regression). The message must not settle it for the reader (QA full
+    // review of fc787674705f, a11b6ba6a939).
+    expect(
+      branchAt,
+      'the in-project branch was not found in components/GlossaryChatbot.tsx: either it was reformatted, or ' +
+        'in-project questions can now reach the general knowledge base',
+    ).toBeGreaterThan(-1);
+    expect(
+      knowledgeAt,
+      'buildKnowledgeBase() was not found in components/GlossaryChatbot.tsx: either it was renamed, or the ' +
+        'order this test holds can no longer be checked',
+    ).toBeGreaterThan(-1);
     expect(branchAt).toBeLessThan(knowledgeAt);
     // And it returns on every path, including its own `catch`: falling through
     // would answer a question about somebody's ABAP out of general SAP

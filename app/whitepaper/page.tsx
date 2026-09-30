@@ -70,7 +70,7 @@ const apiMappings = [
 ];
 
 const doesDo = [
-  'Generates a first Clean-Core-compliant draft plus signed evidence.',
+  'Generates a first draft toward Clean Core plus signed evidence.',
   'Runs deterministic analysis before any AI.',
   'Recommends RAP / CAP with a transparent rationale.',
   'Produces tests, BPMN, TCO and an audit pack.',
@@ -139,7 +139,7 @@ export default function WhitepaperPage() {
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-            A free, community-built accelerator for SAP Clean Core modernization. It runs a deterministic evidence engine first, then AI — turning legacy custom ABAP into Clean-Core-compliant drafts and cryptographically signed audit evidence for architect review. Complementary to SAP’s own tooling, never a replacement.
+            A free, community-built accelerator for SAP Clean Core modernization. It runs a deterministic evidence engine first, then AI — turning legacy custom ABAP into drafts toward Clean Core and cryptographically signed audit evidence for architect review. Complementary to SAP’s own tooling, never a replacement.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto text-left">
@@ -258,7 +258,7 @@ export default function WhitepaperPage() {
         <section id="technical">
           <SectionEyebrow number="06" total="08" />
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">Technical: RAP vs. CAP &amp; API Mapping</h2>
-          <p className="text-gray-600 leading-relaxed mb-8">During analysis, the engine decides — from syntax and coupling evidence — which extensibility path best fits each object:</p>
+          <p className="text-gray-600 leading-relaxed mb-8">During analysis, the engine decides — from syntax and coupling evidence — which extensibility path best fits the uploaded code:</p>
 
           <div className="hidden md:block border border-gray-200 rounded-2xl overflow-hidden">
             <div className="grid grid-cols-[1fr_1.5fr_1.5fr] bg-slate-900 text-white">
@@ -286,7 +286,7 @@ export default function WhitepaperPage() {
 
           <div className="border border-gray-200 rounded-2xl p-6 mt-6">
             <div className="text-xs font-black uppercase tracking-wider text-gray-900 mb-3">Automated API mapping</div>
-            <p className="text-sm text-gray-600 leading-relaxed mb-4">Direct reads and writes to internal tables carry different Clean Core weight — direct writes to standard tables are the more critical case. The engine maps such access to released standard interfaces, grounded in SAP’s Apache-2.0 Cloudification Repository:</p>
+            <p className="text-sm text-gray-600 leading-relaxed mb-4">Direct reads and writes to SAP database tables carry different Clean Core weight — direct writes to standard tables are the more critical case. The engine maps such access to released standard interfaces, grounded in SAP’s Apache-2.0 Cloudification Repository:</p>
             <div className="space-y-2">
               {apiMappings.map((m) => (
                 <div key={m.table} className="flex items-center gap-3 text-sm">
@@ -379,7 +379,7 @@ export default function WhitepaperPage() {
             <div className="relative z-10 space-y-6">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-white leading-tight">Start with a non-production sample</h2>
               <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
-                Generate the first Clean-Core-compliant draft for review, walk the decision with your SAP architect, and export a governed delivery package. Start with 5 free transformations, or bring your own Gemini API key (BYOK) for unlimited access — no credit card required.
+                Generate the first draft toward Clean Core for review, walk the decision with your SAP architect, and export a governed delivery package. Start with 5 free transformations, or bring your own Gemini API key (BYOK) for unlimited access — no credit card required.
               </p>
               <div className="flex flex-col sm:flex-row items-start gap-4 pt-2">
                 <Link href="/?auth=signin" className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-8 py-4 rounded-xl font-black text-sm transition-all shadow-lg hover:shadow-2xl hover:-translate-y-0.5">

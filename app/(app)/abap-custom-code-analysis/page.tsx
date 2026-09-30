@@ -181,8 +181,8 @@ export default function AbapAnalysisPage() {
               The scan surfaces the clean-core risks that most often block an S/4HANA upgrade, each as concrete, line-level evidence:
             </p>
             <ul className="space-y-2 text-gray-700 font-medium">
-              <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Direct standard-table access</strong> (reads and writes to VBAK, BSEG, LIKP, KNA1 …) with the released API or CDS successor for each.</span></li>
-              <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Unreleased or not-to-be-released objects</strong> and function modules, checked against SAP&apos;s Cloudification Repository.</span></li>
+              <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Direct standard-table access</strong> (reads and writes to VBAK, BSEG, LIKP, KNA1 …) with the released API or CDS successor where the catalog lists one — an access without a listed successor stays marked as unresolved.</span></li>
+              <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Unreleased or not-to-be-released objects</strong> and remote function calls, checked against SAP&apos;s Cloudification Repository. A local <code>CALL FUNCTION</code> is not assessed yet, and the result lists it as not assessed.</span></li>
               <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Modifications, implicit enhancements and native SQL</strong> — the not-recommended patterns that break on upgrade.</span></li>
               <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Dynpro / classic UI, BDC and RFC coupling</strong> that needs a redesign rather than a lift-and-shift.</span></li>
             </ul>

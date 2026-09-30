@@ -93,6 +93,9 @@ export function GlossaryMention({ item, children }: { item: GlossaryItem; childr
         data-glossary-term={item.shortName}
         aria-expanded={open}
         aria-controls={open ? id : undefined}
+        /* `aria-controls` does not make the explanation read with the term;
+           the description does (QA full review of v2.20.0). */
+        aria-describedby={open ? id : undefined}
         onClick={() => setOpen((was) => !was)}
         className="cursor-help border-0 bg-transparent p-0 underline decoration-dotted decoration-from-font underline-offset-2"
       >

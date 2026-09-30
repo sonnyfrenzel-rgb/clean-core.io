@@ -44,6 +44,9 @@ export default function MermaidDiagram({ chart }: { chart: string }) {
 
   useEffect(() => {
     if (typeof window === 'undefined' || !ref.current || !chart || !chart.trim()) return;
+    // A render that finishes after the chart changed (or the component went)
+    // must not overwrite the newer diagram (QA full review of v2.20.0).
+    let current = true;
 
     const renderChart = async () => {
       try {
@@ -70,12 +73,14 @@ export default function MermaidDiagram({ chart }: { chart: string }) {
         // configured to let label markup through and nothing else.
         // See lib/sanitize-html.ts.
         const cleanSvg = sanitizeMermaidSvg(svg);
+        if (!current) return;
         if (ref.current) {
           ref.current.innerHTML = cleanSvg;
         }
         setFailed(false);
       } catch (err) {
         console.error("Mermaid render error:", err);
+        if (!current) return;
         if (ref.current) {
           ref.current.innerHTML = '';
         }
@@ -84,6 +89,9 @@ export default function MermaidDiagram({ chart }: { chart: string }) {
     };
 
     renderChart();
+    return () => {
+      current = false;
+    };
   }, [chart]);
 
   return (

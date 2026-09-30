@@ -219,6 +219,21 @@ const SYSTEM_FIELD = /\bSY(?:ST)?-[A-Za-z_]\w*/gi;
 const COMPARISON = /(?:[<>]=?|<>|=|\bEQ\b|\bNE\b|\bGT\b|\bGE\b|\bLT\b|\bLE\b|\bBETWEEN\b|\bIN\b|\bCO\b|\bCS\b|\bCP\b|\bIS\s+(?:NOT\s+)?INITIAL\b)/i;
 
 /**
+ * The condition with the contents of its literals blanked, delimiters kept.
+ *
+ * `lv_text = 'SY-SUBRC'` compares a field with a word; the word is not a return
+ * code, and `'ls_x-y'` in quotes is not a structure component. Every test below
+ * reads code, so every test reads this form. Written here rather than imported
+ * from `statement-reader.ts`: this module has no imports (see the head). A
+ * literal cannot span lines in ABAP, so one pass over the text is enough.
+ */
+function blankLiterals(text: string): string {
+  return text.replace(/'(?:[^']|'')*'|`(?:[^`]|``)*`|\|(?:[^|\\]|\\.)*\|/g, (literal) =>
+    literal.length < 2 ? literal : literal[0] + ' '.repeat(literal.length - 2) + literal[literal.length - 1],
+  );
+}
+
+/**
  * Class of one condition text, as the source writes it.
  *
  * Deterministic and in this order:
@@ -234,7 +249,7 @@ const COMPARISON = /(?:[<>]=?|<>|=|\bEQ\b|\bNE\b|\bGT\b|\bGE\b|\bLT\b|\bLE\b|\bB
  * exactly the false statement V6 exists to prevent.
  */
 export function classifyCondition(condition: string | undefined | null): ConditionClass {
-  const text = (condition ?? '').trim();
+  const text = blankLiterals((condition ?? '').trim());
   if (!text) return 'none';
   for (const marker of TECHNICAL_MARKERS) {
     if (marker.test.test(text)) return 'technical';
@@ -250,7 +265,7 @@ export function classifyCondition(condition: string | undefined | null): Conditi
  * whole evidence — there is no operator to look for.
  */
 export function isBusinessSelector(selector: string | undefined | null): boolean {
-  const text = (selector ?? '').trim();
+  const text = blankLiterals((selector ?? '').trim());
   if (!text) return false;
   for (const marker of TECHNICAL_MARKERS) {
     if (marker.test.test(text)) return false;
@@ -260,7 +275,7 @@ export function isBusinessSelector(selector: string | undefined | null): boolean
 
 /** Names the technical markers a condition contains — for the reason line and for 2.15. */
 export function technicalMarkersIn(condition: string | undefined | null): string[] {
-  const text = (condition ?? '').trim();
+  const text = blankLiterals((condition ?? '').trim());
   if (!text) return [];
   return TECHNICAL_MARKERS.filter((m) => m.test.test(text)).map((m) => m.name);
 }

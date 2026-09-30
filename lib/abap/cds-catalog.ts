@@ -7,13 +7,19 @@ export interface CdsCatalogEntry {
   note?: string;
 }
 
-// Seed — VERIFY against the SAP API Business Hub / released-objects list before use.
+// Hand-picked pairings of a table set with a view. Every view named here is
+// listed as `released` in SAP's release file (`generated/cloudification-repo.
+// latest.json`), and `tests/cds-catalog-qa220.spec.ts` fails the day one is not.
+// That the view models the tables is this file's reading, not SAP's statement —
+// which is why a match is a candidate to check and never a replacement.
+// (Two seeds named views the release file does not list: `I_PurchaseOrderItem`
+// and `I_OperationalAcctgDocmtItem`.)
 export const CDS_CATALOG: CdsCatalogEntry[] = [
   { tables: ['VBAK', 'VBAP'], view: 'I_SalesOrderItem', note: 'Sales order header+item' },
   { tables: ['LIKP', 'LIPS'], view: 'I_DeliveryDocumentItem', note: 'Outbound delivery header+item' },
-  { tables: ['EKKO', 'EKPO'], view: 'I_PurchaseOrderItem', note: 'Purchase order header+item' },
+  { tables: ['EKKO', 'EKPO'], view: 'I_PurchaseOrderItemAPI01', note: 'Purchase order header+item' },
   { tables: ['VBRK', 'VBRP'], view: 'I_BillingDocumentItem', note: 'Billing document header+item' },
-  { tables: ['BKPF', 'BSEG'], view: 'I_OperationalAcctgDocmtItem', note: 'Accounting document header+item' },
+  { tables: ['BKPF', 'BSEG'], view: 'I_OperationalAcctgDocItem', note: 'Accounting document header+item' },
   { tables: ['MARA', 'MAKT'], view: 'I_ProductText', note: 'Product + description' },
 ];
 

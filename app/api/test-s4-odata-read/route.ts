@@ -11,6 +11,7 @@ import {
 } from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
+import { assertRateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { upstreamBodyShape } from '@/lib/upstream-body-shape';
 
@@ -106,6 +107,14 @@ async function fetchOAuth2Token(
   }
 }
 
+/** A token response that carries no token is a failed exchange, not an anonymous read. */
+function requireAccessToken(tokenData: { access_token?: unknown }): string {
+  if (typeof tokenData?.access_token !== 'string' || !tokenData.access_token) {
+    throw new Error('Token endpoint responded but did not return an access_token.');
+  }
+  return tokenData.access_token;
+}
+
 // --- Helper: Build auth headers (shared logic with fetch-s4-metadata) ---
 async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, string>; targetUrl: string }> {
   const headers: Record<string, string> = {
@@ -121,30 +130,40 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
     targetUrl = parsed.URL || parsed.url || parsed.Url;
     if (!targetUrl) throw new Error('Destination JSON missing URL field.');
 
+    // A declared scheme is either carried out or refused. Each branch used to
+    // add its header only when every credential was present (and OAuth only
+    // when a token came back), then read on without one — a public entity set
+    // was then reported as a successful read under a scheme that was never
+    // used (QA full review of fc787674705f, d64ccabb0bbb).
     const auth = (parsed.Authentication || parsed.authentication || '').toLowerCase();
     if (auth === 'basicauthentication' || auth === 'basic') {
       const user = parsed.User || parsed.user || parsed.Username || parsed.username;
       const pass = parsed.Password || parsed.password;
-      if (user && pass) headers['Authorization'] = `Basic ${Buffer.from(`${user}:${pass}`).toString('base64')}`;
+      if (!user || !pass) throw new Error('Destination uses BasicAuthentication but is missing "User" or "Password".');
+      headers['Authorization'] = `Basic ${Buffer.from(`${user}:${pass}`).toString('base64')}`;
     } else if (auth === 'oauth2clientcredentials' || auth === 'oauth2_client_credentials') {
       const tokenUrl = parsed.tokenServiceURL || parsed.TokenServiceURL || parsed.tokenUrl;
       const clientId = parsed.clientId || parsed.ClientId;
       const clientSecret = parsed.clientSecret || parsed.ClientSecret;
-      if (tokenUrl && clientId && clientSecret) {
-        const tokenCheck = await isUrlSafe(tokenUrl);
-        if (!tokenCheck.safe) throw new Error(`Token URL blocked: ${tokenCheck.reason}`);
-        const tokenData = await fetchOAuth2Token(tokenUrl, clientId, clientSecret);
-        if (tokenData.access_token) headers['Authorization'] = `Bearer ${tokenData.access_token}`;
+      if (!tokenUrl || !clientId || !clientSecret) {
+        throw new Error('Destination uses OAuth2ClientCredentials but is missing "tokenServiceURL", "clientId" or "clientSecret".');
       }
+      const tokenCheck = await isUrlSafe(tokenUrl);
+      if (!tokenCheck.safe) throw new Error(`Token URL blocked: ${tokenCheck.reason}`);
+      headers['Authorization'] = `Bearer ${requireAccessToken(await fetchOAuth2Token(tokenUrl, clientId, clientSecret))}`;
     }
-  } else if (body.authType === 'oauth2' && body.tokenUrl && body.username && body.password) {
+  } else if (body.authType === 'oauth2') {
+    if (!body.tokenUrl || !body.username || !body.password) {
+      throw new Error('Token URL, Client ID and Client Secret are required for OAuth 2.0.');
+    }
     const tokenCheck = await isUrlSafe(body.tokenUrl);
     if (!tokenCheck.safe) throw new Error(`Token URL blocked: ${tokenCheck.reason}`);
-    const tokenData = await fetchOAuth2Token(body.tokenUrl, body.username, body.password);
-    if (tokenData.access_token) headers['Authorization'] = `Bearer ${tokenData.access_token}`;
-  } else if (body.authType === 'basic' && body.username && body.password) {
+    headers['Authorization'] = `Bearer ${requireAccessToken(await fetchOAuth2Token(body.tokenUrl, body.username, body.password))}`;
+  } else if (body.authType === 'basic') {
+    if (!body.username || !body.password) throw new Error('Username and password are required for Basic Authentication.');
     headers['Authorization'] = `Basic ${Buffer.from(`${body.username}:${body.password}`).toString('base64')}`;
-  } else if (body.authType === 'sap_hub' && body.password) {
+  } else if (body.authType === 'sap_hub') {
+    if (!body.password) throw new Error('An API key is required for the SAP API Hub.');
     headers['APIKey'] = body.password;
   }
 
@@ -169,6 +188,18 @@ export async function POST(req: NextRequest) {
       await assertS4TenantAccess(decodedToken.uid, { isAdminClaim: (decodedToken as any).admin === true });
     } catch (e: any) {
       return NextResponse.json({ status: 'failed', message: e.message || 'Access denied.' }, { status: 403 });
+    }
+
+    // Per account, before any OAuth exchange or tenant read (QA full review of
+    // fc787674705f, 097d4859c855). A live check reads up to five entity sets,
+    // so the budget is twice the metadata routes'.
+    try {
+      await assertRateLimit(`test-s4-odata-read:${decodedToken.uid}`, 60, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      if (rateErr instanceof QuotaError) {
+        return NextResponse.json({ status: 'failed', message: rateErr.message }, { status: rateErr.status });
+      }
+      throw rateErr;
     }
 
     const body = await req.json();
@@ -244,6 +275,10 @@ export async function POST(req: NextRequest) {
     clearTimeout(timeout);
 
     if (!response.ok) {
+      // Only the status is reported; the body is cancelled rather than left
+      // streaming after the timer was cleared (QA full review of fc787674705f,
+      // 3c5bdb95ddbd).
+      await response.body?.cancel().catch(() => {});
       return NextResponse.json({
         status: 'failed',
         message: response.status === 401 ? 'Authentication rejected.'

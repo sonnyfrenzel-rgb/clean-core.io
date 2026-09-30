@@ -177,3 +177,49 @@ export function checkBlueprintShape(parsed: unknown): BlueprintCheck {
 export const STORED_BLUEPRINT_REJECTED =
   'A blueprint is stored for this project, but it does not have the shape this stage can display, so it is not shown. ' +
   'Why it was stored in this form is not recorded. Generating again replaces it.';
+
+/**
+ * The fields of each business-layer list the stage and the Confluence export
+ * put on the screen. Absent is allowed (the page prints a placeholder or
+ * nothing); present and not renderable is not.
+ */
+const BUSINESS_LISTS = {
+  raci_matrix: ['stepId', 'r', 'a', 'c', 'i'],
+  sop_details: ['stepId', 'narrative', 'businessException', 'kpiTarget'],
+  audit_controls: ['stepId', 'controlObjective', 'mitigationAction', 'assertionMethod'],
+} as const;
+
+/**
+ * Does this parsed business layer have the shape the Business tab renders?
+ *
+ * The three lists are read with `.map`, so each must be an array — a truthy
+ * object or string used to pass the old truthiness check, get stored, and
+ * take the tab down on every load (QA review of fc787674705f, 69cb77382430).
+ */
+export function checkBusinessDocShape(parsed: unknown): BlueprintCheck {
+  if (!isPlainObject(parsed)) {
+    return { ok: false, problems: [`The business layer is ${typeName(parsed)}, not a JSON object.`] };
+  }
+  const problems: BlueprintProblem[] = [];
+  for (const [list, fields] of Object.entries(BUSINESS_LISTS)) {
+    const value = parsed[list];
+    if (!Array.isArray(value)) {
+      problems.push(
+        value === undefined ? `\`${list}\` is missing.` : `\`${list}\` is ${typeName(value)}, not a list.`,
+      );
+      continue;
+    }
+    value.forEach((entry, i) => {
+      if (!isPlainObject(entry)) {
+        problems.push(`\`${list}[${i}]\` is ${typeName(entry)}, not an object.`);
+        return;
+      }
+      for (const field of fields) {
+        if (entry[field] !== undefined && entry[field] !== null && !isRenderable(entry[field])) {
+          problems.push(`\`${list}[${i}].${field}\` is ${typeName(entry[field])}, not text.`);
+        }
+      }
+    });
+  }
+  return { ok: problems.length === 0, problems };
+}

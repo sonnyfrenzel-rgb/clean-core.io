@@ -8,14 +8,14 @@ import { jsonLdHtml } from '@/lib/json-ld';
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'Facts — the source for every public number | Clean-Core.io',
+  title: 'Facts — the source for the catalog, engine and reference-run numbers | Clean-Core.io',
   description:
-    'Every number this site states in public — object count, successor count, the A–D level distribution, both synced catalog files with their hash and sync date, the engine and rule version, and the reference run — in one place, and as JSON.',
+    'The catalog, engine and reference-run numbers this site states in public — object count, successor count, the A–D level distribution, both synced catalog files with their hash and sync date, the engine and rule version, and the reference run — in one place, and as JSON.',
   alternates: { canonical: `${BASE}/facts` },
   openGraph: {
-    title: 'Facts — the source for every public number',
+    title: 'Facts — the source for the catalog, engine and reference-run numbers',
     description:
-      'One page for every figure Clean-Core.io states publicly, with the artefact, hash and date behind each one.',
+      'One page for the catalog, engine and reference-run figures Clean-Core.io states publicly, with the artefact, hash and date behind each one.',
     url: `${BASE}/facts`,
     type: 'article',
   },
@@ -60,11 +60,11 @@ export default function FactsPage() {
           One source, every page
         </p>
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-gray-950 leading-[1.05]">
-          Where every public number comes from
+          Where the catalog and engine numbers come from
         </h1>
         <p className="text-lg text-slate-600 leading-relaxed">
           The object count, the successor count, the A–D distribution, the engine and rule version —
-          every figure this site states in public reads from this same data. If a page ever shows a
+          wherever this site states one of them in public, it reads from this same data. If a page ever shows a
           different number for one of these, that page is wrong, not this one.
         </p>
         <p>
@@ -170,8 +170,9 @@ export default function FactsPage() {
 
       <footer className="text-xs text-slate-500 leading-relaxed border-t border-slate-200 pt-6">
         Produced by Clean-Core.io {facts.engineVersion} ({facts.engineReleaseDate}) against catalog{' '}
-        <code>{facts.catalogVersion}</code>. Every figure on this page is computed at request time from
-        the files named above; none of them is written into the page. Clean-Core.io is not affiliated
+        <code>{facts.catalogVersion}</code>. Every figure on this page is computed from the files named
+        above when the page is rendered, and the rendered page is reused for up to five minutes; none
+        of them is written into the page. Clean-Core.io is not affiliated
         with, or endorsed by, SAP SE.
       </footer>
     </main>

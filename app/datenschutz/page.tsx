@@ -149,7 +149,7 @@ export default function DatenschutzPage() {
                 <strong className="text-gray-800">Google Cloud Platform &amp; Firebase:</strong> Hosting, authentication, and database operations on European servers in the <strong>Belgium (europe-west1)</strong> region — data residency in the EU, operated in line with GDPR requirements.
               </li>
               <li>
-                <strong className="text-gray-800">Google Gemini API:</strong> Generative AI models used exclusively for code transformation, via secure stateless proxy layers.
+                <strong className="text-gray-800">Google Gemini API:</strong> Generative AI models for the model-written parts of the service — the analysis narrative, business names and sentences for the process reconstructed from the code, the solution design, the code proposal, the documentation and the test suite — via secure stateless proxy layers. The findings, the route and the Clean Core Score are computed without a model.
               </li>
               <li>
                 <strong className="text-gray-800">Resend:</strong> Transactional email delivery (e.g. access-approval and status notifications). Your email address is processed to send these messages.

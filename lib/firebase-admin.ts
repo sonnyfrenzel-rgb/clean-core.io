@@ -418,8 +418,12 @@ export async function refundRunQuota(
       if (used > 0) updates.transformationsUsed = FieldValue.increment(-1);
       tx.update(ref, updates);
     });
-  } catch {
-    /* best-effort; intentionally ignored */
+  } catch (err) {
+    // Best-effort for the request — a run that already failed is not also
+    // failed by its refund — but not silent: an unrefunded reservation keeps a
+    // unit and a fingerprint charged, and this line is how an operator finds
+    // the account to put right (QA full review of v2.20.0).
+    console.error('refundRunQuota: refund failed, the reservation stays charged for user:', uid, err);
   }
 }
 
@@ -992,9 +996,12 @@ export async function deleteUserDataAndAccount(
   //    writes it only in a transaction that reads this profile
   //    (`mergeWhileProfileExists`), so one that committed after step 3 is
   //    deleted here, and one that did not can no longer commit.
+  //    The BYOK secret goes in it too, for the same reason: `saveGeminiApiKey`
+  //    writes it in a transaction that reads this profile.
   await tryDelete('users', () => {
     const batch = db.batch();
     batch.delete(db.collection('registration_requests').doc(uid));
+    batch.delete(db.collection('user_secrets').doc(uid).collection('providers').doc('gemini'));
     batch.delete(db.collection('users').doc(uid));
     return batch.commit();
   });
@@ -1233,17 +1240,27 @@ export async function auditActorEmail(db: any, actorUid: string): Promise<string
   return 'system-admin';
 }
 
-export async function logAuditEvent(db: any, actorUid: string, action: string, targetUid: string) {
-  const actorEmail = await auditActorEmail(db, actorUid);
-
-  await db.collection('audit_events').add({
+/** The `audit_events` row for one action, ready for `add()` or for a batch. */
+async function auditEventRecord(db: any, actorUid: string, action: string, targetUid: string) {
+  return {
     actorUid,
-    actorEmail,
+    actorEmail: await auditActorEmail(db, actorUid),
     action,
     targetUid,
     timestamp: new Date(),
-  });
+  };
 }
+
+export async function logAuditEvent(db: any, actorUid: string, action: string, targetUid: string) {
+  await db.collection('audit_events').add(await auditEventRecord(db, actorUid, action, targetUid));
+}
+
+// The four governance actions below write their Firestore state and their
+// `audit_events` row in one batch (QA full review of v2.20.0): written one
+// after the other, a failed audit write left a suspension or an S/4 grant in
+// force with no record of who made it, while the route reported an error. The
+// Auth half of approve and revoke still follows the batch — it is not a
+// Firestore write and cannot join it — so the record exists before it runs.
 
 /**
  * Reinstates a suspended account.
@@ -1253,19 +1270,38 @@ export async function logAuditEvent(db: any, actorUid: string, action: string, t
  * It therefore does NOT reset `transformationsUsed`; a reinstated account keeps
  * the quota it already spent, which is not what a first approval used to do.
  */
+/**
+ * The entitlement fields a reinstatement writes. An enterprise account keeps its
+ * tier: `adminRevokeUser` never touches the tier, so writing `pilot` here turned
+ * a suspension and its undo into a silent downgrade to the metered community
+ * quota (QA full review of v2.20.0). Every other account is reinstated as a
+ * pilot, as before.
+ */
+export function reinstatedEntitlements(profile: { tier?: unknown } | undefined): {
+  status: 'approved';
+  transformationsLimit: number;
+  tier?: 'pilot';
+} {
+  return profile?.tier === 'enterprise'
+    ? { status: 'approved', transformationsLimit: COMMUNITY_QUOTA }
+    : { status: 'approved', tier: 'pilot', transformationsLimit: COMMUNITY_QUOTA };
+}
+
 export async function adminApproveUser(adminUid: string, targetUid: string) {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
-  await db.collection('users').doc(targetUid).set({
-    status: 'approved',
-    tier: 'pilot',
-    transformationsLimit: COMMUNITY_QUOTA,
+  const current = await db.collection('users').doc(targetUid).get();
+  const batch = db.batch();
+  batch.set(db.collection('users').doc(targetUid), {
+    ...reinstatedEntitlements(current.exists ? current.data() : undefined),
     activatedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
-  await db.collection('registration_requests').doc(targetUid).set({
+  batch.set(db.collection('registration_requests').doc(targetUid), {
     status: 'approved',
   }, { merge: true });
+  batch.set(db.collection('audit_events').doc(), await auditEventRecord(db, adminUid, 'APPROVE_USER', targetUid));
+  await batch.commit();
 
   // The other half of `adminRevokeUser`, which disables the sign-in. Without
   // this line a revoked account could be approved again in the console, read
@@ -1274,8 +1310,6 @@ export async function adminApproveUser(adminUid: string, targetUid: string) {
   // fine. Re-enabling is idempotent for an account that was never disabled.
   const auth = await getAdminAuth();
   await auth.updateUser(targetUid, { disabled: false });
-
-  await logAuditEvent(db, adminUid, 'APPROVE_USER', targetUid);
 }
 
 /**
@@ -1290,14 +1324,17 @@ export async function adminApproveUser(adminUid: string, targetUid: string) {
 export async function adminRevokeUser(adminUid: string, targetUid: string) {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
-  await db.collection('users').doc(targetUid).set({
+  const batch = db.batch();
+  batch.set(db.collection('users').doc(targetUid), {
     status: 'suspended',
     transformationsLimit: 0,
     updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
-  await db.collection('registration_requests').doc(targetUid).set({
+  batch.set(db.collection('registration_requests').doc(targetUid), {
     status: 'suspended',
   }, { merge: true });
+  batch.set(db.collection('audit_events').doc(), await auditEventRecord(db, adminUid, 'REVOKE_USER', targetUid));
+  await batch.commit();
 
   // Suspending an account has to end its sessions, not only mark it.
   //
@@ -1327,8 +1364,6 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
   const auth = await getAdminAuth();
   await auth.revokeRefreshTokens(targetUid);
   await auth.updateUser(targetUid, { disabled: true });
-
-  await logAuditEvent(db, adminUid, 'REVOKE_USER', targetUid);
 }
 
 /**
@@ -1347,32 +1382,36 @@ export async function adminGrantS4(adminUid: string, targetUid: string) {
   await ensureInitialized();
   const { db } = await getAdminDb();
   await retireTenantApprovalLinks(db, targetUid);
-  await db.collection('users').doc(targetUid).set({
+  const regRef = db.collection('tenant_access_requests').doc(targetUid);
+  const regSnap = await regRef.get();
+  const batch = db.batch();
+  batch.set(db.collection('users').doc(targetUid), {
     s4TenantAccessAllowed: true,
     s4TenantAccessRequested: false
   }, { merge: true });
-  const regRef = db.collection('tenant_access_requests').doc(targetUid);
-  const regSnap = await regRef.get();
   if (regSnap.exists) {
-    await regRef.set({ status: 'approved' }, { merge: true });
+    batch.set(regRef, { status: 'approved' }, { merge: true });
   }
-  await logAuditEvent(db, adminUid, 'GRANT_S4', targetUid);
+  batch.set(db.collection('audit_events').doc(), await auditEventRecord(db, adminUid, 'GRANT_S4', targetUid));
+  await batch.commit();
 }
 
 export async function adminRevokeS4(adminUid: string, targetUid: string) {
   await ensureInitialized();
   const { db } = await getAdminDb();
   await retireTenantApprovalLinks(db, targetUid);
-  await db.collection('users').doc(targetUid).set({
+  const regRef = db.collection('tenant_access_requests').doc(targetUid);
+  const regSnap = await regRef.get();
+  const batch = db.batch();
+  batch.set(db.collection('users').doc(targetUid), {
     s4TenantAccessAllowed: false,
     s4TenantAccessRequested: false
   }, { merge: true });
-  const regRef = db.collection('tenant_access_requests').doc(targetUid);
-  const regSnap = await regRef.get();
   if (regSnap.exists) {
-    await regRef.set({ status: 'pending' }, { merge: true });
+    batch.set(regRef, { status: 'pending' }, { merge: true });
   }
-  await logAuditEvent(db, adminUid, 'REVOKE_S4', targetUid);
+  batch.set(db.collection('audit_events').doc(), await auditEventRecord(db, adminUid, 'REVOKE_S4', targetUid));
+  await batch.commit();
 }
 
 export async function adminDeleteUser(adminUid: string, targetUid: string) {
@@ -1398,21 +1437,32 @@ export async function saveGeminiApiKey(uid: string, apiKey: string): Promise<any
   const encrypted = encrypt(apiKey);
   const last4 = apiKey.length > 4 ? apiKey.slice(-4) : apiKey;
 
-  // Set the secret document
-  await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').set({
-    encryptedApiKey: encrypted,
-    last4,
-    rotatedAt: FieldValue.serverTimestamp(),
+  // The secret and the profile's metadata in one transaction that reads the
+  // profile (QA full review of v2.20.0). Two separate writes could leave a key
+  // `loadGeminiApiKey` serves while the save reported failure; and a merge-set
+  // recreated the profile of an account erased while the save was in flight.
+  // Now both commit or neither does, a missing profile refuses the save, and
+  // the erasure deletes this secret again in the batch that deletes the
+  // profile, so a save that committed in between goes with it.
+  const profileRef: DocumentReference = db.collection('users').doc(uid);
+  const secretRef: DocumentReference = db.collection('user_secrets').doc(uid).collection('providers').doc('gemini');
+  await db.runTransaction(async (tx: Transaction) => {
+    const profile = await tx.get(profileRef);
+    if (!profile.exists) throw new QuotaError(PROFILE_GONE, 404);
+    tx.set(secretRef, {
+      encryptedApiKey: encrypted,
+      last4,
+      rotatedAt: FieldValue.serverTimestamp(),
+    });
+    // Mirror metadata to the user profile and remove legacy key
+    tx.update(profileRef, {
+      byokConfigured: true,
+      byokLast4: last4,
+      byokRotatedAt: FieldValue.serverTimestamp(),
+      geminiApiKey: FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
   });
-
-  // Mirror metadata to the user profile and remove legacy key
-  await db.collection('users').doc(uid).set({
-    byokConfigured: true,
-    byokLast4: last4,
-    byokRotatedAt: FieldValue.serverTimestamp(),
-    geminiApiKey: FieldValue.delete(),
-    updatedAt: FieldValue.serverTimestamp(),
-  }, { merge: true });
 
   return {
     byokConfigured: true,

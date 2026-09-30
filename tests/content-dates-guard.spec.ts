@@ -59,16 +59,35 @@ function resolveSpec(spec: string, fromFile: string): string | null {
   return null;
 }
 
+/**
+ * Every module specifier in a source text: `from '…'` and the dynamic
+ * `import('…')`, either quote. A page that loads a content module lazily renders
+ * it just the same, and used to be invisible here (QA full review of
+ * fc787674705f, 3e6a9685fd76).
+ */
+function specifiersIn(text: string): string[] {
+  return [...text.matchAll(/(?:\bfrom\s+|\bimport\s*\(\s*)(['"])([^'"]+)\1/g)].map((m) => m[2]);
+}
+
 /** What a file imports, resolved to repo-relative paths. */
 function importsOf(file: string): string[] {
-  const text = read(file);
-  return [...text.matchAll(/from\s+'([^']+)'/g)]
-    .map((m) => resolveSpec(m[1], file))
+  return specifiersIn(read(file))
+    .map((spec) => resolveSpec(spec, file))
     .filter((r): r is string => r !== null);
 }
 
 test.describe('the sitemap dates a route from everything that renders it', () => {
   const SOURCES = routeSources();
+
+  test('the import reader sees static and dynamic imports', () => {
+    const text = [
+      "import { a } from '@/lib/static';",
+      'import b from "./double";',
+      "const HowTo = dynamic(() => import('@/lib/how-to-content'));",
+      'const c = await import("@/components/Lazy");',
+    ].join('\n');
+    expect(specifiersIn(text)).toEqual(['@/lib/static', './double', '@/lib/how-to-content', '@/components/Lazy']);
+  });
 
   test('every file the table names exists', () => {
     const missing = Object.entries(SOURCES).flatMap(([route, files]) =>

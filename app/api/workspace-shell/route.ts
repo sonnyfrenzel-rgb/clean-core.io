@@ -146,7 +146,16 @@ export async function POST(req: NextRequest) {
         { merge: true },
       );
 
-    return NextResponse.json({ ok: true, ...(await answerFor(uid)) });
+    // The write has landed. A failure of the read-back after it is not a
+    // failure of the change: it was answered 500, and a caller that retried or
+    // rolled back undid a switch that had worked (QA full review of
+    // fc787674705f, e9174852bd60). Without the read-back, the answer is what
+    // was written, for an account the admin gate above already let write it.
+    const answer = await answerFor(uid).catch((readErr: unknown) => {
+      logger.warn('workspace-shell read-back after write failed', { route: 'api/workspace-shell', error: errMessage(readErr) });
+      return null;
+    });
+    return NextResponse.json({ ok: true, ...(answer ?? { enabled, eligible: true, confirmed: false }) });
   } catch (err: unknown) {
     const said = refusal(err);
     if (said) return said;

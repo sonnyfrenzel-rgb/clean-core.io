@@ -86,6 +86,12 @@ function stripBraceExpressions(s: string): string {
   return out;
 }
 
+/** A JSX expression that is only a literal: `{23000}`, `{"23,000+"}`, `{'…'}`, a template without substitutions. */
+const LITERAL_EXPRESSION = /\{\s*(\d[\d,._]*\+?|"[^"\n]*"|'[^'\n]*'|`[^`$]*`)\s*\}/g;
+
+/** An internal href as an attribute string or as a static string expression. */
+const STATIC_HREF = /href=(?:"(\/[^"]*)"|\{\s*["'`](\/[^"'`$]*)["'`]\s*\})/g;
+
 /** Strips quoted string literals — attribute values (`className="…"`, `href="…"`) are not prose. */
 function stripQuotedStrings(s: string): string {
   return s.replace(/"[^"]*"/g, '').replace(/'[^']*'/g, '').replace(/`[^`]*`/g, '');
@@ -97,6 +103,21 @@ function proseOnly(rel: string): string {
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '');
+}
+
+/** The repo files a module imports directly (`@/…` and relative, static and `import()`), one level deep. */
+function localImportsOf(rel: string): string[] {
+  const out = new Set<string>();
+  for (const m of read(rel).matchAll(/(?:\bfrom|\bimport\s*\()\s*['"]([^'"]+)['"]/g)) {
+    const spec = m[1];
+    let base: string;
+    if (spec.startsWith('@/')) base = spec.slice(2);
+    else if (spec.startsWith('.')) base = path.posix.join(path.posix.dirname(rel), spec);
+    else continue;
+    const hit = ['.ts', '.tsx', '/index.ts', '/index.tsx'].map((ext) => base + ext).find(isFile);
+    if (hit) out.add(hit);
+  }
+  return [...out];
 }
 
 /**
@@ -140,7 +161,12 @@ test.describe('every public number is bound to the facts service', () => {
       // about the catalog and are excluded, the same way a lint rule for magic
       // numbers usually excludes them — the one hit this returned before the
       // exclusion was the footer's `&copy; 2026`.
-      const found = (literalOnly.match(/\b\d{1,3}(?:,\d{3})+\+?\b|\b\d{4,}\b/g) || []).filter(
+      // A figure written as a JSX expression (`{23000}`, `{"23,000+"}`) is as
+      // typed-in as one in the text, and stripping every brace expression above
+      // used to delete it before the scan (QA full review of fc787674705f,
+      // d66a38dd036e). An expression that is nothing but a literal is copy.
+      const literalExpressions = [...jsx.matchAll(LITERAL_EXPRESSION)].map((m) => m[1]).join(' ');
+      const found = (`${literalOnly} ${literalExpressions}`.match(/\b\d{1,3}(?:,\d{3})+\+?\b|\b\d{4,}\b/g) || []).filter(
         (n) => !/^(19|20)\d{2}$/.test(n),
       );
       expect(found, `${rel} writes a number directly into its copy instead of reading lib/facts.ts: ${found.join(', ')}`).toEqual([]);
@@ -152,10 +178,15 @@ test.describe('no marker phrase reaches production copy', () => {
   test('none of "previously", "used to claim", "TODO" appears in a public page', () => {
     const offenders: string[] = [];
     for (const [route, rel] of Object.entries(PUBLIC_PAGES)) {
-      const prose = proseOnly(rel);
-      for (const marker of [/previously/i, /used to claim/i, /\bTODO\b/]) {
-        const m = prose.match(marker);
-        if (m) offenders.push(`${route} (${rel}): "${m[0]}"`);
+      // The page and every local module it imports directly: copy a page renders
+      // through an imported component is on the page just the same (QA full
+      // review of fc787674705f, 6975ea14026a).
+      for (const file of [rel, ...localImportsOf(rel)]) {
+        const prose = proseOnly(file);
+        for (const marker of [/previously/i, /used to claim/i, /\bTODO\b/]) {
+          const m = prose.match(marker);
+          if (m) offenders.push(`${route} (${file}): "${m[0]}"`);
+        }
       }
     }
     expect(offenders, `marker phrases found:\n${offenders.join('\n')}`).toEqual([]);
@@ -181,7 +212,9 @@ test.describe('no public page links to a route that does not exist', () => {
     const dead: string[] = [];
     for (const [route, rel] of Object.entries(PUBLIC_PAGES)) {
       const src = read(rel);
-      const hrefs = new Set([...src.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]));
+      // `href={'/x'}` is as valid as `href="/x"` and used to go unread (QA full
+      // review of fc787674705f, ca9590dc0003).
+      const hrefs = new Set([...src.matchAll(STATIC_HREF)].map((m) => m[1] ?? m[2]));
       for (const href of hrefs) {
         if (!routeResolves(href)) dead.push(`${route} (${rel}) → ${href}`);
       }
@@ -230,6 +263,19 @@ test.describe('level and role labels come from their one component, not a page c
       if (m) offenders.push(`${route} (${rel}): ${m.join(', ')}`);
     }
     expect(offenders, offenders.join('\n')).toEqual([]);
+  });
+});
+
+test.describe('the readers see the expression forms (QA full review of fc787674705f)', () => {
+  test('a figure or an href written as a literal expression is read, not stripped', () => {
+    const jsx = `<p>{23000} objects, {"23,000+"} APIs, {count} live</p><Link href={'/does-not-exist'}>x</Link><a href="/about">y</a>`;
+    expect([...jsx.matchAll(LITERAL_EXPRESSION)].map((m) => m[1])).toEqual(['23000', '"23,000+"', "'/does-not-exist'"]);
+    expect(stripBraceExpressions(jsx)).not.toContain('23');
+    expect([...jsx.matchAll(STATIC_HREF)].map((m) => m[1] ?? m[2])).toEqual(['/does-not-exist', '/about']);
+  });
+
+  test('the marker scan reaches the components a page imports', () => {
+    expect(localImportsOf('app/page.tsx').some((f) => f.startsWith('components/'))).toBe(true);
   });
 });
 

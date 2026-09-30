@@ -76,7 +76,32 @@ export async function parseUsage(file: File, options: UsageImportOptions | Usage
   const mappedHeaders = new Set(Object.values(mapping));
   const unmapped = headers.filter(h => !mappedHeaders.has(h));
   if (unmapped.length > 0) {
-    warnings.push(`Unmapped columns ignored: ${unmapped.join(', ')}`);
+    // The warnings are stored with the report. A heading that is itself an
+    // address — a pivoted export with one column per user — is personal data
+    // however it got there, so it is counted, never copied (QA full review of
+    // v2.20.0, d371bd76e13b).
+    const personal = unmapped.filter((h) => h.includes('@'));
+    const listed = unmapped.filter((h) => !h.includes('@'));
+    const parts = [
+      ...(listed.length ? [listed.join(', ')] : []),
+      ...(personal.length
+        ? [`${personal.length} column${personal.length === 1 ? '' : 's'} whose heading looks like an e-mail address (not listed)`]
+        : []),
+    ];
+    warnings.push(`Unmapped columns ignored: ${parts.join('; ')}`);
+  }
+
+  // Two headings that both mean the call count (or the last use) cannot both be
+  // read, and taking the first synonym silently decided which number the
+  // prioritisation rests on (QA full review of v2.20.0, b19f783e7d19).
+  for (const [field, label] of [['callCount', 'the call count'], ['lastUsed', 'the last use']] as const) {
+    const candidates = candidateColumns(headers, field);
+    if (candidates.length > 1) {
+      warnings.push(
+        `${candidates.length} columns could hold ${label} (${candidates.join(', ')}); ${mapping[field]} was read and ` +
+        'the others ignored. Check that it is the one you meant before you confirm the import.',
+      );
+    }
   }
 
   // An export with no recognised call-count column is still usable — it carries
@@ -275,6 +300,12 @@ interface ColumnMapping {
   objectType?: string;
 }
 
+/** Every heading in the file that is a synonym of this field, in file order. */
+function candidateColumns(headers: string[], field: keyof ColumnMapping): string[] {
+  const synonyms = new Set(COLUMN_SYNONYMS[field].map((s) => s.toUpperCase()));
+  return headers.filter((h) => synonyms.has(h.toUpperCase().trim()));
+}
+
 function resolveColumnMapping(headers: string[]): ColumnMapping {
   const mapping: ColumnMapping = {};
   const upperHeaders = headers.map(h => h.toUpperCase().trim());
@@ -359,6 +390,12 @@ function parseCallCount(raw: unknown): number | undefined {
   else if (/,\d{3}\./.test(str)) {
     str = str.replace(/,/g, '');
   }
+  // Repeated grouping with one separator: "1.234.567" or "1,234,567". The two
+  // rules around this one each took a single separator, so these came out NaN
+  // and a real count became unknown (QA full review of v2.20.0, 155aeedb1cff).
+  else if (/^-?\d{1,3}([.,])\d{3}(?:\1\d{3})+$/.test(str)) {
+    str = str.replace(/[.,]/g, '');
+  }
   // Detect standalone thousand separator: "1.234" or "1,234" (exactly 3 digits after separator)
   else if (/^[\d]+[.,]\d{3}$/.test(str)) {
     str = str.replace(/[.,]/g, '');
@@ -370,7 +407,9 @@ function parseCallCount(raw: unknown): number | undefined {
   // Dot as decimal: "1.5" → keep as-is (will be rounded below)
 
   const num = Number(str);
-  if (isNaN(num)) return undefined;
+  // Not `isNaN`: `Infinity` and an overflow such as `1e309` are numbers too,
+  // and are no count (QA full review of v2.20.0, a48a8ba01b64).
+  if (!Number.isFinite(num)) return undefined;
   // Handed back unrounded when it is negative, so the caller's `< 0` guard sees
   // the sign and quarantines the row with the value the export actually held.
   return num < 0 ? num : Math.round(num);
@@ -485,7 +524,11 @@ function detectPeriod(records: UsageRecord[]): { observedSpanDays?: number; obse
     .filter((d): d is string => !!d)
     .sort();
 
-  if (dates.length < 2) return {};
+  if (dates.length === 0) return {};
+  // One date is still the last execution seen, which the join's dormancy rule
+  // falls back to; it is no span, so none is reported (QA full review of
+  // v2.20.0, 8a780126c364).
+  if (dates.length === 1) return { observedFrom: dates[0], observedTo: dates[0] };
 
   const from = dates[0];
   const to = dates[dates.length - 1];

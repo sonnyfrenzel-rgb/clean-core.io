@@ -140,7 +140,7 @@ export default function LevelDerivationPage() {
 
       <QuickAnswer
         question="Which file wins when SAP's two catalogs disagree?"
-        answer="The release file. If SAP will not release an object for ABAP Cloud but has named a successor for it, the level is not B — level B means 'acceptable where no level A path exists', and a named successor is that path. This affects 22 objects, including CL_BCS and CL_HTTP_CLIENT."
+        answer={`The release file. If SAP will not release an object for ABAP Cloud but has named a successor for it, the level is not B — level B means 'acceptable where no level A path exists', and a named successor is that path. Of the ${contestedTotal} objects in this position, ${contestedWithSuccessor} carry a named successor, including CL_BCS and CL_HTTP_CLIENT.`}
       />
 
       {/* ---------------------------------------------------------------- */}
@@ -421,8 +421,10 @@ export default function LevelDerivationPage() {
             <span className="mt-2 w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
             <span>
               <span className="font-bold text-gray-950">Not a guess when the data is missing.</span>{' '}
-              An object SAP lists nowhere returns <span className="font-mono text-xs">Unknown</span>{' '}
-              rather than a plausible-looking letter.
+              A state SAP publishes that the rule does not map, and a namespaced object neither file
+              lists, return <span className="font-mono text-xs">Unknown</span> rather than a
+              plausible-looking letter. An SAP object neither file lists is level C, because that is
+              what SAP&rsquo;s level C definition describes (see the rule table above).
             </span>
           </li>
         </ul>

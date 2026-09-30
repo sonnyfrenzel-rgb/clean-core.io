@@ -463,6 +463,9 @@ const EVENT_WORDS = new Set([
 
 const AT_EVENT = /^AT\s+(?:SELECTION-SCREEN\b|LINE-SELECTION\b|USER-COMMAND\b|PF\d)/i;
 
+/** Statements that never set `sy-subrc`, so a check after them still checks the one before. */
+const SUBRC_NEUTRAL = /^(?:(?:DATA|TYPES|CONSTANTS|STATICS|FIELD-SYMBOLS)\s+[\w/<]|(?:CLEAR|FREE)\s)/i;
+
 /** Statements that declare rather than do. None of them is a step. */
 const DECLARATIVE = new Set([
   'REPORT', 'PROGRAM', 'FUNCTION-POOL', 'TABLES', 'TYPES', 'DATA', 'CONSTANTS',
@@ -3252,7 +3255,12 @@ class SkeletonBuilder {
     if (/^CALL\s+FUNCTION\b/i.test(text)) return { ...this.walkFunction(statement, ctx, incoming), outputRun: null };
 
     if (/^CALL\s+TRANSACTION\b/i.test(text)) {
-      const call = this.calls.transactions.find((t) => t.lineStart === statement.lineStart);
+      // The line alone does not name the statement: `CALL TRANSACTION 'VA01'.
+      // CALL TRANSACTION 'ME21N'.` on one line labelled both VA01 (QA full
+      // review of v2.20.0, 829689a504c4). The call site carries its text.
+      const call = this.calls.transactions.find(
+        (t) => t.lineStart === statement.lineStart && t.text === statement.text,
+      );
       const node = this.addNode('transaction', call?.code ?? call?.codeExpression ?? 'CALL TRANSACTION',
         anchorOf(statement, 2), ctx.region, ctx.container, {
           detail: {
@@ -3758,12 +3766,20 @@ class SkeletonBuilder {
     return { exits };
   }
 
-  /** Does the statement right after this one read `sy-subrc`? §5.8 asks for it. */
+  /**
+   * Does the statement right after this one read `sy-subrc`? §5.8 asks for it.
+   *
+   * Within the window of two, a statement in between is looked past only when
+   * it cannot set `sy-subrc` — a declaration or a CLEAR. Any other statement
+   * overwrites it: `CALL FUNCTION 'F1' … EXCEPTIONS …. CALL FUNCTION 'F2'. IF
+   * sy-subrc …` checks F2, and hung a boundary on F1 (QA full review of
+   * v2.20.0, 5390fabd4c02).
+   */
   private handlesSubrcAfter(index: number): boolean {
     for (let i = index + 1; i <= index + 2 && i < this.statements.length; i++) {
       const next = this.statements[i];
-      if (!['IF', 'CASE', 'CHECK'].includes(next.keyword)) continue;
-      if (/\bsy-subrc\b/i.test(next.text)) return true;
+      if (['IF', 'CASE', 'CHECK'].includes(next.keyword) && /\bsy-subrc\b/i.test(next.text)) return true;
+      if (!SUBRC_NEUTRAL.test(next.text)) return false;
     }
     return false;
   }

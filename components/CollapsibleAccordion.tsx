@@ -171,9 +171,13 @@ export default function CollapsibleAccordion({
         )}
       </div>
 
-      {/* Collapsible body */}
+      {/* Collapsible body. Clipped to zero height it was still in the tab order
+          and read out under a header announced as collapsed; `inert` takes it
+          out of both while it is closed, and the height transition stays. */}
       <div
         ref={contentRef}
+        inert={!isOpen}
+        data-accordion-body=""
         style={{ height: height !== undefined ? `${height}px` : 'auto' }}
         className={clsx(
           'transition-[height] duration-200 ease-in-out overflow-hidden rounded-b-cc-card motion-reduce:transition-none',

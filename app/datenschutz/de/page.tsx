@@ -49,7 +49,7 @@ export const metadata: Metadata = withTwitterCard({
 
 export default function DatenschutzDePage() {
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900">
+    <div lang="de" className="min-h-screen bg-white font-sans text-gray-900">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -173,7 +173,7 @@ export default function DatenschutzDePage() {
                 <strong className="text-gray-800">Google Cloud Platform und Firebase:</strong> Hosting, Authentifizierung und Datenbankbetrieb auf europäischen Servern in der Region <strong>Belgien (europe-west1)</strong> — Datenhaltung in der EU, betrieben nach den Anforderungen der DSGVO.
               </li>
               <li>
-                <strong className="text-gray-800">Google-Gemini-API:</strong> generative KI-Modelle, ausschließlich für die Code-Transformation, über gesicherte zustandslose Proxy-Schichten.
+                <strong className="text-gray-800">Google-Gemini-API:</strong> generative KI-Modelle für die modellgeschriebenen Teile des Dienstes — den Analysetext, fachliche Namen und Sätze für den aus dem Code rekonstruierten Prozess, das Lösungsdesign, den Code-Vorschlag, die Dokumentation und die Testsuite — über gesicherte zustandslose Proxy-Schichten. Befunde, Route und Clean Core Score entstehen ohne Modell.
               </li>
               <li>
                 <strong className="text-gray-800">Resend:</strong> Versand transaktionaler E-Mails (etwa Freigabe- und Statusbenachrichtigungen). Ihre E-Mail-Adresse wird verarbeitet, um diese Nachrichten zu versenden.

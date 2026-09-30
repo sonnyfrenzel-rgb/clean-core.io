@@ -14,7 +14,7 @@ import { quotaExhausted, runsRemaining, runsAreSelfFunded } from '@/lib/run-quot
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
-import { workflowSteps, workflowSummary, testEvidence, phaseTone, PHASE_TONE_CLASS, PHASES } from '@/lib/workflow-steps';
+import { workflowSteps, workflowSummary, testEvidence, staleness, phaseTone, PHASE_TONE_CLASS, PHASES } from '@/lib/workflow-steps';
 import { projectStatus } from '@/lib/workspace-rows';
 import { objectStatus, type ObjectStatusValue } from '@/lib/object-status';
 
@@ -38,6 +38,7 @@ import CcSelect from '@/components/cc/Select';
 import CcSkeleton from '@/components/cc/Skeleton';
 import CcTable, { type CcTableColumn, type CcTableRowSpec } from '@/components/cc/Table';
 import CcTag from '@/components/cc/Tag';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
 
 /**
@@ -260,7 +261,8 @@ interface ForumPost {
   isAdmin: boolean;
   category: ForumTopic;
   message: string;
-  createdAt: string;
+  // No date: the posts are static text in this file, and a "Just now" on them
+  // read as freshly published on every visit (QA 18158b8c64f9).
   pinned: boolean;
 }
 
@@ -426,7 +428,12 @@ export default function Dashboard() {
 
     // Immediate, robust one-time getDocs fetch to ensure loading state resolves
     // even if the persistent onSnapshot streaming connection hangs or is blocked on CI runners.
+    // It must not land after the listener has spoken (it would be older), nor
+    // after this effect was cleaned up — the account may have changed since.
+    let cancelled = false;
+    let live = false;
     getDocs(q).then((snapshot) => {
+      if (cancelled || live) return;
       setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoadingProjects(false);
     }).catch((error) => {
@@ -434,13 +441,17 @@ export default function Dashboard() {
     });
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      live = true;
       setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoadingProjects(false);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'projects');
       setLoadingProjects(false);
     });
-    return () => unsubscribe();
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, [user]);
 
   const handleCreateProject = async () => {
@@ -559,7 +570,6 @@ export default function Dashboard() {
       isAdmin: true,
       category: 'announcements',
       message: 'Welcome everyone! This board carries announcements from the administrator about Clean-Core.io; it takes no posts or comments. Everything on Clean-Core.io is free to use: every user gets the full 7-stage workflow (5 transformations to start; bring your own Gemini key for unlimited runs). For account approvals or an admin-gated S/4HANA sandbox connection, reach the admin team at admin@clean-core.io. Happy modernizing!',
-      createdAt: 'Just now',
       pinned: true,
     },
     {
@@ -570,7 +580,6 @@ export default function Dashboard() {
       isAdmin: true,
       category: 'announcements',
       message: `We just published a full write-up on SAP Community — "Clean Core Levels A–D: how to classify your custom ABAP (and what to do with it)". Here's the short version:\n\nSAP Clean Core guidance moved from a fuzzy "clean / not clean" view to a four-grade, cloud-readiness classification for technical objects — A, B, C, D:\n\n- A — Released SAP APIs & extension points. Cloud-ready; build here.\n- B — Classic SAP APIs, SAP-recommended. Usable; plan for released successors over time.\n- C — Internal SAP APIs, conditionally clean. Wrap behind a clean interface; verify per release.\n- D — Not-recommended objects/tech (direct writes to standard tables, unreleased dependencies, dynpro/kernel). The upgrade blockers — replace or re-architect.\n\nPractical flow: identify each object → look it up in SAP's Cloudification Repository → assign a grade → decide remediation (map to a released API/CDS view, wrap, or re-architect) → confirm with SAP ADT/ATC.\n\nFull post on SAP Community: https://community.sap.com/t5/technology-blog-posts-by-members/clean-core-levels-a-d-how-to-classify-your-custom-abap-and-what-to-do-with/ba-p/14437956\n\nTry the A–D readiness estimate on your own code (free): https://clean-core.io/sap-clean-core-object-classification\n\nNote: Clean-Core.io's A–D grade is an experimental preview estimate — a fast orientation aid, not an authoritative SAP ATC classification. Always verify with SAP ADT/ATC for your target release.`,
-      createdAt: 'Just now',
       pinned: true,
     },
     {
@@ -581,7 +590,6 @@ export default function Dashboard() {
       isAdmin: true,
       category: 'technical',
       message: `Welcome to the official technical blueprint of Clean-Core.io!\n\nClean-Core.io modernizes custom SAP ABAP toward clean, upgrade-safe TypeScript/Node.js — deterministic evidence first, AI second. The stack:\n\n- Frontend: Next.js 15 (App Router), React 19, TypeScript (strict), Tailwind v4.\n- Evidence engine: a deterministic ABAP parser/analyzer runs first and produces the auditable facts (code inventory, findings, complexity/criticality scores, RAP vs CAP routing) — before any AI call, to prevent structure hallucination.\n- AI gateway: Google Gemini (${PRODUCT_GEMINI_MODEL}) narrates and transforms on top of that evidence. Keys never reach the client — every call is proxied through our server.\n- BYOK: your own Gemini API key is encrypted at rest (AES-256-GCM) in a server-only store and used exclusively via the secure backend proxy — it is never returned to the client.\n- Sandbox testing: generated tests run in a separate runner service with no roles, no platform secrets and no open network egress, inside a restricted Node child process there (esbuild bundle + Node Permission Model + preloaded module and network guards). Test execution against a live S/4HANA tenant is locked until the isolated live runner has passed its review.\n- Trust chain: every analysis is frozen as an immutable, HMAC-signed Run that anchors a server-generated, verifiable audit evidence pack.\n- Persistence: strict per-user isolation via Firestore security rules.\n\nQuestions about the evidence engine or the transformation go to admin@clean-core.io.`,
-      createdAt: 'Just now',
       pinned: true,
     }
   ]);
@@ -1334,7 +1342,7 @@ export default function Dashboard() {
         open={!!activePost}
         onClose={() => setActivePost(null)}
         title={activePost?.title ?? ''}
-        lead={activePost ? `@${activePost.author}${activePost.authorEmail ? ` · ${activePost.authorEmail}` : ''} · ${activePost.createdAt}` : undefined}
+        lead={activePost ? `@${activePost.author}${activePost.authorEmail ? ` · ${activePost.authorEmail}` : ''}` : undefined}
         size="wide"
       >
         {activePost ? (
@@ -1432,7 +1440,25 @@ function ProjectDeliverables({
     isExport: true,
   })) : [];
 
-  const allItems = [...deliverables, ...dynamicExports];
+  // A deliverable built for a source that is no longer the one under analysis
+  // says so here too, not only on the phase strip — in the list, in the viewer
+  // title and in the downloaded file's name (QA 5c6129878c65).
+  const stale = staleness(project);
+  const STALE_BY_ID: Record<string, boolean> = {
+    analysis: stale.sourceChanged,
+    design: stale.design,
+    code: stale.code,
+    tests: stale.tests,
+    test_report: stale.tests,
+    docs: stale.docs,
+    // Keyed by deliverable id, read-only: nothing here writes the project's
+    // `presentation` field (preservation register L-09 still holds).
+    'presentation': stale.sourceChanged,
+  };
+  const allItems = [...deliverables, ...dynamicExports].map((item) => ({
+    ...item,
+    stale: item.isExport ? stale.sourceChanged : Boolean(STALE_BY_ID[item.id]),
+  }));
 
   return (
     <div id={`project-deliverables-${project.id}`} className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
@@ -1452,21 +1478,22 @@ function ProjectDeliverables({
                 </span>
                 {item.title}
                 {item.isExport ? <CcTag>Export</CcTag> : null}
+                {item.stale ? <CcProvenanceChip value="stale" note="source changed" /> : null}
               </span>
               <span className="flex flex-wrap items-center gap-2">
                 <CcButton
                   variant="ghost"
                   icon={<Eye size={16} aria-hidden={true} />}
-                  onClick={() => onView(item.title, item.content, item.type === 'html' ? 'markdown' : (item.type as ViewType))}
-                  aria-label={`View ${item.title}`}
+                  onClick={() => onView(item.stale ? `${item.title} (stale: built for a previous source)` : item.title, item.content, item.type === 'html' ? 'markdown' : (item.type as ViewType))}
+                  aria-label={`View ${item.title}${item.stale ? ' (stale)' : ''}`}
                 >
                   View
                 </CcButton>
                 <CcButton
                   variant="ghost"
                   icon={<Download size={16} aria-hidden={true} />}
-                  onClick={() => void onDownload(item.content, `${project.name.replace(/\s+/g, '_')}_${item.id}${item.ext}`, item.type === 'html' ? 'text/html' : item.type === 'code' ? 'text/javascript' : 'text/plain')}
-                  aria-label={`Download ${item.title}`}
+                  onClick={() => void onDownload(item.content, `${project.name.replace(/\s+/g, '_')}_${item.id}${item.stale ? '_STALE' : ''}${item.ext}`, item.type === 'html' ? 'text/html' : item.type === 'code' ? 'text/javascript' : 'text/plain')}
+                  aria-label={`Download ${item.title}${item.stale ? ' (stale)' : ''}`}
                 >
                   {item.type === 'code' ? 'Code' : 'Download'}
                 </CcButton>
@@ -1474,7 +1501,7 @@ function ProjectDeliverables({
                   <CcButton
                     variant="ghost"
                     icon={<BookOpen size={16} aria-hidden={true} />}
-                    onClick={() => onView(item.title, item.content, 'html')}
+                    onClick={() => onView(item.stale ? `${item.title} (stale: built for a previous source)` : item.title, item.content, 'html')}
                     aria-label={`View the HTML of ${item.title}`}
                   >
                     View HTML

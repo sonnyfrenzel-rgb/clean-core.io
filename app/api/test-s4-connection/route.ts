@@ -9,6 +9,7 @@ import {
   readBoundedJson,
   TOKEN_BODY_LIMITS,
 } from '@/lib/url-validation';
+import { assertRateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { upstreamBodyShape } from '@/lib/upstream-body-shape';
 
@@ -210,6 +211,8 @@ async function testEndpoint(
   // fallback above never ran and a reachable endpoint was reported as failed
   // (QA review of 33471220d6e9, f480d96b63d1).
   if (response.status === 405 || response.status === 501) {
+    // The refusal's own body is not wanted; left unread, it held its connection.
+    await response.body?.cancel().catch(() => {});
     try {
       response = await safeFetch(url, {
         method: 'GET',
@@ -226,6 +229,11 @@ async function testEndpoint(
     }
   }
 
+  // Only the status is used. The body — a GET fallback's especially — was left
+  // open after the timer was cleared, so an endpoint that kept streaming held
+  // the upstream connection for as long as it liked (QA full review of
+  // fc787674705f, b8dfbd24e73a). Cancelled while the deadline still runs.
+  await response.body?.cancel().catch(() => {});
   clearTimeout(timeout);
   return { httpStatus: response.status };
 }
@@ -301,6 +309,18 @@ export async function POST(req: NextRequest) {
         { status: 'failed', message: e.message || 'Access denied.' },
         { status: 403 }
       );
+    }
+
+    // Per account, before any URL check, OAuth exchange or tenant request; the
+    // same budget as the metadata routes (QA full review of fc787674705f,
+    // 0e90b2d74f76).
+    try {
+      await assertRateLimit(`test-s4-connection:${decodedToken.uid}`, 30, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      if (rateErr instanceof QuotaError) {
+        return NextResponse.json({ status: 'failed', message: rateErr.message }, { status: rateErr.status });
+      }
+      throw rateErr;
     }
 
     const body = await req.json();
@@ -448,19 +468,36 @@ export async function POST(req: NextRequest) {
       }
     }
     // --- Basic Authentication ---
-    else if (authType === 'basic' && username && password) {
+    // A declared scheme without its credential is refused, not tested without
+    // one: an endpoint that answers anonymous requests was otherwise reported
+    // as "Connection successful via Basic Auth" with no credential sent (QA
+    // full review of fc787674705f, 4f96ba27311b).
+    else if (authType === 'basic') {
+      if (!username || !password) {
+        return NextResponse.json(
+          { status: 'failed', message: 'Username and password are required for Basic Authentication.' },
+          { status: 400 }
+        );
+      }
       const credentials = Buffer.from(`${username}:${password}`).toString('base64');
       headers['Authorization'] = `Basic ${credentials}`;
     }
     // --- SAP API Hub Sandbox Key ---
-    else if (authType === 'sap_hub' && password) {
+    else if (authType === 'sap_hub') {
+      if (!password) {
+        return NextResponse.json(
+          { status: 'failed', message: 'An API key is required for the SAP API Hub.' },
+          { status: 400 }
+        );
+      }
       headers['APIKey'] = password;
     }
 
     // --- Perform real HTTP connectivity test ---
     try {
       const { httpStatus } = await testEndpoint(url, headers);
-      return evaluateHttpStatus(httpStatus, authType || 'basic');
+      // No declared scheme sent no credential, so it is not described as Basic Auth.
+      return evaluateHttpStatus(httpStatus, authType || 'none');
     } catch (connErr: any) {
       const status = connErr instanceof SsrfError ? 403 : 502;
       return NextResponse.json(

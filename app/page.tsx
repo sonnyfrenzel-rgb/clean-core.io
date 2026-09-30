@@ -38,13 +38,13 @@ import { getReferenceAnalysis } from '@/lib/reference-analysis';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Accelerator — Free ABAP Analysis | Clean-Core.io',
-  description: 'Free SAP Clean Core tool: analyze custom ABAP, get a Clean Core Score, and generate the first Clean-Core-compliant RAP/CAP draft for review — with verifiable abapGit exports and ABAP-Unit tests. Community-built, complementary to SAP ADT/ATC.',
+  description: 'Free SAP Clean Core tool: analyze custom ABAP, get a Clean Core Score, and generate the first RAP/CAP draft toward Clean Core for review — with verifiable abapGit exports and ABAP-Unit tests. Community-built, complementary to SAP ADT/ATC.',
   alternates: {
     canonical: 'https://clean-core.io',
   },
   openGraph: {
     title: 'The SAP Architect\'s Clean Core Accelerator | Clean-Core.io',
-    description: 'Free community tool that generates the first Clean-Core-compliant draft for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
+    description: 'Free community tool that generates the first draft toward Clean Core for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
     url: 'https://clean-core.io',
     type: 'website',
     siteName: 'Clean-Core.io',
@@ -52,7 +52,7 @@ export const metadata: Metadata = withTwitterCard({
   twitter: {
     card: 'summary_large_image',
     title: 'The SAP Architect\'s Clean Core Accelerator | Clean-Core.io',
-    description: 'Free community tool that generates the first Clean-Core-compliant draft for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
+    description: 'Free community tool that generates the first draft toward Clean Core for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
   }
 });
 
@@ -436,7 +436,7 @@ export default function Home() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">Clean Core Accelerator</span>
           </h1>
           <p className="text-base sm:text-lg md:text-2xl text-gray-700 max-w-3xl mx-auto mb-12 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
-            Generate the first Clean-Core-compliant draft for review and approval &mdash; grounded in SAP&apos;s own published object data, with the limits named before you upload, and the expert&apos;s judgment never replaced.
+            Generate the first draft toward Clean Core for review and approval &mdash; grounded in SAP&apos;s own published object data, with the limits named before you upload, and the expert&apos;s judgment never replaced.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
             <HeroCTA />
@@ -824,7 +824,7 @@ export default function Home() {
               {
                 icon: <ShieldCheck className="w-6 h-6 text-green-600" />,
                 title: "DSGVO / GDPR-aligned",
-                desc: "Art. 17 DSGVO erasure: purge all your uploads and data in Settings. Transactional emails are routed via the Resend API; subprocessors process data under their own terms."
+                desc: "Art. 17 DSGVO erasure: delete your uploads and account data in Settings; encrypted backup copies age out within 30 days, and the privacy policy names what else outlives a deletion. Transactional emails are routed via the Resend API; subprocessors process data under their own terms."
               },
               {
                 icon: <Layers className="w-6 h-6 text-green-600" />,
@@ -988,7 +988,7 @@ export default function Home() {
           {/* BYOK Explainer */}
           <div className="mt-8 text-center text-xs md:text-sm text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-100 bg-gray-50/50 p-5 rounded-3xl shadow-sm">
             <span className="font-extrabold text-gray-800 uppercase tracking-wider block mb-1">* BYOK (Bring Your Own Key)</span>
-            Use your own Google Gemini API key to run unlimited transformations without any platform limits. Your API key is encrypted (AES-256-GCM) and stored in your authenticated user profile&mdash;it is used exclusively via our secure backend proxy and never exposed in plaintext.
+            Use your own Google Gemini API key to run unlimited transformations without the community run limit (the per-hour rate limit still applies). Your API key is encrypted (AES-256-GCM) and stored in your authenticated user profile&mdash;it is used exclusively via our secure backend proxy and never exposed in plaintext.
             <span className="block mt-2 text-[11px] text-gray-500 font-medium">* Usage is subject to your Google Gemini API key quota and billing &mdash; clean-core.io does not charge any platform fees.</span>
           </div>
         </div>
@@ -1027,13 +1027,13 @@ export default function Home() {
                 <strong>Free Community Modernization Platform:</strong> Clean-Core.io is a free, community-built SAP Clean Core modernization platform for architects and developers, maintained by Felix Frenzel. A free, non-commercial community project — no subscriptions or paid tiers. Provided for research and evaluation; generated outputs are drafts to review before productive use.
               </p>
               <p>
-                <strong>AI-Assisted Drafts &mdash; Verify Before You Deploy:</strong> All solution designs, compliance scores, modular code transformations, and test suites are dynamically generated using third-party generative AI models (Google Gemini API). All artifacts are provided on an <em>&quot;AS IS&quot;</em> and <em>&quot;AS AVAILABLE&quot;</em> basis without warranties of any kind. This tool generates the first compliant draft&mdash;the architect reviews, tests, and approves. We provide the abapGit packages and ABAP-Unit tests so you can compile and verify every output in your own Eclipse ADT environment.
+                <strong>AI-Assisted Drafts &mdash; Verify Before You Deploy:</strong> The findings, the extensibility route and the Clean Core Score come from a deterministic engine without a model; the solution designs, code transformations, test suites and narratives are generated using third-party generative AI models (Google Gemini API). All artifacts are provided on an <em>&quot;AS IS&quot;</em> and <em>&quot;AS AVAILABLE&quot;</em> basis without warranties of any kind. This tool generates the first draft&mdash;the architect reviews, tests, and approves. We provide the abapGit packages and ABAP-Unit tests so you can compile and verify every output in your own Eclipse ADT environment.
               </p>
               <p>
                 <strong>Limitation of Liability:</strong> In no event shall the administrator, contributors, or developers be held liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, loss of data, system crashes, integration failures, or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort arising in any way out of the use of this software, even if advised of the possibility of such damage.
               </p>
               <p>
-                <strong>Data Privacy & GDPR:</strong> Primary application storage and compute run on European cloud nodes in the Belgium (europe-west1) region. Uploaded code is processed via server-side proxy layers and saved in your encrypted, access-controlled project workspace (not used by Google to train its models, per the Gemini API terms). Users retain the right to erasure (Art. 17 GDPR) via the settings dashboard; AI and email subprocessors are disclosed separately.
+                <strong>Data Privacy & GDPR:</strong> Primary application storage and compute run on European cloud nodes in the Belgium (europe-west1) region. Uploaded code is processed via server-side proxy layers and saved in your encrypted, access-controlled project workspace (on the community key, not used by Google to train its models, per the paid Gemini API terms; with your own key, the terms of your Google account&apos;s tier apply, and free-tier terms differ). Users retain the right to erasure (Art. 17 GDPR) via the settings dashboard; AI and email subprocessors are disclosed separately.
               </p>
               <div className="pt-1 border-t border-gray-900">
                 <SapTrademarkNotice className="!text-gray-550" />

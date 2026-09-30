@@ -27,12 +27,27 @@ import { HOW_TO_PHASE_CONTENT } from '../lib/how-to-content';
 const TRACK_WORDS = /Node\.js|TypeScript|package\.json|XSUAA/i;
 const NAMES_THE_CAP_TRACK = /\bCAP track\b/i;
 
-/** Sentences that promise a CAP-only technology without saying so. */
+/** A clause that speaks of more than the CAP track. */
+const NAMES_ANOTHER_TRACK = /\b(RAP track|both tracks|either track|every track|all tracks)\b/i;
+
+/**
+ * Sentences that promise a CAP-only technology without saying so.
+ *
+ * The scope is read per clause, not per sentence: "CAP track" anywhere in the
+ * sentence used to waive the check, so "Node.js and TypeScript are used on both
+ * tracks, including the CAP track" passed (QA full review of fc787674705f,
+ * d05c95d093a2). Every clause that names a CAP-only technology has to name the
+ * CAP track itself and no other.
+ */
 function unscopedTrackClaims(text: string): string[] {
   return text
     .split(/(?<=[.!?])\s+|\n/)
     .map((s) => s.trim())
-    .filter((s) => TRACK_WORDS.test(s) && !NAMES_THE_CAP_TRACK.test(s));
+    .filter((s) =>
+      s
+        .split(/[,;:]\s+|\s+(?:—|–)\s+/)
+        .some((clause) => TRACK_WORDS.test(clause) && (!NAMES_THE_CAP_TRACK.test(clause) || NAMES_ANOTHER_TRACK.test(clause))),
+    );
 }
 
 interface HowToSchema {
@@ -116,6 +131,15 @@ test.describe('the how-to page promises no CAP-only technology on both tracks', 
     expect(unscopedTrackClaims('Audit the code conversion. The editor translates legacy ABAP statements into modern Node.js CAP TypeScript services.')).toHaveLength(1);
     expect(unscopedTrackClaims("Click 'Download Handover Package' to export a complete ZIP bundle with package.json configs, tests, and markdown documentation.")).toHaveLength(1);
     expect(unscopedTrackClaims('On the CAP track it is asked for a Node.js (TypeScript) project.')).toEqual([]);
+    // Naming the CAP track somewhere in the sentence is not scoping the claim to it.
+    expect(unscopedTrackClaims('Node.js and TypeScript are used on both tracks, including the CAP track.')).toHaveLength(1);
+    expect(unscopedTrackClaims('Node.js runs on the RAP track and the CAP track.')).toHaveLength(1);
+    // The sentences the page carries today, each scoped clause by clause.
+    for (const phase of Object.values(HOW_TO_PHASE_CONTENT)) {
+      for (const text of stringsIn(phase)) {
+        expect(unscopedTrackClaims(text), text).toEqual([]);
+      }
+    }
   });
 
   test('what a crawler reads — the descriptions and the HowTo block — names no CAP-only technology unscoped', async ({ page, request }) => {

@@ -2,7 +2,8 @@ import { test, expect, type APIRequestContext } from '@playwright/test';
 import { createHash, createHmac } from 'crypto';
 import JSZip from 'jszip';
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { connectAuthToEmulator, requireEmulator } from './helpers/emulator-guard';
 import { initializeApp as initAdminApp, getApps as getAdminApps } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-config.json';
@@ -236,14 +237,19 @@ test.describe('server side', () => {
   const read = async (path: string) => (await db.doc(path).get()).data()!;
 
   test.beforeAll(async () => {
+    // Fail closed before the first write. The Admin SDK goes to the emulator only
+    // because FIRESTORE_EMULATOR_HOST says so; without it, `projectId` below is
+    // the real project and the fixtures would land there (QA full review of
+    // fc787674705f, e737e396484f).
+    requireEmulator();
+    if (!process.env.FIRESTORE_EMULATOR_HOST) {
+      throw new Error('Refusing to run: FIRESTORE_EMULATOR_HOST is not set, so the Admin SDK would write to the real project.');
+    }
     const adminApp = getAdminApps()[0] ?? initAdminApp({ projectId: firebaseConfig.projectId });
     db = getFirestore(adminApp, firebaseConfig.firestoreDatabaseId);
 
     const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    try {
-      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-    } catch { /* already connected */ }
+    const auth = connectAuthToEmulator(getAuth(app));
     const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD);
     token = await cred.user.getIdToken();
     await db.doc(`users/${cred.user.uid}`).set({

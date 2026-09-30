@@ -116,6 +116,15 @@ const excelSheetName = (raw: string, fallback: string, taken: Set<string>): stri
   return candidate;
 };
 
+/**
+ * Whether running the suite would test something other than the current
+ * source: the suite itself is stale, or the code it runs against is
+ * (`generationBlockers`). The stale notice at the top of the page names which.
+ */
+const testRunBlocked = (project: Project | null): boolean =>
+  generationBlockers(project, 'testing').length > 0 ||
+  workflowSteps(project).find((p) => p.key === 'testing')?.state === 'stale';
+
 const ENV_SEGMENTS = [
   { value: 'mock', label: 'Mock Environment' },
   { value: 'live', label: 'Check tenant connection' },
@@ -169,6 +178,8 @@ export default function TestingSandboxPage() {
   const [showS4Password, setShowS4Password] = useState(false);
   const [isRequestingAccess, setIsRequestingAccess] = useState(false);
   const [accessRequestedMotivation, setAccessRequestedMotivation] = useState('');
+  /** Why the last access request did not go through. Empty when none has failed. */
+  const [accessRequestError, setAccessRequestError] = useState('');
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connected' | 'failed'>('disconnected');
   const [connectionMessage, setConnectionMessage] = useState('');
@@ -313,16 +324,23 @@ export default function TestingSandboxPage() {
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Save failed');
       // What the vault now holds — the connection test compares against this.
       setSavedS4({ url: s4Url, username: s4Username, authType: s4AuthType, btpDestinationJson });
-      
-      // Also save environment preference to project
-      const db = getDb();
-      const projectRef = doc(db, 'projects', projectId as string);
-      await setDoc(projectRef, { s4Environment: activeEnvTab }, { merge: true });
-      setProject(prev => prev ? { ...prev, s4Environment: activeEnvTab } : null);
-      
+      // The vault has it from here on: the password leaves the form and the save
+      // is reported as done. The environment preference below is a separate,
+      // optional write — its failure used to land in this catch and report a
+      // saved connection as a failed save, with the password still in the box
+      // (QA full review of fc787674705f, 983d23ce4dad).
       setS4Password(''); // Clear from client state
       setConnectionMessage("Configuration saved securely (encrypted).");
       setTimeout(() => setConnectionMessage(""), 3000);
+
+      try {
+        const db = getDb();
+        const projectRef = doc(db, 'projects', projectId as string);
+        await setDoc(projectRef, { s4Environment: activeEnvTab }, { merge: true });
+        setProject(prev => prev ? { ...prev, s4Environment: activeEnvTab } : null);
+      } catch (prefErr) {
+        console.error("Failed to save environment choice:", prefErr);
+      }
     } catch (err: any) {
       console.error("Failed to save S/4 config:", err);
       setConnectionMessage(err.message || "Failed to save configuration.");
@@ -429,7 +447,7 @@ export default function TestingSandboxPage() {
     setOdataMessage('');
     setOdataEntityTypes([]);
     setOdataSelectedService('');
-    setSandboxOutput(prev => prev + `\n[odata-explorer] Querying OData service catalog from ${s4Url}...\n`);
+    setSandboxOutput(prev => prev + `\n[odata-explorer] Querying OData service catalog from ${savedS4?.url || 'the saved connection'} (saved connection)...\n`);
 
     try {
       const token = await getAuth().currentUser?.getIdToken();
@@ -588,21 +606,16 @@ export default function TestingSandboxPage() {
     if (!uid || !profile) return;
 
     setIsRequestingAccess(true);
+    setAccessRequestError('');
     try {
-      const db = getDb();
-      
-      // 1. Create a request log in Firestore
-      await setDoc(doc(db, 'tenant_access_requests', uid), {
-        name: `${profile.firstName} ${profile.lastName}`,
-        email: profile.email,
-        motivation: (accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection').slice(0, 2000),
-        status: 'pending',
-        createdAt: serverTimestamp()
-      });
-
-      // 3. Trigger email notification
+      // 1. The route first, and its answer read (QA full review of fc787674705f,
+      // b1458e593475). It used to be awaited and ignored: a refused or failed
+      // request left the reader with a button that had done nothing and no word
+      // why. It also runs before the request log now, as it does in Settings —
+      // the log is create-only for the requester (firestore.rules), so a log
+      // written ahead of a failed request made every retry fail on the log.
       const token = await getAuth().currentUser?.getIdToken();
-      await fetch('/api/request-tenant-access', {
+      const res = await fetch('/api/request-tenant-access', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -615,6 +628,20 @@ export default function TestingSandboxPage() {
           motivation: accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection'
         })
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'The access request could not be sent. Please try again.');
+      }
+
+      // 2. The request log in Firestore, once the request is in.
+      const db = getDb();
+      await setDoc(doc(db, 'tenant_access_requests', uid), {
+        name: `${profile.firstName} ${profile.lastName}`,
+        email: profile.email,
+        motivation: (accessRequestedMotivation || 'Live S/4HANA Public Cloud Sandbox Connection').slice(0, 2000),
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
 
       // No local write here. The route sets `s4TenantAccessRequested` on the user
       // document and `useUserProfile` is subscribed to it, so the button flips to
@@ -623,6 +650,7 @@ export default function TestingSandboxPage() {
       // in its comment to do exactly that.
     } catch (err) {
       console.error("Failed to request tenant access:", err);
+      setAccessRequestError(err instanceof Error && err.message ? err.message : 'The access request could not be sent. Please try again.');
     } finally {
       setIsRequestingAccess(false);
     }
@@ -642,6 +670,10 @@ export default function TestingSandboxPage() {
     // Not against code generated from a previous source (E01-F01-US02). The
     // notice at the top of the page says which stage to regenerate first.
     if (generationBlockers(project, 'testing').length > 0) return;
+    // Nor while the testing model stage is off or has no key: the proxy refuses
+    // it, and "Regenerate Suite" used to start that request anyway
+    // (QA full review of fc787674705f, 55b40120e11b).
+    if (!modelAvailability.enabled('testing')) return;
     setGenError('');
     try {
       const result = await generateTestCases();
@@ -659,6 +691,11 @@ export default function TestingSandboxPage() {
   };
 
   const handleRun = async () => {
+    // A suite written for a previous source tests nothing about the current one,
+    // and neither does one built on stale upstream code — the notice at the top
+    // of the page says which stage to regenerate (QA full review of
+    // fc787674705f, a4439fbfd760).
+    if (testRunBlocked(project)) return;
     const selected = testCases.filter((_, i) => selectedTestCases.includes(i));
     try {
       await runTestCases(selected);
@@ -870,7 +907,7 @@ export default function TestingSandboxPage() {
 
       <StageHeader stage="testing">
         {isAbapCloud
-          ? 'Generate ABAP Unit stubs and run simulated validation in a secure SAP ADT environment.'
+          ? 'Generate ABAP Unit test class stubs. Nothing is compiled or executed in SAP ADT here: a mock run is simulated, and a tenant is only checked for connectivity.'
           : 'Generate test cases and run them against mocks in a restricted Node.js process.'}
       </StageHeader>
 
@@ -881,11 +918,11 @@ export default function TestingSandboxPage() {
           <ShieldCheck className="w-6 h-6 text-cc-ink-muted flex-shrink-0" aria-hidden="true" />
           <div>
             <h2 className="cc-text-h3 text-cc-ink mb-1">
-              {isAbapCloud ? 'ABAP Unit Compiler' : 'Real Execution, Against Mocks'}
+              {isAbapCloud ? 'ABAP Unit Stubs' : 'Real Execution, Against Mocks'}
             </h2>
             <p className="cc-text-cell text-cc-ink-muted">
               {isAbapCloud
-                ? 'Generates standardized ABAP Unit local test classes verifying RAP custom behavioral entities.'
+                ? 'Generates ABAP Unit local test class stubs for the RAP behaviour. They are not compiled or run here — an ABAP Unit run in your own system is what would give them a verdict.'
                 : 'The generated Node.js code really runs — in a restricted child process, against mocks. Real results for the code, not for a tenant.'
               }
             </p>
@@ -1089,19 +1126,21 @@ export default function TestingSandboxPage() {
                         </div>
                       </div>
 
-                      {/* Step 3 + 4 — Always visible */}
+                      {/* Step 3 + 4 — Always visible. Save comes first: the test
+                          runs against the saved connection and refuses an unsaved
+                          form (QA full review of fc787674705f, 229511ee85db). */}
                       <div className="flex gap-3 items-start">
                         <span className={STEP}>3</span>
                         <div>
-                          <p className="cc-text-h3 text-cc-ink">Test the Connection</p>
-                          <p className="cc-text-cell text-cc-ink-muted">Click <strong>"Test Connection"</strong> to verify the handshake. The sandbox terminal below will show the live connection log.</p>
+                          <p className="cc-text-h3 text-cc-ink">Save the Connection</p>
+                          <p className="cc-text-cell text-cc-ink-muted">Click <strong>"Save Connection"</strong> to store the config, encrypted on the server. The Mock Environment tab is where the generated suite runs.</p>
                         </div>
                       </div>
                       <div className="flex gap-3 items-start">
                         <span className={STEP}>4</span>
                         <div>
-                          <p className="cc-text-h3 text-cc-ink">Save the Connection</p>
-                          <p className="cc-text-cell text-cc-ink-muted">Click <strong>"Save Connection"</strong> to persist the config. The Mock Environment tab is where the generated suite runs.</p>
+                          <p className="cc-text-h3 text-cc-ink">Test the Connection</p>
+                          <p className="cc-text-cell text-cc-ink-muted">Click <strong>"Test Connection"</strong> to verify the handshake with the saved connection. The sandbox terminal below will show the live connection log.</p>
                         </div>
                       </div>
 
@@ -1612,6 +1651,11 @@ export default function TestingSandboxPage() {
                       >
                         {isRequestingAccess ? 'Sending...' : 'Request Access for Live S/4HANA'}
                       </CcButton>
+                      {accessRequestError && (
+                        <div data-access-request-error role="alert">
+                          <CcMessageStrip state="error">{accessRequestError}</CcMessageStrip>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1636,7 +1680,7 @@ export default function TestingSandboxPage() {
             {testCases.length > 0 && (
               <CcButton
                 onClick={handleGenerate}
-                disabled={isGenerating}
+                disabled={isGenerating || !modelAvailability.enabled('testing')}
                 icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
               >
                 {isGenerating ? 'Generating...' : 'Regenerate Suite'}
@@ -1715,6 +1759,25 @@ export default function TestingSandboxPage() {
                   </div>
                 )}
 
+                {/* Why "Regenerate Suite" is disabled — the same way out the
+                    empty state names. */}
+                {!modelAvailability.enabled('testing') && (
+                  <div data-regenerate-unavailable>
+                    <CcMessageStrip state="neutral">
+                      {modelAvailability.keyAvailable
+                        ? 'Regenerating is off: turn the testing stage back on in Settings.'
+                        : 'Regenerating needs a model key: add your own Gemini API key in Settings.'}
+                    </CcMessageStrip>
+                  </div>
+                )}
+
+                {/* The reason itself is in the notice at the top of the page. */}
+                {testRunBlocked(project) && (
+                  <div data-stale-run-hint>
+                    <CcMessageStrip state="neutral">Running is off until the suite is regenerated for the current source — the notice at the top says which stage comes first.</CcMessageStrip>
+                  </div>
+                )}
+
                 {/* Not a second lock notice — the one above this panel is the
                     only one on this screen (roadmap 1.7). What belongs beside a
                     disabled button is the way forward, so that is all this says. */}
@@ -1752,7 +1815,7 @@ export default function TestingSandboxPage() {
                   <CcButton
                     variant="primary"
                     onClick={handleRun}
-                    disabled={isRunning || selectedTestCases.length === 0 || (activeEnvTab === 'live' && !s4Url) || (activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION.locked)}
+                    disabled={isRunning || selectedTestCases.length === 0 || (activeEnvTab === 'live' && !s4Url) || (activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION.locked) || testRunBlocked(project)}
                     icon={isRunning ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Play className="w-4 h-4" />}
                   >
                     {isRunning ? 'Running...' : 'Run Selected'}
@@ -1805,13 +1868,13 @@ export default function TestingSandboxPage() {
               <div className="flex items-center gap-2 text-cc-code-muted ml-1 md:ml-2 min-w-0">
                 <TerminalIcon className="w-4 h-4 shrink-0" />
                 <span className="text-[12px] font-cc-mono truncate">
-                  {isAbapCloud ? 'adt-test-cockpit ~ execute aunit' : 'sandbox-runtime ~ node app.js'}
+                  {isAbapCloud ? 'abap-unit-stubs ~ simulated run' : 'sandbox-runtime ~ node app.js'}
                 </span>
               </div>
             </div>
             <CcButton variant="ghost" onClick={() => setShowTestCode(!showTestCode)}>
               {isAbapCloud
-                ? (showTestCode ? 'View ADT Output' : 'View ABAP Unit Class')
+                ? (showTestCode ? 'View Simulated Output' : 'View ABAP Unit Class')
                 : (showTestCode ? 'View Output' : 'View Module Code')
               }
             </CcButton>
@@ -1874,7 +1937,7 @@ export default function TestingSandboxPage() {
                 <CcProvenanceChip value="proposed" />
               </div>
               <p className="cc-text-title text-cc-ink mb-4">
-                {project?.coverageEstimate?.percentage ? `${project.coverageEstimate.percentage}%` : 'N/A'}
+                {typeof project?.coverageEstimate?.percentage === 'number' ? `${project.coverageEstimate.percentage}%` : 'N/A'}
               </p>
 
               <div className="space-y-4">

@@ -8,6 +8,7 @@ import type { RunCost } from '@/lib/run-cost';
 import CcButton from './Button';
 import CcMessageStrip from './MessageStrip';
 import CcMessageBox from './MessageBox';
+import { newlyDoneAnnouncement } from './run-announcement';
 
 /**
  * A long run, honestly — `DESIGN.md` §2.8 (ADR-019).
@@ -96,12 +97,11 @@ export default function CcRunIndicator({
 
   // One announcement per stage, on the transition into `done`. Keyed by stage
   // id, so a re-render — or a counter ticking — cannot produce a second.
+  // Several stages finishing in one render are named together, in one update
+  // (`./run-announcement.ts`).
   useEffect(() => {
-    for (const stage of stages) {
-      if (stage.status !== 'done' || announced.current.has(stage.id)) continue;
-      announced.current.add(stage.id);
-      setAnnouncement(stage.result ? `${stage.label}: ${stage.result}` : stage.label);
-    }
+    const said = newlyDoneAnnouncement(stages, announced.current);
+    if (said !== null) setAnnouncement(said);
   }, [stages]);
 
   return (

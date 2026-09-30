@@ -46,7 +46,8 @@ test.describe('the lock is named', () => {
 test.describe('the lock holds in code', () => {
   test('the route refuses a live run before it measures anything', () => {
     const src = read('app/api/run-tests/route.ts');
-    const body = src.indexOf('await req.json()');
+    // The body is read under a bound since the QA full review of fc787674705f.
+    const body = src.indexOf('runRequest = await readBoundedJson(');
     const lock = src.indexOf("s4Environment === 'live' && LIVE_TEST_EXECUTION.locked");
     const refusal = src.indexOf('{ status: 403 }', lock);
     // Refused straight after the body is read: before the project lookup, the runner choice, the credentials,

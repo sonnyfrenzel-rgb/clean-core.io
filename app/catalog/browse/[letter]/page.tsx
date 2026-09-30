@@ -24,7 +24,7 @@ export async function generateMetadata({
   const label = L === '0' ? '0–9' : L;
   return {
     title: `SAP objects starting with ${label} — Clean Core catalog | Clean-Core.io`,
-    description: `SAP standard objects starting with ${label} and their released S/4HANA API successors.`,
+    description: `SAP standard objects starting with ${label}: their clean core level and, where SAP names one, their released S/4HANA API successor.`,
     alternates: { canonical: `${BASE}/catalog/browse/${letter.toLowerCase()}` },
   };
 }

@@ -305,7 +305,9 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     // ones the file is for; drafts such as the design or the generated code are
     // not exported at all.
     const attested = await zip.file(USER_ATTESTED_FILE)!.async('string');
-    expect(attested).toContain('not covered by the pack');
+    // Labelled as unvouched-for, not as outside the signature: the manifest binds
+    // its bytes by digest (QA full review of fc787674705f, ff164aae719c).
+    expect(attested).toMatch(/nobody vouches for what it says/i);
     for (const needle of ['FORGED-NAME Approved by the board', 'forged-owner@example.com', 'Retire / Decommission', 'FORGED-OVERRIDE Nothing to migrate']) expect(attested).toContain(needle);
     expect(attested).toContain('overrides the engine');
     for (const needle of ['FORGED-DESIGN', 'FORGED-CODE', 'FORGED-DOCS', 'FORGED-BUSINESS-DOCS', 'FORGED-DECK', 'FORGED-TITLE', 'Board-approved functional gap']) {

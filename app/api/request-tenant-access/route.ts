@@ -5,9 +5,21 @@ import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, issueTe
 import { APP_BASE_URL, CONTACT_EMAIL, USER_MAIL_FROM } from '@/lib/constants';
 import { htmlToText } from '@/lib/mail-text';
 import { escapeHtml } from '@/lib/utils';
-import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
+import { assertRateLimit } from '@/lib/rate-limit';
+import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 import { wrapEmailDocument } from '@/lib/email-layout';
 import { buildTenantPendingEmail, TENANT_PENDING_SUBJECT } from '@/lib/tenant-email';
+
+/**
+ * What a tenant request may carry. The body is a name and a few sentences of
+ * motivation; 32 KiB is ample for both and is read under a deadline, so an
+ * oversized body is refused before it is parsed, escaped and mailed (QA full
+ * review of fc787674705f, 71dbd0fbe274). The fields are cut to the lengths the
+ * testing page already stores.
+ */
+const TENANT_REQUEST_BODY_LIMITS = { maxBytes: 32 * 1024, timeoutMs: 10_000 };
+const MAX_NAME_CHARS = 200;
+const MAX_MOTIVATION_CHARS = 2000;
 
 export async function POST(request: NextRequest) {
   // Whether the administrator actually received the approval token. The route
@@ -23,8 +35,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     }
 
+    // Per account, not per account and address: with the client IP in the key,
+    // every network the same account used opened a fresh window of three
+    // administrator and applicant mails (QA full review of fc787674705f,
+    // 13e2cad2f979).
     try {
-      await assertRateLimit(`request-tenant:${decodedToken.uid}:${getClientIp(request)}`, 3, 60 * 60 * 1000);
+      await assertRateLimit(`request-tenant:${decodedToken.uid}`, 3, 60 * 60 * 1000);
     } catch (rateErr: any) {
       return NextResponse.json(
         { error: rateErr.message || 'Too many requests. Please wait and try again.' },
@@ -56,7 +72,15 @@ export async function POST(request: NextRequest) {
       throw gateErr;
     }
 
-    const body = await request.json();
+    let body: { name?: unknown; motivation?: unknown } | null;
+    try {
+      body = await readBoundedJson(new Response(request.body, { headers: request.headers }), TENANT_REQUEST_BODY_LIMITS);
+    } catch (bodyErr) {
+      if (bodyErr instanceof ResponseLimitError) {
+        return NextResponse.json({ error: 'The request is too large.' }, { status: 413 });
+      }
+      throw bodyErr;
+    }
     const uid = decodedToken.uid;
     const rawEmail = decodedToken.email || '';
     if (!rawEmail) {
@@ -64,8 +88,8 @@ export async function POST(request: NextRequest) {
     }
     // Values inserted into the HTML email must be HTML-escaped.
     const email = escapeHtml(rawEmail);
-    const name = escapeHtml(body.name || (decodedToken as any).name || rawEmail);
-    const motivation = escapeHtml(body.motivation || '');
+    const name = escapeHtml(String(body?.name || (decodedToken as any).name || rawEmail).slice(0, MAX_NAME_CHARS));
+    const motivation = escapeHtml(String(body?.motivation || '').slice(0, MAX_MOTIVATION_CHARS));
 
     // Action-bound, expiring tokens; fail-closed (no fallback secret). Both carry
     // this request's one-time nonce (UX-152): whichever link is used first
@@ -235,35 +259,41 @@ export async function POST(request: NextRequest) {
         console.log(`[Email] Sent tenant request to the administrator. id=${sent?.id ?? 'unknown'}`);
       }
 
-      // ALSO send a pending confirmation email to the applicant (professional S/4HANA integration pending email)
-      try {
-        console.log('[Email] Sending the tenant request confirmation to the applicant...');
-        // The applicant's copy is a user mail: plain layout, one link
-        // (`lib/tenant-email.ts`, roadmap 3.0.9).
-        const pendingHtml = wrapEmailDocument(buildTenantPendingEmail({ name, recipient: email }));
+      // The applicant's "your request is being reviewed" mail goes out only when
+      // an administrator actually holds the request. It was sent regardless, so a
+      // rejected administrator mail left the applicant told their request was
+      // under review while the route answered 502 and nobody had the approval
+      // link (QA full review of fc787674705f, c4bdccb8bd79).
+      if (adminNotified) {
+        try {
+          console.log('[Email] Sending the tenant request confirmation to the applicant...');
+          // The applicant's copy is a user mail: plain layout, one link
+          // (`lib/tenant-email.ts`, roadmap 3.0.9).
+          const pendingHtml = wrapEmailDocument(buildTenantPendingEmail({ name, recipient: email }));
 
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${resendApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: USER_MAIL_FROM,
-            // The raw address. `email` is the HTML-escaped copy for the markup;
-            // an address with an `&` or `'` in it used to be mailed as
-            // `&amp;`/`&#39;` — a different mailbox, or none (roadmap 3.0.9).
-            to: rawEmail,
-            subject: TENANT_PENDING_SUBJECT,
-            reply_to: CONTACT_EMAIL,
-            html: pendingHtml,
-            // HTML-only was a spam signal (roadmap 3.0.9, seed run 20260924-a).
-            text: htmlToText(pendingHtml),
-          }),
-        });
-        console.log('[Email] Success sending pending tenant connection welcome email to applicant.');
-      } catch (err) {
-        console.error('[Email] Failed to send pending email to applicant:', err);
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${resendApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: USER_MAIL_FROM,
+              // The raw address. `email` is the HTML-escaped copy for the markup;
+              // an address with an `&` or `'` in it used to be mailed as
+              // `&amp;`/`&#39;` — a different mailbox, or none (roadmap 3.0.9).
+              to: rawEmail,
+              subject: TENANT_PENDING_SUBJECT,
+              reply_to: CONTACT_EMAIL,
+              html: pendingHtml,
+              // HTML-only was a spam signal (roadmap 3.0.9, seed run 20260924-a).
+              text: htmlToText(pendingHtml),
+            }),
+          });
+          console.log('[Email] Success sending pending tenant connection welcome email to applicant.');
+        } catch (err) {
+          console.error('[Email] Failed to send pending email to applicant:', err);
+        }
       }
     } else {
       // Security: Never log approval/reject tokens in production (F-03)

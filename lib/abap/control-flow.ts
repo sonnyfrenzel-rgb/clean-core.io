@@ -133,8 +133,12 @@ function armsOf(
   const arms: BranchArm[] = [];
   const headerIndexes: number[] = [];
 
+  // A terminated block closes on its ENDIF/ENDCASE. An unterminated one has no
+  // closer: `closeIndex` is its last body statement, which belongs to the last
+  // arm and must not be cut off as if it were the closing line.
+  const bodyEnd = block.terminated ? block.closeIndex : block.closeIndex + 1;
   if (block.kind === 'if') headerIndexes.push(block.openIndex);
-  for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
+  for (let i = block.openIndex + 1; i < bodyEnd; i++) {
     if (!ARM_KEYWORDS.has(statements[i].keyword)) continue;
     // Only arms of *this* construct — an ELSE of a nested IF belongs to that one.
     const enclosing = structure.enclosing[i];
@@ -146,7 +150,9 @@ function armsOf(
     const header = statements[headerIndexes[a]];
     const kind = a === 0 && block.kind === 'if' ? 'if' : armKind(header);
     const nextHeader = headerIndexes[a + 1];
-    const closerLine = statements[block.closeIndex].lineStart;
+    const closerLine = block.terminated
+      ? statements[block.closeIndex].lineStart
+      : statements[block.closeIndex].lineEnd + 1;
     const boundary = nextHeader === undefined ? closerLine : statements[nextHeader].lineStart;
     arms.push({
       kind,
