@@ -236,3 +236,66 @@ test.describe('Escape hands the focus back to what opened the panel', () => {
     await expect(trigger, 'the focus fell on the body instead of the button that opened the panel').toBeFocused();
   });
 });
+
+test.describe('one entry per width (D.8, Sonny 30.09.2026)', () => {
+  /**
+   * The shell bar carries the assistant from `sm` up; the floating button is
+   * off there unless the reader saved it on, and it is the way in on a phone,
+   * where the shell bar has no room for the header button. Counted on the
+   * visible entries rather than asserted on one element, so a third entry
+   * appearing anywhere turns this red.
+   */
+  const DEFAULT_OWNER = `${unique('assistant-entry')}@cleancore-test.io`;
+  const OPTED_IN = `${unique('assistant-entry-on')}@cleancore-test.io`;
+  const ENTRIES = '[data-assistant-trigger="header"], [data-chatbot-toggle]';
+
+  const seed = async (email: string, extra: Record<string, unknown>) => {
+    const cred = await createUserWithEmailAndPassword(clientAuth, email, PASSWORD);
+    await adminSetDoc('users', cred.user.uid, {
+      firstName: 'Assistant', lastName: 'Entry', email,
+      tier: 'pilot', status: 'approved',
+      transformationsUsed: 0, transformationsLimit: 5, createdAt: new Date(),
+      termsVersionAccepted: TERMS_VERSION, termsAcceptedAt: new Date(),
+      ...extra,
+    });
+  };
+
+  test.beforeAll(async () => {
+    test.setTimeout(120 * 1000);
+    // No `desktopChatbotEnabled` at all: the profile of everyone who never saved it.
+    await seed(DEFAULT_OWNER, {});
+    await seed(OPTED_IN, { desktopChatbotEnabled: true });
+  });
+
+  async function visibleEntries(page: Page): Promise<string[]> {
+    return page.locator(ENTRIES).evaluateAll((els) =>
+      els
+        .filter((el) => (el as HTMLElement).getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden')
+        .map((el) => (el.hasAttribute('data-chatbot-toggle') ? 'floating' : 'header')),
+    );
+  }
+
+  test('a default profile has exactly one entry at 1280 px (the header) and the floating one at 390 px', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await signIn(page, DEFAULT_OWNER);
+    await page.goto('/knowledge', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-assistant-trigger="header"]')).toBeVisible({ timeout: 90000 });
+    // Wait for the profile to land, so "hidden" is not just "not loaded yet".
+    await expect(page.locator('[data-account-menu]')).not.toHaveText('', { timeout: 60000 });
+    await expect.poll(() => visibleEntries(page), { timeout: 30000 }).toEqual(['header']);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect.poll(() => visibleEntries(page), { timeout: 30000 }).toEqual(['floating']);
+    await openFrom(page, page.locator('[data-chatbot-toggle]'));
+  });
+
+  test('a saved "on" keeps the floating button on desktop', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await signIn(page, OPTED_IN);
+    await page.goto('/knowledge', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-chatbot-toggle]')).toBeVisible({ timeout: 90000 });
+    await openFrom(page, page.locator('[data-chatbot-toggle]'));
+  });
+});

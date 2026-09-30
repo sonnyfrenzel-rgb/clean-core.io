@@ -465,13 +465,14 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
    * The shell bar has the named trigger ("Ask this case" / "Ask the assistant")
    * from breakpoint `sm` up, and the help and account menus carry it too. Below
    * `sm` the shell bar has no room for it, so there this floating button is the
-   * one direct way in and it is always shown. From `sm` up it is a shortcut the
-   * reader chose: the setting "Floating assistant button" on /settings decides,
-   * as it did before — the breakpoint is now the header's own (`sm`, not `md`),
-   * so with the setting off there is exactly one entry at every width, and the
-   * panel brings its own close button instead of relying on this one.
+   * one direct way in and it is always shown. From `sm` up it is off unless
+   * the reader switched it on ("Floating assistant button" on /settings, saved
+   * as `true` — Sonny, 30.09.2026): the header button is the entry there, and a
+   * second one for the same panel is noise. Signed out there is no profile, so
+   * there is no floating button on desktop either. The panel brings its own
+   * close button instead of relying on this one.
    */
-  const floatingOffOnDesktop = profile?.desktopChatbotEnabled === false;
+  const floatingOffOnDesktop = profile?.desktopChatbotEnabled !== true;
   const openToggle = () => {
     openerRef.current = toggleRef.current?.querySelector('button') ?? null;
     setIsOpen((prev) => !prev);
