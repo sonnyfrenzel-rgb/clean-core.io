@@ -3,6 +3,8 @@
 import { useMemo } from 'react';
 import { anchorNarrative } from '@/lib/abap/narrative-anchors';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
+import CcAnchor from '@/components/cc/Anchor';
+import CcWhyPopover from '@/components/cc/WhyPopover';
 
 /**
  * The model's prose, with each sentence marked by whether it points at code.
@@ -45,15 +47,15 @@ export default function AnchoredNarrative({
 
   return (
     <div className={className}>
-      <p className="text-slate-655 text-sm leading-relaxed break-words">
+      <p className="cc-text-body text-cc-ink break-words">
         {result.sentences.map((s, i) => (
           <span
             key={i}
             className={
               s.status === 'invalid-anchor'
-                ? 'bg-red-50 border-b border-red-300'
+                ? 'bg-cc-error-bg border-b border-cc-error'
                 : s.status === 'unevidenced' && contractHonoured
-                  ? 'text-slate-400'
+                  ? 'text-cc-ink-muted'
                   : undefined
             }
           >
@@ -61,19 +63,18 @@ export default function AnchoredNarrative({
             {s.anchors.length > 0 && (
               <span className="ml-1 inline-flex flex-wrap gap-1 align-baseline">
                 {s.anchors.map((a, j) => (
-                  <span
+                  <CcAnchor
                     key={j}
-                    title={a.findingId ? `Finding ${a.findingId}` : 'Cited line range'}
-                    className="inline-flex items-center rounded bg-emerald-50 border border-emerald-200 px-1 py-0 font-mono text-[10px] font-bold text-emerald-800"
+                    label={`${a.findingId ? `Finding ${a.findingId}` : 'Cited line range'}, line ${a.lineStart}${a.lineEnd !== a.lineStart ? ` to ${a.lineEnd}` : ''}`}
                   >
-                    {a.lineStart}
+                    L{a.lineStart}
                     {a.lineEnd !== a.lineStart ? `–${a.lineEnd}` : ''}
-                  </span>
+                  </CcAnchor>
                 ))}
               </span>
             )}
             {s.status === 'invalid-anchor' && (
-              <span className="ml-1 inline-flex items-center rounded bg-red-100 border border-red-300 px-1 py-0 font-mono text-[10px] font-bold text-red-800">
+              <span className="ml-1 font-cc-mono text-[12px] font-semibold text-cc-error">
                 cites {s.rejected.join(' ')} — no such evidence
               </span>
             )}{' '}
@@ -82,27 +83,33 @@ export default function AnchoredNarrative({
       </p>
 
       {contractHonoured ? (
-        <p className="mt-3 text-[11px] font-bold text-slate-500">
-          <span className="text-slate-900">
+        <div className="mt-3 flex flex-wrap items-center gap-x-1 cc-text-meta text-cc-ink-muted">
+          <span className="text-cc-ink">
             {result.anchoredCount} of {result.totalCount} sentences
           </span>{' '}
           cite a line of this program
           {result.traceabilityRate !== null && ` (${result.traceabilityRate}%)`}
           {result.unevidencedCount > 0 && (
-            <span className="text-slate-400">
+            <span>
               {' '}
               · {result.unevidencedCount} uncited, shown greyed
             </span>
           )}
           {result.invalidCount > 0 && (
-            <span className="text-red-600">
+            <span className="text-cc-error">
               {' '}
               · {result.invalidCount} cite evidence that does not exist
             </span>
           )}
-        </p>
+          <CcWhyPopover
+            subject={`Traceability, ${result.anchoredCount} of ${result.totalCount} sentences`}
+            provenance="reconstructed"
+            basis="Each sentence of the model's summary is checked for a line or finding citation, and each citation against the findings of this run. The summary itself is not signed."
+            evidence="The line anchors after each sentence."
+          />
+        </div>
       ) : (
-        <p className="mt-3 text-[11px] font-bold text-slate-400">
+        <p className="mt-3 cc-text-meta text-cc-ink-muted">
           This narrative carries no line citations. Runs created before the citation
           contract, or a model that ignored it — either way, none of it is traced to code.
         </p>

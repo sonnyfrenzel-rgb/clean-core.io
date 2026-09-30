@@ -3,6 +3,13 @@
 import { useEffect, useState } from 'react';
 import { ListChecks } from 'lucide-react';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
+import CcTable from '@/components/cc/Table';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import CcWhyPopover from '@/components/cc/WhyPopover';
+import { CcCleanCoreLevel } from '@/components/cc/Identifier';
+import { levelChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
+import type { ProvenanceValue } from '@/lib/provenance';
 import { getAuth } from '@/lib/firebase';
 import type { DataCouplingEntry, CodeInventoryItem } from '@/lib/types';
 import {
@@ -118,6 +125,8 @@ export default function AbcdClassificationPanel({
   const ownObjects = items.filter((i) => i.provenance === 'own-object').length;
   const estimated = items.filter((i) => i.provenance === 'heuristic').length;
 
+  const whyProvenance = estimated === 0 && ownObjects === 0 ? 'imported' : 'reconstructed';
+
   return (
     <CollapsibleAccordion
       icon={<ListChecks size={16} />}
@@ -128,34 +137,60 @@ export default function AbcdClassificationPanel({
     >
       {/* Say where each grade comes from, and keep the audit-pack exclusion
           verbatim. */}
-      <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-700 leading-snug">
-        <span className="text-emerald-700">{fromSap} of {total} grades</span> come from SAP&apos;s
-        published object data (Cloudification Repository + SAP&apos;s classicAPI/noAPI file)
-        {couplings.length > 0
-          ? '; a table is graded for the access your code makes, so reading a table SAP will not release is C and writing to it is D.'
-          : '.'}
-        {ownObjects > 0 && (
-          <> <span className="text-emerald-700">{ownObjects}</span> are your own tables, graded B as
-          classic ABAP working on its own data.</>
-        )}
-        {estimated > 0 && (
-          <> <span className="text-amber-700">{estimated}</span> could not be looked up — SAP has not
-          classified them, so those are estimated from access type, risk and object type.</>
-        )}{' '}
-        Not an authoritative SAP ATC classification and <strong>not part of the signed audit pack</strong>.
-        Verify each grade with SAP ADT / ATC for your target release before relying on it.
-      </div>
-      {/* Distribution bar */}
       <div className="mb-4">
-        <div className="flex h-3 w-full overflow-hidden rounded-full border border-slate-100">
+        <CcMessageStrip state="information">
+          <b className="font-semibold">{fromSap} of {total} grades</b> come from SAP&apos;s
+          published object data (Cloudification Repository + SAP&apos;s classicAPI/noAPI file)
+          {couplings.length > 0
+            ? '; a table is graded for the access your code makes, so reading a table SAP will not release is C and writing to it is D.'
+            : '.'}
+          {ownObjects > 0 && (
+            <> <b className="font-semibold">{ownObjects}</b> are your own tables, graded B as
+            classic ABAP working on its own data.</>
+          )}
+          {estimated > 0 && (
+            <> <b className="font-semibold">{estimated}</b> could not be looked up — SAP has not
+            classified them, so those are estimated from access type, risk and object type.</>
+          )}{' '}
+          Not an authoritative SAP ATC classification and <strong>not part of the signed audit pack</strong>.
+          Verify each grade with SAP ADT / ATC for your target release before relying on it.
+        </CcMessageStrip>
+      </div>
+      {/* Distribution bar — level colours from the fixed list (A blue, never
+          green); "not assessed" is no level and wears the not-determined hatch. */}
+      <div className="mb-4">
+        <div className="flex h-3 w-full overflow-hidden rounded-full border border-cc-line">
           {ALL_GRADES.map((g) =>
             dist[g] > 0 ? (
-              <div key={g} style={{ width: `${(dist[g] / total) * 100}%`, background: ABCD_META[g].color }} title={`${g}: ${dist[g]}`} />
+              g === 'Unknown' ? (
+                <div
+                  key={g}
+                  data-not-determined=""
+                  className={NOT_DETERMINED_CHART.bg}
+                  style={{ width: `${(dist[g] / total) * 100}%`, ...NOT_DETERMINED_CHART.hatch }}
+                  title={`not assessed: ${dist[g]}`}
+                />
+              ) : (
+                <div
+                  key={g}
+                  className={levelChartColor(g).bg}
+                  style={{ width: `${(dist[g] / total) * 100}%` }}
+                  title={`${g}: ${dist[g]}`}
+                />
+              )
             ) : null,
           )}
         </div>
-        <div className="mt-2 text-[11px] font-semibold text-slate-500">
-          {cleanPct}% cloud-ready or stable (A–B) · {dist.C} to review · {dist.D} to replace{dist.Unknown > 0 ? ` · ${dist.Unknown} not assessed` : ''}
+        <div className="mt-2 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted">
+          <span>
+            {cleanPct}% cloud-ready or stable (A–B) · {dist.C} to review · {dist.D} to replace{dist.Unknown > 0 ? ` · ${dist.Unknown} not assessed` : ''}
+          </span>
+          <CcWhyPopover
+            subject={`Level distribution, ${cleanPct}% A–B`}
+            provenance={whyProvenance}
+            basis={`${fromSap} of ${total} grades from SAP's published object data, ${ownObjects} own objects graded B, ${estimated} estimated from access type, risk and object type. One grade per object, counted by row.`}
+            evidence="The per-object table below, each row with where its letter comes from."
+          />
         </div>
       </div>
 
@@ -163,58 +198,60 @@ export default function AbcdClassificationPanel({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
         {GRADES.map((g) => (
           <div key={g} className="flex items-start gap-2">
-            <span className={`shrink-0 mt-0.5 inline-flex items-center justify-center w-6 h-6 rounded-lg text-[11px] font-black border ${ABCD_META[g].badge}`}>{g}</span>
+            <span className="shrink-0 mt-0.5">
+              <CcCleanCoreLevel value={g} />
+            </span>
             <div>
-              <div className="text-xs font-bold text-slate-800">
+              <div className="cc-text-identifier text-cc-ink">
                 {ABCD_META[g].label}
-                <span className="ml-1 text-[10px] font-semibold text-slate-400">· ATC {ABCD_META[g].atcReading} (our reading)</span>
+                <span className="ml-1 cc-text-meta text-cc-ink-muted">· ATC {ABCD_META[g].atcReading} (our reading)</span>
               </div>
-              <div className="text-[11px] text-slate-500 leading-snug">{ABCD_META[g].description}</div>
+              <div className="cc-text-cell text-cc-ink-muted">{ABCD_META[g].description}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* Per-object grades */}
-      <div className="overflow-x-auto -mx-2">
-        <table className="w-full text-xs border-collapse min-w-[460px]">
-          <thead>
-            <tr className="border-b border-slate-100">
-              <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Object</th>
-              <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grade</th>
-              <th className="py-2 px-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden sm:table-cell">Detail</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {items.map((it, i) => (
-              <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                <td className="py-2 px-2 font-mono font-bold text-slate-800">{it.name}</td>
-                <td className="py-2 px-2 whitespace-nowrap">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border ${ABCD_META[it.grade].badge}`}>
-                    {it.grade} · {ABCD_META[it.grade].short}
-                  </span>
-                  <span
-                    className={`ml-1.5 text-[9px] font-bold uppercase tracking-wider ${it.provenance === 'heuristic' ? 'text-amber-600' : 'text-emerald-600'}`}
-                    title={gradeOrigin(it)}
-                  >
-                    {PROVENANCE_CHIP[it.provenance]}
-                  </span>
-                </td>
-                <td className="py-2 px-2 text-slate-500 hidden sm:table-cell">{it.sub || '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <CcTable
+        caption="Clean core level per object"
+        columns={[
+          { key: 'object', label: 'Object' },
+          { key: 'grade', label: 'Grade' },
+          { key: 'detail', label: 'Detail' },
+        ]}
+        rows={items.map((it, i) => ({
+          key: `${it.name}-${i}`,
+          cells: {
+            object: <span className="font-cc-mono font-semibold">{it.name}</span>,
+            grade: (
+              <span className="inline-flex flex-wrap items-center gap-2">
+                <CcCleanCoreLevel value={it.grade} />
+                <span className="cc-text-meta text-cc-ink">{ABCD_META[it.grade].short}</span>
+                <span title={gradeOrigin(it)}>
+                  <CcProvenanceChip value={PROVENANCE_CHIP[it.provenance].value} note={PROVENANCE_CHIP[it.provenance].note} />
+                </span>
+              </span>
+            ),
+            detail: <span className="text-cc-ink-muted">{it.sub || '—'}</span>,
+          },
+        }))}
+      />
     </CollapsibleAccordion>
   );
 }
 
-const PROVENANCE_CHIP: Record<GradeProvenance, string> = {
-  catalog: 'SAP data',
-  'catalog-residual': 'SAP data',
-  'own-object': 'own object',
-  heuristic: 'est.',
+/**
+ * Where a row's letter comes from, as a provenance chip (DESIGN.md §4). A grade
+ * read out of SAP's files is *Imported*; one derived here — the own-table rule
+ * or the estimate from access type, risk and object type — is *Reconstructed*,
+ * with the qualifier the row used to print on its own ("own object", "est.").
+ */
+const PROVENANCE_CHIP: Record<GradeProvenance, { value: ProvenanceValue; note?: string }> = {
+  catalog: { value: 'imported', note: 'SAP data' },
+  'catalog-residual': { value: 'imported', note: 'SAP data' },
+  'own-object': { value: 'reconstructed', note: 'own object' },
+  heuristic: { value: 'reconstructed', note: 'estimated' },
 };
 
 /**
