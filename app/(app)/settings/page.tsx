@@ -1,18 +1,18 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useUserProfile, UserProfile } from '@/hooks/useUserProfile';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { useRouter } from 'next/navigation';
-import { 
-  User, Mail, Shield, Zap, Crown, Infinity, 
-  Clock, Edit2, CheckCircle2, AlertCircle, 
-  LifeBuoy, Send, MessageSquare, Eye, EyeOff,
+import {
+  User, Mail, Shield, Zap, Infinity,
+  Clock, Edit2, CheckCircle2, AlertCircle,
+  Send, Eye, EyeOff,
   Trash2, KeyRound, Loader2,
-  Database, Save, ShieldCheck, Key, RefreshCw,
-  ArrowLeft, Copy, Download, Smartphone, X, ArrowRight, Globe,
+  Database, Save, ShieldCheck, Key,
+  ArrowLeft, Copy, Smartphone, X, ArrowRight, Globe,
   BookOpen, ExternalLink, HelpCircle
 } from 'lucide-react';
-import { addDoc, collection, serverTimestamp, getDocs, query, where, deleteDoc, doc, setDoc } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { getDb, getAuth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import {
   EmailAuthProvider,
@@ -40,7 +40,65 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcSelect from '@/components/cc/Select';
 import CcTextarea from '@/components/cc/Textarea';
 import CcToast from '@/components/cc/Toast';
+import CcSkeleton from '@/components/cc/Skeleton';
+import CcDateText from '@/components/cc/DateText';
+import { STATE_CLASSES } from '@/components/cc/state';
+import type { SemanticState } from '@/lib/provenance';
 import { cn } from '@/lib/utils';
+
+/** The one card of this page: DESIGN.md §1.4, 12 px radius, one line, `shadow-cc`. */
+const CARD = 'rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc';
+/** A quiet block inside a card — a note, an explanation, the strength meter. */
+const INSET = 'rounded-cc-row border border-cc-line bg-cc-surface-muted p-4';
+/** A link in running text. */
+const TEXT_LINK = 'font-semibold text-cc-brand-strong underline underline-offset-2 hover:text-cc-brand-deep';
+
+/**
+ * A state in words with its dot — the shape of `CcObjectStatus` (§2.4, "Status
+ * als Text mit Punkt — nie nur Farbe") for the account states this page has
+ * and the object-status vocabulary does not: 2FA on or off, the own key, the
+ * tenant request, the password strength.
+ */
+function StateWord({ state, children }: { state: SemanticState; children: React.ReactNode }) {
+  const classes = STATE_CLASSES[state];
+  return (
+    <span className={cn('inline-flex items-center gap-2 cc-text-meta whitespace-nowrap', classes.text)}>
+      <span aria-hidden={true} className={cn('inline-block size-2 shrink-0 rounded-full', classes.mark)} />
+      {children}
+    </span>
+  );
+}
+
+/** The head of one card: icon, `h2`, and whatever sits on the right. */
+function CardHead({
+  icon,
+  title,
+  aside,
+  danger = false,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  aside?: React.ReactNode;
+  danger?: boolean;
+}) {
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <span
+          aria-hidden={true}
+          className={cn(
+            'inline-flex size-9 shrink-0 items-center justify-center rounded-cc-row border',
+            danger ? 'border-cc-error-border bg-cc-error-bg text-cc-error' : 'border-cc-line bg-cc-surface-muted text-cc-ink-muted',
+          )}
+        >
+          {icon}
+        </span>
+        <h2 className="m-0 cc-text-h2 text-cc-ink">{title}</h2>
+      </div>
+      {aside}
+    </div>
+  );
+}
 
 /**
  * One text input of this page: `CcField` around a native `<input>`, and for a
@@ -296,20 +354,22 @@ export default function SettingsPage() {
     if (/[^A-Za-z0-9]/.test(pw)) score++;
     else feedback.push('At least one special character');
     
+    // The strength is a state, so it takes a state colour — and always its
+    // word next to it, never the colour alone (DESIGN.md §1.1, §2.4).
     let label = 'Weak';
-    let color = 'bg-red-500';
+    let state: SemanticState = 'error';
     if (score === 2) {
       label = 'Fair';
-      color = 'bg-amber-500';
+      state = 'warning';
     } else if (score === 3) {
       label = 'Good';
-      color = 'bg-yellow-500';
+      state = 'information';
     } else if (score === 4) {
       label = 'Strong';
-      color = 'bg-green-600';
+      state = 'success';
     }
-    
-    return { score, label, color, feedback };
+
+    return { score, label, state, feedback };
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -581,9 +641,9 @@ export default function SettingsPage() {
   }, [profile, loading, router, accountErased, isDeletingAccount]);
 
   if (loading) return (
-    <div className="h-[60vh] flex flex-col items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
-      <p className="text-lg font-medium text-gray-500 tracking-tight">Loading profile settings...</p>
+    <div className="mx-auto max-w-4xl space-y-6 pb-20">
+      <CcSkeleton shape="header" label="Loading profile settings..." />
+      <CcSkeleton shape="cards" label="Loading profile settings..." count={4} />
     </div>
   );
 
@@ -1015,16 +1075,15 @@ export default function SettingsPage() {
   const getTierInfo = (tier: string = 'pilot', hasCustomKey: boolean = false) => {
     if (hasCustomKey && (tier === 'pilot' || tier === 'pilot_byok')) {
       return { 
-        icon: <Infinity className="text-purple-600 animate-pulse" />, 
+        icon: <Infinity size={20} aria-hidden={true} />, 
         label: 'Community (BYOK Active)', 
-        color: 'bg-purple-50 border-purple-100 shadow-md shadow-purple-50', 
         text: 'Your custom Gemini API Key is active. Transformations are unlimited under your key.' 
       };
     }
 
     switch (tier) {
-      case 'pilot_byok': return { icon: <Infinity className="text-purple-600" />, label: 'BYOK · Unlimited', color: 'bg-purple-50 border-purple-100', text: 'Your own Gemini key is active — unlimited transformations, all features, always free.' };
-      default: return { icon: <Shield className="text-gray-600" />, label: 'Free Community Edition', color: 'bg-gray-50 border-gray-100', text: 'Full access to every feature — 5 free transformations. Add your own Gemini key for unlimited runs.' };
+      case 'pilot_byok': return { icon: <Infinity size={20} aria-hidden={true} />, label: 'BYOK · Unlimited', text: 'Your own Gemini key is active — unlimited transformations, all features, always free.' };
+      default: return { icon: <Shield size={20} aria-hidden={true} />, label: 'Free Community Edition', text: 'Full access to every feature — 5 free transformations. Add your own Gemini key for unlimited runs.' };
     }
   };
 
@@ -1033,29 +1092,30 @@ export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
       <div className="px-2">
-        <button
+        <CcButton
+          variant="ghost"
           onClick={() => router.push('/dashboard')}
-          className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-gray-500 hover:text-green-600 transition-colors bg-white hover:bg-green-50 px-4 py-2.5 rounded-xl border border-gray-200/80 shadow-sm transition-all"
+          icon={<ArrowLeft size={16} aria-hidden={true} />}
         >
-          <ArrowLeft size={14} className="stroke-[3]" /> Back to Workspace
-        </button>
+          Back to Workspace
+        </CcButton>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-2">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-gray-950 tracking-tight flex items-center gap-3">
+          <h1 className="cc-text-title text-cc-ink">
             Profile Settings
           </h1>
-          <p className="text-gray-500 font-medium mt-1">Manage your personal information and subscription.</p>
+          <p className="mt-1 cc-text-body text-cc-ink-muted">Manage your personal information and subscription.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 p-1">
         {/* Profile Card */}
         <div className="lg:col-span-2 space-y-8 order-2 lg:order-1">
-          <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Personal Data</h2>
+          <div className={CARD}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="cc-text-h2 text-cc-ink">Personal Data</h2>
               <CcButton
                 variant="ghost"
                 icon={<Edit2 size={16} aria-hidden={true} />}
@@ -1080,23 +1140,23 @@ export default function SettingsPage() {
                 </CcButton>
               </form>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex items-start gap-4">
-                  <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 shrink-0">
-                    <User className="text-gray-400" />
-                  </div>
+                  <span aria-hidden={true} className="inline-flex size-10 shrink-0 items-center justify-center rounded-cc-row border border-cc-line bg-cc-surface-muted text-cc-ink-muted">
+                    <User size={20} />
+                  </span>
                   <div>
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Full Name</p>
-                    <p className="text-base md:text-lg font-bold text-gray-900">{profile?.firstName} {profile?.lastName}</p>
+                    <p className="mb-1 cc-text-label text-cc-ink-muted">Full Name</p>
+                    <p className="cc-text-h3 text-cc-ink">{profile?.firstName} {profile?.lastName}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 shrink-0">
-                    <Mail className="text-gray-400" />
-                  </div>
+                  <span aria-hidden={true} className="inline-flex size-10 shrink-0 items-center justify-center rounded-cc-row border border-cc-line bg-cc-surface-muted text-cc-ink-muted">
+                    <Mail size={20} />
+                  </span>
                   <div className="min-w-0">
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Email Address</p>
-                    <p className="text-base md:text-lg font-bold text-gray-900 truncate">{profile?.email}</p>
+                    <p className="mb-1 cc-text-label text-cc-ink-muted">Email Address</p>
+                    <p className="cc-text-h3 text-cc-ink truncate">{profile?.email}</p>
                   </div>
                 </div>
               </div>
@@ -1104,20 +1164,10 @@ export default function SettingsPage() {
           </div>
 
           {/* System Preferences Card */}
-          <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-gray-100 relative overflow-hidden transition-all duration-300 hover:shadow-md">
-            {/* Decorative side accent */}
-            <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-[#006b2c] to-[#00873a]" />
-            
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="bg-green-600/10 p-2.5 rounded-2xl">
-                  <Database className="text-green-600" size={22} />
-                </div>
-                <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">System Preferences</h2>
-              </div>
-            </div>
-            
-            <p className="text-gray-600 font-medium mb-8 text-sm md:text-base leading-relaxed">
+          <div className={CARD}>
+            <CardHead icon={<Database size={20} />} title="System Preferences" />
+
+            <p className="mb-6 cc-text-body text-cc-ink-muted">
               Configure background backup sync behaviors and map your default start layouts.
             </p>
 
@@ -1127,7 +1177,7 @@ export default function SettingsPage() {
                 nothing else, so choosing "Dark" left the dashboard table white
                 and the project row barely readable. A switch that makes the app
                 worse is not a preference. */}
-            <form onSubmit={handleSavePreferences} className="space-y-6 text-gray-900">
+            <form onSubmit={handleSavePreferences} className="space-y-6 text-cc-ink">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <CcSelect
                   label="Default Landing View"
@@ -1176,46 +1226,33 @@ export default function SettingsPage() {
           </div>
 
           {/* Security & Access Card */}
-          <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-gray-100 relative overflow-hidden transition-all duration-300 hover:shadow-md">
-            {/* Decorative side accent */}
-            <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-green-600 to-emerald-500" />
-            
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-green-600/10 p-2.5 rounded-2xl">
-                <ShieldCheck className="text-green-600" size={22} />
-              </div>
-              <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Security & Access</h2>
-            </div>
-            
-            <p className="text-gray-600 font-medium mb-8 text-sm md:text-base leading-relaxed">
+          <div className={CARD}>
+            <CardHead icon={<ShieldCheck size={20} />} title="Security & Access" />
+
+            <p className="mb-6 cc-text-body text-cc-ink-muted">
               Enhance your account's security with Two-Factor Authentication (2FA) and password updates.
             </p>
 
-            <div className="space-y-8 divide-y divide-gray-100">
+            <div className="space-y-8 divide-y divide-cc-line">
               {/* 2FA Panel */}
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="flex justify-between items-start gap-4">
                   <div>
-                    <h3 className="text-base font-bold text-gray-950">Two-Factor Authentication (2FA)</h3>
-                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                    <h3 className="cc-text-h3 text-cc-ink">Two-Factor Authentication (2FA)</h3>
+                    <p className="mt-1 cc-text-cell text-cc-ink-muted">
                       Secure your account by requiring a 6-digit dynamic token from your authenticator app during login.
                     </p>
                   </div>
-                  <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${
-                    profile?.mfaEnabled 
-                      ? 'bg-green-50 border-green-200 text-green-700'
-                      : 'bg-gray-50 border-gray-200 text-gray-400'
-                  }`}>
+                  <StateWord state={profile?.mfaEnabled ? (enrolledFactorCount === 0 ? 'warning' : 'success') : 'neutral'}>
                     {profile?.mfaEnabled ? (enrolledFactorCount === 0 ? 'Set up again' : 'Enabled') : 'Disabled'}
-                  </span>
+                  </StateWord>
                 </div>
 
                 {profile?.mfaEnabled && enrolledFactorCount === 0 ? (
                   <div className="space-y-4">
-                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 font-medium">
-                      <p className="font-bold flex items-center gap-1.5"><AlertCircle size={14} className="text-amber-600" /> Your two-factor setting predates Firebase's factor</p>
-                      <p className="mt-1 leading-relaxed">The authenticator you set up earlier no longer signs you in. Set it up again — it takes a minute — and the account is protected at sign-in itself, before any session exists.</p>
-                    </div>
+                    <CcMessageStrip state="warning" headline="Your two-factor setting predates Firebase's factor">
+                      The authenticator you set up earlier no longer signs you in. Set it up again — it takes a minute — and the account is protected at sign-in itself, before any session exists.
+                    </CcMessageStrip>
                     <div className="flex flex-wrap gap-3">
                       <CcButton variant="primary" onClick={handleStartMfaSetup} icon={<ShieldCheck size={16} aria-hidden={true} />}>
                         Set up the authenticator again
@@ -1237,15 +1274,14 @@ export default function SettingsPage() {
                   </div>
                 ) : profile?.mfaEnabled ? (
                   <div className="space-y-4">
-                    <div className="p-4 bg-green-50/50 border border-green-100 rounded-2xl text-xs text-green-800 font-medium">
-                      <p className="font-bold flex items-center gap-1.5"><CheckCircle2 size={14} className="text-green-600" /> Two-Factor Authentication is Active</p>
-                      <p className="mt-1 text-green-700/90 leading-relaxed">Firebase asks for your authenticator code at every sign-in — before any session exists.</p>
-                    </div>
+                    <CcMessageStrip state="success" headline="Two-Factor Authentication is Active">
+                      Firebase asks for your authenticator code at every sign-in — before any session exists.
+                    </CcMessageStrip>
 
-                    <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
-                      <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">If you lose the authenticator</span>
-                      <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                        Firebase's factor has no backup codes. Write to <a href="mailto:info@clean-core.io" className="text-green-700 font-bold hover:underline">info@clean-core.io</a> from your account address; an administrator removes the factor after confirming with you, and you set it up again here.
+                    <div className={INSET}>
+                      <span className="block mb-2 cc-text-label text-cc-ink-muted">If you lose the authenticator</span>
+                      <p className="cc-text-cell text-cc-ink-muted">
+                        Firebase's factor has no backup codes. Write to <a href="mailto:info@clean-core.io" className={TEXT_LINK}>info@clean-core.io</a> from your account address; an administrator removes the factor after confirming with you, and you set it up again here.
                       </p>
                     </div>
 
@@ -1255,7 +1291,7 @@ export default function SettingsPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl text-xs text-gray-600 font-medium leading-relaxed">
+                    <div className={cn(INSET, 'cc-text-cell text-cc-ink-muted')}>
                       TOTP (Time-based One-Time Passwords) is 100% free and offline-secure. You can use standard applications such as Google Authenticator, 1Password, or Authy to enroll.
                     </div>
                     <CcButton variant="primary" onClick={handleStartMfaSetup} icon={<Smartphone size={16} aria-hidden={true} />}>
@@ -1271,17 +1307,13 @@ export default function SettingsPage() {
               </div>
 
               {/* Password Panel */}
-              <div className="pt-8 space-y-5">
-                <h3 className="text-base font-bold text-gray-950">Change Password</h3>
-                
+              <div className="pt-8 space-y-4">
+                <h3 className="cc-text-h3 text-cc-ink">Change Password</h3>
+
                 {profile?.authMethod !== 'password' ? (
-                  <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-2xl text-xs text-amber-800 font-medium leading-relaxed flex items-start gap-2.5">
-                    <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-amber-900">Managed Identity Provider</p>
-                      <p className="mt-0.5 text-amber-700/90">Your account authentication is federated via Google. Password updates and resets are managed securely by your identity provider directly.</p>
-                    </div>
-                  </div>
+                  <CcMessageStrip state="information" headline="Managed Identity Provider">
+                    Your account authentication is federated via Google. Password updates and resets are managed securely by your identity provider directly.
+                  </CcMessageStrip>
                 ) : (
                   <form onSubmit={handleChangePassword} className="space-y-4">
                     <SettingsInput
@@ -1306,26 +1338,26 @@ export default function SettingsPage() {
                           reveal={{ shown: showNewPw, onToggle: () => setShowNewPw(!showNewPw), label: 'Show new password' }}
                         />
 
-                        {/* Password strength meter */}
+                        {/* Password strength meter — the word carries it, the
+                            bars and their state colour repeat it. */}
                         {newPassword && (
-                          <div className="mt-2.5 space-y-1.5 bg-gray-50 p-3 rounded-xl border border-gray-150">
-                            <div className="flex justify-between items-center text-[10px] font-bold">
-                              <span className="text-gray-500 uppercase tracking-widest">Strength</span>
-                              <span className={`font-black uppercase tracking-wider ${
-                                getPasswordStrength(newPassword).score === 4 ? 'text-green-600' :
-                                getPasswordStrength(newPassword).score === 3 ? 'text-yellow-600' :
-                                getPasswordStrength(newPassword).score === 2 ? 'text-amber-600' : 'text-red-500'
-                              }`}>{getPasswordStrength(newPassword).label}</span>
+                          <div className="mt-2 space-y-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
+                            <div className="flex justify-between items-center">
+                              <span className="cc-text-label text-cc-ink-muted">Strength</span>
+                              <StateWord state={getPasswordStrength(newPassword).state}>
+                                {getPasswordStrength(newPassword).label}
+                              </StateWord>
                             </div>
-                            <div className="grid grid-cols-4 gap-1 h-1.5">
+                            <div className="grid grid-cols-4 gap-1 h-2" aria-hidden={true}>
                               {[1, 2, 3, 4].map((step) => (
                                 <div
                                   key={step}
-                                  className={`h-full rounded-full transition-all duration-300 ${
+                                  className={cn(
+                                    'h-full rounded-full',
                                     getPasswordStrength(newPassword).score >= step
-                                      ? getPasswordStrength(newPassword).color
-                                      : 'bg-gray-200'
-                                  }`}
+                                      ? STATE_CLASSES[getPasswordStrength(newPassword).state].mark
+                                      : 'bg-cc-line',
+                                  )}
                                 />
                               ))}
                             </div>
@@ -1380,30 +1412,18 @@ export default function SettingsPage() {
           </div>
 
           {isPilotTier && (
-            <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-gray-100 relative overflow-hidden transition-all duration-300 hover:shadow-md">
-              {/* Decorative side accent */}
-              <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-purple-500 to-indigo-600" />
-              
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-purple-600/10 p-2.5 rounded-2xl">
-                    <KeyRound className="text-purple-600" size={22} />
-                  </div>
-                  <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Bring Your Own Key</h2>
-                </div>
-                
-                {profile?.byokConfigured && (
-                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full border border-purple-200">
-                    BYOK Active
-                  </span>
-                )}
-              </div>
-              
-              <p className="text-gray-600 font-medium mb-8 text-sm md:text-base leading-relaxed">
+            <div className={CARD}>
+              <CardHead
+                icon={<KeyRound size={20} />}
+                title="Bring Your Own Key"
+                aside={profile?.byokConfigured ? <StateWord state="success">BYOK Active</StateWord> : undefined}
+              />
+
+              <p className="mb-6 cc-text-body text-cc-ink-muted">
                 Add your own Google Gemini API Key to bypass the standard 5-transformations free limit. Your credentials are encrypted in transit, proxied through our secure backend, and never exposed to the client-side bundle.
               </p>
 
-              <form onSubmit={handleSaveKey} className="space-y-6 text-gray-900">
+              <form onSubmit={handleSaveKey} className="space-y-6 text-cc-ink">
                 <SettingsInput
                   label="Gemini API Key"
                   value={geminiKey}
@@ -1473,7 +1493,7 @@ export default function SettingsPage() {
                 {/* Said before the request rather than as a 403 after it: the
                     own-key routes require an enrolled factor (lib/mfa-gate.ts,
                     byokRequiresEnrolment). */}
-                <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                <p className="mt-3 cc-text-cell text-cc-ink-muted">
                   Storing, testing or removing your own key requires multi-factor authentication on this account —
                   enable it in the Security section first.
                 </p>
@@ -1489,79 +1509,61 @@ export default function SettingsPage() {
           <ModelStagesCard showPreviewStages={workspaceShellEnabled(profile)} />
 
           {isPilotTier && (
-            <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-gray-100 relative overflow-hidden transition-all duration-300 hover:shadow-md">
-              {/* Decorative side accent */}
-              <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-sky-500 to-blue-600" />
-              
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-sky-600/10 p-2.5 rounded-2xl">
-                    <Database className="text-sky-600" size={22} />
-                  </div>
-                  <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">S/4HANA Live Tenant Integration</h2>
-                </div>
-                
-                {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
-                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest bg-sky-100 text-sky-700 px-3 py-1.5 rounded-full border border-sky-200 flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Active · Admin-Gated
-                  </span>
-                ) : profile?.s4TenantAccessRequested ? (
-                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200 flex items-center gap-1">
-                    <Clock size={12} /> Pending Review
-                  </span>
-                ) : null}
-              </div>
-              
-              <p className="text-gray-650 font-medium mb-4 text-sm md:text-base leading-relaxed">
+            <div className={CARD}>
+              <CardHead
+                icon={<Database size={20} />}
+                title="S/4HANA Live Tenant Integration"
+                aside={
+                  profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
+                    <StateWord state="success">Active · Admin-Gated</StateWord>
+                  ) : profile?.s4TenantAccessRequested ? (
+                    <StateWord state="warning">Pending Review</StateWord>
+                  ) : null
+                }
+              />
+
+              <p className="mb-4 cc-text-body text-cc-ink-muted">
                 Connect your custom, non-productive S/4HANA Cloud or On-Premise systems (BYOT) to the Stage 5 testing environment for connection checks and OData metadata reads. Running the generated tests against the tenant is locked until the isolated live runner has passed its review.
               </p>
 
-              <div className="bg-sky-50/60 border border-sky-200 p-4 rounded-2xl mb-8 flex items-start gap-3">
-                <Globe className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-bold text-sky-900 mb-1">Connectivity Mode</p>
-                  <p className="text-[11px] text-sky-800/90 leading-relaxed font-medium">
-                    The &quot;Test Connection&quot; button performs a real HTTP handshake against your S/4HANA endpoint to verify reachability and authentication status. Full OData entity integration is planned for a future release.
-                  </p>
-                </div>
+              <div className="mb-6">
+                <CcMessageStrip state="information" headline="Connectivity Mode">
+                  The &quot;Test Connection&quot; button performs a real HTTP handshake against your S/4HANA endpoint to verify reachability and authentication status. Full OData entity integration is planned for a future release.
+                </CcMessageStrip>
               </div>
 
               {/* How-To Documentation Banner — visible for enabled S4 users */}
               {(profile?.s4TenantAccessAllowed || profile?.isAdmin) && (
-                <div className="bg-gradient-to-r from-indigo-50 via-sky-50 to-blue-50 border border-indigo-200/60 p-5 rounded-2xl mb-8 space-y-3">
+                <div className={cn(INSET, 'mb-6 space-y-3')}>
                   <div className="flex items-start gap-3">
-                    <div className="bg-indigo-600/10 p-2 rounded-xl shrink-0">
-                      <BookOpen className="w-5 h-5 text-indigo-600" />
-                    </div>
+                    <BookOpen size={20} className="shrink-0 text-cc-ink-muted" aria-hidden={true} />
                     <div className="flex-1 space-y-2">
-                      <p className="text-xs font-black text-indigo-950 uppercase tracking-widest">Setup Guide — S/4HANA Live Tenant Integration</p>
-                      <p className="text-[11px] text-indigo-800/90 leading-relaxed font-medium">
+                      <p className="cc-text-label text-cc-ink">Setup Guide — S/4HANA Live Tenant Integration</p>
+                      <p className="cc-text-cell text-cc-ink-muted">
                         Follow our step-by-step documentation to configure your S/4HANA connection. Covers Basic Auth, OAuth 2.0 Client Credentials, SAP API Hub Sandbox Keys, and SAP BTP Destination Service JSON imports.
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2 pt-1 pl-10">
-                    <a
-                      href="/knowledge"
-                      className="inline-flex items-center gap-1.5 text-[10px] font-black text-indigo-700 uppercase tracking-widest bg-white hover:bg-indigo-100 border border-indigo-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
-                    >
-                      <ExternalLink className="w-3 h-3" /> Knowledge Hub
-                    </a>
-                    <button
-                      type="button"
+                  <div className="flex flex-wrap gap-2 pl-8">
+                    <CcLinkButton href="/knowledge" variant="ghost" density="compact" icon={<ExternalLink size={16} aria-hidden={true} />}>
+                      Knowledge Hub
+                    </CcLinkButton>
+                    {/* Outside a project the assistant answers product and
+                        SAP questions, which is what this block is about. */}
+                    <CcButton
+                      variant="ghost"
+                      density="compact"
                       onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
-                      className="inline-flex items-center gap-1.5 text-[10px] font-black text-emerald-700 uppercase tracking-widest bg-white hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
+                      icon={<HelpCircle size={16} aria-hidden={true} />}
                     >
-                      {/* Outside a project the assistant answers product and
-                          SAP questions, which is what this block is about. */}
-                      <HelpCircle className="w-3 h-3" /> Ask the assistant
-                    </button>
+                      Ask the assistant
+                    </CcButton>
                   </div>
                 </div>
               )}
 
               {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
-                <form onSubmit={saveS4Config} className="space-y-6 text-gray-900">
+                <form onSubmit={saveS4Config} className="space-y-6 text-cc-ink">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <SettingsInput
                       label="Tenant HTTPS URL"
@@ -1652,7 +1654,7 @@ export default function SettingsPage() {
                     </CcMessageStrip>
                   )}
 
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100">
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-cc-line">
                     <CcButton
                       variant="secondary"
                       onClick={handleTestS4Connection}
@@ -1670,45 +1672,36 @@ export default function SettingsPage() {
               ) : (
                 <div className="space-y-6">
                   {/* Instructions */}
-                  <div className="bg-sky-50/50 border border-sky-100 p-5 rounded-2xl">
-                    <h3 className="text-xs font-black text-sky-950 uppercase tracking-widest mb-3">📋 Instructions (Setup Guide)</h3>
-                    <ol className="list-decimal pl-4 text-xs text-sky-850 space-y-2 font-medium">
-                      <li><strong>Request access:</strong> Use the form below to request access for your organization.</li>
-                      <li><strong>Provide HTTPS endpoint:</strong> Set up a secure HTTPS connection to your S/4HANA sandbox or test system.</li>
-                      <li><strong>Configure credentials:</strong> Once approved, you can configure your credentials (Basic Auth or OAuth 2.0).</li>
-                      <li><strong>Check the connection:</strong> Test the handshake, read OData metadata and make one read-only call from the Stage 5 testing environment. Running the generated tests against the tenant is locked until the isolated live runner has passed its review.</li>
+                  <div className={INSET}>
+                    <h3 className="mb-3 cc-text-label text-cc-ink">Instructions (Setup Guide)</h3>
+                    <ol className="list-decimal space-y-2 pl-4 cc-text-cell text-cc-ink-muted">
+                      <li><strong className="text-cc-ink">Request access:</strong> Use the form below to request access for your organization.</li>
+                      <li><strong className="text-cc-ink">Provide HTTPS endpoint:</strong> Set up a secure HTTPS connection to your S/4HANA sandbox or test system.</li>
+                      <li><strong className="text-cc-ink">Configure credentials:</strong> Once approved, you can configure your credentials (Basic Auth or OAuth 2.0).</li>
+                      <li><strong className="text-cc-ink">Check the connection:</strong> Test the handshake, read OData metadata and make one read-only call from the Stage 5 testing environment. Running the generated tests against the tenant is locked until the isolated live runner has passed its review.</li>
                     </ol>
                   </div>
 
                   {/* Security Measures */}
-                  <div className="bg-green-50/50 border border-green-100 p-5 rounded-2xl">
-                    <h3 className="text-xs font-black text-green-950 uppercase tracking-widest mb-3">🛡️ Security Measures & Explanations</h3>
-                    <ul className="list-disc pl-4 text-xs text-green-850 space-y-2 font-medium">
-                      <li><strong>Encrypted at rest:</strong> Passwords and tokens travel over HTTPS to the server, which encrypts them with AES-256-GCM in a server-only store. They are never returned to the browser.</li>
-                      <li><strong>Production Block:</strong> Access to production interfaces (<code className="bg-green-100 px-1 py-0.5 rounded font-mono text-[10px]">*-api.s4hana.ondemand.com</code>) is blocked by the system.</li>
-                      <li><strong>Server-side calls only:</strong> Your browser never talks to the tenant. The Clean-Core.io server makes each call through an SSRF-checked fetch that allows HTTPS to non-production hosts only.</li>
+                  <div className={INSET}>
+                    <h3 className="mb-3 cc-text-label text-cc-ink">Security Measures &amp; Explanations</h3>
+                    <ul className="list-disc space-y-2 pl-4 cc-text-cell text-cc-ink-muted">
+                      <li><strong className="text-cc-ink">Encrypted at rest:</strong> Passwords and tokens travel over HTTPS to the server, which encrypts them with AES-256-GCM in a server-only store. They are never returned to the browser.</li>
+                      <li><strong className="text-cc-ink">Production Block:</strong> Access to production interfaces (<code className="rounded-[4px] border border-cc-line bg-cc-surface px-1 font-cc-mono text-[12px] text-cc-ink">*-api.s4hana.ondemand.com</code>) is blocked by the system.</li>
+                      <li><strong className="text-cc-ink">Server-side calls only:</strong> Your browser never talks to the tenant. The Clean-Core.io server makes each call through an SSRF-checked fetch that allows HTTPS to non-production hosts only.</li>
                     </ul>
                   </div>
 
                   {/* Disclaimer */}
-                  <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
-                    <h3 className="text-xs font-black text-amber-950 uppercase tracking-widest mb-2">⚠️ Warranty Disclaimer</h3>
-                    <p className="text-xs text-amber-800 leading-relaxed font-medium">
-                      This is the Free Community Edition. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
-                    </p>
-                  </div>
+                  <CcMessageStrip state="warning" headline="Warranty Disclaimer">
+                    This is the Free Community Edition. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
+                  </CcMessageStrip>
 
                   {/* Request Form / Status */}
                   {profile?.s4TenantAccessRequested ? (
-                    <div className="bg-amber-50/50 border border-amber-150 p-5 rounded-2xl flex items-start gap-3">
-                      <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-bold text-amber-900 text-xs md:text-sm mb-1 uppercase tracking-tight">Request in Review</h4>
-                        <p className="text-xs text-amber-800/90 leading-relaxed font-medium">
-                          Your request for live S/4HANA access is currently being reviewed by our system administrators. Approvals are usually processed within 24 hours.
-                        </p>
-                      </div>
-                    </div>
+                    <CcMessageStrip state="information" headline="Request in Review">
+                      Your request for live S/4HANA access is currently being reviewed by our system administrators. Approvals are usually processed within 24 hours.
+                    </CcMessageStrip>
                   ) : (
                     <form onSubmit={handleRequestByot} className="space-y-4 pt-2">
                       <CcTextarea
@@ -1745,7 +1738,7 @@ export default function SettingsPage() {
                           after approval: the enrolment requirement is enforced
                           by every S/4 route (lib/firebase-admin.ts,
                           assertS4TenantAccess). */}
-                      <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                      <p className="mt-3 cc-text-cell text-cc-ink-muted">
                         Live S/4HANA access requires multi-factor authentication on this account. Enable it in the
                         Security section above before you use a connection — the S/4 endpoints refuse an account
                         without an enrolled authenticator.
@@ -1758,26 +1751,18 @@ export default function SettingsPage() {
           )}
 
           {/* Danger Zone */}
-          <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-red-100 relative overflow-hidden transition-all duration-300 hover:shadow-md">
-            {/* Decorative side accent */}
-            <div className="absolute left-0 top-0 bottom-0 w-2 bg-red-500" />
-            
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-red-500/10 p-2.5 rounded-2xl">
-                <AlertCircle className="text-red-600" size={22} />
-              </div>
-              <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Danger Zone</h2>
-            </div>
-            
-            <p className="text-gray-600 font-medium mb-8 text-sm md:text-base leading-relaxed">
+          <div className={cn(CARD, 'border-cc-error-border')}>
+            <CardHead icon={<AlertCircle size={20} />} title="Danger Zone" danger />
+
+            <p className="mb-6 cc-text-body text-cc-ink-muted">
               Permanently erase your user account and all associated data in accordance with GDPR Art. 17 (Right to Erasure). This operation is final and cannot be undone. All your uploaded ABAP source files, solution designs, modernized TypeScript source codes, and test cases will be irrevocably deleted.
             </p>
 
             {isDeletingAccount ? (
-              <div className="flex flex-col items-center justify-center p-6 bg-red-50 rounded-2xl border border-red-100 space-y-4">
-                <Loader2 className="animate-spin text-red-600" size={32} />
-                <p className="text-sm font-black text-red-950">Securely purging all data in accordance with GDPR...</p>
-                <p className="text-xs text-red-700/80 text-center max-w-sm">We are removing all your projects, custom source code uploads, registration requests, profile configuration preferences, and core authentication credentials from our database.</p>
+              <div role="status" className="flex flex-col items-center justify-center gap-3 rounded-cc-row border border-cc-error-border bg-cc-error-bg p-6 text-center">
+                <Loader2 className="motion-safe:animate-spin text-cc-error" size={32} aria-hidden={true} />
+                <p className="cc-text-h3 text-cc-ink">Securely purging all data in accordance with GDPR...</p>
+                <p className="max-w-sm cc-text-cell text-cc-ink-muted">We are removing all your projects, custom source code uploads, registration requests, profile configuration preferences, and core authentication credentials from our database.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -1796,97 +1781,97 @@ export default function SettingsPage() {
 
         {/* Subscription Sidebar */}
         <div className="space-y-8 order-1 lg:order-2">
-          <div className={`rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border shadow-lg ${tierInfo.color}`}>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-white rounded-2xl shadow-sm shrink-0">
+          <div className={CARD}>
+            <div className="flex items-center gap-3 mb-4">
+              <span aria-hidden={true} className="inline-flex size-10 shrink-0 items-center justify-center rounded-cc-row border border-cc-line bg-cc-surface-muted text-cc-ink-muted">
                 {tierInfo.icon}
-              </div>
+              </span>
               <div>
-                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Current Plan</p>
-                <h3 className="text-xl md:text-2xl font-black text-gray-950 tracking-tight">{tierInfo.label}</h3>
+                <p className="cc-text-label text-cc-ink-muted">Current Plan</p>
+                <h3 className="cc-text-h2 text-cc-ink">{tierInfo.label}</h3>
               </div>
             </div>
-            
-            <p className="text-sm font-medium text-gray-700 leading-relaxed mb-8">
+
+            <p className="mb-6 cc-text-body text-cc-ink-muted">
               {tierInfo.text}
             </p>
 
-            <div className="space-y-4 pt-6 border-t border-gray-200/50">
-              <div className="flex justify-between items-center text-sm">
-                <span className="font-bold text-gray-600">Status</span>
-                <span className="font-black text-green-700 flex items-center gap-1">
-                  <CheckCircle2 size={14} /> Active
-                </span>
+            <dl className="space-y-3 border-t border-cc-line pt-4 cc-text-cell">
+              <div className="flex justify-between items-center gap-3">
+                <dt className="text-cc-ink-muted">Status</dt>
+                <dd className="">
+                  <StateWord state="success">Active</StateWord>
+                </dd>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="font-bold text-gray-600">Usage</span>
-                <span className="font-black text-gray-900">
-                  {profile?.byokConfigured 
+              <div className="flex justify-between items-center gap-3">
+                <dt className="text-cc-ink-muted">Usage</dt>
+                <dd className="font-semibold text-cc-ink">
+                  {profile?.byokConfigured
                     ? `${profile?.transformationsUsed || 0} / Unlimited (BYOK)`
                     : `${profile?.transformationsUsed || 0} / ${profile?.transformationsLimit || 5}`
                   }
-                </span>
+                </dd>
               </div>
               {profile?.accessUntil && (
-                <div className="flex justify-between items-center text-sm">
-                  <span className="font-bold text-gray-600">Valid Until</span>
-                  <span className="font-black text-gray-900 flex items-center gap-1">
-                    <Clock size={14} /> {profile.accessUntil.toDate().toLocaleDateString()}
-                  </span>
+                <div className="flex justify-between items-center gap-3">
+                  <dt className="text-cc-ink-muted">Valid Until</dt>
+                  <dd className="inline-flex items-center gap-1 font-semibold text-cc-ink">
+                    <Clock size={14} aria-hidden={true} /> <CcDateText value={profile.accessUntil.toDate()} format="text" />
+                  </dd>
                 </div>
               )}
-            </div>
+            </dl>
           </div>
 
-          <div className="bg-gray-950 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] text-white shadow-2xl">
-            <h3 className="text-xl font-black mb-4 tracking-tight">Free Community Edition Status</h3>
-            <p className="text-gray-400 text-sm font-medium mb-8">You are currently participating in our free community program.</p>
-            <div className="bg-white/10 p-4 rounded-xl border border-white/20 mb-6">
-              <p className="text-xs text-white/80 leading-relaxed font-medium">For unlimited transformations, add your own Gemini API key (BYOK) in settings — or <a href="mailto:info@clean-core.io" className="text-green-400 hover:text-green-300 font-bold underline">contact the admin</a> with any questions.</p>
+          <div className={CARD}>
+            <h3 className="mb-3 cc-text-h2 text-cc-ink">Free Community Edition Status</h3>
+            <p className="mb-4 cc-text-body text-cc-ink-muted">You are currently participating in our free community program.</p>
+            <div className={cn(INSET, 'mb-4')}>
+              <p className="cc-text-cell text-cc-ink-muted">For unlimited transformations, add your own Gemini API key (BYOK) in settings — or <a href="mailto:info@clean-core.io" className={TEXT_LINK}>contact the admin</a> with any questions.</p>
             </div>
-            <div className="mt-6 flex flex-col gap-3">
-              <div className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-gray-400">
-                <CheckCircle2 size={14} className="text-green-500" /> GDPR Compliance
-              </div>
-              <div className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-gray-400">
-                <CheckCircle2 size={14} className="text-green-500" /> Community Support
-              </div>
-            </div>
+            <ul className="flex list-none flex-col gap-2 p-0 cc-text-meta text-cc-ink-muted">
+              <li className="flex items-center gap-2">
+                <CheckCircle2 size={16} aria-hidden={true} /> GDPR Compliance
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 size={16} aria-hidden={true} /> Community Support
+              </li>
+            </ul>
           </div>
 
           {/* Legal Notice & Privacy Card */}
-          <div className="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] text-white shadow-2xl space-y-6">
-            <h3 className="text-xl font-black tracking-tight uppercase">Legal & Privacy Directory</h3>
-            
-            <div className="space-y-4 text-xs text-slate-400">
-              <div className="border-t border-slate-800 pt-4" id="legal">
-                <span className="font-bold text-white block uppercase tracking-wider mb-1">⚖️ Legal Notice (Impressum)</span>
-                <p className="leading-relaxed">
+          <div className={cn(CARD, 'space-y-4')}>
+            <h3 className="cc-text-h2 text-cc-ink">Legal &amp; Privacy Directory</h3>
+
+            <div className="space-y-4 cc-text-cell text-cc-ink-muted">
+              <div className="border-t border-cc-line pt-4" id="legal">
+                <span className="block mb-1 cc-text-label text-cc-ink">Legal Notice (Impressum)</span>
+                <p className="">
                   Responsible for platform operations:<br />
-                  <strong>Felix Frenzel</strong><br />
+                  <strong className="text-cc-ink">Felix Frenzel</strong><br />
                   Hellerstraße 9, 96047 Bamberg, Germany<br />
-                  E-Mail: <a href="mailto:info@clean-core.io" className="text-emerald-400 hover:underline">info@clean-core.io</a>
+                  E-Mail: <a href="mailto:info@clean-core.io" className={TEXT_LINK}>info@clean-core.io</a>
                 </p>
               </div>
 
-              <div className="border-t border-slate-800 pt-4" id="privacy">
-                <span className="font-bold text-white block uppercase tracking-wider mb-1">🔒 Privacy Policy (Datenschutz)</span>
-                <p className="leading-relaxed">
+              <div className="border-t border-cc-line pt-4" id="privacy">
+                <span className="block mb-1 cc-text-label text-cc-ink">Privacy Policy (Datenschutz)</span>
+                <p className="">
                   Your profile and project assets are hosted on secure European cloud nodes (Google Firebase). The platform is designed to support GDPR (DSGVO)-aligned processing and erasure workflows. You can download or cascadingly erase your data inside the Settings Danger Zone at any time.
                 </p>
               </div>
 
-              <div className="border-t border-slate-800 pt-4">
-                <span className="font-bold text-white block uppercase tracking-wider mb-1">🤖 AI Processing Notice</span>
-                <p className="leading-relaxed">
+              <div className="border-t border-cc-line pt-4">
+                <span className="block mb-1 cc-text-label text-cc-ink">AI Processing Notice</span>
+                <p className="">
                   Code analysis, solution design mapping, test cases, and modernizations are dynamically synthesized using Generative AI models. AI systems may output incorrect code, hallucinations, or compile issues.
                 </p>
               </div>
 
-              <div className="border-t border-slate-800 pt-4">
-                <span className="font-bold text-amber-500 block uppercase tracking-wider mb-1">⚠️ Warranty Disclaimer</span>
-                <p className="leading-relaxed italic text-slate-400">
-                  This application is the <strong>Free Community Edition</strong>. Operations are provided completely <strong>without warranty, guarantees, or liability</strong> of any kind. All generated code must be vetted by qualified architects before deployment.
+              <div className="border-t border-cc-line pt-4">
+                <span className="block mb-1 cc-text-label text-cc-warning">Warranty Disclaimer</span>
+                <p className="">
+                  This application is the <strong className="text-cc-ink">Free Community Edition</strong>. Operations are provided completely <strong className="text-cc-ink">without warranty, guarantees, or liability</strong> of any kind. All generated code must be vetted by qualified architects before deployment.
                 </p>
               </div>
             </div>
