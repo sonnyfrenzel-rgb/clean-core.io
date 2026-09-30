@@ -1,6 +1,7 @@
 'use client';
 
 import { ListChecks } from 'lucide-react';
+import { CcTag } from '@/components/cc/Tag';
 import type { ReviewTask, ReviewTaskKind, ReviewTasks as ReviewTaskResult } from '@/lib/abap/review-tasks';
 
 /**
@@ -99,20 +100,20 @@ export default function ReviewTasks({ result }: { result: ReviewTaskResult }) {
     <section
       data-review-tasks=""
       aria-labelledby="review-tasks-title"
-      className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"
+      className="rounded-cc-card border border-cc-line bg-cc-surface shadow-cc p-6"
     >
       <div className="flex items-start gap-3">
-        <ListChecks className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" aria-hidden="true" />
+        <ListChecks size={20} className="text-cc-ink-muted shrink-0" aria-hidden="true" />
         <div className="min-w-0 flex-1 space-y-5">
           <div className="space-y-2">
             <h3
               id="review-tasks-title"
               data-review-tasks-title
-              className="text-base font-bold text-slate-900 tracking-tight"
+              className="cc-text-h3 text-cc-ink"
             >
               {reviewTasksTitle(count)}
             </h3>
-            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+            <p className="cc-text-cell text-cc-ink">
               {count === 0
                 ? reviewTasksNoneLine(result.noSource, result.usageConsulted)
                 : REVIEW_TASKS_LEAD}
@@ -127,7 +128,7 @@ export default function ReviewTasks({ result }: { result: ReviewTaskResult }) {
             </ul>
           )}
 
-          <p className="text-xs text-slate-500 leading-relaxed">{REVIEW_TASKS_METHOD}</p>
+          <p className="cc-text-cell text-cc-ink-muted">{REVIEW_TASKS_METHOD}</p>
         </div>
       </div>
     </section>
@@ -139,12 +140,10 @@ function ReviewTaskRow({ task }: { task: ReviewTask }) {
     <li
       data-review-task={task.kind}
       data-review-task-id={task.id}
-      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 sm:px-5"
+      className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4"
     >
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
-        <span className="rounded-full border border-slate-300 bg-white px-2.5 py-0.5 text-[11px] font-bold text-slate-700">
-          {KIND_LABEL[task.kind]}
-        </span>
+        <CcTag>{KIND_LABEL[task.kind]}</CcTag>
         {task.anchors.map((anchor) => (
           // Inline, not a flex row: a flex container blockifies its children,
           // and the anchors would reach a reader — and `innerText` — as one line
@@ -152,22 +151,22 @@ function ReviewTaskRow({ task }: { task: ReviewTask }) {
           <code
             key={`${anchor.kind}-${anchor.label}`}
             data-review-task-anchor={anchor.kind}
-            className="font-mono text-[11px] font-bold text-slate-900"
+            className="cc-text-identifier font-cc-mono text-cc-ink"
           >
             {anchor.label}
           </code>
         ))}
       </div>
 
-      <p data-review-task-detail className="mt-3 text-xs text-slate-600 leading-relaxed">
+      <p data-review-task-detail className="mt-3 cc-text-cell text-cc-ink-muted">
         {task.notDetermined.detail}
       </p>
 
-      <p data-review-task-step className="mt-2 text-xs font-semibold text-slate-700 leading-relaxed">
+      <p data-review-task-step className="mt-2 cc-text-cell font-semibold text-cc-ink">
         Next step: {task.task}
       </p>
 
-      <p data-review-task-withheld className="mt-2 text-xs text-slate-500 leading-relaxed">
+      <p data-review-task-withheld className="mt-2 cc-text-cell text-cc-ink-muted">
         Not said while this is open: {task.withheld.charAt(0).toLowerCase()}
         {task.withheld.slice(1)}
       </p>

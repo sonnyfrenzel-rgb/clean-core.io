@@ -259,7 +259,7 @@ test('the settings screen offers one switch per stage and the click sticks', asy
 
   const documentation = page.locator('[data-model-stage="documentation"]');
   await expect(documentation).toHaveAttribute('data-model-stage-on', 'true');
-  await documentation.getByRole('button').click();
+  await documentation.getByRole('switch').click();
   // Polls until the round trip settles rather than sampling after a guessed delay.
   await expect(documentation).toHaveAttribute('data-model-stage-on', 'false', { timeout: 30000 });
 

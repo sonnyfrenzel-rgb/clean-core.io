@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Cpu, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
-import clsx from 'clsx';
+import { SlidersHorizontal } from 'lucide-react';
+import CcSwitch from '@/components/cc/Switch';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import { CcTag } from '@/components/cc/Tag';
 import { getAuth } from '@/lib/firebase';
 import {
   MODEL_STAGE_LABELS,
@@ -69,27 +71,29 @@ export default function ModelStagesCard({ showPreviewStages = false }: { showPre
   };
 
   return (
-    <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-gray-100 relative overflow-hidden transition-all duration-300 hover:shadow-md">
-      <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-slate-500 to-slate-700" />
-
-      <div className="flex items-center justify-between mb-6">
+    <div data-model-stages-card className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc">
+      {/* The head of every settings card (`CardHead` on /settings): a quiet
+          mark, the title, and what belongs beside it. The mark used to be a
+          chip — §3.1 keeps model work out of the iconography — so it is the
+          sliders a setting is. */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="bg-slate-600/10 p-2.5 rounded-2xl">
-            <Cpu className="text-slate-700" size={22} />
-          </div>
-          <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Where the model is used</h2>
+          <span
+            aria-hidden={true}
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-cc-row border border-cc-line bg-cc-surface-muted text-cc-ink-muted"
+          >
+            <SlidersHorizontal size={20} />
+          </span>
+          <h2 className="m-0 cc-text-h2 text-cc-ink">Where the model is used</h2>
         </div>
         {model.known && !model.keyAvailable && (
-          <span
-            data-no-model-key
-            className="text-[10px] md:text-xs font-black uppercase tracking-widest bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full border border-slate-200"
-          >
-            No key available
+          <span data-no-model-key>
+            <CcTag>No key available</CcTag>
           </span>
         )}
       </div>
 
-      <p className="text-gray-600 font-medium mb-8 text-sm md:text-base leading-relaxed">
+      <p className="mb-6 cc-text-body text-cc-ink-muted">
         {COUNT_WORDS[stages.length] ?? stages.length} stages send a prompt to Google Gemini. Switch any of them off and that stage says
         &ldquo;not generated&rdquo; instead of asking for a key. The Analyze stage&rsquo;s evidence — the findings, the
         extensibility route and the Clean Core Score — is computed without a model, and the analysis run is signed
@@ -97,12 +101,15 @@ export default function ModelStagesCard({ showPreviewStages = false }: { showPre
       </p>
 
       {error && (
-        <div className="mb-6 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">
-          <AlertCircle size={14} className="mt-0.5 shrink-0" />
-          <span>{error}</span>
+        <div className="mb-6">
+          <CcMessageStrip state="error" headline="The setting was not saved." announce>
+            {error}
+          </CcMessageStrip>
         </div>
       )}
 
+      {/* A switch, not a checkbox: each one is saved the moment it is flipped
+          (`POST /api/model-stages`), which is the switch contract of §2.7. */}
       <ul className="space-y-3">
         {stages.map((stage) => {
           const on = model.stages[stage];
@@ -111,38 +118,17 @@ export default function ModelStagesCard({ showPreviewStages = false }: { showPre
               key={stage}
               data-model-stage={stage}
               data-model-stage-on={on ? 'true' : 'false'}
-              className="flex items-start justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50/60 px-5 py-4"
+              className="rounded-cc-row border border-cc-line px-4 py-3"
             >
-              <div className="min-w-0">
-                <p className="text-sm font-black text-gray-900">{MODEL_STAGE_LABELS[stage]}</p>
-                <p className="mt-1 text-xs font-medium leading-relaxed text-gray-600">
-                  {MODEL_STAGE_DESCRIPTIONS[stage]}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => toggle(stage)}
+              <CcSwitch
+                label={MODEL_STAGE_LABELS[stage]}
+                help={MODEL_STAGE_DESCRIPTIONS[stage]}
+                checked={on}
+                onChange={() => toggle(stage)}
                 disabled={saving !== null || model.loading}
-                aria-pressed={on}
-                className={clsx(
-                  'shrink-0 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50',
-                  on
-                    ? 'bg-emerald-600 text-white hover:bg-emerald-500'
-                    : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-100',
-                )}
-              >
-                {saving === stage ? (
-                  <Loader2 className="animate-spin" size={14} />
-                ) : saved === stage ? (
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 size={12} /> {on ? 'On' : 'Off'}
-                  </span>
-                ) : on ? (
-                  'On'
-                ) : (
-                  'Off'
-                )}
-              </button>
+                valueState={saving === stage ? 'information' : saved === stage ? 'success' : undefined}
+                message={saving === stage ? 'Saving…' : saved === stage ? `Saved — ${on ? 'on' : 'off'}` : undefined}
+              />
             </li>
           );
         })}

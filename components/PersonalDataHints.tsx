@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import CcCheckbox from '@/components/cc/Checkbox';
+import { STATE_CLASSES } from '@/components/cc/state';
 import type { PersonalDataHint } from '@/lib/personal-data-hints';
 
 /**
@@ -51,6 +54,9 @@ export const PERSONAL_DATA_ACK_LINES =
 export const PERSONAL_DATA_ACK_FILE =
   'I have checked this file myself and want to upload it anyway.';
 
+/** A hint the reader has to act on: the warning state of §1.1, from the tokens. */
+const WARNING = STATE_CLASSES.warning;
+
 /** Beyond this the list stops being something a person reads and becomes noise. */
 const MAX_LISTED = 25;
 
@@ -84,22 +90,21 @@ export default function PersonalDataHints({
 
   const listed = hints.slice(0, MAX_LISTED);
   const titleId = `${id}-title`;
-  const checkboxId = `${id}-ack`;
 
   return (
     <section
       data-personal-data-hints={id}
       aria-labelledby={titleId}
-      className="rounded-3xl border border-amber-200 bg-amber-50 p-6 sm:p-8"
+      className={cn('rounded-cc-card border p-6', WARNING.bg, WARNING.border)}
     >
       <div className="flex items-start gap-3">
-        <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" aria-hidden="true" />
+        <AlertTriangle size={20} className={cn('shrink-0', WARNING.text)} aria-hidden="true" />
         <div className="min-w-0 flex-1 space-y-4">
           <div className="space-y-2">
-            <h3 id={titleId} className="text-base font-bold text-amber-900 tracking-tight">
+            <h3 id={titleId} className="cc-text-h3 text-cc-ink">
               {hints.length > 0 ? PERSONAL_DATA_HINT_TITLE : PERSONAL_DATA_HINT_UNREAD_TITLE}
             </h3>
-            <p className="text-xs sm:text-sm text-amber-900 leading-relaxed">
+            <p className="cc-text-cell text-cc-ink">
               {hints.length > 0 ? PERSONAL_DATA_HINT_LEAD : unreadableNote}
             </p>
           </div>
@@ -110,63 +115,61 @@ export default function PersonalDataHints({
                 <li
                   key={`${hint.kind}-${hint.line}-${index}`}
                   data-personal-data-hint={hint.kind}
-                  className="rounded-2xl border border-amber-200 bg-white px-4 py-3"
+                  className="rounded-cc-row border border-cc-line bg-cc-surface px-4 py-3"
                 >
                   <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                    <span className="cc-text-label font-cc-mono text-cc-ink-muted">
                       Line {hint.line}
                     </span>
                     <code
                       data-personal-data-excerpt
-                      className="font-mono text-[11px] text-gray-900 break-all"
+                      className="cc-text-meta font-cc-mono font-medium text-cc-ink break-all"
                     >
                       {hint.excerpt}
                     </code>
                   </p>
-                  <p className="mt-1.5 text-xs text-gray-600 leading-relaxed">{hint.why}</p>
+                  <p className="mt-1 cc-text-cell text-cc-ink-muted">{hint.why}</p>
                 </li>
               ))}
             </ul>
           )}
 
           {hints.length > listed.length && (
-            <p data-personal-data-hint-more className="text-xs font-semibold text-amber-800">
+            <p data-personal-data-hint-more className="cc-text-cell font-semibold text-cc-ink">
               …and {hints.length - listed.length} more lines of the same kinds. Open the source and read
               them there.
             </p>
           )}
 
-          <p className="text-xs text-amber-900 leading-relaxed">
+          <p className="cc-text-cell text-cc-ink">
             {PERSONAL_DATA_HINT_RULE}{' '}
             <Link
               href="/terms"
               target="_blank"
               rel="noopener noreferrer"
               data-personal-data-terms-link
-              className="font-semibold underline decoration-amber-400 underline-offset-2 hover:decoration-amber-700"
+              className="font-semibold text-cc-brand-strong underline underline-offset-2 hover:text-cc-brand-deep"
             >
               Read the Terms
             </Link>
           </p>
 
-          <label
-            htmlFor={checkboxId}
-            className="flex items-start gap-3 rounded-2xl border border-amber-300 bg-white p-4 cursor-pointer hover:bg-amber-50"
+          {/* The library checkbox (§2.7): a real `<input type="checkbox">`
+              named by its `<label htmlFor>`, with the focus ring of §1.6. It
+              waits for no Save — ticking it is the whole act. */}
+          <div
+            data-personal-data-ack
+            className="rounded-cc-row border border-cc-field-border bg-cc-surface px-4 py-2"
           >
-            <input
-              id={checkboxId}
-              data-personal-data-ack
-              type="checkbox"
+            <CcCheckbox
+              label={hints.length > 0 ? PERSONAL_DATA_ACK_LINES : PERSONAL_DATA_ACK_FILE}
               checked={acknowledged}
-              onChange={(event) => onAcknowledge(event.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-gray-300 accent-amber-600 focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2"
+              onChange={onAcknowledge}
+              density="cozy"
             />
-            <span className="text-xs sm:text-sm font-semibold text-gray-900 leading-relaxed">
-              {hints.length > 0 ? PERSONAL_DATA_ACK_LINES : PERSONAL_DATA_ACK_FILE}
-            </span>
-          </label>
+          </div>
           {ackStale && (
-            <p data-personal-data-ack-stale className="mt-2 text-xs font-semibold text-amber-900">
+            <p data-personal-data-ack-stale className="mt-2 cc-text-cell font-semibold text-cc-ink">
               The source changed after you ticked this, so the tick was taken back. Read the lines above again, then tick it again.
             </p>
           )}
