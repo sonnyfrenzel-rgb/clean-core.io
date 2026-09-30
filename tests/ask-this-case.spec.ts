@@ -26,6 +26,7 @@ import {
 import { inspectModelText } from '../lib/model-text';
 import { PROVENANCE } from '../lib/provenance';
 import type { Project, WorklistItem } from '../lib/types';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 6.8 — „Ask this case" through the assistant that already exists.
@@ -369,13 +370,7 @@ async function openChat(page: Page): Promise<void> {
 }
 
 async function signIn(page: Page, email: string): Promise<void> {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, email, PASSWORD);
 }
 
 test.describe('the assistant, inside a project, in a browser', () => {

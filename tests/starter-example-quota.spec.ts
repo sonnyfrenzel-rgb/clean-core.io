@@ -13,6 +13,7 @@ import { starterExampleIsFree } from '../lib/run-quota-rule';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { observedWhile } from './helpers/observed-while';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 0.9 — the eight shipped examples cost no quota, each once per account.
@@ -441,13 +442,7 @@ test.describe('the screen says what the click costs, before the click', () => {
     test.setTimeout(150 * 1000);
     await resetAccount({ starterExamplesUsed: { [EXAMPLE.name]: true } });
 
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', SIGN_IN);
-    await page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Anmelden")');
-    await page.waitForTimeout(3000);
+    await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3000, alsoGermanLabel: true });
     await page.evaluate(() => window.stop()).catch(() => {});
     try {
       await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 });

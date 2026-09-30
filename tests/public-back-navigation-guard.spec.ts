@@ -3,6 +3,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * UX-015 and UX-104: the way back from a public page.
@@ -98,13 +99,7 @@ test.describe('a reader who is signed in', () => {
 
   test('the same link goes to the workspace, and says so', async ({ page }) => {
     test.setTimeout(240_000);
-    await page.goto('/', { timeout: 200_000 });
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD, { gotoTimeout: 200_000 });
 
     for (const route of ['/how-to', '/knowledge']) {
       await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 200_000 });

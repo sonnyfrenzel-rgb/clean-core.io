@@ -6,6 +6,7 @@ import { receiptFor } from './helpers/test-receipt';
 import firebaseConfig from '../firebase-config.json';
 import { PHASE_TONE_CLASS, phaseTone, workflowSteps, type RailStep } from '../lib/workflow-steps';
 import type { Project, TestCase } from '../lib/types';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 1.7 — the stepper and the rail mean the same thing by "done", and
@@ -268,13 +269,7 @@ test.describe('the stepper and the rail say the same thing about the same phase'
     // Wide enough for the rail: it is `hidden 2xl:flex`, and 2xl is 1536px.
     await page.setViewportSize({ width: 1680, height: 1000 });
 
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
 
     type Mark = { colour: string; tone: string | null; tick: boolean };
     const seen: Record<string, { stepper: Mark; rail: Mark }[]> = {};

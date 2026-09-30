@@ -21,6 +21,7 @@ import {
   hintSentence,
 } from '../lib/process-hints';
 import { EDITOR_PALETTE } from '../components/process-map/BpmnEditor';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * The editor and its check hints — roadmap 3.1 and 3.3.
@@ -323,13 +324,7 @@ const PROJECT_ID = `process-editor-${STAMP}`;
 const RUN_ID = `process-editor-run-${STAMP}`;
 
 async function signIn(page: Page) {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', EMAIL);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, EMAIL, PASSWORD);
 }
 
 async function openMap(page: Page) {

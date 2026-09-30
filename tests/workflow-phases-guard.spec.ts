@@ -11,6 +11,7 @@ import type { Project, TestCase } from '../lib/types';
 // account fail `requireCurrentTerms` on every protected route, so a version
 // bump would break this spec for a reason that has nothing to do with it.
 import { TERMS_VERSION } from '../lib/constants';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * One phase model, and every view reads it (roadmap E01-F01, CR-11).
@@ -245,13 +246,7 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
     test.setTimeout(180 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
 
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
 
     // Dashboard. The stop-then-commit dance is starter-examples.spec.ts's: an
     // in-flight RSC stream from the sign-in redirect can otherwise hold the next

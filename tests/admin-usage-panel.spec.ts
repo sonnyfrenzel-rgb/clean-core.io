@@ -7,6 +7,7 @@ process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-a
 
 import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator, disposableEmail, EMULATOR_PASSWORD } from './helpers/emulator-guard';
+import { signInViaLanding } from './helpers/sign-in';
 
 const firebaseApp = initializeApp(firebaseConfig, 'admin-usage-panel');
 const firebaseAuth = getAuth(firebaseApp);
@@ -95,13 +96,7 @@ test.describe('Admin Console — Usage & Quota panel', () => {
   });
 
   async function signInAsAdmin(page: import('@playwright/test').Page) {
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', ADMIN_EMAIL);
-    await page.fill('input[type="password"]', ADMIN_PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Anmelden")');
-    await page.waitForTimeout(3000);
+    await signInViaLanding(page, ADMIN_EMAIL, ADMIN_PASSWORD, { pauseMs: 3000, alsoGermanLabel: true });
     await page.evaluate(() => window.stop()).catch(() => {});
 
     try {

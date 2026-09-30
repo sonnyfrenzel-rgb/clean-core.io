@@ -12,6 +12,7 @@ import { connectAuthToEmulator } from './helpers/emulator-guard';
 // account fail `requireCurrentTerms` on every protected route, so a version
 // bump would break this spec for a reason that has nothing to do with it.
 import { TERMS_VERSION } from '../lib/constants';
+import { signInViaLanding } from './helpers/sign-in';
 
 const firebaseApp = initializeApp(firebaseConfig, 'starter-examples');
 const firebaseAuth = getAuth(firebaseApp);
@@ -55,13 +56,7 @@ test.describe('Dashboard — starter examples', () => {
     expect(asset.status()).toBe(200);
     expect(await asset.text()).toContain('REPORT z_material_stock_calc');
 
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In"), button[type="submit"]:has-text("Anmelden")');
-    await page.waitForTimeout(3000);
+    await signInViaLanding(page, EMAIL, PASSWORD, { pauseMs: 3000, alsoGermanLabel: true });
     await page.evaluate(() => window.stop());
 
     try {

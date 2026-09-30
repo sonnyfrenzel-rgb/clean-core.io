@@ -20,6 +20,7 @@ import type { ProjectDecision } from '../lib/project-decision';
 import type { NotDetermined } from '../lib/workspace-model';
 import type { Project } from '../lib/types';
 import { steeringOnePager, STEERING_GROUPS, type SteeringSource } from '../lib/steering-one-pager';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 8.6 — the steering one-pager.
@@ -372,13 +373,7 @@ const PASSWORD = 'SteeringPage123!';
 const unique = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 async function signIn(page: Page, email: string): Promise<void> {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, email, PASSWORD);
 }
 
 test.describe('8.6 rendered — the one-pager in the Management view', () => {

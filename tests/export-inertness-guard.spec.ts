@@ -6,6 +6,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * The analysis export is a document, not a program (SEC-2026-014).
@@ -189,13 +190,7 @@ test.describe('the analysis export is a document, not a program', () => {
   test('every field it interpolates comes out as text, and nothing in it runs', async ({ page, context }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
 
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
 
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('#analysis-report', { timeout: 60000 });

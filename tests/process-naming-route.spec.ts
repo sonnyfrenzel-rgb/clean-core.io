@@ -9,6 +9,7 @@ import { adminSetDoc } from './helpers/admin-seed';
 import { issueModelReceipt } from '../lib/model-receipt';
 import { STAGE_DISABLED_CODE } from '../lib/model-stages';
 import { applyNaming, namingContextOf, type ProcessNamingRecord } from '../lib/process-naming';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 2.4 — the route that stores a project's business names, against the
@@ -271,13 +272,7 @@ test('an account with the workspace preview is offered the switch — and the cl
     termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
   });
 
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', PREVIEW_EMAIL);
-  await page.fill('input[type="password"]', SIGN_IN);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(4000);
+  await signInViaLanding(page, PREVIEW_EMAIL, SIGN_IN);
 
   await page.goto('/settings', { waitUntil: 'domcontentloaded' });
   const row = page.locator('[data-model-stage="naming"]');

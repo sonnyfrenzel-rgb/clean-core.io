@@ -19,6 +19,7 @@ import {
 import { TRACKED_ARTEFACTS, sha256Hex, artefactDigest, type TrackedArtefact } from '../lib/artefact-digest';
 import { LIVE_TEST_EXECUTION } from '../lib/locked-paths';
 import type { Project } from '../lib/types';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * The preservation register, checked against the code (roadmap 1.1, QA24-A04, W22-A04).
@@ -1012,13 +1013,7 @@ test.describe('the reference cases, seeded and opened', () => {
 
   async function signIn(page: Page) {
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-    await page.waitForSelector('input[type="email"]');
-    await page.fill('input[type="email"]', EMAIL);
-    await page.fill('input[type="password"]', PASSWORD);
-    await page.click('button[type="submit"]:has-text("Sign In")');
-    await page.waitForTimeout(4000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
     await page.evaluate(() => window.stop()).catch(() => {});
   }
 

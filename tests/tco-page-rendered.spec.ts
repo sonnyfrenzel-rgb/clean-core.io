@@ -6,6 +6,7 @@ import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
 import { tcoForecast } from '../lib/tco-model';
 import { formatAmount } from '../lib/cost-assumptions';
+import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * The Economics stage, opened.
@@ -95,13 +96,7 @@ test.beforeAll(async () => {
 });
 
 async function openEconomics(page: import('@playwright/test').Page, projectId: string) {
-  await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', EMAIL);
-  await page.fill('input[type="password"]', SIGN_IN);
-  await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForTimeout(3500);
+  await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3500 });
   await page.goto(`/project/${projectId}/tco`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
 }
