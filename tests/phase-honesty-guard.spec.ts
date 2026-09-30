@@ -186,10 +186,29 @@ test.describe('what green is allowed to mean', () => {
   });
 
   test('green belongs to one tone and to no other', () => {
-    expect(PHASE_TONE_CLASS.proven.border).toContain('green');
-    for (const tone of ['unproven', 'stale', 'none'] as const) {
-      expect(JSON.stringify(PHASE_TONE_CLASS[tone]), `${tone} reaches for green`).not.toContain('green');
+    // Green is the token `--cc-success` since block D (D.29, `DESIGN.md` §1.1),
+    // not a Tailwind palette shade — so "green" is checked as both words: the
+    // proven tone carries the token in every class, and no other tone may name
+    // either the token or a green-family palette shade.
+    for (const cls of Object.values(PHASE_TONE_CLASS.proven).filter((c) => c !== 'bg-cc-surface')) {
+      expect(cls, 'proven is not painted with --cc-success').toContain('cc-success');
     }
+    for (const tone of ['unproven', 'stale', 'none'] as const) {
+      const classes = JSON.stringify(PHASE_TONE_CLASS[tone]);
+      expect(classes, `${tone} reaches for green`).not.toMatch(/success|green|emerald|lime|teal/);
+    }
+  });
+
+  test('every tone is a token — no palette shade, and stale is warning, never error (§1.1)', () => {
+    for (const [tone, classes] of Object.entries(PHASE_TONE_CLASS)) {
+      for (const cls of Object.values(classes)) {
+        expect(cls, `${tone}: ${cls} is not a --cc-* token`).toMatch(/^(border|bg|text)-cc-[a-z-]+$/);
+      }
+    }
+    for (const cls of Object.values(PHASE_TONE_CLASS.stale).filter((c) => c !== 'bg-cc-surface')) {
+      expect(cls, 'stale means "recompute", which is warning').toContain('cc-warning');
+    }
+    expect(JSON.stringify(PHASE_TONE_CLASS), 'a tone reaches for error — nothing in a phase row is an error').not.toContain('error');
   });
 });
 

@@ -7,9 +7,12 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcTable from '@/components/cc/Table';
 import { CcEmptyState } from '@/components/cc/EmptyState';
+import { CcSeverity } from '@/components/cc/Identifier';
 import { STATE_CLASSES } from '@/components/cc/state';
 import { getAuth } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
+import { normaliseSeverity } from '@/lib/severity';
+import { itFindingsCountLabel, wt } from '@/lib/workspace-messages';
 import type { SemanticState } from '@/lib/provenance';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import {
@@ -74,7 +77,6 @@ export default function ItAnswers({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** The chain link the table is filtered by, or `null`. */
   const [filterLink, setFilterLink] = useState<ChainLinkId | null>(null);
-  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!projectId || findings) return;
@@ -134,9 +136,6 @@ export default function ItAnswers({
     );
   }, [filterLink, chain, view.rows]);
 
-  const FIRST = 5;
-  const shown = showAll ? filtered : filtered.slice(0, FIRST);
-
   const select = useCallback((id: string) => {
     setSelectedId(id);
   }, []);
@@ -144,7 +143,7 @@ export default function ItAnswers({
   if (source === undefined) {
     return (
       <div data-it-view="loading" role="status" className="py-8">
-        <span className="sr-only">Reading the findings of this project…</span>
+        <span className="sr-only">{wt('it.reading')}</span>
       </div>
     );
   }
@@ -159,7 +158,7 @@ export default function ItAnswers({
         {view.headline}
       </h2>
       <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-        {view.question} — this one program, read by the engine.
+        {view.question} {wt('it.questionSuffix')}
       </p>
 
       <ul className="m-0 mt-4 grid list-none gap-2 p-0 sm:grid-cols-3">
@@ -185,8 +184,7 @@ export default function ItAnswers({
           {chain ? (
             <>
               <p className="m-0 mb-2.5 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                Selecting a link filters the findings below to the ones whose chain says the same
-                thing there.
+                {wt('it.chainHint')}
               </p>
               <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2 lg:grid-cols-4">
                 {chain.links.map((link) => (
@@ -212,7 +210,7 @@ export default function ItAnswers({
                         data-it-chain-absent=""
                         className="mt-0.5 block text-[13px] font-semibold text-cc-ink-muted"
                       >
-                        Not determined
+                        {wt('it.notDetermined')}
                       </span>
                     ) : (
                       <span
@@ -243,11 +241,11 @@ export default function ItAnswers({
               </p>
             </>
           ) : (
-            <CcEmptyState title="No chain to follow">
+            <CcEmptyState title={wt('it.noChainTitle')}>
               <span data-it-chain-absent-reason="">
                 {view.unreadable
-                  ? 'The findings of this project could not be read, so no chain is shown. An empty chain would say there were none.'
-                  : 'This run reported no findings, so there is nothing to trace.'}
+                  ? wt('it.noChainUnreadable')
+                  : wt('it.noChainEmpty')}
               </span>
             </CcEmptyState>
           )}
@@ -257,7 +255,7 @@ export default function ItAnswers({
       {/* The level distribution — Unknown as its own slice, and the snapshot
           that answered named in the card (roadmap 6.3's own sentence). */}
       <div className="mt-4">
-        <CcCard title="Clean core levels across the findings">
+        <CcCard title={wt('it.levelsTitle')}>
           <p data-it-level-sentence="" className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
             {view.distribution.sentence}
           </p>
@@ -300,30 +298,31 @@ export default function ItAnswers({
       {/* The findings, with both catalog views side by side. */}
       <div className="mt-4">
         <CcCard
-          title="Findings"
+          title={wt('it.findingsTitle')}
           count={view.rows.length}
           actions={
             filterLink ? (
               <CcButton onClick={() => setFilterLink(null)} data-it-clear-filter="">
-                Clear filter
+                {wt('it.clearFilter')}
               </CcButton>
             ) : null
           }
         >
           {view.rows.length === 0 ? (
-            <CcEmptyState title="No findings on record">
+            <CcEmptyState title={wt('it.noFindingsTitle')}>
               <span data-it-findings-absent-reason="">
                 {view.unreadable
-                  ? 'The findings of this project could not be read. That is not the same as there being none.'
-                  : 'The engine reported no finding for the source staged on this project.'}
+                  ? wt('it.noFindingsUnreadable')
+                  : wt('it.noFindingsEmpty')}
               </span>
             </CcEmptyState>
           ) : (
             <>
               <CcTable
-                caption="Findings, with both SAP catalog views and the clean core level"
+                caption={wt('it.tableCaption')}
                 columns={COLUMNS}
-                rows={shown.map((row) => ({
+                limit={5}
+                rows={filtered.map((row) => ({
                   key: row.id,
                   selected: chain?.findingId === row.id,
                   cells: {
@@ -338,7 +337,7 @@ export default function ItAnswers({
                       >
                         {row.objectName ?? row.title}
                         <span className="mt-0.5 block text-[11px] font-medium text-cc-ink-muted">
-                          {row.id} · {row.severity}
+                          {row.id} · <Severity value={row.severity} />
                           {row.routine ? ` · ${row.routine}` : ''}
                         </span>
                       </button>
@@ -349,7 +348,7 @@ export default function ItAnswers({
                     level:
                       row.level === null ? (
                         <span data-it-level-absent={row.id} className="text-[12px] font-medium text-cc-ink-muted">
-                          Not determined
+                          {wt('it.notDetermined')}
                         </span>
                       ) : (
                         <span
@@ -366,7 +365,7 @@ export default function ItAnswers({
                       ),
                     successor: (
                       <span className="text-[12px] font-medium text-cc-ink-muted">
-                        {row.successor ?? 'none published'}
+                        {row.successor ?? wt('it.successorNone')}
                       </span>
                     ),
                   },
@@ -376,17 +375,8 @@ export default function ItAnswers({
                 data-it-findings-count=""
                 className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted"
               >
-                Showing {shown.length} of {filtered.length}
-                {filterLink ? ` findings filtered by ${filterLink}, out of ${view.rows.length}` : ' findings'}. The
-                release view and the classification are the two SAP files, kept apart; the level is their merge.
+                {itFindingsCountLabel(filtered.length, filterLink, view.rows.length)}
               </p>
-              {filtered.length > shown.length ? (
-                <div className="mt-2">
-                  <CcButton onClick={() => setShowAll(true)} data-it-show-all="">
-                    Show all {filtered.length}
-                  </CcButton>
-                </div>
-              ) : null}
             </>
           )}
         </CcCard>
@@ -396,12 +386,12 @@ export default function ItAnswers({
 }
 
 const COLUMNS = [
-  { key: 'object', label: 'Object' },
-  { key: 'line', label: 'Line', numeric: true },
-  { key: 'release', label: 'Release view' },
-  { key: 'classification', label: 'Classification' },
-  { key: 'level', label: 'Level' },
-  { key: 'successor', label: 'Successor API' },
+  { key: 'object', label: wt('it.colObject') },
+  { key: 'line', label: wt('it.colLine'), numeric: true },
+  { key: 'release', label: wt('it.colRelease') },
+  { key: 'classification', label: wt('it.colClassification') },
+  { key: 'level', label: wt('it.colLevel') },
+  { key: 'successor', label: wt('it.colSuccessor') },
 ] as const;
 
 /**
@@ -432,10 +422,19 @@ function gradeState(grade: CloudReadinessGrade): SemanticState {
   }
 }
 
+/**
+ * The severity of a finding as the fixed identifier (DESIGN.md §2.7). A value
+ * outside the five words is *not determined*, never a guessed severity.
+ */
+function Severity({ value }: { value: unknown }) {
+  const sev = normaliseSeverity(value);
+  return sev ? <CcSeverity value={sev} /> : <>{wt('it.severityNotDetermined')}</>;
+}
+
 /** One half of the catalog answer, or the statement that it was never asked. */
 function ViewCell({ value }: { value: string | null }) {
   return value === null ? (
-    <span className="text-[12px] font-medium text-cc-ink-muted">Not asked — no object</span>
+    <span className="text-[12px] font-medium text-cc-ink-muted">{wt('it.viewNotAsked')}</span>
   ) : (
     <span className="text-[12px] font-medium text-cc-ink">{value}</span>
   );
@@ -451,7 +450,7 @@ function Figure({ figure }: { figure: ItFigure }) {
       <div className="flex flex-wrap items-baseline gap-2">
         {figure.value === null ? (
           <span data-figure-absent="" className="text-[13px] font-semibold text-cc-ink-muted">
-            Not determined
+            {wt('it.notDetermined')}
           </span>
         ) : (
           <span data-figure-value="" className="text-[18px] leading-none font-bold text-cc-ink">

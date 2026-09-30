@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import WorkspaceMetaLine from './MetaLine';
@@ -48,6 +47,8 @@ import {
   type WorkspaceView,
 } from '@/lib/workspace-model';
 import { recordGaps } from '@/lib/legacy-project';
+import { WORKSPACE_RETURN } from '@/lib/workspace-back-href';
+import { pageStatusOnRecord, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 
 type ContentBlock = 'layerBar' | 'nextStep' | 'layerSection' | 'firstLook' | 'ask' | 'notDetermined';
@@ -306,7 +307,7 @@ export default function WorkspaceShell({
             onDismissAll={marks.dismissAll}
           />
         </div>
-        <NextStepCard point={nextStep} projectId={projectId} level={view === 'business' ? 3 : 2} />
+        <NextStepCard point={nextStep} projectId={projectId} view={view} level={view === 'business' ? 3 : 2} />
       </div>
     ),
     // The content of the chosen layer (`DESIGN.md` §2.3 item 5, roadmap 6.2);
@@ -359,24 +360,16 @@ export default function WorkspaceShell({
 
   return (
     <div className="cc" data-workspace-shell={view}>
-      {/* Path — Shell Bar, §2.1. The workspace is one level above the case. */}
-      <div className="cc-no-print flex items-center justify-between gap-3">
-        <nav aria-label="Path" className="flex items-center gap-1 text-[12px] font-medium text-cc-ink-muted">
-          <Link href="/dashboard" className="text-cc-ink-muted no-underline hover:text-cc-ink">
-            My workspace
-          </Link>
-          <ChevronRight size={14} aria-hidden={true} />
-          <span data-workspace-path-current className="font-semibold text-cc-ink">
-            {project?.name || projectId}
-          </span>
-        </nav>
-        {/* Search ⌘K — §2.1's Shell Bar slot, roadmap 6.6. Its own component so
-            the index (elements, rules, findings, source lines, glossary) and the
-            dialog stay out of an already busy file. */}
-        <CommandSearch projectId={projectId} project={project} reading={reading} />
-      </div>
+      {/* Search ⌘K — roadmap 6.6. The path and the search button live in the
+          shell bar, where §2.1 puts them (block D, D.29): the shell names the
+          project from the page's own read and shows the search button while
+          this dialog is mounted (`lib/shell-context.ts`). The page's own path
+          row and button, which said the same things a few pixels lower, are
+          gone. Its own component so the index (elements, rules, findings,
+          source lines, glossary) and the dialog stay out of this file. */}
+      <CommandSearch projectId={projectId} project={project} reading={reading} />
 
-      <section data-workspace-header="" className="mt-3">
+      <section data-workspace-header="">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -403,7 +396,7 @@ export default function WorkspaceShell({
                     aria-expanded={detailsOpen}
                     data-workspace-details-toggle=""
                   >
-                    Details
+                    {wt('page.details')}
                     <ChevronDown size={14} aria-hidden={true} />
                   </CcButton>
                 </span>
@@ -418,7 +411,7 @@ export default function WorkspaceShell({
 
           <div className="cc-no-print flex shrink-0 flex-col items-start gap-1.5">
             <CcSegmentedControl
-              label="View"
+              label={wt('page.view')}
               value={view}
               onChange={onViewChange}
               segments={WORKSPACE_VIEWS.map((v) => ({ value: v, label: VIEW_LABELS[v] }))}
@@ -431,10 +424,10 @@ export default function WorkspaceShell({
             {view === 'it' && (
               <div className="flex items-center gap-1.5" data-workspace-it-focus="">
                 <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-                  Focus
+                  {wt('page.focus')}
                 </span>
                 <CcSegmentedControl
-                  label="Focus"
+                  label={wt('page.focus')}
                   value={focus}
                   onChange={onFocusChange}
                   segments={IT_FOCUS_OPTIONS.map((f) => ({ value: f, label: IT_FOCUS_LABELS[f] }))}
@@ -454,7 +447,7 @@ export default function WorkspaceShell({
                 data-workspace-view-about-toggle=""
                 className="inline-flex min-h-6 items-center font-semibold text-cc-ink underline underline-offset-2"
               >
-                About this view
+                {wt('page.aboutThisView')}
               </button>
             </p>
             {/* The paragraph the link opens (`DESIGN.md` §6.1): what the view
@@ -482,26 +475,24 @@ export default function WorkspaceShell({
               className="flex flex-wrap items-center gap-2.5 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
             >
               <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-                Project status
+                {wt('page.projectStatus')}
               </span>
               <span data-workspace-status-summary className="text-[13px] font-medium text-cc-ink">
-                {started === 0
-                  ? 'Nothing on record yet for any of the seven'
-                  : `${started} of ${statuses.length} have something on record`}
+                {started === 0 ? wt('page.nothingOnRecord') : pageStatusOnRecord(started, statuses.length)}
               </span>
               <span className="cc-no-print ml-auto">
                 <CcButton onClick={() => setStatusOpen(true)} aria-expanded={false}>
-                  Show project status
+                  {wt('page.showProjectStatus')}
                   <ChevronDown size={14} aria-hidden={true} />
                 </CcButton>
               </span>
             </div>
           ) : null}
-          {statusVisible && <WorkspaceStatusLine statuses={statuses} projectId={projectId} />}
+          {statusVisible && <WorkspaceStatusLine statuses={statuses} projectId={projectId} view={view} />}
         </div>
 
-        <div className="cc-no-print mt-4">
-          <WorkspaceToolBar tools={tools} projectId={projectId} open={toolsOpen} />
+        <div id={WORKSPACE_RETURN.tools} className="cc-no-print mt-4">
+          <WorkspaceToolBar tools={tools} projectId={projectId} view={view} open={toolsOpen} />
         </div>
       </section>
 
@@ -592,7 +583,7 @@ export default function WorkspaceShell({
       {marksReady && !marks.anyLeft ? (
         <div className="cc-no-print mt-4">
           <CcButton onClick={marks.reset} data-coach-marks-reset="">
-            Show tips again
+            {wt('page.showTipsAgain')}
           </CcButton>
         </div>
       ) : null}

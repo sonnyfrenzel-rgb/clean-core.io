@@ -5,7 +5,8 @@ import { GitBranch, Database, Code2, Bot, Ruler, ChevronDown, CheckCircle2, Aler
 import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
-import { supportMatrixRows, LEVEL_LABEL, LEVEL_EMOJI } from '@/lib/abap/support-matrix';
+import { supportMatrixRows, LEVEL_LABEL } from '@/lib/abap/support-matrix';
+import SupportLevelMark from '@/components/analyze/SupportLevelMark';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'How It Works — Transformation Methodology & Coverage | Clean-Core.io',
@@ -256,10 +257,8 @@ export default function HowItWorksPage() {
               {coverageRows.map((row, idx) => (
                 <tr key={row.construct} id={row.anchor} className={`scroll-mt-24 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
                   <td className="px-5 py-3.5 font-bold text-gray-800 border-b border-gray-100">{row.title}</td>
-                  <td className={`px-5 py-3.5 font-bold border-b border-gray-100 ${
-                    row.level === 'fully' ? 'text-green-700' : row.level === 'partial' ? 'text-amber-600' : 'text-red-600'
-                  }`}>
-                    {LEVEL_EMOJI[row.level]} {LEVEL_LABEL[row.level]}
+                  <td className="px-5 py-3.5 border-b border-gray-100">
+                    <SupportLevelMark level={row.level} label={LEVEL_LABEL[row.level]} />
                   </td>
                   <td className="px-5 py-3.5 text-gray-600 font-medium border-b border-gray-100">{row.notes}</td>
                 </tr>

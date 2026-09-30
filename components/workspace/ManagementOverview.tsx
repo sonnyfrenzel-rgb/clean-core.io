@@ -5,9 +5,25 @@ import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import CcTable from '@/components/cc/Table';
 import { CcTag } from '@/components/cc/Tag';
 import { getAuth } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
+import { showAllLabel, showFirstLabel } from '@/lib/cc-messages';
+import {
+  mgmtBreakLabel,
+  mgmtBucketsChartLabel,
+  mgmtNotDeterminedRunsLabel,
+  mgmtNotReadLabel,
+  mgmtOpenDecisionLabel,
+  mgmtQualifiersLabel,
+  mgmtReadFailedReason,
+  mgmtRuleVersionLabel,
+  mgmtShowDetailLabel,
+  mgmtSignedOutReason,
+  mgmtTrendLabel,
+  wt,
+} from '@/lib/workspace-messages';
 import { gradeKey, type ObjectUse } from '@/lib/abap/abcd-classification';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import { publicCloudFitLookupObjects, resolvePublicCloudFit, type PublicCloudFitFinding } from '@/lib/abap/public-cloud-fit-resolver';
@@ -214,8 +230,21 @@ function useShowAll(): [boolean, () => void] {
   return [all, () => setAll((v) => !v)];
 }
 
-/** Rows past the first five are hidden on screen until asked for, and always printed (§2.11, §7.1). */
+/**
+ * Rows past the first five are hidden on screen until asked for, and always
+ * printed (§2.11, §7.1). Only the blockers use this: they are an ordered list of
+ * cards (rank, label, tag, provenance, evidence line), not rows of columns, so
+ * `CcTable` does not carry them. The button speaks the table's words, so the
+ * two limits on this page read the same.
+ */
 const beyondFirst = (i: number, all: boolean) => (!all && i >= FIRST_ROWS ? 'hidden print:block' : null);
+
+/** The objects whose bucket moves with the edition — a `CcTable`, so its limit is the table's (§2.11). */
+const MOVE_COLUMNS = [
+  { key: 'object', label: wt('mgmt.colObject') },
+  { key: 'private', label: wt('mgmt.colPrivate') },
+  { key: 'public', label: wt('mgmt.colPublic') },
+] as const;
 
 const STATUS_OF: Record<DecisionStatus, ObjectStatusValue> = {
   draft: 'draft',
@@ -279,7 +308,7 @@ async function readProjectRoute<T>(
   try {
     const token = await getAuth().currentUser?.getIdToken();
     if (!token) {
-      if (!isCancelled()) set({ state: 'absent', reason: `You are signed out, so ${what} could not be read.` });
+      if (!isCancelled()) set({ state: 'absent', reason: mgmtSignedOutReason(what) });
       return;
     }
     const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/${path}`, {
@@ -289,13 +318,13 @@ async function readProjectRoute<T>(
     if (isCancelled()) return;
     const value = res.ok ? accept(json) : null;
     if (value === null) {
-      const said = json && typeof json.error === 'string' ? json.error : `${what} could not be read (${res.status}).`;
+      const said = json && typeof json.error === 'string' ? json.error : mgmtReadFailedReason(what, res.status);
       set({ state: 'absent', reason: said });
       return;
     }
     set({ state: 'ready', value });
   } catch {
-    if (!isCancelled()) set({ state: 'absent', reason: `${what} could not be read.` });
+    if (!isCancelled()) set({ state: 'absent', reason: mgmtReadFailedReason(what) });
   }
 }
 
@@ -335,7 +364,7 @@ export default function ManagementOverview({
       'findings',
       setFindings,
       (j) => (j && Array.isArray((j as ItFindingsSource).rows) ? (j as ItFindingsSource) : null),
-      'The findings of this project',
+      wt('mgmt.whatFindings'),
       () => cancelled,
     );
     return () => {
@@ -357,7 +386,7 @@ export default function ManagementOverview({
         const d = j as Partial<DecisionRead> | null;
         return d && d.draft ? { draft: d.draft, stored: d.stored ?? null } : null;
       },
-      'The decision of this project',
+      wt('mgmt.whatDecision'),
       () => cancelled,
     );
     return () => {
@@ -384,7 +413,7 @@ export default function ManagementOverview({
     if (lookupObjects.length > 0 && lookup.status === 'error') {
       return {
         state: 'absent',
-        reason: 'The catalog lookup for these objects failed, so no bucket is concluded rather than one guessed.',
+        reason: wt('mgmt.lookupFailed'),
       };
     }
     const deps = {
@@ -409,7 +438,6 @@ export default function ManagementOverview({
   );
 
   const [allBlockers, toggleBlockers] = useShowAll();
-  const [allMoves, toggleMoves] = useShowAll();
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   const { buckets, readiness, levels, blockers, decision: dec } = overview;
@@ -424,7 +452,7 @@ export default function ManagementOverview({
         {overview.headline}
       </h2>
       <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-        {overview.question} — this one project. No comparison with any other.
+        {overview.question} {wt('mgmt.questionSuffix')}
       </p>
 
       <div className="mt-4 space-y-4">
@@ -439,7 +467,7 @@ export default function ManagementOverview({
               {dec.waitsFor.length > 0 ? (
                 <div className="mt-2">
                   <h4 className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-                    Waits for
+                    {wt('mgmt.waitsFor')}
                   </h4>
                   <ul data-overview-waits="" className="m-0 mt-1 list-disc space-y-0.5 pl-5">
                     {dec.waitsFor.map((w) => (
@@ -451,9 +479,9 @@ export default function ManagementOverview({
                 </div>
               ) : null}
               <SegmentTable
-                caption="Conditions of this decision by status"
-                unit="Condition status"
-                columns={['Conditions']}
+                caption={wt('mgmt.conditionsCaption')}
+                unit={wt('mgmt.conditionsUnit')}
+                columns={[wt('mgmt.conditionsColumn')]}
                 rows={dec.conditions.map((c) => ({
                   key: c.status,
                   label: c.label,
@@ -463,14 +491,13 @@ export default function ManagementOverview({
               />
               {dec.qualifiers.length > 0 ? (
                 <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                  {dec.qualifiers.length} {dec.qualifiers.length === 1 ? 'point qualifies' : 'points qualify'} it
-                  without blocking it — listed on the decision card below.
+                  {mgmtQualifiersLabel(dec.qualifiers.length)}
                 </p>
               ) : null}
               <Coverage text={dec.coverage} />
               <p className="m-0 mt-2 text-[12px] font-semibold">
                 <a href="#decision-card" className="text-cc-ink underline">
-                  Open decision {dec.identity}
+                  {mgmtOpenDecisionLabel(dec.identity)}
                 </a>
               </p>
             </CcCard>
@@ -498,7 +525,7 @@ export default function ManagementOverview({
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-cc-mono text-[12px] font-semibold text-cc-ink-muted">{row.rank}.</span>
                         <span className="text-[13px] font-semibold text-cc-ink">{row.label}</span>
-                        {row.scope === 'public-edition' ? <CcTag>Public Edition decision</CcTag> : null}
+                        {row.scope === 'public-edition' ? <CcTag>{wt('mgmt.publicEditionDecision')}</CcTag> : null}
                         <CcProvenanceChip value={row.provenance} />
                       </div>
                       <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">{row.evidence}</p>
@@ -509,7 +536,7 @@ export default function ManagementOverview({
               {blockers.rows.length > FIRST_ROWS ? (
                 <div className="cc-no-print mt-2">
                   <CcButton variant="ghost" density="compact" onClick={toggleBlockers} aria-expanded={allBlockers}>
-                    {allBlockers ? 'Show the first five' : `Show all ${blockers.rows.length}`}
+                    {allBlockers ? showFirstLabel(FIRST_ROWS) : showAllLabel(blockers.rows.length)}
                   </CcButton>
                 </div>
               ) : null}
@@ -517,7 +544,7 @@ export default function ManagementOverview({
                 <ul data-overview-unread="" className="m-0 mt-2 list-none space-y-1 p-0">
                   {blockers.unread.map((u) => (
                     <li key={u} className="text-[12px] leading-snug font-medium text-cc-ink-muted">
-                      Not read: {u}
+                      {mgmtNotReadLabel(u)}
                     </li>
                   ))}
                 </ul>
@@ -536,34 +563,32 @@ export default function ManagementOverview({
               <Lead text={readiness.lead} />
               <TrendLine
                 points={readiness.points}
-                label={`Clean Core Score by run on rule version ${readiness.ruleVersion ?? 'not determined'}: ${readiness.points
-                  .map((p) => `${p.score} on ${p.date ?? p.runId}`)
-                  .join(', ')}.`}
+                label={mgmtTrendLabel(readiness.ruleVersion, readiness.points)}
               />
               <p data-overview-rule-version="" className="m-0 mt-1 font-cc-mono text-[11px] text-cc-ink-muted">
-                Rule version: {readiness.ruleVersion ?? 'not determined'}
+                {mgmtRuleVersionLabel(readiness.ruleVersion)}
               </p>
               <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink">{readiness.sentence}</p>
               {readiness.points.length > 0 ? (
                 <table data-overview-table="" className="mt-2 w-full border-collapse text-left">
-                  <caption className="sr-only">Clean Core Score of each run on this rule version</caption>
+                  <caption className="sr-only">{wt('mgmt.trendCaption')}</caption>
                   <thead>
                     <tr>
                       <th scope="col" className={TH}>
-                        Date
+                        {wt('mgmt.colDate')}
                       </th>
                       <th scope="col" className={TH}>
-                        Run
+                        {wt('mgmt.colRun')}
                       </th>
                       <th scope="col" className={cn(TH, 'text-right')}>
-                        Score (0–100)
+                        {wt('mgmt.colScore')}
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {readiness.points.map((p) => (
                       <tr key={p.runId} data-overview-row={p.runId}>
-                        <td className={cn(TD, 'font-cc-mono')}>{p.date ?? 'not recorded'}</td>
+                        <td className={cn(TD, 'font-cc-mono')}>{p.date ?? wt('mgmt.notRecorded')}</td>
                         <td className={cn(TD, 'font-cc-mono')}>{p.runId}</td>
                         <td className={cn(TD, 'text-right tabular-nums')}>{p.score}</td>
                       </tr>
@@ -579,8 +604,7 @@ export default function ManagementOverview({
                 <Swatch tone="not-determined" />
                 <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink">
                   <span className="font-semibold">
-                    Not determined: {readiness.notDetermined.count}{' '}
-                    {readiness.notDetermined.count === 1 ? 'run' : 'runs'}
+                    {mgmtNotDeterminedRunsLabel(readiness.notDetermined.count)}
                   </span>{' '}
                   — {readiness.notDetermined.sentence}
                 </p>
@@ -589,7 +613,7 @@ export default function ManagementOverview({
                 <ul data-overview-breaks="" className="m-0 mt-2 list-none space-y-1 p-0">
                   {readiness.breaks.map((b) => (
                     <li key={b} className="text-[12px] leading-snug font-medium text-cc-ink">
-                      Break: {b}
+                      {mgmtBreakLabel(b)}
                     </li>
                   ))}
                 </ul>
@@ -611,16 +635,16 @@ export default function ManagementOverview({
                   <div key={c.platform} data-overview-platform={c.platform}>
                     <p className="m-0 mb-1 text-[12px] font-semibold text-cc-ink">
                       {c.label}
-                      {c.isTarget ? ' — the target platform' : ''}
+                      {c.isTarget ? ` ${wt('mgmt.targetPlatform')}` : ''}
                     </p>
-                    <StackedBar label={`Four buckets, ${c.label}`} segments={c.segments} chart={`buckets-${c.platform}`} />
+                    <StackedBar label={mgmtBucketsChartLabel(c.label)} segments={c.segments} chart={`buckets-${c.platform}`} />
                   </div>
                 ))}
               </div>
               {buckets.charts[0] ? (
                 <SegmentTable
-                  caption="Objects per bucket, per edition"
-                  unit="Bucket (objects)"
+                  caption={wt('mgmt.bucketsCaption')}
+                  unit={wt('mgmt.bucketsUnit')}
                   columns={buckets.charts.map((c) => c.label)}
                   rows={buckets.charts[0].segments.map((s) => ({
                     key: s.key,
@@ -635,37 +659,20 @@ export default function ManagementOverview({
                 {buckets.moveSentence}
               </p>
               {buckets.moves.length > 0 ? (
-                <table data-overview-moves="" className="mt-1 w-full border-collapse text-left">
-                  <caption className="sr-only">Objects whose bucket depends on the edition</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col" className={TH}>
-                        Object
-                      </th>
-                      <th scope="col" className={TH}>
-                        Private Edition
-                      </th>
-                      <th scope="col" className={TH}>
-                        Public Edition
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {buckets.moves.map((m, i) => (
-                      <tr key={m.objectName} className={cn(!allMoves && i >= FIRST_ROWS ? 'hidden print:table-row' : null)}>
-                        <td className={cn(TD, 'font-cc-mono')}>{m.objectName}</td>
-                        <td className={TD}>{m.privateBucket}</td>
-                        <td className={TD}>{m.publicBucket}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : null}
-              {buckets.moves.length > FIRST_ROWS ? (
-                <div className="cc-no-print mt-2">
-                  <CcButton variant="ghost" density="compact" onClick={toggleMoves} aria-expanded={allMoves}>
-                    {allMoves ? 'Show the first five' : `Show all ${buckets.moves.length}`}
-                  </CcButton>
+                <div data-overview-moves="" className="mt-1">
+                  <CcTable
+                    caption={wt('mgmt.movesCaption')}
+                    columns={MOVE_COLUMNS}
+                    limit={FIRST_ROWS}
+                    rows={buckets.moves.map((m) => ({
+                      key: m.objectName,
+                      cells: {
+                        object: <span className="font-cc-mono">{m.objectName}</span>,
+                        private: m.privateBucket,
+                        public: m.publicBucket,
+                      },
+                    }))}
+                  />
                 </div>
               ) : null}
               {buckets.notes.map((n) => (
@@ -686,12 +693,12 @@ export default function ManagementOverview({
             <CcCard title={levels.title} meta={<CcProvenanceChip value={levels.provenance} />}>
               <Lead text={levels.lead} />
               <div className="mt-2">
-                <StackedBar label="Clean core levels across the findings" segments={levels.segments} chart="levels" />
+                <StackedBar label={wt('mgmt.levelsChart')} segments={levels.segments} chart="levels" />
               </div>
               <SegmentTable
-                caption="Findings per clean core level"
-                unit="Level (findings)"
-                columns={['Findings']}
+                caption={wt('mgmt.levelsCaption')}
+                unit={wt('mgmt.levelsUnit')}
+                columns={[wt('mgmt.levelsColumn')]}
                 rows={levels.segments.map((s) => ({
                   key: s.key,
                   label: s.label,
@@ -718,7 +725,7 @@ export default function ManagementOverview({
             aria-expanded={detailsOpen}
             aria-controls="management-answers-detail"
           >
-            {detailsOpen ? 'Hide the answers in detail' : `Show the answers in detail (${detailCount})`}
+            {detailsOpen ? wt('mgmt.hideDetail') : mgmtShowDetailLabel(detailCount)}
           </CcButton>
           <div id="management-answers-detail" hidden={!detailsOpen} className="mt-4">
             {children}

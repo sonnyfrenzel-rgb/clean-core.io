@@ -46,6 +46,14 @@
   outline-offset: 2px;
 }
 
+/* Focus wins over selection: a node that is both selected and focused must show
+   the focus ring, or the keyboard loses its place (found by the rendered guard,
+   QA review of 6c7d08b439d6). Same specificity, so it has to come after. */
+.cc-map-node[data-selected='true']:focus-visible {
+  outline: 2px solid var(--cc-focus);
+  outline-offset: 2px;
+}
+
 .cc-map-node:hover {
   background: color-mix(in srgb, var(--cc-ink) 6%, transparent);
 }

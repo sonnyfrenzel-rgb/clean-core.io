@@ -24,7 +24,8 @@
     "retention:verify": "tsx scripts/retention-verify.ts",
     "rules:record": "tsx scripts/rules-deploy.ts",
     "roadmap:status": "node scripts/roadmap/status.mjs",
-    "design:baseline": "tsx scripts/design/baseline.ts"
+    "design:baseline": "tsx scripts/design/baseline.ts",
+    "design:rendered-baseline": "cross-env DESIGN_RENDERED_WRITE=lower playwright test tests/design-rendered-guard.spec.ts"
   },
   "dependencies": {
     "@google/genai": "^1.17.0",

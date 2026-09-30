@@ -5,6 +5,7 @@ import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProcessMapModel } from '@/lib/process-map';
 import { searchProcess, type ProcessNavigation, type ProcessSearchHit } from '@/lib/process-navigation';
+import { mapSearchCount, wt } from '@/lib/workspace-messages';
 
 /**
  * Search across every level — roadmap 2.9, `DESIGN.md` §5.9 item 9.
@@ -122,8 +123,8 @@ export default function ProcessSearch({ model, nav, onJump }: ProcessSearchProps
           role="combobox"
           aria-expanded={hits.length > 0}
           aria-controls={listId}
-          aria-label="Find a step in any level (Control K)"
-          placeholder="Find a step — 16.4, a name, L472  (Ctrl+K)"
+          aria-label={wt('mapSearch.label')}
+          placeholder={wt('mapSearch.placeholder')}
           data-process-search-input=""
           value={query}
           onChange={(event) => setQueryAndReset(event.target.value)}
@@ -132,7 +133,7 @@ export default function ProcessSearch({ model, nav, onJump }: ProcessSearchProps
         />
         {query ? (
           <span data-process-search-count className="shrink-0 font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
-            {hits.length ? `${at + 1} of ${hits.length}` : '0 of 0'}
+            {mapSearchCount(at + 1, hits.length)}
           </span>
         ) : null}
       </div>
@@ -141,7 +142,7 @@ export default function ProcessSearch({ model, nav, onJump }: ProcessSearchProps
         <ul
           id={listId}
           role="listbox"
-          aria-label="Search results"
+          aria-label={wt('mapSearch.results')}
           data-process-search-results=""
           className="max-h-[180px] overflow-y-auto rounded-cc-row border border-cc-line bg-cc-surface"
         >

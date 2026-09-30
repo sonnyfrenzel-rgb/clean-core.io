@@ -6,7 +6,9 @@ import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcWhyPopover from '@/components/cc/WhyPopover';
 import { objectStatus } from '@/lib/object-status';
-import type { WorkspaceStatus } from '@/lib/workspace-model';
+import type { WorkspaceStatus, WorkspaceView } from '@/lib/workspace-model';
+import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
+import { openStageLabel, wt } from '@/lib/workspace-messages';
 
 /**
  * The seven statuses of `DESIGN.md` §2.3 — roadmap 1.4.
@@ -44,9 +46,17 @@ export default function WorkspaceStatusLine({
   statuses,
   projectId,
   toolBase,
+  view,
 }: {
   statuses: WorkspaceStatus[];
   projectId?: string;
+  /**
+   * The view the line stands in. Each "Open <stage>" link carries it and this
+   * line as its origin (`?view=…&from=workspace-status`, block D D.29) so "Back
+   * to workspace" returns to the same view. The demo passes none: its stages
+   * have no workspace to return to.
+   */
+  view?: WorkspaceView;
   /**
    * Where the stage tools live. A project's are under `/project/{id}`; the
    * demo's under `/demo` (roadmap 3.0.7), which has no project id to put in
@@ -57,8 +67,9 @@ export default function WorkspaceStatusLine({
   const base = toolBase ?? `/project/${projectId ?? ''}`;
   return (
     <ul
+      id={view ? WORKSPACE_RETURN.status : undefined}
       data-workspace-status-line=""
-      aria-label="Project status"
+      aria-label={wt('status.label')}
       className="m-0 flex list-none flex-wrap items-center gap-x-4 gap-y-2 p-0"
     >
       {statuses.map((entry) => (
@@ -97,11 +108,11 @@ export default function WorkspaceStatusLine({
                   {entry.restsOn.map((phase) => (
                     <Link
                       key={phase.key}
-                      href={`${base}/${phase.path}`}
+                      href={stageHref({ base, path: phase.path, view, from: WORKSPACE_RETURN.status })}
                       data-workspace-status-tool={phase.key}
                       className="font-semibold text-cc-ink underline underline-offset-2"
                     >
-                      Open {phase.label}
+                      {openStageLabel(phase.label)}
                     </Link>
                   ))}
                 </span>

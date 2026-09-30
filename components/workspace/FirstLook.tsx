@@ -36,6 +36,14 @@ import { applyNaming, type ProcessNamingRecord } from '@/lib/process-naming';
 import { fetchProcessNaming } from '@/lib/process-naming-client';
 import type { BusinessRuleSet } from '@/lib/abap/business-rule-set';
 import type { Project } from '@/lib/types';
+import {
+  wt,
+  firstLookDecisionsLine,
+  firstLookReading,
+  firstLookReadingNext,
+  firstLookShowingDecisions,
+  firstLookShowingRules,
+} from '@/lib/workspace-messages';
 
 /**
  * The first look — `DESIGN.md` §5.1, §5.2, roadmap 2.7.
@@ -352,9 +360,9 @@ export default function FirstLook({
     return (
       <>
         <section data-first-look="waiting" data-reduced-motion={reduced ? 'true' : 'false'} className="max-w-3xl">
-          <CcCard title="Reading your code" level={2} meta={<CcProvenanceChip value="reconstructed" />}>
+          <CcCard title={wt('firstLook.title')} level={2} meta={<CcProvenanceChip value="reconstructed" />}>
             <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
-              Reading {sourceName}.
+              {firstLookReading(sourceName)}
             </p>
           </CcCard>
         </section>
@@ -374,12 +382,12 @@ export default function FirstLook({
       <>
       <section data-first-look="building" data-reached={reached} className="max-w-3xl">
         <CcCard
-          title="Reading your code"
+          title={wt('firstLook.title')}
           level={2}
           meta={<CcProvenanceChip value="reconstructed" />}
           actions={
             <CcButton onClick={skip} data-first-look-skip="">
-              Skip
+              {wt('firstLook.skip')}
             </CcButton>
           }
         >
@@ -390,7 +398,7 @@ export default function FirstLook({
           </ol>
           {/* No spinner and no bar: the line says what is being read (§5.1). */}
           <p className="m-0 mt-2 text-[13px] leading-snug font-medium text-cc-ink-muted">
-            {STAGE_LABELS[nextId]} — reading {sourceName}.
+            {firstLookReadingNext(STAGE_LABELS[nextId], sourceName)}
           </p>
         </CcCard>
       </section>
@@ -420,7 +428,7 @@ export default function FirstLook({
                 data-first-look-process-name={result.processName.name ? 'named' : 'unnamed'}
                 className="m-0 font-cc-mono text-[18px] leading-tight font-bold text-cc-ink"
               >
-                {result.processName.name ?? 'No program name in this source'}
+                {result.processName.name ?? wt('firstLook.noProgramName')}
               </h3>
             </div>
             {result.processName.reason ? (
@@ -456,7 +464,7 @@ export default function FirstLook({
                       <span className="font-cc-mono text-[12px]">{rule.label}</span>
                       <CcRulePropertyTag value={rule.property} />
                       {rule.anchors.slice(0, 4).map((anchor) => (
-                        <CcAnchor key={anchor} label={`Source line ${anchor}`}>
+                        <CcAnchor key={anchor} label={`${wt('firstLook.sourceLine')} ${anchor}`}>
                           {anchor}
                         </CcAnchor>
                       ))}
@@ -466,7 +474,7 @@ export default function FirstLook({
               ) : null}
               {result.rules.length > 6 ? (
                 <p className="m-0 mt-1.5 text-[12px] font-medium text-cc-ink-muted">
-                  Showing 6 of {result.rules.length} rules.
+                  {firstLookShowingRules(6, result.rules.length)}
                 </p>
               ) : null}
             </div>
@@ -474,9 +482,7 @@ export default function FirstLook({
             {/* The decisions, with the condition as the source writes it. */}
             <div data-first-look-decisions="" data-count={result.decisions.length}>
               <p className="m-0 text-[13px] leading-snug font-semibold text-cc-ink">
-                {result.decisions.length === 0
-                  ? 'No decision — this source has no branch the engine draws as a gateway.'
-                  : `${result.decisions.length} ${result.decisions.length === 1 ? 'decision' : 'decisions'}, each with the condition as your code writes it.`}
+                {firstLookDecisionsLine(result.decisions.length)}
               </p>
               {result.decisions.length > 0 ? (
                 <ul className="m-0 mt-2 list-none space-y-1.5 p-0">
@@ -488,11 +494,11 @@ export default function FirstLook({
                     >
                       <span className="font-cc-mono text-[12px]">{decision.label}</span>
                       {decision.anchor ? (
-                        <CcAnchor label={`Source line ${decision.anchor}`}>
+                        <CcAnchor label={`${wt('firstLook.sourceLine')} ${decision.anchor}`}>
                           {decision.anchor}
                         </CcAnchor>
                       ) : (
-                        <CcAnchor tone="unlinked">no line</CcAnchor>
+                        <CcAnchor tone="unlinked">{wt('firstLook.noLine')}</CcAnchor>
                       )}
                     </li>
                   ))}
@@ -500,14 +506,14 @@ export default function FirstLook({
               ) : null}
               {result.decisions.length > 5 ? (
                 <p className="m-0 mt-1.5 text-[12px] font-medium text-cc-ink-muted">
-                  Showing 5 of {result.decisions.length} decisions.
+                  {firstLookShowingDecisions(5, result.decisions.length)}
                 </p>
               ) : null}
             </div>
           </div>
         ) : (
           <p data-first-look-result="none" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
-            No source has been staged, so there is no process to show. This is not a result.
+            {wt('firstLook.noSource')}
           </p>
         )}
 

@@ -285,40 +285,25 @@ function percentile(sorted: number[], p: number): number {
 
 // ── Quadrant metadata (for UI) ─────────────────────────────────────
 
-export const QUADRANT_META: Record<Quadrant, { label: string; emoji: string; color: string; bgColor: string; description: string }> = {
+export const QUADRANT_META: Record<Quadrant, { label: string; description: string }> = {
   'danger': {
     label: 'Danger Zone',
-    emoji: '🔴',
-    color: 'text-red-700',
-    bgColor: 'bg-red-50 border-red-200',
     description: 'High usage + no clean path — plan and resource first.',
   },
   'prioritize': {
     label: 'Prioritize',
-    emoji: '🟢',
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50 border-emerald-200',
     description: 'High usage + feasible — transform first for maximum impact.',
   },
   'retire-candidate': {
     label: 'Retire Candidate',
-    emoji: '🟡',
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50 border-amber-200',
     description: 'Zero calls across a declared window of 13+ months, or last used 13+ months ago — retire after business owner confirmation.',
   },
   'low-priority': {
     label: 'Low Priority',
-    emoji: '⚪',
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-50 border-slate-200',
     description: 'Moderate usage, clean path — transform when convenient.',
   },
   'unknown': {
     label: 'Unknown Usage',
-    emoji: '❓',
-    color: 'text-slate-500',
-    bgColor: 'bg-slate-50 border-slate-200',
     description: 'No usage data for the object — or zero calls in a window too short, or undeclared, to call it disuse. Neither is evidence of non-use; verify manually before retiring.',
   },
 };

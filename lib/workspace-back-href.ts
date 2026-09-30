@@ -50,3 +50,43 @@ export function stageBackLink({
   if (profileLoading) return { kind: 'pending' };
   return { kind: 'link', href: workspaceBackHref({ projectId, shell, search }), to: shell ? 'workspace' : 'dashboard' };
 }
+
+/**
+ * Where a stage is left *from*, on the workspace page — the element "Back to
+ * workspace" scrolls back to. Ids that stand on the object page, each owned by
+ * the component that renders the link (block D, D.29).
+ */
+export const WORKSPACE_RETURN = {
+  tools: 'workspace-tools',
+  nextStep: 'next-step',
+  status: 'workspace-status',
+} as const;
+
+export type WorkspaceReturnPoint = (typeof WORKSPACE_RETURN)[keyof typeof WORKSPACE_RETURN];
+
+/**
+ * A link from the workspace into a stage that remembers where it came from:
+ * `/project/<id>/<path>?view=<view>&from=<element>`. `workspaceBackHref` reads
+ * the same two parameters on the way back, so "Back to workspace" returns to the
+ * view the reader was in and to the control they left by (the coordinator's
+ * addendum to D.9). Without a view — the demo, which has no workspace to return
+ * to — the link is the stage's plain address.
+ */
+export function stageHref({
+  base,
+  path,
+  view,
+  from,
+}: {
+  /** `/project/<id>`, or `/demo` for the demo's stages. */
+  base: string;
+  path: string;
+  view?: string | null;
+  from?: WorkspaceReturnPoint;
+}): string {
+  const target = `${base}/${path}`;
+  if (!isWorkspaceView(view)) return target;
+  const params = new URLSearchParams({ view });
+  if (from) params.set('from', from);
+  return `${target}?${params.toString()}`;
+}

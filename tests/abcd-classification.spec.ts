@@ -26,6 +26,7 @@ import {
   getPublishedGradeDistribution,
 } from '../lib/abap/catalog-service';
 import { readFileSync } from 'fs';
+import { CLEAN_CORE_LEVEL } from '../lib/clean-core-level';
 import { join } from 'path';
 
 test.describe('A/B/C/D readiness derivation', () => {
@@ -80,6 +81,20 @@ test.describe('A/B/C/D readiness derivation', () => {
       expect(ABCD_META[g].badge).toBeTruthy();
       expect(ABCD_META[g].atcReading).toBeTruthy();
     }
+  });
+
+  test('a level wears the colour of its semantic state — tokens only, never green (D.29, DESIGN.md §1.8)', () => {
+    // The fixed list is `lib/clean-core-level.ts`; `ABCD_META.badge` writes the
+    // same answer out as classes. Both are read here, so the two cannot drift
+    // into an A that is blue in the workspace and green on the catalog page.
+    for (const g of ALL_GRADES) {
+      const state = CLEAN_CORE_LEVEL[g].state;
+      expect(ABCD_META[g].badge, `${g}`).toBe(`bg-cc-${state}-bg text-cc-${state} border-cc-${state}-border`);
+      expect(ABCD_META[g].badge, `${g} is green`).not.toMatch(/success|green|emerald/);
+    }
+    expect(CLEAN_CORE_LEVEL.A.state).toBe('information');
+    // The hex colour field is gone; a chart takes lib/chart-colors.ts.
+    for (const g of ALL_GRADES) expect(Object.keys(ABCD_META[g])).not.toContain('color');
   });
 });
 

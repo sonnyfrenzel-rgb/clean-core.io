@@ -36,22 +36,22 @@ export default function PilotWarningBanner() {
           the Linux runner, which is the entire reason the overflow guard measures
           in CI rather than on a screenshot. */}
       <div className="flex flex-wrap items-center justify-center gap-2 font-black">
-        <Link href="/datenschutz" className="underline hover:text-green-750 transition-colors outline-none cursor-pointer">
+        <Link href="/datenschutz" className="underline hover:text-green-750 transition-colors cursor-pointer">
           Privacy Policy
         </Link>
         <span>•</span>
-        <Link href="/impressum" className="underline hover:text-green-750 transition-colors outline-none cursor-pointer">
+        <Link href="/impressum" className="underline hover:text-green-750 transition-colors cursor-pointer">
           Legal Notice
         </Link>
         <span>•</span>
-        <Link href="/terms" className="underline hover:text-green-750 transition-colors outline-none cursor-pointer">
+        <Link href="/terms" className="underline hover:text-green-750 transition-colors cursor-pointer">
           Terms
         </Link>
 
         <span className="text-amber-300">|</span>
         <button 
           onClick={dismissBanner}
-          className="inline-flex items-center gap-1 bg-amber-200/80 hover:bg-amber-300 text-amber-950 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all outline-none cursor-pointer border border-amber-300/40 hover:scale-105 active:scale-95 shadow-sm ml-1"
+          className="inline-flex items-center gap-1 bg-amber-200/80 hover:bg-amber-300 text-amber-950 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer border border-amber-300/40 hover:scale-105 active:scale-95 shadow-sm ml-1"
           title="Dismiss warning"
         >
           <X size={10} strokeWidth={3} className="shrink-0" /> Dismiss

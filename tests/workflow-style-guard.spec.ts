@@ -1,11 +1,8 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
-import { adminSetDoc } from './helpers/admin-seed';
-import firebaseConfig from '../firebase-config.json';
-import { stageBackLink, workspaceBackHref } from '../lib/workspace-back-href';
+import { seedStageProject } from './helpers/seed-project';
+import { stageBackLink, stageHref, workspaceBackHref, WORKSPACE_RETURN } from '../lib/workspace-back-href';
 
 /**
  * The seven stages look like one product, and this is what keeps them that way.
@@ -94,55 +91,19 @@ test.describe('one stage header, defined once', () => {
 });
 
 test.describe('every stage renders its title identically', () => {
-  const EMAIL = `stagestyle-${Date.now()}@cleancore-test.io`;
-  const PASSWORD = 'StageStyle123!';
-  const PROJECT_ID = `stage-style-${Date.now()}`;
-  const RUN_ID = `stage-style-run-${Date.now()}`;
+  let EMAIL = '';
+  let PASSWORD = '';
+  let PROJECT_ID = '';
 
   test.beforeAll(async () => {
-    // Look for the DEFAULT app rather than "any app", and hand it to getAuth
-    // explicitly. `if (!getApps().length) initializeApp(...)` followed by a bare
-    // `getAuth()` fails with "No Firebase App '[DEFAULT]' has been created" when
-    // an earlier spec in the same worker left a *named* app in the registry: the
-    // list is non-empty, so initialisation is skipped, and the default the
-    // argument-less getAuth() looks for was never created. It only shows up when
-    // this file runs late in a full suite, which is the worst way to find out.
-    const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    try {
-      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-    } catch { /* already connected */ }
-
-    const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD);
-    const uid = cred.user.uid;
-
-    await adminSetDoc('users', uid, {
-      firstName: 'Stage', lastName: 'Style', email: EMAIL,
-      tier: 'pilot', status: 'approved',
-      transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
-    });
-
-    // Populated enough that no stage renders an empty state, because an empty
-    // state has a different header and the comparison would be vacuous.
-    await adminSetDoc('projects', PROJECT_ID, {
-      name: 'Stage style fixture',
-      userId: uid,
-      createdAt: new Date(),
-      status: 'documented',
-      legacyCode: 'REPORT z_style.\nSELECT * FROM vbak INTO TABLE @DATA(lt).\n',
-      analysis: JSON.stringify({ cleanCoreScore: 62, standardFit: { potential: 'Medium' } }),
-      cleanCoreScore: 62,
-      solutionDesign: '# Target architecture\n\nSide-by-side on BTP.\n',
-      generatedCode: 'export const ok = true;\n',
-      testCases: [{ id: 't1', name: 'Case', category: 'Unit', status: 'Passed' }],
-      documentation: '# Blueprint\n\nLevel 1.\n',
-      activeRunId: RUN_ID,
-    });
-
-    await adminSetDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, {
-      runId: RUN_ID, projectId: PROJECT_ID, userId: uid,
-      createdAt: new Date().toISOString(), status: 'completed', cleanCoreScore: 62,
-    });
+    // The fixture lives in tests/helpers/seed-project.ts (D.2), shared with the
+    // rendered design guard — populated enough that no stage renders an empty
+    // state, because an empty state has a different header and the comparison
+    // would be vacuous.
+    const seeded = await seedStageProject({ prefix: 'stagestyle' });
+    EMAIL = seeded.email;
+    PASSWORD = seeded.password;
+    PROJECT_ID = seeded.projectId;
   });
 
   test('same font, weight, size, spacing, case and ink on all seven', async ({ page }) => {
@@ -256,5 +217,27 @@ test.describe('"Back to workspace" leads to the view and layer the stage was ope
     const src = fs.readFileSync(path.join(process.cwd(), 'components/StageHeader.tsx'), 'utf8');
     expect(src).toContain('const back = stageBackLink({ projectId, profileLoading, shell, search });');
     expect(src).not.toContain('workspaceBackHref(');
+  });
+
+  test('the way in carries what the way back reads — the three workspace links, round trip (D.29)', () => {
+    // Toolbar, status line and "Next step" link into a stage with the view and
+    // their own place on the page; "Back to workspace" on that stage then
+    // returns to exactly that view and place.
+    for (const from of Object.values(WORKSPACE_RETURN)) {
+      for (const view of ['business', 'it', 'management'] as const) {
+        const href = stageHref({ base: '/project/p-1', path: 'design', view, from });
+        expect(href).toBe(`/project/p-1/design?view=${view}&from=${from}`);
+        const search = href.slice(href.indexOf('?'));
+        expect(workspaceBackHref({ projectId: 'p-1', shell: true, search })).toBe(`/project/p-1?view=${view}#${from}`);
+      }
+    }
+    // The demo has no workspace to return to, and an unknown view is dropped.
+    expect(stageHref({ base: '/demo', path: 'tco' })).toBe('/demo/tco');
+    expect(stageHref({ base: '/project/p-1', path: 'tco', view: 'admin', from: WORKSPACE_RETURN.tools })).toBe('/project/p-1/tco');
+    // And the three components build their links through it, not by hand.
+    for (const rel of ['ToolBar', 'StatusLine', 'NextStepCard']) {
+      const src = fs.readFileSync(path.join(process.cwd(), `components/workspace/${rel}.tsx`), 'utf8');
+      expect(src, `${rel} builds its stage link by hand`).toMatch(/href=\{stageHref\(\{/);
+    }
   });
 });

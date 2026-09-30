@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import ts from 'typescript';
 import { CC_MESSAGES } from '../lib/cc-messages';
+import { WORKSPACE_MESSAGES, WORKSPACE_MESSAGE_PARTS } from '../lib/workspace-messages';
 import { createGalleryAdmin, openGallery, type GalleryAdmin } from './helpers/cc-gallery';
 
 /**
@@ -128,6 +130,178 @@ test.describe('the components cannot be overridden from outside', () => {
       expect(value.trim().length, `${key} is empty`).toBeGreaterThan(0);
       expect(value, `${key} carries a raw markdown or template marker`).not.toMatch(/[*_`{}]/);
     }
+  });
+});
+
+/**
+ * Block D, step D.29 — the same rule for the new surfaces, which until this
+ * step it did not reach: the object page (`components/workspace`), the process
+ * map (`components/process-map`) and the demo workspace. Their text comes from
+ * `lib/workspace-messages.ts`.
+ *
+ * Read through the TypeScript parser rather than the one-line pattern above.
+ * That pattern cannot see a sentence that wraps across lines — which is most
+ * sentences in these files — nor a string literal standing in a JSX expression
+ * (`{open ? 'Hide' : 'Show'}`), nor a visible attribute (`title="Findings"`,
+ * `aria-label="Search results"`). The parser sees all three, and does not
+ * mistake a generic's `>` for the end of a tag.
+ */
+const TEXT_SURFACES = ['components/workspace', 'components/process-map'];
+const TEXT_SURFACE_FILES = ['components/demo/DemoWorkspaceShell.tsx', 'components/demo/DemoTourStop.tsx'];
+
+/** Attributes whose value a reader sees or hears. Identifiers, classes, roles and data hooks are not text. */
+const TEXT_ATTRIBUTES = new Set([
+  'title', 'label', 'aria-label', 'aria-description', 'aria-roledescription', 'aria-valuetext',
+  'aria-placeholder', 'placeholder', 'alt', 'caption', 'unit', 'headline', 'confirmLabel',
+  'cancelLabel', 'facet', 'subject', 'description', 'lead', 'eyebrow', 'heading', 'message',
+  'body', 'hint', 'noun', 'emptyLabel', 'reason', 'summary', 'text',
+]);
+
+function surfaceSources(): { rel: string; text: string }[] {
+  const out: { rel: string; text: string }[] = [];
+  for (const dir of TEXT_SURFACES) {
+    for (const name of fs.readdirSync(path.resolve(ROOT, dir))) {
+      if (name.endsWith('.tsx')) out.push({ rel: `${dir}/${name}`, text: read(`${dir}/${name}`) });
+    }
+  }
+  for (const rel of TEXT_SURFACE_FILES) out.push({ rel, text: read(rel) });
+  return out;
+}
+
+/** Every piece of interface text written into the JSX of one file, with its line. */
+function hardCodedText(rel: string, text: string): string[] {
+  const sf = ts.createSourceFile(rel, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const found: string[] = [];
+  const words = (s: string) => /[A-Za-z]{2,}/.test(s);
+  const at = (node: ts.Node) => sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
+  const note = (node: ts.Node, s: string) =>
+    found.push(`${rel}:${at(node)}: "${s.replace(/\s+/g, ' ').trim().slice(0, 60)}"`);
+
+  // The literals an expression can put on the screen: itself, either branch of
+  // a condition, the right side of `&&`, both sides of `||`/`??`/`+`, the
+  // fixed parts of a template.
+  const literals = (expr: ts.Expression | undefined, node: ts.Node): void => {
+    if (!expr) return;
+    if (ts.isParenthesizedExpression(expr)) return literals(expr.expression, node);
+    if (ts.isStringLiteral(expr) || ts.isNoSubstitutionTemplateLiteral(expr)) {
+      if (words(expr.text)) note(node, expr.text);
+      return;
+    }
+    if (ts.isTemplateExpression(expr)) {
+      const fixed = [expr.head.text, ...expr.templateSpans.map((s) => s.literal.text)].join(' ');
+      if (words(fixed)) note(node, fixed);
+      return;
+    }
+    if (ts.isConditionalExpression(expr)) {
+      literals(expr.whenTrue, node);
+      literals(expr.whenFalse, node);
+      return;
+    }
+    if (ts.isBinaryExpression(expr)) {
+      const op = expr.operatorToken.kind;
+      if (op === ts.SyntaxKind.AmpersandAmpersandToken) literals(expr.right, node);
+      if (
+        op === ts.SyntaxKind.BarBarToken ||
+        op === ts.SyntaxKind.QuestionQuestionToken ||
+        op === ts.SyntaxKind.PlusToken
+      ) {
+        literals(expr.left, node);
+        literals(expr.right, node);
+      }
+    }
+  };
+
+  const visit = (node: ts.Node): void => {
+    if (ts.isJsxText(node) && words(node.text)) note(node, node.text);
+    if (ts.isJsxExpression(node) && !ts.isJsxAttribute(node.parent)) literals(node.expression, node);
+    if (ts.isJsxAttribute(node) && TEXT_ATTRIBUTES.has(node.name.getText(sf)) && node.initializer) {
+      const init = node.initializer;
+      if (ts.isStringLiteral(init)) {
+        if (words(init.text)) note(node, init.text);
+      } else if (ts.isJsxExpression(init)) {
+        literals(init.expression, node);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return found;
+}
+
+/** Surface files whose every visible word arrives as a prop or from a `lib/` list with its own guard. */
+const PROPS_ONLY_SURFACES: string[] = [
+  // The glossary popover: the term, its category and its definition are the glossary's (lib/glossary.ts).
+  'components/workspace/GlossaryText.tsx',
+  // The meta line: labels and values arrive as entries, "not recorded" is META_ABSENT in lib/workspace-model.ts.
+  'components/workspace/MetaLine.tsx',
+  // The canvas: its name and its badges arrive as props from ProcessMap and BpmnEditor.
+  'components/process-map/BpmnCanvas.tsx',
+];
+
+test.describe('the new surfaces speak from the catalogue too (D.29)', () => {
+  test('the reader sees what it is meant to catch — text, a wrapped sentence, a branch, an attribute', () => {
+    // Without this, a scanner that matched nothing would pass every file.
+    const sample = [
+      'export function X({ open }: { open: boolean }) {',
+      '  const ref = useRef<HTMLDivElement>(null);',
+      '  return (',
+      '    <div title="Findings">',
+      '      Plain words',
+      '      <p>',
+      '        a sentence that wraps',
+      '        onto a second line',
+      '      </p>',
+      "      {open ? 'Hide' : 'Show'}",
+      "      <span aria-label={`Search ${1}`}>{wt('x.y')}{' · '}{name}</span>",
+      '    </div>',
+      '  );',
+      '}',
+    ].join('\n');
+    const hits = hardCodedText('sample.tsx', sample).map((h) => h.replace(/^sample\.tsx:\d+: /, ''));
+    expect(hits).toEqual([
+      '"Findings"',
+      '"Plain words"',
+      '"a sentence that wraps onto a second line"',
+      '"Hide"',
+      '"Show"',
+      '"Search"',
+    ]);
+  });
+
+  test('no visible string is written into the JSX of the workspace, the process map or the demo workspace', () => {
+    const offenders = surfaceSources().flatMap(({ rel, text }) => hardCodedText(rel, text));
+    expect(
+      offenders,
+      `hard-coded interface text (DESIGN.md §3 — every visible string of a new surface is a key in lib/workspace-messages.ts):\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
+
+  test('every key of the workspace catalogue is a real sentence, in exactly one part', () => {
+    const seen = new Map<string, string>();
+    for (const [part, messages] of Object.entries(WORKSPACE_MESSAGE_PARTS)) {
+      for (const [key, value] of Object.entries(messages as Record<string, string>)) {
+        expect(seen.get(key), `${key} is in both ${seen.get(key)} and ${part}`).toBeUndefined();
+        seen.set(key, part);
+        expect(value.trim().length, `${key} is empty`).toBeGreaterThan(0);
+        expect(value, `${key} carries a raw markdown or template marker`).not.toMatch(/[*`{}]|(^|\s)_\S[^_]*_(\s|$)/);
+        expect(key, `${key} is not <surface>.<name>`).toMatch(/^[a-z][A-Za-z]*\.[A-Za-z0-9.]+$/);
+      }
+    }
+    expect(Object.keys(WORKSPACE_MESSAGES).length).toBe(seen.size);
+    expect(seen.size, 'the catalogue is nearly empty — the surfaces cannot be reading from it').toBeGreaterThan(100);
+  });
+
+  test('and every surface file that has text of its own reads a catalogue', () => {
+    // A component either imports a catalogue or receives all of its text as
+    // props from one that does. The second kind is named here, so a new one is
+    // a decision rather than a way round the rule above.
+    const PROPS_ONLY = new Set<string>(PROPS_ONLY_SURFACES);
+    const silent: string[] = [];
+    for (const { rel, text } of surfaceSources()) {
+      if (PROPS_ONLY.has(rel)) continue;
+      if (!/from '@\/lib\/(workspace|cc)-messages'/.test(text)) silent.push(rel);
+    }
+    expect(silent, `these surface files read no catalogue:\n${silent.join('\n')}`).toEqual([]);
   });
 });
 

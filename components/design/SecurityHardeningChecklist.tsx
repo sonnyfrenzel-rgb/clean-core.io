@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { ShieldCheck, HelpCircle, Link2 } from 'lucide-react';
 import type { SupportFinding } from '@/lib/abap/class-model';
-import { SupportLevelMark } from '@/components/analyze/CoverageVerdict';
+import SupportLevelMark from '@/components/analyze/SupportLevelMark';
 import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';

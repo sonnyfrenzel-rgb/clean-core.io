@@ -12,6 +12,7 @@ import {
   type StagePanel,
   type TravellingFact,
 } from '@/lib/three-views-stage';
+import { wt, threeViewsFactNote, threeViewsOffered } from '@/lib/workspace-messages';
 
 /**
  * The three views in motion — `DESIGN.md` §6.1.1, roadmap step 6.1.
@@ -148,7 +149,7 @@ export default function ThreeViewsStage({
   const columns = still === true;
 
   return (
-    <CcCard title="One case, three views" level={2}>
+    <CcCard title={wt('threeViews.title')} level={2}>
       <div
         data-three-views-stage={columns ? 'columns' : 'stage'}
         data-three-views-auto={moving ? 'running' : 'stopped'}
@@ -162,12 +163,12 @@ export default function ThreeViewsStage({
               it is not drawn there rather than drawn and inert. */}
           {columns ? (
             <span id={labelId} className="text-[12px] font-semibold text-cc-ink">
-              Business, IT and Management on the same fact
+              {wt('threeViews.columnsLabel')}
             </span>
           ) : (
             <span id={labelId}>
               <CcSegmentedControl
-                label="View"
+                label={wt('threeViews.viewLabel')}
                 value={view}
                 onChange={(next) => {
                   // "Ein Klick auf eine Sicht übernimmt und beendet das
@@ -188,11 +189,11 @@ export default function ThreeViewsStage({
                   setAuto(true);
                 }}
               >
-                Replay
+                {wt('threeViews.replay')}
               </CcButton>
             ) : null}
             <CcButton data-three-views-skip="" onClick={onSkip}>
-              Skip intro
+              {wt('threeViews.skipIntro')}
             </CcButton>
           </span>
         </div>
@@ -228,8 +229,7 @@ export default function ThreeViewsStage({
           data-three-views-label=""
           className="m-0 mt-3 text-[11px] leading-snug font-medium text-cc-ink-muted"
         >
-          {fact.label} — read by the same engine that reads your own upload. Every line above comes
-          from the source, and nothing on this stage is stored anywhere.
+          {threeViewsFactNote(fact.label)}
         </p>
       </div>
     </CcCard>
@@ -275,7 +275,7 @@ function StageView({ panel, labelledBy }: { panel: StagePanel; labelledBy: strin
           data-three-views-options=""
           className="m-0 mt-2 text-[11px] leading-snug font-medium text-cc-ink-muted"
         >
-          Offered here: {panel.options.join(' · ')} — options on a screen, not a decision on record.
+          {threeViewsOffered(panel.options)}
         </p>
       ) : null}
     </div>

@@ -469,3 +469,56 @@ test('the orphan-runs backstop of the erasure is not best-effort any more', () =
   expect(block).toContain('erasureErrors.push(');
   expect(block).not.toMatch(/console\.(warn|log)\(/);
 });
+
+// QA c78e7a9a3981: the source check above holds the shape; this holds the
+// behaviour. A backstop query that fails stops the erasure before the sign-in
+// goes, the profile and the orphaned run stay for the retry, and the same call
+// against a database that answers finishes the job.
+test('a failing orphan-runs backstop keeps the profile and the sign-in, and the retry erases both', async () => {
+  test.setTimeout(120_000);
+  const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
+  const realDb = adminFirestore(app, FIRESTORE_DB_ID);
+  const uid = `erasure-backstop-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const profile = realDb.collection('users').doc(uid);
+  // A run whose project is gone: only the collection-group backstop reaches it.
+  const orphanRun = realDb.collection('projects').doc(`${uid}-gone`).collection('runs').doc(`${uid}-run`);
+
+  // The emulator's own instance, with collectionGroup('runs') failing the way a
+  // missing index does in production. Every other member is the real one.
+  let failRuns = true;
+  const db = new Proxy(realDb, {
+    get(target, prop) {
+      if (prop === 'collectionGroup') {
+        return (id: string) => {
+          if (id === 'runs' && failRuns) throw new Error('FAILED_PRECONDITION: the query requires an index');
+          return target.collectionGroup(id);
+        };
+      }
+      const value = Reflect.get(target, prop, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
+  const deleted: string[] = [];
+  const auth = { deleteUser: async (id: string) => { deleted.push(id); } } as unknown as Auth;
+
+  try {
+    await profile.set({ email: `${uid}@cleancore-test.io`, status: 'approved', tier: 'pilot' });
+    await orphanRun.set({ userId: uid, projectId: `${uid}-gone`, hash: 'h' });
+
+    const failed = await deleteUserDataAndAccount(uid, { db, auth }).then(() => null, (e: Error) => e);
+    expect(failed, 'a failing backstop was passed over').not.toBeNull();
+    expect(failed!.message).toContain('orphan runs');
+    expect(failed!.message).toContain('profile and sign-in kept');
+    expect(deleted, 'the sign-in went although runs naming the account are still stored').toEqual([]);
+    expect((await profile.get()).exists, 'the profile went, so the retry is impossible').toBe(true);
+    expect((await orphanRun.get()).exists).toBe(true);
+
+    failRuns = false;
+    await deleteUserDataAndAccount(uid, { db, auth });
+    expect(deleted, 'the retry did not complete').toEqual([uid]);
+    expect((await profile.get()).exists).toBe(false);
+    expect((await orphanRun.get()).exists, 'the retry left the orphaned run').toBe(false);
+  } finally {
+    await Promise.all([profile.delete().catch(() => {}), orphanRun.delete().catch(() => {})]);
+  }
+});

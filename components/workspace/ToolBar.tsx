@@ -5,6 +5,9 @@ import { ChevronDown, Wrench } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import type { PhaseKey } from '@/lib/workflow-steps';
+import type { WorkspaceView } from '@/lib/workspace-model';
+import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
+import { wt } from '@/lib/workspace-messages';
 
 export interface WorkspaceTool {
   key: PhaseKey;
@@ -30,14 +33,22 @@ export interface WorkspaceTool {
  * Open in IT; a "Tools" menu in Business and Management (§2.11, ADR-026),
  * because seven exits over the answer is six offers competing with the one next
  * action a first-time reader should take.
+ *
+ * Every tool carries the view it was opened from and this bar as its origin
+ * (`?view=…&from=workspace-tools`, block D D.29), so the stage's "Back to
+ * workspace" returns to the same view and to the bar, not to the Business view
+ * at the top of the page.
  */
 export default function WorkspaceToolBar({
   tools,
   projectId,
+  view,
   open,
 }: {
   tools: WorkspaceTool[];
   projectId: string;
+  /** The view the reader is in — carried into each stage for the way back. */
+  view: WorkspaceView;
   /** IT lays them out; Business and Management fold them into a menu. */
   open: boolean;
 }) {
@@ -61,7 +72,10 @@ export default function WorkspaceToolBar({
   }, [menuOpen]);
 
   const links = tools.map((tool) => (
-    <CcLinkButton key={tool.key} href={`/project/${projectId}/${tool.path}`}>
+    <CcLinkButton
+      key={tool.key}
+      href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}
+    >
       {tool.label}
     </CcLinkButton>
   ));
@@ -81,7 +95,7 @@ export default function WorkspaceToolBar({
         aria-controls={menuOpen ? panelId : undefined}
         icon={<Wrench size={16} aria-hidden={true} />}
       >
-        Tools
+        {wt('tools.label')}
         <ChevronDown size={14} aria-hidden={true} />
       </CcButton>
       {menuOpen && (
@@ -104,7 +118,7 @@ export default function WorkspaceToolBar({
           className="cc-no-print flex flex-wrap items-center gap-1.5 max-[600px]:hidden"
         >
           <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-            Tools
+            {wt('tools.label')}
           </span>
           {links}
         </div>

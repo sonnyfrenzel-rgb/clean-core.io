@@ -58,6 +58,18 @@ import {
   type TourPlace,
 } from '@/lib/demo-tour';
 import type { DemoWorkspaceData } from '@/lib/demo-workspace';
+import {
+  demoConfirmRoute,
+  demoEvidence,
+  demoFigure,
+  demoFirstFiveOf,
+  demoSourceLineLabel,
+  demoStartingPoint,
+  demoSubtitle,
+  tourContinuesIn,
+  tourPausedAt,
+  wt,
+} from '@/lib/workspace-messages';
 
 /**
  * The demo in the 3.0 workspace, with its tour — roadmap 3.0.7, `DESIGN.md` §6.1.2.
@@ -235,7 +247,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   if (profileLoading) {
     return (
       <div data-workspace-gate="loading" role="status" className="py-16">
-        <span className="sr-only">Loading the demo…</span>
+        <span className="sr-only">{wt('demo.loading')}</span>
       </div>
     );
   }
@@ -245,9 +257,9 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
   return (
     <div className="cc" data-demo-workspace={view} data-demo-ready={hydrated ? 'true' : 'false'}>
-      <nav aria-label="Path" className="flex items-center gap-1 text-[12px] font-medium text-cc-ink-muted">
+      <nav aria-label={wt('demo.pathNav')} className="flex items-center gap-1 text-[12px] font-medium text-cc-ink-muted">
         <Link href="/dashboard" className="text-cc-ink-muted no-underline hover:text-cc-ink">
-          My workspace
+          {wt('demo.myWorkspace')}
         </Link>
         <ChevronRight size={14} aria-hidden={true} />
         <span className="font-semibold text-cc-ink">{demo.title}</span>
@@ -290,12 +302,12 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               </span>
             </div>
             <p className="mt-1 text-[12px] font-medium text-cc-ink-muted">
-              {demo.subject} · {demo.sourceFile} · {demo.totalLines} lines · catalog {demo.catalogVersion}
+              {demoSubtitle(demo.subject, demo.sourceFile, demo.totalLines, demo.catalogVersion)}
             </p>
           </div>
           <div className="flex shrink-0 flex-col items-start gap-1.5">
             <CcSegmentedControl
-              label="View"
+              label={wt('demo.viewLabel')}
               value={view}
               onChange={setView}
               segments={WORKSPACE_VIEWS.map((v) => ({ value: v, label: VIEW_LABELS[v] }))}
@@ -309,16 +321,16 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
           <p data-demo-tour-status="" className="mt-2 flex flex-wrap items-center gap-2 text-[12px] font-medium text-cc-ink-muted">
             {tour.progress.state === 'paused' ? (
               <>
-                Tour paused at {tourPositionLabel(tour.progress.index)}.
+                {tourPausedAt(tourPositionLabel(tour.progress.index))}
                 <CcButton onClick={tour.resume} data-demo-tour-resume="">
-                  Resume tour
+                  {wt('tour.resume')}
                 </CcButton>
               </>
             ) : waiting.view !== view ? (
               <>
-                Tour · {tourPositionLabel(tour.progress.index)} continues in the {VIEW_LABELS[waiting.view]} view.
+                {tourContinuesIn(tourPositionLabel(tour.progress.index), VIEW_LABELS[waiting.view])}
                 <CcButton onClick={goToStation} data-demo-tour-go="">
-                  Go there
+                  {wt('tour.goThere')}
                 </CcButton>
               </>
             ) : null}
@@ -326,7 +338,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         ) : tour.progress?.state === 'ended' ? (
           <p className="mt-2 text-[12px] font-medium text-cc-ink-muted">
             <CcButton onClick={tour.restart} data-demo-tour-restart="">
-              Restart tour
+              {wt('tour.restart')}
             </CcButton>
           </p>
         ) : null}
@@ -338,7 +350,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         ) : null}
 
         {/* The seven stages of the demo — the tools of this workspace (ADR-018). */}
-        <nav aria-label="Stages" className="mt-4 flex flex-wrap gap-1.5" data-demo-stages="">
+        <nav aria-label={wt('demo.stagesNav')} className="mt-4 flex flex-wrap gap-1.5" data-demo-stages="">
           {PHASES.map((p) => (
             <CcLinkButton key={p.key} href={`/demo/${p.key}`}>
               {p.label}
@@ -375,7 +387,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
           <Place place="process-map" className="mt-5">
             <div className="max-w-3xl">{stop('process-map')}</div>
-            <CcCard title="Process map" meta={<CcProvenanceChip value="reconstructed" />}>
+            <CcCard title={wt('demo.processMap')} meta={<CcProvenanceChip value="reconstructed" />}>
               <p className="m-0 mb-3 text-[12px] font-medium text-cc-ink-muted">{processMap.traceability.sentence}</p>
               <ProcessMap
                 model={processMap}
@@ -390,7 +402,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
           <Place place="process-levels">
             {stop('process-levels')}
-            <CcCard title="Levels of this process" count={processMap.planes.length}>
+            <CcCard title={wt('demo.levels')} count={processMap.planes.length}>
               <ul data-demo-process-levels="" className="m-0 flex list-none flex-wrap gap-1.5 p-0">
                 {processMap.planes.map((p) => (
                   <li key={p.id ?? 'top'}>
@@ -409,20 +421,20 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
           <Place place="confirm-rule">
             {stop('confirm-rule')}
-            <CcCard title="Rules in this code" count={reading ? rules.length : undefined}>
+            <CcCard title={wt('demo.rules')} count={reading ? rules.length : undefined}>
               {!reading ? (
-                <p className="m-0 text-[13px] font-medium text-cc-ink-muted">Reading the rules out of the source…</p>
+                <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('demo.readingRules')}</p>
               ) : (
                 <ul data-demo-rules="" className="m-0 flex list-none flex-col gap-2 p-0">
                   {rules.map((rule) => {
                     const confirmed = state.confirmedRules.includes(rule.id);
                     return (
                       <li key={rule.id} data-demo-rule={rule.id} className="flex flex-wrap items-center gap-2 text-[13px]">
-                        <CcProvenanceChip value={confirmed ? 'confirmed' : 'reconstructed'} note={confirmed ? 'this browser' : undefined} />
+                        <CcProvenanceChip value={confirmed ? 'confirmed' : 'reconstructed'} note={confirmed ? wt('demo.thisBrowser') : undefined} />
                         <CcRulePropertyTag value={rule.property} />
                         <code className="font-cc-mono text-[12px] text-cc-ink">{rule.label}</code>
                         {rule.anchors.map((a) => (
-                          <CcAnchor key={a} label={`Source line ${a}`}>
+                          <CcAnchor key={a} label={demoSourceLineLabel(a)}>
                             {a}
                           </CcAnchor>
                         ))}
@@ -438,7 +450,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
                             aria-pressed={confirmed}
                             data-demo-confirm-rule={rule.id}
                           >
-                            {confirmed ? 'Withdraw' : 'Confirm'}
+                            {wt(confirmed ? 'demo.withdraw' : 'demo.confirm')}
                           </CcButton>
                         </span>
                       </li>
@@ -451,25 +463,25 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
           <Place place="standard-fit">
             {stop('standard-fit')}
-            <CcCard title="Standard fit" count={standard.length} meta={<CcProvenanceChip value="imported" />}>
+            <CcCard title={wt('demo.standardFit')} count={standard.length} meta={<CcProvenanceChip value="imported" />}>
               <p className="m-0 mb-2 text-[12px] font-medium text-cc-ink-muted">
-                Successors SAP names for objects this code uses, with the evidence level the catalog gives them.
+                {wt('demo.standardFitLead')}
               </p>
               <ul data-demo-standard-fit="" className="m-0 flex list-none flex-col gap-1.5 p-0">
                 {standard.slice(0, 5).map((item) => (
                   <li key={item.findingId} className="flex flex-wrap items-center gap-2 text-[13px] text-cc-ink">
-                    <CcAnchor label={`Source line ${item.lineStart}`}>{`L${item.lineStart}`}</CcAnchor>
+                    <CcAnchor label={demoSourceLineLabel(item.lineStart)}>{`L${item.lineStart}`}</CcAnchor>
                     <span className="min-w-0">{item.title}</span>
                     <span className="font-semibold">→ {item.successor}</span>
-                    <span className="text-[12px] text-cc-ink-muted">evidence: {item.successorProvenance ?? 'not stated'}</span>
+                    <span className="text-[12px] text-cc-ink-muted">{demoEvidence(item.successorProvenance)}</span>
                   </li>
                 ))}
               </ul>
               {standard.length > 5 ? (
                 <p className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted">
-                  The first 5 of {standard.length}.{' '}
+                  {demoFirstFiveOf(standard.length)}{' '}
                   <Link href="/demo/transformation" className="font-semibold text-cc-ink underline underline-offset-2">
-                    All of them in the transformation plan
+                    {wt('demo.allInPlan')}
                   </Link>
                 </p>
               ) : null}
@@ -503,7 +515,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
                     <b className="font-semibold">{a.headline}</b>
                     {a.figures.length ? (
                       <span className="block text-[12px] font-medium text-cc-ink-muted">
-                        {a.figures.map((f) => `${f.label}: ${f.value ?? f.absentReason ?? 'not determined'}`).join(' · ')}
+                        {a.figures.map((f) => demoFigure(f.label, f.value, f.absentReason)).join(' · ')}
                       </span>
                     ) : null}
                   </li>
@@ -519,30 +531,28 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
           <Place place="costs">
             {stop('costs')}
-            <CcCard title="Costs appear only as a simulation" meta={<CcProvenanceChip value="simulation" />}>
+            <CcCard title={wt('demo.costsTitle')} meta={<CcProvenanceChip value="simulation" />}>
               <p className="m-0 text-[13px] font-medium text-cc-ink">
-                No assumptions have been entered for this demo, so there is no amount to show. A forecast needs a day
-                rate and an investment, and it is always labelled as a simulation with the assumptions it rests on.
+                {wt('demo.costsNoAssumptions')}
               </p>
               <p className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted">
-                The measured starting point is the Clean Core Score of this demo run: {demo.economics.scoreBefore}.
+                {demoStartingPoint(demo.economics.scoreBefore)}
               </p>
               <div className="mt-3">
-                <CcLinkButton href="/demo/tco">Enter assumptions in Economics</CcLinkButton>
+                <CcLinkButton href="/demo/tco">{wt('demo.enterAssumptions')}</CcLinkButton>
               </div>
             </CcCard>
           </Place>
 
           <Place place="decision">
             {stop('decision')}
-            <CcCard title="Open decision" meta={<CcProvenanceChip value="proposed" />}>
+            <CcCard title={wt('demo.openDecision')} meta={<CcProvenanceChip value="proposed" />}>
               <p className="m-0 text-[13px] font-medium text-cc-ink">
-                Proposed from the evidence: <b className="font-semibold">{demo.design.recommendedRoute}</b>.
+                {wt('demo.proposedFromEvidence')} <b className="font-semibold">{demo.design.recommendedRoute}</b>.
               </p>
               <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">{demo.design.rationale}</p>
               <p className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted">
-                On a real project a confirmation records your account against a signed run. Here there is no run and no
-                account, so it binds nothing and stays in this browser.
+                {wt('demo.realProjectNote')}
               </p>
               <div className="mt-3">
                 <CcButton
@@ -551,7 +561,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
                   aria-pressed={state.targetConfirmed}
                   data-demo-confirm-route=""
                 >
-                  {state.targetConfirmed ? 'Confirmed in this browser · withdraw' : `Confirm ${demo.design.recommendedRoute}`}
+                  {state.targetConfirmed ? wt('demo.confirmedWithdraw') : demoConfirmRoute(demo.design.recommendedRoute)}
                 </CcButton>
               </div>
             </CcCard>
@@ -559,14 +569,14 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
           <Place place="handover">
             {stop('handover')}
-            <CcCard title="What a real handover would still need" count={demo.delivery.missing.length}>
+            <CcCard title={wt('demo.handoverTitle')} count={demo.delivery.missing.length}>
               <ul data-demo-handover="" className="m-0 flex list-disc flex-col gap-1 pl-5 text-[13px] text-cc-ink">
                 {demo.delivery.missing.map((m) => (
                   <li key={m}>{m}</li>
                 ))}
               </ul>
               <div className="mt-3">
-                <CcLinkButton href="/demo/delivery">Open the delivery stage</CcLinkButton>
+                <CcLinkButton href="/demo/delivery">{wt('demo.openDelivery')}</CcLinkButton>
               </div>
             </CcCard>
           </Place>

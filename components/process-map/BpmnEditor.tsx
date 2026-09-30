@@ -14,6 +14,12 @@ import {
   type ProposedLane,
 } from '@/lib/process-hints';
 import ProcessHints from './ProcessHints';
+import {
+  mapEditorCannotGoThere,
+  mapEditorCanvasLabel,
+  mapEditorMessageFlowRefused,
+  wt,
+} from '@/lib/workspace-messages';
 
 /**
  * The editor — roadmap 3.1, and the hints of 3.3 that only exist inside it.
@@ -100,8 +106,7 @@ export type SaveProcessModel = (input: SaveProcessModelInput) => Promise<SavePro
 /** No `save` prop: a statement about this mounting, not about the product. */
 const NO_PLACE_TO_KEEP_IT: SaveProcessModel = async () => ({
   ok: false,
-  message: 'This editor was opened without somewhere to keep a revision, so nothing was saved. Your draft is kept'
-    + ' in this session and the reconstruction is untouched.',
+  message: wt('mapEditor.noPlaceToKeep'),
 });
 
 /* ------------------------------------------------------------------ *
@@ -134,35 +139,143 @@ export interface PaletteEntry {
  * the list in the roadmap can be compared without reading any code.
  */
 export const EDITOR_PALETTE: readonly PaletteEntry[] = Object.freeze([
-  { id: 'pool', label: 'Pool', type: 'bpmn:Participant', group: 'Structure', how: 'pool' },
-  { id: 'lane', label: 'Lane', type: 'bpmn:Lane', group: 'Structure', how: 'lane' },
-  { id: 'sub-process', label: 'Sub-process', type: 'bpmn:SubProcess', group: 'Structure', how: 'append' },
-
-  { id: 'start-event', label: 'Start event', type: 'bpmn:StartEvent', group: 'Events', how: 'append' },
   {
-    id: 'intermediate-event',
-    label: 'Intermediate event',
-    type: 'bpmn:IntermediateThrowEvent',
-    group: 'Events',
+    id: 'pool',
+    label: wt('mapEditor.pool'),
+    type: 'bpmn:Participant',
+    group: wt('mapEditor.groupStructure'),
+    how: 'pool',
+  },
+  {
+    id: 'lane',
+    label: wt('mapEditor.lane'),
+    type: 'bpmn:Lane',
+    group: wt('mapEditor.groupStructure'),
+    how: 'lane',
+  },
+  {
+    id: 'sub-process',
+    label: wt('mapEditor.subProcess'),
+    type: 'bpmn:SubProcess',
+    group: wt('mapEditor.groupStructure'),
     how: 'append',
   },
-  { id: 'end-event', label: 'End event', type: 'bpmn:EndEvent', group: 'Events', how: 'append' },
 
-  { id: 'exclusive-gateway', label: 'Exclusive gateway', type: 'bpmn:ExclusiveGateway', group: 'Gateways', how: 'append' },
-  { id: 'parallel-gateway', label: 'Parallel gateway', type: 'bpmn:ParallelGateway', group: 'Gateways', how: 'append' },
+  {
+    id: 'start-event',
+    label: wt('mapEditor.startEvent'),
+    type: 'bpmn:StartEvent',
+    group: wt('mapEditor.groupEvents'),
+    how: 'append',
+  },
+  {
+    id: 'intermediate-event',
+    label: wt('mapEditor.intermediateEvent'),
+    type: 'bpmn:IntermediateThrowEvent',
+    group: wt('mapEditor.groupEvents'),
+    how: 'append',
+  },
+  {
+    id: 'end-event',
+    label: wt('mapEditor.endEvent'),
+    type: 'bpmn:EndEvent',
+    group: wt('mapEditor.groupEvents'),
+    how: 'append',
+  },
 
-  { id: 'task', label: 'Task', type: 'bpmn:Task', group: 'Tasks', how: 'append' },
-  { id: 'user-task', label: 'User task', type: 'bpmn:UserTask', group: 'Tasks', how: 'append' },
-  { id: 'service-task', label: 'Service task', type: 'bpmn:ServiceTask', group: 'Tasks', how: 'append' },
-  { id: 'send-task', label: 'Send task', type: 'bpmn:SendTask', group: 'Tasks', how: 'append' },
-  { id: 'receive-task', label: 'Receive task', type: 'bpmn:ReceiveTask', group: 'Tasks', how: 'append' },
-  { id: 'manual-task', label: 'Manual task', type: 'bpmn:ManualTask', group: 'Tasks', how: 'append' },
-  { id: 'business-rule-task', label: 'Business rule task', type: 'bpmn:BusinessRuleTask', group: 'Tasks', how: 'append' },
-  { id: 'script-task', label: 'Script task', type: 'bpmn:ScriptTask', group: 'Tasks', how: 'append' },
+  {
+    id: 'exclusive-gateway',
+    label: wt('mapEditor.exclusiveGateway'),
+    type: 'bpmn:ExclusiveGateway',
+    group: wt('mapEditor.groupGateways'),
+    how: 'append',
+  },
+  {
+    id: 'parallel-gateway',
+    label: wt('mapEditor.parallelGateway'),
+    type: 'bpmn:ParallelGateway',
+    group: wt('mapEditor.groupGateways'),
+    how: 'append',
+  },
 
-  { id: 'data-object', label: 'Data object', type: 'bpmn:DataObjectReference', group: 'Artefacts', how: 'append' },
-  { id: 'message-flow', label: 'Message flow', type: 'bpmn:MessageFlow', group: 'Artefacts', how: 'message-flow' },
-  { id: 'annotation', label: 'Annotation', type: 'bpmn:TextAnnotation', group: 'Artefacts', how: 'append' },
+  {
+    id: 'task',
+    label: wt('mapEditor.task'),
+    type: 'bpmn:Task',
+    group: wt('mapEditor.groupTasks'),
+    how: 'append',
+  },
+  {
+    id: 'user-task',
+    label: wt('mapEditor.userTask'),
+    type: 'bpmn:UserTask',
+    group: wt('mapEditor.groupTasks'),
+    how: 'append',
+  },
+  {
+    id: 'service-task',
+    label: wt('mapEditor.serviceTask'),
+    type: 'bpmn:ServiceTask',
+    group: wt('mapEditor.groupTasks'),
+    how: 'append',
+  },
+  {
+    id: 'send-task',
+    label: wt('mapEditor.sendTask'),
+    type: 'bpmn:SendTask',
+    group: wt('mapEditor.groupTasks'),
+    how: 'append',
+  },
+  {
+    id: 'receive-task',
+    label: wt('mapEditor.receiveTask'),
+    type: 'bpmn:ReceiveTask',
+    group: wt('mapEditor.groupTasks'),
+    how: 'append',
+  },
+  {
+    id: 'manual-task',
+    label: wt('mapEditor.manualTask'),
+    type: 'bpmn:ManualTask',
+    group: wt('mapEditor.groupTasks'),
+    how: 'append',
+  },
+  {
+    id: 'business-rule-task',
+    label: wt('mapEditor.businessRuleTask'),
+    type: 'bpmn:BusinessRuleTask',
+    group: wt('mapEditor.groupTasks'),
+    how: 'append',
+  },
+  {
+    id: 'script-task',
+    label: wt('mapEditor.scriptTask'),
+    type: 'bpmn:ScriptTask',
+    group: wt('mapEditor.groupTasks'),
+    how: 'append',
+  },
+
+  {
+    id: 'data-object',
+    label: wt('mapEditor.dataObject'),
+    type: 'bpmn:DataObjectReference',
+    group: wt('mapEditor.groupArtefacts'),
+    how: 'append',
+  },
+  {
+    id: 'message-flow',
+    label: wt('mapEditor.messageFlow'),
+    type: 'bpmn:MessageFlow',
+    group: wt('mapEditor.groupArtefacts'),
+    how: 'message-flow',
+  },
+  {
+    id: 'annotation',
+    label: wt('mapEditor.annotation'),
+    type: 'bpmn:TextAnnotation',
+    group: wt('mapEditor.groupArtefacts'),
+    how: 'append',
+  },
 ] as PaletteEntry[]);
 
 /** The groups, in the order they stand in the palette. */
@@ -294,23 +407,23 @@ interface DraftRow {
 }
 
 const KIND_WORDS: Record<string, string> = {
-  startEvent: 'Start',
-  endEvent: 'End',
-  exclusiveGateway: 'Decision',
-  parallelGateway: 'Parallel split',
-  task: 'Step',
-  serviceTask: 'Service step',
-  sendTask: 'Message step',
-  receiveTask: 'Message wait',
-  userTask: 'User step',
-  manualTask: 'Manual step',
-  businessRuleTask: 'Business rule',
-  scriptTask: 'Step',
-  callActivity: 'Call',
-  subProcess: 'Sub-process',
-  boundaryEvent: 'Error boundary',
-  intermediateCatchEvent: 'Wait',
-  intermediateThrowEvent: 'Event',
+  startEvent: wt('mapEditor.kindStart'),
+  endEvent: wt('mapEditor.kindEnd'),
+  exclusiveGateway: wt('mapEditor.kindDecision'),
+  parallelGateway: wt('mapEditor.kindParallelSplit'),
+  task: wt('mapEditor.kindStep'),
+  serviceTask: wt('mapEditor.kindServiceStep'),
+  sendTask: wt('mapEditor.kindMessageStep'),
+  receiveTask: wt('mapEditor.kindMessageWait'),
+  userTask: wt('mapEditor.kindUserStep'),
+  manualTask: wt('mapEditor.kindManualStep'),
+  businessRuleTask: wt('mapEditor.kindBusinessRule'),
+  scriptTask: wt('mapEditor.kindStep'),
+  callActivity: wt('mapEditor.kindCall'),
+  subProcess: wt('mapEditor.kindSubProcess'),
+  boundaryEvent: wt('mapEditor.kindErrorBoundary'),
+  intermediateCatchEvent: wt('mapEditor.kindWait'),
+  intermediateThrowEvent: wt('mapEditor.kindEvent'),
 };
 
 export default function BpmnEditor({
@@ -447,7 +560,7 @@ export default function BpmnEditor({
       id: element.id,
       label: labels.get(element.id) || element.name || element.id,
       // ADR-054: an early end keeps its word in the editor too.
-      kind: element.tag === 'endEvent' && element.trace?.early ? EARLY_END_WORD : (KIND_WORDS[element.tag] ?? 'Step'),
+      kind: element.tag === 'endEvent' && element.trace?.early ? EARLY_END_WORD : (KIND_WORDS[element.tag] ?? wt('mapEditor.kindStep')),
       drawn: element.trace === null,
     }));
   }, [draftXml, labels]);
@@ -534,7 +647,7 @@ export default function BpmnEditor({
       if (entry.how === 'lane') {
         const host = participantOf(source) ?? participants[0] ?? null;
         if (!host) {
-          setNote('A lane lives in a pool. Add a pool first, then a lane.');
+          setNote(wt('mapEditor.laneNeedsPool'));
           return;
         }
         const lane = modeling.addLane(host, 'bottom');
@@ -545,17 +658,17 @@ export default function BpmnEditor({
       if (entry.how === 'message-flow') {
         const from = source;
         if (!from) {
-          setNote('A message flow starts at a step. Pick one in the list first.');
+          setNote(wt('mapEditor.messageFlowNeedsStep'));
           return;
         }
         const own = participantOf(from);
         const target = participants.find((pool) => pool !== own) ?? null;
         if (!target) {
-          setNote('A message flow crosses a pool boundary. Add a second pool first.');
+          setNote(wt('mapEditor.messageFlowNeedsPools'));
           return;
         }
         if (!rules.allowed('connection.create', { source: from, target })) {
-          setNote(`BPMN does not allow a message flow from “${from.businessObject?.name || from.id}” to that pool.`);
+          setNote(mapEditorMessageFlowRefused(from.businessObject?.name || from.id));
           return;
         }
         modeling.connect(from, target);
@@ -578,7 +691,7 @@ export default function BpmnEditor({
     } catch {
       // bpmn-js refuses what BPMN refuses. That is the grammar of the notation
       // speaking, and it is said in a line of text rather than swallowed.
-      setNote(`“${entry.label}” cannot go there. Pick another element in the list and try again.`);
+      setNote(mapEditorCannotGoThere(entry.label));
     }
   }, [current]);
 
@@ -600,7 +713,7 @@ export default function BpmnEditor({
       modeler.get<ModelingService>('modeling').removeElements([shape]);
       reportRef.current(null);
     } catch {
-      setNote('bpmn-js will not remove that element on its own.');
+      setNote(wt('mapEditor.cannotRemove'));
     }
   }, [current]);
 
@@ -654,7 +767,7 @@ export default function BpmnEditor({
       setSaved(result.message);
       if (clean) setDirty(false);
     } catch {
-      setSaved('The model could not be kept. Your draft is still on the canvas.');
+      setSaved(wt('mapEditor.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -668,7 +781,7 @@ export default function BpmnEditor({
       <div
         data-editor-palette=""
         role="group"
-        aria-label="BPMN elements"
+        aria-label={wt('mapEditor.paletteLabel')}
         className="flex flex-col gap-1.5 rounded-cc-card border border-cc-line bg-cc-surface-muted p-2"
       >
         {PALETTE_GROUPS.map((group) => (
@@ -695,14 +808,14 @@ export default function BpmnEditor({
       {/* ---------------- what the selection can do ---------------- */}
       <div data-editor-actions="" className="flex flex-wrap items-center gap-1.5">
         <label className="text-[11px] font-semibold tracking-[0.06em] text-cc-ink-muted uppercase" htmlFor="cc-editor-name">
-          Name
+          {wt('mapEditor.name')}
         </label>
         <input
           id="cc-editor-name"
           data-editor-name=""
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder={activeRow ? activeRow.label : 'Pick an element'}
+          placeholder={activeRow ? activeRow.label : wt('mapEditor.pickElement')}
           className="h-8 min-w-0 flex-1 rounded-cc-row border border-cc-field-border bg-cc-surface px-2 text-[13px] font-medium text-cc-ink"
         />
         <button
@@ -711,7 +824,7 @@ export default function BpmnEditor({
           onClick={rename}
           className="rounded-cc-row border border-cc-line bg-cc-surface px-2 py-0.5 text-[11px] font-semibold text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
         >
-          Rename
+          {wt('mapEditor.rename')}
         </button>
         <button
           type="button"
@@ -719,7 +832,7 @@ export default function BpmnEditor({
           onClick={remove}
           className="rounded-cc-row border border-cc-line bg-cc-surface px-2 py-0.5 text-[11px] font-semibold text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
         >
-          Delete
+          {wt('mapEditor.delete')}
         </button>
         <button
           type="button"
@@ -727,7 +840,7 @@ export default function BpmnEditor({
           onClick={undo}
           className="rounded-cc-row border border-cc-line bg-cc-surface px-2 py-0.5 text-[11px] font-semibold text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
         >
-          Undo
+          {wt('mapEditor.undo')}
         </button>
         <button
           type="button"
@@ -735,7 +848,7 @@ export default function BpmnEditor({
           onClick={redo}
           className="rounded-cc-row border border-cc-line bg-cc-surface px-2 py-0.5 text-[11px] font-semibold text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
         >
-          Redo
+          {wt('mapEditor.redo')}
         </button>
       </div>
 
@@ -747,7 +860,7 @@ export default function BpmnEditor({
         <div
           data-process-editor-canvas=""
           role="group"
-          aria-label={`${label} Editing.`}
+          aria-label={mapEditorCanvasLabel(label)}
           className="cc-map-canvas h-[420px] w-full overflow-hidden rounded-cc-card border border-cc-line md:h-[520px]"
           ref={hostRef}
         />
@@ -756,7 +869,7 @@ export default function BpmnEditor({
         <div
           data-editor-elements=""
           role="listbox"
-          aria-label="Elements of the draft"
+          aria-label={wt('mapEditor.elementsLabel')}
           tabIndex={-1}
           onKeyDown={onListKeyDown}
           className="max-h-[420px] overflow-auto rounded-cc-card border border-cc-line bg-cc-surface p-1 md:max-h-[520px]"
@@ -774,7 +887,7 @@ export default function BpmnEditor({
               className="block w-full truncate rounded-cc-row px-1.5 py-0.5 text-left text-[12px] font-medium text-cc-ink-muted hover:text-cc-ink aria-selected:bg-cc-surface-muted aria-selected:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
             >
               {row.kind}: {row.label}
-              {row.drawn ? <span data-draft-drawn=""> · drawn</span> : null}
+              {row.drawn ? <span data-draft-drawn="">{' · '}{wt('mapEditor.drawn')}</span> : null}
             </button>
           ))}
         </div>
@@ -792,7 +905,7 @@ export default function BpmnEditor({
           onClick={() => void onSave()}
           className="rounded-cc-row bg-cc-brand-strong px-3 py-1 text-[12px] font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
         >
-          Save
+          {wt('mapEditor.save')}
         </button>
         <button
           type="button"
@@ -800,10 +913,10 @@ export default function BpmnEditor({
           onClick={onDiscard}
           className="rounded-cc-row px-3 py-1 text-[12px] font-semibold text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
         >
-          Discard
+          {wt('mapEditor.discard')}
         </button>
         {dirty ? (
-          <span data-editor-dirty className="text-[12px] font-semibold text-cc-ink">Unsaved changes</span>
+          <span data-editor-dirty className="text-[12px] font-semibold text-cc-ink">{wt('mapEditor.unsaved')}</span>
         ) : null}
         <ProcessHints hints={hints} on={hintsOn} onOnChange={setHintsOn} onJump={pick} />
       </div>
