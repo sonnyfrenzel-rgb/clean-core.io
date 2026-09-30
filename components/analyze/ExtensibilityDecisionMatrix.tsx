@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Sparkles, Layers, Globe, Network, ShieldCheck, Terminal, Info } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Check, Code2, Layers, X } from 'lucide-react';
 import clsx from 'clsx';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import { CcTag } from '@/components/cc/Tag';
 
 interface Checkpoint {
   checkpointName: string;
@@ -46,13 +48,87 @@ function NotDetermined({ what }: { what: string }) {
   return (
     <div
       data-not-determined
-      className="bg-slate-50/50 border border-dashed border-slate-300 rounded-[1.5rem] p-5 text-xs text-slate-600 leading-relaxed font-medium"
+      className="rounded-cc-row border border-dashed border-cc-field-border bg-cc-surface-muted p-4 cc-text-cell text-cc-ink-muted"
     >
-      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 font-mono">
+      <span className="cc-text-label text-cc-ink-muted block mb-2">
         Not determined for this run
       </span>
       {what} The route above stands on the evidence the analysis did produce; nothing is filled
       in here from the route itself, because that would be this panel answering its own question.
+    </div>
+  );
+}
+
+/**
+ * One of the two extensibility tracks. The track the route chose carries the
+ * ink border and its target line; the other stays on the muted surface. Neither
+ * is coloured: the grade and the pros and cons are the model's words, so they
+ * are tags and plain text, not states (DESIGN.md §4; green means proven).
+ */
+function Track({
+  title,
+  icon,
+  track,
+  chosen,
+  target,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  track: TrackFeasibility;
+  chosen: boolean;
+  target: string;
+}) {
+  return (
+    <div
+      className={clsx(
+        'p-6 rounded-cc-card border flex flex-col justify-between',
+        chosen ? 'border-cc-ink bg-cc-surface' : 'border-cc-line bg-cc-surface-muted'
+      )}
+    >
+      <div>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <span className="p-2 rounded-cc-row border border-cc-line bg-cc-surface text-cc-ink-muted">{icon}</span>
+            <h4 className="cc-text-h3 text-cc-ink">{title}</h4>
+          </div>
+          <span className="shrink-0">
+            <CcTag>{track.technicalFeasibility}</CcTag>
+          </span>
+        </div>
+
+        <p className="cc-text-cell text-cc-ink-muted mb-6">{track.fitDetails}</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <span className="cc-text-label text-cc-ink-muted block mb-2">Technical Advantages (Pros)</span>
+            <ul className="space-y-2 cc-text-cell text-cc-ink">
+              {track.pros.map((pro, pIdx) => (
+                <li key={pIdx} className="flex items-start gap-2">
+                  <Check size={14} aria-hidden="true" className="text-cc-ink-muted shrink-0 mt-0.5" />
+                  <span>{pro}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <span className="cc-text-label text-cc-ink-muted block mb-2">Architectural Limitations (Cons)</span>
+            <ul className="space-y-2 cc-text-cell text-cc-ink">
+              {track.cons.map((con, cIdx) => (
+                <li key={cIdx} className="flex items-start gap-2">
+                  <X size={14} aria-hidden="true" className="text-cc-ink-muted shrink-0 mt-0.5" />
+                  <span>{con}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {chosen && (
+        <div className="border-t border-cc-line pt-4 mt-6 cc-text-label text-cc-ink-muted">
+          {target}
+        </div>
+      )}
     </div>
   );
 }
@@ -72,105 +148,99 @@ export default function ExtensibilityDecisionMatrix({
   // A stored answer can shrink between renders; an index past the end would read
   // `undefined` and take the panel down with it.
   const active = checkpoints.length > 0 ? Math.min(selectedCheckpoint, checkpoints.length - 1) : 0;
-
+  // Everything this panel shows beyond "not determined" is the model's answer —
+  // said once, in the header, where the spark icon used to stand.
+  const proposed = checkpoints.length > 0 || comparative !== null;
 
   return (
-    <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm relative overflow-hidden group mb-8 animate-in fade-in duration-700">
+    <div className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc mb-8 motion-safe:animate-in fade-in duration-700">
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h3 className="text-xl font-black text-slate-900 tracking-tight">Extensibility Decision Matrix & Path</h3>
-          <p className="text-xs text-slate-400 mt-1">The checkpoints and the track comparison this analysis produced — and nothing where it produced none.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="cc-text-h2 text-cc-ink">Extensibility Decision Matrix & Path</h3>
+            {proposed && <CcProvenanceChip value="proposed" />}
+          </div>
+          <p className="cc-text-cell text-cc-ink-muted mt-1">The checkpoints and the track comparison this analysis produced — and nothing where it produced none.</p>
         </div>
-        <span className="bg-slate-105 text-slate-700 border border-slate-200/60 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider font-mono shrink-0 self-start md:self-center">
-          SAP Clean Core Guidelines
+        <span className="shrink-0 self-start md:self-center">
+          <CcTag>SAP Clean Core Guidelines</CcTag>
         </span>
       </div>
 
-      <div className="space-y-8 animate-in fade-in duration-300">
+      <div className="space-y-8">
         {checkpoints.length === 0 ? (
           <NotDetermined what="This analysis did not return the step-by-step checkpoints behind the routing decision." />
         ) : (
         /* Pathway Explorer */
-        <div className="bg-slate-50/50 border border-slate-150 rounded-[1.5rem] p-5 shadow-sm">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-4 font-mono">AI Routing Decision Pathway Explorer</span>
+        <div className="rounded-cc-card border border-cc-line p-4">
+          <span className="cc-text-label text-cc-ink-muted block mb-4">Routing Decision Pathway Explorer</span>
           <div className="relative">
             {/* Horizontal progress path connecting checkpoints */}
-            <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-slate-200 -translate-y-1/2 hidden md:block z-0"></div>
+            <div className="absolute top-1/2 left-4 right-4 h-px bg-cc-line -translate-y-1/2 hidden md:block z-0"></div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative z-10">
               {checkpoints.map((cp, idx) => {
                 const isActive = active === idx;
-                const isSideBySide = cp.resultState === 'Side-by-Side Preferred';
-                const isInApp = cp.resultState === 'In-App Preferred';
-                
+
                 return (
+                  // The surface sits on a wrapper so the connector line stays behind the card.
+                  <div key={idx} className="rounded-cc-row bg-cc-surface">
                   <button
-                    key={idx}
                     type="button"
+                    aria-pressed={isActive}
                     onClick={() => {
                       setSelectedCheckpoint(idx);
                       setTimeout(() => detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
                     }}
                     className={clsx(
-                      "bg-white border rounded-2xl p-4 text-left transition-all duration-300 shadow-sm relative overflow-hidden group hover:scale-[1.02] hover:shadow-md",
-                      isActive 
-                        ? "border-emerald-600 ring-2 ring-emerald-500/20" 
-                        : "border-slate-200/85 hover:border-slate-300"
+                      "w-full h-full border rounded-cc-row p-4 text-left transition-colors",
+                      isActive
+                        ? "border-cc-ink ring-1 ring-cc-ink"
+                        : "border-cc-line hover:border-cc-field-border"
                     )}
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <span className={clsx(
-                        "w-6 h-6 rounded-full font-bold flex items-center justify-center text-[10px] shrink-0",
-                        isActive 
-                          ? "bg-emerald-600 text-white" 
-                          : "bg-slate-100 text-slate-500 group-hover:bg-slate-200"
+                        "w-6 h-6 rounded-full flex items-center justify-center cc-text-meta shrink-0",
+                        isActive
+                          ? "bg-cc-ink text-cc-surface"
+                          : "border border-cc-line bg-cc-surface-muted text-cc-ink-muted"
                       )}>
                         {idx + 1}
                       </span>
-                      <span className="text-[11px] font-extrabold text-slate-800 tracking-tight line-clamp-1">{cp.checkpointName}</span>
+                      <span className="cc-text-identifier text-cc-ink line-clamp-1">{cp.checkpointName}</span>
                     </div>
-                    
-                    <div className="flex items-center gap-1.5 mt-2">
-                      <span className={clsx(
-                        "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md",
-                        isSideBySide ? "bg-blue-50 text-blue-700 border border-blue-100" :
-                        isInApp ? "bg-emerald-50 text-emerald-700 border border-emerald-100" :
-                        "bg-slate-50 text-slate-600 border border-slate-100"
-                      )}>
-                        {cp.resultState.split(' ')[0]}
-                      </span>
-                      <span className="text-[9px] text-slate-400 font-bold ml-auto group-hover:text-slate-600 transition-colors">Inspect →</span>
+
+                    <div className="flex items-center gap-2 mt-2">
+                      <CcTag>{cp.resultState.split(' ')[0]}</CcTag>
+                      <span className="cc-text-meta text-cc-ink-muted ml-auto">Inspect →</span>
                     </div>
                   </button>
+                  </div>
                 );
               })}
             </div>
           </div>
 
           {/* Active Checkpoint Detail Panel */}
-          <div ref={detailPanelRef} className="bg-white border border-slate-150 rounded-xl p-5 mt-5 animate-in fade-in slide-in-from-top-1 duration-300">
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-150 pb-4 mb-4">
+          <div ref={detailPanelRef} className="rounded-cc-row border border-cc-line p-4 mt-4 motion-safe:animate-in fade-in slide-in-from-top-1 duration-300">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-cc-line pb-4 mb-4">
               <div className="space-y-1">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block font-mono">Selected Milestone {active + 1} • {checkpoints[active].checkpointName}</span>
-                <h4 className="text-sm font-extrabold text-slate-900 leading-snug">{checkpoints[active].question}</h4>
+                <span className="cc-text-label text-cc-ink-muted block">Selected Milestone {active + 1} • {checkpoints[active].checkpointName}</span>
+                <h4 className="cc-text-h3 text-cc-ink">{checkpoints[active].question}</h4>
               </div>
-              <span className={clsx(
-                "text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-sm shrink-0 self-start md:self-auto",
-                checkpoints[active].resultState === 'Side-by-Side Preferred' ? "bg-blue-600 text-white" :
-                checkpoints[active].resultState === 'In-App Preferred' ? "bg-emerald-600 text-white" :
-                "bg-slate-600 text-white"
-              )}>
-                {checkpoints[active].resultState}
+              <span className="shrink-0 self-start md:self-auto">
+                <CcTag>{checkpoints[active].resultState}</CcTag>
               </span>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed">
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1.5">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block font-mono">Custom Technical Assessment</span>
-                <p className="text-slate-700 font-medium">{checkpoints[active].evaluation}</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-cc-row bg-cc-surface-muted p-4 space-y-2">
+                <span className="cc-text-label text-cc-ink-muted block">Custom Technical Assessment</span>
+                <p className="cc-text-cell text-cc-ink">{checkpoints[active].evaluation}</p>
               </div>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1.5">
-                <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest block font-mono">Clean Core Implementation Impact</span>
-                <p className="text-slate-600 font-medium">{checkpoints[active].cleanCoreImpact}</p>
+              <div className="rounded-cc-row bg-cc-surface-muted p-4 space-y-2">
+                <span className="cc-text-label text-cc-ink-muted block">Clean Core Implementation Impact</span>
+                <p className="cc-text-cell text-cc-ink">{checkpoints[active].cleanCoreImpact}</p>
               </div>
             </div>
           </div>
@@ -182,129 +252,20 @@ export default function ExtensibilityDecisionMatrix({
         ) : (
         /* Tailored comparative matrix */
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-          {/* Track 1: In-App ABAP Cloud */}
-          <div className={clsx(
-            "p-6 rounded-2xl border transition-all flex flex-col justify-between",
-            !isBtp
-              ? "bg-emerald-50/20 border-emerald-500/30 shadow-md ring-1 ring-emerald-500/10"
-              : "bg-slate-50/40 border-slate-200/50 opacity-80"
-          )}>
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className={clsx("p-2 rounded-xl", !isBtp ? "bg-emerald-100/50 text-emerald-700" : "bg-slate-200 text-slate-500")}>
-                    <Sparkles size={16} />
-                  </div>
-                  <span className="font-extrabold text-slate-900 text-sm">⚙️ In-App ABAP Cloud (RAP)</span>
-                </div>
-                <span className={clsx(
-                  "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm",
-                  comparative.inAppABAPCloud.technicalFeasibility === 'Highly Compatible' ? "bg-green-600 text-white" :
-                  comparative.inAppABAPCloud.technicalFeasibility === 'Partially Compatible' ? "bg-amber-600 text-white" :
-                  "bg-rose-600 text-white"
-                )}>
-                  {comparative.inAppABAPCloud.technicalFeasibility}
-                </span>
-              </div>
-              
-              <p className="text-xs text-slate-600 leading-relaxed mb-6 font-medium">
-                {comparative.inAppABAPCloud.fitDetails}
-              </p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest block font-mono mb-2">Technical Advantages (Pros)</span>
-                  <ul className="space-y-2 text-[11px] text-slate-700 font-semibold">
-                    {comparative.inAppABAPCloud.pros.map((pro, pIdx) => (
-                      <li key={pIdx} className="flex items-start gap-1.5">
-                        <span className="text-emerald-500 shrink-0 font-extrabold">✓</span>
-                        <span>{pro}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest block font-mono mb-2">Architectural Limitations (Cons)</span>
-                  <ul className="space-y-2 text-[11px] text-slate-500 font-medium">
-                    {comparative.inAppABAPCloud.cons.map((con, cIdx) => (
-                      <li key={cIdx} className="flex items-start gap-1.5">
-                        <span className="text-rose-500 shrink-0 font-extrabold">✗</span>
-                        <span>{con}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-            
-            {!isBtp && (
-              <div className="border-t border-emerald-500/20 pt-4 mt-6 text-[10px] text-emerald-800 font-bold uppercase tracking-widest font-mono">
-                Target: Released CDS Views & RAP Business Objects
-              </div>
-            )}
-          </div>
-
-          {/* Track 2: Side-by-Side SAP BTP */}
-          <div className={clsx(
-            "p-6 rounded-2xl border transition-all flex flex-col justify-between",
-            isBtp
-              ? "bg-blue-50/20 border-blue-500/30 shadow-md ring-1 ring-blue-500/10"
-              : "bg-slate-50/40 border-slate-200/50 opacity-80"
-          )}>
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className={clsx("p-2 rounded-xl", isBtp ? "bg-blue-100/50 text-blue-700" : "bg-slate-200 text-slate-500")}>
-                    <Layers size={16} />
-                  </div>
-                  <span className="font-extrabold text-slate-900 text-sm">☁️ Side-by-Side SAP BTP (CAP)</span>
-                </div>
-                <span className={clsx(
-                  "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm",
-                  comparative.sideBySideBTP.technicalFeasibility === 'Highly Compatible' ? "bg-green-600 text-white" :
-                  comparative.sideBySideBTP.technicalFeasibility === 'Partially Compatible' ? "bg-amber-600 text-white" :
-                  "bg-rose-600 text-white"
-                )}>
-                  {comparative.sideBySideBTP.technicalFeasibility}
-                </span>
-              </div>
-              
-              <p className="text-xs text-slate-600 leading-relaxed mb-6 font-medium">
-                {comparative.sideBySideBTP.fitDetails}
-              </p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest block font-mono mb-2">Technical Advantages (Pros)</span>
-                  <ul className="space-y-2 text-[11px] text-slate-700 font-semibold">
-                    {comparative.sideBySideBTP.pros.map((pro, pIdx) => (
-                      <li key={pIdx} className="flex items-start gap-1.5">
-                        <span className="text-emerald-500 shrink-0 font-extrabold">✓</span>
-                        <span>{pro}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest block font-mono mb-2">Architectural Limitations (Cons)</span>
-                  <ul className="space-y-2 text-[11px] text-slate-500 font-medium">
-                    {comparative.sideBySideBTP.cons.map((con, cIdx) => (
-                      <li key={cIdx} className="flex items-start gap-1.5">
-                        <span className="text-rose-500 shrink-0 font-extrabold">✗</span>
-                        <span>{con}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-            
-            {isBtp && (
-              <div className="border-t border-blue-500/20 pt-4 mt-6 text-[10px] text-blue-800 font-bold uppercase tracking-widest font-mono">
-                Target: CAP OData APIs & Decoupled BTP Microservices
-              </div>
-            )}
-          </div>
+          <Track
+            title="In-App ABAP Cloud (RAP)"
+            icon={<Code2 size={16} aria-hidden="true" />}
+            track={comparative.inAppABAPCloud}
+            chosen={!isBtp}
+            target="Target: Released CDS Views & RAP Business Objects"
+          />
+          <Track
+            title="Side-by-Side SAP BTP (CAP)"
+            icon={<Layers size={16} aria-hidden="true" />}
+            track={comparative.sideBySideBTP}
+            chosen={isBtp}
+            target="Target: CAP OData APIs & Decoupled BTP Microservices"
+          />
         </div>
         )}
       </div>
