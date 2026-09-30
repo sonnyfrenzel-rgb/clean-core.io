@@ -819,15 +819,11 @@ export async function deleteUserDataAndAccount(
   // Firestore TTL on `expiresAt`; they hold no durable PII and are left to age out.
 
   // 3b. Backstop (F-03): purge immutable runs that were orphaned by an earlier
-  //     client-side project delete. Best-effort — a missing collection-group index
-  //     must never abort the erasure, so failures here are logged, not fatal.
-  //
-  //     Kept non-fatal on purpose for now (30.09.2026): the query needs a
-  //     collection-group index on `runs.userId`, which production does not have
-  //     yet, and collecting the failure before the index exists would stop every
-  //     erasure at step 4. Once Sonny has created the index in GCP (open item in
-  //     docs/BACKLOG.md, security v2.20.0), replace the `console.warn` with
-  //     `erasureErrors.push(...)`, like the steps around it.
+  //     client-side project delete. The query runs on the collection-group index
+  //     on `runs.userId` (database clean-core-eu, created 30.09.2026). A failure is
+  //     collected like every other step: the erasure stops before the profile and
+  //     the sign-in go, and a retry finishes the job — rather than reporting an
+  //     account erased while runs that name it are still stored.
   try {
     const q = db.collectionGroup('runs').where('userId', '==', uid).limit(400);
     let s = await q.get();
@@ -838,7 +834,7 @@ export async function deleteUserDataAndAccount(
       s = await q.get();
     }
   } catch (e: any) {
-    console.warn('[erasure] orphan-runs backstop skipped:', e?.message || e);
+    erasureErrors.push(`orphan runs: ${e?.message || e}`);
   }
 
   // 3c. What the account left behind in *other people's* projects.

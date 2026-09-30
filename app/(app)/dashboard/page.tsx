@@ -558,7 +558,7 @@ export default function Dashboard() {
       authorEmail: 'admin@clean-core.io',
       isAdmin: true,
       category: 'announcements',
-      message: 'Welcome everyone! This board carries the administrator's announcements about Clean-Core.io; it takes no posts or comments. Everything on Clean-Core.io is free to use: every user gets the full 7-stage workflow (5 transformations to start; bring your own Gemini key for unlimited runs). For account approvals or an admin-gated S/4HANA sandbox connection, reach the admin team at admin@clean-core.io. Happy modernizing!',
+      message: 'Welcome everyone! This board carries announcements from the administrator about Clean-Core.io; it takes no posts or comments. Everything on Clean-Core.io is free to use: every user gets the full 7-stage workflow (5 transformations to start; bring your own Gemini key for unlimited runs). For account approvals or an admin-gated S/4HANA sandbox connection, reach the admin team at admin@clean-core.io. Happy modernizing!',
       createdAt: 'Just now',
       pinned: true,
     },

@@ -457,3 +457,15 @@ test('the model-stage read budget is per account, and mail refusals log no provi
     expect(read(route), `${route} logs the provider's answer`).not.toMatch(/resendRes\.text\(\)/);
   }
 });
+
+// SEC-2026-034/-528: with the collection-group index on runs.userId in place
+// (30.09.2026), a failing orphan-runs backstop stops the erasure like every
+// other step instead of being logged and passed over.
+test('the orphan-runs backstop of the erasure is not best-effort any more', () => {
+  const src = read('lib/firebase-admin.ts');
+  const at = src.indexOf("db.collectionGroup('runs').where('userId', '==', uid)");
+  expect(at, 'the backstop query moved — re-read this test').toBeGreaterThan(-1);
+  const block = src.slice(at, src.indexOf('// 3c.', at));
+  expect(block).toContain('erasureErrors.push(');
+  expect(block).not.toMatch(/console\.(warn|log)\(/);
+});
