@@ -1084,16 +1084,16 @@ export async function approveTenantWithToken(
   };
 
   if (action === 'approve') {
-    // The request has to still be open, and this is what makes the token
-    // single-use in practice.
+    // The request has to still be open as well as the nonce unused.
     //
-    // `lib/approval-token.ts` signs `uid.requestType.action.exp` and nothing
-    // else: no nonce, no server state, seven days of validity. A rejection
-    // deletes the request document (below) but cannot invalidate the approve
-    // token that was minted beside it, so until this check an approve link for
-    // a request that had been rejected still worked for the rest of that week —
-    // a decision reversed without anyone deciding it again, and without the user
-    // asking again (security audit of v2.14.0, SEC-2026-343).
+    // Until UX-152 `lib/approval-token.ts` signed `uid.requestType.action.exp`
+    // and nothing else — no nonce, no server state, seven days of validity. A
+    // rejection deleted the request document (below) but could not invalidate
+    // the approve token minted beside it, so an approve link for a rejected
+    // request still worked for the rest of that week (security audit of
+    // v2.14.0, SEC-2026-343). The token now signs the request's nonce too
+    // (`uid.requestType.action.exp.nonce`, `createApprovalToken`), and this
+    // check stays as the second condition.
     //
     // Reaching this line already needs an admin claim and fresh step-up MFA
     // (`app/api/admin/approve-tenant/route.ts:8,15`), so this is not the last
