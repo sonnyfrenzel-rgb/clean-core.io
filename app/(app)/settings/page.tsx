@@ -1917,7 +1917,7 @@ export default function SettingsPage() {
         actions={
           mfaSetupStep === 1 ? (
             <CcButton variant="primary" onClick={() => setMfaSetupStep(2)} icon={<ArrowRight size={16} aria-hidden={true} />}>
-              I have scanned it
+              I have added it
             </CcButton>
           ) : mfaSetupStep === 2 ? (
             <>

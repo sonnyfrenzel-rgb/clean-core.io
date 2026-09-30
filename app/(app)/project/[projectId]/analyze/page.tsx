@@ -83,6 +83,7 @@ import GapsWorklist from '@/components/analyze/GapsWorklist';
 import MissingDependencyPrompt from '@/components/analyze/MissingDependencyPrompt';
 import PreAnalysisPreview from '@/components/analyze/PreAnalysisPreview';
 import EvidenceSweep from '@/components/analyze/EvidenceSweep';
+import { modelActionPlan } from '@/lib/action-plan';
 import UsageUpload from '@/components/analyze/UsageUpload';
 import { UsageRiskMatrixFor } from '@/components/analyze/UsageRiskMatrix';
 import AtcUpload from '@/components/analyze/AtcUpload';
@@ -595,7 +596,7 @@ export default function AnalyzePage() {
             ? (data.cleanCoreScore < 50 ? 'High' : data.cleanCoreScore < 75 ? 'Medium' : 'Low')
             : null),
         valueDrivers: data.businessValueAnalysis?.valueDrivers ?? null,
-        plainEnglishActionPlan: data.businessValueAnalysis?.plainEnglishActionPlan || [
+        plainEnglishActionPlan: modelActionPlan(data.businessValueAnalysis?.plainEnglishActionPlan) ?? [
           "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
           "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",
           `3. Decouple unique, high-value custom intellectual property into a modern, upgrade-stable ${project.extensibilityRoute || data.extensibilityRouting?.recommendedRoute || 'decoupled'} architecture.`
@@ -1341,7 +1342,7 @@ export default function AnalyzePage() {
             ? (analysisData.cleanCoreScore < 50 ? 'High' : analysisData.cleanCoreScore < 75 ? 'Medium' : 'Low')
             : null),
         valueDrivers: analysisData.businessValueAnalysis?.valueDrivers ?? null,
-        plainEnglishActionPlan: analysisData.businessValueAnalysis?.plainEnglishActionPlan || [
+        plainEnglishActionPlan: modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) ?? [
           "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
           "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",
           `3. Decouple unique, high-value custom intellectual property into a modern, upgrade-stable ${analysisData.extensibilityRouting?.recommendedRoute || 'decoupled'} architecture.`
@@ -1722,9 +1723,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   Its plan is either the model's or the page's generic fallback
                   (bizFallback above); the line over it says which, since the
                   component itself cannot tell (D.10b, from D.13). */}
-              <div data-action-plan-origin={analysisData.businessValueAnalysis?.plainEnglishActionPlan ? 'model' : 'generic'} className="flex flex-wrap items-center gap-2">
+              <div data-action-plan-origin={modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) ? 'model' : 'generic'} className="flex flex-wrap items-center gap-2">
                 <span className="cc-text-label text-cc-ink-muted">Action plan</span>
-                {analysisData.businessValueAnalysis?.plainEnglishActionPlan ? (
+                {modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) ? (
                   <CcProvenanceChip value="proposed" />
                 ) : (
                   <span className="cc-text-meta text-cc-ink-muted">
