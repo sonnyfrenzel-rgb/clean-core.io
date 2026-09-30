@@ -60,6 +60,26 @@ test.describe('the tenant connection check', () => {
     expect(src.indexOf('assertRateLimit(')).toBeLessThan(src.indexOf('await req.json()'));
   });
 
+  test('cancels every response body it does not read', () => {
+    const src = code(REL);
+    const fallback = src.indexOf('response.status === 405 || response.status === 501');
+    const refetch = src.indexOf("method: 'GET'", fallback);
+    expect(src.slice(fallback, refetch)).toContain('response.body?.cancel()');
+    const ret = src.indexOf('return { httpStatus: response.status }');
+    const lastCancel = src.lastIndexOf('response.body?.cancel()', ret);
+    expect(lastCancel).toBeGreaterThan(refetch);
+    // Cancelled while the deadline is still armed.
+    expect(lastCancel).toBeLessThan(src.lastIndexOf('clearTimeout(timeout)', ret));
+  });
+
+  test('refuses a declared scheme without its credential instead of testing anonymously', () => {
+    const src = code(REL);
+    expect(src).not.toMatch(/authType === 'basic' && username && password/);
+    expect(src).not.toMatch(/authType === 'sap_hub' && password/);
+    expect(src).toMatch(/authType === 'basic'\) \{\s*if \(!username \|\| !password\)/);
+    expect(src).toMatch(/authType === 'sap_hub'\) \{\s*if \(!password\)/);
+    expect(src).not.toContain("authType || 'basic'");
+  });
 });
 
 test.describe('the OData read', () => {
@@ -74,6 +94,20 @@ test.describe('the OData read', () => {
     expect(src.indexOf('assertRateLimit(')).toBeLessThan(src.indexOf('await req.json()'));
   });
 
+  test('never continues a declared scheme without its credential', () => {
+    const src = code(REL);
+    expect(src, 'a scheme adds its header only when the credential happens to be there').not.toMatch(/if \((user && pass|tokenData\.access_token|tokenUrl && clientId && clientSecret)\)/);
+    expect(src).not.toMatch(/authType === '(basic|oauth2|sap_hub)' &&/);
+    expect(src.match(/requireAccessToken\(await fetchOAuth2Token\(/g) || []).toHaveLength(2);
+  });
+
+  test('cancels the body of a refused read', () => {
+    const src = code(REL);
+    const notOk = src.indexOf('if (!response.ok) {', src.indexOf('safeFetch(readUrl'));
+    expect(notOk).toBeGreaterThan(-1);
+    const answer = src.indexOf('return NextResponse.json(', notOk);
+    expect(src.slice(notOk, answer)).toContain('response.body?.cancel()');
+  });
 });
 
 test.describe('the Resend webhook', () => {
