@@ -4,6 +4,7 @@ import path from 'path';
 import {
   GROUP_NAMES,
   RULE_IDS,
+  groupOf,
   countHits,
   ratchet,
   scanFile,
@@ -200,6 +201,32 @@ test.describe('design source guard (DESIGN.md, app-wide ratchet)', () => {
   test('2 px (`*-0.5`) is counted outside a chip, an identifier or an icon, and only there (dc7435453a94)', () => {
     expect(scanFile('components/Probe.tsx', '<div className="p-0.5">x</div>').map((h) => h.rule)).toEqual(['R18']);
     expect(scanFile('components/Probe.tsx', '<span className="rounded-full p-0.5">chip</span>')).toEqual([]);
+  });
+
+  test('D.5e: the three rule corrections bite where they should and nowhere else', () => {
+    const rules = (source: string) => scanFile('components/Probe.tsx', source).map((h) => h.rule);
+
+    // R8 — Tailwind v4 draws nothing for `outline-none focus-visible:outline-2`:
+    // the width utility reads `--tw-outline-style`, which `outline-none` set to none.
+    expect(rules('<button className="outline-none focus-visible:outline-2 focus-visible:outline-cc-focus">x</button>')).toEqual(['R8']);
+    expect(rules('<button className="focus:outline-none focus:outline-2">x</button>')).toEqual(['R8']);
+    // With a style of its own, a ring, a shadow or a border it is a replacement.
+    expect(rules('<button className="outline-none focus-visible:outline-solid focus-visible:outline-2">x</button>')).toEqual([]);
+    expect(rules('<button className="outline-none focus-visible:ring-2">x</button>')).toEqual([]);
+
+    // R18 — 2 px on an element with the library's row radius is a chip, like `rounded-sm`.
+    expect(rules('<span className="rounded-cc-row px-1 py-0.5">chip</span>')).toEqual([]);
+    // … and 6/10/14 px still count there.
+    expect(rules('<span className="rounded-cc-row gap-1.5">x</span>')).toEqual(['R18']);
+
+    // R7 — a hover tint on a hand-built button still counts; on a menu item or
+    // a listbox option it is the look of a list row, not a fifth button.
+    expect(rules('<button className="p-2 rounded-cc-row hover:bg-cc-surface-muted">x</button>')).toEqual(['R7']);
+    expect(rules('<button role="menuitem" className="px-3 py-2 hover:bg-cc-surface-muted">x</button>')).toEqual([]);
+    expect(rules('<button role="option" className="px-3 py-2 hover:bg-cc-surface-muted">x</button>')).toEqual([]);
+
+    // The group map names no file that is gone (GapAccordionCard went in D.12).
+    expect(groupOf('components/analyze/GapAccordionCard.tsx')?.group).not.toBe('analyze-worklists');
   });
 
   test('every group of the plan has its own baseline file', () => {

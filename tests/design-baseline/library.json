@@ -52,8 +52,7 @@
     },
     "components/cc/SegmentedControl.tsx": {
       "step": "D.5a",
-      "R7": 1,
-      "R18": 2
+      "R7": 1
     },
     "components/cc/Table.tsx": {
       "step": "D.5a",

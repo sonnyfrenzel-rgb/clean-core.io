@@ -144,7 +144,7 @@ const GROUPS: { match: (rel: string) => boolean; group: string; step: string }[]
   },
   {
     match: (r) =>
-      ['GapsWorklist', 'GapsPrioritization', 'AtcFindingsPanel', 'AtcUpload', 'UsageUpload', 'UsageRiskMatrix', 'ModuleHeatmap', 'GapAccordionCard']
+      ['GapsWorklist', 'GapsPrioritization', 'AtcFindingsPanel', 'AtcUpload', 'UsageUpload', 'UsageRiskMatrix', 'ModuleHeatmap']
         .some((n) => r === `components/analyze/${n}.tsx`),
     group: 'analyze-worklists',
     step: 'D.12',
@@ -531,7 +531,9 @@ export function scanFile(rel: string, source: string): Hit[] {
     const tag = enclosingTag(m.index);
     if (tag && lucideLocal.has(tag.name)) return;
     const ctx = tag ? tag.text : code.slice(lineStarts[lineOf(m.index) - 1], code.indexOf('\n', m.index) >>> 0);
-    if (/(?<![\w-])(shrink-0|flex-none|rounded(?:-[\w[\]]+)?|font-cc-mono)(?![\w-])/.test(ctx)) return;
+    // `rounded(-…)` with dashes inside the suffix too: `rounded-cc-row` is a
+    // chip's radius as much as `rounded-sm` is (D.5e).
+    if (/(?<![\w-])(shrink-0|flex-none|rounded(?:-[\w[\]-]+)?|font-cc-mono)(?![\w-])/.test(ctx)) return;
     add('R18', m.index, m[0]);
   });
 
@@ -563,16 +565,33 @@ export function scanFile(rel: string, source: string): Hit[] {
     const cls = classAttr(t.text);
     const tokens = cls ? classTokens(cls) : [];
 
-    // R7 — own-surface button/link
+    // R7 — own-surface button/link (§1.5). `hover:bg-*` counts too, on
+    // purpose: `p-2 rounded-lg hover:bg-gray-100` is a hand-built icon button
+    // and `px-4 py-2 hover:bg-gray-100` a hand-built ghost, and neither is one
+    // of the four — the surface only appears later. What does not count is a
+    // menu item or a listbox option (D.5e): those are rows of a list with a
+    // look of their own, not buttons in the sense of §1.5, and before this the
+    // shell menus had to move their item classes to the parent to get past it.
     if (t.name === 'button' || t.name === 'a' || t.name === 'Link') {
-      if (cls && !/CC_BUTTON_|publicButton\s*\(/.test(cls)) {
+      const listRow = /\brole=["'](?:menuitem|menuitemradio|menuitemcheckbox|option)["']/.test(t.text);
+      if (cls && !listRow && !/CC_BUTTON_|publicButton\s*\(/.test(cls)) {
         if (tokens.some((k) => /^bg-/.test(k) && !NON_SURFACE_BG.test(k))) add('R7', t.start, t.text.slice(0, 100));
       }
     }
 
-    // R8 — outline removed without a visible-focus replacement
+    // R8 — outline removed without a visible-focus replacement.
+    // In Tailwind v4 `outline-none` sets `outline-style: none` (and
+    // `--tw-outline-style: none`), and a width or colour utility under
+    // `focus-visible:` reads that variable — so `outline-none
+    // focus-visible:outline-2` draws nothing. An outline counts as a
+    // replacement only with a style of its own (`outline-solid`, `-dashed`, …);
+    // a ring, a shadow or a border always does (D.5e, from D.3).
     if (/(?<![\w-])outline-none(?![\w-])|\boutline:\s*['"]?none/.test(t.text)) {
-      if (!/focus-visible:(?:ring|outline|shadow|border)|focus:ring|focus:outline-(?!none)|focus-within:ring/.test(t.text)) {
+      if (
+        !/focus-visible:(?:ring|shadow|border)|focus:ring|focus-within:ring|(?:focus-visible|focus):outline-(?:solid|dashed|dotted|double)(?![\w-])/.test(
+          t.text,
+        )
+      ) {
         add('R8', t.start, t.text.slice(0, 100));
       }
     }
