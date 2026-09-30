@@ -1,8 +1,23 @@
 'use client';
 
-import { useId } from 'react';
-import { X } from 'lucide-react';
-import { useDialogFocus } from '@/hooks/useDialogFocus';
+import { useSyncExternalStore } from 'react';
+import CcDialog from '@/components/cc/Dialog';
+
+const noSubscription = () => () => {};
+
+/**
+ * `false` on the server and during hydration, `true` after it.
+ *
+ * The landing page opens this dialog from the address (`/?legal=privacy`), so it
+ * can be open on the very first render. `CcDialog` renders nothing where there
+ * is no `document` and a portal where there is one, so the server HTML and the
+ * first client render would disagree and React would throw the page away with
+ * a hydration error. The server snapshot keeps the first client render equal to
+ * the server's; the dialog opens one render later.
+ */
+function useHydrated(): boolean {
+  return useSyncExternalStore(noSubscription, () => true, () => false);
+}
 
 interface LegalOverlayProps {
   isOpen: boolean;
@@ -12,38 +27,26 @@ interface LegalOverlayProps {
 }
 
 /**
- * A modal dialog (QA 58dc160fd6c3): focus moves in on open, Tab stays inside,
- * Escape closes, and focus returns to whatever opened it.
+ * A legal text in a dialog: the summary of the Privacy Policy or the Terms,
+ * opened from a sign-up form without leaving it.
+ *
+ * A `CcDialog` (`DESIGN.md` §2.6) rather than a layer of its own. It was one
+ * until Block D (D.7), with its own focus handling (QA 58dc160fd6c3); the
+ * library's dialog does all of that — focus in on open, Tab held inside, the
+ * page behind `inert`, Escape and the close button as the two ways out, focus
+ * back to the link that opened it — and it does it the same way as every other
+ * dialog in the product. Opened from inside another dialog (the sign-up), it
+ * stacks: the lower one goes inert until this one closes.
+ *
+ * `wide`, because this is a longer explanation, not a form.
  */
 export default function LegalOverlay({ isOpen, onClose, title, children }: LegalOverlayProps) {
-  const titleId = useId();
-  const dialogRef = useDialogFocus<HTMLDivElement>(isOpen, onClose);
-
-  if (!isOpen) return null;
-
+  const hydrated = useHydrated();
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="bg-white p-8 rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl relative focus:outline-none"
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-4 right-4 p-2 text-[#003D7C]/60 hover:text-[#003D7C] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-        >
-          <X className="w-6 h-6" aria-hidden />
-        </button>
-        <h2 id={titleId} className="text-2xl font-bold mb-6 pr-8">{title}</h2>
-        <div className="prose prose-sm max-w-none text-[#003D7C]/70">
-          {children}
-        </div>
+    <CcDialog open={isOpen && hydrated} onClose={onClose} title={title} size="wide">
+      <div data-legal-overlay="" className="cc-text-cell text-cc-ink">
+        {children}
       </div>
-    </div>
+    </CcDialog>
   );
 }

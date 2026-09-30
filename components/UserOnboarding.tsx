@@ -1,12 +1,62 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { Check, ExternalLink } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { getAuth } from '@/lib/firebase';
-import { ShieldCheck, ArrowRight, CheckCircle2, MessageSquare, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 import LegalOverlay from '@/app/components/LegalOverlay';
-import { useDialogFocus } from '@/hooks/useDialogFocus';
+import CcDialog from '@/components/cc/Dialog';
+import CcButton from '@/components/cc/Button';
+import CcField from '@/components/cc/Field';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+
+/** A link inside running text: ink and underlined, never a surface of its own. */
+const INLINE_LINK =
+  'font-semibold text-cc-ink underline underline-offset-2 hover:text-cc-information';
+
+/**
+ * One consent line: the box, and a sentence that links to the text it agrees to.
+ *
+ * Not `CcCheckbox`, whose label is a string, because the sentence has to carry
+ * the link to the document — a consent to a text the form does not let you
+ * open is not informed. Drawn exactly like it (§2.7): the native input *is* the
+ * box, so Space toggles it and the focus ring lands on what the reader sees;
+ * checked is ink, not green, because ticking a box is a choice, not a proof.
+ */
+function ConsentLine({
+  checked,
+  onChange,
+  children,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  children: React.ReactNode;
+}) {
+  const id = useId();
+  return (
+    <div data-onboarding-consent={checked ? 'on' : 'off'} className="flex items-start gap-2">
+      <span className="relative mt-0.5 inline-flex shrink-0">
+        <input
+          id={id}
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="peer m-0 size-4 shrink-0 cursor-pointer appearance-none rounded-[4px] border border-cc-field-border bg-cc-surface checked:border-cc-ink checked:bg-cc-ink forced-colors:appearance-auto"
+        />
+        <Check
+          size={12}
+          strokeWidth={3}
+          aria-hidden={true}
+          className="pointer-events-none absolute top-0.5 left-0.5 hidden text-cc-on-dark peer-checked:block forced-colors:hidden"
+        />
+      </span>
+      <label htmlFor={id} className="cursor-pointer cc-text-cell text-cc-ink">
+        {children}
+      </label>
+    </div>
+  );
+}
 
 export default function UserOnboarding() {
   const { profile, loading, createProfile } = useUserProfile();
@@ -23,14 +73,53 @@ export default function UserOnboarding() {
   const [showTerms, setShowTerms] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
+  /**
+   * Who is signed in, as state that follows the auth state rather than a read
+   * of `auth.currentUser` during render — a snapshot that only changed when
+   * something else happened to re-render this component. Subscribed, a
+   * sign-out takes the card away on its own.
+   */
+  const [user, setUser] = useState<User | null>(null);
+  useEffect(() => {
+    if (!auth) return;
+    // Firebase calls the observer once with the current state on subscribe.
+    return onAuthStateChanged(auth, setUser);
+  }, [auth]);
+
+  /**
+   * An account whose profile this session has already seen is not signing up.
+   *
+   * The account erasure on /settings removes the profile on the server first
+   * and signs out after the answer arrives. In between, this component saw
+   * "signed in, no profile" — the shape of a new account — and laid the sign-up
+   * card over the page for an account that no longer existed, hiding whatever
+   * the erasure had to say (coordinator's note to D.7, 30.09.2026). A profile
+   * that vanishes under a signed-in session is an erasure, not a sign-up, so
+   * once one has been seen for this user the card stays away until the next
+   * sign-in. The address must match, so a profile still on screen from a
+   * previous account never marks the next one.
+   *
+   * Set during render, not in an effect: it is derived from the two values
+   * above and has to hold in the same render in which the profile goes.
+   */
+  const [profileSeenFor, setProfileSeenFor] = useState<string | null>(null);
+  if (
+    profile &&
+    user &&
+    profileSeenFor !== user.uid &&
+    !!profile.email &&
+    profile.email.toLowerCase() === user.email?.toLowerCase()
+  ) {
+    setProfileSeenFor(user.uid);
+  }
+
   // The effect must run on every render, so it cannot sit behind the SSR guard
   // below: the server render returned before reaching it while the browser
   // render ran it, and React throws on the hook-count mismatch during
   // hydration. Guard inside the effect instead of around it.
   useEffect(() => {
-    if (!auth) return;
-    if (auth.currentUser?.displayName && !firstName && !lastName) {
-      const displayName = auth.currentUser.displayName.trim();
+    if (user?.displayName && !firstName && !lastName) {
+      const displayName = user.displayName.trim();
       const parts = displayName.split(/\s+/);
       if (parts.length > 0) {
         setFirstName(parts[0]);
@@ -39,113 +128,21 @@ export default function UserOnboarding() {
         }
       }
     }
-  }, [auth, firstName, lastName]);
-
-  // QA b0b3150a1974: each of the three screens is a modal dialog. Focus moves
-  // in and stays in; the sign-up itself is mandatory, so Escape does not close
-  // it — only the "Leave the sign-up?" question goes back on Escape. Called
-  // before the early returns below, for the same reason as the effect above.
-  const visible = !!auth && !loading && !profile && !!auth.currentUser;
-  const cancelDialogRef = useDialogFocus<HTMLDivElement>(visible && showCancelConfirmation, () => setShowCancelConfirmation(false));
-  const successDialogRef = useDialogFocus<HTMLDivElement>(visible && !showCancelConfirmation && showSuccess);
-  const formDialogRef = useDialogFocus<HTMLDivElement>(visible && !showCancelConfirmation && !showSuccess);
+  }, [user, firstName, lastName]);
 
   // Firebase Auth is bypassed on the server; render nothing there.
   if (!auth) return null;
 
   if (loading) return null;
-  if (profile || !auth.currentUser) return null;
+  if (profile || !user || profileSeenFor === user.uid) return null;
 
-  if (showCancelConfirmation) {
-    return (
-      <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-        <motion.div
-          ref={cancelDialogRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="onboarding-cancel-title"
-          aria-describedby="onboarding-cancel-desc"
-          tabIndex={-1}
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-red-100 p-6 md:p-8 focus:outline-none"
-        >
-          <div className="flex flex-col items-center text-center">
-            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 shadow-inner text-red-600">
-              <ShieldCheck className="w-8 h-8 rotate-180" />
-            </div>
-            {/* Roadmap 0.2 (UX-076). This dialog used to read "you will lose
-                access to our advanced Generative AI modernization tools and
-                fail to modernise your ERP core", over a list headed "What you
-                will miss" whose fourth entry promised a "Developer Community
-                Forum" that posted nothing anywhere. Telling somebody who is
-                closing a sign-up form that they will fail is a guilt trip, and
-                it sat in the one product that positions itself on saying only
-                what it can show. The list keeps the three things the free
-                workspace actually does, and says so in the present tense. */}
-            <h2 id="onboarding-cancel-title" className="text-2xl font-black mb-3 text-gray-900 tracking-tight uppercase">Leave the sign-up?</h2>
-            <p id="onboarding-cancel-desc" className="text-gray-500 font-medium text-sm mb-6 leading-relaxed">
-              Nothing is saved: no workspace is created and what you typed here is discarded. You can sign up again at any time.
-            </p>
+  const cancelSignUp = () => setShowCancelConfirmation(true);
 
-            <div className="w-full bg-slate-50 border border-slate-150 rounded-2xl p-5 text-left mb-8 space-y-3.5">
-              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">What the free workspace includes:</h4>
-              <ul className="space-y-2.5 text-xs text-gray-700 font-medium">
-                <li className="flex items-start gap-2.5">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <div>
-                    <strong className="text-gray-900">5 free analyses</strong>: the seven-stage workflow on your own ABAP, or on a starter example — each example is free the first time you run it.
-                  </div>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <div>
-                    <strong className="text-gray-900">Process Blueprinting</strong>: the process reconstructed from the code, with a BPMN 2.0 XML export.
-                  </div>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="text-green-600 font-bold">✓</span>
-                  <div>
-                    <strong className="text-gray-900">Stakeholder Presentations</strong>: management-ready briefs built from the measured findings — no ROI is estimated.
-                  </div>
-                </li>
-              </ul>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
-              <button 
-                onClick={() => setShowCancelConfirmation(false)}
-                className="flex-1 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white py-3.5 rounded-xl font-black text-sm uppercase tracking-wider transition-all shadow-md hover:shadow-lg active:scale-95"
-              >
-                Back to sign-up
-              </button>
-              <button 
-                onClick={async () => {
-                  try {
-                    await auth.signOut();
-                    window.location.reload();
-                  } catch (e) {
-                    console.error("Sign-out error:", e);
-                  }
-                }}
-                className="flex-1 bg-red-55 text-red-600 border border-red-150 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-red-100 transition-all active:scale-95"
-              >
-                Cancel & Sign Out
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!agreedGDPR || !agreedTerms) return;
     setSubmitError('');
     setIsSubmitting(true);
     try {
-      const user = auth.currentUser!;
       // Creates the profile and hands it straight to /api/account/register,
       // which records the consent the two checkboxes above collected, activates
       // the account and sends the welcome mail. Nothing is queued for review.
@@ -158,240 +155,253 @@ export default function UserOnboarding() {
     }
   };
 
-  if (showSuccess) {
-    return (
-      <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-        <motion.div
-          ref={successDialogRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="onboarding-success-title"
-          tabIndex={-1}
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-md p-8 text-center border border-gray-100 focus:outline-none"
-        >
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-8 h-8 text-green-600" />
-          </div>
-          <h2 id="onboarding-success-title" className="text-2xl font-black mb-3">You're in</h2>
-          <p className="text-gray-600 font-medium mb-6">
-            Your Clean-Core.io workspace is active — there is nothing to approve and nothing to wait for.
-          </p>
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm mb-6 text-left">
-            <p className="font-bold text-gray-900 mb-2">What's next</p>
-            <p className="text-gray-600">A welcome email is on its way to {auth.currentUser.email} with the first-run guide and the security details your IT department will ask for. Or start right now — the dashboard has ready-made ABAP examples, so you need no system connection and no code of your own.</p>
-          </div>
-          <button onClick={() => window.location.reload()} className="w-full bg-gray-900 text-white rounded-xl py-3 font-bold">Open my workspace</button>
-        </motion.div>
-      </div>
-    );
-  }
-
+  /*
+   * Three dialogs (QA b0b3150a1974), all `CcDialog` since Block D (D.7): focus
+   * in and held, the page behind inert, focus back on close. The sign-up is
+   * mandatory, so its two ways out — Escape and the close button — both lead
+   * to the "Leave the sign-up?" question rather than away; that question's own
+   * Escape goes back to the form, which stays open underneath it.
+   */
   return (
-    <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-      <motion.div
-        ref={formDialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="onboarding-title"
-        tabIndex={-1}
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden max-h-[95vh] overflow-y-auto focus:outline-none"
+    <>
+      <CcDialog
+        open={!showSuccess}
+        title="Join the platform"
+        lead="Two details and two agreements, then your Free Community Edition workspace is live. No approval step."
+        onClose={cancelSignUp}
+        onSubmit={handleSubmit}
+        actions={
+          <>
+            <CcButton variant="ghost" onClick={cancelSignUp}>
+              Cancel
+            </CcButton>
+            <CcButton
+              type="submit"
+              variant="primary"
+              busy={isSubmitting}
+              disabled={!agreedGDPR || !agreedTerms || !firstName || !lastName}
+            >
+              {isSubmitting ? 'Setting up your workspace...' : 'Create my workspace'}
+            </CcButton>
+          </>
+        }
       >
-        <div className="bg-green-600 p-5 md:p-8 text-white relative">
-          <button 
-            type="button" 
-            onClick={() => setShowCancelConfirmation(true)}
-            className="absolute top-5 right-5 md:top-6 md:right-6 p-1.5 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            title="Cancel"
-            aria-label="Cancel the sign-up"
-          >
-            <X className="w-5 h-5" aria-hidden />
-          </button>
-          <div className="flex items-center gap-3 mb-2 md:mb-4">
-            <div className="bg-white/20 p-1.5 md:p-2 rounded-lg md:rounded-xl">
-              <ShieldCheck className="w-6 h-6 md:w-8 md:h-8" />
-            </div>
-            <h2 id="onboarding-title" className="text-xl md:text-3xl font-black tracking-tight uppercase">Join the platform</h2>
-          </div>
-          <p className="text-green-50 text-xs md:text-sm font-medium opacity-90 leading-relaxed">
-            Two details and two agreements, then your Free Community Edition workspace is live. No approval step.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-5 md:p-8 space-y-4 md:space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-            <div>
-              <label htmlFor="onboarding-first-name" className="block text-[10px] md:text-xs font-black text-gray-400 mb-1.5 md:mb-2 uppercase tracking-widest">First Name</label>
-              <input
-                id="onboarding-first-name"
-                autoComplete="given-name"
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                placeholder="John"
-                className="w-full px-4 py-2.5 md:py-3 rounded-lg md:rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-600 focus:border-green-600 outline-none transition-all font-medium text-gray-900 text-sm md:text-base"
-              />
-            </div>
-            <div>
-              <label htmlFor="onboarding-last-name" className="block text-[10px] md:text-xs font-black text-gray-400 mb-1.5 md:mb-2 uppercase tracking-widest">Last Name</label>
-              <input
-                id="onboarding-last-name"
-                autoComplete="family-name"
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-                placeholder="Doe"
-                className="w-full px-4 py-2.5 md:py-3 rounded-lg md:rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-600 focus:border-green-600 outline-none transition-all font-medium text-gray-900 text-sm md:text-base"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label htmlFor="onboarding-motivation" className="flex items-center gap-2 text-[10px] md:text-xs font-black text-gray-400 mb-1.5 md:mb-2 uppercase tracking-widest"><MessageSquare size={14} aria-hidden /> Why do you want to join? (Optional)</label>
-            <textarea
-              id="onboarding-motivation"
-              value={motivation}
-              onChange={(e) => setMotivation(e.target.value)}
-              placeholder="Tell us a bit about your use-case..."
-              rows={2}
-              className="w-full px-4 py-2.5 rounded-lg md:rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-600 focus:border-green-600 outline-none transition-all font-medium text-gray-900 text-sm resize-none"
-            />
-          </div>
-
-          <div className="space-y-3 pt-3 md:pt-4 border-t border-gray-100">
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <div className="relative mt-0.5 shrink-0">
-                <input 
-                  type="checkbox" 
-                  checked={agreedGDPR} 
-                  onChange={(e) => setAgreedGDPR(e.target.checked)}
-                  className="sr-only peer"
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <CcField label="First Name" required>
+              {(control) => (
+                <input
+                  id={control.id}
+                  autoComplete="given-name"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required={control.required}
+                  aria-required={control.ariaRequired}
+                  aria-describedby={control.describedBy}
+                  placeholder="John"
+                  className={control.className}
                 />
-                <div className={`peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#1d4ed8] w-4 h-4 md:w-5 md:h-5 border-2 rounded transition-all flex items-center justify-center ${agreedGDPR ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
-                  {agreedGDPR && <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-white" />}
-                </div>
-              </div>
-              <span className="text-[11px] md:text-sm text-gray-600 leading-relaxed font-medium">
-                I agree to the{' '}
-                <button 
-                  type="button" 
-                  onClick={(e) => { e.preventDefault(); setShowDatenschutz(true); }}
-                  className="text-gray-950 font-bold underline hover:text-green-600 transition-colors"
-                >
-                  GDPR provisions and Privacy Policy
-                </button>{' '}
-                and understand that this is a Free Community Edition.
-              </span>
-            </label>
-
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <div className="relative mt-0.5 shrink-0">
-                <input 
-                  type="checkbox" 
-                  checked={agreedTerms} 
-                  onChange={(e) => setAgreedTerms(e.target.checked)}
-                  className="sr-only peer"
+              )}
+            </CcField>
+            <CcField label="Last Name" required>
+              {(control) => (
+                <input
+                  id={control.id}
+                  autoComplete="family-name"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required={control.required}
+                  aria-required={control.ariaRequired}
+                  aria-describedby={control.describedBy}
+                  placeholder="Doe"
+                  className={control.className}
                 />
-                <div className={`peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#1d4ed8] w-4 h-4 md:w-5 md:h-5 border-2 rounded transition-all flex items-center justify-center ${agreedTerms ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
-                  {agreedTerms && <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-white" />}
-                </div>
-              </div>
-              <span className="text-[11px] md:text-sm text-gray-600 leading-relaxed font-medium">
-                I accept the{' '}
-                <button 
-                  type="button" 
-                  onClick={(e) => { e.preventDefault(); setShowTerms(true); }}
-                  className="text-gray-950 font-bold underline hover:text-green-600 transition-colors"
-                >
-                  Terms of Service and Guidelines
-                </button>
-                .
-              </span>
-            </label>
+              )}
+            </CcField>
           </div>
 
-          <div className="bg-gray-50 p-3 md:p-4 rounded-xl md:rounded-2xl border border-gray-100">
-            <h4 className="font-black text-gray-900 mb-1 text-[10px] md:text-sm uppercase tracking-wider">Free Community Edition</h4>
-            <ul className="text-[10px] md:text-xs text-gray-600 space-y-1">
-              <li className="flex items-center gap-2">• Up to 5 App Transformations for testing</li>
-              <li className="flex items-center gap-2">• Community feedback & collaboration</li>
-              <li className="flex items-center gap-2 font-bold">• Active immediately — no approval step</li>
+          <CcField label="Why do you want to join? (Optional)">
+            {(control) => (
+              <textarea
+                id={control.id}
+                value={motivation}
+                onChange={(e) => setMotivation(e.target.value)}
+                aria-describedby={control.describedBy}
+                placeholder="Tell us a bit about your use-case..."
+                rows={2}
+                className={`${control.className} resize-y py-2 leading-normal`}
+              />
+            )}
+          </CcField>
+
+          <div className="space-y-3 border-t border-cc-line pt-4">
+            <ConsentLine checked={agreedGDPR} onChange={setAgreedGDPR}>
+              I agree to the{' '}
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); setShowDatenschutz(true); }}
+                className={INLINE_LINK}
+              >
+                GDPR provisions and Privacy Policy
+              </button>{' '}
+              and understand that this is a Free Community Edition.
+            </ConsentLine>
+
+            <ConsentLine checked={agreedTerms} onChange={setAgreedTerms}>
+              I accept the{' '}
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); setShowTerms(true); }}
+                className={INLINE_LINK}
+              >
+                Terms of Service and Guidelines
+              </button>
+              .
+            </ConsentLine>
+          </div>
+
+          <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
+            <h3 className="m-0 mb-1 cc-text-label text-cc-ink-muted">Free Community Edition</h3>
+            <ul className="m-0 list-disc space-y-1 pl-5 cc-text-cell text-cc-ink">
+              <li>Up to 5 App Transformations for testing</li>
+              <li>Community feedback &amp; collaboration</li>
+              <li className="font-semibold">Active immediately — no approval step</li>
             </ul>
           </div>
 
-          {/* System Disclaimer & Terms */}
-          <div className="bg-amber-50/50 p-4 rounded-xl md:rounded-2xl border border-amber-200/60 text-[10px] md:text-xs text-amber-900 space-y-2">
-            <h4 className="font-black uppercase tracking-wider flex items-center gap-1.5 text-amber-950 text-xs md:text-sm">
-              ⚡ System Disclaimer & Terms
-            </h4>
-            <p className="leading-relaxed font-medium">
-              This application is a <strong>free community project</strong>. All transformation analyses and code migrations are powered by <strong>Generative AI models</strong> and may contain inaccuracies, hallucinations, or syntactical errors.
-            </p>
-            <p className="leading-relaxed font-medium">
+          {/* System disclaimer and terms. It says what happens — a language
+              model writes part of every analysis and all generated code — and
+              leaves out the label: §3.1 has no "powered by Generative AI", and
+              the provenance of a given text is the job of the chip where that
+              text is shown. */}
+          <CcMessageStrip state="warning" headline="System disclaimer and terms.">
+            This application is a <strong>free community project</strong>. Parts of every analysis and all
+            generated code are written by a language model (Google Gemini) and may contain inaccuracies, invented
+            details or syntax errors.
+            <span className="mt-2 block">
               We assume <strong>no warranty, guarantees, or liability</strong> for the performance, reliability, or execution safety of generated codes. Before deploying any output, it must be thoroughly inspected and verified by qualified software architects.
-            </p>
-            <p className="leading-relaxed font-bold text-amber-950">
+            </span>
+            <span className="mt-2 block font-semibold">
               By creating a workspace, you acknowledge these conditions and agree to our{' '}
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={(e) => { e.preventDefault(); setShowDatenschutz(true); }}
-                className="underline hover:text-green-700 font-black"
+                className={INLINE_LINK}
               >
                 Privacy Policy (Datenschutz)
               </button>{' '}
               and standard terms.
-            </p>
-          </div>
+            </span>
+          </CcMessageStrip>
 
           {submitError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-xs font-bold">
+            <CcMessageStrip state="error" announce>
               {submitError}
-            </div>
+            </CcMessageStrip>
           )}
+        </div>
+      </CcDialog>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <button
-              type="submit"
-              disabled={isSubmitting || !agreedGDPR || !agreedTerms || !firstName || !lastName}
-              className="flex-[2] flex items-center justify-center gap-2 bg-gray-950 hover:bg-gray-900 text-white py-3.5 md:py-4 rounded-xl md:rounded-2xl font-black text-sm md:text-base transition-all shadow-lg hover:shadow-xl disabled:bg-gray-300 disabled:shadow-none"
+      {/* Roadmap 0.2 (UX-076). This dialog used to read "you will lose
+          access to our advanced Generative AI modernization tools and
+          fail to modernise your ERP core", over a list headed "What you
+          will miss" whose fourth entry promised a "Developer Community
+          Forum" that posted nothing anywhere. Telling somebody who is
+          closing a sign-up form that they will fail is a guilt trip, and
+          it sat in the one product that positions itself on saying only
+          what it can show. The list keeps the three things the free
+          workspace actually does, and says so in the present tense. */}
+      <CcDialog
+        open={showCancelConfirmation && !showSuccess}
+        title="Leave the sign-up?"
+        lead="Nothing is saved: no workspace is created and what you typed here is discarded. You can sign up again at any time."
+        onClose={() => setShowCancelConfirmation(false)}
+        actions={
+          <>
+            <CcButton
+              variant="ghost"
+              tone="danger"
+              onClick={async () => {
+                try {
+                  await auth.signOut();
+                  window.location.reload();
+                } catch (e) {
+                  console.error("Sign-out error:", e);
+                }
+              }}
             >
-              {isSubmitting ? 'Setting up your workspace...' : 'Create my workspace'} <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowCancelConfirmation(true)}
-              className="flex-1 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3.5 md:py-4 rounded-xl md:rounded-2xl font-bold text-sm md:text-base transition-all border border-gray-200"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </motion.div>
+              Cancel &amp; Sign Out
+            </CcButton>
+            <CcButton variant="primary" onClick={() => setShowCancelConfirmation(false)}>
+              Back to sign-up
+            </CcButton>
+          </>
+        }
+      >
+        <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
+          <h3 className="m-0 mb-2 cc-text-label text-cc-ink-muted">What the free workspace includes:</h3>
+          <ul className="m-0 list-none space-y-2 p-0 cc-text-cell text-cc-ink">
+            <li className="flex items-start gap-2">
+              <Check size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
+              <div>
+                <strong className="font-semibold">5 free analyses</strong>: the seven-stage workflow on your own ABAP, or on a starter example — each example is free the first time you run it.
+              </div>
+            </li>
+            <li className="flex items-start gap-2">
+              <Check size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
+              <div>
+                <strong className="font-semibold">Process Blueprinting</strong>: the process reconstructed from the code, with a BPMN 2.0 XML export.
+              </div>
+            </li>
+            <li className="flex items-start gap-2">
+              <Check size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
+              <div>
+                <strong className="font-semibold">Stakeholder Presentations</strong>: management-ready briefs built from the measured findings — no ROI is estimated.
+              </div>
+            </li>
+          </ul>
+        </div>
+      </CcDialog>
 
-      {/* GDPR privacy policy overlay */}
+      <CcDialog
+        open={showSuccess}
+        title="You're in"
+        lead="Your Clean-Core.io workspace is active — there is nothing to approve and nothing to wait for."
+        onClose={() => window.location.reload()}
+        actions={
+          <CcButton variant="primary" onClick={() => window.location.reload()}>
+            Open my workspace
+          </CcButton>
+        }
+      >
+        <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
+          <p className="m-0 mb-1 cc-text-h3 text-cc-ink">What&apos;s next</p>
+          <p className="m-0 cc-text-cell text-cc-ink-muted">A welcome email is on its way to {user.email} with the first-run guide and the security details your IT department will ask for. Or start right now — the dashboard has ready-made ABAP examples, so you need no system connection and no code of your own.</p>
+        </div>
+      </CcDialog>
+
+      {/* The two legal summaries the consent lines link to. Dialogs of their own,
+          stacked over the sign-up while open. */}
       <LegalOverlay isOpen={showDatenschutz} onClose={() => setShowDatenschutz(false)} title="Privacy Policy (GDPR Compliance)">
-        <div className="space-y-6 text-slate-800">
+        <div className="space-y-6 text-cc-ink">
           <div>
-            <h3 className="text-lg font-bold mb-2">1. Privacy at a Glance</h3>
-            <p className="text-sm leading-relaxed mb-2">
+            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">1. Privacy at a Glance</h3>
+            <p className="m-0 mb-2 cc-text-body">
               Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our platform program.
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="m-0 cc-text-cell text-cc-ink-muted">
               <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: info@clean-core.io.
             </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">2. Data Collection & Processing Purposes</h3>
-            <p className="text-sm leading-relaxed mb-3">
+            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">2. Data Collection & Processing Purposes</h3>
+            <p className="m-0 mb-3 cc-text-body">
               We process personal data of our users only as far as necessary to provide a functional community platform as well as our contents and services.
             </p>
-            <ul className="list-disc pl-5 space-y-2 text-xs text-slate-600">
+            <ul className="list-disc pl-5 space-y-2 cc-text-cell text-cc-ink-muted">
               <li>
                 <strong>Google Authentication (Firebase Auth):</strong> To sign in, we use Google Sign-In. This securely reads your name, email address, and profile picture from your Google account to authenticate your user session and establish access privileges.
               </li>
@@ -405,21 +415,21 @@ export default function UserOnboarding() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">3. Processing of Source Code & Project Assets</h3>
-            <p className="text-sm leading-relaxed">
+            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">3. Processing of Source Code & Project Assets</h3>
+            <p className="m-0 cc-text-body">
               The ABAP source files you upload and the generated modernization artifacts (such as solution designs, TypeScript code, and test cases) are stored in our secure Google Firebase cloud environment in Europe.
             </p>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">
               <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Under Google's applicable API data-use terms, this content is not used to train Google's foundational AI models. When you use your own key (BYOK), the terms of your own Google account additionally apply.
             </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">4. Cloud Node Hosting & Third-Party Services</h3>
-            <p className="text-sm leading-relaxed">
+            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">4. Cloud Node Hosting & Third-Party Services</h3>
+            <p className="m-0 cc-text-body">
               To provide this service, we rely on the following trusted cloud services:
             </p>
-            <ul className="list-disc pl-5 space-y-2 text-xs text-slate-600">
+            <ul className="list-disc pl-5 space-y-2 cc-text-cell text-cc-ink-muted">
               <li>
                 <strong>Google Cloud Platform & Firebase:</strong> Hosted on secure European servers in the <strong>Belgium (europe-west1)</strong> region for low-latency, GDPR-aligned authentication and database operations.
               </li>
@@ -430,11 +440,11 @@ export default function UserOnboarding() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">5. Your Rights Under GDPR (including Art. 17 Deletion)</h3>
-            <p className="text-sm leading-relaxed mb-2">
+            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">5. Your Rights Under GDPR (including Art. 17 Deletion)</h3>
+            <p className="m-0 mb-2 cc-text-body">
               Since our platform is hosted in compliance with EU regulations, you have all rights under the General Data Protection Regulation (GDPR):
             </p>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-slate-600">
+            <ul className="list-disc pl-5 space-y-1 cc-text-cell text-cc-ink-muted">
               <li>Right of Access (Art. 15 GDPR)</li>
               <li>Right to Rectification (Art. 16 GDPR)</li>
               <li>Right to Erasure / "Right to be Forgotten" (Art. 17 GDPR)</li>
@@ -442,8 +452,8 @@ export default function UserOnboarding() {
               <li>Right to Data Portability (Art. 20 GDPR)</li>
               <li>Right to Withdraw Consent (Art. 7 Abs. 3 GDPR)</li>
             </ul>
-            <p className="text-xs text-slate-500 mt-2">
-              To exercise these rights, particularly to cascadingly erase all your data immediately, you can trigger account deletion directly in your Profile Settings under the **Danger Zone**, which will permanently and instantly wipe all database and authentication entries. Alternatively, contact us at <strong>info@clean-core.io</strong>.
+            <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">
+              To exercise these rights, particularly to cascadingly erase all your data immediately, you can trigger account deletion directly in your Profile Settings under the <strong>Danger Zone</strong>, which will permanently and instantly wipe all database and authentication entries. Alternatively, contact us at <strong>info@clean-core.io</strong>.
             </p>
           </div>
         </div>
@@ -451,40 +461,44 @@ export default function UserOnboarding() {
 
       {/* Terms of Service & Guidelines overlay */}
       <LegalOverlay isOpen={showTerms} onClose={() => setShowTerms(false)} title="Terms of Service & Guidelines">
-        <div className="space-y-6 text-slate-800">
-          <a href="/terms" target="_blank" rel="noopener noreferrer" className="block p-3 bg-green-50 border border-green-200 rounded-lg text-sm font-semibold text-green-800 hover:bg-green-100 transition-colors">
-            This is a short summary. Read the full, authoritative Terms of Service &amp; Community Guidelines at clean-core.io/terms ↗
-          </a>
+        <div className="space-y-6 text-cc-ink">
+          <CcMessageStrip state="information">
+            This is a short summary.{' '}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className={INLINE_LINK}>
+              Read the full, authoritative Terms of Service &amp; Community Guidelines at clean-core.io/terms
+              <ExternalLink size={12} aria-hidden={true} className="ml-1 inline align-baseline" />
+            </a>
+          </CcMessageStrip>
           <div>
-            <h3 className="text-lg font-bold mb-2">1. Scope and Purpose</h3>
-            <p className="text-sm leading-relaxed">
+            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">1. Scope and Purpose</h3>
+            <p className="m-0 cc-text-body">
               This Clean-Core.io free community program is designed solely for research and evaluation purposes in the domain of automated code modernization (ABAP to Cloud-Native Node.js). By participating, you help shape and improve this community utility.
             </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">2. Free Community Edition Usage</h3>
-            <p className="text-sm leading-relaxed text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100 font-medium">
+            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">2. Free Community Edition Usage</h3>
+            <CcMessageStrip state="warning">
               Platform access is completely free of charge. Clean-Core.io is a non-commercial community project provided for research and evaluation purposes. Generated code is a draft — it must be reviewed, tested and approved by qualified architects before deployment to any live production environment.
-            </p>
+            </CcMessageStrip>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">3. AI Code Generation & Liability Disclaimer</h3>
-            <p className="text-sm leading-relaxed">
-              Modernization analyses and source codes are synthesized automatically using Generative AI models. We assume **no warranty, guarantees, or liability** for the reliability, correctness, security, or compilation status of the generated codes.
+            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">3. AI Code Generation & Liability Disclaimer</h3>
+            <p className="m-0 cc-text-body">
+              Modernization analyses and source codes are synthesized automatically using Generative AI models. We assume <strong>no warranty, guarantees, or liability</strong> for the reliability, correctness, security, or compilation status of the generated codes.
             </p>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">
               <strong>Architect Directive:</strong> Before applying or utilizing any generated code in staging or production environments, all files must be thoroughly inspected, validated, and approved by qualified software architects.
             </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">4. Community Guidelines & Code of Conduct</h3>
-            <p className="text-sm leading-relaxed mb-2">
+            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">4. Community Guidelines & Code of Conduct</h3>
+            <p className="m-0 mb-2 cc-text-body">
               As a Free Community Edition participant, you agree to adhere to constructive and respectful rules of engagement:
             </p>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-slate-600">
+            <ul className="list-disc pl-5 space-y-1 cc-text-cell text-cc-ink-muted">
               <li>Do not upload malicious software, illegal scripts, or proprietary source code that violates intellectual property rights.</li>
               <li>Maintain a respectful, collaborative, and professional tone in our community spaces.</li>
               <li>Report system hallucinations, security vulnerabilities, or compilation errors to help us continuously refine the engine.</li>
@@ -492,6 +506,6 @@ export default function UserOnboarding() {
           </div>
         </div>
       </LegalOverlay>
-    </div>
+    </>
   );
 }
