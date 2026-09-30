@@ -2384,7 +2384,7 @@
           },
           {
             "module": "lib/workflow-steps.ts",
-            "evidence": "Handover blocked — built for a previous source: ${blockers.join"
+            "evidence": "Handover blocked — built for ${prevBasis}: ${blockers.join"
           }
         ],
         "note": "The stale Delivery detail names every blocker, and it is the detail of Handover."
