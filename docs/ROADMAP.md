@@ -1681,6 +1681,22 @@ den Regeln nehmen, nur noch über gehärtete Routen. Die Übertragung auf die ü
 Sammlungen ist ein eigener Schritt und braucht Sonnys Entscheidung, weil sie die Admin-Konsole
 berührt.
 
+### Full reviews of a12774cd2b7f and fc787674705f (v2.20.0) — three public-copy findings decided on 30.09.2026
+
+Sonny decided all three on 30.09.2026; built on `decide/terms-30` (from `integrate/3.0`, live with 3.0).
+
+| Fingerprint | Severity | File | Decision | State |
+|---|---|---|---|---|
+| `6b83ef361e80` | medium | `app/terms/page.tsx` | A new Terms version, v2.2.0, live with 3.0: section 4.1 names the deterministic results (evidence, not a guarantee) and the model-generated output (a draft that must be reviewed); v2.1.0 and v2.2.0 archived with their digests | fixed (`88377f92`, `97e2d702`) |
+| `c9ab2c6a6c1c` | medium | `components/LandingModals.tsx` | The sign-up disclaimer and the Terms summary say the same as 4.1 — and so do the disclaimer and summary in `components/UserOnboarding.tsx`, which said the same untrue sentence; `tests/terms-provenance-guard.spec.ts` holds the three together | fixed (`88377f92`) |
+| `8eb20d13b5b1` | medium | `app/page.tsx` | Reword to "What will moving it take — effort, and a cost estimate from your inputs" | fixed by 3.0.6 on `integrate/3.0` (`ffa37d17`): `components/BenefitCard.tsx` and its FAQ entry no longer exist on the 3.0 landing, and Economics is described there as a calculation on figures you enter (`lib/landing-stages.ts`). Still live on `main` until 3.0 |
+
+With it, consent: every existing account must accept v2.2.0 at its next sign-in with 3.0 — no mails, no census
+(Sonny, 30.09.2026). `TERMS_VERSIONS_IN_FORCE` holds the current version alone (`122d9275`); this sets aside
+§ 10.1 (six weeks' notice by mail) and § 10.3 (carry on under the accepted Terms; ending that takes 30 days'
+notice) of the Terms those accounts accepted, on the owner's decision. The effective date 15 October 2026 is a
+placeholder for the 3.0 release day.
+
 ### Vollprüfung von 3131afa (v2.14.0), triagiert am 23.09.2026
 
 **Die fünf kritischen Befunde waren derselbe Fehlalarm** — drei localStorage-Schlüssel, eine

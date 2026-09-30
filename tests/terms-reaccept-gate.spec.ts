@@ -289,6 +289,12 @@ test('an account the server grandfathers is asked, not shut out', async ({ page 
  */
 test('an account on the previous published version is asked, and keeps working', async ({ page, request }) => {
   test.setTimeout(180 * 1000);
+  // Since 3.0 no earlier version is in force (Sonny, 30.09.2026; see
+  // TERMS_VERSIONS_IN_FORCE), so there is no account this banner case applies to:
+  // tests/terms-30-reconsent.spec.ts covers what such an account meets now. The
+  // case stays here, and runs again the day a previous version is kept in force.
+  const PREVIOUS = TERMS_VERSIONS_IN_FORCE.find((v) => v !== TERMS_VERSION);
+  test.skip(!PREVIOUS, 'no previous Terms version is in force since 3.0 — see tests/terms-30-reconsent.spec.ts');
 
   const email = `terms-prev-${STAMP}@cleancore-test.io`;
   const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
@@ -298,8 +304,8 @@ test('an account on the previous published version is asked, and keeps working',
     firstName: 'Terms', lastName: 'Previous', email,
     tier: 'pilot', status: 'approved', createdAt: new Date(),
     transformationsUsed: 0, transformationsLimit: 5,
-    // What every existing account holds the moment the new version ships.
-    termsVersionAccepted: '2026-07-07',
+    // A previous version that is still in force.
+    termsVersionAccepted: PREVIOUS,
     mfaEnabled: false,
   });
 
@@ -336,13 +342,15 @@ test('an account on the previous published version is asked, and keeps working',
   ).toBe(200);
 });
 
-test('the version production serves today is one the platform still honours', () => {
-  // A unit-level backstop for the same fact, so it fails in milliseconds rather
-  // than after a sign-in: the list must contain the version that was current
-  // before the bump, or the release locks everybody out.
+test('with 3.0 only the current Terms version is in force', () => {
+  // Until 3.0 this asserted that the previous version stayed in force, so the
+  // release would not lock everybody out. With 3.0 that is reversed on purpose
+  // (Sonny, 30.09.2026): consent to the new version is required at sign-in, so
+  // the list holds the current version and nothing else. A version added back
+  // here is a decision to be written down in lib/constants.ts, not a drift.
+  expect(TERMS_VERSIONS_IN_FORCE, 'the current version must always be in force').toContain(TERMS_VERSION);
   expect(
     TERMS_VERSIONS_IN_FORCE,
-    'the previously published Terms version is not in force — every existing account would be refused',
-  ).toContain('2026-07-07');
-  expect(TERMS_VERSIONS_IN_FORCE, 'the current version must always be in force').toContain(TERMS_VERSION);
+    'an earlier Terms version is in force again — the 3.0 decision requires consent to the current one',
+  ).toEqual([TERMS_VERSION]);
 });
