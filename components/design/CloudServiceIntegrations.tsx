@@ -1,8 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowUpRight, Network, X } from 'lucide-react';
-import clsx from 'clsx';
+import { ArrowUpRight, Copy } from 'lucide-react';
+import CcButton from '@/components/cc/Button';
+import CcDialog from '@/components/cc/Dialog';
+import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import { CcTag } from '@/components/cc/Tag';
+
+/** A snippet as plain lines for the code surface — no highlighting is claimed. */
+function snippetLines(code: string): CcCodeLine[] {
+  return code.split('\n').map((text, index) => ({ number: index + 1, tokens: [{ kind: 'plain', text }] }));
+}
 
 interface CloudService {
   serviceName: string;
@@ -349,149 +358,127 @@ export default function CloudServiceIntegrations({ cloudServices }: CloudService
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const details = activeService ? getCloudServiceDetails(activeService.serviceName) : null;
+  const hasPackages = Boolean(details?.npmPackages && details.npmPackages.length > 0);
+
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Cloud Service Integrations</h3>
-        <p className="text-sm text-slate-500 mt-1">Platform service bindings and technical dependencies required for the target architecture.</p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {cloudServices.map((service, idx) => (
-          <div 
-            key={idx} 
-            onClick={() => setActiveService(service)}
-            className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between hover:border-emerald-500/40 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer relative group active:scale-[0.98]"
-          >
-            <div>
-              <div className="flex justify-between items-start gap-4 mb-2">
-                <h4 className="font-extrabold text-slate-955 text-base group-hover:text-emerald-600 transition-colors">{service.serviceName}</h4>
-                <div className="flex items-center gap-1">
-                  <span className="text-[9px] font-bold text-emerald-505 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-all">Deep Dive</span>
-                  <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors" />
-                </div>
-              </div>
-              <p className="text-slate-600 text-xs leading-relaxed mb-4">{service.purpose}</p>
-            </div>
-            <div className="border-t border-slate-50 pt-3 mt-4">
-              {(() => {
-                const isAbapNative = !service.npmPackages?.length || 
-                  /CDS|View|RAP|IAM|LUW|BADI|BRF|Fiori|ABAP/i.test(service.serviceName);
-                const label = isAbapNative ? 'Released SAP Objects' : 'NPM Package Dependencies';
-                const packages = service.npmPackages?.length ? service.npmPackages : ['No external dependencies'];
-                return (
-                  <>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">{label}</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {packages.map((pkg, pIdx) => (
-                        <code key={pIdx} className="bg-slate-100 text-slate-800 text-[10px] px-2 py-0.5 rounded-md font-mono border border-slate-150 group-hover:bg-emerald-50 group-hover:text-emerald-805 group-hover:border-emerald-200 transition-colors">
-                          {pkg}
-                        </code>
-                      ))}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="cc-text-h2 text-cc-ink">Cloud Service Integrations</h3>
+          {/* Which services, what for and which packages: the model's design.
+              The deep dive behind each card is our own reference text. */}
+          <CcProvenanceChip value="proposed" />
+        </div>
+        <p className="cc-text-cell text-cc-ink-muted mt-1">Platform service bindings and technical dependencies required for the target architecture.</p>
       </div>
 
-      {/* Cloud Services Deep-Dive Drawer Overlay */}
-      {activeService && (() => {
-        const details = getCloudServiceDetails(activeService.serviceName);
-
-        return (
-          <div 
-            className="fixed inset-0 bg-slate-950/65 backdrop-blur-sm z-[90] flex justify-end animate-in fade-in duration-300"
-            onClick={() => setActiveService(null)}
-          >
-            <div 
-              className="bg-slate-900 border-l border-slate-800 text-white w-full max-w-2xl h-full shadow-2xl z-[90] flex flex-col justify-between animate-in slide-in-from-right duration-300"
-              onClick={(e) => e.stopPropagation()}
+      <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {cloudServices.map((service, idx) => {
+          const isAbapNative = !service.npmPackages?.length ||
+            /CDS|View|RAP|IAM|LUW|BADI|BRF|Fiori|ABAP/i.test(service.serviceName);
+          const label = isAbapNative ? 'Released SAP Objects' : 'NPM Package Dependencies';
+          const packages = service.npmPackages?.length ? service.npmPackages : ['No external dependencies'];
+          return (
+            <li
+              key={idx}
+              data-cloud-service={idx}
+              className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc flex flex-col justify-between"
             >
-              {/* Header */}
-              <div className="p-8 border-b border-slate-800/80 flex items-center justify-between relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-12 -mt-12"></div>
-                <div className="flex items-center gap-3.5 relative z-10">
-                  <div className="bg-emerald-500/20 p-2.5 rounded-2xl text-emerald-400 border border-emerald-500/30">
-                    <Network className="w-6 h-6 animate-pulse" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest font-mono">Service Integration Blueprint</span>
-                    <h3 className="text-xl font-extrabold text-white mt-0.5">{details.title}</h3>
-                  </div>
+              <div>
+                <div className="flex justify-between items-start gap-4 mb-2">
+                  <h4 className="cc-text-h3 text-cc-ink">{service.serviceName}</h4>
+                  <CcButton
+                    variant="ghost"
+                    icon={<ArrowUpRight size={16} aria-hidden={true} />}
+                    onClick={() => setActiveService(service)}
+                    aria-haspopup="dialog"
+                  >
+                    Deep Dive
+                  </CcButton>
                 </div>
-                <button aria-label="Close" type="button" 
-                  onClick={() => setActiveService(null)}
-                  className="text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-colors relative z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-                >
-                  <X size={18} />
-                </button>
+                <p className="cc-text-cell text-cc-ink mb-4">{service.purpose}</p>
               </div>
-
-              {/* Content body */}
-              <div className="flex-1 overflow-y-auto p-8 space-y-6 text-sm">
-                <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 font-mono">Service Binding Role</h4>
-                  <p className="text-slate-200 leading-relaxed font-semibold">{activeService.purpose}</p>
-                </div>
-
-                <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 font-mono">Detailed Architectural Overview</h4>
-                  <p className="text-slate-350 leading-relaxed">{details.details}</p>
-                </div>
-
-                <div>
-                  <h4 className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-2 font-mono">Why This is Critical for Clean Core</h4>
-                  <p className="text-slate-300 leading-relaxed text-xs border-l-2 border-emerald-500/40 pl-4 py-1.5 italic bg-emerald-950/20 rounded-r-xl">{details.whyCritical}</p>
-                </div>
-
-                {details.npmPackages && details.npmPackages.length > 0 && (
-                <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 font-mono">NPM Package Dependencies</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {details.npmPackages.map((pkg, idx) => (
-                      <code key={idx} className="bg-slate-955 text-emerald-400 border border-slate-800 text-xs px-3 py-1 rounded-xl font-mono">
-                        {pkg}
-                      </code>
-                    ))}
-                  </div>
-                </div>
-                )}
-
-                <div className="space-y-2.5 pt-2">
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                      {details.npmPackages && details.npmPackages.length > 0 ? 'Node.js Integration Code Guide' : 'ABAP Code Pattern'}
-                    </h4>
-                    <button
-                      onClick={() => handleCopyCode(details.codeSnippet)}
-                      className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 bg-emerald-950/40 border border-emerald-900/60 px-3 py-1.5 rounded-xl transition-all"
-                    >
-                      {copied ? 'Copied!' : 'Copy Code'}
-                    </button>
-                  </div>
-                  <pre className="bg-slate-950 p-5 rounded-2xl border border-slate-800 text-xs font-mono text-emerald-350 overflow-x-auto max-h-[280px] select-all scrollbar-thin scrollbar-thumb-slate-800">
-                    <code>{details.codeSnippet}</code>
-                  </pre>
+              <div className="border-t border-cc-line pt-3 mt-4">
+                <span className="cc-text-label text-cc-ink-muted block mb-2">{label}</span>
+                <div className="flex flex-wrap gap-2">
+                  {packages.map((pkg, pIdx) => (
+                    <code key={pIdx} className="font-cc-mono cc-text-meta text-cc-ink">
+                      <CcTag>{pkg}</CcTag>
+                    </code>
+                  ))}
                 </div>
               </div>
+            </li>
+          );
+        })}
+      </ul>
 
-              {/* Footer */}
-              <div className="p-8 border-t border-slate-800/80 bg-slate-950/20 flex justify-between items-center gap-4">
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-mono">Clean-Core.io Transformed Standard</span>
-                <button
-                  onClick={() => setActiveService(null)}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl transition-all active:scale-95 shadow-lg shadow-emerald-955/20"
+      {/* Cloud service deep dive */}
+      <CcDialog
+        open={Boolean(activeService && details)}
+        title={details?.title ?? ''}
+        lead="Service Integration Blueprint"
+        size="wide"
+        onClose={() => setActiveService(null)}
+        actions={
+          <CcButton variant="ghost" onClick={() => setActiveService(null)}>
+            Return to Design Board
+          </CcButton>
+        }
+      >
+        {activeService && details ? (
+          <div className="space-y-6">
+            <div>
+              <h3 className="cc-text-label text-cc-ink-muted mb-2">Service Binding Role</h3>
+              <p className="cc-text-body font-semibold text-cc-ink">{activeService.purpose}</p>
+            </div>
+
+            <div>
+              <h3 className="cc-text-label text-cc-ink-muted mb-2">Detailed Architectural Overview</h3>
+              <p className="cc-text-body text-cc-ink">{details.details}</p>
+            </div>
+
+            <div>
+              <h3 className="cc-text-label text-cc-ink-muted mb-2">Why This is Critical for Clean Core</h3>
+              <p className="cc-text-cell text-cc-ink border-l-2 border-cc-line pl-4 py-1">{details.whyCritical}</p>
+            </div>
+
+            {hasPackages && (
+              <div>
+                <h3 className="cc-text-label text-cc-ink-muted mb-2">NPM Package Dependencies</h3>
+                <div className="flex flex-wrap gap-2">
+                  {details.npmPackages.map((pkg, idx) => (
+                    <code key={idx} className="font-cc-mono cc-text-meta text-cc-ink">
+                      <CcTag>{pkg}</CcTag>
+                    </code>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2 pt-2">
+              <div className="flex justify-between items-center gap-2">
+                <h3 className="cc-text-label text-cc-ink-muted">
+                  {hasPackages ? 'Node.js Integration Code Guide' : 'ABAP Code Pattern'}
+                </h3>
+                <CcButton
+                  variant="ghost"
+                  icon={<Copy size={16} aria-hidden={true} />}
+                  onClick={() => handleCopyCode(details.codeSnippet)}
                 >
-                  Return to Design Board
-                </button>
+                  {copied ? 'Copied!' : 'Copy Code'}
+                </CcButton>
+              </div>
+              <div className="max-h-[280px] overflow-y-auto rounded-cc-card">
+                <CcCodeSurface label={`${details.title} — code`} lines={snippetLines(details.codeSnippet)} />
               </div>
             </div>
+
+            <p className="cc-text-meta text-cc-ink-muted">Clean-Core.io Transformed Standard</p>
           </div>
-        );
-      })()}
+        ) : null}
+      </CcDialog>
     </div>
   );
 }
