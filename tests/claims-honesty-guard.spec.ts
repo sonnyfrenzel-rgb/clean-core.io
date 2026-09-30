@@ -492,10 +492,19 @@ test.describe('the public pages claim only what the product does', () => {
     const greenClaims = await showroom.evaluate((root) => {
       const ctx = document.createElement('canvas').getContext('2d')!;
       const green = (colour: string) => {
+        // A clean pixel for every colour: without it a transparent fill read the
+        // previous colour back, and a value the canvas refuses (`none`) left the
+        // last one standing.
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
         ctx.fillStyle = colour;
         ctx.fillRect(0, 0, 1, 1);
         const [r, g, b, a] = Array.from(ctx.getImageData(0, 0, 1, 1).data);
         return a > 0 && g > r + 24 && g > b + 24;
+      };
+      const greenMark = (el: Element) => {
+        const s = getComputedStyle(el);
+        return [s.color, s.backgroundColor, s.fill, s.stroke].some(green);
       };
       const claim = /\bcompiled\b|\bvalidated\b|\btests? passed\b|\bverified against\b/i;
       const negated = /\bnot\b[^.]{0,40}(compiled|run|tested|verified)|\bunverified\b/i;
@@ -504,8 +513,15 @@ test.describe('the public pages claim only what the product does', () => {
         if (el.children.length > 0) continue;
         const t = (el.textContent || '').trim();
         if (!t || !claim.test(t) || negated.test(t)) continue;
-        const style = getComputedStyle(el);
-        if (green(style.color) || green(style.backgroundColor)) out.push(t.slice(0, 80));
+        // Not only the claim's own leaf: the row it stands in — a green tick is
+        // usually a sibling icon — and any green surface around it up to the
+        // showroom (QA full review of fc787674705f, 2df860221c95).
+        const row = el.parentElement ?? el;
+        let marked = [row, ...Array.from(row.querySelectorAll('*'))].some(greenMark);
+        for (let up = row.parentElement; !marked && up && up !== root.parentElement; up = up.parentElement) {
+          marked = green(getComputedStyle(up).backgroundColor);
+        }
+        if (marked) out.push(t.slice(0, 80));
       }
       return out;
     });
