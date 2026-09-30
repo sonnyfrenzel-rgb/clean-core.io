@@ -12,7 +12,7 @@ import {
 import { byokRequiresEnrolment } from '@/lib/mfa-gate';
 import { logger, providerErrorShape } from '@/lib/logger';
 import { ByokKeyUnreadableError } from '@/lib/byok-key';
-import { assertRateLimit } from '@/lib/rate-limit';
+import { assertByokRateLimit } from '@/lib/byok-rate-limit';
 import { GoogleGenAI } from '@google/genai';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
@@ -41,7 +41,9 @@ export async function POST(req: NextRequest) {
     // a fresh allowance from every address it could reach us through. The
     // account is established by the verified token; it is the thing limited,
     // exactly as in `/api/gemini`.
-    await assertRateLimit(`byok_test:${decodedToken.uid}`, 5, 900000);
+    // The key and the numbers live in `lib/byok-rate-limit.ts`, with save and
+    // delete, so the three cannot drift apart.
+    await assertByokRateLimit('test', decodedToken.uid);
 
     // 3. Account-state gate — hard suspension only, as on the save path. It was
     // absent here, so a suspended account could still have the server load and

@@ -21,14 +21,20 @@ import {
 } from '../lib/byok-key';
 import { encrypt as encryptWithS4Key, decrypt as decryptWithS4Key } from '../lib/s4-credentials';
 import { GET as healthGET } from '../app/api/health/route';
+import { QuotaError, getAdminDb } from '../lib/firebase-admin';
+import {
+  BYOK_RATE_LIMITS,
+  assertByokRateLimit,
+  byokRateLimitKey,
+  byokRateLimitMessage,
+} from '../lib/byok-rate-limit';
 
 /**
  * Roadmap 3.0.13 — the BYOK hardening before 3.0.
  *
  * One section per point of the roadmap line, each with the check that fails
  * without the change. Pure where the rule is pure; a source guard only where the
- * behaviour cannot be reached from a test run (the rate limiter is switched off
- * under the emulator, `lib/rate-limit.ts`). The route-level halves that need a
+ * behaviour cannot be reached from a test run. The route-level halves that need a
  * signed-in account live in `tests/byok-hardening-routes.spec.ts`.
  */
 
@@ -187,15 +193,84 @@ test.describe('(c) the BYOK tier rule', () => {
   });
 });
 
-// ── (d) the key test is limited per account ─────────────────────────────────
+// ── (d) saving, removing and testing a key are limited per account ─────────
 
-test('(d) the key-test limit is keyed on the account alone, not on account and address', () => {
-  // A source guard, because the limiter is switched off under the emulator
-  // (`lib/rate-limit.ts`) and no route test can observe it.
-  const route = read('app/api/secrets/gemini/test/route.ts');
-  expect(route).toContain('assertRateLimit(`byok_test:${decodedToken.uid}`, 5, 900000)');
-  expect(route, 'the client address is part of the limit again').not.toMatch(/getClientIp/);
-  expect(route).not.toMatch(/byok_test:\$\{decodedToken\.uid\}:/);
+test.describe('(d) the key routes are limited per account, not per account and address', () => {
+  const ROUTES = [
+    { rel: 'app/api/secrets/gemini/route.ts', from: 'export async function POST', to: 'export async function DELETE', call: "assertByokRateLimit('save', decodedToken.uid)", work: 'saveGeminiApiKey(' },
+    { rel: 'app/api/secrets/gemini/route.ts', from: 'export async function DELETE', to: null, call: "assertByokRateLimit('delete', decodedToken.uid)", work: 'deleteGeminiApiKey(' },
+    { rel: 'app/api/secrets/gemini/test/route.ts', from: 'export async function POST', to: null, call: "assertByokRateLimit('test', decodedToken.uid)", work: 'loadGeminiApiKey(' },
+  ] as const;
+
+  test('every key route asks the shared limiter with the account alone, before it does the work', () => {
+    for (const r of ROUTES) {
+      const src = read(r.rel);
+      const handler = src.slice(src.indexOf(r.from), r.to ? src.indexOf(r.to) : undefined);
+      expect(handler, `${r.rel}: ${r.from} no longer limits per account`).toContain(r.call);
+      expect(handler.indexOf(r.call), `${r.rel}: ${r.from} limits after the work`).toBeLessThan(handler.indexOf(r.work));
+      // No second limiter beside it that could key on something else.
+      expect(src, `${r.rel} calls the raw limiter again`).not.toMatch(/\bassertRateLimit\(/);
+      // The address is not read at all, so it cannot become part of a key.
+      expect(src, `${r.rel} reads the client address again`).not.toMatch(/getClientIp/);
+    }
+    // The helper takes the action and the account and nothing else: there is no
+    // parameter through which an address, a header or a body field could reach
+    // the key.
+    expect(assertByokRateLimit.length).toBe(2);
+    expect(read('lib/byok-rate-limit.ts'), 'the limiter module reads the request again').not.toMatch(/getClientIp|NextRequest|headers/);
+  });
+
+  test('the keys and the numbers', () => {
+    expect(byokRateLimitKey('save', 'uid-1')).toBe('byok_save:uid-1');
+    expect(byokRateLimitKey('delete', 'uid-1')).toBe('byok_delete:uid-1');
+    // The key the test route has used since 3.0.13 (d), so its windows carry over.
+    expect(byokRateLimitKey('test', 'uid-1')).toBe('byok_test:uid-1');
+    expect(BYOK_RATE_LIMITS.save).toMatchObject({ max: 10, windowMs: 3_600_000 });
+    expect(BYOK_RATE_LIMITS.delete).toMatchObject({ max: 10, windowMs: 3_600_000 });
+    expect(BYOK_RATE_LIMITS.test).toMatchObject({ max: 5, windowMs: 900_000 });
+  });
+
+  /**
+   * The limiter itself, against the Firestore emulator. It is switched off when
+   * `NEXT_PUBLIC_USE_FIREBASE_EMULATOR` is `true` (`lib/rate-limit.ts`), which
+   * is why no route test can observe it; here the flag is lifted for this test
+   * process only, with `FIRESTORE_EMULATOR_HOST` still set, so every read and
+   * write goes to the emulator and nowhere else.
+   */
+  test('one account runs out, a second account does not share its window, and the 429 says why', async () => {
+    expect(process.env.FIRESTORE_EMULATOR_HOST, 'no emulator host: this test would reach a real database').toBeTruthy();
+    await getAdminDb(); // initialised in emulator mode, before the flag is lifted
+    const run = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    const a = `byok-rl-a-${run}`;
+    const b = `byok-rl-b-${run}`;
+    const saved = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR;
+    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = 'false';
+    try {
+      for (const action of ['save', 'delete', 'test'] as const) {
+        const { max } = BYOK_RATE_LIMITS[action];
+        for (let i = 0; i < max; i++) await assertByokRateLimit(action, a);
+        const refused = await assertByokRateLimit(action, a).then(() => null, (e: unknown) => e);
+        expect(refused, `${action}: the account was not stopped after ${max}`).toBeInstanceOf(QuotaError);
+        expect((refused as QuotaError).status).toBe(429);
+        expect((refused as QuotaError).message).toMatch(/this account may do that at most \d+ times/);
+        expect((refused as QuotaError).message).toMatch(/Please try again in \d+ seconds\.$/);
+        // A second account starts with its own, full window.
+        for (let i = 0; i < max; i++) await assertByokRateLimit(action, b);
+        await expect(assertByokRateLimit(action, b)).rejects.toBeInstanceOf(QuotaError);
+      }
+    } finally {
+      if (saved === undefined) delete process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR;
+      else process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = saved;
+    }
+  });
+
+  test('the 429 names the action, the limit and what did not happen', () => {
+    expect(byokRateLimitMessage('save', 42)).toBe(
+      'Too many attempts to save an API key: this account may do that at most 10 times per hour. Nothing was saved. Please try again in 42 seconds.',
+    );
+    expect(byokRateLimitMessage('delete', 7)).toContain('Your stored key was not removed.');
+    expect(byokRateLimitMessage('test', 7)).toContain('at most 5 times every 15 minutes. The key was not tested.');
+  });
 });
 
 // ── (e) errors are reduced to codes before they are logged ──────────────────
@@ -316,4 +391,5 @@ test.describe('(g) the BYOK key', () => {
     expect(job).toContain('BYOK_ENCRYPTION_KEY=${{ secrets.BYOK_ENCRYPTION_KEY }}');
     expect(read('playwright.config.ts')).toContain('process.env.BYOK_ENCRYPTION_KEY =');
   });
+
 });

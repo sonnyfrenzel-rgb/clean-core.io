@@ -13,7 +13,7 @@ import {
 import { byokRequiresEnrolment } from '@/lib/mfa-gate';
 import { logger, providerErrorShape } from '@/lib/logger';
 import { ByokKeyUnavailableError } from '@/lib/byok-key';
-import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
+import { assertByokRateLimit } from '@/lib/byok-rate-limit';
 
 /**
  * POST /api/secrets/gemini
@@ -40,9 +40,10 @@ export async function POST(req: NextRequest) {
     // the same function, so the page and the route cannot disagree.
     await assertByokAllowed(decodedToken.uid, decodedToken.admin === true);
 
-    // 2. Rate Limiting Gate (10 requests per hour)
-    const ip = getClientIp(req);
-    await assertRateLimit(`byok_save:${decodedToken.uid}:${ip}`, 10, 3600000);
+    // 2. Rate Limiting Gate (10 saves per hour), per account — not per account
+    // and address, which handed the same account a fresh allowance from every
+    // address it could reach us through (3.0.13, owner decision 30.09.2026).
+    await assertByokRateLimit('save', decodedToken.uid);
 
     const body = await req.json().catch(() => ({}));
     const { apiKey } = body as { apiKey?: string };
@@ -110,9 +111,8 @@ export async function DELETE(req: NextRequest) {
     // 1. MFA Step-up Gate
     await assertMfaSatisfied(req, decodedToken, { requireEnrolment: byokRequiresEnrolment });
 
-    // 2. Rate Limiting Gate (10 requests per hour)
-    const ip = getClientIp(req);
-    await assertRateLimit(`byok_delete:${decodedToken.uid}:${ip}`, 10, 3600000);
+    // 2. Rate Limiting Gate (10 removals per hour), per account, as on save.
+    await assertByokRateLimit('delete', decodedToken.uid);
 
     // No account-state gate, on purpose — the same intent
     // `app/api/projects/[projectId]/readers/route.ts` states about revoking.

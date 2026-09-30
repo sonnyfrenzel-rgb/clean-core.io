@@ -48,11 +48,15 @@ function rateLimitDocId(key: string): string {
  * @param key   Composite key, e.g. `gemini:<uid>:<ip>`
  * @param maxRequests  Maximum allowed requests in the window
  * @param windowMs     Window size in milliseconds
+ * @param refusal      Optional wording of the 429, given the seconds until the
+ *                     oldest request leaves the window. Without it the refusal
+ *                     is the generic "Rate limit exceeded" sentence.
  */
 export async function assertRateLimit(
   key: string,
   maxRequests: number,
   windowMs: number,
+  refusal?: (retryAfterSeconds: number) => string,
 ): Promise<void> {
   // Skip rate limiting in emulator/test mode
   if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') return;
@@ -82,9 +86,11 @@ export async function assertRateLimit(
     );
 
     if (timestamps.length >= maxRequests) {
-      const retryAfterMs = timestamps[0] + windowMs - now;
+      const retryAfterSeconds = Math.ceil((timestamps[0] + windowMs - now) / 1000);
       throw new QuotaError(
-        `Rate limit exceeded. Please try again in ${Math.ceil(retryAfterMs / 1000)} seconds.`,
+        refusal
+          ? refusal(retryAfterSeconds)
+          : `Rate limit exceeded. Please try again in ${retryAfterSeconds} seconds.`,
         429,
       );
     }
