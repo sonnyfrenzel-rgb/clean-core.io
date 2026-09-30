@@ -3,8 +3,6 @@
   "route": "/trust",
   "step": "D.23b",
   "ceilings": {
-    "small": 4,
-    "contrast": 1,
-    "heavy": 12
+    "contrast": 1
   }
 }

@@ -1,12 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { getAuth } from '@/lib/firebase';
 import { ArrowRight, Check, Loader2, Lock, Mail, ShieldCheck } from 'lucide-react';
 import { signInLinkFor } from '@/lib/return-path';
+import CcButton from '@/components/cc/Button';
+import CcLinkButton from '@/components/cc/LinkButton';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import { formatTextDate } from '@/lib/format';
 import {
   INVITATION_LIMITS_SENTENCE,
   INVITATION_SCOPE_SENTENCE,
@@ -100,35 +103,32 @@ export default function InvitationPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white border border-gray-200 rounded-3xl shadow-sm p-8 sm:p-10">
-        <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-6 border border-green-200">
-          {accepted ? <Check className="w-7 h-7 text-green-600" /> : <Lock className="w-7 h-7 text-green-600" />}
+      <div className="bg-cc-surface border border-cc-line rounded-3xl p-8 sm:p-10">
+        <div aria-hidden="true" className="w-14 h-14 bg-cc-brand-surface rounded-2xl flex items-center justify-center mb-6 border border-cc-brand">
+          {accepted ? <Check className="w-7 h-7 text-cc-brand-strong" /> : <Lock className="w-7 h-7 text-cc-brand-strong" />}
         </div>
 
         {accepted ? (
           <>
-            <h1 data-invitation-title className="text-3xl font-black text-gray-950 tracking-tight mb-3">
+            <h1 data-invitation-title className="text-3xl font-extrabold text-cc-ink tracking-tight mb-3">
               You now have read access
             </h1>
-            <p className="text-sm font-medium text-gray-600 leading-relaxed mb-8">
+            <p className="text-sm font-medium text-cc-ink-muted leading-relaxed mb-8">
               {accepted.projectName
                 ? `“${accepted.projectName}” is open for reading with this account.`
                 : 'The project is open for reading with this account.'}{' '}
               {INVITATION_LIMITS_SENTENCE}
             </p>
-            <Link
-              href={`/project/${projectId}/analyze`}
-              className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3.5 rounded-2xl font-black text-sm transition-all shadow-md"
-            >
-              Open the project <ArrowRight size={14} />
-            </Link>
+            <CcLinkButton href={`/project/${projectId}/analyze`} variant="primary" density="cozy">
+              Open the project <ArrowRight size={16} aria-hidden="true" />
+            </CcLinkButton>
           </>
         ) : (
           <>
-            <h1 data-invitation-title className="text-3xl font-black text-gray-950 tracking-tight mb-3">
+            <h1 data-invitation-title className="text-3xl font-extrabold text-cc-ink tracking-tight mb-3">
               An invitation to read a project
             </h1>
-            <p className="text-sm font-medium text-gray-600 leading-relaxed mb-6">
+            <p className="text-sm font-medium text-cc-ink-muted leading-relaxed mb-6">
               {INVITATION_SCOPE_SENTENCE} {INVITATION_LIMITS_SENTENCE}
             </p>
 
@@ -137,18 +137,18 @@ export default function InvitationPage() {
                 receives them; the project name stays behind acceptance. */}
             {preview && (
               <dl data-invitation-preview className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm mb-6">
-                <dt className="font-bold text-gray-500">Invited by</dt>
-                <dd data-invitation-inviter className="font-medium text-gray-900">{preview.invitedBy || 'not recorded'}</dd>
-                <dt className="font-bold text-gray-500">Open until</dt>
-                <dd data-invitation-expires className="font-medium text-gray-900">
-                  {new Date(preview.expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                <dt className="font-bold text-cc-ink-muted">Invited by</dt>
+                <dd data-invitation-inviter className="font-medium text-cc-ink">{preview.invitedBy || 'not recorded'}</dd>
+                <dt className="font-bold text-cc-ink-muted">Open until</dt>
+                <dd data-invitation-expires className="font-medium text-cc-ink">
+                  {formatTextDate(preview.expiresAt) ?? preview.expiresAt}
                 </dd>
               </dl>
             )}
 
-            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-8 flex gap-3">
-              <ShieldCheck size={18} className="text-gray-500 shrink-0 mt-0.5" />
-              <p className="text-xs font-medium text-gray-600 leading-relaxed">
+            <div className="bg-cc-surface-muted border border-cc-line rounded-2xl p-5 mb-8 flex gap-3">
+              <ShieldCheck size={18} className="text-cc-ink-muted shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="text-xs font-medium text-cc-ink-muted leading-relaxed">
                 This link opens for one account only: the one signed in with the address the invitation
                 was sent to, and that address has to be confirmed. Forwarding the link gives nobody
                 anything.
@@ -156,29 +156,27 @@ export default function InvitationPage() {
             </div>
 
             {checkingAuth ? (
-              <p className="text-sm font-bold text-gray-500 flex items-center gap-2">
-                <Loader2 size={14} className="animate-spin" /> Checking your session…
+              <p role="status" className="text-sm font-bold text-cc-ink-muted flex items-center gap-2">
+                <Loader2 size={14} className="motion-safe:animate-spin" aria-hidden="true" /> Checking your session…
               </p>
             ) : user ? (
-              <button
-                data-invitation-accept
+              <CcButton
+                data-invitation-accept=""
+                variant="primary"
+                density="cozy"
                 onClick={accept}
+                busy={busy}
                 disabled={busy}
-                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3.5 rounded-2xl font-black text-sm transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                icon={<Mail size={16} aria-hidden="true" />}
               >
-                {busy ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
                 {busy ? 'Opening…' : 'Open the invitation'}
-              </button>
+              </CcButton>
             ) : (
               <>
-                <Link
-                  data-invitation-signin
-                  href={signInLinkFor(here)}
-                  className="inline-flex items-center gap-2 bg-gray-950 hover:bg-gray-900 text-white px-6 py-3.5 rounded-2xl font-black text-sm transition-all shadow-md"
-                >
-                  Sign in to open it <ArrowRight size={14} />
-                </Link>
-                <p className="text-xs font-medium text-gray-500 mt-4 leading-relaxed">
+                <CcLinkButton data-invitation-signin="" href={signInLinkFor(here)} variant="primary" density="cozy">
+                  Sign in to open it <ArrowRight size={16} aria-hidden="true" />
+                </CcLinkButton>
+                <p className="text-xs font-medium text-cc-ink-muted mt-4 leading-relaxed">
                   No account yet? Create one with the address the invitation was sent to — you come back
                   here afterwards.
                 </p>
@@ -186,12 +184,8 @@ export default function InvitationPage() {
             )}
 
             {error && (
-              <div
-                data-invitation-error
-                role="alert"
-                className="mt-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-700 font-bold leading-relaxed"
-              >
-                {error}
+              <div data-invitation-error className="mt-6">
+                <CcMessageStrip state="error">{error}</CcMessageStrip>
               </div>
             )}
           </>

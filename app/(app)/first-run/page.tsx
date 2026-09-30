@@ -3,9 +3,12 @@ import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import {
-  ArrowRight, MousePointerClick, Clock, Mail, HelpCircle,
+  ArrowRight, MousePointerClick, Clock, Mail,
   CheckCircle2, FileCode2, PlayCircle, BookOpen,
 } from 'lucide-react';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import { publicButton } from '@/components/landing/public-button';
+import { formatNumber } from '@/lib/format';
 import { CONTACT_EMAIL } from '@/lib/constants';
 import { STARTER_EXAMPLES } from '@/lib/starter-examples';
 
@@ -127,7 +130,7 @@ export default function FirstRunPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
 
       {/* UX-104: this guide is written for someone who has not signed in yet, and
@@ -137,21 +140,20 @@ export default function FirstRunPage() {
       </div>
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white rounded-[2.5rem] p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-slate-700/30">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.1),transparent)] pointer-events-none" />
-        <div className="relative z-10 max-w-3xl space-y-5">
+      <div className="bg-cc-surface rounded-3xl p-8 sm:p-12 border border-cc-line">
+        <div className="max-w-3xl space-y-5">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 bg-green-500/15 border border-green-400/30 px-4 py-1.5 rounded-full text-xs font-bold text-green-400 tracking-wide uppercase">
-              <MousePointerClick size={14} /> Step by step
+            <span className="inline-flex items-center gap-2 bg-cc-brand-surface border border-cc-brand px-4 py-1 rounded-full text-xs font-bold text-cc-brand-strong tracking-wide uppercase">
+              <MousePointerClick size={14} aria-hidden="true" /> Step by step
             </span>
-            <span className="inline-flex items-center gap-2 bg-white/10 border border-white/20 px-4 py-1.5 rounded-full text-xs font-bold text-slate-300 tracking-wide uppercase">
-              <Clock size={13} /> About 15 minutes
+            <span className="inline-flex items-center gap-2 bg-cc-surface-muted border border-cc-line px-4 py-1 rounded-full text-xs font-bold text-cc-ink-muted tracking-wide uppercase">
+              <Clock size={14} aria-hidden="true" /> About 15 minutes
             </span>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-none text-slate-50">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-none text-cc-ink">
             Your first run
           </h1>
-          <p className="text-lg text-slate-300 leading-relaxed font-medium">
+          <p className="text-lg text-cc-ink-muted leading-relaxed font-medium">
             Seven clicks from signing in to a downloadable package. You do not need an SAP connection,
             you do not need credentials, and you do not need any code of your own — there are examples
             waiting on the dashboard.
@@ -166,10 +168,10 @@ export default function FirstRunPage() {
           { icon: FileCode2, t: 'What it costs', d: 'One of your five transformations, spent at the analysis. The six stages after it are included.' },
           { icon: Clock, t: 'How long', d: 'About fifteen minutes end to end, most of it spent reading the output rather than waiting.' },
         ].map((c) => (
-          <div key={c.t} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-            <c.icon className="w-5 h-5 text-green-600 mb-3" />
-            <h2 className="text-sm font-black text-gray-900 uppercase tracking-wide mb-1.5">{c.t}</h2>
-            <p className="text-sm text-gray-600 leading-relaxed">{c.d}</p>
+          <div key={c.t} className="bg-cc-surface border border-cc-line rounded-2xl p-5">
+            <c.icon className="w-5 h-5 text-cc-brand-strong mb-3" aria-hidden="true" />
+            <h2 className="text-sm font-extrabold text-cc-ink uppercase tracking-wide mb-2">{c.t}</h2>
+            <p className="text-sm text-cc-ink-muted leading-relaxed">{c.d}</p>
           </div>
         ))}
       </div>
@@ -177,30 +179,29 @@ export default function FirstRunPage() {
       {/* The steps */}
       <ol className="space-y-4 list-none p-0 m-0">
         {STEPS.map((step) => (
-          <li key={step.n} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+          <li key={step.n} className="bg-cc-surface border border-cc-line rounded-2xl overflow-hidden">
             <div className="flex gap-5 p-6">
               <div className="shrink-0">
-                <div className="w-11 h-11 rounded-2xl bg-gray-950 text-white flex items-center justify-center font-black text-lg tabular-nums">
+                <div className="w-11 h-11 rounded-2xl bg-cc-surface-dark text-cc-on-dark flex items-center justify-center font-extrabold text-lg tabular-nums">
                   {step.n}
                 </div>
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{step.where}</span>
-                <h2 className="text-lg font-black text-gray-950 leading-snug mt-1 mb-2">{step.action}</h2>
-                <p className="text-sm text-gray-600 leading-relaxed mb-4">{step.detail}</p>
+                <span className="cc-text-label text-cc-ink-muted">{step.where}</span>
+                <h2 className="text-lg font-extrabold text-cc-ink leading-snug mt-1 mb-2">{step.action}</h2>
+                <p className="text-sm text-cc-ink-muted leading-relaxed mb-4">{step.detail}</p>
 
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-3.5 flex gap-2.5">
-                  <ArrowRight size={14} className="text-green-600 shrink-0 mt-0.5" />
-                  <p className="text-xs text-gray-700 leading-relaxed">
-                    <span className="font-black text-gray-900 uppercase tracking-wide text-[10px]">You should see: </span>
+                <div className="bg-cc-surface-muted border border-cc-line rounded-xl p-3 flex gap-2">
+                  <ArrowRight size={14} className="text-cc-brand-strong shrink-0 mt-0.5" aria-hidden="true" />
+                  <p className="text-xs text-cc-ink leading-relaxed">
+                    <span className="cc-text-label text-cc-ink">You should see: </span>
                     {step.see}
                   </p>
                 </div>
 
                 {step.note && (
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-3.5 flex gap-2.5 mt-2.5">
-                    <HelpCircle size={14} className="text-green-600 shrink-0 mt-0.5" />
-                    <p className="text-xs text-green-900/80 leading-relaxed">{step.note}</p>
+                  <div className="mt-2">
+                    <CcMessageStrip state="information">{step.note}</CcMessageStrip>
                   </div>
                 )}
               </div>
@@ -210,20 +211,20 @@ export default function FirstRunPage() {
       </ol>
 
       {/* Which example */}
-      <div className="bg-white border border-gray-200 rounded-[2rem] p-8 shadow-sm">
-        <h2 className="text-2xl font-black text-gray-950 tracking-tight mb-2">Which example should I pick?</h2>
-        <p className="text-sm text-gray-600 leading-relaxed mb-6 max-w-3xl">
+      <div className="bg-cc-surface border border-cc-line rounded-3xl p-8">
+        <h2 className="text-2xl font-extrabold text-cc-ink tracking-tight mb-2">Which example should I pick?</h2>
+        <p className="text-sm text-cc-ink-muted leading-relaxed mb-6 max-w-3xl">
           Each one is built around a different Clean Core problem. Start small; the thousand-line
           report is the honest stress test, but it produces a lot to read.
         </p>
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {STARTER_EXAMPLES.map((ex) => (
-            <div key={ex.file} className="border border-gray-200 rounded-xl p-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="font-mono text-[13px] font-bold text-gray-900">{ex.name}</span>
-              <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 tabular-nums">
-                {ex.lines.toLocaleString()} lines
+            <div key={ex.file} className="border border-cc-line rounded-xl p-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="font-cc-mono text-[13px] font-bold text-cc-ink">{ex.name}</span>
+              <span className="cc-text-label text-cc-ink-muted tabular-nums">
+                {formatNumber(ex.lines)} lines
               </span>
-              <p className="text-xs text-gray-600 leading-relaxed w-full">{ex.demonstrates}</p>
+              <p className="text-xs text-cc-ink-muted leading-relaxed w-full">{ex.demonstrates}</p>
             </div>
           ))}
         </div>
@@ -231,35 +232,35 @@ export default function FirstRunPage() {
 
       {/* Help + next */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-7 text-white">
-          <h2 className="flex items-center gap-2 text-base font-black uppercase tracking-wide mb-3">
-            <Mail size={16} className="text-green-400" /> Something not working?
+        <div className="bg-cc-surface border border-cc-line rounded-2xl p-7 flex flex-col">
+          <h2 className="flex items-center gap-2 text-base font-extrabold text-cc-ink uppercase tracking-wide mb-3">
+            <Mail size={16} className="text-cc-brand-strong" aria-hidden="true" /> Something not working?
           </h2>
-          <p className="text-sm text-slate-300 leading-relaxed mb-5">
+          <p className="text-sm text-cc-ink-muted leading-relaxed mb-5 flex-grow">
             Write to us. Questions about the output, an object the engine handled badly, a stage that
             failed — all of it is useful, and a person answers.
           </p>
           <a
             href={`mailto:${CONTACT_EMAIL}`}
-            className="inline-flex items-center gap-2 bg-white text-slate-900 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-green-50 transition-colors"
+            className={`${publicButton('ghost', 'sm')} self-start`}
           >
             {CONTACT_EMAIL}
           </a>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-7 shadow-sm flex flex-col">
-          <h2 className="flex items-center gap-2 text-base font-black text-gray-900 uppercase tracking-wide mb-3">
-            <BookOpen size={16} className="text-green-600" /> Want the background first?
+        <div className="bg-cc-surface border border-cc-line rounded-2xl p-7 flex flex-col">
+          <h2 className="flex items-center gap-2 text-base font-extrabold text-cc-ink uppercase tracking-wide mb-3">
+            <BookOpen size={16} className="text-cc-brand-strong" aria-hidden="true" /> Want the background first?
           </h2>
-          <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-grow">
+          <p className="text-sm text-cc-ink-muted leading-relaxed mb-5 flex-grow">
             The How-To Guide walks through the same workflow narrated, with the reasoning behind each
             stage and what the Clean Core paradigm is actually asking of you.
           </p>
           <Link
             href="/how-to"
-            className="inline-flex items-center gap-2 text-green-700 border border-green-200 bg-green-50 hover:bg-green-100 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-colors self-start"
+            className={`${publicButton('secondary', 'sm')} self-start`}
           >
-            Open the How-To Guide <ArrowRight size={13} />
+            Open the How-To Guide <ArrowRight size={14} aria-hidden="true" />
           </Link>
         </div>
       </div>
@@ -267,9 +268,9 @@ export default function FirstRunPage() {
       <div className="text-center pt-2 pb-4">
         <Link
           href="/dashboard"
-          className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-10 py-4 rounded-xl font-black text-sm uppercase tracking-wider shadow-lg transition-all"
+          className={publicButton('primary')}
         >
-          <PlayCircle size={17} /> Start your first run
+          <PlayCircle size={16} aria-hidden="true" /> Start your first run
         </Link>
       </div>
     </div>
