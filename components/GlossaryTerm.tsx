@@ -76,6 +76,7 @@ export default function GlossaryTerm({ termKey, children, className }: GlossaryT
         data-glossary-term={item.shortName}
         aria-expanded={open}
         aria-controls={open ? id : undefined}
+        aria-describedby={open ? id : undefined}
         onClick={(event) => {
           event.stopPropagation();
           setOpen((was) => !was);

@@ -147,15 +147,15 @@ const glossaryTermList = (): string =>
     .map((item) => item.term)
     .join(', ');
 
+const greeting = (): Message => ({
+  sender: 'bot',
+  text: 'Greetings. I am your S/4HANA Modernization Architect Assistant. I can help guide you on Clean Core principles, BTP extensions (CAP), In-App extensions (RAP), released standard APIs, and abapGit handovers. What architecture question can I resolve for you today?',
+  timestamp: clockNow(),
+});
+
 export default function GlossaryChatbot() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      sender: 'bot',
-      text: 'Greetings. I am your S/4HANA Modernization Architect Assistant. I can help guide you on Clean Core principles, BTP extensions (CAP), In-App extensions (RAP), released standard APIs, and abapGit handovers. What architecture question can I resolve for you today?',
-      timestamp: clockNow()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => [greeting()]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const { profile } = useUserProfile();
@@ -196,6 +196,17 @@ export default function GlossaryChatbot() {
    * the header and the account menu; keeping the expression identical is the
    * point — two spellings of "am I in a project" drift apart.
    */
+  // The conversation belongs to the place it was held. The panel lives in the
+  // layout and outlives a navigation, so project A's answers stood under
+  // project B's "Evidence of this project" (QA slice review of 953575fcc9bf,
+  // 76118078e97f). A new place starts from the greeting; the reset happens
+  // while rendering, as React prescribes for state that follows a prop.
+  const [messagesFor, setMessagesFor] = useState<string | null>(projectId);
+  if (messagesFor !== projectId) {
+    setMessagesFor(projectId);
+    setMessages([greeting()]);
+  }
+
   const assistantLabel = projectId ? 'Ask this case' : 'Ask the assistant';
 
   const [caseContext, setCaseContext] = useState<CaseContext | null>(null);
