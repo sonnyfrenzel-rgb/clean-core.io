@@ -26,6 +26,29 @@ import {
 type ModelJson = any;
 
 /**
+ * What a stale export says about itself (owner decision 30.09.2026, QA
+ * c8ae21453b3b). A documentation the workflow contract (`lib/workflow-steps.ts`)
+ * calls `stale` stays exportable — it is not blocked — but the file does not
+ * pass itself off as current: it opens with this note, and the page's export
+ * button carries the same warning ("Stale — regenerate first") beside it, so
+ * the reader is told before the download what the file then says itself.
+ */
+export const STALE_EXPORT_NOTE =
+  'Stale — this documentation was written for an earlier source or an earlier step. Regenerate it before relying on it.';
+
+/** Options both Confluence pages take. */
+export interface ConfluenceExportOptions {
+  /** True when the documentation phase is `stale` in `workflowSteps(project)`. */
+  stale?: boolean;
+}
+
+/** The note a stale export opens with; empty for a current one. Our own markup, no model value. */
+function staleNoteHtml(options: ConfluenceExportOptions | undefined): string {
+  if (!options?.stale) return '';
+  return `<p class="card accent-warning" data-stale-export=""><span class="tag tone-warning">Stale</span> ${escapeHtml(STALE_EXPORT_NOTE.replace(/^Stale — /, ''))}</p>`;
+}
+
+/**
  * The legacy blueprint's Confluence page.
  *
  * The export is an HTML document a reviewer opens, and every value in it
@@ -34,8 +57,13 @@ type ModelJson = any;
  * 33471220d6e9, 06f7c0c56a6c). Nothing generated reaches the document
  * unescaped; the markup around it is ours.
  */
-export function buildLegacyConfluenceHtml(parsedDoc: ModelJson, parsedBusinessDoc: ModelJson | null): Blob {
+export function buildLegacyConfluenceHtml(
+  parsedDoc: ModelJson,
+  parsedBusinessDoc: ModelJson | null,
+  options?: ConfluenceExportOptions,
+): Blob {
   const esc = escapeHtml;
+  const staleSection = staleNoteHtml(options);
 
   // The stylesheet every stage export shares (`lib/export-style.ts`).
   const confluenceCSS = EXPORT_STYLE_ELEMENT;
@@ -47,6 +75,7 @@ export function buildLegacyConfluenceHtml(parsedDoc: ModelJson, parsedBusinessDo
         ${confluenceCSS}
       </head>
       <body>
+        ${staleSection}
         <div class="header">
           <h1>${esc(parsedDoc.l1_domain?.name || 'Process documentation')}</h1>
           <div class="meta">Enterprise Integration Specifications & Workflow Definition</div>
@@ -196,8 +225,13 @@ export function confluenceFileName(projectName: string | undefined): string {
  * content as the stage shows, every value escaped, nothing added. The
  * business layer, when there is one, follows as a model proposal.
  */
-export function buildEngineConfluenceHtml(engine: ProcessDocumentation, parsedBusinessDoc: ModelJson | null): Blob {
+export function buildEngineConfluenceHtml(
+  engine: ProcessDocumentation,
+  parsedBusinessDoc: ModelJson | null,
+  options?: ConfluenceExportOptions,
+): Blob {
   const esc = escapeHtml;
+  const staleSection = staleNoteHtml(options);
   // The stylesheet every stage export shares (`lib/export-style.ts`).
   const exportCSS = EXPORT_STYLE_ELEMENT;
   const statementById = new Map(engine.statements.map((s) => [s.id, s]));
@@ -236,6 +270,7 @@ export function buildEngineConfluenceHtml(engine: ProcessDocumentation, parsedBu
       .join('')}</tbody></table>`
     : '';
   const engineHtml = `<html><head><meta charset="utf-8">${exportCSS}</head><body>
+    ${staleSection}
     <h1>Process documentation — ${esc(engine.processName)}</h1>
     <p><em>${esc(engine.disclaimer)}</em></p>
     <p>${esc(engine.fileName)}, ${esc(String(engine.lineCount))} lines. ${esc(engine.overview)} ${esc(engine.traceability.sentence)}</p>
