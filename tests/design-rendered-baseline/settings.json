@@ -4,7 +4,6 @@
   "step": "D.20b",
   "ceilings": {
     "small": 4,
-    "contrast": 1,
     "heavy": 4
   }
 }

@@ -4,7 +4,7 @@
   "step": "D.23a",
   "ceilings": {
     "small": 64,
-    "contrast": 9,
+    "contrast": 8,
     "heavy": 150
   }
 }
