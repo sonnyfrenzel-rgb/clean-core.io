@@ -28,3 +28,14 @@ test('67f11bad0b1d — a static call is not advertised as resolved while coverag
   expect(SUPPORT_MATRIX['static-call'].notes).not.toMatch(/resolved to equivalent/i);
   expect(SUPPORT_MATRIX['static-call'].notes).toMatch(/not assessed/i);
 });
+
+test('50f3aac27c45 — a static call is not advertised at the "fully" level while a local call goes unassessed', () => {
+  // The notes were narrowed (67f11bad0b1d); the level still said `fully`, and
+  // the public page draws its mark from the level, not the notes.
+  const local = assessCoverage("REPORT zt.\nCALL FUNCTION 'Z_LOCAL_FM'.").unassessed.map((u) => u.gap);
+  const remote = assessCoverage("REPORT zt.\nCALL FUNCTION 'Z_REMOTE_FM' DESTINATION 'NONE'.").unassessed.map((u) => u.gap);
+  expect(local, 'the premise: a local call is not assessed').toContain('local-function-call');
+  expect(remote, 'the premise: the RFC form is assessed').not.toContain('local-function-call');
+  expect(SUPPORT_MATRIX['static-call'].level).toBe('partial');
+  expect(SUPPORT_MATRIX['static-call'].notes).toMatch(/DESTINATION/);
+});

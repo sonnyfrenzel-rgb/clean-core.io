@@ -288,6 +288,30 @@ export function declaredTargetOf(project: unknown): AssessmentTarget {
   return parsed.ok ? parsed.target : { ...EMPTY_ASSESSMENT_TARGET };
 }
 
+/** The target a catalog lookup is made under: the `profile` field of `/api/abcd-classify`. */
+export interface CatalogLookupTarget {
+  edition: string;
+  release: string;
+}
+
+/**
+ * The target every catalog lookup of a project is made under — the core run
+ * and each display derived from it alike (owner decision 30.09.2026: a PCE
+ * project must not show a Public Cloud grade in one place and a PCE grade in
+ * another).
+ *
+ * The same two facts `POST /api/runs/create` reads: the edition, absent meaning
+ * the Public Edition exactly as the run route treats it, and the declared
+ * release, normalised by `declaredTargetOf`. Pure, so a client component can
+ * name the target and leave the lookup to the server; the server turns it into
+ * a snapshot key with `catalogSnapshotKeyFor` (`lib/abap/catalog-snapshots.ts`).
+ */
+export function catalogLookupTargetOf(project: unknown): CatalogLookupTarget {
+  const deployment = isObj(project) ? project.s4Deployment : undefined;
+  const edition = typeof deployment === 'string' && deployment ? deployment : 'public';
+  return { edition, release: declaredTargetOf(project).release };
+}
+
 /**
  * The profile the project stands on *now*, rebuilt against a recorded one.
  *

@@ -68,7 +68,7 @@ import ModuleHeatmap from '@/components/analyze/ModuleHeatmap';
 import AbcdClassificationPanel from '@/components/analyze/AbcdClassificationPanel';
 import AssessmentProfileSummary from '@/components/analyze/AssessmentProfileSummary';
 import AssessmentTargetFields from '@/components/analyze/AssessmentTargetFields';
-import { declaredTargetOf, repositoryObjectsOf, type AssessmentTarget } from '@/lib/assessment-target';
+import { catalogLookupTargetOf, declaredTargetOf, repositoryObjectsOf, type AssessmentTarget } from '@/lib/assessment-target';
 import DataCouplingTable from '@/components/analyze/DataCouplingTable';
 import ComplianceReviewHints from '@/components/ComplianceReviewHints';
 import ReviewTasks from '@/components/ReviewTasks';
@@ -1138,6 +1138,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                     usageReport={(usageReport || project!.usageReport)!}
                     findings={evidenceFindings}
                     route={routeReport}
+                    target={project ? catalogLookupTargetOf(project) : null}
                   />
                 </SectionBoundary>
               )}

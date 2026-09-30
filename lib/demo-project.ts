@@ -10,6 +10,7 @@ import {
 } from '@/lib/abap/code-assessment';
 import { coverageCaveat, type CoverageReport } from '@/lib/abap/coverage';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
+import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { PHASES, type PhaseKey, type PhaseState } from '@/lib/workflow-steps';
 import type { CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import {
@@ -118,6 +119,12 @@ export interface DemoProject {
   /** Lines excluding blanks and full-line comments — the figure the forecast uses. */
   linesOfCode: number;
   catalogVersion: string;
+  /**
+   * The catalog snapshot the demo's object states are read from — the one its
+   * target profile names (`pce-latest` for the Private Edition assumption), as
+   * a signed run of the same project would read it (owner decision 30.09.2026).
+   */
+  catalogSnapshot: string;
 
   analyze: {
     findings: EvidenceFinding[];
@@ -295,7 +302,10 @@ export function buildDemoProject(): DemoProject {
   const lines = source.split(/\r?\n/);
   const linesOfCode = lines.filter((l) => l.trim() && !/^\s*\*/.test(l)).length;
 
-  const evidence = buildAbapEvidence(source, DEMO_SOURCE_FILE, DEMO_DEPLOYMENT);
+  // The catalog of the demo's target profile, not the default list: the demo
+  // assumes the Private Edition, and a run of it would read the PCE snapshot.
+  const catalogSnapshot = catalogSnapshotKeyForProject({ s4Deployment: DEMO_DEPLOYMENT });
+  const evidence = buildAbapEvidence(source, DEMO_SOURCE_FILE, DEMO_DEPLOYMENT, catalogSnapshot);
   const route = routeExtensibility(evidence, DEMO_DEPLOYMENT);
   const { plan, unplanned } = planOf(evidence.findings);
 
@@ -310,6 +320,7 @@ export function buildDemoProject(): DemoProject {
     totalLines: lines.length,
     linesOfCode,
     catalogVersion: getMergedCatalogVersion(),
+    catalogSnapshot,
     analyze: {
       findings: evidence.findings,
       summary: evidence.summary,

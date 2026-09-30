@@ -42,6 +42,7 @@ import {
   type TrendChartPoint,
 } from '@/lib/management-overview';
 import type { DecisionStatus } from '@/lib/project-decision';
+import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import type { ObjectStatusValue } from '@/lib/object-status';
 import type { Project } from '@/lib/types';
 
@@ -403,7 +404,9 @@ export default function ManagementOverview({
     [findings],
   );
   const lookupObjects = useMemo(() => (fitFindings ? publicCloudFitLookupObjects(fitFindings) : []), [fitFindings]);
-  const lookup = useAbcdCatalogLookup(lookupObjects);
+  // Graded under the project's target profile, as its run and the IT rows
+  // above are (owner decision 30.09.2026).
+  const lookup = useAbcdCatalogLookup(lookupObjects, project ? catalogLookupTargetOf(project) : null);
 
   const fit = useMemo<Loaded<FitByPlatform>>(() => {
     if (findings.state === 'loading') return { state: 'loading' };

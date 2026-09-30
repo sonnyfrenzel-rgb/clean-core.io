@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getAuth } from '@/lib/firebase';
 import { gradeKey, type GradedObject, type ObjectUse } from '@/lib/abap/abcd-classification';
+import type { CatalogLookupTarget } from '@/lib/assessment-target';
 
 /**
  * Batch clean-core-level and "no released API path" lookups through
@@ -20,6 +21,15 @@ import { gradeKey, type GradedObject, type ObjectUse } from '@/lib/abap/abcd-cla
  * visible states — this repository's rule is that an unknown fact is shown as
  * unknown, never quietly stood in for with a default ("has a path", "grade
  * A") that would make an unresolved lookup look like a concluded one.
+ *
+ * **Under the project's target profile.** `target` is required, and a caller
+ * that has a project passes `catalogLookupTargetOf(project)`: the route then
+ * grades from the catalog the project's signed run read — `pce-latest` for a
+ * Private Edition project — rather than from the default Public list (owner
+ * decision 30.09.2026; roadmap 7.10). `null` is for a lookup with no project
+ * behind it, and is answered from the default file, which is what the route
+ * has always done. Required rather than optional so that a new caller has to
+ * decide, instead of silently grading a PCE project against the Public list.
  *
  * Retries briefly while there is no signed-in user yet (mirrors
  * `useModelAvailability`): the auth listener elsewhere in the app can still be
@@ -58,11 +68,14 @@ interface Settled {
   noPath: Record<string, boolean>;
 }
 
-export function useAbcdCatalogLookup(objects: AbcdCatalogLookupObject[]): AbcdCatalogLookup {
+export function useAbcdCatalogLookup(
+  objects: AbcdCatalogLookupObject[],
+  target: CatalogLookupTarget | null,
+): AbcdCatalogLookup {
   // A stable string key over the requested objects, so the effect below only
   // re-fires when the actual set of objects to grade changes — not on every
   // render that happens to build a new array with the same contents.
-  const requestKey = useMemo(
+  const objectsKey = useMemo(
     () =>
       objects
         .filter((o) => o.name)
@@ -71,6 +84,11 @@ export function useAbcdCatalogLookup(objects: AbcdCatalogLookupObject[]): AbcdCa
         .join('|'),
     [objects],
   );
+  // The target is part of the question: the same objects under another
+  // profile are another lookup, and an answer for the old one is stale.
+  const edition = target?.edition ?? null;
+  const release = target?.release ?? '';
+  const requestKey = objectsKey ? `${objectsKey}#${edition === null ? '' : `${edition}@${release}`}` : '';
 
   // Only ever set once a fetch for a given key actually settles (inside the
   // async callback below, never synchronously in the effect body itself) —
@@ -86,7 +104,7 @@ export function useAbcdCatalogLookup(objects: AbcdCatalogLookupObject[]): AbcdCa
 
     // Mirrors AbcdClassificationPanel.tsx's own decoding of the same gradeKey
     // shape — object names never contain '@', so a plain split is safe.
-    const payload = requestKey.split('|').map((key) => {
+    const payload = objectsKey.split('|').map((key) => {
       const [name, use] = key.split('@');
       return use ? { name, use } : name;
     });
@@ -108,7 +126,10 @@ export function useAbcdCatalogLookup(objects: AbcdCatalogLookupObject[]): AbcdCa
         const res = await fetch('/api/abcd-classify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ objects: payload }),
+          body: JSON.stringify({
+            objects: payload,
+            ...(edition === null ? {} : { profile: { edition, release } }),
+          }),
         });
         if (cancelled) return;
         if (!res.ok) {
@@ -126,7 +147,8 @@ export function useAbcdCatalogLookup(objects: AbcdCatalogLookupObject[]): AbcdCa
     return () => {
       cancelled = true;
     };
-  }, [requestKey]);
+    // `requestKey` carries the other three, so it alone decides when this runs.
+  }, [requestKey, objectsKey, edition, release]);
 
   if (!requestKey) return { status: 'ready', ...EMPTY };
   // A settled result for an OLDER key (the objects to grade changed since it

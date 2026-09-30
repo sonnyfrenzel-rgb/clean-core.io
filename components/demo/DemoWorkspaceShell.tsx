@@ -58,6 +58,7 @@ import {
   type TourPlace,
 } from '@/lib/demo-tour';
 import type { DemoWorkspaceData } from '@/lib/demo-workspace';
+import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import {
   demoConfirmRoute,
   demoEvidence,
@@ -392,6 +393,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               <ProcessMap
                 model={processMap}
                 source={source}
+                catalogTarget={catalogLookupTargetOf(project)}
                 plane={plane}
                 onPlaneChange={setPlane}
                 selected={selected}

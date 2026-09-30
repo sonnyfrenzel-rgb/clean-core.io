@@ -1,4 +1,5 @@
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
+import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import {
   buildArchitectureContract,
@@ -42,6 +43,8 @@ export interface ContractProjectState {
   activeRunId?: unknown;
   legacyCode?: unknown;
   s4Deployment?: unknown;
+  /** The owner's declared target (release …) — Admin-written by `/api/runs/create`. */
+  assessmentTarget?: unknown;
   auditMetadata?: { inputFingerprint?: { fileName?: unknown } } | undefined;
   /** The architect's decision — server-only (`lib/project-commands.ts`). */
   targetArchitecture?: unknown;
@@ -127,7 +130,10 @@ export function contractOfProject(
   const deployment =
     state.s4Deployment === 'private' ? 'private' : state.s4Deployment === 'public' ? 'public' : undefined;
 
-  const evidence = buildAbapEvidence(source, fileName, deployment);
+  // The catalog of the project's target profile, the one the signed run read
+  // (roadmap 7.10; owner decision 30.09.2026). Read from the default list, a
+  // PCE project's contract stood on other object states than its run.
+  const evidence = buildAbapEvidence(source, fileName, deployment, catalogSnapshotKeyForProject(state));
   // The router needs a model to score with. `private` is the conservative one —
   // it is the deployment under which fewer constructs are driven off the stack,
   // so an unbound target cannot produce a *stronger* recommendation than a

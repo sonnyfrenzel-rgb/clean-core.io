@@ -75,7 +75,8 @@ export function buildDemoWorkspace(): DemoWorkspaceData {
     source,
     project,
     processMap: demoProcessMap(source),
-    itFindings: findingsOf(source, DEMO_SOURCE_FILE, demo.deployment),
+    // The same snapshot as the demo's evidence — its target profile's.
+    itFindings: findingsOf(source, DEMO_SOURCE_FILE, demo.deployment, demo.catalogSnapshot),
   };
 
   // The same invariant as the stages: a demo that carries a run, a signature or

@@ -28,6 +28,8 @@ import {
   buildLegacyConfluenceHtml,
   confluenceFileName,
 } from '@/lib/documentation-export';
+import CcStateText from '@/components/cc/StateText';
+import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import { saveAs } from '@/lib/fileSaver';
 import VerificationRail from '@/components/VerificationRail';
@@ -812,17 +814,25 @@ Structure the JSON exactly like this:
    * Both templates live in `lib/documentation-export.ts` (block D, D.16a):
    * they are documents with a stylesheet of their own, not this screen.
    */
+  const phases = workflowSteps(project);
+  /**
+   * Owner decision 30.09.2026 (QA c8ae21453b3b): a stale documentation stays
+   * exportable, but neither the button nor the file hides that it is stale.
+   * The state is the workflow contract's (`lib/workflow-steps.ts`), the same
+   * one the stepper and the stale notice above read.
+   */
+  const documentationStale = phases.find((p) => p.key === 'documentation')?.state === 'stale';
+
   const downloadConfluenceHTML = () => {
+    const options = { stale: documentationStale };
     const blob = engineDoc
-      ? buildEngineConfluenceHtml(engineDoc, parsedBusinessDoc)
+      ? buildEngineConfluenceHtml(engineDoc, parsedBusinessDoc, options)
       : parsedDoc
-        ? buildLegacyConfluenceHtml(parsedDoc, parsedBusinessDoc)
+        ? buildLegacyConfluenceHtml(parsedDoc, parsedBusinessDoc, options)
         : null;
     if (!blob) return;
     saveAs(blob, confluenceFileName(project?.name));
   };
-
-  const phases = workflowSteps(project);
 
   if (loading) return (
     <div>
@@ -1257,7 +1267,7 @@ Structure the JSON exactly like this:
         title={`Built for ${previousBasis(project)}`}
         reasons={[
           ...generationBlockers(project, 'documentation'),
-          ...(phases.find((p) => p.key === 'documentation')?.state === 'stale'
+          ...(documentationStale
             ? [`The blueprint shown here was written for ${previousBasis(project)}.`]
             : []),
         ]}
@@ -1359,14 +1369,24 @@ Structure the JSON exactly like this:
 
           {hasDocument && (
             <>
-              <CcButton
-                density="cozy"
-                onClick={downloadConfluenceHTML}
-                disabled={isGeneratingDoc}
-                icon={<Download size={16} aria-hidden={true} />}
-              >
-                Export Confluence
-              </CcButton>
+              <span className="inline-flex flex-col items-start gap-1">
+                <CcButton
+                  density="cozy"
+                  onClick={downloadConfluenceHTML}
+                  disabled={isGeneratingDoc}
+                  data-export-confluence={documentationStale ? 'stale' : 'current'}
+                  aria-describedby={documentationStale ? 'confluence-export-stale' : undefined}
+                  icon={<Download size={16} aria-hidden={true} />}
+                >
+                  Export Confluence
+                </CcButton>
+                {/* The file opens with the same note (`STALE_EXPORT_NOTE`). */}
+                {documentationStale && (
+                  <span id="confluence-export-stale" data-confluence-stale-note="">
+                    <CcStateText state="warning">Stale — regenerate first</CcStateText>
+                  </span>
+                )}
+              </span>
 
               <CcButton
                 variant="primary"
@@ -1403,6 +1423,7 @@ Structure the JSON exactly like this:
                  and an absent import means the overlay is not offered rather
                  than offered empty. */
               usage={project?.usageReport ?? null}
+              catalogTarget={project ? catalogLookupTargetOf(project) : null}
               plane={resolved.plane}
               onPlaneChange={openPlane}
               selected={resolved.node}
