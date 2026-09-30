@@ -39,9 +39,9 @@ export default function WhyScorePanel({ project }: { project: Project }) {
   const highRisk = coupling.filter((c) => c.riskLevel === 'High').slice(0, 6);
 
   const scores = [
-    { label: 'Clean Core', v: project.cleanCoreScore, basis: 'The Clean Core Score of the run, computed by the deterministic router from the evidence before any model ran.' },
-    { label: 'Complexity', v: project.complexityScore, basis: 'A heuristic over the structure of the code (lib/abap/code-assessment.ts, computeComplexityScore).' },
-    { label: 'Criticality', v: project.criticalityScore, basis: 'A heuristic over the module and the data the code touches (lib/abap/code-assessment.ts, computeCriticalityScore).' },
+    { label: 'Clean Core', v: project.cleanCoreScore, max: 100, basis: 'The Clean Core Score of the run, computed by the deterministic router from the evidence before any model ran.' },
+    { label: 'Complexity', v: project.complexityScore, max: 10, basis: 'A heuristic over the structure of the code (lib/abap/code-assessment.ts, computeComplexityScore).' },
+    { label: 'Criticality', v: project.criticalityScore, max: 10, basis: 'A heuristic over the module and the data the code touches (lib/abap/code-assessment.ts, computeCriticalityScore).' },
   ];
 
   return (
@@ -110,11 +110,11 @@ export default function WhyScorePanel({ project }: { project: Project }) {
                   <div className="flex items-center justify-center gap-1">
                     <span className="cc-text-title tabular-nums text-cc-ink">
                       {s.v ?? '—'}
-                      <span className="cc-text-meta text-cc-ink-muted">/100</span>
+                      <span className="cc-text-meta text-cc-ink-muted">/{s.max}</span>
                     </span>
                     {s.v != null && (
                       <CcWhyPopover
-                        subject={`${s.label} ${s.v}/100`}
+                        subject={`${s.label} ${s.v}/${s.max}`}
                         provenance="reconstructed"
                         basis={s.basis}
                       />
