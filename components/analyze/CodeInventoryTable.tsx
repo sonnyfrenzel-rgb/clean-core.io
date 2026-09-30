@@ -18,7 +18,7 @@ export default function CodeInventoryTable({ codeInventory }: CodeInventoryTable
       icon={<Package size={16} />}
       title="Code Inventory"
       badge={`${codeInventory.length} object${codeInventory.length !== 1 ? 's' : ''} detected`}
-      badgeSeverity={codeInventory.some(i => i.criticality === 'High') ? 'red' : 'green'}
+      badgeSeverity={codeInventory.some(i => i.criticality === 'High') ? 'error' : 'neutral'}
       tooltip="All recognized ABAP artifacts extracted from your uploaded code, classified by type and module."
     >
       {/* Criticality is High / Medium / Low — the words of the severity list,

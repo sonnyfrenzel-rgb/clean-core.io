@@ -181,6 +181,13 @@ test.describe('the app-wide foundations (D.3)', () => {
   test('the text roles of §1.2, with Meta/Chip (E-1), are utilities with the scale values', () => {
     const roles: Record<string, Record<string, string>> = {
       'cc-text-title': { 'font-size': '22px', 'font-weight': '800', 'letter-spacing': '-0.02em' },
+      // D.31: a key figure — the title's scale, with tabular digits.
+      'cc-text-figure': {
+        'font-size': '22px',
+        'font-weight': '800',
+        'letter-spacing': '-0.02em',
+        'font-variant-numeric': 'tabular-nums',
+      },
       'cc-text-h2': { 'font-size': '15px', 'font-weight': '700' },
       'cc-text-h3': { 'font-size': '14px', 'font-weight': '700' },
       'cc-text-body': { 'font-size': '14px', 'font-weight': '500', 'line-height': '1.55' },

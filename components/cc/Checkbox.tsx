@@ -4,7 +4,15 @@ import React, { useId } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CcDensity } from './Button';
-import { CC_CONTROL_HEIGHT, CcFieldDetails, CcRequiredMark, describedByOf, type CcValueState } from './Field';
+import {
+  CC_CONTROL_HEIGHT,
+  CcFieldDetails,
+  CcRequiredMark,
+  ccDataAttributes,
+  describedByOf,
+  type CcDataAttributes,
+  type CcValueState,
+} from './Field';
 import { STATE_CLASSES } from './state';
 
 /**
@@ -25,9 +33,14 @@ import { STATE_CLASSES } from './state';
  *
  * Label, help and value state come from the same parts as `CcField`, so a hint
  * under a checkbox is the hint under an input.
+ *
+ * Block D, D.31: the label may carry markup — a link to the document a box
+ * accepts ("I accept the <a>Terms</a>") — and `data-*` attributes go on the
+ * input, where a caller and a test look for the control.
  */
-export interface CcCheckboxProps {
-  label: string;
+export interface CcCheckboxProps extends CcDataAttributes {
+  /** Text, or text with a link in it. The label is the box's name either way. */
+  label: React.ReactNode;
   checked: boolean;
   onChange: (checked: boolean) => void;
   required?: boolean;
@@ -41,19 +54,20 @@ export interface CcCheckboxProps {
   density?: CcDensity;
 }
 
-export default function CcCheckbox({
-  label,
-  checked,
-  onChange,
-  required = false,
-  disabled = false,
-  help,
-  valueState,
-  message,
-  name,
-  value,
-  density = 'compact',
-}: CcCheckboxProps) {
+export default function CcCheckbox(props: CcCheckboxProps) {
+  const {
+    label,
+    checked,
+    onChange,
+    required = false,
+    disabled = false,
+    help,
+    valueState,
+    message,
+    name,
+    value,
+    density = 'compact',
+  } = props;
   const id = useId();
   const helpId = `${id}-help`;
   const messageId = `${id}-message`;
@@ -64,6 +78,7 @@ export default function CcCheckbox({
       <span className={cn('flex items-center gap-2 pointer-coarse:min-h-11', CC_CONTROL_HEIGHT[density])}>
         <span className="relative inline-flex shrink-0">
           <input
+            {...ccDataAttributes(props)}
             id={id}
             type="checkbox"
             name={name}

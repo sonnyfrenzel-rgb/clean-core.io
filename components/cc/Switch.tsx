@@ -3,7 +3,14 @@
 import React, { useId } from 'react';
 import { cn } from '@/lib/utils';
 import type { CcDensity } from './Button';
-import { CC_CONTROL_HEIGHT, CcFieldDetails, describedByOf, type CcValueState } from './Field';
+import {
+  CC_CONTROL_HEIGHT,
+  CcFieldDetails,
+  ccDataAttributes,
+  describedByOf,
+  type CcDataAttributes,
+  type CcValueState,
+} from './Field';
 import { STATE_CLASSES } from './state';
 
 /**
@@ -24,8 +31,10 @@ import { STATE_CLASSES } from './state';
  * state as well as its colour, and under `forced-colors` the thumb keeps a
  * system colour (`Highlight` when on) so the state survives a contrast theme.
  * The thumb moves in 150ms and not at all under reduced motion (§1.7).
+ *
+ * `data-*` attributes go on the switch button itself (block D, D.31).
  */
-export interface CcSwitchProps {
+export interface CcSwitchProps extends CcDataAttributes {
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
@@ -37,16 +46,8 @@ export interface CcSwitchProps {
   density?: CcDensity;
 }
 
-export default function CcSwitch({
-  label,
-  checked,
-  onChange,
-  disabled = false,
-  help,
-  valueState,
-  message,
-  density = 'compact',
-}: CcSwitchProps) {
+export default function CcSwitch(props: CcSwitchProps) {
+  const { label, checked, onChange, disabled = false, help, valueState, message, density = 'compact' } = props;
   const id = useId();
   const helpId = `${id}-help`;
   const messageId = `${id}-message`;
@@ -56,6 +57,7 @@ export default function CcSwitch({
     <div data-cc-switch={checked ? 'on' : 'off'} className="flex min-w-0 flex-col gap-1">
       <span className={cn('flex items-center gap-2 pointer-coarse:min-h-11', CC_CONTROL_HEIGHT[density])}>
         <button
+          {...ccDataAttributes(props)}
           id={id}
           type="button"
           role="switch"
