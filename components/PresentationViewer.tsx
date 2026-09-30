@@ -89,7 +89,7 @@ function RowStatus({ status, children }: { status?: string; children: React.Reac
 }
 
 /** One heading form for every slide type: the slide is content in the page, not a poster. */
-const SLIDE_HEADING = 'text-2xl sm:text-3xl font-extrabold text-cc-ink tracking-tight mb-2 pb-2 border-b border-cc-line self-start';
+const SLIDE_HEADING = 'cc-text-title text-cc-ink mb-2 pb-2 border-b border-cc-line self-start';
 const SLIDE_SUBTITLE = 'cc-text-label text-cc-ink-muted mb-4';
 const SLIDE_ENTER = 'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300';
 const LINK = 'inline-flex items-center gap-1 cc-text-meta text-cc-brand-strong underline underline-offset-2 hover:text-cc-brand-deep';
@@ -142,8 +142,8 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
         {/* Slide Layouts */}
         {slide.type === 'title' && (
           <div className={cn('text-center mt-8 sm:mt-0', SLIDE_ENTER)}>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-cc-ink tracking-tight mb-4">{slide.title}</h1>
-            {slide.subtitle && <p className="text-lg sm:text-xl text-cc-ink-muted font-medium">{slide.subtitle}</p>}
+            <h2 className="cc-text-title text-cc-ink mb-4">{slide.title}</h2>
+            {slide.subtitle && <p className="cc-text-h2 text-cc-ink-muted">{slide.subtitle}</p>}
             <div className="mt-8 cc-text-meta text-cc-ink-muted">
               {data.author} • {formatTextDate(new Date())}
             </div>
@@ -155,7 +155,7 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
             <h2 className={cn(SLIDE_HEADING, 'mb-6')}>{slide.title}</h2>
             <ul className="space-y-4 flex-grow">
               {slide.content?.map((point, idx) => (
-                <li key={idx} className="flex items-start gap-3 text-base sm:text-lg text-cc-ink">
+                <li key={idx} className="flex items-start gap-3 cc-text-body text-cc-ink">
                   <span aria-hidden className="w-2 h-2 rounded-full bg-cc-ink-muted mt-2 flex-shrink-0" />
                   <span className="leading-relaxed">{renderFormattedText(point)}</span>
                 </li>
@@ -168,10 +168,10 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
           <div className={cn('h-full flex flex-col mt-8 sm:mt-0', SLIDE_ENTER)}>
             <h2 className={cn(SLIDE_HEADING, 'mb-6')}>{slide.title}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 flex-grow items-center">
-              <div className="bg-cc-surface-muted p-6 sm:p-8 rounded-cc-card border border-cc-line h-full flex items-center text-base sm:text-lg text-cc-ink leading-relaxed">
+              <div className="bg-cc-surface-muted p-6 sm:p-8 rounded-cc-card border border-cc-line h-full flex items-center cc-text-body text-cc-ink">
                 <div className="w-full">{renderFormattedText(slide.leftContent)}</div>
               </div>
-              <div className="bg-cc-surface p-6 sm:p-8 rounded-cc-card border border-cc-field-border h-full flex items-center text-base sm:text-lg text-cc-ink leading-relaxed">
+              <div className="bg-cc-surface p-6 sm:p-8 rounded-cc-card border border-cc-field-border h-full flex items-center cc-text-body text-cc-ink">
                 <div className="w-full">{renderFormattedText(slide.rightContent)}</div>
               </div>
             </div>
@@ -181,10 +181,10 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
         {slide.type === 'quote' && (
           <div className={cn('h-full flex flex-col items-center justify-center text-center px-4 sm:px-8 md:px-12 mt-8 sm:mt-0', SLIDE_ENTER)}>
             <h2 className="cc-text-label text-cc-ink-muted mb-6">{slide.title}</h2>
-            <blockquote className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-cc-ink leading-tight mb-6">
+            <blockquote className="cc-text-title text-cc-ink mb-6">
               &quot;{slide.quote}&quot;
             </blockquote>
-            {slide.author && <cite className="text-base sm:text-lg text-cc-ink-muted font-medium not-italic">— {slide.author}</cite>}
+            {slide.author && <cite className="cc-text-body text-cc-ink-muted not-italic">— {slide.author}</cite>}
           </div>
         )}
 
@@ -200,7 +200,7 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
               {slide.metrics?.map((metric, idx) => (
                 <div key={idx} className="bg-cc-surface-muted p-4 rounded-cc-card border border-cc-line flex flex-col justify-center text-center">
-                  <span className="text-2xl sm:text-3xl font-bold text-cc-ink tracking-tight tabular-nums mb-1">
+                  <span className="cc-text-figure text-cc-ink mb-1">
                     {metric.value}
                   </span>
                   <span className="cc-text-label text-cc-ink-muted">

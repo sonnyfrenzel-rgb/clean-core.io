@@ -640,20 +640,7 @@ ${responseText.substring(0, 4000)}`;
     // Fallback to legacy markdown rendering
     return (
       <div 
-        className="prose prose-base max-w-none text-cc-ink
-          prose-headings:text-cc-ink prose-headings:font-bold
-          prose-h1:mb-6 prose-h1:mt-8 prose-h2:mb-4 prose-h2:mt-6 prose-h3:mb-3 prose-h3:mt-4
-          prose-p:text-cc-ink prose-p:leading-relaxed prose-p:mb-6
-          prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-6
-          prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-6
-          prose-li:mb-2
-          prose-strong:text-cc-ink prose-strong:font-bold
-          prose-blockquote:border-l-4 prose-blockquote:border-cc-line prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-6 prose-blockquote:text-cc-ink-muted
-          prose-code:bg-cc-surface-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:font-cc-mono prose-code:text-cc-ink
-          prose-table:w-full prose-table:my-6 prose-table:border-collapse prose-table:border prose-table:border-cc-line
-          prose-th:bg-cc-surface-muted prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:text-cc-ink-muted prose-th:border-b prose-th:border-cc-line
-          prose-td:px-4 prose-td:py-3 prose-td:text-cc-ink prose-td:border-b prose-td:border-cc-line
-        "
+        className="cc-prose"
         dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(design) }}
       />
     );

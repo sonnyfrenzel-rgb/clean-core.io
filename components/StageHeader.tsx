@@ -18,10 +18,10 @@ import { BACK_LINK_CLASS } from '@/components/BackLink';
  *   analyze         text-4xl            font-extrabold  gray-900   centred
  *   design          text-2xl sm:text-3xl font-bold      gray-900   left
  *   transformation  text-4xl            font-black      gray-900   left
- *   testing         text-3xl md:text-4xl font-black     #0b1c30    left
- *   documentation   text-3xl md:text-4xl font-black     #0b1c30    left, UPPERCASE
+ *   testing         text-3xl md:text-4xl font-black     navy       left
+ *   documentation   text-3xl md:text-4xl font-black     navy       left, UPPERCASE
  *   delivery        text-3xl md:text-5xl font-black     gray-900   centred, UPPERCASE
- *   tco             text-3xl md:text-4xl font-black     #0b1c30    left, UPPERCASE
+ *   tco             text-3xl md:text-4xl font-black     navy       left, UPPERCASE
  *
  * The first fix made them agree with each other at 30–36 px / 900 — the
  * landing page's scale. Block D (E-3, ADR-050, `DESIGN.md` §2.3) makes them

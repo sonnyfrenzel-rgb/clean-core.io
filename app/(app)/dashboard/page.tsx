@@ -270,9 +270,8 @@ const TOPIC_LABEL: Record<ForumTopic, string> = {
   general: 'General',
 };
 
-/** Rendered markdown, in tokens — the prose plugin's own colours are replaced. */
-const PROSE =
-  'prose prose-sm max-w-none text-cc-ink prose-headings:text-cc-ink prose-headings:font-bold prose-p:text-cc-ink prose-strong:text-cc-ink prose-a:text-cc-brand-strong prose-code:text-cc-ink prose-code:font-cc-mono prose-th:text-cc-ink-muted prose-td:text-cc-ink prose-blockquote:text-cc-ink-muted prose-blockquote:border-cc-line';
+/** Rendered markdown on the type scale (`.cc-prose`, app/globals.css). */
+const PROSE = 'cc-prose';
 
 const CODE = 'm-0 overflow-x-auto rounded-cc-card bg-cc-code-bg p-3 font-cc-mono text-[12px] leading-5 text-cc-code-ink whitespace-pre';
 

@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { createGalleryAdmin, openGallery, type GalleryAdmin } from './helpers/cc-gallery';
 import { parseColor, ratioOf, round2 } from './helpers/contrast';
+import { listUiFiles } from './helpers/design-source-files';
 
 /**
  * Semantic tokens, and the two ways a colour goes wrong here.
@@ -29,50 +30,23 @@ const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
 /**
- * Everything roadmap 1.5 built, plus everything built on it since. The old
- * product is not in scope here.
+ * The whole application: every UI file under `app/` and `components/`, the
+ * same set `tests/design-source-guard.spec.ts` reads (`listUiFiles`). Until
+ * Block D this was the new namespace only — `components/cc`, the gallery, the
+ * workspace and the process map — because the old product was still written
+ * in `#0b1c30` and `text-gray-500`. D.30 widened it: every surface is on the
+ * tokens now, and a guard that watched only the library would let a stage page
+ * drift back unseen.
  *
- * `components/workspace` and the workspace route joined in roadmap 1.4: the
- * shell is the first real screen made of these components, and a screen that
- * could write `#0b1c30` or `text-gray-500` beside them would undo the namespace
- * in the first place it is used.
+ * Not in scope, as in the source guard: route handlers under `app/api/` (a
+ * response or a mail is a document read outside the app, where no CSS variable
+ * exists) and the standalone exports under `lib/` (their colours are written
+ * out once, as values equal to the tokens, in `lib/export-style.ts`).
  */
-const CC_DIRS = [
-  'components/cc',
-  'app/(app)/admin/design-system',
-  'components/workspace',
-  'app/(app)/project/[projectId]/page.tsx',
-  // Roadmap 2.5. The process map sits inside a stage page of the old product,
-  // where `#0b1c30` and `text-gray-500` are still everywhere; a new component
-  // that copied its neighbours would be the first leak in the namespace.
-  'components/process-map',
-];
-
-function collect(dirRel: string): { rel: string; text: string }[] {
-  const out: { rel: string; text: string }[] = [];
-  const target = path.resolve(ROOT, dirRel);
-  // A single file is as legitimate a scope as a directory: the workspace route
-  // is one page next to six stage pages that are not in this namespace.
-  if (fs.statSync(target).isFile()) {
-    return [{ rel: dirRel.replace(/\\/g, '/'), text: fs.readFileSync(target, 'utf8') }];
-  }
-  const walk = (dir: string) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        walk(full);
-        continue;
-      }
-      if (!/\.(tsx|ts)$/.test(entry.name)) continue;
-      out.push({ rel: path.relative(ROOT, full).replace(/\\/g, '/'), text: fs.readFileSync(full, 'utf8') });
-    }
-  };
-  walk(path.resolve(ROOT, dirRel));
-  return out;
-}
-
-function ccSources() {
-  return CC_DIRS.flatMap(collect);
+function ccSources(): { rel: string; text: string }[] {
+  return listUiFiles()
+    .filter((rel) => rel.startsWith('app/') || rel.startsWith('components/'))
+    .map((rel) => ({ rel, text: read(rel) }));
 }
 
 /** Every `--cc-*` name declared in `app/globals.css`, with its literal value. */
@@ -97,8 +71,17 @@ function declaredUtilityNames(): Set<string> {
   return names;
 }
 
-test.describe('the new namespace uses tokens and nothing else', () => {
-  test('no hex literal in any component of the design system', () => {
+test.describe('the whole app uses tokens and nothing else', () => {
+  test('the scan reads the whole app, not only the library', () => {
+    const rels = ccSources().map((f) => f.rel);
+    expect(rels.length, 'nothing scanned — every test below would pass vacuously').toBeGreaterThan(200);
+    expect(rels).toContain('components/cc/Button.tsx');
+    expect(rels).toContain('app/(app)/project/[projectId]/analyze/page.tsx');
+    expect(rels).toContain('app/page.tsx');
+    expect(rels.some((r) => r.startsWith('app/api/'))).toBe(false);
+  });
+
+  test('no hex literal in any component of the app', () => {
     const offenders: string[] = [];
     for (const { rel, text } of ccSources()) {
       text.split('\n').forEach((line, i) => {
@@ -114,15 +97,15 @@ test.describe('the new namespace uses tokens and nothing else', () => {
     ).toEqual([]);
   });
 
-  test('no Tailwind palette colour in any component of the design system', () => {
+  test('no Tailwind palette colour in any component of the app', () => {
     const PALETTES =
       'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose';
     const UTILITIES =
       'text|bg|border|ring|divide|outline|decoration|accent|caret|fill|stroke|shadow|from|via|to|placeholder';
     const pattern = new RegExp(`\\b(?:${UTILITIES})-(?:${PALETTES})-\\d{2,3}\\b`, 'g');
 
-    // No exemptions, including for the gallery's own access-denied panel: a
-    // guard with a hole in it is a guard with a hole in it.
+    // No exemptions, including for the gallery's own access-denied panel and
+    // the public pages: a guard with a hole in it is a guard with a hole in it.
     const offenders: string[] = [];
     for (const { rel, text } of ccSources()) {
       text.split('\n').forEach((line, i) => {
@@ -133,8 +116,30 @@ test.describe('the new namespace uses tokens and nothing else', () => {
     }
     expect(
       offenders,
-      `palette colours in the cc namespace — every colour there names a semantic token:\n${offenders.join('\n')}`,
+      `palette colours in the app — every colour names a semantic token:\n${offenders.join('\n')}`,
     ).toEqual([]);
+  });
+
+  test('no class of the typography plugin, which is not registered (D.30)', () => {
+    // `@tailwindcss/typography` is a dependency but `app/globals.css` has no
+    // `@plugin` for it, so `prose` and every `prose-*` variant emit nothing —
+    // the same silent failure as an undeclared shade. Generated Markdown takes
+    // `.cc-prose`, which puts it on the type scale.
+    expect(read('app/globals.css')).not.toMatch(/@plugin\s+["']@tailwindcss\/typography/);
+    expect(read('app/globals.css')).toMatch(/\.cc-prose\s*\{/);
+    const offenders: string[] = [];
+    for (const { rel, text } of ccSources()) {
+      text.split('\n').forEach((line, i) => {
+        for (const m of line.matchAll(/(?<![\w-])(?:[\w-]+:)*prose(?:-[\w[\].:/-]+)?(?![\w-])/g)) {
+          // Only inside a class string: the word "prose" in a sentence is fine.
+          const classLine = /className=|clsx\(|cn\(/.test(line) || /^\s*['"`][\w\s:[\]./-]*['"`],?\s*$/.test(line);
+          if (!classLine) continue;
+          if (/\/\/|^\s*\*/.test(line.slice(0, m.index))) continue;
+          offenders.push(`${rel}:${i + 1}  ${m[0]}`);
+        }
+      });
+    }
+    expect(offenders, `typography-plugin classes generate no CSS — use .cc-prose:\n${offenders.join('\n')}`).toEqual([]);
   });
 
   test('every cc utility names a declared token', () => {
@@ -255,7 +260,7 @@ test.describe('the tokens as the browser sees them', () => {
         'cc-line', 'cc-field-border', 'cc-brand', 'cc-brand-strong', 'cc-brand-deep',
         'cc-brand-surface', 'cc-focus', 'cc-on-dark',
         'cc-success', 'cc-success-bg', 'cc-success-border',
-        'cc-warning', 'cc-warning-bg', 'cc-warning-border', 'cc-warning-line',
+        'cc-warning', 'cc-warning-bg', 'cc-warning-border', 'cc-warning-line', 'cc-warning-mark',
         'cc-error', 'cc-error-bg', 'cc-error-border',
         'cc-information', 'cc-information-bg', 'cc-information-border',
         'cc-neutral', 'cc-neutral-bg', 'cc-neutral-border',
@@ -306,6 +311,7 @@ test.describe('the tokens as the browser sees them', () => {
       ['cc-brand-strong', 'cc-brand-surface', 'secondary button border'],
       ['cc-error', 'cc-surface', 'error value state and outline chip'],
       ['cc-warning-line', 'cc-surface', 'warning value state and dashed chip'],
+      ['cc-warning-mark', 'cc-surface', 'warning bar, chart segment and status dot (D.30)'],
       ['cc-success', 'cc-surface', 'success value state'],
       ['cc-information', 'cc-surface', 'information value state and outline chip'],
       ['cc-neutral', 'cc-surface', 'not-determined outline chip'],

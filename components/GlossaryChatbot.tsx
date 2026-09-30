@@ -486,7 +486,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
     <>
       {/* Tables in an answer, drawn with the tokens (§1.1) and the type scale (§1.2). */}
       <style dangerouslySetInnerHTML={{ __html: `
-        .prose-chat table {
+        .chat-answer table {
           width: 100%;
           border-collapse: collapse;
           margin: 12px 0;
@@ -495,7 +495,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
           border-radius: var(--cc-radius-row);
           overflow: hidden;
         }
-        .prose-chat th {
+        .chat-answer th {
           background-color: var(--cc-surface-muted);
           color: var(--cc-ink-muted);
           font-weight: 600;
@@ -506,7 +506,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
           letter-spacing: 0.08em;
           font-size: 11px;
         }
-        .prose-chat td {
+        .chat-answer td {
           padding: 4px 8px;
           color: var(--cc-ink);
           border-top: 1px solid var(--cc-line);
@@ -605,7 +605,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                     className={cn(
                       'rounded-cc-card border p-3 text-[13px] leading-relaxed font-medium text-cc-ink',
                       isBot
-                        ? 'prose prose-sm max-w-none border-cc-line bg-cc-surface prose-headings:font-bold prose-headings:text-cc-ink prose-headings:mt-3 prose-headings:mb-1 prose-p:my-2 prose-p:leading-relaxed prose-p:text-cc-ink prose-li:text-cc-ink prose-strong:text-cc-ink prose-ul:my-2 prose-ul:pl-4 prose-li:my-1 prose-table:my-3'
+                        ? 'cc-prose border-cc-line bg-cc-surface'
                         // The reader's own words: a neutral tint, not the brand
                         // green — green means proven (ADR-007).
                         : 'whitespace-pre-line border-cc-neutral-border bg-cc-neutral-bg',
@@ -613,7 +613,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                   >
                     {isBot ? (
                       <div
-                        className="prose-chat"
+                        className="chat-answer"
                         dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(msg.text) }}
                       />
                     ) : msg.text}
