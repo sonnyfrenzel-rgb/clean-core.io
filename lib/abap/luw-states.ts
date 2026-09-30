@@ -119,6 +119,8 @@ export interface LuwModel {
 
 const UPDATE_TASK = /\bIN\s+UPDATE\s+TASK\b/i;
 const SET_LOCAL = /^SET\s+UPDATE\s+TASK\s+LOCAL\b/i;
+/** Statements that never set `sy-subrc`, so a read after them still reads the one before. */
+const SUBRC_NEUTRAL = /^(?:(?:DATA|TYPES|CONSTANTS|STATICS|FIELD-SYMBOLS)\s+[\w/<]|(?:CLEAR|FREE)\s)/i;
 const FLOW = new Set(['if', 'case', 'loop', 'do', 'while', 'select', 'try', 'at', 'provide']);
 const NOT_FLOW = new Set(['form', 'method', 'module', 'class', 'interface', 'define']);
 /** Where the statement after a body belongs to someone else. */
@@ -509,10 +511,21 @@ class LuwReader {
     };
   }
 
+  /**
+   * Does the program read the return code *this* statement set?
+   *
+   * `sy-subrc` is one global field, overwritten by nearly every statement that
+   * does something. The window of two accepted a mention in either of the next
+   * two statements, so `COMMIT WORK AND WAIT. CALL FUNCTION 'X'. IF sy-subrc …`
+   * counted as reading the commit's result when it reads the call's (QA full
+   * review of v2.20.0, 8c3d47dbf614). A statement in between is looked past
+   * only when it cannot set the field: a declaration or a CLEAR.
+   */
   private subrcReadAfter(index: number): boolean {
     const { statements } = this.facts;
     for (let i = index + 1; i <= index + 2 && i < statements.length; i++) {
       if (/\bsy-subrc\b/i.test(statements[i].text)) return true;
+      if (!SUBRC_NEUTRAL.test(statements[i].text)) return false;
     }
     return false;
   }
