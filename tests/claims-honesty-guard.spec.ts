@@ -507,7 +507,9 @@ test.describe('the public pages claim only what the product does', () => {
         return [s.color, s.backgroundColor, s.fill, s.stroke].some(green);
       };
       const claim = /\bcompiled\b|\bvalidated\b|\btests? passed\b|\bverified against\b/i;
-      const negated = /\bnot\b[^.]{0,40}(compiled|run|tested|verified)|\bunverified\b/i;
+      // "nothing on this page was compiled or run" is a negation too — the
+      // showroom's own lead says exactly that — so `nothing` counts like `not`.
+      const negated = /\b(?:not|nothing)\b[^.]{0,40}(compiled|run|tested|verified)|\bunverified\b/i;
       const out: string[] = [];
       for (const el of Array.from(root.querySelectorAll('*'))) {
         if (el.children.length > 0) continue;
