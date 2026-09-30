@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto';
 import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, termsVersionInForce } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
+import { byokAllowed, BYOK_NOT_AVAILABLE_MESSAGE } from './byok-eligibility';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp, s4AccessRequiresEnrolment } from './mfa-gate';
 import { starterExampleForFingerprint } from './starter-example-fingerprints';
 import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } from './invitations';
@@ -473,6 +474,23 @@ export async function assertAccountActive(
     if (accepted !== null && !termsVersionInForce(accepted)) {
       throw new QuotaError('The version of the Terms of Service your account accepted is no longer in force. Please accept the current Terms in the app to continue.', 403);
     }
+  }
+}
+
+/**
+ * Roadmap 3.0.13 (c): the BYOK tier rule, held on the server.
+ *
+ * The same function the settings screen uses to decide whether to draw the
+ * card (`lib/byok-eligibility.ts`), so the page and the routes cannot drift.
+ * The admin signal is the verified claim, never the profile mirror. Used by
+ * the routes that store and test a key; not by the one that deletes it.
+ */
+export async function assertByokAllowed(uid: string, isAdminClaim: boolean): Promise<void> {
+  const { db } = await getAdminDb();
+  const snap = await db.collection('users').doc(uid).get();
+  const tier = snap.exists ? (snap.data() || {}).tier : undefined;
+  if (!byokAllowed({ isAdmin: isAdminClaim === true, tier })) {
+    throw new QuotaError(BYOK_NOT_AVAILABLE_MESSAGE, 403);
   }
 }
 

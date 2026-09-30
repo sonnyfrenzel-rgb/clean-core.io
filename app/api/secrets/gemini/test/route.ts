@@ -4,6 +4,7 @@ import {
   loadGeminiApiKey,
   assertMfaSatisfied,
   assertAccountActive,
+  assertByokAllowed,
   getAdminDb,
   logAuditEvent,
   QuotaError,
@@ -42,6 +43,10 @@ export async function POST(req: NextRequest) {
     // `app/api/secrets/gemini/route.ts` is deliberately open for the same
     // reason.
     await assertAccountActive(decodedToken.uid);
+
+    // 3.0.13 (c): the tier rule, as on the save path. A key this account may
+    // not store is not one the server should send to the provider either.
+    await assertByokAllowed(decodedToken.uid, decodedToken.admin === true);
 
     const body = await req.json().catch(() => ({}));
     let { apiKey } = body as { apiKey?: string };

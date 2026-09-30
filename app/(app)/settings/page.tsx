@@ -29,6 +29,7 @@ import {
   type User as FirebaseUser,
 } from 'firebase/auth';
 import ModelStagesCard from '@/components/ModelStagesCard';
+import { byokAllowed } from '@/lib/byok-eligibility';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
@@ -179,7 +180,9 @@ function SettingsInput({
 export default function SettingsPage() {
   const router = useRouter();
   const { profile, loading, updateProfile } = useUserProfile();
-  const isPilotTier = !!profile && (profile.isAdmin || ['pilot', 'pilot_byok', 'starter', 'unlimited'].includes(profile.tier));
+  // Who may bring their own key: one list, shared with the routes that store and
+  // test it (lib/byok-eligibility.ts, roadmap 3.0.13 c).
+  const isPilotTier = byokAllowed(profile);
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');

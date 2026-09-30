@@ -9,6 +9,7 @@ import {
 } from '../lib/model-receipt';
 import { modelCompletion, incompleteAnswerMessage, MODEL_INCOMPLETE_CODE } from '../lib/model-completion';
 import { geminiTestStubAnswer, GEMINI_TEST_STUB_TEXT } from '../lib/gemini-test-stub';
+import { byokAllowed, BYOK_TIERS } from '../lib/byok-eligibility';
 
 /**
  * Roadmap 3.0.13 — the BYOK hardening before 3.0.
@@ -138,5 +139,39 @@ test.describe('(a) the finish reason decides whether an answer is a result', () 
     expect(route).toContain('result.promptFeedback?.blockReason');
     // The stub goes through the same check — it is not a second path around it.
     expect(route).toMatch(/const answer: ModelAnswer = stubbed\s*\?\s*geminiTestStubAnswer\(/);
+  });
+});
+
+// ── (c) one BYOK tier rule, for the page and the routes ─────────────────────
+
+test.describe('(c) the BYOK tier rule', () => {
+  test('is the list the settings page applied before 3.0.13, unchanged', () => {
+    expect([...BYOK_TIERS].sort()).toEqual(['pilot', 'pilot_byok', 'starter', 'unlimited']);
+    for (const tier of BYOK_TIERS) expect(byokAllowed({ tier }), tier).toBe(true);
+    expect(byokAllowed({ isAdmin: true, tier: 'enterprise' })).toBe(true);
+    expect(byokAllowed({ isAdmin: true })).toBe(true);
+    for (const tier of ['enterprise', 'premium', 'free', '', undefined, null, 42]) {
+      expect(byokAllowed({ tier }), String(tier)).toBe(false);
+    }
+    expect(byokAllowed({ isAdmin: false, tier: 'enterprise' })).toBe(false);
+    expect(byokAllowed(null)).toBe(false);
+    expect(byokAllowed(undefined)).toBe(false);
+  });
+
+  test('the page and the save and test routes read the same function; delete does not', () => {
+    const page = read('app/(app)/settings/page.tsx');
+    expect(page).toContain('byokAllowed(profile)');
+    expect(page, 'the settings page keeps its own copy of the tier list again').not.toMatch(/\[\s*'pilot',\s*'pilot_byok'/);
+    const save = read('app/api/secrets/gemini/route.ts');
+    const post = save.slice(save.indexOf('export async function POST'), save.indexOf('export async function DELETE'));
+    const del = save.slice(save.indexOf('export async function DELETE'));
+    expect(post).toContain('assertByokAllowed(decodedToken.uid, decodedToken.admin === true)');
+    expect(post.indexOf('assertByokAllowed(')).toBeLessThan(post.indexOf('saveGeminiApiKey('));
+    expect(del, 'withdrawing a key must not depend on the tier').not.toContain('assertByokAllowed(');
+    const testRoute = read('app/api/secrets/gemini/test/route.ts');
+    expect(testRoute.indexOf('assertByokAllowed(decodedToken.uid, decodedToken.admin === true)')).toBeGreaterThan(-1);
+    expect(testRoute.indexOf('assertByokAllowed(')).toBeLessThan(testRoute.indexOf('loadGeminiApiKey(decodedToken.uid)'));
+    const admin = read('lib/firebase-admin.ts');
+    expect(admin).toMatch(/byokAllowed\(\{ isAdmin: isAdminClaim === true, tier \}\)/);
   });
 });

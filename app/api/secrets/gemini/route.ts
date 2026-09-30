@@ -5,6 +5,7 @@ import {
   deleteGeminiApiKey,
   assertMfaSatisfied,
   assertAccountActive,
+  assertByokAllowed,
   getAdminDb,
   logAuditEvent,
   QuotaError,
@@ -32,6 +33,10 @@ export async function POST(req: NextRequest) {
     // NOT required to *store* a key — the bypass the finding is about is *using* it, which
     // is gated at /api/gemini (requireApproved). QuotaError is handled by the catch below.
     await assertAccountActive(decodedToken.uid, { requireCurrentTerms: true, isAdminClaim: decodedToken.admin === true });
+
+    // 3.0.13 (c): the tier rule the settings card applies, held here as well —
+    // the same function, so the page and the route cannot disagree.
+    await assertByokAllowed(decodedToken.uid, decodedToken.admin === true);
 
     // 2. Rate Limiting Gate (10 requests per hour)
     const ip = getClientIp(req);

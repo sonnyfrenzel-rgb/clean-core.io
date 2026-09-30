@@ -4,10 +4,11 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
-import { adminSetDoc } from './helpers/admin-seed';
+import { adminDocExists, adminSetDoc } from './helpers/admin-seed';
 import { GEMINI_TEST_STUB_FINISH_HEADER, GEMINI_TEST_STUB_HEADER, GEMINI_TEST_STUB_TEXT } from '../lib/gemini-test-stub';
 import { MODEL_INCOMPLETE_CODE } from '../lib/model-completion';
 import { MODEL_PROVIDER_ID } from '../lib/model-receipt';
+import { BYOK_NOT_AVAILABLE_CODE } from '../lib/byok-eligibility';
 
 /**
  * Roadmap 3.0.13 — the route halves of the BYOK hardening, against the
@@ -21,7 +22,9 @@ const SIGN_IN = `spec-${process.pid}-${Math.random().toString(36).slice(2)}-Aa1!
 
 let uid = '';
 let idToken = '';
-const headers = () => ({ Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' });
+let outsideUid = '';
+let outsideToken = '';
+const headers = (token = idToken) => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' });
 const stub = (finish?: string) => ({
   ...headers(),
   [GEMINI_TEST_STUB_HEADER]: process.env.PILOT_APPROVAL_SECRET ?? '',
@@ -39,6 +42,15 @@ test.beforeAll(async () => {
   const cred = await createUserWithEmailAndPassword(auth, EMAIL, SIGN_IN);
   uid = cred.user.uid;
   idToken = await cred.user.getIdToken();
+  // An active account on a tier outside the BYOK list (3.0.13 c).
+  const outside = await createUserWithEmailAndPassword(auth, `byok-outside-${STAMP}@cleancore-test.io`, SIGN_IN);
+  outsideUid = outside.user.uid;
+  outsideToken = await outside.user.getIdToken();
+  await adminSetDoc('users', outsideUid, {
+    firstName: 'Byok', lastName: 'Outside', email: `byok-outside-${STAMP}@cleancore-test.io`, tier: 'enterprise', status: 'approved',
+    activatedAt: new Date(), transformationsUsed: 0, transformationsLimit: 5,
+    termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
+  });
   await adminSetDoc('users', uid, {
     firstName: 'Byok', lastName: 'Hardening', email: EMAIL, tier: 'pilot', status: 'approved',
     activatedAt: new Date(), transformationsUsed: 0, transformationsLimit: 5,
@@ -75,4 +87,29 @@ test('(a) an answer the provider filter stopped is refused the same way', async 
   expect(body.code).toBe(MODEL_INCOMPLETE_CODE);
   expect(body.receipt).toBeUndefined();
   expect(body.text).toBeUndefined();
+});
+
+// ── (c) ─────────────────────────────────────────────────────────────────────
+
+test('(c) an account outside the BYOK tiers cannot store or test a key — but can always delete one', async ({ request }) => {
+  const save = await request.post('/api/secrets/gemini', { headers: headers(outsideToken), data: { apiKey: 'AIzaSy-not-a-real-key-000000000000' } });
+  expect(save.status(), await save.text()).toBe(403);
+  expect((await save.json()).error).toContain(BYOK_NOT_AVAILABLE_CODE);
+  expect(await adminDocExists(`user_secrets/${outsideUid}/providers`, 'gemini'), 'the refused key was stored anyway').toBe(false);
+
+  const probe = await request.post('/api/secrets/gemini/test', { headers: headers(outsideToken), data: { apiKey: 'AIzaSy-not-a-real-key-000000000000' } });
+  expect(probe.status(), await probe.text()).toBe(403);
+  expect((await probe.json()).error).toContain(BYOK_NOT_AVAILABLE_CODE);
+
+  const withdraw = await request.delete('/api/secrets/gemini', { headers: headers(outsideToken) });
+  expect(withdraw.status(), await withdraw.text()).toBe(200);
+});
+
+test('(c) an account on a BYOK tier stores its key as before', async ({ request }) => {
+  const save = await request.post('/api/secrets/gemini', { headers: headers(), data: { apiKey: 'AIzaSy-not-a-real-key-111111111111' } });
+  expect(save.status(), await save.text()).toBe(200);
+  expect(await adminDocExists(`user_secrets/${uid}/providers`, 'gemini')).toBe(true);
+  const withdraw = await request.delete('/api/secrets/gemini', { headers: headers() });
+  expect(withdraw.status(), await withdraw.text()).toBe(200);
+  expect(await adminDocExists(`user_secrets/${uid}/providers`, 'gemini')).toBe(false);
 });
