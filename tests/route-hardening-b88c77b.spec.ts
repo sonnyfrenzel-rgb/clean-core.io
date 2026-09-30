@@ -282,6 +282,13 @@ test('the readers overview is gated and metered like the revocation beside it', 
   const gate = src.indexOf('async function openAsOwner');
   const body = src.slice(gate, src.indexOf('export async function GET'));
   expect(body, 'the overview is not metered').toContain('assertRateLimit(');
+  // Metered on its own budget: one shared key let reading the list use up the
+  // allowance a revocation needs (QA review of a7e0ae36c896).
+  expect(body, 'GET and DELETE share one rate-limit key').toContain(
+    "const rateKey = req.method === 'GET' ? 'project-readers-list' : 'project-readers';",
+  );
+  expect(body).toContain('assertRateLimit(`${rateKey}:${decoded.uid}`');
+  expect(body, 'a fixed key is back beside the per-verb one').not.toMatch(/assertRateLimit\(`project-readers:/);
   expect(body, 'the overview does not check the account').toContain('assertAccountActive(');
   // Hard suspension only, deliberately: an owner asked to re-accept the Terms
   // must still be able to see and end somebody else's access to their code.

@@ -60,6 +60,25 @@ test.describe('One-click unsubscribe', () => {
     expect(await adminDocExists('email_suppressions', suppressionId(email))).toBe(false);
   });
 
+  test('the token in a JSON body works, and a body past the bound is not read', async ({ request }) => {
+    // Our own confirmation page sends `{ t }` in the body.
+    const small = `unsub-body-${Date.now()}@cleancore-test.io`;
+    const ok = await request.post('/api/unsubscribe', { data: { t: createUnsubscribeToken(small) } });
+    expect((await ok.json()).success).toBe(true);
+    expect(await adminDocExists('email_suppressions', suppressionId(small))).toBe(true);
+
+    // The route is open to anyone and used to parse a body of any size before
+    // looking at the token (QA review of a7e0ae36c896). The same valid token,
+    // padded past the bound, is not read: nobody is suppressed.
+    const large = `unsub-large-${Date.now()}@cleancore-test.io`;
+    const padded = await request.post('/api/unsubscribe', {
+      data: { t: createUnsubscribeToken(large), pad: 'x'.repeat(64 * 1024) },
+    });
+    expect(padded.status()).toBe(200);
+    expect((await padded.json()).success).toBe(false);
+    expect(await adminDocExists('email_suppressions', suppressionId(large))).toBe(false);
+  });
+
   test('GET does not unsubscribe — it hands the reader the confirmation page', async ({ request, page }) => {
     const email = `unsub-get-${Date.now()}@cleancore-test.io`;
     const token = createUnsubscribeToken(email);

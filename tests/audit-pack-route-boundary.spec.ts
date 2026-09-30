@@ -10,6 +10,7 @@ import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
 import { USER_ATTESTED_FILE } from '../lib/audit-pack';
+import { verifyAuditPack } from '../lib/audit-pack-verify';
 
 /**
  * The route, end to end: what the owner writes into the project never reaches
@@ -142,12 +143,13 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
   async function openPack(request: APIRequestContext) {
     const res = await request.post('/api/audit-pack/create', { headers: headers(), data: { projectId: PROJECT_ID } });
     expect(res.status(), res.status() === 200 ? '' : await res.text()).toBe(200);
-    const zip = await JSZip.loadAsync(await res.body());
+    const body = await res.body();
+    const zip = await JSZip.loadAsync(body);
     const manifest = JSON.parse(await zip.file('manifest.json')!.async('string'));
-    return { zip, manifest };
+    return { zip, manifest, body };
   }
 
-  test('the forged statements reach the attested file and no signed file; the narrative reaches no signed file', async ({ request }) => {
+  test('the forged statements reach the attested file and no signed file; the narrative reaches no signed file', async ({ request, baseURL }) => {
     const run = await request.post('/api/runs/create', {
       headers: headers(),
       data: { projectId: PROJECT_ID, legacyCode: SOURCE, analysis: NARRATIVE, uploadedFileName: 'z_boundary.abap' },
@@ -157,7 +159,7 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     // direct Firestore write from the owner's session could.
     await adminMergeDoc('projects', PROJECT_ID, { ...FORGED, architectSignOffAt: new Date().toISOString() });
 
-    const { zip, manifest } = await openPack(request);
+    const { zip, manifest, body } = await openPack(request);
 
     // The archive is exactly what the manifest says: the signed files, the one
     // attested file, the manifest.
@@ -186,6 +188,26 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     });
     expect(sha(canonical)).toBe(manifest.manifestHash);
     expect(manifest.signed).toBe(true);
+
+    // The recomputation above uses the same helper the issuer does, so it
+    // cannot notice a disagreement between the two. The archive the route
+    // emitted goes through the production verifier as well — the one the
+    // verify page runs, with its signature check sent to this server (QA
+    // review of a7e0ae36c896).
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) =>
+      realFetch(typeof input === 'string' && input.startsWith('/') ? `${baseURL}${input}` : input, init)) as typeof fetch;
+    let verdict: Awaited<ReturnType<typeof verifyAuditPack>>;
+    try {
+      verdict = await verifyAuditPack(body);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+    expect(verdict.integrityValid, verdict.errors.join(' | ')).toBe(true);
+    expect(verdict.signatureValid, verdict.errors.join(' | ')).toBe(true);
+    expect(verdict.status).toBe('authentic');
+    expect(verdict.covers, 'the emitted covers[] was not read as bound').not.toBeNull();
+    expect(verdict.covers!.map((c) => c.step)).toEqual(manifest.covers.map((c: { step: string }) => c.step));
     for (const f of manifest.files) {
       expect(sha(await zip.file(f.path)!.async('nodebuffer')), `${f.path} does not hash to its record`).toBe(f.sha256);
     }

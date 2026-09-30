@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { readBoundedBody } from '../lib/url-validation';
 
 /**
  * Five findings of the b88c77b review that live in the interface and in the
@@ -149,28 +150,42 @@ test.describe('the unsubscribe token is not written into the history and the log
     // the reader is run against all four callers.
     const source = read(ROUTE);
     const inBody = new Function('body', bodyOf(source, /function tokenInBody\(/)) as (b: unknown) => string;
+    // Since the QA review of a7e0ae36c896 the body is read through the
+    // bounded reader rather than `req.json()`, so the stand-in is a real
+    // Request with a real stream, and the reader and its bound are handed in.
+    const limits = source.match(/const BODY_LIMITS = (\{[^}]*\});/);
+    expect(limits, 'the body bound is gone').not.toBeNull();
+    const BODY_LIMITS = new Function(`return ${limits![1].replace(/_/g, '')};`)() as { maxBytes: number; timeoutMs: number };
     const from = new Function(
       'req',
       'tokenInBody',
+      'readBoundedBody',
+      'BODY_LIMITS',
       `return (async () => {${bodyOf(source, /async function tokenFrom\(/)}})();`,
-    ) as (req: unknown, f: (b: unknown) => string) => Promise<string>;
+    ) as (req: unknown, f: (b: unknown) => string, r: typeof readBoundedBody, l: typeof BODY_LIMITS) => Promise<string>;
+    const run = (req: unknown) => from(req, inBody, readBoundedBody, BODY_LIMITS);
 
-    const req = (body: unknown, query: string) => ({
-      json: async () => {
-        if (body === undefined) throw new SyntaxError('Unexpected end of JSON input');
-        return body;
-      },
-      nextUrl: { searchParams: new URLSearchParams(query) },
-    });
+    const req = (body: unknown, query: string) => {
+      const real = new Request(`http://localhost/api/unsubscribe?${query}`, {
+        method: 'POST',
+        ...(body === undefined ? {} : { body: typeof body === 'string' ? body : JSON.stringify(body) }),
+      });
+      return Object.assign(real, { nextUrl: { searchParams: new URLSearchParams(query) } });
+    };
 
     expect(inBody({ t: 'in-body' })).toBe('in-body');
     expect(inBody(null), 'null is not an object to read from').toBe('');
     expect(inBody({ t: 42 }), 'a number is not a token').toBe('');
 
-    expect(await from(req({ t: 'in-body' }, ''), inBody), 'our page').toBe('in-body');
-    expect(await from(req(undefined, 't=in-query'), inBody), 'one-click, no body').toBe('in-query');
-    expect(await from(req({}, 't=in-query'), inBody), 'a body without a token').toBe('in-query');
-    expect(await from(req(undefined, ''), inBody), 'neither').toBe('');
+    expect(await run(req({ t: 'in-body' }, '')), 'our page').toBe('in-body');
+    expect(await run(req(undefined, 't=in-query')), 'one-click, no body').toBe('in-query');
+    expect(await run(req({}, 't=in-query')), 'a body without a token').toBe('in-query');
+    expect(await run(req(undefined, '')), 'neither').toBe('');
+    // A body past the bound is not read, and the query decides.
+    expect(
+      await run(req({ t: 'in-body', pad: 'x'.repeat(BODY_LIMITS.maxBytes) }, 't=in-query')),
+      'an oversized body',
+    ).toBe('in-query');
   });
 });
 

@@ -14,8 +14,11 @@ import {
 } from 'firebase/firestore';
 import fs from 'fs';
 import path from 'path';
+import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin/app';
+import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
 import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
+import { FIRESTORE_DB_ID } from '../lib/constants';
 import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 
 /**
@@ -188,4 +191,30 @@ test('6 · somebody else\'s suspension changes nothing for an active owner', asy
   await signIn(OTHER);
   expect((await getDoc(doc(db, 'projects', OTHER_PROJECT))).exists()).toBe(true);
   expect(await denied(() => updateDoc(doc(db, 'projects', OTHER_PROJECT), { solutionDesign: 'fine' }))).toBe(false);
+});
+
+test('7 · an erased account — profile gone, token still valid — reads and creates nothing', async () => {
+  // Erasure deletes the profile (`deleteUserDataAndAccount`, step 5) and the
+  // ID token already in the browser stays valid for up to an hour. A missing
+  // profile used to count as active in the rules, so that token could go on
+  // creating projects under a uid that no longer has an account (QA review of
+  // a7e0ae36c896). The seed route only sets and merges, so the profile is
+  // deleted through the Admin SDK against the emulator.
+  await signIn(OTHER);
+  const tokenBefore = await auth.currentUser!.getIdToken();
+  expect((await getDoc(doc(db, 'projects', OTHER_PROJECT))).exists(), 'before: read').toBe(true);
+
+  const adminApp = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
+  await adminFirestore(adminApp, FIRESTORE_DB_ID).collection('users').doc(uids.other).delete();
+  expect((await getDoc(doc(db, 'users', uids.other))).exists(), 'the profile is gone').toBe(false);
+
+  expect(await denied(() => getDoc(doc(db, 'projects', OTHER_PROJECT))), 'project read').toBe(true);
+  expect(await denied(() => updateDoc(doc(db, 'projects', OTHER_PROJECT), { solutionDesign: 'after' })), 'project write').toBe(true);
+  expect(
+    await denied(() => setDoc(doc(db, 'projects', `suspended-create-c-${stamp}`), {
+      name: 'New', status: 'uploaded', userId: uids.other, createdAt: new Date(),
+    })),
+    'project create',
+  ).toBe(true);
+  expect(await auth.currentUser!.getIdToken(), 'the same token throughout').toBe(tokenBefore);
 });

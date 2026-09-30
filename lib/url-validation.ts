@@ -251,7 +251,9 @@ export class ResponseLimitError extends Error {
  * UTF-8, byte-order mark dropped.
  */
 export async function readBoundedBody(
-  response: Response,
+  // Only the headers and the stream are read, so an incoming request body can
+  // be bounded the same way (`app/api/unsubscribe/route.ts`).
+  response: Pick<Response, 'headers' | 'body'>,
   limits: { maxBytes: number; timeoutMs: number },
 ): Promise<string> {
   const declared = Number(response.headers.get('content-length'));

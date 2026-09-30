@@ -118,6 +118,18 @@ export async function GET(
       const q = rateErr as { message?: string; status?: number };
       return NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 });
     }
+    // The same account gate as `POST`, and like it before the invitation is
+    // read: a suspended or erased account with a still-valid token is told
+    // what `POST` tells it and learns nothing about any invitation (QA review
+    // of a7e0ae36c896).
+    try {
+      await assertAccountActive(decodedToken.uid, { isAdminClaim: decodedToken.admin === true });
+    } catch (gateErr: unknown) {
+      if (gateErr instanceof QuotaError) {
+        return NextResponse.json({ error: gateErr.message, code: 'account-gate' }, { status: gateErr.status });
+      }
+      throw gateErr;
+    }
     const accountEmail = normaliseInvitedEmail(decodedToken.email);
     if (!accountEmail || decodedToken.email_verified !== true) return closed();
 

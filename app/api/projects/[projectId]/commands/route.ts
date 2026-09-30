@@ -152,13 +152,16 @@ export async function POST(
         }
 
         // The evidence the sign-off will be bound to, taken from the immutable
-        // run and from nowhere else. `firestore.rules:253-269` leaves
-        // `projects/{id}/runs/{runId}` `allow write: if false`, so this is the
-        // one part of the comparison the approver cannot have authored —
-        // unlike every field of `project` above, which the owner writes from
-        // the browser. `null` when there is no run to read; the validator
-        // refuses on it rather than treating an unreadable run as an
-        // unchanged one.
+        // run and from nowhere else. `firestore.rules` leaves
+        // `projects/{projectId}/runs/{runId}` `allow write: if false`, so this
+        // is the one part of the comparison the approver cannot have authored —
+        // unlike the draft fields of `project` above, which the owner writes
+        // from the browser. The pointer to the run is not one of them:
+        // `activeRunId` is on neither client allowlist of /projects/{projectId}
+        // (create or update), so only the server sets it (`/api/runs/create`),
+        // and tests/firestore-rules.spec.ts asserts an owner cannot. `null`
+        // when there is no run to read; the validator refuses on it rather
+        // than treating an unreadable run as an unchanged one.
         let activeRunEvidence: string | null = null;
         // Roadmap 7.10 - the run's target profile against the project's now,
         // read from the same run document in the same transaction. `null` for

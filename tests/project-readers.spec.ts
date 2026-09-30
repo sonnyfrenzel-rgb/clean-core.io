@@ -132,7 +132,17 @@ test.describe('the rules keep the shape the emulator test depends on', () => {
     expect(paths, 'one document path in the whole file').toEqual(['/databases/$(database)/documents/users/$(request.auth.uid)']);
     const gets = [...text.matchAll(/\b(get|exists)\((\w+)\(\)\)/g)].map((m) => `${m[1]}(${m[2]})`);
     expect(new Set(gets), 'every get()/exists() reads that one path').toEqual(new Set(['exists(callerProfilePath)', 'get(callerProfilePath)']));
-    expect(text, 'the exists() guard comes first').toContain('!exists(callerProfilePath()) ||');
+    // The guard comes first, and it is a requirement rather than a way out: a
+    // missing profile is an inactive account, as on the server — erasure
+    // deletes the profile while the ID token lives on (QA review of
+    // a7e0ae36c896).
+    const body = text.slice(text.indexOf('function accountActive()'), text.indexOf('function userClientCreateKeys()'));
+    expect(body, 'accountActive() is found').toContain('exists(callerProfilePath())');
+    expect(body, 'a missing profile is not active').not.toContain('!exists(callerProfilePath())');
+    expect(body.indexOf('exists(callerProfilePath()) &&'), 'the exists() guard is a conjunct')
+      .toBeGreaterThan(-1);
+    expect(body.indexOf('exists(callerProfilePath()) &&'), 'the exists() guard comes before every get()')
+      .toBeLessThan(body.indexOf('get(callerProfilePath())'));
   });
 
   test('`readers` is in neither client allowlist — not to write, not to create', () => {
