@@ -406,9 +406,12 @@ test.describe('the card on the upload screen', () => {
     expect(block).toContain('no one else has standing access');
   });
 
-  test('on a phone it is collapsed behind one control', async ({ page }) => {
+  // Collapsed on every size, desktop included (Sonny, 30.09.2026): the claims
+  // are one click away beside the drop zone instead of a wall of text above it.
+  for (const [name, viewport] of [['a phone', { width: 390, height: 844 }], ['a desktop', { width: 1440, height: 900 }]] as const) {
+  test(`on ${name} it is collapsed behind one control`, async ({ page }) => {
     test.setTimeout(180 * 1000);
-    await page.setViewportSize({ width: 390, height: 844 });
+    await page.setViewportSize(viewport);
     await openUpload(page);
 
     const toggle = page.locator('[data-trust-toggle]');
@@ -421,4 +424,5 @@ test.describe('the card on the upload screen', () => {
     await expect(page.locator('#trust-claim-list')).toBeVisible();
     await expect(page.locator(`[data-trust-claim="${ACCESS_CLAIM_ID}"]`)).toBeVisible();
   });
+  }
 });

@@ -112,7 +112,7 @@ export default function TrustBeforeUpload() {
             aria-expanded={open}
             aria-controls="trust-claim-list"
             onClick={() => setOpen((v) => !v)}
-            className="md:hidden flex items-center gap-1 text-xs font-semibold text-cc-brand-strong hover:text-cc-brand-deep"
+            className="flex items-center gap-1 text-xs font-semibold text-cc-brand-strong hover:text-cc-brand-deep"
           >
             {TRUST_CARD_DISCLOSURE} · {open ? TRUST_CARD_HIDE : TRUST_CARD_SHOW}
             <ChevronDown
@@ -125,7 +125,7 @@ export default function TrustBeforeUpload() {
 
         <ul
           id="trust-claim-list"
-          className={clsx('mt-5 space-y-3', open ? 'block' : 'hidden md:block')}
+          className={clsx('mt-5 space-y-3', open ? 'block' : 'hidden')}
         >
           {TRUST_CLAIMS.map((claim) => {
             const Icon = ICONS[claim.icon];

@@ -996,7 +996,7 @@ Sonny 15.09.2026):
 - **Kein kommerzielles Projekt:** *„Clean-Core.io is a free community project. There is no paid tier, we accept no
   payment, and we do not sell, rent or commercially use your code."* (Terms §2, Privacy Policy)
 - **Form:** eine Karte „Your code and your trust" in der Seitenspalte des Import-Dialogs, Aussagen als kurze Zeilen
-  mit Icon, Links als Text; auf S unter dem Formular, eingeklappt mit „Why you can trust this · Show". Keine Siegel,
+  mit Icon, Links als Text; auf S unter dem Formular; auf jeder Größe eingeklappt mit „Why you can trust this · Show" (Sonny 30.09.2026: auch auf dem Desktop). Keine Siegel,
   keine Zertifikats-Logos, keine Superlative.
 
 ### 6.2 Wollen (nach Nutzen gereiht)
