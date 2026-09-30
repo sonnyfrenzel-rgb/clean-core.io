@@ -9,10 +9,7 @@ import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
-import { FileText, Download, ArrowRight, ArrowLeft, RefreshCw, Eye, LayoutTemplate, Info, X, ShieldCheck, Network } from 'lucide-react';
-import nextDynamic from 'next/dynamic';
-import { DocumentSection } from '@/components/DocumentSection';
-import { Components } from 'react-markdown';
+import { FileText, Download, RefreshCw, Eye, LayoutTemplate } from 'lucide-react';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
 import type { Project, DesignData } from '@/lib/types';
@@ -30,8 +27,6 @@ import { evidenceDigest } from '@/lib/run-evidence-digest';
 // Helper imports from components
 import { getSecurityExplanation } from '@/components/design/SecurityHardeningChecklist';
 import { getCloudServiceDetails } from '@/components/design/CloudServiceIntegrations';
-
-const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 
 import { DocumentSkeleton } from '@/components/Skeleton';
 import NavigationButtons from '@/components/NavigationButtons';
@@ -66,6 +61,10 @@ import { escapeHtml } from '@/lib/utils';
 import { sapApiHubLink } from '@/lib/export-safety';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { cleanAndParseJSON, checkDesignResponse } from '@/lib/design-response';
+import { formatIsoDate } from '@/lib/format';
+import CcButton from '@/components/cc/Button';
+import { CcEmptyState } from '@/components/cc/EmptyState';
+import CcMessageStrip from '@/components/cc/MessageStrip';
 
 
 /**
@@ -109,6 +108,30 @@ const prepareAnalysisContext = (analysis: string | object): string => {
     return raw;
   }
 };
+
+/**
+ * A failure this page words for the reader itself (DESIGN.md §2.8: an error
+ * gets an action, never a raw error text). Whatever else reaches the catch of
+ * a generation — a Firestore error, a parse error — is logged and replaced by
+ * a sentence; its text is for the console, not for the stage.
+ */
+class DesignGenerationError extends Error {}
+
+/**
+ * What a failed model call says on screen. The proxy words its refusals for
+ * the reader (stage switched off, no key, rate limit) and keeps the provider's
+ * own error in its log (`app/api/gemini/route.ts`); only the client's fallback
+ * for an answer without a body is a status line.
+ */
+function modelFailureText(err: unknown): string {
+  const message = err instanceof Error ? err.message : '';
+  if (!message || /request failed with status/i.test(message)) {
+    return 'The model did not answer. Nothing was saved — try again in a moment.';
+  }
+  return message;
+}
+
+const GENERATION_FAILED_TEXT = 'The solution design could not be generated or saved. Nothing was changed — try again.';
 
 export default function DesignPage() {
   const { projectId } = useParams();
@@ -168,32 +191,6 @@ export default function DesignPage() {
   useEffect(() => {
     projectRef.current = project;
   }, [project]);
-
-  const markdownComponents: Components = {
-    h1: ({ node, ...props }) => (
-      <div className="mb-12 pb-6 border-b-2 border-gray-900">
-        <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter mb-2" {...props} />
-      </div>
-    ),
-    h2: ({ node, ...props }) => <DocumentSection title={props.children as string} />,
-    h3: ({ node, ...props }) => <h3 className="text-xl font-bold text-gray-900 mt-8 mb-4 flex items-center gap-3 border-b border-gray-100 pb-2" {...props} />,
-    hr: () => <hr className="my-10 border-t border-gray-100" />,
-    table: ({ node, ...props }) => (
-      <div className="overflow-x-auto my-8 rounded-2xl border border-gray-200 shadow-lg">
-        <table className="min-w-full divide-y divide-gray-200" {...props} />
-      </div>
-    ),
-    thead: ({ node, ...props }) => <thead className="bg-gray-50/50" {...props} />,
-    th: ({ node, ...props }) => <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]" {...props} />,
-    td: ({ node, ...props }) => <td className="px-6 py-4 text-sm text-gray-700 border-t border-gray-100" {...props} />,
-    blockquote: ({ node, ...props }) => {
-      return <blockquote className="border-l-4 border-green-500 pl-6 py-3 italic my-8 bg-green-50/20 rounded-r-2xl text-green-900 font-medium text-base" {...props} />;
-    },
-    p: ({ node, ...props }) => <p className="text-gray-700 leading-relaxed text-base md:text-lg mb-6" {...props} />,
-    li: ({ node, ...props }) => <li className="text-gray-700 text-base mb-2 ml-4 list-disc marker:text-green-500" {...props} />,
-    ul: ({ node, ...props }) => <ul className="mb-8" {...props} />,
-    strong: ({ node, ...props }) => <strong className="font-bold text-gray-950" {...props} />,
-  };
 
   const generateDesign = useCallback(async (analysis: string) => {
     setLoading(true);
@@ -291,20 +288,29 @@ ${prepareAnalysisContext(analysis)}`;
       console.log('[Design] Generating solution design for:', projectRef.current?.name);
       console.log('[Design] Analysis type:', typeof analysis, '| length:', typeof analysis === 'string' ? analysis.length : JSON.stringify(analysis).length);
 
-      const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'design');
+      let responseText: string;
+      try {
+        responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'design');
+      } catch (err: unknown) {
+        console.error('[Design] Model call failed:', err);
+        throw new DesignGenerationError(modelFailureText(err));
+      }
       
       console.log('[Design] Gemini response received, length:', responseText?.length);
         
       if (!responseText) {
-        throw new Error('Gemini returned an empty response. The AI model did not produce any output for the design prompt.');
+        throw new DesignGenerationError('The model returned an empty answer. Nothing was saved — regenerate to try again.');
       }
       // Not every non-empty answer is a design: `{}`, a truncated object or
       // sections of the wrong type used to be stored as one, with `status:
       // 'designed'`, over whatever design was there (QA full review of
       // fc787674705f, 6a5a3b3546de). Refused here, the stored design stays.
       const shape = checkDesignResponse(responseText);
+      // The reason names the broken section; it is for the log, the reader
+      // needs to know that nothing was stored and what to do.
+      if (!shape.ok) console.warn('[Design] Model answer refused:', shape.reason);
       if (!shape.ok) {
-        throw new Error(`The model's answer is not a usable solution design (${shape.reason}) Nothing was saved — regenerate to try again.`);
+        throw new DesignGenerationError("The model's answer is not a usable solution design. Nothing was saved — regenerate to try again.");
       }
 
       // The NFRs are generated from this design and stored with it, in one
@@ -354,10 +360,8 @@ ${responseText.substring(0, 4000)}`;
       setNfrData(nfrForDesign as NFRData | null);
       setProject((prev: Project | null) => prev ? { ...prev, solutionDesign: responseText } : prev);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to generate design.';
       console.error('[Design] Generation FAILED:', err);
-      console.error('[Design] Error details:', msg);
-      setDesignError(msg);
+      setDesignError(err instanceof DesignGenerationError ? err.message : GENERATION_FAILED_TEXT);
     } finally {
       setLoading(false);
       setLoadingMessage('');
@@ -390,7 +394,9 @@ ${responseText.substring(0, 4000)}`;
             // The run (which holds the analysis) could not be read — surface it instead
             // of a silent empty state, so the real cause (permissions/network) is visible.
             console.error('[Design] Active run could not be loaded:', data._runLoadError);
-            setDesignError(`Could not load the analysis run: ${data._runLoadError || 'unknown error'}. This is usually a permissions or connectivity issue — reload the page, or re-run the analysis in stage 1.`);
+            // The error itself is in the console line above; the stage says
+            // what it means and what to do.
+            setDesignError('Could not load the analysis run. This is usually a permissions or connectivity issue — reload the page, or re-run the analysis in stage 1.');
             setLoading(false);
         } else {
             console.warn('[Design] No analysis data found on project — cannot auto-generate design.');
@@ -487,12 +493,12 @@ ${responseText.substring(0, 4000)}`;
           <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-weight: bold; color: #00875a;">${esc(map.sapStandardApiName)}</td>
           <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-family: monospace; font-size: 12px;">${esc(map.apiId)}</td>
           <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #6b778c;">${esc(map.description)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 12px;">${sapApiHubLink(map.apiHubUrl, 'api.sap.com ➔')}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #ebecf0; font-size: 12px;">${sapApiHubLink(map.apiHubUrl, 'api.sap.com →')}</td>
         </tr>
       `).join('') || '';
 
       const apiMappingSection = data.sapStandardApiMapping && data.sapStandardApiMapping.length > 0 ? `
-        <h2>🌐 SAP Business Accelerator Hub Mappings</h2>
+        <h2>SAP Business Accelerator Hub Mappings</h2>
         <p>Decoupled communication mappings dynamically generated to keep the S/4HANA core clean:</p>
         <table>
           <thead>
@@ -536,7 +542,7 @@ ${responseText.substring(0, 4000)}`;
         <body>
           <div class="header">
             <h1>Solution Design Document: ${esc(data.projectName || currentProject.name)}</h1>
-            <div class="meta">Target Framework: <strong>${esc(data.architectureOverview?.nodeFramework)}</strong> | Platform: <strong>${esc(data.architectureOverview?.runtimePlatform)}</strong> | Generated by Clean-Core.io | ${new Date().toLocaleDateString()}</div>
+            <div class="meta">Target Framework: <strong>${esc(data.architectureOverview?.nodeFramework)}</strong> | Platform: <strong>${esc(data.architectureOverview?.runtimePlatform)}</strong> | Generated by Clean-Core.io | ${esc(formatIsoDate(new Date()) ?? '')}</div>
           </div>
           <div class="content">
             <div class="summary-box">
@@ -636,7 +642,7 @@ ${responseText.substring(0, 4000)}`;
         <body>
           <div class="header">
             <h1>Solution Design Document: ${esc(currentProject.name)}</h1>
-            <div class="meta">Generated by Clean-Core.io | ${new Date().toLocaleDateString()}</div>
+            <div class="meta">Generated by Clean-Core.io | ${esc(formatIsoDate(new Date()) ?? '')}</div>
           </div>
           <div class="content">
             ${renderMarkdownSafe(currentProject.solutionDesign)}
@@ -802,8 +808,9 @@ ${responseText.substring(0, 4000)}`;
             <NonFunctionalRequirements nfr={nfrData} />
           </SectionBoundary>
 
-          {/* Architect sign-off / decision — always last */}
-          <div className="bg-white rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-sm">
+          {/* Architect sign-off / decision — always last. The panel is its own
+              card; this wrapper only names the region. */}
+          <section aria-label="Architect sign-off">
               <ArchitectSignOff
                 // The two shapes `originalRecommendation` arrives in — the five
                 // architecture codes and the router's own route names — are
@@ -853,7 +860,7 @@ ${responseText.substring(0, 4000)}`;
                   } as Project : null);
                 }}
               />
-          </div>
+          </section>
         </div>
       );
     }
@@ -861,21 +868,19 @@ ${responseText.substring(0, 4000)}`;
     // Fallback to legacy markdown rendering
     return (
       <div 
-        className="prose prose-base md:prose-lg max-w-none text-slate-800
-          prose-headings:text-slate-900 prose-headings:font-black prose-headings:tracking-tight
-          prose-h1:text-2xl md:text-3xl prose-h1:mb-6 prose-h1:mt-8
-          prose-h2:text-xl md:text-2xl prose-h2:mb-4 prose-h2:mt-6
-          prose-h3:text-lg md:text-xl prose-h3:mb-3 prose-h3:mt-4
-          prose-p:text-slate-650 prose-p:leading-relaxed prose-p:text-base md:prose-p:text-lg prose-p:mb-6
+        className="prose prose-base max-w-none text-cc-ink
+          prose-headings:text-cc-ink prose-headings:font-bold
+          prose-h1:mb-6 prose-h1:mt-8 prose-h2:mb-4 prose-h2:mt-6 prose-h3:mb-3 prose-h3:mt-4
+          prose-p:text-cc-ink prose-p:leading-relaxed prose-p:mb-6
           prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-6
           prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-6
           prose-li:mb-2
-          prose-strong:text-slate-900 prose-strong:font-bold
-          prose-blockquote:border-l-4 prose-blockquote:border-emerald-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-6 prose-blockquote:text-slate-600
-          prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:text-xs prose-code:text-emerald-700
-          prose-table:w-full prose-table:my-6 prose-table:border-collapse prose-table:rounded-xl prose-table:overflow-hidden prose-table:border prose-table:border-slate-200
-          prose-th:bg-slate-50 prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:text-xs prose-th:font-bold prose-th:text-slate-500 prose-th:uppercase prose-th:tracking-wider prose-th:border-b prose-th:border-slate-200
-          prose-td:px-4 prose-td:py-3 prose-td:text-xs md:text-sm prose-td:text-slate-700 prose-td:border-b prose-td:border-slate-100
+          prose-strong:text-cc-ink prose-strong:font-bold
+          prose-blockquote:border-l-4 prose-blockquote:border-cc-line prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-6 prose-blockquote:text-cc-ink-muted
+          prose-code:bg-cc-surface-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:font-cc-mono prose-code:text-cc-ink
+          prose-table:w-full prose-table:my-6 prose-table:border-collapse prose-table:border prose-table:border-cc-line
+          prose-th:bg-cc-surface-muted prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:text-cc-ink-muted prose-th:border-b prose-th:border-cc-line
+          prose-td:px-4 prose-td:py-3 prose-td:text-cc-ink prose-td:border-b prose-td:border-cc-line
         "
         dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(design) }}
       />
@@ -895,29 +900,62 @@ ${responseText.substring(0, 4000)}`;
   ];
   const signOffCurrent = project?.approvedByArchitect === true && !stale.signOff && !designStale;
 
+  const regenerate = () => {
+    if (project?.analysis) {
+      const analysisStr = typeof project.analysis === 'object' ? JSON.stringify(project.analysis) : project.analysis;
+      generateDesign(analysisStr);
+    } else {
+      setDesignError('Analysis data not found. Please go back to stage 1 (Analyze) and run the analysis first.');
+    }
+  };
+
   if (loading && !design) return (
-    <div className="animate-in fade-in duration-500 min-h-screen">
+    <div className="min-h-screen">
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
       <VerificationRail steps={phases} current="design" projectId={projectId as string} />
 
       <Stepper steps={phases} current="design" projectId={projectId as string} />
-      <div className="bg-white rounded-[2rem] shadow-xl border border-gray-100 overflow-hidden mt-8">
-        <div className="bg-green-600 px-6 sm:px-10 py-10 sm:py-12 text-white flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Designing Solution...</h2>
-            <p className="text-green-100 mt-2 text-sm sm:text-base">{loadingMessage || 'Loading project data...'}</p>
+
+      <StageHeader stage="design">Review the generated target architecture and technical design.</StageHeader>
+
+      <div className="overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc">
+        <div role="status" className="flex items-center gap-3 border-b border-cc-line bg-cc-surface-muted px-4 py-4 sm:px-8">
+          <RefreshCw size={20} aria-hidden={true} className="shrink-0 text-cc-ink-muted motion-safe:animate-spin" />
+          <div className="min-w-0">
+            <h2 className="m-0 cc-text-h2 text-cc-ink">Designing Solution...</h2>
+            <p className="m-0 cc-text-cell text-cc-ink-muted">{loadingMessage || 'Loading project data...'}</p>
           </div>
-          <RefreshCw className="w-10 h-10 sm:w-12 sm:h-12 text-white/20 animate-spin shrink-0" />
         </div>
         <DocumentSkeleton />
       </div>
     </div>
   );
 
+  // A failed generation, worded for the reader, with the one action that
+  // could change it. It used to be drawn only on the empty stage, so a failed
+  // *re*generation left the old design on screen and said nothing.
+  const designErrorStrip = designError ? (
+    <CcMessageStrip
+      state="error"
+      headline="Generation failed."
+      announce
+      actions={
+        modelAvailability.enabled('design') ? (
+          <CcButton variant="secondary" icon={<RefreshCw size={16} aria-hidden={true} />} busy={loading} onClick={regenerate}>
+            {design ? 'Regenerate' : 'Retry Generation'}
+          </CcButton>
+        ) : undefined
+      }
+    >
+      {designError}
+      {!design && ' This may happen with large ABAP programs. The retry uses a condensed analysis context.'}
+    </CcMessageStrip>
+  ) : null;
+
   return (
-    <div className="animate-in fade-in duration-500 min-h-screen">
+    <div className="min-h-screen">
       {/* The rail used to render only while the page was loading: it sat in the
           early return and nowhere else, so it vanished the moment there was
           something to report on. */}
@@ -928,63 +966,55 @@ ${responseText.substring(0, 4000)}`;
       <StaleNotice title="Built for a previous source" reasons={staleNotes} />
 
       <StageHeader
-        title="Solution Design"
+        stage="design"
         actions={design ? (
-          <div className="flex flex-wrap gap-2 sm:gap-3">
-
-            <button 
+          <div className="flex flex-wrap gap-2">
+            <CcButton
+              variant="secondary"
+              icon={<RefreshCw size={16} aria-hidden={true} />}
+              busy={loading}
               onClick={() => {
                 if (project?.analysis) {
                   const analysisStr = typeof project.analysis === 'object' ? JSON.stringify(project.analysis) : project.analysis;
                   generateDesign(analysisStr);
                 }
               }}
-              className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-xs sm:text-sm"
             >
-              <RefreshCw size={16} /> Regenerate
-            </button>
-            <button 
-              onClick={() => exportToConfluence(true)} 
-              className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-xs sm:text-sm"
-            >
-              <Eye size={16} /> View HTML
-            </button>
-            <button 
-              onClick={() => exportToConfluence(false)} 
-              className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-xs sm:text-sm"
-            >
-              <Download size={16} /> Export HTML
-            </button>
+              Regenerate
+            </CcButton>
+            <CcButton variant="ghost" icon={<Eye size={16} aria-hidden={true} />} onClick={() => exportToConfluence(true)}>
+              View HTML
+            </CcButton>
+            <CcButton variant="ghost" icon={<Download size={16} aria-hidden={true} />} onClick={() => exportToConfluence(false)}>
+              Export HTML
+            </CcButton>
           </div>
         ) : null}
       >
         Review the generated target architecture and technical design.
       </StageHeader>
 
-
-
       <div
         id="design-report"
         data-stage-output={design ? 'solutionDesign' : undefined}
-        className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mb-12"
+        className="mb-12 overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc"
       >
-        <div className="bg-gray-50 border-b border-gray-200 px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-between">
-          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            <div className="bg-green-600 p-2 sm:p-2.5 rounded-xl shadow-green-200 shadow-lg shrink-0">
-              <LayoutTemplate className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-            </div>
+        <div className="flex items-center justify-between border-b border-cc-line bg-cc-surface-muted px-4 py-4 sm:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <LayoutTemplate size={20} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
             <div className="min-w-0">
-              <h2 className="text-base sm:text-xl font-bold text-gray-900 truncate">Architecture & Design Specification</h2>
-              <p className="text-xs sm:text-sm text-gray-500 truncate">Project: {project?.name || 'Loading...'}</p>
+              <h2 className="m-0 truncate cc-text-h2 text-cc-ink">Architecture &amp; Design Specification</h2>
+              <p className="m-0 truncate cc-text-cell text-cc-ink-muted">Project: {project?.name || 'Loading...'}</p>
             </div>
-          </div>
-          <div className="flex gap-3">
           </div>
         </div>
-        
-        <div className="p-6 md:p-12 bg-[#FDFDFD]">
+
+        <div className="bg-cc-surface p-6 md:p-12">
           {design ? (
-            renderDesignContent()
+            <>
+              {designErrorStrip && <div className="mb-8">{designErrorStrip}</div>}
+              {renderDesignContent()}
+            </>
           ) : !modelAvailability.enabled('design') ? (
             /* Roadmap 1.2 / V25-A12 — a button that can only fail is worse than
                no button. The stage says which of the two reasons applies and
@@ -1001,41 +1031,23 @@ ${responseText.substring(0, 4000)}`;
               }
             />
           ) : (
-            <div className="text-center py-12">
-              <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-slate-800">No Solution Design Found</h3>
-              <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
-                The target architecture design is empty or was not generated automatically. Click below to trigger the AI Modernization engine.
-              </p>
-              {designError && (
-                <div className="mt-4 mx-auto max-w-lg bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 text-left">
-                  <div className="flex items-center gap-2 font-bold mb-1">
-                    <X size={14} className="text-red-500" /> Generation failed
-                  </div>
-                  <p className="text-red-600">{designError}</p>
-                  <p className="text-red-500/70 text-xs mt-2">This may happen with large ABAP programs. The retry uses a condensed analysis context.</p>
-                </div>
-              )}
-              <button
-                onClick={() => {
-                  if (project?.analysis) {
-                    const analysisStr = typeof project.analysis === 'object' ? JSON.stringify(project.analysis) : project.analysis;
-                    generateDesign(analysisStr);
-                  } else {
-                    setDesignError('Analysis data not found. Please go back to stage 1 (Analyze) and run the analysis first.');
-                  }
-                }}
-                className="mt-6 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm px-6 py-3 rounded-xl transition-all shadow-md active:scale-95"
+            <div className="space-y-4">
+              {designErrorStrip}
+              <CcEmptyState
+                illustration={<FileText size={32} aria-hidden={true} className="text-cc-ink-muted" />}
+                title="No Solution Design Found"
+                action={
+                  <CcButton variant="primary" density="cozy" icon={<RefreshCw size={16} aria-hidden={true} />} busy={loading} onClick={regenerate}>
+                    {designError ? 'Retry Generation' : 'Generate Solution Design'}
+                  </CcButton>
+                }
               >
-                <RefreshCw className="w-4 h-4" /> {designError ? 'Retry Generation' : 'Generate Solution Design'}
-              </button>
+                The target architecture design is empty or was not generated automatically. Generate it from the signed analysis.
+              </CcEmptyState>
             </div>
           )}
         </div>
       </div>
-
-
-
 
       <NavigationButtons 
         backPath={`/project/${projectId}/analyze`}
