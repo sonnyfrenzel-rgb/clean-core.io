@@ -12,7 +12,7 @@ export const metadata: Metadata = withTwitterCard({
   },
   openGraph: {
     title: 'Impressum – Legal Notice | Clean-Core.io',
-    description: 'Legal notice (Impressum) for Clean-Core.io according to § 5 TMG.',
+    description: 'Legal notice (Impressum) for Clean-Core.io according to § 5 DDG.',
     url: 'https://clean-core.io/impressum',
     type: 'website',
   },
