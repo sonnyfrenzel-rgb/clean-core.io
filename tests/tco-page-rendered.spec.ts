@@ -251,3 +251,30 @@ test('once an option leads, the panel says how far each assumption may move', as
   // explains itself would satisfy the loop above.
   expect(sentences.join(' ')).toMatch(/(rises by|falls by|stays between)\s[\d.,]+\s%/);
 });
+
+// QA 50585e6ab592: the printed estimate names the inputs it was priced with.
+// `tco-cost-inputs-guard` reads the footer out of the source; this prints the
+// page. The footer is `hidden print:block`, so on screen it is not there at all
+// and in print it has to be — carrying the figures as entered, in the currency
+// named, and "Not determined" for the one left empty rather than a zero.
+test('the printed page carries the entered cost figures, and an empty one as "Not determined"', async ({ page }) => {
+  test.setTimeout(180 * 1000);
+  await openEconomics(page, SCORED);
+  await page.fill('[data-tco-cost="dev-rate"]', String(DEV_RATE));
+  await page.fill('[data-tco-cost="user-rate"]', String(USER_RATE));
+  await page.fill('[data-cost-field="currency"]', CURRENCY);
+  // The investment stays empty.
+  await expect(page.locator('[data-tco-cost="investment"]')).toHaveValue('');
+
+  const footer = page.locator('[data-tco-print-inputs]');
+  await expect(footer, 'the footer prints only').toBeHidden();
+
+  await page.emulateMedia({ media: 'print' });
+  await expect(footer).toBeVisible();
+  await expect(footer).toContainText(`developer day rate ${formatAmount(DEV_RATE, CURRENCY)}`);
+  await expect(footer).toContainText(`key-user day rate ${formatAmount(USER_RATE, CURRENCY)}`);
+  await expect(footer).toContainText('modernisation investment Not determined');
+  await expect(footer).toContainText(`${LOC} LoC`);
+  expect(formatAmount(DEV_RATE, CURRENCY), 'the expected amount names the currency').toContain(CURRENCY);
+  await page.emulateMedia({ media: 'screen' });
+});
