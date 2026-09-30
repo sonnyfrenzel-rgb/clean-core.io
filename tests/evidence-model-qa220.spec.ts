@@ -15,6 +15,47 @@ const findings = (code: string, deployment: 'public' | 'private' = 'private') =>
   buildAbapEvidence(code, 'ZQA', deployment).findings;
 const src = (...lines: string[]) => lines.join('\n');
 
+test('an unlisted namespaced table is not asserted to be the customer\'s', () => {
+  const [write] = findings(src('REPORT zqa.', 'UPDATE /acme/t_order SET status = abap_true.'))
+    .filter((f) => f.kind === 'custom-table-write');
+  expect(write).toBeTruthy();
+  expect(write.title).not.toMatch(/Custom Table/);
+  expect(write.technicalDetail).toMatch(/does not say which/);
+});
+
+test('a write to a customer table is not called a clean core violation', () => {
+  const [write] = findings(src('REPORT zqa.', 'UPDATE zorders SET status = abap_true.'))
+    .filter((f) => f.kind === 'custom-table-write');
+  expect(write.title).toBe('Direct Write to Custom Table ZORDERS');
+  expect(write.cleanCoreImpact).not.toMatch(/violating clean core rules/i);
+});
+
+test('a curated replacement leaves the finding a static-parser finding', () => {
+  for (const f of findings(src('REPORT zqa.', 'SELECT * FROM vbak INTO TABLE @DATA(lt_vbak).'))) {
+    if (!f.sapReplacement) continue;
+    const expected = f.sapReplacement.confidence === 'Catalog Match' ? 'catalog-match' : 'static-parser';
+    expect(f.source, `${f.title}: ${f.sapReplacement.confidence}`).toBe(expected);
+  }
+  const vbak = findings(src('REPORT zqa.', 'SELECT * FROM vbak INTO TABLE @DATA(lt_vbak).'))
+    .find((f) => f.sapReplacement?.confidence === 'Verified');
+  expect(vbak, 'VBAK carries a curated replacement').toBeTruthy();
+  expect(vbak!.source).toBe('static-parser');
+});
+
+test('two modification regions under one transport request are two modifications', () => {
+  const mods = findings(src(
+    'REPORT zmod.',
+    '*{   INSERT         DEVK900123                                        1',
+    "  WRITE 'first'.",
+    '*}   INSERT',
+    "  WRITE 'standard'.",
+    '*{   INSERT         DEVK900123                                        2',
+    "  WRITE 'second'.",
+    '*}   INSERT',
+  )).filter((f) => f.kind === 'modification');
+  expect(mods.map((m) => m.lineStart)).toEqual([2, 6]);
+});
+
 test('a function-module name in a message literal is not a call', () => {
   const kinds = findings(src(
     'REPORT zqa.',

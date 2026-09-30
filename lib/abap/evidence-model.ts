@@ -228,9 +228,12 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
       ...(finding.objectName !== undefined ? { objectName: redactCredentials(finding.objectName) } : {}),
       technicalDetail: redactCredentials(finding.technicalDetail),
       id: `CC-${String(idCounter++).padStart(3, '0')}`,
-      // Default source: 'static-parser' for all scanner findings.
-      // Upgraded to 'catalog-match' when a sapReplacement is present.
-      source: finding.source || (finding.sapReplacement ? 'catalog-match' : 'static-parser'),
+      // Default source: 'static-parser' for all scanner findings. Upgraded to
+      // 'catalog-match' only when the replacement came out of SAP's release
+      // data; a curated pairing (`'Verified'`, see `replacementProvenance`) is
+      // this file's knowledge, and calling it a catalog match would cite SAP
+      // for it.
+      source: finding.source || (finding.sapReplacement?.confidence === 'Catalog Match' ? 'catalog-match' : 'static-parser'),
     });
   };
 
@@ -270,33 +273,48 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
       (!knownToSap && /^\/[^/]+\//.test(table));
     const hasReplacement = STANDARD_TABLE_MAP[table] !== undefined;
 
+    // A `/NS/` name SAP does not list is not SAP standard, but the namespace
+    // alone does not say whose it is — a partner's or the customer's. The
+    // finding is written for "not SAP's", and says no more than that.
+    const unownedNamespace = !table.startsWith('Z') && !table.startsWith('Y');
     if (isCustom) {
       if (isWrite) {
         addFinding({
           kind: 'custom-table-write',
-          title: `Direct Write to Custom Table ${table}`,
+          title: unownedNamespace
+            ? `Direct Write to Namespaced Table ${table}`
+            : `Direct Write to Custom Table ${table}`,
           severity: 'High',
           confidence: 'High',
           objectName: table,
           objectType: 'Database Table',
           lineStart: line,
           snippet: text,
-          technicalDetail: `Direct modification statement (INSERT/UPDATE/MODIFY/DELETE) on custom table ${table}.${routeNote}`,
-          cleanCoreImpact: 'Direct DB access bypasses the application layer and encapsulation, violating clean core rules.',
+          technicalDetail: unownedNamespace
+            ? `Direct modification statement (INSERT/UPDATE/MODIFY/DELETE) on ${table}, a reserved-namespace table SAP does not list — a partner's or the customer's; the name does not say which.${routeNote}`
+            : `Direct modification statement (INSERT/UPDATE/MODIFY/DELETE) on custom table ${table}.${routeNote}`,
+          // Writing to a table that is not SAP's is not itself a clean core
+          // violation (`extensibility-router.ts` says so for Private Edition);
+          // what the write costs is the missing application layer.
+          cleanCoreImpact: 'Direct DB access bypasses the application layer and encapsulation: no business object guards the rows it changes. Writing to a table that is not SAP\'s is not itself a clean core violation, but ABAP Cloud needs the table exposed through a RAP business object or moved side-by-side.',
           recommendation: `Expose custom tables via RAP Business Objects (Developer Extensibility) or use Side-by-Side persistence in BTP (CAP).`,
           targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
         });
       } else {
         addFinding({
           kind: 'table-access',
-          title: `Direct Read from Custom Table ${table}`,
+          title: unownedNamespace
+            ? `Direct Read from Namespaced Table ${table}`
+            : `Direct Read from Custom Table ${table}`,
           severity: 'Low',
           confidence: 'High',
           objectName: table,
           objectType: 'Database Table',
           lineStart: line,
           snippet: text,
-          technicalDetail: `SELECT statement reading from custom table ${table}.${routeNote}`,
+          technicalDetail: unownedNamespace
+            ? `SELECT statement reading from ${table}, a reserved-namespace table SAP does not list — a partner's or the customer's; the name does not say which.${routeNote}`
+            : `SELECT statement reading from custom table ${table}.${routeNote}`,
           cleanCoreImpact: 'Reading from custom tables directly is acceptable if wrapped in Tier-2 or CDS views, but should be checked for proper API usage.',
           recommendation: `Expose custom table via CDS view and wrap it in a RAP service layer.`,
           targetOptions: ['Developer Extensibility / RAP', 'Key User Extensibility']
@@ -746,19 +764,17 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
   // most severe clean core violation would be invisible to the engine.
   const rawLines = code.split(/\r?\n/);
   const MOD_MARKER = /^\s*[*"]\{\s*(INSERT|REPLACE|DELETE)\b(.*)$/i;
-  const seenModifications = new Set<string>();
   for (let i = 0; i < rawLines.length; i++) {
+    // One finding per modification: only the opening marker `*{` matches, the
+    // closing `*}` does not, so each region is counted once. Two regions in the
+    // same include under the same transport request are two modifications —
+    // they were once merged by request, and the count came out one short.
     const m = rawLines[i].match(MOD_MARKER);
     if (!m) continue;
     const action = m[1].toUpperCase();
     // The marker carries the transport request that registered the modification.
     const requestMatch = m[2].match(/([A-Z0-9]{3}K\d{6})/i);
     const request = requestMatch ? requestMatch[1].toUpperCase() : '';
-    // One finding per modification, not one per marker line (each block has an
-    // opening and a closing marker carrying the same request).
-    const dedupKey = request ? `${action}:${request}` : `${action}:${i}`;
-    if (seenModifications.has(dedupKey)) continue;
-    seenModifications.add(dedupKey);
 
     addFinding({
       kind: 'modification',
