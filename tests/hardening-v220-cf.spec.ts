@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { withPreviewPolicy } from '../lib/export-preview';
+import { getPublishedKeyring, resetSigningKeypairCache } from '../lib/audit-signing-keypair';
 
 /**
  * Hardening that shipped with the v2.20 security steps C and F.
@@ -63,5 +65,29 @@ test.describe('the read paths of the process routes and the model settings', () 
     const get = src.slice(src.indexOf('export async function GET'), src.indexOf('export async function POST'));
     expect(get, 'the read is unmetered').toContain('assertRateLimit(`model_stages_read:');
     expect(get.indexOf('assertRateLimit('), 'the limit comes after the work').toBeLessThan(get.indexOf('answerFor('));
+  });
+});
+
+test.describe('the list of retired signing keys', () => {
+  test('takes public keys only — a private key there is refused, not converted', () => {
+    const vars = ['AUDIT_SIGNING_PRIVATE_KEY', 'AUDIT_SIGNING_PUBLIC_KEYS_RETIRED'] as const;
+    const previous = vars.map((v) => process.env[v]);
+    const pem = () => crypto.generateKeyPairSync('ed25519').privateKey.export({ format: 'pem', type: 'pkcs8' }) as string;
+    const retiredPrivate = pem();
+    try {
+      process.env.AUDIT_SIGNING_PRIVATE_KEY = Buffer.from(pem()).toString('base64');
+      for (const shape of [retiredPrivate, retiredPrivate.replace(/\n/g, '\n')]) {
+        process.env.AUDIT_SIGNING_PUBLIC_KEYS_RETIRED = shape;
+        resetSigningKeypairCache();
+        const ring = getPublishedKeyring();
+        expect(ring.map((k) => k.status), 'a private key was published as a retired one').toEqual(['active']);
+      }
+    } finally {
+      vars.forEach((v, i) => {
+        if (previous[i] === undefined) delete process.env[v];
+        else process.env[v] = previous[i];
+      });
+      resetSigningKeypairCache();
+    }
   });
 });
