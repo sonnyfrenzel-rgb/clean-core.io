@@ -58,6 +58,11 @@ export default function EvidenceSweep({
     onCompleteRef.current = onComplete;
   }, [onComplete]);
   const completedRef = useRef(false);
+  // How often `onComplete` has actually been called, on the DOM as
+  // `data-sweep-completions` so a browser test can hold the "exactly once"
+  // promise below — the analyze page's own callback only sets a ref, which
+  // nothing outside the page can see (tests/evidence-sweep.spec.ts).
+  const [completionCalls, setCompletionCalls] = useState(0);
 
   // Sort findings by line position for sequential reveal
   const sortedFindings = useMemo(
@@ -88,6 +93,7 @@ export default function EvidenceSweep({
     setRevealedCount(sortedFindings.length);
     if (completedRef.current) return;
     completedRef.current = true;
+    setCompletionCalls((n) => n + 1);
     onCompleteRef.current();
   }, [sortedFindings.length]);
 
@@ -122,7 +128,14 @@ export default function EvidenceSweep({
   const current = sortedFindings[revealedCount - 1];
 
   return (
-    <div>
+    <div
+      data-evidence-sweep=""
+      data-sweep-state={isComplete ? 'complete' : 'running'}
+      data-sweep-revealed={revealedCount}
+      data-sweep-total={sortedFindings.length}
+      data-sweep-line={current ? current.lineStart : ''}
+      data-sweep-completions={completionCalls}
+    >
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-2 text-cc-ink-muted">
