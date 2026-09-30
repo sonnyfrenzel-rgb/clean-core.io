@@ -89,14 +89,22 @@ function detectStructural(model: ClassModel): SupportFinding[] {
   const hasInheritance = Object.values(model.nodes).some((n) => n.superClass || n.interfaces.length);
   if (hasInheritance) {
     const blocked = model.missing.some((m) => m.impact === 'blocks-resolution');
+    // A missing interface does not block the chain, but a hierarchy with a
+    // referenced type nobody supplied is not "fully resolved" either (QA full
+    // review of v2.20.0, a250f878343a).
+    const incomplete = !blocked && model.missing.length > 0;
     findings.push(baseFinding('deep-inheritance', {
-      level: blocked ? 'partial' : 'fully',
+      level: blocked || incomplete ? 'partial' : 'fully',
       detail: blocked
         ? 'Inheritance chain incomplete — at least one ancestor source is missing.'
-        : `Inheritance chain fully resolved (${model.linearization.length} types in the hierarchy).`,
+        : incomplete
+          ? `Inheritance chain resolved (${model.linearization.length} types in the hierarchy), but ${model.missing.length} referenced type(s) listed above were not provided, so the hierarchy is not fully known.`
+          : `Inheritance chain fully resolved (${model.linearization.length} types in the hierarchy).`,
       recommendation: blocked
         ? 'Provide the missing ancestor sources listed above, then re-run.'
-        : 'No action required; structure mirrored 1:1 in TypeScript.',
+        : incomplete
+          ? 'Provide the missing sources listed above to complete the hierarchy, then re-run.'
+          : 'No action required; structure mirrored 1:1 in TypeScript.',
       requiresSignOff: blocked,
       location: model.nodes[model.root]?.source ?? undefined,
     }));
@@ -125,8 +133,21 @@ export function detectFindings(model: ClassModel, sources: SourceFile[]): Suppor
       const line = lines[i];
       if (!line.trim()) continue;
 
+      // A statement may break its line anywhere — `CALL FUNCTION` on one line
+      // and `lv_name` on the next is one dynamic call, and neither line alone
+      // matched (QA full review of v2.20.0, 2f79b8aedde5). Each pattern is asked
+      // about this line joined to the next one that holds code; a match counts
+      // for this line only when it starts here, so a construct written wholly
+      // on the next line is still reported there, once.
+      let next = '';
+      for (let j = i + 1; j < lines.length; j++) {
+        if (lines[j].trim()) { next = lines[j]; break; }
+      }
+      const joined = `${line} ${next}`;
+
       for (const p of BODY_PATTERNS) {
-        if (p.re.test(line)) {
+        const match = p.re.exec(joined);
+        if (match && match.index < line.length) {
           findings.push(baseFinding(p.construct, {
             detail: p.why,
             recommendation: SUPPORT_MATRIX[p.construct].notes,
