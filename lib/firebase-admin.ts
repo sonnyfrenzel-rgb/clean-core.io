@@ -1116,15 +1116,25 @@ export async function approveTenantWithToken(
       consume();
     });
   } else if (action === 'reject') {
+    // The same condition as the approval: a request that is still open. A
+    // manual grant in the admin console resolves the request as well, and a
+    // reject link used afterwards must not reverse it (QA review of
+    // a7e0ae36c896) — the grant also retires the nonce (`adminGrantS4`), this
+    // is the second door.
+    const requestRef: DocumentReference = db.collection('tenant_access_requests').doc(uid);
     await db.runTransaction(async (tx: Transaction) => {
       const consume = await consumeNonce(tx);
+      const snapshot = await tx.get(requestRef);
+      const status = snapshot.exists ? (snapshot.data()?.status as string | undefined) : undefined;
+      if (!snapshot.exists) throw new Error('This tenant access request no longer exists.');
+      if (status && status !== 'pending') throw new Error(`This tenant access request is already ${status}.`);
       // Clean request status on user document
       tx.set(db.collection('users').doc(uid), {
         s4TenantAccessRequested: false,
         s4TenantAccessAllowed: false
       }, { merge: true });
       // Delete tenant access request document
-      tx.delete(db.collection('tenant_access_requests').doc(uid));
+      tx.delete(requestRef);
       consume();
     });
   }
@@ -1321,9 +1331,22 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
   await logAuditEvent(db, adminUid, 'REVOKE_USER', targetUid);
 }
 
+/**
+ * A decision made in the admin console answers the open request as well, so the
+ * approve and reject links mailed for it stop working: their nonce is removed
+ * first, before the decision is written. Otherwise a reject link used after a
+ * manual grant took the access away again, and an approve link used after a
+ * manual revocation — which puts the request back to `pending` — granted it
+ * again (QA review of a7e0ae36c896).
+ */
+async function retireTenantApprovalLinks(db: Firestore, targetUid: string): Promise<void> {
+  await db.collection(TENANT_APPROVAL_NONCES).doc(targetUid).delete();
+}
+
 export async function adminGrantS4(adminUid: string, targetUid: string) {
   await ensureInitialized();
   const { db } = await getAdminDb();
+  await retireTenantApprovalLinks(db, targetUid);
   await db.collection('users').doc(targetUid).set({
     s4TenantAccessAllowed: true,
     s4TenantAccessRequested: false
@@ -1339,6 +1362,7 @@ export async function adminGrantS4(adminUid: string, targetUid: string) {
 export async function adminRevokeS4(adminUid: string, targetUid: string) {
   await ensureInitialized();
   const { db } = await getAdminDb();
+  await retireTenantApprovalLinks(db, targetUid);
   await db.collection('users').doc(targetUid).set({
     s4TenantAccessAllowed: false,
     s4TenantAccessRequested: false

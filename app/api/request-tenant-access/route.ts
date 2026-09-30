@@ -70,6 +70,25 @@ export async function POST(request: NextRequest) {
     // Action-bound, expiring tokens; fail-closed (no fallback secret). Both carry
     // this request's one-time nonce (UX-152): whichever link is used first
     // consumes it, and a new request replaces it, so no link outlives its request.
+    //
+    // The request is recorded on the profile first, before the nonce and the
+    // mail. The gate above is a read; an erasure that completes after it used
+    // to be noticed only by the update at the end — after the nonce had been
+    // written for a uid that no longer exists and the administrator had been
+    // mailed the applicant's details (QA review of a7e0ae36c896).
+    // `updateExistingProfile` fails on a missing profile with the gate's own
+    // 404, so an erased account now stops here, with nothing written or sent.
+    const { FieldValue } = await getAdminDb();
+    await updateExistingProfile(uid, {
+      s4TenantAccessRequested: true,
+      // False until the administrator's mail is accepted below, so a request
+      // that reached nobody is findable rather than indistinguishable from one
+      // an administrator is sitting on.
+      s4TenantAccessNotified: false,
+      s4TenantAccessRequestedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
     const nonce = await issueTenantApprovalNonce(uid);
     const approveToken = createApprovalToken(uid, 'tenant', 'approve', undefined, nonce);
     const rejectToken = createApprovalToken(uid, 'tenant', 'reject', undefined, nonce);
@@ -286,22 +305,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Set requested flag on user document server-side (F-03 / Audit security fix)
+    // Whether the administrator was told, beside the request recorded above.
     //
-    // An update, not a merge-set. The gate above ran before the nonce write and
-    // the mail; an erasure that deletes `users/{uid}` in between used to be
-    // undone here, because a merge onto a missing document creates it (QA full
-    // review of fc787674705f, 2eb73a29b0fd). `updateExistingProfile` fails on a
-    // missing profile with the gate's own 404, so the erased account stays
-    // erased and the caller is refused.
-    const { FieldValue } = await getAdminDb();
+    // An update, not a merge-set: a merge onto a missing document creates it,
+    // and an erasure that deleted `users/{uid}` in the meantime used to be
+    // undone here (QA full review of fc787674705f, 2eb73a29b0fd).
+    // `updateExistingProfile` fails on a missing profile with the gate's own
+    // 404, so the erased account stays erased and the caller is refused.
     await updateExistingProfile(uid, {
-      s4TenantAccessRequested: true,
-      // Recorded either way, so an un-notified request is findable rather than
-      // indistinguishable from one an administrator is sitting on.
       s4TenantAccessNotified: adminNotified,
-      s4TenantAccessRequestedAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     if (!adminNotified) {
