@@ -103,7 +103,10 @@
         "originalRecommendation",
         "recommendationConfidence",
         "recommendationJustification",
-        "inputManifest"
+        "inputManifest",
+        "assessmentProfile",
+        "profileCoverage",
+        "assessmentSubject"
       ],
       "unsignedFieldsOnTheRun": [
         "analysis",
@@ -119,6 +122,7 @@
       "transformationBypass",
       "legacyCode",
       "s4Deployment",
+      "assessmentTarget",
       "updatedAt",
       "worklist",
       "extensibilityRoute",

@@ -133,6 +133,20 @@ export interface Project {
    * on a hydrated project. Readers fall back to `auditMetadata.inputManifest`.
    */
   inputManifest?: import('./input-manifest').InputManifest;
+  /**
+   * Roadmap 7.10 - run fields, arriving here on a hydrated project like
+   * `inputManifest` above: the profile the active run was assessed against,
+   * its coverage and the subject hash. Absent for a run signed before 7.10.
+   */
+  assessmentProfile?: import('./assessment-profile').AssessmentProfile;
+  profileCoverage?: import('./assessment-target').RecordedProfileCoverage;
+  assessmentSubject?: string;
+  /**
+   * Roadmap 7.10 - what the owner declared about the target (release,
+   * component levels, language version per object). A project field, written
+   * by `/api/runs/create` with the Admin SDK and not client-writable.
+   */
+  assessmentTarget?: import('./assessment-target').AssessmentTarget;
 
   // v1.22: Usage Import & Risk Prioritization
   usageReport?: import('./abap/usage-model').UsageReport;
@@ -194,6 +208,8 @@ export interface AuditMetadata {
    * still say which inputs the current result was computed from.
    */
   inputManifest?: import('./input-manifest').InputManifest;
+  /** Roadmap 7.10 - `assessmentSubject` of the active run, so the next run can tell a profile change. */
+  assessmentSubject?: string;
 }
 
 /** Single ABAP artifact extracted from uploaded code */

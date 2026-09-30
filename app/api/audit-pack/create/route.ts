@@ -9,7 +9,9 @@ import { signEd25519, getSigningKeypair } from '@/lib/audit-signing-keypair';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { APP_VERSION } from '@/lib/version';
 import { signOffKey } from '@/lib/artefact-digest';
-import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
+import { getCatalogSnapshotRef, getMergedCatalogVersion } from '@/lib/abap/catalog-service';
+import { PROFILE_INPUT_ID } from '@/lib/assessment-profile';
+import { liveProfileDigest, recordedProfileOf } from '@/lib/assessment-target';
 import {
   INPUT_IDS,
   inputLabel,
@@ -211,6 +213,18 @@ export async function POST(req: NextRequest) {
               ? referenceDigest(INPUT_IDS.ruleset, runData.rulesetVersion)
               : null,
         };
+        // Roadmap 7.10 - the target profile, rebuilt from the project as it is
+        // now and against the catalog snapshot this build reads. A pack is not
+        // signed over a run whose profile is no longer the project's. A run
+        // signed before 7.10 recorded none and is not asked about one.
+        const recordedProfile = recordedProfileOf(runData);
+        if (recordedProfile) {
+          live[PROFILE_INPUT_ID] = liveProfileDigest({
+            project: projectData,
+            recorded: recordedProfile,
+            catalogSnapshot: getCatalogSnapshotRef(),
+          });
+        }
         const unverified = invalidatingInputs(unverifiedInputs(recordedManifest, live));
         if (unverified.length > 0) {
           blockers.push({

@@ -9,6 +9,8 @@ import {
 } from './input-manifest';
 import { coveringTestRunReceipt, executedPasses } from './test-receipt';
 import { isEngineDocumentation } from './process-documentation';
+import { PROFILE_INPUT_ID } from './assessment-profile';
+import { liveProfileDigest, recordedProfileOf } from './assessment-target';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -253,15 +255,23 @@ export function staleness(project: Project | null): Staleness {
   // before it signs anything.
   const recorded = project.inputManifest ?? project.auditMetadata?.inputManifest ?? null;
   const deployment = typeof project.s4Deployment === 'string' && project.s4Deployment ? project.s4Deployment : null;
+  // Roadmap 7.10 - the profile, for a run that recorded one: rebuilt from what
+  // the project states now against the run's own catalog snapshot and rule
+  // version (the catalog is the server's to compare). A run signed before 7.10
+  // is not asked about a profile it never recorded.
+  const recordedProfile = recordedProfileOf(project);
   const unverified =
     project.activeRunId && recorded
       ? invalidatingInputs(
           unverifiedInputs(recorded, {
             [INPUT_IDS.source]: source ? sha256Hex(source) : null,
             [INPUT_IDS.deployment]: deployment ? sha256Hex(deployment) : null,
+            ...(recordedProfile ? { [PROFILE_INPUT_ID]: liveProfileDigest({ project, recorded: recordedProfile }) } : {}),
           }),
         )
       : [];
+  // A sign-off given under one target profile is not a sign-off under another.
+  const profileMoved = unverified.some((u) => u.id === PROFILE_INPUT_ID);
 
   return {
     sourceChanged,
@@ -269,7 +279,7 @@ export function staleness(project: Project | null): Staleness {
     code: sourceChanged || unchangedSince('generatedCode'),
     tests: sourceChanged || unchangedSince('testCases'),
     docs: sourceChanged || unchangedSince('documentation'),
-    signOff: (sourceChanged && project.approvedByArchitect === true) || signOffUnchanged,
+    signOff: ((sourceChanged || profileMoved) && project.approvedByArchitect === true) || signOffUnchanged,
     unverifiedInputs: unverified,
   };
 }

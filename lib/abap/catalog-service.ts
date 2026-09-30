@@ -203,6 +203,45 @@ export function getMergedCatalogVersion(): string {
 }
 
 
+/* ---------- which snapshot answers (roadmap 7.10, CR-02) ---------- */
+
+/**
+ * The catalog snapshot every lookup in this module reads: the registry key of
+ * the release file and the digest of the raw file SAP served.
+ *
+ * The key alone is not an identity — `latest` is a moving name — so the digest
+ * travels with it into the run's `AssessmentProfile`. This is what makes a
+ * result say *which* catalog answered, and a resync visible as a different one.
+ */
+export function getCatalogSnapshotRef(): { registryKey: string; sourceSha256: string } {
+  return { registryKey: CR.meta?.release || '', sourceSha256: CR.meta?.sourceSha256 || '' };
+}
+
+/** A lookup asked for a snapshot this build does not ship. Never answered from another one. */
+export class CatalogSnapshotNotShipped extends Error {
+  readonly snapshot: string;
+  constructor(snapshot: string) {
+    super(
+      `The catalog snapshot "${snapshot}" is not shipped with this build. No grade is given from another snapshot in its place.`,
+    );
+    this.name = 'CatalogSnapshotNotShipped';
+    this.snapshot = snapshot;
+  }
+}
+
+/**
+ * The snapshot argument of the lookups below.
+ *
+ * Omitted, the lookup reads the one release file this build ships, as it
+ * always has. Named, it must be that file: `pce-2023-3` asked for and `latest`
+ * answered would be exactly the silent substitution 7.10 forbids ("ein
+ * Latest-Eintrag ersetzt keinen älteren Release-Snapshot still").
+ */
+export function assertSnapshot(snapshot: string | undefined): void {
+  if (snapshot === undefined) return;
+  if (snapshot !== getCatalogSnapshotRef().registryKey) throw new CatalogSnapshotNotShipped(snapshot);
+}
+
 /* ---------- clean core level (A–D) lookup ---------- */
 
 /**
@@ -212,7 +251,8 @@ export function getMergedCatalogVersion(): string {
  * never import this into a client component. Client surfaces get the resolved
  * grade, not the map.
  */
-export function getSapObjectStates(objectName: string): SapObjectStates {
+export function getSapObjectStates(objectName: string, snapshot?: string): SapObjectStates {
+  assertSnapshot(snapshot);
   const key = (objectName || '').toUpperCase().trim();
   const release = CR.entries?.[key];
   const classification = CR_CLASS.entries?.[key];
@@ -240,8 +280,8 @@ export function getSapObjectStates(objectName: string): SapObjectStates {
  * This is the answer for the *name*. Where the code's use of the object is
  * known, `gradeSapObjectUse` is the answer the analysis shows.
  */
-export function gradeSapObject(objectName: string): GradedObject {
-  return gradeFromSapStates(getSapObjectStates(objectName));
+export function gradeSapObject(objectName: string, snapshot?: string): GradedObject {
+  return gradeFromSapStates(getSapObjectStates(objectName, snapshot));
 }
 
 /**
@@ -249,8 +289,8 @@ export function gradeSapObject(objectName: string): GradedObject {
  * shows next to a table the code reads or writes (`/api/abcd-classify`), and
  * the grade the reference corpus compares, so the two cannot drift apart.
  */
-export function gradeSapObjectUse(objectName: string, use: ObjectUse | null): GradedObject {
-  return gradeFromSapStatesForUse(getSapObjectStates(objectName), use);
+export function gradeSapObjectUse(objectName: string, use: ObjectUse | null, snapshot?: string): GradedObject {
+  return gradeFromSapStatesForUse(getSapObjectStates(objectName, snapshot), use);
 }
 
 /* ---------- the two dimensions of a catalog object (roadmap 7.9, CR-01) ---------- */

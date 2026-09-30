@@ -3,7 +3,7 @@ import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, reserveRunQuota, refundRunQuota, assertMfaSatisfied, type RunQuotaResult } from '@/lib/firebase-admin';
 import { APP_VERSION } from '@/lib/version';
-import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
+import { getCatalogSnapshotRef, getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
@@ -18,6 +18,15 @@ import { looksLikeAbap } from '@/lib/abap-input-check';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { readModelGaps, type ModelGap } from '@/lib/model-gaps';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { profileCoverage, profileManifestInput, PROFILE_VERSION, type AssessmentProfile } from '@/lib/assessment-profile';
+import {
+  buildAssessmentProfile,
+  declaredTargetOf,
+  normaliseAssessmentTarget,
+  repositoryObjectsOf,
+  runProfileRecord,
+} from '@/lib/assessment-target';
+import { INPUT_IDS } from '@/lib/input-manifest';
 
 /**
  * The most ABAP one request may be asked to analyse.
@@ -198,9 +207,68 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let targetDeployment = body.s4Deployment || projectData?.s4Deployment || 'public';
-    if (targetDeployment !== 'public' && targetDeployment !== 'private') {
-      targetDeployment = 'public'; // Strict validation
+    // Roadmap 7.10 (CR-02) - the edition is the first fact of the target
+    // profile, and an edition this product cannot assess is refused, visibly.
+    //
+    // It used to be coerced: anything that was not `public` or `private` became
+    // `public` ("Strict validation"), so a request for an on-premise or a BTP
+    // target was answered with a signed Public-Cloud assessment that said
+    // nothing about the swap - the silent substitution CR-02 names. Absent
+    // still means the Public Edition, as it always has, and the run records
+    // that it was assessed against it; a *named* edition is taken at its word.
+    const rawDeployment: unknown = body.s4Deployment || projectData?.s4Deployment || 'public';
+    if (rawDeployment !== 'public' && rawDeployment !== 'private') {
+      const asked = String(rawDeployment).slice(0, 40);
+      const refusal = profileCoverage({
+        profileVersion: PROFILE_VERSION,
+        edition: asked as AssessmentProfile['edition'],
+        release: '',
+        components: [],
+        catalogSnapshot: getCatalogSnapshotRef(),
+        ruleVersion: 'rules-v1.0',
+        languageVersions: [],
+      });
+      const sentence =
+        refusal.state === 'rejected'
+          ? refusal.sentence
+          : `The evidence engine routes for the Public and the Private Edition only. No assessment is made against the ${asked} edition.`;
+      return NextResponse.json({ error: sentence, code: 'profile-rejected' }, { status: 422 });
+    }
+    const targetDeployment: 'public' | 'private' = rawDeployment;
+
+    // What the owner declares about the target - release, component levels,
+    // the ABAP language version per object. From the request when the analyze
+    // stage sends one; otherwise what the project declared with its last run,
+    // so a caller that does not know about profiles (an older tab) does not
+    // quietly erase a declaration. A declaration that does not parse is
+    // refused: guessing which half the owner meant would be a profile nobody
+    // declared.
+    let assessmentTarget = declaredTargetOf(projectData);
+    if (body.targetProfile !== undefined) {
+      const parsed = normaliseAssessmentTarget(body.targetProfile);
+      if (!parsed.ok) {
+        return NextResponse.json({ error: parsed.error, code: 'profile-malformed' }, { status: 400 });
+      }
+      assessmentTarget = parsed.target;
+    }
+
+    // The profile this run is assessed against: the edition and the
+    // declaration above, the objects the source defines, the catalog snapshot
+    // the engine reads (key *and* digest) and the rule version. Built before
+    // the quota is reserved, so a profile that is refused costs nothing.
+    const rulesetVersion = 'rules-v1.0';
+    const assessmentProfile = buildAssessmentProfile({
+      edition: targetDeployment,
+      target: assessmentTarget,
+      objects: repositoryObjectsOf(extractCodeInventory(legacyCode)),
+      catalogSnapshot: getCatalogSnapshotRef(),
+      ruleVersion: rulesetVersion,
+    });
+    const assessmentCoverage = profileCoverage(assessmentProfile);
+    if (assessmentCoverage.state === 'rejected') {
+      // Only reachable when the build's catalog carries no digest (the stub
+      // before the first sync): nothing identifies what would be looked up.
+      return NextResponse.json({ error: assessmentCoverage.sentence, code: 'profile-rejected' }, { status: 422 });
     }
 
     // Load user profile from database to determine BYOK configuration server-side (Finding P0/P1)
@@ -455,10 +523,13 @@ export async function POST(req: NextRequest) {
     // left every earlier result reading as current. The manifest is the one
     // list, inside the signed payload, and `lib/input-manifest.ts` is the only
     // place that knows how it is formed.
-    const rulesetVersion = 'rules-v1.0';
     const catalogVersion = getMergedCatalogVersion();
+    // Roadmap 7.10 - the source under this profile, and the coverage the run
+    // may claim. Inside the signed payload; `unconfirmed` is signed as such.
+    const profileRecord = runProfileRecord(assessmentProfile, hashHex);
     const inputManifest = buildInputManifest(
-      analysisRunInputs({
+      [
+        ...analysisRunInputs({
         sourceSha256: hashHex,
         deploymentTarget: targetDeployment,
         catalogVersion,
@@ -474,7 +545,12 @@ export async function POST(req: NextRequest) {
             : modelParticipation === 'narrative'
               ? 'unattested'
               : null,
-      }),
+        }),
+        // `source-artefact`: a different profile invalidates what was derived
+        // under this one, through the path 0.6 already built. Throws on a
+        // rejected profile, which was refused above.
+        profileManifestInput(assessmentProfile),
+      ],
       projectData?.auditMetadata?.inputManifest || null,
     );
 
@@ -531,6 +607,14 @@ export async function POST(req: NextRequest) {
       originalRecommendation: extensibilityReport.recommendedRoute,
       recommendationConfidence: extensibilityReport.confidenceScore,
       recommendationJustification: extensibilityReport.rationale,
+      // Roadmap 7.10 - `assessmentProfile`, `profileCoverage`, `assessmentSubject`.
+      // A run signed before 7.10 has none of the three and verifies as it was
+      // sealed (`recomputeStoredRunHash` hashes the stored document); it is
+      // labelled as such (`lib/legacy-project.ts`), not given a profile after
+      // the fact.
+      assessmentProfile: profileRecord.assessmentProfile,
+      profileCoverage: profileRecord.profileCoverage,
+      assessmentSubject: profileRecord.assessmentSubject,
     };
 
     // Calculate cryptographic runHash over sorted canonical representation of complete payload (Finding 2)
@@ -610,9 +694,39 @@ export async function POST(req: NextRequest) {
       // Rebuilt from the transaction's own snapshot rather than the one read at
       // the start: the source is proven unchanged, the artefacts around it are not.
       const previousInTx: string | undefined = freshData.auditMetadata?.inputFingerprint?.sha256 || previousSha256;
+      // Roadmap 7.10 - "ein Profilwechsel ändert den Subject-Hash und entwertet
+      // abhängige Freigaben". The same code under another profile is another
+      // subject: the design, the code, the tests, the documentation and the
+      // sign-off standing now were made for the old one. Recorded with the
+      // mechanism a source change uses, so every reader that already treats a
+      // changed source as stale treats a changed profile the same way.
+      //
+      // The previous subject comes from the project's own server-written
+      // mirror. A project whose last run predates 7.10 has none; there the
+      // one profile fact that run did record - the deployment in its manifest,
+      // or failing that on the project - is compared, and nothing else is
+      // read into it.
+      const previousSubject: unknown = freshData.auditMetadata?.assessmentSubject;
+      const previousDeploymentEntry = Array.isArray(freshData.auditMetadata?.inputManifest?.inputs)
+        ? freshData.auditMetadata.inputManifest.inputs.find((i: { id?: unknown }) => i?.id === INPUT_IDS.deployment)
+        : null;
+      const previousDeployment: unknown =
+        typeof previousDeploymentEntry?.revision === 'string' ? previousDeploymentEntry.revision : freshData.s4Deployment;
+      const sourceDiffers = Boolean(previousInTx && previousInTx !== hashHex);
+      const profileDiffers =
+        Boolean(previousInTx) &&
+        !sourceDiffers &&
+        (typeof previousSubject === 'string'
+          ? previousSubject !== profileRecord.assessmentSubject
+          : typeof previousDeployment === 'string' && previousDeployment !== '' && previousDeployment !== targetDeployment);
       const sourceChange =
-        previousInTx && previousInTx !== hashHex
-          ? buildSourceChangeRecord(freshData as Record<string, unknown>, previousInTx, runId, new Date().toISOString())
+        previousInTx && (sourceDiffers || profileDiffers)
+          ? {
+              ...buildSourceChangeRecord(freshData as Record<string, unknown>, previousInTx, runId, new Date().toISOString()),
+              ...(profileDiffers
+                ? { reason: 'profile' as const, previousSubject: typeof previousSubject === 'string' ? previousSubject : null }
+                : {}),
+            }
           : null;
 
       // runs/{runId} is client-write-blocked; written here so the new run cannot
@@ -629,6 +743,10 @@ export async function POST(req: NextRequest) {
           transformationBypass: true,
           legacyCode,
           s4Deployment: targetDeployment,
+          // Roadmap 7.10 - the owner's declaration, kept for the next run and
+          // for the live comparison. Admin SDK only: it is not in the client
+          // allowlist of `firestore.rules`, so it changes with a run or not at all.
+          assessmentTarget,
           updatedAt: new Date(),
 
           // Save client-writable/interactive fields initially — findings plus the
@@ -662,6 +780,9 @@ export async function POST(req: NextRequest) {
             // Roadmap 0.5 — the same manifest the run signed, mirrored where a
             // reader that holds only the project document can find it.
             inputManifest,
+            // Roadmap 7.10 - the subject of the active run, so the next run can
+            // tell a profile change from a re-analysis of the same subject.
+            assessmentSubject: profileRecord.assessmentSubject,
           },
         },
         { merge: true },
@@ -753,6 +874,9 @@ export async function POST(req: NextRequest) {
       runId,
       runHash,
       signature,
+      // Roadmap 7.10 - what the run was assessed against and what it may claim.
+      profileCoverage: profileRecord.profileCoverage,
+      assessmentSubject: profileRecord.assessmentSubject,
       // What the run actually recorded about the model's part in it. The caller
       // cannot work this out for itself — whether the receipt verified is
       // decided here — and a browser that reported its own guess would be the
