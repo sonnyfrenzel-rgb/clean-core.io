@@ -30,7 +30,12 @@ import {
   type CostOption,
   type EffortDays,
 } from '@/lib/cost-assumptions';
-import { Scale, AlertTriangle, Sigma } from 'lucide-react';
+import { Scale, AlertTriangle, Sigma, CircleAlert } from 'lucide-react';
+import CcButton from '@/components/cc/Button';
+import CcCheckbox from '@/components/cc/Checkbox';
+import CcField, { CcRequiredNote } from '@/components/cc/Field';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import { CcTag } from '@/components/cc/Tag';
 
 /**
  * The options the panel offers, by name only. A label is not a figure: every
@@ -106,6 +111,18 @@ function withOneOffCorner(
   return empty ? null : next;
 }
 
+/**
+ * The card of this stage (DESIGN.md §1.4), with the print rule of §7.1 that
+ * `cc-card` carries: outlined, never torn across a page.
+ */
+const CARD = 'cc-card rounded-cc-card border bg-cc-surface shadow-cc';
+
+/**
+ * A figure the reader states. Every field on this panel is mandatory (ADR-035),
+ * so every one carries the asterisk and `aria-required`. An empty field says
+ * so once the reader has left it (§2.7: on blur, not on the first keystroke);
+ * until then the option's own "Not determined" below names the gap.
+ */
 function NumField({
   id,
   label,
@@ -119,29 +136,34 @@ function NumField({
   onChange: (v: number | null) => void;
   hint?: string;
 }) {
+  const [left, setLeft] = useState(false);
+  const missing = value === null && left;
   return (
-    <label className="block space-y-1">
-      <span className="flex justify-between gap-2 text-[11px] font-bold uppercase tracking-wide text-gray-700">
-        <span>{label}</span>
-        <span className={value === null ? 'text-amber-600' : 'text-blue-650'}>
-          {value === null ? 'Your figure' : value.toLocaleString('en-GB')}
-        </span>
-      </span>
-      <input
-        type="number"
-        inputMode="decimal"
-        min={0}
-        step="any"
-        value={value ?? ''}
-        placeholder="— enter your figure"
-        data-cost-field={id}
-        onChange={(e) => onChange(num(e.target.value))}
-        className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
-          value === null ? 'border-amber-300' : 'border-gray-200'
-        }`}
-      />
-      {hint ? <span className="block text-[10px] font-medium text-gray-400">{hint}</span> : null}
-    </label>
+    <CcField
+      label={label}
+      required
+      help={hint}
+      valueState={missing ? 'warning' : undefined}
+      message={missing ? 'Your figure — there is no default.' : undefined}
+    >
+      {({ id: controlId, describedBy, ariaRequired, className }) => (
+        <input
+          id={controlId}
+          type="number"
+          inputMode="decimal"
+          min={0}
+          step="any"
+          value={value ?? ''}
+          placeholder="— enter your figure"
+          data-cost-field={id}
+          aria-required={ariaRequired}
+          aria-describedby={describedBy}
+          onBlur={() => setLeft(true)}
+          onChange={(e) => onChange(num(e.target.value))}
+          className={className}
+        />
+      )}
+    </CcField>
   );
 }
 
@@ -167,7 +189,7 @@ function EffortFields({
     value && Number.isFinite(value[key]) ? (value[key] as number) : null;
   return (
     <fieldset className="space-y-2">
-      <legend className="text-[11px] font-black uppercase tracking-wide text-slate-500">{label}</legend>
+      <legend className="cc-text-label text-cc-ink-muted">{label}</legend>
       <div className="grid grid-cols-2 gap-3">
         <NumField id={`${idPrefix}-dev`} label="Dev days" value={shown('devDays')} onChange={(v) => set('devDays', v)} />
         <NumField id={`${idPrefix}-test`} label="Test days" value={shown('testDays')} onChange={(v) => set('testDays', v)} />
@@ -211,13 +233,16 @@ export default function OptionComparison({
     setStated((a) => ({ ...a, options: a.options.map((o) => (o.id === id ? { ...o, ...p } : o)) }));
 
   return (
-    <section className="space-y-6" data-cost-comparison>
-      <div className="bg-white border border-gray-150 rounded-[2rem] p-6 md:p-8 shadow-sm print:hidden">
-        <h2 className="text-lg font-black uppercase text-[#0b1c30] flex items-center gap-2">
-          <Scale className="w-5 h-5 text-blue-600" />
-          Options and costs
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+    <section className="space-y-4" data-cost-comparison aria-labelledby="cost-comparison-title">
+      <div className={`p-4 md:p-6 print:hidden border-cc-line ${CARD}`}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="cost-comparison-title" className="cc-text-h2 text-cc-ink flex items-center gap-2">
+            <Scale size={16} aria-hidden="true" className="text-cc-ink-muted" />
+            Options and costs
+          </h2>
+          <CcRequiredNote />
+        </div>
+        <p className="mt-2 cc-text-body text-cc-ink-muted">
           Every amount below comes from one revision of the assumptions you state here — there is no
           default currency, no default day rate and no default observation period. While an option is
           missing a mandatory field, no option is called cheapest.
@@ -225,29 +250,7 @@ export default function OptionComparison({
 
         {/* The shared assumptions. */}
         <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
-          <label className="block space-y-1">
-            <span className="flex justify-between gap-2 text-[11px] font-bold uppercase tracking-wide text-gray-700">
-              <span>Currency</span>
-              <span className={currency ? 'text-blue-650' : 'text-amber-600'}>
-                {currency || 'Yours to state'}
-              </span>
-            </span>
-            <input
-              type="text"
-              value={currency}
-              maxLength={8}
-              placeholder="e.g. EUR — no default"
-              data-cost-field="currency"
-              onChange={(e) => onCurrencyChange(e.target.value.trim().toUpperCase())}
-              className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
-                currency ? 'border-gray-200' : 'border-amber-300'
-              }`}
-            />
-            <span className="block text-[10px] font-medium text-gray-400">
-              The currency your day rates are in &mdash; for this panel and for the forecast above it.
-              Nothing here assumes one.
-            </span>
-          </label>
+          <CurrencyField currency={currency} onCurrencyChange={onCurrencyChange} />
 
           <NumField
             id="dev-day-rate"
@@ -281,39 +284,36 @@ export default function OptionComparison({
               }
               hint="How often the running effort falls due."
             />
-            <label className="flex items-start gap-2 text-[11px] font-semibold text-slate-600">
-              <input
-                type="checkbox"
-                data-cost-field="release-cadence-confirmed"
+            {/* The confirmation is part of the mandatory cadence (ADR-035). */}
+            <div data-cost-field="release-cadence-confirmed">
+              <CcCheckbox
+                label={'I confirm this cadence. Until then it is a proposal, and no amount is shown (ADR‑035).'}
+                required
                 checked={assumptions.releaseCadence?.confirmed ?? false}
                 disabled={!assumptions.releaseCadence}
-                onChange={(e) =>
+                onChange={(checked) =>
                   patch(
                     assumptions.releaseCadence
-                      ? { releaseCadence: { ...assumptions.releaseCadence, confirmed: e.target.checked } }
+                      ? { releaseCadence: { ...assumptions.releaseCadence, confirmed: checked } }
                       : {},
                   )
                 }
-                className="mt-0.5 h-4 w-4 accent-blue-600"
               />
-              <span>
-                I confirm this cadence. Until then it is a proposal, and no amount is shown
-                (ADR&#8209;035).
-              </span>
-            </label>
+            </div>
           </div>
         </div>
 
         {proposal ? (
-          <p className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-xs leading-relaxed text-amber-900" data-cost-proposal>
-            <strong>A proposal, not a field.</strong> {proposal.sentence} Use the buttons on each option
-            to take it over; nothing applies it for you.
-          </p>
+          <div className="mt-6" data-cost-proposal>
+            <CcMessageStrip state="warning" headline="A proposal, not a field.">
+              {proposal.sentence} Use the buttons on each option to take it over; nothing applies it for you.
+            </CcMessageStrip>
+          </div>
         ) : null}
       </div>
 
       {/* One card per option: the fields, then what it costs or why it does not. */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {assumptions.options.map((option) => {
           const cost = comparison.costs.find((c) => c.optionId === option.id);
           const isComparison = option.kind === COMPARISON_KIND;
@@ -322,24 +322,21 @@ export default function OptionComparison({
             <div
               key={option.id}
               data-cost-option={option.id}
-              className={`rounded-[2rem] border bg-white p-6 shadow-sm ${
-                comparison.winner === option.id ? 'border-green-500' : 'border-gray-150'
+              // The lowest-cost option is outlined in ink, not green: lowest
+              // cost is a priced comparison, not a proof (§1.1), and the
+              // verdict below names it in words.
+              className={`p-4 md:p-6 ${CARD} ${
+                comparison.winner === option.id ? 'border-cc-ink' : 'border-cc-line'
               }`}
             >
               <div className="flex items-baseline justify-between gap-2">
-                <h3 className="text-sm font-black uppercase tracking-wide text-[#0b1c30]">{option.label}</h3>
-                {isComparison ? (
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-600">
-                    Comparison option
-                  </span>
-                ) : null}
+                <h3 className="cc-text-h3 text-cc-ink">{option.label}</h3>
+                {isComparison ? <CcTag>Comparison option</CcTag> : null}
               </div>
 
               <div className="mt-4 space-y-4 print:hidden">
                 <fieldset className="space-y-2">
-                  <legend className="text-[11px] font-black uppercase tracking-wide text-slate-500">
-                    One-off effort (range)
-                  </legend>
+                  <legend className="cc-text-label text-cc-ink-muted">One-off effort (range)</legend>
                   <div className="grid grid-cols-2 gap-3">
                     {([
                       ['low', 'devDays', 'Low · dev days'],
@@ -359,8 +356,7 @@ export default function OptionComparison({
                     ))}
                   </div>
                   {proposal ? (
-                    <button
-                      type="button"
+                    <CcButton
                       data-cost-apply-proposal={option.id}
                       onClick={() =>
                         patchOption(option.id, {
@@ -369,10 +365,9 @@ export default function OptionComparison({
                           effortSource: 'proposal-confirmed',
                         })
                       }
-                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-50"
                     >
                       Take over the proposal, as my figure
-                    </button>
+                    </CcButton>
                   ) : null}
                 </fieldset>
 
@@ -394,9 +389,7 @@ export default function OptionComparison({
 
                 {isComparison ? (
                   <fieldset className="space-y-2">
-                    <legend className="text-[11px] font-black uppercase tracking-wide text-slate-500">
-                      Upgrade deferral
-                    </legend>
+                    <legend className="cc-text-label text-cc-ink-muted">Upgrade deferral</legend>
                     <NumField
                       id={`${option.id}-upgrade-delay`}
                       label="Releases deferred"
@@ -412,8 +405,7 @@ export default function OptionComparison({
                       }
                       hint="Not priced — nothing here knows what a deferred upgrade costs. Stated, because it is part of what doing nothing is."
                     />
-                    <button
-                      type="button"
+                    <CcButton
                       data-cost-delay-not-determined
                       onClick={() =>
                         patchOption(option.id, {
@@ -423,25 +415,24 @@ export default function OptionComparison({
                           },
                         })
                       }
-                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-50"
                     >
                       Not determined
-                    </button>
+                    </CcButton>
                   </fieldset>
                 ) : null}
               </div>
 
               {/* What it costs, or the sentence that says why it does not. */}
-              <div className="mt-5 border-t border-gray-100 pt-4" data-cost-option-result={option.id}>
+              <div className="mt-4 border-t border-cc-line pt-4" data-cost-option-result={option.id}>
                 {cost && cost.total ? (
                   <>
-                    <span className="block text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    <span className="block cc-text-label text-cc-ink-muted">
                       Total over the observation period
                     </span>
-                    <p className="mt-1 text-lg font-black text-slate-900" data-cost-option-total={option.id}>
+                    <p className="mt-1 cc-text-h2 text-cc-ink" data-cost-option-total={option.id}>
                       {formatAmountRange(cost.total, currency)}
                     </p>
-                    <dl className="mt-3 space-y-1 text-[11px] font-semibold text-slate-500">
+                    <dl className="mt-3 space-y-1 cc-text-cell text-cc-ink-muted">
                       <div className="flex justify-between gap-2">
                         <dt>One-off</dt>
                         <dd>{formatAmountRange(cost.oneOff, currency)}</dd>
@@ -458,15 +449,22 @@ export default function OptionComparison({
                       ) : null}
                     </dl>
                     {cost.coverage.state === 'unconfirmed' ? (
-                      <p className="mt-3 text-[11px] leading-relaxed text-amber-700">{cost.coverage.sentence}</p>
+                      // Something to check, so the warning state — with its
+                      // icon, never the colour alone (§2.7).
+                      <p className="mt-3 flex items-start gap-1 cc-text-cell text-cc-warning">
+                        <CircleAlert size={14} aria-hidden="true" className="mt-1 shrink-0" />
+                        <span>{cost.coverage.sentence}</span>
+                      </p>
                     ) : null}
                   </>
                 ) : (
                   <>
-                    <p className="text-sm font-black text-amber-600" data-cost-option-not-determined={option.id}>
+                    {/* No figure is not a warning: it is the absence of a
+                        verdict, and it stands neutral (§1.1). */}
+                    <p className="cc-text-h3 text-cc-ink" data-cost-option-not-determined={option.id}>
                       Not determined
                     </p>
-                    <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
+                    <p className="mt-1 cc-text-cell text-cc-ink-muted">
                       {cost?.coverage.sentence || 'No assumptions carry an amount for this option yet.'}
                     </p>
                   </>
@@ -478,16 +476,16 @@ export default function OptionComparison({
       </div>
 
       {/* The verdict — or the refusal, which is the point of the step. */}
-      <div className="rounded-[2rem] border border-gray-150 bg-white p-6 md:p-8 shadow-sm">
+      <div className={`p-4 md:p-6 border-cc-line ${CARD}`}>
         {comparison.winner ? (
           <div data-cost-winner={comparison.winner}>
-            <span className="block text-[10px] font-black uppercase tracking-widest text-green-650">
+            <span className="block cc-text-label text-cc-ink-muted">
               Lowest cost over the observation period
             </span>
-            <h3 className="mt-1 text-2xl font-black text-slate-900">
+            <h3 className="mt-1 text-[22px] font-bold tracking-tight text-cc-ink">
               {comparison.costs.find((c) => c.optionId === comparison.winner)?.label}
             </h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+            <p className="mt-2 cc-text-body text-cc-ink-muted">
               Its upper bound is below every other option&rsquo;s lower bound, so the ordering does not
               depend on where inside the one-off range the effort lands. Lowest cost is not the same as
               best decision; this panel prices options and decides nothing.
@@ -495,16 +493,16 @@ export default function OptionComparison({
           </div>
         ) : (
           <div data-cost-no-winner={comparison.refusal?.code || 'unknown'}>
-            <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-amber-600">
-              <AlertTriangle className="w-4 h-4" /> No cheapest option
+            <span className="flex items-center gap-2 cc-text-label text-cc-ink-muted">
+              <AlertTriangle size={16} aria-hidden="true" /> No cheapest option
             </span>
-            <p className="mt-2 text-sm leading-relaxed text-slate-700">{comparison.refusal?.sentence}</p>
+            <p className="mt-2 cc-text-body text-cc-ink">{comparison.refusal?.sentence}</p>
           </div>
         )}
 
-        <div className="mt-6 border-t border-gray-100 pt-5">
-          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
-            <Sigma className="w-4 h-4" /> How far an assumption has to move before the answer changes
+        <div className="mt-6 border-t border-cc-line pt-4">
+          <span className="flex items-center gap-2 cc-text-label text-cc-ink-muted">
+            <Sigma size={16} aria-hidden="true" /> How far an assumption has to move before the answer changes
           </span>
           {comparison.tippingPoints.length > 0 ? (
             <ul className="mt-3 space-y-2" data-cost-tipping-points>
@@ -515,7 +513,7 @@ export default function OptionComparison({
                     key={point.field}
                     data-cost-tipping-field={point.field}
                     data-cost-tipping-found={found ? 'yes' : 'no'}
-                    className={`text-[12px] leading-relaxed ${found ? 'text-amber-700 font-semibold' : 'text-slate-600'}`}
+                    className={`cc-text-cell ${found ? 'text-cc-ink font-semibold' : 'text-cc-ink-muted'}`}
                   >
                     {point.sentence}
                   </li>
@@ -523,20 +521,66 @@ export default function OptionComparison({
               })}
             </ul>
           ) : (
-            <p className="mt-3 text-[12px] leading-relaxed text-slate-500" data-cost-tipping-points-empty>
+            <p className="mt-3 cc-text-cell text-cc-ink-muted" data-cost-tipping-points-empty>
               {comparison.tippingPointsSentence}
             </p>
           )}
-          <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+          <p className="mt-3 cc-text-meta text-cc-ink-muted">
             Each distance is solved from the figures you stated, not sampled at a chosen spread. It says
             where the answer flips, not how likely that is &mdash; nothing here knows the distribution of a day rate.
           </p>
         </div>
 
-        <p className="mt-6 border-t border-gray-100 pt-4 text-[11px] font-semibold text-slate-500">
-          Assumption revision: <code data-cost-revision className="font-mono text-slate-700">{comparison.revision}</code>
+        <p className="mt-6 border-t border-cc-line pt-4 cc-text-meta text-cc-ink-muted">
+          Assumption revision: <code data-cost-revision className="font-cc-mono text-cc-ink">{comparison.revision}</code>
         </p>
       </div>
     </section>
+  );
+}
+
+/**
+ * The stage's currency (roadmap 7.11), stated here once and nowhere else.
+ * Mandatory (ADR-035) and without a default; an empty field says so once the
+ * reader has left it.
+ */
+function CurrencyField({
+  currency,
+  onCurrencyChange,
+}: {
+  currency: string;
+  onCurrencyChange: (currency: string) => void;
+}) {
+  const [left, setLeft] = useState(false);
+  const missing = !currency && left;
+  return (
+    <CcField
+      label="Currency"
+      required
+      help={
+        <>
+          The currency your day rates are in &mdash; for this panel and for the forecast above it.
+          Nothing here assumes one.
+        </>
+      }
+      valueState={missing ? 'warning' : undefined}
+      message={missing ? 'Yours to state — there is no default.' : undefined}
+    >
+      {({ id, describedBy, ariaRequired, className }) => (
+        <input
+          id={id}
+          type="text"
+          value={currency}
+          maxLength={8}
+          placeholder="e.g. EUR — no default"
+          data-cost-field="currency"
+          aria-required={ariaRequired}
+          aria-describedby={describedBy}
+          onBlur={() => setLeft(true)}
+          onChange={(e) => onCurrencyChange(e.target.value.trim().toUpperCase())}
+          className={className}
+        />
+      )}
+    </CcField>
   );
 }
