@@ -34,6 +34,12 @@ const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
 const PANEL = 'components/PersonalDataHints.tsx';
+/**
+ * The acknowledgement checkbox itself. Since Block D, D.19 it is the library's
+ * `CcCheckbox`, which carries no data attributes of its own, so the marker sits
+ * on the box around it and the control is the one real checkbox inside.
+ */
+const ACK = '[data-personal-data-ack] input[type="checkbox"]';
 const MODULE = 'lib/personal-data-hints.ts';
 const ANALYZE = 'app/(app)/project/[projectId]/analyze/page.tsx';
 const NEW_PROJECT = 'components/workspace/NewProject.tsx';
@@ -200,7 +206,7 @@ test('the control is a real, labelled checkbox that the keyboard can reach', asy
   test.setTimeout(180 * 1000);
   await openUploadScreen(page);
 
-  const checkbox = page.locator('[data-personal-data-ack]');
+  const checkbox = page.locator(ACK);
   await expect(checkbox).toBeVisible({ timeout: 30000 });
   // An unlabelled control is the UX register's standing complaint; a `<label
   // htmlFor>` is what answers it, and the accessible name is what proves it.
@@ -216,7 +222,7 @@ test('the control is a real, labelled checkbox that the keyboard can reach', asy
 test('the analysis does not start until somebody says they looked', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openUploadScreen(page);
-  await expect(page.locator('[data-personal-data-ack]')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator(ACK)).toBeVisible({ timeout: 30000 });
   await satisfyTheOlderGates(page);
 
   const start = page.getByRole('button', { name: /Start Analysis/ });
@@ -227,7 +233,7 @@ test('the analysis does not start until somebody says they looked', async ({ pag
   // And the screen says which step is missing rather than leaving a dead button.
   await expect(page.locator('body')).toContainText('look as though they may hold personal data');
 
-  await page.locator('[data-personal-data-ack]').check();
+  await page.locator(ACK).check();
   await expect(start, 'the acknowledgement did not open the way through').toBeEnabled();
 });
 
@@ -258,16 +264,16 @@ test('the usage import asks the same question, and it matters more there', async
 
   const confirm = page.locator('[data-usage-confirm]');
   await expect(confirm, 'the import was open although nobody had looked').toBeDisabled();
-  await panel.locator('[data-personal-data-ack]').check();
+  await panel.locator(ACK).check();
   await expect(confirm, 'the acknowledgement did not open the import').toBeEnabled();
 });
 
 test('editing the source afterwards takes the acknowledgement back', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openUploadScreen(page);
-  await expect(page.locator('[data-personal-data-ack]')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator(ACK)).toBeVisible({ timeout: 30000 });
   await satisfyTheOlderGates(page);
-  await page.locator('[data-personal-data-ack]').check();
+  await page.locator(ACK).check();
 
   const start = page.getByRole('button', { name: /Start Analysis/ });
   await expect(start).toBeEnabled();
@@ -282,7 +288,7 @@ test('editing the source afterwards takes the acknowledgement back', async ({ pa
     'the new line produced no hint of its own',
   ).toHaveCount(1);
   await expect(
-    page.locator('[data-personal-data-ack]'),
+    page.locator(ACK),
     'the tick made for the old text still stood for the new text',
   ).not.toBeChecked();
   await expect(

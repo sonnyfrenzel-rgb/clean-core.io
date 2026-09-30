@@ -279,7 +279,7 @@ test('an account with the workspace preview is offered the switch — and the cl
   await expect(row, 'the preview account is not offered the naming switch').toHaveCount(1, { timeout: 60000 });
   await expect(row).toHaveAttribute('data-model-stage-on', 'true');
 
-  await row.getByRole('button').click();
+  await row.getByRole('switch').click();
   await expect(row).toHaveAttribute('data-model-stage-on', 'false', { timeout: 30000 });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-model-stage="naming"]'), 'the switch was painted, not stored')

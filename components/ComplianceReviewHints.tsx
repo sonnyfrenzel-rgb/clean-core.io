@@ -1,6 +1,7 @@
 'use client';
 
 import { ClipboardList } from 'lucide-react';
+import { CcTag } from '@/components/cc/Tag';
 import {
   CONCERN_COPY,
   TOUCH_LABEL,
@@ -115,20 +116,20 @@ export default function ComplianceReviewHints({
     <section
       data-compliance-hints=""
       aria-labelledby="compliance-review-hints-title"
-      className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"
+      className="rounded-cc-card border border-cc-line bg-cc-surface shadow-cc p-6"
     >
       <div className="flex items-start gap-3">
-        <ClipboardList className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" aria-hidden="true" />
+        <ClipboardList size={20} className="text-cc-ink-muted shrink-0" aria-hidden="true" />
         <div className="min-w-0 flex-1 space-y-5">
           <div className="space-y-2">
             <h3
               id="compliance-review-hints-title"
               data-compliance-hints-title
-              className="text-base font-bold text-slate-900 tracking-tight"
+              className="cc-text-h3 text-cc-ink"
             >
               {nothingMatched ? COMPLIANCE_HINT_NOTHING_MATCHED_TITLE : COMPLIANCE_HINT_TITLE}
             </h3>
-            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+            <p className="cc-text-cell text-cc-ink">
               {nothingMatched ? COMPLIANCE_HINT_NOTHING_MATCHED_LEAD : COMPLIANCE_HINT_LEAD}
             </p>
           </div>
@@ -139,17 +140,15 @@ export default function ComplianceReviewHints({
                 <li
                   key={hint.family}
                   data-compliance-hint={hint.family}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 sm:px-5"
+                  className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4"
                 >
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
-                    <h4 className="text-sm font-bold text-slate-900">{hint.title}</h4>
+                    <h4 className="cc-text-h3 text-cc-ink">{hint.title}</h4>
                     {hint.concerns.map((concern) => (
-                      <span
-                        key={concern}
-                        data-compliance-concern={concern}
-                        className="rounded-full border border-slate-300 bg-white px-2.5 py-0.5 text-[11px] font-bold text-slate-700"
-                      >
-                        {CONCERN_COPY[concern].label}
+                      // A tag, the quietest of the vocabularies: the words
+                      // are an instruction ("Check for …"), not a category.
+                      <span key={concern} data-compliance-concern={concern}>
+                        <CcTag>{CONCERN_COPY[concern].label}</CcTag>
                       </span>
                     ))}
                   </div>
@@ -162,14 +161,14 @@ export default function ComplianceReviewHints({
                       <li
                         key={table.table}
                         data-compliance-table={table.table}
-                        className="text-xs text-slate-600"
+                        className="cc-text-cell text-cc-ink-muted"
                       >
                         This code {TOUCH_LABEL[table.touch]}{' '}
-                        <code className="font-mono text-[11px] font-bold text-slate-900">
+                        <code className="cc-text-identifier font-cc-mono text-cc-ink">
                           {table.table}
                         </code>
                         {table.lines.length > 0 && (
-                          <span className="font-mono text-[11px] text-slate-500">
+                          <span className="cc-text-meta font-cc-mono font-medium text-cc-ink-muted">
                             {' · '}
                             {table.lines.length === 1 ? 'line' : 'lines'} {table.lines.join(', ')}
                           </span>
@@ -178,9 +177,9 @@ export default function ComplianceReviewHints({
                     ))}
                   </ul>
 
-                  <p className="mt-3 text-xs text-slate-600 leading-relaxed">{hint.sapKeeps}</p>
+                  <p className="mt-3 cc-text-cell text-cc-ink-muted">{hint.sapKeeps}</p>
 
-                  <p data-compliance-bridge className="mt-2 text-xs text-slate-600 leading-relaxed">
+                  <p data-compliance-bridge className="mt-2 cc-text-cell text-cc-ink-muted">
                     Tables of this kind often carry{' '}
                     {hint.concerns.map((concern, index) => (
                       <span key={concern}>
@@ -196,7 +195,7 @@ export default function ComplianceReviewHints({
                     <p
                       key={concern}
                       data-compliance-depth={concern}
-                      className="mt-2 text-xs text-slate-600 leading-relaxed"
+                      className="mt-2 cc-text-cell text-cc-ink-muted"
                     >
                       {CONCERN_COPY[concern].depth}
                     </p>
@@ -206,20 +205,20 @@ export default function ComplianceReviewHints({
             </ul>
           )}
 
-          <p data-compliance-coverage className="text-xs font-semibold text-slate-700 leading-relaxed">
+          <p data-compliance-coverage className="cc-text-cell font-semibold text-cc-ink">
             {complianceCoverageLine(report)}
           </p>
 
           {report.unrecognised.length > 0 && (
-            <p data-compliance-unrecognised className="text-xs text-slate-500 leading-relaxed">
+            <p data-compliance-unrecognised className="cc-text-cell text-cc-ink-muted">
               Without a hint:{' '}
-              <span className="font-mono text-[11px] text-slate-600">
+              <span className="cc-text-meta font-cc-mono font-medium text-cc-ink-muted">
                 {report.unrecognised.join(', ')}
               </span>
             </p>
           )}
 
-          <p className="text-xs text-slate-500 leading-relaxed">{COMPLIANCE_HINT_METHOD}</p>
+          <p className="cc-text-cell text-cc-ink-muted">{COMPLIANCE_HINT_METHOD}</p>
         </div>
       </div>
     </section>
