@@ -11,6 +11,7 @@ import {
 } from '@/lib/url-validation';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
+import { assertRateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { upstreamBodyShape } from '@/lib/upstream-body-shape';
 
@@ -169,6 +170,18 @@ export async function POST(req: NextRequest) {
       await assertS4TenantAccess(decodedToken.uid, { isAdminClaim: (decodedToken as any).admin === true });
     } catch (e: any) {
       return NextResponse.json({ status: 'failed', message: e.message || 'Access denied.' }, { status: 403 });
+    }
+
+    // Per account, before any OAuth exchange or tenant read (QA full review of
+    // fc787674705f, 097d4859c855). A live check reads up to five entity sets,
+    // so the budget is twice the metadata routes'.
+    try {
+      await assertRateLimit(`test-s4-odata-read:${decodedToken.uid}`, 60, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      if (rateErr instanceof QuotaError) {
+        return NextResponse.json({ status: 'failed', message: rateErr.message }, { status: rateErr.status });
+      }
+      throw rateErr;
     }
 
     const body = await req.json();
