@@ -77,23 +77,21 @@ export const TERMS_VERSION = '2026-10-15';
  */
 export const TERMS_VERSIONS_IN_FORCE: readonly string[] = [
   // v2.2.0, the version 3.0 ships with: section 4.1 separates the deterministic
-  // results from the model-generated output (QA 6b83ef361e80, Sonny 30.09.2026).
+  // results from the model-generated output (QA 6b83ef361e80).
   '2026-10-15',
-  // v2.1.0, current from 18.09.2026 until 3.0.
-  '2026-09-18',
-  // v2.0.0, and listed on purpose (Sonny, 18.09.2026).
+  // v2.1.0 (2026-09-18) and v2.0.0 (2026-07-07) are no longer in force from 3.0
+  // on — Sonny, 30.09.2026: "no mails, no census — consent to the new version
+  // is simply required at login with 3.0". An account holding either meets the
+  // blocking Terms dialog at its next sign-in and every route that asks for the
+  // Terms answers 403 until it accepts; its sign-in and its data are unchanged.
   //
-  // Every account that exists on the day 2026-09-18 ships accepted this one —
-  // it is what production served until then. Leaving it out would have refused
-  // all of them at every protected route until they clicked, which is a lockout
-  // of the whole community on release day and flatly contradicts § 10.3, which
-  // the same release introduces. A QA review caught it before it shipped.
-  //
-  // So they are asked, not shut out: the banner offers the new version, "not
-  // now" leaves the product working, and the old Terms keep governing that
-  // account until the operator ends them with the 30 days' notice § 10.3
-  // requires. Removing this entry is that act, and nothing less.
-  '2026-07-07',
+  // This is the owner's decision against the rule written above, not an
+  // oversight of it: § 10.3 of v2.0.0/v2.1.0 lets an account that declines
+  // carry on under the Terms it accepted, and ending that takes 30 days' notice
+  // in text form, which this decision deliberately does without. v2.0.0 was
+  // kept in force on 18.09.2026 for exactly that reason (QA 66a392dc1b6b); the
+  // entries are removed here on purpose. To go back to "ask, do not shut out",
+  // put '2026-09-18' and '2026-07-07' back and nothing else changes.
 ];
 
 /** True when an account holding `accepted` may still use the platform. */
