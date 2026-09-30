@@ -264,11 +264,13 @@ export default function LandingModals() {
       }, 850);
     } catch (error: any) {
       if (interceptSecondFactor(error)) return;
-      console.error('Error signing in with popup:', error);
       const code = error?.code || '';
+      // A closed popup, or a second click that superseded the first popup, is
+      // not an error: the reader changed their mind or clicked twice.
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
         return;
       }
+      console.error('Error signing in with popup:', error);
       // Log the actual error for debugging — don't silently redirect
       console.error('[handleSignIn] Google popup error code:', code, 'message:', error?.message);
       if (code === 'auth/popup-blocked') {
