@@ -111,6 +111,17 @@ function replacementProvenance(entry: { confidence?: string } | undefined): {
 }
 
 /**
+ * Does this statement call the function module `pattern` names — or declare the
+ * constant a dynamic call would name it by? The name stands in a literal, so
+ * the literal is read; but only a literal in one of those two places. Anywhere
+ * else — a log message, a value assigned to a text field — it is a word.
+ */
+function namesModule(text: string, pattern: string): boolean {
+  if (new RegExp(`^\\s*CALL\\s+FUNCTION\\s+['\`](?:${pattern})['\`]`, 'i').test(text)) return true;
+  return /^\s*CONSTANTS\b/i.test(text) && new RegExp(`['\`](?:${pattern})['\`]`, 'i').test(text);
+}
+
+/**
  * Conventional ABAP prefixes for local/global data objects and parameters.
  * Used only in combination with "not present in either SAP artifact" — 103 real
  * SAP objects (CS_BOM_EXPL_MAT_V2, RS_*, CT_*) share these prefixes and must
@@ -432,8 +443,10 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
 
     // Classic ALV Grid. The name of a called function module stands in a
     // literal and is the call target, not prose about one — the exception
-    // `statement-reader.ts` documents. So this reads `text`, not `codeText`.
-    if (/REUSE_ALV_GRID_DISPLAY/i.test(text) || /REUSE_ALV_LIST_DISPLAY/i.test(text)) {
+    // `statement-reader.ts` documents. So this reads `text`, not `codeText` —
+    // but only the literal a `CALL FUNCTION` (or a constant) names: in
+    // `PERFORM add_log USING 'GUI_DOWNLOAD'` the name is a message.
+    if (namesModule(text, 'REUSE_ALV_(?:GRID|LIST)_DISPLAY')) {
       addFinding({
         kind: 'classic-alv',
         title: 'Legacy ALV Grid Display',
@@ -450,7 +463,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
 
     // GUI Download / Local File access. Function-module names again (`text`,
     // for the reason above); `CL_GUI_FRONTEND_SERVICES` is the class form.
-    if (/GUI_DOWNLOAD/i.test(text) || /GUI_UPLOAD/i.test(text) || /CL_GUI_FRONTEND_SERVICES/i.test(text)) {
+    if (namesModule(text, 'GUI_(?:DOWNLOAD|UPLOAD)') || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText)) {
       addFinding({
         kind: 'gui-download',
         title: 'Legacy Frontend File Upload/Download',
@@ -610,7 +623,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
 
     // SAPOffice legacy mailing — a function-module name, read from `text`.
-    if (/SO_NEW_DOCUMENT_SEND_API1/i.test(text)) {
+    if (namesModule(text, 'SO_NEW_DOCUMENT_SEND_API1')) {
       addFinding({
         kind: 'legacy-mail',
         title: 'Legacy Mail Service (SO_NEW_DOCUMENT_SEND_API1)',
