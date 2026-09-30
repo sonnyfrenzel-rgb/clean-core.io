@@ -1094,9 +1094,12 @@ test.describe('the reference cases, seeded and opened', () => {
           continue;
         }
         if (entry.opensWith) {
+          // A report section is an ARIA tab since D.10b (CcTabs); the other
+          // stages open their part with a button. Either role, the same name.
+          const opener = new RegExp(entry.opensWith.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
           await page
-            // The Analyze report sections are ARIA tabs since D.10b (CcTabs).
-            .getByRole('tab', { name: new RegExp(entry.opensWith.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') })
+            .getByRole('tab', { name: opener })
+            .or(page.getByRole('button', { name: opener }))
             .first()
             .click();
         }
