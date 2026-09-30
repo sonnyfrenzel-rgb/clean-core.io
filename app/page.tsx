@@ -478,9 +478,11 @@ export default function Home() {
         <section id="what" aria-labelledby="what-title" className="scroll-mt-20 border-y border-cc-line bg-cc-surface py-20 md:py-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <SectionHeader eyebrow="In one sentence" title="What is Clean-Core.io?" titleId="what-title">
-              Clean-Core.io is a free community tool for SAP custom code: a deterministic ABAP static code analysis reads
-              your program, reconstructs its business process with a line anchor on every element, shows SAP&apos;s clean
-              core level for each SAP object it uses, and seals every completed analysis as a signed run.
+              Clean-Core.io is a free community tool that takes SAP custom code from not understood to an
+              evidence-backed decision: a deterministic ABAP static code analysis reads your program, reconstructs its
+              business process with a line anchor on every element and shows SAP&apos;s clean core level for each SAP
+              object it uses — then drafts the target design, the transformed code, documentation and tests for you to
+              review, estimates the economics from your own figures, and seals every completed analysis as a signed run.
             </SectionHeader>
             <div className="grid gap-5 md:grid-cols-3">
               {[

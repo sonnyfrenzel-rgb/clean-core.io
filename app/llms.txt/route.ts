@@ -25,8 +25,10 @@ export function GET() {
 > reads the program before any language model does, reconstructs its business process
 > as BPMN with a line anchor on every element, lists the business rules hard-coded in
 > the program, grades each SAP object it uses Level A–D from SAP's published
-> Cloudification Repository, and names what it could not determine. Every completed
-> analysis is sealed as an immutable, signed run.
+> Cloudification Repository, and names what it could not determine. From that evidence
+> it drafts the target design, the transformed code, documentation and tests for a
+> person to review, and estimates the economics from the user's own figures. Every
+> completed analysis is sealed as an immutable, signed run.
 
 One workspace, three views of the same facts: the Business view ("Do I still need this,
 and what changes for me?"), the IT view ("What exactly, where to, and is it right?") and
