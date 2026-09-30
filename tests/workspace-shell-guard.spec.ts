@@ -35,6 +35,7 @@ import { analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
 import { sha256Hex } from '../lib/artefact-digest';
 import type { Project, TestCase } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * Roadmap 1.4 — the workspace shell, and the two promises it makes.
@@ -482,7 +483,7 @@ test.describe('nothing changes for an account without the switch', () => {
     const community = await createUserWithEmailAndPassword(clientAuth, COMMUNITY, PASSWORD);
     await adminSetDoc('users', community.user.uid, {
       firstName: 'Community', lastName: 'Account', email: COMMUNITY,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
       // Deliberately set: the flag alone must not open anything.
       workspaceShell: true,
@@ -971,7 +972,7 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     const outsider = await createUserWithEmailAndPassword(clientAuth, outsiderEmail, PASSWORD);
     await adminSetDoc('users', outsider.user.uid, {
       firstName: 'No', lastName: 'Admin', email: outsiderEmail,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
     const refused = await request.post('/api/workspace-shell', {

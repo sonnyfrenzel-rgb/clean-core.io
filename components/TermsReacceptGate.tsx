@@ -95,7 +95,7 @@ export default function TermsReacceptGate() {
     }
   };
 
-  const accepted = profile?.termsVersionAccepted ?? null;
+  const accepted = profile?.termsVersionAccepted || null;
   const needed = !loading && !!profile && accepted !== TERMS_VERSION;
 
   /**
@@ -109,10 +109,16 @@ export default function TermsReacceptGate() {
    * and a dismissible notice would leave somebody in a product that answers 403
    * everywhere, which is how the MFA lockout presented itself.
    *
-   * An account with no accepted version at all is the legacy case the server
-   * grandfathers; it is asked, not shut out.
+   * An account with no accepted version at all used to be grandfathered by the
+   * server and was only asked here. Since roadmap 3.0.13 (f) the server refuses
+   * it (`assertAccountActive`, `requireCurrentTerms`): it accepted no Terms, so
+   * there is nothing § 10.3 lets it carry on under. So it gets the blocking
+   * form — with the way out on it, "accept", which is what keeps this a request
+   * for consent rather than a lockout. Admins are exempt on the server, so for
+   * them it stays a banner.
    */
-  const mayDecline = accepted === null || termsVersionInForce(accepted);
+  const noAcceptance = accepted === null;
+  const mayDecline = noAcceptance ? profile?.isAdmin === true : termsVersionInForce(accepted);
 
   /**
    * Focus goes in and stays in, the page behind is inert, and it does not scroll.
@@ -181,8 +187,9 @@ export default function TermsReacceptGate() {
    * above the content and covers nothing. An overlay here
    * would take the page hostage over a question the reader is allowed to answer
    * with "no" — and it did: it intercepted pointer events in nine unrelated
-   * specs whose fixtures simply never set `termsVersionAccepted`, which is
-   * precisely the legacy account the server grandfathers.
+   * specs whose fixtures simply never set `termsVersionAccepted`. (Such an
+   * account is no longer grandfathered — 3.0.13 (f) — and now gets the modal
+   * below; the fixtures record an acceptance instead.)
    *
    * Once the accepted version has been ended, the routes really do refuse, and
    * then it is a **modal**: full screen, focus trapped, Escape inert. Leaving
@@ -191,10 +198,12 @@ export default function TermsReacceptGate() {
    */
   const blocking = !mayDecline;
 
-  const explanation = mayDecline
-    ? 'You accepted an earlier version. Please read the current one and accept it. You do not have to: section 10.3 lets you carry on under the Terms you accepted, and nothing stops working if you decline.'
-    : 'The version your account accepted is no longer in force, so the platform is closed to it. Please read the current Terms and accept them to carry on.';
-  const title = 'The Terms of Service have changed';
+  const explanation = noAcceptance && !mayDecline
+    ? 'Your account has no recorded acceptance of the Terms of Service, so the platform is closed to it until there is one. Please read the Terms and accept them to carry on. Your account and your data are unchanged.'
+    : mayDecline
+      ? 'You accepted an earlier version. Please read the current one and accept it. You do not have to: section 10.3 lets you carry on under the Terms you accepted, and nothing stops working if you decline.'
+      : 'The version your account accepted is no longer in force, so the platform is closed to it. Please read the current Terms and accept them to carry on.';
+  const title = noAcceptance && !mayDecline ? 'Please accept the Terms of Service' : 'The Terms of Service have changed';
 
   // What changed, the two documents and the error: the same in both forms.
   const details = (

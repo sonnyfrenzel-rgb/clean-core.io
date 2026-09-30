@@ -207,7 +207,13 @@ export async function POST(
     const { db, FieldValue } = await getAdminDb();
 
     /* ------------------------------------------- 2. Terms accepted */
-    // Suspended accounts and a stale acceptance are caught by the existing gate.
+    // Suspended accounts, a stale acceptance and — since roadmap 3.0.13 (f) — a
+    // missing one are refused by the existing gate. The missing case keeps its
+    // own code, which the invitation screen branches on: it used to be the one
+    // check here, when the gate still grandfathered a missing acceptance.
+    const profileSnap = await db.collection('users').doc(uid).get();
+    const profile = (profileSnap.data() || {}) as { termsVersionAccepted?: unknown };
+    const noAcceptance = typeof profile.termsVersionAccepted !== 'string' || profile.termsVersionAccepted === '';
     try {
       await assertAccountActive(uid, {
         requireCurrentTerms: true,
@@ -215,17 +221,22 @@ export async function POST(
       });
     } catch (gateErr: unknown) {
       if (gateErr instanceof QuotaError) {
-        return NextResponse.json({ error: gateErr.message, code: 'account-gate' }, { status: gateErr.status });
+        const suspended = /suspended/i.test(gateErr.message);
+        return NextResponse.json(
+          noAcceptance && !suspended
+            ? {
+                error: 'Accept the Terms of Service and the Privacy Policy on your account before opening an invitation.',
+                code: 'terms-required',
+              }
+            : { error: gateErr.message, code: 'account-gate' },
+          { status: gateErr.status },
+        );
       }
       throw gateErr;
     }
-    // …and a *missing* acceptance is not: `assertAccountActive` grandfathers it
-    // on purpose, so that accounts from before consent was recorded are not
-    // locked out of their own projects. Reading somebody else's source code is
-    // not their own project, so this one is asked for explicitly.
-    const profileSnap = await db.collection('users').doc(uid).get();
-    const profile = (profileSnap.data() || {}) as { termsVersionAccepted?: unknown };
-    if (typeof profile.termsVersionAccepted !== 'string' || profile.termsVersionAccepted === '') {
+    // Reading somebody else's source code is not their own project, so an
+    // administrator — whom the gate exempts — is asked for an acceptance too.
+    if (noAcceptance) {
       return NextResponse.json(
         {
           error: 'Accept the Terms of Service and the Privacy Policy on your account before opening an invitation.',

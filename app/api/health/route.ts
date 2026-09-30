@@ -3,6 +3,7 @@ import { APP_VERSION } from '@/lib/version';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { getSigningKeypair } from '@/lib/audit-signing-keypair';
 import { singleFlight } from '@/lib/single-flight';
+import { byokEncryptionConfigured } from '@/lib/byok-key';
 
 /**
  * Liveness / readiness probe for Cloud Run health checks and uptime monitoring.
@@ -77,6 +78,11 @@ export async function GET(req: Request) {
 
   const signingKeyOk = !!process.env.AUDIT_SIGNING_KEY;
   const geminiOk = !!process.env.GEMINI_API_KEY;
+  // Roadmap 3.0.13 (g): without a usable `BYOK_ENCRYPTION_KEY` no account can
+  // store its own key, and a key stored under it cannot be read. The save route
+  // refuses with a reason; this makes the same condition visible to the probe
+  // instead of to the first person who tries.
+  const byokKeyOk = byokEncryptionConfigured();
 
   // The asymmetric half of the trust chain, when there is one.
   //
@@ -104,7 +110,7 @@ export async function GET(req: Request) {
     }
   }
 
-  const healthy = signingKeyOk && geminiOk && asymmetricOk && firestoreOk;
+  const healthy = signingKeyOk && geminiOk && byokKeyOk && asymmetricOk && firestoreOk;
 
   // The short commit the revision was built from (set by deploy.yml). The
   // repository is public, so this reveals nothing new — it lets the QA smoke

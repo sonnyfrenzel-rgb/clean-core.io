@@ -64,6 +64,9 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       email: NORMAL_USER_EMAIL,
       tier: 'pilot',
       status: 'pending',
+      // Since 3.0.13 (f) a missing acceptance is refused, not grandfathered; this
+      // account has accepted, as every account that registered through the form has.
+      termsVersionAccepted: TERMS_VERSION,
       isAdmin: false,
       transformationsUsed: 0,
       transformationsLimit: 5,
@@ -577,7 +580,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     const readerToken = await readerCred.user.getIdToken();
 
     await adminSetDoc('users', readerUid, {
-      firstName: 'Invited', lastName: 'Reader', email: readerEmail, tier: 'pilot', status: 'approved',
+      firstName: 'Invited', lastName: 'Reader', email: readerEmail, tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       isAdmin: false, transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
       s4TenantAccessAllowed: false, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),
     });
@@ -687,7 +690,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
     const uid = cred.user.uid;
     await adminSetDoc('users', uid, {
-      firstName: 'T', lastName: 'PD', email, tier: 'pilot', status: 'approved', isAdmin: false,
+      firstName: 'T', lastName: 'PD', email, tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION, isAdmin: false,
       transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
       s4TenantAccessAllowed: false, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),
     });
@@ -721,7 +724,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
     const ownerUid = cred.user.uid;
     await adminSetDoc('users', ownerUid, {
-      firstName: 'T', lastName: 'AD', email, tier: 'pilot', status: 'approved', isAdmin: false,
+      firstName: 'T', lastName: 'AD', email, tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION, isAdmin: false,
       transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
       s4TenantAccessAllowed: false, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),
     });
@@ -796,7 +799,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     const cred = await createUserWithEmailAndPassword(firebaseAuth, email, TEST_PASSWORD);
     const ownerUid = cred.user.uid;
     await adminSetDoc('users', ownerUid, {
-      firstName: 'T', lastName: 'AP', email, tier: 'pilot', status: 'approved', isAdmin: false,
+      firstName: 'T', lastName: 'AP', email, tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION, isAdmin: false,
       transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
       s4TenantAccessAllowed: false, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),
     });
@@ -845,7 +848,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
 
     // Approved and granted: the gate lets the request through to the route's
     // own validation, which is what proves the gate is the thing being measured.
-    await adminSetDoc('users', uid, { ...profile, status: 'approved' });
+    await adminSetDoc('users', uid, { ...profile, status: 'approved', termsVersionAccepted: TERMS_VERSION });
     const token = await cred.user.getIdToken(true);
     const allowed = await request.post('/api/test-s4-connection', {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -928,7 +931,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     // so the account-state gate passes (the owner reaches the ownership/run checks).
     await adminSetDoc('users', uid, {
       firstName: 'APK', lastName: 'Owner', email: `apk-${uid}@cleancore-test.io`, tier: 'pilot',
-      status: 'approved', isAdmin: false, transformationsUsed: 0, transformationsLimit: 5,
+      status: 'approved', termsVersionAccepted: TERMS_VERSION, isAdmin: false, transformationsUsed: 0, transformationsLimit: 5,
       maxTeamMembers: 1, s4TenantAccessAllowed: false, s4TenantAccessRequested: false,
       mfaEnabled: false, createdAt: new Date(),
     });
@@ -1115,7 +1118,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
         firstName: 'Malicious',
         lastName: 'User',
         email: maliciousEmail,
-        status: 'approved',
+        status: 'approved', termsVersionAccepted: TERMS_VERSION,
         createdAt: new Date(),
       })
     ).rejects.toThrow();
@@ -1210,7 +1213,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       lastName: 'Gate',
       email: mfaEmail,
       tier: 'pilot',
-      status: 'approved',
+      status: 'approved', termsVersionAccepted: TERMS_VERSION,
       activatedAt: new Date(),
       isAdmin: false,
       transformationsUsed: 0,

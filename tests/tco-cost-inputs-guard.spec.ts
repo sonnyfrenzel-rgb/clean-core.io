@@ -6,6 +6,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * No savings forecast from figures nobody entered (roadmap E12-F01-US02).
@@ -84,7 +85,7 @@ test.describe('rendered', () => {
     } catch { /* already connected */ }
     const uid = (await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD)).user.uid;
     await adminSetDoc('users', uid, {
-      firstName: 'Tco', lastName: 'Cost', email: EMAIL, tier: 'pilot', status: 'approved',
+      firstName: 'Tco', lastName: 'Cost', email: EMAIL, tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
     // Two thousand lines: large enough that the model has something to price.

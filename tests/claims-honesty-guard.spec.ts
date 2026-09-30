@@ -31,6 +31,7 @@ import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { getCloudServiceDetails } from '../components/design/CloudServiceIntegrations';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -108,7 +109,7 @@ test.describe('a signed-in account reading its own project', () => {
       lastName: 'Honesty',
       email: EMAIL,
       tier: 'pilot',
-      status: 'approved',
+      status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 0,
       transformationsLimit: 5,
       createdAt: new Date(),
@@ -424,7 +425,7 @@ test.describe('UX-107 — a button does what it says', () => {
       lastName: 'Admin',
       email: EMAIL,
       tier: 'pilot',
-      status: 'approved',
+      status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 0,
       transformationsLimit: 5,
       createdAt: new Date(),

@@ -169,7 +169,7 @@ test.describe('and inside a project', () => {
     const cred = await createUserWithEmailAndPassword(clientAuth, OWNER, PASSWORD);
     await adminSetDoc('users', cred.user.uid, {
       firstName: 'Assistant', lastName: 'Label', email: OWNER,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
     await adminSetDoc('projects', LIVE_PROJECT, {

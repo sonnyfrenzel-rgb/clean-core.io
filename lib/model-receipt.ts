@@ -62,7 +62,19 @@ import { canonicalizeJson, timingSafeEqualHex } from './run-signature';
  * "the server saw a model write this".
  */
 
-/** The only provider this product calls. Named once so the two routes cannot drift. */
+/**
+ * The provider id for Google Gemini — what `/api/gemini` names when it has
+ * called Gemini.
+ *
+ * It is **not a default** any more (roadmap 3.0.13 b). `issueModelReceipt`
+ * used to fill `provider` from this constant whenever a caller left it out, so
+ * a receipt said "google-gemini" because nobody had said otherwise — and the
+ * day a second provider is called, a forgotten argument would have stamped
+ * Gemini onto a run another provider wrote, inside a MAC. The caller that made
+ * the call now has to name the provider it called, and a receipt without one
+ * is not issued. The value itself is unchanged, so every receipt and every run
+ * minted under it verifies exactly as before.
+ */
 export const MODEL_PROVIDER_ID = 'google-gemini';
 
 /** Bumped only when the claim set or the canonical form changes. */
@@ -149,7 +161,11 @@ export function issueModelReceipt(
     uid: string;
     /** The text as returned to the caller, byte for byte. */
     text: string;
-    provider?: string;
+    /**
+     * The provider the server actually called — named by the caller that made
+     * the call, never defaulted and never taken from the client (3.0.13 b).
+     */
+    provider: string;
     modelId: string;
     byok: boolean;
     /** Only for tests that need a fixed clock. */
@@ -159,11 +175,17 @@ export function issueModelReceipt(
   },
   key: string,
 ): ModelReceipt {
+  // Checked at runtime as well as by the type: a JavaScript caller, or a cast,
+  // must not get a receipt that names no provider — or one that names a
+  // provider nobody chose.
+  if (typeof args.provider !== 'string' || args.provider.trim() === '') {
+    throw new Error('issueModelReceipt: the provider that was called must be named.');
+  }
   const claims: ModelReceiptClaims = {
     v: MODEL_RECEIPT_VERSION,
     uid: args.uid,
     textSha256: narrativeDigest(args.text),
-    provider: args.provider ?? MODEL_PROVIDER_ID,
+    provider: args.provider,
     modelId: args.modelId,
     byok: args.byok,
     iat: args.issuedAt ?? Date.now(),

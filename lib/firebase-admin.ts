@@ -1,7 +1,9 @@
 import { randomBytes } from 'crypto';
 import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, termsVersionInForce } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
-import { encrypt, decrypt } from './s4-credentials';
+import { byokAllowed, BYOK_NOT_AVAILABLE_MESSAGE } from './byok-eligibility';
+import { sealByokSecret, openByokSecret, ByokKeyUnreadableError } from './byok-key';
+import { logger, providerErrorShape } from './logger';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp, s4AccessRequiresEnrolment } from './mfa-gate';
 import { starterExampleForFingerprint } from './starter-example-fingerprints';
 import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } from './invitations';
@@ -469,14 +471,43 @@ export async function assertAccountActive(
   // acceptance would have made that clause false from the day it shipped.
   //
   // What still refuses: a version the operator has ended (removed from
-  // `TERMS_VERSIONS_IN_FORCE` after those notices ran). A missing acceptance is
-  // grandfathered as before — it must not lock out pre-existing users. The
-  // client cannot forge or remove the field (see firestore.rules).
+  // `TERMS_VERSIONS_IN_FORCE` after those notices ran). The client cannot forge
+  // or remove the field (see firestore.rules).
+  //
+  // And, since roadmap 3.0.13 (f), **no recorded acceptance at all**. A missing
+  // acceptance used to be grandfathered — read as "accepted" — so an account
+  // with no `consent_events` row behind it passed every gate that asks for the
+  // Terms. § 10.3 is about somebody who accepted an *earlier* version; an
+  // account that accepted none has no Terms to carry on under. It is not
+  // locked out: `components/TermsReacceptGate.tsx` shows the same account a
+  // blocking dialogue whose one action records the acceptance
+  // (`POST /api/consent`, which asks for no Terms itself), and the account,
+  // its sign-in and its data are untouched. Admins stay exempt, as before.
   if (opts.requireCurrentTerms && !isAdmin) {
-    const accepted = data.termsVersionAccepted || null;
-    if (accepted !== null && !termsVersionInForce(accepted)) {
+    const accepted = typeof data.termsVersionAccepted === 'string' && data.termsVersionAccepted ? data.termsVersionAccepted : null;
+    if (accepted === null) {
+      throw new QuotaError('Your account has no recorded acceptance of the Terms of Service. Please accept the Terms in the app to continue.', 403);
+    }
+    if (!termsVersionInForce(accepted)) {
       throw new QuotaError('The version of the Terms of Service your account accepted is no longer in force. Please accept the current Terms in the app to continue.', 403);
     }
+  }
+}
+
+/**
+ * Roadmap 3.0.13 (c): the BYOK tier rule, held on the server.
+ *
+ * The same function the settings screen uses to decide whether to draw the
+ * card (`lib/byok-eligibility.ts`), so the page and the routes cannot drift.
+ * The admin signal is the verified claim, never the profile mirror. Used by
+ * the routes that store and test a key; not by the one that deletes it.
+ */
+export async function assertByokAllowed(uid: string, isAdminClaim: boolean): Promise<void> {
+  const { db } = await getAdminDb();
+  const snap = await db.collection('users').doc(uid).get();
+  const tier = snap.exists ? (snap.data() || {}).tier : undefined;
+  if (!byokAllowed({ isAdmin: isAdminClaim === true, tier })) {
+    throw new QuotaError(BYOK_NOT_AVAILABLE_MESSAGE, 403);
   }
 }
 
@@ -1426,7 +1457,10 @@ export async function adminDeleteUser(adminUid: string, targetUid: string) {
 
 /**
  * Saves the user's custom Gemini API key securely:
- * 1. Encrypts the key using AES-256-GCM.
+ * 1. Seals the key with AES-256-GCM under `BYOK_ENCRYPTION_KEY`, recording the
+ *    key version in the record (`lib/byok-key.ts`, roadmap 3.0.13 g). Without a
+ *    usable key this throws `ByokKeyUnavailableError` before anything is
+ *    written — there is no fallback to the S/4 key.
  * 2. Saves it in the server-only user_secrets collection.
  * 3. Updates the user profile with BYOK metadata (configured status, last 4 chars, timestamp)
  *    and deletes the legacy cleartext key.
@@ -1434,7 +1468,7 @@ export async function adminDeleteUser(adminUid: string, targetUid: string) {
 export async function saveGeminiApiKey(uid: string, apiKey: string): Promise<any> {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
-  const encrypted = encrypt(apiKey);
+  const sealed = sealByokSecret(apiKey, { uid, provider: 'gemini' });
   const last4 = apiKey.length > 4 ? apiKey.slice(-4) : apiKey;
 
   // The secret and the profile's metadata in one transaction that reads the
@@ -1450,7 +1484,8 @@ export async function saveGeminiApiKey(uid: string, apiKey: string): Promise<any
     const profile = await tx.get(profileRef);
     if (!profile.exists) throw new QuotaError(PROFILE_GONE, 404);
     tx.set(secretRef, {
-      encryptedApiKey: encrypted,
+      encryptedApiKey: sealed.encryptedApiKey,
+      keyVersion: sealed.keyVersion,
       last4,
       rotatedAt: FieldValue.serverTimestamp(),
     });
@@ -1472,7 +1507,13 @@ export async function saveGeminiApiKey(uid: string, apiKey: string): Promise<any
 
 /**
  * Loads and decrypts the user's custom Gemini API key.
- * Returns null if not configured or if decryption fails.
+ *
+ * Returns null only when no key is stored. A stored key that cannot be opened —
+ * it has no version or one outside the key ring, its version's key is missing
+ * on this server, or it does not decrypt — throws `ByokKeyUnreadableError`
+ * (3.0.13 g), logged below with its reason. It used to return null there too, and
+ * null reads as "no key": `/api/gemini` then served the call with the
+ * community key, unmetered, because the profile still said BYOK.
  */
 export async function loadGeminiApiKey(uid: string): Promise<string | null> {
   await ensureInitialized();
@@ -1483,10 +1524,15 @@ export async function loadGeminiApiKey(uid: string): Promise<string | null> {
   if (!data || !data.encryptedApiKey) return null;
   
   try {
-    return decrypt(data.encryptedApiKey);
+    return openByokSecret(data as { encryptedApiKey: string; keyVersion?: unknown }, { uid, provider: 'gemini' });
   } catch (err) {
-    console.error('Failed to decrypt Gemini API key for user:', uid, err);
-    return null;
+    // A code, never the error object (3.0.13 e).
+    logger.error('byok key decrypt failed', {
+      error: providerErrorShape(err),
+      keyVersion: err instanceof ByokKeyUnreadableError ? err.keyVersion : null,
+      reason: err instanceof ByokKeyUnreadableError ? err.reason : null,
+    });
+    throw err;
   }
 }
 

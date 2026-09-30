@@ -27,6 +27,7 @@ import { inspectModelText } from '../lib/model-text';
 import { PROVENANCE } from '../lib/provenance';
 import type { Project, WorklistItem } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * Roadmap 6.8 — „Ask this case" through the assistant that already exists.
@@ -399,7 +400,7 @@ test.describe('the assistant, inside a project, in a browser', () => {
     const cred = await createUserWithEmailAndPassword(clientAuth, OWNER, PASSWORD);
     await adminSetDoc('users', cred.user.uid, {
       firstName: 'Ask', lastName: 'Case', email: OWNER,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
     await adminSetDoc('projects', LIVE_PROJECT, {

@@ -23,6 +23,7 @@ import { evidenceDigest } from '../lib/run-evidence-digest';
 import { parseClientWritableProjectFields, normaliseRulesText } from '../lib/firestore-rules-contract';
 import { attestationsOf, signedGeneratorInput, buildAuditPackContents } from '../lib/audit-pack-build';
 import { USER_ATTESTED_FILE } from '../lib/audit-pack';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * QA24-A12: client, server, index and export have the same limits.
@@ -594,7 +595,7 @@ test.describe('the live emulator rules refuse every one of the six', () => {
     ownerUid = ownerCred.user.uid;
     idToken = await ownerCred.user.getIdToken();
     await adminSetDoc('users', ownerUid, {
-      firstName: 'Command', lastName: 'Owner', email: OWNER, tier: 'pilot', status: 'approved',
+      firstName: 'Command', lastName: 'Owner', email: OWNER, tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 0, transformationsLimit: 5, mfaEnabled: false, createdAt: new Date(),
     });
     await adminSetDoc('projects', PROJECT_ID, {
@@ -615,7 +616,7 @@ test.describe('the live emulator rules refuse every one of the six', () => {
 
     const strangerCred = await createUserWithEmailAndPassword(auth, STRANGER, PASSWORD);
     await adminSetDoc('users', strangerCred.user.uid, {
-      firstName: 'Not', lastName: 'Yours', email: STRANGER, tier: 'pilot', status: 'approved',
+      firstName: 'Not', lastName: 'Yours', email: STRANGER, tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 0, transformationsLimit: 5, mfaEnabled: false, createdAt: new Date(),
     });
     await adminSetDoc('projects', FOREIGN_PROJECT_ID, {

@@ -132,7 +132,7 @@ test('the server under test has the route', async ({ request }) => {
 });
 
 test('an answer with a verified receipt is validated against the stored source, stored and read back', async ({ request }) => {
-  const receipt = issueModelReceipt({ uid, text: ANSWER, modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey());
+  const receipt = issueModelReceipt({ uid, text: ANSWER, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey());
   const res = await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text: ANSWER, receipt } });
   expect(res.status(), await res.text()).toBe(200);
   const { record } = (await res.json()) as { record: StatementProposalRecord };
@@ -160,7 +160,7 @@ test('an answer with a verified receipt is validated against the stored source, 
 
 test('an answer that is not the format stores a proposal with nothing in it, counted', async ({ request }) => {
   const text = 'Here are the statements: ```json {"statements":[]}```';
-  const receipt = issueModelReceipt({ uid, text, modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey());
+  const receipt = issueModelReceipt({ uid, text, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey());
   const res = await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text, receipt } });
   expect(res.status(), await res.text()).toBe(200);
   const { record } = (await res.json()) as { record: StatementProposalRecord };
@@ -169,7 +169,7 @@ test('an answer that is not the format stores a proposal with nothing in it, cou
   expect(applyStatementProposal(PROGRAM, record).notice).toContain('No usable sentence');
 
   // Put the good one back for the tests below.
-  const good = issueModelReceipt({ uid, text: ANSWER, modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey());
+  const good = issueModelReceipt({ uid, text: ANSWER, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey());
   expect((await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text: ANSWER, receipt: good } })).status()).toBe(200);
 });
 
@@ -180,9 +180,9 @@ test('without a receipt that verifies for this text and this account, nothing is
 
   const cases: Array<[string, unknown]> = [
     ['absent', undefined],
-    ['text-mismatch', issueModelReceipt({ uid, text: ANSWER, modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey())],
-    ['wrong-account', issueModelReceipt({ uid: otherUid, text: other, modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey())],
-    ['forged', issueModelReceipt({ uid, text: other, modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, 'not-the-signing-key')],
+    ['text-mismatch', issueModelReceipt({ uid, text: ANSWER, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey())],
+    ['wrong-account', issueModelReceipt({ uid: otherUid, text: other, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey())],
+    ['forged', issueModelReceipt({ uid, text: other, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, 'not-the-signing-key')],
   ];
   for (const [refusal, receipt] of cases) {
     const res = await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text: other, receipt } });
@@ -200,7 +200,7 @@ test('33a42c475f1a: a valid receipt from another stage is refused while the stat
   try {
     const other = JSON.stringify({ statements: [{ text: 'Der Lieferant wird geprüft.', anchors: [`${STATEMENT_SOURCE_NAME}:3`], element: null, uncertainty: null }] });
     for (const stage of ['naming', 'documentation', undefined]) {
-      const receipt = issueModelReceipt({ uid, text: other, modelId: 'gemini-3.8-flash', byok: false, ...(stage ? { stage } : {}) }, signingKey());
+      const receipt = issueModelReceipt({ uid, text: other, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, ...(stage ? { stage } : {}) }, signingKey());
       const res = await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text: other, receipt } });
       expect(res.status(), `${stage ?? 'no stage'}: ${await res.text()}`).toBe(422);
       expect(await res.json()).toMatchObject({ code: 'receipt-refused', refusal: 'wrong-stage' });
@@ -215,7 +215,7 @@ test('an answer for another reading of the source is refused with 409', async ({
   const before = await stored(request);
   const elsewhere = statementProposalContextOf(`${PROGRAM}\n  COMMIT WORK.`);
   expect(elsewhere.digest).not.toBe(CONTEXT.digest);
-  const receipt = issueModelReceipt({ uid, text: ANSWER, modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey());
+  const receipt = issueModelReceipt({ uid, text: ANSWER, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey());
   const res = await request.post(path, { headers: headers(), data: { digest: elsewhere.digest, text: ANSWER, receipt } });
   expect(res.status(), await res.text()).toBe(409);
   expect((await res.json()).code).toBe('source-moved');
@@ -229,7 +229,7 @@ test('the owner writes, the invited reader only reads, a stranger neither — an
   const text = JSON.stringify({ statements: [{ text: 'Ein Leser schreibt mit.', anchors: [`${STATEMENT_SOURCE_NAME}:3`], element: null, uncertainty: null }] });
   const asReader = await request.post(path, {
     headers: headers(readerToken),
-    data: { digest: CONTEXT.digest, text, receipt: issueModelReceipt({ uid: readerUid, text, modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey()) },
+    data: { digest: CONTEXT.digest, text, receipt: issueModelReceipt({ uid: readerUid, text, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey()) },
   });
   expect(asReader.status(), 'the reader was allowed to write').toBe(404);
 
@@ -238,7 +238,7 @@ test('the owner writes, the invited reader only reads, a stranger neither — an
   expect(JSON.stringify(await read.json())).not.toContain('Sperrkennzeichen');
   const write = await request.post(path, {
     headers: headers(otherToken),
-    data: { digest: CONTEXT.digest, text, receipt: issueModelReceipt({ uid: otherUid, text, modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey()) },
+    data: { digest: CONTEXT.digest, text, receipt: issueModelReceipt({ uid: otherUid, text, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey()) },
   });
   expect(write.status()).toBe(404);
   expect(await stored(request)).toEqual(owners);

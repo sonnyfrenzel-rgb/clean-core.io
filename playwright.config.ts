@@ -39,6 +39,13 @@ if (!process.env.AUDIT_SIGNING_KEY) {
 if (!process.env.S4_ENCRYPTION_KEY) {
   process.env.S4_ENCRYPTION_KEY = Buffer.alloc(32, 'clean-core-test-key').toString('base64');
 }
+// Roadmap 3.0.13 (g): the key a stored BYOK key is sealed with, separate from
+// the S/4 key and, like it, a visibly-test value here. Without one the save
+// route refuses and `/api/health` reports degraded — by design, so the suite
+// brings its own.
+if (!process.env.BYOK_ENCRYPTION_KEY) {
+  process.env.BYOK_ENCRYPTION_KEY = Buffer.alloc(32, 'clean-core-byok-test-key').toString('base64');
+}
 
 export default defineConfig({
   testDir: './tests',

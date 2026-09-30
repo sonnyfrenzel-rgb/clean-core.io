@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
+import { ByokKeyUnreadableError } from '@/lib/byok-key';
 import {
   verifyRequestAuth,
   assertMfaSatisfied,
@@ -47,12 +48,21 @@ interface StageAnswer {
   keySource: 'byok' | 'community' | null;
 }
 
+const UNREADABLE = Symbol('byok-key-unreadable');
+
 async function answerFor(uid: string): Promise<StageAnswer> {
   const { db } = await getAdminDb();
   const snap = await db.collection('users').doc(uid).get();
   const stages = modelStagesOf(snap.exists ? (snap.data() as { modelStages?: Record<string, boolean> }) : null);
 
-  const byokKey = await loadGeminiApiKey(uid);
+  // A stored key this server cannot open (3.0.13 g) is not an available key:
+  // `/api/gemini` refuses the call rather than spend the community key on an
+  // account that brought its own, so this answer must not promise one either.
+  const byokKey = await loadGeminiApiKey(uid).catch((err: unknown) => {
+    if (err instanceof ByokKeyUnreadableError) return UNREADABLE;
+    throw err;
+  });
+  if (byokKey === UNREADABLE) return { stages, keyAvailable: false, keySource: null };
   const keySource: StageAnswer['keySource'] = byokKey
     ? 'byok'
     : process.env.GEMINI_API_KEY
