@@ -12,18 +12,26 @@ import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import Stepper from '@/components/Stepper';
 import type { Project } from '@/lib/types';
-import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, Globe, Lock as LockIcon, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, ChevronDown, ChevronUp, Info, Database, Search, Layers, ChevronRight, MapPin } from 'lucide-react';
+import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
+import CcSegmentedControl from '@/components/cc/SegmentedControl';
+import CcDisclosure from '@/components/cc/Disclosure';
+import CcDialog from '@/components/cc/Dialog';
+import CcTable from '@/components/cc/Table';
+import CcField, { CC_CONTROL_HEIGHT } from '@/components/cc/Field';
+import CcSelect from '@/components/cc/Select';
+import CcTextarea from '@/components/cc/Textarea';
 import { STATE_CLASSES } from '@/components/cc/state';
 import { stateChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
 import type { TestingPieSlice } from '@/components/TestingCharts';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { clsx } from 'clsx';
+import { cn } from '@/lib/utils';
 import NavigationButtons from '@/components/NavigationButtons';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -107,6 +115,24 @@ const excelSheetName = (raw: string, fallback: string, taken: Set<string>): stri
   taken.add(candidate.toLowerCase());
   return candidate;
 };
+
+const ENV_SEGMENTS = [
+  { value: 'mock', label: 'Mock Environment' },
+  { value: 'live', label: 'Check tenant connection' },
+] as const;
+
+const AUTH_TYPE_OPTIONS = [
+  { value: 'basic', label: 'Basic Authentication (Username + Password)' },
+  { value: 'oauth2', label: 'OAuth 2.0 Client Credentials (Client ID + Secret)' },
+  { value: 'sap_hub', label: 'SAP Business Accelerator Hub Sandbox (API Key only)' },
+  { value: 'btp_destination', label: 'SAP BTP Destination Service (Paste JSON)' },
+] as const;
+
+const ODATA_PROPERTY_COLUMNS = [
+  { key: 'name', label: 'Property' },
+  { key: 'type', label: 'Type' },
+  { key: 'nullable', label: 'Nullable' },
+] as const;
 
 export default function TestingSandboxPage() {
   const { projectId } = useParams();
@@ -798,11 +824,9 @@ export default function TestingSandboxPage() {
   // Block D (D.17a): one vocabulary of surfaces and type for the whole stage —
   // DESIGN.md §1.1–§1.4. A card is the workspace card, a field is the field, a
   // label is the micro label; nothing here picks its own colour any more.
+  // Fields are the library's `CcField` (D.17b), so they have no class here.
   const CARD = 'bg-cc-surface border border-cc-line rounded-cc-card shadow-cc';
   const LABEL = 'cc-text-label text-cc-ink-muted';
-  const FIELD =
-    'w-full bg-cc-surface border border-cc-field-border rounded-cc-row cc-text-cell text-cc-ink placeholder:text-cc-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus';
-  const HINT = 'cc-text-meta font-medium text-cc-ink-muted leading-relaxed';
   const CODE = 'bg-cc-surface px-1 py-0.5 rounded font-cc-mono text-[12px] border border-cc-line';
   const authOption = (selected: boolean) =>
     clsx(
@@ -850,14 +874,15 @@ export default function TestingSandboxPage() {
           : 'Generate test cases and run them against mocks in a restricted Node.js process.'}
       </StageHeader>
 
-      {/* Explanation Boxes */}
+      {/* Explanation Boxes — h2 under the stage title (h1), set in the h3
+          style: sections of the page, not subsections of anything. */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <div className={clsx(CARD, 'p-4 md:p-5 flex gap-4')}>
           <ShieldCheck className="w-6 h-6 text-cc-ink-muted flex-shrink-0" aria-hidden="true" />
           <div>
-            <h3 className="cc-text-h3 text-cc-ink mb-1">
+            <h2 className="cc-text-h3 text-cc-ink mb-1">
               {isAbapCloud ? 'ABAP Unit Compiler' : 'Real Execution, Against Mocks'}
-            </h3>
+            </h2>
             <p className="cc-text-cell text-cc-ink-muted">
               {isAbapCloud
                 ? 'Generates standardized ABAP Unit local test classes verifying RAP custom behavioral entities.'
@@ -869,9 +894,9 @@ export default function TestingSandboxPage() {
         <div className={clsx(CARD, 'p-4 md:p-5 flex gap-4')}>
           <Activity className="w-6 h-6 text-cc-ink-muted flex-shrink-0" aria-hidden="true" />
           <div>
-            <h3 className="cc-text-h3 text-cc-ink mb-1">
+            <h2 className="cc-text-h3 text-cc-ink mb-1">
               {isAbapCloud ? 'SQL Test Double Mock' : 'SAP Mock Library'}
-            </h3>
+            </h2>
             <p className="cc-text-cell text-cc-ink-muted">
               {isAbapCloud
                 ? 'Realistic SQL Double DB schemas are mocked to test transactional behavior logic without core pollution.'
@@ -883,7 +908,7 @@ export default function TestingSandboxPage() {
         <div className={clsx(CARD, 'p-4 md:p-5 flex gap-4')}>
           <BarChart3 className="w-6 h-6 text-cc-ink-muted flex-shrink-0" aria-hidden="true" />
           <div>
-            <h3 className="cc-text-h3 text-cc-ink mb-1">Estimated Coverage</h3>
+            <h2 className="cc-text-h3 text-cc-ink mb-1">Estimated Coverage</h2>
             <p className="cc-text-meta text-cc-ink">
               {project?.coverageEstimate && !storedSuiteRejected
                 ? <span data-stage-output="coverageEstimate">{`${project.coverageEstimate.percentage}% Coverage`}</span>
@@ -905,33 +930,20 @@ export default function TestingSandboxPage() {
               1.7, ADR-004). */}
           <p className="cc-text-cell text-cc-ink-muted mt-1">Mock runs the generated suite in the sandbox. The tenant tab checks a connection and reads its OData metadata.</p>
         </div>
-        <div className="flex bg-cc-surface-muted border border-cc-line p-1 rounded-cc-row w-full sm:w-auto self-start sm:self-auto">
-          <button
-            onClick={() => handleEnvChange('mock')}
-            className={clsx(
-              "flex-1 sm:flex-none px-4 min-h-[32px] rounded-cc-row text-[13px] font-semibold transition-colors text-center",
-              activeEnvTab === 'mock'
-                ? "bg-cc-ink text-cc-on-dark"
-                : "text-cc-ink-muted hover:text-cc-ink"
-            )}
-          >
-            Mock Environment
-          </button>
-          <button
-            onClick={() => handleEnvChange('live')}
-            className={clsx(
-              "flex-1 sm:flex-none px-4 min-h-[32px] rounded-cc-row text-[13px] font-semibold transition-colors flex items-center justify-center gap-2 text-center",
-              activeEnvTab === 'live'
-                ? "bg-cc-ink text-cc-on-dark"
-                : "text-cc-ink-muted hover:text-cc-ink"
-            )}
-          >
-            {/* ADR-004 (15.09.2026): the tab stays visible and is named after
-                what it does. It carried "Connected S/4HANA Tenant" and a "Check
-                only" pill, which was the lock notice a third time on one screen
-                and told the reader what the tab is *not*. */}
-            Check tenant connection
-          </button>
+        {/* A state of the stage, not two parts of it: the environment decides
+            what "Run Selected" may do and whether the tenant panel is shown, so
+            it is a segmented control (§1.5), one radio group, and not tabs.
+            ADR-004 (15.09.2026): the tenant segment stays visible and is named
+            after what it does. It carried "Connected S/4HANA Tenant" and a
+            "Check only" pill, which was the lock notice a third time on one
+            screen and told the reader what the tab is *not*. */}
+        <div className="self-start sm:self-auto">
+          <CcSegmentedControl
+            label="Validation environment"
+            segments={ENV_SEGMENTS}
+            value={activeEnvTab}
+            onChange={(env) => handleEnvChange(env)}
+          />
         </div>
       </div>
 
@@ -994,287 +1006,272 @@ export default function TestingSandboxPage() {
                 </div>
 
                 {/* ─────── Comprehensive Setup Guide (collapsible) ─────── */}
-                <div className="mb-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowSetupGuide(!showSetupGuide)}
-                    className="w-full flex items-center justify-between bg-cc-surface-muted border border-cc-line p-4 rounded-cc-card hover:border-cc-field-border transition-colors group"
+                {/* Folded, never removed (§2.11): the guide stays in the page
+                    while it is closed, and it opens by itself for a connection
+                    that has not been saved yet (see the effect above). */}
+                <div className="mb-6 bg-cc-surface-muted border border-cc-line px-4 py-3 rounded-cc-card">
+                  <CcDisclosure
+                    title="Quick Start Guide — How to Connect Your S/4HANA Tenant"
+                    level={4}
+                    open={showSetupGuide}
+                    onOpenChange={setShowSetupGuide}
                   >
-                    <div className="flex items-center gap-3">
-                      <BookOpen className="w-5 h-5 text-cc-ink-muted shrink-0" aria-hidden="true" />
-                      <div className="text-left">
-                        <p className="cc-text-h3 text-cc-ink">Quick Start Guide — How to Connect Your S/4HANA Tenant</p>
-                        <p className="cc-text-meta font-medium text-cc-ink-muted mt-1">Step-by-step instructions for every authentication method. Click to {showSetupGuide ? 'collapse' : 'expand'}.</p>
-                      </div>
-                    </div>
-                    {showSetupGuide ? <ChevronUp className="w-5 h-5 text-cc-ink-muted" /> : <ChevronDown className="w-5 h-5 text-cc-ink-muted" />}
-                  </button>
+                    <div className="space-y-4 pt-1">
+                      <p className="cc-text-meta font-medium text-cc-ink-muted flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
+                        Step-by-step instructions for every authentication method.
+                      </p>
 
-                  <AnimatePresence>
-                    {showSetupGuide && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="bg-cc-surface-muted border border-t-0 border-cc-line p-5 rounded-b-cc-card -mt-2 space-y-4">
-
-                          {/* Step 1 — Always visible */}
-                          <div className="flex gap-3 items-start">
-                            <span className={STEP}>1</span>
-                            <div>
-                              <p className="cc-text-h3 text-cc-ink">Choose your Authentication Type</p>
-                              <p className="cc-text-cell text-cc-ink-muted leading-relaxed">
-                                Select the method that matches your SAP system setup from the dropdown below. Not sure which to use? Here is a quick overview:
-                              </p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                                <div className={authOption(s4AuthType === 'basic')}>
-                                  <span className="font-bold text-cc-ink block mb-1">Basic Authentication</span>
-                                  <span className="text-cc-ink-muted">Username + Password. Use for S/4HANA Cloud test tenants with Communication Arrangements (API users).</span>
-                                </div>
-                                <div className={authOption(s4AuthType === 'oauth2')}>
-                                  <span className="font-bold text-cc-ink block mb-1">OAuth 2.0 Client Credentials</span>
-                                  <span className="text-cc-ink-muted">Client ID + Secret. Use when your S/4HANA tenant provides OAuth token endpoints via Communication Arrangements.</span>
-                                </div>
-                                <div className={authOption(s4AuthType === 'sap_hub')}>
-                                  <span className="font-bold text-cc-ink block mb-1">SAP Business Accelerator Hub Sandbox</span>
-                                  <span className="text-cc-ink-muted">Free sandbox API key. No own tenant needed — perfect for testing with SAP{"'"}s public demo APIs.</span>
-                                </div>
-                                <div className={authOption(s4AuthType === 'btp_destination')}>
-                                  <span className="font-bold text-cc-ink block mb-1">BTP Destination Service (JSON)</span>
-                                  <span className="text-cc-ink-muted">Paste your BTP destination JSON config. For enterprises routing via SAP BTP with Cloud Connector or Internet proxy.</span>
-                                </div>
-                              </div>
+                      {/* Step 1 — Always visible */}
+                      <div className="flex gap-3 items-start">
+                        <span className={STEP}>1</span>
+                        <div>
+                          <p className="cc-text-h3 text-cc-ink">Choose your Authentication Type</p>
+                          <p className="cc-text-cell text-cc-ink-muted leading-relaxed">
+                            Select the method that matches your SAP system setup from the dropdown below. Not sure which to use? Here is a quick overview:
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                            <div className={authOption(s4AuthType === 'basic')}>
+                              <span className="font-bold text-cc-ink block mb-1">Basic Authentication</span>
+                              <span className="text-cc-ink-muted">Username + Password. Use for S/4HANA Cloud test tenants with Communication Arrangements (API users).</span>
                             </div>
-                          </div>
-
-                          {/* Step 2 — Dynamic based on auth type */}
-                          <div className="flex gap-3 items-start">
-                            <span className={STEP}>2</span>
-                            <div>
-                              <p className="cc-text-h3 text-cc-ink">Enter Your Connection Details</p>
-                              {s4AuthType === 'basic' && (
-                                <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
-                                  <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className={CODE}>https://my300120-api.s4hana.cloud.sap</code></p>
-                                  <p>→ <strong>Username:</strong> The Communication User name from your Communication Arrangement (e.g. <code className={CODE}>CC_INTEGRATOR</code>)</p>
-                                  <p>→ <strong>Password:</strong> The password assigned to that Communication User</p>
-                                  <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: S/4HANA Cloud → Communication Management → Communication Arrangements → Your arrangement → Inbound Communication → User Name</p>
-                                </div>
-                              )}
-                              {s4AuthType === 'oauth2' && (
-                                <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
-                                  <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className={CODE}>https://my300120-api.s4hana.cloud.sap</code></p>
-                                  <p>→ <strong>Client ID:</strong> The OAuth client ID from your Communication Arrangement (starts with <code className={CODE}>sb-clone-...</code>)</p>
-                                  <p>→ <strong>Client Secret:</strong> The OAuth client secret generated alongside the Client ID</p>
-                                  <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: S/4HANA Cloud → Communication Arrangements → OAuth 2.0 Details → Client ID / Client Secret</p>
-                                </div>
-                              )}
-                              {s4AuthType === 'sap_hub' && (
-                                <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
-                                  <p>→ <strong>Tenant URL:</strong> Use SAP{"'"}s sandbox URL: <code className={CODE}>https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/</code></p>
-                                  <p>→ No username or password needed — only your API key is required</p>
-                                  <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: <a href="https://api.sap.com" target="_blank" rel="noopener noreferrer" className="underline">api.sap.com</a> → Log in → Show API Key (top-right on any API page)</p>
-                                </div>
-                              )}
-                              {s4AuthType === 'btp_destination' && (
-                                <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
-                                  <p>→ Paste the full JSON from your BTP Destination into the text area below</p>
-                                  <p>→ The system automatically extracts <strong>Name</strong>, <strong>URL</strong>, <strong>Authentication</strong>, and <strong>ProxyType</strong></p>
-                                  <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: SAP BTP Cockpit → Connectivity → Destinations → Select your destination → Export as JSON (or copy the config)</p>
-                                </div>
-                              )}
+                            <div className={authOption(s4AuthType === 'oauth2')}>
+                              <span className="font-bold text-cc-ink block mb-1">OAuth 2.0 Client Credentials</span>
+                              <span className="text-cc-ink-muted">Client ID + Secret. Use when your S/4HANA tenant provides OAuth token endpoints via Communication Arrangements.</span>
                             </div>
-                          </div>
-
-                          {/* Step 3 + 4 — Always visible */}
-                          <div className="flex gap-3 items-start">
-                            <span className={STEP}>3</span>
-                            <div>
-                              <p className="cc-text-h3 text-cc-ink">Test the Connection</p>
-                              <p className="cc-text-cell text-cc-ink-muted">Click <strong>"Test Connection"</strong> to verify the handshake. The sandbox terminal below will show the live connection log.</p>
+                            <div className={authOption(s4AuthType === 'sap_hub')}>
+                              <span className="font-bold text-cc-ink block mb-1">SAP Business Accelerator Hub Sandbox</span>
+                              <span className="text-cc-ink-muted">Free sandbox API key. No own tenant needed — perfect for testing with SAP{"'"}s public demo APIs.</span>
                             </div>
-                          </div>
-                          <div className="flex gap-3 items-start">
-                            <span className={STEP}>4</span>
-                            <div>
-                              <p className="cc-text-h3 text-cc-ink">Save the Connection</p>
-                              <p className="cc-text-cell text-cc-ink-muted">Click <strong>"Save Connection"</strong> to persist the config. The Mock Environment tab is where the generated suite runs.</p>
+                            <div className={authOption(s4AuthType === 'btp_destination')}>
+                              <span className="font-bold text-cc-ink block mb-1">BTP Destination Service (JSON)</span>
+                              <span className="text-cc-ink-muted">Paste your BTP destination JSON config. For enterprises routing via SAP BTP with Cloud Connector or Internet proxy.</span>
                             </div>
-                          </div>
-
-                          {/* Security Notice */}
-                          <CcMessageStrip state="information" headline="Security:">
-                            Credentials travel over HTTPS and are encrypted at rest on the server (AES-256-GCM). Production domains (<code className={CODE}>*-api.s4hana.ondemand.com</code>) are automatically blocked. Only non-productive sandbox/test systems are allowed.
-                          </CcMessageStrip>
-
-                          {/* Quick links */}
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            <CcLinkButton href="/knowledge" icon={<ExternalLink className="w-4 h-4" aria-hidden="true" />}>
-                              Knowledge Hub
-                            </CcLinkButton>
-                            {/* This button is inside a project, so the one
-                                assistant it opens is the case-bound one: it
-                                answers from this project's evidence with
-                                anchors, and from nothing else. It cannot
-                                help with the S/4 connection this block is
-                                about — the Knowledge Hub link next to it
-                                can. Named for what opens, not for what one
-                                would wish for here; see the report on this
-                                step. */}
-                            <CcButton
-                              onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
-                              icon={<HelpCircle className="w-4 h-4" aria-hidden="true" />}
-                            >
-                              Ask this case
-                            </CcButton>
-                            <CcLinkButton href="/settings" icon={<ExternalLink className="w-4 h-4" aria-hidden="true" />}>
-                              Manage in Profile Settings
-                            </CcLinkButton>
                           </div>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      </div>
+
+                      {/* Step 2 — Dynamic based on auth type */}
+                      <div className="flex gap-3 items-start">
+                        <span className={STEP}>2</span>
+                        <div>
+                          <p className="cc-text-h3 text-cc-ink">Enter Your Connection Details</p>
+                          {s4AuthType === 'basic' && (
+                            <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
+                              <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className={CODE}>https://my300120-api.s4hana.cloud.sap</code></p>
+                              <p>→ <strong>Username:</strong> The Communication User name from your Communication Arrangement (e.g. <code className={CODE}>CC_INTEGRATOR</code>)</p>
+                              <p>→ <strong>Password:</strong> The password assigned to that Communication User</p>
+                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: S/4HANA Cloud → Communication Management → Communication Arrangements → Your arrangement → Inbound Communication → User Name</p>
+                            </div>
+                          )}
+                          {s4AuthType === 'oauth2' && (
+                            <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
+                              <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className={CODE}>https://my300120-api.s4hana.cloud.sap</code></p>
+                              <p>→ <strong>Client ID:</strong> The OAuth client ID from your Communication Arrangement (starts with <code className={CODE}>sb-clone-...</code>)</p>
+                              <p>→ <strong>Client Secret:</strong> The OAuth client secret generated alongside the Client ID</p>
+                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: S/4HANA Cloud → Communication Arrangements → OAuth 2.0 Details → Client ID / Client Secret</p>
+                            </div>
+                          )}
+                          {s4AuthType === 'sap_hub' && (
+                            <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
+                              <p>→ <strong>Tenant URL:</strong> Use SAP{"'"}s sandbox URL: <code className={CODE}>https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/</code></p>
+                              <p>→ No username or password needed — only your API key is required</p>
+                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: <a href="https://api.sap.com" target="_blank" rel="noopener noreferrer" className="underline">api.sap.com</a> → Log in → Show API Key (top-right on any API page)</p>
+                            </div>
+                          )}
+                          {s4AuthType === 'btp_destination' && (
+                            <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
+                              <p>→ Paste the full JSON from your BTP Destination into the text area below</p>
+                              <p>→ The system automatically extracts <strong>Name</strong>, <strong>URL</strong>, <strong>Authentication</strong>, and <strong>ProxyType</strong></p>
+                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: SAP BTP Cockpit → Connectivity → Destinations → Select your destination → Export as JSON (or copy the config)</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Step 3 + 4 — Always visible */}
+                      <div className="flex gap-3 items-start">
+                        <span className={STEP}>3</span>
+                        <div>
+                          <p className="cc-text-h3 text-cc-ink">Test the Connection</p>
+                          <p className="cc-text-cell text-cc-ink-muted">Click <strong>"Test Connection"</strong> to verify the handshake. The sandbox terminal below will show the live connection log.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 items-start">
+                        <span className={STEP}>4</span>
+                        <div>
+                          <p className="cc-text-h3 text-cc-ink">Save the Connection</p>
+                          <p className="cc-text-cell text-cc-ink-muted">Click <strong>"Save Connection"</strong> to persist the config. The Mock Environment tab is where the generated suite runs.</p>
+                        </div>
+                      </div>
+
+                      {/* Security Notice */}
+                      <CcMessageStrip state="information" headline="Security:">
+                        Credentials travel over HTTPS and are encrypted at rest on the server (AES-256-GCM). Production domains (<code className={CODE}>*-api.s4hana.ondemand.com</code>) are automatically blocked. Only non-productive sandbox/test systems are allowed.
+                      </CcMessageStrip>
+
+                      {/* Quick links */}
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <CcLinkButton href="/knowledge" icon={<ExternalLink className="w-4 h-4" aria-hidden="true" />}>
+                          Knowledge Hub
+                        </CcLinkButton>
+                        {/* This button is inside a project, so the one
+                            assistant it opens is the case-bound one: it
+                            answers from this project's evidence with
+                            anchors, and from nothing else. It cannot
+                            help with the S/4 connection this block is
+                            about — the Knowledge Hub link next to it
+                            can. Named for what opens, not for what one
+                            would wish for here; see the report on this
+                            step. */}
+                        <CcButton
+                          onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
+                          icon={<HelpCircle className="w-4 h-4" aria-hidden="true" />}
+                        >
+                          Ask this case
+                        </CcButton>
+                        <CcLinkButton href="/settings" icon={<ExternalLink className="w-4 h-4" aria-hidden="true" />}>
+                          Manage in Profile Settings
+                        </CcLinkButton>
+                      </div>
+                    </div>
+                  </CcDisclosure>
                 </div>
 
                 {/* ─────── Connection Form with Contextual Helpers ─────── */}
                 <form onSubmit={saveS4Config} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Tenant URL */}
-                    <div className="space-y-2">
-                      <label className={clsx(LABEL, 'block')}>Tenant HTTPS URL</label>
-                      <div className="relative">
-                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cc-ink-muted" />
+                    {/* Label above, hint under the label, asterisk and
+                        `aria-required` on every field the form cannot be saved
+                        without (§2.7). The native `required` stays on each
+                        control, so the browser still refuses an incomplete
+                        form exactly as before. */}
+                    <CcField
+                      label="Tenant HTTPS URL"
+                      required
+                      help={
+                        s4AuthType === 'sap_hub'
+                          ? 'Use the SAP Business Accelerator Hub sandbox base URL. Find it at api.sap.com on any S/4HANA Cloud API page.'
+                          : s4AuthType === 'btp_destination'
+                          ? 'Auto-filled from your BTP Destination JSON. You can also enter it manually.'
+                          : 'Your S/4HANA Cloud API host. Format: https://myXXXXXX-api.s4hana.cloud.sap — found in your S/4HANA Launchpad under Communication Arrangements.'
+                      }
+                    >
+                      {(control) => (
                         <input
+                          id={control.id}
                           type="url"
-                          required
+                          required={control.required}
+                          aria-required={control.ariaRequired}
+                          aria-describedby={control.describedBy}
                           value={s4Url}
                           onChange={e => setS4Url(e.target.value)}
                           placeholder={s4AuthType === 'sap_hub' ? 'https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/' : 'https://my300120-api.s4hana.cloud.sap'}
-                          className={clsx(FIELD, 'pl-10 pr-4 h-10')}
+                          className={cn(control.className, CC_CONTROL_HEIGHT.cozy)}
                         />
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <Info className="w-3 h-3 text-cc-ink-muted shrink-0 mt-1" />
-                        <span className={HINT}>
-                          {s4AuthType === 'sap_hub'
-                            ? 'Use the SAP Business Accelerator Hub sandbox base URL. Find it at api.sap.com on any S/4HANA Cloud API page.'
-                            : s4AuthType === 'btp_destination'
-                            ? 'Auto-filled from your BTP Destination JSON. You can also enter it manually.'
-                            : 'Your S/4HANA Cloud API host. Format: https://myXXXXXX-api.s4hana.cloud.sap — found in your S/4HANA Launchpad under Communication Arrangements.'
-                          }
-                        </span>
-                      </div>
-                    </div>
+                      )}
+                    </CcField>
 
-                    {/* Authentication Type */}
-                    <div className="space-y-2">
-                      <label className={clsx(LABEL, 'block')}>Authentication Type</label>
-                      <select
-                        value={s4AuthType}
-                        onChange={e => setS4AuthType(e.target.value as any)}
-                        className={clsx(FIELD, 'px-3 h-10')}
-                      >
-                        <option value="basic">Basic Authentication (Username + Password)</option>
-                        <option value="oauth2">OAuth 2.0 Client Credentials (Client ID + Secret)</option>
-                        <option value="sap_hub">SAP Business Accelerator Hub Sandbox (API Key only)</option>
-                        <option value="btp_destination">SAP BTP Destination Service (Paste JSON)</option>
-                      </select>
-                      <div className="flex items-start gap-2">
-                        <Info className="w-3 h-3 text-cc-ink-muted shrink-0 mt-1" />
-                        <span className={HINT}>
-                          {s4AuthType === 'basic' && 'Best for direct S/4HANA Cloud sandbox connections using a Communication User.'}
-                          {s4AuthType === 'oauth2' && 'Use when your Communication Arrangement provides OAuth 2.0 token endpoints.'}
-                          {s4AuthType === 'sap_hub' && 'No S/4HANA system needed — uses SAP\'s free public sandbox APIs for testing.'}
-                          {s4AuthType === 'btp_destination' && 'For enterprise setups routing through SAP BTP with Cloud Connector or direct proxy.'}
-                        </span>
-                      </div>
-                    </div>
+                    <CcSelect
+                      label="Authentication Type"
+                      density="cozy"
+                      options={AUTH_TYPE_OPTIONS}
+                      value={s4AuthType}
+                      onChange={setS4AuthType}
+                      help={
+                        s4AuthType === 'basic' ? 'Best for direct S/4HANA Cloud sandbox connections using a Communication User.'
+                          : s4AuthType === 'oauth2' ? 'Use when your Communication Arrangement provides OAuth 2.0 token endpoints.'
+                          : s4AuthType === 'sap_hub' ? 'No S/4HANA system needed — uses SAP\'s free public sandbox APIs for testing.'
+                          : 'For enterprise setups routing through SAP BTP with Cloud Connector or direct proxy.'
+                      }
+                    />
 
                     {/* BTP Destination JSON */}
                     {s4AuthType === 'btp_destination' && (
-                      <div className="space-y-2 col-span-1 md:col-span-2">
-                        <label className={clsx(LABEL, 'block')}>SAP BTP Destination JSON Configuration</label>
-                        <textarea
+                      <div className="col-span-1 md:col-span-2">
+                        <CcField
+                          label="SAP BTP Destination JSON Configuration"
                           required
-                          value={btpDestinationJson}
-                          onChange={e => handleBtpJsonChange(e.target.value)}
-                          placeholder={'{\n  "Name": "S4_CLOUDSANDBOX",\n  "Type": "HTTP",\n  "URL": "https://my300120-api.s4hana.cloud.sap",\n  "Authentication": "PrincipalPropagation",\n  "ProxyType": "OnPremise",\n  "tokenServiceURL": "https://tenant.authentication.eu10.hana.ondemand.com/oauth/token"\n}'}
-                          className={clsx(FIELD, 'px-3 py-2 h-32 font-cc-mono resize-none')}
-                        />
-                        <div className="flex items-start gap-2">
-                          <Info className="w-3 h-3 text-cc-ink-muted shrink-0 mt-1" />
-                          <span className={HINT}>
-                            Paste the JSON from SAP BTP Cockpit → Connectivity → Destinations. The Name, URL, Authentication, and ProxyType fields are auto-extracted.
-                          </span>
-                        </div>
+                          help="Paste the JSON from SAP BTP Cockpit → Connectivity → Destinations. The Name, URL, Authentication, and ProxyType fields are auto-extracted."
+                        >
+                          {(control) => (
+                            <textarea
+                              id={control.id}
+                              required={control.required}
+                              aria-required={control.ariaRequired}
+                              aria-describedby={control.describedBy}
+                              rows={7}
+                              value={btpDestinationJson}
+                              onChange={e => handleBtpJsonChange(e.target.value)}
+                              placeholder={'{\n  "Name": "S4_CLOUDSANDBOX",\n  "Type": "HTTP",\n  "URL": "https://my300120-api.s4hana.cloud.sap",\n  "Authentication": "PrincipalPropagation",\n  "ProxyType": "OnPremise",\n  "tokenServiceURL": "https://tenant.authentication.eu10.hana.ondemand.com/oauth/token"\n}'}
+                              className={cn(control.className, 'py-2 font-cc-mono resize-y leading-normal')}
+                            />
+                          )}
+                        </CcField>
                       </div>
                     )}
 
                     {/* Username / Client ID + Password / Secret fields */}
                     {s4AuthType !== 'sap_hub' && s4AuthType !== 'btp_destination' && (
                       <>
-                        <div className="space-y-2">
-                          <label className={clsx(LABEL, 'block')}>
-                            {s4AuthType === 'oauth2' ? 'Client ID' : 'Username'}
-                          </label>
-                          <div className="relative">
-                            <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cc-ink-muted" />
+                        <CcField
+                          label={s4AuthType === 'oauth2' ? 'Client ID' : 'Username'}
+                          required
+                          help={
+                            s4AuthType === 'oauth2'
+                              ? 'Found in Communication Arrangements → OAuth 2.0 Details → Client ID. Starts with "sb-clone-".'
+                              : 'The Communication User name from your Communication Arrangement. Example: CC_INTEGRATOR or INTEGRATION_USER.'
+                          }
+                        >
+                          {(control) => (
                             <input
+                              id={control.id}
                               type="text"
-                              required
+                              required={control.required}
+                              aria-required={control.ariaRequired}
+                              aria-describedby={control.describedBy}
                               value={s4Username}
                               onChange={e => setS4Username(e.target.value)}
                               placeholder={s4AuthType === 'oauth2' ? 'sb-clone-xxxx...' : 'CC_INTEGRATOR'}
-                              className={clsx(FIELD, 'pl-10 pr-4 h-10')}
+                              className={cn(control.className, CC_CONTROL_HEIGHT.cozy)}
                             />
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <Info className="w-3 h-3 text-cc-ink-muted shrink-0 mt-1" />
-                            <span className={HINT}>
-                              {s4AuthType === 'oauth2'
-                                ? 'Found in Communication Arrangements → OAuth 2.0 Details → Client ID. Starts with "sb-clone-".'
-                                : 'The Communication User name from your Communication Arrangement. Example: CC_INTEGRATOR or INTEGRATION_USER.'
-                              }
-                            </span>
-                          </div>
-                        </div>
+                          )}
+                        </CcField>
 
-                        <div className="space-y-2">
-                          <label className={clsx(LABEL, 'block')}>
-                            {s4AuthType === 'oauth2' ? 'Client Secret' : 'Password'}
-                          </label>
-                          <div className="relative">
-                            <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cc-ink-muted" />
-                            <input
-                              type={showS4Password ? "text" : "password"}
-                              required
-                              value={s4Password}
-                              onChange={e => setS4Password(e.target.value)}
-                              placeholder="••••••••••••••••"
-                              className={clsx(FIELD, 'pl-10 pr-12 h-10')}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowS4Password(!showS4Password)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-cc-ink-muted hover:text-cc-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
-                              aria-label="Show password"
-                              aria-pressed={showS4Password}
-                            >
-                              {showS4Password ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <Info className="w-3 h-3 text-cc-ink-muted shrink-0 mt-1" />
-                            <span className={HINT}>
-                              {s4AuthType === 'oauth2'
-                                ? 'The Client Secret generated together with your Client ID. Only shown once when creating the Communication Arrangement.'
-                                : 'The password set for the Communication User. If forgotten, reset it in the Communication Arrangement settings.'
-                              }
-                            </span>
-                          </div>
-                        </div>
+                        <CcField
+                          label={s4AuthType === 'oauth2' ? 'Client Secret' : 'Password'}
+                          required
+                          help={
+                            s4AuthType === 'oauth2'
+                              ? 'The Client Secret generated together with your Client ID. Only shown once when creating the Communication Arrangement.'
+                              : 'The password set for the Communication User. If forgotten, reset it in the Communication Arrangement settings.'
+                          }
+                        >
+                          {(control) => (
+                            <div className="relative">
+                              <input
+                                id={control.id}
+                                type={showS4Password ? "text" : "password"}
+                                required={control.required}
+                                aria-required={control.ariaRequired}
+                                aria-describedby={control.describedBy}
+                                value={s4Password}
+                                onChange={e => setS4Password(e.target.value)}
+                                placeholder="••••••••••••••••"
+                                className={cn(control.className, CC_CONTROL_HEIGHT.cozy, 'pr-10')}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowS4Password(!showS4Password)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-cc-ink-muted hover:text-cc-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+                                aria-label="Show password"
+                                aria-pressed={showS4Password}
+                              >
+                                {showS4Password ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
+                              </button>
+                            </div>
+                          )}
+                        </CcField>
                       </>
                     )}
                   </div>
@@ -1331,7 +1328,7 @@ export default function TestingSandboxPage() {
                           <div className="flex items-center gap-3">
                             <Database className="w-5 h-5 text-cc-ink-muted shrink-0" aria-hidden="true" />
                             <div>
-                              <h3 className="cc-text-h3 text-cc-ink">OData Service Explorer</h3>
+                              <h4 className="cc-text-h3 text-cc-ink">OData Service Explorer</h4>
                               <p className="cc-text-meta font-medium text-cc-ink-muted">Browse live OData services exposed by your connected tenant.</p>
                             </div>
                           </div>
@@ -1345,16 +1342,21 @@ export default function TestingSandboxPage() {
                         </div>
 
                         {/* Manual service input */}
-                        <div className="flex gap-2 mb-4">
-                          <div className="relative flex-1">
-                            <Database className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cc-ink-muted" />
-                            <input
-                              type="text"
-                              value={odataServicePath}
-                              onChange={e => setOdataServicePath(e.target.value)}
-                              placeholder="Enter service name, e.g. API_BUSINESS_PARTNER"
-                              className={clsx(FIELD, 'pl-10 pr-4 h-8')}
-                            />
+                        <div className="flex items-end gap-2 mb-4">
+                          <div className="flex-1 min-w-0">
+                            <CcField label="Service name">
+                              {(control) => (
+                                <input
+                                  id={control.id}
+                                  type="text"
+                                  aria-describedby={control.describedBy}
+                                  value={odataServicePath}
+                                  onChange={e => setOdataServicePath(e.target.value)}
+                                  placeholder="Enter service name, e.g. API_BUSINESS_PARTNER"
+                                  className={control.className}
+                                />
+                              )}
+                            </CcField>
                           </div>
                           <CcButton
                             onClick={() => odataServicePath && handleFetchServiceMetadata(odataServicePath)}
@@ -1397,22 +1399,32 @@ export default function TestingSandboxPage() {
                         {/* Service Catalog Results */}
                         {odataMode === 'catalog' && odataCatalog.length > 0 && (
                           <div className="space-y-2">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className={LABEL}>
+                            <div className="flex items-end justify-between gap-3 mb-2">
+                              <span className={clsx(LABEL, 'pb-2')}>
                                 {odataTotalServices} Services Discovered
                               </span>
-                              <div className="relative w-48">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-cc-ink-muted" />
-                                <input
-                                  type="text"
-                                  value={odataCatalogSearch}
-                                  onChange={e => setOdataCatalogSearch(e.target.value)}
-                                  placeholder="Filter services..."
-                                  className={clsx(FIELD, 'pl-8 pr-3 h-8')}
-                                />
+                              <div className="w-48">
+                                <CcField label="Filter services">
+                                  {(control) => (
+                                    <input
+                                      id={control.id}
+                                      type="text"
+                                      aria-describedby={control.describedBy}
+                                      value={odataCatalogSearch}
+                                      onChange={e => setOdataCatalogSearch(e.target.value)}
+                                      placeholder="Filter services..."
+                                      className={control.className}
+                                    />
+                                  )}
+                                </CcField>
                               </div>
                             </div>
-                            <div className="max-h-60 overflow-y-auto rounded-cc-row border border-cc-line bg-cc-surface divide-y divide-cc-line">
+                            {/* A list of services, each one a button that fetches
+                                its $metadata. Rows of a list rather than buttons of
+                                §1.5, so they carry no surface of their own — the
+                                title underlines under the pointer, and the focus
+                                ring is the app's own. */}
+                            <ul className="max-h-60 overflow-y-auto rounded-cc-row border border-cc-line bg-cc-surface divide-y divide-cc-line m-0 p-0 list-none">
                               {odataCatalog
                                 .filter(svc =>
                                   !odataCatalogSearch ||
@@ -1421,60 +1433,52 @@ export default function TestingSandboxPage() {
                                 )
                                 .slice(0, 50)
                                 .map((svc, i) => (
-                                  <button
-                                    key={i}
-                                    type="button"
-                                    onClick={() => handleFetchServiceMetadata(svc.path)}
-                                    className="w-full flex items-center justify-between px-4 py-2 hover:bg-cc-surface-muted transition-colors text-left group"
-                                  >
-                                    <div className="min-w-0">
-                                      <span className="cc-text-cell font-semibold text-cc-ink block truncate">{svc.title}</span>
-                                      <span className="text-[12px] font-cc-mono text-cc-ink-muted block truncate">{svc.path}</span>
-                                    </div>
-                                    <ChevronRight className="w-4 h-4 text-cc-ink-muted group-hover:text-cc-ink shrink-0 transition-colors" />
-                                  </button>
+                                  <li key={i}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleFetchServiceMetadata(svc.path)}
+                                      className="w-full flex items-center justify-between gap-2 px-4 py-2 text-left group"
+                                    >
+                                      <span className="min-w-0">
+                                        <span className="cc-text-cell font-semibold text-cc-ink block truncate group-hover:underline">{svc.title}</span>
+                                        <span className="text-[12px] font-cc-mono text-cc-ink-muted block truncate">{svc.path}</span>
+                                      </span>
+                                      <ChevronRight className="w-4 h-4 text-cc-ink-muted group-hover:text-cc-ink shrink-0 transition-colors" aria-hidden="true" />
+                                    </button>
+                                  </li>
                                 ))}
-                            </div>
+                            </ul>
                           </div>
                         )}
 
                         {/* Metadata Results (Entity Types) */}
                         {odataMode === 'metadata' && odataEntityTypes.length > 0 && (
                           <div className="space-y-2">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => { setOdataMode('catalog'); setOdataEntityTypes([]); }}
-                                  className="cc-text-meta text-cc-information hover:text-cc-ink underline"
-                                >
-                                  ← Back to catalog
-                                </button>
-                                <span className={LABEL}>
-                                  {odataSelectedService} — {odataEntityTypes.length} Entity Types
-                                </span>
-                              </div>
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <CcButton
+                                variant="ghost"
+                                onClick={() => { setOdataMode('catalog'); setOdataEntityTypes([]); }}
+                                icon={<ArrowLeft className="w-4 h-4" aria-hidden="true" />}
+                              >
+                                Back to catalog
+                              </CcButton>
+                              <span className={LABEL}>
+                                {odataSelectedService} — {odataEntityTypes.length} Entity Types
+                              </span>
                             </div>
+                            {/* One entity type open at a time, as before; its
+                                count is on the closed row (§2.11). */}
                             <div className="max-h-80 overflow-y-auto rounded-cc-row border border-cc-line bg-cc-surface divide-y divide-cc-line">
                               {odataEntityTypes.map((et, i) => (
-                                <div key={i}>
-                                  <button
-                                    type="button"
-                                    onClick={() => setOdataExpandedEntity(odataExpandedEntity === et.name ? null : et.name)}
-                                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-cc-surface-muted transition-colors text-left"
+                                <div key={i} className="px-4 py-1">
+                                  <CcDisclosure
+                                    title={et.name}
+                                    count={et.properties.length}
+                                    open={odataExpandedEntity === et.name}
+                                    onOpenChange={(open) => setOdataExpandedEntity(open ? et.name : null)}
                                   >
-                                    <div className="flex items-center gap-2">
-                                      <Layers className="w-4 h-4 text-cc-ink-muted" />
-                                      <span className="cc-text-cell font-semibold text-cc-ink">{et.name}</span>
-                                      <CcTag>{et.properties.length} props</CcTag>
-                                    </div>
-                                    <ChevronDown className={clsx(
-                                      "w-4 h-4 text-cc-ink-muted transition-transform",
-                                      odataExpandedEntity === et.name && "rotate-180"
-                                    )} />
-                                  </button>
                                   {odataExpandedEntity === et.name && (
-                                    <div className="px-4 pb-3">
+                                    <div className="pb-2">
                                       {/* Reads from the tenant that is actually connected. Reports
                                           what came back and nothing more — no comparison against the
                                           generated code happens here, so none is claimed. */}
@@ -1496,32 +1500,23 @@ export default function TestingSandboxPage() {
                                           </span>
                                         )}
                                       </div>
-                                      <div className="bg-cc-surface rounded-cc-row border border-cc-line overflow-hidden">
-                                        <table className="w-full cc-text-meta">
-                                          <thead>
-                                            <tr className="bg-cc-surface-muted">
-                                              <th className={clsx(LABEL, 'text-left px-3 py-2')}>Property</th>
-                                              <th className={clsx(LABEL, 'text-left px-3 py-2')}>Type</th>
-                                              <th className={clsx(LABEL, 'text-left px-3 py-2')}>Nullable</th>
-                                            </tr>
-                                          </thead>
-                                          <tbody className="divide-y divide-cc-line">
-                                            {et.properties.map((prop, pi) => (
-                                              <tr key={pi} className="hover:bg-cc-surface-muted">
-                                                <td className="px-3 py-2 font-cc-mono text-cc-ink">{prop.name}</td>
-                                                <td className="px-3 py-2 font-cc-mono text-cc-ink-muted">{prop.type.replace('Edm.', '')}</td>
-                                                <td className="px-3 py-2">
-                                                  {prop.nullable
-                                                    ? <CcTag>Yes</CcTag>
-                                                    : <span className="cc-text-meta text-cc-error">Required</span>}
-                                                </td>
-                                              </tr>
-                                            ))}
-                                          </tbody>
-                                        </table>
-                                      </div>
+                                      <CcTable
+                                        caption={`Properties of ${et.name}`}
+                                        columns={ODATA_PROPERTY_COLUMNS}
+                                        rows={et.properties.map((prop, pi) => ({
+                                          key: `${pi}`,
+                                          cells: {
+                                            name: <span className="font-cc-mono">{prop.name}</span>,
+                                            type: <span className="font-cc-mono text-cc-ink-muted">{prop.type.replace('Edm.', '')}</span>,
+                                            nullable: prop.nullable
+                                              ? <CcTag>Yes</CcTag>
+                                              : <span className="cc-text-meta text-cc-error">Required</span>,
+                                          },
+                                        }))}
+                                      />
                                     </div>
                                   )}
+                                  </CcDisclosure>
                                 </div>
                               ))}
                             </div>
@@ -1553,10 +1548,10 @@ export default function TestingSandboxPage() {
                 <div className="space-y-4 max-w-4xl">
                   {/* Instructions */}
                   <div className="bg-cc-surface-muted border border-cc-line p-4 rounded-cc-card">
-                    <h3 className="cc-text-h3 text-cc-ink mb-3 flex items-center gap-2">
+                    <h4 className="cc-text-h3 text-cc-ink mb-3 flex items-center gap-2">
                       <ListChecks className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" />
                       Instructions (Setup Guide)
-                    </h3>
+                    </h4>
                     <ol className="list-decimal pl-4 cc-text-cell text-cc-ink space-y-2">
                       <li><strong>Request access:</strong> Use the form below to request access for your organization.</li>
                       <li><strong>Provide HTTPS endpoint:</strong> Set up a secure HTTPS connection to your S/4HANA sandbox or test system.</li>
@@ -1567,10 +1562,10 @@ export default function TestingSandboxPage() {
 
                   {/* Security Measures */}
                   <div className="bg-cc-surface-muted border border-cc-line p-4 rounded-cc-card">
-                    <h3 className="cc-text-h3 text-cc-ink mb-3 flex items-center gap-2">
+                    <h4 className="cc-text-h3 text-cc-ink mb-3 flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" />
                       Security Measures & Explanations
-                    </h3>
+                    </h4>
                     <ul className="list-disc pl-4 cc-text-cell text-cc-ink space-y-2">
                       <li><strong>Encrypted at rest:</strong> Passwords and tokens travel over HTTPS to the server, which encrypts them with AES-256-GCM in a server-only store. They are never returned to the browser.</li>
                       <li><strong>Production Block:</strong> Access to production interfaces (<code className={CODE}>*-api.s4hana.ondemand.com</code>) is blocked by the system.</li>
@@ -1596,18 +1591,17 @@ export default function TestingSandboxPage() {
                     </div>
                   ) : (
                     <div className="space-y-4 pt-2">
-                      <div className="space-y-2">
-                        <label className={clsx(LABEL, 'block')}>
-                          Description of your use case (Motivation)
-                        </label>
-                        <textarea
-                          placeholder="E.g., connecting our non-productive S/4HANA Public Cloud Sandbox to validate OData interfaces..."
-                          value={accessRequestedMotivation}
-                          maxLength={2000}
-                          onChange={e => setAccessRequestedMotivation(e.target.value)}
-                          className={clsx(FIELD, 'px-3 py-2 h-20 resize-none')}
-                        />
-                      </div>
+                      {/* The limit is the rule's (firestore.rules caps the
+                          field) and the handler cuts to it again before the
+                          write — the field only stops the typing earlier. */}
+                      <CcTextarea
+                        label="Description of your use case (Motivation)"
+                        placeholder="E.g., connecting our non-productive S/4HANA Public Cloud Sandbox to validate OData interfaces..."
+                        value={accessRequestedMotivation}
+                        maxLength={2000}
+                        rows={3}
+                        onChange={setAccessRequestedMotivation}
+                      />
 
                       <CcButton
                         variant="primary"
@@ -1741,14 +1735,13 @@ export default function TestingSandboxPage() {
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
                   <div className="flex items-center gap-4 flex-wrap">
                     <span data-stage-output="testCases" className={LABEL}>{selectedTestCases.length} of {testCases.length} selected</span>
-                    <div className="relative group/tooltip">
-                      <button
-                        onClick={exportTestCasesToExcel}
-                        className="flex items-center gap-2 text-[13px] font-semibold transition-colors text-cc-information hover:text-cc-ink"
-                      >
-                        <Download size={14} /> Export Excel
-                      </button>
-                    </div>
+                    <CcButton
+                      variant="ghost"
+                      onClick={exportTestCasesToExcel}
+                      icon={<Download size={14} aria-hidden="true" />}
+                    >
+                      Export Excel
+                    </CcButton>
                     {exportError && (
                       <span data-export-error role="alert" className="flex items-center gap-2 cc-text-meta text-cc-error">
                         <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -1765,20 +1758,23 @@ export default function TestingSandboxPage() {
                     {isRunning ? 'Running...' : 'Run Selected'}
                   </CcButton>
                 </div>
+                {/* The whole row is the checkbox's label, so a click anywhere on
+                    it ticks the box and the box is what the keyboard reaches —
+                    a clickable row alone was out of reach of Tab and Space. The
+                    label's text (id, category, description) is the box's name. */}
                 {testCases.map((tc, i) => (
-                  <div
+                  <label
                     key={i}
                     className={clsx(
                       "flex items-start gap-3 p-3 md:p-4 rounded-cc-row border transition-colors cursor-pointer",
                       selectedTestCases.includes(i) ? "border-cc-ink bg-cc-surface" : "border-cc-line hover:border-cc-field-border hover:bg-cc-surface-muted"
                     )}
-                    onClick={() => toggleTestCase(i)}
                   >
                     <input
                       type="checkbox"
                       checked={selectedTestCases.includes(i)}
-                      onChange={() => {}}
-                      className="mt-1 w-4 h-4 rounded border-cc-field-border accent-cc-ink"
+                      onChange={() => toggleTestCase(i)}
+                      className="mt-1 w-4 h-4 shrink-0 cursor-pointer rounded border-cc-field-border accent-cc-ink"
                     />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -1789,7 +1785,7 @@ export default function TestingSandboxPage() {
                       </div>
                       <p className="cc-text-cell text-cc-ink truncate sm:whitespace-normal">{renderSafeValue(tc.description)}</p>
                     </div>
-                  </div>
+                  </label>
                 ))}
               </div>
             )}
@@ -1813,15 +1809,12 @@ export default function TestingSandboxPage() {
                 </span>
               </div>
             </div>
-            <button
-              onClick={() => setShowTestCode(!showTestCode)}
-              className="text-[12px] font-semibold text-cc-code-ink bg-cc-code-bg border border-cc-code-muted hover:border-cc-code-ink px-3 min-h-[32px] rounded-cc-row transition-colors text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-code-name"
-            >
+            <CcButton variant="ghost" onClick={() => setShowTestCode(!showTestCode)}>
               {isAbapCloud
                 ? (showTestCode ? 'View ADT Output' : 'View ABAP Unit Class')
                 : (showTestCode ? 'View Output' : 'View Module Code')
               }
-            </button>
+            </CcButton>
           </div>
           <div className="p-4 md:p-6 font-cc-mono text-[12px] md:text-[13px] bg-cc-code-bg text-cc-code-ink flex-grow overflow-auto custom-scrollbar">
             {showTestCode ? (
@@ -1991,10 +1984,9 @@ export default function TestingSandboxPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                onClick={() => setSelectedResult(res)}
                 data-verdict-tone={tone}
                 className={clsx(
-                  "group p-4 rounded-cc-card border cursor-pointer transition-colors bg-cc-surface shadow-cc hover:border-cc-field-border",
+                  "group relative p-4 rounded-cc-card border transition-colors bg-cc-surface shadow-cc hover:border-cc-field-border",
                   tone === 'fail' ? 'border-cc-error-border' : tone === 'none' ? 'border-dashed border-cc-field-border' : 'border-cc-line'
                 )}
               >
@@ -2006,7 +1998,19 @@ export default function TestingSandboxPage() {
                   </span>
                   <span className="font-cc-mono text-[12px] text-cc-ink-muted">{renderSafeValue(res.id)}</span>
                 </div>
-                <h4 className="cc-text-h3 text-cc-ink mb-2 line-clamp-2 leading-tight">{renderSafeValue(res.name)}</h4>
+                {/* The name is the button, stretched over the card: the whole
+                    card still opens the report on click, and the keyboard now
+                    reaches it too — the report dialog hands the focus back
+                    here when it closes. */}
+                <h4 className="cc-text-h3 text-cc-ink mb-2 line-clamp-2 leading-tight">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedResult(res)}
+                    className="text-left cursor-pointer after:absolute after:inset-0 after:rounded-cc-card"
+                  >
+                    {renderSafeValue(res.name)}
+                  </button>
+                </h4>
                 <div className="flex items-center gap-2 pt-2">
                   <CcTag>{renderSafeValue(res.category)}</CcTag>
                   <span className={clsx("cc-text-meta ml-auto", state.text)}>
@@ -2020,47 +2024,51 @@ export default function TestingSandboxPage() {
         </div>
       )}
 
-      {selectedResult && (
-        <div className="fixed inset-0 bg-cc-overlay/60 flex items-center justify-center p-4 z-[100]" onClick={() => setSelectedResult(null)}>
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="bg-cc-surface rounded-cc-card p-6 md:p-8 max-w-4xl w-full shadow-cc-dialog flex flex-col max-h-[90vh] overflow-hidden"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6 gap-4">
-              <div className="min-w-0">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="font-cc-mono text-[13px] font-semibold text-cc-ink">{renderSafeValue(selectedResult.id)}</span>
-                  <CcTag>{renderSafeValue(selectedResult.category)}</CcTag>
-                </div>
-                <h3 className="cc-text-title text-cc-ink">{renderSafeValue(selectedResult.name)}</h3>
-              </div>
-              <div className={clsx(
-                "px-3 py-1 rounded-cc-row border cc-text-meta self-start sm:self-auto",
+      {/* The report of one test case: the library's dialog (§2.6) — the page
+          behind is inert, Escape and the close button leave, and the focus
+          returns to the card that opened it. A click on the dimmed page no
+          longer closes it: that is the dialog's rule, not this page's. */}
+      <CcDialog
+        open={!!selectedResult}
+        title={selectedResult ? renderSafeValue(selectedResult.name) : ''}
+        onClose={() => setSelectedResult(null)}
+        size="wide"
+        data-test-report=""
+        actions={
+          <CcButton variant="ghost" density="cozy" onClick={() => setSelectedResult(null)}>
+            Close report
+          </CcButton>
+        }
+      >
+        {selectedResult && (
+          <>
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+              <span className="font-cc-mono text-[13px] font-semibold text-cc-ink">{renderSafeValue(selectedResult.id)}</span>
+              <CcTag>{renderSafeValue(selectedResult.category)}</CcTag>
+              <span className={clsx(
+                "ml-auto px-3 py-1 rounded-cc-row border cc-text-meta",
                 STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].bg,
                 STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].border,
                 STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].text,
               )}>
                 {renderSafeValue(selectedResult.status)}
-              </div>
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-grow overflow-y-auto px-1 custom-scrollbar pb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <div>
-                  <h4 className={clsx(LABEL, 'mb-2')}>Goal</h4>
+                  <h3 className={clsx(LABEL, 'mb-2')}>Goal</h3>
                   <p className="cc-text-body text-cc-ink">{renderSafeValue(selectedResult.description)}</p>
                 </div>
                 <div>
-                  <h4 className={clsx(LABEL, 'mb-2')}>Preconditions</h4>
+                  <h3 className={clsx(LABEL, 'mb-2')}>Preconditions</h3>
                   <div className="bg-cc-surface-muted p-4 rounded-cc-row border border-cc-line">
                     <p className="cc-text-cell text-cc-ink whitespace-pre-wrap">{renderSafeValue(selectedResult.preconditions)}</p>
                   </div>
                 </div>
                 <div>
-                  <h4 className={clsx(LABEL, 'mb-2')}>Requirement Metadata</h4>
+                  <h3 className={clsx(LABEL, 'mb-2')}>Requirement Metadata</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-cc-surface-muted p-3 rounded-cc-row border border-cc-line">
                       <span className={clsx(LABEL, 'block mb-1')}>Priority</span>
@@ -2076,7 +2084,7 @@ export default function TestingSandboxPage() {
 
               <div className="space-y-6">
                 <div>
-                  <h4 className={clsx(LABEL, 'mb-2')}>Execution Sequence</h4>
+                  <h3 className={clsx(LABEL, 'mb-2')}>Execution Sequence</h3>
                   <div className="space-y-2">
                     {Array.isArray(selectedResult.steps) ? selectedResult.steps.map((step: any, idx: number) => (
                       <div key={idx} className="flex gap-4 p-3 bg-cc-surface-muted rounded-cc-row border border-cc-line">
@@ -2087,7 +2095,7 @@ export default function TestingSandboxPage() {
                   </div>
                 </div>
                 <div>
-                  <h4 className={clsx(LABEL, 'mb-2')}>Validation Logic</h4>
+                  <h3 className={clsx(LABEL, 'mb-2')}>Validation Logic</h3>
                   <div className={clsx(
                     "p-4 rounded-cc-row border font-cc-mono text-[12px] text-cc-ink",
                     STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].bg,
@@ -2107,15 +2115,9 @@ export default function TestingSandboxPage() {
                 </div>
               </div>
             </div>
-
-            <div className="mt-6 flex justify-end shrink-0">
-              <CcButton variant="dark" density="cozy" onClick={() => setSelectedResult(null)}>
-                Close report
-              </CcButton>
-            </div>
-          </motion.div>
-        </div>
-      )}
+          </>
+        )}
+      </CcDialog>
 
 
       <NavigationButtons
