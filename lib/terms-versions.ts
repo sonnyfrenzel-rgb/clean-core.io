@@ -87,12 +87,39 @@ export const TERMS_ARCHIVE_DIR = 'docs/terms';
 /**
  * Every version of the Terms that has been published, newest first.
  *
- * Only v2.0.0 is here today, and that is the honest state: it is the one text
- * that has actually been in force. The version currently being prepared
- * (`TERMS_VERSION`) joins this list when it goes live on `main`, and until it
- * does, `archivedTermsSha256(TERMS_VERSION)` answers null rather than a guess.
+ * The version in force (`TERMS_VERSION`) is archived in the same change that
+ * makes it current, not afterwards. The first plan was "it joins this list when
+ * it goes live on `main`", and v2.1.0 showed what that plan produces: nobody
+ * did it, and every consent recorded for v2.1.0 from 18.09.2026 carries
+ * `contentSha256: null`. Archiving it up front is safe because
+ * `tests/terms-version-archive.spec.ts` holds the rendered `/terms` to the
+ * archived wording of `TERMS_VERSION`: an edit to the page without a new
+ * version fails there, instead of turning the archived digest into a claim
+ * about words the page no longer shows.
  */
 export const ARCHIVED_TERMS_VERSIONS: readonly ArchivedTermsVersion[] = [
+  {
+    // v2.2.0, the version 3.0 ships with (Sonny, 30.09.2026): section 4.1 says
+    // which results the deterministic engine computes and which a model writes
+    // (QA 6b83ef361e80). The id and the effective date are a placeholder for the
+    // 3.0 release day; if that day differs, this is re-extracted under the real
+    // date before release — it has not been published yet, so it is not an edit
+    // of a published version.
+    version: '2026-10-15',
+    label: 'v2.2.0',
+    effectiveOn: '15 October 2026',
+    file: 'docs/terms/2026-10-15.md',
+    sha256: '14b1c96513d6b91201f047fa87a0b5581ce243faeeefcf575e38b064fa011cb7',
+    source: {
+      file: 'app/terms/page.tsx',
+      commit: '88377f92ffed2bb58da9147dadb81fc15e65b7b6',
+      blob: '925ece2cce59d21053c8620ffb0a67d40d50ba70',
+      method:
+        'Rendered in a browser at the recorded commit and read out of the DOM with the walk in ' +
+        'scratch/extract-legal.js. The "Published versions" list is navigation, not contract text, and was ' +
+        'left out.',
+    },
+  },
   {
     // v2.1.0 was current from 18.09.2026 and never archived while it was: every
     // consent recorded for it carries `contentSha256: null`. It is archived now,

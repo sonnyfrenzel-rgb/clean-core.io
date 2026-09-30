@@ -240,6 +240,25 @@ test.describe('the archived text is the one that was in force', () => {
     }
   });
 
+  /**
+   * v2.1.0 is recognisable by the sentence v2.2.0 replaced (QA 6b83ef361e80):
+   * section 4.1 attributing the whole analysis to generative AI. Finding it here,
+   * under the v2.1.0 date, is what shows this file is the text that was in force
+   * from 18.09.2026 and not a copy of its successor.
+   */
+  test('v2.1.0 carries the section 4.1 that v2.2.0 replaced', () => {
+    const entry = archivedTerms('2026-09-18');
+    expect(entry, 'v2.1.0 is no longer archived').toBeTruthy();
+    const text = normalise(read(entry!.file));
+    expect(text, 'the archived text does not state its own version').toContain(
+      normalise('effective 18 September 2026 (v2.1.0)'),
+    );
+    expect(text).toContain(
+      normalise('Modernization analyses and source code are generated automatically by generative AI models.'),
+    );
+    expect(text, 'the v2.1.0 archive carries v2.2.0 wording').not.toContain('Deterministic results');
+  });
+
   test('the archived Markdown parses into the blocks the page renders', () => {
     for (const entry of ARCHIVED_TERMS_VERSIONS) {
       const blocks = parseArchivedTerms(read(entry.file));
@@ -256,6 +275,59 @@ test.describe('the archived text is the one that was in force', () => {
         .filter((c) => c.trim().length > 0).length;
       const items = blocks.reduce((n, b) => n + (b.kind === 'list' ? b.items.length : 1), 0);
       expect(items, `${entry.file} loses text between the file and the blocks`).toBe(chunks);
+    }
+  });
+});
+
+test.describe('the version in force is the version archived under its id', () => {
+  /**
+   * `TERMS_VERSION` is archived in the change that makes it current (see the
+   * comment on `ARCHIVED_TERMS_VERSIONS`), so the digest a consent record
+   * carries is never null again. That is only safe if the page cannot move away
+   * from the archived words afterwards: an edit to `/terms` under the same
+   * version would make every record naming it a statement about words nobody
+   * was shown. This is the check that makes such an edit fail — change the
+   * wording, and it has to be a new version with a new archive entry.
+   */
+  test('TERMS_VERSION has an archived text', () => {
+    expect(
+      archivedTerms(TERMS_VERSION),
+      `${TERMS_VERSION} is current but not archived — every consent to it would record no wording`,
+    ).toBeTruthy();
+  });
+
+  test('/terms renders exactly the archived wording of TERMS_VERSION', async ({ page }) => {
+    const entry = archivedTerms(TERMS_VERSION);
+    test.skip(!entry, 'covered by the test above');
+    await page.goto('/terms', { waitUntil: 'domcontentloaded' });
+    const main = normalise(await page.locator('main').innerText());
+    for (const block of parseArchivedTerms(read(entry!.file))) {
+      const wanted =
+        block.kind === 'heading' ? block.text : block.kind === 'list' ? block.items.join(' ') : block.lines.join(' ');
+      expect(
+        main,
+        `/terms no longer says "${wanted.slice(0, 80)}…", which the archived ${entry!.label} does. A changed text ` +
+          'is a new version with a new effective date, not an edit under the current one.',
+      ).toContain(normalise(wanted));
+    }
+    // And nothing was added to the contract on the page that the archive lacks:
+    // every paragraph of the page's contract part is a block of the archive.
+    const archived = normalise(
+      parseArchivedTerms(read(entry!.file))
+        .map((b) => (b.kind === 'heading' ? b.text : b.kind === 'list' ? b.items.join(' ') : b.lines.join(' ')))
+        .join(' '),
+    );
+    const pageParagraphs = await page
+      .locator('main p, main li, main h1, main h2')
+      .evaluateAll((els) =>
+        els
+          .filter((el) => !el.closest('#previous-versions'))
+          .map((el) => (el.tagName === 'H1' || el.tagName === 'H2' ? el.textContent : (el as HTMLElement).innerText) || ''),
+      );
+    for (const para of pageParagraphs) {
+      const text = normalise(para);
+      if (!text) continue;
+      expect(archived, `/terms says "${text.slice(0, 80)}…", which the archived ${entry!.label} does not`).toContain(text);
     }
   });
 });
