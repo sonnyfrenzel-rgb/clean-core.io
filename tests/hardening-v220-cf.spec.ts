@@ -13,6 +13,12 @@ import JSZip from 'jszip';
 import { verifyAuditPack } from '../lib/audit-pack-verify';
 import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
 import { providerErrorShape } from '../lib/logger';
+import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin/app';
+import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
+import type { Auth } from 'firebase-admin/auth';
+import firebaseConfig from '../firebase-config.json';
+import { FIRESTORE_DB_ID } from '../lib/constants';
+import { deleteUserDataAndAccount } from '../lib/firebase-admin';
 import { generateExecutiveSummary, generateExecutiveSummaryDoc, generateModelCard } from '../lib/audit-pack';
 
 /**
@@ -240,6 +246,44 @@ test.describe('the HTML documents served from public/', () => {
     expect(pages.length).toBeGreaterThan(0);
     const external = /@import\s+(?:url\(\s*)?['"]?https?:|<(?:link|script|img|iframe|source)\b[^>]*\b(?:href|src)\s*=\s*["']?https?:/i;
     for (const page of pages) expect(read(`public/${page}`), `public/${page} fetches from another origin`).not.toMatch(external);
+  });
+});
+
+test.describe('account erasure and the mail records', () => {
+  test('takes the outbox and delivery-log records of the account with it', async () => {
+    // The whole cascade against the emulator: tens of queries, some of them
+    // collection-group ones, which the emulator answers slowly.
+    test.setTimeout(120_000);
+    const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
+    const db = adminFirestore(app, FIRESTORE_DB_ID);
+    const uid = `erasure-mail-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    const email = `${uid}@cleancore-test.io`;
+    const other = `${uid}-other@cleancore-test.io`;
+    const refs = {
+      outbox: db.collection('email_sends').doc(`erasure-spec__${uid}`),
+      eventByUid: db.collection('email_events').doc(`${uid}-m1`),
+      eventByAddress: db.collection('email_events').doc(`${uid}-m2`),
+      someoneElse: db.collection('email_events').doc(`${uid}-m3`),
+    };
+    try {
+      await db.collection('users').doc(uid).set({ email, status: 'approved', tier: 'pilot' });
+      await refs.outbox.set({ campaign: 'erasure-spec', email, uid, state: 'sent' });
+      await refs.eventByUid.set({ messageId: `${uid}-m1`, to: [email], uid, kind: 'welcome', status: 'email.sent' });
+      await refs.eventByAddress.set({ messageId: `${uid}-m2`, to: [email], uid: null, kind: 'tenant approval', status: 'email.sent' });
+      await refs.someoneElse.set({ messageId: `${uid}-m3`, to: [other], uid: null, kind: 'tenant approval', status: 'email.sent' });
+
+      const deleted: string[] = [];
+      const auth = { deleteUser: async (id: string) => { deleted.push(id); } } as unknown as Auth;
+      await deleteUserDataAndAccount(uid, { db, auth });
+
+      expect(deleted, 'the cascade did not complete').toEqual([uid]);
+      expect((await refs.outbox.get()).exists, 'the outbox kept the address').toBe(false);
+      expect((await refs.eventByUid.get()).exists, 'the delivery log kept a record by uid').toBe(false);
+      expect((await refs.eventByAddress.get()).exists, 'the delivery log kept a record by address').toBe(false);
+      expect((await refs.someoneElse.get()).exists, 'another recipient\'s record was taken too').toBe(true);
+    } finally {
+      await Promise.all([...Object.values(refs), db.collection('users').doc(uid)].map((r) => r.delete().catch(() => {})));
+    }
   });
 });
 

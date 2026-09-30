@@ -31,6 +31,8 @@ Two sub-processors receive data in transit for the features that require them �
 | `registration_requests/{uid}` | Pilot access requests | uid | Life of account | ✅ direct |
 | `tenant_access_requests/{uid}` | BYOT access requests | uid | Life of account | ✅ direct |
 | `survey_responses/{campaign}__{uid}` | Survey answers and the free-text comment beside them | `uid` | Life of account | ✅ query delete |
+| `email_sends/{campaign}__{uid}` | Bulk-mail outbox: recipient address, uid, send state per campaign | `uid` | Life of account | ✅ query delete |
+| `email_events/{messageId}` | Delivery log per sent mail: recipient address, subject, kind, delivery status | `uid` where the sender passed one; recipient address in `to` | Life of account | ✅ query delete, by uid and by address |
 | `audit_events/{id}` | Admin/security audit log | server | **24 months** from the recorded action, then deleted (see note) | ❌ intentionally kept |
 | `rate_limits/{key}` | Sliding-window counters. The document id is an HMAC-SHA256 of `gemini:<uid>:<ip>` under `RATE_LIMIT_PEPPER`, so no address is stored in readable form | composite (hashed) | Self-expiring: `expiresAt` drives a Firestore TTL policy, **created 2026-09-18** | ❌ no durable PII, auto-expires |
 
