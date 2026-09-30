@@ -31,3 +31,18 @@ test('1d5ab9d90793 — the Key User checkpoint does not grade feasibility from a
     expect(keyUser.resultState, 'a count is not a preference').toBe('Neutral');
   }
 });
+
+test('e08f739fe79e — a direct write to an SAP table on Private Edition is not "High compatibility"', () => {
+  const report = route(STANDARD_WRITE, 'private');
+  expect(report.recommendedRoute, 'the route stays on-stack').toBe('In-App (ABAP Cloud)');
+  const inApp = checkpoint(report, 'In-App Developer');
+  expect(inApp.evaluation).not.toMatch(/^High compatibility/);
+  expect(inApp.evaluation).toMatch(/released write API|BAPI|RAP action/);
+  expect(report.comparativeAnalysis.inAppABAPCloud.technicalFeasibility).toBe('Partially Compatible');
+  expect(report.comparativeAnalysis.inAppABAPCloud.fitDetails).not.toMatch(/excellent fit/i);
+
+  // The rating it had is kept where it was earned.
+  const clean = route(READ_ONLY, 'private');
+  expect(checkpoint(clean, 'In-App Developer').evaluation).toMatch(/^High compatibility/);
+  expect(clean.comparativeAnalysis.inAppABAPCloud.technicalFeasibility).toBe('Highly Compatible');
+});
