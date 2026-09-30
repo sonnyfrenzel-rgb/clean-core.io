@@ -8,6 +8,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * The ABAP Cloud delivery bundle has to survive the one thing it exists for.
@@ -58,7 +59,7 @@ test.describe('the ABAP Cloud bundle a customer imports', () => {
       lastName: 'Config',
       email: EMAIL,
       tier: 'pilot',
-      status: 'approved',
+      status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 0,
       transformationsLimit: 5,
       createdAt: new Date(),

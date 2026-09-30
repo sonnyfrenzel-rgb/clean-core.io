@@ -190,20 +190,18 @@ test('the keyboard cannot leave the gate', async ({ page }) => {
 });
 
 /**
- * A question somebody may answer with "no" must not take the page hostage.
+ * An account with no recorded acceptance at all — roadmap 3.0.13 (f).
  *
- * The first version of this gate was a full-screen modal in every case,
- * including for an account with no recorded acceptance at all — the legacy
- * account the *server* deliberately grandfathers. It therefore blocked people
- * the platform was letting in, and it intercepted pointer events in nine
- * unrelated specs whose fixtures simply never set `termsVersionAccepted`.
- *
- * Since § 10.3 the two cases are different things and look different: a banner
- * in the page flow while the accepted version is still in force, a modal once it
- * is not. This pins that, and the click at the end is the part that matters —
- * the banner must not sit on top of anything.
+ * It used to be grandfathered: the server read "no acceptance" as "accepted",
+ * and this gate showed it the dismissible banner. An account that accepted no
+ * Terms has nothing § 10.3 lets it carry on under, so the server now refuses it
+ * at every route that asks for the Terms — and the rule that governs this gate
+ * applies: wherever a gate can refuse on account state, the screen that state
+ * reaches must carry the way out. So it gets the blocking form, with "accept"
+ * on it, and after accepting the same protected route answers. Nothing about
+ * the account itself changes: it signs in as before and keeps its data.
  */
-test('an account the server grandfathers is asked, not shut out', async ({ page }) => {
+test('an account with no recorded acceptance is led to accept, not shut out', async ({ page }) => {
   test.setTimeout(180 * 1000);
 
   const email = `terms-legacy-${STAMP}@cleancore-test.io`;
@@ -218,6 +216,15 @@ test('an account the server grandfathers is asked, not shut out', async ({ page 
     mfaEnabled: false,
   });
 
+  // The server half first: a route that asks for the Terms refuses, and says why.
+  const knock = async () => page.request.post('/api/model-stages', {
+    headers: { Authorization: `Bearer ${await cred.user.getIdToken(true)}`, 'Content-Type': 'application/json' },
+    data: { stages: { design: true } },
+  });
+  const refused = await knock();
+  expect(refused.status(), 'an account with no acceptance passed a Terms-gated route').toBe(403);
+  expect((await refused.json()).error).toContain('no recorded acceptance of the Terms of Service');
+
   await page.goto('/?auth=signin');
   await page.waitForSelector('input[type="email"]', { timeout: 60000 });
   await page.fill('input[type="email"]', email);
@@ -225,53 +232,25 @@ test('an account the server grandfathers is asked, not shut out', async ({ page 
   await page.click('button[type="submit"]:has-text("Sign In")');
   await page.waitForURL('**/dashboard', { timeout: 60000 });
 
+  // Signing in is unchanged; the gate is the blocking form, with the way out on it.
   const gate = page.locator('[data-terms-gate]');
-  await expect(gate, 'the legacy account was not asked at all').toBeVisible({ timeout: 60000 });
-  await expect(
-    gate,
-    'a grandfathered account got the blocking form — the server lets it in, the screen must not shut it out',
-  ).toHaveAttribute('data-terms-gate-mode', 'banner');
+  await expect(gate, 'the account with no acceptance was not asked at all').toBeVisible({ timeout: 60000 });
+  await expect(gate, 'the server refuses this account, so a dismissible banner would leave it in a product that answers 403')
+    .toHaveAttribute('data-terms-gate-mode', 'blocking');
+  await expect(gate.getByRole('dialog', { name: 'Please accept the Terms of Service' })).toBeVisible();
+  await expect(gate.locator('[data-terms-gate-decline]'), '"carry on under the Terms I accepted" offered to an account that accepted none').toHaveCount(0);
+  await expect(gate.locator('[data-terms-gate-signout]')).toBeVisible();
 
-  // Declining is offered, and it is offered as declining — not as signing out.
-  await expect(gate.locator('[data-terms-gate-decline]')).toBeVisible();
+  await gate.locator('[data-terms-gate-accept]').click();
+  await expect(gate, 'the gate stayed up after accepting').toBeHidden({ timeout: 60000 });
+  await expect.poll(async () => (await adminGetDoc('users', cred.user.uid))?.termsVersionAccepted, {
+    timeout: 30000,
+    message: 'the acceptance did not reach the profile',
+  }).toBe(TERMS_VERSION);
 
-  // The page underneath is usable. `click` fails on an intercepted element, so
-  // this assertion is the whole point of the banner form.
-  await page.locator('h1, h2').first().click({ timeout: 15000 });
-
-  await gate.locator('[data-terms-gate-decline]').click();
-  await expect(gate, 'declining did not put the banner away').toBeHidden({ timeout: 15000 });
-
-  /*
-   * And it stays away for the rest of the session.
-   *
-   * "Not now" was React state alone, so it lasted exactly as long as the
-   * component: every reload, and every route entered with a fresh document,
-   * asked again. A UX review of bc2f7863464c found the card holding the whole
-   * first viewport on ten routes at once — the product answering a question its
-   * reader had already answered.
-   *
-   * The reload is the assertion. Clicking decline and finding the banner gone
-   * was already true before the fix; coming back and finding it still gone is
-   * what was not.
-   */
-  await page.reload();
-  await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 60000 });
-  await expect(
-    page.locator('[data-terms-gate]'),
-    'the banner came back after a reload — "not now" did not survive the page',
-  ).toBeHidden({ timeout: 15000 });
-
-  // The next sign-in must ask again, so the record of the decline is scoped to
-  // the browsing session and not to the device. Session storage is what the
-  // privacy policy § 7 names for it; local storage would outlive the session and
-  // make the policy false.
-  const persisted = await page.evaluate(() => ({
-    session: Object.keys(window.sessionStorage).filter((k) => k.startsWith('cc.terms.declined.')),
-    local: Object.keys(window.localStorage).filter((k) => k.startsWith('cc.terms.declined.')),
-  }));
-  expect(persisted.session, 'the decline was not recorded in session storage').toHaveLength(1);
-  expect(persisted.local, 'the decline outlives the session — § 7 says it does not').toHaveLength(0);
+  // And the route that refused answers now.
+  const after = await knock();
+  expect(after.status(), await after.text()).toBe(200);
 });
 
 /**
@@ -334,6 +313,40 @@ test('an account on the previous published version is asked, and keeps working',
     gated.status(),
     `a protected route refused an account on the previous, still-in-force Terms: ${await gated.text()}`,
   ).toBe(200);
+
+  await gate.locator('[data-terms-gate-decline]').click();
+  await expect(gate, 'declining did not put the banner away').toBeHidden({ timeout: 15000 });
+
+  /*
+   * And it stays away for the rest of the session.
+   *
+   * "Not now" was React state alone, so it lasted exactly as long as the
+   * component: every reload, and every route entered with a fresh document,
+   * asked again. A UX review of bc2f7863464c found the card holding the whole
+   * first viewport on ten routes at once — the product answering a question its
+   * reader had already answered.
+   *
+   * The reload is the assertion. Clicking decline and finding the banner gone
+   * was already true before the fix; coming back and finding it still gone is
+   * what was not.
+   */
+  await page.reload();
+  await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 60000 });
+  await expect(
+    page.locator('[data-terms-gate]'),
+    'the banner came back after a reload — "not now" did not survive the page',
+  ).toBeHidden({ timeout: 15000 });
+
+  // The next sign-in must ask again, so the record of the decline is scoped to
+  // the browsing session and not to the device. Session storage is what the
+  // privacy policy § 7 names for it; local storage would outlive the session and
+  // make the policy false.
+  const persisted = await page.evaluate(() => ({
+    session: Object.keys(window.sessionStorage).filter((k) => k.startsWith('cc.terms.declined.')),
+    local: Object.keys(window.localStorage).filter((k) => k.startsWith('cc.terms.declined.')),
+  }));
+  expect(persisted.session, 'the decline was not recorded in session storage').toHaveLength(1);
+  expect(persisted.local, 'the decline outlives the session — § 7 says it does not').toHaveLength(0);
 });
 
 test('the version production serves today is one the platform still honours', () => {

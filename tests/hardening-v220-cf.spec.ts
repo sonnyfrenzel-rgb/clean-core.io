@@ -17,7 +17,7 @@ import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin
 import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
 import type { Auth } from 'firebase-admin/auth';
 import firebaseConfig from '../firebase-config.json';
-import { FIRESTORE_DB_ID } from '../lib/constants';
+import { TERMS_VERSION, FIRESTORE_DB_ID } from '../lib/constants';
 import { deleteUserDataAndAccount } from '../lib/firebase-admin';
 import { suppressionId } from '../lib/unsubscribe-token';
 import { generateExecutiveSummary, generateExecutiveSummaryDoc, generateModelCard } from '../lib/audit-pack';
@@ -306,7 +306,7 @@ test.describe('account erasure and the mail records', () => {
       providerId: 'seed',
     };
     try {
-      await db.collection('users').doc(uid).set({ email, status: 'approved', tier: 'pilot' });
+      await db.collection('users').doc(uid).set({ email, status: 'approved', termsVersionAccepted: TERMS_VERSION, tier: 'pilot' });
       await refs.outbox.set({ campaign: 'erasure-spec', email, uid, state: 'sent' });
       await refs.eventByUid.set({ messageId: `${uid}-m1`, to: [email], uid, kind: 'welcome', status: 'email.sent' });
       await refs.eventByAddress.set({ messageId: `${uid}-m2`, to: [email], uid: null, kind: 'tenant approval', status: 'email.sent' });

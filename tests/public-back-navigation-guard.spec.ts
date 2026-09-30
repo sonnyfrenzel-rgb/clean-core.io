@@ -4,6 +4,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * UX-015 and UX-104: the way back from a public page.
@@ -90,7 +91,7 @@ test.describe('a reader who is signed in', () => {
       lastName: 'Navigation',
       email: EMAIL,
       tier: 'pilot',
-      status: 'approved',
+      status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 0,
       transformationsLimit: 5,
       createdAt: new Date(),

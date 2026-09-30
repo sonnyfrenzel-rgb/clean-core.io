@@ -10,6 +10,7 @@ import { findTrustChainField, DEMO_SOURCE_FILE, DEMO_STORAGE_KEY, DEMO_TITLE_PRE
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { PHASES } from '../lib/workflow-steps';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * The demo project — roadmap step 0.10, `DESIGN.md` §6.1.2.
@@ -265,7 +266,7 @@ test.describe('the demo costs an account nothing', () => {
       lastName: 'Reader',
       email: EMAIL,
       tier: 'pilot',
-      status: 'approved',
+      status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 0,
       transformationsLimit: 5,
       createdAt: new Date(),

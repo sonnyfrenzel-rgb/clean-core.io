@@ -7,6 +7,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * The analysis export is a document, not a program (SEC-2026-014).
@@ -133,7 +134,7 @@ test.describe('the analysis export is a document, not a program', () => {
 
     await adminSetDoc('users', uid, {
       firstName: 'Export', lastName: 'Inert', email: EMAIL,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
 

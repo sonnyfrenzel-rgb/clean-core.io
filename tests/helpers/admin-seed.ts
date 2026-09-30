@@ -4,6 +4,7 @@
  */
 
 import firebaseConfig from '../../firebase-config.json';
+import { TERMS_VERSION } from '../../lib/constants';
 
 /**
  * The app under test. Port 3000 unless a run says otherwise — several worktrees
@@ -38,6 +39,9 @@ export async function adminMergeDoc(collectionPath: string, docId: string, data:
 export async function adminApproveUser(uid: string) {
   await adminMergeDoc('users', uid, {
     status: 'approved',
+    // An active account has accepted the Terms; since roadmap 3.0.13 (f) the
+    // gated routes refuse one that has not, instead of grandfathering it.
+    termsVersionAccepted: TERMS_VERSION,
     tier: 'starter', // Must be starter+ for Stage 6 Download Bundle button visibility
     transformationsLimit: 50, // High limit for CI: retries consume transformations
     transformationsUsed: 0,

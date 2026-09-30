@@ -10,6 +10,7 @@ import {
   testSuiteRejectionMessage,
 } from '../app/(app)/project/[projectId]/testing/test-suite-schema';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * Roadmap 17.2 — the documentation stage's defect, one stage over.
@@ -199,7 +200,7 @@ test.describe('the check runs before the write', () => {
 
     await adminSetDoc('users', uid, {
       firstName: 'Test', lastName: 'Shape', email: EMAIL,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 50, createdAt: new Date(),
     });
 

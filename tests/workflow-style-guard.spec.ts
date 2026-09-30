@@ -6,6 +6,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { stageBackLink, workspaceBackHref } from '../lib/workspace-back-href';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * The seven stages look like one product, and this is what keeps them that way.
@@ -118,7 +119,7 @@ test.describe('every stage renders its title identically', () => {
 
     await adminSetDoc('users', uid, {
       firstName: 'Stage', lastName: 'Style', email: EMAIL,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
 

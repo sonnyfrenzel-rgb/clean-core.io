@@ -7,6 +7,7 @@ import firebaseConfig from '../firebase-config.json';
 import { PHASE_TONE_CLASS, phaseTone, workflowSteps, type RailStep } from '../lib/workflow-steps';
 import type { Project, TestCase } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * Roadmap 1.7 — the stepper and the rail mean the same thing by "done", and
@@ -224,7 +225,7 @@ test.describe('the stepper and the rail say the same thing about the same phase'
 
     await adminSetDoc('users', uid, {
       firstName: 'Phase', lastName: 'Honesty', email: EMAIL,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
 

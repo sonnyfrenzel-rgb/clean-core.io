@@ -467,12 +467,24 @@ export async function assertAccountActive(
   // acceptance would have made that clause false from the day it shipped.
   //
   // What still refuses: a version the operator has ended (removed from
-  // `TERMS_VERSIONS_IN_FORCE` after those notices ran). A missing acceptance is
-  // grandfathered as before — it must not lock out pre-existing users. The
-  // client cannot forge or remove the field (see firestore.rules).
+  // `TERMS_VERSIONS_IN_FORCE` after those notices ran). The client cannot forge
+  // or remove the field (see firestore.rules).
+  //
+  // And, since roadmap 3.0.13 (f), **no recorded acceptance at all**. A missing
+  // acceptance used to be grandfathered — read as "accepted" — so an account
+  // with no `consent_events` row behind it passed every gate that asks for the
+  // Terms. § 10.3 is about somebody who accepted an *earlier* version; an
+  // account that accepted none has no Terms to carry on under. It is not
+  // locked out: `components/TermsReacceptGate.tsx` shows the same account a
+  // blocking dialogue whose one action records the acceptance
+  // (`POST /api/consent`, which asks for no Terms itself), and the account,
+  // its sign-in and its data are untouched. Admins stay exempt, as before.
   if (opts.requireCurrentTerms && !isAdmin) {
-    const accepted = data.termsVersionAccepted || null;
-    if (accepted !== null && !termsVersionInForce(accepted)) {
+    const accepted = typeof data.termsVersionAccepted === 'string' && data.termsVersionAccepted ? data.termsVersionAccepted : null;
+    if (accepted === null) {
+      throw new QuotaError('Your account has no recorded acceptance of the Terms of Service. Please accept the Terms in the app to continue.', 403);
+    }
+    if (!termsVersionInForce(accepted)) {
       throw new QuotaError('The version of the Terms of Service your account accepted is no longer in force. Please accept the current Terms in the app to continue.', 403);
     }
   }

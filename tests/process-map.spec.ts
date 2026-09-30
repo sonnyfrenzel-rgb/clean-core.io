@@ -17,6 +17,7 @@ import {
   traceabilityOf,
 } from '../lib/process-map';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * The process map — roadmap 2.5.
@@ -274,7 +275,7 @@ test.describe('the map on the page, without a mouse', () => {
 
     await adminSetDoc('users', uid, {
       firstName: 'Process', lastName: 'Map', email: EMAIL,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
 
