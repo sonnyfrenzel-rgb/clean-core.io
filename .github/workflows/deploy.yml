@@ -435,8 +435,9 @@ jobs:
       # the deploy stops when it is missing or not 32 bytes (owner decision
       # 30.09.2026). Should it ever reach a revision anyway, the app still
       # degrades rather than falls back - storing an own model key is refused
-      # with a reason and /api/health reports degraded. The order is secret
-      # first, then this deploy, then scripts/byok-rekey.ts.
+      # with a reason and /api/health reports degraded. There is nothing to
+      # migrate: no model key was stored before 3.0.13, and the pre-3.0.13
+      # record shape is no longer read.
       - name: Deploy to Google Cloud Run
         uses: google-github-actions/deploy-cloudrun@251330ba9a8a34bfbc1622895f42e1d53fd14522 # v2
         with:

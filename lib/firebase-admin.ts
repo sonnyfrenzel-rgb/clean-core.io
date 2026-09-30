@@ -1435,8 +1435,9 @@ export async function saveGeminiApiKey(uid: string, apiKey: string): Promise<any
  * Loads and decrypts the user's custom Gemini API key.
  *
  * Returns null only when no key is stored. A stored key that cannot be opened —
- * its version's key is missing on this server, or it does not decrypt — throws
- * `ByokKeyUnreadableError` (3.0.13 g). It used to return null there too, and
+ * it has no version or one outside the key ring, its version's key is missing
+ * on this server, or it does not decrypt — throws `ByokKeyUnreadableError`
+ * (3.0.13 g), logged below with its reason. It used to return null there too, and
  * null reads as "no key": `/api/gemini` then served the call with the
  * community key, unmetered, because the profile still said BYOK.
  */
@@ -1455,6 +1456,7 @@ export async function loadGeminiApiKey(uid: string): Promise<string | null> {
     logger.error('byok key decrypt failed', {
       error: providerErrorShape(err),
       keyVersion: err instanceof ByokKeyUnreadableError ? err.keyVersion : null,
+      reason: err instanceof ByokKeyUnreadableError ? err.reason : null,
     });
     throw err;
   }

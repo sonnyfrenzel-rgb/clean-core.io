@@ -331,17 +331,67 @@ test.describe('(g) the BYOK key', () => {
     const env = { BYOK_ENCRYPTION_KEY: BYOK };
     expect(() => openByokSecret(sealed, { ...where, uid: 'uid-b' }, env)).toThrow(ByokKeyUnreadableError);
     expect(() => openByokSecret(sealed, { ...where, provider: 'openai' }, env)).toThrow(ByokKeyUnreadableError);
-    // The version field edited to 0 sends it to the S/4 key, which cannot open it.
+    // The version field removed or edited: unreadable, whatever it was changed to.
     expect(() => openByokSecret({ encryptedApiKey: sealed.encryptedApiKey }, where, env)).toThrow(ByokKeyUnreadableError);
+    expect(() => openByokSecret({ ...sealed, keyVersion: 0 }, where, env)).toThrow(ByokKeyUnreadableError);
     expect(() => openByokSecret({ ...sealed, keyVersion: 7 }, where, env)).toThrow(ByokKeyUnreadableError);
+    expect(() => openByokSecret({ ...sealed, keyVersion: '1' }, where, env)).toThrow(ByokKeyUnreadableError);
   });
 
-  test('a record from before 3.0.13 (no version, S/4 key) is still read', () => {
-    // playwright.config.ts supplies the test S/4 key to this process.
+  /**
+   * The legacy read path is gone (owner decision 30.09.2026: a dry run against
+   * both databases found no stored model key, so there was nothing to migrate).
+   * A record in the pre-3.0.13 shape — no version, sealed with the S/4 key — is
+   * unreadable, with a reason for the log, and the S/4 key is never tried.
+   */
+  const reasonOf = (fn: () => unknown) => {
+    try {
+      fn();
+    } catch (e) {
+      expect(e).toBeInstanceOf(ByokKeyUnreadableError);
+      return { reason: (e as ByokKeyUnreadableError).reason, keyVersion: (e as ByokKeyUnreadableError).keyVersion };
+    }
+    throw new Error('opened a record that must stay unreadable');
+  };
+
+  test('a record without a version is not read — the S/4 key that sealed it is never tried', () => {
+    // playwright.config.ts supplies the test S/4 key to this process, so the
+    // S/4 key *could* open this record; the point is that nothing asks it to.
     const legacy = { encryptedApiKey: encryptWithS4Key(SECRET) };
-    expect(openByokSecret(legacy, where, { BYOK_ENCRYPTION_KEY: BYOK })).toBe(SECRET);
-    // Even on a deployment that has no BYOK key yet — reading version 0 needs only the S/4 key.
-    expect(openByokSecret(legacy, where, {})).toBe(SECRET);
+    expect(decryptWithS4Key(legacy.encryptedApiKey), 'fixture: the S/4 key opens it').toBe(SECRET);
+    expect(reasonOf(() => openByokSecret(legacy, where, { BYOK_ENCRYPTION_KEY: BYOK }))).toEqual({ reason: 'unversioned', keyVersion: null });
+    expect(reasonOf(() => openByokSecret(legacy, where, {}))).toEqual({ reason: 'unversioned', keyVersion: null });
+    // Labelled version 0, it is a version outside the ring, not a way back in.
+    expect(reasonOf(() => openByokSecret({ ...legacy, keyVersion: 0 }, where, { BYOK_ENCRYPTION_KEY: BYOK }))).toEqual({ reason: 'unknown-version', keyVersion: 0 });
+    // And the other two reasons, for the log.
+    const sealed = sealByokSecret(SECRET, where, { BYOK_ENCRYPTION_KEY: BYOK });
+    expect(reasonOf(() => openByokSecret(sealed, where, {}))).toEqual({ reason: 'key-missing', keyVersion: BYOK_KEY_VERSION });
+    expect(reasonOf(() => openByokSecret(sealed, where, { BYOK_ENCRYPTION_KEY: OTHER }))).toEqual({ reason: 'decrypt-failed', keyVersion: BYOK_KEY_VERSION });
+  });
+
+  test('no BYOK code can reach S4_ENCRYPTION_KEY', () => {
+    const code = (rel: string) => read(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    // The sealing module imports nothing but crypto, so the S/4 helpers are not
+    // reachable from it even indirectly.
+    const imports = [...read('lib/byok-key.ts').matchAll(/^import[^;]*from '([^']+)';/gm)].map((m) => m[1]);
+    expect(imports, 'lib/byok-key.ts imports more than crypto again').toEqual(['crypto']);
+    for (const rel of [
+      'lib/byok-key.ts',
+      'lib/byok-rate-limit.ts',
+      'lib/byok-eligibility.ts',
+      'app/api/secrets/gemini/route.ts',
+      'app/api/secrets/gemini/test/route.ts',
+    ]) {
+      const src = code(rel);
+      expect(src, `${rel} names the S/4 key`).not.toContain('S4_ENCRYPTION_KEY');
+      expect(src, `${rel} imports the S/4 credential helpers`).not.toMatch(/s4-credentials/);
+    }
+    // The store and the load in firebase-admin go through the sealing module only.
+    const admin = code('lib/firebase-admin.ts');
+    expect(admin).not.toContain('S4_ENCRYPTION_KEY');
+    expect(admin).not.toMatch(/s4-credentials/);
+    // And the re-key script that read with it is gone.
+    expect(fs.existsSync(path.join(ROOT, 'scripts/byok-rekey.ts')), 'the legacy re-key script is back').toBe(false);
   });
 
   test('without a usable BYOK key nothing is sealed — and never with the S/4 key instead', () => {

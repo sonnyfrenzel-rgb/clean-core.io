@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import { decrypt as decryptWithS4Key } from './s4-credentials';
 
 /**
  * The key a customer's own model key is sealed with — its own, and versioned.
@@ -17,13 +16,16 @@ import { decrypt as decryptWithS4Key } from './s4-credentials';
  *   - **Own secret.** `BYOK_ENCRYPTION_KEY`, 32 bytes, base64 — the same shape
  *     as `S4_ENCRYPTION_KEY`, and generated the same way
  *     (`openssl rand -base64 32`).
- *   - **Version in the record.** Every record written from here on carries
- *     `keyVersion`. A record without one is version 0: sealed with the S/4 key,
- *     as every record before 3.0.13 was.
- *   - **Reads both, writes only the new.** Version 0 is still read, so no
- *     stored key stops working on the day this ships; nothing new is ever
- *     sealed with the S/4 key. `scripts/byok-rekey.ts` re-seals the version-0
- *     records, and after it has run the S/4 key reads no model key at all.
+ *   - **Version in the record.** Every record carries `keyVersion`, and only a
+ *     version in `KEY_RING` is ever opened.
+ *   - **No legacy path.** Records sealed with the S/4 key before 3.0.13 had no
+ *     version, and there was a read path for them plus a re-key script. A dry
+ *     run against both databases on 30.09.2026 found no stored model key at all,
+ *     so both went (owner decision): a record without a version, or with one
+ *     outside the key ring, is unreadable (`ByokKeyUnreadableError`, logged with
+ *     its reason) and is never handed to the S/4 key. This module does not
+ *     import `lib/s4-credentials.ts`, and `tests/byok-hardening.spec.ts` holds
+ *     that.
  *   - **No fallback.** Without a usable `BYOK_ENCRYPTION_KEY` a save is refused
  *     with a reason (`ByokKeyUnavailableError`), not quietly sealed with the S/4
  *     key again — that would be the very mixing this module ends, done silently
@@ -46,10 +48,7 @@ const TAG_LENGTH = 16;
 /** What every new record is sealed with. */
 export const BYOK_KEY_VERSION = 1;
 
-/** A record without `keyVersion`: sealed with `S4_ENCRYPTION_KEY`, before 3.0.13. */
-export const BYOK_LEGACY_KEY_VERSION = 0;
-
-/** Where each version's key lives. Version 0 is the S/4 key and is read through `lib/s4-credentials.ts`. */
+/** Where each readable version's key lives. Nothing outside this ring is opened. */
 const KEY_RING: Readonly<Record<number, string>> = {
   1: 'BYOK_ENCRYPTION_KEY',
 };
@@ -70,14 +69,27 @@ export class ByokKeyUnavailableError extends Error {
 }
 
 /**
- * A stored key that cannot be opened — the version's key is missing, or the
- * record does not decrypt under it. Thrown, not answered with `null`: `null`
+ * Why a stored record could not be opened — for the log, never for the caller:
+ *
+ *   - `unversioned`: the record has no `keyVersion` (the pre-3.0.13 shape,
+ *     sealed with the S/4 key; no longer read).
+ *   - `unknown-version`: a version outside `KEY_RING`.
+ *   - `key-missing`: the version's key is not set, or not 32 bytes, here.
+ *   - `decrypt-failed`: the record does not open under the version's key.
+ */
+export type ByokUnreadableReason = 'unversioned' | 'unknown-version' | 'key-missing' | 'decrypt-failed';
+
+/**
+ * A stored key that cannot be opened. Thrown, not answered with `null`: `null`
  * means "no key stored", and a caller that read it that way would quietly
  * spend the community key on an account that brought its own.
  */
 export class ByokKeyUnreadableError extends Error {
   readonly code = BYOK_KEY_UNREADABLE_CODE;
-  constructor(readonly keyVersion: number) {
+  constructor(
+    readonly keyVersion: number | null,
+    readonly reason: ByokUnreadableReason,
+  ) {
     super(
       `Your saved key could not be read on this server (${BYOK_KEY_UNREADABLE_CODE}). Nothing was sent to a model. ` +
         'Save your key again in Settings, or contact support if this persists.',
@@ -131,27 +143,25 @@ export function sealByokSecret(
   };
 }
 
-/** The version a stored record was sealed with. A record without the field is version 0. */
-export function byokRecordVersion(record: { keyVersion?: unknown }): number {
-  return record.keyVersion === undefined || record.keyVersion === null ? BYOK_LEGACY_KEY_VERSION : Number(record.keyVersion);
-}
-
-/** Open a stored record, whichever version sealed it. Throws `ByokKeyUnreadableError`, never returns a guess. */
+/**
+ * Open a stored record sealed with a version in the key ring. Throws
+ * `ByokKeyUnreadableError` with the reason, never returns a guess — and never
+ * tries any other key, the S/4 key least of all.
+ */
 export function openByokSecret(
   record: { encryptedApiKey: string; keyVersion?: unknown },
   where: { uid: string; provider: string },
   env: Env = process.env,
 ): string {
-  const version = byokRecordVersion(record);
-  if (version === BYOK_LEGACY_KEY_VERSION) {
-    try {
-      return decryptWithS4Key(record.encryptedApiKey);
-    } catch {
-      throw new ByokKeyUnreadableError(version);
-    }
+  if (record.keyVersion === undefined || record.keyVersion === null) {
+    throw new ByokKeyUnreadableError(null, 'unversioned');
   }
-  const key = Number.isInteger(version) ? byokKeyFor(version, env) : null;
-  if (!key) throw new ByokKeyUnreadableError(Number.isInteger(version) ? version : -1);
+  const version = record.keyVersion;
+  if (typeof version !== 'number' || !Number.isInteger(version) || !Object.hasOwn(KEY_RING, version)) {
+    throw new ByokKeyUnreadableError(typeof version === 'number' && Number.isInteger(version) ? version : null, 'unknown-version');
+  }
+  const key = byokKeyFor(version, env);
+  if (!key) throw new ByokKeyUnreadableError(version, 'key-missing');
   try {
     const raw = Buffer.from(record.encryptedApiKey, 'base64');
     if (raw.length < IV_LENGTH + TAG_LENGTH + 1) throw new Error('short');
@@ -160,6 +170,6 @@ export function openByokSecret(
     decipher.setAuthTag(raw.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH));
     return Buffer.concat([decipher.update(raw.subarray(IV_LENGTH + TAG_LENGTH)), decipher.final()]).toString('utf8');
   } catch {
-    throw new ByokKeyUnreadableError(version);
+    throw new ByokKeyUnreadableError(version, 'decrypt-failed');
   }
 }
