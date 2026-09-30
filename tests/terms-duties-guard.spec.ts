@@ -229,8 +229,8 @@ test.describe('and a reader opening the page finds them', () => {
     expect(
       rendered,
       'the effective version a reader sees is not the one the gate compares against',
-    ).toContain(normalise('effective 18 September 2026 (v2.1.0)'));
-    expect(TERMS_VERSION).toBe('2026-09-18');
+    ).toContain(normalise('effective 15 October 2026 (v2.2.0)'));
+    expect(TERMS_VERSION).toBe('2026-10-15');
     // And the two clauses that version was raised for, on the same page.
     expect(rendered).toContain(normalise('at least 18 years old'));
     expect(rendered).toContain(normalise('Do not submit personal data of third parties'));
@@ -251,9 +251,9 @@ test('the effective version, the constant and the new obligations are one change
 
   // The document states a version of its own, and it is the one the gate uses.
   expect(terms, 'the Terms no longer state an effective version').toMatch(
-    /effective\s+18\s+September\s+2026\s+\(v2\.1\.0\)/,
+    /effective\s+15\s+October\s+2026\s+\(v2\.2\.0\)/,
   );
-  expect(TERMS_VERSION, 'the constant and the document disagree about which version is current').toBe('2026-09-18');
+  expect(TERMS_VERSION, 'the constant and the document disagree about which version is current').toBe('2026-10-15');
 
   // And the substance that version exists for.
   expect(terms, 'the version moved without the age rule it was raised for').toMatch(/at least 18 years old/);
@@ -261,4 +261,14 @@ test('the effective version, the constant and the new obligations are one change
     /Do not submit personal data of third parties/,
   );
   expect(terms, 'the version moved without the Art. 28 statement').toMatch(/data processing agreement under Art\. 28 GDPR/);
+  // v2.2.0 (QA 6b83ef361e80): section 4.1 separates what the engine computes
+  // from what a model writes. A bump without that separation would ask every
+  // account to re-accept the sentence the QA review found untrue.
+  expect(terms, 'v2.2.0 without the deterministic half of section 4.1').toMatch(
+    /<em>Deterministic results<\/em>[\s\S]*?without a\s+generative AI model/,
+  );
+  expect(terms, 'v2.2.0 without the model-generated half of section 4.1').toMatch(/<em>Model-generated output<\/em>/);
+  expect(terms, 'section 4.1 still attributes the analyses to generative AI').not.toMatch(
+    /Modernization analyses and source code\s+are generated automatically by generative AI models/,
+  );
 });

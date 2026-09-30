@@ -94,6 +94,28 @@ export const TERMS_ARCHIVE_DIR = 'docs/terms';
  */
 export const ARCHIVED_TERMS_VERSIONS: readonly ArchivedTermsVersion[] = [
   {
+    // v2.1.0 was current from 18.09.2026 and never archived while it was: every
+    // consent recorded for it carries `contentSha256: null`. It is archived now,
+    // as it becomes a previous version. Its wording never changed after
+    // 74270fe0 — the three `main` deploys that carried `2026-09-18` (bc2f7863,
+    // def82624, b88c77b4) and `fc787674` all hold blob 25ec39fd of the page.
+    version: '2026-09-18',
+    label: 'v2.1.0',
+    effectiveOn: '18 September 2026',
+    file: 'docs/terms/2026-09-18.md',
+    sha256: '34baa2f89d0e89ad5ad264c93179ddb91f22606f6cd45ee7ad507a80793a30e2',
+    source: {
+      file: 'app/terms/page.tsx',
+      commit: '74270fe0a445b33b4bca81aadbaa0da80e5c1e12',
+      blob: '25ec39fdd323d2e2822f1fdfca83bbfc1a161b0b',
+      method:
+        'Rendered in a browser at cb90fc7c (integrate/3.0, whose page differs from this blob only in class ' +
+        'names and the frame around <main> — the text inside <main> was compared word for word) and read out ' +
+        'of the DOM with the walk in scratch/extract-legal.js. The "Previous versions" list is navigation, ' +
+        'not contract text, and was left out.',
+    },
+  },
+  {
     version: '2026-07-07',
     label: 'v2.0.0',
     effectiveOn: '7 July 2026',
