@@ -175,12 +175,15 @@ export default function GapsWorklist({
         complexity: g.complexity,
         rationale: g.rationale
       };
+      // A model gap can arrive without a strategy; it is then sorted by its
+      // complexity alone instead of taking the whole panel down.
+      const strategy = (typeof g.strategy === 'string' ? g.strategy : '').toLowerCase();
 
-      if (g.strategy.toLowerCase().includes('decommission') || g.strategy.toLowerCase().includes('retire')) {
+      if (strategy.includes('decommission') || strategy.includes('retire')) {
         retire.push(mappedGap);
       } else if (g.complexity === 'Low') {
         quickWins.push(mappedGap);
-      } else if (g.strategy.toLowerCase().includes('btp') || g.strategy.toLowerCase().includes('side-by-side')) {
+      } else if (strategy.includes('btp') || strategy.includes('side-by-side')) {
         strategic.push(mappedGap);
       } else {
         complexStandard.push(mappedGap);
