@@ -431,6 +431,10 @@ test.describe('the open gaps are still open — closing one has to update the re
     const back = stageBackLink({ projectId: 'p-1', profileLoading: false, shell: false, search: '' });
     expect(back, 'the stage link no longer leads a switch-less account to the dashboard — re-read WG-02').toMatchObject({ kind: 'link', to: 'dashboard' });
     if (back.kind === 'link') expect(back.href.startsWith('/dashboard')).toBe(true);
+    // …and the stage header renders exactly that decision as its link (QA 1a44e754567b).
+    const header = raw('components/StageHeader.tsx');
+    expect(header).toMatch(/const back = stageBackLink\(\{ projectId, profileLoading, shell, search \}\);/);
+    expect(header).toContain('href={back.href}');
   });
 
   test('WG-03: the "Why?" of a status is still its own 24-px target (3.0.4)', () => {

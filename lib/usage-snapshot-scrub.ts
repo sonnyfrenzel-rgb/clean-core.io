@@ -71,9 +71,14 @@ export function withoutAccount(
 ): { update: Record<string, unknown>; deleteRecipient: boolean } | null {
   const wanted = new Set(addresses.map(lower).filter(Boolean));
   if (wanted.size === 0) return null;
+  // An address counts only as a whole address: erasing a@x.io must not take
+  // the failure of ba@x.io or a@x.io.uk with it (QA 9e198a0085d0).
+  const whole = [...wanted].map(
+    (a) => new RegExp(`(?<![a-z0-9._%+-])${a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![a-z0-9._-])`),
+  );
   const mentions = (text: unknown) => {
     const t = lower(text);
-    return !!t && [...wanted].some((a) => t.includes(a));
+    return !!t && whole.some((re) => re.test(t));
   };
 
   const update: Record<string, unknown> = {};

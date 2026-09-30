@@ -4,7 +4,6 @@ import path from 'path';
 import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin/app';
 import { getFirestore as adminFirestore, type Firestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-config.json';
-import { FIRESTORE_DB_ID } from '../lib/constants';
 import { buildUsageReport, usageReportSnapshot } from '../lib/usage-report';
 import {
   renderUsageReportEmail,
@@ -32,7 +31,9 @@ import {
 
 function adminDb(): Firestore {
   const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
-  return adminFirestore(app, FIRESTORE_DB_ID);
+  // Its own emulator database, so the report counts exactly what this spec
+  // seeded and the figures below can be exact (QA e94b32621379).
+  return adminFirestore(app, `figures-only-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
 }
 
 test('the weekly report and its stored snapshot carry figures only', async () => {
@@ -84,10 +85,10 @@ test('the weekly report and its stored snapshot carry figures only', async () =>
     const report = await buildUsageReport(db, new Date(now.getTime() + 60_000));
 
     // The seeded people are in the figures — otherwise the search below proves nothing.
-    expect(report.current.registrations, 'the new accounts were not counted').toBeGreaterThanOrEqual(2);
-    expect(report.current.activations, 'the first analysis was not counted').toBeGreaterThanOrEqual(1);
-    expect(report.totals.atLimit, 'the account at the limit was not counted').toBeGreaterThanOrEqual(1);
-    expect(report.delivery.bounced, 'the bounce was not counted').toBeGreaterThanOrEqual(1);
+    expect(report.current.registrations, 'the new accounts were not counted').toBe(2);
+    expect(report.current.activations, 'the first analysis was not counted').toBe(1);
+    expect(report.totals.atLimit, 'the account at the limit was not counted').toBe(1);
+    expect(report.delivery.bounced, 'the bounce was not counted').toBe(1);
 
     const channels: Record<string, string> = {
       subject: renderUsageReportSubject(report),

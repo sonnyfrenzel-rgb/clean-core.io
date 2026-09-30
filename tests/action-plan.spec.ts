@@ -28,6 +28,9 @@ test('the Analyze page decides the plan and its origin through modelActionPlan',
   const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'analyze', 'page.tsx'), 'utf8');
   expect(page).toContain("import { modelActionPlan } from '@/lib/action-plan';");
   expect(page.match(/modelActionPlan\(\s*[a-zA-Z]+\.businessValueAnalysis\?\.plainEnglishActionPlan\s*\)/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
-  expect(page, 'a raw truthiness check on the plan decides the fallback or the origin again')
-    .not.toMatch(/businessValueAnalysis\?\.plainEnglishActionPlan\s*(\|\||\?\s)/);
+  // Every read of the plan goes through the helper — no `&&`, ternary, `!!` or
+  // `||` on the raw field can decide the fallback or the origin (QA f0cde36e47bf).
+  const reads = page.match(/businessValueAnalysis\?\.plainEnglishActionPlan/g)?.length ?? 0;
+  const guarded = page.match(/modelActionPlan\(\s*[a-zA-Z]+\.businessValueAnalysis\?\.plainEnglishActionPlan\s*\)/g)?.length ?? 0;
+  expect(reads, 'the plan is read somewhere without modelActionPlan').toBe(guarded);
 });

@@ -87,6 +87,24 @@ test.describe('the snapshot helpers', () => {
     expect(withoutAccount(newShape(), [MAIL_A])).toBeNull();
   });
 
+  test('match an address only as a whole address (QA 9e198a0085d0)', () => {
+    const snapshot = {
+      delivery: {
+        failures: [
+          { to: 'other@x.io', kind: 'welcome', status: 'email.bounced', detail: '550 <ba@x.io> unknown' },
+          { to: 'other@x.io', kind: 'welcome', status: 'email.bounced', detail: '550 <a@x.io.uk> unknown' },
+          { to: 'other@x.io', kind: 'welcome', status: 'email.bounced', detail: '550 <a@x.io> unknown' },
+        ],
+      },
+    };
+    const change = withoutAccount(snapshot, ['a@x.io']);
+    expect(change).not.toBeNull();
+    expect((change!.update['delivery.failures'] as Array<{ detail: string }>).map((f) => f.detail)).toEqual([
+      '550 <ba@x.io> unknown',
+      '550 <a@x.io.uk> unknown',
+    ]);
+  });
+
   test('take one account out and leave the others', () => {
     const change = withoutAccount(oldShape(), [MAIL_A.toUpperCase()]);
     expect(change).not.toBeNull();
