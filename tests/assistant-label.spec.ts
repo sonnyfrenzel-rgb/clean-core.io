@@ -139,6 +139,29 @@ async function signIn(page: Page, email: string): Promise<void> {
   await signInViaLanding(page, email, PASSWORD);
 }
 
+/**
+ * Owner decision 30.09.2026 (QA 795c0e739916): the assistant sends only the
+ * current question, never the conversation so far. The panel has to say so
+ * before a follow-up is typed, and say it to the screen reader too — the note
+ * is the input's description, not a line floating near it.
+ */
+async function expectIndependentQuestionNote(page: Page): Promise<void> {
+  const note = page.locator('[data-chatbot-independent]');
+  await expect(note).toBeVisible();
+  await expect(note).toContainText('Each question is answered on its own');
+  await expect(note).toContainText('include the context you need');
+  const input = page.getByLabel('Your question');
+  const describedBy = (await input.getAttribute('aria-describedby')) ?? '';
+  const noteText = (await note.innerText()).trim();
+  const descriptions = await Promise.all(
+    describedBy.split(/\s+/).filter(Boolean).map((id) => page.locator(`[id="${id}"]`).innerText()),
+  );
+  expect(
+    descriptions.map((d) => d.trim()),
+    'the input is not described by the note that its question is answered on its own',
+  ).toContain(noteText);
+}
+
 test.describe('what the header button promises, and what opens', () => {
   test('outside a project it offers the assistant, and the assistant is what opens', async ({ page }) => {
     test.setTimeout(120 * 1000);
@@ -157,6 +180,7 @@ test.describe('what the header button promises, and what opens', () => {
     // What actually opened: the general assistant, not the case one.
     await expect(page.locator('[data-chatbot-title]')).toHaveText('SAP Modernization Assistant');
     await expect(page.locator('[data-chatbot-scope]')).not.toContainText('evidence of this project');
+    await expectIndependentQuestionNote(page);
   });
 });
 
@@ -195,6 +219,7 @@ test.describe('and inside a project', () => {
     // that makes the name true.
     await expect(page.locator('[data-chatbot-title]')).toHaveText('Ask this case');
     await expect(page.locator('[data-chatbot-scope]')).toContainText('only from the evidence of this project');
+    await expectIndependentQuestionNote(page);
   });
 });
 

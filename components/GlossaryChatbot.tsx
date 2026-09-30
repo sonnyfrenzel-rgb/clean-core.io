@@ -60,6 +60,14 @@ interface Message {
 }
 
 /**
+ * Said under the input, in both scopes: the assistant sends only the current
+ * question, never the conversation so far (owner decision 30.09.2026, QA
+ * 795c0e739916), so a follow-up has to carry its own context.
+ */
+const INDEPENDENT_QUESTION_NOTE =
+  'Each question is answered on its own, without the earlier messages — include the context you need.';
+
+/**
  * Everything the assistant is allowed to know inside one project — roadmap 6.8.
  *
  * The index is the one roadmap 6.6 already built (`lib/workspace-search.ts`),
@@ -728,7 +736,15 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             className="flex shrink-0 items-end gap-2 border-t border-cc-line bg-cc-surface p-3"
           >
             <div className="min-w-0 flex-grow">
-              <CcField label="Your question">
+              {/* Owner decision 30.09.2026 (QA 795c0e739916): no conversation
+                  history is sent. Every answer stays anchored to the evidence
+                  gathered for its own question (`lib/case-answer.ts`), so the
+                  reader is told that before typing a follow-up like "and that
+                  one?". Wired to the input through `aria-describedby`. */}
+              <CcField
+                label="Your question"
+                help={<span data-chatbot-independent="">{INDEPENDENT_QUESTION_NOTE}</span>}
+              >
                 {({ id, describedBy, className }) => (
                   <input
                     id={id}
