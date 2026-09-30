@@ -34,6 +34,7 @@ import { CcRulePropertyTag, CcTag } from '@/components/cc/Tag';
 import CcToast from '@/components/cc/Toast';
 import CcWhyPopover from '@/components/cc/WhyPopover';
 import FormControlsGallery from './FormControlsGallery';
+import LibraryAddendaGallery from './LibraryAddendaGallery';
 import LoadingDisclosureGallery from './LoadingDisclosureGallery';
 import SeverityChartsGallery from './SeverityChartsGallery';
 
@@ -675,6 +676,12 @@ export default function DesignSystemGallery() {
       {/* Block D, step D.5c — skeleton, busy button, disclosure, tabs, table limit. */}
       <Section id="ds-loading" title="Loading, folding, tabs and the table limit">
         <LoadingDisclosureGallery />
+      </Section>
+
+      {/* Block D, step D.5e — layers, a dialog that must be answered, state
+          text, a row that opens, a button with a ref. */}
+      <Section id="ds-addenda" title="Layers, state text and rows that open">
+        <LibraryAddendaGallery />
       </Section>
 
       <Section id="ds-code" title="Code surface">

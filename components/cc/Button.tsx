@@ -86,6 +86,12 @@ export interface CcButtonProps
    * painted after 400 ms, the click is swallowed until it ends.
    */
   busy?: boolean;
+  /**
+   * The button element — for a menu trigger that has to take the focus back
+   * when its menu closes, or a popover that positions itself against it.
+   * React 19 hands `ref` to a function component as a prop (block D, D.5e).
+   */
+  ref?: React.Ref<HTMLButtonElement>;
   children: React.ReactNode;
 }
 
@@ -98,6 +104,7 @@ export default function CcButton({
   children,
   type = 'button',
   onClick,
+  ref,
   ...rest
 }: CcButtonProps) {
   const busyShown = useCcDelayedFlag(busy, CC_BUSY_DELAY_MS);
@@ -105,6 +112,7 @@ export default function CcButton({
   return (
     <button
       {...rest}
+      ref={ref}
       type={type}
       aria-busy={busy || rest['aria-busy'] || undefined}
       aria-disabled={busy || rest['aria-disabled'] || undefined}

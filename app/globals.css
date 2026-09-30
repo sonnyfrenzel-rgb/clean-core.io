@@ -210,6 +210,27 @@
   --cc-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
   --cc-shadow-dialog: 0 16px 48px rgb(11 28 48 / 0.18);
 
+  /* Stacking, bottom to top (block D, D.5e). Five named layers instead of the
+     z-10 … z-[200] each file used to pick for itself — which is how the green
+     assistant button (z-[80]) came to sit on top of every dialog (z-50) and,
+     on a phone, on top of the dialog's main button.
+
+       popover  anchored in content: Why?, message popover, a menu
+       sticky   the shell bar and bars that stick while the page scrolls
+       float    floating helpers over the page: the assistant button and its
+                panel, the verification rail on small screens
+       overlay  modal layers: dialog, message box, a side sheet, the search —
+                above every floating helper, so nothing covers a question
+       toast    the one-line confirmation of §2.6, readable over a dialog
+
+     Values are far apart and above the ad-hoc ones still in the app (up to
+     z-[120]) so that a layer on the scale wins while those are migrated. */
+  --cc-z-popover: 30;
+  --cc-z-sticky: 40;
+  --cc-z-float: 60;
+  --cc-z-overlay: 150;
+  --cc-z-toast: 160;
+
   --cc-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* The smallest type the workspace allows, §1.2. Written down because the
@@ -286,6 +307,13 @@
 
   --shadow-cc: var(--cc-shadow);
   --shadow-cc-dialog: var(--cc-shadow-dialog);
+
+  /* `z-cc-popover` … `z-cc-toast`. */
+  --z-index-cc-popover: var(--cc-z-popover);
+  --z-index-cc-sticky: var(--cc-z-sticky);
+  --z-index-cc-float: var(--cc-z-float);
+  --z-index-cc-overlay: var(--cc-z-overlay);
+  --z-index-cc-toast: var(--cc-z-toast);
 
   --font-cc-mono: var(--cc-font-mono);
 }

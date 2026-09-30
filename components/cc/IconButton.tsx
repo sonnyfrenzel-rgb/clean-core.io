@@ -21,6 +21,8 @@ export interface CcIconButtonProps
   /** The accessible name. Required — an icon alone is not a name. */
   label: string;
   density?: CcDensity;
+  /** The button element, e.g. for a menu trigger (React 19: `ref` is a prop; D.5e). */
+  ref?: React.Ref<HTMLButtonElement>;
   children: React.ReactNode;
 }
 
@@ -29,11 +31,13 @@ export default function CcIconButton({
   density = 'compact',
   children,
   type = 'button',
+  ref,
   ...rest
 }: CcIconButtonProps) {
   return (
     <button
       {...rest}
+      ref={ref}
       type={type}
       aria-label={label}
       data-cc-icon-button=""

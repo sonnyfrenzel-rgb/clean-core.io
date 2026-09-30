@@ -4,7 +4,7 @@ import React, { useId } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '@/lib/cc-messages';
 import CcButton from './Button';
-import { useCcModal } from './modal';
+import { useCcHydrated, useCcModal } from './modal';
 
 /**
  * Confirmation before something that cannot be taken back — `DESIGN.md` §2.6.
@@ -27,6 +27,10 @@ import { useCcModal } from './modal';
  * The binding confirmation is the `dark` button (§1.5) and it is the only place
  * that variant appears. `Cancel` is `ghost` and comes first in the DOM, so
  * Escape and the default focus both lead away from the irreversible thing.
+ *
+ * On `z-cc-overlay`, like the dialog, and hydration-safe the same way (block D,
+ * D.5e): open on the first render, it opens one render later instead of
+ * throwing the page away.
  */
 export interface CcMessageBoxProps {
   open: boolean;
@@ -50,13 +54,15 @@ export default function CcMessageBox({
   // Inert page, focus held, Escape, focus returned: `./modal.ts`, shared with
   // `CcDialog`. The box itself takes the first focus, not the confirm button,
   // so a stray Enter cannot delete anything.
-  const boxRef = useCcModal<HTMLDivElement>({ open, onClose: onCancel, initialFocus: 'container' });
+  const hydrated = useCcHydrated();
+  const shown = open && hydrated;
+  const boxRef = useCcModal<HTMLDivElement>({ open: shown, onClose: onCancel, initialFocus: 'container' });
   const titleId = useId();
 
-  if (!open || typeof document === 'undefined') return null;
+  if (!shown) return null;
 
   return createPortal(
-    <div data-cc-message-box-layer="" className="cc fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div data-cc-message-box-layer="" className="cc fixed inset-0 z-cc-overlay flex items-center justify-center p-4">
       <div
         data-cc-scrim=""
         data-backdrop=""

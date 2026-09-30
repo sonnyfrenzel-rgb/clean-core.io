@@ -176,7 +176,7 @@ export default function CcMessagePopover({
           tabIndex={-1}
           data-cc-message-popover-panel=""
           className={cn(
-            'absolute right-0 z-30 w-[470px] max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3 text-left shadow-cc-dialog',
+            'absolute right-0 z-cc-popover w-[470px] max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3 text-left shadow-cc-dialog',
             placement === 'above' ? 'bottom-full mb-2' : 'top-full mt-2',
           )}
         >

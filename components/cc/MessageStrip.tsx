@@ -66,7 +66,7 @@ export default function CcMessageStrip({
       role={state === 'error' ? 'alert' : 'status'}
       tabIndex={announce ? -1 : undefined}
       className={cn(
-        'flex items-start gap-2.5 rounded-cc-row border px-3 py-2',
+        'flex flex-wrap items-start gap-2 rounded-cc-row border px-3 py-2',
         'text-[13px] font-medium leading-snug text-cc-ink',
         classes.bg,
         classes.border,
@@ -75,12 +75,21 @@ export default function CcMessageStrip({
       <span className={cn('mt-0.5 shrink-0', classes.text)}>
         <Icon size={16} aria-hidden={true} />
       </span>
-      <span className="min-w-0 flex-1">
+      {/* A `div`, not a `span`: callers put lists and paragraphs in here, and a
+          block inside an inline element is invalid markup that browsers repair
+          each in their own way (D.5e). `basis-64` lets the actions drop below
+          the text on a narrow screen instead of squeezing it to one word a
+          line. */}
+      <div data-cc-message-strip-text="" className="min-w-0 flex-1 basis-64">
         {headline ? <b className="font-semibold">{headline}</b> : null}
         {headline ? ' ' : null}
         {children}
-      </span>
-      {actions ? <span className="flex shrink-0 items-center gap-1.5">{actions}</span> : null}
+      </div>
+      {actions ? (
+        <div data-cc-message-strip-actions="" className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
+          {actions}
+        </div>
+      ) : null}
     </div>
   );
 }
