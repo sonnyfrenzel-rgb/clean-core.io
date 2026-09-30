@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { ChevronDown, Info } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { Project } from '@/lib/types';
+import CcWhyPopover from '@/components/cc/WhyPopover';
+import { CcSeverity } from '@/components/cc/Identifier';
 
 /**
  * "Why this route & score" — a small, collapsible transparency panel on the Analyze
@@ -37,50 +39,58 @@ export default function WhyScorePanel({ project }: { project: Project }) {
   const highRisk = coupling.filter((c) => c.riskLevel === 'High').slice(0, 6);
 
   const scores = [
-    { label: 'Clean Core', v: project.cleanCoreScore },
-    { label: 'Complexity', v: project.complexityScore },
-    { label: 'Criticality', v: project.criticalityScore },
+    { label: 'Clean Core', v: project.cleanCoreScore, max: 100, basis: 'The Clean Core Score of the run, computed by the deterministic router from the evidence before any model ran.' },
+    { label: 'Complexity', v: project.complexityScore, max: 10, basis: 'A heuristic over the structure of the code (lib/abap/code-assessment.ts, computeComplexityScore).' },
+    { label: 'Criticality', v: project.criticalityScore, max: 10, basis: 'A heuristic over the module and the data the code touches (lib/abap/code-assessment.ts, computeCriticalityScore).' },
   ];
 
   return (
-    <div className="not-prose mt-8 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+    <div className="not-prose mt-8 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="w-full flex items-center justify-between gap-4 px-5 sm:px-7 py-5 text-left hover:bg-slate-50/60 transition-colors"
+        className="w-full flex items-center justify-between gap-4 px-4 sm:px-6 py-4 text-left"
       >
         <div className="flex items-center gap-3">
-          <span className="p-2 rounded-xl bg-emerald-50 border border-emerald-100">
-            <Info className="w-5 h-5 text-emerald-600" />
+          <span className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-2 text-cc-ink-muted">
+            <Info className="w-5 h-5" aria-hidden="true" />
           </span>
           <div>
-            <div className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Transparency</div>
-            <h3 className="text-base sm:text-lg font-black text-slate-900">Why this route &amp; score</h3>
+            <div className="cc-text-label text-cc-ink-muted">Transparency</div>
+            <h3 className="cc-text-h2 text-cc-ink">Why this route &amp; score</h3>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          {conf != null && <span className="hidden sm:inline text-xs font-bold text-slate-500">{conf}% confidence</span>}
-          <ChevronDown className={clsx('w-5 h-5 text-slate-400 transition-transform duration-300', open && 'rotate-180')} />
+          {conf != null && <span className="hidden sm:inline cc-text-meta text-cc-ink-muted">{conf}% confidence</span>}
+          <ChevronDown className={clsx('w-5 h-5 text-cc-ink-muted motion-safe:transition-transform', open && 'rotate-180')} aria-hidden="true" />
         </div>
       </button>
 
-      <div className={clsx('grid transition-[grid-template-rows] duration-300 ease-in-out', open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
+      <div className={clsx('grid motion-safe:transition-[grid-template-rows] motion-safe:duration-300', open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
         <div className="overflow-hidden">
-          <div className="px-5 sm:px-7 pb-7 pt-1 space-y-6">
+          <div className="px-4 sm:px-6 pb-6 pt-1 space-y-6">
             {/* Route + confidence */}
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-sm font-bold text-slate-900">Recommended route:</span>
-              <span className="text-sm font-black text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">{route}</span>
+              <span className="cc-text-identifier text-cc-ink">Recommended route:</span>
+              <span className="cc-text-identifier text-cc-ink rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-1">{route}</span>
               {conf != null && (
                 <div className="flex items-center gap-2">
-                  <div className="w-28 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                  {/* One measure, one ink: the bar is not a verdict, so it
+                      carries no traffic-light colour (§1.8). */}
+                  <div className="w-28 h-2 rounded-full bg-cc-surface-muted border border-cc-line overflow-hidden">
                     <div
-                      className={clsx('h-full rounded-full', conf >= 80 ? 'bg-emerald-500' : conf >= 60 ? 'bg-amber-500' : 'bg-red-500')}
+                      className="h-full rounded-full bg-cc-neutral"
                       style={{ width: `${Math.min(100, Math.max(0, conf))}%` }}
                     />
                   </div>
-                  <span className="text-xs font-bold text-slate-500">{conf}%</span>
+                  <span className="cc-text-meta text-cc-ink-muted">{conf}%</span>
+                  <CcWhyPopover
+                    subject={`Route confidence ${conf}%`}
+                    provenance="reconstructed"
+                    basis="The deterministic extensibility router, from the findings of this run — before any model call."
+                    evidence={rationale || undefined}
+                  />
                 </div>
               )}
             </div>
@@ -88,20 +98,29 @@ export default function WhyScorePanel({ project }: { project: Project }) {
             {/* Rationale */}
             {rationale && (
               <div>
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Router rationale (deterministic)</div>
-                <p className="text-sm text-slate-700 leading-relaxed">{rationale}</p>
+                <div className="cc-text-label text-cc-ink-muted mb-2">Router rationale (deterministic)</div>
+                <p className="cc-text-body text-cc-ink">{rationale}</p>
               </div>
             )}
 
             {/* Scores */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {scores.map((s) => (
-                <div key={s.label} className="bg-slate-50 border border-slate-100 rounded-2xl p-3 text-center">
-                  <div className="text-xl font-black text-slate-900">
-                    {s.v ?? '—'}
-                    <span className="text-xs text-slate-400 font-bold">/100</span>
+                <div key={s.label} className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="cc-text-title tabular-nums text-cc-ink">
+                      {s.v ?? '—'}
+                      <span className="cc-text-meta text-cc-ink-muted">/{s.max}</span>
+                    </span>
+                    {s.v != null && (
+                      <CcWhyPopover
+                        subject={`${s.label} ${s.v}/${s.max}`}
+                        provenance="reconstructed"
+                        basis={s.basis}
+                      />
+                    )}
                   </div>
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">{s.label}</div>
+                  <div className="cc-text-label text-cc-ink-muted mt-1">{s.label}</div>
                 </div>
               ))}
             </div>
@@ -109,30 +128,21 @@ export default function WhyScorePanel({ project }: { project: Project }) {
             {/* What drove it */}
             {coupling.length > 0 && (
               <div>
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">What drove it — data coupling by risk</div>
-                <div className="flex flex-wrap gap-2 mb-3">
+                <div className="cc-text-label text-cc-ink-muted mb-2">What drove it — data coupling by risk</div>
+                <div className="flex flex-wrap gap-3 mb-3">
                   {(['High', 'Medium', 'Low'] as const).map((lvl) => (
-                    <span
-                      key={lvl}
-                      className={clsx(
-                        'text-xs font-bold px-3 py-1 rounded-full border',
-                        lvl === 'High'
-                          ? 'bg-red-50 text-red-700 border-red-100'
-                          : lvl === 'Medium'
-                          ? 'bg-amber-50 text-amber-700 border-amber-100'
-                          : 'bg-emerald-50 text-emerald-700 border-emerald-100',
-                      )}
-                    >
-                      {counts[lvl]} {lvl}
+                    <span key={lvl} className="inline-flex items-center gap-2 cc-text-identifier text-cc-ink">
+                      <span className="tabular-nums">{counts[lvl]}</span>
+                      <CcSeverity value={lvl} />
                     </span>
                   ))}
                 </div>
                 {highRisk.length > 0 && (
                   <ul className="space-y-2">
                     {highRisk.map((c, i) => (
-                      <li key={i} className="flex items-start gap-2 text-xs">
-                        <span className="font-mono font-bold text-slate-800 shrink-0">{c.tableName}</span>
-                        <span className="text-slate-500">— {c.recommendation}</span>
+                      <li key={i} className="flex items-start gap-2 cc-text-cell">
+                        <span className="font-cc-mono font-semibold text-cc-ink shrink-0">{c.tableName}</span>
+                        <span className="text-cc-ink-muted">— {c.recommendation}</span>
                       </li>
                     ))}
                   </ul>
@@ -140,9 +150,9 @@ export default function WhyScorePanel({ project }: { project: Project }) {
               </div>
             )}
 
-            <p className="text-[11px] text-slate-400 leading-relaxed border-t border-slate-100 pt-3">
-              These figures come from the deterministic evidence engine (before any AI). The route and score are
-              computed from the findings above — proven, not guessed.
+            <p className="cc-text-meta text-cc-ink-muted border-t border-cc-line pt-3">
+              These figures come from the deterministic evidence engine, before any model call. The route and
+              score are computed from the findings above — derived from the code, not guessed.
             </p>
           </div>
         </div>

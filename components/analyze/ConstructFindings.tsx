@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { ShieldCheck, Info, Check, Link2, ExternalLink } from 'lucide-react';
-import clsx from 'clsx';
+import { ShieldCheck, Link2, ExternalLink, SearchX } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { SupportFinding } from '@/lib/abap/class-model';
-import { LEVEL_EMOJI, LEVEL_LABEL } from '@/lib/abap/support-matrix';
 import { safeHttpHref } from '@/lib/export-safety';
+import CcButton, { CC_BUTTON_BASE, CC_BUTTON_DENSITY_CLASSES, CC_BUTTON_VARIANT_CLASSES } from '@/components/cc/Button';
+import { CcEmptyState } from '@/components/cc/EmptyState';
+import { SupportLevelMark } from './CoverageVerdict';
 
 interface ConstructFindingsProps {
   findings: SupportFinding[];
@@ -18,13 +20,10 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
     return (
       <div className="space-y-4">
         <div>
-          <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <span>Construct Findings</span>
-            <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 px-2.5 py-0.5 rounded-full text-xs font-bold">
-              0 findings
-            </span>
+          <h3 className="cc-text-h2 text-cc-ink">
+            Construct Findings <span className="font-medium text-cc-ink-muted">(0 findings)</span>
           </h3>
-          <p className="text-sm text-slate-500 mt-1">Deterministic static analysis of ABAP language constructs against target platform support matrix.</p>
+          <p className="cc-text-cell text-cc-ink-muted mt-1">Deterministic static analysis of ABAP language constructs against target platform support matrix.</p>
         </div>
         {/* "Pristine Codebase Detected" was a verdict on the code. What the run
             establishes is narrower: these detectors matched nothing. That is the
@@ -32,15 +31,14 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
             matrix does not cover yet produces — and none of those is a clean
             codebase. The sentence below states the finding; the heading no longer
             states a conclusion the finding does not carry. */}
-        <div className="bg-slate-50 border border-slate-200 p-8 rounded-3xl text-center">
-          <span className="text-3xl">🔍</span>
-          <h4 className="text-base font-extrabold text-slate-800 mt-3">No findings from these detectors</h4>
-          <p className="text-xs text-slate-500 mt-1">
-            The static analysis matched no unreleased database queries, screen flows or dynamic
-            call targets in the staged code. It does not follow that the code is clean — only
-            that these checks found nothing to report.
-          </p>
-        </div>
+        <CcEmptyState
+          illustration={<SearchX size={24} aria-hidden="true" className="text-cc-ink-muted" />}
+          title="No findings from these detectors"
+        >
+          The static analysis matched no unreleased database queries, screen flows or dynamic
+          call targets in the staged code. It does not follow that the code is clean — only
+          that these checks found nothing to report.
+        </CcEmptyState>
       </div>
     );
   }
@@ -62,80 +60,64 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
   };
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-4">
       <div>
-        <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <span>Statically Identified Constructs</span>
-          <span className="bg-slate-100 text-slate-500 border border-slate-200/60 px-2.5 py-0.5 rounded-full text-xs font-bold font-mono">
-            {findings.length} findings
-          </span>
+        <h3 className="cc-text-h2 text-cc-ink">
+          Statically Identified Constructs{' '}
+          <span className="font-medium text-cc-ink-muted">({findings.length} findings)</span>
         </h3>
-        <p className="text-sm text-slate-500 mt-1">Review the architectural footprint and evidence list before confirming solution design.</p>
+        <p className="cc-text-cell text-cc-ink-muted mt-1">Review the architectural footprint and evidence list before confirming solution design.</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {findings.map((finding) => {
           const key = getFindingKey(finding);
           const isSignedOff = signedOffKeys.has(key);
           const level = finding.level || 'fully';
-          
-          const levelColors = {
-            'fully': 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-            'partial': 'bg-amber-50 text-amber-700 border border-amber-200',
-            'not-supported': 'bg-red-50 text-red-700 border border-red-200'
-          };
 
           return (
-            <div 
+            <div
               key={key}
-              className={clsx(
-                "border rounded-2xl p-6 transition-all duration-300 shadow-sm relative overflow-hidden group flex flex-col md:flex-row gap-6 items-start justify-between",
-                isSignedOff 
-                  ? "bg-emerald-50/15 border-emerald-500/40 ring-1 ring-emerald-500/10 shadow-emerald-50" 
-                  : "bg-white border-slate-150 hover:border-slate-250"
+              className={cn(
+                'rounded-cc-card border bg-cc-surface p-4 shadow-cc flex flex-col md:flex-row gap-4 items-start justify-between',
+                // A sign-off is the reader's own word: information, never green (§1.1).
+                isSignedOff ? 'border-cc-information' : 'border-cc-line',
               )}
             >
-              {/* Left Column: Emoji + Title + Location + Explanations */}
-              <div className="space-y-4 flex-1">
+              {/* Left Column: Level + Title + Location + Explanations */}
+              <div className="space-y-3 flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
-                  {/* Status Badge */}
-                  <span className={clsx(
-                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
-                    levelColors[level]
-                  )}>
-                    <span>{LEVEL_EMOJI[level]}</span>
-                    <span>{LEVEL_LABEL[level]}</span>
-                  </span>
+                  <SupportLevelMark level={level} />
 
                   {/* Construct Title */}
-                  <h4 className="font-extrabold text-slate-900 text-base">{finding.title}</h4>
+                  <h4 className="cc-text-h3 text-cc-ink">{finding.title}</h4>
 
-                  {/* File Location Tag */}
+                  {/* File Location */}
                   {finding.location && (
-                    <span className="bg-slate-50 text-slate-500 border border-slate-150/70 px-2 py-0.5 rounded-md font-mono text-[10px] flex items-center gap-1">
-                      <Link2 size={10} />
+                    <span className="inline-flex items-center gap-1 font-cc-mono text-[12px] text-cc-ink-muted">
+                      <Link2 size={12} aria-hidden="true" />
                       {finding.location.file}:{finding.location.line}
                     </span>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Detail */}
                   <div className="space-y-1">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block font-mono">Static Evidence</span>
-                    <p className="text-slate-700 font-semibold leading-relaxed">{finding.detail}</p>
+                    <span className="cc-text-label text-cc-ink-muted block">Static Evidence</span>
+                    <p className="cc-text-cell text-cc-ink">{finding.detail}</p>
                   </div>
 
                   {/* Recommendation */}
                   <div className="space-y-1">
-                    <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest block font-mono">Modernization Path</span>
-                    <p className="text-slate-600 font-medium leading-relaxed">{finding.recommendation}</p>
+                    <span className="cc-text-label text-cc-ink-muted block">Modernization Path</span>
+                    <p className="cc-text-cell text-cc-ink-muted">{finding.recommendation}</p>
                   </div>
                 </div>
               </div>
 
               {/* Right Column: Actions & Sign-off check */}
-              <div className="flex sm:flex-row md:flex-col items-center gap-3 w-full md:w-auto shrink-0 border-t md:border-t-0 border-slate-100 pt-4 md:pt-0 md:pl-4 self-stretch md:justify-center">
+              <div className="flex md:flex-col items-center gap-2 w-full md:w-auto shrink-0 border-t md:border-t-0 border-cc-line pt-3 md:pt-0 md:pl-4 self-stretch md:justify-center">
                 {/* How it works Deep Link */}
                 {/* The value comes from the analysis model, so it reaches an
                     anchor only as http(s) — the same rule and the same helper as
@@ -148,29 +130,24 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
                     href={safeHttpHref(finding.howItWorks)}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 md:w-full flex items-center justify-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-205 text-slate-600 hover:text-slate-800 text-[10px] font-black uppercase tracking-wider h-10 px-4 rounded-xl transition-all shadow-sm"
+                    data-cc-button="ghost"
+                    className={cn(CC_BUTTON_BASE, CC_BUTTON_VARIANT_CLASSES.ghost, CC_BUTTON_DENSITY_CLASSES.compact, 'no-underline flex-1 md:w-full')}
                   >
                     <span>How It Works</span>
-                    <ExternalLink size={12} />
+                    <ExternalLink size={14} aria-hidden="true" />
                   </a>
                 )}
 
-                {/* Sign-off Checkbox */}
-                <button
-                  type="button"
+                {/* Sign-off toggle */}
+                <CcButton
+                  variant="ghost"
+                  aria-pressed={isSignedOff}
+                  icon={<ShieldCheck size={16} aria-hidden="true" />}
                   onClick={() => toggleSignOff(key)}
-                  className={clsx(
-                    "flex-1 md:w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-wider h-10 px-4 rounded-xl transition-all shadow-sm active:scale-95",
-                    isSignedOff
-                      ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-md shadow-emerald-500/20"
-                      : "bg-white hover:bg-slate-50 border border-slate-205 text-slate-600 hover:text-slate-800"
-                  )}
                 >
-                  <ShieldCheck size={14} className={clsx(isSignedOff ? "animate-pulse" : "")} />
-                  <span>{isSignedOff ? "Signed Off" : "Sign Off"}</span>
-                </button>
+                  {isSignedOff ? 'Signed Off' : 'Sign Off'}
+                </CcButton>
               </div>
-
             </div>
           );
         })}

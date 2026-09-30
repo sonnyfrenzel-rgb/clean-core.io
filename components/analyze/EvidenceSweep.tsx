@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import SweepCodeViewer from './SweepCodeViewer';
 import SweepVerdictBar from './SweepVerdictBar';
-import { Shield, Cpu } from 'lucide-react';
+import { Shield } from 'lucide-react';
+import CcButton from '@/components/cc/Button';
 
 /* ---------- Types ---------- */
 interface EvidenceSweepProps {
@@ -12,22 +13,42 @@ interface EvidenceSweepProps {
   findings: EvidenceFinding[];
   isActive: boolean;
   onComplete: () => void;
-  minDuration?: number; // default 3500ms
+  /**
+   * Ignored. The sweep used to be held open for at least this long — six
+   * seconds from the analyze page — whatever the engine had done, which is the
+   * artificial minimum duration `DESIGN.md` §5.4 rules out. Still accepted so
+   * the page's call compiles until it drops the prop (D.10b).
+   */
+  minDuration?: number;
 }
 
-/* ---------- Component ---------- */
+/**
+ * The whole replay may take this long, and no longer (§5.1: "gerafft auf das
+ * Zeitbudget"). It is a ceiling, not a floor: a program with three findings is
+ * done in a fraction of it.
+ */
+const SWEEP_BUDGET_MS = 2400;
+/** No single step is slower than this, so a short list does not crawl. */
+const MAX_STEP_MS = 120;
+
+/**
+ * The evidence sweep — `DESIGN.md` §5.1, §5.4.
+ *
+ * The engine has already run when this mounts (`buildAbapEvidence` is
+ * synchronous); what is shown is its findings in line order, the real events
+ * of the run, one line lighting up per finding. Nothing waits for a clock:
+ * the last finding ends the sweep, "Skip" ends it at once, and
+ * `prefers-reduced-motion` shows the end state immediately.
+ */
 export default function EvidenceSweep({
   code,
   findings,
   isActive,
   onComplete,
-  minDuration = 6000,
 }: EvidenceSweepProps) {
   const [revealedCount, setRevealedCount] = useState(0);
-  const [scanLineProgress, setScanLineProgress] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startTimeRef = useRef<number>(0);
   // The latest-callback ref is kept current in an effect, not during render.
   // Writing a ref while rendering is the one thing refs are not for: under
   // StrictMode the render runs twice and a discarded render would still have
@@ -36,6 +57,7 @@ export default function EvidenceSweep({
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
+  const completedRef = useRef(false);
 
   // Sort findings by line position for sequential reveal
   const sortedFindings = useMemo(
@@ -60,82 +82,67 @@ export default function EvidenceSweep({
     };
   }, [sortedFindings, revealedCount]);
 
-  // Total lines in code
-  const totalLines = useMemo(() => code.split('\n').length, [code]);
-
   const finishSweep = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
     setIsComplete(true);
     setRevealedCount(sortedFindings.length);
-    setScanLineProgress(1);
-    // Small delay for the "lock in" glow effect
-    setTimeout(() => {
-      onCompleteRef.current();
-    }, 600);
+    if (completedRef.current) return;
+    completedRef.current = true;
+    onCompleteRef.current();
   }, [sortedFindings.length]);
 
   useEffect(() => {
     if (!isActive || sortedFindings.length === 0) return;
 
-    // Accessibility: skip animation entirely
+    // Accessibility: the end state at once (§5.2).
     if (prefersReducedMotion) {
-      setRevealedCount(sortedFindings.length);
-      setScanLineProgress(1);
-      setIsComplete(true);
-      setTimeout(() => onCompleteRef.current(), 100);
-      return;
+      const done = setTimeout(finishSweep, 0);
+      return () => clearTimeout(done);
     }
 
-    startTimeRef.current = Date.now();
-    const intervalMs = Math.max(minDuration / sortedFindings.length, 80);
+    const intervalMs = Math.min(SWEEP_BUDGET_MS / sortedFindings.length, MAX_STEP_MS);
     let count = 0;
 
     timerRef.current = setInterval(() => {
       count++;
       if (count >= sortedFindings.length) {
-        if (timerRef.current) clearInterval(timerRef.current);
-
-        // Ensure minimum duration
-        const elapsed = Date.now() - startTimeRef.current;
-        const remaining = Math.max(minDuration - elapsed, 0);
-        setTimeout(() => finishSweep(), remaining);
+        finishSweep();
         return;
       }
-
       setRevealedCount(count);
-
-      // Scan line progress = position of current finding relative to total lines
-      const currentFinding = sortedFindings[count - 1];
-      if (currentFinding && totalLines > 0) {
-        setScanLineProgress(currentFinding.lineStart / totalLines);
-      }
     }, intervalMs);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isActive, sortedFindings, minDuration, totalLines, prefersReducedMotion, finishSweep]);
+  }, [isActive, sortedFindings, prefersReducedMotion, finishSweep]);
 
   if (!isActive && !isComplete) return null;
 
+  const current = sortedFindings[revealedCount - 1];
+
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div>
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-200">
-          <Shield className="w-5 h-5 text-emerald-600" />
+        <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-2 text-cc-ink-muted">
+          <Shield className="w-5 h-5" aria-hidden="true" />
         </div>
         <div>
-          <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-            Evidence Scanner
-          </h3>
-          <p className="text-[10px] sm:text-xs text-slate-500 font-bold">
-            Deterministic ABAP analysis • No AI guesswork
+          <h3 className="cc-text-h2 text-cc-ink">Evidence Scanner</h3>
+          <p className="cc-text-meta text-cc-ink-muted">
+            Deterministic ABAP analysis · no model call
           </p>
         </div>
         {!isComplete && (
-          <div className="ml-auto flex items-center gap-2 text-xs text-emerald-600 font-bold">
-            <Cpu className="w-4 h-4 animate-spin" style={{ animationDuration: '3s' }} />
-            <span className="hidden sm:inline">Scanning…</span>
+          <div className="ml-auto flex items-center gap-3">
+            <span className="cc-text-meta text-cc-ink-muted tabular-nums" aria-hidden="true">
+              {revealedCount}/{sortedFindings.length}
+              {current ? ` · line ${current.lineStart}` : ''}
+            </span>
+            <CcButton variant="ghost" onClick={finishSweep}>
+              Skip
+            </CcButton>
           </div>
         )}
       </div>
@@ -152,28 +159,12 @@ export default function EvidenceSweep({
         />
       </div>
 
-      {/* Code viewer with scan line */}
+      {/* The source, a line lit per finding */}
       <SweepCodeViewer
         code={code}
         findings={sortedFindings}
         revealedCount={revealedCount}
-        scanLineProgress={scanLineProgress}
       />
-
-      {/* Progress indicator */}
-      {!isComplete && (
-        <div className="mt-3 flex items-center gap-3">
-          <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-300"
-              style={{ width: `${(revealedCount / Math.max(sortedFindings.length, 1)) * 100}%` }}
-            />
-          </div>
-          <span className="text-[10px] text-slate-500 font-bold tabular-nums shrink-0">
-            {revealedCount}/{sortedFindings.length}
-          </span>
-        </div>
-      )}
     </div>
   );
 }
