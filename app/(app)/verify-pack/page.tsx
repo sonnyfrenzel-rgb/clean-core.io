@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useCallback, useRef } from 'react';
-import { verifyAuditPack, type VerifyResult, type FileVerifyResult } from '@/lib/audit-pack-verify';
+import { verifyAuditPack, signatureStateOf, verdictHeadline, type VerifyResult, type FileVerifyResult } from '@/lib/audit-pack-verify';
 import { ShieldCheck, ShieldAlert, ShieldX, Upload, CheckCircle2, XCircle, AlertCircle, FileText, Hash } from 'lucide-react';
 import BackLink from '@/components/BackLink';
 import { motion, AnimatePresence } from 'motion/react';
@@ -53,14 +53,14 @@ export default function VerifyPackPage() {
     if (file) handleFile(file);
   }, [handleFile]);
 
-  const signatureBadge = (sv: boolean | null) => {
-    if (sv === true) return (
+  const signatureBadge = (state: ReturnType<typeof signatureStateOf>) => {
+    if (state === 'valid') return (
       <div className="flex items-center gap-2 text-emerald-600">
         <ShieldCheck size={20} className="shrink-0" />
         <span className="font-bold text-sm">Authenticity Confirmed</span>
       </div>
     );
-    if (sv === false) return (
+    if (state === 'invalid') return (
       <div className="flex items-center gap-2 text-red-600">
         <ShieldX size={20} className="shrink-0" />
         <span className="font-bold text-sm">Signature Invalid</span>
@@ -69,7 +69,7 @@ export default function VerifyPackPage() {
     return (
       <div className="flex items-center gap-2 text-amber-600">
         <ShieldAlert size={20} className="shrink-0" />
-        <span className="font-bold text-sm">Unsigned / Unverified</span>
+        <span className="font-bold text-sm">{state === 'unchecked' ? 'Signed / Not Checked' : 'Unsigned / Unverified'}</span>
       </div>
     );
   };
@@ -174,11 +174,7 @@ export default function VerifyPackPage() {
                           ? 'text-amber-800'
                           : 'text-red-800'
                     }`}>
-                      {result.status === 'authentic'
-                        ? 'Authenticity & Integrity Verified'
-                        : result.status === 'integrity-only'
-                          ? 'Integrity Verified (Unsigned)'
-                          : 'Verification Failed'}
+                      {verdictHeadline(result)}
                     </h2>
                     <p className={`text-sm mt-1 ${
                       result.status === 'authentic'
@@ -264,7 +260,7 @@ export default function VerifyPackPage() {
                     <ShieldCheck size={16} className="text-gray-500" />
                     <span className="font-bold text-xs uppercase tracking-widest text-gray-500">Signature</span>
                   </div>
-                  {signatureBadge(result.signatureValid)}
+                  {signatureBadge(signatureStateOf(result))}
                   {result.manifest?.signature && (
                     <p className="text-[10px] text-gray-400 font-mono mt-2 break-all">
                       {result.manifest.signature.substring(0, 32)}...

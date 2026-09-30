@@ -288,6 +288,26 @@ export interface VerifyResult {
  * 3. Verifies the manifest hash (canonical string)
  * 4. Optionally verifies the HMAC signature via /api/export/verify
  */
+/**
+ * How the verdict is named. A pack whose manifest is signed but whose signature
+ * could not be checked (the verification service did not answer) is not an
+ * unsigned pack: saying "Unsigned" there tells the reader the pack carries no
+ * signature, when all that is known is that authenticity was not established.
+ */
+export function signatureStateOf(result: Pick<VerifyResult, 'signatureValid' | 'manifest'>): 'valid' | 'invalid' | 'unchecked' | 'unsigned' {
+  if (result.signatureValid === true) return 'valid';
+  if (result.signatureValid === false) return 'invalid';
+  return result.manifest?.signed === true ? 'unchecked' : 'unsigned';
+}
+
+export function verdictHeadline(result: Pick<VerifyResult, 'status' | 'signatureValid' | 'manifest'>): string {
+  if (result.status === 'authentic') return 'Authenticity & Integrity Verified';
+  if (result.status === 'failed') return 'Verification Failed';
+  return signatureStateOf(result) === 'unchecked'
+    ? 'Integrity Verified (Signature Not Checked)'
+    : 'Integrity Verified (Unsigned)';
+}
+
 export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Promise<VerifyResult> {
   const errors: string[] = [];
   const fileResults: FileVerifyResult[] = [];
