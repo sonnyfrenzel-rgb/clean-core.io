@@ -1083,7 +1083,7 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-029 | mittel | P2 | eigener Schritt, braucht Sonnys Go | eingeplant |
 | SEC-2026-031 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
 | SEC-2026-033 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
-| SEC-2026-034 | mittel | P2 | Phase 2 · Datenschutz-Schritt | eingeplant |
+| SEC-2026-034 | mittel | P2 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-036 | mittel | P3 | Phase 4 · Austauschen | eingeplant |
 | SEC-2026-037 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
 | SEC-2026-038 | mittel | P2 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
@@ -1281,7 +1281,7 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-525 | mittel | P2 | v2.19-Sicherheitsschritt A - sofort | behoben |
 | SEC-2026-526 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
 | SEC-2026-527 | mittel | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
-| SEC-2026-528 | mittel | P2 | Phase 2 · Datenschutz-Schritt | eingeplant |
+| SEC-2026-528 | mittel | P2 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-529 | mittel | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-557 | mittel | P2 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
 | SEC-2026-558 | mittel | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
