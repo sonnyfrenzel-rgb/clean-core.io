@@ -127,7 +127,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
   type RunResult = { exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[]; receipt?: TestRunReceipt | null; draftId?: string; draftReceipt?: TestRunReceipt | null };
 
   /** POST to the repair-draft route (roadmap 8.7). Returns the parsed body and whether it was accepted. */
-  const repairDraftCall = async (body: Record<string, unknown>): Promise<{ ok: boolean; data: any }> => {
+  const repairDraftCall = async (body: Record<string, unknown>): Promise<{ ok: boolean; status: number; data: any }> => {
     const auth = getAuth();
     const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
     const res = await fetch(`/api/projects/${projectId}/repair-drafts`, {
@@ -139,7 +139,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
       body: JSON.stringify(body),
     });
     const data = await res.json().catch(() => ({}));
-    return { ok: res.ok, data };
+    return { ok: res.ok, status: res.status, data };
   };
 
   const executeWithHealing = async (payload: { tests: Project['testSuite']; projectId: string; code: string | undefined }, maxRetries = 2): Promise<RunResult> => {
@@ -279,9 +279,17 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         return result;
       }
       const adoption = { action: 'adopt', draftId: ran.id, expectedDraftDigest: ran.digest };
+      // A 5xx is not a refusal: the adoption may have committed before the
+      // server failed to answer, so it takes the lost-answer path below (QA
+      // slice review of 81810c8026e0, 95912ce88e0d).
+      const adopt = async () => {
+        const answer = await repairDraftCall(adoption);
+        if (answer.status >= 500) throw new Error(`The adoption answered ${answer.status}.`);
+        return answer;
+      };
       let adopted: Awaited<ReturnType<typeof repairDraftCall>>;
       try {
-        adopted = await repairDraftCall(adoption);
+        adopted = await adopt();
       } catch {
         // The request may have reached the server and committed while its
         // answer was lost (QA review of 4b4586aff273). Adoption is a
@@ -289,7 +297,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         // name, so asking again is safe — and its answer says which it was.
         setSandboxOutput(prev => prev + `\n[Auto-Healing] The answer to the adoption of draft ${ran.id} did not arrive. Asking the server again...\n`);
         try {
-          adopted = await repairDraftCall(adoption);
+          adopted = await adopt();
         } catch {
           throw new Error(`The adoption of draft ${ran.id} was sent, but no answer arrived. The project may already hold the repair — reload it to see what is stored.`);
         }

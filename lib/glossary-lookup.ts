@@ -157,7 +157,13 @@ const isBoundary = (text: string, index: number): boolean =>
 
 export function findGlossaryMentions(text: string): GlossaryMention[] {
   if (!text) return [];
-  const haystack = text.toLowerCase();
+  // Lowercased character by character, keeping every length: `'İ'.toLowerCase()`
+  // is two code units, and one such character shifted every offset after it
+  // (QA slice review of 68a81318dbc1, 978275f2d42d).
+  const haystack = Array.from(text, (ch) => {
+    const lower = ch.toLowerCase();
+    return lower.length === ch.length ? lower : ch;
+  }).join('');
 
   // Longest name first, so rule 2 falls out of the order rather than needing
   // a second pass to undo a shorter match already taken.

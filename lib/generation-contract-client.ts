@@ -131,6 +131,12 @@ export async function storeGeneration(
       `The server did not finish answering (${res.status}), so it is not known whether this generation was stored.`,
     );
   }
+  // A success whose answer did not arrive whole says nothing about the write:
+  // it is the lost-answer case, not a refusal (QA slice review of
+  // c053fc5909c1, d63333ca74b2).
+  if (res.ok && !body?.fields) {
+    throw new CommandAnswerLostError('The answer to this generation arrived incomplete, so it is not known whether it was stored.');
+  }
   if (!res.ok || !body?.fields) {
     return { ok: false, error: body?.error || 'This generation could not be stored.' };
   }

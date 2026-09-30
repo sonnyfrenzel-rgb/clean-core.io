@@ -45,10 +45,13 @@ export function useStatementProposal(
       ]);
       const record = await client.fetchStatementProposal(projectId);
       if (cancelled) return;
-      setHeld({ key, view: lib.applyStatementProposal(source, record) });
+      // A proposal requested and answered while this read was under way is newer
+      // than what the read found; the read does not overwrite it (QA slice review
+      // of f03c6c53294a, 19ffd321c29a).
+      setHeld((prev) => (prev.key === key ? prev : { key, view: lib.applyStatementProposal(source, record) }));
     })().catch(() => {
       // Nothing to show is the evidence alone, which is what the page shows anyway.
-      if (!cancelled) setHeld({ key, view: null });
+      if (!cancelled) setHeld((prev) => (prev.key === key ? prev : { key, view: null }));
     });
     return () => {
       cancelled = true;
