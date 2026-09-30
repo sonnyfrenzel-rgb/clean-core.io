@@ -12,7 +12,8 @@ import path from 'path';
  */
 
 const SEGMENT = path.resolve(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'testing');
-const page = () => fs.readFileSync(path.join(SEGMENT, 'page.tsx'), 'utf8');
+// Line endings normalised: a Windows checkout (core.autocrlf) has CRLF, CI has LF.
+const page = () => fs.readFileSync(path.join(SEGMENT, 'page.tsx'), 'utf8').replace(/\r\n/g, '\n');
 /** The rendered half only — comments above the handlers name the wording they replaced. */
 const rendered = () => {
   const s = page();
