@@ -539,7 +539,11 @@ function carriersOf(
     const at = anchorOf(statement.lineStart, statement.lineEnd);
     const screen = CALL_SCREEN.exec(statement.text);
     if (screen) {
-      const number = screen[1].toUpperCase();
+      // A screen number is digits. `CALL SCREEN lv_dynnr` names the variable
+      // that will hold it, and was reported as "screen LV_DYNNR" (QA full
+      // review of v2.20.0, 3001cbbf16e1) — the carrier is then not named here,
+      // like a computed transaction code.
+      const number = /^\d+$/.test(screen[1]) ? screen[1] : null;
       out.push({
         kind: 'screen',
         mode: 'opened',
@@ -549,7 +553,7 @@ function carriersOf(
         lineEnd: statement.lineEnd,
         routine: routineAt(containers, statement.lineStart),
         text: statement.text,
-        phrase: `The code calls screen ${number} of this program at ${at}.`,
+        phrase: number ? `The code calls screen ${number} of this program at ${at}.` : null,
         note: 'What that screen shows is in the screen painter, which is not part of this source.',
       });
       continue;
