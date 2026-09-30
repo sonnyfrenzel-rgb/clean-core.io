@@ -420,7 +420,7 @@ Export. Was hier steht, ist deshalb das, was wir selbst belegen können.
 
 | # | Schritt | Größe |
 |---|---|---|
-| 4.3 | **Signavio-Export geprüft — zurückgestellt, Sonny führt es vor dem 3.0-Release durch (Entscheidung 18.09.2026):** Export → Import in SAP Signavio Process Manager, im Workspace eines Mitglieds mit Lizenz. Protokoll, was überlebt (Namensraum-Erweiterungen, Lanes, Layout) und was nicht. Erst danach darf eine Seite „getestet mit SAP Signavio Process Manager" sagen — mit Datum, und ausdrücklich nur für diese eine Richtung | S, extern |
+| 4.3 | **Signavio-Export geprüft — zurückgestellt, Sonny führt es vor dem 3.0-Release durch (Entscheidung 18.09.2026):** Export → Import in SAP Signavio Process Manager, im Workspace eines Mitglieds mit Lizenz. Protokoll, was überlebt (Namensraum-Erweiterungen, Lanes, Layout) und was nicht. Erst danach darf eine Seite „getestet mit SAP Signavio Process Manager" sagen — mit Datum, und ausdrücklich nur für diese eine Richtung **Keine Bedingung für 3.0 mehr (Sonny, 30.09.2026): er übernimmt das Risiko; bis ein Protokoll vorliegt, bleibt die Aussage „nicht verifiziert“.** | S, extern |
 | 4.4 | **Kurzbrief:** Prozessbild, Regeln, offene Fragen — jede Aussage mit Anker; PDF und `.bpmn` in einem Download | M |
 
 Die Nummern 4.1 und 4.2 bleiben unbesetzt: sie trugen den BPMN-Import und den
@@ -597,12 +597,11 @@ ganzen Fluss durchläuft und die Copy-CI grün ist — **und die neue Landingpag
 echten Produktansichten live ist**: kein Mockup-Bild auf einer öffentlichen Seite,
 Anmeldung wie heute erreichbar, Landing-Guards und Signavio-/Geld-Guards grün,
 JSON-LD und sichtbares FAQ deckungsgleich. 3.0 wird nicht ohne die neue Startseite
-veröffentlicht — **und nicht ohne den geprüften Signavio-Export aus 4.3**
-(Entscheidung Sonny, 18.09.2026): er öffnet einen eigenen Export in SAP Signavio
-Process Manager, im Workspace eines Mitglieds mit Lizenz, und legt das Protokoll
-mit Datum ins Repository. Bis dahin sagt keine Seite „getestet mit SAP Signavio
-Process Manager". Der Schritt ist von der Phase 4 an diese Stelle gerückt, weil er
-nicht gebaut, sondern durchgeführt wird — **und nicht ohne die Management-Sicht aus 3.0.10**: ihre Frage in
+veröffentlicht. **Der geprüfte Signavio-Export aus 4.3 ist keine Bedingung mehr**
+(Entscheidung Sonny, 30.09.2026 — ändert die vom 18.09.2026: „ich übernehme das Risiko,
+es kann auch ohne Protokoll übernommen werden“). Was bleibt: ohne Protokoll sagt keine
+Seite „getestet mit SAP Signavio Process Manager“ — die Aussage bleibt „BPMN 2.0 XML,
+Import in Signavio nicht verifiziert“, gehalten von den Signavio-Guards — **und 3.0 erscheint nicht ohne die Management-Sicht aus 3.0.10**: ihre Frage in
 einem Satz beantwortet, die vier Töpfe und der Readiness-Verlauf als Diagramm, „nicht
 bestimmt" in jedem davon als eigene Fläche, jede Zahl mit ihrer Abdeckung und als Text
 erreichbar, Kosten nur als Simulation mit Annahmenrevision.
@@ -815,6 +814,8 @@ diese Roadmap das Konto nicht anfasst.
   Aufruf im Smoke-Check nach dem Deploy, Probelauf mit zwei Workern, Umfrage-Code entfernen, Specs nach Features;
   (3) Anmeldung einmal je Datei, Animationen per `page.clock`, die vier Lücken (Admin-Schalter, Registrierung über
   die Oberfläche, Audit-Pack Export→Prüfung, Leseansicht Eingeladener). Stufe 1 ist am 30.09. gebaut.
+- **4.3 Signavio-Export ist keine Bedingung für 3.0 mehr** — Sonny übernimmt das Risiko; ohne Protokoll bleibt jede
+  öffentliche Aussage bei „BPMN 2.0 XML, Import nicht verifiziert“ (Zeile 4.3, 3.0 „Fertig, wenn“).
 - **3.0.9 Mail-Zustellbarkeit:** keine CSA-Zertifizierung, T-Online entfällt; Abnahme = Posteingang bei Gmail und Microsoft,
   GMX/web.de gemessen und als bekannte Einschränkung benannt (Zeile 3.0.9).
 - **BYOK für OpenAI und Anthropic bleibt bei 3.5.** Die Härtung, die auch Gemini heute nützt, kommt **vor 3.0** als
