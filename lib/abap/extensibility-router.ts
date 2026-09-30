@@ -329,10 +329,15 @@ export function routeExtensibility(
       evaluation: findings.length === 0 && coverageIncomplete
         ? `Not established. No pattern was found, but ${unassessedSummary || 'part of the code'} was not assessed by any detector \u2014 feasibility cannot be judged from what was not read.`
         : findings.length === 0
-          ? 'Highly feasible. Trivial extension with no database writes or external integrations.'
-          : 'Infeasible. Custom logic, DB writes, or complex calculations exceed Key User capabilities.',
-      resultState: findings.length === 0 && !coverageIncomplete ? 'In-App Preferred' : 'Neutral',
-      cleanCoreImpact: 'Safe upgrades guaranteed. Completely isolated from the SAP core.'
+          ? 'No blocker found: the code shows no database write, external integration or other legacy pattern. Whether its logic can be expressed with Key User tools is not assessed by the engine.'
+          : `Not indicated. The code contains ${presentCategories}, which Key User tools do not cover as it stands. Whether the requirement could be re-expressed with them is not assessed by the engine.`,
+      // Neutral in every case. A finding count says whether a blocker was seen,
+      // not whether the logic fits the low-code tools: no findings is not
+      // "trivially feasible", and one finding of any kind is not "infeasible"
+      // (QA full review of v2.20.0, 1d5ab9d90793). The impact below is what the
+      // track offers, not a property of the analysed code (c658f64f147e).
+      resultState: 'Neutral',
+      cleanCoreImpact: 'Target property of Key User extensions: they use released extension points only. Not established for the analysed code.'
     },
     {
       checkpointName: 'In-App Developer Extensibility (Tier 1)',

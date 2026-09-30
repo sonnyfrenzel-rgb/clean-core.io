@@ -1,0 +1,33 @@
+/**
+ * The router's checkpoints and tracks say only what the evidence carries.
+ *
+ * QA full review of v2.20.0 (fc787674705f):
+ *   1d5ab9d90793 — a finding count read as proof of Key User feasibility;
+ *   c658f64f147e — "Safe upgrades guaranteed" as fixed text;
+ *   e08f739fe79e — a Private Edition write to SAP's rows rated "High compatibility";
+ *   2b515958f925 — any side-by-side trigger read as "Perfect fit" for CAP persistence.
+ *
+ * Serverless: pure functions over text.
+ */
+import { test, expect } from '@playwright/test';
+import { buildAbapEvidence } from '../lib/abap/evidence-model';
+import { routeExtensibility } from '../lib/abap/extensibility-router';
+
+const route = (code: string, deployment: 'public' | 'private' = 'private') =>
+  routeExtensibility(buildAbapEvidence(code, 'zcc_qa220.abap', deployment), deployment);
+
+const checkpoint = (report: ReturnType<typeof route>, name: string) =>
+  report.checkpoints.find((c) => c.checkpointName.includes(name))!;
+
+const READ_ONLY = 'REPORT zcc_read.\nSELECT * FROM vbak INTO TABLE @DATA(lt).';
+const STANDARD_WRITE = 'REPORT zcc_write.\nUPDATE vbak SET netwr = 0 WHERE vbeln = lv_vbeln.';
+const RFC = "REPORT zcc_rfc.\nCALL FUNCTION 'Z_REMOTE' DESTINATION 'NONE'.";
+
+test('1d5ab9d90793 — the Key User checkpoint does not grade feasibility from a count', () => {
+  for (const code of [READ_ONLY, STANDARD_WRITE, RFC]) {
+    const keyUser = checkpoint(route(code), 'Key User');
+    expect(keyUser.evaluation, code).not.toMatch(/Highly feasible|Trivial extension|^Infeasible/);
+    expect(keyUser.evaluation, 'and it says what it did not assess').toMatch(/not assessed/i);
+    expect(keyUser.resultState, 'a count is not a preference').toBe('Neutral');
+  }
+});
