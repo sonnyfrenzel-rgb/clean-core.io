@@ -264,7 +264,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
             </span>
             <span className="flex flex-col">
               <span className="text-[15px] font-extrabold leading-tight tracking-[-0.02em] text-cc-ink">
-                Clean-Core<span className="text-cc-brand">.io</span>
+                Clean-Core<span className="text-cc-brand-strong">.io</span>
               </span>
               <span className="text-[11px] font-medium leading-tight text-cc-ink-muted">Free Community Edition</span>
             </span>
