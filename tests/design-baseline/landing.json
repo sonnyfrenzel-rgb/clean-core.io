@@ -1,32 +1,5 @@
 {
   "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
   "group": "landing",
-  "files": {
-    "app/page.tsx": {
-      "step": "D.27",
-      "R3": 1,
-      "R4": 11,
-      "R5": 1
-    },
-    "components/LandingModals.tsx": {
-      "step": "D.27",
-      "R1": 23,
-      "R2": 25,
-      "R3": 5,
-      "R4": 202,
-      "R5": 53,
-      "R7": 9,
-      "R10": 1,
-      "R13": 3,
-      "R14": 1,
-      "R18": 27
-    },
-    "components/SectionHeader.tsx": {
-      "step": "D.27",
-      "R4": 5,
-      "R5": 4,
-      "R17": 1,
-      "R18": 1
-    }
-  }
+  "files": {}
 }

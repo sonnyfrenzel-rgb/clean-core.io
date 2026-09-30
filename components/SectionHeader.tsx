@@ -47,10 +47,10 @@ export default function SectionHeader({
       {eyebrow && (
         <span
           data-section-eyebrow
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-[0.08em] mb-4 border ${
+          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-[0.08em] mb-4 border ${
             tone === 'dark'
-              ? 'text-emerald-300 bg-emerald-950/60 border-emerald-800/60'
-              : 'text-cc-brand-strong bg-cc-brand-surface border-green-200'
+              ? 'text-cc-brand bg-cc-brand/15 border-cc-brand/40'
+              : 'text-cc-brand-strong bg-cc-brand-surface border-cc-brand/30'
           }`}
         >
           {eyebrow}
@@ -74,7 +74,7 @@ export default function SectionHeader({
         <p
           className={`text-base sm:text-lg md:text-xl leading-relaxed font-medium max-w-3xl text-pretty ${
             centered ? 'mx-auto' : ''
-          } ${tone === 'dark' ? 'text-gray-300' : 'text-cc-ink-muted'}`}
+          } ${tone === 'dark' ? 'text-cc-on-dark/80' : 'text-cc-ink-muted'}`}
         >
           {children}
         </p>

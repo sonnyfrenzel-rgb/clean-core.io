@@ -38,6 +38,9 @@ import ViewsStage, { type StageView } from '@/components/landing/ViewsStage';
 import StageTimeline, { type TimelineStage } from '@/components/landing/StageTimeline';
 import { publicButton } from '@/components/landing/public-button';
 import CcTable from '@/components/cc/Table';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import CcAnchor from '@/components/cc/Anchor';
+import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
 import { getFacts, formatObjectCount } from '@/lib/facts';
 import { getReferenceAnalysis } from '@/lib/reference-analysis';
@@ -52,7 +55,6 @@ import { DEMO_OBJECT_NAME, DEMO_ROUTE } from '@/lib/demo-marks';
 import { landingShotSrc, stageShot } from '@/lib/landing-shots';
 import { landingStages } from '@/lib/landing-stages';
 import { landingShotSize } from '@/lib/landing-shot-size';
-import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 
 /**
  * The public start page — roadmap 3.0.6, built along
@@ -155,61 +157,10 @@ const PROVENANCE_GROUPS: Array<{ form: string; meaning: string; values: Provenan
   { form: 'Dashed', meaning: 'provisional', values: ['proposed', 'simulation', 'demonstrated-mock'] },
 ];
 
-const PROVENANCE_CHIP: Record<string, string> = {
-  filled: 'border',
-  outline: 'border bg-white',
-  dashed: 'border border-dashed bg-white',
-};
-const STATE_CHIP: Record<string, string> = {
-  success: 'text-cc-success bg-cc-success-bg border-cc-success-border',
-  information: 'text-cc-information bg-cc-information-bg border-cc-information-border',
-  warning: 'text-cc-warning bg-cc-warning-bg border-cc-warning-line',
-  neutral: 'text-cc-neutral bg-cc-neutral-bg border-cc-neutral',
-  error: 'text-cc-error bg-cc-error-bg border-cc-error-border',
-};
-const LEVEL_CHIP: Record<CloudReadinessGrade, string> = {
-  A: 'bg-cc-information-bg border-cc-information-border text-cc-information',
-  B: 'bg-gray-100 border-gray-300 text-gray-700',
-  C: 'bg-cc-warning-bg border-cc-warning-border text-cc-warning',
-  D: 'bg-cc-error-bg border-cc-error-border text-cc-error',
-  Unknown: 'bg-cc-neutral-bg border-cc-neutral-border text-cc-neutral',
-};
-
-function LevelChip({ grade }: { grade: CloudReadinessGrade }) {
-  return (
-    <span
-      className={`inline-flex h-6 min-w-[26px] items-center justify-center rounded border px-2 text-[13px] font-semibold ${LEVEL_CHIP[grade]}`}
-      aria-label={`Level ${CLEAN_CORE_LEVEL[grade].code}`}
-    >
-      {CLEAN_CORE_LEVEL[grade].code}
-    </span>
-  );
-}
-
-function ProvenanceWord({ value }: { value: ProvenanceValue }) {
-  const p = PROVENANCE[value];
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-3 py-px text-xs font-semibold leading-[18px] whitespace-nowrap ${PROVENANCE_CHIP[p.form]} ${STATE_CHIP[p.state]}`}
-      data-provenance={value}
-    >
-      {p.label}
-    </span>
-  );
-}
-
-function Anchor({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex min-h-6 items-center rounded border border-cc-line bg-gray-100 px-2 font-cc-mono text-xs font-semibold text-gray-800">
-      {children}
-    </span>
-  );
-}
-
 function TextLink({ href, children }: { href: string; children: React.ReactNode }) {
   const external = href.startsWith('http');
   const cls =
-    'inline-flex items-center gap-1 font-semibold text-cc-brand-strong underline decoration-green-300 underline-offset-4 hover:decoration-cc-brand-strong';
+    'inline-flex items-center gap-1 font-semibold text-cc-brand-strong underline decoration-cc-brand underline-offset-4 hover:decoration-cc-brand-strong';
   return external ? (
     <a href={href} className={cls} rel="noopener noreferrer" target="_blank">
       {children}
@@ -227,7 +178,7 @@ function Shot({ shot, alt, caption, priority = false }: { shot: Parameters<typeo
   return (
     <figure className="m-0">
       {caption && <figcaption className="mb-3 text-center text-sm font-medium text-cc-ink-muted">{caption}</figcaption>}
-      <div className="overflow-hidden rounded-[20px] border border-gray-300 bg-white shadow-[0_24px_64px_rgb(11_28_48/0.10)]">
+      <div className="overflow-hidden rounded-[20px] border border-cc-line bg-cc-surface shadow-[0_24px_64px_rgb(11_28_48/0.10)]">
         <Image
           src={landingShotSrc(shot)}
           alt={alt}
@@ -243,11 +194,11 @@ function Shot({ shot, alt, caption, priority = false }: { shot: Parameters<typeo
 }
 
 /**
- * The hero's line grid, at 18 % opacity. The only colour literal left on the
- * page: the three mesh blobs above it take existing tokens of the same value,
- * and a token for this slate belongs to the landing follow-up (block D, D.27).
+ * The hero's line grid, at 18 % opacity. A token like the three mesh blobs
+ * above it: `--cc-mesh-grid` in `app/globals.css` (block D, D.27), so the page
+ * holds no colour literal of its own.
  */
-const MESH_GRID = '#94a3b8';
+const MESH_GRID = 'var(--cc-mesh-grid)';
 
 const CARD = 'min-w-0 rounded-3xl border border-cc-line bg-cc-surface p-5 sm:p-8';
 
@@ -672,7 +623,7 @@ export default function Home() {
                   {ladder.map((l) => (
                     <li key={l.level} className="rounded-xl border border-cc-line p-4">
                       <p className="flex items-center gap-3 text-sm font-semibold text-cc-ink">
-                        <LevelChip grade={l.level} />
+                        <CcCleanCoreLevel value={l.level} />
                         <span className="first-letter:uppercase">{l.label}</span>
                       </p>
                       {l.examples.map((e) => (
@@ -685,7 +636,7 @@ export default function Home() {
                             <code className="font-cc-mono font-semibold text-cc-ink">{e.name}</code>
                           )}
                           <span>{e.note}</span>
-                          <ProvenanceWord value="imported" />
+                          <CcProvenanceChip value="imported" />
                         </p>
                       ))}
                     </li>
@@ -720,7 +671,7 @@ export default function Home() {
                     </p>
                     <p className="mt-2 text-sm font-medium leading-relaxed text-cc-ink-muted">{s.d}</p>
                     <p className="mt-2">
-                      <ProvenanceWord value={s.pv} />
+                      <CcProvenanceChip value={s.pv} />
                     </p>
                   </li>
                 ))}
@@ -774,7 +725,7 @@ export default function Home() {
                           {o.name}
                         </Link>
                       ),
-                      level: <LevelChip grade={o.grade.grade} />,
+                      level: <CcCleanCoreLevel value={o.grade.grade} />,
                       state: <span className="text-cc-ink-muted">{o.grade.state ?? 'not listed'}</span>,
                       successor: <span className="font-cc-mono">{o.successor ?? '—'}</span>,
                     },
@@ -897,7 +848,7 @@ export default function Home() {
                 {reference.businessDecisions[0] && (
                   <p className="mt-5 text-sm font-medium leading-relaxed text-cc-ink-muted">
                     One finding lands on the business: {reference.businessDecisions[0].title}{' '}
-                    <Anchor>L{reference.businessDecisions[0].lineStart}</Anchor>. The engine&apos;s recommendation, quoted
+                    <CcAnchor>L{reference.businessDecisions[0].lineStart}</CcAnchor>. The engine&apos;s recommendation, quoted
                     unedited: &ldquo;{reference.businessDecisions[0].recommendation}&rdquo;
                   </p>
                 )}
@@ -942,7 +893,7 @@ export default function Home() {
                       {g.values.map((v) => (
                         <li key={v} className="grid grid-cols-[150px_minmax(0,1fr)] items-start gap-3 text-sm">
                           <span>
-                            <ProvenanceWord value={v} />
+                            <CcProvenanceChip value={v} />
                           </span>
                           <span className="font-medium text-cc-ink-muted">{PROVENANCE[v].meaning}</span>
                         </li>
@@ -1279,7 +1230,7 @@ export default function Home() {
           <div className="mt-14 border-t border-white/15 pt-12">
             <SiteFooter dark />
           </div>
-          <div className="mt-10 border-t border-white/15 pt-8 text-center text-sm text-gray-300">
+          <div className="mt-10 border-t border-white/15 pt-8 text-center text-sm text-cc-on-dark/70">
             <p className="flex flex-wrap justify-center gap-x-4 gap-y-2">
               <Link href="/impressum" className="hover:text-white">Legal Notice</Link>
               <Link href="/datenschutz" className="hover:text-white">Privacy Policy</Link>
@@ -1287,14 +1238,14 @@ export default function Home() {
               <Link href="/licenses" className="hover:text-white">Licenses</Link>
               <a href={SECURITY_MODEL_URL} className="hover:text-white" rel="noopener noreferrer" target="_blank">SECURITY.md on GitHub</a>
             </p>
-            <p className="mx-auto mt-6 max-w-2xl text-xs leading-relaxed text-gray-300">
+            <p className="mx-auto mt-6 max-w-2xl text-xs leading-relaxed text-cc-on-dark/70">
               Generated output is a draft that you review, test and approve before any productive use. The platform is
               provided free of charge and without warranty (<Link href="/terms" className="underline hover:text-white">Terms of Service</Link>).
             </p>
             <div className="mx-auto mt-4 max-w-2xl">
-              <SapTrademarkNotice className="!text-gray-300" />
+              <SapTrademarkNotice className="!text-cc-on-dark/70" />
             </div>
-            <p className="mt-6 font-cc-mono text-xs text-gray-300">
+            <p className="mt-6 font-cc-mono text-xs text-cc-on-dark/70">
               © 2026 Clean-Core.io · Version {APP_VERSION} · {APP_RELEASE_DATE}
             </p>
           </div>
