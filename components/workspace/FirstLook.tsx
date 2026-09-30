@@ -391,7 +391,7 @@ export default function FirstLook({
             </CcButton>
           }
         >
-          <ol data-first-look-stages="building" className="m-0 flex list-none flex-col gap-1.5 p-0">
+          <ol data-first-look-stages="building" className="m-0 flex list-none flex-col gap-2 p-0">
             {shown.map((stage, i) => (
               <StageRow key={stage?.id ?? `pending-${i}`} stage={stage} />
             ))}
@@ -426,7 +426,7 @@ export default function FirstLook({
             <div className="flex flex-wrap items-center gap-2">
               <h3
                 data-first-look-process-name={result.processName.name ? 'named' : 'unnamed'}
-                className="m-0 font-cc-mono text-[18px] leading-tight font-bold text-cc-ink"
+                className="m-0 font-cc-mono text-[15px] leading-tight font-bold text-cc-ink"
               >
                 {result.processName.name ?? wt('firstLook.noProgramName')}
               </h3>
@@ -454,7 +454,7 @@ export default function FirstLook({
                 {finalStage?.result}
               </p>
               {result.rules.length > 0 ? (
-                <ul className="m-0 mt-2 list-none space-y-1.5 p-0">
+                <ul className="m-0 mt-2 list-none space-y-2 p-0">
                   {result.rules.slice(0, 6).map((rule) => (
                     <li
                       key={rule.id}
@@ -473,7 +473,7 @@ export default function FirstLook({
                 </ul>
               ) : null}
               {result.rules.length > 6 ? (
-                <p className="m-0 mt-1.5 text-[12px] font-medium text-cc-ink-muted">
+                <p className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted">
                   {firstLookShowingRules(6, result.rules.length)}
                 </p>
               ) : null}
@@ -485,7 +485,7 @@ export default function FirstLook({
                 {firstLookDecisionsLine(result.decisions.length)}
               </p>
               {result.decisions.length > 0 ? (
-                <ul className="m-0 mt-2 list-none space-y-1.5 p-0">
+                <ul className="m-0 mt-2 list-none space-y-2 p-0">
                   {result.decisions.slice(0, 5).map((decision) => (
                     <li
                       key={decision.nodeId}
@@ -505,7 +505,7 @@ export default function FirstLook({
                 </ul>
               ) : null}
               {result.decisions.length > 5 ? (
-                <p className="m-0 mt-1.5 text-[12px] font-medium text-cc-ink-muted">
+                <p className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted">
                   {firstLookShowingDecisions(5, result.decisions.length)}
                 </p>
               ) : null}
@@ -521,7 +521,7 @@ export default function FirstLook({
             receipt for the numbers above, not a loading screen. */}
         <ol
           data-first-look-stages={endStateOnly ? 'end-state' : 'built'}
-          className="m-0 mt-4 flex list-none flex-col gap-1.5 border-t border-cc-line p-0 pt-3"
+          className="m-0 mt-4 flex list-none flex-col gap-2 border-t border-cc-line p-0 pt-3"
         >
           {shown.map((stage, i) => (
             <StageRow key={stage?.id ?? `done-${i}`} stage={stage} />

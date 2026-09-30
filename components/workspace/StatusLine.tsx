@@ -78,7 +78,7 @@ export default function WorkspaceStatusLine({
           data-workspace-status={entry.facet}
           data-status={entry.status}
           title={entry.detail}
-          className="flex items-center gap-1.5"
+          className="flex items-center gap-2"
         >
           <CcObjectStatus value={entry.status} facet={entry.label} />
           {entry.provenance ? <CcProvenanceChip value={entry.provenance} /> : null}

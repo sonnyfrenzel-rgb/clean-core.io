@@ -73,8 +73,8 @@ export default function ProcessFilters({
   variant,
 }: ProcessFiltersProps) {
   return (
-    <div data-process-filters="" className="flex flex-col gap-1.5">
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div data-process-filters="" className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] font-semibold tracking-[0.06em] text-cc-ink-muted uppercase">{wt('mapFilters.path')}</span>
         <button
           type="button"
@@ -139,7 +139,7 @@ export default function ProcessFilters({
           document nobody opens, so an overlay carries its own and it is on
           screen exactly while the overlay is. */}
       {overlays.some((overlay) => overlay.note && activeOverlays.has(overlay.key)) ? (
-        <div data-overlay-notes="" className="flex flex-col gap-0.5">
+        <div data-overlay-notes="" className="flex flex-col gap-1">
           {overlays
             .filter((overlay) => overlay.note && activeOverlays.has(overlay.key))
             .map((overlay) => (
@@ -156,7 +156,7 @@ export default function ProcessFilters({
 
       {variantOpen && switches.length > 0 ? (
         <div data-process-variants="" className="flex flex-col gap-1 rounded-cc-row border border-cc-line bg-cc-surface p-2">
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             {switches.map((entry) => {
               const on = positions.get(entry.name) ?? entry.defaultOn ?? true;
               return (

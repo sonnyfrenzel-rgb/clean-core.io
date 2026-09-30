@@ -170,7 +170,7 @@ export default function SteeringOnePager({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id="steering-one-pager-heading" className="m-0 text-[16px] leading-snug font-bold text-cc-ink">
+          <h2 id="steering-one-pager-heading" className="m-0 cc-text-h2 text-cc-ink">
             {STEERING_TITLE} · {projectName}
           </h2>
           <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
@@ -216,7 +216,7 @@ export default function SteeringOnePager({
                   className="break-inside-avoid rounded-cc-row border border-cc-line px-3 py-2"
                 >
                   <div className="flex flex-wrap items-baseline gap-2">
-                    <span data-figure-value="" className="text-[16px] leading-none font-bold text-cc-ink">
+                    <span data-figure-value="" className="cc-text-figure leading-none text-cc-ink">
                       {f.value}
                     </span>
                     <span className="text-[12px] font-medium text-cc-ink-muted">

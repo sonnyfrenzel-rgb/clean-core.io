@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { countHints, hintSentence, type ProcessHint } from '@/lib/process-hints';
 import { wt } from '@/lib/workspace-messages';
+import CcButton from '@/components/cc/Button';
 
 /**
  * The check hints of the editing footer — roadmap 3.3, `DESIGN.md` §2.6.
@@ -45,15 +46,13 @@ export default function ProcessHints({ hints, on, onOnChange, onJump }: ProcessH
 
   return (
     <div data-process-hints="" className="flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        data-hints-toggle=""
-        aria-expanded={open}
-        onClick={() => setOpen((was) => !was)}
-        className="rounded-cc-row border border-cc-line bg-cc-surface px-2 py-0.5 text-[12px] font-semibold text-cc-ink hover:bg-cc-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
-      >
-        {wt('mapHints.hints')} (<span data-hints-count="">{on ? counts.total : 0}</span>)
-      </button>
+      <CcButton data-hints-toggle="" aria-expanded={open} onClick={() => setOpen((was) => !was)}>
+        {/* One text run: the button lays its children out as flex items, and a
+            bare "(" and ")" would each become one, spaced apart. */}
+        <span>
+          {wt('mapHints.hints')} (<span data-hints-count="">{on ? counts.total : 0}</span>)
+        </span>
+      </CcButton>
 
       <label className="flex items-center gap-1 text-[12px] font-medium text-cc-ink-muted">
         <input
@@ -93,7 +92,7 @@ export default function ProcessHints({ hints, on, onOnChange, onJump }: ProcessH
                     data-hint-element={hint.elementId ?? ''}
                     disabled={!hint.elementId}
                     onClick={() => hint.elementId && onJump(hint.elementId)}
-                    className="block w-full rounded-cc-row px-1.5 py-0.5 text-left text-[12px] font-medium text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
+                    className="block w-full rounded-cc-row px-2 py-0.5 text-left text-[12px] font-medium text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
                   >
                     <span className="font-semibold text-cc-ink">{hint.ruleLabel}</span>
                     {' — '}

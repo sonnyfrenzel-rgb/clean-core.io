@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { List, Map as MapIcon, Pencil } from 'lucide-react';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcButton from '@/components/cc/Button';
 import { useProcessRules } from '@/hooks/useProcessRules';
 import { useProcessOverlays } from '@/hooks/useProcessOverlays';
 import type { UsageReport } from '@/lib/abap/usage-model';
@@ -521,10 +522,10 @@ export default function ProcessMap({
           <h3 data-process-map-title className="text-[15px] font-bold text-cc-ink">
             {wt('map.title')}
           </h3>
-          <p data-process-map-overview className="mt-0.5 text-[13px] font-medium text-cc-ink-muted">
+          <p data-process-map-overview className="mt-1 text-[13px] font-medium text-cc-ink-muted">
             {model.overview}
           </p>
-          <p data-process-map-traceability className="mt-0.5 text-[13px] font-medium text-cc-ink-muted">
+          <p data-process-map-traceability className="mt-1 text-[13px] font-medium text-cc-ink-muted">
             {model.traceability.sentence}
             {measuredAt ? ` ${mapMeasuredOn(measuredAt.slice(0, 10))}` : ''}
           </p>
@@ -542,19 +543,17 @@ export default function ProcessMap({
           {/* Roadmap 3.1. Editing is a mode, not a view: *Map* and *Steps* are
               two renderings of the same thing, and a modeller is a third state
               of the first one. The reading view stays reachable at all times. */}
-          <button
-            type="button"
+          <CcButton
             data-process-edit-toggle=""
             aria-pressed={editing}
+            icon={<Pencil size={16} aria-hidden={true} />}
             onClick={() => {
               setView('map');
               setEditing((was) => !was);
             }}
-            className="inline-flex items-center gap-1 rounded-cc-row border border-cc-line bg-cc-surface px-2 py-1 text-[12px] font-semibold text-cc-ink-muted hover:text-cc-ink aria-pressed:border-cc-ink aria-pressed:bg-cc-surface-muted aria-pressed:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
           >
-            <Pencil size={14} aria-hidden={true} />
             {wt(editing ? 'map.stopEditing' : 'map.editModel')}
-          </button>
+          </CcButton>
         </div>
       </div>
 

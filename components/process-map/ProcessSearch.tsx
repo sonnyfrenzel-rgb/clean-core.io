@@ -110,13 +110,14 @@ export default function ProcessSearch({ model, nav, onJump }: ProcessSearchProps
 
   return (
     <div data-process-search="" className="flex min-w-0 flex-col gap-1">
-      <div
-        className={cn(
-          'flex items-center gap-1.5 rounded-cc-row border border-cc-field-border bg-cc-surface px-2 py-1',
-          'focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-cc-focus',
-        )}
-      >
-        <Search size={13} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
+      {/* The input is the field — its border and its focus ring (§1.6) are
+          its own; the icon sits inside it. */}
+      <div className="relative flex items-center gap-2">
+        <Search
+          size={13}
+          aria-hidden={true}
+          className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-cc-ink-muted"
+        />
         <input
           ref={input}
           type="search"
@@ -129,7 +130,7 @@ export default function ProcessSearch({ model, nav, onJump }: ProcessSearchProps
           value={query}
           onChange={(event) => setQueryAndReset(event.target.value)}
           onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 bg-transparent text-[12px] font-medium text-cc-ink outline-none placeholder:text-cc-ink-muted"
+          className="min-w-0 flex-1 rounded-cc-row border border-cc-field-border bg-cc-surface py-1 pr-2 pl-7 text-[12px] font-medium text-cc-ink placeholder:text-cc-ink-muted"
         />
         {query ? (
           <span data-process-search-count className="shrink-0 font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
@@ -154,7 +155,7 @@ export default function ProcessSearch({ model, nav, onJump }: ProcessSearchProps
               data-search-hit={hit.id}
               onClick={() => { setCursor(index); jump(index); }}
               className={cn(
-                'flex cursor-pointer flex-wrap items-baseline gap-x-1.5 border-b border-cc-line px-2 py-1 last:border-b-0',
+                'flex cursor-pointer flex-wrap items-baseline gap-x-2 border-b border-cc-line px-2 py-1 last:border-b-0',
                 index === at && 'bg-cc-surface-muted',
               )}
             >

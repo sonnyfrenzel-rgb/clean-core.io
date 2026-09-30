@@ -67,7 +67,7 @@ export default function NotDeterminedCard({
           {wt('notDetermined.none')}
         </p>
       ) : (
-        <ul data-not-determined-state="some" className="m-0 list-none space-y-2.5 p-0">
+        <ul data-not-determined-state="some" className="m-0 list-none space-y-3 p-0">
           {data.items.map((item, i) => (
             <li
               key={`${item.anchor}-${i}`}
@@ -90,7 +90,7 @@ export default function NotDeterminedCard({
           <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
             {wt('notDetermined.recordTitle')}
           </p>
-          <ul className="m-0 mt-1.5 list-none space-y-2.5 p-0">
+          <ul className="m-0 mt-2 list-none space-y-3 p-0">
             {recorded.map((gap) => (
               <li
                 key={gap.form}

@@ -35,7 +35,7 @@ export default function ProcessBreadcrumb({ crumbs, onOpen }: ProcessBreadcrumbP
   const parent = crumbs.length > 1 ? crumbs[last - 1] : null;
 
   return (
-    <nav data-process-path="" aria-label={wt('map.levelNav')} className="flex flex-wrap items-center gap-1.5">
+    <nav data-process-path="" aria-label={wt('map.levelNav')} className="flex flex-wrap items-center gap-2">
       <ol className="flex min-w-0 flex-wrap items-center gap-1">
         {crumbs.map((crumb, index) => (
           <li key={crumb.plane ?? 'top'} className="flex min-w-0 items-center gap-1">
@@ -72,7 +72,7 @@ export default function ProcessBreadcrumb({ crumbs, onOpen }: ProcessBreadcrumbP
           data-process-up=""
           onClick={() => onOpen(parent.plane)}
           className={cn(
-            'inline-flex items-center gap-1 rounded-cc-row border border-cc-line px-1.5 py-0.5',
+            'inline-flex items-center gap-1 rounded-cc-row border border-cc-line px-2 py-0.5',
             'text-[11px] font-semibold text-cc-ink-muted',
             'hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus',
           )}

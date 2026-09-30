@@ -371,7 +371,9 @@ export default function WorkspaceShell({
 
       <section data-workspace-header="">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-          <div className="min-w-0 flex-1">
+          {/* A basis, not only `flex-1`: with a zero basis the title never
+              wraps below the view switch and, on a phone, runs under it. */}
+          <div className="min-w-0 flex-1 basis-64">
             <div className="flex flex-wrap items-center gap-2">
               <h1
                 data-workspace-title
@@ -409,7 +411,7 @@ export default function WorkspaceShell({
             )}
           </div>
 
-          <div className="cc-no-print flex shrink-0 flex-col items-start gap-1.5">
+          <div className="cc-no-print flex shrink-0 flex-col items-start gap-2">
             <CcSegmentedControl
               label={wt('page.view')}
               value={view}
@@ -422,7 +424,7 @@ export default function WorkspaceShell({
                 (the layers it would scope are later roadmap steps); it is
                 ordering infrastructure, held the same way the view is. */}
             {view === 'it' && (
-              <div className="flex items-center gap-1.5" data-workspace-it-focus="">
+              <div className="flex items-center gap-2" data-workspace-it-focus="">
                 <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
                   {wt('page.focus')}
                 </span>
@@ -472,7 +474,7 @@ export default function WorkspaceShell({
           {view === 'business' && !statusOpen ? (
             <div
               data-workspace-status-fold=""
-              className="flex flex-wrap items-center gap-2.5 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
+              className="flex flex-wrap items-center gap-3 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
             >
               <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
                 {wt('page.projectStatus')}
