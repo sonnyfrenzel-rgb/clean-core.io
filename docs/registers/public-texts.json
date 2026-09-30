@@ -2823,6 +2823,50 @@
       }
     },
     {
+      "path": "docs/terms/2026-10-15.md",
+      "kind": "legal",
+      "purpose": "Terms of Service, version effective 15 October 2026 (v2.2.0, with 3.0)",
+      "audience": "oeffentlich, rechtlich (lib/terms-versions.ts)",
+      "saysToday": "Terms of Service and Community Guidelines v2.2.0: section 4.1 separates deterministic results from model-generated output.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text, never edited after publication (lib/terms-versions.ts). Decision Sonny 30.09.2026: a new Terms version, v2.2.0, goes live with 3.0; v2.1.0 is archived as it becomes a previous version.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "referencedBy": [
+        "lib/terms-versions.ts"
+      ],
+      "measured": {
+        "lines": 161
+      }
+    },
+    {
+      "path": "docs/terms/2026-09-18.md",
+      "kind": "legal",
+      "purpose": "Terms of Service, version effective 18 September 2026 (v2.1.0)",
+      "audience": "oeffentlich, rechtlich (lib/terms-versions.ts)",
+      "saysToday": "Terms of Service and Community Guidelines v2.1.0.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text, never edited after publication (lib/terms-versions.ts). Decision Sonny 30.09.2026: a new Terms version, v2.2.0, goes live with 3.0; v2.1.0 is archived as it becomes a previous version.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "referencedBy": [
+        "lib/terms-versions.ts"
+      ],
+      "measured": {
+        "lines": 161
+      }
+    },
+    {
       "path": "docs/terms/2026-07-07.md",
       "kind": "legal",
       "purpose": "Nutzungsbedingungen, Fassung 07.07.2026",
@@ -3384,6 +3428,17 @@
       "status": "vollzogen",
       "files": [
         "docs/terms/2026-07-07.md"
+      ]
+    },
+    {
+      "id": "terms-v2.2.0",
+      "date": "2026-09-30",
+      "by": "Sonny",
+      "decision": "Replaces terms-unchanged (24.09.2026): a new Terms version, v2.2.0, goes live with 3.0 - section 4.1 states which results are deterministic and which are model-generated (QA 6b83ef361e80, c9ab2c6a6c1c). v2.1.0 archived as docs/terms/2026-09-18.md, v2.2.0 as docs/terms/2026-10-15.md; every existing account accepts v2.2.0 at its next sign-in.",
+      "status": "vollzogen",
+      "files": [
+        "docs/terms/2026-09-18.md",
+        "docs/terms/2026-10-15.md"
       ]
     },
     {
