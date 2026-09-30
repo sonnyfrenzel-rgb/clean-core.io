@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useUserProfile, UserProfile } from '@/hooks/useUserProfile';
 import { useRouter } from 'next/navigation';
 import { 
@@ -8,8 +8,8 @@ import {
   Clock, Edit2, CheckCircle2, AlertCircle, 
   LifeBuoy, Send, MessageSquare, Eye, EyeOff,
   Trash2, KeyRound, Loader2,
-  Database, Save, Lock, ShieldCheck, Key, RefreshCw,
-  ArrowLeft, Copy, Download, Smartphone, Check, X, ArrowRight, Globe,
+  Database, Save, ShieldCheck, Key, RefreshCw,
+  ArrowLeft, Copy, Download, Smartphone, X, ArrowRight, Globe,
   BookOpen, ExternalLink, HelpCircle
 } from 'lucide-react';
 import { addDoc, collection, serverTimestamp, getDocs, query, where, deleteDoc, doc, setDoc } from 'firebase/firestore';
@@ -28,11 +28,95 @@ import {
   type TotpSecret,
   type User as FirebaseUser,
 } from 'firebase/auth';
-import { motion, AnimatePresence } from 'motion/react';
-import { callGemini } from '@/lib/gemini';
 import ModelStagesCard from '@/components/ModelStagesCard';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
-import { clsx } from 'clsx';
+import CcButton from '@/components/cc/Button';
+import CcLinkButton from '@/components/cc/LinkButton';
+import CcCheckbox from '@/components/cc/Checkbox';
+import CcDialog from '@/components/cc/Dialog';
+import CcField, { CC_CONTROL_HEIGHT, type CcValueState } from '@/components/cc/Field';
+import CcMessageBox from '@/components/cc/MessageBox';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcSelect from '@/components/cc/Select';
+import CcTextarea from '@/components/cc/Textarea';
+import CcToast from '@/components/cc/Toast';
+import { cn } from '@/lib/utils';
+
+/**
+ * One text input of this page: `CcField` around a native `<input>`, and for a
+ * secret the button that shows it. Declared outside the page so a re-render of
+ * the page does not remount the input and lose the caret.
+ */
+function SettingsInput({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  required = false,
+  placeholder,
+  autoComplete,
+  inputMode,
+  maxLength,
+  help,
+  valueState,
+  message,
+  mono = false,
+  autoFocus = false,
+  reveal,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: 'text' | 'password' | 'url';
+  required?: boolean;
+  placeholder?: string;
+  autoComplete?: string;
+  inputMode?: 'numeric' | 'text';
+  maxLength?: number;
+  help?: React.ReactNode;
+  valueState?: CcValueState;
+  message?: React.ReactNode;
+  mono?: boolean;
+  autoFocus?: boolean;
+  /** A secret with a show/hide button: its state and the button's name. */
+  reveal?: { shown: boolean; onToggle: () => void; label: string };
+}) {
+  return (
+    <CcField label={label} required={required} help={help} valueState={valueState} message={message}>
+      {(control) => (
+        <div className="relative">
+          <input
+            id={control.id}
+            type={reveal ? (reveal.shown ? 'text' : 'password') : type}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            required={control.required}
+            aria-required={control.ariaRequired}
+            aria-invalid={control.invalid || undefined}
+            aria-describedby={control.describedBy}
+            placeholder={placeholder}
+            autoComplete={autoComplete}
+            inputMode={inputMode}
+            maxLength={maxLength}
+            autoFocus={autoFocus}
+            className={cn(control.className, CC_CONTROL_HEIGHT.compact, reveal && 'pr-10', mono && 'font-cc-mono tracking-wider')}
+          />
+          {reveal ? (
+            <button
+              type="button"
+              onClick={reveal.onToggle}
+              aria-label={reveal.label}
+              aria-pressed={reveal.shown}
+              className="absolute top-1/2 right-1 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-cc-row text-cc-ink-muted hover:text-cc-ink"
+            >
+              {reveal.shown ? <EyeOff size={16} aria-hidden={true} /> : <Eye size={16} aria-hidden={true} />}
+            </button>
+          ) : null}
+        </div>
+      )}
+    </CcField>
+  );
+}
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -58,9 +142,25 @@ export default function SettingsPage() {
   const [validationStatus, setValidationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [validationError, setValidationError] = useState('');
   const [isDeletingKey, setIsDeletingKey] = useState(false);
+  // Replaces the browser's `confirm` before removing the key, and its `alert`s
+  // after a refused save or removal (DESIGN.md §2.6).
+  const [confirmDeleteKey, setConfirmDeleteKey] = useState(false);
+  const [keyError, setKeyError] = useState('');
 
   // GDPR Account Deletion
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  // The three browser prompts of the erasure — address, authenticator code,
+  // password — are fields of one message box now. The same checks run on the
+  // same values, in the same order, before the same calls.
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState('');
+  const [deleteMfaCode, setDeleteMfaCode] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteEmailError, setDeleteEmailError] = useState('');
+  const [deleteCodeError, setDeleteCodeError] = useState('');
+  const [deletePasswordError, setDeletePasswordError] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [accountErased, setAccountErased] = useState(false);
 
   // BYOT (Bring Your Own Tenant) States
   const [byotMotivation, setByotMotivation] = useState('');
@@ -87,6 +187,8 @@ export default function SettingsPage() {
   const [desktopChatbotEnabled, setDesktopChatbotEnabled] = useState<boolean>(true);
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [prefsSaved, setPrefsSaved] = useState(false);
+  // Stable, so the toast's four-second timer is not restarted by every render.
+  const dismissPrefsSaved = useCallback(() => setPrefsSaved(false), []);
 
   // Change Password States
   const [currentPassword, setCurrentPassword] = useState('');
@@ -107,6 +209,8 @@ export default function SettingsPage() {
   const [tempMfaSecret, setTempMfaSecret] = useState('');
   const [mfaVerifyCode, setMfaVerifyCode] = useState('');
   const [mfaSetupError, setMfaSetupError] = useState('');
+  // What used to be a browser `alert` when the setup could not even start.
+  const [mfaStartError, setMfaStartError] = useState('');
   const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   /**
@@ -265,6 +369,7 @@ export default function SettingsPage() {
 
   const handleStartMfaSetup = async () => {
     setMfaSetupError('');
+    setMfaStartError('');
     try {
       const auth = getAuth();
       const user = auth.currentUser;
@@ -290,7 +395,7 @@ export default function SettingsPage() {
     } catch (err: any) {
       const code = err?.code || '';
       if (code === 'auth/requires-recent-login') {
-        alert('For your security, sign out and sign in again, then start the setup.');
+        setMfaStartError('For your security, sign out and sign in again, then start the setup.');
         return;
       }
       if (code === 'auth/unverified-email') {
@@ -299,7 +404,7 @@ export default function SettingsPage() {
         setMfaSetupStep(1);
         return;
       }
-      alert(err?.message || 'Error starting 2FA setup.');
+      setMfaStartError(err?.message || 'Error starting 2FA setup.');
     }
   };
 
@@ -378,7 +483,27 @@ export default function SettingsPage() {
     }
   };
 
+  const closeMfaDisable = () => {
+    setShowMfaDisable(false);
+    setDisablePassword('');
+    setMfaDisableCode('');
+    setMfaDisableError('');
+  };
+
   const handleDisableMfa = async () => {
+    // The message box's binding button cannot be disabled the way the old
+    // "Confirm Disable" was, so the same three conditions refuse here: a
+    // removal already running, a code that is not six digits, and — for a
+    // password account — no password.
+    if (isDisablingMfa) return;
+    if (mfaDisableCode.length !== 6) {
+      setMfaDisableError('Enter the current 6-digit code from your authenticator app.');
+      return;
+    }
+    if (profile?.authMethod === 'password' && !disablePassword) {
+      setMfaDisableError('Enter your account password to confirm.');
+      return;
+    }
     setMfaDisableError('');
     setIsDisablingMfa(true);
     try {
@@ -446,11 +571,14 @@ export default function SettingsPage() {
   }, [profile]);
 
   // Redirect to dashboard if profile doesn't exist
+  // Not during or after an erasure: the server removes the profile before the
+  // sign-out, so it is gone on purpose then, and the erasure itself goes on to
+  // the start page.
   useEffect(() => {
-    if (!loading && !profile) {
+    if (!loading && !profile && !accountErased && !isDeletingAccount) {
       router.push('/dashboard');
     }
-  }, [profile, loading, router]);
+  }, [profile, loading, router, accountErased, isDeletingAccount]);
 
   if (loading) return (
     <div className="h-[60vh] flex flex-col items-center justify-center">
@@ -511,8 +639,8 @@ export default function SettingsPage() {
         landingPageDefault: defaultView,
         desktopChatbotEnabled
       });
+      // A side action that finished: a toast (DESIGN.md §2.6), which removes itself.
       setPrefsSaved(true);
-      setTimeout(() => setPrefsSaved(false), 3000);
     } catch (error) {
       console.error('Error saving system preferences:', error);
     } finally {
@@ -523,6 +651,7 @@ export default function SettingsPage() {
   const handleSaveKey = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile || !isPilotTier || !geminiKey.trim()) return;
+    setKeyError('');
     setIsSavingKey(true);
     try {
       const auth = getAuth();
@@ -547,7 +676,7 @@ export default function SettingsPage() {
       setTimeout(() => setKeySaved(false), 3000);
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : 'Failed to save API key.');
+      setKeyError(error instanceof Error ? error.message : 'Failed to save API key.');
     } finally {
       setIsSavingKey(false);
     }
@@ -593,11 +722,11 @@ export default function SettingsPage() {
     }
   };
 
+  // Runs only from the message box's binding button — the box is the
+  // confirmation `window.confirm` used to be.
   const handleDeleteKey = async () => {
-    if (!window.confirm('Are you sure you want to securely remove your Gemini API Key? This will revert you back to standard limits.')) {
-      return;
-    }
-
+    setConfirmDeleteKey(false);
+    setKeyError('');
     setIsDeletingKey(true);
     try {
       const auth = getAuth();
@@ -618,7 +747,7 @@ export default function SettingsPage() {
       setValidationStatus('idle');
     } catch (error) {
       console.error('Error removing API Key:', error);
-      alert(error instanceof Error ? error.message : 'Failed to delete API key.');
+      setKeyError(error instanceof Error ? error.message : 'Failed to delete API key.');
     } finally {
       setIsDeletingKey(false);
     }
@@ -784,34 +913,64 @@ export default function SettingsPage() {
 
   // GDPR Account Deletion
 
-  const handleDeleteAccount = async () => {
-    const confirmation = window.prompt(
-      "GDPR Right to Erasure (Art. 17 GDPR):\n" +
-      "To permanently and irrevocably erase all your personal data, uploaded source codes, API keys, and transformation projects, please confirm by entering your email address:"
-    );
+  const openDeleteAccount = () => {
+    setDeleteEmail('');
+    setDeleteMfaCode('');
+    setDeletePassword('');
+    setDeleteEmailError('');
+    setDeleteCodeError('');
+    setDeletePasswordError('');
+    setDeleteError('');
+    setShowDeleteAccount(true);
+  };
 
-    if (!confirmation || confirmation.trim().toLowerCase() !== profile?.email.toLowerCase()) {
-      alert("Confirmation failed. The entered email address does not match your profile.");
+  const cancelDeleteAccount = () => {
+    setShowDeleteAccount(false);
+    setDeleteMfaCode('');
+    setDeletePassword('');
+  };
+
+  /**
+   * GDPR erasure. The binding button of the message box starts it; before any
+   * call the typed address must match the profile, and with a second factor
+   * the authenticator code (and for a password account the password) must be
+   * there — the same refusals the three browser prompts made, now said at the
+   * field instead of in an `alert`. Then, unchanged: a fresh sign-in with the
+   * factor, a fresh token, `/api/account/delete`, sign-out.
+   */
+  const handleDeleteAccount = async () => {
+    if (isDeletingAccount) return;
+    setDeleteEmailError('');
+    setDeleteCodeError('');
+    setDeletePasswordError('');
+    setDeleteError('');
+
+    if (!deleteEmail || deleteEmail.trim().toLowerCase() !== profile?.email.toLowerCase()) {
+      setDeleteEmailError('The entered address does not match your profile. Enter the e-mail address of this account.');
+      return;
+    }
+    // With a second factor enrolled, the deletion needs a sign-in that just
+    // ran the factor: the server checks recency and the factor on the token.
+    const mfaCode = deleteMfaCode.replace(/\s+/g, '');
+    if (profile?.mfaEnabled && !mfaCode) {
+      setDeleteCodeError('The authenticator code is required. Enter the 6-digit code from your authenticator app.');
+      return;
+    }
+    if (profile?.mfaEnabled && profile?.authMethod === 'password' && !deletePassword) {
+      setDeletePasswordError('Enter your password to confirm.');
       return;
     }
 
+    setShowDeleteAccount(false);
     setIsDeletingAccount(true);
     try {
       const auth = getAuth();
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("No authenticated user found.");
 
-      // With a second factor enrolled, the deletion needs a sign-in that just
-      // ran the factor: the server checks recency and the factor on the token.
       if (profile?.mfaEnabled) {
-        const mfaCode = window.prompt("Step-up required:\nEnter the 6-digit code from your authenticator app to confirm your identity:");
-        if (!mfaCode) {
-          alert("Deletion cancelled. The authenticator code is required.");
-          setIsDeletingAccount(false);
-          return;
-        }
-        const pw = profile?.authMethod === 'password' ? window.prompt('Enter your password to confirm:') || '' : '';
-        await reauthenticateWithFactor(currentUser, pw, mfaCode.replace(/\s+/g, ''));
+        const pw = profile?.authMethod === 'password' ? deletePassword : '';
+        await reauthenticateWithFactor(currentUser, pw, mfaCode);
       }
 
       const token = await currentUser.getIdToken(true);
@@ -829,18 +988,26 @@ export default function SettingsPage() {
         throw new Error(errorData.error || 'Failed to erase account.');
       }
 
+      // Set before the sign-out, so the empty profile it leaves behind is not
+      // read as "no profile" and sent to the dashboard instead of the start page.
+      setAccountErased(true);
       await auth.signOut();
-
-      alert("Your user account and all associated data have been successfully and permanently removed from our system in accordance with GDPR (Right to Erasure). Thank you for participating in the Free Community Edition.");
+      // The browser `alert` that confirmed the erasure here is gone with the
+      // other native dialogs and not replaced on this page: from the moment the
+      // server removes the profile, the app shell lays its sign-up card
+      // (components/UserOnboarding.tsx, z-[100]) over anything this page could
+      // show. The start page is where the old alert led as well.
       router.push('/');
     } catch (error: any) {
       console.error("GDPR Account Erasure failed:", error);
       if (error.message?.includes('recent login') || error.message?.includes('requires-recent-login')) {
-        alert("Security restriction: Deleting your account requires a recent login. Please sign out, sign back in, and try deleting your account again.");
+        setDeleteError("Security restriction: Deleting your account requires a recent login. Please sign out, sign back in, and try deleting your account again.");
       } else {
-        alert("GDPR erasure failed or is incomplete: " + (error.message || error));
+        setDeleteError("GDPR erasure failed or is incomplete: " + (error.message || error));
       }
     } finally {
+      setDeleteMfaCode('');
+      setDeletePassword('');
       setIsDeletingAccount(false);
     }
   };
@@ -889,47 +1056,28 @@ export default function SettingsPage() {
           <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Personal Data</h2>
-              <button 
+              <CcButton
+                variant="ghost"
+                icon={<Edit2 size={16} aria-hidden={true} />}
                 onClick={() => {
                   setIsEditing(!isEditing);
                   setFirstName(profile?.firstName || '');
                   setLastName(profile?.lastName || '');
                 }}
-                className="flex items-center gap-2 text-xs md:text-sm font-bold text-green-600 hover:text-green-700 transition-all bg-green-50 px-3 md:px-4 py-2 rounded-xl"
               >
-                <Edit2 size={16} /> {isEditing ? 'Cancel' : 'Edit'}
-              </button>
+                {isEditing ? 'Cancel' : 'Edit'}
+              </CcButton>
             </div>
 
             {isEditing ? (
               <form onSubmit={handleUpdateProfile} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="settings-first-name" className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2">First Name</label>
-                    <input 
-                      id="settings-first-name"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-600 outline-none transition-all font-medium text-gray-900"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="settings-last-name" className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Last Name</label>
-                    <input 
-                      id="settings-last-name"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-600 outline-none transition-all font-medium text-gray-900"
-                    />
-                  </div>
+                  <SettingsInput label="First Name" value={firstName} onChange={setFirstName} autoComplete="given-name" />
+                  <SettingsInput label="Last Name" value={lastName} onChange={setLastName} autoComplete="family-name" />
                 </div>
-                <button 
-                  type="submit" 
-                  disabled={isUpdating}
-                  className="w-full bg-gray-950 text-white py-4 rounded-2xl font-black shadow-lg hover:shadow-xl transition-all disabled:bg-gray-400"
-                >
+                <CcButton type="submit" variant="primary" busy={isUpdating}>
                   {isUpdating ? 'Saving...' : 'Save Changes'}
-                </button>
+                </CcButton>
               </form>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -967,12 +1115,6 @@ export default function SettingsPage() {
                 </div>
                 <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">System Preferences</h2>
               </div>
-              
-              {prefsSaved && (
-                <span className="text-[10px] md:text-xs font-black uppercase tracking-widest bg-green-100 text-green-700 px-3 py-1.5 rounded-full border border-green-200 flex items-center gap-1.5 animate-bounce">
-                  <CheckCircle2 size={12} /> Saved
-                </span>
-              )}
             </div>
             
             <p className="text-gray-600 font-medium mb-8 text-sm md:text-base leading-relaxed">
@@ -986,108 +1128,51 @@ export default function SettingsPage() {
                 and the project row barely readable. A switch that makes the app
                 worse is not a preference. */}
             <form onSubmit={handleSavePreferences} className="space-y-6 text-gray-900">
-              {/* Grid layout for other settings */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="settings-default-view" className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
-                    Default Landing View
-                  </label>
-                  <select
-                    id="settings-default-view"
-                    value={defaultView}
-                    onChange={(e: any) => setDefaultView(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-600 outline-none transition-all font-medium text-gray-900 text-sm"
-                  >
-                    <option value="dashboard">Dashboard Workspace</option>
-                    <option value="analytics">Technical Analytics</option>
-                    <option value="transformation">Code Transformation</option>
-                  </select>
-                </div>
+                <CcSelect
+                  label="Default Landing View"
+                  value={defaultView}
+                  onChange={setDefaultView}
+                  options={[
+                    { value: 'dashboard', label: 'Dashboard Workspace' },
+                    { value: 'analytics', label: 'Technical Analytics' },
+                    { value: 'transformation', label: 'Code Transformation' },
+                  ]}
+                />
 
-                <div>
-                  <label id="settings-backup-label" className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
-                    Automated Backup Sync
-                  </label>
-                  <div className="flex items-center justify-between h-[46px] bg-gray-50 border border-gray-200 px-4 rounded-xl">
-                    <span id="settings-backup-desc" className="text-xs font-bold text-gray-700">Auto-save projects</span>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={backupEnabled}
-                      aria-labelledby="settings-backup-label settings-backup-desc"
-                      onClick={() => setBackupEnabled(!backupEnabled)}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out motion-reduce:transition-none outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8] ${
-                        backupEnabled ? 'bg-green-600' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out motion-reduce:transition-none ${
-                          backupEnabled ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
+                {/* Checkboxes, not switches: both wait for "Save Preferences",
+                    and a switch that does nothing until Save lies about when
+                    it acts (components/cc/Switch.tsx, DESIGN.md §2.7). */}
+                <CcCheckbox
+                  label="Automated Backup Sync"
+                  help="Auto-save projects"
+                  checked={backupEnabled}
+                  onChange={setBackupEnabled}
+                />
 
                 <div className="sm:col-span-2">
-                  <label id="settings-chatbot-label" className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
-                    Floating assistant button
-                  </label>
-                  <div className="flex items-center justify-between h-[46px] bg-gray-50 border border-gray-200 px-4 rounded-xl">
-                    {/* What the switch really does, and nothing more: it adds
-                        `md:hidden` to the floating toggle in
-                        `components/GlossaryChatbot.tsx`. The assistant itself
-                        stays, and so does the button in the header — saying
-                        otherwise here would be the one lie a settings page
-                        cannot afford. */}
-                    <span id="settings-chatbot-desc" className="text-xs font-bold text-gray-700">Show the floating assistant button on desktop screens. The button in the header stays either way.</span>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={desktopChatbotEnabled}
-                      aria-labelledby="settings-chatbot-label"
-                      aria-describedby="settings-chatbot-desc"
-                      onClick={() => setDesktopChatbotEnabled(!desktopChatbotEnabled)}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out motion-reduce:transition-none outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8] ${
-                        desktopChatbotEnabled ? 'bg-green-600' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out motion-reduce:transition-none ${
-                          desktopChatbotEnabled ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </div>
+                  {/* What the setting really does, and nothing more: it adds
+                      `md:hidden` to the floating toggle in
+                      `components/GlossaryChatbot.tsx`. The assistant itself
+                      stays, and so does the button in the header — saying
+                      otherwise here would be the one lie a settings page
+                      cannot afford. */}
+                  <CcCheckbox
+                    label="Floating assistant button"
+                    help="Show the floating assistant button on desktop screens. The button in the header stays either way."
+                    checked={desktopChatbotEnabled}
+                    onChange={setDesktopChatbotEnabled}
+                  />
                 </div>
               </div>
 
-              {/* Submit Buttons */}
-              <div className="pt-2">
-                <button 
-                  type="submit" 
-                  disabled={isSavingPrefs}
-                  className="w-full bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white py-3.5 rounded-2xl font-black transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg shadow-green-600/10 hover:scale-[1.01]"
-                >
-                  {isSavingPrefs ? (
-                    <>
-                      <Loader2 className="animate-spin" size={16} />
-                      Saving Preferences...
-                    </>
-                  ) : prefsSaved ? (
-                    <>
-                      <CheckCircle2 size={16} />
-                      Preferences Saved!
-                    </>
-                  ) : (
-                    <>
-                      <Save size={16} />
-                      Save Preferences
-                    </>
-                  )}
-                </button>
-              </div>
+              <CcButton type="submit" variant="primary" busy={isSavingPrefs} icon={<Save size={16} aria-hidden={true} />}>
+                {isSavingPrefs ? 'Saving Preferences...' : 'Save Preferences'}
+              </CcButton>
             </form>
+            <CcToast open={prefsSaved} onDismiss={dismissPrefsSaved}>
+              Preferences saved
+            </CcToast>
           </div>
 
           {/* Security & Access Card */}
@@ -1132,27 +1217,22 @@ export default function SettingsPage() {
                       <p className="mt-1 leading-relaxed">The authenticator you set up earlier no longer signs you in. Set it up again — it takes a minute — and the account is protected at sign-in itself, before any session exists.</p>
                     </div>
                     <div className="flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        onClick={handleStartMfaSetup}
-                        className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3 rounded-xl transition-all text-xs flex items-center gap-2 shadow-lg shadow-green-600/10"
-                      >
-                        <ShieldCheck size={14} /> Set up the authenticator again
-                      </button>
-                      <button
-                        type="button"
+                      <CcButton variant="primary" onClick={handleStartMfaSetup} icon={<ShieldCheck size={16} aria-hidden={true} />}>
+                        Set up the authenticator again
+                      </CcButton>
+                      <CcButton
+                        variant="ghost"
                         onClick={handleTurnOffStranded}
-                        disabled={isClearingStranded}
-                        className="bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 font-bold px-5 py-3 rounded-xl transition-all text-xs flex items-center gap-2 disabled:opacity-60"
+                        busy={isClearingStranded}
+                        icon={<X size={16} aria-hidden={true} />}
                       >
-                        <X size={14} /> {isClearingStranded ? 'Turning off...' : 'Turn off two-factor authentication'}
-                      </button>
+                        {isClearingStranded ? 'Turning off...' : 'Turn off two-factor authentication'}
+                      </CcButton>
                     </div>
                     {strandedError && (
-                      <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-2.5 text-xs text-rose-700 font-bold">
-                        <X size={14} className="shrink-0 mt-0.5" />
-                        <span>{strandedError}</span>
-                      </div>
+                      <CcMessageStrip state="error" announce>
+                        {strandedError}
+                      </CcMessageStrip>
                     )}
                   </div>
                 ) : profile?.mfaEnabled ? (
@@ -1169,27 +1249,24 @@ export default function SettingsPage() {
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setShowMfaDisable(true)}
-                      className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold px-5 py-3 rounded-xl transition-all text-xs flex items-center gap-2"
-                    >
-                      <X size={14} /> Disable Two-Factor Authentication
-                    </button>
+                    <CcButton variant="ghost" tone="danger" onClick={() => setShowMfaDisable(true)} icon={<X size={16} aria-hidden={true} />}>
+                      Disable Two-Factor Authentication
+                    </CcButton>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl text-xs text-gray-600 font-medium leading-relaxed">
                       TOTP (Time-based One-Time Passwords) is 100% free and offline-secure. You can use standard applications such as Google Authenticator, 1Password, or Authy to enroll.
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleStartMfaSetup}
-                      className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3.5 rounded-xl transition-all text-xs flex items-center gap-2 shadow-sm"
-                    >
-                      <Smartphone size={14} /> Enable Two-Factor Authentication
-                    </button>
+                    <CcButton variant="primary" onClick={handleStartMfaSetup} icon={<Smartphone size={16} aria-hidden={true} />}>
+                      Enable Two-Factor Authentication
+                    </CcButton>
                   </div>
+                )}
+                {mfaStartError && (
+                  <CcMessageStrip state="error" announce>
+                    {mfaStartError}
+                  </CcMessageStrip>
                 )}
               </div>
 
@@ -1207,55 +1284,27 @@ export default function SettingsPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleChangePassword} className="space-y-4">
-                    <div>
-                      <label htmlFor="settings-current-password" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Current Password</label>
-                      <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                          id="settings-current-password"
-                          type={showCurrentPw ? 'text' : 'password'}
-                          required
-                          value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full bg-gray-50 border border-gray-200 pl-11 pr-11 py-3.5 rounded-xl focus:ring-2 focus:ring-green-600 outline-none transition-all font-medium text-gray-900 text-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowCurrentPw(!showCurrentPw)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-                          aria-label="Show current password"
-                          aria-pressed={showCurrentPw}
-                        >
-                          {showCurrentPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                    </div>
+                    <SettingsInput
+                      label="Current Password"
+                      value={currentPassword}
+                      onChange={setCurrentPassword}
+                      required
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      reveal={{ shown: showCurrentPw, onToggle: () => setShowCurrentPw(!showCurrentPw), label: 'Show current password' }}
+                    />
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor="settings-new-password" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">New Password</label>
-                        <div className="relative">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input
-                            id="settings-new-password"
-                            type={showNewPw ? 'text' : 'password'}
-                            required
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full bg-gray-50 border border-gray-200 pl-11 pr-11 py-3.5 rounded-xl focus:ring-2 focus:ring-green-600 outline-none transition-all font-medium text-gray-900 text-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowNewPw(!showNewPw)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-                            aria-label="Show new password"
-                            aria-pressed={showNewPw}
-                          >
-                            {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
-                        </div>
+                        <SettingsInput
+                          label="New Password"
+                          value={newPassword}
+                          onChange={setNewPassword}
+                          required
+                          placeholder="••••••••"
+                          autoComplete="new-password"
+                          reveal={{ shown: showNewPw, onToggle: () => setShowNewPw(!showNewPw), label: 'Show new password' }}
+                        />
 
                         {/* Password strength meter */}
                         {newPassword && (
@@ -1284,62 +1333,46 @@ export default function SettingsPage() {
                         )}
                       </div>
 
-                      <div>
-                        <label htmlFor="settings-confirm-password" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Confirm New Password</label>
-                        <div className="relative">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input
-                            id="settings-confirm-password"
-                            type={showNewPw ? 'text' : 'password'}
-                            required
-                            value={confirmNewPassword}
-                            onChange={(e) => setConfirmNewPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full bg-gray-50 border border-gray-200 pl-11 pr-4 py-3.5 rounded-xl focus:ring-2 focus:ring-green-600 outline-none transition-all font-medium text-gray-900 text-sm"
-                          />
-                        </div>
-                        {confirmNewPassword && newPassword !== confirmNewPassword && (
-                          <p className="text-[10px] font-bold text-red-500 mt-1 flex items-center gap-1">
-                            <X size={10} /> Passwords do not match
-                          </p>
-                        )}
-                        {confirmNewPassword && newPassword === confirmNewPassword && (
-                          <p className="text-[10px] font-bold text-green-600 mt-1 flex items-center gap-1">
-                            <Check size={10} /> Passwords match
-                          </p>
-                        )}
-                      </div>
+                      <SettingsInput
+                        label="Confirm New Password"
+                        type={showNewPw ? 'text' : 'password'}
+                        value={confirmNewPassword}
+                        onChange={setConfirmNewPassword}
+                        required
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                        valueState={confirmNewPassword ? (newPassword !== confirmNewPassword ? 'error' : 'success') : undefined}
+                        message={
+                          confirmNewPassword
+                            ? newPassword !== confirmNewPassword
+                              ? 'Passwords do not match. Type the new password again.'
+                              : 'Passwords match'
+                            : undefined
+                        }
+                      />
                     </div>
 
                     {pwChangeStatus === 'success' && (
-                      <div className="p-4 bg-emerald-50 border border-emerald-250 text-emerald-800 rounded-2xl text-xs font-bold flex items-center gap-2">
-                        <CheckCircle2 size={16} className="text-green-600" />
-                        <span>Password changed successfully!</span>
-                      </div>
+                      <CcMessageStrip state="success" announce>
+                        Password changed successfully!
+                      </CcMessageStrip>
                     )}
 
                     {pwChangeStatus === 'error' && (
-                      <div className="p-4 bg-rose-50 border border-rose-250 text-rose-800 rounded-2xl text-xs font-bold flex items-center gap-2">
-                        <AlertCircle size={16} className="text-red-600" />
-                        <span>{pwChangeError || 'Error updating password.'}</span>
-                      </div>
+                      <CcMessageStrip state="error" announce>
+                        {pwChangeError || 'Error updating password.'}
+                      </CcMessageStrip>
                     )}
 
-                    <button
+                    <CcButton
                       type="submit"
-                      disabled={isChangingPassword || !currentPassword || !newPassword || !confirmNewPassword || newPassword !== confirmNewPassword}
-                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-6 rounded-xl transition-all text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      variant="primary"
+                      busy={isChangingPassword}
+                      disabled={!currentPassword || !newPassword || !confirmNewPassword || newPassword !== confirmNewPassword}
+                      icon={<Key size={16} aria-hidden={true} />}
                     >
-                      {isChangingPassword ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" /> Updating...
-                        </>
-                      ) : (
-                        <>
-                          <Key size={14} /> Update Password
-                        </>
-                      )}
-                    </button>
+                      {isChangingPassword ? 'Updating...' : 'Update Password'}
+                    </CcButton>
                   </form>
                 )}
               </div>
@@ -1371,123 +1404,70 @@ export default function SettingsPage() {
               </p>
 
               <form onSubmit={handleSaveKey} className="space-y-6 text-gray-900">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label htmlFor="settings-gemini-key" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                      Gemini API Key
-                    </label>
-                    {profile?.byokConfigured && (
-                      <span className="text-[11px] font-bold text-green-600 flex items-center gap-1">
-                        <CheckCircle2 size={12} /> Currently configured
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="relative">
-                    <input 
-                      id="settings-gemini-key"
-                      type={showKey ? "text" : "password"}
-                      value={geminiKey}
-                      onChange={(e) => {
-                        setGeminiKey(e.target.value);
-                        if (validationStatus !== 'idle') setValidationStatus('idle');
-                      }}
-                      placeholder={profile?.byokConfigured ? (profile.byokLast4 ? "••••••••••••" + profile.byokLast4 : "••••••••••••••••••••••••••••••••") : "AIzaSy..."}
-                      className="w-full bg-gray-50 border border-gray-200 pl-4 pr-12 py-3.5 rounded-xl focus:ring-2 focus:ring-purple-600 outline-none transition-all font-medium text-gray-900 font-mono text-sm tracking-wider"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowKey(!showKey)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-                      aria-label="Show API key"
-                      aria-pressed={showKey}
-                      title={showKey ? "Hide API Key" : "Show API Key"}
-                    >
-                      {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
+                <SettingsInput
+                  label="Gemini API Key"
+                  value={geminiKey}
+                  onChange={(value) => {
+                    setGeminiKey(value);
+                    if (validationStatus !== 'idle') setValidationStatus('idle');
+                  }}
+                  help={profile?.byokConfigured ? 'Currently configured' : undefined}
+                  placeholder={profile?.byokConfigured ? (profile.byokLast4 ? "••••••••••••" + profile.byokLast4 : "••••••••••••••••••••••••••••••••") : "AIzaSy..."}
+                  autoComplete="off"
+                  mono
+                  reveal={{ shown: showKey, onToggle: () => setShowKey(!showKey), label: 'Show API key' }}
+                />
 
                 {/* Validation Response Banners */}
                 {validationStatus === 'success' && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-emerald-50 border border-emerald-200 text-emerald-950 p-4 rounded-xl text-xs md:text-sm font-medium flex items-start gap-2.5"
-                  >
-                    <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={16} />
-                    <div>
-                      <p className="font-bold text-emerald-900 mb-0.5">Connection test successful!</p>
-                      <p className="text-emerald-700/90 leading-normal">Your custom API key successfully authenticated with Google Gemini services and is ready for use.</p>
-                    </div>
-                  </motion.div>
+                  <CcMessageStrip state="success" headline="Connection test successful!" announce>
+                    Your custom API key successfully authenticated with Google Gemini services and is ready for use.
+                  </CcMessageStrip>
                 )}
 
                 {validationStatus === 'error' && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-rose-50 border border-rose-200 text-rose-950 p-4 rounded-xl text-xs md:text-sm font-medium flex items-start gap-2.5"
-                  >
-                    <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={16} />
-                    <div>
-                      <p className="font-bold text-rose-900 mb-0.5">Connection test failed</p>
-                      <p className="text-rose-700/90 leading-normal">{validationError || 'The API key did not pass authentication. Please check your credentials.'}</p>
-                    </div>
-                  </motion.div>
+                  <CcMessageStrip state="error" headline="Connection test failed" announce>
+                    {validationError || 'The API key did not pass authentication. Please check your credentials.'}
+                  </CcMessageStrip>
+                )}
+
+                {keyError && (
+                  <CcMessageStrip state="error" announce>
+                    {keyError}
+                  </CcMessageStrip>
                 )}
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <button 
-                    type="button"
+                  <CcButton
+                    variant="secondary"
                     onClick={handleTestConnection}
-                    disabled={isValidatingKey || (!geminiKey.trim() && !profile?.byokConfigured)}
-                    className="flex-1 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 text-gray-900 py-3.5 px-4 rounded-xl font-bold transition-all disabled:opacity-50 disabled:bg-gray-50 flex items-center justify-center gap-2 text-sm shadow-sm"
+                    busy={isValidatingKey}
+                    disabled={!geminiKey.trim() && !profile?.byokConfigured}
+                    icon={<Zap size={16} aria-hidden={true} />}
                   >
-                    {isValidatingKey ? (
-                      <>
-                        <Loader2 className="animate-spin text-purple-600 animate-duration-1000" size={16} />
-                        Testing Connection...
-                      </>
-                    ) : (
-                      <>
-                        <Zap size={16} className="text-purple-600" />
-                        Test Connection
-                      </>
-                    )}
-                  </button>
+                    {isValidatingKey ? 'Testing Connection...' : 'Test Connection'}
+                  </CcButton>
 
-                  <button 
-                    type="submit" 
-                    disabled={isSavingKey || !geminiKey.trim()}
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3.5 px-4 rounded-xl font-black transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg shadow-purple-600/10"
+                  <CcButton
+                    type="submit"
+                    variant="primary"
+                    busy={isSavingKey}
+                    disabled={!geminiKey.trim()}
+                    icon={keySaved ? <CheckCircle2 size={16} aria-hidden={true} /> : undefined}
                   >
-                    {isSavingKey ? (
-                      <>
-                        <Loader2 className="animate-spin animate-duration-1000" size={16} />
-                        Saving Key...
-                      </>
-                    ) : keySaved ? (
-                      <>
-                        <CheckCircle2 size={16} />
-                        API Key Saved!
-                      </>
-                    ) : (
-                      'Save API Key'
-                    )}
-                  </button>
+                    {isSavingKey ? 'Saving Key...' : keySaved ? 'API Key Saved!' : 'Save API Key'}
+                  </CcButton>
 
                   {profile?.byokConfigured && (
-                    <button 
-                      type="button"
-                      onClick={handleDeleteKey}
-                      disabled={isDeletingKey}
-                      className="sm:w-12 w-full bg-red-50 hover:bg-red-100 text-red-600 py-3.5 px-4 rounded-xl font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 border border-red-100"
-                      title="Delete saved API key"
+                    <CcButton
+                      variant="ghost"
+                      tone="danger"
+                      onClick={() => setConfirmDeleteKey(true)}
+                      busy={isDeletingKey}
+                      icon={<Trash2 size={16} aria-hidden={true} />}
                     >
-                      {isDeletingKey ? <Loader2 className="animate-spin animate-duration-1000" size={16} /> : <Trash2 size={16} />}
-                      <span className="sm:hidden text-sm">Delete API Key</span>
-                    </button>
+                      Delete API Key
+                    </CcButton>
                   )}
                 </div>
                 {/* Said before the request rather than as a 403 after it: the
@@ -1583,69 +1563,51 @@ export default function SettingsPage() {
               {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
                 <form onSubmit={saveS4Config} className="space-y-6 text-gray-900">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label htmlFor="settings-s4-url" className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Tenant HTTPS URL</label>
-                      <div className="relative">
-                        <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          id="settings-s4-url"
-                          type="url"
-                          required
-                          value={s4Url}
-                          onChange={e => setS4Url(e.target.value)}
-                          placeholder="https://my300120-api.s4hana.cloud.sap"
-                          className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-11"
-                        />
-                      </div>
-                      <span className="text-[10px] text-gray-400 font-semibold block leading-relaxed">
-                        Must start with <span className="font-bold">https://</span>. Production domains are automatically blocked.
-                      </span>
-                    </div>
+                    <SettingsInput
+                      label="Tenant HTTPS URL"
+                      type="url"
+                      required
+                      value={s4Url}
+                      onChange={setS4Url}
+                      placeholder="https://my300120-api.s4hana.cloud.sap"
+                      help={<>Must start with <span className="font-bold">https://</span>. Production domains are automatically blocked.</>}
+                    />
 
-                    <div className="space-y-2">
-                      <label htmlFor="settings-s4-auth-type" className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Authentication Type</label>
-                      <select
-                        id="settings-s4-auth-type"
-                        value={s4AuthType}
-                        onChange={e => setS4AuthType(e.target.value as any)}
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-11"
-                      >
-                        <option value="basic">Basic Authentication</option>
-                        <option value="oauth2">OAuth 2.0 Client Credentials</option>
-                        <option value="sap_hub">SAP Accelerator Hub Sandbox Key</option>
-                        <option value="btp_destination">SAP BTP Destination Service (JSON)</option>
-                      </select>
-                    </div>
+                    <CcSelect
+                      label="Authentication Type"
+                      value={s4AuthType}
+                      onChange={setS4AuthType}
+                      options={[
+                        { value: 'basic', label: 'Basic Authentication' },
+                        { value: 'oauth2', label: 'OAuth 2.0 Client Credentials' },
+                        { value: 'sap_hub', label: 'SAP Accelerator Hub Sandbox Key' },
+                        { value: 'btp_destination', label: 'SAP BTP Destination Service (JSON)' },
+                      ]}
+                    />
 
                     {s4AuthType === 'oauth2' && (
-                      <div className="space-y-2 col-span-1 md:col-span-2">
-                        <label htmlFor="settings-s4-token-url" className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">OAuth 2.0 Token URL</label>
-                        <div className="relative">
-                          <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                          <input
-                            id="settings-s4-token-url"
-                            type="url"
-                            required
-                            value={s4TokenUrl}
-                            onChange={e => setS4TokenUrl(e.target.value)}
-                            placeholder="https://mysubaccount.authentication.eu10.hana.ondemand.com/oauth/token"
-                            className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-11"
-                          />
-                        </div>
-                        <span className="text-[10px] text-gray-400 font-semibold block leading-relaxed">
-                          The XSUAA or IAS token endpoint URL from your BTP subaccount. Used for <span className="font-bold">grant_type=client_credentials</span>.
-                        </span>
+                      <div className="col-span-1 md:col-span-2">
+                        <SettingsInput
+                          label="OAuth 2.0 Token URL"
+                          type="url"
+                          required
+                          value={s4TokenUrl}
+                          onChange={setS4TokenUrl}
+                          placeholder="https://mysubaccount.authentication.eu10.hana.ondemand.com/oauth/token"
+                          help={<>The XSUAA or IAS token endpoint URL from your BTP subaccount. Used for <span className="font-bold">grant_type=client_credentials</span>.</>}
+                        />
                       </div>
                     )}
 
                     {s4AuthType === 'btp_destination' && (
-                      <div className="space-y-2 col-span-1 md:col-span-2">
-                        <label htmlFor="settings-s4-destination-json" className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">SAP BTP Destination JSON Configuration</label>
-                        <textarea
-                          id="settings-s4-destination-json"
+                      <div className="col-span-1 md:col-span-2">
+                        <CcTextarea
+                          label="SAP BTP Destination JSON Configuration"
                           required
+                          rows={8}
                           value={btpDestinationJson}
-                          onChange={e => handleBtpJsonChange(e.target.value)}
+                          onChange={handleBtpJsonChange}
+                          help={<>Paste the full JSON export from the BTP Cockpit Destination Service. Supports <span className="font-bold">BasicAuthentication</span>, <span className="font-bold">OAuth2ClientCredentials</span>, and <span className="font-bold">PrincipalPropagation</span>.</>}
                           placeholder={`{
   "Name": "S4_CLOUDSANDBOX",
   "Type": "HTTP",
@@ -1656,90 +1618,53 @@ export default function SettingsPage() {
   "clientSecret": "...",
   "ProxyType": "Internet"
 }`}
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-40 font-mono resize-none"
                         />
-                        <span className="text-[10px] text-gray-400 font-semibold block leading-relaxed">
-                          Paste the full JSON export from the BTP Cockpit Destination Service. Supports <span className="font-bold">BasicAuthentication</span>, <span className="font-bold">OAuth2ClientCredentials</span>, and <span className="font-bold">PrincipalPropagation</span>.
-                        </span>
                       </div>
                     )}
 
                     {s4AuthType !== 'sap_hub' && s4AuthType !== 'btp_destination' && (
                       <>
-                        <div className="space-y-2">
-                          <label htmlFor="settings-s4-username" className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">
-                            {s4AuthType === 'oauth2' ? 'Client ID' : 'Username'}
-                          </label>
-                          <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input
-                              id="settings-s4-username"
-                              type="text"
-                              required
-                              value={s4Username}
-                              onChange={e => setS4Username(e.target.value)}
-                              placeholder={s4AuthType === 'oauth2' ? 'sb-clone-xxxx...' : 'CC_INTEGRATOR'}
-                              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-11"
-                            />
-                          </div>
-                        </div>
+                        <SettingsInput
+                          label={s4AuthType === 'oauth2' ? 'Client ID' : 'Username'}
+                          required
+                          value={s4Username}
+                          onChange={setS4Username}
+                          placeholder={s4AuthType === 'oauth2' ? 'sb-clone-xxxx...' : 'CC_INTEGRATOR'}
+                        />
 
-                        <div className="space-y-2">
-                          <label htmlFor="settings-s4-password" className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">
-                            {s4AuthType === 'oauth2' ? 'Client Secret' : 'Password'}
-                          </label>
-                          <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input
-                              id="settings-s4-password"
-                              type={showS4Password ? "text" : "password"}
-                              required
-                              value={s4Password}
-                              onChange={e => setS4Password(e.target.value)}
-                              placeholder="••••••••••••••••"
-                              className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-11"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowS4Password(!showS4Password)}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-                              aria-label="Show password"
-                              aria-pressed={showS4Password}
-                            >
-                              {showS4Password ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
-                          </div>
-                        </div>
+                        <SettingsInput
+                          label={s4AuthType === 'oauth2' ? 'Client Secret' : 'Password'}
+                          required
+                          value={s4Password}
+                          onChange={setS4Password}
+                          placeholder="••••••••••••••••"
+                          reveal={{ shown: showS4Password, onToggle: () => setShowS4Password(!showS4Password), label: 'Show password' }}
+                        />
                       </>
                     )}
                   </div>
 
                   {connectionMessage && (
-                    <div className={clsx(
-                      "p-4 rounded-xl border text-xs font-bold transition-all",
-                      connectionStatus === 'connected' ? "bg-green-50 border-green-200 text-green-800" :
-                      connectionStatus === 'failed' ? "bg-red-50 border-red-200 text-red-800" : "bg-blue-50 border-blue-200 text-blue-800"
-                    )}>
+                    <CcMessageStrip
+                      state={connectionStatus === 'connected' ? 'success' : connectionStatus === 'failed' ? 'error' : 'information'}
+                    >
                       {connectionMessage}
-                    </div>
+                    </CcMessageStrip>
                   )}
 
                   <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100">
-                    <button
-                      type="button"
+                    <CcButton
+                      variant="secondary"
                       onClick={handleTestS4Connection}
-                      disabled={testingConnection || !s4Url}
-                      className="flex-1 h-11 flex items-center justify-center gap-2 bg-gradient-to-br from-blue-600 to-sky-650 hover:shadow-lg text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all disabled:opacity-50"
+                      busy={testingConnection}
+                      disabled={!s4Url}
+                      icon={<Globe size={16} aria-hidden={true} />}
                     >
-                      {testingConnection ? <><Loader2 className="w-4 h-4 animate-spin" /> Verifying Connection...</> : <><Globe className="w-4 h-4" /> Test Connection</>}
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSavingConfig}
-                      className="flex-1 h-11 flex items-center justify-center gap-2 bg-gradient-to-br from-gray-900 to-slate-800 hover:shadow-lg text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all disabled:opacity-50"
-                    >
-                      {isSavingConfig ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Save className="w-4 h-4" /> Save Connection</>}
-                    </button>
+                      {testingConnection ? 'Verifying Connection...' : 'Test Connection'}
+                    </CcButton>
+                    <CcButton type="submit" variant="primary" busy={isSavingConfig} icon={<Save size={16} aria-hidden={true} />}>
+                      {isSavingConfig ? 'Saving...' : 'Save Connection'}
+                    </CcButton>
                   </div>
                 </form>
               ) : (
@@ -1786,58 +1711,36 @@ export default function SettingsPage() {
                     </div>
                   ) : (
                     <form onSubmit={handleRequestByot} className="space-y-4 pt-2">
-                      <div className="space-y-2">
-                        <label htmlFor="settings-byot-motivation" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                          Description of your use case (Motivation)
-                        </label>
-                        <textarea 
-                          id="settings-byot-motivation"
-                          value={byotMotivation}
-                          onChange={(e) => setByotMotivation(e.target.value)}
-                          placeholder="E.g., connecting our non-productive S/4HANA Public Cloud Sandbox to validate OData interfaces..."
-                          rows={3}
-                          className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-sky-600 outline-none transition-all font-medium text-gray-900 text-sm leading-relaxed"
-                          required
-                        />
-                      </div>
+                      <CcTextarea
+                        label="Description of your use case (Motivation)"
+                        required
+                        rows={3}
+                        value={byotMotivation}
+                        onChange={setByotMotivation}
+                        placeholder="E.g., connecting our non-productive S/4HANA Public Cloud Sandbox to validate OData interfaces..."
+                      />
 
                       {byotStatus === 'success' && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-emerald-50 border border-emerald-250 text-emerald-950 p-4 rounded-xl text-xs font-medium"
-                        >
+                        <CcMessageStrip state="success" announce>
                           Request successfully submitted!
-                        </motion.div>
+                        </CcMessageStrip>
                       )}
 
                       {byotStatus === 'error' && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-rose-50 border border-rose-250 text-rose-950 p-4 rounded-xl text-xs font-medium"
-                        >
+                        <CcMessageStrip state="error" announce>
                           {byotError || 'Error submitting request. Please try again.'}
-                        </motion.div>
+                        </CcMessageStrip>
                       )}
 
-                      <button 
-                        type="submit" 
-                        disabled={isRequestingByot || !byotMotivation.trim()}
-                        className="w-full bg-gradient-to-br from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white py-3 px-4 rounded-xl font-black transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-xs shadow-md"
+                      <CcButton
+                        type="submit"
+                        variant="primary"
+                        busy={isRequestingByot}
+                        disabled={!byotMotivation.trim()}
+                        icon={<Send size={16} aria-hidden={true} />}
                       >
-                        {isRequestingByot ? (
-                          <>
-                            <Loader2 className="animate-spin" size={14} />
-                            Sending...
-                          </>
-                        ) : (
-                          <>
-                            <Send size={14} />
-                            Request Access for Live S/4HANA
-                          </>
-                        )}
-                      </button>
+                        {isRequestingByot ? 'Sending...' : 'Request Access for Live S/4HANA'}
+                      </CcButton>
                       {/* Said here, before the request, rather than as a 403
                           after approval: the enrolment requirement is enforced
                           by every S/4 route (lib/firebase-admin.ts,
@@ -1877,14 +1780,16 @@ export default function SettingsPage() {
                 <p className="text-xs text-red-700/80 text-center max-w-sm">We are removing all your projects, custom source code uploads, registration requests, profile configuration preferences, and core authentication credentials from our database.</p>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={handleDeleteAccount}
-                className="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 hover:border-red-300 py-4 rounded-2xl font-black transition-all flex items-center justify-center gap-2 text-sm md:text-base shadow-sm"
-              >
-                <Trash2 size={18} />
-                Permanently Delete Account (GDPR Art. 17)
-              </button>
+              <div className="space-y-4">
+                {deleteError && (
+                  <CcMessageStrip state="error" announce>
+                    {deleteError}
+                  </CcMessageStrip>
+                )}
+                <CcButton variant="ghost" tone="danger" onClick={openDeleteAccount} icon={<Trash2 size={16} aria-hidden={true} />}>
+                  Permanently Delete Account (GDPR Art. 17)
+                </CcButton>
+              </div>
             )}
           </div>
         </div>
@@ -1989,309 +1894,286 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* 2FA Setup Step Modal */}
-      <AnimatePresence>
-        {showMfaSetup && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              transition={{ type: 'spring', duration: 0.4 }}
-              className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl border border-gray-100 overflow-hidden relative"
-            >
-              {/* Close Button */}
-              {mfaSetupStep !== 3 && (
-                <button aria-label="Close" type="button"
-                  onClick={() => setShowMfaSetup(false)}
-                  className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-                >
-                  <X size={16} strokeWidth={2.5} />
-                </button>
-              )}
-
-              <div className="p-8 sm:p-10">
-                {/* Steps Header indicator */}
-                <div className="flex items-center gap-2 mb-6">
-                  {[1, 2, 3].map((step) => (
-                    <div
-                      key={step}
-                      className={`h-1.5 flex-1 rounded-full transition-all ${
-                        mfaSetupStep >= step ? 'bg-green-600' : 'bg-gray-200'
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                {mfaSetupStep === 1 ? (
-                  /* Step 1: Scan QR Code */
-                  <div className="space-y-6">
-                    <h3 className="text-2xl font-black text-gray-950 tracking-tight">1. Add the account to your authenticator</h3>
-                    {mfaSetupError && (
-                      <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 font-bold space-y-3">
-                        <span>{mfaSetupError}</span>
-                        {!totpSecret && (
-                          <button
-                            type="button"
-                            onClick={handleSendVerificationMail}
-                            disabled={verificationMailSent}
-                            className="block w-full bg-gray-900 hover:bg-gray-800 disabled:opacity-60 text-white rounded-xl py-3 text-xs font-black uppercase tracking-wider"
-                          >
-                            {verificationMailSent ? 'Verification mail sent — check your inbox' : 'Send the verification mail'}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                      Open your authenticator app (Google Authenticator, Authy, 1Password, …). On this
-                      device the button below hands it the account directly; otherwise type the setup
-                      key.
-                    </p>
-
-                    {/*
-                      There used to be a QR code here. It was a hand-drawn SVG named
-                      `MockQrCode` that ignored the `value` prop entirely and always
-                      rendered the same pattern, under a heading that told people to
-                      scan it. Scanning it enrolled nothing, so the documented primary
-                      path into two-factor authentication did not work at all — only
-                      typing the secret did.
-                      A real QR needs a vetted encoder, and adding a dependency here
-                      means regenerating the lockfile, which on this project is its own
-                      hazard (see CLAUDE.md). Until that is a deliberate decision, the
-                      honest options are the ones below: the otpauth:// URI the server
-                      already generates, and the key.
-                    */}
-                    <a
-                      href={qrCodeUrl}
-                      className="flex items-center justify-center gap-2 w-full bg-gray-900 hover:bg-gray-800 text-white rounded-2xl py-3.5 text-xs font-black uppercase tracking-wider transition-colors"
-                    >
-                      <ShieldCheck size={14} /> Open in authenticator app
-                    </a>
-
-                    <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-1.5 text-center">
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Secret Setup Key</span>
-                      <span className="font-mono text-base font-black tracking-wider text-gray-800 uppercase block select-all">{tempMfaSecret}</span>
-                      
-                      <div className="flex flex-wrap items-center justify-center gap-4 mt-1.5">
-                        <button
-                          type="button"
-                          onClick={() => copyMfa('secret', tempMfaSecret)}
-                          className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-green-700 hover:text-green-800 transition-colors"
-                        >
-                          <Copy size={10} /> Copy setup key
-                        </button>
-                        {/* The link above opens an app that may not be installed,
-                            and on a desktop usually is not. The URI in writing is
-                            the way through for everyone else. */}
-                        <button
-                          type="button"
-                          onClick={() => copyMfa('link', qrCodeUrl)}
-                          className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-gray-600 hover:text-gray-800 transition-colors"
-                        >
-                          <Copy size={10} /> Copy setup link
-                        </button>
-                      </div>
-                      <p role="status" aria-live="polite" className="text-[10px] font-bold mt-1 min-h-[1rem]">
-                        {mfaCopied === 'secret' && <span className="text-green-700">Setup key copied.</span>}
-                        {mfaCopied === 'link' && <span className="text-green-700">Setup link copied.</span>}
-                        {mfaCopied === 'failed' && (
-                          <span className="text-amber-700">
-                            Your browser did not allow the copy. Select the key above and copy it by hand.
-                          </span>
-                        )}
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setMfaSetupStep(2)}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                    >
-                      I have scanned it <ArrowRight size={14} />
-                    </button>
-                  </div>
-                ) : mfaSetupStep === 2 ? (
-                  /* Step 2: Verification Code input */
-                  <div className="space-y-6">
-                    <h3 className="text-2xl font-black text-gray-950 tracking-tight">2. Verify Setup</h3>
-                    <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                      Enter the 6-digit code shown in your authenticator app to complete connection verification:
-                    </p>
-
-                    <div className="space-y-3">
-                      <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input
-                          type="text"
-                          required
-                          maxLength={6}
-                          value={mfaVerifyCode}
-                          onChange={(e) => setMfaVerifyCode(e.target.value.replace(/\s+/g, ''))}
-                          aria-label="6-digit code from your authenticator app"
-                          inputMode="numeric"
-                          autoComplete="one-time-code"
-                          placeholder="e.g. 123456"
-                          className="w-full bg-gray-50 border border-gray-200 pl-12 pr-4 py-4 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-mono font-black text-lg text-gray-900 tracking-widest text-center"
-                          autoFocus
-                        />
-                      </div>
-
-                      {mfaSetupError && (
-                        <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-2.5 text-xs text-rose-700 font-bold">
-                          <X size={14} className="shrink-0 mt-0.5" />
-                          <span>{mfaSetupError}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex gap-3 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setMfaSetupStep(1)}
-                        className="flex-1 py-4 text-sm font-bold text-gray-500 hover:text-gray-905 rounded-2xl transition-all"
-                      >
-                        Back
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleVerifyMfaSetup}
-                        disabled={isVerifyingMfa || mfaVerifyCode.length !== 6}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        {isVerifyingMfa ? 'Verifying...' : 'Verify & Enable'} <ArrowRight size={14} />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* Step 3: done — the factor is live at the next sign-in */
-                  <div className="space-y-6">
-                    <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-4 border border-green-150">
-                      <ShieldCheck className="w-8 h-8 text-green-600" />
-                    </div>
-                    <h3 className="text-2xl font-black text-gray-950 tracking-tight">3. Two-factor authentication is active</h3>
-                    <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                      From now on Firebase asks for the code from your authenticator app at every sign-in — before any session exists. Your current session was created without it, so sign in again to continue working with a fully verified session.
-                    </p>
-                    <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-xs text-gray-600 font-medium leading-relaxed">
-                      There are no backup codes. If you lose the authenticator, write to info@clean-core.io from your account address; an administrator removes the factor after confirming with you.
-                    </div>
-                    <div className="flex flex-col gap-2 pt-2">
-                      <button
-                        type="button"
-                        onClick={async () => { setShowMfaSetup(false); await signOut(getAuth()); router.push('/?auth=signin'); }}
-                        className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-md flex items-center justify-center gap-2"
-                      >
-                        <ArrowRight size={14} /> Sign out and sign in again
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowMfaSetup(false)}
-                        className="w-full py-4 text-sm font-black text-green-600 hover:underline"
-                      >
-                        Later
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* 2FA Disable Modal */}
-      <AnimatePresence>
-        {showMfaDisable && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              transition={{ type: 'spring', duration: 0.4 }}
-              className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl border border-gray-100 overflow-hidden relative p-8 sm:p-10"
-            >
-              <button aria-label="Close" type="button"
-                onClick={() => setShowMfaDisable(false)}
-                className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
+      {/* 2FA setup — a dialog that asks for input (DESIGN.md §2.6, §2.7).
+          Escape and the close button end it like "Later" does; the dimmed
+          page does not, so a stray click cannot drop a half-typed code. */}
+      <CcDialog
+        open={showMfaSetup}
+        title={
+          mfaSetupStep === 1
+            ? '1. Add the account to your authenticator'
+            : mfaSetupStep === 2
+              ? '2. Verify Setup'
+              : '3. Two-factor authentication is active'
+        }
+        onClose={() => setShowMfaSetup(false)}
+        onSubmit={
+          mfaSetupStep === 2
+            ? () => {
+                if (!isVerifyingMfa && mfaVerifyCode.length === 6) handleVerifyMfaSetup();
+              }
+            : undefined
+        }
+        actions={
+          mfaSetupStep === 1 ? (
+            <CcButton variant="primary" onClick={() => setMfaSetupStep(2)} icon={<ArrowRight size={16} aria-hidden={true} />}>
+              I have scanned it
+            </CcButton>
+          ) : mfaSetupStep === 2 ? (
+            <>
+              <CcButton variant="ghost" onClick={() => setMfaSetupStep(1)}>
+                Back
+              </CcButton>
+              <CcButton
+                type="submit"
+                variant="primary"
+                busy={isVerifyingMfa}
+                disabled={mfaVerifyCode.length !== 6}
+                icon={<ArrowRight size={16} aria-hidden={true} />}
               >
-                <X size={16} strokeWidth={2.5} />
-              </button>
+                {isVerifyingMfa ? 'Verifying...' : 'Verify & Enable'}
+              </CcButton>
+            </>
+          ) : (
+            <>
+              <CcButton variant="ghost" onClick={() => setShowMfaSetup(false)}>
+                Later
+              </CcButton>
+              <CcButton
+                variant="primary"
+                icon={<ArrowRight size={16} aria-hidden={true} />}
+                onClick={async () => { setShowMfaSetup(false); await signOut(getAuth()); router.push('/?auth=signin'); }}
+              >
+                Sign out and sign in again
+              </CcButton>
+            </>
+          )
+        }
+      >
+        <div className="space-y-4">
+          {/* Where in the three steps the reader is; the title says it in words. */}
+          <div className="flex items-center gap-2" aria-hidden={true}>
+            {[1, 2, 3].map((step) => (
+              <div
+                key={step}
+                className={cn('h-1 flex-1 rounded-full', mfaSetupStep >= step ? 'bg-cc-brand-strong' : 'bg-cc-line')}
+              />
+            ))}
+          </div>
 
-              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6">
-                <AlertCircle className="w-8 h-8 text-red-600" />
-              </div>
-              <h3 className="text-2xl font-black text-gray-950 tracking-tight mb-2">Disable Two-Factor Auth?</h3>
-              <p className="text-xs text-gray-500 leading-relaxed font-medium mb-6">
-                Disabling two-factor authentication lowers your account security. {profile?.authMethod === 'password' ? 'Please enter your password to confirm:' : 'Confirm below:'}
+          {mfaSetupStep === 1 ? (
+            <>
+              {mfaSetupError && (
+                <CcMessageStrip
+                  state="warning"
+                  actions={
+                    !totpSecret ? (
+                      <CcButton variant="secondary" onClick={handleSendVerificationMail} disabled={verificationMailSent}>
+                        {verificationMailSent ? 'Verification mail sent — check your inbox' : 'Send the verification mail'}
+                      </CcButton>
+                    ) : undefined
+                  }
+                >
+                  {mfaSetupError}
+                </CcMessageStrip>
+              )}
+              <p className="m-0 text-cc-ink-muted">
+                Open your authenticator app (Google Authenticator, Authy, 1Password, …). On this
+                device the button below hands it the account directly; otherwise type the setup
+                key.
               </p>
 
-              <div className="space-y-5">
-                {profile?.authMethod === 'password' && (
-                  <div>
-                    <label htmlFor="settings-delete-password" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Your Account Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <input
-                        id="settings-delete-password"
-                        type="password"
-                        required
-                        value={disablePassword}
-                        onChange={(e) => setDisablePassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full bg-gray-50 border border-gray-200 pl-11 pr-4 py-3.5 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all font-medium text-gray-900 text-sm"
-                      />
-                    </div>
-                  </div>
-                )}
+              {/*
+                There used to be a QR code here. It was a hand-drawn SVG named
+                `MockQrCode` that ignored the `value` prop entirely and always
+                rendered the same pattern, under a heading that told people to
+                scan it. Scanning it enrolled nothing, so the documented primary
+                path into two-factor authentication did not work at all — only
+                typing the secret did.
+                A real QR needs a vetted encoder, and adding a dependency here
+                means regenerating the lockfile, which on this project is its own
+                hazard (see CLAUDE.md). Until that is a deliberate decision, the
+                honest options are the ones below: the otpauth:// URI the server
+                already generates, and the key.
+              */}
+              <CcLinkButton href={qrCodeUrl} variant="secondary" icon={<ShieldCheck size={16} aria-hidden={true} />}>
+                Open in authenticator app
+              </CcLinkButton>
 
-                <div>
-                  <label htmlFor="settings-delete-mfa-code" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Code from your authenticator app</label>
-                  <div className="relative">
-                    <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input
-                      id="settings-delete-mfa-code"
-                      type="text"
-                      inputMode="numeric"
-                      required
-                      maxLength={6}
-                      value={mfaDisableCode}
-                      onChange={(e) => setMfaDisableCode(e.target.value.replace(/[^0-9]/g, ''))}
-                      placeholder="123456"
-                      autoComplete="one-time-code"
-                      className="w-full bg-gray-50 border border-gray-200 pl-11 pr-4 py-3.5 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all font-mono text-sm tracking-widest"
-                    />
-                  </div>
+              <div className="space-y-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 text-center">
+                <span className="block text-[12px] font-semibold text-cc-ink-muted">Secret Setup Key</span>
+                <span className="block select-all font-cc-mono text-[15px] font-bold tracking-wider text-cc-ink uppercase">{tempMfaSecret}</span>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <CcButton variant="ghost" onClick={() => copyMfa('secret', tempMfaSecret)} icon={<Copy size={16} aria-hidden={true} />}>
+                    Copy setup key
+                  </CcButton>
+                  {/* The link above opens an app that may not be installed,
+                      and on a desktop usually is not. The URI in writing is
+                      the way through for everyone else. */}
+                  <CcButton variant="ghost" onClick={() => copyMfa('link', qrCodeUrl)} icon={<Copy size={16} aria-hidden={true} />}>
+                    Copy setup link
+                  </CcButton>
                 </div>
-
-                {mfaDisableError && (
-                  <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-2.5 text-xs text-rose-700 font-bold">
-                    <X size={14} className="shrink-0 mt-0.5" />
-                    <span>{mfaDisableError}</span>
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => { setShowMfaDisable(false); setDisablePassword(''); setMfaDisableCode(''); setMfaDisableError(''); }}
-                    className="flex-1 py-4 text-sm font-bold text-gray-500 hover:text-gray-905 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDisableMfa}
-                    disabled={isDisablingMfa || mfaDisableCode.length !== 6 || (profile?.authMethod === 'password' && !disablePassword)}
-                    className="flex-1 bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-lg flex items-center justify-center gap-2"
-                  >
-                    {isDisablingMfa ? 'Disabling...' : 'Confirm Disable'}
-                  </button>
-                </div>
+                <p role="status" aria-live="polite" className="m-0 min-h-4 text-[12px] font-semibold">
+                  {mfaCopied === 'secret' && <span className="text-cc-success">Setup key copied.</span>}
+                  {mfaCopied === 'link' && <span className="text-cc-success">Setup link copied.</span>}
+                  {mfaCopied === 'failed' && (
+                    <span className="text-cc-warning">
+                      Your browser did not allow the copy. Select the key above and copy it by hand.
+                    </span>
+                  )}
+                </p>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+            </>
+          ) : mfaSetupStep === 2 ? (
+            <>
+              <p className="m-0 text-cc-ink-muted">
+                Enter the 6-digit code shown in your authenticator app to complete connection verification:
+              </p>
+              <SettingsInput
+                label="6-digit code from your authenticator app"
+                required
+                value={mfaVerifyCode}
+                onChange={(value) => setMfaVerifyCode(value.replace(/\s+/g, ''))}
+                maxLength={6}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="e.g. 123456"
+                mono
+                autoFocus
+                valueState={mfaSetupError ? 'error' : undefined}
+                message={mfaSetupError || undefined}
+              />
+            </>
+          ) : (
+            <>
+              <div className="flex size-10 items-center justify-center rounded-cc-row border border-cc-success-border bg-cc-success-bg">
+                <ShieldCheck size={20} className="text-cc-success" aria-hidden={true} />
+              </div>
+              <p className="m-0 text-cc-ink-muted">
+                From now on Firebase asks for the code from your authenticator app at every sign-in — before any session exists. Your current session was created without it, so sign in again to continue working with a fully verified session.
+              </p>
+              <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 text-[13px] text-cc-ink-muted">
+                There are no backup codes. If you lose the authenticator, write to info@clean-core.io from your account address; an administrator removes the factor after confirming with you.
+              </div>
+            </>
+          )}
+        </div>
+      </CcDialog>
+
+      {/* 2FA removal — a confirmation before something that lowers the
+          account's security: a message box, its binding button `dark`
+          (DESIGN.md §1.5, §2.6). The password and the code are asked for in
+          it exactly as before, and handleDisableMfa refuses without them. */}
+      <CcMessageBox
+        open={showMfaDisable}
+        title="Disable Two-Factor Auth?"
+        confirmLabel={isDisablingMfa ? 'Disabling...' : 'Confirm Disable'}
+        onConfirm={handleDisableMfa}
+        onCancel={closeMfaDisable}
+      >
+        <div className="space-y-4">
+          <p className="m-0">
+            Disabling two-factor authentication lowers your account security. {profile?.authMethod === 'password' ? 'Please enter your password to confirm:' : 'Confirm below:'}
+          </p>
+          {profile?.authMethod === 'password' && (
+            <SettingsInput
+              label="Your Account Password"
+              type="password"
+              required
+              value={disablePassword}
+              onChange={setDisablePassword}
+              placeholder="••••••••"
+              autoComplete="current-password"
+            />
+          )}
+          <SettingsInput
+            label="Code from your authenticator app"
+            required
+            value={mfaDisableCode}
+            onChange={(value) => setMfaDisableCode(value.replace(/[^0-9]/g, ''))}
+            maxLength={6}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="123456"
+            mono
+          />
+          {mfaDisableError && (
+            <CcMessageStrip state="error" announce>
+              {mfaDisableError}
+            </CcMessageStrip>
+          )}
+        </div>
+      </CcMessageBox>
+
+      {/* Removing the own key: the confirmation `window.confirm` used to ask. */}
+      <CcMessageBox
+        open={confirmDeleteKey}
+        title="Remove your Gemini API key?"
+        confirmLabel="Remove API key"
+        onConfirm={handleDeleteKey}
+        onCancel={() => setConfirmDeleteKey(false)}
+      >
+        Are you sure you want to securely remove your Gemini API Key? This will revert you back to standard limits.
+      </CcMessageBox>
+
+      {/* GDPR erasure — the three browser prompts as the fields of one
+          message box. Nothing is called until the address matches and, with
+          a second factor, the code (and the password) are there. */}
+      <CcMessageBox
+        open={showDeleteAccount}
+        title="Permanently delete your account?"
+        confirmLabel="Delete account permanently"
+        onConfirm={handleDeleteAccount}
+        onCancel={cancelDeleteAccount}
+      >
+        <div className="space-y-4">
+          <p className="m-0">
+            GDPR Right to Erasure (Art. 17 GDPR): to permanently and irrevocably erase all your personal data, uploaded
+            source codes, API keys, and transformation projects, please confirm by entering your email address.
+          </p>
+          <SettingsInput
+            label="Your account e-mail address"
+            required
+            value={deleteEmail}
+            onChange={setDeleteEmail}
+            autoComplete="off"
+            valueState={deleteEmailError ? 'error' : undefined}
+            message={deleteEmailError || undefined}
+          />
+          {profile?.mfaEnabled && (
+            <>
+              <p className="m-0">
+                Step-up required: enter the 6-digit code from your authenticator app to confirm your identity.
+              </p>
+              <SettingsInput
+                label="Code from your authenticator app"
+                required
+                value={deleteMfaCode}
+                onChange={setDeleteMfaCode}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                mono
+                valueState={deleteCodeError ? 'error' : undefined}
+                message={deleteCodeError || undefined}
+              />
+              {profile?.authMethod === 'password' && (
+                <SettingsInput
+                  label="Enter your password to confirm"
+                  type="password"
+                  required
+                  value={deletePassword}
+                  onChange={setDeletePassword}
+                  autoComplete="current-password"
+                  valueState={deletePasswordError ? 'error' : undefined}
+                  message={deletePasswordError || undefined}
+                />
+              )}
+            </>
+          )}
+        </div>
+      </CcMessageBox>
+
     </div>
   );
 }
