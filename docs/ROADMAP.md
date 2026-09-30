@@ -1091,7 +1091,7 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-040 | mittel | P2 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
 | SEC-2026-041 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
 | SEC-2026-042 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
-| SEC-2026-055 | niedrig | P2 | Phase 2 · Datenschutz-Schritt | eingeplant |
+| SEC-2026-055 | niedrig | P2 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-065 | niedrig | P3 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-067 | niedrig | P3 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
 | SEC-2026-073 | mittel | P2 | eigener Schritt, braucht Sonnys Go | eingeplant |
@@ -1317,7 +1317,7 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-606 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-607 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
 | SEC-2026-608 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-609 | niedrig | P2 | Phase 2 · Datenschutz-Schritt | eingeplant |
+| SEC-2026-609 | niedrig | P2 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-610 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-611 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-613 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
