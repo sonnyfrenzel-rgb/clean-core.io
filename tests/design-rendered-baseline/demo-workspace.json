@@ -3,7 +3,7 @@
   "route": "/demo/workspace",
   "step": "D.29",
   "ceilings": {
-    "small": 14,
+    "small": 4,
     "contrast": 1,
     "heavy": 4
   }
