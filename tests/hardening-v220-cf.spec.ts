@@ -7,6 +7,7 @@ import { getPublishedKeyring, resetSigningKeypairCache } from '../lib/audit-sign
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { readTableDependencies } from '../lib/abap/table-dependencies';
 import { applyRunnerVerdicts, parseTapOutput } from '../lib/test-verdicts';
+import { isUrlSafe } from '../lib/url-validation';
 
 /**
  * Hardening that shipped with the v2.20 security steps C and F.
@@ -154,6 +155,27 @@ test.describe('the verdicts read from a test run', () => {
     const cases = [{ id: 'TC-001' }, { id: 'TC.002' }, { id: 'TC_003' }, { id: 'TC_004' }];
     const byId = Object.fromEntries(applyRunnerVerdicts(cases, parseTapOutput(tap), 1).map((c) => [c.id, c.status]));
     expect(byId).toEqual({ 'TC-001': 'Failed', 'TC.002': 'Failed', TC_003: 'Failed', TC_004: 'Skipped' });
+  });
+});
+
+test.describe('the outbound host allowlist', () => {
+  test('matches an entry at a label boundary only', async () => {
+    const previous = process.env.S4_HOST_ALLOWLIST;
+    const NOT_LISTED = 'Host is not in the configured allowlist.';
+    try {
+      for (const entry of ['s4hana.cloud', '.s4hana.cloud']) {
+        process.env.S4_HOST_ALLOWLIST = entry;
+        expect((await isUrlSafe('https://evil-s4hana.cloud/x')).reason, `${entry}: a look-alike host passed`).toBe(NOT_LISTED);
+        expect((await isUrlSafe('https://nots4hana.cloud/x')).reason, `${entry}: a look-alike host passed`).toBe(NOT_LISTED);
+        // The listed domain and its subdomains are past the allowlist (whatever
+        // DNS then says about them).
+        expect((await isUrlSafe('https://my.s4hana.cloud/x')).reason).not.toBe(NOT_LISTED);
+        expect((await isUrlSafe('https://s4hana.cloud/x')).reason).not.toBe(NOT_LISTED);
+      }
+    } finally {
+      if (previous === undefined) delete process.env.S4_HOST_ALLOWLIST;
+      else process.env.S4_HOST_ALLOWLIST = previous;
+    }
   });
 });
 
