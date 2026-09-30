@@ -64,13 +64,28 @@ function tadirToType(tadir: string): SapApiObjectType {
   }
 }
 
+/**
+ * The no-path verdict of one release-file entry: no object successor, and a
+ * concept note in its place or a state other than released. Shared by
+ * `buildMerged` and the snapshot branch of `hasNoReleasedApiPath`, so the two
+ * cannot drift apart.
+ */
+function releaseEntryHasNoPath(e: NormalizedEntry): boolean {
+  if (e.successors?.[0]) return false;
+  return Boolean(e.conceptNote) || e.state?.toLowerCase() !== 'released';
+}
+
+/** The no-path verdict of a classification-only entry: `noAPI`, no successor, no concept note. */
+function classificationEntryHasNoPath(e: NormalizedEntry): boolean {
+  return e.state?.toLowerCase() === 'noapi' && !e.successors?.length && !e.conceptNote;
+}
+
 function buildMerged(): { map: Record<string, MergedApiEntry>; noPath: Set<string> } {
   const map: Record<string, MergedApiEntry> = {};
   const noPath = new Set<string>();
 
   // Layer 2 first (so layer 1 overwrites).
   for (const [name, e] of Object.entries<NormalizedEntry>(CR.entries ?? {})) {
-    const released = e.state?.toLowerCase() === 'released';
     const primary = e.successors?.[0];
 
     if (primary) {
@@ -82,11 +97,9 @@ function buildMerged(): { map: Record<string, MergedApiEntry>; noPath: Set<strin
         successors: e.successors,
         conceptNote: e.conceptNote,
       };
-    } else if (e.conceptNote) {
-      // Successor is a concept, not an object — do NOT fabricate a mapping.
-      noPath.add(name);
-    } else if (!released) {
-      // Listed, not released, no successor → honest no-path signal.
+    } else if (releaseEntryHasNoPath(e)) {
+      // Successor is a concept, not an object — do NOT fabricate a mapping. Or:
+      // listed, not released, no successor → honest no-path signal.
       noPath.add(name);
     }
     // released && no successor → object itself is a released API; nothing to map.
@@ -121,9 +134,7 @@ function buildMerged(): { map: Record<string, MergedApiEntry>; noPath: Set<strin
   // `gradeFromSapStates`.
   for (const [name, e] of Object.entries<NormalizedEntry>(CR_CLASS.entries ?? {})) {
     if (CR.entries?.[name]) continue;
-    if (e.state?.toLowerCase() !== 'noapi') continue;
-    if (e.successors?.length || e.conceptNote) continue;
-    noPath.add(name);
+    if (classificationEntryHasNoPath(e)) noPath.add(name);
   }
 
   // Layer 1: curated entries always win (field-level knowledge).
@@ -153,8 +164,26 @@ export function resolveApi(objectName: string): MergedApiEntry | undefined {
   return MERGED_TABLE_MAP[(objectName || '').toUpperCase()];
 }
 
-export function hasNoReleasedApiPath(objectName: string): boolean {
-  return NO_PATH_OBJECTS.has((objectName || '').toUpperCase());
+/**
+ * Whether the catalog shows no released-API path for an object.
+ *
+ * Omitted, or naming the default file, the answer is `NO_PATH_OBJECTS`. Naming
+ * another shipped snapshot (a Private Edition release list, roadmap 7.10), the
+ * release state comes from that snapshot under the rules `buildMerged`
+ * applies: the curated layer still wins, the classification file is
+ * release-agnostic. `/api/abcd-classify` used to answer this from the default
+ * file while grading from the snapshot, so one response mixed two catalogs
+ * under one snapshot reference (QA review of e7372791c70d).
+ */
+export function hasNoReleasedApiPath(objectName: string, snapshot?: string): boolean {
+  const key = (objectName || '').toUpperCase();
+  const release = releaseArtifact(snapshot);
+  if (release === CR) return NO_PATH_OBJECTS.has(key);
+  if (Object.prototype.hasOwnProperty.call(SAP_API_CATALOG, key)) return false;
+  const entry = release.entries?.[key];
+  if (entry) return releaseEntryHasNoPath(entry);
+  const classification = CR_CLASS.entries?.[key];
+  return Boolean(classification && classificationEntryHasNoPath(classification));
 }
 
 export const MERGED_CATALOG_SIZE = Object.keys(MERGED_TABLE_MAP).length;

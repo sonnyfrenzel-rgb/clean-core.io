@@ -93,7 +93,10 @@ const LEAKS: Array<{ file: string; gone: RegExp[]; present: string[] }> = [
   },
   {
     file: 'app/api/admin/approve-tenant/route.ts',
-    gone: [/error\.message \|\|/],
+    // The second shape: the caught message into the log. A body that fails
+    // `req.json()` comes back as a SyntaxError quoting that body, token and
+    // all (QA review of e7372791c70d); the log gets the error's class instead.
+    gone: [/error\.message \|\|/, /error: message\b/],
     // The one route here that answers two different things from its catch.
     // Everything unexpected is still redacted to the fixed sentence; a refusal
     // that `lib/approval-token.ts` marked as its own goes back to the caller,

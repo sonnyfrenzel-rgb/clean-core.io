@@ -41,9 +41,9 @@
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
   },
   "pending": {
-    "sha256OfLfNormalisedText": "924d13ea8f538772b80b039cf3621981b7f9b291fb90b6966447d98408f24d49",
+    "sha256OfLfNormalisedText": "def53aa157e536bf386ab00b1a552b40f05c28235be5a8e05140e1522c2fc290",
     "recordedAt": "2026-09-30",
-    "recordedFor": "QA full review of fc787674705f, 36f3d696ddda: isAdmin() honours the withdrawal mirror users/{uid}.isAdmin == false. Security audit of v2.20.0, Sicherheitsschritt B: create and update validation for users, projects, files, abap_examples, support_tickets, registration_requests and tenant_access_requests; uploads and support tickets owner-read only. Narrows only; no client project field added or removed. Braucht Sonnys Rules-Deploy (npm run deploy:rules). QA review of a7e0ae36c896: accountActive() counts a missing caller profile as inactive, as assertAccountActive does on the server. Narrows only.",
+    "recordedFor": "QA full review of fc787674705f, 36f3d696ddda: isAdmin() honours the withdrawal mirror users/{uid}.isAdmin == false. Security audit of v2.20.0, Sicherheitsschritt B: create and update validation for users, projects, files, abap_examples, support_tickets, registration_requests and tenant_access_requests; uploads and support tickets owner-read only. Narrows only; no client project field added or removed. Braucht Sonnys Rules-Deploy (npm run deploy:rules). QA review of a7e0ae36c896: accountActive() counts a missing caller profile as inactive, as assertAccountActive does on the server. Narrows only. QA review of e7372791c70d: isAdmin() also denies when the caller profile is missing (an erased administrator's still-valid token). Narrows only.",
     "addsToClient": [],
     "removesFromClient": [],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",

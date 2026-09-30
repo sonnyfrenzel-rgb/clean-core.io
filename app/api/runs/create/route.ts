@@ -171,6 +171,12 @@ export async function POST(req: NextRequest) {
     if (!legacyCode) {
       return NextResponse.json({ error: 'Project does not contain ABAP source code to analyze.' }, { status: 400 });
     }
+    // A source is text. Anything else used to reach `Buffer.byteLength` below,
+    // which throws on a non-string, and came back as a 500 (QA review of
+    // e7372791c70d).
+    if (typeof legacyCode !== 'string') {
+      return NextResponse.json({ error: 'The ABAP source must be text.', code: 'not-abap' }, { status: 400 });
+    }
     // Refused before anything is computed, and before the quota is reserved.
     // `legacyCode` comes straight off the body here, so nothing else had looked
     // at its size — not `firestore.rules`, which only governs what is stored.
@@ -687,6 +693,7 @@ export async function POST(req: NextRequest) {
     // the profile half of the same defect (see request-tenant-access).
     const projectRef = db.collection('projects').doc(projectId);
     let sourceMoved = false;
+    let profileMoved = false;
     let projectGone = false;
     await db.runTransaction(async (tx: any) => {
       const fresh = await tx.get(projectRef);
@@ -699,6 +706,16 @@ export async function POST(req: NextRequest) {
       const nowSource = typeof freshData.legacyCode === 'string' ? freshData.legacyCode : '';
       if (nowSource !== readSource) {
         sourceMoved = true;
+        return;
+      }
+      // The same rule for the declared target. Two runs over the same source
+      // under different profiles used to commit in finishing order, so the
+      // slower, older request put its profile back over the one the newer run
+      // had just made current (QA review of e7372791c70d).
+      const profileAt = (d: Record<string, unknown> | undefined) =>
+        JSON.stringify([d?.s4Deployment ?? null, d?.assessmentTarget ?? null]);
+      if (profileAt(freshData) !== profileAt(projectData)) {
+        profileMoved = true;
         return;
       }
       // Rebuilt from the transaction's own snapshot rather than the one read at
@@ -834,7 +851,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (sourceMoved) {
+    if (sourceMoved || profileMoved) {
       // Nothing was written. The unit goes back, because the analysis did not
       // become this project's state — the same rule as any other failure.
       //
@@ -850,6 +867,20 @@ export async function POST(req: NextRequest) {
         chargedUid = null;
         chargedHash = null;
         reservation = null;
+      }
+      if (profileMoved) {
+        logger.warn('runs/create refused: the target profile changed while the analysis ran', {
+          route: 'api/runs/create',
+          projectId,
+        });
+        return NextResponse.json(
+          {
+            error:
+              'The target profile of this project changed while this analysis was running. Nothing was overwritten — re-run the analysis for the current target.',
+            code: 'profile-moved',
+          },
+          { status: 409 },
+        );
       }
       logger.warn('runs/create refused: the source changed while the analysis ran', {
         route: 'api/runs/create',

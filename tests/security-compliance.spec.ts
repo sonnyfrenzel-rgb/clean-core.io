@@ -255,13 +255,13 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
 
     // 3. The same link, a second time, after the decision was reversed.
     //
-    // `lib/approval-token.ts` signs `uid.requestType.action.exp` and nothing
-    // else — no nonce, no server state, seven days. So the approve link minted
-    // for this request stays cryptographically valid after a rejection, and
-    // until 23.09.2026 replaying it silently granted tenant access again to a
-    // user who had been refused and had not asked twice (security audit of
-    // v2.14.0, SEC-2026-343). Nothing about the token changed; what changed is
-    // that the approval now needs the request to still be open.
+    // Until UX-152 `lib/approval-token.ts` signed `uid.requestType.action.exp`
+    // and nothing else — no nonce, no server state, seven days. So an approve
+    // link stayed cryptographically valid after a rejection, and until
+    // 23.09.2026 replaying it silently granted tenant access again to a user who
+    // had been refused and had not asked twice (security audit of v2.14.0,
+    // SEC-2026-343). The approval has needed the request to still be open since
+    // then, and the token has carried the request's nonce since UX-152.
     const rejectRes = await request.post('/api/admin/approve-tenant', {
       headers: { 'Authorization': `Bearer ${adminToken}` },
       data: { uid: normalUserUid, token: createApprovalToken(normalUserUid, 'tenant', 'reject', undefined, nonce2), action: 'reject' },

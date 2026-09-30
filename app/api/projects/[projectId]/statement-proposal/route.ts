@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { logger, errMessage } from '@/lib/logger';
 import {
   verifyRequestAuth,
@@ -284,10 +285,34 @@ export async function POST(
     // `set` without merge: a new proposal replaces the old one whole. Keeping a
     // sentence of the previous answer next to those of this one would be a
     // record no model call produced.
-    await db
-      .collection('projects').doc(gate.projectId)
-      .collection(COLLECTION).doc(DOC)
-      .set({ ...record, requestedBy: gate.uid });
+    //
+    // In a transaction that reads the project again. The gate above is a read;
+    // a project deleted after it used to receive the proposal anyway, and a
+    // subcollection document outlives its deleted parent (QA review of
+    // e7372791c70d). Owner and source are asked again for the same reason.
+    const projectRef: DocumentReference = db.collection('projects').doc(gate.projectId);
+    const outcome: 'gone' | 'source-moved' | 'written' = await db.runTransaction(async (tx: Transaction) => {
+      const fresh = await tx.get(projectRef);
+      const data = fresh.exists ? fresh.data() || {} : null;
+      if (!data || data.userId !== gate.uid) return 'gone' as const;
+      if (typeof data.legacyCode !== 'string' || statementProposalContextOf(data.legacyCode).digest !== context.digest) {
+        return 'source-moved' as const;
+      }
+      tx.set(projectRef.collection(COLLECTION).doc(DOC), { ...record, requestedBy: gate.uid });
+      return 'written' as const;
+    });
+    if (outcome === 'gone') {
+      return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
+    }
+    if (outcome === 'source-moved') {
+      return NextResponse.json(
+        {
+          error: 'The source changed since these sentences were asked for. Open the stage again and ask again.',
+          code: 'source-moved',
+        },
+        { status: 409 },
+      );
+    }
 
     return NextResponse.json({ record });
   } catch (err: unknown) {

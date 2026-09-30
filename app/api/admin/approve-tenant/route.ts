@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminRequest, approveTenantWithToken, assertAdminStepUp } from '@/lib/firebase-admin';
-import { logger, errMessage } from '@/lib/logger';
+import { logger, errMessage, providerErrorShape } from '@/lib/logger';
 import { isFirestoreId } from '@/lib/firestore-id';
 
 export async function POST(req: NextRequest) {
@@ -64,9 +64,18 @@ export async function POST(req: NextRequest) {
     // is not in doubt and 401 would send them to re-authenticate for nothing —
     // what is wrong is the `token` field they sent. 500 stays for the failures
     // nobody chose.
+    //
+    // The log gets the error's class and code, not its text. The text is what
+    // can carry the token: a body that fails `req.json()` comes back as a
+    // SyntaxError quoting the start of that body, token included (QA review of
+    // e7372791c70d). A refusal the token module made is named as one.
     const message = errMessage(error);
     const deliberate = message.startsWith('Invalid verification token');
-    logger.error('approve-tenant failed', { route: 'api/admin/approve-tenant', error: message });
+    logger.error('approve-tenant failed', {
+      route: 'api/admin/approve-tenant',
+      ...providerErrorShape(error),
+      refusal: deliberate ? 'invalid-token' : null,
+    });
     return NextResponse.json(
       { error: deliberate ? 'Invalid verification token.' : 'Internal Server Error' },
       { status: deliberate ? 400 : 500 },
