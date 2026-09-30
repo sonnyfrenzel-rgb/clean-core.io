@@ -20,11 +20,14 @@ import { escapeHtml as escapeHtmlFromUtils } from '../lib/utils';
  */
 
 const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
-const ANALYZE = 'app/(app)/project/[projectId]/analyze/page.tsx';
+const ANALYZE_PAGE = 'app/(app)/project/[projectId]/analyze/page.tsx';
 const DESIGN = 'app/(app)/project/[projectId]/design/page.tsx';
 const DOCS = 'app/(app)/project/[projectId]/documentation/page.tsx';
 /** The documentation stage's two Confluence pages, moved out of the page in block D, D.16a. */
 const DOCS_EXPORT = 'lib/documentation-export.ts';
+/** The analysis and design Confluence pages, moved out of their pages in block D, D.28. */
+const ANALYZE = 'lib/analysis-export.ts';
+const DESIGN_EXPORT = 'lib/design-export.ts';
 
 /** The interpolations of one template region, minus the ones we build ourselves. */
 function modelValues(source: string, from: string, to: string): string[] {
@@ -43,7 +46,7 @@ function modelValues(source: string, from: string, to: string): string[] {
 }
 
 test('the design export escapes every value the model wrote', () => {
-  const left = modelValues(read(DESIGN), 'const structureRows', 'if (viewOnly) {');
+  const left = modelValues(read(DESIGN_EXPORT), 'const structureRows', 'export function designExportFileName');
   expect(left, `unescaped in the design export: ${left.join(', ')}`).toEqual([]);
 });
 
@@ -79,6 +82,22 @@ test('the engine documentation export carries the business layer, escaped and ma
   expect(all.length, 'the scan found no value in the business layer').toBeGreaterThan(10);
   const raw = all.filter((e) => !e.startsWith('esc('));
   expect(raw, `unescaped in the business layer of the engine export: ${raw.join(', ')}`).toEqual([]);
+});
+
+test('the analysis and design stages build their Confluence pages only through the escaping modules', () => {
+  // D.28 moved both templates out of the pages, as D.16a did for documentation;
+  // a page must not grow a template of its own again beside them, one that the
+  // checks in this file would not read.
+  const analyze = read(ANALYZE_PAGE);
+  expect(analyze).toContain("from '@/lib/analysis-export'");
+  expect(analyze).toContain('buildAnalysisExportHtml(');
+  const design = read(DESIGN);
+  expect(design).toContain("from '@/lib/design-export'");
+  expect(design).toContain('buildDesignExportHtml(');
+  for (const [rel, page] of [[ANALYZE_PAGE, analyze], [DESIGN, design]]) {
+    expect(page, `${rel} writes a document of its own again`).not.toContain('<html');
+    expect(page, `${rel} writes a document of its own again`).not.toContain('<table');
+  }
 });
 
 test('the documentation stage builds its Confluence pages only through the escaping module', () => {
@@ -229,20 +248,26 @@ test('nothing foreign is interpolated into an attribute of an exported document'
   // conditional whose every branch is a literal of ours — and nothing else.
   const regions: Array<[string, string]> = [
     [ANALYZE, 'const gapsRows'],
-    [DESIGN, 'const structureRows'],
+    [DESIGN_EXPORT, 'const structureRows'],
     [DOCS_EXPORT, 'const html = `'],
   ];
   const ends: Record<string, string> = {
-    [ANALYZE]: 'const blob = new Blob',
-    [DESIGN]: 'if (viewOnly) {',
+    [ANALYZE]: 'export function analysisExportFileName',
+    [DESIGN_EXPORT]: 'export function designExportFileName',
     [DOCS_EXPORT]: '_Confluence.html',
   };
 
   const offenders: string[] = [];
-  let checked = 0;
+  const checked: Record<string, number> = {};
   for (const [file, from] of regions) {
-    const seen = interpolations(region(read(file), from, ends[file])).filter((e) => e.inAttr);
-    checked += seen.length;
+    const source = read(file);
+    // Each region has to be found by both its markers, or the scan below reads
+    // nothing and passes for the wrong reason.
+    const start = source.indexOf(from);
+    expect(start, `${file}: the region start "${from}" is gone`).toBeGreaterThan(-1);
+    expect(source.indexOf(ends[file]), `${file}: the region end "${ends[file]}" is gone or before the start`).toBeGreaterThan(start);
+    const seen = interpolations(region(source, from, ends[file])).filter((e) => e.inAttr);
+    checked[file] = seen.length;
     for (const { expr } of seen) {
       if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(expr)) continue;
       if (yieldsOnlyOwnLiterals(expr)) continue;
@@ -250,9 +275,14 @@ test('nothing foreign is interpolated into an attribute of an exported document'
     }
   }
 
-  // If this drops to nothing the scan stopped finding the regions at all, and
-  // the check above would pass for the wrong reason.
-  expect(checked, 'no attribute interpolation was found — the scan lost its regions').toBeGreaterThan(15);
+  // If this drops to nothing the scan stopped finding attributes at all, and
+  // the check above would pass for the wrong reason. Per file since D.28: the
+  // analysis export picks every chip's class above the template (a dozen
+  // constants), the documentation export one ternary; the design export no
+  // longer interpolates into any attribute — its method chips were three
+  // colour ternaries each and are one neutral class now — so it has no floor.
+  expect(checked[ANALYZE], 'the analysis export: no attribute interpolation was found').toBeGreaterThanOrEqual(10);
+  expect(checked[DOCS_EXPORT], 'the documentation export: no attribute interpolation was found').toBeGreaterThanOrEqual(1);
   expect(offenders, `a value reaches an attribute of an exported document:\n${offenders.join('\n')}`).toEqual([]);
 });
 
@@ -265,7 +295,7 @@ test('nothing foreign is interpolated into an attribute of an exported document'
  */
 const ANALYSIS_EXPORT_EXCEPTIONS: Array<[string, string]> = [
   [
-    `item.isCustom ? '<span style="color:#0747a6;font-size:9px;">(Custom)</span>' : ''`,
+    `item.isCustom ? '<span class="meta">(Custom)</span>' : ''`,
     'a boolean chooses between our own markup and nothing; the value itself is never written',
   ],
   [
@@ -275,7 +305,7 @@ const ANALYSIS_EXPORT_EXCEPTIONS: Array<[string, string]> = [
 ];
 
 test('the analysis export escapes every stored value it writes', () => {
-  const seg = region(read(ANALYZE), 'const gapsRows', 'const blob = new Blob');
+  const seg = region(read(ANALYZE), 'const gapsRows', 'export function analysisExportFileName');
   const roots = /\b(data|project|item|g|cp|f|comparative|bizFallback)\./;
   const audited = new Set(ANALYSIS_EXPORT_EXCEPTIONS.map(([expr]) => expr));
 

@@ -26,6 +26,9 @@ const MEASURED_VALUE_SURFACES = [
   'app/(app)/project/[projectId]/transformation/page.tsx',
   'app/(app)/project/[projectId]/analyze/page.tsx',
   'app/(app)/project/[projectId]/design/page.tsx',
+  // The two stage exports, moved out of those pages in block D, D.28.
+  'lib/analysis-export.ts',
+  'lib/design-export.ts',
   'components/ArchitectSignOff.tsx',
 ];
 

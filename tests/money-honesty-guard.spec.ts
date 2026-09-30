@@ -33,6 +33,8 @@ import { signInViaLanding } from './helpers/sign-in';
 const ROOT = path.resolve(__dirname, '..');
 const read = (p: string) => fs.readFileSync(path.resolve(ROOT, p), 'utf8');
 const ANALYZE = 'app/(app)/project/[projectId]/analyze/page.tsx';
+/** The stage's Confluence export, moved out of the page in block D, D.28. */
+const ANALYSIS_EXPORT = 'lib/analysis-export.ts';
 
 const PROGRAM = "REPORT zcredit.\nSELECT SINGLE * FROM vbak INTO ls_order WHERE vbeln = p_vbeln.\nUPDATE vbak SET cmgst = 'B' WHERE vbeln = p_vbeln.\n";
 
@@ -78,10 +80,15 @@ test('every reader of a stored analysis masks amounts — in every stored shape'
   expect(containsAmount(formatAnalysisToMarkdown('# Legacy markdown analysis\n\nSaves €5,000.'))).toBe(false);
 
   // The Analyze stage, its export and the design prompt read through the shared reader, never a parse of their own.
+  // The export moved to lib/analysis-export.ts in block D, D.28: one reading on each side.
   const page = read(ANALYZE);
-  expect(page.match(/readStoredAnalysis<AnalysisData>\(project\.analysis\)/g)).toHaveLength(2);
+  const exported = read(ANALYSIS_EXPORT);
+  expect(page.match(/readStoredAnalysis<AnalysisData>\(project\.analysis\)/g)).toHaveLength(1);
+  expect(exported.match(/readStoredAnalysis<AnalysisData>\(project\.analysis\)/g)).toHaveLength(1);
   expect(page).not.toMatch(/project\.analysis\.replace\(\/\^```json/);
-  expect(page.match(/renderMarkdownSafe\(withoutUnapprovedMoney\(project\.analysis\)\)/g)).toHaveLength(2);
+  expect(exported).not.toMatch(/project\.analysis\.replace\(\/\^```json/);
+  expect(page.match(/renderMarkdownSafe\(withoutUnapprovedMoney\(project\.analysis\)\)/g)).toHaveLength(1);
+  expect(exported.match(/renderMarkdownSafe\(withoutUnapprovedMoney\(project\.analysis\)\)/g)).toHaveLength(1);
   expect(read('app/(app)/project/[projectId]/design/page.tsx')).toMatch(/JSON\.stringify\(withoutUnapprovedMoneyDeep\(designContext\)\)/);
 });
 
@@ -172,8 +179,10 @@ test('the Analyze stage and its export say "not determined" instead of an amount
   expect(audit).not.toMatch(/style: 'currency'|toLocaleString\(/);
   expect(audit).not.toMatch(/Estimated Cloud ROI|ROI Calculator/);
   const page = read(ANALYZE);
-  expect(page).toContain('<strong>Annual maintenance cost:</strong> not determined');
   expect(page).not.toMatch(/Expected Cloud ROI|bizFallback\.cloudRoiSummary|bizFallback\.estimatedMaintenanceCost/);
+  const exported = read(ANALYSIS_EXPORT);
+  expect(exported).toContain('<strong>Annual maintenance cost:</strong> not determined');
+  expect(exported).not.toMatch(/Expected Cloud ROI|bizFallback\.cloudRoiSummary|bizFallback\.estimatedMaintenanceCost/);
 });
 
 test('no screen outside Economics formats an amount of money', () => {
