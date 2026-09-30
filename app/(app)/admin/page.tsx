@@ -70,8 +70,14 @@ export default function AdminConsole() {
 
     setLoadingRequests(true);
     const q = query(collection(db, 'registration_requests'), orderBy('createdAt', 'desc'));
-    
+    // Each snapshot awaits one profile read per row before it can be shown, so
+    // an older snapshot can finish after a newer one. Only the latest may land,
+    // and none after unsubscribe.
+    let generation = 0;
+    let active = true;
+
     const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const mine = ++generation;
       try {
         const fetched = await Promise.all(snapshot.docs.map(async (docSnap) => {
           const data = docSnap.data();
@@ -102,18 +108,22 @@ export default function AdminConsole() {
             createdAt: dateObj
           };
         }));
+        if (!active || mine !== generation) return;
         setRequests(fetched);
       } catch (err) {
         console.error('Error fetching user profiles during snapshot processing:', err);
       } finally {
-        setLoadingRequests(false);
+        if (active && mine === generation) setLoadingRequests(false);
       }
     }, (err) => {
       console.error('Error listing registration requests:', err);
       setLoadingRequests(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [profile, profileLoading, db]);
 
   const handleApprove = async (uid: string) => {
@@ -611,8 +621,9 @@ function welcomeMailBadge(
       return { label: 'Welcome mail delivered', state: 'neutral', failed: false };
     case 'email.opened':
     case 'email.clicked':
-      // Read, not proven: an open pixel is no evidence, so not green (§1.1).
-      return { label: 'Welcome mail read', state: 'information', failed: false };
+      // Opened or clicked, not read: a privacy proxy or a link scanner fires the
+      // same events, so it is no evidence a person read it, and not green (§1.1).
+      return { label: 'Welcome mail opened or clicked', state: 'information', failed: false };
     default:
       return null;
   }
