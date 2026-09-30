@@ -73,6 +73,29 @@ test.describe('a request body is read under a bound', () => {
 test.describe('request-tenant-access', () => {
   const REL = 'app/api/request-tenant-access/route.ts';
 
+  test('the limit is per account, not per account and address', () => {
+    const src = code(REL);
+    const call = src.match(/assertRateLimit\(\s*`([^`]+)`/);
+    expect(call).not.toBeNull();
+    expect(call![1]).toContain('${decodedToken.uid}');
+    expect(call![1]).not.toContain('getClientIp');
+  });
+
+  test('the fields are cut before they are escaped into the mail', () => {
+    const src = code(REL);
+    expect(src).toMatch(/escapeHtml\(String\(body\?\.name[^\n]*\.slice\(0, MAX_NAME_CHARS\)\)/);
+    expect(src).toMatch(/escapeHtml\(String\(body\?\.motivation[^\n]*\.slice\(0, MAX_MOTIVATION_CHARS\)\)/);
+  });
+
+  test('the applicant is told "under review" only when an administrator holds the request', () => {
+    const src = code(REL);
+    const pending = src.indexOf('buildTenantPendingEmail(');
+    expect(pending).toBeGreaterThan(-1);
+    const gate = src.lastIndexOf('if (adminNotified) {', pending);
+    expect(gate, 'the applicant mail is sent whether or not the administrator was notified').toBeGreaterThan(-1);
+    // And the gate is the one right before the applicant block, not an earlier one.
+    expect(src.slice(gate, pending)).not.toContain('api.resend.com');
+  });
 });
 
 test.describe('the tenant mail routes report only what they did', () => {
