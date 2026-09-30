@@ -12,7 +12,15 @@ import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import Stepper from '@/components/Stepper';
 import type { Project } from '@/lib/types';
-import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, X, Rocket, CheckCircle2, Globe, Lock as LockIcon, Send, Sparkles, Eye, EyeOff, Clock, Loader2, BookOpen, ExternalLink, HelpCircle, ChevronDown, ChevronUp, Info, Database, Search, Layers, ChevronRight } from 'lucide-react';
+import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, Globe, Lock as LockIcon, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, ChevronDown, ChevronUp, Info, Database, Search, Layers, ChevronRight, MapPin } from 'lucide-react';
+import CcButton from '@/components/cc/Button';
+import CcLinkButton from '@/components/cc/LinkButton';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import { CcTag } from '@/components/cc/Tag';
+import { STATE_CLASSES } from '@/components/cc/state';
+import { stateChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
+import type { TestingPieSlice } from '@/components/TestingCharts';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { clsx } from 'clsx';
@@ -684,13 +692,24 @@ export default function TestingSandboxPage() {
   const verdictTone = (status?: string): 'pass' | 'fail' | 'none' =>
     status === 'Passed' ? 'pass' : status === 'Failed' ? 'fail' : 'none';
 
+  /**
+   * The state each verdict is drawn in (DESIGN.md §1.1, §4). Green only where a
+   * test really passed; a failure is `error`; everything without a verdict —
+   * Not run, Skipped, Todo, Simulated — is *not determined*, neutral, and not
+   * the amber it used to be: amber says "watch out", and "we do not know" is
+   * not a warning about the code.
+   */
+  const VERDICT_STATE = { pass: 'success', fail: 'error', none: 'neutral' } as const;
+
   // Tests without a verdict get their own slice. Leaving them out would make a
-  // chart of four passes and twenty skips look like a clean sweep.
-  const pieData = stats ? [
-    { name: 'Passed', value: stats.passed, color: '#006b2c' },
-    { name: 'Failed', value: stats.failed, color: '#dc2626' },
+  // chart of four passes and twenty skips look like a clean sweep. Colours from
+  // `lib/chart-colors.ts` (§1.8): no chart is green, so a pass is `information`
+  // there, a failure `error`, and "no verdict" the dashed not-determined area.
+  const pieData: TestingPieSlice[] = stats ? [
+    { name: 'Passed', value: stats.passed, color: stateChartColor('information').value },
+    { name: 'Failed', value: stats.failed, color: stateChartColor('error').value },
     ...(stats.inconclusive > 0
-      ? [{ name: 'No verdict', value: stats.inconclusive, color: '#d97706' }]
+      ? [{ name: 'No verdict', value: stats.inconclusive, color: 'var(--cc-surface-muted)', notDetermined: true }]
       : []),
   ] : [];
 
@@ -775,19 +794,39 @@ export default function TestingSandboxPage() {
 
   const phases = workflowSteps(project);
 
-  if (loading) return <div className="p-8">Loading...</div>;
+
+  // Block D (D.17a): one vocabulary of surfaces and type for the whole stage —
+  // DESIGN.md §1.1–§1.4. A card is the workspace card, a field is the field, a
+  // label is the micro label; nothing here picks its own colour any more.
+  const CARD = 'bg-cc-surface border border-cc-line rounded-cc-card shadow-cc';
+  const LABEL = 'cc-text-label text-cc-ink-muted';
+  const FIELD =
+    'w-full bg-cc-surface border border-cc-field-border rounded-cc-row cc-text-cell text-cc-ink placeholder:text-cc-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus';
+  const HINT = 'cc-text-meta font-medium text-cc-ink-muted leading-relaxed';
+  const CODE = 'bg-cc-surface px-1 py-0.5 rounded font-cc-mono text-[12px] border border-cc-line';
+  const authOption = (selected: boolean) =>
+    clsx(
+      'p-3 rounded-cc-row border cc-text-meta font-medium leading-relaxed transition-colors',
+      selected ? 'bg-cc-surface border-cc-ink ring-1 ring-cc-ink' : 'bg-cc-surface border-cc-line',
+    );
+  const STEP = 'bg-cc-ink text-cc-on-dark cc-text-meta w-6 h-6 rounded-cc-row flex items-center justify-center shrink-0';
+  const connectionState = connectionStatus === 'connected' ? 'success' : connectionStatus === 'failed' ? 'error' : 'neutral';
+
+  if (loading) return <div className="p-8 cc-text-body text-cc-ink-muted">Loading...</div>;
   if (loadError) return (
     <div className="p-8 max-w-xl">
-      <div className="p-6 bg-rose-50 border border-rose-200 rounded-2xl text-sm text-rose-900 font-medium">
-        <p className="font-black mb-1">This stage could not be opened</p>
-        <p>{loadError}</p>
-        <button type="button" onClick={() => window.location.reload()} className="mt-4 bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors">Try again</button>
-      </div>
+      <CcMessageStrip
+        state="error"
+        headline="This stage could not be opened"
+        actions={<CcButton onClick={() => window.location.reload()}>Try again</CcButton>}
+      >
+        {loadError}
+      </CcMessageStrip>
     </div>
   );
 
   return (
-    <div className="animate-in fade-in duration-500 bg-[#f8f9ff] min-h-screen p-4 md:p-8">
+    <div className="bg-cc-page min-h-screen p-4 md:p-8">
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
@@ -805,47 +844,47 @@ export default function TestingSandboxPage() {
         ]}
       />
 
-      <StageHeader title="Testing &amp; Sandbox">
+      <StageHeader stage="testing">
         {isAbapCloud
           ? 'Generate ABAP Unit stubs and run simulated validation in a secure SAP ADT environment.'
           : 'Generate test cases and run them against mocks in a restricted Node.js process.'}
       </StageHeader>
 
       {/* Explanation Boxes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-10">
-        <div className="bg-white p-5 md:p-6 rounded-2xl border border-blue-100 shadow-sm flex gap-4">
-          <ShieldCheck className="w-8 h-8 md:w-10 md:h-10 text-blue-600 flex-shrink-0" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className={clsx(CARD, 'p-4 md:p-5 flex gap-4')}>
+          <ShieldCheck className="w-6 h-6 text-cc-ink-muted flex-shrink-0" aria-hidden="true" />
           <div>
-            <h3 className="font-bold text-blue-900 mb-1 text-sm md:text-base">
+            <h3 className="cc-text-h3 text-cc-ink mb-1">
               {isAbapCloud ? 'ABAP Unit Compiler' : 'Real Execution, Against Mocks'}
             </h3>
-            <p className="text-xs md:text-sm text-blue-700">
-              {isAbapCloud 
+            <p className="cc-text-cell text-cc-ink-muted">
+              {isAbapCloud
                 ? 'Generates standardized ABAP Unit local test classes verifying RAP custom behavioral entities.'
                 : 'The generated Node.js code really runs — in a restricted child process, against mocks. Real results for the code, not for a tenant.'
               }
             </p>
           </div>
         </div>
-        <div className="bg-white p-5 md:p-6 rounded-2xl border border-green-100 shadow-sm flex gap-4">
-          <Activity className="w-8 h-8 md:w-10 md:h-10 text-green-600 flex-shrink-0" />
+        <div className={clsx(CARD, 'p-4 md:p-5 flex gap-4')}>
+          <Activity className="w-6 h-6 text-cc-ink-muted flex-shrink-0" aria-hidden="true" />
           <div>
-            <h3 className="font-bold text-green-900 mb-1 text-sm md:text-base">
+            <h3 className="cc-text-h3 text-cc-ink mb-1">
               {isAbapCloud ? 'SQL Test Double Mock' : 'SAP Mock Library'}
             </h3>
-            <p className="text-xs md:text-sm text-green-700">
-              {isAbapCloud 
+            <p className="cc-text-cell text-cc-ink-muted">
+              {isAbapCloud
                 ? 'Realistic SQL Double DB schemas are mocked to test transactional behavior logic without core pollution.'
                 : 'Realistic SAP response patterns are injected to ensure business logic parity.'
               }
             </p>
           </div>
         </div>
-        <div className="bg-white p-5 md:p-6 rounded-2xl border border-purple-100 shadow-sm flex gap-4">
-          <BarChart3 className="w-8 h-8 md:w-10 md:h-10 text-purple-600 flex-shrink-0" />
+        <div className={clsx(CARD, 'p-4 md:p-5 flex gap-4')}>
+          <BarChart3 className="w-6 h-6 text-cc-ink-muted flex-shrink-0" aria-hidden="true" />
           <div>
-            <h3 className="font-bold text-purple-900 mb-1 text-sm md:text-base">Estimated Coverage</h3>
-            <p className="text-xs md:text-sm text-purple-700 font-bold uppercase tracking-tight">
+            <h3 className="cc-text-h3 text-cc-ink mb-1">Estimated Coverage</h3>
+            <p className="cc-text-meta text-cc-ink">
               {project?.coverageEstimate && !storedSuiteRejected
                 ? <span data-stage-output="coverageEstimate">{`${project.coverageEstimate.percentage}% Coverage`}</span>
                 : 'Generate tests to see estimate'}
@@ -855,25 +894,25 @@ export default function TestingSandboxPage() {
       </div>
 
       {/* Environment Selection Toggle */}
-      <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className={clsx(CARD, 'p-4 md:p-5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4')}>
         <div>
-          <h2 className="text-lg font-bold text-[#0b1c30] flex items-center gap-2">
-            <Globe className="w-5 h-5 text-blue-600" />
+          <h2 className="cc-text-h2 text-cc-ink flex items-center gap-2">
+            <Globe className="w-5 h-5 text-cc-ink-muted" aria-hidden="true" />
             Validation Environment
           </h2>
           {/* Two tabs, named after what each one does. The lock is not repeated
               here: it stands once, inside the tenant tab it applies to (roadmap
               1.7, ADR-004). */}
-          <p className="text-xs text-[#0b1c30]/60 mt-1 font-medium">Mock runs the generated suite in the sandbox. The tenant tab checks a connection and reads its OData metadata.</p>
+          <p className="cc-text-cell text-cc-ink-muted mt-1">Mock runs the generated suite in the sandbox. The tenant tab checks a connection and reads its OData metadata.</p>
         </div>
-        <div className="flex bg-gray-100 p-1.5 rounded-2xl w-full sm:w-auto self-start sm:self-auto">
+        <div className="flex bg-cc-surface-muted border border-cc-line p-1 rounded-cc-row w-full sm:w-auto self-start sm:self-auto">
           <button
             onClick={() => handleEnvChange('mock')}
             className={clsx(
-              "flex-1 sm:flex-none px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all text-center",
-              activeEnvTab === 'mock' 
-                ? "bg-[#0b1c30] text-white shadow-md" 
-                : "text-gray-500 hover:text-gray-900"
+              "flex-1 sm:flex-none px-4 min-h-[32px] rounded-cc-row text-[13px] font-semibold transition-colors text-center",
+              activeEnvTab === 'mock'
+                ? "bg-cc-ink text-cc-on-dark"
+                : "text-cc-ink-muted hover:text-cc-ink"
             )}
           >
             Mock Environment
@@ -881,10 +920,10 @@ export default function TestingSandboxPage() {
           <button
             onClick={() => handleEnvChange('live')}
             className={clsx(
-              "flex-1 sm:flex-none px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-center",
-              activeEnvTab === 'live' 
-                ? "bg-blue-600 text-white shadow-md" 
-                : "text-gray-500 hover:text-gray-900"
+              "flex-1 sm:flex-none px-4 min-h-[32px] rounded-cc-row text-[13px] font-semibold transition-colors flex items-center justify-center gap-2 text-center",
+              activeEnvTab === 'live'
+                ? "bg-cc-ink text-cc-on-dark"
+                : "text-cc-ink-muted hover:text-cc-ink"
             )}
           >
             {/* ADR-004 (15.09.2026): the tab stays visible and is named after
@@ -903,7 +942,7 @@ export default function TestingSandboxPage() {
             initial={{ opacity: 0, height: 0, marginBottom: 0 }}
             animate={{ opacity: 1, height: 'auto', marginBottom: 24 }}
             exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-            className="overflow-hidden animate-in fade-in"
+            className="overflow-hidden"
           >
             {LIVE_TEST_EXECUTION.locked && (
               // The documented lock (lib/locked-paths.ts, G0:R0), said once, where
@@ -912,51 +951,43 @@ export default function TestingSandboxPage() {
               // It stood in three places on this one screen before: here, as a
               // pill on the tab, and beside the run button. Three copies of a
               // refusal read as three different refusals.
-              <div data-live-test-lock className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
-                <LockIcon className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                <div className="text-xs text-amber-900 font-medium leading-relaxed">
-                  <p className="font-bold mb-0.5">Tests against a tenant are locked</p>
-                  <p>{LIVE_TEST_EXECUTION.userNotice}</p>
-                  <p className="mt-1.5">
+              <div data-live-test-lock className="mb-4">
+                <CcMessageStrip state="warning" headline="Tests against a tenant are locked">
+                  <span className="block">{LIVE_TEST_EXECUTION.userNotice}</span>
+                  <span className="block mt-2">
                     {profile?.s4TenantAccessAllowed || profile?.isAdmin
                       ? 'Bring your own tenant (BYOT) is granted for this account, so the connection check, the OData metadata read and the read-only call below are open to you. That approval does not lift this lock: it is lifted when the isolated live runner has passed its proof on the deployed service and its review, not by a permission.'
                       : profile?.s4TenantAccessRequested
                         ? 'Bring your own tenant (BYOT) is what opens the connection check, the OData metadata read and the read-only call — your request for it is with an administrator. That approval does not lift this lock: it is lifted when the isolated live runner has passed its proof on the deployed service and its review, not by a permission.'
                         : 'Bring your own tenant (BYOT) is what opens the connection check, the OData metadata read and the read-only call: ask for it with the form below and an administrator reviews it by hand. That approval does not lift this lock: it is lifted when the isolated live runner has passed its proof on the deployed service and its review, not by a permission.'}
-                  </p>
-                </div>
+                  </span>
+                </CcMessageStrip>
               </div>
             )}
             {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
               // Unlocked Active Connection Card
-              <div className="bg-white border border-gray-100 rounded-[2rem] p-6 md:p-8 shadow-sm">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-6 mb-6">
+              <div className={clsx(CARD, 'p-4 md:p-6')}>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-cc-line pb-4 mb-4">
                   <div>
                     <div className="flex items-center gap-3 flex-wrap">
-                      <h3 className="text-xl font-black text-[#0b1c30] tracking-tight uppercase flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-blue-600" />
+                      <h3 className="cc-text-h2 text-cc-ink flex items-center gap-2">
+                        <Globe className="w-5 h-5 text-cc-ink-muted" aria-hidden="true" />
                         S/4HANA Live Tenant Bridge
                       </h3>
-                      <Link 
+                      <Link
                         href="/settings"
-                        className="text-xs text-blue-600 hover:text-blue-700 font-extrabold flex items-center gap-1 hover:underline shrink-0"
+                        className="text-[13px] font-semibold text-cc-information hover:underline flex items-center gap-1 shrink-0"
                       >
                         Profile Settings ↗
                       </Link>
                     </div>
-                    <p className="text-xs text-gray-500 font-medium mt-1">Configure your non-productive S/4HANA Public Cloud endpoint to check the connection and read OData metadata.</p>
+                    <p className="cc-text-cell text-cc-ink-muted mt-1">Configure your non-productive S/4HANA Public Cloud endpoint to check the connection and read OData metadata.</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={clsx(
-                      "text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border flex items-center gap-1.5",
-                      connectionStatus === 'connected' ? "bg-green-50 border-green-200 text-green-700" :
-                      connectionStatus === 'failed' ? "bg-red-50 border-red-200 text-red-700" : "bg-gray-50 border-gray-250 text-gray-500"
-                    )}>
-                      <span className={clsx(
-                        "w-2 h-2 rounded-full",
-                        connectionStatus === 'connected' ? "bg-green-500 animate-pulse" :
-                        connectionStatus === 'failed' ? "bg-red-500" : "bg-gray-400"
-                      )}></span>
+                    {/* Text with a state dot — the word carries the state, the
+                        dot repeats it, and nothing pulses (§1.7). */}
+                    <span className={clsx('inline-flex items-center gap-2 cc-text-meta', STATE_CLASSES[connectionState].text)}>
+                      <span aria-hidden="true" className={clsx('w-2 h-2 rounded-full', STATE_CLASSES[connectionState].mark)}></span>
                       {connectionStatus === 'connected' ? 'Connected' : connectionStatus === 'failed' ? 'Connection Failed' : 'Disconnected'}
                     </span>
                   </div>
@@ -967,18 +998,16 @@ export default function TestingSandboxPage() {
                   <button
                     type="button"
                     onClick={() => setShowSetupGuide(!showSetupGuide)}
-                    className="w-full flex items-center justify-between bg-gradient-to-r from-indigo-50 via-sky-50 to-blue-50 border border-indigo-200/60 p-4 rounded-2xl hover:shadow-sm transition-all group"
+                    className="w-full flex items-center justify-between bg-cc-surface-muted border border-cc-line p-4 rounded-cc-card hover:border-cc-field-border transition-colors group"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="bg-indigo-600/10 p-2 rounded-xl shrink-0">
-                        <BookOpen className="w-5 h-5 text-indigo-600" />
-                      </div>
+                      <BookOpen className="w-5 h-5 text-cc-ink-muted shrink-0" aria-hidden="true" />
                       <div className="text-left">
-                        <p className="text-xs font-black text-indigo-950 uppercase tracking-widest">Quick Start Guide — How to Connect Your S/4HANA Tenant</p>
-                        <p className="text-[10px] text-indigo-700/80 font-semibold mt-0.5">Step-by-step instructions for every authentication method. Click to {showSetupGuide ? 'collapse' : 'expand'}.</p>
+                        <p className="cc-text-h3 text-cc-ink">Quick Start Guide — How to Connect Your S/4HANA Tenant</p>
+                        <p className="cc-text-meta font-medium text-cc-ink-muted mt-1">Step-by-step instructions for every authentication method. Click to {showSetupGuide ? 'collapse' : 'expand'}.</p>
                       </div>
                     </div>
-                    {showSetupGuide ? <ChevronUp className="w-5 h-5 text-indigo-500" /> : <ChevronDown className="w-5 h-5 text-indigo-500" />}
+                    {showSetupGuide ? <ChevronUp className="w-5 h-5 text-cc-ink-muted" /> : <ChevronDown className="w-5 h-5 text-cc-ink-muted" />}
                   </button>
 
                   <AnimatePresence>
@@ -989,32 +1018,32 @@ export default function TestingSandboxPage() {
                         exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="bg-gradient-to-br from-indigo-50/80 to-sky-50/60 border border-t-0 border-indigo-200/40 p-5 rounded-b-2xl -mt-2 space-y-4">
-                          
+                        <div className="bg-cc-surface-muted border border-t-0 border-cc-line p-5 rounded-b-cc-card -mt-2 space-y-4">
+
                           {/* Step 1 — Always visible */}
                           <div className="flex gap-3 items-start">
-                            <span className="bg-indigo-600 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">1</span>
+                            <span className={STEP}>1</span>
                             <div>
-                              <p className="text-xs font-bold text-indigo-950">Choose your Authentication Type</p>
-                              <p className="text-[11px] text-indigo-800/80 font-medium leading-relaxed">
+                              <p className="cc-text-h3 text-cc-ink">Choose your Authentication Type</p>
+                              <p className="cc-text-cell text-cc-ink-muted leading-relaxed">
                                 Select the method that matches your SAP system setup from the dropdown below. Not sure which to use? Here is a quick overview:
                               </p>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                                <div className={clsx("p-2.5 rounded-xl border text-[10px] font-semibold leading-relaxed transition-all", s4AuthType === 'basic' ? "bg-white border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white/50 border-gray-200/80")}>
-                                  <span className="font-black text-indigo-900 block mb-0.5">Basic Authentication</span>
-                                  <span className="text-gray-600">Username + Password. Use for S/4HANA Cloud test tenants with Communication Arrangements (API users).</span>
+                                <div className={authOption(s4AuthType === 'basic')}>
+                                  <span className="font-bold text-cc-ink block mb-1">Basic Authentication</span>
+                                  <span className="text-cc-ink-muted">Username + Password. Use for S/4HANA Cloud test tenants with Communication Arrangements (API users).</span>
                                 </div>
-                                <div className={clsx("p-2.5 rounded-xl border text-[10px] font-semibold leading-relaxed transition-all", s4AuthType === 'oauth2' ? "bg-white border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white/50 border-gray-200/80")}>
-                                  <span className="font-black text-indigo-900 block mb-0.5">OAuth 2.0 Client Credentials</span>
-                                  <span className="text-gray-600">Client ID + Secret. Use when your S/4HANA tenant provides OAuth token endpoints via Communication Arrangements.</span>
+                                <div className={authOption(s4AuthType === 'oauth2')}>
+                                  <span className="font-bold text-cc-ink block mb-1">OAuth 2.0 Client Credentials</span>
+                                  <span className="text-cc-ink-muted">Client ID + Secret. Use when your S/4HANA tenant provides OAuth token endpoints via Communication Arrangements.</span>
                                 </div>
-                                <div className={clsx("p-2.5 rounded-xl border text-[10px] font-semibold leading-relaxed transition-all", s4AuthType === 'sap_hub' ? "bg-white border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white/50 border-gray-200/80")}>
-                                  <span className="font-black text-indigo-900 block mb-0.5">SAP Business Accelerator Hub Sandbox</span>
-                                  <span className="text-gray-600">Free sandbox API key. No own tenant needed — perfect for testing with SAP{"'"}s public demo APIs.</span>
+                                <div className={authOption(s4AuthType === 'sap_hub')}>
+                                  <span className="font-bold text-cc-ink block mb-1">SAP Business Accelerator Hub Sandbox</span>
+                                  <span className="text-cc-ink-muted">Free sandbox API key. No own tenant needed — perfect for testing with SAP{"'"}s public demo APIs.</span>
                                 </div>
-                                <div className={clsx("p-2.5 rounded-xl border text-[10px] font-semibold leading-relaxed transition-all", s4AuthType === 'btp_destination' ? "bg-white border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white/50 border-gray-200/80")}>
-                                  <span className="font-black text-indigo-900 block mb-0.5">BTP Destination Service (JSON)</span>
-                                  <span className="text-gray-600">Paste your BTP destination JSON config. For enterprises routing via SAP BTP with Cloud Connector or Internet proxy.</span>
+                                <div className={authOption(s4AuthType === 'btp_destination')}>
+                                  <span className="font-bold text-cc-ink block mb-1">BTP Destination Service (JSON)</span>
+                                  <span className="text-cc-ink-muted">Paste your BTP destination JSON config. For enterprises routing via SAP BTP with Cloud Connector or Internet proxy.</span>
                                 </div>
                               </div>
                             </div>
@@ -1022,37 +1051,37 @@ export default function TestingSandboxPage() {
 
                           {/* Step 2 — Dynamic based on auth type */}
                           <div className="flex gap-3 items-start">
-                            <span className="bg-indigo-600 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">2</span>
+                            <span className={STEP}>2</span>
                             <div>
-                              <p className="text-xs font-bold text-indigo-950">Enter Your Connection Details</p>
+                              <p className="cc-text-h3 text-cc-ink">Enter Your Connection Details</p>
                               {s4AuthType === 'basic' && (
-                                <div className="text-[11px] text-indigo-800/80 font-medium leading-relaxed space-y-1 mt-1">
-                                  <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className="bg-white/80 px-1.5 py-0.5 rounded text-[10px] font-mono border border-indigo-200/50">https://my300120-api.s4hana.cloud.sap</code></p>
-                                  <p>→ <strong>Username:</strong> The Communication User name from your Communication Arrangement (e.g. <code className="bg-white/80 px-1.5 py-0.5 rounded text-[10px] font-mono border border-indigo-200/50">CC_INTEGRATOR</code>)</p>
+                                <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
+                                  <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className={CODE}>https://my300120-api.s4hana.cloud.sap</code></p>
+                                  <p>→ <strong>Username:</strong> The Communication User name from your Communication Arrangement (e.g. <code className={CODE}>CC_INTEGRATOR</code>)</p>
                                   <p>→ <strong>Password:</strong> The password assigned to that Communication User</p>
-                                  <p className="text-[10px] text-indigo-600 mt-1">📍 Where to find: S/4HANA Cloud → Communication Management → Communication Arrangements → Your arrangement → Inbound Communication → User Name</p>
+                                  <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: S/4HANA Cloud → Communication Management → Communication Arrangements → Your arrangement → Inbound Communication → User Name</p>
                                 </div>
                               )}
                               {s4AuthType === 'oauth2' && (
-                                <div className="text-[11px] text-indigo-800/80 font-medium leading-relaxed space-y-1 mt-1">
-                                  <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className="bg-white/80 px-1.5 py-0.5 rounded text-[10px] font-mono border border-indigo-200/50">https://my300120-api.s4hana.cloud.sap</code></p>
-                                  <p>→ <strong>Client ID:</strong> The OAuth client ID from your Communication Arrangement (starts with <code className="bg-white/80 px-1.5 py-0.5 rounded text-[10px] font-mono border border-indigo-200/50">sb-clone-...</code>)</p>
+                                <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
+                                  <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className={CODE}>https://my300120-api.s4hana.cloud.sap</code></p>
+                                  <p>→ <strong>Client ID:</strong> The OAuth client ID from your Communication Arrangement (starts with <code className={CODE}>sb-clone-...</code>)</p>
                                   <p>→ <strong>Client Secret:</strong> The OAuth client secret generated alongside the Client ID</p>
-                                  <p className="text-[10px] text-indigo-600 mt-1">📍 Where to find: S/4HANA Cloud → Communication Arrangements → OAuth 2.0 Details → Client ID / Client Secret</p>
+                                  <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: S/4HANA Cloud → Communication Arrangements → OAuth 2.0 Details → Client ID / Client Secret</p>
                                 </div>
                               )}
                               {s4AuthType === 'sap_hub' && (
-                                <div className="text-[11px] text-indigo-800/80 font-medium leading-relaxed space-y-1 mt-1">
-                                  <p>→ <strong>Tenant URL:</strong> Use SAP{"'"}s sandbox URL: <code className="bg-white/80 px-1.5 py-0.5 rounded text-[10px] font-mono border border-indigo-200/50">https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/</code></p>
+                                <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
+                                  <p>→ <strong>Tenant URL:</strong> Use SAP{"'"}s sandbox URL: <code className={CODE}>https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/</code></p>
                                   <p>→ No username or password needed — only your API key is required</p>
-                                  <p className="text-[10px] text-indigo-600 mt-1">📍 Where to find: <a href="https://api.sap.com" target="_blank" rel="noopener noreferrer" className="underline">api.sap.com</a> → Log in → Show API Key (top-right on any API page)</p>
+                                  <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: <a href="https://api.sap.com" target="_blank" rel="noopener noreferrer" className="underline">api.sap.com</a> → Log in → Show API Key (top-right on any API page)</p>
                                 </div>
                               )}
                               {s4AuthType === 'btp_destination' && (
-                                <div className="text-[11px] text-indigo-800/80 font-medium leading-relaxed space-y-1 mt-1">
+                                <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
                                   <p>→ Paste the full JSON from your BTP Destination into the text area below</p>
                                   <p>→ The system automatically extracts <strong>Name</strong>, <strong>URL</strong>, <strong>Authentication</strong>, and <strong>ProxyType</strong></p>
-                                  <p className="text-[10px] text-indigo-600 mt-1">📍 Where to find: SAP BTP Cockpit → Connectivity → Destinations → Select your destination → Export as JSON (or copy the config)</p>
+                                  <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: SAP BTP Cockpit → Connectivity → Destinations → Select your destination → Export as JSON (or copy the config)</p>
                                 </div>
                               )}
                             </div>
@@ -1060,58 +1089,48 @@ export default function TestingSandboxPage() {
 
                           {/* Step 3 + 4 — Always visible */}
                           <div className="flex gap-3 items-start">
-                            <span className="bg-indigo-600 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">3</span>
+                            <span className={STEP}>3</span>
                             <div>
-                              <p className="text-xs font-bold text-indigo-950">Test the Connection</p>
-                              <p className="text-[11px] text-indigo-800/80 font-medium">Click <strong>"Test Connection"</strong> to verify the handshake. The sandbox terminal below will show the live connection log.</p>
+                              <p className="cc-text-h3 text-cc-ink">Test the Connection</p>
+                              <p className="cc-text-cell text-cc-ink-muted">Click <strong>"Test Connection"</strong> to verify the handshake. The sandbox terminal below will show the live connection log.</p>
                             </div>
                           </div>
                           <div className="flex gap-3 items-start">
-                            <span className="bg-indigo-600 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5">4</span>
+                            <span className={STEP}>4</span>
                             <div>
-                              <p className="text-xs font-bold text-indigo-950">Save the Connection</p>
-                              <p className="text-[11px] text-indigo-800/80 font-medium">Click <strong>"Save Connection"</strong> to persist the config. The Mock Environment tab is where the generated suite runs.</p>
+                              <p className="cc-text-h3 text-cc-ink">Save the Connection</p>
+                              <p className="cc-text-cell text-cc-ink-muted">Click <strong>"Save Connection"</strong> to persist the config. The Mock Environment tab is where the generated suite runs.</p>
                             </div>
                           </div>
 
                           {/* Security Notice */}
-                          <div className="bg-green-50/70 border border-green-200/60 p-3 rounded-xl flex items-start gap-2 mt-2">
-                            <ShieldCheck className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
-                            <p className="text-[10px] text-green-800 font-semibold leading-relaxed">
-                              <strong>Security:</strong> Credentials travel over HTTPS and are encrypted at rest on the server (AES-256-GCM). Production domains (<code className="bg-green-100 px-1 rounded font-mono">*-api.s4hana.ondemand.com</code>) are automatically blocked. Only non-productive sandbox/test systems are allowed.
-                            </p>
-                          </div>
+                          <CcMessageStrip state="information" headline="Security:">
+                            Credentials travel over HTTPS and are encrypted at rest on the server (AES-256-GCM). Production domains (<code className={CODE}>*-api.s4hana.ondemand.com</code>) are automatically blocked. Only non-productive sandbox/test systems are allowed.
+                          </CcMessageStrip>
 
                           {/* Quick links */}
                           <div className="flex flex-wrap gap-2 pt-1">
-                            <Link
-                              href="/knowledge"
-                              className="inline-flex items-center gap-1.5 text-[10px] font-black text-indigo-700 uppercase tracking-widest bg-white hover:bg-indigo-100 border border-indigo-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
-                            >
-                              <ExternalLink className="w-3 h-3" /> Knowledge Hub
-                            </Link>
-                            <button
-                              type="button"
+                            <CcLinkButton href="/knowledge" icon={<ExternalLink className="w-4 h-4" aria-hidden="true" />}>
+                              Knowledge Hub
+                            </CcLinkButton>
+                            {/* This button is inside a project, so the one
+                                assistant it opens is the case-bound one: it
+                                answers from this project's evidence with
+                                anchors, and from nothing else. It cannot
+                                help with the S/4 connection this block is
+                                about — the Knowledge Hub link next to it
+                                can. Named for what opens, not for what one
+                                would wish for here; see the report on this
+                                step. */}
+                            <CcButton
                               onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
-                              className="inline-flex items-center gap-1.5 text-[10px] font-black text-emerald-700 uppercase tracking-widest bg-white hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
+                              icon={<HelpCircle className="w-4 h-4" aria-hidden="true" />}
                             >
-                              {/* This button is inside a project, so the one
-                                  assistant it opens is the case-bound one: it
-                                  answers from this project's evidence with
-                                  anchors, and from nothing else. It cannot
-                                  help with the S/4 connection this block is
-                                  about — the Knowledge Hub link next to it
-                                  can. Named for what opens, not for what one
-                                  would wish for here; see the report on this
-                                  step. */}
-                              <HelpCircle className="w-3 h-3" /> Ask this case
-                            </button>
-                            <Link
-                              href="/settings"
-                              className="inline-flex items-center gap-1.5 text-[10px] font-black text-gray-600 uppercase tracking-widest bg-white hover:bg-gray-100 border border-gray-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
-                            >
-                              <ExternalLink className="w-3 h-3" /> Manage in Profile Settings
-                            </Link>
+                              Ask this case
+                            </CcButton>
+                            <CcLinkButton href="/settings" icon={<ExternalLink className="w-4 h-4" aria-hidden="true" />}>
+                              Manage in Profile Settings
+                            </CcLinkButton>
                           </div>
                         </div>
                       </motion.div>
@@ -1124,21 +1143,21 @@ export default function TestingSandboxPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Tenant URL */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Tenant HTTPS URL</label>
+                      <label className={clsx(LABEL, 'block')}>Tenant HTTPS URL</label>
                       <div className="relative">
-                        <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cc-ink-muted" />
                         <input
                           type="url"
                           required
                           value={s4Url}
                           onChange={e => setS4Url(e.target.value)}
                           placeholder={s4AuthType === 'sap_hub' ? 'https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/' : 'https://my300120-api.s4hana.cloud.sap'}
-                          className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-12"
+                          className={clsx(FIELD, 'pl-10 pr-4 h-10')}
                         />
                       </div>
-                      <div className="flex items-start gap-1.5">
-                        <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" />
-                        <span className="text-[10px] text-gray-400 font-semibold leading-relaxed">
+                      <div className="flex items-start gap-2">
+                        <Info className="w-3 h-3 text-cc-ink-muted shrink-0 mt-1" />
+                        <span className={HINT}>
                           {s4AuthType === 'sap_hub'
                             ? 'Use the SAP Business Accelerator Hub sandbox base URL. Find it at api.sap.com on any S/4HANA Cloud API page.'
                             : s4AuthType === 'btp_destination'
@@ -1151,20 +1170,20 @@ export default function TestingSandboxPage() {
 
                     {/* Authentication Type */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Authentication Type</label>
+                      <label className={clsx(LABEL, 'block')}>Authentication Type</label>
                       <select
                         value={s4AuthType}
                         onChange={e => setS4AuthType(e.target.value as any)}
-                        className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-12"
+                        className={clsx(FIELD, 'px-3 h-10')}
                       >
                         <option value="basic">Basic Authentication (Username + Password)</option>
                         <option value="oauth2">OAuth 2.0 Client Credentials (Client ID + Secret)</option>
                         <option value="sap_hub">SAP Business Accelerator Hub Sandbox (API Key only)</option>
                         <option value="btp_destination">SAP BTP Destination Service (Paste JSON)</option>
                       </select>
-                      <div className="flex items-start gap-1.5">
-                        <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" />
-                        <span className="text-[10px] text-gray-400 font-semibold leading-relaxed">
+                      <div className="flex items-start gap-2">
+                        <Info className="w-3 h-3 text-cc-ink-muted shrink-0 mt-1" />
+                        <span className={HINT}>
                           {s4AuthType === 'basic' && 'Best for direct S/4HANA Cloud sandbox connections using a Communication User.'}
                           {s4AuthType === 'oauth2' && 'Use when your Communication Arrangement provides OAuth 2.0 token endpoints.'}
                           {s4AuthType === 'sap_hub' && 'No S/4HANA system needed — uses SAP\'s free public sandbox APIs for testing.'}
@@ -1176,17 +1195,17 @@ export default function TestingSandboxPage() {
                     {/* BTP Destination JSON */}
                     {s4AuthType === 'btp_destination' && (
                       <div className="space-y-2 col-span-1 md:col-span-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">SAP BTP Destination JSON Configuration</label>
+                        <label className={clsx(LABEL, 'block')}>SAP BTP Destination JSON Configuration</label>
                         <textarea
                           required
                           value={btpDestinationJson}
                           onChange={e => handleBtpJsonChange(e.target.value)}
                           placeholder={'{\n  "Name": "S4_CLOUDSANDBOX",\n  "Type": "HTTP",\n  "URL": "https://my300120-api.s4hana.cloud.sap",\n  "Authentication": "PrincipalPropagation",\n  "ProxyType": "OnPremise",\n  "tokenServiceURL": "https://tenant.authentication.eu10.hana.ondemand.com/oauth/token"\n}'}
-                          className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-32 font-mono resize-none"
+                          className={clsx(FIELD, 'px-3 py-2 h-32 font-cc-mono resize-none')}
                         />
-                        <div className="flex items-start gap-1.5">
-                          <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" />
-                          <span className="text-[10px] text-gray-450 font-bold leading-relaxed">
+                        <div className="flex items-start gap-2">
+                          <Info className="w-3 h-3 text-cc-ink-muted shrink-0 mt-1" />
+                          <span className={HINT}>
                             Paste the JSON from SAP BTP Cockpit → Connectivity → Destinations. The Name, URL, Authentication, and ProxyType fields are auto-extracted.
                           </span>
                         </div>
@@ -1197,23 +1216,23 @@ export default function TestingSandboxPage() {
                     {s4AuthType !== 'sap_hub' && s4AuthType !== 'btp_destination' && (
                       <>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">
+                          <label className={clsx(LABEL, 'block')}>
                             {s4AuthType === 'oauth2' ? 'Client ID' : 'Username'}
                           </label>
                           <div className="relative">
-                            <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cc-ink-muted" />
                             <input
                               type="text"
                               required
                               value={s4Username}
                               onChange={e => setS4Username(e.target.value)}
                               placeholder={s4AuthType === 'oauth2' ? 'sb-clone-xxxx...' : 'CC_INTEGRATOR'}
-                              className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-12"
+                              className={clsx(FIELD, 'pl-10 pr-4 h-10')}
                             />
                           </div>
-                          <div className="flex items-start gap-1.5">
-                            <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" />
-                            <span className="text-[10px] text-gray-400 font-semibold leading-relaxed">
+                          <div className="flex items-start gap-2">
+                            <Info className="w-3 h-3 text-cc-ink-muted shrink-0 mt-1" />
+                            <span className={HINT}>
                               {s4AuthType === 'oauth2'
                                 ? 'Found in Communication Arrangements → OAuth 2.0 Details → Client ID. Starts with "sb-clone-".'
                                 : 'The Communication User name from your Communication Arrangement. Example: CC_INTEGRATOR or INTEGRATION_USER.'
@@ -1223,32 +1242,32 @@ export default function TestingSandboxPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">
+                          <label className={clsx(LABEL, 'block')}>
                             {s4AuthType === 'oauth2' ? 'Client Secret' : 'Password'}
                           </label>
                           <div className="relative">
-                            <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cc-ink-muted" />
                             <input
                               type={showS4Password ? "text" : "password"}
                               required
                               value={s4Password}
                               onChange={e => setS4Password(e.target.value)}
                               placeholder="••••••••••••••••"
-                              className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-12"
+                              className={clsx(FIELD, 'pl-10 pr-12 h-10')}
                             />
                             <button
                               type="button"
                               onClick={() => setShowS4Password(!showS4Password)}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-650 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-cc-ink-muted hover:text-cc-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
                               aria-label="Show password"
                               aria-pressed={showS4Password}
                             >
                               {showS4Password ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
                           </div>
-                          <div className="flex items-start gap-1.5">
-                            <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" />
-                            <span className="text-[10px] text-gray-400 font-semibold leading-relaxed">
+                          <div className="flex items-start gap-2">
+                            <Info className="w-3 h-3 text-cc-ink-muted shrink-0 mt-1" />
+                            <span className={HINT}>
                               {s4AuthType === 'oauth2'
                                 ? 'The Client Secret generated together with your Client ID. Only shown once when creating the Communication Arrangement.'
                                 : 'The password set for the Communication User. If forgotten, reset it in the Communication Arrangement settings.'
@@ -1265,37 +1284,36 @@ export default function TestingSandboxPage() {
                       that reads as a broken tenant (UX review of 52f171091948,
                       1b84676d685d). */}
                   {unsavedNotice && (
-                    <div className="p-4 rounded-xl border text-xs font-bold bg-amber-50 border-amber-200 text-amber-800" role="status">
-                      {unsavedNotice}
-                    </div>
+                    <CcMessageStrip state="warning">{unsavedNotice}</CcMessageStrip>
                   )}
 
                   {connectionMessage && (
-                    <div className={clsx(
-                      "p-4 rounded-xl border text-xs font-bold transition-all",
-                      connectionStatus === 'connected' ? "bg-green-50 border-green-200 text-green-800" :
-                      connectionStatus === 'failed' ? "bg-red-50 border-red-200 text-red-800" : "bg-blue-50 border-blue-200 text-blue-800"
-                    )}>
+                    <CcMessageStrip
+                      state={connectionStatus === 'connected' ? 'success' : connectionStatus === 'failed' ? 'error' : 'information'}
+                    >
                       {connectionMessage}
-                    </div>
+                    </CcMessageStrip>
                   )}
 
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100">
-                    <button
-                      type="button"
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-cc-line">
+                    <CcButton
+                      variant="secondary"
+                      density="cozy"
                       onClick={handleTestConnection}
                       disabled={testingConnection || !s4Url}
-                      className="flex-1 h-12 flex items-center justify-center gap-2 bg-gradient-to-br from-blue-600 to-sky-600 hover:shadow-lg text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all disabled:opacity-50"
+                      icon={testingConnection ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Globe className="w-4 h-4" />}
                     >
-                      {testingConnection ? <><RefreshCw className="w-4 h-4 animate-spin" /> Verifying Connection...</> : <><Globe className="w-4 h-4" /> Test Connection</>}
-                    </button>
-                    <button
+                      {testingConnection ? 'Verifying Connection...' : 'Test Connection'}
+                    </CcButton>
+                    <CcButton
                       type="submit"
+                      variant="primary"
+                      density="cozy"
                       disabled={isSavingConfig}
-                      className="flex-1 h-12 flex items-center justify-center gap-2 bg-gradient-to-br from-gray-900 to-slate-800 hover:shadow-lg text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all disabled:opacity-50"
+                      icon={isSavingConfig ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                     >
-                      {isSavingConfig ? <><RefreshCw className="w-4 h-4 animate-spin" /> Saving...</> : <><ShieldCheck className="w-4 h-4" /> Save Connection</>}
-                    </button>
+                      {isSavingConfig ? 'Saving...' : 'Save Connection'}
+                    </CcButton>
                   </div>
                 </form>
 
@@ -1308,78 +1326,71 @@ export default function TestingSandboxPage() {
                       exit={{ opacity: 0, height: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="mt-6 border border-emerald-200/60 bg-gradient-to-br from-emerald-50/40 to-teal-50/30 rounded-2xl p-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                      <div className="mt-6 border border-cc-line bg-cc-surface-muted rounded-cc-card p-4 md:p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                           <div className="flex items-center gap-3">
-                            <div className="bg-emerald-600/10 p-2.5 rounded-xl">
-                              <Database className="w-5 h-5 text-emerald-600" />
-                            </div>
+                            <Database className="w-5 h-5 text-cc-ink-muted shrink-0" aria-hidden="true" />
                             <div>
-                              <h3 className="text-sm font-black text-emerald-950 uppercase tracking-wider">OData Service Explorer</h3>
-                              <p className="text-[10px] text-emerald-700/70 font-semibold">Browse live OData services exposed by your connected tenant.</p>
+                              <h3 className="cc-text-h3 text-cc-ink">OData Service Explorer</h3>
+                              <p className="cc-text-meta font-medium text-cc-ink-muted">Browse live OData services exposed by your connected tenant.</p>
                             </div>
                           </div>
-                          <button
-                            type="button"
+                          <CcButton
                             onClick={handleFetchODataCatalog}
                             disabled={odataMode === 'loading'}
-                            className="shrink-0 h-10 px-5 flex items-center justify-center gap-2 bg-gradient-to-br from-emerald-600 to-teal-600 hover:shadow-lg text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all disabled:opacity-50"
+                            icon={odataMode === 'loading' ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Search className="w-4 h-4" />}
                           >
-                            {odataMode === 'loading' ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Fetching...</> : <><Search className="w-3.5 h-3.5" /> Discover Services</>}
-                          </button>
+                            {odataMode === 'loading' ? 'Fetching...' : 'Discover Services'}
+                          </CcButton>
                         </div>
 
                         {/* Manual service input */}
                         <div className="flex gap-2 mb-4">
                           <div className="relative flex-1">
-                            <Database className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                            <Database className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cc-ink-muted" />
                             <input
                               type="text"
                               value={odataServicePath}
                               onChange={e => setOdataServicePath(e.target.value)}
                               placeholder="Enter service name, e.g. API_BUSINESS_PARTNER"
-                              className="w-full pl-9 pr-4 py-2.5 bg-white border border-emerald-200/60 rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-400 transition-all text-[#0b1c30]"
+                              className={clsx(FIELD, 'pl-10 pr-4 h-8')}
                             />
                           </div>
-                          <button
-                            type="button"
+                          <CcButton
                             onClick={() => odataServicePath && handleFetchServiceMetadata(odataServicePath)}
                             disabled={!odataServicePath || odataMode === 'loading'}
-                            className="shrink-0 h-[42px] px-4 flex items-center gap-1.5 bg-white border border-emerald-200 hover:bg-emerald-50 text-emerald-700 font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all disabled:opacity-40"
+                            icon={<Layers className="w-4 h-4" />}
                           >
-                            <Layers className="w-3.5 h-3.5" /> Fetch $metadata
-                          </button>
+                            Fetch $metadata
+                          </CcButton>
                         </div>
 
                         {/* Error message */}
                         {odataMode === 'error' && odataMessage && (
-                          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-800 mb-4 flex items-start gap-2">
-                            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                            {odataMessage}
+                          <div className="mb-4">
+                            <CcMessageStrip state="error">{odataMessage}</CcMessageStrip>
                           </div>
                         )}
 
                         {/* Info message (partial catalog) */}
                         {odataMode === 'catalog' && odataMessage && odataCatalog.length === 0 && (
-                          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs font-semibold text-amber-800 mb-4 flex items-start gap-2">
-                            <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                            <div>
-                              <p>{odataMessage}</p>
+                          <div className="mb-4">
+                            <CcMessageStrip state="warning">
+                              <span className="block">{odataMessage}</span>
                               {odataSuggestedServices.length > 0 && (
-                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                <span className="mt-2 flex flex-wrap gap-2">
                                   {odataSuggestedServices.map(svc => (
-                                    <button
+                                    <CcButton
                                       key={svc.path}
-                                      type="button"
                                       onClick={() => handleFetchServiceMetadata(svc.path)}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-amber-200 hover:bg-amber-100 text-amber-900 font-bold text-[10px] rounded-lg transition-all"
+                                      icon={<Database className="w-4 h-4" />}
                                     >
-                                      <Database className="w-3 h-3" /> {svc.title}
-                                    </button>
+                                      {svc.title}
+                                    </CcButton>
                                   ))}
-                                </div>
+                                </span>
                               )}
-                            </div>
+                            </CcMessageStrip>
                           </div>
                         )}
 
@@ -1387,21 +1398,21 @@ export default function TestingSandboxPage() {
                         {odataMode === 'catalog' && odataCatalog.length > 0 && (
                           <div className="space-y-2">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">
+                              <span className={LABEL}>
                                 {odataTotalServices} Services Discovered
                               </span>
                               <div className="relative w-48">
-                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-cc-ink-muted" />
                                 <input
                                   type="text"
                                   value={odataCatalogSearch}
                                   onChange={e => setOdataCatalogSearch(e.target.value)}
                                   placeholder="Filter services..."
-                                  className="w-full pl-7 pr-3 py-1.5 bg-white border border-emerald-200/60 rounded-lg text-[10px] font-medium focus:ring-1 focus:ring-emerald-400 transition-all"
+                                  className={clsx(FIELD, 'pl-8 pr-3 h-8')}
                                 />
                               </div>
                             </div>
-                            <div className="max-h-60 overflow-y-auto rounded-xl border border-emerald-100 bg-white divide-y divide-emerald-50">
+                            <div className="max-h-60 overflow-y-auto rounded-cc-row border border-cc-line bg-cc-surface divide-y divide-cc-line">
                               {odataCatalog
                                 .filter(svc =>
                                   !odataCatalogSearch ||
@@ -1414,13 +1425,13 @@ export default function TestingSandboxPage() {
                                     key={i}
                                     type="button"
                                     onClick={() => handleFetchServiceMetadata(svc.path)}
-                                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-emerald-50 transition-all text-left group"
+                                    className="w-full flex items-center justify-between px-4 py-2 hover:bg-cc-surface-muted transition-colors text-left group"
                                   >
                                     <div className="min-w-0">
-                                      <span className="text-xs font-bold text-emerald-900 block truncate">{svc.title}</span>
-                                      <span className="text-[10px] font-mono text-emerald-600/70 block truncate">{svc.path}</span>
+                                      <span className="cc-text-cell font-semibold text-cc-ink block truncate">{svc.title}</span>
+                                      <span className="text-[12px] font-cc-mono text-cc-ink-muted block truncate">{svc.path}</span>
                                     </div>
-                                    <ChevronRight className="w-4 h-4 text-emerald-400 group-hover:text-emerald-600 shrink-0 transition-colors" />
+                                    <ChevronRight className="w-4 h-4 text-cc-ink-muted group-hover:text-cc-ink shrink-0 transition-colors" />
                                   </button>
                                 ))}
                             </div>
@@ -1435,32 +1446,30 @@ export default function TestingSandboxPage() {
                                 <button
                                   type="button"
                                   onClick={() => { setOdataMode('catalog'); setOdataEntityTypes([]); }}
-                                  className="text-[10px] font-bold text-emerald-600 hover:text-emerald-800 underline"
+                                  className="cc-text-meta text-cc-information hover:text-cc-ink underline"
                                 >
                                   ← Back to catalog
                                 </button>
-                                <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">
+                                <span className={LABEL}>
                                   {odataSelectedService} — {odataEntityTypes.length} Entity Types
                                 </span>
                               </div>
                             </div>
-                            <div className="max-h-80 overflow-y-auto rounded-xl border border-emerald-100 bg-white divide-y divide-emerald-50">
+                            <div className="max-h-80 overflow-y-auto rounded-cc-row border border-cc-line bg-cc-surface divide-y divide-cc-line">
                               {odataEntityTypes.map((et, i) => (
                                 <div key={i}>
                                   <button
                                     type="button"
                                     onClick={() => setOdataExpandedEntity(odataExpandedEntity === et.name ? null : et.name)}
-                                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-emerald-50 transition-all text-left"
+                                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-cc-surface-muted transition-colors text-left"
                                   >
                                     <div className="flex items-center gap-2">
-                                      <Layers className="w-4 h-4 text-emerald-500" />
-                                      <span className="text-xs font-bold text-emerald-900">{et.name}</span>
-                                      <span className="text-[9px] font-semibold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">
-                                        {et.properties.length} props
-                                      </span>
+                                      <Layers className="w-4 h-4 text-cc-ink-muted" />
+                                      <span className="cc-text-cell font-semibold text-cc-ink">{et.name}</span>
+                                      <CcTag>{et.properties.length} props</CcTag>
                                     </div>
                                     <ChevronDown className={clsx(
-                                      "w-4 h-4 text-emerald-400 transition-transform",
+                                      "w-4 h-4 text-cc-ink-muted transition-transform",
                                       odataExpandedEntity === et.name && "rotate-180"
                                     )} />
                                   </button>
@@ -1470,46 +1479,41 @@ export default function TestingSandboxPage() {
                                           what came back and nothing more — no comparison against the
                                           generated code happens here, so none is claimed. */}
                                       <div className="flex flex-wrap items-center gap-2 mb-2">
-                                        <button
-                                          type="button"
+                                        <CcButton
                                           onClick={() => handleReadEntitySet(et.name)}
                                           disabled={odataReadState[et.name]?.status === 'reading'}
-                                          className="inline-flex items-center gap-1.5 bg-white border border-emerald-200 hover:bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors disabled:opacity-60"
                                         >
                                           {odataReadState[et.name]?.status === 'reading' ? 'Reading…' : 'Read records from tenant'}
-                                        </button>
+                                        </CcButton>
                                         {odataReadState[et.name]?.status === 'done' && (
-                                          <span className="text-[10px] font-bold text-emerald-700">
+                                          <span className="cc-text-meta text-cc-ink">
                                             {odataReadState[et.name]?.recordCount ?? 0} record(s) returned
                                           </span>
                                         )}
                                         {odataReadState[et.name]?.status === 'failed' && (
-                                          <span className="text-[10px] font-bold text-rose-600">
+                                          <span className="cc-text-meta text-cc-error">
                                             {odataReadState[et.name]?.message}
                                           </span>
                                         )}
                                       </div>
-                                      <div className="bg-emerald-50/50 rounded-lg border border-emerald-100 overflow-hidden">
-                                        <table className="w-full text-[10px]">
+                                      <div className="bg-cc-surface rounded-cc-row border border-cc-line overflow-hidden">
+                                        <table className="w-full cc-text-meta">
                                           <thead>
-                                            <tr className="bg-emerald-100/60">
-                                              <th className="text-left px-3 py-1.5 font-black text-emerald-800 uppercase tracking-wider">Property</th>
-                                              <th className="text-left px-3 py-1.5 font-black text-emerald-800 uppercase tracking-wider">Type</th>
-                                              <th className="text-left px-3 py-1.5 font-black text-emerald-800 uppercase tracking-wider">Nullable</th>
+                                            <tr className="bg-cc-surface-muted">
+                                              <th className={clsx(LABEL, 'text-left px-3 py-2')}>Property</th>
+                                              <th className={clsx(LABEL, 'text-left px-3 py-2')}>Type</th>
+                                              <th className={clsx(LABEL, 'text-left px-3 py-2')}>Nullable</th>
                                             </tr>
                                           </thead>
-                                          <tbody className="divide-y divide-emerald-100/50">
+                                          <tbody className="divide-y divide-cc-line">
                                             {et.properties.map((prop, pi) => (
-                                              <tr key={pi} className="hover:bg-emerald-50">
-                                                <td className="px-3 py-1.5 font-mono font-semibold text-emerald-900">{prop.name}</td>
-                                                <td className="px-3 py-1.5 font-mono text-emerald-600">{prop.type.replace('Edm.', '')}</td>
-                                                <td className="px-3 py-1.5">
-                                                  <span className={clsx(
-                                                    "px-1.5 py-0.5 rounded text-[9px] font-bold",
-                                                    prop.nullable ? "bg-gray-100 text-gray-500" : "bg-red-50 text-red-600"
-                                                  )}>
-                                                    {prop.nullable ? 'Yes' : 'Required'}
-                                                  </span>
+                                              <tr key={pi} className="hover:bg-cc-surface-muted">
+                                                <td className="px-3 py-2 font-cc-mono text-cc-ink">{prop.name}</td>
+                                                <td className="px-3 py-2 font-cc-mono text-cc-ink-muted">{prop.type.replace('Edm.', '')}</td>
+                                                <td className="px-3 py-2">
+                                                  {prop.nullable
+                                                    ? <CcTag>Yes</CcTag>
+                                                    : <span className="cc-text-meta text-cc-error">Required</span>}
                                                 </td>
                                               </tr>
                                             ))}
@@ -1526,9 +1530,9 @@ export default function TestingSandboxPage() {
 
                         {/* Empty state */}
                         {odataMode === 'idle' && (
-                          <div className="text-center py-6 text-emerald-600/50">
-                            <Database className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                            <p className="text-[11px] font-semibold">Click "Discover Services" to browse the OData catalog, or enter a service name above.</p>
+                          <div className="text-center py-6 text-cc-ink-muted">
+                            <Database className="w-8 h-8 mx-auto mb-2" aria-hidden="true" />
+                            <p className="cc-text-cell">Click "Discover Services" to browse the OData catalog, or enter a service name above.</p>
                           </div>
                         )}
                       </div>
@@ -1538,23 +1542,22 @@ export default function TestingSandboxPage() {
               </div>
             ) : (
               // Locked Teaser Card / Guide & Access Request
-              <div className="bg-[#ffffff] border border-gray-100 rounded-[2rem] p-6 md:p-10 shadow-sm relative overflow-hidden">
-                <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-sky-500 to-blue-600" />
-                
+              <div className={clsx(CARD, 'p-4 md:p-6')}>
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="bg-sky-600/10 p-2.5 rounded-2xl">
-                    <Globe className="text-sky-600" size={22} />
-                  </div>
-                  <h3 className="text-xl font-black text-[#0b1c30] tracking-tight uppercase flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-cc-ink-muted shrink-0" aria-hidden="true" />
+                  <h3 className="cc-text-h2 text-cc-ink">
                     Live S/4HANA Integration Bridge
                   </h3>
                 </div>
 
-                <div className="space-y-6 max-w-4xl">
+                <div className="space-y-4 max-w-4xl">
                   {/* Instructions */}
-                  <div className="bg-sky-50/50 border border-sky-100 p-5 rounded-2xl">
-                    <h3 className="text-xs font-black text-sky-950 uppercase tracking-widest mb-3">📋 Instructions (Setup Guide)</h3>
-                    <ol className="list-decimal pl-4 text-xs text-sky-850 space-y-2 font-medium">
+                  <div className="bg-cc-surface-muted border border-cc-line p-4 rounded-cc-card">
+                    <h3 className="cc-text-h3 text-cc-ink mb-3 flex items-center gap-2">
+                      <ListChecks className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" />
+                      Instructions (Setup Guide)
+                    </h3>
+                    <ol className="list-decimal pl-4 cc-text-cell text-cc-ink space-y-2">
                       <li><strong>Request access:</strong> Use the form below to request access for your organization.</li>
                       <li><strong>Provide HTTPS endpoint:</strong> Set up a secure HTTPS connection to your S/4HANA sandbox or test system.</li>
                       <li><strong>Configure credentials:</strong> Once approved, you can configure your credentials (Basic Auth or OAuth 2.0).</li>
@@ -1563,30 +1566,30 @@ export default function TestingSandboxPage() {
                   </div>
 
                   {/* Security Measures */}
-                  <div className="bg-green-50/50 border border-green-100 p-5 rounded-2xl">
-                    <h3 className="text-xs font-black text-green-950 uppercase tracking-widest mb-3">🛡️ Security Measures & Explanations</h3>
-                    <ul className="list-disc pl-4 text-xs text-green-850 space-y-2 font-medium">
+                  <div className="bg-cc-surface-muted border border-cc-line p-4 rounded-cc-card">
+                    <h3 className="cc-text-h3 text-cc-ink mb-3 flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" />
+                      Security Measures & Explanations
+                    </h3>
+                    <ul className="list-disc pl-4 cc-text-cell text-cc-ink space-y-2">
                       <li><strong>Encrypted at rest:</strong> Passwords and tokens travel over HTTPS to the server, which encrypts them with AES-256-GCM in a server-only store. They are never returned to the browser.</li>
-                      <li><strong>Production Block:</strong> Access to production interfaces (<code className="bg-green-100 px-1 py-0.5 rounded font-mono text-[10px]">*-api.s4hana.ondemand.com</code>) is blocked by the system.</li>
+                      <li><strong>Production Block:</strong> Access to production interfaces (<code className={CODE}>*-api.s4hana.ondemand.com</code>) is blocked by the system.</li>
                       <li><strong>Server-side calls only:</strong> Your browser never talks to the tenant. The Clean-Core.io server makes each call through an SSRF-checked fetch that allows HTTPS to non-production hosts only.</li>
                     </ul>
                   </div>
 
                   {/* Disclaimer */}
-                  <div className="bg-amber-50/50 border border-amber-100 p-5 rounded-2xl">
-                    <h3 className="text-xs font-black text-amber-950 uppercase tracking-widest mb-2">⚠️ Warranty Disclaimer</h3>
-                    <p className="text-xs text-amber-800 leading-relaxed font-medium">
-                      This is the Free Community Edition. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
-                    </p>
-                  </div>
+                  <CcMessageStrip state="warning" headline="Warranty Disclaimer">
+                    This is the Free Community Edition. Access is provided entirely without warranty, guarantee, or liability. Under no circumstances should you use productive ERP data or real passwords.
+                  </CcMessageStrip>
 
                   {/* Request Form / Status */}
                   {profile?.s4TenantAccessRequested ? (
-                    <div className="bg-amber-50/50 border border-amber-150 p-5 rounded-2xl flex items-start gap-3">
-                      <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="bg-cc-surface border border-cc-line p-4 rounded-cc-card flex items-start gap-3">
+                      <Clock className="w-5 h-5 text-cc-ink-muted shrink-0" aria-hidden="true" />
                       <div>
-                        <h4 className="font-bold text-amber-900 text-xs md:text-sm mb-1 uppercase tracking-tight">Request in Review</h4>
-                        <p className="text-xs text-amber-800/90 leading-relaxed font-medium">
+                        <h4 className="cc-text-h3 text-cc-ink mb-1">Request in Review</h4>
+                        <p className="cc-text-cell text-cc-ink-muted leading-relaxed">
                           Your request for live S/4HANA access is currently being reviewed by our system administrators. Approvals are usually processed within 24 hours.
                         </p>
                       </div>
@@ -1594,26 +1597,27 @@ export default function TestingSandboxPage() {
                   ) : (
                     <div className="space-y-4 pt-2">
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                        <label className={clsx(LABEL, 'block')}>
                           Description of your use case (Motivation)
                         </label>
-                        <textarea 
+                        <textarea
                           placeholder="E.g., connecting our non-productive S/4HANA Public Cloud Sandbox to validate OData interfaces..."
                           value={accessRequestedMotivation}
                           maxLength={2000}
                           onChange={e => setAccessRequestedMotivation(e.target.value)}
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-medium text-[#0b1c30] focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all h-20 resize-none outline-none font-medium"
+                          className={clsx(FIELD, 'px-3 py-2 h-20 resize-none')}
                         />
                       </div>
 
-                      <button
-                        type="button"
+                      <CcButton
+                        variant="primary"
+                        density="cozy"
                         onClick={handleRequestAccess}
                         disabled={isRequestingAccess}
-                        className="w-full bg-gradient-to-r from-blue-600 to-sky-650 hover:shadow-lg text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 h-11"
+                        icon={isRequestingAccess ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Send className="w-4 h-4" />}
                       >
-                        {isRequestingAccess ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : <><Send className="w-4 h-4" /> Request Access for Live S/4HANA 🚀</>}
-                      </button>
+                        {isRequestingAccess ? 'Sending...' : 'Request Access for Live S/4HANA'}
+                      </CcButton>
                     </div>
                   )}
                 </div>
@@ -1624,30 +1628,28 @@ export default function TestingSandboxPage() {
       </AnimatePresence>
 
       {/* Test Suite UI */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8 mb-8">
-        <div className="bg-[#ffffff] rounded-[2rem] shadow-sm overflow-hidden flex flex-col h-[500px] md:h-[600px]">
-          <div className="bg-[#eff4ff] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+        <div className={clsx(CARD, 'overflow-hidden flex flex-col h-[500px] md:h-[600px]')}>
+          <div className="bg-cc-surface-muted border-b border-cc-line px-4 md:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="bg-[#006b2c]/10 p-2 rounded-xl">
-                <ListChecks className="w-5 h-5 text-[#006b2c]" />
-              </div>
-              <h2 className="text-lg font-bold text-[#0b1c30]">Test Suite</h2>
+              <ListChecks className="w-5 h-5 text-cc-ink-muted" aria-hidden="true" />
+              <h2 className="cc-text-h2 text-cc-ink">Test Suite</h2>
             </div>
             {/* Only once the suite exists. Before that this button and the one in
                 the empty state below were the same action, offered twice on one
                 screen — "Generate Suite" here, "Generate Test Suite" in the
                 middle of the card. */}
             {testCases.length > 0 && (
-              <button 
-                onClick={handleGenerate} 
+              <CcButton
+                onClick={handleGenerate}
                 disabled={isGenerating}
-                className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 text-xs md:text-sm font-bold"
+                icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
               >
-                {isGenerating ? <><RefreshCw className="w-4 h-4 animate-spin" /> Generating...</> : 'Regenerate Suite'}
-              </button>
+                {isGenerating ? 'Generating...' : 'Regenerate Suite'}
+              </CcButton>
             )}
           </div>
-          
+
           <div className="p-4 md:p-6 flex-grow overflow-auto">
             {testCases.length === 0 && !modelAvailability.enabled('testing') ? (
               /* Roadmap 1.2 / V25-A12 — "Generate Your Test Suite" over a button
@@ -1665,49 +1667,47 @@ export default function TestingSandboxPage() {
                 />
               </div>
             ) : testCases.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8 bg-[#f8f9ff]/50 rounded-2xl border-2 border-dashed border-slate-200 max-w-md mx-auto my-auto min-h-[300px]">
-                <div className="bg-[#006b2c]/10 p-4 rounded-2xl text-[#006b2c] mb-4 animate-pulse">
-                  <ListChecks className="w-10 h-10 md:w-12 md:h-12" />
-                </div>
-                <h3 className="text-base font-extrabold text-slate-900">Generate Your Test Suite</h3>
+              <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8 bg-cc-surface-muted rounded-cc-card border border-dashed border-cc-field-border max-w-md mx-auto my-auto min-h-[300px]">
+                <ListChecks className="w-10 h-10 text-cc-ink-muted mb-4" aria-hidden="true" />
+                <h3 className="cc-text-h2 text-cc-ink">Generate Your Test Suite</h3>
                 {/* A stored suite that cannot be drawn is a fact about this
                     project, not the same thing as never having generated one.
                     Without this line the reader is told to start something he
                     already did, and the reason his last suite vanished is
                     nowhere on the screen. */}
                 {storedSuiteRejected ? (
-                  <p data-stored-test-suite-rejected className="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
+                  <p data-stored-test-suite-rejected className="cc-text-cell text-cc-ink-muted mt-2 max-w-xs leading-relaxed">
                     {STORED_TEST_SUITE_REJECTED}
                   </p>
                 ) : (
-                  <p className="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
+                  <p className="cc-text-cell text-cc-ink-muted mt-2 max-w-xs leading-relaxed">
                     To begin sandboxed verification, you must first generate the test cases based on your modernization blueprint.
                   </p>
                 )}
-                
+
                 {genError && (
-                  <p data-test-generation-error role="alert" className="mt-4 max-w-xs text-xs font-semibold leading-relaxed text-red-700">
+                  <p data-test-generation-error role="alert" className="mt-4 max-w-xs cc-text-cell font-semibold leading-relaxed text-cc-error">
                     {genError}
                   </p>
                 )}
 
-                <button
-                  onClick={handleGenerate}
-                  disabled={isGenerating}
-                  /* `animate-bounce` removed. It made the only action on an empty
-                     step bounce for ever — an attention-grab aimed at something the
-                     reader is already looking at, and the loudest element on a page
-                     whose other primaries sit still. It also made the button
-                     impossible to click under test: Playwright waits for an element
-                     to stop moving, and this one never did. */
-                  className="mt-6 flex items-center justify-center gap-2 bg-[#00873a] hover:bg-[#006b2c] text-white px-6 py-3 rounded-xl shadow-lg shadow-green-900/10 hover:shadow-xl hover:shadow-green-900/20 transition-all font-black text-xs uppercase tracking-wider"
-                >
-                  {isGenerating ? (
-                    <><RefreshCw className="w-4 h-4 animate-spin" /> Generating Suite...</>
-                  ) : (
-                    <>Generate Test Suite</>
-                  )}
-                </button>
+                {/* `animate-bounce` removed. It made the only action on an empty
+                    step bounce for ever — an attention-grab aimed at something the
+                    reader is already looking at, and the loudest element on a page
+                    whose other primaries sit still. It also made the button
+                    impossible to click under test: Playwright waits for an element
+                    to stop moving, and this one never did. */}
+                <div className="mt-6">
+                  <CcButton
+                    variant="primary"
+                    density="cozy"
+                    onClick={handleGenerate}
+                    disabled={isGenerating}
+                    icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
+                  >
+                    {isGenerating ? 'Generating Suite...' : 'Generate Test Suite'}
+                  </CcButton>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
@@ -1716,86 +1716,78 @@ export default function TestingSandboxPage() {
                     still on the screen, so without this the button simply
                     appears to do nothing. */}
                 {genError && (
-                  <p data-test-generation-error role="alert" className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs font-semibold leading-relaxed text-red-800">
-                    {genError}
-                  </p>
+                  <div data-test-generation-error>
+                    <CcMessageStrip state="error">{genError}</CcMessageStrip>
+                  </div>
                 )}
 
                 {/* Not a second lock notice — the one above this panel is the
                     only one on this screen (roadmap 1.7). What belongs beside a
                     disabled button is the way forward, so that is all this says. */}
                 {activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION.locked && (
-                  <div data-live-test-hint className="p-3.5 bg-gray-50 border border-gray-200 text-gray-700 rounded-2xl text-xs font-semibold flex items-center gap-2">
-                    <ListChecks className="w-4 h-4 text-gray-500 shrink-0" />
-                    <span>Switch to the Mock Environment to run this suite in the sandbox.</span>
+                  <div data-live-test-hint>
+                    <CcMessageStrip state="neutral">Switch to the Mock Environment to run this suite in the sandbox.</CcMessageStrip>
                   </div>
                 )}
 
                 {activeEnvTab === 'live' && !s4Url && (
-                  <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-2xl text-xs font-semibold flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-red-650 shrink-0" />
-                    <span>Please configure the S/4HANA connection (URL & credentials) to run the connection checks.</span>
-                  </div>
+                  <CcMessageStrip state="error">Please configure the S/4HANA connection (URL & credentials) to run the connection checks.</CcMessageStrip>
                 )}
 
                 {activeEnvTab === 'live' && s4Url && connectionStatus !== 'connected' && (
-                  <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl text-xs font-semibold flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span>Tip: Please run a successful connection test above to avoid connectivity issues.</span>
-                  </div>
+                  <CcMessageStrip state="warning">Tip: Please run a successful connection test above to avoid connectivity issues.</CcMessageStrip>
                 )}
 
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
-                  <div className="flex items-center gap-4">
-                    <span data-stage-output="testCases" className="text-[10px] font-black text-[#0b1c30]/50 uppercase tracking-widest">{selectedTestCases.length} of {testCases.length} selected</span>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <span data-stage-output="testCases" className={LABEL}>{selectedTestCases.length} of {testCases.length} selected</span>
                     <div className="relative group/tooltip">
                       <button
                         onClick={exportTestCasesToExcel}
-                        className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest transition-all text-[#006b2c] hover:text-[#00873a]"
+                        className="flex items-center gap-2 text-[13px] font-semibold transition-colors text-cc-information hover:text-cc-ink"
                       >
                         <Download size={14} /> Export Excel
                       </button>
                     </div>
                     {exportError && (
-                      <span data-export-error role="alert" className="flex items-center gap-1.5 text-[11px] font-bold text-red-700">
-                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      <span data-export-error role="alert" className="flex items-center gap-2 cc-text-meta text-cc-error">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
                         {exportError}
                       </span>
                     )}
                   </div>
-                  <button 
-                    onClick={handleRun} 
+                  <CcButton
+                    variant="primary"
+                    onClick={handleRun}
                     disabled={isRunning || selectedTestCases.length === 0 || (activeEnvTab === 'live' && !s4Url) || (activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION.locked)}
-                    className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 text-xs md:text-sm font-bold w-full sm:w-auto"
+                    icon={isRunning ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Play className="w-4 h-4" />}
                   >
-                    {isRunning ? <><RefreshCw className="w-4 h-4 animate-spin" /> Running...</> : <><Play className="w-4 h-4" /> Run Selected</>}
-                  </button>
+                    {isRunning ? 'Running...' : 'Run Selected'}
+                  </CcButton>
                 </div>
                 {testCases.map((tc, i) => (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     className={clsx(
-                      "flex items-start gap-3 p-3 md:p-4 rounded-xl border transition-colors cursor-pointer",
-                      selectedTestCases.includes(i) ? "border-[#006b2c] bg-[#eff4ff]" : "border-[#eff4ff] hover:border-[#006b2c]/50 hover:bg-[#eff4ff]/30"
+                      "flex items-start gap-3 p-3 md:p-4 rounded-cc-row border transition-colors cursor-pointer",
+                      selectedTestCases.includes(i) ? "border-cc-ink bg-cc-surface" : "border-cc-line hover:border-cc-field-border hover:bg-cc-surface-muted"
                     )}
                     onClick={() => toggleTestCase(i)}
                   >
-                    <input 
-                      type="checkbox" 
-                      checked={selectedTestCases.includes(i)} 
+                    <input
+                      type="checkbox"
+                      checked={selectedTestCases.includes(i)}
                       onChange={() => {}}
-                      className="mt-1 w-4 h-4 text-[#006b2c] rounded border-[#eff4ff] focus:ring-[#006b2c]"
+                      className="mt-1 w-4 h-4 rounded border-cc-field-border accent-cc-ink"
                     />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-[10px] text-[#006b2c] font-black uppercase">{renderSafeValue(tc.id)}</span>
+                        <span className="font-cc-mono text-[12px] font-semibold text-cc-ink">{renderSafeValue(tc.id)}</span>
                         {tc.category && (
-                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-bold uppercase tracking-wider">
-                            {renderSafeValue(tc.category)}
-                          </span>
+                          <CcTag>{renderSafeValue(tc.category)}</CcTag>
                         )}
                       </div>
-                      <p className="text-xs md:text-sm text-[#0b1c30] font-medium truncate sm:whitespace-normal">{renderSafeValue(tc.description)}</p>
+                      <p className="cc-text-cell text-cc-ink truncate sm:whitespace-normal">{renderSafeValue(tc.description)}</p>
                     </div>
                   </div>
                 ))}
@@ -1803,25 +1795,27 @@ export default function TestingSandboxPage() {
             )}
           </div>
         </div>
-        
-        <div className="bg-[#0b1c30] rounded-[2rem] shadow-sm overflow-hidden flex flex-col h-[500px] md:h-[600px]">
-          <div className="bg-[#0b1c30]/80 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+
+        {/* The terminal is code, and code is one of the two dark surfaces
+            DESIGN.md §1.1 allows. */}
+        <div className="bg-cc-code-bg rounded-cc-card border border-cc-line overflow-hidden flex flex-col h-[500px] md:h-[600px]">
+          <div className="bg-cc-code-bg border-b border-cc-code-muted/30 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex gap-1.5 shrink-0">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+              <div className="flex gap-1 shrink-0" aria-hidden="true">
+                <div className="w-2 h-2 rounded-full bg-cc-code-muted"></div>
+                <div className="w-2 h-2 rounded-full bg-cc-code-muted"></div>
+                <div className="w-2 h-2 rounded-full bg-cc-code-muted"></div>
               </div>
-              <div className="flex items-center gap-2 text-[#ffffff]/60 ml-1 md:ml-2 min-w-0">
-                <TerminalIcon className="w-3.5 h-3.5 shrink-0" />
-                <span className="text-[10px] font-mono truncate">
+              <div className="flex items-center gap-2 text-cc-code-muted ml-1 md:ml-2 min-w-0">
+                <TerminalIcon className="w-4 h-4 shrink-0" />
+                <span className="text-[12px] font-cc-mono truncate">
                   {isAbapCloud ? 'adt-test-cockpit ~ execute aunit' : 'sandbox-runtime ~ node app.js'}
                 </span>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setShowTestCode(!showTestCode)}
-              className="text-[10px] font-black text-white/70 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors uppercase tracking-widest text-center"
+              className="text-[12px] font-semibold text-cc-code-ink bg-cc-code-bg border border-cc-code-muted hover:border-cc-code-ink px-3 min-h-[32px] rounded-cc-row transition-colors text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-code-name"
             >
               {isAbapCloud
                 ? (showTestCode ? 'View ADT Output' : 'View ABAP Unit Class')
@@ -1829,11 +1823,11 @@ export default function TestingSandboxPage() {
               }
             </button>
           </div>
-          <div className="p-4 md:p-6 font-mono text-[11px] md:text-sm bg-[#0b1c30] text-[#00ff41] flex-grow overflow-auto custom-scrollbar">
+          <div className="p-4 md:p-6 font-cc-mono text-[12px] md:text-[13px] bg-cc-code-bg text-cc-code-ink flex-grow overflow-auto custom-scrollbar">
             {showTestCode ? (
               <pre
                 data-stage-output={project?.testSuite?.code ? 'testSuite' : undefined}
-                className="whitespace-pre-wrap leading-relaxed text-blue-300"
+                className="whitespace-pre-wrap leading-relaxed text-cc-code-name"
               >
                 {(!storedSuiteRejected && project?.testSuite?.code) || (isAbapCloud ? 'No test suite generated yet. Generate a suite to inspect local ABAP stubs.' : 'No test code generated yet.')}
               </pre>
@@ -1849,31 +1843,29 @@ export default function TestingSandboxPage() {
           says the logic ran — not that it works with those libraries — and until
           now nothing on this page said which ones had been replaced. */}
       {testResults && stubbedPackages.length > 0 && (
-        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" data-stubbed-packages>
-          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <p className="leading-relaxed">
-            <strong>Ran against stubs for: {stubbedPackages.join(', ')}.</strong>{' '}
+        <div className="mb-6" data-stubbed-packages>
+          <CcMessageStrip state="warning" headline={`Ran against stubs for: ${stubbedPackages.join(', ')}.`}>
             These packages were replaced by an empty proxy so the code could load. A pass here shows the
             business logic ran — not that it works with them.
-          </p>
+          </CcMessageStrip>
         </div>
       )}
 
       {testResults && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {project?.manualTestingRequirements && project.manualTestingRequirements.length > 0 && (
-            <div className="bg-amber-50 border border-amber-100 rounded-[2rem] p-6 animate-in fade-in slide-in-from-bottom-4">
-              <h3 className="text-base md:text-lg font-black text-amber-900 mb-4 flex items-center gap-2 uppercase tracking-tight">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <div className={clsx(CARD, 'p-4 md:p-6')}>
+              <h3 className="cc-text-h2 text-cc-ink mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-cc-warning" aria-hidden="true" />
                 Human-in-the-Loop Verification
               </h3>
               <div className="grid grid-cols-1 gap-4">
                 {project.manualTestingRequirements.map((req: any, i: number) => (
-                  <div key={i} className="bg-white p-4 rounded-xl border border-amber-100 shadow-sm">
-                    <h4 className="font-black text-amber-900 text-xs md:text-sm mb-1 uppercase tracking-tight">{req.area}</h4>
-                    <p className="text-[11px] md:text-xs text-amber-700 mb-3 leading-relaxed">{req.reason}</p>
-                    <div className="text-[10px] md:text-xs text-amber-800 font-mono bg-amber-50 p-2.5 rounded-lg border border-amber-100">
-                      <strong className="text-amber-900">VERIFY:</strong> {req.verificationSteps}
+                  <div key={i} className="bg-cc-surface-muted p-4 rounded-cc-row border border-cc-line">
+                    <h4 className="cc-text-h3 text-cc-ink mb-1">{req.area}</h4>
+                    <p className="cc-text-cell text-cc-ink-muted mb-3 leading-relaxed">{req.reason}</p>
+                    <div className="text-[12px] text-cc-ink font-cc-mono bg-cc-surface p-2 rounded-cc-row border border-cc-line">
+                      <strong>VERIFY:</strong> {req.verificationSteps}
                     </div>
                   </div>
                 ))}
@@ -1881,24 +1873,25 @@ export default function TestingSandboxPage() {
             </div>
           )}
 
-          <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-purple-100 shadow-sm flex flex-col md:flex-row gap-6">
-            <div className="bg-purple-100 p-4 rounded-2xl shrink-0 w-fit">
-              <BarChart3 className="w-8 h-8 md:w-10 md:h-10 text-purple-600" />
-            </div>
+          <div className={clsx(CARD, 'p-4 md:p-6 flex flex-col md:flex-row gap-6')}>
+            <BarChart3 className="w-8 h-8 text-cc-ink-muted shrink-0" aria-hidden="true" />
             <div className="min-w-0">
-              <h3 className="font-black text-purple-900 text-base md:text-lg mb-1 uppercase tracking-tight">AI-Estimated Coverage</h3>
-              <p className="text-purple-700 text-3xl md:text-4xl font-black mb-4">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <h3 className="cc-text-h2 text-cc-ink">AI-Estimated Coverage</h3>
+                <CcProvenanceChip value="proposed" />
+              </div>
+              <p className="cc-text-title text-cc-ink mb-4">
                 {project?.coverageEstimate?.percentage ? `${project.coverageEstimate.percentage}%` : 'N/A'}
               </p>
-              
+
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-[10px] font-black text-purple-900/60 uppercase tracking-widest mb-1.5">Logic Analysis</h4>
-                  <p className="text-xs md:text-sm text-purple-700 leading-relaxed">{project?.coverageEstimate?.explanation || 'No explanation available.'}</p>
+                  <h4 className={clsx(LABEL, 'mb-1')}>Logic Analysis</h4>
+                  <p className="cc-text-cell text-cc-ink leading-relaxed">{project?.coverageEstimate?.explanation || 'No explanation available.'}</p>
                 </div>
                 <div>
-                  <h4 className="text-[10px] font-black text-purple-900/60 uppercase tracking-widest mb-1.5">Gaps Identified</h4>
-                  <p className="text-xs md:text-sm text-purple-700 italic font-medium">{project?.coverageEstimate?.missingCoverage || 'No missing coverage information.'}</p>
+                  <h4 className={clsx(LABEL, 'mb-1')}>Gaps Identified</h4>
+                  <p className="cc-text-cell text-cc-ink">{project?.coverageEstimate?.missingCoverage || 'No missing coverage information.'}</p>
                 </div>
               </div>
             </div>
@@ -1907,13 +1900,14 @@ export default function TestingSandboxPage() {
       )}
 
       {aiExplanation && (
-        <div className="mb-8 bg-red-50 border border-red-100 rounded-[2rem] p-6 flex flex-col sm:flex-row gap-4 items-start animate-in fade-in slide-in-from-bottom-4">
-          <div className="bg-red-100 p-3 rounded-xl shrink-0">
-            <AlertTriangle className="w-6 h-6 text-red-600" />
-          </div>
+        <div className="mb-8 bg-cc-error-bg border border-cc-error-border rounded-cc-card p-4 md:p-6 flex flex-col sm:flex-row gap-4 items-start">
+          <AlertTriangle className="w-6 h-6 text-cc-error shrink-0" aria-hidden="true" />
           <div className="min-w-0">
-            <h3 className="text-base md:text-lg font-black text-red-900 mb-2 uppercase tracking-tight">AI Test Analysis</h3>
-            <div className="text-red-800 font-medium leading-relaxed prose prose-sm prose-red max-w-none">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h3 className="cc-text-h2 text-cc-ink">AI Test Analysis</h3>
+              <CcProvenanceChip value="proposed" />
+            </div>
+            <div className="text-cc-ink cc-text-body prose prose-sm max-w-none">
               <ReactMarkdown>{aiExplanation}</ReactMarkdown>
             </div>
           </div>
@@ -1921,25 +1915,25 @@ export default function TestingSandboxPage() {
       )}
 
       {testResults && stats && (
-        <div id="qa-report-dashboard" className="animate-in fade-in slide-in-from-bottom-8 duration-700 mt-16">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 px-2">
+        <div id="qa-report-dashboard" className="mt-12">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
             <div>
-              <h2 className="text-3xl md:text-4xl font-black text-[#0b1c30] tracking-tighter uppercase">QA Dashboard</h2>
-              <p className="text-[#0b1c30]/50 font-black text-xs md:text-sm uppercase tracking-widest">Automation report for {project?.name}</p>
+              <h2 className="cc-text-title text-cc-ink">QA Dashboard</h2>
+              <p className="cc-text-cell text-cc-ink-muted">Automation report for {project?.name}</p>
             </div>
-            <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+            <div className={clsx(CARD, 'px-4 py-2 flex items-center gap-4')}>
               <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#006b2c]"></div>
-                <span className="text-[10px] font-black text-gray-500 uppercase">{stats.passed} Passed</span>
+                <span data-chart-swatch aria-hidden="true" className={clsx('w-2 h-2 rounded-full', stateChartColor('information').bg)}></span>
+                <span className="cc-text-meta text-cc-ink">{stats.passed} Passed</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-600"></div>
-                <span className="text-[10px] font-black text-gray-500 uppercase">{stats.failed} Failed</span>
+                <span data-chart-swatch aria-hidden="true" className={clsx('w-2 h-2 rounded-full', stateChartColor('error').bg)}></span>
+                <span className="cc-text-meta text-cc-ink">{stats.failed} Failed</span>
               </div>
               {stats.inconclusive > 0 && (
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-600"></div>
-                  <span className="text-[10px] font-black text-gray-500 uppercase">
+                  <span data-chart-swatch data-not-determined aria-hidden="true" className={clsx('w-2 h-2 rounded-full', NOT_DETERMINED_CHART.bg)}></span>
+                  <span className="cc-text-meta text-cc-ink">
                     {stats.inconclusive} No verdict
                   </span>
                 </div>
@@ -1947,28 +1941,28 @@ export default function TestingSandboxPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
             {/* Pass Rate Card */}
-            <div className="lg:col-span-4 bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center">
+            <div className={clsx(CARD, 'lg:col-span-4 p-6 flex flex-col items-center justify-center text-center')}>
               {mounted && <TestingPieChart pieData={pieData} stats={stats} />}
-              <div className="mt-6 flex justify-center gap-8">
+              <div className="mt-4 flex justify-center gap-8">
                 <div className="text-center">
-                  <p className="text-2xl font-black text-[#006b2c] tracking-tighter">{stats.passed}</p>
-                  <p className="text-[9px] font-black text-gray-400 border-t border-gray-50 pt-1 uppercase tracking-widest">Passed</p>
+                  <p className="cc-text-title text-cc-ink">{stats.passed}</p>
+                  <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>Passed</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-black text-red-600 tracking-tighter">{stats.failed}</p>
-                  <p className="text-[9px] font-black text-gray-400 border-t border-gray-50 pt-1 uppercase tracking-widest">Failed</p>
+                  <p className="cc-text-title text-cc-ink">{stats.failed}</p>
+                  <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>Failed</p>
                 </div>
                 {stats.inconclusive > 0 && (
                   <div className="text-center">
-                    <p className="text-2xl font-black text-amber-600 tracking-tighter">{stats.inconclusive}</p>
-                    <p className="text-[9px] font-black text-gray-400 border-t border-gray-50 pt-1 uppercase tracking-widest">No verdict</p>
+                    <p className="cc-text-title text-cc-ink">{stats.inconclusive}</p>
+                    <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>No verdict</p>
                   </div>
                 )}
               </div>
               {stats.inconclusive > 0 && (
-                <p className="mt-4 text-[10px] leading-relaxed text-amber-700 font-bold max-w-[22rem]">
+                <p className="mt-4 cc-text-meta font-medium leading-relaxed text-cc-ink-muted max-w-[22rem]">
                   {stats.inconclusive} of {stats.total} produced no result — skipped, or the runner
                   never reported on them. The rate above is of the {stats.verdicts} that did.
                 </p>
@@ -1976,9 +1970,9 @@ export default function TestingSandboxPage() {
             </div>
 
             {/* Category Performance */}
-            <div className="lg:col-span-8 bg-white p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
-              <h3 className="text-lg font-black text-[#0b1c30] mb-8 flex items-center gap-2 uppercase tracking-tight">
-                <BarChart3 className="w-5 h-5 text-[#006b2c]" />
+            <div className={clsx(CARD, 'lg:col-span-8 p-4 md:p-6 overflow-hidden')}>
+              <h3 className="cc-text-h2 text-cc-ink mb-6 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-cc-ink-muted" aria-hidden="true" />
                 Capability Coverage
               </h3>
               <div className="h-[250px] md:h-[300px]">
@@ -1987,141 +1981,126 @@ export default function TestingSandboxPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-            {testResults.map((res: any, i: number) => (
-              <motion.div 
-                key={i} 
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {testResults.map((res: any, i: number) => {
+              const tone = verdictTone(res.status);
+              const state = STATE_CLASSES[VERDICT_STATE[tone]];
+              return (
+              <motion.div
+                key={i}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                onClick={() => setSelectedResult(res)} 
+                onClick={() => setSelectedResult(res)}
+                data-verdict-tone={tone}
                 className={clsx(
-                  "group p-6 rounded-[2rem] border cursor-pointer transition-all hover:shadow-xl active:scale-[0.98]",
-                  verdictTone(res.status) === 'pass'
-                    ? 'bg-white border-gray-100 hover:border-green-200'
-                    : verdictTone(res.status) === 'fail'
-                      ? 'bg-red-50 border-red-100 hover:border-red-200'
-                      : 'bg-amber-50 border-amber-100 hover:border-amber-200'
+                  "group p-4 rounded-cc-card border cursor-pointer transition-colors bg-cc-surface shadow-cc hover:border-cc-field-border",
+                  tone === 'fail' ? 'border-cc-error-border' : tone === 'none' ? 'border-dashed border-cc-field-border' : 'border-cc-line'
                 )}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className={clsx(
-                    "p-2 rounded-xl",
-                    verdictTone(res.status) === 'pass'
-                      ? 'bg-green-50 text-green-600'
-                      : verdictTone(res.status) === 'fail'
-                        ? 'bg-white text-red-600'
-                        : 'bg-white text-amber-600'
-                  )}>
-                    {verdictTone(res.status) === 'pass' ? <ShieldCheck size={20} />
-                      : verdictTone(res.status) === 'fail' ? <AlertTriangle size={20} />
-                      : <HelpCircle size={20} />}
-                  </div>
-                  <span className="font-mono text-[9px] font-black text-gray-400 uppercase tracking-widest">{renderSafeValue(res.id)}</span>
-                </div>
-                <h4 className="font-black text-[#0b1c30] mb-2 line-clamp-2 text-sm leading-tight group-hover:text-[#006b2c] transition-colors">{renderSafeValue(res.name)}</h4>
-                <div className="flex items-center gap-2 pt-2">
-                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-black uppercase tracking-tight">
-                    {renderSafeValue(res.category)}
+                  <span className={state.text}>
+                    {tone === 'pass' ? <ShieldCheck size={20} aria-hidden="true" />
+                      : tone === 'fail' ? <AlertTriangle size={20} aria-hidden="true" />
+                      : <HelpCircle size={20} aria-hidden="true" />}
                   </span>
-                  <span className={clsx(
-                    "text-[9px] font-black uppercase tracking-[0.2em] ml-auto",
-                    verdictTone(res.status) === 'pass' ? 'text-green-600'
-                      : verdictTone(res.status) === 'fail' ? 'text-red-600'
-                      : 'text-amber-600'
-                  )}>
+                  <span className="font-cc-mono text-[12px] text-cc-ink-muted">{renderSafeValue(res.id)}</span>
+                </div>
+                <h4 className="cc-text-h3 text-cc-ink mb-2 line-clamp-2 leading-tight">{renderSafeValue(res.name)}</h4>
+                <div className="flex items-center gap-2 pt-2">
+                  <CcTag>{renderSafeValue(res.category)}</CcTag>
+                  <span className={clsx("cc-text-meta ml-auto", state.text)}>
                     {renderSafeValue(res.status)}
                   </span>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
       {selectedResult && (
-        <div className="fixed inset-0 bg-[#0b1c30]/60 backdrop-blur-md flex items-center justify-center p-4 z-[100] animate-in fade-in duration-300" onClick={() => setSelectedResult(null)}>
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 max-w-4xl w-full shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" 
+        <div className="fixed inset-0 bg-cc-overlay/60 flex items-center justify-center p-4 z-[100]" onClick={() => setSelectedResult(null)}>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="bg-cc-surface rounded-cc-card p-6 md:p-8 max-w-4xl w-full shadow-cc-dialog flex flex-col max-h-[90vh] overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-8 gap-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6 gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="font-mono text-sm font-black text-[#006b2c] uppercase tracking-widest">{renderSafeValue(selectedResult.id)}</span>
-                  <span className="text-[10px] px-3 py-1 rounded-full bg-[#eff4ff] text-[#00873a] font-black uppercase tracking-[0.1em]">
-                    {renderSafeValue(selectedResult.category)}
-                  </span>
+                  <span className="font-cc-mono text-[13px] font-semibold text-cc-ink">{renderSafeValue(selectedResult.id)}</span>
+                  <CcTag>{renderSafeValue(selectedResult.category)}</CcTag>
                 </div>
-                <h3 className="text-2xl md:text-4xl font-black text-[#0b1c30] leading-tight tracking-tighter uppercase">{renderSafeValue(selectedResult.name)}</h3>
+                <h3 className="cc-text-title text-cc-ink">{renderSafeValue(selectedResult.name)}</h3>
               </div>
               <div className={clsx(
-                "px-6 py-2 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg self-start sm:self-auto",
-                verdictTone(selectedResult.status) === 'pass' ? 'bg-green-600 text-white shadow-green-900/20'
-                  : verdictTone(selectedResult.status) === 'fail' ? 'bg-red-600 text-white shadow-red-900/20'
-                  : 'bg-amber-600 text-white shadow-amber-900/20'
+                "px-3 py-1 rounded-cc-row border cc-text-meta self-start sm:self-auto",
+                STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].bg,
+                STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].border,
+                STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].text,
               )}>
                 {renderSafeValue(selectedResult.status)}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 flex-grow overflow-y-auto px-1 custom-scrollbar pb-6">
-              <div className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-grow overflow-y-auto px-1 custom-scrollbar pb-6">
+              <div className="space-y-6">
                 <div>
-                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-3">Goal</h4>
-                  <p className="text-gray-700 leading-relaxed font-bold text-base md:text-lg">{renderSafeValue(selectedResult.description)}</p>
+                  <h4 className={clsx(LABEL, 'mb-2')}>Goal</h4>
+                  <p className="cc-text-body text-cc-ink">{renderSafeValue(selectedResult.description)}</p>
                 </div>
                 <div>
-                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-3">Preconditions</h4>
-                  <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 shadow-inner">
-                    <p className="text-sm text-gray-600 whitespace-pre-wrap font-medium">{renderSafeValue(selectedResult.preconditions)}</p>
+                  <h4 className={clsx(LABEL, 'mb-2')}>Preconditions</h4>
+                  <div className="bg-cc-surface-muted p-4 rounded-cc-row border border-cc-line">
+                    <p className="cc-text-cell text-cc-ink whitespace-pre-wrap">{renderSafeValue(selectedResult.preconditions)}</p>
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-3">Requirement Metadata</h4>
+                  <h4 className={clsx(LABEL, 'mb-2')}>Requirement Metadata</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50/50 p-3 rounded-xl border border-gray-100">
-                      <span className="text-[9px] font-black text-gray-400 uppercase block mb-1">Priority</span>
-                      <span className="text-xs font-bold text-gray-900">{renderSafeValue(selectedResult.priority) || 'Medium'}</span>
+                    <div className="bg-cc-surface-muted p-3 rounded-cc-row border border-cc-line">
+                      <span className={clsx(LABEL, 'block mb-1')}>Priority</span>
+                      <span className="cc-text-cell font-semibold text-cc-ink">{renderSafeValue(selectedResult.priority) || 'Medium'}</span>
                     </div>
-                    <div className="bg-gray-50/50 p-3 rounded-xl border border-gray-100">
-                      <span className="text-[9px] font-black text-gray-400 uppercase block mb-1">Test Data</span>
-                      <span className="text-xs font-bold text-gray-900 truncate block">{renderSafeValue(selectedResult.testData) || 'N/A'}</span>
+                    <div className="bg-cc-surface-muted p-3 rounded-cc-row border border-cc-line">
+                      <span className={clsx(LABEL, 'block mb-1')}>Test Data</span>
+                      <span className="cc-text-cell font-semibold text-cc-ink truncate block">{renderSafeValue(selectedResult.testData) || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-8">
+              <div className="space-y-6">
                 <div>
-                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-3">Execution Sequence</h4>
-                  <div className="space-y-3">
+                  <h4 className={clsx(LABEL, 'mb-2')}>Execution Sequence</h4>
+                  <div className="space-y-2">
                     {Array.isArray(selectedResult.steps) ? selectedResult.steps.map((step: any, idx: number) => (
-                      <div key={idx} className="flex gap-4 p-3 bg-gray-50/50 rounded-xl border border-gray-100 group/item">
-                        <span className="font-black text-[#006b2c] text-sm">{idx + 1}.</span>
-                        <span className="text-xs md:text-sm text-gray-700 font-medium leading-relaxed">{renderSafeValue(step)}</span>
+                      <div key={idx} className="flex gap-4 p-3 bg-cc-surface-muted rounded-cc-row border border-cc-line">
+                        <span className="font-bold text-cc-ink cc-text-cell">{idx + 1}.</span>
+                        <span className="cc-text-cell text-cc-ink leading-relaxed">{renderSafeValue(step)}</span>
                       </div>
-                    )) : <p className="text-sm text-gray-600 font-medium">{renderSafeValue(selectedResult.steps)}</p>}
+                    )) : <p className="cc-text-cell text-cc-ink">{renderSafeValue(selectedResult.steps)}</p>}
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-3">Validation Logic</h4>
+                  <h4 className={clsx(LABEL, 'mb-2')}>Validation Logic</h4>
                   <div className={clsx(
-                    "p-6 rounded-2xl border font-mono text-[11px] md:text-xs shadow-lg",
-                    verdictTone(selectedResult.status) === 'pass' ? 'bg-green-50 border-green-200 text-green-900 shadow-green-900/5'
-                      : verdictTone(selectedResult.status) === 'fail' ? 'bg-red-50 border-red-200 text-red-900 shadow-red-900/5'
-                      : 'bg-amber-50 border-amber-200 text-amber-900 shadow-amber-900/5'
+                    "p-4 rounded-cc-row border font-cc-mono text-[12px] text-cc-ink",
+                    STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].bg,
+                    STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].border,
                   )}>
                     <div className="mb-4">
-                      <span className="font-black opacity-60 uppercase text-[9px] block mb-1">Execution Message</span>
-                      <p className="font-bold">{renderSafeValue(selectedResult.message)}</p>
+                      <span className={clsx(LABEL, 'block mb-1')}>Execution Message</span>
+                      <p className="font-semibold">{renderSafeValue(selectedResult.message)}</p>
                     </div>
                     {selectedResult.expectedResult && (
                       <div>
-                        <span className="font-black opacity-60 uppercase text-[9px] block mb-1">Expected Invariant</span>
-                        <p className="font-bold">{renderSafeValue(selectedResult.expectedResult)}</p>
+                        <span className={clsx(LABEL, 'block mb-1')}>Expected Invariant</span>
+                        <p className="font-semibold">{renderSafeValue(selectedResult.expectedResult)}</p>
                       </div>
                     )}
                   </div>
@@ -2129,18 +2108,17 @@ export default function TestingSandboxPage() {
               </div>
             </div>
 
-            <button 
-              onClick={() => setSelectedResult(null)} 
-              className="mt-8 md:mt-12 w-full bg-[#0b1c30] text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] hover:bg-green-600 transition-all shadow-xl hover:shadow-green-600/20 shrink-0"
-            >
-              CLOSE REPORT
-            </button>
+            <div className="mt-6 flex justify-end shrink-0">
+              <CcButton variant="dark" density="cozy" onClick={() => setSelectedResult(null)}>
+                Close report
+              </CcButton>
+            </div>
           </motion.div>
         </div>
       )}
 
 
-      <NavigationButtons 
+      <NavigationButtons
         backPath={`/project/${projectId}/documentation`}
         backLabel="Back to Documentation"
         proceedPath={`/project/${projectId}/tco`}
