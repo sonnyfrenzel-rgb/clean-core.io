@@ -5,6 +5,7 @@
   "ceilings": {
     "small": 4,
     "contrast": 1,
+    "focus": 1,
     "heavy": 4
   }
 }

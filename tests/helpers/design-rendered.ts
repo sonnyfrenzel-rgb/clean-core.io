@@ -14,9 +14,11 @@
  *
  *   small       text below the 11 px floor (DESIGN.md §1.2)
  *   contrast    text below 4.5:1 (3:1 when large) against the colour actually
- *               behind it, translucent layers composited (§1.1)
- *   focus       a Tab stop that shows no indicator: no outline of at least 2 px
- *               and no ring (box-shadow) either (§1.6)
+ *               behind it, translucent layers composited and the `opacity` of
+ *               the text and its ancestors applied (§1.1)
+ *   focus       a Tab stop that shows no indicator: focusing it changes neither
+ *               an outline of at least 2 px nor a visible ring (box-shadow) —
+ *               a shadow the element wears anyway is decoration (§1.6)
  *   headings    a heading more than one level below the one before it; the
  *               outline starts at level 0, so a page that opens on h2 has one (§2.3)
  *   heavy       text heavier than 800 (§1.2: 900 does not exist; public pages
@@ -291,7 +293,6 @@ export function measurePage(sampleMax = 12): PageMeasure {
     const [l1, l2] = [lum(a), lum(b)].sort((x, y) => y - x);
     return (l1 + 0.05) / (l2 + 0.05);
   };
-  const over = (top: number[], under: number[]) => [0, 1, 2].map((i) => top[i] * top[3] + under[i] * (1 - top[3]));
 
   const describe = (el: Element) => {
     const cls = (el.getAttribute('class') || '').replace(/\s+/g, ' ').slice(0, 70);
@@ -300,36 +301,52 @@ export function measurePage(sampleMax = 12): PageMeasure {
   };
 
   /**
-   * The opaque colour behind an element: layers collected upwards until one is
-   * opaque, then composited back down over white. A gradient counts as its
-   * least favourable opaque stop against `fg` — text on a gradient has to be
-   * readable on all of it. A picture (`url(...)`) cannot be measured: null.
+   * The text and the colour behind it, both as the reader sees them. Walks from
+   * the element to the root and composites the way the browser does: at each
+   * level what is inside is painted over that element's own background, and the
+   * whole group is then faded by that element's `opacity` before it meets the
+   * level below. Run twice in one walk — once with the text on top and once
+   * without — so an `opacity: 0.7` on the text or on any ancestor lightens the
+   * text against the ground behind the group, not against its own card. A
+   * gradient counts as its least favourable opaque stop against `fg` — text on a
+   * gradient has to be readable on all of it. A picture (`url(...)`) cannot be
+   * measured: null. Colours are premultiplied `[r·a, g·a, b·a, a]` while they
+   * are composited; the result is opaque over white.
    */
-  const backgroundOf = (start: Element, fg: number[]): number[] | null => {
-    const layers: number[][] = [];
-    let node: Element | null = start;
-    while (node) {
+  const textAndGround = (start: Element, fg: number[]): { text: number[]; ground: number[] } | null => {
+    const pm = (c: number[]) => [c[0] * c[3], c[1] * c[3], c[2] * c[3], c[3]];
+    const on = (top: number[], under: number[]) => under.map((v, i) => top[i] + v * (1 - top[3]));
+    let text = pm(fg);
+    let ground = [0, 0, 0, 0];
+    for (let node: Element | null = start; node; node = node.parentElement) {
       const s = getComputedStyle(node);
-      const image = s.backgroundImage;
-      if (image && image !== 'none') {
-        if (/url\(/.test(image)) return null;
-        const stops = [...image.matchAll(/rgba?\([^)]+\)/g)].map((m) => parse(m[0])).filter((c): c is number[] => !!c && c[3] >= 1);
-        if (stops.length) {
-          const worst = stops.sort((a, b) => ratio(fg, a) - ratio(fg, b))[0];
-          layers.push(worst);
-          break;
+      // Once the ground is opaque, backgrounds further up are covered; only an
+      // opacity below 1 on the way up lets them through again.
+      if (ground[3] < 0.999) {
+        const image = s.backgroundImage;
+        let layer: number[] | null = null;
+        if (image && image !== 'none') {
+          if (/url\(/.test(image)) return null;
+          const stops = [...image.matchAll(/rgba?\([^)]+\)/g)].map((m) => parse(m[0])).filter((c): c is number[] => !!c && c[3] >= 1);
+          if (stops.length) layer = stops.sort((a, b) => ratio(fg, a) - ratio(fg, b))[0];
+        }
+        // What is inside goes over the image, the image over the element's
+        // background colour — so the gradient first, then the colour.
+        const bg = parse(s.backgroundColor);
+        for (const under of [layer, bg && bg[3] > 0 ? bg : null]) {
+          if (!under) continue;
+          text = on(text, pm(under));
+          ground = on(ground, pm(under));
         }
       }
-      const bg = parse(s.backgroundColor);
-      if (bg && bg[3] > 0) {
-        layers.push(bg);
-        if (bg[3] >= 1) break;
+      const o = parseFloat(s.opacity || '1');
+      if (o < 1) {
+        text = text.map((v) => v * o);
+        ground = ground.map((v) => v * o);
       }
-      node = node.parentElement;
     }
-    let ground = [255, 255, 255];
-    for (let i = layers.length - 1; i >= 0; i--) ground = over(layers[i], ground);
-    return ground;
+    const white = [255, 255, 255, 1];
+    return { text: on(text, white).slice(0, 3), ground: on(ground, white).slice(0, 3) };
   };
 
   const effectiveOpacity = (el: Element) => {
@@ -367,19 +384,25 @@ export function measurePage(sampleMax = 12): PageMeasure {
     if (weight > 800) note('heavy', `${describe(el)} ${weight}`);
 
     // Contrast: two characters at least (a lone "·" separator is not text),
-    // not a disabled control's dimmed label, not gradient-clipped text.
+    // not a disabled control's dimmed label, not gradient-clipped text. A
+    // disabled control is named by what it is, not guessed from how faint it
+    // is: WCAG 1.4.3 exempts inactive components, and the design system dims
+    // them to 0.6 — which the opacity applied below would otherwise count.
     if (own.length < 2 || opacity <= 0.5) continue;
+    if (el.closest(':disabled, [aria-disabled="true"]')) continue;
     if (/text/.test(s.backgroundClip || '') || /text/.test((s as unknown as Record<string, string>).webkitBackgroundClip || '')) continue;
     const isSvg = el instanceof SVGElement;
     const fg = parse(isSvg ? s.fill : s.color);
     if (!fg) continue;
-    const bg = backgroundOf(el, fg);
-    if (!bg) continue;
-    const flat = over(fg, bg);
+    const seen = textAndGround(el, fg);
+    if (!seen) continue;
     const large = size >= 24 || (size >= 18.66 && weight >= 700);
     const floor = large ? 3 : 4.5;
-    const r = ratio(flat, bg);
-    if (r < floor) note('contrast', `${Math.round(r * 100) / 100}:1 (needs ${floor}) ${describe(el)} ${s.color} on rgb(${bg.map(Math.round).join(', ')})`);
+    const r = ratio(seen.text, seen.ground);
+    if (r < floor) {
+      const faded = opacity < 1 ? ` at opacity ${Math.round(opacity * 100) / 100}` : '';
+      note('contrast', `${Math.round(r * 100) / 100}:1 (needs ${floor}) ${describe(el)} ${s.color}${faded} on rgb(${seen.ground.map(Math.round).join(', ')})`);
+    }
   }
 
   // Headings in document order; the outline starts at 0. A `sr-only` heading
@@ -462,15 +485,56 @@ export function focusedRing(): { id: number; ringless: boolean; what: string; ag
   w.__d2Focus ??= new Map();
   const again = w.__d2Focus.has(el);
   if (!again) w.__d2Focus.set(el, w.__d2Focus.size);
+
+  // A focus ring that fades in is read at its end, not at whichever frame the
+  // walk happened to arrive on.
+  for (const a of el.getAnimations()) if (a instanceof CSSTransition) a.finish();
   const s = getComputedStyle(el);
-  const outline = s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) >= 2;
-  const ring = s.boxShadow !== 'none' && s.boxShadow !== '';
+
+  // The same element unfocused: a shallow copy in the same place, which matches
+  // every selector the element does except the focus ones. It is inserted and
+  // removed in one task, so it is never painted. No `id`, `name` or `autofocus`,
+  // so it joins no radio group and takes nothing from the original. An element
+  // that would load something when inserted (a frame, media, a custom element)
+  // is not copied; its resting state is taken as "no outline, no shadow".
+  let rest = { style: 'none', width: '0px', color: 'rgba(0, 0, 0, 0)', offset: '0px', shadow: 'none' };
+  if (!/^(IFRAME|OBJECT|EMBED|VIDEO|AUDIO)$/.test(el.tagName) && !el.tagName.includes('-')) {
+    const twin = el.cloneNode(false) as HTMLElement;
+    for (const attr of ['id', 'name', 'autofocus']) twin.removeAttribute(attr);
+    el.after(twin);
+    const u = getComputedStyle(twin);
+    rest = { style: u.outlineStyle, width: u.outlineWidth, color: u.outlineColor, offset: u.outlineOffset, shadow: u.boxShadow };
+    twin.remove();
+  }
+
+  const clear = (color: string) => /transparent|rgba\([^)]*,\s*0\)|\/\s*0\)/.test(color);
+  // A visible shadow: a colour that is not transparent and some extent (offset,
+  // blur or spread) — `0 0 #0000`, what Tailwind writes for "no ring", is not.
+  const shadows = (value: string) =>
+    value === 'none' || !value
+      ? []
+      : value
+          .split(/,(?![^(]*\))/)
+          .map((part) => part.trim())
+          .filter((part) => {
+            const color = /(rgba?\([^)]*\)|transparent)/i.exec(part)?.[0] ?? '';
+            if (color && clear(color)) return false;
+            const lengths = (part.replace(color, '').match(/-?\d*\.?\d+px/g) ?? []).map(parseFloat);
+            return lengths.some((n) => n !== 0);
+          })
+          .sort();
+  const outlineOf = (st: { style: string; width: string; color: string; offset: string }) =>
+    st.style !== 'none' && parseFloat(st.width) >= 2 && !clear(st.color) ? `${st.style} ${st.width} ${st.color} ${st.offset}` : '';
+  const focusedOutline = outlineOf({ style: s.outlineStyle, width: s.outlineWidth, color: s.outlineColor, offset: s.outlineOffset });
+  const outline = focusedOutline !== '' && focusedOutline !== outlineOf(rest);
+  const ringNow = shadows(s.boxShadow);
+  const ring = ringNow.length > 0 && ringNow.join('|') !== shadows(rest.shadow).join('|');
   const cls = (el.getAttribute('class') || '').replace(/\s+/g, ' ').slice(0, 70);
   const label = (el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 30);
   return {
     id: w.__d2Focus.get(el)!,
     ringless: !outline && !ring,
-    what: `<${el.tagName.toLowerCase()}${cls ? ` class="${cls}"` : ''}> "${label}" outline ${s.outlineWidth} ${s.outlineStyle}`,
+    what: `<${el.tagName.toLowerCase()}${cls ? ` class="${cls}"` : ''}> "${label}" outline ${s.outlineWidth} ${s.outlineStyle}, shadow ${s.boxShadow === rest.shadow ? 'unchanged' : s.boxShadow}`,
     again,
   };
 }

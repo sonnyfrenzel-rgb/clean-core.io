@@ -262,6 +262,56 @@ test.describe('design rendered guard (DESIGN.md on every route, ratchet)', () =>
     expect(new Set(ROUTES.map((r) => r.key)).size, 'two routes share a key').toBe(ROUTES.length);
   });
 
+  // QA f8887638a04b, 0564882579db: the two checks on fixtures whose answer is
+  // known, so a measurement that goes blind again is red here and not quietly
+  // green on every route.
+  test('contrast applies opacity above 0.5 to the text, and a shadow the element always wears is no focus ring', async ({ page }) => {
+    await page.setContent(`<!doctype html><html><head><style>
+      body { margin: 0; background: #ffffff; font: 16px/1.5 sans-serif; }
+      button { font: inherit; margin: 8px; padding: 8px; border: 1px solid #555; background: #fff; color: #111; outline: none; }
+      .decor { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+      .ring:focus-visible { box-shadow: 0 0 0 3px #2563eb; }
+      .decor-ring { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+      .decor-ring:focus-visible { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 3px #2563eb; }
+      .outlined { outline: 2px solid #2563eb; }
+      .outline-on-focus:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+      .tw-none { box-shadow: 0 0 #0000, 0 0 #0000; }
+    </style></head><body>
+      <p data-case="control" style="color:#595959">Grey text at full strength</p>
+      <p data-case="faded-self" style="color:#595959;opacity:0.6">Grey text faded on itself</p>
+      <div style="opacity:0.6"><p data-case="faded-parent" style="color:#595959">Grey text faded by its card</p></div>
+      <div style="opacity:0.6"><button disabled style="color:#595959">Disabled action, exempt</button></div>
+      <button class="decor">Decoration only</button>
+      <button class="ring">Ring on focus</button>
+      <button class="decor-ring">Decoration plus ring</button>
+      <button class="outlined">Outline always</button>
+      <button class="outline-on-focus">Outline on focus</button>
+      <button class="tw-none">Transparent ring</button>
+    </body></html>`);
+
+    const m = await page.evaluate(measurePage, 12);
+    expect(m.counts.contrast, m.samples.contrast.join('\n')).toBe(2);
+    expect(m.samples.contrast.join('\n')).toContain('faded on itself');
+    expect(m.samples.contrast.join('\n')).toContain('faded by its card');
+
+    await page.evaluate(focusStart);
+    const ringless: Record<string, boolean> = {};
+    for (let i = 0; i < 6; i++) {
+      await page.keyboard.press('Tab');
+      const ring = await page.evaluate(focusedRing);
+      expect(ring, `Tab ${i + 1} reached nothing`).not.toBeNull();
+      ringless[ring!.what.match(/> "([^"]+)"/)![1]] = ring!.ringless;
+    }
+    expect(ringless).toEqual({
+      'Decoration only': true,
+      'Ring on focus': false,
+      'Decoration plus ring': false,
+      'Outline always': true,
+      'Outline on focus': false,
+      'Transparent ring': true,
+    });
+  });
+
   test('public routes, signed out', async ({ page }) => {
     test.setTimeout(15 * 60 * 1000);
     const results: Measured[] = [];
