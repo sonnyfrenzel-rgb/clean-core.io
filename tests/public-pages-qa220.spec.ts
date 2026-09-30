@@ -55,6 +55,11 @@ test.describe('the landing page and the whitepaper', () => {
     expect(src).toMatch(/not used by Google to train its models[^<]*free-tier terms differ/);
   });
 
+  test('the whitepaper describes the route and the table access it really has (55f3dd4a7152, e6f754593747)', () => {
+    const src = code('app/whitepaper/page.tsx');
+    expect(src).not.toMatch(/best fits each object/);
+    expect(src).not.toMatch(/writes to internal tables/);
+  });
 });
 
 test.describe('the legal pages', () => {
