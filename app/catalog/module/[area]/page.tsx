@@ -44,8 +44,8 @@ export async function generateMetadata({
   if (!meta) return { title: 'Module not found | Clean-Core.io' };
 
   const count = getObjectsByModule(meta.code).length;
-  const title = `SAP ${meta.name} (${meta.code}) objects → released S/4HANA APIs | Clean-Core.io`;
-  const description = `${count} SAP ${meta.name} objects with their clean core level and released S/4HANA API successor, from SAP's official Cloudification Repository. ${meta.blurb}`;
+  const title = `SAP ${meta.name} (${meta.code}) objects: clean core level and released S/4HANA successors | Clean-Core.io`;
+  const description = `${count} SAP ${meta.name} objects with their clean core level and, where SAP names one, their released S/4HANA API successor, from SAP's official Cloudification Repository. ${meta.blurb}`;
 
   return withTwitterCard({
     title,
@@ -122,9 +122,9 @@ export default async function CatalogModulePage({
       <p className="text-lg text-slate-600 mb-2">{meta.blurb}</p>
       <p className="text-sm text-slate-500 mb-10">
         {rows.length} object{rows.length === 1 ? '' : 's'} in this area, {rows.filter((r) => r.successor).length} of
-        them with a released S/4HANA successor. The sentence used to claim all of them did, while
-        the table below marked some &ldquo;no released path&rdquo; two lines further down. Each row
-        shows the clean core level derived from SAP&apos;s own published state for that object.
+        them with a released S/4HANA successor. Each row shows the clean core level derived from
+        SAP&apos;s own published state for that object; an SAP object neither of SAP&apos;s files
+        lists is level C, which is how SAP&apos;s level concept defines an internal object.
       </p>
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200 mb-10">
