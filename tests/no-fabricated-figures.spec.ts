@@ -320,12 +320,28 @@ test.describe('nothing reports success it did not achieve', () => {
     expect(source).toContain("'Not scored yet'");
   });
 
-  test('the Jira modal does not simulate a sync', () => {
-    const source = fs.readFileSync(path.join(ROOT, 'components/JiraIntegrationModal.tsx'), 'utf8');
-    // It used to setTimeout its way to a success screen while the server has no
-    // token persistence at all.
-    expect(source).not.toMatch(/setTimeout\([\s\S]{0,120}setStep\('success'\)/);
-    expect(source).toContain('not available yet');
+  test('no Jira screen simulates a sync', () => {
+    // The Jira modal used to setTimeout its way to a success screen while the
+    // server has no token persistence at all. It was never mounted and D.22c
+    // removed it; the claim now holds for every source file, so a screen that
+    // brings the fake sync back fails here wherever it lives.
+    expect(fs.existsSync(path.join(ROOT, 'components/JiraIntegrationModal.tsx'))).toBe(false);
+    const files: string[] = [];
+    const walk = (rel: string) => {
+      for (const e of fs.readdirSync(path.join(ROOT, rel), { withFileTypes: true })) {
+        const child = `${rel}/${e.name}`;
+        if (e.isDirectory()) walk(child);
+        else if (/\.(tsx?|jsx?)$/.test(e.name)) files.push(child);
+      }
+    };
+    for (const dir of ['app', 'components', 'lib', 'hooks']) walk(dir);
+    for (const f of files) {
+      const source = fs.readFileSync(path.join(ROOT, f), 'utf8');
+      expect(source, `${f} fakes a sync`).not.toMatch(/setTimeout\([\s\S]{0,120}setStep\('success'\)/);
+      if (f.endsWith('.tsx') && !f.startsWith('app/api/') && /\bJira\b/.test(source)) {
+        expect(source, `${f} names Jira without saying the sync is not available`).toContain('not available yet');
+      }
+    }
   });
 
   test('the Jira callback does not report a success it cannot back', () => {

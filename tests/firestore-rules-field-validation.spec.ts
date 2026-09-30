@@ -24,8 +24,10 @@ import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emu
  *
  * Every refusal is paired with the write the app itself performs succeeding, in
  * the shape the app sends it (hooks/useUserProfile.ts, components/LandingModals.tsx,
- * app/(app)/settings/page.tsx, app/(app)/dashboard/page.tsx, components/FileUpload.tsx,
- * the project stages), so no assertion can pass because the call fails anyway.
+ * app/(app)/settings/page.tsx, app/(app)/dashboard/page.tsx, the project stages;
+ * for `files`, the shape the never-mounted `components/FileUpload.tsx` wrote
+ * until D.22c removed it — the rule stays and so does its test), so no
+ * assertion can pass because the call fails anyway.
  */
 
 const [EMU_HOST, EMU_PORT] = (process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080').split(':');

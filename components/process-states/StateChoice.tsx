@@ -37,7 +37,9 @@ import {
  *      time. That is the whole claim.
  *
  * Presentational apart from the draft a reader is holding: it fetches nothing
- * and stores nothing. `ProcessStatesPanel` wires it to the route.
+ * and stores nothing. No screen mounts it yet: `ProcessStatesPanel`, which
+ * wired it to the route and was never mounted, went in D.22c (git history has
+ * it); the calls it made live on in `lib/process-states-client.ts`.
  */
 
 export interface StateChoiceProps {
