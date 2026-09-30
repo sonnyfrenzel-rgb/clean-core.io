@@ -3,8 +3,8 @@
   "route": "/clean-core-explained",
   "step": "D.23a",
   "ceilings": {
-    "small": 64,
-    "contrast": 9,
-    "heavy": 150
+    "small": 1,
+    "contrast": 2,
+    "heavy": 5
   }
 }

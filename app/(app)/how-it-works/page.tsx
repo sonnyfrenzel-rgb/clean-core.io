@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { getFacts, formatObjectCount } from '@/lib/facts';
-import { GitBranch, Database, Code2, Bot, Ruler, ChevronDown, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { GitBranch, Database, Code2, PenLine, Ruler, ChevronDown, CheckCircle2 } from 'lucide-react';
 import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { supportMatrixRows, LEVEL_LABEL } from '@/lib/abap/support-matrix';
 import SupportLevelMark from '@/components/analyze/SupportLevelMark';
+import CcTable from '@/components/cc/Table';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'How It Works — Transformation Methodology & Coverage | Clean-Core.io',
@@ -57,6 +58,34 @@ const llmItems = [
   'Code comments and naming',
 ];
 
+/**
+ * The public knowledge-page look (block D, D.23a): `--cc-*` tokens instead of
+ * the palette, nothing heavier than 800, nothing under 11 px, the generous
+ * public radii (DESIGN.md §1.4, ADR-051). The hero is light with the landing
+ * page's mesh at .18 — the dark gradient banner it replaces was a surface the
+ * product does not have.
+ */
+const PAGE = 'mx-auto max-w-5xl space-y-12 px-4 py-10 text-cc-ink sm:px-6';
+const HERO = 'relative overflow-hidden rounded-3xl border border-cc-line bg-cc-surface p-8 shadow-cc sm:p-12';
+const HERO_MESH =
+  'radial-gradient(38% 42% at 10% 12%,var(--cc-seq-3) 0%,transparent 70%),radial-gradient(34% 40% at 90% 10%,var(--cc-brand) 0%,transparent 70%),radial-gradient(46% 40% at 55% 62%,var(--cc-chart-3) 0%,transparent 72%)';
+const EYEBROW =
+  'inline-flex items-center gap-2 rounded-full border border-cc-line bg-cc-brand-surface px-4 py-1 text-xs font-bold uppercase tracking-[0.08em] text-cc-brand-strong';
+const H1 = 'text-4xl font-extrabold leading-none tracking-[-0.035em] text-cc-ink sm:text-6xl';
+const H2 = 'text-3xl font-extrabold tracking-[-0.03em] text-cc-ink';
+const H3 = 'text-lg font-bold text-cc-ink';
+const STEP_ICON =
+  'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cc-line bg-cc-brand-surface text-cc-brand-strong';
+const CHECK = 'shrink-0 text-cc-brand-strong';
+const FAQ_BOX = 'space-y-6 rounded-3xl border border-cc-line bg-cc-surface-muted p-8';
+const FAQ_TITLE = 'text-2xl font-extrabold text-cc-ink';
+const FOOTER_LINE =
+  'border-t border-cc-line pt-10 text-center font-cc-mono text-xs font-semibold uppercase tracking-wider text-cc-ink-muted';
+
+const STAGE_CARD = 'space-y-4 rounded-3xl border border-cc-line bg-cc-surface p-6';
+const STAGE_NUMBER = 'flex h-10 w-10 items-center justify-center rounded-xl bg-cc-ink text-sm font-bold text-cc-on-dark';
+const STAGE_TEXT = 'text-sm font-medium leading-relaxed text-cc-ink-muted';
+
 export default function HowItWorksPage() {
 
   /**
@@ -93,7 +122,7 @@ export default function HowItWorksPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-12 animate-in fade-in duration-300 bg-white min-h-screen text-gray-900 font-sans">
+    <div className={PAGE}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -109,16 +138,16 @@ export default function HowItWorksPage() {
       </div>
 
       {/* Hero Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[2.5rem] p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-slate-700/30">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.08),transparent)] pointer-events-none"></div>
-        <div className="relative z-10 max-w-4xl space-y-6">
-          <div className="inline-flex items-center gap-2 bg-green-500/15 border border-green-400/30 px-4 py-1.5 rounded-full text-xs font-bold text-green-400 tracking-wide uppercase">
-            <GitBranch size={14} /> Methodology
+      <div className={HERO}>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.18]" style={{ background: HERO_MESH }} />
+        <div className="relative max-w-4xl space-y-6">
+          <div className={EYEBROW}>
+            <GitBranch size={14} aria-hidden="true" /> Methodology
           </div>
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none text-slate-50">
-            How It <span className="text-green-400">Works</span>
+          <h1 className={H1}>
+            How It <span className="text-cc-brand-strong">Works</span>
           </h1>
-          <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
+          <p className="max-w-2xl text-lg font-medium leading-relaxed text-cc-ink-muted">
             Three deterministic stages — from legacy ABAP to cloud-compliant architecture. Transparent, verifiable coverage — honest limitations.
           </p>
         </div>
@@ -133,53 +162,53 @@ export default function HowItWorksPage() {
       {/* Section A: Pipeline Overview */}
       <section className="space-y-6">
         <div className="space-y-2">
-          <h2 className="text-3xl font-black tracking-tight text-gray-955">
+          <h2 className={H2}>
             The Transformation Pipeline
           </h2>
-          <p className="text-gray-600 font-medium">
+          <p className="font-medium text-cc-ink-muted">
             Three deterministic stages — from legacy ABAP to cloud-compliant architecture.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {/* Step 1: Parse */}
-          <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 space-y-4 relative">
+          <div className={STAGE_CARD}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-600 text-white rounded-xl flex items-center justify-center text-sm font-black">1</div>
-              <h3 className="text-lg font-black text-gray-955">Parse</h3>
+              <div className={STAGE_NUMBER} aria-hidden="true">1</div>
+              <h3 className={H3}>Parse</h3>
             </div>
-            <div className="flex-shrink-0 w-12 h-12 bg-green-50 border border-green-200 rounded-xl flex items-center justify-center text-green-600">
-              <Code2 size={20} />
+            <div className={STEP_ICON}>
+              <Code2 size={20} aria-hidden="true" />
             </div>
-            <p className="text-gray-600 text-sm font-medium leading-relaxed">
+            <p className={STAGE_TEXT}>
               Legacy ABAP code is parsed into an Abstract Syntax Tree (AST). Direct database reads, function module calls, and class dependencies are extracted and classified.
             </p>
           </div>
 
           {/* Step 2: Map */}
-          <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 space-y-4 relative">
+          <div className={STAGE_CARD}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-600 text-white rounded-xl flex items-center justify-center text-sm font-black">2</div>
-              <h3 className="text-lg font-black text-gray-955">Map</h3>
+              <div className={STAGE_NUMBER} aria-hidden="true">2</div>
+              <h3 className={H3}>Map</h3>
             </div>
-            <div className="flex-shrink-0 w-12 h-12 bg-green-50 border border-green-200 rounded-xl flex items-center justify-center text-green-600">
-              <Database size={20} />
+            <div className={STEP_ICON}>
+              <Database size={20} aria-hidden="true" />
             </div>
-            <p className="text-gray-600 text-sm font-medium leading-relaxed">
+            <p className={STAGE_TEXT}>
               Extracted table references (e.g., VBAK, BSEG, LIKP) are resolved against a layered catalog: SAP&apos;s official Cloudification Repository ({catalogObjects}, auto-synced weekly) provides authoritative coverage, while hand-curated entries add field-level mapping precision. Every finding carries its source layer and the catalog version for audit traceability.
             </p>
           </div>
 
           {/* Step 3: Generate */}
-          <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 space-y-4 relative">
+          <div className={STAGE_CARD}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-600 text-white rounded-xl flex items-center justify-center text-sm font-black">3</div>
-              <h3 className="text-lg font-black text-gray-955">Generate</h3>
+              <div className={STAGE_NUMBER} aria-hidden="true">3</div>
+              <h3 className={H3}>Generate</h3>
             </div>
-            <div className="flex-shrink-0 w-12 h-12 bg-green-50 border border-green-200 rounded-xl flex items-center justify-center text-green-600">
-              <GitBranch size={20} />
+            <div className={STEP_ICON}>
+              <GitBranch size={20} aria-hidden="true" />
             </div>
-            <p className="text-gray-600 text-sm font-medium leading-relaxed">
+            <p className={STAGE_TEXT}>
               Target code is compiled in the user&apos;s selected architecture: ABAP Cloud RAP (CDS Views + Behavior Definitions) or Side-by-Side BTP CAP (Node.js services + schema definitions). ABAP-Unit test classes are generated alongside.
             </p>
           </div>
@@ -188,41 +217,42 @@ export default function HowItWorksPage() {
 
       {/* Section B: Deterministic vs LLM */}
       <section className="space-y-6">
-        <h2 className="text-3xl font-black tracking-tight text-gray-955">
+        <h2 className={H2}>
           Deterministic Rules vs. LLM Generation
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* Deterministic Column */}
-          <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 space-y-4">
+          <div className={STAGE_CARD}>
             <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-12 h-12 bg-green-50 border border-green-200 rounded-xl flex items-center justify-center text-green-600">
-                <Ruler size={20} />
+              <div className={STEP_ICON}>
+                <Ruler size={20} aria-hidden="true" />
               </div>
-              <h3 className="text-lg font-black text-gray-955">Deterministic (Rule-Based)</h3>
+              <h3 className={H3}>Deterministic (Rule-Based)</h3>
             </div>
-            <ul className="space-y-3 font-bold text-sm text-gray-700">
+            <ul className="space-y-3 text-sm font-semibold text-cc-ink">
               {deterministicItems.map((item, idx) => (
-                <li key={idx} className="flex gap-2 items-center">
-                  <CheckCircle2 className="text-green-600 shrink-0" size={16} />
+                <li key={idx} className="flex items-center gap-2">
+                  <CheckCircle2 className={CHECK} size={16} aria-hidden="true" />
                   {item}
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* LLM Column */}
-          <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 space-y-4">
+          {/* LLM Column — a neutral mark for model work: no robot, no sparkle
+              (DESIGN.md §1.7, §3.1). */}
+          <div className={STAGE_CARD}>
             <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-12 h-12 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-center text-indigo-600">
-                <Bot size={20} />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cc-line bg-cc-surface text-cc-ink-muted">
+                <PenLine size={20} aria-hidden="true" />
               </div>
-              <h3 className="text-lg font-black text-gray-955">LLM-Assisted (Google Gemini)</h3>
+              <h3 className={H3}>LLM-Assisted (Google Gemini)</h3>
             </div>
-            <ul className="space-y-3 font-bold text-sm text-gray-700">
+            <ul className="space-y-3 text-sm font-semibold text-cc-ink">
               {llmItems.map((item, idx) => (
-                <li key={idx} className="flex gap-2 items-center">
-                  <Bot className="text-indigo-500 shrink-0" size={16} />
+                <li key={idx} className="flex items-center gap-2">
+                  <PenLine className="shrink-0 text-cc-ink-muted" size={16} aria-hidden="true" />
                   {item}
                 </li>
               ))}
@@ -234,74 +264,54 @@ export default function HowItWorksPage() {
       {/* Section C: Coverage Matrix (data-driven from SUPPORT_MATRIX) */}
       <section className="space-y-6">
         <div className="space-y-2">
-          <h2 className="text-3xl font-black tracking-tight text-gray-955">
+          <h2 className={H2}>
             Coverage Matrix
           </h2>
-          <p className="text-gray-600 font-medium">
+          <p className="font-medium text-cc-ink-muted">
             What works today, what needs help, and what we don&apos;t support yet. This matrix is the
             single source the transformation engine flags against — it is always current.
           </p>
         </div>
 
-        {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-sm border border-gray-200 rounded-2xl overflow-hidden">
-            <thead>
-              <tr className="bg-slate-50 text-left">
-                <th className="px-5 py-3.5 font-black text-gray-955 border-b border-gray-200">Construct</th>
-                <th className="px-5 py-3.5 font-black text-gray-955 border-b border-gray-200">Support Level</th>
-                <th className="px-5 py-3.5 font-black text-gray-955 border-b border-gray-200">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {coverageRows.map((row, idx) => (
-                <tr key={row.construct} id={row.anchor} className={`scroll-mt-24 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                  <td className="px-5 py-3.5 font-bold text-gray-800 border-b border-gray-100">{row.title}</td>
-                  <td className="px-5 py-3.5 border-b border-gray-100">
-                    <SupportLevelMark level={row.level} label={LEVEL_LABEL[row.level]} />
-                  </td>
-                  <td className="px-5 py-3.5 text-gray-600 font-medium border-b border-gray-100">{row.notes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Stacked Cards */}
-        <div className="md:hidden space-y-4">
-          {coverageRows.map((row) => (
-            <div key={row.construct} id={`${row.anchor}-m`} className="scroll-mt-24 bg-slate-50 border border-gray-200 rounded-2xl p-5 space-y-2">
-              <h4 className="font-black text-gray-955 text-sm">{row.title}</h4>
-              <div className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
-                row.level === 'fully'
-                  ? 'bg-green-100 text-green-700 border border-green-200'
-                  : row.level === 'partial'
-                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                  : 'bg-red-50 text-red-600 border border-red-200'
-              }`}>
-                {row.level === 'fully' && <CheckCircle2 size={12} />}
-                {row.level === 'partial' && <AlertTriangle size={12} />}
-                {row.level === 'not-supported' && <XCircle size={12} />}
-                {LEVEL_LABEL[row.level]}
-              </div>
-              <p className="text-gray-600 text-xs font-medium leading-relaxed">{row.notes}</p>
-            </div>
-          ))}
+        {/* One table on every width: CcTable turns its rows into cards on S
+            (DESIGN.md §2.4, §2.9), so the #anchor deep links resolve on a phone
+            too — they used to point into a table hidden below md. */}
+        <div className="rounded-2xl border border-cc-line bg-cc-surface px-2 pt-3">
+          <CcTable
+            caption="Coverage matrix"
+            columns={[
+              { key: 'construct', label: 'Construct' },
+              { key: 'level', label: 'Support Level' },
+              { key: 'notes', label: 'Notes' },
+            ]}
+            rows={coverageRows.map((row) => ({
+              key: row.construct,
+              cells: {
+                construct: (
+                  <span key="construct" id={row.anchor} className="scroll-mt-24 font-bold text-cc-ink">
+                    {row.title}
+                  </span>
+                ),
+                level: <SupportLevelMark level={row.level} label={LEVEL_LABEL[row.level]} key="level" />,
+                notes: <span key="notes" className="text-cc-ink-muted">{row.notes}</span>,
+              },
+            }))}
+          />
         </div>
       </section>
 
       {/* Section D: FAQ */}
-      <div className="bg-slate-50 border border-gray-200 rounded-[2.5rem] p-8 space-y-6">
-        <h2 className="text-2xl font-black text-gray-955">Frequently Asked Questions (FAQ)</h2>
-        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 font-bold text-sm">
+      <div className={FAQ_BOX}>
+        <h2 className={FAQ_TITLE}>Frequently Asked Questions (FAQ)</h2>
+        <div className="grid grid-cols-1 gap-6 text-sm">
           {faqs.map((faq, idx) => (
-            <details key={idx} className="group bg-white border border-gray-200 rounded-2xl overflow-hidden">
-              <summary className="flex items-center justify-between cursor-pointer px-6 py-4 list-none">
-                <h3 className="text-gray-955 font-black pr-4">{faq.question}</h3>
-                <ChevronDown size={18} className="text-gray-400 shrink-0 transition-transform group-open:rotate-180" />
+            <details key={idx} className="group overflow-hidden rounded-2xl border border-cc-line bg-cc-surface">
+              <summary className="flex cursor-pointer list-none items-center justify-between rounded-2xl px-6 py-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus">
+                <h3 className="pr-4 font-bold text-cc-ink">{faq.question}</h3>
+                <ChevronDown size={18} aria-hidden="true" className="shrink-0 text-cc-ink-muted transition-transform group-open:rotate-180 motion-reduce:transition-none" />
               </summary>
               <div className="px-6 pb-5">
-                <p className="text-gray-600 font-medium leading-relaxed">{faq.answer}</p>
+                <p className="font-medium leading-relaxed text-cc-ink-muted">{faq.answer}</p>
               </div>
             </details>
           ))}
@@ -309,7 +319,7 @@ export default function HowItWorksPage() {
       </div>
 
       {/* Footer Disclaimer */}
-      <div className="text-center text-[10px] text-gray-500 font-mono font-bold uppercase tracking-wider pt-10 border-t border-gray-200">
+      <div className={FOOTER_LINE}>
         Clean-Core.io {APP_VERSION} • {APP_RELEASE_DATE} • Free Community Edition
       </div>
     </div>
