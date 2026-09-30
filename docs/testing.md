@@ -1,190 +1,242 @@
-# Testing Architecture & Guidelines
+# Testing
 
-This document outlines the testing strategy, core frameworks, emulator integration, and execution procedures for the **Clean-Core.io** platform.
+How the Clean-Core.io test suite is built today, how to run it, and how to check a
+spec the way CI will. Rewritten on 30.09.2026 (test audit, stage 1); the previous
+version described three browsers and a stage-by-stage E2E flow that the suite no
+longer has.
 
-The testing infrastructure ensures that both client-side UI workflows and server-side compliance/security gates function flawlessly under local development conditions and inside the CI/CD pipeline.
-
----
-
-## 1. Testing Strategy & Hermetic Isolation
-
-We adhere to the principle of **hermetic (isolated) testing**. This means:
-*   **No Dependency on Live Systems:** Tests never access production or staging environments of Firebase or SAP.
-*   **Local Emulation:** All database and authentication operations are executed against the Firebase Emulator Suite.
-*   **Determinism & Reproducibility:** Every test run starts with a clean, well-defined dataset seeded programmatically during the test setup.
+Everything below is taken from `playwright.config.ts`, `.github/workflows/deploy.yml`
+(job `validate`) and the files under `tests/`. Where a number appears, the command
+that produced it is next to it.
 
 ---
 
-## 2. Testing Stack & Frameworks
+## 1. One runner, one browser
 
-Our testing stack consists of three main components:
-1.  **Playwright (v1.59+):** An E2E test runner executing parallel browser automation tests across Chromium, Firefox, and WebKit in headless or headed modes.
-2.  **Firebase Emulator Suite:** Local emulators for **Firestore** (Port `8080`) and **Firebase Authentication** (Port `9099`). This enables local validation of security rules (`firestore.rules`) without incurring cloud costs or polluting databases.
-3.  **Next.js Dev Server:** Local compilation and hosting of the React application on Port `3000` during test execution.
+Every test in the repository runs under **Playwright** (`@playwright/test`, see
+`package.json`). There is no second runner — pure function tests and source guards
+use Playwright's `test`/`expect` too, they simply never ask for a `page`.
 
----
+- `testDir` is `./tests`; Playwright picks up `tests/*.spec.ts` and the one
+  `tests/board-deck.integrity.test.ts`. Shared code lives in `tests/helpers/`,
+  data in `tests/fixtures/`, `tests/korpus/`, `tests/prozess-benchmark/` and
+  `tests/design-baseline/`.
+- **Chromium only.** The config defines a single project, `chromium`
+  (`devices['Desktop Chrome']`), and CI installs only Chromium
+  (`npx playwright install chromium`). Firefox and WebKit are not run anywhere.
+- `fullyParallel: true`; `reporter: 'line'`; `trace: 'on-first-retry'`.
 
-## 3. Test Suite Classification
+Size at the time of writing:
 
-All tests are located in the [tests/](file:///c:/Users/felix/antigravity/Project-Platform/tests) directory and are classified into three distinct categories:
+```bash
+ls tests/*.spec.ts | wc -l          # spec files
+npx playwright test --list | tail -1   # "Total: N tests in M files"
+```
 
-### A. Parser & Compiler Unit Tests
-These tests verify the mathematical and logical correctness of the modernization engine (ABAP parser and SQL converter).
-*   **[`tests/abap-inheritance.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/abap-inheritance.spec.ts):** Tests class inheritance hierarchies, abstract classes, method overrides, and correct Method Resolution Order (MRO) linearization for ABAP class structures.
-*   **[`tests/abap-sql-joins.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/abap-sql-joins.spec.ts):** Validates the translation of complex ABAP `JOIN` statements, table mappings, and the correction of legacy structures such as `FOR ALL ENTRIES`.
-*   **[`tests/no-fabricated-figures.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/no-fabricated-figures.spec.ts):** Source-level guard against `|| <number>` on a measured value, a `${{ }}` expression inside a workflow `run:` block, a hook after an early return, and a `valid: false` answer on a verification that never ran. Each of these is a coding shape rather than a layout, so a rendering test would not catch the next occurrence.
-*   **[`tests/credential-and-consent-guard.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/credential-and-consent-guard.spec.ts):** Asserts the S/4 vault stays all-or-nothing across all four outbound routes (the next one will be written by copying an existing one), and that no client context writes a terms acceptance at all. The second half changed in v2.4.2: consent used to be allowed on one client path and is now written exclusively by the Admin SDK, so the guard checks the Firestore create allowlist and the shared `lib/consent.ts` writer rather than counting occurrences in a component.
-*   **[`tests/mfa-coverage-guard.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/mfa-coverage-guard.spec.ts):** Pins which routes must require the second factor and which must not, plus the fail-closed behaviour of the client sign-in paths.
-*   **[`tests/reference-analysis.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/reference-analysis.spec.ts):** Guards the published reference run's properties rather than its numbers — the buckets partition the findings exactly, nothing counts as settled without a catalog lookup, and the handed-back bucket is never silently emptied.
-*   **[`tests/enhancement-detection.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/enhancement-detection.spec.ts):** Covers the enhancement and modification detectors. The modification cases are the important ones: markers are full-line comments that the tokenizer drops by design, so they rely on a separate raw-source pass — a regression there would silently hide the most severe clean core violation. Also asserts that BAdI usage (level B) is not penalised like a modification.
-*   **[`tests/registration-flow-guard.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/registration-flow-guard.spec.ts):** Holds the shape registration took in v2.4.2. The removed approval routes stay removed and nothing calls them; a revoked account becomes `suspended` rather than `pending`, because as `pending` it was indistinguishable from a fresh signup and self-service activation would have reinstated it; activation never resets a spent quota; the dashboard offers the activation call instead of a waiting room; both mails go out only when the call actually performed the activation, so a retry cannot send a second welcome; the administrator's mail carries no token and no privileged link; and the one welcome mail still contains the first-run steps, the security block and the quota sentence, rendered rather than grepped.
-*   **[`tests/run-integrity-guard.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/run-integrity-guard.spec.ts):** A signature that is never checked is decoration. Exercises `lib/run-signature.ts` against the realistic attack — edit the run, recompute the hash, and be stopped by the HMAC alone — and pins the two rules the audit pack now follows: it verifies the run before signing anything, and evidence comes from `runData` rather than the client-writable project fields. Also covers the unsigned-pack verdict and the server-derived consent fields.
-*   **[`tests/fabricated-verification-guard.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/fabricated-verification-guard.spec.ts):** No screen may report a verification it did not perform. The deleted sandbox tester stays deleted, no `setTimeout` in the transformation view may write to `signedOffIds` — the shape, not just the string — and the real stage-5 read may not grow the claim the fake made.
-*   **[`tests/benefit-card-guard.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/benefit-card-guard.spec.ts):** The landing card carries prose and computed figures, and a reader has to be able to tell them apart: exactly one dark region, and it is the evidence. Also pins that no copy names a column position (the old layout said 'the question on the right' to phones that have none), that every roll-call pair equals what SAP's release data names, and that the merged integrity section cannot return as its own block.
-*   **[`tests/registration-flow-guard.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/registration-flow-guard.spec.ts):** The shape registration took when the approval gate went: removed routes stay removed, a revoked account becomes 'suspended' rather than 'pending', and both mails go out only when the call actually performed the activation.
-*   **[`tests/registration-email-guard.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/registration-email-guard.spec.ts):** Each registration mail rendered three ways at three widths — full shell, `<style>` block stripped, no viewport meta — because a mail client is free to do any of those. Fails on any element past the right edge, and caps the welcome mail's length.
-*   **[`tests/support-matrix-drift.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/support-matrix-drift.spec.ts):** Prevents documentation drift. Asserts that the feature capability matrix rendered in the UI matches the engine's internal source-of-truth constants.
+## 2. What kinds of test there are
 
-### B. End-to-End (E2E) Pipeline Tests
-These tests simulate complete user journeys, stepping through all stages of the Clean-Core accelerator assistant.
-*   **[`tests/landing.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/landing.spec.ts):** Verifies the landing page, navigation links, Legal Notice (Impressum), and responsive layouts.
-*   **[`tests/stage1-2.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/stage1-2.spec.ts):** Simulates uploading legacy ABAP files in Stage 1 and generating the solution architecture catalog in Stage 2.
-*   **[`tests/full-pipeline.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/full-pipeline.spec.ts):** The primary E2E flow. It automates login (Stage 0), code upload (Stage 1), architecture generation (Stage 2), interactive code refactoring (Stage 3), abapGit ZIP and Confluence blueprints export (Stage 4), and final sandbox handover (Stage 5/6).
-*   **[`tests/sandbox-delivery.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/sandbox-delivery.spec.ts):** Checks validation and handback steps in the deployment sandbox.
+The suite mixes four kinds of test, often in the same file. They differ in what
+they need to run, and that is what decides how fast and how fragile they are.
 
-### C. Security, Compliance & Gating Tests
-These tests validate server-side API routes, permissions, and regulatory data protection (GDPR).
-*   **[`tests/security-compliance.spec.ts`](file:///c:/Users/felix/antigravity/Project-Platform/tests/security-compliance.spec.ts):** Asserts critical security gates:
-    1.  **S/4HANA Connection Gating:** Restricts unapproved users (lacking the `s4TenantAccessAllowed: true` flag) from hitting S/4HANA live credentials/connection routes, returning a `403 Forbidden` response.
-    2.  **Admin Onboarding Access:** Verifies that approving user roles via admin API endpoints strictly requires valid administrator claims inside the client token.
-    3.  **Cryptographic HMAC Tokens:** Cryptographically verifies onboarding/registration links via server-side SHA-256 HMAC signatures to prevent tampering.
-    4.  **Cascading Deletion (Art. 17 GDPR / Right to Erasure):** Ensures that deleting a user account via `/api/account/delete` cascadingly purges all user-related documents (`users`, `projects`, `abap_examples`) from Firestore and deletes the Auth credentials.
-    5.  **Self-service activation (v2.4.2):** Registration moves the account to `approved` and records the consent server-side; a second call is a no-op rather than a second welcome mail; a `suspended` account cannot reinstate itself; neither can an account revoked under the pre-v2.4.2 scheme, which is `pending` with a zeroed quota and no `activatedAt` to recognise it by; and a client create carrying `termsVersionAccepted` is refused by the Firestore rules.
+| Kind | What it does | Needs |
+|---|---|---|
+| **Pure function test** | Imports a module from `lib/` (or a page's pure helper) and calls it — the ABAP engine, the trust chain, the cost model. | Nothing but Node. |
+| **Source guard** | Reads repository files with `fs` and asserts a shape: a call that must not come back, a register that must match the code, a pattern that hid a defect once. | Nothing but Node — and the file paths it names. |
+| **Route test** | Calls the running app's API routes through Playwright's `request` fixture, usually after seeding Firestore. | Dev or production server, emulators. |
+| **Browser test** | Drives the real UI through the `page` fixture: signs in, opens a project, reads what is rendered. | Server, emulators, Chromium. |
 
----
+Two properties of this mix are worth knowing before you add or move anything:
 
-## 4. Local Test Execution (Step-by-Step)
+- **Source guards name files and count call sites.** A guard may assert that a page
+  contains exactly two calls of a reader, or read a file by its path. Moving or
+  renaming a module, or adding a legitimate call, can turn an unrelated spec red.
+  Before pushing such a change: `grep -rl <file> tests/` and run what it finds.
+- **The web server starts for every run.** `webServer` is global in the config, so
+  even a run of pure tests waits for the server. That is a cost, not a bug.
 
-To run the test suite locally, the Firebase emulator and Playwright must be synchronized.
+### Helpers every server-side spec uses
 
-### Step 1: Start the Firebase Emulator
-Open a terminal in the project directory and boot the Authentication and Firestore emulators:
-```powershell
+- `tests/helpers/admin-seed.ts` — writes Firestore documents through
+  `/api/test/seed`. That route answers `404` unless three gates hold: `K_SERVICE`
+  is unset (it is set on every Cloud Run service), `NEXT_PUBLIC_USE_FIREBASE_EMULATOR`
+  is exactly `true`, and the request header `x-test-seed-token` equals the server's
+  `PILOT_APPROVAL_SECRET`. The helper targets `TEST_BASE_URL`, default
+  `http://localhost:3000`.
+- `tests/helpers/emulator-guard.ts` — fail-closed connection of the client Firebase
+  SDK to the emulators. `firebase-config.json` names the real project; a spec that
+  connected only "if the flag is set" would create accounts in production when run
+  outside this config. These helpers throw instead.
+- `tests/helpers/sign-in.ts` — `signInViaLanding(page, email, password, options)`,
+  the sign-in through the real landing-page form. Browser specs used to carry their
+  own copy of this sequence; they call the helper now. It still ends in a **fixed
+  pause** after the submit (4000 ms by default; some specs pass 3500 or 3000), exactly
+  as the copies did. Replacing the pause with a wait for a real signal is the next
+  step of the test audit, and it happens in this one file.
+
+### Model calls
+
+`/api/gemini` has a provider stub for tests (`lib/gemini-test-stub.ts`): it replaces
+the provider call, and nothing else, when the server runs the emulator build outside
+Cloud Run **and** the request carries `x-test-gemini-stub` equal to
+`PILOT_APPROVAL_SECRET`. `tests/gemini-test-stub-guard.spec.ts` holds those gates.
+Some browser specs stub model answers in the page instead, with `page.route(...)`. CI additionally hands
+the server a test key (`TEST_GEMINI_API_KEY` → `GEMINI_API_KEY`), so a spec that
+neither stubs nor sends the header reaches the real model there — and not locally,
+where no key is set.
+
+## 3. The environment
+
+### Emulators
+
+```bash
 npx firebase emulators:start --only auth,firestore --project=cleancore-491216
 ```
-*The emulators will run on port 9099 (Auth) and port 8080 (Firestore).*
 
-### Step 2: Set Environment Variables (Preventing Split-Brain)
-To avoid a **split-brain connection** (where the Playwright runner process in Node.js targets production Firebase in the cloud, while the headless browser targets the emulator), you must set the emulator environment flags on the shell process running Playwright.
+Auth on `:9099`, Firestore on `:8080`. **The `--project` flag is not optional.**
+There is no `.firebaserc`; without the flag the CLI uses `demo-no-project`, the
+browser mints tokens for that project, and the Admin SDK rejects every one of them
+with `incorrect "aud" claim`. It looks like a handful of auth-dependent specs
+regressing; it is the flag.
 
-**On Windows (PowerShell):**
-```powershell
-$env:NEXT_PUBLIC_USE_FIREBASE_EMULATOR="true"
-$env:FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099"
-$env:FIRESTORE_EMULATOR_HOST="127.0.0.1:8080"
-```
+A Firestore emulator that has run for a whole day can grow large enough to slow
+everything down (`beforeAll` timeouts on account creation). Restart it before
+believing a wave of those.
 
-**On macOS / Linux (Bash/Zsh):**
+### What `playwright.config.ts` sets
+
+At module scope, for the test process — and, through `...process.env`, for the
+server it starts:
+
+- `NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true`, `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099`,
+  `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`;
+- visibly-test values for `PILOT_APPROVAL_SECRET`, `RATE_LIMIT_PEPPER`,
+  `MFA_BACKUP_CODE_PEPPER`, `AUDIT_SIGNING_KEY` and `S4_ENCRYPTION_KEY`, unless the
+  environment already has them. No production secret reaches a test run.
+
+In `webServer.env` it also sets `RESEND_API_KEY` to empty, so no mail leaves a
+test run.
+
+### The server: Playwright owns it
+
+| | Local | CI (`CI` is set) |
+|---|---|---|
+| Command | `npm run dev` | `npm start` (production build from the step before) |
+| `reuseExistingServer` | yes | no |
+| Workers | Playwright default | 1 |
+| Retries | 0 | 2 |
+| `test.only` | allowed | fails the run (`forbidOnly`) |
+
+**Do not start the dev server by hand for a test run.** The seed route compares its
+`PILOT_APPROVAL_SECRET` with the one the test process sends, and signing routes use
+`AUDIT_SIGNING_KEY`; a hand-started server reads `.env.local` instead, and every
+seeding spec fails with `Seeding API failed: {"error":"Not Found"}` — which reads like
+a broken route. Because `reuseExistingServer` is on locally, Playwright will adopt
+such a server silently. Leave the port free and let the config start it. A run whose
+log has no `[WebServer]` lines reused a server it did not start.
+
+## 4. Running tests locally
+
 ```bash
-export NEXT_PUBLIC_USE_FIREBASE_EMULATOR="true"
-export FIREBASE_AUTH_EMULATOR_HOST="127.0.0.1:9099"
-export FIRESTORE_EMULATOR_HOST="127.0.0.1:8080"
+# 1. emulators (see above), in their own terminal
+# 2. then:
+npx playwright test                                  # everything
+npx playwright test tests/public-pages-smoke.spec.ts # one file
+npx playwright test -g "imprint"                     # by title
+npx playwright show-report                           # after a failure
 ```
 
-### Step 3: Execute Playwright Tests
-Once environment variables are defined, run the test suites:
-```powershell
-npx playwright test
+- **Node.** `package.json` asks for `>=22.8`, and CI runs Node 22. Run Playwright on
+  the machine's default Node, not through a Node 22 shim: Node 22 can `require()` an
+  ES module and Node 20 cannot, so a spec that loads fine under a shim may not load
+  at all on the default install — and the reverse is what CI sees.
+- **Another port.** Several checkouts can have a dev server up at once. For a second
+  one, use a local, uncommitted config that imports `playwright.config.ts` and
+  overrides `use.baseURL`, `webServer.url` and `webServer.command`
+  (`npm run dev -- -p <port>`), and sets `TEST_BASE_URL` to the same origin so
+  `admin-seed.ts` seeds the right server. Run it with `-c <that file>`.
+- **Two runs against one dev server** can take the server down. Run one at a time.
+
+## 5. CI — job `validate` in `.github/workflows/deploy.yml`
+
+Runs on every push to `dev`, `release` and `main` (the trigger list still names
+`release`; its deploy is retired and stops with an error). Both deploy jobs `need`
+it. In order:
+
+1. checkout with full history (`fetch-depth: 0`; `tests/terms-version-archive.spec.ts`
+   checks recorded commits against git and would skip on a shallow clone);
+2. Node 22, `npm ci --foreground-scripts`;
+3. `npm run lint`;
+4. `npx playwright install chromium` (no `--with-deps`, timeout 10 min);
+5. Java 21, then the emulators with `--project=cleancore-491216`;
+6. `npm run build` with `NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true` and both emulator
+   hosts **set for the build**;
+7. `npm run typecheck` — the whole project, specs included (`next build` checks
+   application code only);
+8. `npx playwright test` with the same emulator variables and `GEMINI_API_KEY`
+   from `TEST_GEMINI_API_KEY`.
+
+A red `validate` blocks every deploy.
+
+## 6. Checking a spec the way CI will
+
+The local dev server compiles on demand and is several times slower than the
+production server CI runs. Two consequences cut in opposite directions:
+
+- **Green here, red in CI.** A spec that samples for a state which exists only
+  *during* a request (a reservation between two writes, say) catches it against the
+  slow dev server and misses it against the fast production build. Either make the
+  window unnecessary, or sample in a tight loop that stops when the request settles,
+  with input large enough that there is a window at all.
+- **Red here, green in CI.** The dev server sometimes fails to serve a freshly added
+  client chunk; `app/error.tsx` reloads the page and the running `page.goto` dies with
+  `net::ERR_ABORTED`. A long dev session can also corrupt `.next`
+  (`Unexpected end of JSON input at loadManifest` behind a seed failure). Stop the
+  server, delete `.next`, re-run — and before believing a navigation-level failure,
+  re-run it on a production build.
+
+To run like CI, with the emulators up and the port free:
+
+```bash
+NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true \
+FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
+npm run build
+
+CI=1 npx playwright test tests/<spec>.spec.ts
 ```
 
-To run a single test file (e.g., security and compliance tests):
-```powershell
-npx playwright test tests/security-compliance.spec.ts
-```
+The emulator flag must be set **for the build**, not only for the run:
+`NEXT_PUBLIC_*` values are compiled into the browser bundle. Without it the bundle
+talks to real Firebase and every signed-in page test fails for a reason that is not
+in your change. `CI=1` makes the config start `npm start`, use one worker and two
+retries, and refuse to reuse a running server.
 
-To run tests with a visible browser UI (headed mode):
-```powershell
-npx playwright test --headed
-```
+## 7. Writing tests
 
-### Step 4: Inspect Test Reports
-If any test fails, open the interactive HTML test report to review screenshots, trace timelines, and logs:
-```powershell
-npx playwright show-report
-```
+- **No conditional assertions.** `if (await x.count() > 0) { expect(...) }` makes the
+  assertion optional; three specs asserted nothing for months that way.
+  `tests/no-vacuous-tests.spec.ts` rejects the shape repo-wide.
+- **Titles say what is checked.** A test named after a workflow stage opens that
+  stage. The public-page smoke checks live in `tests/public-pages-smoke.spec.ts`,
+  which replaced five May specs whose titles named stages they never visited.
+- **Seed through the helpers**, not the client SDK against security rules:
+  `admin-seed.ts` for Firestore, `emulator-guard.ts` for Auth.
+- **Sign in through `tests/helpers/sign-in.ts`**, not a new copy of the form sequence.
+- **Locate by stable attributes** (`data-*`, `getByTestId`), not by layout classes or
+  by wording that is a product decision.
+- **Rendered style is enforced by specs**: `tests/landing-style-guard.spec.ts`
+  (section headers of the landing page) and `tests/workflow-style-guard.spec.ts`
+  (stage titles) compare computed styles; see `CLAUDE.md`.
 
----
+## 8. Troubleshooting
 
-## 5. Developer Guidelines (Test Design Best Practices)
-
-When writing new tests or adapting existing components, adhere to these development standards:
-
-### A. Emulator Connection in Seed Code
-Any test file that uses the Firebase SDK directly in the Node.js context to set up (seed) or verify mock data must establish an emulator connection:
-```typescript
-import { initializeApp } from 'firebase/app';
-import { initializeFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import firebaseConfig from '../firebase-config.json';
-
-const app = initializeApp(firebaseConfig);
-const db = initializeFirestore(app, {}, firebaseConfig.firestoreDatabaseId);
-
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-}
-```
-
-### B. Firestore Rules Adherence
-Because the local Firestore emulator strictly enforces [`firestore.rules`](file:///c:/Users/felix/antigravity/Project-Platform/firestore.rules), write operations will fail if seeded mock documents lack required fields.
-*   **Projects (`projects`):** Must contain `name`, `status`, `userId`, and `createdAt`.
-*   **ABAP Examples (`abap_examples`):** Must contain `name`, `code`, `userId`, and `createdAt`.
-
-*Omitting these fields will trigger a `FirebaseError: 7 PERMISSION_DENIED` during execution.*
-
-### C. Handling Next.js Hydration Lag
-When running against the local Next.js dev server, React hydration on the homepage `/` can take a few hundred milliseconds. If Playwright attempts to click links before hydration finishes, client-side React routes might not execute.
-
-**Resolution:** When navigating to the home route, wait for the network to settle or add a brief timeout:
-```typescript
-await page.goto('/');
-await page.waitForLoadState('networkidle'); // Wait for scripts to load
-await page.waitForTimeout(1000);            // Brief buffer for React hydration to complete
-```
-
-### D. Locator Selection
-*   Avoid brittle CSS paths that fluctuate with layout changes (e.g., `.mt-4 > div:nth-child(2)`).
-*   Prefer robust attributes such as `data-testid` (e.g., `page.getByTestId('analyze-button')`) or deterministic semantic queries (e.g., `a[href="/impressum"]`).
-
----
-
-## 6. CI/CD Integration
-
-Tests run automatically on GitHub Actions for every pull request and push to the `main` branch. 
-
-The pipeline execution flow is:
-1.  **Repository Checkout & Node Setup**
-2.  **Install Dependencies:** `npm ci`
-3.  **Install Playwright Browsers:** `npx playwright install --with-deps`
-4.  **Install Firebase CLI**
-5.  **Build Phase:** `npm run build` (ensures compiling finishes clean of typescript errors)
-6.  **Startup Emulator & Dev Server**
-7.  **Run Tests:** Runs the Playwright command with environment flags.
-8.  **Archive Artifacts:** Traces, screenshots, and reports are uploaded as build artifacts upon failure.
-
----
-
-## 7. Troubleshooting & FAQs
-
-### Problem 1: `FirebaseError: Permission Denied (403)` during database seed
-*   **Cause:** A document seeded via the test runner lacks schema-required fields required by `firestore.rules`, or is written under a mismatched `userId`.
-*   **Solution:** Compare the document structure in your `setDoc` calls with the match statements in `firestore.rules` (e.g., Match `/projects/{projectId}`).
-
-### Problem 2: Playwright tests timeout or fail to locate elements
-*   **Cause:** The Next.js dev server is compiling pages on-demand.
-*   **Solution:** Increase the default locator/page timeouts in `playwright.config.ts` or leverage explicit `page.waitForSelector()` calls.
-
-### Problem 3: Port conflict (`Port 8080/9099 already in use`)
-*   **Cause:** A background Firebase emulator process failed to terminate correctly.
-*   **Solution:** Terminate the processes manually:
-    *   *Windows (PowerShell):* `Get-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess | Stop-Process -Force`
-    *   *macOS/Linux:* `kill -9 $(lsof -t -i:8080)`
+| Symptom | Usual cause |
+|---|---|
+| `incorrect "aud" claim`, "There is no user record" in a few auth specs | Emulators started without `--project=cleancore-491216`. |
+| `Seeding API failed: {"error":"Not Found"}` | The server was not started by this config (wrong `PILOT_APPROVAL_SECRET`), or `TEST_BASE_URL` points at another server. |
+| `Seeding API failed: <!DOCTYPE html>…` | A corrupted `.next` in a long dev session; stop the server, delete `.next`. |
+| `net::ERR_ABORTED` on `page.goto`, only locally | Dev-server chunk failure; re-run on a production build. |
+| `fetch failed` / `ERR_CONNECTION_REFUSED` in several specs at once | The server went down — often two runs against one server. |
+| Many `beforeAll` timeouts creating accounts | A long-running Firestore emulator; restart it. |
+| Every signed-in page test red after a local production build | The build ran without `NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true`. |
+| `Port 8080/9099 already in use` | An emulator from an earlier session still runs; stop it by the PID holding the port. |

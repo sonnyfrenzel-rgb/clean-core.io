@@ -2846,34 +2846,22 @@
       "kind": "docs",
       "purpose": "Teststrategie und Ausfuehrung",
       "audience": "Entwickler, Agenten",
-      "saysToday": "Playwright, Emulatoren, Specs pro Stufe.",
+      "saysToday": "Aufbau der Suite (reine Funktionstests, Quelltext-Guards, Routen-Tests, Browser-Tests), nur Chromium, Emulatoren mit --project, lokal vs. CI, Pruefung einer Spec wie in der CI. Neu geschrieben mit Stufe 1 des Test-Audits (30.09.2026).",
       "wrongWith30": [
         {
-          "lines": "29-52",
-          "what": "Links als file:///c:/Users/felix/... — lokaler Pfad, oeffentlich nutzlos."
-        },
-        {
-          "lines": "51-52",
-          "what": "stage1-2 / full-pipeline als \"primaerer E2E-Fluss\" — ab 3.0 laeuft der Fluss durch den Arbeitsraum."
-        },
-        {
-          "lines": "62",
-          "what": "Versionsmarken (v2.4.2) — Stand."
-        },
-        {
-          "lines": "49",
-          "what": "Guard (b) clean-core-concept: Abweichung \"mit Bindestrich, aber ohne .io — liest sich wie der Produktname\" statt \"Clean Core\""
+          "lines": "214-229",
+          "what": "Abschnitt 7 nennt Workflow-Stufen und den Stufentitel-Guard (workflow-style-guard) - mit dem 3.0-Umbau pruefen. Die vier frueheren Punkte (file:///-Links, stage1-2/full-pipeline als Hauptfluss, Versionsmarke, Schreibweise Clean-Core) sind mit der Neufassung erledigt."
         }
       ],
       "decision": "update",
       "reason": "Lebende Entwicklerdoku.",
-      "effort": "M",
+      "effort": "XS",
       "guard": {
         "removed": "check",
         "terms": "check"
       },
       "measured": {
-        "lines": 191
+        "lines": 243
       }
     },
     {
