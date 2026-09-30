@@ -125,15 +125,17 @@ function Node({ node, interactive }: { node: LandingNode; interactive: boolean }
     className: 'cc-bpmn-node',
     tabIndex: 0,
     role: opens ? 'button' : 'img',
-    'aria-label': opens ? `Open ${spokenName(node)}` : spokenName(node),
   } as const;
+  // The name a screen reader hears and the tooltip a mouse shows: one <title>,
+  // which SVG uses as the accessible name, rather than a second copy in aria-label.
+  const name = opens ? `Open ${spokenName(node)}` : spokenName(node);
 
   if (node.tag === 'startEvent' || node.tag === 'endEvent' || node.tag === 'boundaryEvent' || node.tag === 'intermediateCatchEvent') {
     const end = node.tag === 'endEvent';
     const label = node.tag === 'boundaryEvent' ? [] : wrap(node.name, 20, 2);
     return (
       <g {...common}>
-        <title>{spokenName(node)}</title>
+        <title>{name}</title>
         <circle
           cx={cx}
           cy={cy}
@@ -162,7 +164,7 @@ function Node({ node, interactive }: { node: LandingNode; interactive: boolean }
     const m = 9;
     return (
       <g {...common}>
-        <title>{spokenName(node)}</title>
+        <title>{name}</title>
         <path
           d={`M${cx} ${y} L${x + width} ${cy} L${cx} ${y + height} L${x} ${cy} Z`}
           className="cc-bpmn-shape fill-cc-surface stroke-cc-information"
@@ -192,7 +194,7 @@ function Node({ node, interactive }: { node: LandingNode; interactive: boolean }
   const top = y + height / 2 - ((label.length + 1) * LINE_H) / 2 + 11;
   return (
     <g {...common}>
-      <title>{spokenName(node)}</title>
+      <title>{name}</title>
       <rect
         x={x}
         y={y}
