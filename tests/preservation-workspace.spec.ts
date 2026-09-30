@@ -1,3 +1,4 @@
+import { stageBackLink } from '../lib/workspace-back-href';
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
@@ -420,10 +421,16 @@ test.describe('the open gaps are still open — closing one has to update the re
 
   test('WG-02: the way back from a stage still leads to the dashboard (3.0.1)', () => {
     expect(gap('WG-02')?.step).toBe('3.0.1');
+    // Since D.6 the shell carries a path instead of the "Back to My Workspace"
+    // pill, and since D.9 the stage's own "Back to workspace" link is the way
+    // back. Both still lead to /dashboard for every account outside the switch.
     const layout = raw('app/(app)/layout.tsx');
-    const at = layout.indexOf('{isProjectStep && (');
-    expect(at, 'the back link moved — re-read WG-02').toBeGreaterThan(-1);
-    expect(layout.slice(at, at + 400)).toContain('href="/dashboard"');
+    const at = layout.indexOf('data-shell-path=""');
+    expect(at, 'the shell path moved — re-read WG-02').toBeGreaterThan(-1);
+    expect(layout.slice(at, at + 600)).toContain('href="/dashboard"');
+    const back = stageBackLink({ projectId: 'p-1', profileLoading: false, shell: false, search: '' });
+    expect(back, 'the stage link no longer leads a switch-less account to the dashboard — re-read WG-02').toMatchObject({ kind: 'link', to: 'dashboard' });
+    if (back.kind === 'link') expect(back.href.startsWith('/dashboard')).toBe(true);
   });
 
   test('WG-03: the "Why?" of a status is still its own 24-px target (3.0.4)', () => {
