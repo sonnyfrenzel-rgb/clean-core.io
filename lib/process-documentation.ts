@@ -36,6 +36,16 @@ export const PROCESS_DOCUMENTATION_FORMAT_VERSION = 1;
 /** The label of `not-determined` in `lib/provenance.ts`, used for every gap. */
 export const NOT_DETERMINED_LABEL = 'Not determined';
 
+/**
+ * How a commit's waiting reads. `andWait` is null when the code decides it at
+ * run time (`WAIT = lv_wait`); that is not "does not wait" (QA slice review of
+ * 81810c8026e0, b99ee9f51490).
+ */
+export function commitWaitWords(andWait: boolean | null): string {
+  if (andWait === null) return `, waiting: ${NOT_DETERMINED_LABEL.toLowerCase()}`;
+  return andWait ? ', waits for the update' : ', does not wait';
+}
+
 /** What this document is. Printed at the top of every rendering. */
 export const PROCESS_DOCUMENTATION_DISCLAIMER =
   'Read by the engine out of the whole source the signed run analysed. No language model wrote its process structure '
@@ -356,7 +366,7 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation): strin
       out.push(`  - V1/V2: ${NOT_DETERMINED_LABEL} — ${registration.updateKind.reason}`);
     }
     for (const event of doc.effects.events) {
-      const wait = event.kind === 'commit' ? (event.andWait ? ', waits for the update' : ', does not wait') : '';
+      const wait = event.kind === 'commit' ? commitWaitWords(event.andWait) : '';
       out.push(`- \`${event.token}\`${wait} — ${rangeWords(event.anchor)}`);
     }
     out.push('');

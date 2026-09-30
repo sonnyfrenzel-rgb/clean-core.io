@@ -5,6 +5,7 @@ import CcTable, { type CcTableColumn } from '@/components/cc/Table';
 import {
   NOT_DETERMINED_LABEL,
   anchorsWords,
+  commitWaitWords,
   rangeWords,
   stepEvidence,
   type ProcessDocumentation,
@@ -174,7 +175,7 @@ export default function ProcessDocumentationView({
             {doc.effects.events.map((event, i) => (
               <li key={`e-${i}`}>
                 <span className="font-mono">{event.token}</span>
-                {event.kind === 'commit' ? (event.andWait ? ', waits for the update' : ', does not wait') : ''} — {rangeWords(event.anchor)}
+                {event.kind === 'commit' ? commitWaitWords(event.andWait) : ''} — {rangeWords(event.anchor)}
               </li>
             ))}
           </ul>
