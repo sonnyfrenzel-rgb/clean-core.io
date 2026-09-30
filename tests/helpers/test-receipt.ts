@@ -1,4 +1,4 @@
-import { TEST_RUN_RECEIPT_VERSION, testRunSubject, type TestRunReceipt } from '../../lib/test-receipt';
+import { TEST_RUN_RECEIPT_VERSION, testRunSubject, type TestRunReceipt, type TestRunVerdict } from '../../lib/test-receipt';
 
 /**
  * The receipt `/api/run-tests` would have written for this project.
@@ -17,6 +17,25 @@ import { TEST_RUN_RECEIPT_VERSION, testRunSubject, type TestRunReceipt } from '.
  * null`) and no package was replaced. A fixture that means something else passes
  * it in — it is not defaulted away anywhere a test reasons about it.
  */
+const VERDICTS: ReadonlySet<string> = new Set<TestRunVerdict>(['Passed', 'Failed', 'Not run', 'Skipped', 'Todo', 'Error']);
+
+/**
+ * Without `verdicts`, a case the fixture gives a runner verdict (`Failed`,
+ * `Skipped`, …) keeps it. It used to be `Passed` for every id whatever the
+ * fixture said — the shortcut the paragraph above rules out — so a fixture with
+ * a failed case produced an all-green receipt (QA full review of fc787674705f,
+ * 7e83cba6af12). A case that states no runner verdict at all (no status, or
+ * `Simulated`, which is the browser's word and not a runner's) is the "the suite
+ * ran and every case passed" fixture this helper exists for, and stays `Passed`.
+ */
+function verdictsOf(testCases: unknown): TestRunReceipt['verdicts'] {
+  return (Array.isArray(testCases) ? testCases : []).map((t) => {
+    const { id, status } = (t ?? {}) as { id?: unknown; status?: unknown };
+    const stated = typeof status === 'string' && VERDICTS.has(status) ? (status as TestRunVerdict) : 'Passed';
+    return { id: String(id ?? ''), status: stated };
+  });
+}
+
 export function receiptFor(
   project: {
     activeRunId?: unknown;
@@ -40,7 +59,7 @@ export function receiptFor(
     executedAt: '2026-09-17T10:00:00.000Z',
     executedBy: 'fixture-uid',
     exitCode: 0,
-    verdicts: verdicts ?? ids.map((id) => ({ id, status: 'Passed' as const })),
+    verdicts: verdicts ?? verdictsOf(project.testCases),
     ...over,
   };
 }
