@@ -20,7 +20,13 @@ import {
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { isTransientModelError } from '@/lib/model-retry';
 import { issueModelReceipt, MODEL_PROVIDER_ID } from '@/lib/model-receipt';
-import { GEMINI_TEST_STUB_HEADER, GEMINI_TEST_STUB_TEXT, geminiTestStubActive } from '@/lib/gemini-test-stub';
+import {
+  GEMINI_TEST_STUB_FINISH_HEADER,
+  GEMINI_TEST_STUB_HEADER,
+  geminiTestStubActive,
+  geminiTestStubAnswer,
+} from '@/lib/gemini-test-stub';
+import { incompleteAnswerMessage, modelCompletion, MODEL_INCOMPLETE_CODE, type ModelAnswer } from '@/lib/model-completion';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 /**
@@ -135,11 +141,11 @@ const MAX_PROMPT_LENGTH = 250_000;
 const MAX_RETRIES = 3;
 const INITIAL_DELAY = 2000;
 
-async function callWithRetry(
-  fn: () => Promise<string>,
+async function callWithRetry<T>(
+  fn: () => Promise<T>,
   retries = MAX_RETRIES,
   delay = INITIAL_DELAY,
-): Promise<string> {
+): Promise<T> {
   try {
     return await fn();
   } catch (error: unknown) {
@@ -313,21 +319,42 @@ export async function POST(request: NextRequest) {
 
     // No quota reservation here — metering happens once per analysis run in
     // /api/runs/create. See the module header.
-    const text = stubbed ? GEMINI_TEST_STUB_TEXT : await callWithRetry(async () => {
-      const result = await ai!.models.generateContent({
-        model,
-        contents: prompt,
-        config: jsonResponse
-          ? { responseMimeType: 'application/json' }
-          : undefined,
+    const answer: ModelAnswer = stubbed
+      ? geminiTestStubAnswer(request.headers.get(GEMINI_TEST_STUB_FINISH_HEADER))
+      : await callWithRetry(async () => {
+          const result = await ai!.models.generateContent({
+            model,
+            contents: prompt,
+            config: jsonResponse
+              ? { responseMimeType: 'application/json' }
+              : undefined,
+          });
+          return {
+            text: result.text,
+            finishReason: result.candidates?.[0]?.finishReason ?? null,
+            blockReason: result.promptFeedback?.blockReason ?? null,
+          };
+        });
+
+    // Roadmap 3.0.13 (a) — only a finished answer is a result. The SDK's `text`
+    // is whatever text the candidate carries, including an answer cut off at the
+    // output limit or stopped by the provider's filter; receipting that would be
+    // the server vouching for text the model did not finish
+    // (`lib/model-completion.ts`). Not retried: the same prompt runs into the
+    // same limit. The log names the reason code and nothing the provider said.
+    const completion = modelCompletion(answer);
+    if (!completion.ok) {
+      logger.warn('gemini answer incomplete', {
+        route: 'api/gemini',
+        reason: completion.reason,
+        finishReason: completion.finishReason,
       });
-
-      if (!result.text) {
-        throw new Error('Gemini returned an empty response.');
-      }
-
-      return result.text;
-    });
+      return NextResponse.json(
+        { error: incompleteAnswerMessage(completion.reason), code: MODEL_INCOMPLETE_CODE },
+        { status: 502 },
+      );
+    }
+    const text = completion.text;
 
     // The receipt. Minted here because this is the only place that knows the
     // call happened at all — the narrative reaches `/api/runs/create` in a
