@@ -5,6 +5,7 @@ import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import { CcTag } from '@/components/cc/Tag';
 import { revisionBadge } from '@/lib/workspace-revision';
+import { wt, revisionMovedMessage } from '@/lib/workspace-messages';
 
 /**
  * What Stand the workspace is showing, and what to do when it has moved —
@@ -55,22 +56,20 @@ export default function WorkspaceRevisionStand({
         <div data-workspace-revision-banner="" className="mt-2 w-full">
           <CcMessageStrip
             state="warning"
-            headline="This process has moved on."
+            headline={wt('revision.movedHeadline')}
             announce={true}
             actions={
               <>
                 <CcButton variant="ghost" onClick={onKeep} data-workspace-revision-keep="">
-                  Keep this Stand
+                  {wt('revision.keep')}
                 </CcButton>
                 <CcButton variant="secondary" onClick={onRefresh} data-workspace-revision-refresh="">
-                  Refresh
+                  {wt('revision.refresh')}
                 </CcButton>
               </>
             }
           >
-            {revisionBadge(seen ?? null)} was written somewhere else while this screen was open. You are
-            reading {revisionBadge(held).toLowerCase()}. Nothing here has changed and nothing of yours was
-            overwritten.
+            {revisionMovedMessage(revisionBadge(seen ?? null), revisionBadge(held).toLowerCase())}
           </CcMessageStrip>
         </div>
       ) : null}

@@ -47,6 +47,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import { CcRunCost } from '@/components/cc/RunIndicator';
+import { wt, newProjectCatalogLine, newProjectExampleSize } from '@/lib/workspace-messages';
 
 /**
  * "New project" — first understand, then start. `DESIGN.md` §6.1.1, roadmap 2.7.
@@ -210,7 +211,7 @@ export default function NewProject({
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'projects');
       setError(
-        err instanceof Error ? err.message : 'The project could not be created. Nothing was saved.',
+        err instanceof Error ? err.message : wt('newProject.createFailed'),
       );
       setBusy(false);
     }
@@ -219,7 +220,7 @@ export default function NewProject({
   if (profileLoading || introOpen === null) {
     return (
       <div className="mx-auto my-12 max-w-md text-center text-[13px] font-medium text-cc-ink-muted">
-        Loading
+        {wt('newProject.loading')}
       </div>
     );
   }
@@ -232,9 +233,9 @@ export default function NewProject({
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-cc-card border border-cc-error-border bg-cc-error-bg text-cc-error">
           <ShieldAlert className="h-7 w-7" />
         </div>
-        <h2 className="mb-2 text-[15px] font-bold text-cc-ink">Access denied</h2>
+        <h2 className="mb-2 text-[15px] font-bold text-cc-ink">{wt('newProject.accessDenied')}</h2>
         <p className="text-[13px] leading-relaxed font-medium text-cc-ink-muted">
-          This page is restricted to Clean-Core.io system administrators.
+          {wt('newProject.adminOnly')}
         </p>
       </div>
     );
@@ -247,7 +248,7 @@ export default function NewProject({
       <div className="mx-auto flex max-w-[1280px] flex-col gap-4">
         <div>
           <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">
-            New project
+            {wt('newProject.title')}
           </h1>
           <p data-new-project-core="" className="mt-0.5 max-w-3xl text-[13px] font-medium text-cc-ink-muted">
             {NEW_PROJECT_CORE}
@@ -257,7 +258,7 @@ export default function NewProject({
         {/* ---------------------------------------------- part 1: what it is */}
         {introOpen ? (
           <div data-new-project-intro="open" className="flex flex-col gap-4">
-            <CcCard title="What is different here" level={2}>
+            <CcCard title={wt('newProject.different')} level={2}>
               <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 lg:grid-cols-3">
                 {NEW_PROJECT_DIFFERENCES.map((line) => {
                   const Icon = DIFFERENCE_ICONS[line.icon] ?? CircleHelp;
@@ -283,7 +284,7 @@ export default function NewProject({
               data-new-project-glances=""
               className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
             >
-              <CcCard title="What clean core means">
+              <CcCard title={wt('newProject.cleanCoreMeans')}>
                 <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
                   {CLEAN_CORE_MEANING}
                 </p>
@@ -309,7 +310,7 @@ export default function NewProject({
                 </ul>
               </CcCard>
 
-              <CcCard title="The four levels">
+              <CcCard title={wt('newProject.fourLevels')}>
                 <ul data-new-project-ladder="" className="m-0 list-none space-y-1.5 p-0">
                   {ladder.map((level) => (
                     <li
@@ -330,7 +331,7 @@ export default function NewProject({
                 </p>
               </CcCard>
 
-              <CcCard title="Where the evidence comes from">
+              <CcCard title={wt('newProject.evidenceFrom')}>
                 <ol data-new-project-evidence="" className="m-0 list-none space-y-2 p-0">
                   {stations.map((station) => (
                     <li
@@ -342,7 +343,7 @@ export default function NewProject({
                         <b className="text-[12px] font-semibold text-cc-ink">{station.label}</b>
                         <CcProvenanceChip value={station.provenance} />
                         {station.optional ? (
-                          <span className="text-[11px] font-medium text-cc-ink-muted">optional</span>
+                          <span className="text-[11px] font-medium text-cc-ink-muted">{wt('newProject.optional')}</span>
                         ) : null}
                       </span>
                       <span className="block text-[12px] leading-snug font-medium text-cc-ink-muted">
@@ -361,10 +362,9 @@ export default function NewProject({
                                   `toLocaleString()` prints 25.467 on a German
                                   machine and 25,467 on an English one for the
                                   same number. */}
-                              {artifact.file} · {artifact.entries.toLocaleString('en')} entries ·
-                              last synced{' '}
+                              {newProjectCatalogLine(artifact.file, artifact.entries.toLocaleString('en'))}{' '}
                               <span data-catalog-synced="">
-                                {artifact.fetchedAt || 'not recorded'}
+                                {artifact.fetchedAt || wt('newProject.notRecorded')}
                               </span>
                             </li>
                           ))}
@@ -384,23 +384,23 @@ export default function NewProject({
 
             <div>
               <CcButton onClick={closeIntro} data-new-project-intro-hide="">
-                Hide this
+                {wt('newProject.hideThis')}
               </CcButton>
             </div>
           </div>
         ) : (
           <div data-new-project-intro="folded" className="flex flex-wrap items-center gap-2">
             <span className="text-[13px] font-medium text-cc-ink-muted">
-              What is Clean-Core.io?
+              {wt('newProject.whatIs')}
             </span>
             <CcButton onClick={() => setIntroOpen(true)} data-new-project-intro-show="">
-              Show
+              {wt('newProject.show')}
             </CcButton>
           </div>
         )}
 
         {/* ------------------------------------------- part 2: how to start */}
-        <CcCard title="How do you want to start?" level={2}>
+        <CcCard title={wt('newProject.howStart')} level={2}>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {(['example', 'own-code'] as StartChoice[]).map((key) => {
               const card = START_CHOICES[key];
@@ -450,7 +450,7 @@ export default function NewProject({
                           {item.name}
                         </span>
                         <span className="text-[11px] font-medium text-cc-ink-muted">
-                          {item.lines.toLocaleString('en')} lines · {item.size}
+                          {newProjectExampleSize(item.lines.toLocaleString('en'), item.size)}
                         </span>
                         <span
                           data-example-quota={cost.free ? 'free' : 'costs'}
@@ -474,7 +474,7 @@ export default function NewProject({
               </p>
               {exampleCost.rerunWarning ? (
                 <div className="mt-2">
-                  <CcMessageStrip state="warning" headline="You ran this example before.">
+                  <CcMessageStrip state="warning" headline={wt('newProject.ranBefore')}>
                     {exampleCost.rerunWarning}
                   </CcMessageStrip>
                 </div>
@@ -489,8 +489,7 @@ export default function NewProject({
                 <CcRunCost cost={ownCodeCost} />
               </p>
               <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                The next screen is where the source is added. It says what is read and what is
-                stored before anything leaves your machine.
+                {wt('newProject.ownCodeNext')}
               </p>
             </div>
           )}
@@ -510,7 +509,7 @@ export default function NewProject({
 
           {error ? (
             <div className="mt-3">
-              <CcMessageStrip state="error" headline="Nothing was created." announce>
+              <CcMessageStrip state="error" headline={wt('newProject.nothingCreated')} announce>
                 {error}
               </CcMessageStrip>
             </div>
@@ -537,7 +536,7 @@ export default function NewProject({
                 data-new-project-personal-data-pending=""
                 className="text-[12px] font-medium text-cc-ink-muted"
               >
-                Read the lines above and tick the box to carry on. Nothing has been created yet.
+                {wt('newProject.personalDataPending')}
               </span>
             ) : null}
           </div>

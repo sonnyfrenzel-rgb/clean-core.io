@@ -518,6 +518,15 @@ test.describe('nothing changes for an account without the switch', () => {
     // And the product it does have is still there: the stage pages are untouched.
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 60000 });
+
+    // The shell path names the project from the stage's own read (D.29) and,
+    // without the workspace, leads back to the dashboard — never to the 404.
+    const crumb = page.locator('header [data-shell-path] [data-shell-path-project]');
+    await expect(crumb).toHaveText('Closed to everyone', { timeout: 30000 });
+    await expect(crumb).toHaveAttribute('href', '/dashboard');
+    await expect(page.locator('header [data-shell-path] [aria-current="page"]')).toHaveText('Analyze');
+    // No project search on a stage, so no search button in the shell.
+    await expect(page.locator('header [data-command-search-trigger]')).toHaveCount(0);
   });
 
   test('an administrator who has not turned it on gets it as well', async ({ page }) => {
@@ -708,10 +717,21 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     expect(meta.engine).toBe('3.0.0');
     expect(meta.rules).toBe('levels/1.3');
 
+    // The shell bar carries the path with the project's name and the search
+    // button (§2.1, D.29); the page's own path row is gone.
+    const crumb = page.locator('header [data-shell-path] [data-shell-path-project]');
+    await expect(crumb).toHaveText('Emergency purchase approval');
+    await expect(crumb).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('header [data-command-search-trigger]')).toBeVisible();
+    await expect(page.locator('[data-workspace-shell] nav[aria-label="Path"]')).toHaveCount(0);
+
     // Seven tools, open in IT, each a real link to its stage.
     const tools = page.locator('[data-workspace-tools="open"] a[data-cc-button]');
     await expect(tools).toHaveCount(7);
-    await expect(tools.first()).toHaveAttribute('href', `/project/${FULL_ID}/analyze`);
+    // …and each carries the view and this bar into the stage, so "Back to
+    // workspace" returns to IT at the toolbar (block D, D.29).
+    await expect(tools.first()).toHaveAttribute('href', `/project/${FULL_ID}/analyze?view=it&from=workspace-tools`);
+    await expect(page.locator('#workspace-tools [data-workspace-tools="open"]')).toHaveCount(1);
 
     // The open point the engine stepped over, with its reason and its line.
     await expect(page.locator('[data-not-determined-state="some"]')).toBeVisible();

@@ -291,7 +291,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           }
         ],
         "note": "The bundle is made only in the Delivery tool; the workspace downloads nothing."
@@ -344,7 +344,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           }
         ],
         "note": "The workspace generates nothing; opening the Design tool still generates by itself."
@@ -598,7 +598,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -817,7 +817,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -959,7 +959,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1102,7 +1102,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1303,7 +1303,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1404,7 +1404,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1588,7 +1588,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -2366,7 +2366,7 @@
           },
           {
             "module": "components/workspace/NextStepCard.tsx",
-            "evidence": "Open {point.label}"
+            "evidence": "{openStageLabel(point.label)}"
           }
         ],
         "note": "Enforced on the stage page, and the workspace generates nothing, so nothing here can launder a stale state. Where a blocker stands, the Next step card points at the stage the blocker sends the reader to."

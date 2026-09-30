@@ -110,15 +110,19 @@ export function phaseTone(step: Pick<RailStep, 'state' | 'proven'>): PhaseTone {
 
 /**
  * The classes that carry the tone, written out once so the three surfaces
- * cannot drift into four shades of "nearly green". Every shade here is a
- * Tailwind default; half-steps would have to be declared in the `@theme` block
- * of `app/globals.css` first (see CLAUDE.md).
+ * cannot drift into four shades of "nearly green". Tokens only (`DESIGN.md`
+ * §1.1, block D step D.29): green is `--cc-success` and belongs to `proven`
+ * alone; done-but-unchecked and stale are both `warning` — *stale* means
+ * "recompute", which is `warning` and never `error` ("Veraltet ist nicht
+ * falsch"); stale takes the darker ink of that family so the two stay apart
+ * beside each other, and the tick and the `data-phase-tone` say which is which
+ * in words. An empty phase is the neutral line.
  */
 export const PHASE_TONE_CLASS: Record<PhaseTone, { border: string; fill: string; surface: string; ink: string }> = {
-  proven: { border: 'border-green-600', fill: 'bg-green-600', surface: 'bg-white', ink: 'text-green-600' },
-  unproven: { border: 'border-amber-400', fill: 'bg-amber-400', surface: 'bg-amber-50', ink: 'text-amber-700' },
-  stale: { border: 'border-rose-400', fill: 'bg-rose-400', surface: 'bg-rose-50', ink: 'text-rose-700' },
-  none: { border: 'border-gray-300', fill: 'bg-gray-200', surface: 'bg-white', ink: 'text-gray-400' },
+  proven: { border: 'border-cc-success', fill: 'bg-cc-success', surface: 'bg-cc-surface', ink: 'text-cc-success' },
+  unproven: { border: 'border-cc-warning-line', fill: 'bg-cc-warning-line', surface: 'bg-cc-warning-bg', ink: 'text-cc-warning' },
+  stale: { border: 'border-cc-warning', fill: 'bg-cc-warning', surface: 'bg-cc-warning-bg', ink: 'text-cc-warning' },
+  none: { border: 'border-cc-neutral-border', fill: 'bg-cc-line', surface: 'bg-cc-surface', ink: 'text-cc-ink-muted' },
 };
 
 export const PHASES: ReadonlyArray<{ n: number; key: PhaseKey; label: string }> = [

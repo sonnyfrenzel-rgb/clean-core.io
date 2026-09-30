@@ -45,6 +45,11 @@ const CC_SOURCE_DIRS = [
   // freehand word for "reconstructed" would be read as the definition of the
   // vocabulary rather than a use of it.
   'components/process-map',
+  // Block D, D.29: the text of the workspace, the process map and the demo
+  // workspace moved out of the components into the catalogue. A retired wording
+  // written into a catalogue value is on the same screens, so the guard follows
+  // the text there rather than losing sight of it.
+  'lib/messages',
 ];
 
 function ccSources(): { rel: string; text: string }[] {

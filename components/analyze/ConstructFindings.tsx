@@ -7,7 +7,7 @@ import type { SupportFinding } from '@/lib/abap/class-model';
 import { safeHttpHref } from '@/lib/export-safety';
 import CcButton, { CC_BUTTON_BASE, CC_BUTTON_DENSITY_CLASSES, CC_BUTTON_VARIANT_CLASSES } from '@/components/cc/Button';
 import { CcEmptyState } from '@/components/cc/EmptyState';
-import { SupportLevelMark } from './CoverageVerdict';
+import SupportLevelMark from './SupportLevelMark';
 
 interface ConstructFindingsProps {
   findings: SupportFinding[];

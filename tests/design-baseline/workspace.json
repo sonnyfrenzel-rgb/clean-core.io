@@ -45,7 +45,6 @@
     },
     "components/process-map/ProcessMiniMap.tsx": {
       "step": "D.29",
-      "R1": 1,
       "R18": 2
     },
     "components/process-map/ProcessOutline.tsx": {
@@ -87,7 +86,6 @@
     },
     "components/workspace/GlossaryText.tsx": {
       "step": "D.29",
-      "R1": 1,
       "R12": 1,
       "R18": 3
     },
@@ -110,7 +108,7 @@
     },
     "components/workspace/ManagementOverview.tsx": {
       "step": "D.29",
-      "R11": 3,
+      "R11": 2,
       "R12": 1,
       "R18": 1,
       "R19": 1

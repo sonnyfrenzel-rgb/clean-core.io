@@ -5,6 +5,9 @@ import CcCard from '@/components/cc/Card';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { NEXT_STEP_PROVENANCE, NOTHING_OPEN, type NextOpenPoint } from '@/lib/next-step';
+import type { WorkspaceView } from '@/lib/workspace-model';
+import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
+import { openStageLabel, wt } from '@/lib/workspace-messages';
 
 /**
  * "Next step" — `DESIGN.md` §2.3 item 5, §5.5, roadmap step 6.5.
@@ -44,10 +47,17 @@ import { NEXT_STEP_PROVENANCE, NOTHING_OPEN, type NextOpenPoint } from '@/lib/ne
 export default function NextStepCard({
   point,
   projectId,
+  view,
   level = 3,
 }: {
   point: NextOpenPoint | null;
   projectId: string;
+  /**
+   * The view the card stands in. The button carries it, and this card as its
+   * origin, into the stage (`?view=…&from=next-step`, block D D.29), so "Back
+   * to workspace" returns here rather than to the top of the Business view.
+   */
+  view: WorkspaceView;
   /**
    * The heading level of the card title. A card is an `h3` (`DESIGN.md` §2.3),
    * but in IT and Management this card stands directly under the project's
@@ -56,8 +66,8 @@ export default function NextStepCard({
   level?: 2 | 3;
 }) {
   return (
-    <div data-next-step="">
-      <CcCard title="Next step" level={level} meta={<CcProvenanceChip value={point?.provenance ?? NEXT_STEP_PROVENANCE} />}>
+    <div id={WORKSPACE_RETURN.nextStep} data-next-step="">
+      <CcCard title={wt('nextStep.title')} level={level} meta={<CcProvenanceChip value={point?.provenance ?? NEXT_STEP_PROVENANCE} />}>
         {point === null ? (
           <p
             data-next-step-state="none"
@@ -81,8 +91,11 @@ export default function NextStepCard({
               {point.selection}
             </p>
             <div className="mt-2.5">
-              <CcLinkButton href={`/project/${projectId}/${point.path}`} variant="primary">
-                Open {point.label}
+              <CcLinkButton
+                href={stageHref({ base: `/project/${projectId}`, path: point.path, view, from: WORKSPACE_RETURN.nextStep })}
+                variant="primary"
+              >
+                {openStageLabel(point.label)}
               </CcLinkButton>
             </div>
           </div>

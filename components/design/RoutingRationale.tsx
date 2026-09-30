@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { ArrowRight, Shield, BarChart3, Zap, AlertTriangle, Cloud, Code2 } from 'lucide-react';
 import type { SupportFinding } from '@/lib/abap/class-model';
-import { SupportLevelMark } from '@/components/analyze/CoverageVerdict';
+import SupportLevelMark from '@/components/analyze/SupportLevelMark';
 
 interface RoutingRationaleProps {
   /** Optional: absent on runs created before the extensibility router (pre-v1.14). */
