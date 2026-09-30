@@ -2,13 +2,16 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { MessageSquare, X, Send, PenLine, ShieldCheck } from 'lucide-react';
+import CcButton from '@/components/cc/Button';
+import CcIconButton from '@/components/cc/IconButton';
+import CcField from '@/components/cc/Field';
 import { usePathname } from 'next/navigation';
 import { callGemini } from '@/lib/gemini';
 import { GLOSSARY_ITEMS } from '@/lib/glossary';
 import { glossaryAnswerFor } from '@/lib/glossary-lookup';
 import { buildKnowledgeBase } from '@/lib/chatbot-knowledge';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import clsx from 'clsx';
+import { cn } from '@/lib/utils';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { readSource, decisionLines, type DecisionLine } from '@/lib/first-look';
@@ -113,6 +116,24 @@ async function loadCaseContext(projectId: string): Promise<CaseContext> {
  * still needs is to know which terms are spoken for, so it does not define one
  * differently in passing — and that is a list of names.
  */
+/**
+ * The time a message was written, on the reader's clock, 24-hour and with the
+ * zone — `DESIGN.md` §3 ("Uhrzeiten mit Zeitzone"), e.g. "14:05 GMT+2". It used
+ * to be `toLocaleTimeString([])`, which printed whatever the browser's locale
+ * chose and no zone at all.
+ */
+function clockNow(): string {
+  const parts = new Intl.DateTimeFormat('en', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZoneName: 'shortOffset',
+  }).formatToParts(new Date());
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? '';
+  const zone = part('timeZoneName');
+  return `${part('hour')}:${part('minute')}${zone ? ` ${zone === 'GMT' ? 'UTC' : zone}` : ''}`;
+}
+
 const glossaryTermList = (): string =>
   Object.values(GLOSSARY_ITEMS)
     .map((item) => item.term)
@@ -124,19 +145,20 @@ export default function GlossaryChatbot() {
     {
       sender: 'bot',
       text: 'Greetings. I am your S/4HANA Modernization Architect Assistant. I can help guide you on Clean Core principles, BTP extensions (CAP), In-App extensions (RAP), released standard APIs, and abapGit handovers. What architecture question can I resolve for you today?',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: clockNow()
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const { profile } = useUserProfile();
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const toggleRef = useRef<HTMLButtonElement>(null);
+  /** Wraps the floating toggle — `CcButton` takes no ref, so the button is found inside. */
+  const toggleRef = useRef<HTMLSpanElement>(null);
   /**
    * What opened the panel, and whether Escape asked for focus to go back.
    * The floating toggle is not always the opener: the header, the account
    * menu and the help menu open the panel by event — and with the desktop
-   * toggle switched off in the profile the toggle is `md:hidden` the moment
+   * toggle switched off in the profile the toggle is `sm:hidden` the moment
    * the panel closes, so focusing it would drop focus on the body.
    */
   const openerRef = useRef<HTMLElement | null>(null);
@@ -224,7 +246,8 @@ export default function GlossaryChatbot() {
     returnFocusRef.current = false;
     const shown = (el: HTMLElement | null): el is HTMLElement =>
       Boolean(el && el.isConnected && el.getClientRects().length > 0);
-    const target = [openerRef.current, toggleRef.current].find(shown);
+    const toggle = toggleRef.current?.querySelector('button') ?? null;
+    const target = [openerRef.current, toggle].find(shown);
     target?.focus();
   }, [isOpen]);
 
@@ -264,9 +287,8 @@ export default function GlossaryChatbot() {
         'What is BYOK?'
       ];
 
-  const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const say = (message: Omit<Message, 'sender' | 'timestamp'>) =>
-    setMessages((prev) => [...prev, { sender: 'bot', timestamp: now(), ...message }]);
+    const say = (message: Omit<Message, 'sender' | 'timestamp'>) =>
+    setMessages((prev) => [...prev, { sender: 'bot', timestamp: clockNow(), ...message }]);
 
   /**
    * The in-project half — roadmap 6.8. Everything it can say comes out of
@@ -337,7 +359,7 @@ export default function GlossaryChatbot() {
     const userMessage: Message = {
       sender: 'user',
       text,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: clockNow()
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -353,7 +375,7 @@ export default function GlossaryChatbot() {
       const botMessage: Message = {
         sender: 'bot',
         text: glossary.answer,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: clockNow(),
         source: 'glossary',
         glossarySource: glossary.item.source,
       };
@@ -419,7 +441,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
       const botMessage: Message = {
         sender: 'bot',
         text: responseText || 'My apologies, I could not compile a response. Please rephrase your architecture question.',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: clockNow()
       };
 
       setMessages((prev) => [...prev, botMessage]);
@@ -427,8 +449,8 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
       console.error('Chatbot error:', error);
       const botMessage: Message = {
         sender: 'bot',
-        text: 'Error: Failed to connect to the AI modernization engine. Please ensure your Gemini API key is configured in Settings.',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        text: 'The assistant could not answer just now. Ask again in a moment; if you use your own Gemini API key, check it in Settings.',
+        timestamp: clockNow()
       };
       setMessages((prev) => [...prev, botMessage]);
     } finally {
@@ -436,116 +458,129 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
     }
   };
 
+  /**
+   * One entry, not two — block D, step D.8 (`DESIGN.md` §2.1: the shell bar
+   * carries help; §1.5: four button styles, none of them a green bubble).
+   *
+   * The shell bar has the named trigger ("Ask this case" / "Ask the assistant")
+   * from breakpoint `sm` up, and the help and account menus carry it too. Below
+   * `sm` the shell bar has no room for it, so there this floating button is the
+   * one direct way in and it is always shown. From `sm` up it is a shortcut the
+   * reader chose: the setting "Floating assistant button" on /settings decides,
+   * as it did before — the breakpoint is now the header's own (`sm`, not `md`),
+   * so with the setting off there is exactly one entry at every width, and the
+   * panel brings its own close button instead of relying on this one.
+   */
+  const floatingOffOnDesktop = profile?.desktopChatbotEnabled === false;
+  const openToggle = () => {
+    openerRef.current = toggleRef.current?.querySelector('button') ?? null;
+    setIsOpen((prev) => !prev);
+  };
+  const closePanel = () => {
+    returnFocusRef.current = true;
+    setIsOpen(false);
+  };
+
   return (
     <>
+      {/* Tables in an answer, drawn with the tokens (§1.1) and the type scale (§1.2). */}
       <style dangerouslySetInnerHTML={{ __html: `
         .prose-chat table {
           width: 100%;
           border-collapse: collapse;
           margin: 12px 0;
-          font-size: 10px;
-          border: 1px solid #e2e8f0;
-          border-radius: 12px;
+          font-size: 12px;
+          border: 1px solid var(--cc-line);
+          border-radius: var(--cc-radius-row);
           overflow: hidden;
         }
         .prose-chat th {
-          background-color: #f1f5f9;
-          color: #334155;
-          font-weight: 800;
+          background-color: var(--cc-surface-muted);
+          color: var(--cc-ink-muted);
+          font-weight: 600;
           text-align: left;
-          padding: 6px 10px;
-          border-bottom: 2px solid #e2e8f0;
+          padding: 4px 8px;
+          border-bottom: 1px solid var(--cc-line);
           text-transform: uppercase;
-          font-size: 9px;
+          letter-spacing: 0.08em;
+          font-size: 11px;
         }
         .prose-chat td {
-          padding: 6px 10px;
-          color: #475569;
-          border-top: 1px solid #f1f5f9;
-          background-color: #ffffff;
-        }
-        .prose-chat tr:nth-child(even) td {
-          background-color: #f8fafc;
+          padding: 4px 8px;
+          color: var(--cc-ink);
+          border-top: 1px solid var(--cc-line);
+          background-color: var(--cc-surface);
         }
       `}} />
 
-      {/* Floating Glowing Assistant Toggle Button */}
-      <button
+      {/* The floating entry. Below the dialog layer (z-50: CcDialog, CcMessageBox,
+          the sticky shell bar), so a dialog is never covered by it. */}
+      <span
         ref={toggleRef}
-        type="button"
-        onClick={() => {
-          openerRef.current = toggleRef.current;
-          setIsOpen((prev) => !prev);
-        }}
-        aria-expanded={isOpen}
-        aria-controls={isOpen ? 'chatbot-panel' : undefined}
-        aria-label={isOpen ? 'Close the assistant' : assistantLabel}
-        className={clsx(
-          "fixed bottom-6 right-6 z-[80] p-4 rounded-full shadow-2xl transition-all duration-350 hover:scale-105 active:scale-95 group border flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]",
-          isOpen 
-            ? "bg-slate-900 text-white border-slate-800" 
-            : "bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500/30",
-          (!isOpen && profile?.desktopChatbotEnabled === false) && "md:hidden"
+        className={cn(
+          'fixed right-4 bottom-4 z-30 inline-flex rounded-cc-row shadow-cc-dialog sm:right-6 sm:bottom-6',
+          floatingOffOnDesktop && 'sm:hidden',
         )}
-        title={isOpen ? 'Close the assistant' : assistantLabel}
-        data-chatbot-toggle=""
       >
-        {isOpen ? <X size={20} aria-hidden /> : <MessageSquare size={20} aria-hidden className="group-hover:rotate-6 transition-transform" />}
-        {/* `DESIGN.md` §3.1, in so many words: „Ask AI" heißt „Ask this case".
-            The old label was also the reason `findAiSymbolism` fires on the
-            exact string "Ask AI about this case" in `lib/model-text.ts`.
+        <CcButton
+          variant="ghost"
+          density="cozy"
+          onClick={openToggle}
+          aria-expanded={isOpen}
+          aria-controls={isOpen ? 'chatbot-panel' : undefined}
+          aria-label={isOpen ? 'Close the assistant' : assistantLabel}
+          title={isOpen ? 'Close the assistant' : assistantLabel}
+          data-chatbot-toggle=""
+          icon={isOpen ? <X size={16} aria-hidden /> : <MessageSquare size={16} aria-hidden />}
+        >
+          {/* `DESIGN.md` §3.1, in so many words: „Ask AI" heißt „Ask this case".
+              It travels with the path, like the header trigger and the panel:
+              outside a project there is no case, and the assistant answers from
+              the general knowledge base. On a phone the label is the accessible
+              name only; the icon is the button. */}
+          <span className="hidden sm:inline">{isOpen ? 'Close' : assistantLabel}</span>
+        </CcButton>
+      </span>
 
-            It travels with the path, like the header trigger and like the panel
-            three lines down: outside a project there is no case, and the
-            assistant answers from the general knowledge base — a button that
-            said "Ask this case" on /knowledge promised evidence about code the
-            reader has not uploaded. */}
-        <span className="text-xs font-black uppercase tracking-wider hidden sm:inline-block pr-1">
-          {isOpen ? 'Close' : assistantLabel}
-        </span>
-      </button>
-
-      {/* Floating Chat Panel Wrapper */}
+      {/* The panel. Not modal — the page stays usable beside it — and one layer
+          under dialogs (z-40), so a CcDialog opened from the page covers it. */}
       {isOpen && (
         <div
           id="chatbot-panel"
           role="dialog"
           aria-labelledby="chatbot-panel-title"
-          className="fixed bottom-24 right-6 w-96 max-w-[calc(100vw-2rem)] h-[520px] bg-white border border-slate-200 shadow-2xl rounded-3xl z-[85] flex flex-col justify-between overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
-          
-          {/* Header */}
-          <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="bg-emerald-500/10 p-1.5 rounded-lg border border-emerald-500/20 text-emerald-400">
-                {/* No sparkles: `DESIGN.md` §3.1 forbids them as the icon for
-                    model work. A pen is what `lib/provenance.ts` gives the
-                    value *Model proposal*, so the panel and its chips agree. */}
-                <PenLine size={16} />
-              </div>
-              <div>
-                <h4 id="chatbot-panel-title" className="text-xs font-extrabold text-white leading-none" data-chatbot-title="">
+          className="cc fixed right-4 bottom-20 z-40 flex h-[520px] max-h-[calc(100dvh-7rem)] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog sm:right-6 sm:bottom-24"
+        >
+          {/* Header — light, like every other surface (§1.1); dark is for code. */}
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-cc-line px-4 py-3">
+            <div className="flex min-w-0 items-center gap-2">
+              {/* No sparkles: `DESIGN.md` §3.1 forbids them as the icon for
+                  model work. A pen is what `lib/provenance.ts` gives the
+                  value *Model proposal*, so the panel and its chips agree. */}
+              <PenLine size={16} aria-hidden className="shrink-0 text-cc-ink-muted" />
+              <div className="min-w-0">
+                <h2 id="chatbot-panel-title" className="m-0 cc-text-h3 text-cc-ink" data-chatbot-title="">
                   {projectId ? 'Ask this case' : 'SAP Modernization Assistant'}
-                </h4>
-                <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-widest block mt-0.5">
+                </h2>
+                <p className="m-0 cc-text-meta text-cc-ink-muted">
                   {projectId ? 'Evidence of this project only' : 'Product and SAP help'}
-                </span>
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
-              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Active</span>
-            </div>
+            <CcIconButton label="Close the assistant" onClick={closePanel}>
+              <X size={16} aria-hidden />
+            </CcIconButton>
           </div>
 
-          {/* Messages Console (Scrollable) */}
-          <div className="flex-grow p-4 overflow-y-auto space-y-4 bg-slate-50/30">
-            <div className="bg-slate-100/60 p-3 rounded-2xl border border-slate-200/50 flex gap-2 text-[10px] text-slate-600 leading-normal">
-              <ShieldCheck size={14} className="text-slate-500 shrink-0 mt-0.5" />
+          {/* Messages (scrollable) */}
+          <div className="flex-grow space-y-4 overflow-y-auto bg-cc-surface-muted p-4">
+            <div className="flex gap-2 rounded-cc-row border border-cc-line bg-cc-surface p-3 text-[12px] leading-normal text-cc-ink-muted">
+              <ShieldCheck size={16} aria-hidden className="mt-px shrink-0 text-cc-ink-muted" />
               {/* Roadmap 6.8 — the reader is told which of the two boundaries
                   is in force before they type, not after an answer disappoints
                   them. Inside a project the assistant has no other source than
                   this project's evidence, and says so. */}
-              <p className="font-semibold" data-chatbot-scope="">
+              <p className="m-0 font-medium" data-chatbot-scope="">
                 {projectId
                   ? 'Inside a project this assistant answers only from the evidence of this project, and names the line each statement rests on. It has no other source.'
                   : 'Context-restricted assistant. Focused exclusively on SAP S/4HANA Clean Core architectures.'}
@@ -554,21 +589,23 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
 
             {messages.map((msg, idx) => {
               const isBot = msg.sender === 'bot';
-              
+
               return (
-                <div 
+                <div
                   key={idx}
-                  className={clsx(
-                    "flex flex-col max-w-[85%] space-y-1 animate-in fade-in slide-in-from-bottom-1 duration-200",
-                    isBot ? "self-start items-start" : "self-end items-end ml-auto"
+                  className={cn(
+                    'flex max-w-[85%] flex-col space-y-1',
+                    isBot ? 'items-start self-start' : 'ml-auto items-end self-end',
                   )}
                 >
-                  <div 
-                    className={clsx(
-                      "p-3.5 rounded-2xl text-xs font-semibold leading-relaxed shadow-sm border",
-                      isBot 
-                        ? "bg-white text-slate-800 border-slate-150 rounded-tl-sm prose prose-sm prose-slate max-w-none text-slate-800 prose-headings:text-slate-950 prose-headings:font-extrabold prose-headings:mt-3 prose-headings:mb-1.5 prose-p:my-1.5 prose-p:leading-relaxed prose-ul:my-1.5 prose-ul:pl-4 prose-li:my-0.5 prose-table:my-3"
-                        : "bg-emerald-600 text-white border-emerald-500 rounded-tr-sm whitespace-pre-line"
+                  <div
+                    className={cn(
+                      'rounded-cc-card border p-3 text-[13px] leading-relaxed font-medium text-cc-ink',
+                      isBot
+                        ? 'prose prose-sm max-w-none border-cc-line bg-cc-surface prose-headings:font-bold prose-headings:text-cc-ink prose-headings:mt-3 prose-headings:mb-1 prose-p:my-2 prose-p:leading-relaxed prose-p:text-cc-ink prose-li:text-cc-ink prose-strong:text-cc-ink prose-ul:my-2 prose-ul:pl-4 prose-li:my-1 prose-table:my-3'
+                        // The reader's own words: a neutral tint, not the brand
+                        // green — green means proven (ADR-007).
+                        : 'whitespace-pre-line border-cc-neutral-border bg-cc-neutral-bg',
                     )}
                   >
                     {isBot ? (
@@ -584,8 +621,8 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                       to show" answers, and it is marked *Not determined*
                       rather than left to look like a statement. */}
                   {msg.provenance ? (
-                    <div className="px-1 space-y-1" data-chatbot-case-answer="">
-                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <div className="space-y-1 px-1" data-chatbot-case-answer="">
+                      <p className="m-0 cc-text-label text-cc-ink-muted">
                         {msg.noModelCall ? (
                           <>
                             <span data-chatbot-no-model-call="">No model call</span>
@@ -601,10 +638,10 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                         ) : null}
                       </p>
                       {msg.evidence && msg.evidence.length > 0 ? (
-                        <ul className="text-[11px] font-semibold text-slate-600 space-y-0.5" data-chatbot-evidence="">
+                        <ul className="m-0 space-y-1 p-0 text-[12px] font-medium text-cc-ink-muted list-none" data-chatbot-evidence="">
                           {msg.evidence.map((fact) => (
                             <li key={fact.id}>
-                              <span className="font-mono">{fact.anchor}</span>
+                              <span className="font-cc-mono">{fact.anchor}</span>
                               {` — ${fact.title}`}
                             </li>
                           ))}
@@ -618,78 +655,77 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                     // side of the product, plus the SAP source when the entry
                     // carries one — printed honestly when it does not, rather
                     // than left silent (ADR-034).
-                    // 11px and up, deliberately: the 8–9px labels elsewhere on this
-                    // card are an open UX finding (illegible at normal zoom), not a
-                    // size to repeat in new work.
                     <p
                       data-chatbot-glossary-answer=""
-                      className="text-[11px] font-bold text-slate-450 uppercase tracking-wider px-1"
+                      className="m-0 px-1 cc-text-label text-cc-ink-muted"
                     >
                       <span data-chatbot-no-model-call="">No model call</span>
                       {' · '}
                       {msg.glossarySource ? `Source: ${msg.glossarySource}` : 'Source not yet recorded'}
                     </p>
                   ) : null}
-                  <span className="text-[8px] font-bold text-slate-400 font-mono tracking-wider px-1">
+                  <span className="px-1 font-cc-mono text-[11px] font-medium text-cc-ink-muted">
                     {msg.timestamp}
                   </span>
                 </div>
               );
             })}
 
-            {/* AI Loading state */}
+            {/* Waiting for an answer: said in words, once, without a perpetual
+                animation (§1.7, §2.8). */}
             {loading && (
-              <div className="self-start flex flex-col items-start space-y-1 animate-pulse">
-                <div className="bg-white border border-slate-150 p-3 rounded-2xl rounded-tl-sm shadow-sm flex items-center gap-1.5 py-4 px-5">
-                  <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                  <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                  <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                </div>
-              </div>
+              <p role="status" className="m-0 self-start px-1 text-[12px] font-medium text-cc-ink-muted">
+                {projectId ? 'Reading the evidence of this project…' : 'Writing an answer…'}
+              </p>
             )}
-            
+
             <div ref={chatEndRef} />
           </div>
 
-          {/* Quick suggestions chips */}
-          <div className="px-4 py-2 border-t border-slate-100 flex flex-wrap gap-1.5 shrink-0 bg-white select-none">
+          {/* Quick suggestions */}
+          <div className="flex shrink-0 flex-wrap gap-2 border-t border-cc-line bg-cc-surface px-4 py-2">
             {suggestionChips.map((chip, idx) => (
-              <button
+              <CcButton
                 key={idx}
-                type="button"
+                variant="ghost"
                 onClick={() => handleSend(chip)}
                 disabled={loading}
-                className="text-[9px] font-bold text-slate-600 hover:text-emerald-700 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-100 px-2.5 py-1.5 rounded-full transition-all disabled:opacity-50"
               >
                 {chip}
-              </button>
+              </CcButton>
             ))}
           </div>
 
-          {/* Message input panel */}
-          <form 
+          {/* Message input */}
+          <form
             onSubmit={(e) => { e.preventDefault(); handleSend(inputValue); }}
-            className="p-3 border-t border-slate-150 bg-white flex items-center gap-2 shrink-0"
+            className="flex shrink-0 items-end gap-2 border-t border-cc-line bg-cc-surface p-3"
           >
-            <input
-              type="text"
-              placeholder="Ask S/4HANA Modernization Architect..."
-              aria-label="Your question"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              disabled={loading}
-              className="flex-grow bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-emerald-500 focus:bg-white transition-all disabled:opacity-75"
-            />
-            <button
+            <div className="min-w-0 flex-grow">
+              <CcField label="Your question">
+                {({ id, describedBy, className }) => (
+                  <input
+                    id={id}
+                    type="text"
+                    aria-describedby={describedBy}
+                    placeholder={projectId ? 'Ask about this case…' : 'Ask about SAP or the product…'}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    disabled={loading}
+                    className={className}
+                  />
+                )}
+              </CcField>
+            </div>
+            <CcButton
               type="submit"
+              variant="primary"
               disabled={loading || !inputValue.trim()}
-              aria-label="Send question"
-              className="p-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-green-100 disabled:opacity-50 disabled:hover:bg-emerald-600 cursor-pointer shrink-0 transition-all active:scale-95"
+              icon={<Send size={16} aria-hidden />}
             >
-              <Send size={14} aria-hidden />
-            </button>
+              Send
+            </CcButton>
           </form>
-
         </div>
       )}
     </>

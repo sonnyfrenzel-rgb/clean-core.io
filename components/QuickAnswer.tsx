@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -20,9 +20,16 @@ interface QuickAnswerProps {
  * Default state: expanded on desktop, collapsed on mobile — but the user can toggle
  * either way. `open === null` is the pre-hydration state; its class list matches what
  * the post-mount effect resolves to, so there is no hydration mismatch and no flash.
+ *
+ * Block D, D.8 (`DESIGN.md` §1.1, ADR-051): tokens instead of the green panel —
+ * green means proven, and a quick answer is not a proof. The heading holds the
+ * button rather than the other way round (a disclosure: `h3 > button`, since a
+ * heading is not allowed inside a button), and the body id comes from `useId`, so
+ * two of these on one page do not share an id.
  */
 export default function QuickAnswer({ question, answer }: QuickAnswerProps) {
   const [open, setOpen] = useState<boolean | null>(null);
+  const bodyId = useId();
 
   useEffect(() => {
     // Desktop (md, ≥768px) defaults to expanded; mobile defaults to collapsed.
@@ -35,40 +42,40 @@ export default function QuickAnswer({ question, answer }: QuickAnswerProps) {
     open === null ? 'rotate-0 md:rotate-180' : open ? 'rotate-180' : 'rotate-0';
 
   return (
-    <div className="bg-green-50/50 rounded-3xl p-5 sm:p-6 border border-green-100 shadow-sm max-w-4xl mx-auto text-left md:text-center">
-      <span className="text-[10px] sm:text-xs font-black text-green-800 uppercase tracking-widest mb-2 block text-center">
+    <div className="bg-cc-surface rounded-cc-card p-5 sm:p-6 border border-cc-line shadow-cc max-w-4xl mx-auto text-left md:text-center">
+      <span className="cc-text-label text-cc-ink-muted mb-2 block text-center">
         Quick Answer
       </span>
 
       {/* Question — always visible; also the expand/collapse control on every viewport. */}
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        // UX-058: before hydration the state is not known (collapsed on a phone,
-        // open on a desktop), so no state is claimed rather than "open".
-        aria-expanded={open === null ? undefined : open}
-        aria-controls="quick-answer-body"
-        className="w-full flex items-center justify-between md:justify-center gap-3 text-left rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-      >
-        <h3 className="text-sm sm:text-base font-bold text-gray-950 leading-tight md:text-center">
-          {question}
-        </h3>
-        <ChevronDown
-          aria-hidden="true"
-          className={clsx('w-5 h-5 text-green-700 shrink-0 transition-transform duration-300', chevronRot)}
-        />
-      </button>
+      <h3 className="m-0 text-[15px] font-bold text-cc-ink leading-tight md:text-center">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          // UX-058: before hydration the state is not known (collapsed on a phone,
+          // open on a desktop), so no state is claimed rather than "open".
+          aria-expanded={open === null ? undefined : open}
+          aria-controls={bodyId}
+          className="w-full flex items-center justify-between md:justify-center gap-3 text-left md:text-center rounded-cc-row bg-transparent p-0 font-[inherit] text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+        >
+          <span>{question}</span>
+          <ChevronDown
+            aria-hidden="true"
+            className={clsx('w-5 h-5 text-cc-ink-muted shrink-0 transition-transform duration-300 motion-reduce:transition-none', chevronRot)}
+          />
+        </button>
+      </h3>
 
       {/* Answer — always in the DOM for crawlers; visually collapsed via CSS height only. */}
       <div
-        id="quick-answer-body"
+        id={bodyId}
         // Collapsed means collapsed for a screen reader too; crawlers still get
         // the text, because aria-hidden removes nothing from the DOM.
         aria-hidden={open === false ? true : undefined}
-        className={clsx('grid transition-[grid-template-rows] duration-300 ease-in-out mt-2', bodyRows)}
+        className={clsx('grid transition-[grid-template-rows] duration-300 ease-in-out motion-reduce:transition-none mt-2', bodyRows)}
       >
         <div className="overflow-hidden">
-          <p className="text-xs sm:text-sm text-gray-700 leading-relaxed font-medium">{answer}</p>
+          <p className="text-[14px] sm:text-[15px] text-cc-ink leading-relaxed font-medium">{answer}</p>
         </div>
       </div>
     </div>
