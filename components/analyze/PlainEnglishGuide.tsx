@@ -1,5 +1,7 @@
 'use client';
 
+import { CcTag } from '@/components/cc/Tag';
+
 interface PlainEnglishGuideProps {
   plainEnglishActionPlan: string[];
   extensibilityRoute: string;
@@ -7,30 +9,30 @@ interface PlainEnglishGuideProps {
 
 export default function PlainEnglishGuide({ plainEnglishActionPlan, extensibilityRoute }: PlainEnglishGuideProps) {
   return (
-    <div className="bg-slate-900 text-white rounded-3xl p-8 border border-slate-800 shadow-xl relative overflow-hidden flex flex-col justify-between group">
-      <div className="absolute top-0 right-0 w-80 h-80 bg-green-500/5 rounded-full blur-3xl -mr-24 -mt-24 pointer-events-none"></div>
-      
+    <div className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc flex flex-col justify-between">
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-cc-line pb-4">
           <div>
-            <span className="text-[10px] font-bold tracking-widest text-green-400 uppercase bg-green-950 px-2.5 py-1 rounded-full border border-green-800/30">Executive Summary</span>
-            <h3 className="text-xl font-black text-white mt-3">What to Do - Plain English Guide</h3>
-            <p className="text-xs text-slate-400 mt-1">Simple, non-technical steps to modernize this business process successfully.</p>
+            <span className="cc-text-label text-cc-ink-muted">Executive Summary</span>
+            <h3 className="cc-text-h2 text-cc-ink mt-2">What to Do - Plain English Guide</h3>
+            <p className="cc-text-cell text-cc-ink-muted mt-1">Simple, non-technical steps to modernize this business process successfully.</p>
           </div>
-          <span className="text-[10px] font-bold text-slate-400 bg-slate-800 border border-slate-700 px-3 py-1 rounded-full uppercase tracking-wider font-mono shrink-0 self-start sm:self-center">Business Roadmap</span>
+          <span className="shrink-0 self-start sm:self-center">
+            <CcTag>Business Roadmap</CcTag>
+          </span>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {plainEnglishActionPlan.map((action, aIdx) => (
-            <div key={aIdx} className="bg-slate-800/50 p-4 rounded-2xl border border-slate-800/60 flex items-start gap-4 hover:border-slate-700 transition-colors">
-              <span className="w-8 h-8 rounded-xl bg-green-500/10 text-green-400 border border-green-500/20 flex items-center justify-center shrink-0 font-black text-xs shadow-inner">{aIdx + 1}</span>
-              <p className="text-xs text-slate-300 leading-relaxed font-bold pt-1.5">{action}</p>
+            <div key={aIdx} className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4 flex items-start gap-4">
+              <span className="w-8 h-8 rounded-cc-row border border-cc-line bg-cc-surface text-cc-ink flex items-center justify-center shrink-0 cc-text-identifier">{aIdx + 1}</span>
+              <p className="cc-text-body text-cc-ink pt-1">{action}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="text-[10px] text-slate-400 font-bold font-mono tracking-widest uppercase mt-6 pt-4 border-t border-slate-800/60">
+      <div className="cc-text-label text-cc-ink-muted mt-6 pt-4 border-t border-cc-line">
         Strategic Path: {extensibilityRoute} Track
       </div>
     </div>
