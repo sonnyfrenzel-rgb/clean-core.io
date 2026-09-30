@@ -12,6 +12,7 @@ import {
 } from '@/lib/firebase-admin';
 import { byokRequiresEnrolment } from '@/lib/mfa-gate';
 import { logger, providerErrorShape } from '@/lib/logger';
+import { ByokKeyUnavailableError } from '@/lib/byok-key';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 
 /**
@@ -50,7 +51,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required field: apiKey.' }, { status: 400 });
     }
 
-    const metadata = await saveGeminiApiKey(decodedToken.uid, apiKey.trim());
+    let metadata: Awaited<ReturnType<typeof saveGeminiApiKey>>;
+    try {
+      metadata = await saveGeminiApiKey(decodedToken.uid, apiKey.trim());
+    } catch (sealErr: unknown) {
+      // 3.0.13 (g): no usable BYOK_ENCRYPTION_KEY on this deployment. Refused
+      // with a reason, and nothing written — never sealed with the S/4 key
+      // instead. `/api/health` reports the same condition as degraded.
+      if (sealErr instanceof ByokKeyUnavailableError) {
+        logger.critical('byok key save refused: BYOK_ENCRYPTION_KEY is not set or not 32 bytes', {
+          route: 'api/secrets/gemini',
+          code: sealErr.code,
+        });
+        return NextResponse.json({ error: sealErr.message, code: sealErr.code }, { status: 503 });
+      }
+      throw sealErr;
+    }
 
     // 3. Security Audit Logging
     const { db } = await getAdminDb();

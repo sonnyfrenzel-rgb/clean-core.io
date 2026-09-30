@@ -137,6 +137,7 @@ Firestore
 - **Key**: 32-byte AES key stored as `S4_ENCRYPTION_KEY` (base64-encoded).
 - **Rotation**: Generate new key → re-encrypt all `s4_credentials` docs → swap env var.
 - **Storage**: GitHub Secrets → Cloud Run encrypted env vars.
+- **Own model keys (BYOK)** are not under this key since roadmap 3.0.13: `user_secrets/{uid}/providers/*` is sealed with `BYOK_ENCRYPTION_KEY`, the key version is recorded in each record and bound into the GCM additional data together with the account and the provider (`lib/byok-key.ts`). Records without a version were sealed with `S4_ENCRYPTION_KEY`; they are read, never written, and `scripts/byok-rekey.ts` re-seals them.
 - **Generate**: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
 
 ### Write-Only Pattern
@@ -320,6 +321,7 @@ proven on the deployed profile.
 | `RESEND_API_KEY` | Yes | Transactional email sending (approval/revoke mails) |
 | `NEXT_PUBLIC_APP_URL` | Yes | Self-referential URLs (prevents Host header injection) |
 | `S4_ENCRYPTION_KEY` | Yes (if S4 features used) | AES-256-GCM key for credential encryption |
+| `BYOK_ENCRYPTION_KEY` | Yes | AES-256-GCM key for stored own model keys (BYOK), version 1 (`lib/byok-key.ts`). Unset = storing a key is refused and `/api/health` reports degraded; keys stored before 3.0.13 (version 0, S/4 key) stay readable until `scripts/byok-rekey.ts` has re-sealed them |
 | `S4_HOST_ALLOWLIST` | Recommended | Comma-separated SAP host suffixes for SSRF allowlist |
 | `RUNNER_URL` | Yes, for test execution | URL of the isolated mock runner (`clean-core-runner`). Unset = a deployed app runs no tests (fail closed) |
 | `RUNNER_LIVE_URL` | No (live path locked) | URL of the isolated live runner (`clean-core-runner-live`). Unset = no live runs, even with the lock lifted |

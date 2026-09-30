@@ -1,8 +1,8 @@
 import { randomBytes } from 'crypto';
 import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, termsVersionInForce } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
-import { encrypt, decrypt } from './s4-credentials';
 import { byokAllowed, BYOK_NOT_AVAILABLE_MESSAGE } from './byok-eligibility';
+import { sealByokSecret, openByokSecret, ByokKeyUnreadableError } from './byok-key';
 import { logger, providerErrorShape } from './logger';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp, s4AccessRequiresEnrolment } from './mfa-gate';
 import { starterExampleForFingerprint } from './starter-example-fingerprints';
@@ -1382,7 +1382,10 @@ export async function adminDeleteUser(adminUid: string, targetUid: string) {
 
 /**
  * Saves the user's custom Gemini API key securely:
- * 1. Encrypts the key using AES-256-GCM.
+ * 1. Seals the key with AES-256-GCM under `BYOK_ENCRYPTION_KEY`, recording the
+ *    key version in the record (`lib/byok-key.ts`, roadmap 3.0.13 g). Without a
+ *    usable key this throws `ByokKeyUnavailableError` before anything is
+ *    written — there is no fallback to the S/4 key.
  * 2. Saves it in the server-only user_secrets collection.
  * 3. Updates the user profile with BYOK metadata (configured status, last 4 chars, timestamp)
  *    and deletes the legacy cleartext key.
@@ -1390,12 +1393,13 @@ export async function adminDeleteUser(adminUid: string, targetUid: string) {
 export async function saveGeminiApiKey(uid: string, apiKey: string): Promise<any> {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
-  const encrypted = encrypt(apiKey);
+  const sealed = sealByokSecret(apiKey, { uid, provider: 'gemini' });
   const last4 = apiKey.length > 4 ? apiKey.slice(-4) : apiKey;
 
   // Set the secret document
   await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').set({
-    encryptedApiKey: encrypted,
+    encryptedApiKey: sealed.encryptedApiKey,
+    keyVersion: sealed.keyVersion,
     last4,
     rotatedAt: FieldValue.serverTimestamp(),
   });
@@ -1417,7 +1421,12 @@ export async function saveGeminiApiKey(uid: string, apiKey: string): Promise<any
 
 /**
  * Loads and decrypts the user's custom Gemini API key.
- * Returns null if not configured or if decryption fails.
+ *
+ * Returns null only when no key is stored. A stored key that cannot be opened —
+ * its version's key is missing on this server, or it does not decrypt — throws
+ * `ByokKeyUnreadableError` (3.0.13 g). It used to return null there too, and
+ * null reads as "no key": `/api/gemini` then served the call with the
+ * community key, unmetered, because the profile still said BYOK.
  */
 export async function loadGeminiApiKey(uid: string): Promise<string | null> {
   await ensureInitialized();
@@ -1428,11 +1437,14 @@ export async function loadGeminiApiKey(uid: string): Promise<string | null> {
   if (!data || !data.encryptedApiKey) return null;
   
   try {
-    return decrypt(data.encryptedApiKey);
+    return openByokSecret(data as { encryptedApiKey: string; keyVersion?: unknown }, { uid, provider: 'gemini' });
   } catch (err) {
     // A code, never the error object (3.0.13 e).
-    logger.error('byok key decrypt failed', { error: providerErrorShape(err) });
-    return null;
+    logger.error('byok key decrypt failed', {
+      error: providerErrorShape(err),
+      keyVersion: err instanceof ByokKeyUnreadableError ? err.keyVersion : null,
+    });
+    throw err;
   }
 }
 

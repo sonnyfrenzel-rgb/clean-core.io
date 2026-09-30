@@ -11,6 +11,7 @@ import {
 } from '@/lib/firebase-admin';
 import { byokRequiresEnrolment } from '@/lib/mfa-gate';
 import { logger, providerErrorShape } from '@/lib/logger';
+import { ByokKeyUnreadableError } from '@/lib/byok-key';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { GoogleGenAI } from '@google/genai';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
@@ -60,7 +61,17 @@ export async function POST(req: NextRequest) {
 
     if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim()) {
       // Fallback: load saved key
-      const savedKey = await loadGeminiApiKey(decodedToken.uid);
+      let savedKey: string | null;
+      try {
+        savedKey = await loadGeminiApiKey(decodedToken.uid);
+      } catch (keyErr: unknown) {
+        // 3.0.13 (g): stored, but not readable here — say so rather than
+        // report the key itself as failing authentication.
+        if (keyErr instanceof ByokKeyUnreadableError) {
+          return NextResponse.json({ error: keyErr.message, code: keyErr.code }, { status: 503 });
+        }
+        throw keyErr;
+      }
       if (!savedKey) {
         return NextResponse.json({ error: 'No custom API key has been saved yet.' }, { status: 400 });
       }

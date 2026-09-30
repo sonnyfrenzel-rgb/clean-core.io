@@ -20,6 +20,7 @@ import {
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { isTransientModelError } from '@/lib/model-retry';
 import { issueModelReceipt, MODEL_PROVIDER_ID } from '@/lib/model-receipt';
+import { ByokKeyUnreadableError } from '@/lib/byok-key';
 import {
   GEMINI_TEST_STUB_FINISH_HEADER,
   GEMINI_TEST_STUB_HEADER,
@@ -298,7 +299,19 @@ export async function POST(request: NextRequest) {
     const stubbed = geminiTestStubActive(process.env, request.headers.get(GEMINI_TEST_STUB_HEADER));
 
     // Resolve the AI client — load BYOK key from secure user_secrets if it exists, else server key.
-    const byokKey = stubbed ? null : await loadGeminiApiKey(decodedToken.uid);
+    //
+    // A stored key this server cannot open is refused, not treated as absent
+    // (3.0.13 g): absent would hand the call to the community key, unmetered,
+    // for an account whose profile says it brings its own.
+    let byokKey: string | null = null;
+    try {
+      byokKey = stubbed ? null : await loadGeminiApiKey(decodedToken.uid);
+    } catch (keyErr: unknown) {
+      if (keyErr instanceof ByokKeyUnreadableError) {
+        return NextResponse.json({ error: keyErr.message, code: keyErr.code }, { status: 503 });
+      }
+      throw keyErr;
+    }
     const ai = byokKey
       ? new GoogleGenAI({ apiKey: byokKey })
       : getDefaultAI();

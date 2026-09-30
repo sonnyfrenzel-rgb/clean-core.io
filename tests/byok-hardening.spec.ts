@@ -11,6 +11,16 @@ import { modelCompletion, incompleteAnswerMessage, MODEL_INCOMPLETE_CODE } from 
 import { geminiTestStubAnswer, GEMINI_TEST_STUB_TEXT } from '../lib/gemini-test-stub';
 import { byokAllowed, BYOK_TIERS } from '../lib/byok-eligibility';
 import { providerErrorShape } from '../lib/logger';
+import {
+  BYOK_KEY_VERSION,
+  ByokKeyUnavailableError,
+  ByokKeyUnreadableError,
+  byokEncryptionConfigured,
+  openByokSecret,
+  sealByokSecret,
+} from '../lib/byok-key';
+import { encrypt as encryptWithS4Key, decrypt as decryptWithS4Key } from '../lib/s4-credentials';
+import { GET as healthGET } from '../app/api/health/route';
 
 /**
  * Roadmap 3.0.13 — the BYOK hardening before 3.0.
@@ -220,5 +230,90 @@ test.describe('(e) the key paths log codes, not errors', () => {
     }
     // The model key paths — save and test — use the provider shape, not a message.
     for (const f of files.slice(0, 2)) expect(read(f)).toContain('providerErrorShape(err)');
+  });
+});
+
+// ── (g) BYOK keys have their own, versioned key ─────────────────────────────
+
+test.describe('(g) the BYOK key', () => {
+  const BYOK = Buffer.alloc(32, 'byok-spec-key').toString('base64');
+  const OTHER = Buffer.alloc(32, 'another-byok-key').toString('base64');
+  const where = { uid: 'uid-a', provider: 'gemini' };
+  const SECRET = 'AIzaSy-byok-spec-000000000000000000';
+
+  test('a key is sealed with BYOK_ENCRYPTION_KEY, carries its version, and opens again', () => {
+    const sealed = sealByokSecret(SECRET, where, { BYOK_ENCRYPTION_KEY: BYOK });
+    expect(sealed.keyVersion).toBe(BYOK_KEY_VERSION);
+    expect(sealed.encryptedApiKey).not.toContain(SECRET);
+    expect(openByokSecret(sealed, where, { BYOK_ENCRYPTION_KEY: BYOK })).toBe(SECRET);
+    // Not with another key, and not as the S/4 key's ciphertext.
+    expect(() => openByokSecret(sealed, where, { BYOK_ENCRYPTION_KEY: OTHER })).toThrow(ByokKeyUnreadableError);
+    expect(() => decryptWithS4Key(sealed.encryptedApiKey)).toThrow();
+  });
+
+  test('a sealed key is bound to its account, its provider and its version', () => {
+    const sealed = sealByokSecret(SECRET, where, { BYOK_ENCRYPTION_KEY: BYOK });
+    const env = { BYOK_ENCRYPTION_KEY: BYOK };
+    expect(() => openByokSecret(sealed, { ...where, uid: 'uid-b' }, env)).toThrow(ByokKeyUnreadableError);
+    expect(() => openByokSecret(sealed, { ...where, provider: 'openai' }, env)).toThrow(ByokKeyUnreadableError);
+    // The version field edited to 0 sends it to the S/4 key, which cannot open it.
+    expect(() => openByokSecret({ encryptedApiKey: sealed.encryptedApiKey }, where, env)).toThrow(ByokKeyUnreadableError);
+    expect(() => openByokSecret({ ...sealed, keyVersion: 7 }, where, env)).toThrow(ByokKeyUnreadableError);
+  });
+
+  test('a record from before 3.0.13 (no version, S/4 key) is still read', () => {
+    // playwright.config.ts supplies the test S/4 key to this process.
+    const legacy = { encryptedApiKey: encryptWithS4Key(SECRET) };
+    expect(openByokSecret(legacy, where, { BYOK_ENCRYPTION_KEY: BYOK })).toBe(SECRET);
+    // Even on a deployment that has no BYOK key yet — reading version 0 needs only the S/4 key.
+    expect(openByokSecret(legacy, where, {})).toBe(SECRET);
+  });
+
+  test('without a usable BYOK key nothing is sealed — and never with the S/4 key instead', () => {
+    for (const env of [{}, { BYOK_ENCRYPTION_KEY: '' }, { BYOK_ENCRYPTION_KEY: Buffer.alloc(16).toString('base64') }]) {
+      expect(byokEncryptionConfigured(env)).toBe(false);
+      expect(() => sealByokSecret(SECRET, where, env)).toThrow(ByokKeyUnavailableError);
+    }
+    // The error the save route turns into its answer names the reason and says nothing was stored.
+    expect(new ByokKeyUnavailableError().message).toMatch(/byok-key-unavailable[\s\S]*Nothing was saved/);
+    // A version-1 record cannot be read without the key either — thrown, not `null`,
+    // so no caller mistakes it for "no key" and spends the community key.
+    const sealed = sealByokSecret(SECRET, where, { BYOK_ENCRYPTION_KEY: BYOK });
+    expect(() => openByokSecret(sealed, where, {})).toThrow(ByokKeyUnreadableError);
+  });
+
+  test('the store writes through the sealing module only, and the S/4 helpers are gone from it', () => {
+    const admin = read('lib/firebase-admin.ts');
+    const save = admin.slice(admin.indexOf('export async function saveGeminiApiKey'), admin.indexOf('export async function loadGeminiApiKey'));
+    expect(save).toContain("sealByokSecret(apiKey, { uid, provider: 'gemini' })");
+    expect(save).toContain('keyVersion: sealed.keyVersion');
+    expect(admin, 'firebase-admin seals with the S/4 key again').not.toMatch(/from '\.\/s4-credentials'/);
+    const load = admin.slice(admin.indexOf('export async function loadGeminiApiKey'), admin.indexOf('export async function deleteGeminiApiKey'));
+    expect(load).toContain('openByokSecret(');
+    expect(load, 'an unreadable key is answered with null again').not.toMatch(/catch[\s\S]*return null;\s*\n\s*\}\s*\n\}/);
+  });
+
+  test('/api/health reports degraded without a usable BYOK key, and ok with one', async () => {
+    const saved = { byok: process.env.BYOK_ENCRYPTION_KEY, gemini: process.env.GEMINI_API_KEY };
+    process.env.GEMINI_API_KEY = saved.gemini || 'health-spec-placeholder';
+    try {
+      delete process.env.BYOK_ENCRYPTION_KEY;
+      let res = await healthGET(new Request('http://localhost:3000/api/health'));
+      expect(res.status, 'a deployment that cannot store keys reports healthy').toBe(503);
+      expect(((await res.json()) as { status: string }).status).toBe('degraded');
+      process.env.BYOK_ENCRYPTION_KEY = BYOK;
+      res = await healthGET(new Request('http://localhost:3000/api/health'));
+      expect(res.status).toBe(200);
+    } finally {
+      if (saved.byok === undefined) delete process.env.BYOK_ENCRYPTION_KEY; else process.env.BYOK_ENCRYPTION_KEY = saved.byok;
+      if (saved.gemini === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = saved.gemini;
+    }
+  });
+
+  test('the deploy maps the secret like the others, and the suite brings a test value', () => {
+    const deploy = read('.github/workflows/deploy.yml');
+    const job = deploy.slice(deploy.indexOf('\n  deploy:'));
+    expect(job).toContain('BYOK_ENCRYPTION_KEY=${{ secrets.BYOK_ENCRYPTION_KEY }}');
+    expect(read('playwright.config.ts')).toContain('process.env.BYOK_ENCRYPTION_KEY =');
   });
 });

@@ -4,11 +4,15 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
-import { adminDocExists, adminSetDoc } from './helpers/admin-seed';
+import { adminDocExists, adminGetDoc, adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
 import { GEMINI_TEST_STUB_FINISH_HEADER, GEMINI_TEST_STUB_HEADER, GEMINI_TEST_STUB_TEXT } from '../lib/gemini-test-stub';
 import { MODEL_INCOMPLETE_CODE } from '../lib/model-completion';
 import { MODEL_PROVIDER_ID } from '../lib/model-receipt';
 import { BYOK_NOT_AVAILABLE_CODE } from '../lib/byok-eligibility';
+import { BYOK_KEY_UNREADABLE_CODE, BYOK_KEY_VERSION, openByokSecret } from '../lib/byok-key';
+import { encrypt as encryptWithS4Key, decrypt as decryptWithS4Key } from '../lib/s4-credentials';
+import { spawn } from 'child_process';
+import path from 'path';
 
 /**
  * Roadmap 3.0.13 — the route halves of the BYOK hardening, against the
@@ -112,4 +116,109 @@ test('(c) an account on a BYOK tier stores its key as before', async ({ request 
   const withdraw = await request.delete('/api/secrets/gemini', { headers: headers() });
   expect(withdraw.status(), await withdraw.text()).toBe(200);
   expect(await adminDocExists(`user_secrets/${uid}/providers`, 'gemini')).toBe(false);
+});
+
+// ── (g) ─────────────────────────────────────────────────────────────────────
+
+const PROVIDERS = (id: string) => `user_secrets/${id}/providers`;
+
+async function keySource(request: import('@playwright/test').APIRequestContext): Promise<string | null> {
+  const res = await request.get('/api/model-stages', { headers: headers() });
+  expect(res.status(), await res.text()).toBe(200);
+  return (await res.json()).keySource;
+}
+
+test('(g) a saved key is sealed with the BYOK key, with its version — not with the S/4 key', async ({ request }) => {
+  const secret = 'AIzaSy-byok-save-222222222222222222';
+  const save = await request.post('/api/secrets/gemini', { headers: headers(), data: { apiKey: secret } });
+  expect(save.status(), await save.text()).toBe(200);
+  const record = await adminGetDoc(PROVIDERS(uid), 'gemini');
+  expect(record?.keyVersion).toBe(BYOK_KEY_VERSION);
+  expect(() => decryptWithS4Key(record!.encryptedApiKey)).toThrow();
+  expect(openByokSecret(record as { encryptedApiKey: string; keyVersion: number }, { uid, provider: 'gemini' })).toBe(secret);
+  // And the app reads it back.
+  expect(await keySource(request)).toBe('byok');
+  await request.delete('/api/secrets/gemini', { headers: headers() });
+});
+
+test('(g) a stored key the server cannot open is refused — never replaced by the community key', async ({ request }) => {
+  await adminSetDoc(PROVIDERS(uid), 'gemini', { encryptedApiKey: Buffer.alloc(64, 7).toString('base64'), keyVersion: BYOK_KEY_VERSION, last4: 'xxxx' });
+  try {
+    expect(await keySource(request), 'an unreadable key is reported as available').toBeNull();
+    // No stub: the route loads the key, and must stop before any model call.
+    const res = await request.post('/api/gemini', { headers: headers(), data: { prompt: 'Say something.' } });
+    expect(res.status(), await res.text()).toBe(503);
+    expect((await res.json()).code).toBe(BYOK_KEY_UNREADABLE_CODE);
+    const probe = await request.post('/api/secrets/gemini/test', { headers: headers(), data: {} });
+    expect(probe.status(), await probe.text()).toBe(503);
+    expect((await probe.json()).code).toBe(BYOK_KEY_UNREADABLE_CODE);
+  } finally {
+    await request.delete('/api/secrets/gemini', { headers: headers() });
+  }
+});
+
+test('(g) the re-key script moves a pre-3.0.13 record to the BYOK key — dry run first, confirmation required, nothing printed', async ({ request }) => {
+  test.setTimeout(180 * 1000);
+  const secret = 'AIzaSy-byok-legacy-333333333333333333';
+  const legacyCipher = encryptWithS4Key(secret);
+  await adminSetDoc(PROVIDERS(uid), 'gemini', { encryptedApiKey: legacyCipher, last4: secret.slice(-4), rotatedAt: new Date() });
+  await adminMergeDoc('users', uid, { byokConfigured: true, byokLast4: secret.slice(-4) });
+  // Version 0 is read as before.
+  expect(await keySource(request)).toBe('byok');
+
+  // Asynchronous on purpose: a synchronous spawn blocks this worker's event loop
+  // while the script runs, the dev server closes the idle keep-alive socket in
+  // the meantime, and the next seed call dies with ECONNRESET.
+  const run = async (args: string[], extra: Record<string, string | undefined> = {}) => {
+    const env: Record<string, string | undefined> = { ...process.env, ...extra };
+    if (!('CI' in extra)) delete env.CI;
+    if (!('GITHUB_ACTIONS' in extra)) delete env.GITHUB_ACTIONS;
+    const child = spawn(process.execPath, [path.join(__dirname, '..', 'node_modules', 'tsx', 'dist', 'cli.mjs'), path.join(__dirname, '..', 'scripts', 'byok-rekey.ts'), '--uid', uid, ...args], {
+      env: env as NodeJS.ProcessEnv,
+    });
+    let text = '';
+    child.stdout.on('data', (d) => { text += String(d); });
+    child.stderr.on('data', (d) => { text += String(d); });
+    const out = { status: await new Promise<number | null>((resolve) => child.on('close', resolve)) };
+    // Only counts: never the account, the key, or a ciphertext.
+    expect(text).not.toContain(uid);
+    expect(text).not.toContain(secret);
+    expect(text).not.toContain(secret.slice(-8));
+    expect(text).not.toContain(legacyCipher.slice(0, 16));
+    return { status: out.status, text };
+  };
+  const stored = async () => (await adminGetDoc(PROVIDERS(uid), 'gemini'))!;
+
+  // Refuses in CI.
+  expect((await run(['--apply'], { CI: 'true', BYOK_REKEY_CONFIRM: firebaseConfig.firestoreDatabaseId })).status).toBe(2);
+  // Dry run: counts, writes nothing.
+  const dry = await run([]);
+  expect(dry.status, dry.text).toBe(0);
+  expect(dry.text).toMatch(/legacy {2}\(v0\) : 1 — readable 1/);
+  expect((await stored()).encryptedApiKey).toBe(legacyCipher);
+  // --apply without the confirmation naming the database: refused, nothing written.
+  expect((await run(['--apply'])).status).toBe(2);
+  expect((await run(['--apply'], { BYOK_REKEY_CONFIRM: 'yes' })).status).toBe(2);
+  expect((await stored()).encryptedApiKey).toBe(legacyCipher);
+
+  // The real run.
+  const applied = await run(['--apply'], { BYOK_REKEY_CONFIRM: firebaseConfig.firestoreDatabaseId });
+  expect(applied.status, applied.text).toBe(0);
+  expect(applied.text).toMatch(/re-sealed {4}: 1/);
+  const after = await stored();
+  expect(after.keyVersion).toBe(BYOK_KEY_VERSION);
+  expect(after.encryptedApiKey).not.toBe(legacyCipher);
+  expect(() => decryptWithS4Key(after.encryptedApiKey), 'the S/4 key still opens the re-sealed key').toThrow();
+  expect(openByokSecret(after as { encryptedApiKey: string; keyVersion: number }, { uid, provider: 'gemini' })).toBe(secret);
+  expect(after.last4).toBe(secret.slice(-4));
+  // The app reads the re-sealed record.
+  expect(await keySource(request)).toBe('byok');
+
+  // A second run finds nothing left to do.
+  const again = await run(['--apply'], { BYOK_REKEY_CONFIRM: firebaseConfig.firestoreDatabaseId });
+  expect(again.status, again.text).toBe(0);
+  expect(again.text).toMatch(/current \(v1\) : 1/);
+  expect(again.text).toMatch(/re-sealed {4}: 0/);
+
+  await request.delete('/api/secrets/gemini', { headers: headers() });
 });
