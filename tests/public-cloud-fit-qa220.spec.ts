@@ -44,3 +44,15 @@ test('ceb59bbace90 — without own work the gates still answer "not assigned"', 
   expect(assignPublicCloudFit(input({ level: 'Unknown' }), 'private').reason?.code).toBe('level-not-determined');
   expect(assignPublicCloudFit(input(), null).reason?.code).toBe('target-platform-not-set');
 });
+
+test('50eec718700f — the headline does not say "no object is waiting" over unassigned objects', () => {
+  const assignments = [
+    assignPublicCloudFit(input({ objectName: 'ZA', level: 'A', catalog: { pathEvidence: 'successor-named' } }), 'public'),
+    assignPublicCloudFit(input({ objectName: 'ZB', level: 'Unknown' }), 'public'),
+  ];
+  const summary = summarizePublicCloudFit(assignments, { targetPlatform: 'public', usageImported: true });
+  expect(summary.counts.notAssigned).toBe(1);
+  const headline = publicCloudFitHeadline(summary);
+  expect(headline).not.toMatch(/^No object is waiting/);
+  expect(headline).toMatch(/1 object is not assigned/);
+});

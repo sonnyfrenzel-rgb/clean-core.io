@@ -656,5 +656,12 @@ export function publicCloudFitHeadline(summary: PublicCloudFitSummary): string {
     const n = summary.objectsWithoutCataloguedPath.length;
     return `${n} object${n === 1 ? ' has' : 's have'} no catalogued path — that has to be answered before a ${platformLabel} decision.`;
   }
+  // An unassigned object was never asked the path question, so "no object is
+  // waiting" cannot speak for it (QA full review of v2.20.0, 50eec718700f).
+  const open = summary.counts.notAssigned;
+  if (open > 0) {
+    return `No assigned object is waiting on a catalogued path for a ${platformLabel} decision; `
+      + `${open} object${open === 1 ? ' is' : 's are'} not assigned, so the question is still open for ${open === 1 ? 'it' : 'them'}.`;
+  }
   return `No object is waiting on a catalogued path for a ${platformLabel} decision.`;
 }
