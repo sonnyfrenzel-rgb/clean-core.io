@@ -1126,7 +1126,7 @@ export default function LandingModals() {
             </p>
             <ul className="list-disc pl-5 space-y-2 text-xs text-slate-600">
               <li>
-                <strong>Google Cloud Platform & Firebase:</strong> Hosting, authentication, and database operations on European servers in the <strong>Belgium (europe-west1)</strong> region — data residency in the EU, operated in line with GDPR requirements.
+                <strong>Google Cloud Platform & Firebase:</strong> Hosting (Cloud Run) and database (Firestore) on European servers in the <strong>Belgium (europe-west1)</strong> region — data residency in the EU, operated in line with GDPR requirements. The sign-in, Firebase Authentication, is a Google service not tied to a region and is covered by the international-transfer safeguards in the full privacy policy.
               </li>
               <li>
                 <strong>Google Gemini API:</strong> Generative AI models used exclusively for code transformation, utilizing secure stateless proxy layers.

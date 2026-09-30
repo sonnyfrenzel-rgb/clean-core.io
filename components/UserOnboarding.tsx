@@ -431,7 +431,7 @@ export default function UserOnboarding() {
             </p>
             <ul className="list-disc pl-5 space-y-2 cc-text-cell text-cc-ink-muted">
               <li>
-                <strong>Google Cloud Platform & Firebase:</strong> Hosted on secure European servers in the <strong>Belgium (europe-west1)</strong> region for low-latency, GDPR-aligned authentication and database operations.
+                <strong>Google Cloud Platform & Firebase:</strong> Hosting (Cloud Run) and database (Firestore) on secure European servers in the <strong>Belgium (europe-west1)</strong> region. The sign-in, Firebase Authentication, is a Google service not tied to a region and is covered by the international-transfer safeguards in the full privacy policy.
               </li>
               <li>
                 <strong>Google Gemini API:</strong> Generative AI models used exclusively for code transformation, utilizing secure stateless proxy layers.
