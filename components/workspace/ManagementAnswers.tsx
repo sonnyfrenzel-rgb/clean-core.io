@@ -14,6 +14,7 @@ import {
 } from '@/lib/management-answers';
 import { notDetermined } from '@/lib/workspace-model';
 import ManagementOverview from './ManagementOverview';
+import { wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 
 /**
@@ -110,7 +111,7 @@ export default function ManagementAnswers({
   if (history === undefined) {
     return (
       <div data-management-view="loading" role="status" className="py-8">
-        <span className="sr-only">Reading the runs of this project…</span>
+        <span className="sr-only">{wt('mgmtAnswers.reading')}</span>
       </div>
     );
   }
@@ -193,7 +194,7 @@ function Figure({ figure }: { figure: ManagementFigure }) {
       <div className="flex flex-wrap items-baseline gap-2">
         {figure.value === null ? (
           <span data-figure-absent="" className="text-[13px] font-semibold text-cc-ink-muted">
-            Not determined
+            {wt('mgmtAnswers.notDetermined')}
           </span>
         ) : (
           <span data-figure-value="" className="text-[18px] leading-none font-bold text-cc-ink">

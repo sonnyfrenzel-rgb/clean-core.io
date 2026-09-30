@@ -291,7 +291,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           }
         ],
         "note": "The bundle is made only in the Delivery tool; the workspace downloads nothing."
@@ -344,7 +344,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           }
         ],
         "note": "The workspace generates nothing; opening the Design tool still generates by itself."
@@ -463,7 +463,8 @@
           {
             "field": "worklist",
             "from": "project",
-            "why": "the editable gaps worklist"
+            "via": "buildAnalysisExportHtml",
+            "why": "the editable gaps worklist (components/analyze/GapsWorklist.tsx, from the project prop) and the Confluence export, which lib/analysis-export.ts builds since D.28"
           },
           {
             "field": "usageReport",
@@ -597,7 +598,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -816,7 +817,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -958,7 +959,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -998,7 +999,7 @@
           {
             "field": "generatedCode",
             "from": "project",
-            "why": "the documentation is merged back into it as docs/process-blueprint.md"
+            "why": "the documentation is merged back into it as docs/process-documentation.md"
           },
           {
             "field": "documentation",
@@ -1029,7 +1030,7 @@
           "documentation",
           "businessDocumentation"
         ],
-        "note": "This is the one stage that writes an upstream stage's artefact: the documentation inserts docs/process-blueprint.md and the business layer docs/business-documentation.md into generatedCode, each inside a Firestore transaction that re-reads it. Since 3.0.5 `documentation` holds the engine form (format 'engine-process-documentation', lib/process-documentation.ts); it stays client-written and client-writable in firestore.rules."
+        "note": "This is the one stage that writes an upstream stage's artefact: the documentation inserts docs/process-documentation.md and the business layer docs/business-documentation.md into generatedCode, each inside a Firestore transaction that re-reads it. Since 3.0.5 `documentation` holds the engine form (format 'engine-process-documentation', lib/process-documentation.ts); it stays client-written and client-writable in firestore.rules."
       },
       "preconditions": {
         "enforceActiveRun": true,
@@ -1086,7 +1087,7 @@
         "notShown": [
           {
             "field": "generatedCode",
-            "why": "not read for the documentation since 3.0.5 (L-04 resolved); the stage only merges docs/process-blueprint.md into it, and that workspace copy leaves as a download"
+            "why": "not read for the documentation since 3.0.5 (L-04 resolved); the stage only merges docs/process-documentation.md into it, and that workspace copy leaves as a download"
           },
           {
             "field": "status",
@@ -1101,7 +1102,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1302,7 +1303,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1403,7 +1404,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1587,7 +1588,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -2365,7 +2366,7 @@
           },
           {
             "module": "components/workspace/NextStepCard.tsx",
-            "evidence": "Open {point.label}"
+            "evidence": "{openStageLabel(point.label)}"
           }
         ],
         "note": "Enforced on the stage page, and the workspace generates nothing, so nothing here can launder a stale state. Where a blocker stands, the Next step card points at the stage the blocker sends the reader to."

@@ -11,6 +11,7 @@ import {
   tourPositionLabel,
   type TourSlot,
 } from '@/lib/demo-tour';
+import { tourPosition, tourStationLabel, wt } from '@/lib/workspace-messages';
 
 /**
  * One tour stop, where it belongs — roadmap 3.0.7, `DESIGN.md` §6.1.2.
@@ -49,7 +50,7 @@ export default function DemoTourStop({
         <span className="min-w-0 flex-1">
           <b className="block text-[14px] font-bold text-cc-ink">{TOUR_INVITATION_TITLE}</b>
           <span className="block text-[12px] leading-snug font-medium text-cc-ink-muted">
-            An example costs nothing and is analysed by the same engine as this demo. Your own code stays yours.
+            {wt('tour.invitationLead')}
           </span>
         </span>
         <span className="flex shrink-0 flex-wrap items-center gap-1.5">
@@ -64,11 +65,11 @@ export default function DemoTourStop({
           </span>
           {slot.last ? (
             <CcButton onClick={onEnd} data-demo-tour-end="">
-              End tour
+              {wt('tour.end')}
             </CcButton>
           ) : (
             <CcButton onClick={onNext} data-demo-tour-continue="">
-              Continue tour
+              {wt('tour.continue')}
             </CcButton>
           )}
         </span>
@@ -81,7 +82,7 @@ export default function DemoTourStop({
     <div
       data-demo-tour-station={station.place}
       role="note"
-      aria-label={`Tour, ${tourPositionLabel(index, total)}: ${station.title}`}
+      aria-label={tourStationLabel(tourPositionLabel(index, total), station.title)}
       className="mb-2 flex flex-wrap items-start gap-2.5 rounded-cc-row border border-cc-information-border bg-cc-information-bg px-3 py-2"
     >
       <span aria-hidden={true} className="mt-0.5 shrink-0 text-cc-information">
@@ -89,20 +90,20 @@ export default function DemoTourStop({
       </span>
       <span className="min-w-0 flex-1">
         <span data-demo-tour-position="" className="block text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-          Tour · {tourPositionLabel(index, total)}
+          {tourPosition(tourPositionLabel(index, total))}
         </span>
         <b className="text-[13px] font-semibold text-cc-ink">{station.title}</b>
         <span className="block text-[12px] leading-snug font-medium text-cc-ink-muted">{station.body}</span>
       </span>
       <span className="flex shrink-0 flex-wrap items-center gap-1.5">
         <CcButton variant="secondary" onClick={onNext} data-demo-tour-next="">
-          Next
+          {wt('tour.next')}
         </CcButton>
         <CcButton onClick={onPause} data-demo-tour-pause="">
-          Pause tour
+          {wt('tour.pause')}
         </CcButton>
         <CcButton onClick={onEnd} data-demo-tour-end="">
-          End tour
+          {wt('tour.end')}
         </CcButton>
       </span>
     </div>

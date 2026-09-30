@@ -6,12 +6,12 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { countHits, isUiFile, scanFile, type BaselineEntry, type BaselineFile, type RuleCounts } from './design-rules';
+import { countHits, isUiFile, scanFile, STANDALONE_EXPORT_FILES, type BaselineEntry, type BaselineFile, type RuleCounts } from './design-rules';
 
 export const REPO_ROOT = path.resolve(__dirname, '..', '..');
 export const BASELINE_DIR = path.join(REPO_ROOT, 'tests', 'design-baseline');
 
-/** Every UI file under `app/` and `components/`, repo-relative with forward slashes. */
+/** Every UI file under `app/` and `components/`, plus the standalone exports, repo-relative with forward slashes. */
 export function listUiFiles(root = REPO_ROOT): string[] {
   const out: string[] = [];
   const walk = (dir: string) => {
@@ -29,6 +29,8 @@ export function listUiFiles(root = REPO_ROOT): string[] {
   };
   walk(path.join(root, 'app'));
   walk(path.join(root, 'components'));
+  // The standalone exports under lib/ (D.28), named one by one in design-rules.
+  for (const rel of STANDALONE_EXPORT_FILES) if (fs.existsSync(path.join(root, rel))) out.push(rel);
   return out.sort();
 }
 

@@ -6,6 +6,7 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
 import type { ProcessMapElement } from '@/lib/process-map';
+import { wt } from '@/lib/workspace-messages';
 
 /**
  * The step list — `DESIGN.md` §5.7, the second half of "Map | Steps".
@@ -103,7 +104,7 @@ export default function ProcessStepList({
 
             {element.businessName ? (
               <span className="text-[12px] font-medium text-cc-ink-muted">
-                Technical name: <span className="font-cc-mono">{element.technicalName}</span>
+                {wt('mapSteps.technicalName')} <span className="font-cc-mono">{element.technicalName}</span>
               </span>
             ) : null}
 
@@ -119,7 +120,7 @@ export default function ProcessStepList({
                     {branch.condition ? (
                       <span className="font-cc-mono text-cc-ink">{branch.condition}</span>
                     ) : (
-                      <span className="italic">otherwise</span>
+                      <span className="italic">{wt('mapSteps.otherwise')}</span>
                     )}
                     {' → '}
                     {branch.toLabel}

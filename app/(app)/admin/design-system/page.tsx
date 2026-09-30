@@ -33,6 +33,7 @@ import CcTable from '@/components/cc/Table';
 import { CcRulePropertyTag, CcTag } from '@/components/cc/Tag';
 import CcToast from '@/components/cc/Toast';
 import CcWhyPopover from '@/components/cc/WhyPopover';
+import D31AddendaGallery from './D31AddendaGallery';
 import FormControlsGallery from './FormControlsGallery';
 import LibraryAddendaGallery from './LibraryAddendaGallery';
 import LoadingDisclosureGallery from './LoadingDisclosureGallery';
@@ -682,6 +683,12 @@ export default function DesignSystemGallery() {
           text, a row that opens, a button with a ref. */}
       <Section id="ds-addenda" title="Layers, state text and rows that open">
         <LibraryAddendaGallery />
+      </Section>
+
+      {/* Block D, step D.31 — verdict chart under a contrast theme, a key
+          figure, controls with markup and data names, a link that leaves. */}
+      <Section id="ds-d31" title="Verdicts, figures and links that leave">
+        <D31AddendaGallery />
       </Section>
 
       <Section id="ds-code" title="Code surface">

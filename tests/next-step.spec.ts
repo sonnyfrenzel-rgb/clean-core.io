@@ -306,7 +306,9 @@ test.describe('the "Next step" card, rendered', () => {
     expect(reason).not.toBe('Next step');
     expect(reason.toLowerCase()).toMatch(/no source staged/);
 
-    await expect(card.locator('a[data-cc-button]')).toHaveAttribute('href', `/project/${EMPTY_ID}/analyze`);
+    // The view and the card travel into the stage, for "Back to workspace" (block D, D.29).
+    await expect(card.locator('a[data-cc-button]')).toHaveAttribute('href', `/project/${EMPTY_ID}/analyze?view=business&from=next-step`);
+    await expect(page.locator('#next-step[data-next-step]')).toHaveCount(1);
   });
 
   test('a phase blocked by the account\'s own switch: the reason names the switch', async ({ page }) => {
@@ -325,7 +327,7 @@ test.describe('the "Next step" card, rendered', () => {
 
     // The button still opens the stage — a navigation cannot fail the way a
     // generation call would, so it is offered regardless of the switch.
-    await expect(card.locator('a[data-cc-button]')).toHaveAttribute('href', `/project/${BLOCKED_ID}/design`);
+    await expect(card.locator('a[data-cc-button]')).toHaveAttribute('href', `/project/${BLOCKED_ID}/design?view=business&from=next-step`);
   });
 
   test('a finished project: the card says plainly that nothing is open', async ({ page }) => {

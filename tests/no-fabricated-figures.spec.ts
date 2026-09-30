@@ -26,6 +26,9 @@ const MEASURED_VALUE_SURFACES = [
   'app/(app)/project/[projectId]/transformation/page.tsx',
   'app/(app)/project/[projectId]/analyze/page.tsx',
   'app/(app)/project/[projectId]/design/page.tsx',
+  // The two stage exports, moved out of those pages in block D, D.28.
+  'lib/analysis-export.ts',
+  'lib/design-export.ts',
   'components/ArchitectSignOff.tsx',
 ];
 
@@ -306,6 +309,41 @@ test.describe('hooks run before any early return', () => {
   }
 });
 
+/**
+ * Wording that tells the reader a Jira sync or connection happened: the old
+ * modal's success screen and its relatives. The server cannot keep a Jira token
+ * (`app/api/auth/jira/callback/route.ts`), so no such sentence can be true.
+ * Returns the matched phrases.
+ */
+function jiraPromises(source: string): string[] {
+  const patterns = [
+    /\b(?:synced|synchroni[sz]ed|connected|exported|pushed|sent|written|published|uploaded|transformed)\b[^\n]{0,60}\b(?:to|with|into|in)\s+(?:your\s+)?Jira\b/gi,
+    /\bJira\b[^\n.]{0,40}\b(?:connected|synced|sync(?:ed)? complete|successfully)\b/gi,
+    /\bsync complete\b/gi,
+    /\b(?:master\s+)?(?:epics?|user\s+stor(?:y|ies)|stories)\s+(?:was\s+|were\s+|has\s+been\s+|have\s+been\s+)?created\b/gi,
+    /\bwriting to [A-Z][A-Z0-9]+-\d+\b/gi,
+  ];
+  return patterns.flatMap((re) => [...source.matchAll(re)].map((m) => m[0]));
+}
+
+/**
+ * The 1-based lines of a component that name Jira with no "not available yet"
+ * on the same line or within three lines of it — close enough to be the same
+ * JSX text or the element beside it, which is where a reader meets it.
+ */
+function jiraWithoutCaveat(source: string, reach = 3): number[] {
+  const lines = source.split(/\r?\n/);
+  const caveat = lines.map((l) => /not available yet/i.test(l));
+  const out: number[] = [];
+  lines.forEach((line, i) => {
+    if (!/\bJira\b/i.test(line)) return;
+    const from = Math.max(0, i - reach);
+    const to = Math.min(lines.length - 1, i + reach);
+    if (!caveat.slice(from, to + 1).some(Boolean)) out.push(i + 1);
+  });
+  return out;
+}
+
 test.describe('nothing reports success it did not achieve', () => {
   test('the compliance HUD does not claim 100% when nothing needs sign-off', () => {
     const source = fs.readFileSync(
@@ -320,12 +358,66 @@ test.describe('nothing reports success it did not achieve', () => {
     expect(source).toContain("'Not scored yet'");
   });
 
-  test('the Jira modal does not simulate a sync', () => {
-    const source = fs.readFileSync(path.join(ROOT, 'components/JiraIntegrationModal.tsx'), 'utf8');
-    // It used to setTimeout its way to a success screen while the server has no
-    // token persistence at all.
-    expect(source).not.toMatch(/setTimeout\([\s\S]{0,120}setStep\('success'\)/);
-    expect(source).toContain('not available yet');
+  test('no Jira screen simulates a sync', () => {
+    // The Jira modal used to setTimeout its way to a success screen while the
+    // server has no token persistence at all. It was never mounted and D.22c
+    // removed it; the claim now holds for every source file, so a screen that
+    // brings the fake sync back fails here wherever it lives.
+    expect(fs.existsSync(path.join(ROOT, 'components/JiraIntegrationModal.tsx'))).toBe(false);
+    const files: string[] = [];
+    const walk = (rel: string) => {
+      for (const e of fs.readdirSync(path.join(ROOT, rel), { withFileTypes: true })) {
+        const child = `${rel}/${e.name}`;
+        if (e.isDirectory()) walk(child);
+        else if (/\.(tsx?|jsx?)$/.test(e.name)) files.push(child);
+      }
+    };
+    for (const dir of ['app', 'components', 'lib', 'hooks']) walk(dir);
+    const product = files.filter((f) => !f.startsWith('app/api/'));
+    expect(product.length, 'the walk found no product files').toBeGreaterThan(100);
+    for (const f of files) {
+      const source = fs.readFileSync(path.join(ROOT, f), 'utf8');
+      expect(source, `${f} fakes a sync`).not.toMatch(/setTimeout\([\s\S]{0,120}setStep\('success'\)/);
+    }
+    for (const f of product) {
+      const source = fs.readFileSync(path.join(ROOT, f), 'utf8');
+      expect(jiraPromises(source), `${f} promises a Jira sync nothing performs`).toEqual([]);
+      if (f.endsWith('.tsx')) expect(jiraWithoutCaveat(source), `${f} names Jira without saying the sync is not available`).toEqual([]);
+    }
+  });
+
+  // QA 9ed1bc8e4168: the guard used to accept "not available yet" anywhere in a
+  // file that named Jira, so one caveat in a comment covered a success screen
+  // three hundred lines further down. These are the two checks above on text
+  // whose answer is known.
+  test('the Jira checks see a promise and a caveat that is out of reach', () => {
+    const promises = [
+      'Sync Complete! Your Solution Design has been transformed into detailed Epics and User stories in Jira.',
+      '<p>Work packages synced to Jira.</p>',
+      '<span>Connected to your Jira</span>',
+      'toast.success("Exported to Jira")',
+      '<p>Master Epic created in TRANSFORM.</p>',
+      '<p>12 user stories have been created.</p>',
+      '<p>Jira connected successfully.</p>',
+      '<p>Synchronizing Work Packages... Writing to TRANSFORM-1</p>',
+    ];
+    for (const text of promises) expect(jiraPromises(text), text).not.toEqual([]);
+    for (const text of [
+      '<p>Jira sync is not available yet: the server does not persist the tokens.</p>',
+      '// the Jira start keeps the step-up gate',
+      '<p>No Epic and no User Story is created.</p>',
+    ]) {
+      expect(jiraPromises(text), text).toEqual([]);
+    }
+
+    const near = ['<section>', '  <h3>Jira</h3>', '  <p>Not available yet: tokens are not stored.</p>', '</section>'].join('\n');
+    expect(jiraWithoutCaveat(near)).toEqual([]);
+    const far = [
+      '// Jira sync is not available yet.',
+      ...Array.from({ length: 20 }, (_, i) => `  <div key="${i}" />`),
+      '  <button>Send to Jira</button>',
+    ].join('\n');
+    expect(jiraWithoutCaveat(far)).toEqual([22]);
   });
 
   test('the Jira callback does not report a success it cannot back', () => {

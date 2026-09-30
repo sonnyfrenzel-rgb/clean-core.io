@@ -18,9 +18,9 @@
  * The assertions are made against the rendered page wherever a browser can
  * reach it. A source grep is satisfied by a component that fetches the same
  * sentence from somewhere else; rendered text is not (the reasoning of
- * `tests/landing-style-guard.spec.ts`). One of the nine — the Jira modal — is
- * imported by nothing in the app, so no route can render it; that one is read
- * from source, and says so.
+ * `tests/landing-style-guard.spec.ts`). One of the nine — the Jira modal — was
+ * imported by nothing in the app, so no route could render it, and D.22c
+ * removed it; that one is read from the whole source tree, and says so.
  */
 import { test, expect, Page } from '@playwright/test';
 import fs from 'fs';
@@ -340,40 +340,71 @@ test.describe('an account that has not finished signing up', () => {
   });
 });
 
-test.describe('UX-026 · the Jira modal promises only what it can do', () => {
+test.describe('UX-026 · no Jira screen promises what it cannot do', () => {
   /*
-   * This one is read from source on purpose. `JiraIntegrationModal` is imported
-   * by nothing — `grep -rn JiraIntegrationModal app components lib` finds only
-   * its own definition — so no route renders it and a browser cannot reach it.
-   * A finding about a screen nobody can open is still worth closing, because
-   * the copy is a trap for whoever wires it up; it simply cannot be closed with
-   * a rendered assertion. If it is ever mounted, replace this with a test that
-   * opens it.
+   * Read from source on purpose. `components/JiraIntegrationModal.tsx` was
+   * imported by nothing — no route rendered it, so no browser could reach it —
+   * and D.22c removed it. The finding it carried still holds for whatever
+   * comes next: its copy was a trap for whoever wires a Jira screen up. So the
+   * guard no longer reads one file; it reads every source file of the app and
+   * holds the same three claims across all of them. If a Jira screen is ever
+   * mounted, replace this with a test that opens it.
    */
-  const visible = () => withoutComments(read('components/JiraIntegrationModal.tsx'));
+  const JIRA_MODAL = 'components/JiraIntegrationModal.tsx';
+
+  const sourceFiles = (() => {
+    const out: string[] = [];
+    const walk = (rel: string) => {
+      for (const e of fs.readdirSync(path.join(ROOT, rel), { withFileTypes: true })) {
+        const child = `${rel}/${e.name}`;
+        if (e.isDirectory()) walk(child);
+        else if (/\.(tsx?|jsx?|mjs)$/.test(e.name)) out.push(child);
+      }
+    };
+    for (const dir of ['app', 'components', 'lib', 'hooks']) walk(dir);
+    return out;
+  })();
+
+  test('the unmounted modal is gone and nothing loads it', () => {
+    expect(fs.existsSync(path.join(ROOT, JIRA_MODAL)), `${JIRA_MODAL} came back`).toBe(false);
+    const loaders = sourceFiles.filter((f) => /['"][^'"]*\/JiraIntegrationModal['"]/.test(read(f)));
+    expect(loaders, 'a file loads the removed Jira modal').toEqual([]);
+  });
 
   test('nothing promises issues it cannot create', () => {
-    const s = visible();
-    for (const gone of [
-      'create Epics and User Stories in your Jira instance automatically',
-      'Will create 1 Master Epic',
-      'Sync Complete!',
-      'transformed into detailed Epics and User stories in Jira',
-      'Synchronizing Work Packages',
-    ]) {
-      expect(s, `${gone} came back`).not.toContain(gone);
+    for (const f of sourceFiles) {
+      const s = withoutComments(read(f));
+      for (const gone of [
+        'create Epics and User Stories in your Jira instance automatically',
+        'Will create 1 Master Epic',
+        'Sync Complete!',
+        'transformed into detailed Epics and User stories in Jira',
+        'Synchronizing Work Packages',
+      ]) {
+        expect(s, `${f}: ${gone} came back`).not.toContain(gone);
+      }
     }
   });
 
   test('no invented board stands in for one it never read', () => {
-    const s = visible();
-    for (const gone of ['S/4HANA Core Team (S4CT)', 'BTP Innovation Hub (BTP)', 'Legacy Decommissioning (LEG)']) {
-      expect(s, `${gone} came back`).not.toContain(gone);
+    for (const f of sourceFiles) {
+      const s = withoutComments(read(f));
+      for (const gone of ['S/4HANA Core Team (S4CT)', 'BTP Innovation Hub (BTP)', 'Legacy Decommissioning (LEG)']) {
+        expect(s, `${f}: ${gone} came back`).not.toContain(gone);
+      }
     }
   });
 
-  test('and it still says why the sync cannot run', () => {
-    expect(read('components/JiraIntegrationModal.tsx')).toContain('not available yet');
+  test('a Jira screen that comes back still says why the sync cannot run', () => {
+    // Every rendered file outside the API routes that names Jira in its visible
+    // source must carry the reason the removed modal carried. Today there is
+    // none, which is the honest state: no screen, no promise.
+    const screens = sourceFiles.filter(
+      (f) => f.endsWith('.tsx') && !f.startsWith('app/api/') && /\bJira\b/.test(withoutComments(read(f))),
+    );
+    for (const f of screens) {
+      expect(read(f), `${f} names Jira without saying the sync is not available`).toContain('not available yet');
+    }
   });
 });
 
@@ -477,6 +508,8 @@ test('0613631545b2 · and the Confluence export carries no invented evidence eit
    */
   for (const rel of [
     'app/(app)/project/[projectId]/analyze/page.tsx',
+    // The export, moved out of the page in block D, D.28.
+    'lib/analysis-export.ts',
     'components/analyze/ExtensibilityDecisionMatrix.tsx',
   ]) {
     const s = withoutComments(read(rel));
@@ -495,7 +528,7 @@ test('0613631545b2 · and the Confluence export carries no invented evidence eit
     expect(s, `${rel} fills in decisionTreeCheckpoints`).not.toMatch(/decisionTreeCheckpoints\s*\|\|/);
     expect(s, `${rel} fills in comparativeAnalysis`).not.toMatch(/comparativeAnalysis\s*\|\|/);
   }
-  expect(withoutComments(read('app/(app)/project/[projectId]/analyze/page.tsx')), 'the export says so instead').toContain(
+  expect(withoutComments(read('lib/analysis-export.ts')), 'the export says so instead').toContain(
     'Not determined for this run',
   );
 });

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   CC_BUTTON_BASE,
@@ -10,6 +11,7 @@ import {
   type CcButtonVariant,
   type CcDensity,
 } from './Button';
+import { ccDataAttributes, type CcDataAttributes } from './Field';
 
 /**
  * A control that **goes somewhere**, wearing one of the four styles — not a
@@ -30,8 +32,16 @@ import {
  *
  * It carries `data-cc-button` like the button does, so the rendered guard that
  * measures the four styles measures this too when it appears on the gallery.
+ *
+ * Block D, D.31: `external` opens the target in a new tab — a plain `<a>` with
+ * `target="_blank" rel="noopener noreferrer"`, because the router has nothing
+ * to do with a page outside the product. Leaving the page is announced twice:
+ * a visible arrow-out-of-the-box after the text, and the hint in words for a
+ * screen reader, appended to the link's name. The words are the caller's for
+ * now (`external="opens in a new tab"`): the component writes no text of its
+ * own, and the catalogue key belongs to the text-key step.
  */
-export interface CcLinkButtonProps {
+export interface CcLinkButtonProps extends CcDataAttributes {
   href: string;
   variant?: CcButtonVariant;
   density?: CcDensity;
@@ -39,31 +49,44 @@ export interface CcLinkButtonProps {
   icon?: React.ReactNode;
   /** Set when this link points at the page the reader is already on. */
   current?: boolean;
+  /**
+   * Opens in a new tab. The value is the hint a screen reader hears after the
+   * name ("opens in a new tab"); sighted readers see the external-link icon.
+   */
+  external?: string;
   children: React.ReactNode;
 }
 
-export default function CcLinkButton({
-  href,
-  variant = 'ghost',
-  density = 'compact',
-  icon,
-  current = false,
-  children,
-}: CcLinkButtonProps) {
+export default function CcLinkButton(props: CcLinkButtonProps) {
+  const { href, variant = 'ghost', density = 'compact', icon, current = false, external, children } = props;
+  const className = cn(
+    CC_BUTTON_BASE,
+    'no-underline',
+    CC_BUTTON_VARIANT_CLASSES[variant],
+    CC_BUTTON_DENSITY_CLASSES[density],
+  );
+  const common = {
+    ...ccDataAttributes(props),
+    'data-cc-button': variant,
+    'data-cc-density': density,
+    'data-cc-tone': 'default',
+    'aria-current': current ? ('page' as const) : undefined,
+    className,
+  };
+
+  if (external) {
+    return (
+      <a {...common} href={href} target="_blank" rel="noopener noreferrer" data-cc-external="">
+        {icon}
+        {children}
+        <ExternalLink size={14} aria-hidden={true} data-cc-external-mark="" />
+        <span className="sr-only">({external})</span>
+      </a>
+    );
+  }
+
   return (
-    <Link
-      href={href}
-      data-cc-button={variant}
-      data-cc-density={density}
-      data-cc-tone="default"
-      aria-current={current ? 'page' : undefined}
-      className={cn(
-        CC_BUTTON_BASE,
-        'no-underline',
-        CC_BUTTON_VARIANT_CLASSES[variant],
-        CC_BUTTON_DENSITY_CLASSES[density],
-      )}
-    >
+    <Link {...common} href={href}>
       {icon}
       {children}
     </Link>

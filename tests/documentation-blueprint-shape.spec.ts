@@ -271,7 +271,9 @@ test.describe('the documentation is read from the code, and a legacy blueprint s
     expect(doc.format).toBe('engine-process-documentation');
     expect(doc.sourceSha256).toBe(sha256Hex(SOURCE));
     expect(JSON.stringify(doc)).not.toContain('l1_domain');
-    expect(String(stored?.generatedCode)).toContain('docs/process-blueprint.md');
+    expect(String(stored?.generatedCode)).toContain('docs/process-documentation.md');
+    // UX-169: one name for the stage's file, the one the handover writes too.
+    expect(String(stored?.generatedCode)).not.toContain('docs/process-blueprint.md');
     expect(stored?.status).toBe('documented');
     expect(modelCalls, 'the documentation stage called a model').toBe(0);
   });

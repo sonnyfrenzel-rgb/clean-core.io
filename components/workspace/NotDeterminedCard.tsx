@@ -6,6 +6,7 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import type { NotDetermined } from '@/lib/workspace-model';
 import type { RecordGap } from '@/lib/legacy-project';
+import { wt } from '@/lib/workspace-messages';
 
 /**
  * What the engine could not work out — `DESIGN.md` §5.1, §5.5, roadmap 1.4.
@@ -47,7 +48,7 @@ export default function NotDeterminedCard({
 }) {
   return (
     <CcCard
-      title="Not determined"
+      title={wt('notDetermined.title')}
       count={data.noSource ? undefined : data.count}
       meta={<CcProvenanceChip value="not-determined" />}
     >
@@ -56,16 +57,14 @@ export default function NotDeterminedCard({
           data-not-determined-state="no-source"
           className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted"
         >
-          No source has been staged, so nothing has been assessed and nothing has been stepped over.
-          This is not a result.
+          {wt('notDetermined.noSource')}
         </p>
       ) : data.count === 0 ? (
         <p
           data-not-determined-state="none"
           className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted"
         >
-          Every construct in this source falls inside the detectors that ran. That is the boundary of
-          the question the engine answered — not a clean bill of health.
+          {wt('notDetermined.none')}
         </p>
       ) : (
         <ul data-not-determined-state="some" className="m-0 list-none space-y-2.5 p-0">
@@ -77,7 +76,7 @@ export default function NotDeterminedCard({
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[13px] font-semibold text-cc-ink">{item.label}</span>
-                <CcAnchor label={`Source line ${item.anchor}`}>{item.anchor}</CcAnchor>
+                <CcAnchor label={`${wt('notDetermined.sourceLine')} ${item.anchor}`}>{item.anchor}</CcAnchor>
               </div>
               <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
                 {item.why}
@@ -89,7 +88,7 @@ export default function NotDeterminedCard({
       {recorded.length > 0 ? (
         <div data-not-determined-record-list="" className="mt-3">
           <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-            Not in this project&apos;s record
+            {wt('notDetermined.recordTitle')}
           </p>
           <ul className="m-0 mt-1.5 list-none space-y-2.5 p-0">
             {recorded.map((gap) => (

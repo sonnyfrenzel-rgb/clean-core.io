@@ -39,8 +39,18 @@ export interface GradeMeta {
   description: string;
   /** OUR reading of the matching ABAP Test Cockpit severity — not an SAP-published mapping. */
   atcReading: string;
-  color: string; // hex — charts
-  badge: string; // tailwind badge classes
+  /**
+   * The letter's identifier classes — tokens of the level's semantic state,
+   * the fixed list in `lib/clean-core-level.ts` (`DESIGN.md` §1.8, ADR-024): A
+   * `information`, B `neutral`, C `warning`, D `error`, Unknown `neutral`.
+   * Never `success`: the level is imported from SAP's classification file, not
+   * proven, so a green A would say "verified clean" about a row somebody else
+   * wrote down. Written out rather than imported so this module stays free of
+   * imports; `tests/abcd-classification.spec.ts` holds the two lists together.
+   * (A hex `color` for charts stood here and went in block D, D.29 — its one
+   * reader tinted a card with it; charts take `lib/chart-colors.ts`.)
+   */
+  badge: string;
 }
 
 // Aligned to SAP's official clean core level concept (ABAP extensibility guide, 2025)
@@ -52,8 +62,7 @@ export const ABCD_META: Record<CloudReadinessGrade, GradeMeta> = {
     short: 'Cloud-ready',
     description: 'Released SAP APIs (local & remote) and extension points — ABAP Cloud on-stack, or side-by-side on SAP BTP. Fully supported and upgrade-stable.',
     atcReading: 'No message',
-    color: '#059669',
-    badge: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    badge: 'bg-cc-information-bg text-cc-information border-cc-information-border',
   },
   B: {
     grade: 'B',
@@ -61,8 +70,7 @@ export const ABCD_META: Record<CloudReadinessGrade, GradeMeta> = {
     short: 'Classic OK',
     description: 'Classic SAP APIs and extension points that follow SAP recommendations — used where no Level A path is available.',
     atcReading: 'Priority 3 · info',
-    color: '#2563eb',
-    badge: 'bg-blue-100 text-blue-800 border-blue-300',
+    badge: 'bg-cc-neutral-bg text-cc-neutral border-cc-neutral-border',
   },
   C: {
     grade: 'C',
@@ -70,8 +78,7 @@ export const ABCD_META: Record<CloudReadinessGrade, GradeMeta> = {
     short: 'Internal',
     description: 'Uses internal SAP objects/APIs — conditionally clean if verified via the changelog-for-SAP-objects approach before each upgrade.',
     atcReading: 'Priority 2 · warning',
-    color: '#d97706',
-    badge: 'bg-amber-100 text-amber-800 border-amber-300',
+    badge: 'bg-cc-warning-bg text-cc-warning border-cc-warning-border',
   },
   D: {
     grade: 'D',
@@ -79,8 +86,7 @@ export const ABCD_META: Record<CloudReadinessGrade, GradeMeta> = {
     short: 'Replace',
     description: 'Not-recommended objects & technologies — modifications, implicit enhancements, direct table writes, non-released access. Not clean; replace before upgrade.',
     atcReading: 'Priority 1 · error',
-    color: '#dc2626',
-    badge: 'bg-red-100 text-red-800 border-red-300',
+    badge: 'bg-cc-error-bg text-cc-error border-cc-error-border',
   },
   Unknown: {
     grade: 'Unknown',
@@ -88,8 +94,7 @@ export const ABCD_META: Record<CloudReadinessGrade, GradeMeta> = {
     short: 'Unknown',
     description: 'Not enough evidence to assign a clean-core level. Provide risk/criticality or import ATC results to classify — shown honestly instead of a guessed grade.',
     atcReading: 'Not assessed',
-    color: '#64748b',
-    badge: 'bg-slate-100 text-slate-700 border-slate-300',
+    badge: 'bg-cc-neutral-bg text-cc-neutral border-cc-neutral-border',
   },
 };
 

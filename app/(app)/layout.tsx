@@ -1,11 +1,11 @@
 'use client';
 
-import { User, RotateCw, LogOut, Settings, Shield, HelpCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { User, RotateCw, LogOut, Settings, Shield, HelpCircle, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getAuth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import ShellHelpMenu, {
   SHELL_MENU_ITEMS,
   SHELL_MENU_PANEL,
@@ -14,6 +14,7 @@ import ShellHelpMenu, {
   useShellMenu,
 } from '@/components/ShellHelpMenu';
 import CcButton from '@/components/cc/Button';
+import CcIconButton from '@/components/cc/IconButton';
 import CcMessageBox from '@/components/cc/MessageBox';
 import CcTag from '@/components/cc/Tag';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,13 @@ import { runsAreSelfFunded, runsRemaining } from '@/lib/run-quota-rule';
 import { Lightbulb } from 'lucide-react';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { showTipsAgain } from '@/lib/show-tips-again';
+import { openProjectSearch, useProjectSearchAvailable, useShellProjectName } from '@/lib/shell-context';
+import { workspaceBackHref } from '@/lib/workspace-back-href';
+import { wt } from '@/lib/workspace-messages';
+
+const noSubscription = () => () => {};
+const readSearch = () => window.location.search;
+const serverSearch = () => '';
 
 export default function AppLayout({children}: {children: React.ReactNode}) {
   const pathname = usePathname();
@@ -116,10 +124,23 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
    * Where the reader stands, for the path in the shell bar (§2.1: "Workspace ›
    * Projekt"). The workspace is the root; a stage names itself from `PHASES`
    * (`lib/workflow-steps.ts`), the list the stepper and the stage title read.
-   * The project's own name is not fetched here — that would be one more read of
-   * a document that carries the source code; the stages hand it up in D.29.
-   * On the object page (`/project/<id>`) the workspace shows its own path.
+   *
+   * The project's name is not fetched here — that would be one more read of a
+   * document that carries the source code. The page under the shell has read
+   * it already (`loadProjectAndHydrate`) and announced the name; the shell
+   * shows it for the project in its own address only (`lib/shell-context.ts`,
+   * block D D.29). Until it arrives the crumb is simply not there.
    */
+  const projectInPath = /^\/project\/([^/?#]+)/.exec(pathname ?? '')?.[1] ?? null;
+  const projectId = ((): string | null => {
+    if (!projectInPath) return null;
+    try {
+      return decodeURIComponent(projectInPath);
+    } catch {
+      return projectInPath;
+    }
+  })();
+  const projectName = useShellProjectName(projectId);
   const pathCurrent = ((): string | null => {
     const stage = /^\/project\/[^/]+\/([^/?#]+)/.exec(pathname ?? '')?.[1];
     if (stage) return PHASES.find((p) => p.key === stage)?.label ?? null;
@@ -127,6 +148,18 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
     if (pathname?.startsWith('/admin')) return 'Admin Console';
     return null;
   })();
+  // On a stage the project crumb leads back to the workspace — the object page,
+  // in the view the stage was opened from, for an account behind the preview
+  // switch; the dashboard for everyone else (the same rule as the stage's own
+  // "Back to workspace", `lib/workspace-back-href.ts`). On the object page it is
+  // where the reader stands.
+  const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
+  const projectHref = projectId
+    ? workspaceBackHref({ projectId, shell: workspaceShellEnabled(profile), search })
+    : null;
+  // The search slot of §2.1: a button only while a project search is on the
+  // page (the object page's ⌘K dialog), opening it by a named event.
+  const projectSearch = useProjectSearchAvailable();
   const atWorkspace = pathname === '/dashboard';
 
   return (
@@ -137,7 +170,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
       <a
         href="#main-content"
         data-skip-link=""
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-cc-row focus:outline-2 focus:outline-offset-2 focus:outline-cc-focus"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-cc-float focus:rounded-cc-row focus:outline-2 focus:outline-offset-2 focus:outline-cc-focus"
       >
         <span className="block rounded-cc-row border border-cc-line bg-cc-surface px-4 py-3 text-[13px] font-semibold text-cc-ink shadow-cc-dialog">
           Skip to content
@@ -155,7 +188,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           product name on the left, the path beside them, the quota, the
           assistant, Help and the account menu on the right. White surface and a
           1 px rule — no blur, no shadow, no green hover (ADR-007). */}
-      <header className="cc-no-print sticky top-0 z-50 border-b border-cc-line bg-cc-surface">
+      <header className="cc-no-print sticky top-0 z-cc-sticky border-b border-cc-line bg-cc-surface">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
           {/* Home means the dashboard for someone signed in and the landing page
               for everyone else. The same shell serves both, and a hard link to
@@ -190,6 +223,24 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                   My workspace
                 </Link>
               )}
+              {projectName && (
+                <>
+                  <ChevronRight size={14} aria-hidden={true} className="shrink-0" />
+                  {pathCurrent && projectHref ? (
+                    <Link
+                      href={projectHref}
+                      data-shell-path-project=""
+                      className="max-w-[16rem] truncate text-cc-ink-muted no-underline hover:text-cc-ink hover:underline"
+                    >
+                      {projectName}
+                    </Link>
+                  ) : (
+                    <span aria-current="page" data-shell-path-project="" className="max-w-[20rem] truncate font-semibold text-cc-ink">
+                      {projectName}
+                    </span>
+                  )}
+                </>
+              )}
               {pathCurrent && !atWorkspace && (
                 <>
                   <ChevronRight size={14} aria-hidden={true} className="shrink-0" />
@@ -220,6 +271,21 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                     : `${runsRemaining(profile)} of ${profile.transformationsLimit} left`}
                 </div>
               </div>
+            )}
+
+            {/* Search ⌘K (§2.1, roadmap 6.6) — here only while the page has a
+                project search to open; the dialog, its index and its focus
+                handling stay with the page (components/workspace/CommandSearch.tsx). */}
+            {projectSearch && (
+              <span className="cc-no-print inline-flex">
+                <CcIconButton
+                  label={wt('shell.searchProject')}
+                  data-command-search-trigger=""
+                  onClick={openProjectSearch}
+                >
+                  <Search size={16} aria-hidden={true} />
+                </CcIconButton>
+              </span>
             )}
 
             <span className="hidden sm:inline-flex">

@@ -1,0 +1,8 @@
+{
+  "$comment": "Ceilings of tests/design-rendered-guard.spec.ts for this route: per check, the rendered count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:rendered-baseline` (add `-- -c <config>` for another port); never raise by hand. A route without a file has ceiling 0. Checks: tests/helpers/design-rendered.ts. Plan: Block D, docs/design/block-d-plan.md D.2 / D.30.",
+  "route": "/project/[id] (business)",
+  "step": "D.29",
+  "ceilings": {
+    "contrast": 1
+  }
+}

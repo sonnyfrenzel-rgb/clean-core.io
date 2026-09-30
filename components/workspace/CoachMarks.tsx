@@ -4,6 +4,7 @@ import React from 'react';
 import { Lightbulb } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import type { CoachMark, CoachMarkId } from '@/lib/coach-marks';
+import { wt } from '@/lib/workspace-messages';
 
 /**
  * One coach mark, where it belongs — `DESIGN.md` §6.2, roadmap 2.7.
@@ -56,10 +57,10 @@ export default function CoachMarkNote({
       </span>
       <span className="flex shrink-0 items-center gap-1.5">
         <CcButton onClick={() => onDismiss(mark.id)} data-coach-mark-dismiss={mark.id}>
-          Got it
+          {wt('coach.gotIt')}
         </CcButton>
         <CcButton onClick={onDismissAll} data-coach-mark-dismiss-all="">
-          Skip tips
+          {wt('coach.skipTips')}
         </CcButton>
       </span>
     </div>

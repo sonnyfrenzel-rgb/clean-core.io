@@ -3,6 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import type { OverlayDefinition, RunSwitch, RunVariant } from '@/lib/process-navigation';
+import { wt } from '@/lib/workspace-messages';
 
 /**
  * The filter row over the map — roadmap 2.9, `DESIGN.md` §5.9 items 6, 7 and 8.
@@ -74,7 +75,7 @@ export default function ProcessFilters({
   return (
     <div data-process-filters="" className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[11px] font-semibold tracking-[0.06em] text-cc-ink-muted uppercase">Path</span>
+        <span className="text-[11px] font-semibold tracking-[0.06em] text-cc-ink-muted uppercase">{wt('mapFilters.path')}</span>
         <button
           type="button"
           data-path-toggle="main"
@@ -82,7 +83,7 @@ export default function ProcessFilters({
           onClick={() => onHighlightChange(highlight === 'main' ? 'none' : 'main')}
           className={toggleClass(highlight === 'main')}
         >
-          Main path
+          {wt('mapFilters.mainPath')}
         </button>
         <button
           type="button"
@@ -92,10 +93,10 @@ export default function ProcessFilters({
           onClick={() => onHighlightChange(highlight === 'to-selected' ? 'none' : 'to-selected')}
           className={cn(toggleClass(highlight === 'to-selected'), !canShowPathsToHere && 'opacity-50')}
         >
-          Show paths to here
+          {wt('mapFilters.pathsToHere')}
         </button>
 
-        <span className="ml-2 text-[11px] font-semibold tracking-[0.06em] text-cc-ink-muted uppercase">Overlays</span>
+        <span className="ml-2 text-[11px] font-semibold tracking-[0.06em] text-cc-ink-muted uppercase">{wt('mapFilters.overlays')}</span>
         {overlays.map((overlay) => {
           const on = activeOverlays.has(overlay.key);
           return (
@@ -126,7 +127,7 @@ export default function ProcessFilters({
             onClick={() => onVariantOpenChange(!variantOpen)}
             className={cn('ml-2', toggleClass(variantOpen))}
           >
-            Run variants <span className="font-cc-mono">{switches.length}</span>
+            {wt('mapFilters.runVariants')} <span className="font-cc-mono">{switches.length}</span>
           </button>
         ) : null}
       </div>
@@ -171,7 +172,7 @@ export default function ProcessFilters({
                   }}
                   className={toggleClass(on)}
                 >
-                  <span className="font-cc-mono">{entry.name}</span> {on ? 'on' : 'off'}
+                  <span className="font-cc-mono">{entry.name}</span> {wt(on ? 'mapFilters.on' : 'mapFilters.off')}
                 </button>
               );
             })}
@@ -180,8 +181,7 @@ export default function ProcessFilters({
             {variant.sentence}
           </p>
           <p className="text-[11px] font-medium text-cc-ink-muted">
-            A step behind a switch is dimmed together with the level it opens. What comes after it is not:
-            the code skips the step and goes on, and the file carries that way past the switch as a flow of its own.
+            {wt('mapFilters.variantNote')}
           </p>
         </div>
       ) : null}

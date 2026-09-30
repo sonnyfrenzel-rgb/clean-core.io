@@ -13,6 +13,18 @@ import { CommandAnswerLostError, runProjectCommand } from '@/lib/project-command
 import { CONDITION_STATUS_LABEL, decisionCardView, type CardBinding } from '@/lib/decision-card';
 import type { ProjectDecision, DecisionConfirmation, DecisionStatus } from '@/lib/project-decision';
 import type { ObjectStatusValue } from '@/lib/object-status';
+import {
+  wt,
+  decisionConfirmedBy,
+  decisionConfirmsLine,
+  decisionConfirmTitle,
+  decisionDeriveFailed,
+  decisionLatest,
+  decisionMovedSentence,
+  decisionShowConditions,
+  decisionTimelineTitle,
+  decisionWithdrawTitle,
+} from '@/lib/workspace-messages';
 
 /**
  * "Open decision" — roadmap 8.4, mockup screen 5 (Management).
@@ -83,7 +95,7 @@ export default function DecisionCard({
       try {
         const token = await getAuth().currentUser?.getIdToken();
         if (!token) {
-          if (!cancelled) setLoad({ state: 'failed', sentence: 'You are signed out, so the decision could not be read.' });
+          if (!cancelled) setLoad({ state: 'failed', sentence: wt('decision.signedOut') });
           return;
         }
         const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/decision`, {
@@ -94,13 +106,13 @@ export default function DecisionCard({
         if (!res.ok || !json || !json.draft) {
           setLoad({
             state: 'failed',
-            sentence: json?.error || `The decision of this project could not be derived (${res.status}).`,
+            sentence: json?.error || decisionDeriveFailed(res.status),
           });
           return;
         }
         setLoad({ state: 'ready', answer: json });
       } catch {
-        if (!cancelled) setLoad({ state: 'failed', sentence: 'The decision of this project could not be read.' });
+        if (!cancelled) setLoad({ state: 'failed', sentence: wt('decision.unreadable') });
       }
     })();
     return () => {
@@ -125,7 +137,7 @@ export default function DecisionCard({
   // decision again so what it shows next is the server's.
   const answerLost = useCallback(
     (err: CommandAnswerLostError) => {
-      setRefusal({ headline: 'No answer came back. The decision was read again.', sentence: err.message });
+      setRefusal({ headline: wt('decision.answerLost'), sentence: err.message });
       // Not a success, so not the success path's `setReload` + `onChanged` pair
       // (management-overview.spec.ts counts that pair), but the same two rereads.
       onChanged?.();
@@ -161,8 +173,8 @@ export default function DecisionCard({
         return;
       }
       setRefusal({
-        headline: draftSaved ? 'Not confirmed. The draft was saved.' : 'Nothing was written.',
-        sentence: err instanceof Error ? err.message : 'The server refused the confirmation.',
+        headline: draftSaved ? wt('decision.draftSaved') : wt('decision.nothingWritten'),
+        sentence: err instanceof Error ? err.message : wt('decision.confirmRefused'),
       });
       if (draftSaved) onChanged?.();
     } finally {
@@ -185,8 +197,8 @@ export default function DecisionCard({
         return;
       }
       setRefusal({
-        headline: 'Nothing was written.',
-        sentence: err instanceof Error ? err.message : 'The server refused the withdrawal.',
+        headline: wt('decision.nothingWritten'),
+        sentence: err instanceof Error ? err.message : wt('decision.withdrawRefused'),
       });
     } finally {
       setBusy(false);
@@ -198,17 +210,16 @@ export default function DecisionCard({
   if (load.state === 'loading') {
     return (
       <div data-decision-card="loading" role="status" className="py-4">
-        <span className="sr-only">Deriving the decision of this project…</span>
+        <span className="sr-only">{wt('decision.deriving')}</span>
       </div>
     );
   }
 
   if (load.state === 'failed' || !view || !shown || !answer) {
     return (
-      <CcCard title="Open decision" meta={<CcProvenanceChip value="not-determined" />}>
+      <CcCard title={wt('decision.title')} meta={<CcProvenanceChip value="not-determined" />}>
         <p data-decision-card="unreadable" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
-          {load.state === 'failed' ? load.sentence : 'The decision of this project could not be read.'} Not
-          determined — an empty card would say nothing is open.
+          {load.state === 'failed' ? load.sentence : wt('decision.unreadable')} {wt('decision.unreadableTail')}
         </p>
       </CcCard>
     );
@@ -220,7 +231,7 @@ export default function DecisionCard({
   return (
     <div data-decision-card="" data-decision-status={shown.status} data-decision-coverage={view.coverage.state}>
       <CcCard
-        title="Open decision"
+        title={wt('decision.title')}
         meta={
           <>
             <code data-decision-identity="" className="text-[12px] font-medium text-cc-ink-muted">
@@ -233,7 +244,7 @@ export default function DecisionCard({
           answer.canDecide ? (
             isConfirmed ? (
               <CcButton onClick={() => setAsking('withdraw')} disabled={busy} data-decision-withdraw="">
-                Withdraw decision…
+                {wt('decision.withdrawEllipsis')}
               </CcButton>
             ) : (
               <CcButton
@@ -243,7 +254,7 @@ export default function DecisionCard({
                 aria-describedby={view.confirmable ? undefined : 'decision-blocked-reason'}
                 data-decision-confirm=""
               >
-                Confirm decision…
+                {wt('decision.confirmEllipsis')}
               </CcButton>
             )
           ) : null
@@ -254,7 +265,7 @@ export default function DecisionCard({
         </p>
 
         <dl className="m-0 mt-2.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13px]">
-          <dt className="font-semibold text-cc-ink-muted">Binds</dt>
+          <dt className="font-semibold text-cc-ink-muted">{wt('decision.binds')}</dt>
           <dd className="m-0 min-w-0">
             <ul data-decision-binds="" className="m-0 list-none space-y-1 p-0">
               {view.bindings.map((b) => (
@@ -262,20 +273,20 @@ export default function DecisionCard({
               ))}
             </ul>
           </dd>
-          <dt className="font-semibold text-cc-ink-muted">Run</dt>
+          <dt className="font-semibold text-cc-ink-muted">{wt('decision.run')}</dt>
           <dd className="m-0 min-w-0">
             <ul className="m-0 list-none p-0">
               <Binding binding={view.run} />
             </ul>
           </dd>
-          <dt className="font-semibold text-cc-ink-muted">Reversible</dt>
+          <dt className="font-semibold text-cc-ink-muted">{wt('decision.reversible')}</dt>
           <dd className="m-0 min-w-0" data-decision-reversible={shown.reversibility.answer}>
             <span className="font-semibold text-cc-ink">{view.reversible.answer}</span>
             <span className="mt-0.5 block text-[12px] leading-snug font-medium text-cc-ink-muted">
               {view.reversible.detail}
             </span>
           </dd>
-          <dt className="font-semibold text-cc-ink-muted">Conditions</dt>
+          <dt className="font-semibold text-cc-ink-muted">{wt('decision.conditions')}</dt>
           <dd className="m-0 min-w-0">
             <span data-decision-conditions-summary="" className="font-medium text-cc-ink">
               {view.conditionsSummary}
@@ -289,7 +300,7 @@ export default function DecisionCard({
                   aria-controls="decision-conditions"
                   data-decision-conditions-toggle=""
                 >
-                  {conditionsOpen ? 'Hide conditions' : `Show conditions (${view.conditions.length})`}
+                  {conditionsOpen ? wt('decision.hideConditions') : decisionShowConditions(view.conditions.length)}
                   <ChevronDown size={14} aria-hidden={true} />
                 </CcButton>
               </span>
@@ -308,7 +319,7 @@ export default function DecisionCard({
                         {CONDITION_STATUS_LABEL[c.status]}
                       </span>
                       <span className="text-[12px] font-medium text-cc-ink-muted">
-                        {c.statusBasis === 'derived' ? 'from the evidence' : 'stated by the account'}
+                        {c.statusBasis === 'derived' ? wt('decision.fromEvidence') : wt('decision.statedByAccount')}
                       </span>
                       <CcProvenanceChip value={c.provenance} />
                     </div>
@@ -326,21 +337,20 @@ export default function DecisionCard({
             data-decision-coverage-sentence=""
             className="m-0 mt-2.5 text-[12px] leading-snug font-medium text-cc-ink-muted"
           >
-            {view.coverage.state === 'blocked' ? 'Cannot be confirmed yet. ' : 'Qualified. '}
+            {view.coverage.state === 'blocked' ? wt('decision.cannotConfirmYet') : wt('decision.qualified')}{' '}
             {view.coverage.sentence}
           </p>
         ) : null}
 
         {moved ? (
           <p data-decision-moved="" className="m-0 mt-2.5 text-[12px] leading-snug font-medium text-cc-ink">
-            The evidence behind this decision has changed since it was confirmed. Withdraw it to confirm revision{' '}
-            {answer.draft.revision}, which binds what the project stands on now.
+            {decisionMovedSentence(answer.draft.revision)}
           </p>
         ) : null}
 
         {isConfirmed && answer.stored?.confirmation ? (
           <p data-decision-confirmed-by="" className="m-0 mt-2.5 text-[12px] leading-snug font-medium text-cc-ink">
-            Confirmed by {answer.stored.confirmation.account} on {answer.stored.confirmation.at.slice(0, 10)}.
+            {decisionConfirmedBy(answer.stored.confirmation.account, answer.stored.confirmation.at.slice(0, 10))}
           </p>
         ) : null}
 
@@ -358,10 +368,10 @@ export default function DecisionCard({
 
         {/* The timeline — folded, as the mockup folds it. */}
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-cc-line pt-2.5">
-          <h4 className="m-0 text-[13px] font-bold text-cc-ink">Timeline ({shown.timeline.length})</h4>
+          <h4 className="m-0 text-[13px] font-bold text-cc-ink">{decisionTimelineTitle(shown.timeline.length)}</h4>
           {shown.timeline.length > 0 ? (
             <span className="text-[12px] font-medium text-cc-ink-muted">
-              latest {shown.timeline[shown.timeline.length - 1].at.slice(0, 10)}
+              {decisionLatest(shown.timeline[shown.timeline.length - 1].at.slice(0, 10))}
             </span>
           ) : null}
           {shown.timeline.length > 0 ? (
@@ -373,7 +383,7 @@ export default function DecisionCard({
                 aria-controls="decision-timeline"
                 data-decision-timeline-toggle=""
               >
-                {timelineOpen ? 'Hide' : 'Show'}
+                {timelineOpen ? wt('decision.hide') : wt('decision.show')}
                 <ChevronDown size={14} aria-hidden={true} />
               </CcButton>
             </span>
@@ -393,13 +403,13 @@ export default function DecisionCard({
 
       <CcMessageBox
         open={asking === 'confirm'}
-        title={`Confirm decision ${shown.decisionId}?`}
-        confirmLabel="Confirm decision"
+        title={decisionConfirmTitle(shown.decisionId)}
+        confirmLabel={wt('decision.confirm')}
         onConfirm={confirm}
         onCancel={cancel}
       >
         <p className="m-0">
-          {account ? `${account} confirms.` : 'The signed-in account confirms.'} {view.selfDeclaration}
+          {decisionConfirmsLine(account)} {view.selfDeclaration}
         </p>
         <ul data-decision-dialog-lines="" className="m-0 mt-2 list-disc space-y-1 pl-5">
           {view.dialogLines.map((line) => (
@@ -410,14 +420,13 @@ export default function DecisionCard({
 
       <CcMessageBox
         open={asking === 'withdraw'}
-        title={`Withdraw decision ${shown.decisionId}?`}
-        confirmLabel="Withdraw decision"
+        title={decisionWithdrawTitle(shown.decisionId)}
+        confirmLabel={wt('decision.withdraw')}
         onConfirm={withdraw}
         onCancel={cancel}
       >
         <p className="m-0">
-          The decision is no longer confirmed. Who confirmed it and when stays on the record — that happened. A new
-          confirmation is a new revision.
+          {wt('decision.withdrawBody')}
         </p>
       </CcMessageBox>
     </div>
@@ -431,7 +440,7 @@ function Binding({ binding }: { binding: CardBinding }) {
       <span className="flex flex-wrap items-center gap-1.5">
         <span className="font-medium text-cc-ink-muted">{binding.label}</span>
         {binding.value === null ? (
-          <span className="font-semibold text-cc-ink-muted">not determined</span>
+          <span className="font-semibold text-cc-ink-muted">{wt('decision.notDetermined')}</span>
         ) : (
           <code className="font-semibold text-cc-ink">{binding.value}</code>
         )}

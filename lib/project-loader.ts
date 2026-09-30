@@ -1,4 +1,5 @@
 import { doc, getDoc } from 'firebase/firestore';
+import { announceShellProject } from './shell-context';
 import { getAuth } from 'firebase/auth';
 import { getDb } from './firebase';
 import { Project } from './types';
@@ -115,6 +116,11 @@ export async function loadProjectAndHydrate(projectId: string): Promise<Project 
       run = { kind: 'failed', error: err instanceof Error ? err.message : 'Failed to load the analysis run.' };
     }
   }
+
+  // The shell's path names the project (`DESIGN.md` §2.1) from this read —
+  // the one every stage and the object page already make — rather than from a
+  // read of its own, which would load the source code twice (`lib/shell-context.ts`).
+  announceShellProject(projectId, data.name);
 
   return hydrateProject(docSnap.id, data, run);
 }

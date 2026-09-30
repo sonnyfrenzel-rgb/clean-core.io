@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { countHints, hintSentence, type ProcessHint } from '@/lib/process-hints';
+import { wt } from '@/lib/workspace-messages';
 
 /**
  * The check hints of the editing footer — roadmap 3.3, `DESIGN.md` §2.6.
@@ -51,7 +52,7 @@ export default function ProcessHints({ hints, on, onOnChange, onJump }: ProcessH
         onClick={() => setOpen((was) => !was)}
         className="rounded-cc-row border border-cc-line bg-cc-surface px-2 py-0.5 text-[12px] font-semibold text-cc-ink hover:bg-cc-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
       >
-        Hints (<span data-hints-count="">{on ? counts.total : 0}</span>)
+        {wt('mapHints.hints')} (<span data-hints-count="">{on ? counts.total : 0}</span>)
       </button>
 
       <label className="flex items-center gap-1 text-[12px] font-medium text-cc-ink-muted">
@@ -61,23 +62,23 @@ export default function ProcessHints({ hints, on, onOnChange, onJump }: ProcessH
           checked={on}
           onChange={(event) => onOnChange(event.target.checked)}
         />
-        Show check hints
+        {wt('mapHints.show')}
       </label>
 
       <span data-hints-sentence="" aria-live="polite" className="text-[12px] font-medium text-cc-ink-muted">
-        {on ? hintSentence(counts) : 'Check hints are off. They never stopped anything while they were on.'}
+        {on ? hintSentence(counts) : wt('mapHints.offSentence')}
       </span>
 
       {open ? (
         <div
           data-hints-popover=""
           role="group"
-          aria-label="Check hints"
+          aria-label={wt('mapHints.popoverLabel')}
           className="w-full rounded-cc-card border border-cc-line bg-cc-surface p-2"
         >
           {shown.length === 0 ? (
             <p data-hints-empty className="text-[12px] font-medium text-cc-ink-muted">
-              {on ? 'No check hints on this model.' : 'Check hints are off.'}
+              {wt(on ? 'mapHints.none' : 'mapHints.off')}
             </p>
           ) : (
             <ul className="flex flex-col gap-1">

@@ -7,6 +7,7 @@ import {
   revokeProjectAccess,
   type ProjectAccessList,
 } from '@/lib/project-readers-client';
+import { wt, accessUnaccountedLabel } from '@/lib/workspace-messages';
 
 /**
  * Roadmap 5.5 — who has Einsicht into this project, since when, and the one
@@ -71,7 +72,7 @@ export default function WorkspaceAccessList({
         await revokeProjectAccess(projectId, uid);
         await refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'The revocation did not go through.');
+        setError(err instanceof Error ? err.message : wt('access.revokeFailed'));
       } finally {
         setBusyUid(null);
       }
@@ -92,13 +93,12 @@ export default function WorkspaceAccessList({
         id="workspace-access-title"
         className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase"
       >
-        Who can read this project
+        {wt('access.title')}
       </h2>
 
       {access.entries.length === 0 ? (
         <p data-workspace-access-empty className="mt-2 mb-0 text-[13px] text-cc-ink-muted">
-          Nobody but you. An invitation gives read access to the whole project, source code
-          included — generating, confirming, signing and exporting stay with you.
+          {wt('access.empty')}
         </p>
       ) : (
         <ul className="mt-2 mb-0 list-none space-y-2 p-0">
@@ -112,7 +112,7 @@ export default function WorkspaceAccessList({
                 {entry.email}
               </span>
               <span data-workspace-access-since className="text-[12px] text-cc-ink-muted">
-                Read access since {entry.since.slice(0, 10)}
+                {wt('access.since')} {entry.since.slice(0, 10)}
               </span>
               <span className="ml-auto">
                 <CcButton
@@ -122,7 +122,7 @@ export default function WorkspaceAccessList({
                   disabled={busyUid === entry.uid}
                   data-workspace-access-revoke={entry.uid}
                 >
-                  {busyUid === entry.uid ? 'Revoking…' : 'Revoke'}
+                  {busyUid === entry.uid ? wt('access.revoking') : wt('access.revoke')}
                 </CcButton>
               </span>
             </li>
@@ -134,9 +134,7 @@ export default function WorkspaceAccessList({
         // A uid the rules would let read, with no accepted invitation behind
         // it, is a fault worth seeing rather than one worth hiding.
         <p data-workspace-access-unaccounted className="mt-2 mb-0 text-[12px] text-cc-ink-muted">
-          {access.unaccountedUids.length} account
-          {access.unaccountedUids.length === 1 ? '' : 's'} on the read list without a matching
-          invitation. Please report this — it should not happen.
+          {accessUnaccountedLabel(access.unaccountedUids.length)}
         </p>
       ) : null}
 

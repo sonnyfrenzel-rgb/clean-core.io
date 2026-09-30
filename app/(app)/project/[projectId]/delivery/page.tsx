@@ -862,7 +862,7 @@ jobs:
           <CollapsibleAccordion
             title="Compliance Audit Pack"
             badge={project.auditMetadata?.inputFingerprint ? 'Ready' : 'Partial'}
-            badgeSeverity={project.auditMetadata?.inputFingerprint ? 'green' : 'amber'}
+            badgeSeverity={project.auditMetadata?.inputFingerprint ? 'neutral' : 'warning'}
             tooltip="Exportable evidence package for architecture governance, compliance reviews, and audit documentation."
           >
             <div className="space-y-4">

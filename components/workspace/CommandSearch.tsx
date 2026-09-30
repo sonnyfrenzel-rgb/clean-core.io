@@ -6,6 +6,13 @@ import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/cc-messages';
+import {
+  wt,
+  searchFoundLabel,
+  searchNothingMatches,
+  searchSourceLineLabel,
+} from '@/lib/workspace-messages';
+import { onOpenProjectSearch, registerProjectSearch } from '@/lib/shell-context';
 import CcIconButton from '@/components/cc/IconButton';
 import CcTag from '@/components/cc/Tag';
 import CcAnchor from '@/components/cc/Anchor';
@@ -30,9 +37,14 @@ import type { Project } from '@/lib/types';
  * page — the precedent is `components/process-map/ProcessSearch.tsx`, and the
  * same guard against stealing a keystroke from a text field applies here. But
  * a shortcut is never the *only* way in (the UX register carries open findings
- * about exactly that): the small button beside the project title is a real,
- * tabbable, labelled control that opens the same dialog for a mouse, a switch
- * device, or a reader who has never learned the chord.
+ * about exactly that): the search button in the shell bar — the slot §2.1
+ * gives it — is a real, tabbable, labelled control that opens the same dialog
+ * for a mouse, a switch device, or a reader who has never learned the chord.
+ * Since block D, D.29 that button belongs to the shell and not to this
+ * component: this dialog registers itself while it is mounted, the shell shows
+ * the button only then, and the button asks by a named event
+ * (`lib/shell-context.ts`) — the shell never learns the index, and this
+ * component never reaches into the layout.
  *
  * **A dialog in the full sense** — modelled on `components/cc/MessageBox.tsx`,
  * this product's one other true modal: portalled to `document.body` so
@@ -123,6 +135,19 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
+  /** The shell's search button: present while this dialog is, and opening it by event. */
+  useEffect(() => {
+    const unregister = registerProjectSearch();
+    const stop = onOpenProjectSearch(() => {
+      openerRef.current = document.activeElement as HTMLElement | null;
+      setOpen(true);
+    });
+    return () => {
+      stop();
+      unregister();
+    };
+  }, []);
+
   /** The focus trap, the `inert` siblings, and giving the focus back on close. */
   useEffect(() => {
     if (!open) return undefined;
@@ -196,20 +221,9 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
 
   return (
     <>
-      <CcIconButton
-        label="Search this project (Ctrl K)"
-        data-command-search-trigger=""
-        onClick={() => {
-          openerRef.current = document.activeElement as HTMLElement | null;
-          setOpen(true);
-        }}
-      >
-        <Search size={16} aria-hidden={true} />
-      </CcIconButton>
-
       {open && typeof document !== 'undefined'
         ? createPortal(
-            <div data-command-search-layer="" className="fixed inset-0 z-[120] flex items-start justify-center p-4 pt-[12vh]">
+            <div data-command-search-layer="" className="fixed inset-0 z-cc-overlay flex items-start justify-center p-4 pt-[12vh]">
               <div
                 data-cc-scrim=""
                 aria-hidden={true}
@@ -226,9 +240,9 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
               >
                 <div className="flex items-center justify-between gap-2">
                   <h2 id={titleId} className="m-0 text-[13px] font-bold text-cc-ink">
-                    Search this project
+                    {wt('search.title')}
                   </h2>
-                  <CcIconButton label="Close search" onClick={close}>
+                  <CcIconButton label={wt('search.close')} onClick={close}>
                     <X size={16} aria-hidden={true} />
                   </CcIconButton>
                 </div>
@@ -246,8 +260,8 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
                     role="combobox"
                     aria-expanded={shown.length > 0}
                     aria-controls={listId}
-                    aria-label="Find an element, a rule, a finding, a source line or a glossary term"
-                    placeholder="Find an element, a rule, a finding, L231, or a glossary term"
+                    aria-label={wt('search.fieldName')}
+                    placeholder={wt('search.placeholder')}
                     data-command-search-input=""
                     value={query}
                     onChange={(event) => {
@@ -259,14 +273,14 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
                   />
                   {query ? (
                     <span className="shrink-0 font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
-                      {results.length ? `${results.length} found` : '0 found'}
+                      {searchFoundLabel(results.length)}
                     </span>
                   ) : null}
                 </div>
 
                 {query && shown.length === 0 ? (
                   <p data-command-search-empty="" className="m-0 text-[12px] font-medium text-cc-ink-muted">
-                    Nothing in this project matches &ldquo;{query}&rdquo;.
+                    {searchNothingMatches(query)}
                   </p>
                 ) : null}
 
@@ -274,7 +288,7 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
                   <ul
                     id={listId}
                     role="listbox"
-                    aria-label="Search results"
+                    aria-label={wt('search.results')}
                     data-command-search-results=""
                     className="m-0 flex max-h-[50vh] list-none flex-col gap-1.5 overflow-y-auto p-0"
                   >
@@ -302,7 +316,7 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
                           <CcTag>{SEARCH_KIND_LABEL[result.kind]}</CcTag>
                           <span className="text-[13px] font-semibold text-cc-ink">{result.title}</span>
                           {result.anchor ? (
-                            <CcAnchor label={`Source line ${result.anchor}`}>{result.anchor}</CcAnchor>
+                            <CcAnchor label={searchSourceLineLabel(result.anchor)}>{result.anchor}</CcAnchor>
                           ) : null}
                           {result.detail ? (
                             <span className="min-w-0 truncate text-[12px] font-medium text-cc-ink-muted">

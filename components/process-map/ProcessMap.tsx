@@ -34,6 +34,7 @@ import ProcessMiniMap from './ProcessMiniMap';
 import ProcessOutline from './ProcessOutline';
 import ProcessSearch from './ProcessSearch';
 import ProcessStepList from './ProcessStepList';
+import { mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } from '@/lib/workspace-messages';
 
 /**
  * The process map in the workspace — roadmap 2.5, navigable at size since 2.9.
@@ -514,28 +515,28 @@ export default function ProcessMap({
   const openProblem = problems.get(plane);
 
   return (
-    <section data-process-map="" aria-label="Process reconstructed from code" className="flex flex-col gap-3">
+    <section data-process-map="" aria-label={wt('map.sectionLabel')} className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <h3 data-process-map-title className="text-[15px] font-bold text-cc-ink">
-            Process — reconstructed from code
+            {wt('map.title')}
           </h3>
           <p data-process-map-overview className="mt-0.5 text-[13px] font-medium text-cc-ink-muted">
             {model.overview}
           </p>
           <p data-process-map-traceability className="mt-0.5 text-[13px] font-medium text-cc-ink-muted">
             {model.traceability.sentence}
-            {measuredAt ? ` Measured and kept with this model on ${measuredAt.slice(0, 10)}.` : ''}
+            {measuredAt ? ` ${mapMeasuredOn(measuredAt.slice(0, 10))}` : ''}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <CcSegmentedControl<ProcessMapView>
-            label="Process view"
+            label={wt('map.viewLabel')}
             value={view}
             onChange={setView}
             segments={[
-              { value: 'map', label: 'Map', icon: <MapIcon size={14} aria-hidden={true} /> },
-              { value: 'steps', label: 'Steps', icon: <List size={14} aria-hidden={true} /> },
+              { value: 'map', label: wt('map.viewMap'), icon: <MapIcon size={14} aria-hidden={true} /> },
+              { value: 'steps', label: wt('map.viewSteps'), icon: <List size={14} aria-hidden={true} /> },
             ]}
           />
           {/* Roadmap 3.1. Editing is a mode, not a view: *Map* and *Steps* are
@@ -552,7 +553,7 @@ export default function ProcessMap({
             className="inline-flex items-center gap-1 rounded-cc-row border border-cc-line bg-cc-surface px-2 py-1 text-[12px] font-semibold text-cc-ink-muted hover:text-cc-ink aria-pressed:border-cc-ink aria-pressed:bg-cc-surface-muted aria-pressed:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
           >
             <Pencil size={14} aria-hidden={true} />
-            {editing ? 'Stop editing' : 'Edit model'}
+            {wt(editing ? 'map.stopEditing' : 'map.editModel')}
           </button>
         </div>
       </div>
@@ -564,14 +565,14 @@ export default function ProcessMap({
       />
 
       {model.naming.notice ? (
-        <CcMessageStrip state="neutral" headline="Business names">
+        <CcMessageStrip state="neutral" headline={wt('map.businessNames')}>
           {model.naming.notice}
         </CcMessageStrip>
       ) : null}
 
       {model.lanes.length > 0 ? (
         <p data-process-map-lanes className="text-[12px] font-medium text-cc-ink-muted">
-          Lanes proposed: {model.lanes.map((lane) => lane.name).join(' · ')}. {model.lanes[0].statement}
+          {mapLanesProposed(model.lanes.map((lane) => lane.name))} {model.lanes[0].statement}
         </p>
       ) : null}
 
@@ -669,7 +670,7 @@ export default function ProcessMap({
           ) : (
             <ProcessStepList
               elements={planeElements}
-              label={`Steps. ${model.overview}`}
+              label={mapStepsLabel(model.overview)}
               active={active}
               selected={selected}
               onActivate={activate}
@@ -695,9 +696,7 @@ export default function ProcessMap({
             data-process-map-hint
             className="rounded-cc-card border border-cc-line bg-cc-surface-muted p-3 text-[13px] font-medium text-cc-ink-muted"
           >
-            Select a step to open the code it was read from. With the keyboard: Ctrl+K to search any level, the
-            outline number or a name, Enter to open. Inside the {view === 'map' ? 'map' : 'step list'} and the
-            outline, the arrow keys move, Enter opens, Escape closes, Alt+Up goes one level up.
+            {mapKeyboardHint(view === 'map')}
           </p>
         )}
       </div>

@@ -409,7 +409,6 @@
         "components/process-map/ProcessOutline.tsx",
         "components/process-map/ProcessSearch.tsx",
         "components/process-map/ProcessStepList.tsx",
-        "components/process-target/TargetAnchorNote.tsx",
         "components/TrustBeforeUpload.tsx",
         "components/workspace/AskThisCase.tsx",
         "components/workspace/CoachMarks.tsx",

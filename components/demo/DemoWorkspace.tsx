@@ -2,19 +2,21 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import {
-  Info,
-  RotateCcw,
-  ArrowRight,
-  CheckCircle2,
-  Circle,
-  AlertTriangle,
-  FileCode2,
-  ShieldOff,
-} from 'lucide-react';
-import { clsx } from 'clsx';
+import { RotateCcw, ArrowRight, CheckCircle2, Circle, FileCode2 } from 'lucide-react';
 import StageHeader from '@/components/StageHeader';
 import Stepper from '@/components/Stepper';
+import CcButton from '@/components/cc/Button';
+import CcCard from '@/components/cc/Card';
+import CcAnchor from '@/components/cc/Anchor';
+import CcField from '@/components/cc/Field';
+import CcIconButton from '@/components/cc/IconButton';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcTable from '@/components/cc/Table';
+import CcTextarea from '@/components/cc/Textarea';
+import { CcTag } from '@/components/cc/Tag';
+import { CcSeverity } from '@/components/cc/Identifier';
+import { normaliseSeverity } from '@/lib/severity';
+import { formatNumber } from '@/lib/format';
 import { tcoForecast, TCO_TARGET_SCORE } from '@/lib/tco-model';
 import type { PhaseKey } from '@/lib/workflow-steps';
 import type { DemoProject } from '@/lib/demo-project';
@@ -41,6 +43,11 @@ import {
  * signs, charges or stores. That is not a habit, it is the mechanism: the demo
  * cannot consume a run because there is no code path from this file to one, and
  * `tests/demo-project.spec.ts` fails if one appears.
+ *
+ * Block D (D.22b): the stages wear what a real project's stages wear — the
+ * stage header of §2.3, cards, tables, fields and buttons from `components/cc`,
+ * tokens instead of the palette, severity through `CcSeverity`. The demo marks
+ * are a tag and a message strip, not badges of their own.
  */
 
 interface DemoState {
@@ -82,15 +89,11 @@ function readState(): DemoState {
   }
 }
 
-const card = 'bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm';
-const label = 'text-[11px] font-black uppercase tracking-widest text-gray-500';
-const severityTone: Record<string, string> = {
-  Critical: 'bg-rose-50 text-rose-700 border-rose-200',
-  High: 'bg-orange-50 text-orange-700 border-orange-200',
-  Medium: 'bg-amber-50 text-amber-700 border-amber-200',
-  Low: 'bg-blue-50 text-blue-700 border-blue-200',
-  Info: 'bg-gray-50 text-gray-600 border-gray-200',
-};
+/** The key-figure tile of a real stage (analyze's evidence-only report). */
+const tile = 'rounded-cc-card border border-cc-line bg-cc-surface shadow-cc px-4 py-4';
+const label = 'cc-text-label text-cc-ink-muted';
+const lead = 'm-0 mb-3 cc-text-cell text-cc-ink-muted';
+const num = (n: number) => formatNumber(n) ?? String(n);
 
 export default function DemoWorkspace({ demo, stage }: { demo: DemoProject; stage: PhaseKey }) {
   const [state, setState] = useState<DemoState>(EMPTY_STATE);
@@ -127,26 +130,23 @@ export default function DemoWorkspace({ demo, stage }: { demo: DemoProject; stag
     // `data-demo-ready` flips once the browser has taken over: the demo is
     // server-rendered and every control on it is inert until then, so a test
     // that clicks earlier is testing the wrong thing.
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24" data-demo-ready={hydrated ? 'true' : 'false'}>
+    <div className="cc max-w-6xl mx-auto px-4 sm:px-6 pb-24" data-demo-ready={hydrated ? 'true' : 'false'}>
       <DemoStrip onReset={reset} />
 
       {/* No cast: `DemoRailStep` has to stay assignable to the product's own
           `RailStep`, so a future field that drifts apart is a type error here. */}
       <Stepper steps={demo.rail} current={stage} projectId="demo" basePath="/demo" />
 
+      {/* `stage` for the header's identity, `title` because the demo's title
+          must carry "Demo ·" — a reader may never mistake it for a project of
+          their own (§6.1.2, `tests/demo-project.spec.ts`). */}
       <StageHeader
+        stage={stage}
         title={`${demo.title} — ${current.label}`}
         eyebrow={
           <>
-            <span
-              data-testid="demo-stage-tag"
-              className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-200"
-            >
-              {DEMO_TAG}
-            </span>
-            <span className={clsx('text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border', severityTone.Info)}>
-              {current.badge}
-            </span>
+            <CcTag>{DEMO_TAG}</CcTag>
+            <CcTag>{current.badge}</CcTag>
           </>
         }
       >
@@ -172,45 +172,34 @@ export default function DemoWorkspace({ demo, stage }: { demo: DemoProject; stag
  * It carries the three things a reader has to know before anything else on the
  * page means something: this is a demo, nothing is kept, and nothing here is
  * signed. The invitation lives in it too — one per screen, an inline link, never
- * a dialog and never in the way (`DESIGN.md` §6.1.2).
+ * a dialog and never in the way (`DESIGN.md` §6.1.2). A message strip that was
+ * on the page all along, so it does not take the focus (§2.6).
  */
 function DemoStrip({ onReset }: { onReset: () => void }) {
   return (
-    <div
-      data-testid="demo-strip"
-      role="status"
-      className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-4 sm:px-5"
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-3 min-w-0">
-          <Info className="w-5 h-5 text-blue-700 shrink-0 mt-0.5" aria-hidden />
-          <div className="min-w-0">
-            <p data-testid="demo-notice" className="text-sm font-bold text-blue-900 leading-relaxed">
-              {DEMO_STRIP_NOTICE}
-            </p>
-            <p data-testid="demo-unsigned" className="text-xs text-blue-900 leading-relaxed mt-1.5">
-              {DEMO_UNSIGNED_NOTICE}
-            </p>
-            <p className="text-xs text-blue-900 leading-relaxed mt-1.5">{DEMO_QUOTA_NOTICE}</p>
-            <Link
-              href="/dashboard"
-              data-demo-invitation
-              data-testid="demo-invitation"
-              className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-blue-800 hover:text-blue-950 mt-3 underline underline-offset-4"
-            >
-              {DEMO_INVITATION} <ArrowRight className="w-3.5 h-3.5" aria-hidden />
-            </Link>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={onReset}
-          data-testid="demo-reset"
-          className="shrink-0 inline-flex items-center gap-2 rounded-xl border border-blue-300 bg-white px-3.5 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100 transition-colors"
+    <div data-testid="demo-strip" className="mt-6 mb-4">
+      <CcMessageStrip
+        state="information"
+        headline={<span data-testid="demo-notice">{DEMO_STRIP_NOTICE}</span>}
+        actions={
+          <CcButton onClick={onReset} data-testid="demo-reset" icon={<RotateCcw size={14} aria-hidden={true} />}>
+            {DEMO_RESET_LABEL}
+          </CcButton>
+        }
+      >
+        <span data-testid="demo-unsigned" className="mt-1 block">
+          {DEMO_UNSIGNED_NOTICE}
+        </span>
+        <span className="mt-1 block">{DEMO_QUOTA_NOTICE}</span>
+        <Link
+          href="/dashboard"
+          data-demo-invitation
+          data-testid="demo-invitation"
+          className="mt-2 inline-flex items-center gap-1 font-semibold text-cc-ink underline underline-offset-2"
         >
-          <RotateCcw className="w-3.5 h-3.5" aria-hidden /> {DEMO_RESET_LABEL}
-        </button>
-      </div>
+          {DEMO_INVITATION} <ArrowRight size={14} aria-hidden={true} />
+        </Link>
+      </CcMessageStrip>
     </div>
   );
 }
@@ -218,21 +207,17 @@ function DemoStrip({ onReset }: { onReset: () => void }) {
 /** Said on the stages where a real run would hand over to the model. */
 function ModelHalfNotice({ what }: { what: string }) {
   return (
-    <div className={clsx(card, 'border-dashed')}>
-      <div className="flex items-start gap-3">
-        <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" aria-hidden />
-        <div>
-          <h3 className="text-sm font-black text-gray-900">The demo stops where the model begins</h3>
-          <p className="text-sm text-gray-600 leading-relaxed mt-1.5">
-            {what} comes out of a model call against the source in a real run. A demo makes no model call, so
-            there is none here — and writing a convincing one by hand is the one thing this product may never do.
-            What you see above is what the deterministic engine produced, which is the half that carries the line
-            numbers.
-          </p>
-        </div>
-      </div>
-    </div>
+    <CcMessageStrip state="neutral" headline="The demo stops where the model begins.">
+      {what} comes out of a model call against the source in a real run. A demo makes no model call, so there is
+      none here — and writing a convincing one by hand is the one thing this product may never do. What you see
+      above is what the deterministic engine produced, which is the half that carries the line numbers.
+    </CcMessageStrip>
   );
+}
+
+/** A source line, as the anchor every statement in the product hangs on. */
+function Line({ n }: { n: number }) {
+  return <CcAnchor label={`Source line ${n}`}>{`L${n}`}</CcAnchor>;
 }
 
 function Analyze({
@@ -271,122 +256,111 @@ function Analyze({
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className={card}>
-          <p className={label}>Clean Core Score</p>
-          <p data-testid="demo-score" className="text-4xl font-black text-gray-950 mt-1">
+        <div className={tile}>
+          <span className={label}>Clean Core Score</span>
+          <p data-testid="demo-score" className="m-0 mt-2 cc-text-title text-cc-ink">
             {demo.analyze.cleanCoreScore}
           </p>
-          <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
-            Computed by the engine in this release from {demo.analyze.findings.length} findings. Not signed —
-            see the strip above.
+          <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+            Computed by the engine in this release from {demo.analyze.findings.length} findings. Not signed — see
+            the strip above.
           </p>
         </div>
-        <div className={card}>
-          <p className={label}>Source</p>
-          <p className="text-sm font-mono font-bold text-gray-900 mt-1 break-all">{demo.sourceFile}</p>
-          <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
-            {demo.totalLines.toLocaleString()} lines, {demo.linesOfCode.toLocaleString()} of them code.{' '}
-            {demo.subject}. Catalog {demo.catalogVersion}.
+        <div className={tile}>
+          <span className={label}>Source</span>
+          <p className="m-0 mt-2 cc-text-identifier font-cc-mono text-cc-ink break-all">{demo.sourceFile}</p>
+          <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+            {num(demo.totalLines)} lines, {num(demo.linesOfCode)} of them code. {demo.subject}. Catalog{' '}
+            {demo.catalogVersion}.
           </p>
         </div>
-        <div className={card}>
-          <p className={label}>Complexity / criticality</p>
-          <p className="text-sm font-bold text-gray-900 mt-1">
+        <div className={tile}>
+          <span className={label}>Complexity / criticality</span>
+          <p className="m-0 mt-2 cc-text-h2 text-cc-ink">
             {demo.analyze.complexityScore} / {demo.analyze.criticalityScore}
           </p>
-          <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+          <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
             Both on the engine&apos;s own ten-point scale, over the same source.
           </p>
         </div>
       </div>
 
-      <div className={card}>
-        <p className={label}>What the engine did not judge</p>
-        <p data-testid="demo-caveat" className="text-sm text-gray-700 leading-relaxed mt-2">
+      <CcCard title="What the engine did not judge">
+        <p data-testid="demo-caveat" className="m-0 cc-text-body text-cc-ink">
           {demo.analyze.caveat ??
             'Nothing in this source falls outside what the detectors judge — which is rare enough to be worth saying.'}
         </p>
-        <ul className="mt-3 space-y-1.5">
+        <ul className="m-0 mt-3 list-none space-y-1 p-0">
           {demo.analyze.coverage.gaps.map((g) => (
-            <li key={g.gap} className="text-xs text-gray-600">
-              <span className="font-bold text-gray-800">{g.count} ×</span> {g.label} — first at line {g.firstLine}
+            <li key={g.gap} className="cc-text-cell text-cc-ink-muted">
+              <span className="font-semibold text-cc-ink">{g.count} ×</span> {g.label} — first at line{' '}
+              <Line n={g.firstLine} />
             </li>
           ))}
         </ul>
-      </div>
+      </CcCard>
 
-      <div className={card}>
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div>
-            <h3 className="text-lg font-black text-gray-950">Findings</h3>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {reviewed.size} of {demo.analyze.findings.length} marked reviewed in this browser.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter findings by severity">
+      <CcCard
+        title="Findings"
+        count={demo.analyze.findings.length}
+        actions={
+          <div className="flex flex-wrap gap-1" role="group" aria-label="Filter findings by severity">
             {(['all', ...counts.map((c) => c[0])] as DemoState['severityFilter'][]).map((s) => (
-              <button
+              <CcButton
                 key={s}
-                type="button"
+                variant={state.severityFilter === s ? 'dark' : 'ghost'}
                 data-testid={`demo-filter-${s}`}
-                onClick={() => patch({ severityFilter: s })}
                 aria-pressed={state.severityFilter === s}
-                className={clsx(
-                  'text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border transition-colors',
-                  state.severityFilter === s
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400',
-                )}
+                onClick={() => patch({ severityFilter: s })}
               >
                 {s === 'all' ? `All ${demo.analyze.findings.length}` : `${s} ${counts.find((c) => c[0] === s)?.[1] ?? 0}`}
-              </button>
+              </CcButton>
             ))}
           </div>
-        </div>
+        }
+      >
+        <p className={lead}>
+          {reviewed.size} of {demo.analyze.findings.length} marked reviewed in this browser.
+        </p>
 
-        <ul data-testid="demo-findings" className="divide-y divide-gray-100">
-          {filtered.map((f) => (
-            <li key={f.id} className="py-3.5 flex items-start gap-3">
-              <button
-                type="button"
-                onClick={() => toggle(f.id)}
-                aria-pressed={reviewed.has(f.id)}
-                aria-label={`Mark ${f.id} reviewed`}
-                data-testid={`demo-review-${f.id}`}
-                className="shrink-0 mt-0.5 text-gray-400 hover:text-green-600 transition-colors"
-              >
-                {reviewed.has(f.id) ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-600" aria-hidden />
-                ) : (
-                  <Circle className="w-5 h-5" aria-hidden />
-                )}
-              </button>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-[11px] font-bold text-gray-500">{f.id}</span>
-                  <span className="text-sm font-bold text-gray-900">{f.title}</span>
-                  <span
-                    className={clsx(
-                      'text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border',
-                      severityTone[f.severity],
-                    )}
-                  >
-                    {f.severity}
-                  </span>
-                  <span className="text-[11px] font-mono text-gray-500">line {f.lineStart}</span>
+        <ul data-testid="demo-findings" className="m-0 list-none divide-y divide-cc-line p-0">
+          {filtered.map((f) => {
+            const sev = normaliseSeverity(f.severity);
+            const done = reviewed.has(f.id);
+            return (
+              <li key={f.id} className="flex items-start gap-3 py-3">
+                <CcIconButton
+                  label={`Mark ${f.id} reviewed`}
+                  aria-pressed={done}
+                  data-testid={`demo-review-${f.id}`}
+                  onClick={() => toggle(f.id)}
+                >
+                  {done ? (
+                    <CheckCircle2 size={18} className="text-cc-ink" aria-hidden={true} />
+                  ) : (
+                    <Circle size={18} aria-hidden={true} />
+                  )}
+                </CcIconButton>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="cc-text-meta font-cc-mono text-cc-ink-muted">{f.id}</span>
+                    <span className="cc-text-h3 text-cc-ink">{f.title}</span>
+                    {sev ? <CcSeverity value={sev} /> : <CcTag>{f.severity}</CcTag>}
+                    <Line n={f.lineStart} />
+                  </div>
+                  <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{f.recommendation}</p>
+                  {f.sapReplacement && (
+                    <p className="m-0 mt-1 cc-text-meta text-cc-ink-muted">
+                      <span className="text-cc-ink">Successor: </span>
+                      {f.sapReplacement.objectName} ({f.sapReplacement.confidence})
+                    </p>
+                  )}
                 </div>
-                <p className="text-xs text-gray-600 leading-relaxed mt-1">{f.recommendation}</p>
-                {f.sapReplacement && (
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    <span className="font-bold text-gray-700">Successor: </span>
-                    {f.sapReplacement.objectName} ({f.sapReplacement.confidence})
-                  </p>
-                )}
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
-      </div>
+      </CcCard>
     </>
   );
 }
@@ -403,78 +377,74 @@ function Design({
   const r = demo.design;
   return (
     <>
-      <div className={card}>
-        <p className={label}>Proposed route</p>
-        <p data-testid="demo-route" className="text-2xl font-black text-gray-950 mt-1">
+      <div className={tile}>
+        <span className={label}>Proposed route</span>
+        <p data-testid="demo-route" className="m-0 mt-2 cc-text-title text-cc-ink">
           {r.recommendedRoute}
         </p>
-        <p className="text-sm text-gray-600 leading-relaxed mt-2">{r.rationale}</p>
-        <p className="text-xs text-gray-500 mt-2">
-          Target artefact: <span className="font-bold text-gray-700">{r.targetArtifact}</span> · routing
+        <p className="m-0 mt-2 cc-text-body text-cc-ink-muted">{r.rationale}</p>
+        <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted">
+          Target artefact: <span className="font-semibold text-cc-ink">{r.targetArtifact}</span> · routing
           confidence {r.confidenceScore} · deployment assumed {demo.deployment}
         </p>
       </div>
 
-      <div className={card}>
-        <h3 className="text-lg font-black text-gray-950 mb-3">Decision checkpoints</h3>
-        <ul className="space-y-3">
+      <CcCard title="Decision checkpoints">
+        <ul className="m-0 list-none space-y-3 p-0">
           {r.checkpoints.map((c) => (
-            <li key={c.checkpointName} className="border-l-2 border-gray-200 pl-3">
-              <p className="text-sm font-bold text-gray-900">{c.checkpointName}</p>
-              <p className="text-xs text-gray-600 leading-relaxed mt-0.5">{c.question}</p>
-              <p className="text-xs text-gray-700 leading-relaxed mt-1">
-                <span className="font-bold">{c.resultState}: </span>
+            <li key={c.checkpointName} className="border-l-2 border-cc-line pl-3">
+              <p className="m-0 cc-text-h3 text-cc-ink">{c.checkpointName}</p>
+              <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{c.question}</p>
+              <p className="m-0 mt-1 cc-text-cell text-cc-ink">
+                <span className="font-semibold">{c.resultState}: </span>
                 {c.evaluation}
               </p>
             </li>
           ))}
         </ul>
-      </div>
+      </CcCard>
 
-      <div className={card}>
-        <h3 className="text-lg font-black text-gray-950 mb-1">Assumptions behind the route</h3>
-        <p className="text-xs text-gray-500 mb-3">
+      <CcCard title="Assumptions behind the route">
+        <p className={lead}>
           The engine names them so they can be argued with, rather than folding them into the answer.
         </p>
-        <ul className="list-disc pl-5 space-y-1.5">
+        <ul className="m-0 list-disc space-y-1 pl-5">
           {r.assumptions.map((a) => (
-            <li key={a} className="text-xs text-gray-600 leading-relaxed">
+            <li key={a} className="cc-text-cell text-cc-ink-muted">
               {a}
             </li>
           ))}
         </ul>
-      </div>
+      </CcCard>
 
-      <div className={card}>
-        <h3 className="text-lg font-black text-gray-950 mb-1">Confirm the target architecture</h3>
-        <p className="text-sm text-gray-600 leading-relaxed">
+      <CcCard title="Confirm the target architecture">
+        <p className="m-0 cc-text-body text-cc-ink-muted">
           On a real project this is the point where a person puts their name to the target — a self-declaration,
           not an organisational approval. In the demo it is a switch in this browser: no name is recorded, nothing
           is stored, and nothing downstream is unlocked by it.
         </p>
-        <button
-          type="button"
-          data-testid="demo-confirm-target"
-          aria-pressed={state.targetConfirmed}
-          onClick={() => patch({ targetConfirmed: !state.targetConfirmed })}
-          className={clsx(
-            'mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors',
-            state.targetConfirmed
-              ? 'bg-green-600 text-white hover:bg-green-700'
-              : 'bg-gray-900 text-white hover:bg-gray-800',
-          )}
-        >
-          {state.targetConfirmed ? (
-            <>
-              <CheckCircle2 className="w-4 h-4" aria-hidden /> Confirmed in this browser
-            </>
-          ) : (
-            <>
-              <Circle className="w-4 h-4" aria-hidden /> Confirm {r.recommendedRoute}
-            </>
-          )}
-        </button>
-      </div>
+        <div className="mt-4">
+          {/* The action is the page's primary button; once pressed it steps
+              back to ghost rather than turning into a success colour — green
+              says "proven" (§1.1), and a switch in a browser proves nothing. */}
+          <CcButton
+            variant={state.targetConfirmed ? 'ghost' : 'primary'}
+            density="cozy"
+            data-testid="demo-confirm-target"
+            aria-pressed={state.targetConfirmed}
+            onClick={() => patch({ targetConfirmed: !state.targetConfirmed })}
+            icon={
+              state.targetConfirmed ? (
+                <CheckCircle2 size={16} aria-hidden={true} />
+              ) : (
+                <Circle size={16} aria-hidden={true} />
+              )
+            }
+          >
+            {state.targetConfirmed ? 'Confirmed in this browser' : `Confirm ${r.recommendedRoute}`}
+          </CcButton>
+        </div>
+      </CcCard>
     </>
   );
 }
@@ -482,42 +452,40 @@ function Design({
 function Transformation({ demo }: { demo: DemoProject }) {
   return (
     <>
-      <div className={card}>
-        <h3 className="text-lg font-black text-gray-950 mb-1">The plan the engine can write on its own</h3>
-        <p className="text-xs text-gray-500 mb-4">
+      <CcCard title="The plan the engine can write on its own">
+        <p className={lead}>
           One line per finding: where it is, what the route is, and the released successor when the catalog names
-          one. {demo.transformation.unplanned > 0
+          one.{' '}
+          {demo.transformation.unplanned > 0
             ? `${demo.transformation.unplanned} findings carry no target option and are left out rather than guessed at.`
             : 'Every finding carries at least one target option.'}
         </p>
-        <div className="overflow-x-auto">
-          <table data-testid="demo-plan" className="w-full text-left text-xs">
-            <thead>
-              <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
-                <th className="py-2 pr-3 font-black">Line</th>
-                <th className="py-2 pr-3 font-black">Finding</th>
-                <th className="py-2 pr-3 font-black">Route</th>
-                <th className="py-2 font-black">Successor</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {demo.transformation.plan.map((p) => (
-                <tr key={p.findingId}>
-                  <td className="py-2 pr-3 font-mono text-gray-500 align-top">{p.lineStart}</td>
-                  <td className="py-2 pr-3 align-top">
-                    <span className="font-bold text-gray-900">{p.title}</span>
-                    <span className="block text-gray-500 mt-0.5">{p.recommendation}</span>
-                  </td>
-                  <td className="py-2 pr-3 text-gray-700 align-top">{p.target}</td>
-                  <td className="py-2 text-gray-700 align-top">
-                    {p.successor ? `${p.successor} (${p.successorProvenance})` : 'none in the catalog'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div data-testid="demo-plan">
+          <CcTable
+            caption="Transformation plan written by the engine"
+            columns={[
+              { key: 'line', label: 'Line', width: '5rem' },
+              { key: 'finding', label: 'Finding' },
+              { key: 'route', label: 'Route' },
+              { key: 'successor', label: 'Successor' },
+            ]}
+            rows={demo.transformation.plan.map((p) => ({
+              key: p.findingId,
+              cells: {
+                line: <Line n={p.lineStart} />,
+                finding: (
+                  <>
+                    <span className="font-semibold text-cc-ink">{p.title}</span>
+                    <span className="mt-1 block text-cc-ink-muted">{p.recommendation}</span>
+                  </>
+                ),
+                route: p.target,
+                successor: p.successor ? `${p.successor} (${p.successorProvenance})` : 'none in the catalog',
+              },
+            }))}
+          />
         </div>
-      </div>
+      </CcCard>
       <ModelHalfNotice what="The transformed code" />
     </>
   );
@@ -526,51 +494,51 @@ function Transformation({ demo }: { demo: DemoProject }) {
 function Documentation({ demo }: { demo: DemoProject }) {
   return (
     <>
-      <div className={card}>
-        <h3 className="text-lg font-black text-gray-950 mb-1">Object inventory</h3>
-        <p className="text-xs text-gray-500 mb-4">
+      <CcCard title="Object inventory" count={demo.documentation.inventory.length}>
+        <p className={lead}>
           {demo.documentation.inventory.length} objects parsed out of the source, each with the lines it occupies
           — the anchors every later statement hangs on.
         </p>
-        <div className="overflow-x-auto">
-          <table data-testid="demo-inventory" className="w-full text-left text-xs">
-            <thead>
-              <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
-                <th className="py-2 pr-3 font-black">Object</th>
-                <th className="py-2 pr-3 font-black">Type</th>
-                <th className="py-2 pr-3 font-black">Criticality</th>
-                <th className="py-2 font-black">Lines</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {demo.documentation.inventory.map((o) => (
-                <tr key={`${o.objectName}-${o.lineStart ?? 0}`}>
-                  <td className="py-2 pr-3 font-mono text-gray-900 align-top">{o.objectName}</td>
-                  <td className="py-2 pr-3 text-gray-600 align-top">{o.type}</td>
-                  <td className="py-2 pr-3 text-gray-600 align-top">{o.criticality}</td>
-                  <td className="py-2 font-mono text-gray-500 align-top">
-                    {o.lineStart ?? '—'}
-                    {o.lineEnd ? `–${o.lineEnd}` : ''}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div data-testid="demo-inventory">
+          <CcTable
+            caption="Objects parsed out of the demo source"
+            columns={[
+              { key: 'object', label: 'Object' },
+              { key: 'type', label: 'Type' },
+              { key: 'criticality', label: 'Criticality' },
+              { key: 'lines', label: 'Lines' },
+            ]}
+            rows={demo.documentation.inventory.map((o) => ({
+              key: `${o.objectName}-${o.lineStart ?? 0}`,
+              cells: {
+                object: <span className="font-cc-mono">{o.objectName}</span>,
+                type: o.type,
+                criticality: o.criticality,
+                lines:
+                  o.lineStart ? (
+                    <CcAnchor label={o.lineEnd ? `Source lines ${o.lineStart} to ${o.lineEnd}` : `Source line ${o.lineStart}`}>
+                      {`L${o.lineStart}${o.lineEnd ? `-${o.lineEnd}` : ''}`}
+                    </CcAnchor>
+                  ) : (
+                    '—'
+                  ),
+              },
+            }))}
+          />
         </div>
-      </div>
+      </CcCard>
 
-      <div className={card}>
-        <h3 className="text-lg font-black text-gray-950 mb-1">Tables this program is coupled to</h3>
-        <p className="text-xs text-gray-500 mb-4">{demo.documentation.coupling.length} tables, read or written directly.</p>
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <CcCard title="Tables this program is coupled to" count={demo.documentation.coupling.length}>
+        <p className={lead}>{demo.documentation.coupling.length} tables, read or written directly.</p>
+        <ul className="m-0 grid list-none grid-cols-1 gap-2 p-0 sm:grid-cols-2">
           {demo.documentation.coupling.map((t) => (
-            <li key={t.tableName} className="text-xs text-gray-600 border border-gray-100 rounded-xl px-3 py-2">
-              <span className="font-mono font-bold text-gray-900">{t.tableName}</span> · {t.accessType} ·{' '}
+            <li key={t.tableName} className="rounded-cc-row border border-cc-line px-3 py-2 cc-text-cell text-cc-ink-muted">
+              <span className="font-cc-mono font-semibold text-cc-ink">{t.tableName}</span> · {t.accessType} ·{' '}
               {t.isCustom ? 'custom' : 'SAP standard'} · risk {t.riskLevel}
             </li>
           ))}
         </ul>
-      </div>
+      </CcCard>
 
       <ModelHalfNotice what="The written blueprint, and the process drawing on top of it," />
     </>
@@ -580,33 +548,31 @@ function Documentation({ demo }: { demo: DemoProject }) {
 function Testing({ demo }: { demo: DemoProject }) {
   return (
     <>
-      <div className={card}>
-        <h3 className="text-lg font-black text-gray-950 mb-1">Nothing here has run</h3>
-        <p className="text-sm text-gray-600 leading-relaxed">
+      <CcCard title="Nothing here has run">
+        <p className="m-0 cc-text-body text-cc-ink-muted">
           {demo.testing.verdicts.total} tests generated, {demo.testing.verdicts.passed} passed,{' '}
           {demo.testing.verdicts.failed} failed. There is no pass rate, because a rate over nothing is not a
           number. A real run generates a suite from the transformed code and executes it in a restricted runner;
           the demo has neither.
         </p>
-      </div>
+      </CcCard>
 
-      <div className={card}>
-        <h3 className="text-lg font-black text-gray-950 mb-1">What a tester would have to check by hand</h3>
-        <p className="text-xs text-gray-500 mb-4">
+      <CcCard title="What a tester would have to check by hand" count={demo.testing.manualAreas.length}>
+        <p className={lead}>
           Straight out of the engine&apos;s coverage report: every construct it says it did not judge is a place
           where no generated test can stand in for a person.
         </p>
-        <ul data-testid="demo-manual-areas" className="space-y-2.5">
+        <ul data-testid="demo-manual-areas" className="m-0 list-none space-y-3 p-0">
           {demo.testing.manualAreas.map((a) => (
-            <li key={`${a.label}-${a.line}`} className="border-l-2 border-amber-300 pl-3">
-              <p className="text-sm font-bold text-gray-900">
-                {a.label} <span className="font-mono text-xs font-normal text-gray-500">line {a.line}</span>
+            <li key={`${a.label}-${a.line}`} className="border-l-2 border-cc-warning-line pl-3">
+              <p className="m-0 flex flex-wrap items-center gap-2 cc-text-h3 text-cc-ink">
+                {a.label} <Line n={a.line} />
               </p>
-              <p className="text-xs text-gray-600 leading-relaxed mt-0.5">{a.why}</p>
+              <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{a.why}</p>
             </li>
           ))}
         </ul>
-      </div>
+      </CcCard>
     </>
   );
 }
@@ -652,75 +618,73 @@ function Economics({
     state.oneTimeCost === null && 'modernisation investment',
   ].filter(Boolean) as string[];
 
-  const num = (v: string): number | null => {
+  const parse = (v: string): number | null => {
     const n = Number(v);
     return v.trim() === '' || !Number.isFinite(n) ? null : n;
   };
 
   return (
     <>
-      <div className={card}>
-        <h3 className="text-lg font-black text-gray-950 mb-1">Your assumptions</h3>
-        <p className="text-xs text-gray-500 mb-4">
+      <CcCard title="Your assumptions">
+        <p className={lead}>
           Nothing is filled in for you. The model refuses to produce a figure until the numbers behind it are
           yours, and it says which ones are still missing.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Field
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <NumberField
             id="demo-dev-rate"
             title="Developer day rate"
             hint="in euro, per day"
             value={state.devRate}
-            onChange={(v) => patch({ devRate: num(v) })}
+            onChange={(v) => patch({ devRate: parse(v) })}
           />
-          <Field
+          <NumberField
             id="demo-user-rate"
             title="Business tester day rate"
             hint="in euro, per day"
             value={state.userRate}
-            onChange={(v) => patch({ userRate: num(v) })}
+            onChange={(v) => patch({ userRate: parse(v) })}
           />
-          <Field
+          <NumberField
             id="demo-investment"
             title="One-time modernisation investment"
             hint="in euro"
             value={state.oneTimeCost}
-            onChange={(v) => patch({ oneTimeCost: num(v) })}
+            onChange={(v) => patch({ oneTimeCost: parse(v) })}
           />
-          <Field
+          <NumberField
             id="demo-upgrades"
             title="Major upgrades per year"
             hint="whole number"
             value={state.upgradeFreq}
-            onChange={(v) => patch({ upgradeFreq: num(v) ?? 0 })}
+            onChange={(v) => patch({ upgradeFreq: parse(v) ?? 0 })}
           />
-          <Field
+          <NumberField
             id="demo-feature-packs"
             title="Feature packs per year"
             hint="whole number"
             value={state.fpFreq}
-            onChange={(v) => patch({ fpFreq: num(v) ?? 0 })}
+            onChange={(v) => patch({ fpFreq: parse(v) ?? 0 })}
           />
-          <div className="rounded-xl border border-gray-200 px-3 py-2.5 bg-gray-50">
-            <p className={label}>Measured, not assumed</p>
-            <p className="text-sm text-gray-700 mt-1 leading-relaxed">
-              {demo.economics.loc.toLocaleString()} lines of code, Clean Core Score {demo.economics.scoreBefore},
-              target {TCO_TARGET_SCORE} — the target is the model&apos;s assumption, the other two come from the run.
+          <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2">
+            <span className={label}>Measured, not assumed</span>
+            <p className="m-0 mt-1 cc-text-cell text-cc-ink">
+              {num(demo.economics.loc)} lines of code, Clean Core Score {demo.economics.scoreBefore}, target{' '}
+              {TCO_TARGET_SCORE} — the target is the model&apos;s assumption, the other two come from the run.
             </p>
           </div>
         </div>
-      </div>
+      </CcCard>
 
-      <div className={card}>
-        <h3 className="text-lg font-black text-gray-950 mb-1">Maintenance effort · scenario</h3>
+      <CcCard title="Maintenance effort · scenario">
         {forecast === null ? (
-          <p data-testid="demo-forecast-refused" className="text-sm text-gray-600 leading-relaxed">
+          <p data-testid="demo-forecast-refused" className="m-0 cc-text-body text-cc-ink-muted">
             No forecast yet
             {missing.length > 0 ? `: still missing the ${missing.join(', the ')}.` : ' — the model declines these inputs.'}{' '}
             An output built on a number nobody entered is not a scenario, it is an invention.
           </p>
         ) : (
-          <div data-testid="demo-forecast" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-3">
+          <div data-testid="demo-forecast" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Metric title="Legacy effort" value={`${days(forecast.legacyDevDaysTotal + forecast.legacyTestDaysTotal)} days per year`} />
             <Metric title="After modernisation" value={`${days(forecast.modernDevDaysTotal + forecast.modernTestDaysTotal)} days per year`} />
             <Metric title="Overhead reduction" value={`${forecast.overheadReductionPct}%`} />
@@ -730,17 +694,18 @@ function Economics({
             />
           </div>
         )}
-        <p className="text-xs text-gray-500 leading-relaxed mt-4">
+        <p className="m-0 mt-4 cc-text-cell text-cc-ink-muted">
           A scenario, not a quotation: the day counts come from your assumptions and the score the run measured,
           and the target score of {TCO_TARGET_SCORE} is an assumption of the model itself. The amounts behind
           these days appear on the Economics stage of your own project.
         </p>
-      </div>
+      </CcCard>
     </>
   );
 }
 
-function Field({
+/** A number the reader enters, in the field of §2.7. The test id stays on the input. */
+function NumberField({
   id,
   title,
   hint,
@@ -754,23 +719,22 @@ function Field({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 px-3 py-2.5">
-      <label htmlFor={id} className={label}>
-        {title}
-      </label>
-      <input
-        id={id}
-        data-testid={id}
-        type="number"
-        min={0}
-        inputMode="numeric"
-        value={value === null ? '' : value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="—"
-        className="mt-1 w-full bg-transparent text-lg font-black text-gray-900 outline-none"
-      />
-      <p className="text-[11px] text-gray-400">{hint}</p>
-    </div>
+    <CcField label={title} help={hint}>
+      {(control) => (
+        <input
+          id={control.id}
+          data-testid={id}
+          type="number"
+          min={0}
+          inputMode="numeric"
+          value={value === null ? '' : value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="—"
+          aria-describedby={control.describedBy}
+          className={control.className}
+        />
+      )}
+    </CcField>
   );
 }
 
@@ -785,9 +749,9 @@ function days(n: number): string {
 
 function Metric({ title, value }: { title: string; value: string }) {
   return (
-    <div className="rounded-xl border border-gray-200 px-3 py-2.5">
-      <p className={label}>{title}</p>
-      <p className="text-lg font-black text-gray-950 mt-1">{value}</p>
+    <div className="rounded-cc-row border border-cc-line px-3 py-2">
+      <span className={label}>{title}</span>
+      <p className="m-0 mt-1 cc-text-h2 text-cc-ink">{value}</p>
     </div>
   );
 }
@@ -803,71 +767,55 @@ function Delivery({
 }) {
   return (
     <>
-      <div className={card}>
-        <div className="flex items-start gap-3">
-          <ShieldOff className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" aria-hidden />
-          <div>
-            <h3 className="text-lg font-black text-gray-950">No pack leaves this screen</h3>
-            <p data-testid="demo-no-pack" className="text-sm text-gray-600 leading-relaxed mt-1.5">
-              There is no download here, and there is no button that would make one. An audit pack is sealed
-              against a signed run and carries the account that made it; a demo has neither, so a pack out of the
-              demo would be a document that looks like evidence and is not. That is the one failure mode this
-              product cannot afford, so the capability is absent rather than disabled.
-            </p>
-          </div>
-        </div>
-      </div>
+      <CcMessageStrip state="information" headline="No pack leaves this screen.">
+        <span data-testid="demo-no-pack">
+          There is no download here, and there is no button that would make one. An audit pack is sealed against a
+          signed run and carries the account that made it; a demo has neither, so a pack out of the demo would be a
+          document that looks like evidence and is not. That is the one failure mode this product cannot afford, so
+          the capability is absent rather than disabled.
+        </span>
+      </CcMessageStrip>
 
-      <div className={card}>
-        <h3 className="text-lg font-black text-gray-950 mb-1">What a real handover would still need</h3>
-        <ul data-testid="demo-missing" className="mt-3 space-y-2">
+      <CcCard title="What a real handover would still need" count={demo.delivery.missing.length}>
+        <ul data-testid="demo-missing" className="m-0 list-none space-y-2 p-0">
           {demo.delivery.missing.map((m) => (
-            <li key={m} className="flex items-start gap-2.5 text-sm text-gray-700">
-              <FileCode2 className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" aria-hidden />
+            <li key={m} className="flex items-start gap-2 cc-text-body text-cc-ink">
+              <FileCode2 size={16} className="mt-1 shrink-0 text-cc-ink-muted" aria-hidden={true} />
               <span>{m}</span>
             </li>
           ))}
         </ul>
-      </div>
+      </CcCard>
 
-      <div className={card}>
-        <h3 className="text-lg font-black text-gray-950 mb-1">Record a decision</h3>
-        <p className="text-sm text-gray-600 leading-relaxed">
+      <CcCard title="Record a decision">
+        <p className="m-0 cc-text-body text-cc-ink-muted">
           Try the shape of it. The choice and the note stay in this browser, they are attributed to nobody, and{' '}
           {DEMO_RESET_LABEL} removes them.
         </p>
-        <div className="flex flex-wrap gap-2 mt-4">
+        <div className="mt-4 flex flex-wrap gap-2">
           {(['proceed', 'park'] as const).map((d) => (
-            <button
+            <CcButton
               key={d}
-              type="button"
+              variant={state.decision === d ? 'dark' : 'ghost'}
+              density="cozy"
               data-testid={`demo-decision-${d}`}
               aria-pressed={state.decision === d}
               onClick={() => patch({ decision: state.decision === d ? 'undecided' : d })}
-              className={clsx(
-                'rounded-xl px-4 py-2.5 text-sm font-bold border transition-colors',
-                state.decision === d
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400',
-              )}
             >
               {d === 'proceed' ? 'Proceed with the route' : 'Park it for now'}
-            </button>
+            </CcButton>
           ))}
         </div>
-        <label htmlFor="demo-decision-note" className={clsx(label, 'block mt-4')}>
-          Why
-        </label>
-        <textarea
-          id="demo-decision-note"
-          data-testid="demo-decision-note"
-          rows={3}
-          value={state.decisionNote}
-          onChange={(e) => patch({ decisionNote: e.target.value })}
-          placeholder="The reasoning a colleague would need in six months."
-          className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-800 outline-none focus:border-gray-400"
-        />
-      </div>
+        <div className="mt-4" data-testid="demo-decision-note">
+          <CcTextarea
+            label="Why"
+            rows={3}
+            value={state.decisionNote}
+            onChange={(v) => patch({ decisionNote: v })}
+            placeholder="The reasoning a colleague would need in six months."
+          />
+        </div>
+      </CcCard>
     </>
   );
 }

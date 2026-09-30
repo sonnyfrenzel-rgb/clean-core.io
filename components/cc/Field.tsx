@@ -43,7 +43,20 @@ const VALUE_STATE_ICONS: Record<SemanticState, React.ComponentType<{ size?: numb
 
 export type CcValueState = 'error' | 'warning' | 'success' | 'information';
 
-export interface CcFieldProps {
+/** `data-*` attributes a caller hands through — a name, not a style (block D, D.31). */
+export type CcDataAttributes = { [data: `data-${string}`]: string | undefined };
+
+/** Picks the `data-*` entries out of a props object. */
+export function ccDataAttributes(props: object): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const [key, value] of Object.entries(props)) {
+    if (key.startsWith('data-')) out[key] = value as string | undefined;
+  }
+  return out;
+}
+
+
+export interface CcFieldProps extends CcDataAttributes {
   label: string;
   required?: boolean;
   /** Under the label, before the control. */
@@ -70,14 +83,12 @@ export interface CcFieldProps {
 const CONTROL_BASE =
   'w-full rounded-cc-row border bg-cc-surface px-3 py-1 text-[13px] font-medium text-cc-ink placeholder:text-cc-ink-muted min-h-[32px]';
 
-export default function CcField({
-  label,
-  required = false,
-  help,
-  valueState,
-  message,
-  children,
-}: CcFieldProps) {
+/**
+ * `data-*` attributes go on the field's wrapper: the control is the caller's
+ * own element and takes its attributes there.
+ */
+export default function CcField(props: CcFieldProps) {
+  const { label, required = false, help, valueState, message, children } = props;
   const id = useId();
   const messageId = `${id}-message`;
   const helpId = `${id}-help`;
@@ -86,7 +97,7 @@ export default function CcField({
   const describedBy = describedByOf({ helpId: !!help && helpId, messageId: !!message && !!valueState && messageId });
 
   return (
-    <div data-cc-field={valueState ?? 'none'} className="flex min-w-0 flex-col gap-1">
+    <div {...ccDataAttributes(props)} data-cc-field={valueState ?? 'none'} className="flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-[13px] font-semibold text-cc-ink">
         {label}
         {required ? <CcRequiredMark /> : null}

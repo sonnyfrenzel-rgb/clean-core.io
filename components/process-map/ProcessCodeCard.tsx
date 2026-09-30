@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import CcCodeSurface from '@/components/cc/CodeSurface';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { codeCardLabel, codeCardLines, type ProcessMapElement } from '@/lib/process-map';
+import { mapSourceForLabel, wt } from '@/lib/workspace-messages';
 
 /**
  * The code card — roadmap 2.5: *"a click on an element opens the code card with
@@ -46,7 +47,7 @@ export default function ProcessCodeCard({ element, source, fileName, onClose }: 
   return (
     <section
       data-process-code-card={element.id}
-      aria-label={`Source for ${element.label}`}
+      aria-label={mapSourceForLabel(element.label)}
       // Escape belongs to the card as well as to the map. Opening it moves the
       // focus here, so a handler that only sat on the map would answer Escape
       // everywhere except in the one place the reader actually is.
@@ -72,7 +73,7 @@ export default function ProcessCodeCard({ element, source, fileName, onClose }: 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close the source"
+            aria-label={wt('map.closeSource')}
             data-process-code-card-close=""
             className="inline-flex h-8 w-8 items-center justify-center rounded-cc-row border border-cc-field-border bg-cc-surface text-cc-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
           >
@@ -88,7 +89,7 @@ export default function ProcessCodeCard({ element, source, fileName, onClose }: 
           <b className="font-semibold text-cc-ink">{element.evidenceLabel}.</b>{' '}
           {element.unanchoredReason
             ? element.unanchoredReason
-            : 'The reader drew this element from the shape of the program rather than from one statement, so there is no line to open.'}
+            : wt('map.noLineToOpen')}
         </p>
       )}
     </section>
