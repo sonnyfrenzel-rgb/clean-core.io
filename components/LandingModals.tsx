@@ -33,6 +33,8 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { createPortal } from 'react-dom';
+import { useCcHydrated, useCcModal } from '@/components/cc/modal';
 import LegalOverlay from '@/app/components/LegalOverlay';
 import { COMMUNITY_QUOTA } from '@/lib/constants';
 import { finishRegistration } from '@/hooks/useUserProfile';
@@ -157,6 +159,22 @@ export default function LandingModals() {
     setMfaCode(['', '', '', '', '', '']);
     updateQueryParams('auth', null);
   };
+
+  /**
+   * The sign-in dialog is modal the way every other layer is
+   * (`components/cc/modal.ts`, DESIGN.md §2.6): the page behind goes inert,
+   * focus moves to the first field and stays in the dialog, Escape closes it,
+   * and closing hands focus back to what opened it. It is portalled to `body`
+   * because that inerting spares only a direct child of it, and it waits for
+   * hydration because the server has no `body` to portal to (QA full review of
+   * v2.20.0).
+   */
+  const hydrated = useCcHydrated();
+  const authDialogRef = useCcModal<HTMLDivElement>({
+    open: hydrated && Boolean(authParam),
+    onClose: closeAuthModal,
+    initialFocus: 'first-field',
+  });
 
   const handleSignIn = async () => {
     const provider = new GoogleAuthProvider();
@@ -477,10 +495,16 @@ export default function LandingModals() {
       )}
 
       {/* Auth Modal */}
+      {hydrated && createPortal(
       <AnimatePresence>
         {authParam && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4">
             <motion.div
+              ref={authDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Sign in or register"
+              tabIndex={-1}
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -984,7 +1008,9 @@ export default function LandingModals() {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body,
+      )}
 
       {/* Legal Overlays */}
       <LegalOverlay isOpen={legalParam === 'impressum'} onClose={() => updateQueryParams('legal', null)} title="Legal Notice (Impressum)">
