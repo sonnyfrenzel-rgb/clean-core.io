@@ -593,7 +593,7 @@ test.describe('the tokens as the browser sees them', () => {
     // is a 2px outline of style none. The page is Lane C's (D.20a replaces the
     // switches); the number is a ratchet: fix one and this test fails until the
     // count below comes down with it.
-    const KNOWN_BARE_SWITCHES = 2;
+    const KNOWN_BARE_SWITCHES = 0;
     expect(
       bare.every((b) => b.startsWith('<button class="relative inline-flex h-6 w-11')),
       `focus with no indicator at all (DESIGN.md §1.6):\n${bare.join('\n')}`,
