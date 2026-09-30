@@ -156,4 +156,11 @@ test.describe('the Resend webhook', () => {
     expect(src.slice(handler, handler + 400)).toContain('{ status: 503 }');
   });
 
+  test('keeps the recipient and the provider detail out of the log', () => {
+    const src = code(REL);
+    const at = src.indexOf("'email did not reach the recipient'");
+    const block = src.slice(at, src.indexOf('});', at));
+    expect(block).not.toMatch(/\bto\b\s*:/);
+    expect(block).not.toMatch(/\bdetail\b/);
+  });
 });

@@ -132,8 +132,6 @@ export async function POST(req: NextRequest) {
         route: 'api/webhooks/resend',
         type,
         messageId,
-        to: to.join(', '),
-        detail,
       });
     }
 
