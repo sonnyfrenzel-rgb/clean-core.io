@@ -223,7 +223,7 @@ test.describe('what a review covers', () => {
       'lib/abap/evidence-model.ts',
       'app/api/gemini/route.ts',
       'scripts/ux/review.mjs',
-      'tests/landing.spec.ts',
+      'tests/public-pages-smoke.spec.ts',
     ]) {
       expect(isUxRelevant(p), `${p} is in the UX scope and should not be`).toBe(false);
     }
