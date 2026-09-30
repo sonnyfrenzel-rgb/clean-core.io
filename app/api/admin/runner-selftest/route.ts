@@ -42,9 +42,16 @@ async function networkProbe(url: string): Promise<{ ok: boolean; held: boolean; 
       headers: { authorization: `Bearer ${token}` },
       signal: controller.signal,
     });
-    clearTimeout(timer);
-    if (!res.ok) return { ok: false, held: false, reason: `HTTP ${res.status}`, detail: `HTTP ${res.status}` };
-    const body: unknown = await res.json();
+    // The deadline covers the body too: cleared before `res.json()`, a runner
+    // that sent its headers and then stalled held the request open for good
+    // (QA slice review of 97c740cc5e71, 0d9a23f48357).
+    let body: unknown;
+    try {
+      if (!res.ok) return { ok: false, held: false, reason: `HTTP ${res.status}`, detail: `HTTP ${res.status}` };
+      body = await res.json();
+    } finally {
+      clearTimeout(timer);
+    }
     const verdict = evaluateNetworkProbe(body);
     return { ok: true, held: verdict.held, reason: verdict.reason, detail: body };
   } catch (err: unknown) {

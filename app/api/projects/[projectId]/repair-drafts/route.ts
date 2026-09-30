@@ -10,6 +10,12 @@ import {
 import { assertRateLimit } from '@/lib/rate-limit';
 import { adoptRepairDraft, proposeRepairDraft } from '@/lib/repair-draft-store';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
+
+// A draft is one Firestore document (at most 1 MiB), so a body twice that size
+// is already no draft; read no more than that (QA slice review of
+// 81810c8026e0, e6a8d32f903a).
+const REPAIR_BODY_LIMITS = { maxBytes: 2 * 1024 * 1024, timeoutMs: 20_000 };
 
 /**
  * POST /api/projects/{projectId}/repair-drafts — roadmap 8.7 (CR-10)
@@ -86,7 +92,15 @@ export async function POST(
     }
     const safeProjectId = projectId;
 
-    const body = await req.json().catch(() => null);
+    let body: unknown = null;
+    try {
+      body = await readBoundedJson(new Response(req.body, { headers: req.headers }), REPAIR_BODY_LIMITS);
+    } catch (bodyErr) {
+      if (bodyErr instanceof ResponseLimitError) {
+        return NextResponse.json({ error: 'The repair draft is too large.' }, { status: 413 });
+      }
+      body = null;
+    }
     const action = body && typeof body === 'object' ? (body as { action?: unknown }).action : undefined;
     const { db } = await getAdminDb();
 

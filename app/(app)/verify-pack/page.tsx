@@ -20,8 +20,8 @@ export default function VerifyPackPage() {
     setVerifying(true);
     setResult(null);
     try {
-      const blob = new Blob([await file.arrayBuffer()]);
-      const res = await verifyAuditPack(blob);
+      // The file goes in as it is: the verifier asks its size before reading it.
+      const res = await verifyAuditPack(file);
       setResult(res);
     } catch (err: any) {
       setResult({

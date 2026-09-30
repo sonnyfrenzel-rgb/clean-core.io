@@ -151,6 +151,10 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
       const tokenCheck = await isUrlSafe(tokenUrl);
       if (!tokenCheck.safe) throw new Error(`Token URL blocked: ${tokenCheck.reason}`);
       headers['Authorization'] = `Bearer ${requireAccessToken(await fetchOAuth2Token(tokenUrl, clientId, clientSecret))}`;
+    } else if (auth && auth !== 'noauthentication') {
+      // Any other declared scheme is refused, not read anonymously (QA slice
+      // review of ad155b478e36, 4688e78a3516).
+      throw new Error('Destination authentication type is not supported. Use BasicAuthentication, OAuth2ClientCredentials or NoAuthentication.');
     }
   } else if (body.authType === 'oauth2') {
     if (!body.tokenUrl || !body.username || !body.password) {
