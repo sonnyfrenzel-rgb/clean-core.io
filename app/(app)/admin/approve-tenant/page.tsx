@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { getAuth, getDb } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { ShieldCheck, ShieldAlert, CheckCircle2, XCircle, ArrowRight, Loader2, User, Mail, FileText, Globe } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { ArrowRight, User, Mail, FileText, Globe } from 'lucide-react';
+import CcButton from '@/components/cc/Button';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcSkeleton from '@/components/cc/Skeleton';
 
 function TenantApprovalContent() {
   const searchParams = useSearchParams();
@@ -175,27 +177,19 @@ function TenantApprovalContent() {
 
   if (profileLoading || status === 'loading') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-        <p className="text-gray-400 font-medium">Validating credentials and fetching request...</p>
-      </div>
+      <Panel>
+        <CcSkeleton shape="text" label="tenant access request" />
+      </Panel>
     );
   }
 
   if (status === 'unauthorized') {
     return (
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl mx-auto my-12"
-      >
-        <div className="w-16 h-16 bg-red-955/50 border border-red-550/30 rounded-2xl flex items-center justify-center mx-auto mb-6 text-red-500 shadow-inner">
-          <ShieldAlert className="w-8 h-8" />
-        </div>
-        <h2 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">Access Denied</h2>
-        <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed">
+      <Panel>
+        <h1 className="m-0 cc-text-title text-cc-ink">Access denied</h1>
+        <CcMessageStrip state="error">
           You must be logged in as a platform administrator to access this panel and approve S/4HANA live connections.
-        </p>
+        </CcMessageStrip>
         {/*
           UX-107: this button used to say "Sign In as Admin" and sign the reader
           out — a label that promised the opposite of what the click did, on the
@@ -204,227 +198,184 @@ function TenantApprovalContent() {
           page opens its sign-in dialog for `?auth=signin` (LandingModals), the
           same way "Sign out and sign in again" in the MFA settings already works.
         */}
-        <button
-          data-testid="approve-tenant-switch-account"
-          onClick={() => {
-            const auth = getAuth();
-            auth.signOut().then(() => {
-              router.push('/?auth=signin');
-            });
-          }}
-          className="w-full bg-red-600 hover:bg-red-750 text-white py-3.5 rounded-xl font-bold uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-red-650/10"
-        >
-          Sign out and sign in as administrator
-        </button>
-      </motion.div>
+        <div>
+          <CcButton
+            variant="primary"
+            density="cozy"
+            data-testid="approve-tenant-switch-account"
+            onClick={() => {
+              const auth = getAuth();
+              auth.signOut().then(() => {
+                router.push('/?auth=signin');
+              });
+            }}
+          >
+            Sign out and sign in as administrator
+          </CcButton>
+        </div>
+      </Panel>
     );
   }
 
-  return (
-    <div className="max-w-xl w-full mx-auto my-8 p-4">
-      <AnimatePresence mode="wait">
-        
-        {/* Ready State - Pending Approval */}
-        {status === 'ready' && applicant && (
-          <motion.div 
-            key="ready"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl"
-          >
-            <div className="bg-gradient-to-r from-blue-900/40 to-sky-900/40 p-6 md:p-8 border-b border-slate-800 flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-550/20 rounded-xl flex items-center justify-center text-blue-400 border border-blue-550/30">
-                <Globe className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Clean-Core.io Admin</span>
-                <h2 className="text-xl font-black text-white uppercase tracking-tight">S/4HANA Connection Approval</h2>
-              </div>
-            </div>
-
-            <div className="p-6 md:p-8 space-y-6">
-              {/* Applicant Card */}
-              <div className="bg-slate-950 border border-slate-850 rounded-2xl p-5 space-y-4">
-                <div className="flex items-start gap-3.5">
-                  <User className="w-5 h-5 text-slate-500 mt-0.5" />
-                  <div>
-                    <p className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Name</p>
-                    <span className="text-white font-bold text-base">{applicant.name}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3.5">
-                  <Mail className="w-5 h-5 text-slate-500 mt-0.5" />
-                  <div>
-                    <p className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Email</p>
-                    <span className="text-blue-400 font-semibold">{applicant.email}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3.5 pt-3 border-t border-slate-850/60">
-                  <FileText className="w-5 h-5 text-slate-500 mt-0.5" />
-                  <div>
-                    <p className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Motivation / Use Case</p>
-                    <p className="text-slate-300 text-sm leading-relaxed font-medium italic">
-                      "{applicant.motivation || 'No details provided.'}"
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-950 border border-slate-850 p-4 rounded-2xl text-xs text-slate-400 space-y-1.5 font-medium">
-                <p className="font-bold text-white uppercase tracking-wide">⚠️ Provisioning Scope:</p>
-                <p>• Unlocks the <strong className="text-blue-400">Check tenant connection</strong> tab</p>
-                <p>• Activates dynamic destination endpoint mapping environment variables</p>
-                <p>• Enables Basic Auth or Client Credentials storage</p>
-              </div>
-
-              {/* One button: the link's token is bound to one action, so the other
-                  button could only ever be refused. The other decision is the
-                  other link of the same mail — and whichever is used first
-                  closes both (UX-152). */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                {actionParam === 'reject' ? (
-                  <button
-                    onClick={handleReject}
-                    data-tenant-decision="reject"
-                    className="flex-1 bg-red-950/30 hover:bg-red-900/20 text-red-400 border border-red-900/50 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all active:scale-95"
-                  >
-                    Decline Request
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleApprove}
-                    data-tenant-decision="approve"
-                    className="flex-[2] bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white py-4 rounded-xl font-black text-sm uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    Approve Request <ArrowRight className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              <p className="text-xs text-slate-400">
-                {actionParam === 'reject'
-                  ? 'To approve instead, open the Approve link in the same mail.'
-                  : 'To decline instead, open the Decline link in the same mail.'}{' '}
-                Each link works once, and using either closes both.
-              </p>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Processing State */}
-        {status === 'processing' && (
-          <motion.div 
-            key="processing"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center shadow-2xl"
-          >
-            <Loader2 className="w-16 h-16 text-blue-400 animate-spin mx-auto mb-6" />
-            <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Activating Capabilities</h2>
-            <p className="text-slate-400 font-medium text-sm leading-relaxed">
-              Updating user privileges and integration configurations in Firestore database. Please wait...
-            </p>
-          </motion.div>
-        )}
-
-        {/* Approved Success State */}
-        {status === 'approved' && (
-          <motion.div 
-            key="approved"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-slate-800 rounded-3xl p-8 md:p-12 text-center shadow-2xl"
-          >
-            <div className="w-20 h-20 bg-blue-550/20 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-400 border-2 border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.2)]">
-              <CheckCircle2 className="w-12 h-12 animate-pulse" />
-            </div>
-            <h2 className="text-3xl font-black text-white mb-3 uppercase tracking-tight">Tenant Access Approved!</h2>
-            <p className="text-slate-300 font-medium text-sm max-w-sm mx-auto mb-8 leading-relaxed">
-              The user profile has been successfully updated. The live S/4HANA Connection features are now active.
-            </p>
-            
-            {applicant && (
-              <div className="bg-slate-950 border border-slate-850 p-4 rounded-2xl max-w-md mx-auto text-left mb-8">
-                <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">Activated Profile:</p>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-white font-bold">{applicant.name}</span>
-                  <span className="text-slate-400 font-semibold">{applicant.email}</span>
-                </div>
-              </div>
-            )}
-
-            <button 
-              onClick={() => router.push('/dashboard')}
-              className="px-8 py-3.5 bg-slate-800 hover:bg-slate-750 text-white rounded-xl font-bold uppercase text-xs tracking-wider transition-all active:scale-95 border border-slate-700"
-            >
-              Go to Dashboard
-            </button>
-          </motion.div>
-        )}
-
-        {/* Rejected State */}
-        {status === 'rejected' && (
-          <motion.div 
-            key="rejected"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-slate-800 rounded-3xl p-8 md:p-12 text-center shadow-2xl"
-          >
-            <div className="w-20 h-20 bg-red-950/20 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500 border-2 border-red-550">
-              <XCircle className="w-12 h-12" />
-            </div>
-            <h2 className="text-3xl font-black text-white mb-3 uppercase tracking-tight">Request Declined</h2>
-            <p className="text-slate-300 font-medium text-sm max-w-sm mx-auto mb-8 leading-relaxed">
-              The tenant access request has been successfully declined and the user profile has been cleaned up.
-            </p>
-            <button 
-              onClick={() => router.push('/dashboard')}
-              className="px-8 py-3.5 bg-slate-800 hover:bg-slate-750 text-white rounded-xl font-bold uppercase text-xs tracking-wider transition-all active:scale-95 border border-slate-700"
-            >
-              Go to Dashboard
-            </button>
-          </motion.div>
-        )}
-
-        {/* Error State */}
-        {status === 'error' && (
-          <motion.div 
-            key="error"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-slate-800 rounded-3xl p-8 md:p-12 text-center shadow-2xl"
-          >
-            <div className="w-16 h-16 bg-red-950/50 border border-red-550/30 rounded-2xl flex items-center justify-center mx-auto mb-6 text-red-500">
-              <ShieldAlert className="w-8 h-8" />
-            </div>
-            <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Operation Failed</h2>
-            <p className="text-red-400 font-bold text-sm mb-4">{errorMessage}</p>
-            <button 
-              onClick={() => router.push('/dashboard')}
-              className="px-8 py-3.5 bg-slate-800 hover:bg-slate-750 text-white rounded-xl font-bold uppercase text-xs tracking-wider transition-all active:scale-95 border border-slate-700"
-            >
-              Go to Dashboard
-            </button>
-          </motion.div>
-        )}
-
-      </AnimatePresence>
+  const backToDashboard = (
+    <div>
+      <CcButton variant="ghost" density="cozy" onClick={() => router.push('/dashboard')}>
+        Go to Dashboard
+      </CcButton>
     </div>
+  );
+
+  return (
+    <>
+      {/* Ready State - Pending Approval */}
+      {status === 'ready' && applicant && (
+        <Panel>
+          <div className="flex items-center gap-3">
+            <Globe size={20} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
+            <div className="min-w-0">
+              <p className="m-0 cc-text-label text-cc-ink-muted">Clean-Core.io Admin</p>
+              <h1 className="m-0 cc-text-title text-cc-ink">S/4HANA Connection Approval</h1>
+            </div>
+          </div>
+
+          {/* Applicant */}
+          <dl className="m-0 flex flex-col gap-3 rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
+            <div className="flex items-start gap-3">
+              <User size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
+              <div className="min-w-0">
+                <dt className="cc-text-label text-cc-ink-muted">Name</dt>
+                <dd className="m-0 cc-text-identifier text-cc-ink">{applicant.name}</dd>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Mail size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
+              <div className="min-w-0">
+                <dt className="cc-text-label text-cc-ink-muted">Email</dt>
+                <dd className="m-0 break-all cc-text-cell text-cc-ink">{applicant.email}</dd>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 border-t border-cc-line pt-3">
+              <FileText size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
+              <div className="min-w-0">
+                <dt className="cc-text-label text-cc-ink-muted">Motivation / Use Case</dt>
+                <dd className="m-0 cc-text-body text-cc-ink">
+                  &ldquo;{applicant.motivation || 'No details provided.'}&rdquo;
+                </dd>
+              </div>
+            </div>
+          </dl>
+
+          <CcMessageStrip state="information" headline="Provisioning scope:">
+            <ul className="m-0 mt-1 list-disc pl-4">
+              <li>Unlocks the <span className="font-semibold">Check tenant connection</span> tab</li>
+              <li>Activates dynamic destination endpoint mapping environment variables</li>
+              <li>Enables Basic Auth or Client Credentials storage</li>
+            </ul>
+          </CcMessageStrip>
+
+          {/* One button: the link's token is bound to one action, so the other
+              button could only ever be refused. The other decision is the
+              other link of the same mail — and whichever is used first
+              closes both (UX-152). */}
+          <div className="flex flex-col gap-2">
+            <div>
+              {actionParam === 'reject' ? (
+                <CcButton variant="ghost" tone="danger" density="cozy" onClick={handleReject} data-tenant-decision="reject">
+                  Decline Request
+                </CcButton>
+              ) : (
+                <CcButton variant="primary" density="cozy" onClick={handleApprove} data-tenant-decision="approve">
+                  Approve Request <ArrowRight size={16} aria-hidden={true} />
+                </CcButton>
+              )}
+            </div>
+            <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">
+              {actionParam === 'reject'
+                ? 'To approve instead, open the Approve link in the same mail.'
+                : 'To decline instead, open the Decline link in the same mail.'}{' '}
+              Each link works once, and using either closes both.
+            </p>
+          </div>
+        </Panel>
+      )}
+
+      {/* Processing State */}
+      {status === 'processing' && (
+        <Panel>
+          <h1 className="m-0 cc-text-title text-cc-ink">Activating Capabilities</h1>
+          <p className="m-0 cc-text-body text-cc-ink-muted">
+            Updating user privileges and integration configurations in Firestore database. Please wait...
+          </p>
+          <CcSkeleton shape="text" count={2} label="tenant access update" />
+        </Panel>
+      )}
+
+      {/* Approved State */}
+      {status === 'approved' && (
+        <Panel>
+          <h1 className="m-0 cc-text-title text-cc-ink">Tenant Access Approved</h1>
+          <CcMessageStrip state="information" headline="Approved.">
+            The user profile has been successfully updated. The live S/4HANA Connection features are now active.
+          </CcMessageStrip>
+          {applicant && (
+            <dl className="m-0 rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
+              <dt className="cc-text-label text-cc-ink-muted">Activated Profile</dt>
+              <dd className="m-0 mt-1 flex flex-wrap items-center justify-between gap-2 cc-text-cell">
+                <span className="font-semibold text-cc-ink">{applicant.name}</span>
+                <span className="break-all text-cc-ink-muted">{applicant.email}</span>
+              </dd>
+            </dl>
+          )}
+          {backToDashboard}
+        </Panel>
+      )}
+
+      {/* Rejected State */}
+      {status === 'rejected' && (
+        <Panel>
+          <h1 className="m-0 cc-text-title text-cc-ink">Request Declined</h1>
+          <CcMessageStrip state="neutral">
+            The tenant access request has been successfully declined and the user profile has been cleaned up.
+          </CcMessageStrip>
+          {backToDashboard}
+        </Panel>
+      )}
+
+      {/* Error State */}
+      {status === 'error' && (
+        <Panel>
+          <h1 className="m-0 cc-text-title text-cc-ink">Operation Failed</h1>
+          <CcMessageStrip state="error">{errorMessage}</CcMessageStrip>
+          {backToDashboard}
+        </Panel>
+      )}
+    </>
+  );
+}
+
+/**
+ * The one surface of this page — a light card in the workspace (§1.1: dark
+ * only for code and the transient overlay). It used to be a dark console
+ * panel on a dark page, the only one in the product.
+ */
+function Panel({ children }: { children: React.ReactNode }) {
+  return (
+    <section className="mx-auto my-8 flex w-full max-w-xl flex-col gap-4 rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc">
+      {children}
+    </section>
   );
 }
 
 export default function TenantApprovalPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
-      <Suspense fallback={
-        <div className="flex flex-col items-center justify-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-          <p className="text-gray-400 font-medium">Loading Approval Panel...</p>
-        </div>
-      }>
+    <div className="flex w-full items-start justify-center p-4">
+      <Suspense
+        fallback={
+          <Panel>
+            <CcSkeleton shape="text" label="approval panel" />
+          </Panel>
+        }
+      >
         <TenantApprovalContent />
       </Suspense>
     </div>

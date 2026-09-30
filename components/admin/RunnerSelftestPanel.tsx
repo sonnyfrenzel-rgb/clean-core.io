@@ -7,6 +7,7 @@ import { getAuth } from '@/lib/firebase';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import { formatDateTime } from '@/lib/format';
 
 /**
  * The runner self-test, one click — roadmap 8.9.
@@ -263,7 +264,7 @@ export default function RunnerSelftestPanel() {
     router.push('/?auth=signin');
   };
 
-  const timestamp = outcome ? outcome.at.toLocaleString() : '';
+  const timestamp = outcome ? formatDateTime(outcome.at) ?? '' : '';
 
   return (
     <div className="cc" data-runner-selftest="">

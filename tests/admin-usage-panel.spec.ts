@@ -77,6 +77,13 @@ const COHORT = [
   },
 ];
 
+/**
+ * One account's row. A `CcTable` row since block D (D.21): the figures sit in
+ * their own cells, so the row — not the name button inside it — is what holds
+ * "3 / 5" and "Limit". The filters are a segmented control (one radio group).
+ */
+const ROW = '[data-cc-table-row]';
+
 test.describe('Admin Console — Usage & Quota panel', () => {
   test.beforeAll(async () => {
     const adminUid = (await createUserWithEmailAndPassword(firebaseAuth, ADMIN_EMAIL, ADMIN_PASSWORD)).user.uid;
@@ -125,24 +132,24 @@ test.describe('Admin Console — Usage & Quota panel', () => {
     await signInAsAdmin(page);
 
     // --- Rows render the counters straight from Firestore ---
-    const partialRow = page.locator('button', { hasText: 'Maria Huber' }).first();
+    const partialRow = page.locator(ROW, { hasText: 'Maria Huber' }).first();
     await expect(partialRow).toContainText('3 / 5');
 
-    const atLimitRow = page.locator('button', { hasText: 'Jonas Roth' }).first();
+    const atLimitRow = page.locator(ROW, { hasText: 'Jonas Roth' }).first();
     await expect(atLimitRow).toContainText('5 / 5');
     await expect(atLimitRow).toContainText('Limit');
 
-    const byokRow = page.locator('button', { hasText: 'Tim Bauer' }).first();
+    const byokRow = page.locator(ROW, { hasText: 'Tim Bauer' }).first();
     await expect(byokRow).toContainText('BYOK');
     await expect(byokRow).toContainText('unlimited');
 
     // 'Pending' used to mean "waiting for an administrator to approve". It cannot
     // mean that any more, and a badge that still said so would send the admin
     // looking for a queue that no longer exists.
-    await expect(page.locator('button', { hasText: 'Sabine Klein' }).first()).toContainText(
+    await expect(page.locator(ROW, { hasText: 'Sabine Klein' }).first()).toContainText(
       'Setup unfinished',
     );
-    await expect(page.locator('button', { hasText: 'Rolf Maier' }).first()).toContainText(
+    await expect(page.locator(ROW, { hasText: 'Rolf Maier' }).first()).toContainText(
       'Suspended',
     );
 
@@ -152,25 +159,28 @@ test.describe('Admin Console — Usage & Quota panel', () => {
     await expect(page.getByText('At limit', { exact: true }).first()).toBeVisible();
 
     // --- Filters ---
-    await page.getByRole('button', { name: 'At limit', exact: true }).click();
-    await expect(page.locator('button', { hasText: 'Jonas Roth' }).first()).toBeVisible();
-    await expect(page.locator('button', { hasText: 'Maria Huber' })).toHaveCount(0);
+    await page.getByRole('radio', { name: 'At limit', exact: true }).click();
+    await expect(page.locator(ROW, { hasText: 'Jonas Roth' }).first()).toBeVisible();
+    await expect(page.locator(ROW, { hasText: 'Maria Huber' })).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'BYOK', exact: true }).click();
-    await expect(page.locator('button', { hasText: 'Tim Bauer' }).first()).toBeVisible();
-    await expect(page.locator('button', { hasText: 'Jonas Roth' })).toHaveCount(0);
+    await page.getByRole('radio', { name: 'BYOK', exact: true }).click();
+    await expect(page.locator(ROW, { hasText: 'Tim Bauer' }).first()).toBeVisible();
+    await expect(page.locator(ROW, { hasText: 'Jonas Roth' })).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'All', exact: true }).click();
+    await page.getByRole('radio', { name: 'All', exact: true }).click();
 
     // --- Search ---
     await page.fill('input[placeholder="Search name or email..."]', 'jonas.roth');
-    await expect(page.locator('button', { hasText: 'Jonas Roth' }).first()).toBeVisible();
-    await expect(page.locator('button', { hasText: 'Maria Huber' })).toHaveCount(0);
+    await expect(page.locator(ROW, { hasText: 'Jonas Roth' }).first()).toBeVisible();
+    await expect(page.locator(ROW, { hasText: 'Maria Huber' })).toHaveCount(0);
     await page.fill('input[placeholder="Search name or email..."]', '');
 
     // --- Drill-down ---
     await partialRow.click();
     await expect(page.getByText('Distinct ABAP objects')).toBeVisible();
+    // UX-078: the row's own button says that its detail is open, so the state
+    // is not only visible but spoken, and reachable by keyboard.
+    await expect(partialRow.getByRole('button', { name: 'Maria Huber' })).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByText('3 of 5')).toBeVisible();
     await expect(page.getByText('UID', { exact: true })).toBeVisible();
     await expect(page.getByText(/Only the analysis run in/)).toBeVisible();
@@ -191,19 +201,19 @@ test.describe('Admin Console — Usage & Quota panel', () => {
 
     // The pipeline creates a user per run; they outnumbered real accounts four to
     // one, which is what made the panel unusable for its actual purpose.
-    await expect(page.locator('button', { hasText: 'Superduper E2E' })).toHaveCount(0);
-    await expect(page.locator('button', { hasText: 'Maria Huber' }).first()).toBeVisible();
+    await expect(page.locator(ROW, { hasText: 'Superduper E2E' })).toHaveCount(0);
+    await expect(page.locator(ROW, { hasText: 'Maria Huber' }).first()).toBeVisible();
 
     // The count has to be honest about what is being withheld.
     const toggle = page.getByText(/Show \d+ CI test accounts?/);
     await expect(toggle).toBeVisible();
 
     await page.getByRole('checkbox').check();
-    await expect(page.locator('button', { hasText: 'Superduper E2E' }).first()).toBeVisible();
-    await expect(page.locator('button', { hasText: 'Superduper E2E' }).first()).toContainText('CI');
+    await expect(page.locator(ROW, { hasText: 'Superduper E2E' }).first()).toBeVisible();
+    await expect(page.locator(ROW, { hasText: 'Superduper E2E' }).first()).toContainText('CI');
 
     await page.getByRole('checkbox').uncheck();
-    await expect(page.locator('button', { hasText: 'Superduper E2E' })).toHaveCount(0);
+    await expect(page.locator(ROW, { hasText: 'Superduper E2E' })).toHaveCount(0);
   });
 
   test('the panel is usable on a phone', async ({ page }) => {
@@ -220,10 +230,10 @@ test.describe('Admin Console — Usage & Quota panel', () => {
 
     // The per-row data must still be readable, with its own labels now that the
     // column headers are hidden.
-    const row = page.locator('button', { hasText: 'Maria Huber' }).first();
+    const row = page.locator(ROW, { hasText: 'Maria Huber' }).first();
     await expect(row).toBeVisible();
     await expect(row).toContainText('3 / 5');
-    await expect(row).toContainText('Objects:');
+    await expect(row).toContainText('Objects');
 
     await page.screenshot({ path: 'test-results/admin-usage-panel-mobile.png', fullPage: true });
   });

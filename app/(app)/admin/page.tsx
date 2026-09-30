@@ -1,14 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { ShieldCheck, ShieldAlert, CheckCircle2, Trash2, User, Mail, FileText, Clock, Search, Shield, UserX, UserCheck, Globe, Gauge, MailWarning, MailCheck } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { format } from 'date-fns';
-import { clsx } from 'clsx';
+import { Trash2, Search, UserX, UserCheck, Globe } from 'lucide-react';
 import { APP_VERSION } from '@/lib/version';
+import { formatDateTime } from '@/lib/format';
+import CcButton from '@/components/cc/Button';
+import CcMessageBox from '@/components/cc/MessageBox';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcTabs from '@/components/cc/Tabs';
+import CcSegmentedControl from '@/components/cc/SegmentedControl';
+import CcField from '@/components/cc/Field';
+import CcTable from '@/components/cc/Table';
+import CcSkeleton from '@/components/cc/Skeleton';
+import { CcTag } from '@/components/cc/Tag';
+import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
+import { AccountStateText, accountState, type AccountStateEntry } from '@/components/admin/AccountState';
 import UsageQuotaPanel from '@/components/admin/UsageQuotaPanel';
 import WorkspaceShellSwitch from '@/components/workspace/ShellSwitch';
 import RunnerSelftestPanel from '@/components/admin/RunnerSelftestPanel';
@@ -18,6 +27,14 @@ export default function AdminConsole() {
   const [requests, setRequests] = useState<any[]>([]);
   /** A notification that did not go out — the state change stood, the mail did not. */
   const [mailWarning, setMailWarning] = useState('');
+  /**
+   * An action that did not happen. It used to be a native `alert()`, which
+   * blocked the page and could not be read again once dismissed (§2.6); it is
+   * a message strip now, above the list, until it is dismissed.
+   */
+  const [actionError, setActionError] = useState('');
+  /** The account a delete is waiting on — the Message Box is open while set. */
+  const [pendingDelete, setPendingDelete] = useState<{ uid: string; name?: string; email?: string } | null>(null);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   // Signup no longer produces a queue to work through: accounts are active the
@@ -43,7 +60,7 @@ export default function AdminConsole() {
   }, []);
   
   const [actionUid, setActionUid] = useState<string | null>(null);
-  const [actionType, setActionType] = useState<'approving' | 'revoking' | 'deleting' | null>(null);
+  const [actionType, setActionType] = useState<'approving' | 'revoking' | 'deleting' | 'tenant' | null>(null);
 
   const db = getDb();
 
@@ -150,7 +167,7 @@ export default function AdminConsole() {
       }
     } catch (err: any) {
       console.error('Error approving user:', err);
-      alert(err.message || 'Failed to approve user.');
+      setActionError(err.message || 'Failed to approve user.');
     } finally {
       setActionUid(null);
       setActionType(null);
@@ -177,16 +194,16 @@ export default function AdminConsole() {
       }
     } catch (err: any) {
       console.error('Error revoking user:', err);
-      alert(err.message || 'Failed to revoke access.');
+      setActionError(err.message || 'Failed to revoke access.');
     } finally {
       setActionUid(null);
       setActionType(null);
     }
   };
 
+  // The confirmation is the Message Box below (§2.6): the Delete button only
+  // opens it, and nothing is sent until its binding button is pressed.
   const handleDelete = async (uid: string) => {
-    if (!confirm('Are you sure you want to permanently delete this application and user profile?')) return;
-    
     setActionUid(uid);
     setActionType('deleting');
     try {
@@ -206,7 +223,7 @@ export default function AdminConsole() {
       }
     } catch (err: any) {
       console.error('Error deleting user:', err);
-      alert(err.message || 'Failed to delete user.');
+      setActionError(err.message || 'Failed to delete user.');
     } finally {
       setActionUid(null);
       setActionType(null);
@@ -215,7 +232,7 @@ export default function AdminConsole() {
 
   const handleToggleS4Access = async (uid: string, currentAllowed: boolean) => {
     setActionUid(uid);
-    setActionType(currentAllowed ? 'revoking' : 'approving');
+    setActionType('tenant');
     const targetReq = requests.find(r => r.uid === uid);
     try {
       const token = await getAuth().currentUser?.getIdToken();
@@ -267,7 +284,7 @@ export default function AdminConsole() {
 
     } catch (err) {
       console.error('Error toggling S/4 access:', err);
-      alert('Failed to update tenant access privileges.');
+      setActionError('Failed to update tenant access privileges.');
     } finally {
       setActionUid(null);
       setActionType(null);
@@ -276,34 +293,29 @@ export default function AdminConsole() {
 
   if (profileLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh]">
-        <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-gray-500 font-medium">Validating Administrator session...</p>
+      <div className="mx-auto w-full max-w-7xl">
+        <CcSkeleton shape="header" label="administrator session" />
       </div>
     );
   }
 
   if (!profile || !profile.isAdmin) {
     return (
-      <div className="max-w-md mx-auto my-12 bg-white border border-red-100 rounded-3xl p-8 text-center shadow-xl">
-        <div className="w-16 h-16 bg-red-50 border border-red-200 rounded-2xl flex items-center justify-center mx-auto mb-6 text-red-650 shadow-inner">
-          <ShieldAlert className="w-8 h-8 animate-bounce" />
-        </div>
-        <h2 className="text-2xl font-black text-gray-900 mb-3 uppercase tracking-tight">Access Denied</h2>
-        <p className="text-gray-500 text-sm font-medium mb-6 leading-relaxed">
+      <div className="mx-auto my-12 w-full max-w-md">
+        <CcMessageStrip state="error" headline="Access denied.">
           This panel is restricted exclusively to Clean-Core.io system administrators.
-        </p>
+        </CcMessageStrip>
       </div>
     );
   }
 
   // Filter requests based on search term and active tab
   const filteredRequests = requests.filter(req => {
-    const matchesSearch = 
+    const matchesSearch =
       (req.name && req.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (req.email && req.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (req.motivation && req.motivation.toLowerCase().includes(searchTerm.toLowerCase()));
-      
+
     const matchesTab =
       activeTab === 'all' ||
       (activeTab === 'active' && req.status === 'approved') ||
@@ -312,37 +324,223 @@ export default function AdminConsole() {
     return matchesSearch && matchesTab;
   });
 
-  return (
-    <div className="space-y-8 animate-in fade-in duration-300 w-full max-w-7xl mx-auto">
-      {mailWarning && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-sm text-amber-900 font-medium">
-          <MailWarning size={18} className="text-amber-600 shrink-0 mt-0.5" />
-          <span className="flex-1">{mailWarning}</span>
-          <button type="button" onClick={() => setMailWarning('')} className="text-amber-700 hover:text-amber-900 font-bold text-xs uppercase tracking-widest">Dismiss</button>
+  const activeCount = requests.filter((r) => r.status === 'approved').length;
+  const tabCount = (tab: 'all' | 'active' | 'suspended') =>
+    tab === 'all' ? requests.length : requests.filter((r) => (tab === 'active') === (r.status === 'approved')).length;
+
+  const applications = (
+    <div className="flex flex-col gap-4">
+      {/* Filter and search bar */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="w-full md:w-80">
+          <CcField label="Search applications">
+            {(control) => (
+              <span className="relative flex items-center">
+                <Search size={14} aria-hidden={true} className="pointer-events-none absolute left-2 text-cc-ink-muted" />
+                <input
+                  id={control.id}
+                  type="search"
+                  placeholder="Search applications..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className={`${control.className} pl-8`}
+                />
+              </span>
+            )}
+          </CcField>
         </div>
-      )}
-      
-      {/* Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-[80px] pointer-events-none"></div>
-        <div className="flex items-center gap-4 z-10">
-          <div className="w-14 h-14 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-400 border border-green-500/20 shadow-inner">
-            <Shield className="w-7 h-7" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-green-400 uppercase tracking-widest bg-green-950/60 border border-green-900/40 px-2 py-0.5 rounded-full">Secure Console</span>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-800 border border-slate-700 px-2.5 py-0.5 rounded-full">{APP_VERSION}</span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight mt-1">Admin Control Room</h1>
-          </div>
-        </div>
-        <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl text-xs text-slate-400 space-y-1 z-10 shrink-0">
-          <p className="font-bold text-white uppercase tracking-wide">⚡ Total Applications: {requests.length}</p>
-          <p>• Active: <strong className="text-green-400">{requests.filter(r => r.status === 'approved').length}</strong></p>
-          <p>• Not active: <strong className="text-amber-400">{requests.filter(r => r.status !== 'approved').length}</strong></p>
-        </div>
+        {/* The third segment folds pending, suspended and deleted together (see
+            the note on `activeTab`), so it carries the name of what it holds —
+            "Not active", as in the header count — and not the name of one of
+            the three (UX review of ac27aed, UX-145). */}
+        <CcSegmentedControl
+          label="Account state"
+          value={activeTab}
+          onChange={setActiveTab}
+          segments={[
+            { value: 'all', label: `All (${tabCount('all')})` },
+            { value: 'active', label: `Active (${tabCount('active')})` },
+            { value: 'suspended', label: `Not active (${tabCount('suspended')})` },
+          ]}
+        />
       </div>
+
+      {loadingRequests ? (
+        <CcSkeleton shape="table" label="applications" />
+      ) : requests.length === 0 ? (
+        <CcEmptyState title="No applications yet">No registration requests have been submitted.</CcEmptyState>
+      ) : filteredRequests.length === 0 ? (
+        <CcNoMatches
+          title="No applications match your search or filter"
+          reason="No registration requests match your current filters or query."
+          onClear={() => {
+            setSearchTerm('');
+            setActiveTab('all');
+          }}
+        />
+      ) : (
+        <CcTable
+          caption="Applications"
+          columns={[
+            { key: 'account', label: 'Account' },
+            { key: 'state', label: 'State' },
+            { key: 'submitted', label: 'Submitted', width: '190px' },
+            { key: 'actions', label: 'Actions', action: true },
+          ]}
+          rows={filteredRequests.map((req) => {
+            const busyRow = req.uid === actionUid;
+            const mail = welcomeMailBadge(req.welcomeMailStatus);
+            return {
+              key: req.uid,
+              cells: {
+                account: (
+                  <span className="flex min-w-0 flex-col">
+                    <span className="cc-text-identifier text-cc-ink">{req.name || 'Anonymous User'}</span>
+                    <span className="select-all break-all text-cc-ink-muted">{req.email}</span>
+                  </span>
+                ),
+                state: (
+                  <span className="flex flex-col items-start gap-1">
+                    {/* Every non-approved account used to read "Pending
+                        Review", including one an administrator had just
+                        suspended (QA review of 33471220d6e9, aad1ecf24d47). */}
+                    <AccountStateText entry={accountState(req.status)} />
+                    {req.s4TenantAccessAllowed && <CcTag>S/4 tenant access granted</CcTag>}
+                    {!req.s4TenantAccessAllowed && req.s4TenantAccessRequested && (
+                      <AccountStateText entry={{ label: 'S/4 tenant access requested', state: 'information' }} />
+                    )}
+                    {/*
+                      Whether the welcome mail actually arrived. An account that
+                      was created and never used looks the same as one whose
+                      first-run guide sat in a corporate quarantine — this is the
+                      only place that difference becomes visible. Silence until a
+                      delivery event arrives; nothing to say is not a warning.
+                    */}
+                    {mail && <AccountStateText entry={mail} />}
+                  </span>
+                ),
+                submitted: <span className="text-cc-ink-muted">{formatDateTime(req.createdAt) ?? '—'}</span>,
+                actions: (
+                  <span className="flex flex-wrap justify-end gap-2">
+                    {req.status !== 'approved' ? (
+                      <CcButton
+                        variant="secondary"
+                        icon={<UserCheck size={16} aria-hidden={true} />}
+                        busy={busyRow && actionType === 'approving'}
+                        disabled={busyRow && actionType !== 'approving'}
+                        onClick={() => handleApprove(req.uid)}
+                      >
+                        Reinstate
+                      </CcButton>
+                    ) : (
+                      <CcButton
+                        variant="ghost"
+                        icon={<UserX size={16} aria-hidden={true} />}
+                        busy={busyRow && actionType === 'revoking'}
+                        disabled={busyRow && actionType !== 'revoking'}
+                        onClick={() => handleRevoke(req.uid)}
+                      >
+                        Revoke
+                      </CcButton>
+                    )}
+
+                    {req.status === 'approved' && (
+                      <CcButton
+                        variant="ghost"
+                        icon={<Globe size={16} aria-hidden={true} />}
+                        busy={busyRow && actionType === 'tenant'}
+                        disabled={busyRow && actionType !== 'tenant'}
+                        onClick={() => handleToggleS4Access(req.uid, req.s4TenantAccessAllowed)}
+                      >
+                        {req.s4TenantAccessAllowed ? 'Revoke BYOT' : 'Grant BYOT'}
+                      </CcButton>
+                    )}
+
+                    <CcButton
+                      variant="ghost"
+                      tone="danger"
+                      icon={<Trash2 size={16} aria-hidden={true} />}
+                      busy={busyRow && actionType === 'deleting'}
+                      disabled={busyRow && actionType !== 'deleting'}
+                      onClick={() => setPendingDelete({ uid: req.uid, name: req.name, email: req.email })}
+                      title="Permanently delete application record"
+                    >
+                      Delete
+                    </CcButton>
+                  </span>
+                ),
+              },
+              note:
+                (mail && req.welcomeMailDetail) || req.motivation ? (
+                  <span className="flex flex-col gap-1 cc-text-cell text-cc-ink-muted">
+                    {/* UX-110 / UX-146: the provider's reason ("mailbox does not
+                        exist") sat only in the badge's hover title — unreachable
+                        by keyboard, touch and screen reader. It is text now. */}
+                    {mail && req.welcomeMailDetail && (
+                      <span data-welcome-mail-detail>
+                        <span className="font-semibold text-cc-ink">Mail provider:</span> {req.welcomeMailDetail}
+                      </span>
+                    )}
+                    {req.motivation && (
+                      <span>
+                        <span className="font-semibold text-cc-ink">Motivation:</span> &ldquo;{req.motivation}&rdquo;
+                      </span>
+                    )}
+                  </span>
+                ) : undefined,
+            };
+          })}
+        />
+      )}
+    </div>
+  );
+
+  return (
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      {/* Header */}
+      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <CcTag>Secure console</CcTag>
+            <span className="font-cc-mono cc-text-meta text-cc-ink-muted">{APP_VERSION}</span>
+          </div>
+          <h1 className="m-0 mt-1 cc-text-title text-cc-ink">Admin Control Room</h1>
+        </div>
+        <p className="m-0 cc-text-meta text-cc-ink-muted">
+          Total applications: <span className="text-cc-ink tabular-nums">{requests.length}</span>
+          {' · '}Active: <span className="text-cc-ink tabular-nums">{activeCount}</span>
+          {' · '}Not active: <span className="text-cc-ink tabular-nums">{requests.length - activeCount}</span>
+        </p>
+      </header>
+
+      {mailWarning && (
+        <CcMessageStrip
+          state="warning"
+          announce
+          actions={
+            <CcButton variant="ghost" onClick={() => setMailWarning('')}>
+              Dismiss
+            </CcButton>
+          }
+        >
+          {mailWarning}
+        </CcMessageStrip>
+      )}
+
+      {actionError && (
+        <CcMessageStrip
+          state="error"
+          headline="The action did not go through."
+          announce
+          actions={
+            <CcButton variant="ghost" onClick={() => setActionError('')}>
+              Dismiss
+            </CcButton>
+          }
+        >
+          {actionError}
+        </CcMessageStrip>
+      )}
 
       {/* The switch the 3.0 interface grows behind (roadmap 1.4). Here because
           this is where the gate it shares already is, and because it only ever
@@ -353,270 +551,68 @@ export default function AdminConsole() {
           Same gate as every action here: admin claim plus a fresh step-up. */}
       <RunnerSelftestPanel />
 
-      {/* Console sections */}
-      <div className="flex gap-1.5 p-1 bg-gray-100 rounded-2xl w-full sm:w-auto sm:inline-flex">
-        {([
-          { key: 'applications', label: 'Applications', icon: User },
-          { key: 'usage', label: 'Usage & Quota', icon: Gauge },
-        ] as const).map((section) => (
-          <button
-            key={section.key}
-            onClick={() => setConsoleSection(section.key)}
-            className={clsx(
-              'flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer',
-              consoleSection === section.key ? 'bg-white text-gray-950 shadow' : 'text-gray-500 hover:text-gray-900',
-            )}
-          >
-            <section.icon className="w-4 h-4" /> {section.label}
-          </button>
-        ))}
-      </div>
+      {/* Console sections. The usage panel streams every user profile, so it
+          is only mounted while its tab is the chosen one. */}
+      <CcTabs
+        label="Admin console"
+        value={consoleSection}
+        onChange={setConsoleSection}
+        tabs={[
+          { value: 'applications', label: 'Applications', content: applications },
+          { value: 'usage', label: 'Usage & Quota', content: consoleSection === 'usage' ? <UsageQuotaPanel /> : null },
+        ]}
+      />
 
-      {consoleSection === 'usage' && <UsageQuotaPanel />}
-
-      {consoleSection === 'applications' && (
-      <>
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-2xl border border-gray-250 shadow-sm w-full">
-        
-        {/* Search */}
-        <div className="relative w-full md:w-80 shrink-0">
-          <Search className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search applications..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 outline-none text-sm font-medium focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-all text-gray-900 bg-white"
-          />
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1.5 p-1 bg-gray-100 rounded-xl w-full md:w-auto">
-          {/* The third tab folds pending, suspended and deleted together (see
-              the note on `activeTab`), so it carries the name of what it holds —
-              "Not active", as in the header count — and not the name of one of
-              the three (UX review of ac27aed, UX-145). */}
-          {(['all', 'active', 'suspended'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              data-admin-tab={tab}
-              className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${activeTab === tab ? 'bg-white text-gray-950 shadow' : 'text-gray-500 hover:text-gray-900'}`}
-            >
-              {tab === 'suspended' ? 'Not active' : tab}{' '}
-              <span className="tabular-nums">
-                ({tab === 'all'
-                  ? requests.length
-                  : requests.filter((r) => (tab === 'active') === (r.status === 'approved')).length})
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Applications Catalog List */}
-      <div className="space-y-4 w-full">
-        {loadingRequests ? (
-          <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-gray-200">
-            <div className="w-8 h-8 border-3 border-green-600 border-t-transparent rounded-full animate-spin mb-3"></div>
-            <p className="text-gray-400 text-sm font-semibold">Loading applications database...</p>
-          </div>
-        ) : filteredRequests.length === 0 ? (
-          <div className="text-center p-16 bg-white rounded-3xl border border-gray-200 shadow-sm">
-            <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-gray-450 border border-gray-200">
-              <User className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-black text-gray-900 uppercase mb-1">No Applications Found</h3>
-            <p className="text-gray-400 text-sm font-medium max-w-xs mx-auto leading-relaxed">
-              No registration requests match your current filters or query.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 w-full">
-            <AnimatePresence mode="popLayout">
-              {filteredRequests.map((req) => (
-                <motion.div
-                  key={req.uid}
-                  layout
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all p-5 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 w-full"
-                >
-                  <div className="space-y-3.5 flex-1 w-full">
-                    {/* Header info */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-black text-gray-900 text-base">{req.name || 'Anonymous User'}</h3>
-                      {req.status === 'approved' ? (
-                        <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-green-200">
-                          <CheckCircle2 size={10} /> Active Plan
-                        </span>
-                      ) : req.status === 'suspended' ? (
-                        // Every non-approved account used to read "Pending
-                        // Review", including one an administrator had just
-                        // suspended (QA review of 33471220d6e9, aad1ecf24d47).
-                        <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-rose-200">
-                          <UserX size={10} /> Suspended
-                        </span>
-                      ) : req.status === 'deleted' ? (
-                        <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-gray-200">
-                          <Trash2 size={10} /> Deleted
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-amber-200">
-                          <Clock size={10} /> Pending Review
-                        </span>
-                      )}
-                      {req.s4TenantAccessAllowed && (
-                        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-blue-200">
-                          <Globe size={10} /> S/4 Live Bridge Unlocked
-                        </span>
-                      )}
-                      {!req.s4TenantAccessAllowed && req.s4TenantAccessRequested && (
-                        <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-indigo-200 animate-pulse">
-                          <Globe size={10} /> BYOT Requested
-                        </span>
-                      )}
-                      {/*
-                        Whether the welcome mail actually arrived. An account that
-                        was created and never used looks the same as one whose
-                        first-run guide sat in a corporate quarantine — this is the
-                        only place that difference becomes visible. Silence until a
-                        delivery event arrives; nothing to say is not a warning.
-                      */}
-                      {welcomeMailBadge(req.welcomeMailStatus) && (
-                        <span
-                          className={clsx(
-                            'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border',
-                            welcomeMailBadge(req.welcomeMailStatus)!.className,
-                          )}
-                        >
-                          {welcomeMailBadge(req.welcomeMailStatus)!.failed ? <MailWarning size={10} /> : <MailCheck size={10} />}
-                          {welcomeMailBadge(req.welcomeMailStatus)!.label}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* UX-110 / UX-146: the provider's reason ("mailbox does not
-                        exist") sat only in the badge's hover title — unreachable
-                        by keyboard, touch and screen reader. It is text now. */}
-                    {welcomeMailBadge(req.welcomeMailStatus) && req.welcomeMailDetail && (
-                      <p data-welcome-mail-detail className="text-xs text-gray-600 font-medium">
-                        <span className="font-bold text-gray-700">Mail provider:</span> {req.welcomeMailDetail}
-                      </p>
-                    )}
-
-                    {/* Meta information */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-gray-500 font-medium">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-gray-400 shrink-0" />
-                        <span className="text-gray-900 select-all font-semibold">{req.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-400 shrink-0" />
-                        <span>Submitted on {format(req.createdAt, 'PPpp')}</span>
-                      </div>
-                    </div>
-
-                    {/* Motivation card */}
-                    {req.motivation && (
-                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-3.5 text-xs flex gap-2 w-full max-w-xl">
-                        <FileText className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                        <div>
-                           <label className="block text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Motivation</label>
-                          <p className="text-gray-700 font-medium italic leading-relaxed">"{req.motivation}"</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions column */}
-                  <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto border-t border-gray-100 sm:border-t-0 pt-4 sm:pt-0 justify-end">
-                    {req.uid === actionUid ? (
-                      <div className="flex items-center justify-center py-2.5 px-6 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-500 w-full sm:w-36">
-                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
-                        Updating...
-                      </div>
-                    ) : (
-                      <>
-                        {req.status !== 'approved' ? (
-                          <button
-                            onClick={() => handleApprove(req.uid)}
-                            className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95 whitespace-nowrap"
-                          >
-                            <UserCheck className="w-4 h-4" /> Reinstate
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleRevoke(req.uid)}
-                            className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 border border-slate-700 whitespace-nowrap"
-                          >
-                            <UserX className="w-4 h-4" /> Revoke
-                          </button>
-                        )}
-
-                        {req.status === 'approved' && (
-                          <button
-                            onClick={() => handleToggleS4Access(req.uid, req.s4TenantAccessAllowed)}
-                            className={clsx(
-                              "w-full sm:w-auto flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 whitespace-nowrap border",
-                              req.s4TenantAccessAllowed 
-                                ? "bg-blue-50 hover:bg-blue-100 text-blue-650 border-blue-200 shadow-sm" 
-                                : "bg-white hover:bg-gray-50 text-gray-700 border-gray-250 shadow-sm"
-                            )}
-                          >
-                            <Globe className="w-4 h-4" />
-                            {req.s4TenantAccessAllowed ? 'Revoke BYOT' : 'Grant BYOT'}
-                          </button>
-                        )}
-
-                        <button
-                          onClick={() => handleDelete(req.uid)}
-                          className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-650 border border-red-200 px-3.5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 whitespace-nowrap"
-                          title="Permanently delete application record"
-                        >
-                          <Trash2 className="w-4 h-4" /> Delete
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-      </div>
-      </>
-      )}
-
+      {/* The confirmation of a delete (§2.6). Cancel, Escape and the scrim
+          all close it without sending anything; only the binding button
+          calls `handleDelete`. */}
+      <CcMessageBox
+        open={pendingDelete !== null}
+        title="Delete this account permanently?"
+        confirmLabel="Delete permanently"
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => {
+          const target = pendingDelete;
+          setPendingDelete(null);
+          if (target) void handleDelete(target.uid);
+        }}
+      >
+        <p className="m-0">
+          This erases the application record and user profile of{' '}
+          <span className="font-semibold">{pendingDelete?.name || 'this account'}</span>
+          {pendingDelete?.email ? <> ({pendingDelete.email})</> : null} — the same full erasure as a
+          self-service account deletion: sign-in, projects, runs and stored keys go with it.
+        </p>
+        <p className="m-0 mt-2">This cannot be undone.</p>
+      </CcMessageBox>
     </div>
   );
 }
 
 /**
- * The delivery verdict on a welcome mail, as a badge — or nothing.
+ * The delivery verdict on a welcome mail, as a status — or nothing.
  *
  * `sent` is deliberately silent: it means Resend queued the message, which is
  * what the platform always knew and what turned out to be worth nothing. Only
- * the states that say something about the *reader* get a badge, and only the two
- * that mean they never saw it are red.
+ * the states that say something about the *reader* get a status, and only the two
+ * that mean they never saw it are `error`.
  */
 function welcomeMailBadge(
   status: string | undefined,
-): { label: string; className: string; failed: boolean } | null {
+): (AccountStateEntry & { failed: boolean }) | null {
   switch (status) {
     case 'email.bounced':
-      return { label: 'Welcome mail bounced', className: 'bg-red-50 text-red-700 border-red-200', failed: true };
+      return { label: 'Welcome mail bounced', state: 'error', failed: true };
     case 'email.complained':
-      return { label: 'Marked as spam', className: 'bg-red-50 text-red-700 border-red-200', failed: true };
+      return { label: 'Marked as spam', state: 'error', failed: true };
     case 'email.delivery_delayed':
-      return { label: 'Welcome mail delayed', className: 'bg-amber-50 text-amber-700 border-amber-200', failed: true };
+      return { label: 'Welcome mail delayed', state: 'warning', failed: true };
     case 'email.delivered':
-      return { label: 'Welcome mail delivered', className: 'bg-gray-50 text-gray-600 border-gray-200', failed: false };
+      return { label: 'Welcome mail delivered', state: 'neutral', failed: false };
     case 'email.opened':
     case 'email.clicked':
-      return { label: 'Welcome mail read', className: 'bg-green-50 text-green-700 border-green-200', failed: false };
+      // Read, not proven: an open pixel is no evidence, so not green (§1.1).
+      return { label: 'Welcome mail read', state: 'information', failed: false };
     default:
       return null;
   }

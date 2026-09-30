@@ -223,9 +223,12 @@ test.describe('a bounce reaches the operator', () => {
     for (const failed of ['email.bounced', 'email.complained', 'email.delivery_delayed']) {
       expect(badge).toContain(`case '${failed}'`);
     }
-    // The two that mean the reader never saw it are the ones that read as red.
-    expect(badge).toMatch(/case 'email\.bounced':[\s\S]{0,200}?bg-red-50/);
-    expect(badge).toMatch(/case 'email\.complained':[\s\S]{0,200}?bg-red-50/);
+    // The two that mean the reader never saw it are the ones that read as red —
+    // the `error` state since block D (D.21), no longer a palette class.
+    expect(badge).toMatch(/case 'email\.bounced':[\s\S]{0,200}?state: 'error'/);
+    expect(badge).toMatch(/case 'email\.complained':[\s\S]{0,200}?state: 'error'/);
+    // And no other verdict borrows that colour.
+    expect((badge.slice(0, badge.indexOf('default:')).match(/state: 'error'/g) || []).length).toBe(2);
   });
 });
 
