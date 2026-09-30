@@ -362,7 +362,7 @@ export function routeExtensibility(
         ? `Required by the evidence that chose this route: ${btpTriggerList}.`
         : 'Optional. Simple reads do not justify the architectural overhead of a separate BTP runtime.',
       resultState: needsBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
-      cleanCoreImpact: 'Maximum upgrade safety. Code is completely decoupled from S/4HANA.'
+      cleanCoreImpact: 'Target: decoupled from the S/4HANA core, with its own lifecycle. Not established for the analysed code.'
     }
   ];
 
@@ -409,7 +409,9 @@ export function routeExtensibility(
     fitDetails: modificationBlocks
       ? 'Not reachable as it stands either. Code that was inserted into an SAP program cannot be moved off the stack before it is removed from it.'
       : needsBtp
-      ? 'Perfect fit. SAP BTP CAP decoupled persistence safely isolates custom code and legacy APIs from S/4HANA core.'
+      // What chose the route, not a claim that CAP persistence is needed or an
+      // isolation design exists (QA full review of v2.20.0, 2b515958f925).
+      ? `Recommended route: what was found (${btpTriggerList}) points off the ABAP Cloud stack. Whether the extension needs its own persistence on BTP, and how it is decoupled, is a design decision this analysis does not establish.`
       : 'Feasible, but introduces architectural overhead for simple read-only reports.',
     pros: [
       'Maximizes upgrade readiness and isolates extensions',

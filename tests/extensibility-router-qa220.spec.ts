@@ -32,6 +32,16 @@ test('1d5ab9d90793 — the Key User checkpoint does not grade feasibility from a
   }
 });
 
+test('c658f64f147e — no checkpoint impact states a guarantee about the analysed code', () => {
+  for (const code of [READ_ONLY, STANDARD_WRITE, RFC]) {
+    for (const c of route(code).checkpoints) {
+      expect(c.cleanCoreImpact, `${c.checkpointName}: ${code}`).not.toMatch(
+        /guaranteed|Maximum upgrade safety|^Clean core compliant/i,
+      );
+    }
+  }
+});
+
 test('e08f739fe79e — a direct write to an SAP table on Private Edition is not "High compatibility"', () => {
   const report = route(STANDARD_WRITE, 'private');
   expect(report.recommendedRoute, 'the route stays on-stack').toBe('In-App (ABAP Cloud)');
@@ -45,4 +55,12 @@ test('e08f739fe79e — a direct write to an SAP table on Private Edition is not 
   const clean = route(READ_ONLY, 'private');
   expect(checkpoint(clean, 'In-App Developer').evaluation).toMatch(/^High compatibility/);
   expect(clean.comparativeAnalysis.inAppABAPCloud.technicalFeasibility).toBe('Highly Compatible');
+});
+
+test('2b515958f925 — an RFC call does not make CAP persistence a "perfect fit"', () => {
+  const report = route(RFC, 'private');
+  expect(report.recommendedRoute).toBe('Side-by-Side (SAP BTP)');
+  const fit = report.comparativeAnalysis.sideBySideBTP.fitDetails;
+  expect(fit).not.toMatch(/perfect fit|safely isolates/i);
+  expect(fit, 'it names what chose the route').toMatch(/RFC/i);
 });
