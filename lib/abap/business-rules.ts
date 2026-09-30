@@ -583,14 +583,14 @@ function weigh(
   left: Token | null,
   operatorToken: Token,
   right: Token | null,
-  extraValues?: { literal: string; values: string[]; offset: number },
+  extraValues?: { literal: string; values: string[]; offset: number; negated?: boolean },
 ): void {
   const operator = operatorOf(operatorToken);
   if (!operator) return;
   const { conditionText, range } = context;
   // A rejection names the comparison it dropped, not the whole condition: a
   // condition may state three rules and drop only one of them.
-  const comparison = [left?.text, operatorToken.text, extraValues?.literal ?? right?.text]
+  const comparison = [left?.text, extraValues?.negated ? 'NOT' : undefined, operatorToken.text, extraValues?.literal ?? right?.text]
     .filter(Boolean)
     .join(' ');
 
@@ -664,7 +664,7 @@ function weigh(
     container: context.container,
     conditionText,
     valueOffset: offset,
-    operator: operatorToken.text.toUpperCase(),
+    operator: `${extraValues?.negated ? 'NOT ' : ''}${operatorToken.text.toUpperCase()}`,
     literal: valued.literal,
     values: valued.values,
     subject,
@@ -675,6 +675,21 @@ function weigh(
     lineEnd: range.lineEnd,
     scope: context.scope,
   });
+}
+
+/**
+ * The field left of an `IN` or `BETWEEN`. In `land1 NOT IN ( 'DE', 'AT' )` the
+ * word before the operator is `NOT`, and the field is one further back; taking
+ * `NOT` as the subject named a rule after a keyword. The negation itself is
+ * kept by the caller in the operator (`NOT IN`, `NOT BETWEEN`).
+ */
+function subjectBefore(tokens: Token[], at: number): Token | null {
+  return negatedAt(tokens, at) ? tokens[at - 2] ?? null : tokens[at - 1] ?? null;
+}
+
+function negatedAt(tokens: Token[], at: number): boolean {
+  const before = tokens[at - 1];
+  return Boolean(before && !before.literal && before.text.toUpperCase() === 'NOT');
 }
 
 /** Every comparison in one condition. */
@@ -709,10 +724,11 @@ function readCondition(
         .map((m) => valueOf(m, reader.constants))
         .filter((v): v is Valued => v !== null);
       if (!valuedMembers.length) continue;
-      weigh(reader, context, tokens[t - 1] ?? null, tokens[t], null, {
+      weigh(reader, context, subjectBefore(tokens, t), tokens[t], null, {
         literal: members.map((m) => m.text).join(', '),
         values: valuedMembers.flatMap((v) => v.values),
         offset: members[0].start,
+        negated: negatedAt(tokens, t),
       });
       t = close;
       continue;
@@ -724,10 +740,11 @@ function readCondition(
       const valuedLower = lower ? valueOf(lower, reader.constants) : null;
       const valuedUpper = upper ? valueOf(upper, reader.constants) : null;
       if (!valuedLower || !valuedUpper) continue;
-      weigh(reader, context, tokens[t - 1] ?? null, tokens[t], null, {
+      weigh(reader, context, subjectBefore(tokens, t), tokens[t], null, {
         literal: `${lower.text} AND ${upper.text}`,
         values: [...valuedLower.values, ...valuedUpper.values],
         offset: lower.start,
+        negated: negatedAt(tokens, t),
       });
       t += 3;
       continue;
