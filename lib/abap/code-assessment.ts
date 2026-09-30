@@ -52,7 +52,7 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
     const trimmed = line.trim().toUpperCase();
 
     // CLASS ... DEFINITION | IMPLEMENTATION
-    const classMatch = trimmed.match(/^CLASS\s+([\w]+)\s+(DEFINITION|IMPLEMENTATION)/);
+    const classMatch = trimmed.match(/^CLASS\s+([\w/]+)\s+(DEFINITION|IMPLEMENTATION)/);
     if (classMatch && !seen.has(classMatch[1])) {
       seen.add(classMatch[1]);
       items.push({
@@ -64,7 +64,7 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
     }
 
     // REPORT
-    const reportMatch = trimmed.match(/^REPORT\s+([\w]+)/);
+    const reportMatch = trimmed.match(/^REPORT\s+([\w/]+)/);
     if (reportMatch && !seen.has(reportMatch[1])) {
       seen.add(reportMatch[1]);
       items.push({
@@ -75,8 +75,23 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
       });
     }
 
-    // FUNCTION-POOL or FUNCTION
-    const funcMatch = trimmed.match(/^FUNCTION\s+([\w]+)/);
+    // FUNCTION-POOL — the function group. `^FUNCTION\s` below cannot see it:
+    // the hyphen is not a blank. The inventory type list has no function group,
+    // so it is an 'Other' with the category saying which.
+    const poolMatch = trimmed.match(/^FUNCTION-POOL\s+([\w/]+)/);
+    if (poolMatch && !seen.has(poolMatch[1])) {
+      seen.add(poolMatch[1]);
+      items.push({
+        objectName: poolMatch[1],
+        type: 'Other',
+        category: 'Function Group',
+        module: inferModule(poolMatch[1]),
+        criticality: poolMatch[1].startsWith('Z') || poolMatch[1].startsWith('Y') ? 'High' : 'Low',
+      });
+    }
+
+    // FUNCTION
+    const funcMatch = trimmed.match(/^FUNCTION\s+([\w/]+)/);
     if (funcMatch && !seen.has(funcMatch[1])) {
       seen.add(funcMatch[1]);
       items.push({
@@ -88,7 +103,7 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
     }
 
     // FORM ... ENDFORM
-    const formMatch = trimmed.match(/^FORM\s+([\w]+)/);
+    const formMatch = trimmed.match(/^FORM\s+([\w/]+)/);
     if (formMatch && !seen.has(formMatch[1])) {
       seen.add(formMatch[1]);
       items.push({
@@ -100,7 +115,7 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
     }
 
     // INTERFACE ... DEFINITION
-    const ifaceMatch = trimmed.match(/^INTERFACE\s+([\w]+)\s+/);
+    const ifaceMatch = trimmed.match(/^INTERFACE\s+([\w/]+)\s+/);
     if (ifaceMatch && !seen.has(ifaceMatch[1])) {
       seen.add(ifaceMatch[1]);
       items.push({
@@ -116,7 +131,7 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
     // an object called STRUCTURE in the inventory (R29: not v1-R16's missing
     // include). The dependency they carry is a table dependency and is read by
     // `table-dependencies.ts`.
-    const includeMatch = trimmed.match(/^INCLUDE\s+(?!STRUCTURE\b|TYPE\b)([\w]+)/);
+    const includeMatch = trimmed.match(/^INCLUDE\s+(?!STRUCTURE\b|TYPE\b)([\w/]+)/);
     if (includeMatch && !seen.has(includeMatch[1])) {
       seen.add(includeMatch[1]);
       items.push({
@@ -248,8 +263,10 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
       recommendation = referenceRecommendation(tableName, stats.routes, stats.programs);
     } else if (isStandard && hasReplacement) {
       recommendation = STANDARD_TABLE_MAP[tableName];
-      // Hand-written guidance in this file, not a lookup in SAP's release data.
-      replacementConfidence = 'Verified';
+      // Hand-written guidance in this file, not a lookup in SAP's release data,
+      // and not checked against the target release or the fields read here. A
+      // candidate to check, not a verified replacement.
+      replacementConfidence = 'Candidate';
     } else if (isStandard) {
       recommendation = 'Verify API availability in SAP API Hub';
       replacementConfidence = 'Candidate';

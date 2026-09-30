@@ -17,6 +17,32 @@ import {
 
 const src = (...lines: string[]) => lines.join('\n');
 
+test('a namespaced class, report and interface are inventoried', () => {
+  const names = extractCodeInventory(src(
+    'REPORT /acme/r_orders.',
+    'CLASS /acme/cl_order DEFINITION.',
+    'ENDCLASS.',
+    'INTERFACE /acme/if_order PUBLIC.',
+    'ENDINTERFACE.',
+  )).map((i) => i.objectName);
+  expect(names).toEqual(expect.arrayContaining(['/ACME/R_ORDERS', '/ACME/CL_ORDER', '/ACME/IF_ORDER']));
+});
+
+test('a FUNCTION-POOL is inventoried as a function group', () => {
+  const items = extractCodeInventory(src('FUNCTION-POOL zfg_orders.', 'INCLUDE lzfg_orderstop.'));
+  const pool = items.find((i) => i.objectName === 'ZFG_ORDERS');
+  expect(pool).toBeTruthy();
+  expect(pool!.category).toBe('Function Group');
+});
+
+test('hand-written replacement guidance is a candidate, not verified', () => {
+  const coupling = extractDataCoupling(src('REPORT zqa.', 'SELECT * FROM bseg INTO TABLE @DATA(lt_bseg).'));
+  const bseg = coupling.find((c) => c.tableName === 'BSEG');
+  expect(bseg).toBeTruthy();
+  expect(bseg!.recommendation).toMatch(/I_JournalEntryItem/);
+  expect(bseg!.replacementConfidence).not.toBe('Verified');
+});
+
 test('comments and literals do not move the scores', () => {
   const code = src(
     'REPORT zqa.',
