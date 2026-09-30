@@ -198,6 +198,53 @@ test.describe('the architecture diagram is parsed, not pattern-matched', () => {
     }
   });
 
+  test('nothing in a sanitized diagram points outside it', async ({ page }) => {
+    const bundle = await browserBundle();
+    await page.setContent('<!doctype html><html><body></body></html>');
+    await page.addScriptTag({ content: bundle });
+
+    // Every input names the same outside host; the check is that the host does
+    // not survive, whatever carried it. Labels that sit beside a reference must.
+    const OUTSIDE = 'example.invalid';
+    const svg = (inner: string) => `<svg xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+    const label = (inner: string) => svg(`<foreignObject width="80" height="24"><div xmlns="http://www.w3.org/1999/xhtml">${inner}</div></foreignObject>`);
+    const cases: Array<{ name: string; dirty: string; mustKeep?: string }> = [
+      { name: 'an inline style with a resource', dirty: svg(`<rect style="fill: url(https://${OUTSIDE}/a)" width="4" height="4"/><text>Order</text>`), mustKeep: 'Order' },
+      { name: 'a stylesheet that imports', dirty: svg(`<style>@import url(https://${OUTSIDE}/b.css);</style><text>Order</text>`), mustKeep: 'Order' },
+      { name: 'a stylesheet with a resource', dirty: svg(`<style>.n{background:url("https://${OUTSIDE}/c")}</style><text>Order</text>`), mustKeep: 'Order' },
+      { name: 'a resource spelled with an escape', dirty: svg(`<rect style="background:\\75 rl(https://${OUTSIDE}/d)" width="4" height="4"/>`) },
+      { name: 'an image set', dirty: svg(`<rect style="background-image:image-set('https://${OUTSIDE}/e.png' 1x)" width="4" height="4"/>`) },
+      { name: 'an image in a label', dirty: label(`<img src="https://${OUTSIDE}/f.png">Order`), mustKeep: 'Order' },
+      { name: 'a link in a label', dirty: label(`<a href="https://${OUTSIDE}/g">Order</a>`), mustKeep: 'Order' },
+      { name: 'a link in the picture', dirty: svg(`<a href="https://${OUTSIDE}/h"><text>Order</text></a>`), mustKeep: 'Order' },
+      { name: 'an SVG image', dirty: svg(`<image href="https://${OUTSIDE}/i.png" width="4" height="4"/>`) },
+      { name: 'a reference to an outside shape', dirty: svg(`<use href="https://${OUTSIDE}/j.svg#x"/>`) },
+      { name: 'a filter that loads an image', dirty: svg(`<filter id="k"><feImage href="https://${OUTSIDE}/k.png"/></filter>`) },
+      { name: 'a background on a label table', dirty: label(`<table background="https://${OUTSIDE}/l.png"><tr><td>Order</td></tr></table>`), mustKeep: 'Order' },
+    ];
+
+    const outcome = await page.evaluate((inputs: Array<{ name: string; dirty: string }>) => {
+      return inputs.map(({ name, dirty }) => {
+        const cleaned = window.CleanCoreSanitize.sanitizeMermaidSvg(dirty);
+        const host = document.createElement('div');
+        host.innerHTML = cleaned;
+        return { name, cleaned, text: host.textContent || '' };
+      });
+    }, cases.map(({ name, dirty }) => ({ name, dirty })));
+
+    for (let i = 0; i < cases.length; i += 1) {
+      const got = outcome[i];
+      expect(got.cleaned, `${got.name}: a reference to the outside survived`).not.toContain(OUTSIDE);
+      const keep = cases[i].mustKeep;
+      if (keep) expect(got.text, `${got.name}: the label was thrown away with the reference`).toContain(keep);
+    }
+
+    // The module exports one SVG sanitizer. A second one, configured looser than
+    // this and documented as stricter, is how a caller picks the wrong one.
+    const exported = await page.evaluate(() => Object.keys(window.CleanCoreSanitize));
+    expect(exported.filter((name) => /svg/i.test(name))).toEqual(['sanitizeMermaidSvg']);
+  });
+
   test('the sanitizer is a parser and the layers above it are still there', () => {
     const src = read('lib/sanitize-html.ts');
     const body = src.slice(src.indexOf('export function sanitizeMermaidSvg'));
