@@ -45,7 +45,7 @@ type StatusFilter = 'all' | Status;
 const STATUS_OPTIONS: { value: Status; label: string }[] = [
   { value: 'open', label: 'Open' },
   { value: 'in_review', label: 'In review' },
-  { value: 'signed_off', label: 'Signed off' },
+  { value: 'signed_off', label: 'Confirmed' },
 ];
 
 /**
@@ -319,7 +319,7 @@ export default function GapsWorklist({
           <div className="w-full flex-1 space-y-2 sm:w-64">
             <div
               role="img"
-              aria-label={`Signed off ${stats.signedOff}, in review ${stats.inReview}, open ${stats.open} of ${stats.total}`}
+              aria-label={`Confirmed ${stats.signedOff}, in review ${stats.inReview}, open ${stats.open} of ${stats.total}`}
               className="flex h-3 w-full overflow-hidden rounded-cc-row border border-cc-line"
             >
               <div data-chart-segment="" className={BURNDOWN.signedOff} style={{ width: `${stats.signedOffPct}%` }} />
@@ -329,7 +329,7 @@ export default function GapsWorklist({
             <ul className="flex flex-wrap justify-between gap-2 cc-text-meta text-cc-ink">
               <li className="flex items-center gap-1">
                 <span aria-hidden={true} className={cn('inline-block h-2 w-2 shrink-0 rounded-full', BURNDOWN.signedOff)} />
-                Signed off ({stats.signedOff})
+                Confirmed ({stats.signedOff})
               </li>
               <li className="flex items-center gap-1">
                 <span aria-hidden={true} className={cn('inline-block h-2 w-2 shrink-0 rounded-full', BURNDOWN.inReview)} />

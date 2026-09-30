@@ -54,7 +54,7 @@ export default function BusinessValueAudit({ projectId, bizFallback }: BusinessV
               </>
             ) : (
               // No bar either: a zero-width bar reads as "scored zero".
-              <span className="cc-text-cell text-cc-ink-muted">not computed</span>
+              <span className="cc-text-cell text-cc-ink-muted">not determined</span>
             )}
           </div>
 

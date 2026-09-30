@@ -11,6 +11,7 @@ import {
 import { OBJECT_STATUS_VALUES } from '../lib/object-status';
 import { SEVERITY, SEVERITY_VALUES } from '../lib/severity';
 import { createGalleryAdmin, openGallery, GALLERY_PATH, type GalleryAdmin } from './helpers/cc-gallery';
+import { stripComments } from './helpers/design-rules';
 
 /**
  * One provenance list, and no badge that says anything else.
@@ -32,25 +33,20 @@ const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
 /**
- * Everything roadmap 1.5 built, plus the workspace shell roadmap 1.4 built on
- * it. The shell is the first screen that states provenance about a real
- * project, so it is the first place a freehand badge would actually be read.
+ * The whole application, plus the text catalogue. Until Block D this was the
+ * new namespace — `components/cc`, the gallery, the workspace, the process map
+ * — because the old product still wrote provenance and severity freehand. D.30
+ * widened it to every file under `app/` and `components/` (route handlers under
+ * `app/api/` are not screens and are left out, as in the design source guard):
+ * every surface states provenance through `CcProvenanceChip` and severity
+ * through `CcSeverity` now, and a freehand badge on a stage page is read by the
+ * same sceptical reader as one in the workspace.
+ *
+ * `lib/messages` (D.29): the text moved out of the components into the
+ * catalogue, and a retired wording written into a catalogue value is on the
+ * same screens, so the guard follows the text there.
  */
-const CC_SOURCE_DIRS = [
-  'components/cc',
-  'app/(app)/admin/design-system',
-  'components/workspace',
-  // Roadmap 2.5: the process map is the second screen built on these
-  // components, and its legend is a provenance legend — the one place where a
-  // freehand word for "reconstructed" would be read as the definition of the
-  // vocabulary rather than a use of it.
-  'components/process-map',
-  // Block D, D.29: the text of the workspace, the process map and the demo
-  // workspace moved out of the components into the catalogue. A retired wording
-  // written into a catalogue value is on the same screens, so the guard follows
-  // the text there rather than losing sight of it.
-  'lib/messages',
-];
+const CC_SOURCE_DIRS = ['app', 'components', 'lib/messages'];
 
 function ccSources(): { rel: string; text: string }[] {
   const out: { rel: string; text: string }[] = [];
@@ -62,8 +58,10 @@ function ccSources(): { rel: string; text: string }[] {
         continue;
       }
       if (!/\.(tsx|ts)$/.test(entry.name)) continue;
+      const rel = path.relative(ROOT, full).replace(/\\/g, '/');
+      if (rel.startsWith('app/api/')) continue;
       out.push({
-        rel: path.relative(ROOT, full).replace(/\\/g, '/'),
+        rel,
         text: fs.readFileSync(full, 'utf8'),
       });
     }
@@ -99,6 +97,30 @@ function freeSeverityBadges(text: string): { line: number; snippet: string }[] {
     if (COLOUR.test(window)) hits.push({ line: i + 1, snippet: line.trim().slice(0, 100) });
   });
   return hits;
+}
+
+/**
+ * The retired provenance wordings (`RETIRED_PROVENANCE_WORDINGS`) a file writes
+ * as text: at the start of a string literal or of a JSX text node. Not
+ * "anywhere in the file" — `lib/provenance.ts` lists them on purpose, and so
+ * does this spec. Comments are stripped first (they carry the history on
+ * purpose), and so are two places where the words are a data contract rather
+ * than a label: an equality test against a value the engine or the test runner
+ * hands over (`status === 'Passed'`, `case 'Passed':`) and the key of a map
+ * over such a value. What the map says, and whatever text the screen shows, is
+ * still read.
+ */
+function retiredWordings(text: string, rel: string): string[] {
+  const code = stripComments(text, rel);
+  const found: string[] = [];
+  for (const wording of Object.keys(RETIRED_PROVENANCE_WORDINGS)) {
+    const word = wording.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // A key is written `'X':` and a ternary `'X' :`, so the key test allows no
+    // space before the colon. `dataKey="passed"` names a field of the data.
+    const pattern = new RegExp(`(?<!(?:[=!]==?|\\bcase|Key=)\\s*)['"\`>]\\s*${word}\\b(?!['"\`]:)`, 'gi');
+    if (pattern.test(code)) found.push(wording);
+  }
+  return found;
 }
 
 test.describe('the list itself', () => {
@@ -219,7 +241,16 @@ test.describe('nothing can write a badge of its own', () => {
     }
   });
 
-  test('no severity is painted freehand in the new namespace', () => {
+  test('the scan reads the whole app, not only the library', () => {
+    const rels = ccSources().map((f) => f.rel);
+    expect(rels.length, 'nothing scanned — every source test here would pass vacuously').toBeGreaterThan(200);
+    expect(rels).toContain('app/(app)/project/[projectId]/analyze/page.tsx');
+    expect(rels).toContain('components/cc/ProvenanceChip.tsx');
+    expect(rels.some((r) => r.startsWith('lib/messages/'))).toBe(true);
+    expect(rels.some((r) => r.startsWith('app/api/'))).toBe(false);
+  });
+
+  test('no severity is painted freehand anywhere in the app', () => {
     const offenders: string[] = [];
     for (const { rel, text } of ccSources()) {
       for (const hit of freeSeverityBadges(text)) offenders.push(`${rel}:${hit.line}: ${hit.snippet}`);
@@ -230,17 +261,40 @@ test.describe('nothing can write a badge of its own', () => {
     ).toEqual([]);
   });
 
-  test('no retired wording appears as text in the new namespace', () => {
+  test('the retired-wording detector sees text and not a data value', () => {
+    // Text a reader sees: a string literal, a JSX text node, a prop value.
+    const shown = [
+      `<span>Signed off</span>`,
+      `{done ? 'Signed Off' : 'Sign Off'}`,
+      `{ name: 'No verdict', value: 3 }`,
+      `<Bar name="Passed" />`,
+      `{value || 'Not computed'}`,
+    ];
+    for (const sample of shown) {
+      expect(retiredWordings(sample, 'components/Probe.tsx').length, `not recognised: ${sample}`).toBeGreaterThan(0);
+    }
+    // Not text: a comparison with, a key of, or a chart field named after a
+    // value the engine or the runner hands over (a data contract, not a
+    // label), and a comment.
+    const data = [
+      `if (confidence === 'Catalog Match') return 'information';`,
+      `status !== 'Passed'`,
+      `case 'Passed': return 1;`,
+      `const MEANING = { 'Catalog Match': 'Found in the SAP catalogue data.' };`,
+      `<Bar dataKey="passed" name="Proven" />`,
+      `// a status spelled 'passed' would now fail the build`,
+      `{/* the green "AI Generated" badge was the failure */}`,
+    ];
+    for (const sample of data) {
+      expect(retiredWordings(sample, 'components/Probe.tsx'), `a false alarm: ${sample}`).toEqual([]);
+    }
+  });
+
+  test('no retired wording appears as text anywhere in the app', () => {
     const offenders: string[] = [];
     for (const { rel, text } of ccSources()) {
-      for (const wording of Object.keys(RETIRED_PROVENANCE_WORDINGS)) {
-        // The wording at the start of a string literal or of a JSX text node.
-        // Not "anywhere in the file": `lib/provenance.ts` lists them on purpose,
-        // and so does this spec.
-        const pattern = new RegExp(`['">]\\s*${wording.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-        if (pattern.test(text)) {
-          offenders.push(`${rel}: "${wording}" — say ${RETIRED_PROVENANCE_WORDINGS[wording]} instead`);
-        }
+      for (const wording of retiredWordings(text, rel)) {
+        offenders.push(`${rel}: "${wording}" — say ${RETIRED_PROVENANCE_WORDINGS[wording]} instead`);
       }
     }
     expect(

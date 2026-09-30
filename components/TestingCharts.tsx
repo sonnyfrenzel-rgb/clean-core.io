@@ -74,7 +74,7 @@ export function TestingPieChart({ pieData, stats }: { pieData: TestingPieSlice[]
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {stats.passRate === null || stats.passRate === undefined ? (
           <>
-            <span className="cc-text-h2 text-cc-neutral">No verdict</span>
+            <span className="cc-text-h2 text-cc-neutral">Not determined</span>
             <span className="cc-text-label text-cc-ink-muted">
               Nothing ran
             </span>
@@ -110,17 +110,17 @@ export function TestingBarChart({ stats }: { stats: TestingChartStats }) {
             cursor={{ fill: 'transparent' }}
             contentStyle={{ borderRadius: 'var(--cc-radius-row)', border: '1px solid var(--cc-line)', boxShadow: 'var(--cc-shadow)', fontSize: 12 }}
           />
-          <Bar dataKey="passed" name="Passed" stackId="a" fill={stateChartColor('information').value} barSize={20} isAnimationActive={false} />
+          <Bar dataKey="passed" name="Proven" stackId="a" fill={stateChartColor('information').value} barSize={20} isAnimationActive={false} />
           <Bar dataKey="failed" name="Failed" stackId="a" fill={stateChartColor('error').value} barSize={20} isAnimationActive={false} />
           {/* Tests without a verdict were counted and then not drawn, so a
               category of nothing but skipped tests showed as an empty row. */}
-          <Bar dataKey="inconclusive" name="No verdict" stackId="a" {...NOT_DETERMINED_SVG} barSize={20} isAnimationActive={false} />
+          <Bar dataKey="inconclusive" name="Not determined" stackId="a" {...NOT_DETERMINED_SVG} barSize={20} isAnimationActive={false} />
         </BarChart>
       </ResponsiveContainer>
       <ul className="sr-only">
         {stats.categoryStats.map((c) => (
           <li key={c.name}>
-            {c.name}: {c.passed} passed, {c.failed} failed, {c.inconclusive} no verdict, of {c.total}
+            {c.name}: {c.passed} proven, {c.failed} failed, {c.inconclusive} not determined, of {c.total}
           </li>
         ))}
       </ul>

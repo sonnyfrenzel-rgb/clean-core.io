@@ -731,10 +731,10 @@ export default function TestingSandboxPage() {
   // `lib/chart-colors.ts` (§1.8): no chart is green, so a pass is `information`
   // there, a failure `error`, and "no verdict" the dashed not-determined area.
   const pieData: TestingPieSlice[] = stats ? [
-    { name: 'Passed', value: stats.passed, color: stateChartColor('information').value },
+    { name: 'Proven', value: stats.passed, color: stateChartColor('information').value },
     { name: 'Failed', value: stats.failed, color: stateChartColor('error').value },
     ...(stats.inconclusive > 0
-      ? [{ name: 'No verdict', value: stats.inconclusive, color: 'var(--cc-surface-muted)', notDetermined: true }]
+      ? [{ name: 'Not determined', value: stats.inconclusive, color: 'var(--cc-surface-muted)', notDetermined: true }]
       : []),
   ] : [];
 
@@ -1899,7 +1899,7 @@ export default function TestingSandboxPage() {
               <h3 className="cc-text-h2 text-cc-ink">AI Test Analysis</h3>
               <CcProvenanceChip value="proposed" />
             </div>
-            <div className="text-cc-ink cc-text-body prose prose-sm max-w-none">
+            <div className="cc-prose">
               <ReactMarkdown>{aiExplanation}</ReactMarkdown>
             </div>
           </div>
@@ -1916,7 +1916,7 @@ export default function TestingSandboxPage() {
             <div className={clsx(CARD, 'px-4 py-2 flex items-center gap-4')}>
               <div className="flex items-center gap-2">
                 <span data-chart-swatch aria-hidden="true" className={clsx('w-2 h-2 rounded-full', stateChartColor('information').bg)}></span>
-                <span className="cc-text-meta text-cc-ink">{stats.passed} Passed</span>
+                <span className="cc-text-meta text-cc-ink">{stats.passed} Proven</span>
               </div>
               <div className="flex items-center gap-2">
                 <span data-chart-swatch aria-hidden="true" className={clsx('w-2 h-2 rounded-full', stateChartColor('error').bg)}></span>
@@ -1926,7 +1926,7 @@ export default function TestingSandboxPage() {
                 <div className="flex items-center gap-2">
                   <span data-chart-swatch data-not-determined aria-hidden="true" className={clsx('w-2 h-2 rounded-full', NOT_DETERMINED_CHART.bg)}></span>
                   <span className="cc-text-meta text-cc-ink">
-                    {stats.inconclusive} No verdict
+                    {stats.inconclusive} Not determined
                   </span>
                 </div>
               )}
@@ -1940,7 +1940,7 @@ export default function TestingSandboxPage() {
               <div className="mt-4 flex justify-center gap-8">
                 <div className="text-center">
                   <p className="cc-text-title text-cc-ink">{stats.passed}</p>
-                  <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>Passed</p>
+                  <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>Proven</p>
                 </div>
                 <div className="text-center">
                   <p className="cc-text-title text-cc-ink">{stats.failed}</p>
@@ -1949,7 +1949,7 @@ export default function TestingSandboxPage() {
                 {stats.inconclusive > 0 && (
                   <div className="text-center">
                     <p className="cc-text-title text-cc-ink">{stats.inconclusive}</p>
-                    <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>No verdict</p>
+                    <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>Not determined</p>
                   </div>
                 )}
               </div>
