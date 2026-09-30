@@ -988,7 +988,7 @@ export default function Home() {
           {/* BYOK Explainer */}
           <div className="mt-8 text-center text-xs md:text-sm text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-100 bg-gray-50/50 p-5 rounded-3xl shadow-sm">
             <span className="font-extrabold text-gray-800 uppercase tracking-wider block mb-1">* BYOK (Bring Your Own Key)</span>
-            Use your own Google Gemini API key to run unlimited transformations without any platform limits. Your API key is encrypted (AES-256-GCM) and stored in your authenticated user profile&mdash;it is used exclusively via our secure backend proxy and never exposed in plaintext.
+            Use your own Google Gemini API key to run unlimited transformations without the community run limit (the per-hour rate limit still applies). Your API key is encrypted (AES-256-GCM) and stored in your authenticated user profile&mdash;it is used exclusively via our secure backend proxy and never exposed in plaintext.
             <span className="block mt-2 text-[11px] text-gray-500 font-medium">* Usage is subject to your Google Gemini API key quota and billing &mdash; clean-core.io does not charge any platform fees.</span>
           </div>
         </div>

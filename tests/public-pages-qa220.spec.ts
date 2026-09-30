@@ -33,6 +33,10 @@ test.describe('the landing page and the whitepaper', () => {
     }
   });
 
+  test('BYOK is not promised to be free of every platform limit (07188dc4d715)', () => {
+    expect(code('app/page.tsx')).not.toMatch(/without any platform limits/);
+  });
+
 });
 
 test.describe('the legal pages', () => {
