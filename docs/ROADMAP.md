@@ -1141,7 +1141,6 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-024 | hoch | P1 | Phase 0 · sofort behoben | behoben |
 | SEC-2026-025 | hoch | P1 | Patch-Schritt sofort, vor jeder Roadmap-Arbeit (nach Prüfung kritisch) | behoben |
 | SEC-2026-026 | hoch | P1 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
-| SEC-2026-027 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
 | SEC-2026-029 | mittel | P2 | eigener Schritt, braucht Sonnys Go | eingeplant |
 | SEC-2026-031 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
 | SEC-2026-033 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
@@ -1152,16 +1151,12 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-039 | mittel | P3 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
 | SEC-2026-040 | mittel | P2 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
 | SEC-2026-041 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
-| SEC-2026-042 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
 | SEC-2026-055 | niedrig | P2 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-065 | niedrig | P3 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-067 | niedrig | P3 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
 | SEC-2026-073 | mittel | P2 | eigener Schritt, braucht Sonnys Go | eingeplant |
 | SEC-2026-074 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
-| SEC-2026-075 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
 | SEC-2026-076 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
-| SEC-2026-077 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
-| SEC-2026-078 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
 | SEC-2026-079 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
 | SEC-2026-080 | hoch | — | — | behoben |
 | SEC-2026-081 | mittel | — | — | behoben |
@@ -1325,7 +1320,6 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-507 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
 | SEC-2026-508 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-509 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
-| SEC-2026-510 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | eingeplant |
 | SEC-2026-511 | niedrig | P3 | nur falls die Jira-Integration je aktiviert wird | eingeplant |
 | SEC-2026-512 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-513 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
@@ -1352,11 +1346,12 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-565 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
 | SEC-2026-566 | mittel | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-568 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-569 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
 | SEC-2026-570 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
 | SEC-2026-571 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-572 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-573 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
-| SEC-2026-576 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-576 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-577 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
 | SEC-2026-578 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-580 | niedrig | P3 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
@@ -1368,7 +1363,7 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-588 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
 | SEC-2026-589 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-590 | niedrig | P3 | Phase 2 · Datenschutz-Schritt | behoben |
-| SEC-2026-592 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-592 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-596 | niedrig | P3 | eigener Schritt: S/4-Schluesselhygiene mit Migration, braucht Sonnys Go | eingeplant |
 | SEC-2026-597 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
 | SEC-2026-598 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
@@ -1385,7 +1380,6 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-613 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-616 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-620 | info | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-622 | info | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-624 | info | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-626 | info | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
 | SEC-2026-627 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
