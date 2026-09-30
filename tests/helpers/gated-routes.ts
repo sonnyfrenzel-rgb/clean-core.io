@@ -77,6 +77,10 @@ export const GATED_ROUTES: GatedRoute[] = [
   // quota may be spent on. Both sit behind the factor.
   { file: 'app/api/model-stages/route.ts', method: 'GET', path: () => '/api/model-stages' },
   { file: 'app/api/model-stages/route.ts', method: 'POST', path: () => '/api/model-stages', body: { stages: { design: false } } },
+  // Owner decision 30.09.2026 — the consent to community mail. A profile
+  // setting like the model stages, and behind the same factor: a token from
+  // before the second factor does not change what the account agreed to.
+  { file: 'app/api/community-mail/route.ts', method: 'POST', path: () => '/api/community-mail', body: { optIn: false } },
   // Roadmap 2.4 — the business names of a project's process. Both verbs read
   // the project's code to rebuild its skeleton, and POST stores what a model
   // said about it; a token from before the second factor reaches neither.

@@ -63,6 +63,7 @@ import { invitationLinkPath } from '../../lib/invitations';
 import { SURVEY_CAMPAIGN, SURVEY_QUESTIONS, SURVEY_SUBJECT } from '../../lib/survey/definition';
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../../lib/survey/invite-email';
 import { summarise, type SurveyResponse } from '../../lib/survey/store';
+import { unsubscribeUrls } from '../../lib/community-mail';
 import {
   renderSurveyDigestEmail,
   renderSurveyDigestSubject,
@@ -400,8 +401,10 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
     source: 'scripts/send-survey.ts',
     template: 'lib/survey/invite-email.ts',
     build: (ctx) => {
-      // send-survey.ts builds the unsubscribe URL on a fixed https://clean-core.io.
-      const unsubscribeUrl = `https://clean-core.io/api/unsubscribe?t=${encodeURIComponent(unsignedToken('unsub', ctx))}`;
+      // send-survey.ts builds the unsubscribe URLs on a fixed https://clean-core.io,
+      // with the same helper: the one-click URL for the header, the fragment
+      // link for the body (QA finding 8e25777f1339).
+      const unsubscribe = unsubscribeUrls('https://clean-core.io', unsignedToken('unsub', ctx));
       const closesOn = new Date(ctx.now.getTime() + 7 * 24 * 60 * 60 * 1000)
         .toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
       const input = {
@@ -409,7 +412,7 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
         recipient: escapeHtml(ctx.recipient.address),
         token: unsignedToken('survey', ctx),
         closesOn,
-        unsubscribeUrl,
+        unsubscribeUrl: unsubscribe.page,
       };
       return {
         from: USER_MAIL_FROM,
@@ -418,7 +421,7 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
         html: wrapEmailDocument(renderSurveyInviteEmail(input), 'Clean-Core.io survey'),
         text: renderSurveyInviteText(input),
         headers: {
-          'List-Unsubscribe': `<${unsubscribeUrl}>, <mailto:info@clean-core.io?subject=Unsubscribe>`,
+          'List-Unsubscribe': `<${unsubscribe.oneClick}>, <mailto:info@clean-core.io?subject=Unsubscribe>`,
           'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
       };

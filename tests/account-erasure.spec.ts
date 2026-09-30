@@ -73,7 +73,13 @@ function recordingAuth() {
 
 async function seedOwnedData(uid: string, email: string) {
   const db = adminDb();
-  await db.collection('users').doc(uid).set({ email, status: 'approved', tier: 'pilot' });
+  // With the consent to community mail on the profile (owner decision
+  // 30.09.2026): it lives in the profile and has to go with it — the tests
+  // below assert the profile is gone once the erasure completes.
+  await db.collection('users').doc(uid).set({
+    email, status: 'approved', tier: 'pilot',
+    communityMail: { optIn: true, consentedAt: new Date(), source: 'settings' },
+  });
   await db.collection('s4_credentials').doc(uid).set({ url: 'https://s4.example.com', secretEnc: 'ciphertext' });
   await db.collection('mfa_secrets').doc(uid).set({ secret: 'ciphertext' });
   await db.collection('survey_responses').doc(`${CAMPAIGN}__${uid}`).set({

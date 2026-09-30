@@ -87,16 +87,44 @@ test.describe('One-click unsubscribe', () => {
     const res = await request.get(`/api/unsubscribe?t=${encodeURIComponent(token)}`, { maxRedirects: 0 });
     expect(res.status()).toBe(302);
     expect(res.headers()['location']).toContain('/unsubscribe');
+    // The redirect hands the token on in the fragment, which the browser never
+    // sends back, so the second request of an old link logs no token
+    // (QA finding 8e25777f1339).
+    const location = new URL(res.headers()['location']);
+    expect(location.search, 'the redirect puts the token back into a logged query').toBe('');
+    expect(location.hash).toBe(`#t=${encodeURIComponent(token)}`);
     expect(await adminDocExists('email_suppressions', suppressionId(email))).toBe(false);
 
-    // The page confirms, and only the button actually suppresses.
+    // A mail sent before 30.09.2026 links to the page with `?t=`. It still
+    // works, and the page takes the token out of the address bar at once.
     await page.goto(`/unsubscribe?t=${encodeURIComponent(token)}`);
     await expect(page.getByRole('heading', { name: /Community updates/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Confirm unsubscribe/i })).toBeEnabled();
+    expect(new URL(page.url()).search, 'the old query link kept its token in the address bar').toBe('');
     expect(await adminDocExists('email_suppressions', suppressionId(email))).toBe(false);
 
     await page.getByRole('button', { name: /Confirm unsubscribe/i }).click();
     await expect(page.getByRole('heading', { name: /You are unsubscribed/i })).toBeVisible({ timeout: 15000 });
     expect(await adminDocExists('email_suppressions', suppressionId(email))).toBe(true);
+  });
+
+  test('the link in a new mail carries the token in the fragment, and the page acts on it', async ({ page }) => {
+    const email = `unsub-fragment-${Date.now()}@cleancore-test.io`;
+    const token = createUnsubscribeToken(email);
+    // Every request the page makes on the way in: none may carry the token.
+    const requested: string[] = [];
+    page.on('request', (r) => requested.push(r.url()));
+
+    await page.goto(`/unsubscribe#t=${encodeURIComponent(token)}`);
+    await expect(page.getByRole('button', { name: /Confirm unsubscribe/i })).toBeEnabled();
+    expect(new URL(page.url()).hash, 'the fragment stayed in the address bar').toBe('');
+    expect(await adminDocExists('email_suppressions', suppressionId(email))).toBe(false);
+
+    await page.getByRole('button', { name: /Confirm unsubscribe/i }).click();
+    await expect(page.getByRole('heading', { name: /You are unsubscribed/i })).toBeVisible({ timeout: 15000 });
+    expect(await adminDocExists('email_suppressions', suppressionId(email))).toBe(true);
+    const leaked = requested.filter((u) => u.includes(encodeURIComponent(token)) || u.includes(token));
+    expect(leaked, 'a request carried the token in its URL').toEqual([]);
   });
 
   test('a link with no token tells the reader instead of failing silently', async ({ page }) => {
