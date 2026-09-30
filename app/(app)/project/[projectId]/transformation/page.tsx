@@ -7,12 +7,20 @@ import { useParams, useRouter } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
-import { useDialogFocus } from '@/hooks/useDialogFocus';
-import { Code2, ArrowRight, ArrowLeft, RefreshCw, FileCode2, Terminal, AlertCircle, CheckCircle2, Cpu, Copy, Check, X, Folder, Lock, Unlock, Activity, Shield, Layers, Sparkles } from 'lucide-react';
+import { Code2, ArrowRight, RefreshCw, FileCode2, Terminal, CheckCircle2, Folder, Lock, Unlock, Layers } from 'lucide-react';
 import clsx from 'clsx';
-import { DocumentSkeleton } from '@/components/Skeleton';
 import NavigationButtons from '@/components/NavigationButtons';
-import nextDynamic from 'next/dynamic';
+import CodeHighlighter from '@/components/CodeHighlighter';
+import CcButton from '@/components/cc/Button';
+import CcDialog from '@/components/cc/Dialog';
+import CcToast from '@/components/cc/Toast';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcCheckbox from '@/components/cc/Checkbox';
+import CcSkeleton from '@/components/cc/Skeleton';
+import { CcTag } from '@/components/cc/Tag';
+import { STATE_CLASSES } from '@/components/cc/state';
+import { SupportLevelMark, SUPPORT_LEVEL_STATE } from '@/components/analyze/CoverageVerdict';
 import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -70,7 +78,10 @@ const isUsableFile = (f: unknown): f is ProjectFile =>
  * project instead of `zcl_demo_rap_behavior` has still answered the question.
  */
 
-const CodeHighlighter = nextDynamic(() => import('@/components/CodeHighlighter'), { ssr: false });
+/** The three markers a generation may write into its comments, as code points. */
+const WARNING_SIGN = String.fromCodePoint(0x26a0, 0xfe0f);
+const CROSS_MARK = String.fromCodePoint(0x274c);
+const CHECK_MARK = String.fromCodePoint(0x2705);
 
 export default function TransformationPage() {
   const { projectId } = useParams();
@@ -112,9 +123,11 @@ export default function TransformationPage() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
-  // Roadmap 3.0.4: the audit drawer is a modal dialog — focus moves in, Tab
-  // stays inside, Escape closes, focus returns to the button that opened it.
-  const drawerRef = useDialogFocus<HTMLDivElement>(drawerOpen, closeDrawer);
+  const closeCopyToast = useCallback(() => setShowCopyDialog(false), []);
+  // Roadmap 3.0.4: the audit is a modal dialog — focus moves in, Tab stays
+  // inside, Escape closes, focus returns to the button that opened it. Since
+  // D.15 that is `CcDialog`, which does all four through the library's modal
+  // code instead of a page-local hook.
   const [signedOffIds, setSignedOffIds] = useState<Set<string>>(new Set());
   const [findings, setFindings] = useState<SupportFinding[]>([]);
 
@@ -150,21 +163,23 @@ export default function TransformationPage() {
     
     lines.forEach((line, idx) => {
       const lineNum = idx + 1;
-      if (line.includes('CC-PARTIAL') || line.includes('⚠️')) {
+      // The model's markers are matched by code point, not written as emoji
+      // here: the source stays free of pictographs (§3.1), the match is the same.
+      if (line.includes('CC-PARTIAL') || line.includes(WARNING_SIGN)) {
         markers.push({
           line: lineNum,
           level: 'partial',
           title: 'Partial Compliance',
           detail: line.replace(/^\s*\/\/\s*/, '').trim()
         });
-      } else if (line.includes('CC-NOT-SUPPORTED') || line.includes('❌')) {
+      } else if (line.includes('CC-NOT-SUPPORTED') || line.includes(CROSS_MARK)) {
         markers.push({
           line: lineNum,
           level: 'not-supported',
           title: 'Manual Review Required',
           detail: line.replace(/^\s*\/\/\s*/, '').trim()
         });
-      } else if (line.includes('//') && (line.includes('CDS') || line.includes('matched') || line.includes('fully') || line.includes('✅'))) {
+      } else if (line.includes('//') && (line.includes('CDS') || line.includes('matched') || line.includes('fully') || line.includes(CHECK_MARK))) {
         markers.push({
           line: lineNum,
           level: 'fully',
@@ -320,6 +335,7 @@ CMD ["node", "srv/service.js"]`
   };
 
   const getFileLanguage = (filePath: string): string => {
+    if (filePath.endsWith('.abap')) return 'abap';
     if (filePath.endsWith('.json')) return 'json';
     if (filePath.endsWith('.md')) return 'markdown';
     if (filePath.endsWith('.ts') || filePath.endsWith('.js')) return 'typescript';
@@ -383,6 +399,29 @@ CMD ["node", "srv/service.js"]`
     }
   };
 
+  const renderFileButton = (file: ProjectFile, name: string) => {
+    const isSelected = selectedFilePath === file.path;
+    // Navigation in a light panel: the chosen file is ink and outlined, not
+    // green — choosing a file is not a proof of anything (§1.1).
+    return (
+      <button
+        key={file.path}
+        type="button"
+        onClick={() => setSelectedFilePath(file.path)}
+        aria-current={isSelected ? 'true' : undefined}
+        className={clsx(
+          'w-full flex items-center gap-2 px-2 py-1 rounded-cc-row border font-cc-mono text-[12px] text-left',
+          isSelected
+            ? 'border-cc-field-border text-cc-ink font-semibold'
+            : 'border-transparent text-cc-ink-muted hover:text-cc-ink'
+        )}
+      >
+        <FileCode2 size={12} aria-hidden="true" className="shrink-0" />
+        <span className="truncate">{name}</span>
+      </button>
+    );
+  };
+
   const renderFileTree = () => {
     const structure: { [folder: string]: ProjectFile[] } = {};
     const rootFiles: ProjectFile[] = [];
@@ -404,57 +443,23 @@ CMD ["node", "srv/service.js"]`
       <div className="space-y-4">
         {Object.entries(structure).map(([folderName, folderFiles]) => (
           <div key={folderName} className="space-y-1">
-            <div className="flex items-center gap-1.5 px-2 py-1 text-gray-500 font-bold text-xs uppercase tracking-wider">
-              <Folder size={12} className="text-green-500" />
+            <div className="flex items-center gap-2 px-2 py-1 cc-text-label text-cc-ink-muted">
+              <Folder size={12} aria-hidden="true" className="shrink-0" />
               <span>{folderName}</span>
             </div>
-            <div className="pl-3 space-y-0.5 border-l border-white/5 ml-3">
-              {folderFiles.map(file => {
-                const isSelected = selectedFilePath === file.path;
-                return (
-                  <button
-                    key={file.path}
-                    onClick={() => setSelectedFilePath(file.path)}
-                    className={clsx(
-                      "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-mono transition-colors text-left",
-                      isSelected 
-                        ? "bg-green-500/10 text-green-400 border border-green-500/20 font-bold" 
-                        : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
-                    )}
-                  >
-                    <FileCode2 size={12} className={isSelected ? "text-green-400" : "text-gray-500"} />
-                    <span className="truncate">{file.path.split('/').slice(1).join('/')}</span>
-                  </button>
-                );
-              })}
+            <div className="pl-2 space-y-1 border-l border-cc-line ml-3">
+              {folderFiles.map(file => renderFileButton(file, file.path.split('/').slice(1).join('/')))}
             </div>
           </div>
         ))}
         
         {rootFiles.length > 0 && (
           <div className="space-y-1">
-            <div className="flex items-center gap-1.5 px-2 py-1 text-gray-500 font-bold text-xs uppercase tracking-wider">
+            <div className="flex items-center gap-2 px-2 py-1 cc-text-label text-cc-ink-muted">
               <span>Root Files</span>
             </div>
-            <div className="space-y-0.5">
-              {rootFiles.map(file => {
-                const isSelected = selectedFilePath === file.path;
-                return (
-                  <button
-                    key={file.path}
-                    onClick={() => setSelectedFilePath(file.path)}
-                    className={clsx(
-                      "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-mono transition-colors text-left",
-                      isSelected 
-                        ? "bg-green-500/10 text-green-400 border border-green-500/20 font-bold" 
-                        : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
-                    )}
-                  >
-                    <FileCode2 size={12} className={isSelected ? "text-green-400" : "text-gray-500"} />
-                    <span className="truncate">{file.path}</span>
-                  </button>
-                );
-              })}
+            <div className="space-y-1">
+              {rootFiles.map(file => renderFileButton(file, file.path))}
             </div>
           </div>
         )}
@@ -465,8 +470,8 @@ CMD ["node", "srv/service.js"]`
 
   const handleCopy = () => {
     navigator.clipboard.writeText(transformedCode);
+    // `CcToast` removes itself after the four seconds of §2.6.
     setShowCopyDialog(true);
-    setTimeout(() => setShowCopyDialog(false), 2000);
   };
 
   /**
@@ -856,67 +861,113 @@ CMD ["node", "srv/service.js"]`
       : []),
   ];
 
+  /**
+   * The signed score as a ring — ink on the line colour, the same ring the
+   * Analyze stage draws (D.10a). A score is a measurement, not a proof, so it
+   * is not green, and it is not red or amber either: the words beside it say
+   * what the number means (ADR-007).
+   */
+  const scoreRing = (size: number, stroke: number) => {
+    const r = size / 2 - stroke;
+    const c = 2 * Math.PI * r;
+    return (
+      <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
+        <circle className="stroke-cc-line fill-none" strokeWidth={stroke} r={r} cx={size / 2} cy={size / 2} />
+        {currentScore !== undefined && (
+          <circle
+            className="stroke-cc-ink fill-none"
+            strokeWidth={stroke}
+            strokeDasharray={c}
+            strokeDashoffset={c - (currentScore / 100) * c}
+            strokeLinecap="round"
+            r={r}
+            cx={size / 2}
+            cy={size / 2}
+          />
+        )}
+      </svg>
+    );
+  };
+
+  const openSignOffs = findings.filter(f => f.requiresSignOff && !signedOffIds.has(`${f.construct}-${f.location?.line}`)).length;
+
   if (loading && !transformedCode) return (
-    <div className="animate-in fade-in duration-500">
+    <div>
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
       <VerificationRail steps={phases} current="transformation" projectId={projectId as string} />
 
       <Stepper steps={phases} current="transformation" projectId={projectId as string} />
-      <div className="bg-[#0a0a0a] rounded-[2rem] shadow-2xl border border-white/10 overflow-hidden mt-8">
-        <div className="px-10 py-12 text-white flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-green-500/20 rounded-lg">
-                <Cpu className="w-6 h-6 text-green-400 animate-pulse" />
+
+      <StageHeader stage="transformation">
+        <span data-track-loading>{track.loading}</span>
+      </StageHeader>
+
+      {/* The generation, while it runs. It used to be a black console with a
+          pulsing chip icon under "AI Transformation Engine" (§3.1: no model
+          iconography, §1.1: no dark panels besides code). The progress, the
+          log and the placeholder for the code are what it showed, and they
+          stay. */}
+      <section
+        aria-busy="true"
+        aria-labelledby="transformation-progress-title"
+        className="mt-6 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc"
+      >
+        <div className="p-6 flex flex-col md:flex-row gap-8">
+          <div className="flex-1 min-w-0">
+            <h2 id="transformation-progress-title" className="cc-text-h2 text-cc-ink">Generating the transformation</h2>
+            <div className="mt-6 space-y-2">
+              <div
+                role="progressbar"
+                aria-label="Generation progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(progress)}
+                className="w-full h-2 bg-cc-line rounded-full overflow-hidden"
+              >
+                <div className="h-full bg-cc-ink transition-all duration-500" style={{ width: `${progress}%` }}></div>
               </div>
-              <h2 className="text-3xl font-black tracking-tight">AI Transformation Engine</h2>
-            </div>
-            <p className="text-gray-400 max-w-md" data-track-loading>{track.loading}</p>
-            
-            <div className="mt-8 space-y-4">
-              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${progress}%` }}></div>
-              </div>
-              <div className="flex justify-between text-xs font-mono text-gray-500">
-                <span>{progress.toFixed(0)}% PROCESSED</span>
-                <span className="animate-pulse">EXECUTING...</span>
+              <div className="flex justify-between cc-text-meta font-cc-mono text-cc-ink-muted">
+                <span>{progress.toFixed(0)}% processed</span>
+                <span>Executing …</span>
               </div>
             </div>
           </div>
-          
-          <div className="w-full md:w-80 bg-black/40 rounded-xl border border-white/5 p-4 font-mono text-[10px] text-green-400/70 h-48 overflow-y-auto">
+
+          <div
+            aria-label="Generation log"
+            className="w-full md:w-80 h-48 overflow-y-auto rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 font-cc-mono text-[12px] text-cc-ink-muted"
+          >
             {transformationLog.map((log, i) => (
               <div key={i} className="mb-1 flex gap-2">
-                <span className="text-gray-600">[{new Date().toLocaleTimeString()}]</span>
-                <span>{log}</span>
+                <span className="shrink-0">[{new Date().toLocaleTimeString('en', { hour12: false })}]</span>
+                <span className="text-cc-ink">{log}</span>
               </div>
             ))}
-            <div className="animate-pulse">_</div>
           </div>
         </div>
-        <div className="p-10 bg-[#111]">
-          <DocumentSkeleton />
+        <div className="border-t border-cc-line p-6">
+          <CcSkeleton shape="text" label="transformed code" count={6} />
         </div>
-      </div>
+      </section>
     </div>
   );
 
   return (
-    <div className="animate-in fade-in duration-500 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       {/* Rendered here as well as in the loading state — it used to exist only
           there, and disappeared as soon as the page had loaded. */}
       <VerificationRail steps={phases} current="transformation" projectId={projectId as string} />
 
       <Stepper steps={phases} current="transformation" projectId={projectId as string} />
-      
-      <div className="mb-10 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/50 backdrop-blur-sm border border-slate-200/50 rounded-3xl p-6 shadow-sm">
+
+      <div className="mb-8 flex flex-col md:flex-row md:items-start justify-between gap-6">
         {/* The quota used to be stated a third time here, as "Free
             Transformations: 4 / 5" — remaining-of-total, while the header said
             "1 / 5 Transformations", used-of-total. The header carries it once. */}
         <div className="flex-1 min-w-0">
-          <StageHeader title="Code Transformation">
+          <StageHeader stage="transformation">
             {/* The track decides the words (roadmap 0.2, UX-037): the in-app
                 track generates RAP artefacts, and the lead used to promise
                 Node.js over them anyway. */}
@@ -925,112 +976,68 @@ CMD ["node", "srv/service.js"]`
                 deviation is named here, not only applied: a deviation nobody is
                 shown is applied but not held. */}
             {contractTrack && (
-              <span className="block mt-1 text-sm text-gray-600" data-contract-sentence>
+              <span className="block mt-1 cc-text-cell text-cc-ink-muted" data-contract-sentence>
                 {contractTrack.sentence}
               </span>
             )}
           </StageHeader>
         </div>
 
-        {/* Clean Core Compliance Shield HUD */}
-        <div className="flex items-center gap-4 shrink-0 w-full md:w-auto">
-          <div 
-            onClick={() => setDrawerOpen(true)}
-            className="flex items-center gap-4 bg-gray-900 text-white border border-gray-800 rounded-2xl p-3 px-5 hover:border-green-500/30 hover:bg-gray-850 cursor-pointer transition-all duration-300 group shadow-md w-full md:w-auto"
-          >
-            {/* SVG Circular Progress Ring */}
-            <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
-              <svg className="w-full h-full transform -rotate-90">
-                <circle
-                  className="text-white/10"
-                  strokeWidth="3.5"
-                  stroke="currentColor"
-                  fill="transparent"
-                  r="18"
-                  cx="24"
-                  cy="24"
-                />
-                <circle
-                  className={clsx(
-                    "transition-all duration-500",
-                    currentScore === undefined
-                      ? "text-white/20"
-                      : currentScore >= 90 ? "text-emerald-400" : currentScore >= 70 ? "text-amber-400" : "text-rose-400"
-                  )}
-                  strokeWidth="3.5"
-                  strokeDasharray={2 * Math.PI * 18}
-                  strokeDashoffset={2 * Math.PI * 18 - ((currentScore ?? 0) / 100) * 2 * Math.PI * 18}
-                  strokeLinecap="round"
-                  stroke="currentColor"
-                  fill="transparent"
-                  r="18"
-                  cx="24"
-                  cy="24"
-                />
-              </svg>
-              <span className="absolute text-[10px] font-black font-mono">
-                {currentScore === undefined ? '—' : `${currentScore}%`}
-              </span>
-            </div>
-            <div>
-              <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Compliance HUD</div>
-              <div className="text-xs font-bold text-gray-300 group-hover:text-green-400 transition-colors flex items-center gap-1.5">
-                <span>View Grounding Audit</span>
-                {findings.some(f => f.requiresSignOff && !signedOffIds.has(`${f.construct}-${f.location?.line}`)) && (
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                  </span>
-                )}
+        {/* The signed score and the way into the grounding audit. It used to be
+            a black clickable <div> with a traffic-light ring and a pinging dot;
+            the open sign-offs are now said in words next to a real button. */}
+        <div className="flex items-center gap-4 shrink-0 w-full md:w-auto rounded-cc-card border border-cc-line bg-cc-surface shadow-cc p-3 px-4">
+          <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
+            {scoreRing(48, 4)}
+            <span className="absolute cc-text-meta font-cc-mono text-cc-ink">
+              {currentScore === undefined ? '—' : `${currentScore}%`}
+            </span>
+          </div>
+          <div className="space-y-1">
+            <div className="cc-text-label text-cc-ink-muted">Clean Core Score</div>
+            <CcButton icon={<Layers size={16} aria-hidden="true" />} onClick={() => setDrawerOpen(true)}>
+              View Grounding Audit
+            </CcButton>
+            {openSignOffs > 0 && (
+              <div className="cc-text-meta text-cc-warning">
+                {openSignOffs} open sign-off{openSignOffs === 1 ? '' : 's'}
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex flex-wrap gap-3">
-          <button 
-            onClick={() => setSyncScroll(!syncScroll)}
-            className={clsx(
-              "flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-bold text-sm shadow-sm border",
-              syncScroll 
-                ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100" 
-                : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-            )}
-          >
-            {syncScroll ? <Lock size={16} /> : <Unlock size={16} />} 
-            Sync Scroll: {syncScroll ? 'ON' : 'OFF'}
-          </button>
-          <button 
-            onClick={handleCopy}
-            className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all font-bold text-sm shadow-sm"
-          >
-            <Code2 size={16} /> Copy Code
-          </button>
-          <button
-            onClick={() => {
-              if (blockers.length === 0 && project?.legacyCode && project?.solutionDesign && project?.analysis) {
-                generateTransformation();
-              }
-            }}
-            disabled={blockers.length > 0}
-            title={blockers.length > 0 ? blockers.join(' ') : undefined}
-            className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all font-bold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <RefreshCw size={16} /> Re-Run Engine
-          </button>
-        </div>
+      <div className="mb-6 flex flex-wrap gap-2">
+        <CcButton
+          aria-pressed={syncScroll}
+          icon={syncScroll ? <Lock size={16} aria-hidden="true" /> : <Unlock size={16} aria-hidden="true" />}
+          onClick={() => setSyncScroll(!syncScroll)}
+        >
+          Sync Scroll: {syncScroll ? 'ON' : 'OFF'}
+        </CcButton>
+        <CcButton icon={<Code2 size={16} aria-hidden="true" />} onClick={handleCopy}>
+          Copy Code
+        </CcButton>
+        <CcButton
+          icon={<RefreshCw size={16} aria-hidden="true" />}
+          busy={loading}
+          onClick={() => {
+            if (blockers.length === 0 && project?.legacyCode && project?.solutionDesign && project?.analysis) {
+              generateTransformation();
+            }
+          }}
+          disabled={blockers.length > 0}
+          title={blockers.length > 0 ? blockers.join(' ') : undefined}
+        >
+          Re-Run Engine
+        </CcButton>
       </div>
 
       <StaleNotice title="Built for a previous source" reasons={staleNotes} />
 
-      {showCopyDialog && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl z-[100] flex items-center gap-3 animate-in slide-in-from-top-4">
-          <CheckCircle2 className="text-green-400 w-5 h-5" />
-          <span className="font-bold text-sm">Code copied to clipboard!</span>
-        </div>
-      )}
+      <CcToast open={showCopyDialog} onDismiss={closeCopyToast}>
+        Code copied to clipboard
+      </CcToast>
 
       {/*
         Roadmap 8.3 — a blocked contract generates nothing, and the reader is
@@ -1039,84 +1046,73 @@ CMD ["node", "srv/service.js"]`
         generated" and none of the point.
       */}
       {contractRefusal && (
-        <div
-          data-contract-refusal={contractRefusal.code}
-          className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-8 flex items-start gap-3"
-        >
-          <Lock className="w-5 h-5 text-amber-600 shrink-0" />
-          <div className="space-y-1">
-            <p className="text-sm font-bold text-amber-900">Nothing was generated against this contract.</p>
-            <p className="text-sm text-amber-800">{contractRefusal.sentence}</p>
-            <p className="text-sm text-amber-800">{contractRefusal.remedy}</p>
-          </div>
+        <div data-contract-refusal={contractRefusal.code} className="mb-8">
+          <CcMessageStrip state="warning" headline="Nothing was generated against this contract." announce>
+            <span className="block">{contractRefusal.sentence}</span>
+            <span className="block">{contractRefusal.remedy}</span>
+          </CcMessageStrip>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-          <p className="text-sm text-red-700 font-medium">{error}</p>
+        <div className="mb-8">
+          <CcMessageStrip state="error" announce>
+            {error}
+          </CcMessageStrip>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
         {/* Legacy Code Panel */}
-        <div className="flex flex-col h-[700px]">
-          <div className="bg-gray-100 px-4 py-2 rounded-t-xl border-x border-t flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Terminal size={14} className="text-gray-500" />
-              <span className="text-xs font-bold uppercase tracking-widest text-gray-600">Legacy Source (ABAP)</span>
-            </div>
+        <section aria-labelledby="legacy-source-title" className="flex flex-col min-w-0">
+          <div className="flex items-center gap-2 mb-2 min-h-6">
+            <Terminal size={14} aria-hidden="true" className="text-cc-ink-muted" />
+            <h2 id="legacy-source-title" className="cc-text-label text-cc-ink-muted">Legacy Source (ABAP)</h2>
           </div>
-          <div 
+          <div
             ref={legacyScrollRef}
             onScroll={handleLegacyScroll}
-            className="flex-1 overflow-y-auto rounded-b-xl border shadow-sm bg-[#1e1e1e] p-6 h-full scrollbar-thin scrollbar-thumb-gray-800"
+            className="h-[640px] overflow-y-auto rounded-cc-card bg-cc-code-bg"
           >
-            <CodeHighlighter 
-              language="abap" 
-              customStyle={{ margin: 0, padding: 0, overflow: 'visible', height: 'auto', fontSize: '13px' }}
+            <CodeHighlighter
+              language="abap"
+              label="Legacy source (ABAP)"
               code={project?.legacyCode || ''}
             />
           </div>
-        </div>
+        </section>
 
         {/* Transformed Code Panel */}
-        <div className="flex flex-col h-[700px] relative">
-          <div className="bg-green-50 px-4 py-2 rounded-t-xl border-x border-t flex items-center justify-between border-green-100">
-            <div className="flex items-center gap-2">
-              <FileCode2 size={14} className="text-green-600" />
-              <span className="text-xs font-bold uppercase tracking-widest text-green-700" data-track-pane>{track.pane}</span>
+        <section aria-labelledby="target-code-title" className="flex flex-col min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-2 min-h-6">
+            <div className="flex items-center gap-2 min-w-0">
+              <FileCode2 size={14} aria-hidden="true" className="text-cc-ink-muted shrink-0" />
+              <h2 id="target-code-title" className="cc-text-label text-cc-ink-muted" data-track-pane>{track.pane}</h2>
             </div>
-            <div className="flex items-center gap-1">
-              {/* "AI Verified" was unconditional. No compiler, no test runner and
-                  no validator has looked at this output — the transformation path
-                  parses the model's response, and falls back to accepting
-                  arbitrary non-JSON text. "Generated" is what actually happened.
-                  Roadmap 1.2: and only when something was (V25-A12) — the badge
-                  used to sit over an empty pane and say a model had produced it. */}
-              {files.length > 0 && (
-                <>
-                  <Sparkles size={12} className="text-green-600" />
-                  <span className="text-[10px] font-bold text-green-600 uppercase">AI Generated</span>
-                </>
-              )}
-            </div>
+            {/* "AI Verified" was unconditional. No compiler, no test runner and
+                no validator has looked at this output — the transformation path
+                parses the model's response, and falls back to accepting
+                arbitrary non-JSON text. "Generated" is what actually happened.
+                Roadmap 1.2: and only when something was (V25-A12) — the badge
+                used to sit over an empty pane and say a model had produced it.
+                D.15: the words come from the provenance list now ("Model
+                proposal", §4), with the pen, not a sparkle (§3.1). */}
+            {files.length > 0 && <CcProvenanceChip value="proposed" />}
           </div>
-          <div className="flex-1 flex flex-col md:flex-row overflow-hidden rounded-b-xl border border-green-100 shadow-lg shadow-green-500/5 bg-[#1e1e1e] h-full relative">
+          <div className="h-[640px] flex flex-col md:flex-row overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface">
             {/* File Explorer Sidebar */}
-            <div className="w-full md:w-56 border-b md:border-b-0 md:border-r border-white/5 bg-[#141414] overflow-y-auto flex flex-col shrink-0 h-40 md:h-auto">
-              <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between shrink-0">
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Project Files</span>
-                <span className="text-[9px] bg-green-500/10 text-green-400 border border-green-500/20 px-1 py-0.5 rounded font-mono font-bold">Workspace</span>
+            <nav aria-label="Project files" className="w-full md:w-56 border-b md:border-b-0 md:border-r border-cc-line bg-cc-surface-muted overflow-y-auto flex flex-col shrink-0 h-40 md:h-auto">
+              <div className="px-3 py-2 border-b border-cc-line flex items-center justify-between shrink-0">
+                <span className="cc-text-label text-cc-ink-muted">Project Files</span>
+                <CcTag>Workspace</CcTag>
               </div>
               <div className="p-2 space-y-1">
                 {renderFileTree()}
               </div>
-            </div>
-            
+            </nav>
+
             {/* Code Viewer Area with minimap */}
-            <div className="flex-1 flex flex-col overflow-hidden relative">
+            <div className="flex-1 flex overflow-hidden bg-cc-code-bg min-w-0">
               {/* Roadmap 0.2 (UX-038). A banner used to sit here saying
                   either "Clean Core Refactored Mode: Legacy ABAP SQL quirks
                   remediated to standard Cloud APIs" or "Strict Legacy Mode:
@@ -1141,295 +1137,216 @@ CMD ["node", "srv/service.js"]`
                 ref={modernScrollRef}
                 onScroll={handleModernScroll}
                 data-stage-output={transformedCode ? 'generatedCode' : undefined}
-                className="flex-1 overflow-y-auto p-6 pr-12 scrollbar-thin scrollbar-thumb-gray-800"
+                className="flex-1 min-w-0 overflow-y-auto"
               >
                 {files.length === 0 && !loading ? (
                   /* Roadmap 1.2 / V25-A12. An empty syntax highlighter under a
                      green "AI Generated" badge is the exact failure the
                      acceptance names: a reader sees a code pane that produced
                      nothing and cannot tell whether that is the answer. */
-                  <NotGenerated
-                    what="Transformed code"
-                    absence={
-                      !modelAvailability.enabled('transformation')
-                        ? modelAvailability.keyAvailable
-                          ? 'stage-off'
-                          : 'no-key'
-                        : null
-                    }
-                    stage="transformation"
-                    hint={
-                      modelAvailability.enabled('transformation')
-                        ? 'Run the engine above to generate it from the signed analysis and the approved design.'
-                        : modelAvailability.keyAvailable
-                          ? 'Turn the transformation stage back on in Settings to generate it.'
-                          : 'Add your own Gemini API key in Settings to generate it.'
-                    }
-                  />
+                  <div className="h-full bg-cc-surface p-6">
+                    <NotGenerated
+                      what="Transformed code"
+                      absence={
+                        !modelAvailability.enabled('transformation')
+                          ? modelAvailability.keyAvailable
+                            ? 'stage-off'
+                            : 'no-key'
+                          : null
+                      }
+                      stage="transformation"
+                      hint={
+                        modelAvailability.enabled('transformation')
+                          ? 'Run the engine above to generate it from the signed analysis and the approved design.'
+                          : modelAvailability.keyAvailable
+                            ? 'Turn the transformation stage back on in Settings to generate it.'
+                            : 'Add your own Gemini API key in Settings to generate it.'
+                      }
+                    />
+                  </div>
                 ) : (
                   <CodeHighlighter
                     language={getFileLanguage(selectedFilePath)}
-                    customStyle={{ margin: 0, padding: 0, overflow: 'visible', height: 'auto', fontSize: '13px' }}
+                    label={selectedFilePath || 'Transformed code'}
                     code={transformedCode}
                   />
                 )}
               </div>
 
-              {/* Code-Integrity Minimap Heatmap Strip */}
-              <div className="absolute right-0 top-0 bottom-0 w-8 bg-black/40 border-l border-white/5 flex flex-col justify-start py-4 pointer-events-auto z-10 select-none">
-                <div className="h-full relative w-full flex flex-col items-center">
-                  {getModernMarkers().map((marker, i) => {
-                    const totalLines = transformedCode.split('\n').length || 1;
-                    const topPercent = Math.min(95, Math.max(5, (marker.line / totalLines) * 90 + 5));
-                    return (
-                      <button aria-label={`Go to line ${marker.line}: ${marker.detail}`} type="button"
-                        key={i}
-                        onClick={() => scrollToLine(marker.line)}
-                        className={clsx(
-                          "absolute w-3 h-3 rounded-full border border-black/40 shadow-sm transition-transform hover:scale-125 cursor-pointer focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8] flex items-center justify-center",
-                          marker.level === 'fully' ? "bg-emerald-500 shadow-emerald-500/50" :
-                          marker.level === 'partial' ? "bg-amber-500 shadow-amber-500/50" :
-                          "bg-rose-500 shadow-rose-500/50"
-                        )}
-                        style={{ top: `${topPercent}%` }}
-                        title={`Line ${marker.line}: ${marker.detail}`}
-                      >
-                        <span className="w-1 h-1 rounded-full bg-white/50" />
-                      </button>
-                    );
-                  })}
-                </div>
+              {/* Code-Integrity Minimap Heatmap Strip. The dot carries the
+                  support level's state colour; its name says the level in
+                  words, so colour is never the only cue (§2.4). */}
+              <div className="relative w-6 shrink-0 border-l border-cc-code-muted/40 select-none">
+                {getModernMarkers().map((marker, i) => {
+                  const totalLines = transformedCode.split('\n').length || 1;
+                  const topPercent = Math.min(95, Math.max(5, (marker.line / totalLines) * 90 + 5));
+                  return (
+                    <button
+                      type="button"
+                      key={i}
+                      aria-label={`Go to line ${marker.line}: ${marker.title}. ${marker.detail}`}
+                      title={`Line ${marker.line}: ${marker.detail}`}
+                      onClick={() => scrollToLine(marker.line)}
+                      className="absolute left-1/2 -translate-x-1/2 w-4 h-4 flex items-center justify-center rounded-full"
+                      style={{ top: `${topPercent}%` }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={clsx('block w-3 h-3 rounded-full border border-cc-code-bg', STATE_CLASSES[SUPPORT_LEVEL_STATE[marker.level]].mark)}
+                      />
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
-        </div>
+        </section>
       </div>
 
-
-      {/* Sliding Grounded Audit Panel (Drawer) */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-[150] flex justify-end">
-          {/* Backdrop */}
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-            onClick={() => setDrawerOpen(false)}
-          />
-          
-          {/* Drawer Body */}
-          <div
-            ref={drawerRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="grounding-audit-title"
-            tabIndex={-1}
-            className="relative w-full max-w-lg bg-slate-900 border-l border-white/10 h-full shadow-2xl flex flex-col text-slate-100 z-10 animate-in slide-in-from-right duration-300 focus:outline-none"
-          >
-            {/* Header */}
-            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-slate-950/50">
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-green-400" />
-                <h3 id="grounding-audit-title" className="text-xl font-bold tracking-tight">Grounded Grounding Audit</h3>
-              </div>
-              <button aria-label="Close" type="button" 
-                onClick={() => setDrawerOpen(false)}
-                className="p-1.5 hover:bg-white/10 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-              >
-                <X size={20} />
-              </button>
+      {/* The grounding audit. It was a dark drawer from the right edge; it is
+          a light `CcDialog` now (§1.1: the only dark surface that carries
+          content is code). Same content, same sign-off boxes, same jumps. */}
+      <CcDialog
+        open={drawerOpen}
+        onClose={closeDrawer}
+        title="Grounding Audit"
+        lead="The signed score, the findings that need a sign-off, and the released CDS views the legacy selects map to."
+        actions={
+          <CcButton onClick={closeDrawer}>Close Audit</CcButton>
+        }
+      >
+        <div className="space-y-6">
+          {/* Section 1: Score & Rollup */}
+          <div className="rounded-cc-card border border-cc-line p-4 flex items-center gap-4">
+            <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
+              {scoreRing(80, 6)}
+              <span className="absolute cc-text-identifier font-cc-mono text-cc-ink">
+                {currentScore === undefined ? '—' : `${currentScore}%`}
+              </span>
             </div>
-            
-            {/* Content (Scrollable) */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-thin scrollbar-thumb-gray-800">
-              {/* Section 1: Score & Rollup */}
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center gap-6">
-                <div className="relative w-20 h-20 flex items-center justify-center shrink-0 bg-slate-950 rounded-full border border-white/5">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle
-                      className="text-white/5"
-                      strokeWidth="5"
-                      stroke="currentColor"
-                      fill="transparent"
-                      r="32"
-                      cx="40"
-                      cy="40"
-                    />
-                    <circle
-                      className={clsx(
-                        "transition-all duration-500",
-                        currentScore === undefined
-                          ? "text-white/20"
-                          : currentScore >= 90 ? "text-emerald-400" : currentScore >= 70 ? "text-amber-400" : "text-rose-400"
-                      )}
-                      strokeWidth="5"
-                      strokeDasharray={2 * Math.PI * 32}
-                      strokeDashoffset={2 * Math.PI * 32 - ((currentScore ?? 0) / 100) * 2 * Math.PI * 32}
-                      strokeLinecap="round"
-                      stroke="currentColor"
-                      fill="transparent"
-                      r="32"
-                      cx="40"
-                      cy="40"
-                    />
-                  </svg>
-                  <span className="absolute text-sm font-black font-mono">
-                    {currentScore === undefined ? '\u2014' : `${currentScore}%`}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="text-xs font-black uppercase text-gray-500 tracking-wider">Overall Support Rollup</h4>
-                  <p className="text-2xl font-black mt-0.5">
-                    {currentScore === undefined
-                      ? 'Not scored yet'
-                      : currentScore >= 90 ? 'Grounded & Ready' : currentScore >= 70 ? 'Requires Verification' : 'High Risk Gaps'}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {signedOffIds.size} of {findings.filter(f => f.requiresSignOff).length} manual findings signed off.
-                  </p>
-                </div>
-              </div>
+            <div>
+              <h3 className="cc-text-label text-cc-ink-muted">Overall Support Rollup</h3>
+              <p className="cc-text-h2 text-cc-ink mt-1">
+                {currentScore === undefined
+                  ? 'Not scored yet'
+                  : currentScore >= 90 ? 'Grounded & Ready' : currentScore >= 70 ? 'Requires Verification' : 'High Risk Gaps'}
+              </p>
+              <p className="cc-text-meta text-cc-ink-muted mt-1">
+                {signedOffIds.size} of {findings.filter(f => f.requiresSignOff).length} manual findings signed off.
+              </p>
+            </div>
+          </div>
 
-              {/* Section 3: Sign-off Checklist */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-wider text-gray-400 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle2 size={14} className="text-green-400" />
-                    <span>Sign-off Checklist</span>
-                  </span>
-                  <span className="text-[10px] font-mono text-gray-500 font-normal">Action Required</span>
-                </h4>
-                
-                {findings.length === 0 ? (
-                  <div className="text-center p-6 bg-white/5 rounded-2xl text-xs text-gray-500 border border-white/5">
-                    No support findings require sign-off.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {findings.map((f, i) => {
-                      const id = `${f.construct}-${f.location?.line}`;
-                      const isSignedOff = signedOffIds.has(id);
-                      return (
-                        <div 
-                          key={i} 
-                          className={clsx(
-                            "p-4 rounded-xl border transition-all flex items-start gap-3.5",
-                            isSignedOff 
-                              ? "bg-green-950/10 border-green-500/20 text-green-100 shadow-sm" 
-                              : f.level === 'not-supported'
-                                ? "bg-rose-950/10 border-rose-500/10 hover:border-rose-500/25"
-                                : "bg-white/5 border-white/5 hover:border-white/15"
-                          )}
-                        >
-                          {f.requiresSignOff ? (
-                            <input 
-                              type="checkbox" 
-                              checked={isSignedOff}
-                              onChange={() => toggleSignOff(id)}
-                              className="mt-1 w-4 h-4 rounded text-green-600 focus:ring-green-500 bg-slate-800 border-slate-700 cursor-pointer shrink-0"
-                            />
-                          ) : (
-                            <CheckCircle2 className="mt-1 w-4 h-4 text-emerald-500 shrink-0" />
-                          )}
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs font-bold uppercase tracking-wider font-mono text-gray-400">
-                                {f.title}
-                              </span>
-                              <span className={clsx(
-                                "text-[9px] font-bold px-1.5 py-0.5 rounded uppercase",
-                                f.level === 'fully' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                                f.level === 'partial' ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
-                                "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                              )}>
-                                {f.level}
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-300 leading-relaxed">
-                              {f.detail}
-                            </p>
-                            {f.location && (
-                              <div className="flex items-center justify-between pt-1">
-                                <span className="text-[10px] font-mono text-gray-500">
-                                  {f.location.file}:{f.location.line}
-                                </span>
-                                <button
-                                  onClick={() => {
-                                    if (f.location?.line) {
-                                      scrollToLine(f.location.line);
-                                      setDrawerOpen(false);
-                                    }
-                                  }}
-                                  className="text-[10px] text-green-400 hover:text-green-300 font-bold flex items-center gap-0.5"
-                                >
-                                  Jump to line <ArrowRight size={8} />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+          {/* Section 3: Sign-off Checklist */}
+          <div className="space-y-3">
+            <h3 className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2 cc-text-h3 text-cc-ink">
+                <CheckCircle2 size={16} aria-hidden="true" className="text-cc-ink-muted" />
+                <span>Sign-off Checklist</span>
+              </span>
+              <span className="cc-text-label text-cc-ink-muted">Action Required</span>
+            </h3>
 
-              {/* Section 4: SQL CDS View Matches */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                  <Layers size={14} className="text-green-400" />
-                  <span>SQL CDS Matches</span>
-                </h4>
-                <div className="space-y-3">
-                  {project?.legacyCode && extractSelects(project.legacyCode).map((sel, idx) => {
-                    const parsed = parseSelect(sel.text, 'main.abap', sel.line);
-                    const cds = matchCdsView(parsed);
-                    if (!cds) return null;
-                    return (
-                      <div key={idx} className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
-                        <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                          <span className="text-xs font-bold font-mono text-gray-400">Match #{idx+1}</span>
-                          <span className="text-[9px] bg-green-500/10 text-emerald-400 border border-green-500/20 px-1.5 py-0.5 rounded font-mono font-bold">
-                            {cds.exact ? 'Exact Match' : 'Superset Match'} (Conf: {cds.confidence})
+            {findings.length === 0 ? (
+              <p className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4 text-center cc-text-cell text-cc-ink-muted">
+                No support findings require sign-off.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {findings.map((f, i) => {
+                  const id = `${f.construct}-${f.location?.line}`;
+                  const isSignedOff = signedOffIds.has(id);
+                  return (
+                    <li key={i} className="rounded-cc-row border border-cc-line p-3 space-y-1">
+                      <div className="flex items-start justify-between gap-2">
+                        {f.requiresSignOff ? (
+                          <CcCheckbox
+                            label={f.title}
+                            checked={isSignedOff}
+                            onChange={() => toggleSignOff(id)}
+                          />
+                        ) : (
+                          <span className="flex items-center gap-2 min-h-8 cc-text-cell text-cc-ink">
+                            <CheckCircle2 size={16} aria-hidden="true" className="shrink-0 text-cc-ink-muted" />
+                            {f.title}
                           </span>
-                        </div>
-                        <div className="flex items-center justify-center gap-4 text-xs font-mono py-2 bg-slate-950/60 rounded-xl">
-                          <div className="text-center">
-                            <div className="text-[9px] text-gray-500 uppercase tracking-widest font-sans">Legacy Tables</div>
-                            <div className="text-amber-400 font-bold mt-0.5">
-                              {parsed.from.name} {parsed.joins.map(j => `+ ${j.table.name}`).join(' ')}
-                            </div>
-                          </div>
-                          <ArrowRight size={14} className="text-gray-600" />
-                          <div className="text-center">
-                            <div className="text-[9px] text-gray-500 uppercase tracking-widest font-sans">Target CDS View</div>
-                            <div className="text-emerald-400 font-bold mt-0.5">{cds.view}</div>
-                          </div>
-                        </div>
-                        <p className="text-[11px] text-gray-400 italic font-sans leading-relaxed">
-                          {cds.note || 'Resolved standard S/4HANA released CDS view.'}
-                        </p>
+                        )}
+                        <span className="shrink-0 pt-2">
+                          <SupportLevelMark level={f.level} />
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
+                      <p className="pl-6 cc-text-cell text-cc-ink-muted">
+                        {f.detail}
+                      </p>
+                      {f.location && (
+                        <div className="pl-6 flex items-center justify-between gap-2">
+                          <span className="cc-text-meta font-cc-mono text-cc-ink-muted">
+                            {f.location.file}:{f.location.line}
+                          </span>
+                          <CcButton
+                            icon={<ArrowRight size={14} aria-hidden="true" />}
+                            onClick={() => {
+                              if (f.location?.line) {
+                                scrollToLine(f.location.line);
+                                setDrawerOpen(false);
+                              }
+                            }}
+                          >
+                            Jump to line
+                          </CcButton>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
 
-            </div>
-            
-            {/* Footer */}
-            <div className="p-6 border-t border-white/5 bg-slate-950/50 flex gap-3 shrink-0">
-              <button 
-                onClick={() => setDrawerOpen(false)}
-                className="w-full bg-slate-800 hover:bg-slate-750 text-white font-bold py-3 px-4 rounded-xl text-xs transition-colors"
-              >
-                Close Audit
-              </button>
+          {/* Section 4: SQL CDS View Matches */}
+          <div className="space-y-3">
+            <h3 className="flex items-center gap-2 cc-text-h3 text-cc-ink">
+              <Layers size={16} aria-hidden="true" className="text-cc-ink-muted" />
+              <span>SQL CDS Matches</span>
+            </h3>
+            <div className="space-y-2">
+              {project?.legacyCode && extractSelects(project.legacyCode).map((sel, idx) => {
+                const parsed = parseSelect(sel.text, 'main.abap', sel.line);
+                const cds = matchCdsView(parsed);
+                if (!cds) return null;
+                return (
+                  <div key={idx} className="rounded-cc-row border border-cc-line p-3 space-y-3">
+                    <div className="flex items-center justify-between gap-2 border-b border-cc-line pb-2">
+                      <span className="cc-text-identifier font-cc-mono text-cc-ink">Match #{idx+1}</span>
+                      <CcTag>
+                        {cds.exact ? 'Exact Match' : 'Superset Match'} (Conf: {cds.confidence})
+                      </CcTag>
+                    </div>
+                    <div className="flex items-center justify-center gap-4 py-2 rounded-cc-row bg-cc-surface-muted">
+                      <div className="text-center">
+                        <div className="cc-text-label text-cc-ink-muted">Legacy Tables</div>
+                        <div className="cc-text-identifier font-cc-mono text-cc-ink mt-1">
+                          {parsed.from.name} {parsed.joins.map(j => `+ ${j.table.name}`).join(' ')}
+                        </div>
+                      </div>
+                      <ArrowRight size={14} aria-hidden="true" className="text-cc-ink-muted" />
+                      <div className="text-center">
+                        <div className="cc-text-label text-cc-ink-muted">Target CDS View</div>
+                        <div className="cc-text-identifier font-cc-mono text-cc-ink mt-1">{cds.view}</div>
+                      </div>
+                    </div>
+                    <p className="cc-text-meta italic text-cc-ink-muted">
+                      {cds.note || 'Resolved standard S/4HANA released CDS view.'}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
-      )}
+      </CcDialog>
 
-      <NavigationButtons 
+      <NavigationButtons
         backPath={`/project/${projectId}/design`}
         backLabel="Back to Design"
         proceedPath={`/project/${projectId}/documentation`}
@@ -1438,4 +1355,3 @@ CMD ["node", "srv/service.js"]`
     </div>
   );
 }
-
