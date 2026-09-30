@@ -134,10 +134,13 @@ export default function SurveyClient({
 
     const run = (queues.current[questionId] ?? Promise.resolve()).then(async () => {
       const ok = await post(questionId, value);
-      // Superseded while it was in flight: the press that superseded it owns
-      // the outcome, and writing this one's would be writing the older answer.
-      if (latest.current[questionId] !== seq) return;
+      // The requests are serialised, so a success is what the server holds now,
+      // superseded or not: if the newer press then fails, the read-back has to
+      // show this answer, not the one before it.
       if (ok) setSaved((s) => ({ ...s, [questionId]: value }));
+      // Superseded while it was in flight: the press that superseded it owns
+      // the status.
+      if (latest.current[questionId] !== seq) return;
       setStatus((s) => ({ ...s, [questionId]: ok ? 'saved' : 'error' }));
     });
     queues.current[questionId] = run;
@@ -176,19 +179,39 @@ export default function SurveyClient({
   // There is deliberately no effect here that writes an answer. The one that used
   // to sit at this spot is what the doc comment above is about.
 
+  /**
+   * The note gets the same treatment as the answers: requests go out one at a
+   * time, so the server's last write is the last send, and only the newest send
+   * sets the status. Editing the box re-enables the button while a send is still
+   * in flight, and two overlapping sends could otherwise land in either order
+   * and leave `sentComment` on the text the server no longer holds.
+   */
+  const commentQueue = useRef<Promise<void>>(Promise.resolve());
+  const commentLatest = useRef(0);
+
   async function saveComment() {
+    const seq = commentLatest.current + 1;
+    commentLatest.current = seq;
+    const text = comment;
     setCommentStatus('saving');
-    try {
-      const res = await fetch('/api/survey/vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, comment }),
-      });
-      if (res.ok) setSentComment(comment);
-      setCommentStatus(res.ok ? 'saved' : 'error');
-    } catch {
-      setCommentStatus('error');
-    }
+    const run = commentQueue.current.then(async () => {
+      let ok = false;
+      try {
+        const res = await fetch('/api/survey/vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, comment: text }),
+        });
+        ok = res.ok;
+      } catch {
+        ok = false;
+      }
+      if (ok) setSentComment(text);
+      if (commentLatest.current !== seq) return;
+      setCommentStatus(ok ? 'saved' : 'error');
+    });
+    commentQueue.current = run;
+    await run;
   }
 
   const commentUnsent = comment.trim() !== sentComment.trim();
