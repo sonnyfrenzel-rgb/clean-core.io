@@ -330,9 +330,12 @@ function referenceRecommendation(tableName: string, routes: Set<DependencyRoute>
  * Scale: 1 = trivial, 5 = moderate, 10 = highly complex
  */
 export function computeComplexityScore(code: string): number {
-  const lines = code.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  // Measured on what executes: comments and literal contents are blanked first,
+  // so a comment line is no line of code and `'UPDATE'` in a message is no write.
+  const masked = maskNonCode(code);
+  const lines = masked.split(/\r?\n/).filter((l) => l.trim().length > 0);
   const loc = lines.length;
-  const upper = code.toUpperCase();
+  const upper = masked.toUpperCase();
 
   // Nesting depth approximation (IF/LOOP/DO/CASE/TRY blocks).
   //
@@ -378,7 +381,11 @@ export function computeComplexityScore(code: string): number {
  * Scale: 1 = low impact (simple read-only utility), 5 = important, 10 = mission-critical
  */
 export function computeCriticalityScore(code: string): number {
-  const upper = code.toUpperCase();
+  // Same as the complexity score: a table or keyword named in a comment or a
+  // literal is not one the program touches. The one literal that is code — the
+  // name of a called function module — is read back in, as `calledFunctionModules`
+  // reads it.
+  const upper = [maskNonCode(code).toUpperCase(), ...calledFunctionModules(code)].join('\n');
 
   // Module heuristics — check if code touches critical SAP modules
   const criticalModules = ['FI', 'CO', 'MM', 'SD', 'HR', 'PP', 'PM', 'QM'];
