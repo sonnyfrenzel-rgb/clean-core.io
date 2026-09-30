@@ -32,24 +32,29 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
+// "7 October 2026" — the long month the survey mail uses too, so the page and
+// the mail name the closing day the same way. Pinned to en-GB and UTC so the
+// server's locale and zone cannot change it.
+const CLOSING_DATE = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
 function formatDate(d: Date): string {
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  return CLOSING_DATE.format(d);
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-gray-50 px-6 py-12 sm:py-16">
+    <main className="min-h-screen bg-cc-page px-6 py-12 sm:py-16">
       <div className="mx-auto w-full max-w-2xl">
         <Link href="/" className="inline-block mb-8">
-          <span className="text-2xl font-black text-gray-950 tracking-tight">
-            Clean-Core<span className="text-green-600">.io</span>
+          <span className="text-2xl font-extrabold text-cc-ink tracking-tight">
+            Clean-Core<span className="text-cc-brand-strong">.io</span>
           </span>
-          <span className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mt-1">
+          <span className="block cc-text-label text-cc-ink-muted mt-1">
             Free Community SAP Modernization Platform
           </span>
         </Link>
         {children}
-        <p className="text-xs text-gray-400 mt-10 leading-relaxed">
+        <p className="text-xs text-cc-ink-muted mt-10 leading-relaxed">
           Clean-Core.io · Felix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany
         </p>
       </div>
@@ -83,13 +88,13 @@ export default async function SurveyPage({
   if (!identity) {
     return (
       <Shell>
-        <h1 className="text-3xl font-black text-gray-950 tracking-tight mb-3">
+        <h1 className="text-3xl font-extrabold text-cc-ink tracking-tight mb-3">
           This link is no longer valid
         </h1>
-        <p className="text-gray-600 leading-relaxed">
+        <p className="text-cc-ink-muted leading-relaxed">
           Survey links stop working once the survey closes, and each one is tied to a single
           recipient. If you would still like to say something, write to{' '}
-          <a href="mailto:info@clean-core.io" className="font-bold text-green-700 underline">
+          <a href="mailto:info@clean-core.io" className="font-bold text-cc-brand-strong underline">
             info@clean-core.io
           </a>{' '}
           — it comes to me directly.
@@ -152,7 +157,7 @@ export default async function SurveyPage({
         So the page leads with what is left rather than with what is done. The
         confirmation is a line inside the progress strip, not a panel of its own.
       */}
-      <h1 className="text-3xl sm:text-4xl font-black text-gray-950 tracking-tight leading-tight mb-3">
+      <h1 className="text-3xl sm:text-4xl font-extrabold text-cc-ink tracking-tight leading-tight mb-3">
         The ballot for version 3.0
       </h1>
       {/*
@@ -162,7 +167,7 @@ export default async function SurveyPage({
         reader it was written for. The pick is carried over and highlighted; the tap
         that records it happens here.
       */}
-      <p className="text-gray-600 leading-relaxed mb-8">
+      <p className="text-cc-ink-muted leading-relaxed mb-8">
         {answeredInMail
           ? `Your pick from the email is already selected. ${SURVEY_QUESTIONS.length} questions, one tap each`
           : `${SURVEY_QUESTIONS.length} questions, one tap each`}{' '}
