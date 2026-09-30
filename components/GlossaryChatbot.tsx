@@ -195,13 +195,24 @@ export default function GlossaryChatbot() {
   const caseProjectRef = useRef<string | null>(null);
 
   /**
-   * The project's evidence, read once per project and then reused.
+   * The project's evidence, read once per opening of the panel and then reused.
    *
    * Kept in a promise ref rather than only in state so that a question typed
    * before the warm-up finishes waits for the same read instead of starting a
    * second one — two readings of one source are two places for the line
    * numbers to disagree, which is the defect `lib/process-facts.ts` names.
    */
+  /**
+   * The project the panel stands in right now. The panel lives in the layout
+   * and outlives a navigation, so an answer that was asked for in project A and
+   * arrives after the reader moved to project B is dropped rather than shown
+   * under B's heading (QA full review of v2.20.0).
+   */
+  const currentProjectRef = useRef<string | null>(projectId);
+  useEffect(() => {
+    currentProjectRef.current = projectId;
+  }, [projectId]);
+
   const ensureCase = (id: string): Promise<CaseContext> => {
     if (caseProjectRef.current !== id || !caseContextRef.current) {
       caseProjectRef.current = id;
@@ -215,8 +226,13 @@ export default function GlossaryChatbot() {
 
   // Warm the evidence up when the panel opens inside a project, so the first
   // question does not pay for the read. Nothing here answers anything.
+  //
+  // Each opening reads afresh: the panel outlives the project's pages, and a
+  // source replaced or re-analysed since the last opening would otherwise be
+  // answered from the old lines (QA full review of v2.20.0).
   useEffect(() => {
     if (!isOpen || !projectId) return;
+    caseContextRef.current = null;
     void ensureCase(projectId);
   }, [isOpen, projectId]);
 
@@ -307,6 +323,7 @@ export default function GlossaryChatbot() {
    */
   const answerInProject = async (id: string, text: string): Promise<void> => {
     const context = await ensureCase(id);
+    if (currentProjectRef.current !== id) return;
     const decision = answerCase(
       context.index,
       { projectId: id, legacyCode: context.legacyCode },
@@ -335,6 +352,7 @@ export default function GlossaryChatbot() {
     }
 
     const raw = await callGemini(decision.prompt, PRODUCT_GEMINI_MODEL, false);
+    if (currentProjectRef.current !== id) return;
     // §3.1 — what the model wrote appears like every other text here. The chip
     // says where it came from; the prose must not.
     const { text: cleaned } = cleanModelText(raw ?? '', 'screen');
@@ -394,6 +412,7 @@ export default function GlossaryChatbot() {
         await answerInProject(projectId, text);
       } catch (error) {
         console.error('Ask this case error:', error);
+        if (currentProjectRef.current !== projectId) return;
         say({
           text: 'The evidence of this project could not be read just now, so there is no grounded answer. Reload the project page and ask again.',
           provenance: 'not-determined',
@@ -437,6 +456,9 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
       const promptContext = `${systemPrompt}\n\nUser Question: ${text}\nAssistant Response:`;
 
       const responseText = await callGemini(promptContext, PRODUCT_GEMINI_MODEL, false);
+      // Asked outside a project; the reader has since opened one, where this
+      // panel answers from that project's evidence only.
+      if (currentProjectRef.current !== null) return;
 
       const botMessage: Message = {
         sender: 'bot',
@@ -566,7 +588,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                   {projectId ? 'Ask this case' : 'SAP Modernization Assistant'}
                 </h2>
                 <p className="m-0 cc-text-meta text-cc-ink-muted">
-                  {projectId ? 'Evidence of this project only' : 'Product and SAP help'}
+                  {projectId ? 'Evidence of this project, and the glossary' : 'Product and SAP help'}
                 </p>
               </div>
             </div>
@@ -582,10 +604,11 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
               {/* Roadmap 6.8 — the reader is told which of the two boundaries
                   is in force before they type, not after an answer disappoints
                   them. Inside a project the assistant has no other source than
-                  this project's evidence, and says so. */}
+                  this project's evidence — except the glossary, which roadmap
+                  6.6 checks first (`handleSend`), so the sentence names it. */}
               <p className="m-0 font-medium" data-chatbot-scope="">
                 {projectId
-                  ? 'Inside a project this assistant answers only from the evidence of this project, and names the line each statement rests on. It has no other source.'
+                  ? 'Inside a project this assistant answers only from the evidence of this project, and names the line each statement rests on. The one exception is a glossary term, which is answered from its glossary entry and marked as such.'
                   : 'Context-restricted assistant. Focused exclusively on SAP S/4HANA Clean Core architectures.'}
               </p>
             </div>
