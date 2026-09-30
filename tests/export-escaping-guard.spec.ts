@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { sapApiHubHref, sapApiHubLink, sapApiHubUrl, safeHttpHref, escapeHtml } from '../lib/export-safety';
 import { escapeHtml as escapeHtmlFromUtils } from '../lib/utils';
+import { buildEngineConfluenceHtml } from '../lib/documentation-export';
 
 /**
  * Three stages assemble an HTML document out of values the model wrote from the
@@ -341,4 +342,34 @@ test("neither the API Hub mapping table nor the markdown export puts the model's
   const md = fs.readFileSync(path.join(__dirname, '..', 'lib', 'markdownFormatter.ts'), 'utf8');
   expect(md, 'the markdown export links the raw apiHubUrl').not.toMatch(/\]\(\$\{map\.apiHubUrl\}\)/);
   expect(md).toMatch(/sapApiHubUrl\(map\.apiHubUrl\)/);
+});
+
+// QA slice review of c053fc5909c1 (a0bc6496333f): the source check above
+// exempts `name` and conditional expressions in the engine rows, so a later
+// unescaped interpolation there would pass it. This feeds hostile text into
+// every field the engine export writes and reads the file that comes out.
+test('the engine documentation export escapes every value it writes, whatever the model or the code put there', async () => {
+  const evil = '<img src=x onerror=alert(1)>';
+  const engine = {
+    processName: evil,
+    disclaimer: evil,
+    fileName: evil,
+    lineCount: 3,
+    overview: evil,
+    traceability: { sentence: evil },
+    steps: [
+      { id: evil, kind: evil, technicalName: evil, businessName: evil, lane: evil, statementId: 's1', anchor: { lineStart: 1, lineEnd: 2 }, undetermined: null },
+      { id: 'b', kind: 'k', technicalName: evil, businessName: null, lane: null, statementId: null, anchor: null, undetermined: { reason: evil } },
+    ],
+    statements: [{ id: 's1', text: evil, anchors: [] }],
+    notDetermined: [{ subject: evil, reason: evil }],
+  } as unknown as Parameters<typeof buildEngineConfluenceHtml>[0];
+  const business = {
+    raci_matrix: [{ stepId: evil, r: evil, a: evil, c: evil, i: evil }],
+    sop_details: [{ stepId: evil, narrative: evil, businessException: evil, kpiTarget: evil }],
+    audit_controls: [{ stepId: evil, controlObjective: evil, mitigationAction: evil, assertionMethod: evil }],
+  };
+  const html = await buildEngineConfluenceHtml(engine, business).text();
+  expect(html).not.toContain('<img');
+  expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
 });
