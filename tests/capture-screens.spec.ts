@@ -524,7 +524,7 @@ test.describe('capture the landing page views', () => {
       // a column of dashes under "Lines" is not what the stage is about.
       const start =
         phase.key === 'documentation'
-          ? page.locator('h3', { hasText: 'Tables this program is coupled to' }).locator('xpath=..')
+          ? page.locator('[data-cc-card-title]', { hasText: 'Tables this program is coupled to' }).locator('xpath=..')
           : page.locator('[data-stage-title]').first();
       await start.evaluate((node) => {
         (node as HTMLElement).style.scrollMarginTop = '136px';
