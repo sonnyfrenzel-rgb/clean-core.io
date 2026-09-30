@@ -38,13 +38,13 @@ import { getReferenceAnalysis } from '@/lib/reference-analysis';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Accelerator — Free ABAP Analysis | Clean-Core.io',
-  description: 'Free SAP Clean Core tool: analyze custom ABAP, get a Clean Core Score, and generate the first Clean-Core-compliant RAP/CAP draft for review — with verifiable abapGit exports and ABAP-Unit tests. Community-built, complementary to SAP ADT/ATC.',
+  description: 'Free SAP Clean Core tool: analyze custom ABAP, get a Clean Core Score, and generate the first RAP/CAP draft toward Clean Core for review — with verifiable abapGit exports and ABAP-Unit tests. Community-built, complementary to SAP ADT/ATC.',
   alternates: {
     canonical: 'https://clean-core.io',
   },
   openGraph: {
     title: 'The SAP Architect\'s Clean Core Accelerator | Clean-Core.io',
-    description: 'Free community tool that generates the first Clean-Core-compliant draft for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
+    description: 'Free community tool that generates the first draft toward Clean Core for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
     url: 'https://clean-core.io',
     type: 'website',
     siteName: 'Clean-Core.io',
@@ -52,7 +52,7 @@ export const metadata: Metadata = withTwitterCard({
   twitter: {
     card: 'summary_large_image',
     title: 'The SAP Architect\'s Clean Core Accelerator | Clean-Core.io',
-    description: 'Free community tool that generates the first Clean-Core-compliant draft for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
+    description: 'Free community tool that generates the first draft toward Clean Core for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
   }
 });
 
@@ -436,7 +436,7 @@ export default function Home() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">Clean Core Accelerator</span>
           </h1>
           <p className="text-base sm:text-lg md:text-2xl text-gray-700 max-w-3xl mx-auto mb-12 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
-            Generate the first Clean-Core-compliant draft for review and approval &mdash; grounded in SAP&apos;s own published object data, with the limits named before you upload, and the expert&apos;s judgment never replaced.
+            Generate the first draft toward Clean Core for review and approval &mdash; grounded in SAP&apos;s own published object data, with the limits named before you upload, and the expert&apos;s judgment never replaced.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
             <HeroCTA />

@@ -70,7 +70,7 @@ const apiMappings = [
 ];
 
 const doesDo = [
-  'Generates a first Clean-Core-compliant draft plus signed evidence.',
+  'Generates a first draft toward Clean Core plus signed evidence.',
   'Runs deterministic analysis before any AI.',
   'Recommends RAP / CAP with a transparent rationale.',
   'Produces tests, BPMN, TCO and an audit pack.',
@@ -379,7 +379,7 @@ export default function WhitepaperPage() {
             <div className="relative z-10 space-y-6">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-white leading-tight">Start with a non-production sample</h2>
               <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
-                Generate the first Clean-Core-compliant draft for review, walk the decision with your SAP architect, and export a governed delivery package. Start with 5 free transformations, or bring your own Gemini API key (BYOK) for unlimited access — no credit card required.
+                Generate the first draft toward Clean Core for review, walk the decision with your SAP architect, and export a governed delivery package. Start with 5 free transformations, or bring your own Gemini API key (BYOK) for unlimited access — no credit card required.
               </p>
               <div className="flex flex-col sm:flex-row items-start gap-4 pt-2">
                 <Link href="/?auth=signin" className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-8 py-4 rounded-xl font-black text-sm transition-all shadow-lg hover:shadow-2xl hover:-translate-y-0.5">
