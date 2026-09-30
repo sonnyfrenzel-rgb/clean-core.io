@@ -721,8 +721,8 @@ function Economics({
           </p>
         ) : (
           <div data-testid="demo-forecast" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-3">
-            <Metric title="Legacy effort" value={`${forecast.legacyDevDaysTotal + forecast.legacyTestDaysTotal} days per year`} />
-            <Metric title="After modernisation" value={`${forecast.modernDevDaysTotal + forecast.modernTestDaysTotal} days per year`} />
+            <Metric title="Legacy effort" value={`${days(forecast.legacyDevDaysTotal + forecast.legacyTestDaysTotal)} days per year`} />
+            <Metric title="After modernisation" value={`${days(forecast.modernDevDaysTotal + forecast.modernTestDaysTotal)} days per year`} />
             <Metric title="Overhead reduction" value={`${forecast.overheadReductionPct}%`} />
             <Metric
               title="Payback"
@@ -772,6 +772,15 @@ function Field({
       <p className="text-[11px] text-gray-400">{hint}</p>
     </div>
   );
+}
+
+/**
+ * A day count as a reader writes it. The sum of two floating-point totals
+ * printed raw read "3.9050000000000002 days" — a precision the model does not
+ * have. One decimal, like the payback months.
+ */
+function days(n: number): string {
+  return n.toLocaleString('en-US', { maximumFractionDigits: 1 });
 }
 
 function Metric({ title, value }: { title: string; value: string }) {

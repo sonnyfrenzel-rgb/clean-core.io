@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { objectToSlug } from '@/lib/abap/catalog-index';
@@ -16,6 +16,19 @@ interface CatalogSearchProps {
  */
 export default function CatalogSearch({ names }: CatalogSearchProps) {
   const [q, setQ] = useState('');
+
+  // The landing page's lookup (roadmap 3.0.6) is a plain GET form to
+  // `/catalog?q=…`, so it works without JavaScript. Read once in the browser
+  // rather than through `useSearchParams`, which would take this static page
+  // out of static rendering.
+  useEffect(() => {
+    try {
+      const initial = new URLSearchParams(window.location.search).get('q');
+      if (initial) setQ(initial.slice(0, 60));
+    } catch {
+      /* no query, nothing to fill */
+    }
+  }, []);
 
   const results = useMemo(() => {
     const term = q.trim().toUpperCase();

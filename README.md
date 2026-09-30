@@ -1,144 +1,116 @@
-# Clean-Core.io — Free, Community SAP Clean Core Modernization
+# Clean-Core.io
 
-Clean-Core.io is a free, community-built web application that helps SAP practitioners modernize custom ABAP toward TypeScript/Node.js, aligned with SAP's **Clean Core Extensibility** principles. It helps architects and developers assess custom-code Clean Core readiness, map to released APIs, and draft modular RAP/CAP designs for review — **complementary to SAP's own tooling (ADT, ATC), not a replacement**. Not affiliated with or endorsed by SAP SE.
+Clean-Core.io is a free community web app that reads custom SAP ABAP and takes it from
+"not understood" to an evidence-backed decision, aligned with SAP's Clean Core
+extensibility model. It is complementary to SAP's own tooling (ABAP Test Cockpit, ABAP
+Development Tools, SAP Cloud ALM), not a replacement, and it is not affiliated with or
+endorsed by SAP SE.
 
----
+[clean-core.io](https://clean-core.io) · source: [github.com/sonnyfrenzel-rgb/clean-core.io](https://github.com/sonnyfrenzel-rgb/clean-core.io) ·
+Apache License 2.0 · release notes: [`CHANGELOG.md`](CHANGELOG.md)
 
-## ✨ Key Capabilities
+![The Business view of the demo project Z_MM_PO_APPROVAL: the process, its rules hard-coded in the program with their line anchors, and what could not be determined](public/landing/view-business.jpg)
 
-*   **Visual Code-Transformation Integrity HUD & Heatmap (English UI):**
-    Provides real-time feedback on code modernization status:
-    *   **Clean Core Compliance Shield (Hero HUD):** A circular glassmorphic compliance progress radar that adapts dynamically (Green/Amber/Red) and details grounding statistics.
-    *   **Code-Integrity Minimap (Heatmap Scrollbar):** A vertical scroll strip containing colored markers matching translation findings (Fully Grounded, SQL Quirks, RTTI gaps) with smooth scroll-to-line navigation.
-    *   **Grounded Grounding Audit Panel (Sliding Drawer):** Includes an interactive developer sign-off checklist that updates the compliance score in real-time, detailed SQL CDS matches (mapping tables to released standard views), active Open SQL quirk remediation settings, and a **Differential Sandbox Result-Set Tester** that simulates S/4HANA live query checks.
-*   **Realistic OO & Complex SQL Join Test Balloon:**
-    A comprehensive test script (`public/starter-examples/Z_ORDER_INTEGRITY_CHECK.txt`) modeling legacy invoice processing with abstract classes, subclasses, redefinitions, and a complex 3-table SELECT query with `FOR ALL ENTRIES` and `LEFT OUTER JOIN` quirks, designed for users to verify the engine's grounding behavior.
-*   **S/4HANA Live Bridge (BYOT - Bring Your Own Tenant):**
-    Connect your own S/4HANA Public Cloud Test/Sandbox Tenant to check the connection, read OData metadata and make one read-only call. **Running the generated tests against the tenant is locked** until the test runner has its own isolated service (gate `G0:R0`, [`SECURITY.md`](SECURITY.md) §7.1). Credentials are encrypted at rest (AES-256-GCM) in a server-only Firestore collection, inaccessible to client SDKs.
-*   **Unified Access & Tenant Administration Console:**
-    Comprehensive admin workbench (`/admin`) for suspending or reinstating accounts, tracking tenant bridge applications, and toggling Bring-Your-Own-Tenant (BYOT) privileges with live status badges. Signing up needs no approval — accounts are active immediately — so the console governs accounts rather than gating them.
-*   **Transactional Verification & Responsive Email Automations:**
-    Fully integrated with the Resend API to deliver secure, responsive, HTML-formatted notifications. A new account triggers exactly two: one welcome mail carrying the first-run guide and the security answers an IT department will ask for, and one administrator notification that contains no privileged action. Live-tenant requests still send cryptographically signed approval links, because that approval is still made by a human.
-*   **Legacy-to-Modern AI Transformation Engine:**
-    Modular code translation from SAP ABAP to structured Node.js/TypeScript code using Google Gemini. Classifies legacy logic to automatically separate **In-App Developer Extensibility (ABAP Cloud RAP)** from **Side-by-Side Extensibility (BTP CAP)** tracks.
-*   **Modernization Assessment Engine (v1.9.0):**
-    Computes complexity and business-criticality scores from uploaded ABAP code. Extracts a full code inventory (classes, reports, function modules) and maps data coupling with standard SAP table risk analysis — all before transformation begins.
-*   **Architect Sign-Off Gate (v1.9.0):**
-    Requires explicit target architecture confirmation (RAP, CAP, Integration Suite, Event Mesh, or Retire) before code transformation. Supports override with justification and records a self-attested sign-off (approver email, timestamp, rationale) — captured from your own session, not a server-verified review event.
-*   **Compliance Audit Pack & Board Presentation (v1.12.0):**
-    Exportable ZIP evidence package (including Word document executive summaries) and a deterministic, rollup-secured Board Presentation (Stage 7) mapping support levels and risks dynamically, keeping compliance in sync with the `SUPPORT_MATRIX`.
-*   **Deterministic ABAP OO Inheritance Resolver & Grounding Layer:**
-    Resolves complex, multi-stage class and interface hierarchies deterministically before LLM invocation. Linearizes members via MRO, maps constructors and interface aliases, and requests missing dependencies dynamically via a bundle upload UI, preventing LLM structure hallucinations.
-*   **Architectural Solution Design & File Explorers:**
-    Interactive visual representation of API endpoints, directory configurations (including database entity mapping and Docker containers), and direct public links to the SAP API Business Hub.
-*   **ADT Cockpit & Unit Testing:**
-    Runs generated unit tests in a restricted child process against mocks (CAP) or simulates the ABAP Unit run (ABAP Cloud, never counted as passed). Running tests against a connected tenant is locked, so no tenant credentials reach the test process.
-*   **Process Blueprinting & BPMN 2.0 Mapping:**
-    Generates dynamic Level 1-4 functional blueprints and interactive BPMN process flow maps directly from modernized business logic.
-*   **GDPR / DSGVO Data Erasure:**
-    Support for Article 17 GDPR (Right to Erasure). An idempotent, multi-system deletion cascade in the settings panel recursively purges user footprints, project workspaces, custom snippets, and authentication keys.
-*   **Frosted-glass UI:**
-    Visually stunning dark-mode design featuring vibrant HSL-tailored emerald mesh gradients, smooth framer-motion transitions, and polished glassmorphism aesthetics.
-*   **SEO & AI-Search Engine Optimization (GEO):**
-    Fully optimized for classic search engines and AI engines. Includes a custom `robots.txt` prioritizing AI crawlers (`GPTBot`, `PerplexityBot`, etc.), comprehensive JSON-LD graphs (`Organization`, `Person` for founder Felix Frenzel, `SoftwareApplication`, `FAQPage`), and dedicated high-authority landing pages. HTML assets utilize Next.js ISR (`revalidate = 300`) to guarantee fresh indexation.
+*The Business view of the demo project `Z_MM_PO_APPROVAL`, captured from the workspace by
+`tests/capture-screens.spec.ts` (`CAPTURE_LANDING=1`). No mockup images.*
 
 ---
 
-## 📦 Technical Architecture & Stack
+## What it does
 
-Clean-Core.io is engineered for ultimate performance, security, and portability:
+You bring one piece of custom ABAP. A deterministic engine reads it first; a language
+model only proposes names and wording afterwards, and every proposal is marked as a
+Model proposal.
 
-*   **Frontend Core:** React 19, Next.js (v15.5) App Router, HSL Custom Glassmorphism Styling.
-*   **Security & Database:** Firestore & Firebase Auth secured with custom rules and server-side token verification via Firebase Admin SDK.
-*   **Animations:** Motion (Framer Motion) for micro-animations and physics-based sliders.
-*   **Email Deliverability:** Transactional secure email templates powered by Resend API.
-*   **QA Test Runner:** Authenticated TypeScript runtime executing automated unit test specifications with SSRF protection and input sanitisation.
+- **The process, read from the code.** The engine reconstructs the business process the
+  program implements and draws it as BPMN. Every element carries the line it came from
+  (`L243`), including the business rules that are hard-coded in the program. What the
+  engine could not determine is listed as *not determined*, with the reason.
+- **One workspace, three views.** Each project opens in a workspace with three views of
+  the same content. The Business view asks *"Do I still need this, and what changes for
+  me?"*, the IT view *"What exactly, where to, and is it right?"*, the Management view
+  *"What do I risk, what do I decide?"*. A view orders and explains; it never changes the
+  result and is never stored with it.
+- **Six layers.** Within a view the page is organised in layers: Need & process ·
+  Standard fit · Costs & assumptions · Architecture & dependencies · Evidence & controls ·
+  Changes & commitments.
+- **The seven stages as tools.** Analyze · Design · Transformation · Documentation ·
+  Testing · Economics · Delivery stay available as tools from the workspace toolbar.
+- **Clean Core Level A–D.** Every SAP object the code uses is graded Level A–D from SAP's
+  published Cloudification Repository and object classification, with the rule version
+  that produced it. The level is an orientation, not an ATC result, and is not part of
+  the signed audit pack.
+- **Where each statement comes from.** Every statement carries one of nine provenance
+  values: Proven · Confirmed · Reconstructed · Imported · Model proposal · Simulation ·
+  Demonstrated · mock · Stale · Not determined. *Confirmed* means the signed-in account
+  confirmed it: a self-declaration, not a mandate.
+- **Signed runs.** Every completed analysis is stored as an immutable run, signed with
+  HMAC and Ed25519, and a signed export can be verified against it.
+- **BPMN 2.0 XML export.** The process model leaves as a BPMN 2.0 XML file. There is no
+  connection to a Signavio workspace or the Signavio API; the file is yours to take along.
+- **Read access by invitation.** A project is shared with one confirmed e-mail address,
+  including its source code, with expiry and revocation.
+- **Costs only as simulation.** Economics calculates on your own assumptions; any amount
+  shown elsewhere carries the *Simulation* label and the assumption revision.
+- **A demo project for every account.** The fully worked demo `Z_MM_PO_APPROVAL`, with a
+  guided tour; nothing done there is saved or counted.
+- **The SAP object catalog.** A free viewer of SAP's Cloudification Repository and object
+  classification at [clean-core.io/catalog](https://clean-core.io/catalog), no account
+  needed.
 
----
+## What it deliberately does not do
 
-## 🚀 Local Development Setup
+Deliberately not built: tenants and organisation accounts, single sign-on, guest access,
+role mandates, a self-hosted edition, ALM adapters, portfolio or wave planning, and any
+write access through an API. Accountability stays with the signed-in account. The
+reasons are in [`docs/ROADMAP.md`](docs/ROADMAP.md) §8.
 
-### 📋 Prerequisites
-*   Node.js (v22.8 or higher — required; the test runner's permission model depends on it)
-*   npm (v10 or higher)
+## Cost
 
-### ⚙️ Installation
-1.  **Clone the Repository:**
-    ```bash
-    git clone https://github.com/sonnyfrenzel-rgb/clean-core.io.git
-    cd clean-core.io
-    ```
-2.  **Install Dependencies:**
-    ```bash
-    npm install
-    ```
-3.  **Configure Environment Variables:**
-    Copy the sample configuration file:
-    ```bash
-    cp .env.example .env.local
-    ```
-    Populate the variables inside `.env.local` including your `GEMINI_API_KEY`, `RESEND_API_KEY`, and standard Firebase project keys.
+Free. There is no paid tier and no payment is accepted. An account has five analysis
+runs, and each starter example is free the first time it runs; after that you continue
+with your own Gemini API key, which Google bills under your own agreement with Google.
 
-### 🌐 Running the Web Application
-Launch the local Next.js development server:
+## Local development
+
+Requirements: Node.js 22.8 or later.
+
 ```bash
-npm run dev
+git clone https://github.com/sonnyfrenzel-rgb/clean-core.io.git
+cd clean-core.io
+npm ci
+cp .env.example .env.local   # Firebase keys, GEMINI_API_KEY, AUDIT_SIGNING_KEY, RESEND_API_KEY
+npm run dev                  # http://localhost:3000
 ```
-Open [http://localhost:3000](http://localhost:3000) to view the client.
 
----
+Tests run against the Firebase emulators:
 
-## ⚙️ S/4HANA Public Cloud Sandbox Integration (BYOT)
+```bash
+firebase emulators:start --only auth,firestore --project=cleancore-491216
+npx playwright test
+```
 
-Clean-Core.io bridges the gap between static code analysis and live sandbox verification. **Connections are restricted to non-production sandbox systems only — never production environments.** All communication is encrypted, read-only, and admin-gated.
+Architecture and runbook: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · design rules:
+[`DESIGN.md`](DESIGN.md) · working in this repository: [`CLAUDE.md`](CLAUDE.md).
 
-### How it Works:
-1.  **Request Access:** Users click "Request Live Tenant Access" inside Stage 5 (Testing Sandbox).
-2.  **Security Review:** Administrators receive a cryptographically signed email linking to `/admin/approve-tenant`.
-3.  **Privilege Granting:** Admin grants the `s4TenantAccessAllowed` right directly in the Unified Admin Console.
-4.  **Secure Connection:** The locked connection panel slides open. Users enter their S/4HANA URL and Basic/OAuth credentials.
-5.  **Encrypted Credential Storage:** Credentials are sent to `POST /api/s4-credentials`, encrypted with AES-256-GCM, and stored in a server-only `s4_credentials/{uid}` collection. Only non-secret metadata (`s4Meta`) is stored in the user profile.
-6.  **Server-Side Resolution:** For the connection check, the metadata read and the read-only call, the server loads and decrypts credentials. Credentials **never** leave the server after initial save. Test execution against the tenant is locked (see [`SECURITY.md`](SECURITY.md) §7.1).
+## Security and data
 
----
+Model keys never reach the browser; every mutating route verifies a Firebase ID token;
+S/4HANA credentials are encrypted with AES-256-GCM in a collection no client can read.
+Generated tests run against mocks in an isolated test runner, a service of its own.
+Running generated tests against a connected tenant is locked until the isolated live
+runner has passed its external review. Account deletion follows GDPR Art. 17; encrypted
+backups age out within 30 days.
 
-## 🔒 Security, Sovereignty & Compliance
+Details: [`SECURITY.md`](SECURITY.md) · retention and backups:
+[`docs/DATA-RETENTION.md`](docs/DATA-RETENTION.md) · operations:
+[`docs/OPERATIONS.md`](docs/OPERATIONS.md).
 
-Clean-Core.io prioritizes data security and user privacy above all else:
+## Licence
 
-*   **Server-Side Auth:** All mutating API routes require a valid Firebase ID token verified via Firebase Admin SDK.
-*   **SSRF Protection:** Multi-layer defense: HTTPS-only, DNS resolution with IP re-check, host allowlist (`S4_HOST_ALLOWLIST`), credential-in-URL blocking, internal TLD blocking, cloud metadata endpoint blocking, encoded IP detection, and redirect target validation. See [`SECURITY.md`](SECURITY.md) for full details.
-*   **Encrypted Credentials (AES-256-GCM):** S/4HANA credentials are encrypted at rest in a server-only Firestore collection (`s4_credentials`). Client SDKs cannot read this collection (`allow read, write: if false`). Passwords follow a write-only pattern — they are never returned to the client.
-*   **Admin Gating:** All privileged routes (email sending, tenant management) require `verifyAdminRequest()` with email allowlist enforcement.
-*   **Quota Enforcement:** Transformation quotas are enforced via atomic server-side Firestore transactions. Client-side counters are decorative only.
-*   **Sandboxed Test Runner:** Generated unit tests do not execute inside the application service. `/api/run-tests` sends the project's stored code and suite to a separate runner service (`runner/`, roadmap 8.9): its own Cloud Run service whose service account holds no roles, with no platform secrets in its image or environment, reachable only by the app, and with all outbound traffic routed into a VPC without NAT. A deployed app without that runner runs no tests at all; only an emulator build (local development, CI) runs the same execution core in-process, and says so (`local-emulator`). The runner reports the SHA-256 of every file it ran and its revision, and the app checks both before it records a result. Inside the runner the earlier layers stay as defence in depth, not as a boundary of their own: esbuild bundling, Node's Permission Model (filesystem scoped to a temp dir; no child-process/worker/native-addon access), `--no-experimental-sqlite`, and preloaded module and network guards. **Live S/4HANA test execution is locked** (gate `G0:R0`, [`SECURITY.md`](SECURITY.md) §7.1). Behind the lock the path is built so that a runner never holds a tenant credential: a live run carries a short-lived capability, and the app's credential proxy adds the credentials per request, for one host and one run. The old environment switch and its egress probe are gone. See [`SECURITY.md`](SECURITY.md) §7.
-*   **Field-Level Security:** Firestore Security Rules freeze all privileged fields (isAdmin, tier, quota counters) so only admins can modify them.
-*   **Art. 17 GDPR Cascade Deletion:** An idempotent cascade purges authentication profiles, custom uploads, ABAP scripts, analysis metadata, modernized designs, blueprints, generated ZIP packages, sandbox outputs, configurations, and **encrypted S/4HANA credentials**; a partial failure is surfaced rather than reported as success, and encrypted backups age out within 30 days.
-*   **Full Security Documentation:** See [`SECURITY.md`](SECURITY.md) for the complete security architecture, threat model, and developer checklist.
-
----
-
-## 🗺️ Status: v2.5.0 shipped
-
-Clean-Core.io is at **v2.5.0** — a security-hardened **Free Community Edition** with an audit-friendly, server-generated evidence chain and operational readiness (health check, structured logging, documented runbooks), plus a sharpened, honest narrative (free · community · **complementary to SAP tooling**, not a competitor). It is not a certified, procurement-grade enterprise platform, and some controls remain defense-in-depth or roadmap rather than complete (notably the test-runner isolation and parts of the audit-pack trust chain) — see the deliberately deferred items below and [`SECURITY.md`](SECURITY.md).
-
-Highlights: server-authoritative, HMAC-signed audit packs · complete GDPR Art. 17 erasure (with an automated completeness test) · supply-chain CI (secret scanning + dependency audit + CycloneDX SBOM) · `/api/health` + structured logging · a public SAP Object Catalog · and a public [/trust](https://clean-core.io/trust) transparency page.
-
-Full release notes: [CHANGELOG.md](CHANGELOG.md) (kept internal; the public /changelog page was retired).
-
-### Deliberately in the backlog
-
-Classic enterprise identity/governance items — **SSO (SAML/OIDC), multi-role RBAC, org/project sharing, formal DPA/TOMs, run-over-run diffing, CSP nonce migration, and a commissioned external penetration test** — are intentionally deferred. Clean-Core.io targets **individual** SAP architects, developers and decision-makers (a free community tool), not multi-user enterprise procurement, so these add cost and complexity without matching current need. Full rationale: **[docs/archiv/ROADMAP-2.0.md](docs/archiv/ROADMAP-2.0.md)**; current plan: **[docs/ROADMAP.md](docs/ROADMAP.md)**.
-
-Operations, monitoring, backups and rules deployment: **[docs/OPERATIONS.md](docs/OPERATIONS.md)** · Security architecture: **[SECURITY.md](SECURITY.md)** · Data handling: **[docs/DATA-RETENTION.md](docs/DATA-RETENTION.md)**.
-
----
-
-## 📄 License & Usage
-
-Clean-Core.io is **open source under the [Apache License 2.0](LICENSE)** — engine, catalog layer, UI and all. You may run it, fork it, host it yourself and build on it, provided you keep the licence and the [NOTICE](NOTICE) with it. You own the output you generate.
-
-This section previously described the platform as proprietary, all rights reserved. That was accurate rather than careless: there was no licence file in the repository, and code without one is closed by default, whatever a roadmap promises. The self-hosting and open-core intent needed a licence to become true rather than planned, so here it is.
-
-The object catalog is grounded in SAP's Apache-2.0-licensed [Cloudification Repository](https://github.com/SAP/abap-atc-cr-cv-s4hc); those synced artifacts stay under their own copyright, and [NOTICE](NOTICE) says so. SAP product names are used nominatively — this project is not affiliated with SAP SE.
-
+Apache License 2.0 — see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). You may run, fork
+and build on the code under that licence; you own the output you generate. The object
+catalog is derived from SAP's Apache-2.0-licensed
+[Cloudification Repository](https://github.com/SAP/abap-atc-cr-cv-s4hc); those files keep
+their own copyright ([`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)). SAP product names
+are used nominatively.

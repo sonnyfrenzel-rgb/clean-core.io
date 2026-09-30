@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { FEATURE_SLUGS } from '../lib/features-content';
+import { getAllCatalogObjectNames, getModuleAreas, objectToSlug } from '../lib/abap/catalog-index';
 
 /**
  * The Copy-CI: roadmap 0.2 (`docs/roadmap/SCHNITT-0-UMFANG.md` §2, `UX-E14-F01:R0`).
@@ -119,7 +121,19 @@ function routeResolves(href: string): boolean {
   for (const group of ['', '(app)/']) {
     if (isFile(`app/${group}${base}/page.tsx`) || isFile(`app/${group}${base}/route.ts`)) return true;
   }
-  return false;
+  // The 3.0 landing page (roadmap 3.0.6) links into the catalog and feature
+  // pages by name. A dynamic segment resolves when its folder exists and the
+  // value is one the route really serves — the same data seo-surface-guard reads.
+  const parts = base.split('/');
+  const last = parts.pop()!;
+  const parent = parts.join('/');
+  const served: Record<string, () => string[]> = {
+    features: () => FEATURE_SLUGS,
+    catalog: () => getAllCatalogObjectNames().map(objectToSlug),
+    'catalog/browse': () => 'abcdefghijklmnopqrstuvwxyz'.split(''),
+    'catalog/module': () => getModuleAreas().map((a) => a.code.toLowerCase()),
+  };
+  return Boolean(served[parent]?.().includes(last));
 }
 
 test.describe('every public number is bound to the facts service', () => {

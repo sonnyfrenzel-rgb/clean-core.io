@@ -37,14 +37,24 @@ test.describe('one section header, defined once', () => {
   test('nothing outside the component carries the heading classes', () => {
     const src = read('app/page.tsx');
     // The scale lives in SectionHeader. Finding it here means a copy was made.
+    expect(src).not.toContain('md:text-5xl font-extrabold');
     expect(src).not.toContain('md:text-6xl font-black');
   });
 
   test('the eyebrow pill is defined once', () => {
     const src = read('app/page.tsx');
-    const pills = (src.match(/rounded-full text-\[10px\] font-black uppercase/g) || []).length;
+    // Roadmap 3.0.6 / DESIGN.md §1.7: 12px, weight 700, no longer 10px black.
+    const pills = (src.match(/rounded-full text-xs font-bold uppercase/g) || []).length;
     expect(pills, 'eyebrow pill classes copied into app/page.tsx').toBe(0);
-    expect(read('components/SectionHeader.tsx')).toMatch(/rounded-full text-\[10px\] font-black uppercase/);
+    expect(read('components/SectionHeader.tsx')).toMatch(/rounded-full text-xs font-bold uppercase/);
+  });
+
+  test('nothing on the landing page is heavier than 800 — DESIGN.md §1.2, §1.7', () => {
+    // 900 flattens the hierarchy; with 3.0 the public pages follow the product
+    // scale. Checked in the page and in the header component it owns.
+    for (const rel of ['app/page.tsx', 'components/SectionHeader.tsx', 'components/HeaderAuthButton.tsx', 'components/landing/ViewsStage.tsx']) {
+      expect(read(rel), `${rel} uses font-black`).not.toMatch(/font-black/);
+    }
   });
 });
 
@@ -68,6 +78,8 @@ test.describe('every section heading renders identically', () => {
     );
 
     expect(headings.length, 'no section headings found').toBeGreaterThan(4);
+    const weights = await page.locator('[data-section-heading]').evaluateAll((els) => els.map((el) => Number(getComputedStyle(el).fontWeight)));
+    expect(Math.max(...weights), 'a section heading is heavier than 800').toBeLessThanOrEqual(800);
 
     const keys = [...new Set(headings.map((h) => h.key))];
     expect(

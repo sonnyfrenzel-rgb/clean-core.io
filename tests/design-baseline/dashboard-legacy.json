@@ -40,14 +40,6 @@
       "R12": 4,
       "R18": 1
     },
-    "components/ProcessStrip.tsx": {
-      "step": "D.22",
-      "R1": 5,
-      "R2": 4,
-      "R4": 22,
-      "R5": 3,
-      "R18": 3
-    },
     "components/Skeleton.tsx": {
       "step": "D.22",
       "R4": 3,
