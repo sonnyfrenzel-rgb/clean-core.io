@@ -152,7 +152,7 @@ export default function ModuleHeatmap({ codeInventory }: { codeInventory: CodeIn
       icon={<Grid3x3 size={16} />}
       title="Module Risk Heatmap"
       badge={`${data.length} module${data.length !== 1 ? 's' : ''}${highModules ? ` · ${highModules} high-risk` : ''}`}
-      badgeSeverity={highModules ? 'red' : 'green'}
+      badgeSeverity={highModules ? 'error' : 'neutral'}
       tooltip={`Each tile is a functional module. Tile area = share of the codebase (${weightedBy}); colour = the worst criticality inside it. Larger + redder = address first.`}
       defaultOpen
     >

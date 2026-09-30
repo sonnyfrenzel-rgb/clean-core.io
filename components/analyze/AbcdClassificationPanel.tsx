@@ -132,7 +132,7 @@ export default function AbcdClassificationPanel({
       icon={<ListChecks size={16} />}
       title="Cloud Readiness Classification (A–D)"
       badge={`A ${dist.A} · B ${dist.B} · C ${dist.C} · D ${dist.D}`}
-      badgeSeverity={dist.D > 0 ? 'red' : dist.C > 0 ? 'amber' : 'green'}
+      badgeSeverity={dist.D > 0 ? 'error' : dist.C > 0 ? 'warning' : 'neutral'}
       tooltip="SAP's clean core level concept (A = released, B = classic SAP API, C = internal/conditional, D = not recommended), one grade per object. Objects SAP has published a state for are looked up in the Cloudification Repository and SAP's classicAPI/noAPI file, and a table is graded for the access your code makes: reading a table SAP will not release is C, writing to it is D. Your own Z/Y tables are graded B as classic ABAP working on its own data; other objects SAP has not classified fall back to a heuristic and are marked as estimated. Not an authoritative SAP ATC classification and not part of the signed audit pack — verify with SAP ADT/ATC."
     >
       {/* Say where each grade comes from, and keep the audit-pack exclusion

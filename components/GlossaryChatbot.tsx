@@ -514,12 +514,13 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
         }
       `}} />
 
-      {/* The floating entry. Below the dialog layer (z-50: CcDialog, CcMessageBox,
-          the sticky shell bar), so a dialog is never covered by it. */}
+      {/* The floating entry, on the float layer (`app/globals.css`): above the
+          page and the sticky shell bar, below every dialog and message box, so
+          a question the page asks is never covered by it. */}
       <span
         ref={toggleRef}
         className={cn(
-          'fixed right-4 bottom-4 z-30 inline-flex rounded-cc-row shadow-cc-dialog sm:right-6 sm:bottom-6',
+          'fixed right-4 bottom-4 z-cc-float inline-flex rounded-cc-row shadow-cc-dialog sm:right-6 sm:bottom-6',
           floatingOffOnDesktop && 'sm:hidden',
         )}
       >
@@ -543,14 +544,15 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
         </CcButton>
       </span>
 
-      {/* The panel. Not modal — the page stays usable beside it — and one layer
-          under dialogs (z-40), so a CcDialog opened from the page covers it. */}
+      {/* The panel. Not modal — the page stays usable beside it — and on the
+          float layer with its button, under the overlay layer, so a CcDialog
+          opened from the page covers it. */}
       {isOpen && (
         <div
           id="chatbot-panel"
           role="dialog"
           aria-labelledby="chatbot-panel-title"
-          className="cc fixed right-4 bottom-20 z-40 flex h-[520px] max-h-[calc(100dvh-7rem)] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog sm:right-6 sm:bottom-24"
+          className="cc fixed right-4 bottom-20 z-cc-float flex h-[520px] max-h-[calc(100dvh-7rem)] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog sm:right-6 sm:bottom-24"
         >
           {/* Header — light, like every other surface (§1.1); dark is for code. */}
           <div className="flex shrink-0 items-center justify-between gap-3 border-b border-cc-line px-4 py-3">

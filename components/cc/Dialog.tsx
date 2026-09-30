@@ -26,7 +26,9 @@ import { useCcHydrated, useCcModal } from './modal';
  * Two decisions that differ from the message box, on purpose:
  *
  *   - the focus starts on the **first field**, not on the layer: someone who
- *     opened a form wants to type into it;
+ *     opened a form wants to type into it. A dialog without a field may mark
+ *     the control the caret belongs on with `data-cc-initial-focus` (D.31:
+ *     the terms gate's one way back into the product);
  *   - clicking the dimmed page does **not** close it. A form that vanishes on a
  *     stray click takes the typed text with it. Escape and the close button are
  *     the two ways out, and both are deliberate.

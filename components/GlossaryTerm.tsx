@@ -93,7 +93,10 @@ export default function GlossaryTerm({ termKey, children, className }: GlossaryT
           id={id}
           data-glossary-popover=""
           className={cn(
-            'z-40 block rounded-cc-card border border-cc-field-border bg-cc-surface p-3 text-left whitespace-normal normal-case tracking-normal shadow-cc-dialog',
+            // Anchored in the text on wider screens (popover layer); on a phone it
+            // is pinned over the bottom of the viewport, where the assistant's
+            // floating button sits — there it must lie above the float layer.
+            'z-cc-popover max-md:z-cc-overlay block rounded-cc-card border border-cc-field-border bg-cc-surface p-3 text-left whitespace-normal normal-case tracking-normal shadow-cc-dialog',
             // Phone: pinned to the bottom of the viewport, full width minus the gutter.
             'max-md:fixed max-md:inset-x-4 max-md:bottom-4',
             // Wider screens: above the term, like GlossaryMention.

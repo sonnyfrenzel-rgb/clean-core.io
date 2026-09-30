@@ -334,6 +334,7 @@
  * the workspace components already render (`leading-tight` for the title).
  *
  *   cc-text-title       22 / 800 / -0.02em   project title, stage title
+ *   cc-text-figure      22 / 800 / -0.02em / tabular   a key figure (D.31)
  *   cc-text-h2          15 / 700             section title
  *   cc-text-h3          14 / 700             card title
  *   cc-text-body        14 / 500 / 1.55      running text
@@ -349,6 +350,18 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.25;
+}
+
+/* A key figure — the amount, the months, the percentage a tile exists for
+   (block D, D.31). The title's size and weight, because a figure stands as
+   loud as the page's name and no louder, with tabular digits so figures in a
+   row of tiles line up digit for digit. Not a heading: it is a `p` or a `dd`. */
+@utility cc-text-figure {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
 }
 
 @utility cc-text-h2 {
@@ -642,6 +655,22 @@
 
   [data-chart-line] {
     stroke: CanvasText;
+  }
+
+  /* Block D, D.31. An SVG shape is not a box: it has no border, and the
+     contrast theme leaves its `fill` alone — a Recharts ring kept its own
+     blue, red and grey on a black page, three colours the reader did not
+     choose and may not be able to tell apart. The same rule as the boxes
+     above, in SVG terms: the fill becomes the page, the outline the theme's
+     text colour, and "not determined" keeps its dashes. */
+  svg [data-chart-segment] {
+    fill: Canvas;
+    stroke: CanvasText;
+    stroke-width: 1px;
+  }
+
+  svg [data-chart-segment][data-not-determined] {
+    stroke-dasharray: 3 2;
   }
 
   /* Roadmap 3.0.4. The ring takes the system's highlight, so it is the
