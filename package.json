@@ -38,7 +38,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "dompurify": "^3.4.11",
+    "dompurify": "^3.4.16",
     "esbuild": "^0.28.1",
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
@@ -85,7 +85,7 @@
     "cross-env": "^7.0.3",
     "eslint": "9.39.1",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "firebase-tools": "^15.0.0",
+    "firebase-tools": "^15.32.0",
     "playwright": "^1.59.1",
     "tailwindcss": "4.1.11",
     "tsx": "^4.19.0",
@@ -114,6 +114,8 @@
     "ip-address": "^10.7.1",
     "qs": "^6.16.0",
     "undici": "^6.28.1",
+    "@grpc/grpc-js": "^1.14.5",
+    "morgan": "^1.12.1",
     "sharp": "^0.35.4"
   }
 }
