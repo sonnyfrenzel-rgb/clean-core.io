@@ -1,10 +1,18 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ShieldCheck, HelpCircle, X, Link2 } from 'lucide-react';
-import clsx from 'clsx';
+import { ShieldCheck, HelpCircle, Link2 } from 'lucide-react';
 import type { SupportFinding } from '@/lib/abap/class-model';
-import { LEVEL_EMOJI } from '@/lib/abap/support-matrix';
+import { SupportLevelMark } from '@/components/analyze/CoverageVerdict';
+import CcButton from '@/components/cc/Button';
+import CcDialog from '@/components/cc/Dialog';
+import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+
+/** A snippet as plain lines for the code surface — no highlighting is claimed. */
+function snippetLines(code: string): CcCodeLine[] {
+  return code.split('\n').map((text, index) => ({ number: index + 1, tokens: [{ kind: 'plain', text }] }));
+}
 
 interface SecurityHardeningItem {
   category: string;
@@ -103,140 +111,113 @@ export default function SecurityHardeningChecklist({ securityHardening, findings
 
   if (!securityHardening || securityHardening.length === 0) return null;
 
+  const matchedItem = activeTerm ? securityHardening.find((h) => h.requirement === activeTerm) : undefined;
+  const explanation = activeTerm ? getSecurityExplanation(activeTerm, matchedItem?.packageOrConfig || '') : null;
+
   return (
-    <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between">
+    <div className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc flex flex-col justify-between">
       <div>
         <div className="mb-6">
-          <h4 className="font-extrabold text-slate-900 text-lg">Security Hardening Checklist</h4>
-          <p className="text-xs text-slate-405 mt-1">Concrete actions to secure the side-by-side Node.js application.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="cc-text-h2 text-cc-ink">Security Hardening Checklist</h4>
+            {/* The checklist items are the model's; the explanations behind "Explain" are ours. */}
+            <CcProvenanceChip value="proposed" />
+          </div>
+          <p className="cc-text-cell text-cc-ink-muted mt-1">Concrete actions to secure the side-by-side Node.js application.</p>
         </div>
-        
-        <div className="space-y-3">
+
+        <ul className="space-y-3">
           {securityHardening.map((item, idx) => (
-            <div 
-              key={idx} 
-              onClick={() => setActiveTerm(item.requirement)}
-              className="bg-slate-50 p-4 rounded-2xl border border-slate-105 flex items-start gap-3.5 text-xs hover:border-emerald-500/40 hover:bg-slate-100/30 cursor-pointer transition-all shadow-sm active:scale-[0.98] group"
+            <li
+              key={idx}
+              data-security-item={idx}
+              className="bg-cc-surface-muted p-4 rounded-cc-row border border-cc-line flex items-start gap-3"
             >
-              <div className="bg-emerald-100/50 p-1.5 rounded-xl text-emerald-600 shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">{item.category}</span>
-                    <span className="text-[9px] text-slate-400 font-mono font-medium bg-slate-200/50 px-1.5 py-0.5 rounded">({item.packageOrConfig})</span>
+              <ShieldCheck className="w-4 h-4 mt-1 text-cc-ink-muted shrink-0" aria-hidden="true" />
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="cc-text-h3 text-cc-ink">{item.category}</span>
+                    <span className="font-cc-mono cc-text-meta text-cc-ink-muted">({item.packageOrConfig})</span>
                   </div>
-                  <span className="text-[9px] font-bold text-slate-400 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <HelpCircle className="w-3 h-3 text-emerald-500" /> Explain
-                  </span>
+                  <CcButton
+                    variant="ghost"
+                    icon={<HelpCircle size={16} aria-hidden={true} />}
+                    onClick={() => setActiveTerm(item.requirement)}
+                    aria-haspopup="dialog"
+                  >
+                    Explain
+                  </CcButton>
                 </div>
-                <p className="text-slate-600 mt-1 leading-relaxed">{item.requirement}</p>
-                {/* Construct coupling badges */}
+                <p className="cc-text-cell text-cc-ink mt-1">{item.requirement}</p>
+                {/* Construct coupling: the findings of the analysis this item answers */}
                 {hardeningToFindings.has(idx) && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
+                  <ul className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
                     {hardeningToFindings.get(idx)!.map((f, fIdx) => (
-                      <span
+                      <li
                         key={fIdx}
-                        className={clsx(
-                          'inline-flex items-center gap-1 text-[8px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border',
-                          f.level === 'not-supported' ? 'bg-red-50 text-red-600 border-red-100' :
-                          f.level === 'partial' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                          'bg-emerald-50 text-emerald-600 border-emerald-100'
-                        )}
+                        className="inline-flex items-center gap-1 cc-text-meta text-cc-ink"
                         title={f.recommendation}
                       >
-                        <Link2 className="w-2.5 h-2.5" />
-                        {LEVEL_EMOJI[f.level]} {f.title}
-                      </span>
+                        <Link2 className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" />
+                        <SupportLevelMark level={f.level} />
+                        <span aria-hidden="true" className="text-cc-ink-muted">·</span>
+                        <span>{f.title}</span>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 )}
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
 
-      {/* Specialist Term Modal Overlay */}
-      {activeTerm && (() => {
-        let matchedItem = securityHardening.find((h) => h.requirement === activeTerm);
-        const explanation = getSecurityExplanation(activeTerm, matchedItem?.packageOrConfig || '');
+      {/* Specialist term explanation */}
+      <CcDialog
+        open={Boolean(activeTerm && explanation)}
+        title={explanation?.title ?? ''}
+        lead="Specialist Security Concept"
+        size="wide"
+        onClose={() => setActiveTerm(null)}
+        actions={
+          <CcButton variant="ghost" onClick={() => setActiveTerm(null)}>
+            Acknowledge & Close
+          </CcButton>
+        }
+      >
+        {explanation ? (
+          <div className="space-y-5">
+            <div>
+              <h3 className="cc-text-label text-cc-ink-muted mb-1">Description</h3>
+              <p className="cc-text-body text-cc-ink">{explanation.explanation}</p>
+            </div>
 
-        return (
-          <div 
-            className="fixed inset-0 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md z-[100] animate-in fade-in duration-200"
-            onClick={() => setActiveTerm(null)}
-          >
-            <div 
-              className="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-xl w-full text-white shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Decorative gradient blob */}
-              <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl -mr-12 -mt-12 pointer-events-none"></div>
-              
-              <button aria-label="Close" type="button" 
-                onClick={() => setActiveTerm(null)}
-                className="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-1.5 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-              >
-                <X size={16} />
-              </button>
+            <div>
+              <h3 className="cc-text-label text-cc-ink-muted mb-1">Technical & Architectural Impact</h3>
+              <p className="cc-text-cell text-cc-ink">{explanation.technicalImpact}</p>
+            </div>
 
-              <div className="flex items-center gap-3.5 mb-6">
-                <div className="bg-emerald-500/20 p-2 rounded-2xl text-emerald-400 border border-emerald-500/30">
-                  <ShieldCheck className="w-6 h-6" />
+            {matchedItem && (
+              <div className="grid grid-cols-2 gap-4 border-y border-cc-line py-3">
+                <div>
+                  <span className="cc-text-label text-cc-ink-muted block">Requirement Category</span>
+                  <span className="cc-text-h3 text-cc-ink mt-1 block">{matchedItem.category}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest font-mono">Specialist Security Concept</span>
-                  <h3 className="text-xl font-extrabold text-white mt-0.5">{explanation.title}</h3>
+                  <span className="cc-text-label text-cc-ink-muted block">NPM / Configuration Target</span>
+                  <span className="font-cc-mono cc-text-identifier text-cc-ink mt-1 block">{matchedItem.packageOrConfig}</span>
                 </div>
               </div>
+            )}
 
-              <div className="space-y-5 text-sm">
-                <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">Description</h4>
-                  <p className="text-slate-300 leading-relaxed">{explanation.explanation}</p>
-                </div>
-
-                <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 font-mono">Technical & Architectural Impact</h4>
-                  <p className="text-slate-400 leading-relaxed text-xs">{explanation.technicalImpact}</p>
-                </div>
-
-                {matchedItem && (
-                  <div className="grid grid-cols-2 gap-4 border-y border-slate-850 py-3.5 my-2">
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Requirement Category</span>
-                      <span className="text-xs font-bold text-slate-200 mt-1 block">{matchedItem.category}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">NPM / Configuration Target</span>
-                      <span className="text-xs font-mono font-bold text-emerald-400 mt-1 block">{matchedItem.packageOrConfig}</span>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 font-mono">Implementation Snippet</h4>
-                  <pre className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs font-mono text-emerald-300 overflow-x-auto">
-                    <code>{explanation.implementationPattern}</code>
-                  </pre>
-                </div>
-              </div>
-
-              <div className="mt-8 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setActiveTerm(null)}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-lg shadow-emerald-950/20 active:scale-95"
-                >
-                  Acknowledge & Close
-                </button>
-              </div>
+            <div>
+              <h3 className="cc-text-label text-cc-ink-muted mb-2">Implementation Snippet</h3>
+              <CcCodeSurface label={`${explanation.title} — implementation snippet`} lines={snippetLines(explanation.implementationPattern)} />
             </div>
           </div>
-        );
-      })()}
+        ) : null}
+      </CcDialog>
     </div>
   );
 }
