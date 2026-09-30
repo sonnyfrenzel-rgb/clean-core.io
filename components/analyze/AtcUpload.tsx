@@ -1,9 +1,14 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { FileSpreadsheet, AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
-import clsx from 'clsx';
+import { FileSpreadsheet, AlertTriangle, Info } from 'lucide-react';
 import type { AtcReport } from '@/lib/abap/atc-model';
+import { formatIsoDate } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import CcButton from '@/components/cc/Button';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcTable from '@/components/cc/Table';
+import { CcTag } from '@/components/cc/Tag';
 import { ATC_PRIVACY_NOTICE } from '@/lib/abap/atc-privacy';
 import {
   personalDataHintKey,
@@ -145,33 +150,25 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
   if (imported && !file) {
     const counts = priorityCounts(imported);
     return (
-      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5" data-atc-imported>
-        <div className="flex items-start gap-3">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-emerald-900">
-              ATC results imported — {imported.findings.length} findings, as reported by ATC
-            </p>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-emerald-700">
-              {(['error', 'warning', 'info', 'unknown'] as const)
-                .filter((p) => counts[p] > 0)
-                .map((p) => (
-                  <span key={p}>{counts[p]} {PRIORITY_LABEL[p]}</span>
-                ))}
-              {imported.quarantined && imported.quarantined.length > 0 && (
-                <span className="text-amber-700">⛔ {imported.quarantined.length} rows rejected</span>
-              )}
-              <span>📊 Imported {new Date(imported.importedAt).toLocaleDateString()}</span>
-            </div>
-            <Warnings warnings={imported.warnings} />
-          </div>
-          <button
-            onClick={startOver}
-            className="text-xs text-emerald-600 hover:text-emerald-800 font-bold underline underline-offset-2 shrink-0"
-          >
-            Replace
-          </button>
-        </div>
+      <div data-atc-imported="">
+        <CcMessageStrip
+          state="information"
+          headline={`ATC results imported — ${imported.findings.length} findings, as reported by ATC.`}
+          actions={<CcButton variant="ghost" onClick={startOver}>Replace</CcButton>}
+        >
+          <span className="flex flex-wrap gap-x-4 gap-y-1">
+            {(['error', 'warning', 'info', 'unknown'] as const)
+              .filter((p) => counts[p] > 0)
+              .map((p) => (
+                <span key={p}>{counts[p]} {PRIORITY_LABEL[p]}</span>
+              ))}
+            {imported.quarantined && imported.quarantined.length > 0 && (
+              <span>{imported.quarantined.length} rows rejected</span>
+            )}
+            <span>Imported <span className="font-cc-mono">{formatIsoDate(imported.importedAt) ?? 'date not recorded'}</span></span>
+          </span>
+          <Warnings warnings={imported.warnings} />
+        </CcMessageStrip>
       </div>
     );
   }
@@ -183,13 +180,11 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        className={clsx(
-          'relative border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all',
-          isDragging
-            ? 'border-emerald-400 bg-emerald-50/50'
-            : 'border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/20',
-          parsing && 'opacity-50 pointer-events-none',
+        data-atc-dropzone={isDragging ? 'dragging' : 'idle'}
+        className={cn(
+          'flex flex-col items-center gap-2 rounded-cc-card border-2 border-dashed p-6 text-center',
+          isDragging ? 'border-cc-ink bg-cc-surface-muted' : 'border-cc-field-border bg-cc-surface',
+          parsing && 'opacity-60',
         )}
       >
         <input
@@ -200,23 +195,32 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
           data-atc-file
           className="hidden"
         />
-        <FileSpreadsheet className={clsx('w-8 h-8 mx-auto mb-2', isDragging ? 'text-emerald-500' : 'text-slate-300')} />
-        <p className="text-sm font-bold text-slate-700">
+        <FileSpreadsheet size={32} aria-hidden={true} className="text-cc-ink-muted" />
+        <p className="cc-text-h3 text-cc-ink" aria-live="polite">
           {parsing ? 'Reading ATC worklist…' : file ? `${file.name} — drop another file to replace it` : 'Drop ATC worklist export here'}
         </p>
-        <p className="text-xs text-slate-400 mt-1">
-          CSV/TSV (from SAP GUI "Local File") or XLSX (from ADT export) · nothing is stored until you confirm
+        <p className="cc-text-meta text-cc-ink-muted">
+          CSV/TSV (from SAP GUI &quot;Local File&quot;) or XLSX (from ADT export) · nothing is stored until you confirm
         </p>
+        <CcButton
+          variant="secondary"
+          busy={parsing}
+          icon={<FileSpreadsheet size={16} aria-hidden={true} />}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {file ? 'Choose another file' : 'Choose a file'}
+        </CcButton>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-bold text-red-800">Import failed</p>
-            <p className="text-xs text-red-600 mt-0.5">{error}</p>
-          </div>
-        </div>
+        <CcMessageStrip
+          state="error"
+          headline="Import failed."
+          announce
+          actions={<CcButton variant="ghost" onClick={() => fileInputRef.current?.click()}>Choose another file</CcButton>}
+        >
+          {error}
+        </CcMessageStrip>
       )}
 
       {file && (
@@ -230,32 +234,37 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
       )}
 
       {preview && !error && (
-        <div className="border border-slate-200 rounded-2xl p-4 space-y-3" data-atc-preview>
-          <p className="text-sm font-bold text-slate-800">
+        <div className="space-y-3 rounded-cc-card border border-cc-line bg-cc-surface p-4" data-atc-preview>
+          <p className="cc-text-h3 text-cc-ink">
             Preview: {preview.findings.length} findings would be imported, as reported by ATC
             {preview.quarantined && preview.quarantined.length > 0 && (
-              <span className="text-rose-700"> · {preview.quarantined.length} rows rejected</span>
+              <span className="text-cc-error"> · {preview.quarantined.length} rows rejected</span>
             )}
           </p>
           <Warnings warnings={preview.warnings} />
 
           {preview.quarantined && preview.quarantined.length > 0 && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50/60 overflow-hidden" data-atc-quarantine>
-              <p className="px-3 py-2 text-[11px] font-bold text-rose-800 border-b border-rose-200">
-                Rejected rows — not imported, not compared with the engine
-              </p>
-              <ul className="max-h-48 overflow-y-auto divide-y divide-rose-100">
-                {preview.quarantined.slice(0, PREVIEW_ROWS).map((q) => (
-                  <li key={q.row} className="px-3 py-1.5 text-[11px] text-rose-900 flex items-start gap-2">
-                    <XCircle className="w-3 h-3 shrink-0 mt-0.5 text-rose-500" />
-                    <span className="font-mono shrink-0">row {q.row}</span>
-                    <span className="font-mono font-bold shrink-0">{q.objectName}</span>
-                    <span className="min-w-0">{q.reason}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="space-y-2" data-atc-quarantine>
+              <p className="cc-text-label text-cc-ink-muted">Rejected rows — not imported, not compared with the engine</p>
+              <CcTable
+                caption="Rejected rows"
+                limit={5}
+                columns={[
+                  { key: 'row', label: 'Row', numeric: true, width: '80px' },
+                  { key: 'object', label: 'Object' },
+                  { key: 'reason', label: 'Reason' },
+                ]}
+                rows={preview.quarantined.slice(0, PREVIEW_ROWS).map((q) => ({
+                  key: String(q.row),
+                  cells: {
+                    row: <span className="font-cc-mono">{q.row}</span>,
+                    object: <span className="font-cc-mono">{q.objectName}</span>,
+                    reason: q.reason,
+                  },
+                }))}
+              />
               {preview.quarantined.length > PREVIEW_ROWS && (
-                <p className="px-3 py-1.5 text-[10px] text-rose-700 border-t border-rose-200">
+                <p className="cc-text-meta text-cc-ink-muted">
                   …and {preview.quarantined.length - PREVIEW_ROWS} more. All are kept with the import.
                 </p>
               )}
@@ -263,49 +272,47 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
           )}
 
           {preview.findings.length > 0 && (
-            <div className="rounded-xl border border-slate-200 overflow-hidden">
-              <p className="px-3 py-2 text-[11px] font-bold text-slate-600 border-b border-slate-200">
+            <div className="space-y-2">
+              <p className="cc-text-label text-cc-ink-muted">
                 First {Math.min(PREVIEW_ROWS, preview.findings.length)} findings, as ATC reported them
               </p>
-              <ul className="max-h-56 overflow-y-auto divide-y divide-slate-100">
-                {[...preview.findings]
+              <CcTable
+                caption="Findings, as ATC reported them"
+                limit={5}
+                columns={[
+                  { key: 'priority', label: 'ATC priority', width: '120px' },
+                  { key: 'object', label: 'Object' },
+                  { key: 'message', label: 'Message' },
+                ]}
+                rows={[...preview.findings]
                   .sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
                   .slice(0, PREVIEW_ROWS)
-                  .map((f, i) => (
-                    <li key={i} className="px-3 py-1.5 text-[11px] text-slate-700 flex items-start gap-2">
-                      <span className={clsx(
-                        'shrink-0 px-1.5 py-0.5 rounded font-black uppercase text-[9px]',
-                        f.priority === 'error' ? 'bg-red-100 text-red-700' :
-                        f.priority === 'warning' ? 'bg-amber-100 text-amber-700' :
-                        f.priority === 'info' ? 'bg-slate-100 text-slate-600' : 'bg-slate-100 text-slate-400',
-                      )}>
-                        {PRIORITY_LABEL[f.priority]}
-                      </span>
-                      <span className="font-mono font-bold shrink-0">{f.objectName}</span>
-                      <span className="min-w-0 truncate">{f.message}</span>
-                    </li>
-                  ))}
-              </ul>
+                  .map((f, i) => ({
+                    key: String(i),
+                    cells: {
+                      priority: <CcTag>{PRIORITY_LABEL[f.priority]}</CcTag>,
+                      object: <span className="font-cc-mono">{f.objectName}</span>,
+                      message: f.message,
+                    },
+                  }))}
+              />
             </div>
           )}
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
+            <CcButton
+              variant="primary"
               onClick={confirm}
               disabled={preview.findings.length === 0 || hintPending}
               data-atc-confirm
-              className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-wider hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
             >
               Import {preview.findings.length} findings
-            </button>
-            <button
-              onClick={startOver}
-              className="text-xs text-slate-500 hover:text-slate-800 font-bold underline underline-offset-2"
-            >
+            </CcButton>
+            <CcButton variant="ghost" onClick={startOver}>
               Cancel
-            </button>
+            </CcButton>
             {hintPending && (
-              <span data-atc-personal-data-pending className="text-xs font-bold text-amber-700">
+              <span data-atc-personal-data-pending className="cc-text-meta text-cc-warning">
                 Tick the box above to say you have checked this file. Nothing has been imported yet.
               </span>
             )}
@@ -313,8 +320,8 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
         </div>
       )}
 
-      <div className="flex items-start gap-2 text-[11px] text-slate-400 leading-relaxed">
-        <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-2 cc-text-meta text-cc-ink-muted">
+        <Info size={14} aria-hidden={true} className="mt-0.5 shrink-0" />
         <p>{ATC_PRIVACY_NOTICE}</p>
       </div>
     </div>
@@ -330,13 +337,13 @@ function priorityCounts(report: AtcReport): Record<string, number> {
 function Warnings({ warnings }: { warnings: string[] }) {
   if (warnings.length === 0) return null;
   return (
-    <div className="mt-2 space-y-1">
+    <ul className="mt-2 space-y-1" data-import-warnings="">
       {warnings.map((w, i) => (
-        <div key={i} className="flex items-start gap-1.5 text-[11px] text-amber-700">
-          <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
+        <li key={i} className="flex items-start gap-2 cc-text-meta text-cc-warning">
+          <AlertTriangle size={14} aria-hidden={true} className="mt-0.5 shrink-0" />
           <span>{w}</span>
-        </div>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

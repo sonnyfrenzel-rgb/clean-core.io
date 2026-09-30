@@ -1,26 +1,24 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { 
-  CheckCircle2, 
-  AlertCircle, 
-  Clock, 
-  Search, 
-  Filter, 
-  Code2,
-  X,
-  ShieldCheck, 
-  ChevronDown, 
-  ListFilter,
-  Check,
-  TrendingUp,
-  Brain
-} from 'lucide-react';
-import clsx from 'clsx';
+import { Code2, X } from 'lucide-react';
 import type { Project, WorklistItem } from '@/lib/types';
 import type { SupportFinding } from '@/lib/abap/class-model';
 import GapsPrioritization from './GapsPrioritization';
 import { gapsUnreadableSentence } from '@/lib/model-gaps';
+import { normaliseSeverity } from '@/lib/severity';
+import { SEQUENTIAL_CHART_COLORS } from '@/lib/chart-colors';
+import { cn } from '@/lib/utils';
+import CcButton from '@/components/cc/Button';
+import CcFilterBar from '@/components/cc/FilterBar';
+import CcSelect from '@/components/cc/Select';
+import CcTable, { type CcTableRowSpec } from '@/components/cc/Table';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcCodeSurface from '@/components/cc/CodeSurface';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import { CcNoMatches } from '@/components/cc/EmptyState';
+import { CcSeverity } from '@/components/cc/Identifier';
+import { CcTag } from '@/components/cc/Tag';
 
 interface GapsWorklistProps {
   projectId: string;
@@ -39,6 +37,27 @@ interface GapsWorklistProps {
   onUpdateWorklist: (updatedWorklist: WorklistItem[]) => Promise<void>;
 }
 
+type Status = WorklistItem['status'];
+type CategoryFilter = 'all' | WorklistItem['category'];
+type StatusFilter = 'all' | Status;
+
+/** The three states a backlog item moves through. Words only — no coloured dot stands in for them. */
+const STATUS_OPTIONS: { value: Status; label: string }[] = [
+  { value: 'open', label: 'Open' },
+  { value: 'in_review', label: 'In review' },
+  { value: 'signed_off', label: 'Signed off' },
+];
+
+/**
+ * The burndown bar counts amounts of one list, not states of a finding, so it
+ * takes the sequential palette (DESIGN.md §1.8) — darkest for what is done —
+ * and "open" is the empty track the other two have not filled yet.
+ */
+const BURNDOWN = {
+  signedOff: SEQUENTIAL_CHART_COLORS[3].bg,
+  inReview: SEQUENTIAL_CHART_COLORS[1].bg,
+};
+
 export default function GapsWorklist({
   projectId,
   project,
@@ -49,9 +68,8 @@ export default function GapsWorklist({
   onUpdateWorklist
 }: GapsWorklistProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [severityFilter, setSeverityFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
   const [expandedCodeItem, setExpandedCodeItem] = useState<string | null>(null);
 
@@ -123,7 +141,7 @@ export default function GapsWorklist({
   const latestList = useRef(worklistItems);
   useEffect(() => { latestList.current = worklistItems; }, [worklistItems]);
 
-  const handleStatusChange = async (itemId: string, newStatus: 'open' | 'in_review' | 'signed_off') => {
+  const handleStatusChange = async (itemId: string, newStatus: Status) => {
     setUpdatingItemId(itemId);
     const run = pendingWrite.current.then(async () => {
       const updatedList = latestList.current.map((item: WorklistItem) =>
@@ -147,18 +165,25 @@ export default function GapsWorklist({
 
   // Filtered list
   const filteredItems = useMemo(() => {
+    const term = searchTerm.toLowerCase();
     return worklistItems.filter(item => {
-      const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.recommendation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.location.toLowerCase().includes(searchTerm.toLowerCase());
-      
+      const matchesSearch = item.title.toLowerCase().includes(term) ||
+        item.recommendation.toLowerCase().includes(term) ||
+        item.location.toLowerCase().includes(term);
+
       const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-      const matchesSeverity = severityFilter === 'all' || item.severity === severityFilter || item.effort === severityFilter;
       const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
 
-      return matchesSearch && matchesStatus && matchesSeverity && matchesCategory;
+      return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [worklistItems, searchTerm, statusFilter, severityFilter, categoryFilter]);
+  }, [worklistItems, searchTerm, statusFilter, categoryFilter]);
+
+  const filterActive = searchTerm !== '' || statusFilter !== 'all' || categoryFilter !== 'all';
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setCategoryFilter('all');
+  };
 
   // Map functional gaps category to 2x2 matrix gaps category format
   const gapsCat = useMemo(() => {
@@ -193,296 +218,224 @@ export default function GapsWorklist({
     return { quickWins, complexStandard, strategic, retire };
   }, [analysisGaps]);
 
+  const rows: CcTableRowSpec[] = filteredItems.map((item) => {
+    const isUpdating = updatingItemId === item.id;
+    const severityValue = normaliseSeverity(item.severity);
+    const canShowCode = !!(item.location && item.location.includes(':') && project?.legacyCode);
+    const codeOpen = expandedCodeItem === item.id;
+    return {
+      key: item.id,
+      cells: {
+        status: (
+          // Labelled per row: the column head says "Status", the name says of what.
+          <select
+            aria-label={`Status of ${item.title}`}
+            disabled={isUpdating}
+            aria-busy={isUpdating || undefined}
+            value={item.status}
+            onChange={(e) => handleStatusChange(item.id, e.target.value as Status)}
+            data-worklist-status={item.id}
+            className="min-h-8 w-36 cursor-pointer rounded-cc-row border border-cc-field-border bg-cc-surface px-2 text-[13px] font-medium text-cc-ink disabled:cursor-not-allowed disabled:bg-cc-surface-muted disabled:text-cc-ink-muted"
+          >
+            {STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        ),
+        item: (
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="cc-text-identifier text-cc-ink">{item.title}</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-cc-mono text-[12px] font-medium text-cc-ink-muted">{item.location}</span>
+              {canShowCode && (
+                <CcButton
+                  variant="ghost"
+                  aria-expanded={codeOpen}
+                  onClick={() => setExpandedCodeItem(codeOpen ? null : item.id)}
+                  icon={codeOpen ? <X size={14} aria-hidden={true} /> : <Code2 size={14} aria-hidden={true} />}
+                >
+                  {codeOpen ? 'Close code' : 'View code'}
+                </CcButton>
+              )}
+            </div>
+          </div>
+        ),
+        category: <CcTag>{item.category === 'Finding' ? 'Finding' : 'Gap'}</CcTag>,
+        severity: severityValue ? (
+          <CcSeverity value={severityValue} />
+        ) : (
+          <span className="cc-text-meta text-cc-ink-muted">not determined</span>
+        ),
+        effort: <span className="cc-text-cell text-cc-ink">{item.effort}</span>,
+        action: (
+          <div className="flex flex-col gap-2">
+            <p className="cc-text-cell text-cc-ink">{item.recommendation}</p>
+            {item.strategy && (
+              <p className="cc-text-cell text-cc-ink-muted">
+                <span className="font-semibold text-cc-ink">Strategy:</span> {item.strategy}{' '}
+                <CcProvenanceChip value="proposed" />
+              </p>
+            )}
+          </div>
+        ),
+      },
+      note: codeOpen && project?.legacyCode ? <CodeContext item={item} code={project.legacyCode} onClose={() => setExpandedCodeItem(null)} /> : undefined,
+    };
+  });
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {gapsUnreadable ? (
         // The model sent gaps in a shape `lib/model-gaps.ts` could not read.
         // Said here, where the gaps would be, rather than left out in silence.
-        <p
-          role="status"
-          data-gaps-unreadable
-          className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
-        >
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>{gapsUnreadableSentence(gapsUnreadable)}</span>
-        </p>
+        <div data-gaps-unreadable="">
+          <CcMessageStrip state="warning">{gapsUnreadableSentence(gapsUnreadable)}</CcMessageStrip>
+        </div>
       ) : null}
-      {/* Burndown Rollup Header */}
-      <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-6 md:p-8 border border-slate-800 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,#10b98115,transparent_50%)]"></div>
-        <div className="space-y-2 relative z-10 w-full md:max-w-md">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30">Migration Burndown</span>
-            {stats.signedOffPct === 100 && (
-              <span className="text-[9px] font-black uppercase tracking-widest bg-green-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Check size={10} strokeWidth={3} /> Cleared
-              </span>
-            )}
+
+      {/* Burndown rollup */}
+      <section className="flex flex-col gap-6 rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc md:flex-row md:items-center md:justify-between">
+        <div className="w-full space-y-2 md:max-w-md">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="cc-text-label text-cc-ink-muted">Migration burndown</span>
+            {stats.signedOffPct === 100 && <CcTag>Cleared</CcTag>}
           </div>
-          <h3 className="text-2xl font-black tracking-tight">Project Backlog Clearance</h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <h2 className="cc-text-h2 text-cc-ink">Project Backlog Clearance</h2>
+          <p className="cc-text-cell text-cc-ink-muted">
             Resolve architectural findings and functional standard fits. All required sign-offs must be cleared to generate the final deployment bundle.
           </p>
         </div>
 
-        {/* Big Counter and Burndown Chart */}
-        <div className="flex flex-col sm:flex-row items-center gap-8 relative z-10 shrink-0 w-full md:w-auto">
-          <div className="text-center sm:text-left">
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Items Signed-Off</span>
-            <div className="flex items-baseline gap-2 justify-center sm:justify-start">
-              <span className="text-4xl font-black text-white">{stats.signedOff}</span>
-              <span className="text-slate-500 text-lg">/</span>
-              <span className="text-lg text-slate-400 font-bold">{stats.total}</span>
-            </div>
-            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1 justify-center sm:justify-start mt-0.5">
-              <TrendingUp size={12} /> {stats.signedOffPct}% Completed
-            </span>
+        <div className="flex w-full shrink-0 flex-col gap-6 sm:flex-row sm:items-center md:w-auto">
+          <div>
+            <span className="cc-text-label block text-cc-ink-muted">Items signed off</span>
+            <p className="mt-1 text-cc-ink">
+              <span className="cc-text-title tabular-nums">{stats.signedOff}</span>
+              <span className="cc-text-body text-cc-ink-muted"> / {stats.total}</span>
+            </p>
+            <span className="cc-text-meta text-cc-ink-muted">{stats.signedOffPct}% completed</span>
           </div>
 
-          {/* Styled Horizontal Burndown Progress Bar */}
-          <div className="flex-1 sm:w-64 space-y-2.5 w-full">
-            <div className="h-4 w-full bg-slate-800 rounded-full overflow-hidden flex shadow-inner">
-              <div 
-                className="h-full bg-gradient-to-r from-emerald-500 to-green-600 transition-all duration-500" 
-                style={{ width: `${stats.signedOffPct}%` }}
-                title={`Signed Off: ${stats.signedOff} (${stats.signedOffPct}%)`}
-              />
-              <div 
-                className="h-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-500" 
-                style={{ width: `${stats.inReviewPct}%` }}
-                title={`In Review: ${stats.inReview} (${stats.inReviewPct}%)`}
-              />
-              <div 
-                className="h-full bg-slate-700 transition-all duration-500" 
-                style={{ width: `${stats.openPct}%` }}
-                title={`Open: ${stats.open} (${stats.openPct}%)`}
-              />
-            </div>
-            <div className="flex justify-between text-[9px] font-bold uppercase tracking-wider text-slate-400 font-mono">
-              <span className="text-emerald-400">Signed Off ({stats.signedOff})</span>
-              <span className="text-amber-400">In Review ({stats.inReview})</span>
-              <span>Open ({stats.open})</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters and List */}
-      <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
-        {/* Filter bar */}
-        <div className="bg-slate-50 border-b border-slate-100 p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <ListFilter size={16} className="text-slate-400" />
-            <span className="text-xs font-extrabold text-slate-700 uppercase tracking-widest">Gaps Backlog Worklist</span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search Input */}
-            <div className="relative w-full sm:w-64">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Search size={14} />
-              </span>
-              <input
-                type="text"
-                placeholder="Search backlog..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-slate-205 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-green-500 bg-white placeholder-slate-400"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <select
-              value={categoryFilter}
-              onChange={e => setCategoryFilter(e.target.value)}
-              className="border border-slate-205 rounded-xl px-3 py-2 text-xs font-bold bg-white text-slate-600 focus:outline-none"
+          <div className="w-full flex-1 space-y-2 sm:w-64">
+            <div
+              role="img"
+              aria-label={`Signed off ${stats.signedOff}, in review ${stats.inReview}, open ${stats.open} of ${stats.total}`}
+              className="flex h-3 w-full overflow-hidden rounded-cc-row border border-cc-line"
             >
-              <option value="all">All Categories</option>
-              {/* "Statischer Finding" was half German in an otherwise English
-                  list, and it did not match the word the table itself uses for
-                  the category (UX review of 52f171091948, 0cac41894022). The
-                  value stays `Finding` — it is the stored category, not copy. */}
-              <option value="Finding">Static finding</option>
-              <option value="Functional Gap">Functional Gap</option>
-            </select>
-
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className="border border-slate-205 rounded-xl px-3 py-2 text-xs font-bold bg-white text-slate-600 focus:outline-none"
-            >
-              <option value="all">All Statuses</option>
-              <option value="open">🔴 Open</option>
-              <option value="in_review">🟡 In Review</option>
-              <option value="signed_off">🟢 Signed Off</option>
-            </select>
+              <div data-chart-segment="" className={BURNDOWN.signedOff} style={{ width: `${stats.signedOffPct}%` }} />
+              <div data-chart-segment="" className={BURNDOWN.inReview} style={{ width: `${stats.inReviewPct}%` }} />
+              <div className="bg-cc-surface-muted" style={{ width: `${stats.openPct}%` }} />
+            </div>
+            <ul className="flex flex-wrap justify-between gap-2 cc-text-meta text-cc-ink">
+              <li className="flex items-center gap-1">
+                <span aria-hidden={true} className={cn('inline-block h-2 w-2 shrink-0 rounded-full', BURNDOWN.signedOff)} />
+                Signed off ({stats.signedOff})
+              </li>
+              <li className="flex items-center gap-1">
+                <span aria-hidden={true} className={cn('inline-block h-2 w-2 shrink-0 rounded-full', BURNDOWN.inReview)} />
+                In review ({stats.inReview})
+              </li>
+              <li className="flex items-center gap-1">
+                <span aria-hidden={true} className="inline-block h-2 w-2 shrink-0 rounded-full border border-cc-field-border bg-cc-surface-muted" />
+                Open ({stats.open})
+              </li>
+            </ul>
           </div>
         </div>
+      </section>
 
-        {/* Table content */}
-        <div className="overflow-x-auto">
-          {filteredItems.length > 0 ? (
-            <table className="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/50">
-                  <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-40">Status</th>
-                  <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Backlog Item / Code Location</th>
-                  <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden lg:table-cell w-28">Category</th>
-                  <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:table-cell w-28">Effort / Severity</th>
-                  <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Modernization Action / Mitigation</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-sans">
-                {filteredItems.map(item => {
-                  const isUpdating = updatingItemId === item.id;
-                  
-                  return (
-                    <React.Fragment key={item.id}>
-                    <tr className="hover:bg-slate-50/20 transition-colors align-top group">
-                      {/* Status select column */}
-                      <td className="py-4 px-6">
-                        <div className="relative">
-                          <select
-                            disabled={isUpdating}
-                            value={item.status}
-                            onChange={e => handleStatusChange(item.id, e.target.value as any)}
-                            className={clsx(
-                              "w-36 appearance-none border rounded-xl py-2 pl-3 pr-8 text-[11px] font-bold outline-none cursor-pointer transition-all shadow-sm focus:ring-1 focus:ring-slate-400",
-                              item.status === 'signed_off' && "bg-emerald-50/30 text-emerald-800 border-emerald-200 hover:border-emerald-300",
-                              item.status === 'in_review' && "bg-amber-50/30 text-amber-800 border-amber-205 hover:border-amber-300",
-                              item.status === 'open' && "bg-slate-100/50 text-slate-700 border-slate-205 hover:border-slate-300"
-                            )}
-                          >
-                            <option value="open">🔴 Open</option>
-                            <option value="in_review">🟡 In Review</option>
-                            <option value="signed_off">🟢 Signed Off</option>
-                          </select>
-                          <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        </div>
-                      </td>
+      {/* Filters and list */}
+      <section className="space-y-4 rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc" data-gaps-worklist="">
+        <h2 className="cc-text-h2 text-cc-ink">
+          Gaps Backlog Worklist <span className="cc-text-meta text-cc-ink-muted">({worklistItems.length})</span>
+        </h2>
+        <CcFilterBar
+          noun="backlog items"
+          shown={filteredItems.length}
+          total={worklistItems.length}
+          search={searchTerm}
+          onSearch={setSearchTerm}
+          active={filterActive}
+          onClear={clearFilters}
+        >
+          {/* "Statischer Finding" was half German in an otherwise English
+              list, and it did not match the word the table itself uses for
+              the category (UX review of 52f171091948, 0cac41894022). The
+              value stays `Finding` — it is the stored category, not copy. */}
+          <CcSelect<CategoryFilter>
+            label="Category"
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            options={[
+              { value: 'all', label: 'All categories' },
+              { value: 'Finding', label: 'Static finding' },
+              { value: 'Functional Gap', label: 'Functional gap' },
+            ]}
+          />
+          <CcSelect<StatusFilter>
+            label="Status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[{ value: 'all', label: 'All statuses' }, ...STATUS_OPTIONS]}
+          />
+        </CcFilterBar>
 
-                      {/* Item details */}
-                      <td className="py-4 px-6 space-y-1.5 max-w-[280px]">
-                        <h5 className="font-extrabold text-slate-900 text-sm leading-snug">{item.title}</h5>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-[10px] text-slate-500 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
-                            <span>📍</span>
-                            <span>{item.location}</span>
-                          </span>
-                          {item.location && item.location.includes(':') && project?.legacyCode && (
-                            <button
-                              onClick={() => setExpandedCodeItem(expandedCodeItem === item.id ? null : item.id)}
-                              className={`text-[9px] font-bold uppercase tracking-widest flex items-center gap-0.5 transition-colors ${
-                                expandedCodeItem === item.id
-                                  ? 'text-red-500 hover:text-red-600'
-                                  : 'text-emerald-600 hover:text-emerald-700'
-                              }`}
-                            >
-                              {expandedCodeItem === item.id ? (<>Close <X size={10} /></>) : (<>View Code <Code2 size={10} /></>)}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Category */}
-                      <td className="py-4 px-6 hidden lg:table-cell">
-                        <span className={clsx(
-                          "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm inline-block",
-                          item.category === 'Finding' 
-                            ? "bg-blue-50/50 text-blue-700 border-blue-100" 
-                            : "bg-purple-50/50 text-purple-700 border-purple-100"
-                        )}>
-                          {item.category === 'Finding' ? 'Finding' : 'Gap'}
-                        </span>
-                      </td>
-
-                      {/* Severity/Effort */}
-                      <td className="py-4 px-6 hidden sm:table-cell">
-                        <span className={clsx(
-                          "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border inline-block",
-                          item.effort === 'High' ? "bg-rose-50 text-rose-700 border-rose-100" :
-                          item.effort === 'Medium' ? "bg-amber-50 text-amber-700 border-amber-100" :
-                          "bg-emerald-50 text-emerald-700 border-emerald-100"
-                        )}>
-                          {item.effort}
-                        </span>
-                      </td>
-
-                      {/* Action detail */}
-                      <td className="py-4 px-6 space-y-1 text-slate-650 max-w-[340px]">
-                        <p className="leading-relaxed font-semibold">{item.recommendation}</p>
-                        {item.strategy && (
-                          <div className="flex gap-1.5 items-start mt-1.5 bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-[11px]">
-                            <Brain size={12} className="text-purple-500 shrink-0 mt-0.5" />
-                            <p className="text-slate-600 font-medium leading-normal">
-                              <span className="font-bold text-slate-800">Strategy:</span> {item.strategy}
-                            </p>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                    {/* Inline code snippet expansion */}
-                    {expandedCodeItem === item.id && project?.legacyCode && (() => {
-                      // Parse line numbers from location (e.g. "main.abap:228, 656, 703")
-                      const locParts = (item.location || '').split(':');
-                      const lineNums = (locParts[1] || '').split(',').map((s: string) => parseInt(s.trim(), 10)).filter((n: number) => !isNaN(n));
-                      const codeLines = project.legacyCode.split('\n');
-                      if (lineNums.length === 0) return null;
-                      return (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-3 bg-slate-950">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Source Code — {lineNums.length} occurrence{lineNums.length > 1 ? 's' : ''}</span>
-                              <button onClick={() => setExpandedCodeItem(null)} className="text-[10px] font-bold text-slate-500 hover:text-white transition-colors flex items-center gap-1">
-                                <X size={10} /> Close
-                              </button>
-                            </div>
-                            <div className="max-h-64 overflow-y-auto rounded-lg">
-                              {lineNums.map((lineNum: number, i: number) => {
-                                const contextStart = Math.max(0, lineNum - 3);
-                                const contextEnd = Math.min(codeLines.length - 1, lineNum + 2);
-                                const snippet = codeLines.slice(contextStart, contextEnd + 1);
-                                return (
-                                  <div key={i} className={i > 0 ? 'mt-3 pt-3 border-t border-slate-800' : ''}>
-                                    <pre className="text-[10px] font-mono leading-relaxed">
-                                      {snippet.map((line, j) => {
-                                        const actualLine = contextStart + j + 1;
-                                        const isTarget = actualLine === lineNum;
-                                        return (
-                                          <div key={j} className={`px-3 py-0.5 ${
-                                            isTarget ? 'bg-amber-500/20 text-amber-200 font-bold' : 'text-slate-400'
-                                          }`}>
-                                            <span className="inline-block w-10 text-right mr-3 text-slate-600 select-none">{actualLine}</span>
-                                            {line}
-                                          </div>
-                                        );
-                                      })}
-                                    </pre>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })()}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          ) : (
-            <div className="text-center p-12 text-slate-500">
-              <span className="text-2xl">🔍</span>
-              <p className="text-xs font-bold mt-2">No backlog items matching filters found.</p>
-            </div>
-          )}
-        </div>
-      </div>
+        {filteredItems.length > 0 ? (
+          <CcTable
+            caption="Gaps backlog worklist"
+            limit={10}
+            columns={[
+              { key: 'status', label: 'Status', width: '160px' },
+              { key: 'item', label: 'Backlog item / code location' },
+              { key: 'category', label: 'Category', width: '110px' },
+              { key: 'severity', label: 'Severity', width: '110px' },
+              { key: 'effort', label: 'Effort', width: '90px' },
+              { key: 'action', label: 'Modernization action / mitigation' },
+            ]}
+            rows={rows}
+          />
+        ) : worklistItems.length > 0 ? (
+          <CcNoMatches title="No backlog items match these filters" onClear={clearFilters} />
+        ) : (
+          <p className="cc-text-cell text-cc-ink-muted">This analysis has no backlog items.</p>
+        )}
+      </section>
 
       {/* 2x2 Prioritization Matrix */}
       <GapsPrioritization showHelpMode={showHelpMode} gapsCat={gapsCat} />
+    </div>
+  );
+}
+
+/** The lines a location points at, with two lines of context either side. */
+function CodeContext({ item, code, onClose }: { item: WorklistItem; code: string; onClose: () => void }) {
+  // Parse line numbers from location (e.g. "main.abap:228, 656, 703")
+  const locParts = (item.location || '').split(':');
+  const lineNums = (locParts[1] || '').split(',').map((s: string) => parseInt(s.trim(), 10)).filter((n: number) => !isNaN(n));
+  const codeLines = code.split('\n');
+  if (lineNums.length === 0) return null;
+  return (
+    <div className="space-y-2" data-worklist-code={item.id}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="cc-text-label text-cc-ink-muted">
+          Source code — {lineNums.length} occurrence{lineNums.length > 1 ? 's' : ''}
+        </span>
+        <CcButton variant="ghost" onClick={onClose} icon={<X size={14} aria-hidden={true} />}>
+          Close
+        </CcButton>
+      </div>
+      <div className="max-h-64 space-y-2 overflow-y-auto">
+        {lineNums.map((lineNum: number, i: number) => {
+          const contextStart = Math.max(0, lineNum - 3);
+          const contextEnd = Math.min(codeLines.length - 1, lineNum + 2);
+          const lines = codeLines.slice(contextStart, contextEnd + 1).map((text, j) => ({
+            number: contextStart + j + 1,
+            tokens: [{ kind: 'plain' as const, text }],
+            highlighted: contextStart + j + 1 === lineNum,
+          }));
+          return <CcCodeSurface key={i} lines={lines} label={`${locParts[0]}, line ${lineNum}`} />;
+        })}
+      </div>
     </div>
   );
 }

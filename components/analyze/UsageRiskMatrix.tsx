@@ -1,8 +1,20 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { AlertTriangle, TrendingUp, Trash2, HelpCircle, BarChart3, Clock, X, ExternalLink, MinusCircle, Loader2 } from 'lucide-react';
-import clsx from 'clsx';
+import { TrendingUp, HelpCircle, BarChart3, Clock, X, MinusCircle } from 'lucide-react';
+import { normaliseSeverity } from '@/lib/severity';
+import { SEQUENTIAL_CHART_COLORS } from '@/lib/chart-colors';
+import { formatIsoDate, formatNumber } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import CcButton from '@/components/cc/Button';
+import CcIconButton from '@/components/cc/IconButton';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcSkeleton from '@/components/cc/Skeleton';
+import CcTable from '@/components/cc/Table';
+import CcDisclosure from '@/components/cc/Disclosure';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import { CcSeverity } from '@/components/cc/Identifier';
+import { CcTag } from '@/components/cc/Tag';
 import { RETIREMENT_WINDOW_DAYS, type UsageJoinRow, type Quadrant, type UsageBucket, type Feasibility } from '@/lib/abap/usage-model';
 import type { UsageReport } from '@/lib/abap/usage-model';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
@@ -57,31 +69,30 @@ export function UsageRiskMatrixFor({
 /** Visible "not loaded yet" state — never a matrix computed with a guessed feasibility. */
 function UsageRiskMatrixPending() {
   return (
-    <div
+    <section
       data-usage-risk-matrix="loading"
-      className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white px-6 py-8 shadow-sm sm:px-8"
+      className="space-y-3 rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc"
     >
-      <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-400" aria-hidden="true" />
-      <p className="text-sm font-semibold text-slate-600">
+      <p className="cc-text-cell text-cc-ink-muted">
         Checking the Cloudification Repository for a released path on each object…
       </p>
-    </div>
+      <CcSkeleton shape="table" label="Checking the Cloudification Repository" count={3} />
+    </section>
   );
 }
 
 /** Visible "the lookup failed" state — never a matrix silently defaulted to "clean-core-ready". */
 function UsageRiskMatrixLookupFailed() {
   return (
-    <div
-      data-usage-risk-matrix="error"
-      className="flex items-start gap-3 rounded-3xl border border-amber-200 bg-amber-50 px-6 py-8 shadow-sm sm:px-8"
-    >
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
-      <p className="text-sm font-semibold text-amber-800">
+    <section data-usage-risk-matrix="error">
+      <CcMessageStrip
+        state="warning"
+        actions={<CcButton variant="ghost" onClick={() => window.location.reload()}>Reload the page</CcButton>}
+      >
         Could not reach the SAP catalog lookup for feasibility, so the risk matrix cannot be shown — it would
         otherwise have to guess whether each object has a released path. Reload the page to try again.
-      </p>
-    </div>
+      </CcMessageStrip>
+    </section>
   );
 }
 
@@ -89,14 +100,34 @@ function UsageRiskMatrixLookupFailed() {
 
 type CellKey = `${UsageBucket}-${Feasibility}`;
 
-const USAGE_LABELS: { bucket: UsageBucket; label: string; icon: React.ReactNode }[] = [
-  { bucket: 'heavy',    label: 'Heavy Usage',    icon: <TrendingUp className="w-3.5 h-3.5" /> },
-  { bucket: 'moderate', label: 'Moderate',       icon: <BarChart3 className="w-3.5 h-3.5" /> },
-  { bucket: 'low',      label: 'Low Usage',      icon: <MinusCircle className="w-3.5 h-3.5" /> },
-  { bucket: 'dormant',  label: 'Dormant',        icon: <Clock className="w-3.5 h-3.5" /> },
+const USAGE_LABELS: { bucket: UsageBucket; label: string; icon: React.ReactNode; explain?: string }[] = [
+  { bucket: 'heavy',    label: 'Heavy Usage',    icon: <TrendingUp size={14} aria-hidden={true} /> },
+  { bucket: 'moderate', label: 'Moderate',       icon: <BarChart3 size={14} aria-hidden={true} /> },
+  {
+    bucket: 'low',
+    label: 'Low Usage',
+    icon: <MinusCircle size={14} aria-hidden={true} />,
+    explain: 'Below-average usage but recently active. May include business-critical periodic processes (monthly closings, year-end, audit reports). Low ≠ dormant.',
+  },
+  {
+    bucket: 'dormant',
+    label: 'Dormant',
+    icon: <Clock size={14} aria-hidden={true} />,
+    explain: 'Zero executions across a declared window of 13+ months, or last used 13+ months ago. Retire only after business owner confirmation — some dormant objects may be required for periodic processes.',
+  },
   // Zero calls in a window too short, or undeclared, to call it disuse.
-  { bucket: 'unobserved', label: 'Not seen (short window)', icon: <Clock className="w-3.5 h-3.5" /> },
-  { bucket: 'unknown',  label: 'Unknown',        icon: <HelpCircle className="w-3.5 h-3.5" /> },
+  {
+    bucket: 'unobserved',
+    label: 'Not seen (short window)',
+    icon: <Clock size={14} aria-hidden={true} />,
+    explain: 'Zero calls — but in a window shorter than 13 months, or none declared. A month-end or year-end program need not have run in it. Not a retirement candidate.',
+  },
+  {
+    bucket: 'unknown',
+    label: 'Unknown',
+    icon: <HelpCircle size={14} aria-hidden={true} />,
+    explain: 'No usage data in the imported export for these objects. Missing data is not evidence of non-use — verify manually before retiring.',
+  },
 ];
 
 const FEASIBILITY_LABELS: { key: Feasibility; label: string }[] = [
@@ -105,26 +136,30 @@ const FEASIBILITY_LABELS: { key: Feasibility; label: string }[] = [
   { key: 'clean-core-ready',     label: 'Clean Core Ready' },
 ];
 
-const CELL_COLORS: Record<string, string> = {
-  'heavy-no-released-api-path':   'bg-red-100 border-red-300 text-red-800',
-  'heavy-needs-architect':        'bg-red-50 border-red-200 text-red-700',
-  'heavy-clean-core-ready':       'bg-emerald-100 border-emerald-300 text-emerald-800',
-  'moderate-no-released-api-path':'bg-orange-50 border-orange-200 text-orange-700',
-  'moderate-needs-architect':     'bg-amber-50 border-amber-200 text-amber-700',
-  'moderate-clean-core-ready':    'bg-slate-50 border-slate-200 text-slate-600',
-  'low-no-released-api-path':     'bg-yellow-50 border-yellow-200 text-yellow-700',
-  'low-needs-architect':          'bg-yellow-50/50 border-yellow-100 text-yellow-600',
-  'low-clean-core-ready':         'bg-slate-50 border-slate-200 text-slate-500',
-  'dormant-no-released-api-path': 'bg-amber-50 border-amber-200 text-amber-700',
-  'dormant-needs-architect':      'bg-amber-50/50 border-amber-100 text-amber-600',
-  'dormant-clean-core-ready':     'bg-slate-50/50 border-slate-100 text-slate-500',
-  'unobserved-no-released-api-path': 'bg-slate-50 border-slate-200 text-slate-500',
-  'unobserved-needs-architect':      'bg-slate-50 border-slate-200 text-slate-500',
-  'unobserved-clean-core-ready':     'bg-slate-50 border-slate-200 text-slate-500',
-  'unknown-no-released-api-path': 'bg-slate-50 border-slate-200 text-slate-500',
-  'unknown-needs-architect':      'bg-slate-50 border-slate-200 text-slate-500',
-  'unknown-clean-core-ready':     'bg-slate-50 border-slate-200 text-slate-500',
-};
+/**
+ * A cell's fill says how many objects sit in it, nothing else: an amount, so
+ * the sequential palette (DESIGN.md §1.8). What a cell *means* — danger,
+ * retire, prioritise — is in its row and column heads and in the quadrant
+ * word of every object, not in a red or a green that would claim a verdict.
+ * The number is always printed in the cell.
+ */
+function cellFill(count: number, max: number): string {
+  if (count === 0 || max === 0) return 'bg-cc-surface text-cc-ink-muted border border-cc-line';
+  const share = count / max;
+  if (share <= 1 / 3) return cn(SEQUENTIAL_CHART_COLORS[0].bg, 'text-cc-ink');
+  if (share <= 2 / 3) return cn(SEQUENTIAL_CHART_COLORS[1].bg, 'text-cc-ink');
+  return cn(SEQUENTIAL_CHART_COLORS[3].bg, 'text-cc-on-dark');
+}
+
+const QUADRANTS = Object.keys(QUADRANT_META) as Quadrant[];
+
+function QuadrantTag({ quadrant }: { quadrant: Quadrant }) {
+  return (
+    <span title={QUADRANT_META[quadrant].description} data-usage-quadrant={quadrant}>
+      <CcTag>{QUADRANT_META[quadrant].label}</CcTag>
+    </span>
+  );
+}
 
 export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixProps) {
   const [selectedCell, setSelectedCell] = useState<CellKey | null>(null);
@@ -142,6 +177,12 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
     return cells;
   }, [rows]);
 
+  const maxInCell = useMemo(() => {
+    let max = 0;
+    grid.forEach((list) => { max = Math.max(max, list.length); });
+    return max;
+  }, [grid]);
+
   // Quadrant summary counts
   const quadrantCounts = useMemo(() => {
     const counts: Record<Quadrant, number> = {
@@ -151,27 +192,37 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
     return counts;
   }, [rows]);
 
+  const cellLabel = (key: CellKey) => {
+    const [u, f] = [USAGE_LABELS.find((x) => key.startsWith(`${x.bucket}-`)), FEASIBILITY_LABELS.find((x) => key.endsWith(`-${x.key}`))];
+    return `${u?.label ?? ''} × ${f?.label ?? ''}`;
+  };
+
+  const selectedRows = selectedCell ? grid.get(selectedCell) || [] : [];
+  const selectedSeverity = selectedRow ? normaliseSeverity(selectedRow.riskLevel) : null;
+
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+    <section
+      data-usage-risk-matrix="ready"
+      className="rounded-cc-card border border-cc-line bg-cc-surface shadow-cc"
+    >
       {/* Header */}
-      <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[9px] font-bold tracking-widest text-emerald-600 uppercase font-mono">
-            Usage × Evidence Matrix
-          </span>
+      <div className="space-y-2 px-6 pt-6 pb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="cc-text-label text-cc-ink-muted">Usage × Evidence Matrix</span>
+          <CcProvenanceChip value="imported" note="usage" />
         </div>
-        <h4 className="text-xl font-black text-slate-900">Risk Prioritization Matrix</h4>
-        <p className="text-xs text-slate-500 mt-1">
+        <h3 className="cc-text-h2 text-cc-ink">Risk Prioritization Matrix</h3>
+        <p className="cc-text-cell text-cc-ink-muted">
           Objects plotted by production usage intensity × technical feasibility.
           {/* The span the export shows, not the window it was taken over — the
               export does not say how long monitoring ran, and calling the gap
               between the first and last execution a measurement period reported
               "two days" for a year of data. */}
           {usageReport.observedSpanDays && (
-            <span className="ml-1 font-medium">
+            <span className="ml-1 font-semibold text-cc-ink">
               Covering {usageReport.observedSpanDays} days of observed {usageReport.source.toUpperCase()} activity
               {(usageReport.observedFrom ?? usageReport.measuredFrom) && (usageReport.observedTo ?? usageReport.measuredTo) && (
-                <> ({usageReport.observedFrom ?? usageReport.measuredFrom} – {usageReport.observedTo ?? usageReport.measuredTo})</>
+                <> (<span className="font-cc-mono">{usageReport.observedFrom ?? usageReport.measuredFrom}</span> – <span className="font-cc-mono">{usageReport.observedTo ?? usageReport.measuredTo}</span>)</>
               )}.
             </span>
           )}
@@ -179,46 +230,38 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
         {/* The window as declared at import (E03-F02). Without one, or with one
             shorter than 13 months, a zero count is shown as "not seen", never as
             dormant — a year-end program need not run in a six-week export. */}
-        <p className="text-xs mt-1 font-medium" data-usage-window>
+        <p className="cc-text-meta" data-usage-window>
           {usageReport.window ? (
-            <span className={usageReport.window.days < RETIREMENT_WINDOW_DAYS ? 'text-amber-700' : 'text-slate-600'}>
+            <span className={usageReport.window.days < RETIREMENT_WINDOW_DAYS ? 'text-cc-warning' : 'text-cc-ink-muted'}>
               Monitoring window, as declared: {usageReport.window.from} – {usageReport.window.to} ({usageReport.window.days} days)
               {usageReport.window.days < RETIREMENT_WINDOW_DAYS && ' — shorter than 13 months, so no zero count is read as disuse.'}
             </span>
           ) : (
-            <span className="text-amber-700">
+            <span className="text-cc-warning">
               No monitoring window declared — no zero count is read as disuse.
             </span>
           )}
         </p>
       </div>
 
-      {/* Quadrant summary badges */}
-      <div className="px-6 sm:px-8 pb-4 flex flex-wrap gap-2">
-        {(Object.entries(quadrantCounts) as [Quadrant, number][]).map(([q, count]) => (
-          <div
-            key={q}
-            className={clsx(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border',
-              QUADRANT_META[q].bgColor,
-              QUADRANT_META[q].color,
-            )}
-          >
-            <span>{QUADRANT_META[q].emoji}</span>
-            <span>{count}</span>
-            <span className="font-medium opacity-70">{QUADRANT_META[q].label}</span>
-          </div>
+      {/* Quadrant summary */}
+      <ul className="flex flex-wrap gap-x-4 gap-y-2 px-6 pb-4" data-usage-quadrant-summary="">
+        {QUADRANTS.map((q) => (
+          <li key={q} className="flex items-center gap-2 cc-text-meta text-cc-ink">
+            <span className="tabular-nums">{quadrantCounts[q]}</span>
+            <QuadrantTag quadrant={q} />
+          </li>
         ))}
-      </div>
+      </ul>
 
       {/* 2D Grid */}
-      <div className="px-4 sm:px-8 pb-6 overflow-x-auto">
-        <div className="min-w-[600px]">
+      <div className="overflow-x-auto px-4 pb-4 sm:px-6">
+        <div className="min-w-[600px]" role="group" aria-label="Objects by usage and feasibility">
           {/* Column headers */}
-          <div className="grid grid-cols-[120px_1fr_1fr_1fr] gap-1 mb-1">
-            <div /> {/* empty corner */}
+          <div className="mb-1 grid grid-cols-[140px_1fr_1fr_1fr] gap-1">
+            <div />
             {FEASIBILITY_LABELS.map(f => (
-              <div key={f.key} className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-wider py-2">
+              <div key={f.key} className="cc-text-label py-2 text-center text-cc-ink-muted">
                 {f.label}
               </div>
             ))}
@@ -226,54 +269,25 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
 
           {/* Rows */}
           {USAGE_LABELS.map(u => (
-            <div key={u.bucket} className="grid grid-cols-[120px_1fr_1fr_1fr] gap-1 mb-1">
-              {/* Row label */}
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 pr-2">
-                {u.icon}
+            <div key={u.bucket} className="mb-1 grid grid-cols-[140px_1fr_1fr_1fr] gap-1">
+              <div className="flex items-center gap-2 pr-2 cc-text-meta text-cc-ink">
+                <span className="shrink-0 text-cc-ink-muted">{u.icon}</span>
                 <span>{u.label}</span>
-                {u.bucket === 'dormant' && (
-                  <span className="group relative">
-                    <HelpCircle className="w-3 h-3 text-amber-400 cursor-help" />
-                    <span className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded-lg w-56 hidden group-hover:block z-20 leading-relaxed">
-                      Zero executions across a declared window of 13+ months, or last used 13+ months ago. Retire only after business owner confirmation — some dormant objects may be required for periodic processes.
-                    </span>
-                  </span>
-                )}
-                {u.bucket === 'unobserved' && (
-                  <span className="group relative">
-                    <HelpCircle className="w-3 h-3 text-slate-400 cursor-help" />
-                    <span className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded-lg w-56 hidden group-hover:block z-20 leading-relaxed">
-                      Zero calls — but in a window shorter than 13 months, or none declared. A month-end or year-end program need not have run in it. Not a retirement candidate.
-                    </span>
-                  </span>
-                )}
-                {u.bucket === 'low' && (
-                  <span className="group relative">
-                    <HelpCircle className="w-3 h-3 text-yellow-400 cursor-help" />
-                    <span className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded-lg w-56 hidden group-hover:block z-20 leading-relaxed">
-                      Below-average usage but recently active. May include business-critical periodic processes (monthly closings, year-end, audit reports). Low ≠ dormant.
-                    </span>
-                  </span>
-                )}
-                {u.bucket === 'unknown' && (
-                  <span className="group relative">
-                    <HelpCircle className="w-3 h-3 text-slate-400 cursor-help" />
-                    <span className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded-lg w-56 hidden group-hover:block z-20 leading-relaxed">
-                      No usage data in the imported export for these objects. Missing data is not evidence of non-use — verify manually before retiring.
-                    </span>
-                  </span>
-                )}
               </div>
 
-              {/* Cells */}
               {FEASIBILITY_LABELS.map(f => {
                 const key: CellKey = `${u.bucket}-${f.key}`;
                 const cellRows = grid.get(key) || [];
                 const isSelected = selectedCell === key;
+                const n = cellRows.length;
 
                 return (
                   <button
                     key={key}
+                    type="button"
+                    data-usage-cell={key}
+                    aria-pressed={isSelected}
+                    aria-label={`${cellLabel(key)}: ${n} ${n === 1 ? 'object' : 'objects'}`}
                     onClick={() => {
                       // The open object detail belonged to the cell that was
                       // selected before; it used to stay on screen under a
@@ -282,17 +296,18 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
                       setSelectedRow(null);
                       setSelectedCell(isSelected ? null : key);
                     }}
-                    className={clsx(
-                      'rounded-xl border px-3 py-3 text-center transition-all min-h-[56px]',
-                      CELL_COLORS[key] || 'bg-slate-50 border-slate-200',
-                      cellRows.length > 0 ? 'cursor-pointer hover:shadow-md hover:scale-[1.02]' : 'cursor-default opacity-50',
-                      isSelected && 'ring-2 ring-emerald-500 shadow-lg scale-[1.02]',
+                    disabled={n === 0}
+                    className={cn(
+                      'block w-full rounded-cc-row disabled:cursor-default',
+                      isSelected && 'ring-2 ring-cc-ink ring-offset-1',
                     )}
-                    disabled={cellRows.length === 0}
                   >
-                    <span className="text-lg font-black">{cellRows.length}</span>
-                    <span className="block text-[9px] opacity-60 mt-0.5">
-                      {cellRows.length === 1 ? 'object' : 'objects'}
+                    <span
+                      data-chart-segment=""
+                      className={cn('flex min-h-[56px] flex-col items-center justify-center rounded-cc-row px-3 py-2', cellFill(n, maxInCell))}
+                    >
+                      <span className="cc-text-h2 tabular-nums">{n}</span>
+                      <span className="cc-text-meta">{n === 1 ? 'object' : 'objects'}</span>
                     </span>
                   </button>
                 );
@@ -302,132 +317,128 @@ export default function UsageRiskMatrix({ rows, usageReport }: UsageRiskMatrixPr
         </div>
       </div>
 
+      <div className="px-6 pb-4">
+        <CcDisclosure title="What the usage rows mean">
+          <dl className="mt-2 space-y-2">
+            {USAGE_LABELS.filter((u) => u.explain).map((u) => (
+              <div key={u.bucket}>
+                <dt className="cc-text-meta text-cc-ink">{u.label}</dt>
+                <dd className="cc-text-cell text-cc-ink-muted">{u.explain}</dd>
+              </div>
+            ))}
+          </dl>
+        </CcDisclosure>
+      </div>
+
       {/* Selected cell detail list */}
       {selectedCell && (
-        <div className="border-t border-slate-100 px-6 sm:px-8 py-4 bg-slate-50/50">
-          <div className="flex items-center justify-between mb-3">
-            <h5 className="text-sm font-bold text-slate-800">
-              {grid.get(selectedCell)?.length || 0} objects in cell
-            </h5>
+        <div className="space-y-3 border-t border-cc-line bg-cc-surface-muted px-6 py-4" data-usage-cell-detail="">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="cc-text-h3 text-cc-ink">
+              {selectedRows.length} objects in cell <span className="cc-text-meta text-cc-ink-muted">· {cellLabel(selectedCell)}</span>
+            </h4>
             {/* An icon-only button has no accessible name of its own: a screen
                 reader announces "button" and nothing about what it closes, and
                 this panel has two of them (UX review of 52f171091948,
                 f320972178fb). */}
-            <button
-              onClick={() => setSelectedCell(null)}
-              aria-label="Close cell details"
-              className="text-slate-400 hover:text-slate-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <CcIconButton label="Close cell details" onClick={() => setSelectedCell(null)}>
+              <X size={16} aria-hidden={true} />
+            </CcIconButton>
           </div>
-          <div className="space-y-1.5 max-h-72 overflow-y-auto">
-            {(grid.get(selectedCell) || []).map(row => (
-              <button
-                key={row.objectName}
-                onClick={() => setSelectedRow(selectedRow?.objectName === row.objectName ? null : row)}
-                className={clsx(
-                  'w-full text-left px-3 py-2 rounded-lg border text-xs transition-colors flex items-center justify-between gap-3',
-                  selectedRow?.objectName === row.objectName
-                    ? 'bg-white border-emerald-300 shadow-sm'
-                    : 'bg-white/50 border-transparent hover:bg-white hover:border-slate-200',
-                )}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-mono font-bold text-slate-800 truncate">{row.objectName}</span>
-                  <span className={clsx(
-                    'text-[8px] px-1.5 py-0.5 rounded font-black uppercase shrink-0',
-                    QUADRANT_META[row.quadrant].bgColor,
-                    QUADRANT_META[row.quadrant].color,
-                  )}>
-                    {QUADRANT_META[row.quadrant].label}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-slate-500 shrink-0">
-                  {row.callCount !== null && (
-                    <span className="tabular-nums">{row.callCount.toLocaleString()} calls</span>
-                  )}
-                  {row.findingIds.length > 0 && (
-                    <span>{row.findingIds.length} findings</span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
+          <CcTable
+            caption="Objects in the selected cell"
+            limit={5}
+            columns={[
+              { key: 'object', label: 'Object' },
+              { key: 'quadrant', label: 'Quadrant' },
+              { key: 'calls', label: 'Calls', numeric: true },
+              { key: 'findings', label: 'Findings', numeric: true },
+            ]}
+            rows={selectedRows.map((row) => {
+              const open = selectedRow?.objectName === row.objectName;
+              return {
+                key: row.objectName,
+                selected: open,
+                cells: {
+                  object: (
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      onClick={() => setSelectedRow(open ? null : row)}
+                      data-usage-object={row.objectName}
+                      className="cc-text-identifier font-cc-mono text-cc-ink underline underline-offset-2"
+                    >
+                      {row.objectName}
+                    </button>
+                  ),
+                  quadrant: <QuadrantTag quadrant={row.quadrant} />,
+                  calls: row.callCount !== null ? formatNumber(row.callCount) : '—',
+                  findings: formatNumber(row.findingIds.length),
+                },
+              };
+            })}
+          />
         </div>
       )}
 
-      {/* Object detail flyout */}
+      {/* Object detail */}
       {selectedRow && (
-        <div className="border-t border-slate-100 px-6 sm:px-8 py-4 bg-white">
-          <div className="flex items-center justify-between mb-3">
+        <div className="space-y-3 border-t border-cc-line px-6 py-4" data-usage-object-detail="">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-sm text-slate-900">{selectedRow.objectName}</span>
-              <span className={clsx(
-                'text-[9px] px-2 py-0.5 rounded-full font-black uppercase border',
-                QUADRANT_META[selectedRow.quadrant].bgColor,
-                QUADRANT_META[selectedRow.quadrant].color,
-              )}>
-                {QUADRANT_META[selectedRow.quadrant].emoji} {QUADRANT_META[selectedRow.quadrant].label}
-              </span>
+              <h4 className="cc-text-identifier font-cc-mono text-cc-ink">{selectedRow.objectName}</h4>
+              <QuadrantTag quadrant={selectedRow.quadrant} />
             </div>
-            <button
-              onClick={() => setSelectedRow(null)}
-              aria-label="Close object details"
-              className="text-slate-400 hover:text-slate-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <CcIconButton label="Close object details" onClick={() => setSelectedRow(null)}>
+              <X size={16} aria-hidden={true} />
+            </CcIconButton>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <DetailCard label="Usage" value={selectedRow.usage === 'unknown' ? 'Unknown' : selectedRow.usage} />
-            <DetailCard label="Call Count" value={selectedRow.callCount !== null ? selectedRow.callCount.toLocaleString() : '—'} />
-            <DetailCard label="Last Used" value={selectedRow.lastUsed || '—'} />
-            <DetailCard label="Risk Level" value={selectedRow.riskLevel} />
+            <DetailCard label="Call Count" value={selectedRow.callCount !== null ? formatNumber(selectedRow.callCount) ?? '—' : '—'} />
+            <DetailCard label="Last Used" value={selectedRow.lastUsed || '—'} mono />
+            <DetailCard
+              label="Risk Level"
+              value={selectedSeverity ? <CcSeverity value={selectedSeverity} /> : selectedRow.riskLevel}
+            />
             <DetailCard label="Feasibility" value={selectedRow.feasibility.replace(/-/g, ' ')} />
             <DetailCard label="Findings" value={String(selectedRow.findingIds.length)} />
-          </div>
+          </dl>
 
           {selectedRow.usage === 'unknown' && (
-            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-start gap-2 text-[11px] text-amber-700">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              <span>
-                No usage data in the imported export for this object. Missing data is not evidence of non-use — verify manually before retiring.
-              </span>
-            </div>
+            <CcMessageStrip state="warning">
+              No usage data in the imported export for this object. Missing data is not evidence of non-use — verify manually before retiring.
+            </CcMessageStrip>
           )}
           {selectedRow.usage === 'unobserved' && (
-            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-start gap-2 text-[11px] text-amber-700">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              <span>
-                Zero calls, in a monitoring window shorter than 13 months or not declared at all. Periodic programs may not have run in it — this is not evidence of disuse.
-              </span>
-            </div>
+            <CcMessageStrip state="warning">
+              Zero calls, in a monitoring window shorter than 13 months or not declared at all. Periodic programs may not have run in it — this is not evidence of disuse.
+            </CcMessageStrip>
           )}
         </div>
       )}
 
       {/* Measurement context footer */}
-      <div className="border-t border-slate-100 px-6 sm:px-8 py-3 bg-slate-50/30 flex items-center gap-2 text-[10px] text-slate-400">
-        <BarChart3 className="w-3 h-3" />
+      <p className="flex items-center gap-2 border-t border-cc-line px-6 py-3 cc-text-meta text-cc-ink-muted">
+        <BarChart3 size={14} aria-hidden={true} className="shrink-0" />
         <span>
           Source: {usageReport.source.toUpperCase()} ·
           {usageReport.records.length} objects ·
           {usageReport.observedSpanDays ? ` ${usageReport.observedSpanDays} days observed` : ' activity span unknown'} ·
           {usageReport.quarantined && usageReport.quarantined.length > 0 && ` ${usageReport.quarantined.length} rows rejected ·`}
-          Imported {new Date(usageReport.importedAt).toLocaleDateString()}
+          {' '}Imported <span className="font-cc-mono">{formatIsoDate(usageReport.importedAt) ?? 'date not recorded'}</span>
         </span>
-      </div>
-    </div>
+      </p>
+    </section>
   );
 }
 
-function DetailCard({ label, value }: { label: string; value: string }) {
+function DetailCard({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
-    <div className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
-      <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{label}</div>
-      <div className="text-sm font-bold text-slate-800 mt-0.5 capitalize">{value}</div>
+    <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2">
+      <dt className="cc-text-label text-cc-ink-muted">{label}</dt>
+      <dd className={cn('cc-text-identifier mt-1 text-cc-ink capitalize', mono && 'font-cc-mono')}>{value}</dd>
     </div>
   );
 }
