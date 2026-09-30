@@ -294,7 +294,7 @@ export function useUserProfile() {
         await setDoc(regRef, {
           email: user.email,
           name: `${firstName} ${lastName}`,
-          motivation: motivation || '',
+          motivation: (motivation || '').slice(0, 2000),
           status: 'pending',
           createdAt: serverTimestamp()
         });

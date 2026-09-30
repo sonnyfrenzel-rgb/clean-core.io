@@ -17,7 +17,7 @@ import {
   type MultiFactorResolver,
 } from 'firebase/auth';
 import { getAuth, getDb } from '@/lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { 
   X, 
   ArrowRight, 
@@ -270,7 +270,7 @@ export default function LandingModals() {
         // This is the email/password registration path; it recorded 'google',
         // which mislabels the provenance of the consent record beside it.
         identityProvider: 'password',
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
         isAdmin: false,
         authMethod: 'password',
         // Consent is not written from here. The two fields that used to sit on
@@ -288,7 +288,7 @@ export default function LandingModals() {
         name: `${firstName} ${lastName}`,
         motivation: motivation.trim().slice(0, 2000),
         status: 'pending',
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
       });
 
       // Activates the account, records the consent and sends the one welcome
