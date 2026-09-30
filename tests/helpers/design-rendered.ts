@@ -5,9 +5,9 @@
  * what a reader sees: a class that Tailwind does not emit, a colour inherited
  * from three levels up, a heading level that depends on which branch rendered.
  * This file holds what the rendered walk (`tests/design-rendered-guard.spec.ts`)
- * needs besides the browser: the routes it visits, the six checks, the per-route
- * ceilings in `tests/design-rendered-baseline/`, and the ratchet over them — the
- * same shape as D.1, one JSON file per route instead of one per group.
+ * needs besides the browser: the routes it visits and the six checks. Until
+ * D.30 each route had ceilings in a baseline folder and a ratchet over them;
+ * since D.30 every route stands at zero and the guard asks for zero.
  *
  * The six checks are the gallery's (`cc-token-guard`, `cc-style-guard`,
  * `cc-library-addenda`), carried from `[data-cc-gallery]` to whole pages:
@@ -29,9 +29,6 @@
  * Every count is of *elements*, not of pixels or of occurrences, so a page that
  * repeats one bad row twenty times counts twenty — that is what a reader meets.
  */
-import fs from 'fs';
-import path from 'path';
-
 export const CHECK_IDS = ['small', 'contrast', 'focus', 'headings', 'heavy', 'colourOnly'] as const;
 export type CheckId = (typeof CHECK_IDS)[number];
 export type CheckCounts = Partial<Record<CheckId, number>>;
@@ -45,8 +42,6 @@ export const CHECK_LABEL: Record<CheckId, string> = {
   colourOnly: 'state colour without text',
 };
 
-export const STEP_PATTERN = /^D\.\d+[a-z]?$/;
-
 /**
  * Which session opens a route: `public` in a fresh, signed-out context (what a
  * visitor sees), `signed-in` as an administrator with the workspace switch on
@@ -55,13 +50,11 @@ export const STEP_PATTERN = /^D\.\d+[a-z]?$/;
 export type Session = 'public' | 'signed-in';
 
 export interface RouteDef {
-  /** File name of the ceilings, `tests/design-rendered-baseline/<key>.json`. */
+  /** A short name for the route, e.g. the probe route `trust`. */
   key: string;
   /** The route as the plan names it. */
   route: string;
   session: Session;
-  /** The step that brings this route to zero (the plan's owner of the surface). */
-  step: string;
   /** The URL; `{project}` is the seeded project. */
   url: string;
   /** Each present once the page's content — not its skeleton — has rendered. */
@@ -75,35 +68,25 @@ export const CATALOG_OBJECT = 'vbak';
 const FIRST_LOOK_DONE = '[data-first-look="end-state"], [data-first-look="complete"]';
 
 export const STAGES = ['analyze', 'design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'] as const;
-const STAGE_STEP: Record<(typeof STAGES)[number], string> = {
-  analyze: 'D.10b',
-  design: 'D.14a',
-  transformation: 'D.15',
-  documentation: 'D.16a',
-  testing: 'D.17a',
-  tco: 'D.18',
-  delivery: 'D.19',
-};
 
 export const ROUTES: RouteDef[] = [
-  { key: 'landing', route: '/', session: 'public', step: 'D.27', url: '/', ready: ['[data-section-heading]'] },
-  { key: 'catalog', route: '/catalog', session: 'public', step: 'D.25a', url: '/catalog', ready: ['h1'] },
-  { key: 'catalog-object', route: '/catalog/[object]', session: 'public', step: 'D.25a', url: `/catalog/${CATALOG_OBJECT}`, ready: ['h1'] },
-  { key: 'knowledge', route: '/knowledge', session: 'public', step: 'D.23b', url: '/knowledge', ready: ['h1'] },
-  { key: 'clean-core-explained', route: '/clean-core-explained', session: 'public', step: 'D.23a', url: '/clean-core-explained', ready: ['h1'] },
-  { key: 'trust', route: '/trust', session: 'public', step: 'D.23b', url: '/trust', ready: ['h1'] },
-  { key: 'how-to', route: '/how-to', session: 'public', step: 'D.23b', url: '/how-to', ready: ['h1'] },
-  { key: 'demo-analyze', route: '/demo/[stage] (analyze)', session: 'public', step: 'D.22b', url: '/demo/analyze', ready: ['h1'] },
+  { key: 'landing', route: '/', session: 'public', url: '/', ready: ['[data-section-heading]'] },
+  { key: 'catalog', route: '/catalog', session: 'public', url: '/catalog', ready: ['h1'] },
+  { key: 'catalog-object', route: '/catalog/[object]', session: 'public', url: `/catalog/${CATALOG_OBJECT}`, ready: ['h1'] },
+  { key: 'knowledge', route: '/knowledge', session: 'public', url: '/knowledge', ready: ['h1'] },
+  { key: 'clean-core-explained', route: '/clean-core-explained', session: 'public', url: '/clean-core-explained', ready: ['h1'] },
+  { key: 'trust', route: '/trust', session: 'public', url: '/trust', ready: ['h1'] },
+  { key: 'how-to', route: '/how-to', session: 'public', url: '/how-to', ready: ['h1'] },
+  { key: 'demo-analyze', route: '/demo/[stage] (analyze)', session: 'public', url: '/demo/analyze', ready: ['h1'] },
   // Behind the workspace switch like /project/[id]: a visitor gets a 404 (DemoWorkspaceShell).
-  { key: 'demo-workspace', route: '/demo/workspace', session: 'signed-in', step: 'D.29', url: '/demo/workspace', ready: ['[data-demo-ready="true"] h1', FIRST_LOOK_DONE] },
-  { key: 'settings', route: '/settings', session: 'signed-in', step: 'D.20b', url: '/settings', ready: ['h1'] },
-  { key: 'admin-workspace', route: '/admin/workspace', session: 'signed-in', step: 'D.29', url: '/admin/workspace', ready: ['h1'] },
-  { key: 'dashboard', route: '/dashboard', session: 'signed-in', step: 'D.22a', url: '/dashboard', ready: ['h1'] },
+  { key: 'demo-workspace', route: '/demo/workspace', session: 'signed-in', url: '/demo/workspace', ready: ['[data-demo-ready="true"] h1', FIRST_LOOK_DONE] },
+  { key: 'settings', route: '/settings', session: 'signed-in', url: '/settings', ready: ['h1'] },
+  { key: 'admin-workspace', route: '/admin/workspace', session: 'signed-in', url: '/admin/workspace', ready: ['h1'] },
+  { key: 'dashboard', route: '/dashboard', session: 'signed-in', url: '/dashboard', ready: ['h1'] },
   ...(['business', 'it', 'management'] as const).map((view) => ({
     key: `project-${view}`,
     route: `/project/[id] (${view})`,
     session: 'signed-in' as const,
-    step: 'D.29',
     url: `/project/{project}?view=${view}`,
     ready: [`[data-workspace-shell="${view}"] h1`, FIRST_LOOK_DONE],
   })),
@@ -111,97 +94,19 @@ export const ROUTES: RouteDef[] = [
     key: `stage-${stage}`,
     route: `/project/[id]/${stage}`,
     session: 'signed-in' as const,
-    step: STAGE_STEP[stage],
     url: `/project/{project}/${stage}`,
     ready: ['[data-stage-title]'],
   })),
 ];
 
-// ── ceilings ─────────────────────────────────────────────────────────────────
-
-export const REPO_ROOT = path.resolve(__dirname, '..', '..');
-export const RENDERED_BASELINE_DIR = path.join(REPO_ROOT, 'tests', 'design-rendered-baseline');
-
-export interface RouteBaseline {
-  $comment?: string;
-  route: string;
-  step: string;
-  ceilings: CheckCounts;
-}
-
-export const RENDERED_BASELINE_COMMENT =
-  'Ceilings of tests/design-rendered-guard.spec.ts for this route: per check, the rendered count may not rise, ' +
-  'and when it falls the ceiling must fall in the same commit. Lower with `npm run design:rendered-baseline` ' +
-  '(add `-- -c <config>` for another port); never raise by hand. A route without a file has ceiling 0. ' +
-  'Checks: tests/helpers/design-rendered.ts. Plan: Block D, docs/design/block-d-plan.md D.2 / D.30.';
-
-export function baselinePath(key: string): string {
-  return path.join(RENDERED_BASELINE_DIR, `${key}.json`);
-}
-
-export function readRouteBaseline(key: string): RouteBaseline | null {
-  const file = baselinePath(key);
-  if (!fs.existsSync(file)) return null;
-  return JSON.parse(fs.readFileSync(file, 'utf8')) as RouteBaseline;
-}
-
-export function listBaselineFiles(): string[] {
-  if (!fs.existsSync(RENDERED_BASELINE_DIR)) return [];
-  return fs.readdirSync(RENDERED_BASELINE_DIR).filter((n) => n.endsWith('.json')).sort();
-}
-
-/** Zero is omitted; a route whose every count is zero has no file at all. */
-export function writeRouteBaseline(def: RouteDef, step: string, counts: CheckCounts): void {
-  const ceilings: CheckCounts = {};
-  for (const c of CHECK_IDS) if ((counts[c] ?? 0) > 0) ceilings[c] = counts[c];
-  const file = baselinePath(def.key);
-  if (Object.keys(ceilings).length === 0) {
-    if (fs.existsSync(file)) fs.unlinkSync(file);
-    return;
-  }
-  fs.mkdirSync(RENDERED_BASELINE_DIR, { recursive: true });
-  const body: RouteBaseline = { $comment: RENDERED_BASELINE_COMMENT, route: def.route, step, ceilings };
-  fs.writeFileSync(file, JSON.stringify(body, null, 2) + '\n', 'utf8');
-}
-
-export function validateRouteBaseline(fileName: string, data: RouteBaseline): string[] {
-  const problems: string[] = [];
-  const def = ROUTES.find((r) => `${r.key}.json` === fileName);
-  if (!def) return [`${fileName}: no route in ROUTES has this key — remove the file or add the route`];
-  if (data.route !== def.route) problems.push(`${fileName}: "route" is "${data.route}", ROUTES says "${def.route}"`);
-  if (!STEP_PATTERN.test(data.step ?? '')) problems.push(`${fileName}: step "${data.step}" does not name a step D.x`);
-  const keys = Object.keys(data.ceilings ?? {});
-  if (keys.length === 0) problems.push(`${fileName}: no ceiling — a clean route has no file`);
-  for (const k of keys) {
-    if (!(CHECK_IDS as readonly string[]).includes(k)) problems.push(`${fileName}: unknown check "${k}"`);
-    const v = (data.ceilings as Record<string, unknown>)[k];
-    if (!Number.isInteger(v) || (v as number) <= 0) problems.push(`${fileName}: ${k} must be a positive integer (omit zero)`);
-  }
-  return problems;
-}
-
-export interface Finding {
-  kind: 'over' | 'under';
-  check: CheckId;
-  message: string;
-}
-
-/** The ratchet of one route: more than the ceiling is red, and so is less. */
-export function ratchetRoute(def: RouteDef, counts: CheckCounts, ceilings: CheckCounts): Finding[] {
-  const out: Finding[] = [];
-  for (const c of CHECK_IDS) {
-    const n = counts[c] ?? 0;
-    const ceiling = ceilings[c] ?? 0;
-    if (n > ceiling) out.push({ kind: 'over', check: c, message: `${def.route}: ${CHECK_LABEL[c]} ${n}, ceiling ${ceiling}` });
-    else if (n < ceiling) {
-      out.push({
-        kind: 'under',
-        check: c,
-        message: `${def.route}: ${CHECK_LABEL[c]} ${n}, ceiling still ${ceiling} — lower tests/design-rendered-baseline/${def.key}.json`,
-      });
-    }
-  }
-  return out;
+/**
+ * The comparison of the negative probe: which checks rose from `before` to
+ * `after` on the same loaded page. Since D.30 every route stands at zero, so
+ * the guard itself asks for zero and needs no ceiling; the probe still needs a
+ * "more than a moment ago", because it proves each check sees its element.
+ */
+export function roseFrom(before: CheckCounts, after: CheckCounts): CheckId[] {
+  return CHECK_IDS.filter((c) => (after[c] ?? 0) > (before[c] ?? 0));
 }
 
 // ── in the browser ───────────────────────────────────────────────────────────

@@ -1,20 +1,16 @@
 import { test, expect, type Page } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 import {
   CHECK_IDS,
   CHECK_LABEL,
   ROUTES,
-  STEP_PATTERN,
   focusStart,
   freezeEndlessAnimations,
   focusedRing,
-  listBaselineFiles,
   measurePage,
   pageSettled,
-  ratchetRoute,
-  readRouteBaseline,
-  validateRouteBaseline,
-  writeRouteBaseline,
-  type CheckCounts,
+  roseFrom,
   type CheckId,
   type RouteDef,
   type Session,
@@ -38,16 +34,11 @@ import { seedStageProject, signInThroughForm } from './helpers/seed-project';
  * without a visible ring, skipped heading levels, weight > 800, and a state
  * colour with no word beside it. One load per route, every check on that load.
  *
- * It cannot demand zero today, so — like D.1 — it demands *no worse, and
- * progress written down*:
- *
- *   - `tests/design-rendered-baseline/<route>.json` holds today's count per
- *     check as a ceiling, and the step D.x that removes it. A route without a
- *     file has ceiling 0.
- *   - More than the ceiling is red. **Fewer is also red** until the ceiling is
- *     lowered in the same commit — `npm run design:rendered-baseline` (it runs
- *     this spec in writing mode: lowers only, refuses and writes nothing if any
- *     count rose; `-- -c <config>` for another port). D.30 deletes the folder.
+ * It demands zero, on every route, for every check (D.30). From D.2 to D.30 it
+ * demanded *no worse, and progress written down*: a ceiling per route and check
+ * in `tests/design-rendered-baseline/`, lowered step by step. The last ceiling
+ * went with D.30 and so did the folder and its writing mode; a route that
+ * counts anything is red, and the fix is in the page, never in a list.
  *
  * Waiting: a production build (CI, `npm start`, one worker) is several times
  * faster than `next dev`, and a check that samples during a load passes locally
@@ -60,7 +51,6 @@ import { seedStageProject, signInThroughForm } from './helpers/seed-project';
  * Needs the emulators (auth, firestore) and a server — dev or production.
  */
 
-const WRITE = process.env.DESIGN_RENDERED_WRITE as 'lower' | 'init' | undefined;
 /** Tab stops per route. The first sixty are the shell and the top of the page — where a keyboard user starts. */
 const FOCUS_STOPS = 60;
 /** The route whose loaded page takes the negative probe. */
@@ -70,7 +60,7 @@ test.use({ viewport: { width: 1440, height: 1000 }, contextOptions: { reducedMot
 
 interface Measured {
   def: RouteDef;
-  counts: CheckCounts;
+  counts: Partial<Record<CheckId, number>>;
   samples: Partial<Record<CheckId, string[]>>;
   texts: number;
   /** Tab stops the walk reached — none means the walk measured nothing. */
@@ -141,10 +131,6 @@ async function measureRoute(page: Page, def: RouteDef): Promise<Measured> {
   };
 }
 
-function ceilingsOf(def: RouteDef): CheckCounts {
-  return readRouteBaseline(def.key)?.ceilings ?? {};
-}
-
 function table(results: Measured[]): string {
   const head = ['route'.padEnd(34), ...CHECK_IDS.map((c) => c.padStart(11)), 'texts'.padStart(8), 'stops'.padStart(7)].join('');
   const rows = results.map((r) =>
@@ -160,8 +146,8 @@ function table(results: Measured[]): string {
 
 /**
  * The negative probe: one element per check, built into the loaded page, and
- * each of the six must now stand above its ceiling. Proves the measurement and
- * the ratchet on a real page — a check that stopped seeing would pass as clean.
+ * each of the six must now count more than it did a moment ago. Proves the
+ * measurement on a real page — a check that stopped seeing would pass as clean.
  */
 async function probe(page: Page, measured: Measured): Promise<void> {
   await page.evaluate(() => {
@@ -181,11 +167,9 @@ async function probe(page: Page, measured: Measured): Promise<void> {
     document.body.prepend(bare);
   });
   const again = await measureRoute(page, measured.def);
-  // Against the page as it measured a moment ago — a route that stands at its
-  // ceiling, which is what every green route does. (Against the file, a ceiling
-  // left too high would swallow the probe and blame it for the wrong thing.)
-  const findings = ratchetRoute(measured.def, again.counts, measured.counts);
-  const over = findings.filter((f) => f.kind === 'over').map((f) => f.check).sort();
+  // Against the page as it measured a moment ago, not against zero: the probe
+  // must prove each check sees its own element, whatever else the page holds.
+  const over = [...roseFrom(measured.counts, again.counts)].sort();
   expect(over, `the probe on ${measured.def.route} did not turn every check red:\n${table([measured, again])}`).toEqual(
     [...CHECK_IDS].sort(),
   );
@@ -193,73 +177,36 @@ async function probe(page: Page, measured: Measured): Promise<void> {
   expect((again.counts.small ?? 0) - (measured.counts.small ?? 0)).toBe(1);
 }
 
-/** Checks, writes or reports one session's routes. */
+/** Checks one session's routes: every count is zero. */
 function judge(session: Session, results: Measured[]): void {
   console.log(`\ndesign-rendered-guard · ${session}\n${table(results)}\n`);
   for (const r of results) {
     expect(r.texts, `${r.def.route}: nothing measured — the page did not render`).toBeGreaterThan(10);
     expect(r.stops, `${r.def.route}: the Tab walk reached nothing`).toBeGreaterThan(2);
   }
-
-  if (WRITE) {
-    const rises: string[] = [];
-    const writes: { def: RouteDef; step: string; counts: CheckCounts }[] = [];
-    for (const r of results) {
-      const current = readRouteBaseline(r.def.key);
-      if (!current) {
-        if (WRITE !== 'init') {
-          const any = CHECK_IDS.some((c) => (r.counts[c] ?? 0) > 0);
-          if (any) rises.push(`${r.def.route}: no ceilings on file and counts above 0 — a route has no exception unless the coordinator admits it (init)`);
-          continue;
-        }
-        writes.push({ def: r.def, step: r.def.step, counts: r.counts });
-        continue;
-      }
-      const lowered: CheckCounts = {};
-      for (const c of CHECK_IDS) {
-        const n = r.counts[c] ?? 0;
-        const ceiling = current.ceilings[c] ?? 0;
-        if (n > ceiling) rises.push(`${r.def.route}: ${CHECK_LABEL[c]} rose ${ceiling} -> ${n}\n    ${(r.samples[c] ?? []).slice(0, 5).join('\n    ')}`);
-        lowered[c] = Math.min(n, ceiling);
-      }
-      writes.push({ def: r.def, step: current.step, counts: lowered });
-    }
-    // All or nothing, like `design:baseline`: a rise writes no file at all.
-    expect(rises, 'A count rose above its ceiling. Fix the page; ceilings are never raised. Nothing was written.').toEqual([]);
-    for (const w of writes) writeRouteBaseline(w.def, w.step, w.counts);
-    return;
-  }
-
-  const over: string[] = [];
-  const under: string[] = [];
+  const found: string[] = [];
   for (const r of results) {
-    for (const f of ratchetRoute(r.def, r.counts, ceilingsOf(r.def))) {
-      if (f.kind === 'over') over.push(`${f.message}\n    ${(r.samples[f.check] ?? []).join('\n    ')}`);
-      else under.push(f.message);
+    for (const c of CHECK_IDS) {
+      const n = r.counts[c] ?? 0;
+      if (n > 0) found.push(`${r.def.route}: ${CHECK_LABEL[c]} ${n}\n    ${(r.samples[c] ?? []).join('\n    ')}`);
     }
   }
-  expect.soft(
-    over,
-    'A route got worse. Replace the element with the design-system equivalent (block-d-plan.md §4); ceilings are never raised.',
+  expect(
+    found,
+    'A route breaks DESIGN.md. Replace the element with the design-system equivalent (block-d-plan.md §4); there is no exception list.',
   ).toEqual([]);
-  expect.soft(under, 'Fewer than the ceiling — good. Lower it in the same commit: npm run design:rendered-baseline.').toEqual([]);
 }
 
-test.describe('design rendered guard (DESIGN.md on every route, ratchet)', () => {
-  test('every ceiling file names a route of the walk, a step, and known checks', () => {
-    const problems: string[] = [];
-    for (const fileName of listBaselineFiles()) {
-      const def = ROUTES.find((r) => `${r.key}.json` === fileName);
-      const data = readRouteBaseline(fileName.replace(/\.json$/, ''));
-      if (!def || !data) {
-        problems.push(`${fileName}: no route in ROUTES has this key`);
-        continue;
-      }
-      problems.push(...validateRouteBaseline(fileName, data));
-    }
-    expect(problems).toEqual([]);
-    for (const r of ROUTES) expect(STEP_PATTERN.test(r.step), `${r.key}: step ${r.step}`).toBe(true);
+test.describe('design rendered guard (DESIGN.md on every route, zero)', () => {
+  test('the walk covers both sessions, and no ceiling list has come back', () => {
     expect(new Set(ROUTES.map((r) => r.key)).size, 'two routes share a key').toBe(ROUTES.length);
+    expect(ROUTES.some((r) => r.session === 'public')).toBe(true);
+    expect(ROUTES.some((r) => r.session === 'signed-in')).toBe(true);
+    expect(ROUTES.some((r) => r.key === PROBE_ROUTE && r.session === 'public'), 'the probe route is not walked').toBe(true);
+    // D.30 deleted the per-route ceilings. A folder of them coming back would
+    // be an exception list the spec no longer reads — green for the wrong reason.
+    const folder = path.resolve(__dirname, 'design-rendered-baseline');
+    expect(fs.existsSync(folder), `${folder} exists — there are no ceilings since D.30; fix the page instead`).toBe(false);
   });
 
   // QA f8887638a04b, 0564882579db: the two checks on fixtures whose answer is
@@ -319,7 +266,7 @@ test.describe('design rendered guard (DESIGN.md on every route, ratchet)', () =>
       await openRoute(page, def, '');
       const measured = await measureRoute(page, def);
       results.push(measured);
-      if (def.key === PROBE_ROUTE && !WRITE) await probe(page, measured);
+      if (def.key === PROBE_ROUTE) await probe(page, measured);
     }
     judge('public', results);
   });
