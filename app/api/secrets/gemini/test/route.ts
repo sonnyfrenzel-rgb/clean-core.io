@@ -10,6 +10,7 @@ import {
   QuotaError,
 } from '@/lib/firebase-admin';
 import { byokRequiresEnrolment } from '@/lib/mfa-gate';
+import { logger, providerErrorShape } from '@/lib/logger';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { GoogleGenAI } from '@google/genai';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
@@ -85,7 +86,9 @@ export async function POST(req: NextRequest) {
     if (err?.message?.includes('MFA verification required')) {
       return NextResponse.json({ error: err.message }, { status: 403 });
     }
-    console.error('Gemini Key connectivity test failed:', err);
+    // A code, never the error (3.0.13 e). What the provider answers to a wrong
+    // key can quote the key back, and the SDK error carries that answer's body.
+    logger.error('byok key test failed', { route: 'api/secrets/gemini/test', error: providerErrorShape(err) });
 
     // Log security failure
     try {

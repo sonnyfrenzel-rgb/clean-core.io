@@ -3,6 +3,7 @@ import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, termsVersionInForce } from '@/lib/con
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
 import { byokAllowed, BYOK_NOT_AVAILABLE_MESSAGE } from './byok-eligibility';
+import { logger, providerErrorShape } from './logger';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp, s4AccessRequiresEnrolment } from './mfa-gate';
 import { starterExampleForFingerprint } from './starter-example-fingerprints';
 import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } from './invitations';
@@ -1429,7 +1430,8 @@ export async function loadGeminiApiKey(uid: string): Promise<string | null> {
   try {
     return decrypt(data.encryptedApiKey);
   } catch (err) {
-    console.error('Failed to decrypt Gemini API key for user:', uid, err);
+    // A code, never the error object (3.0.13 e).
+    logger.error('byok key decrypt failed', { error: providerErrorShape(err) });
     return null;
   }
 }

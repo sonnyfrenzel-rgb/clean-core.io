@@ -10,6 +10,7 @@ import {
 import { modelCompletion, incompleteAnswerMessage, MODEL_INCOMPLETE_CODE } from '../lib/model-completion';
 import { geminiTestStubAnswer, GEMINI_TEST_STUB_TEXT } from '../lib/gemini-test-stub';
 import { byokAllowed, BYOK_TIERS } from '../lib/byok-eligibility';
+import { providerErrorShape } from '../lib/logger';
 
 /**
  * Roadmap 3.0.13 — the BYOK hardening before 3.0.
@@ -185,4 +186,39 @@ test('(d) the key-test limit is keyed on the account alone, not on account and a
   expect(route).toContain('assertRateLimit(`byok_test:${decodedToken.uid}`, 5, 900000)');
   expect(route, 'the client address is part of the limit again').not.toMatch(/getClientIp/);
   expect(route).not.toMatch(/byok_test:\$\{decodedToken\.uid\}:/);
+});
+
+// ── (e) errors are reduced to codes before they are logged ──────────────────
+
+test.describe('(e) the key paths log codes, not errors', () => {
+  test('an error that quotes the key back is logged as its class and status only', () => {
+    const key = 'sk-proj-abcdefghijklmnopqrstuvwxyz0123456789';
+    const err = Object.assign(new Error(`Incorrect API key provided: ${key}. You can find your API key at …`), {
+      status: 401,
+      response: { body: { error: { message: `key ${key} is invalid` } } },
+    });
+    const shape = providerErrorShape(err);
+    expect(shape).toEqual({ name: 'Error', status: 401 });
+    expect(JSON.stringify(shape)).not.toContain(key.slice(-8));
+  });
+
+  test('no route under app/api/secrets and no BYOK helper hands an error object to a log', () => {
+    const files = [
+      'app/api/secrets/gemini/route.ts',
+      'app/api/secrets/gemini/test/route.ts',
+      'app/api/secrets/gemini/status/route.ts',
+    ];
+    const admin = read('lib/firebase-admin.ts');
+    const byok = admin.slice(admin.indexOf('export async function saveGeminiApiKey'), admin.indexOf('export async function deleteGeminiApiKey'));
+    const sources: Array<[string, string]> = [...files.map((f) => [f, read(f)] as [string, string]), ['lib/firebase-admin.ts (BYOK)', byok]];
+    for (const [name, src] of sources) {
+      expect(src, `${name} writes to the console`).not.toMatch(/console\.(error|warn|log|info)\(/);
+      // Every `error:` field handed to the logger is a reduced shape.
+      for (const m of src.matchAll(/logger\.(error|warn|info|critical)\([^;]*?\berror:\s*([^,}\n]+)/g)) {
+        expect(m[2].trim(), `${name} logs ${m[2].trim()}`).toMatch(/^(providerErrorShape|errMessage)\(/);
+      }
+    }
+    // The model key paths — save and test — use the provider shape, not a message.
+    for (const f of files.slice(0, 2)) expect(read(f)).toContain('providerErrorShape(err)');
+  });
 });

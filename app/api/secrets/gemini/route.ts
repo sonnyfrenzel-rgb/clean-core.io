@@ -11,6 +11,7 @@ import {
   QuotaError,
 } from '@/lib/firebase-admin';
 import { byokRequiresEnrolment } from '@/lib/mfa-gate';
+import { logger, providerErrorShape } from '@/lib/logger';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 
 /**
@@ -63,7 +64,10 @@ export async function POST(req: NextRequest) {
     if (err?.message?.includes('MFA verification required')) {
       return NextResponse.json({ error: err.message }, { status: 403 });
     }
-    console.error('Error saving Gemini API key:', err);
+    // A code, never the error: a failure here can carry the key being stored or
+    // a provider's answer body, and the log is read by more people than the
+    // vault (3.0.13 e).
+    logger.error('byok key save failed', { route: 'api/secrets/gemini', error: providerErrorShape(err) });
     
     // Log security failure
     try {
@@ -116,7 +120,7 @@ export async function DELETE(req: NextRequest) {
     if (err?.message?.includes('MFA verification required')) {
       return NextResponse.json({ error: err.message }, { status: 403 });
     }
-    console.error('Error deleting Gemini API key:', err);
+    logger.error('byok key delete failed', { route: 'api/secrets/gemini', error: providerErrorShape(err) });
 
     // Log security failure
     try {
