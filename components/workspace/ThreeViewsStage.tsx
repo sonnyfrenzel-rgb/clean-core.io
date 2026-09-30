@@ -56,7 +56,12 @@ export default function ThreeViewsStage({
 }) {
   const [view, setView] = useState<WorkspaceView>('business');
   const [auto, setAuto] = useState(true);
-  const [held, setHeld] = useState(false);
+  // The pointer and the focus hold the stage separately: one leaving must not
+  // restart the timer while the other is still inside (QA full review of
+  // v2.20.0 — a single flag let the pointer leaving end a keyboard hold).
+  const [pointerIn, setPointerIn] = useState(false);
+  const [focusIn, setFocusIn] = useState(false);
+  const held = pointerIn || focusIn;
   const [fading, setFading] = useState(false);
   /**
    * `null` until the browser has been asked, the same reason the workspace's
@@ -153,10 +158,13 @@ export default function ThreeViewsStage({
       <div
         data-three-views-stage={columns ? 'columns' : 'stage'}
         data-three-views-auto={moving ? 'running' : 'stopped'}
-        onMouseEnter={() => setHeld(true)}
-        onMouseLeave={() => setHeld(false)}
-        onFocusCapture={() => setHeld(true)}
-        onBlurCapture={() => setHeld(false)}
+        onMouseEnter={() => setPointerIn(true)}
+        onMouseLeave={() => setPointerIn(false)}
+        onFocusCapture={() => setFocusIn(true)}
+        onBlurCapture={(event) => {
+          // Focus moving to another control inside still holds.
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusIn(false);
+        }}
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           {/* The real switcher — and nothing to switch in the column layout, so

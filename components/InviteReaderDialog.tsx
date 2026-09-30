@@ -1,7 +1,9 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useId, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { getAuth } from '@/lib/firebase';
+import { useCcHydrated, useCcModal } from '@/components/cc/modal';
 import { AlertTriangle, Check, Loader2, Mail, X } from 'lucide-react';
 import {
   INVITATION_DEFAULT_DAYS,
@@ -44,6 +46,14 @@ export default function InviteReaderDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [sent, setSent] = useState<Invitation | null>(null);
+  const emailId = useId();
+  // Modal the way every other layer is (`components/cc/modal.ts`): the page
+  // behind goes inert, focus moves to the address field and stays in the
+  // dialog, Escape closes, and closing hands focus back to the opener. The
+  // layer is portalled to `body` because that inerting only spares a direct
+  // child of it (QA full review of v2.20.0).
+  const hydrated = useCcHydrated();
+  const dialogRef = useCcModal<HTMLDivElement>({ open: hydrated, onClose, initialFocus: 'first-field' });
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -74,9 +84,13 @@ export default function InviteReaderDialog({
     }
   };
 
-  return (
+  if (!hydrated) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[100] bg-gray-900/40 backdrop-blur-md flex items-center justify-center p-4">
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         data-invite-dialog
         role="dialog"
         aria-modal="true"
@@ -144,12 +158,13 @@ export default function InviteReaderDialog({
               </p>
             </div>
 
-            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">
+            <label htmlFor={emailId} className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">
               Email address
             </label>
             <div className="relative mb-2">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
+                id={emailId}
                 data-invite-email
                 type="email"
                 required
@@ -194,6 +209,7 @@ export default function InviteReaderDialog({
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
