@@ -10,7 +10,7 @@ import {
   QuotaError,
 } from '@/lib/firebase-admin';
 import { byokRequiresEnrolment } from '@/lib/mfa-gate';
-import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
+import { assertRateLimit } from '@/lib/rate-limit';
 import { GoogleGenAI } from '@google/genai';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
@@ -31,9 +31,15 @@ export async function POST(req: NextRequest) {
     // 1. MFA Step-up Gate
     await assertMfaSatisfied(req, decodedToken, { requireEnrolment: byokRequiresEnrolment });
 
-    // 2. Rate Limiting Gate (5 tests per 15 minutes)
-    const ip = getClientIp(req);
-    await assertRateLimit(`byok_test:${decodedToken.uid}:${ip}`, 5, 900000);
+    // 2. Rate Limiting Gate (5 tests per 15 minutes), per account.
+    //
+    // It was keyed on the account *and* the client address (3.0.13 d). This
+    // route tests any key it is handed, so its limit is what bounds using the
+    // server as a key oracle — and a ceiling per address gave the same account
+    // a fresh allowance from every address it could reach us through. The
+    // account is established by the verified token; it is the thing limited,
+    // exactly as in `/api/gemini`.
+    await assertRateLimit(`byok_test:${decodedToken.uid}`, 5, 900000);
 
     // 3. Account-state gate — hard suspension only, as on the save path. It was
     // absent here, so a suspended account could still have the server load and

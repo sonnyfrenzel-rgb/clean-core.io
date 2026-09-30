@@ -175,3 +175,14 @@ test.describe('(c) the BYOK tier rule', () => {
     expect(admin).toMatch(/byokAllowed\(\{ isAdmin: isAdminClaim === true, tier \}\)/);
   });
 });
+
+// ── (d) the key test is limited per account ─────────────────────────────────
+
+test('(d) the key-test limit is keyed on the account alone, not on account and address', () => {
+  // A source guard, because the limiter is switched off under the emulator
+  // (`lib/rate-limit.ts`) and no route test can observe it.
+  const route = read('app/api/secrets/gemini/test/route.ts');
+  expect(route).toContain('assertRateLimit(`byok_test:${decodedToken.uid}`, 5, 900000)');
+  expect(route, 'the client address is part of the limit again').not.toMatch(/getClientIp/);
+  expect(route).not.toMatch(/byok_test:\$\{decodedToken\.uid\}:/);
+});
