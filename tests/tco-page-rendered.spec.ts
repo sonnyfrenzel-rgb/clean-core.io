@@ -194,7 +194,7 @@ test('the option comparison names nothing until every option is complete', async
   await page.fill('[data-cost-field="test-day-rate"]', '600');
   await page.fill('[data-cost-field="horizon-years"]', '5');
   await page.fill('[data-cost-field="release-cadence"]', '2');
-  await page.check('[data-cost-field="release-cadence-confirmed"]');
+  await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]');
 
   // Still nothing: the day rates are there, the options are not, and the panel
   // refuses to call one cheapest instead of comparing what happens to be filled in.
@@ -223,7 +223,7 @@ test('once an option leads, the panel says how far each assumption may move', as
   await page.fill('[data-cost-field="test-day-rate"]', '600');
   await page.fill('[data-cost-field="horizon-years"]', '5');
   await page.fill('[data-cost-field="release-cadence"]', '2');
-  await page.check('[data-cost-field="release-cadence-confirmed"]');
+  await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]');
 
   // The same effort for every option, taken over from the proposal as the
   // reader's own figure, so what separates them is the maintenance baseline
