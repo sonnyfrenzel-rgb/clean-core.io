@@ -240,6 +240,24 @@ function yieldsOnlyOwnLiterals(expr: string): boolean {
   return /^(?:[^?:]*\?\s*§\s*:\s*)+§$/.test(skeleton);
 }
 
+/**
+ * The class constants an exported template may put in an attribute. Each is
+ * picked above its template from our own class names (`severityClass`,
+ * `toneClass`, or a ternary of literals). A new one is added here on purpose,
+ * after reading where its value comes from.
+ */
+const ATTRIBUTE_CLASS_CONSTANTS = new Set([
+  'sevClass',
+  'stateClass',
+  'complexityAccent',
+  'criticalityAccent',
+  'critClass',
+  'accessClass',
+  'riskClass',
+  'srcClass',
+  'confClass',
+]);
+
 test('nothing foreign is interpolated into an attribute of an exported document', () => {
   // Escaping the five HTML characters is the right answer for a text node and
   // for a quoted attribute value, and not the whole answer for `style="…"` or
@@ -270,7 +288,10 @@ test('nothing foreign is interpolated into an attribute of an exported document'
     const seen = interpolations(region(source, from, ends[file])).filter((e) => e.inAttr);
     checked[file] = seen.length;
     for (const { expr } of seen) {
-      if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(expr)) continue;
+      // Carried QA findings 281b2f182905 / 8e31bf02f2fd / 1a7077c49219: a bare
+      // identifier is not safe because it is bare. Only the class constants the
+      // templates actually pick above themselves are, and they are named here.
+      if (ATTRIBUTE_CLASS_CONSTANTS.has(expr)) continue;
       if (yieldsOnlyOwnLiterals(expr)) continue;
       offenders.push(`${file}: ${expr}`);
     }
