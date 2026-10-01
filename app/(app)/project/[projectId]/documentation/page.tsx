@@ -1478,6 +1478,7 @@ Structure the JSON exactly like this:
               onSelectedChange={selectElement}
               save={saveProcessModel}
               openLatest={openLatestRevision}
+              projectId={typeof projectId === 'string' ? projectId : null}
             />
           ) : (
             <p className="cc-text-cell text-cc-ink-muted">

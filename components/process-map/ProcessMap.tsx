@@ -39,7 +39,8 @@ import ProcessMiniMap from './ProcessMiniMap';
 import ProcessOutline from './ProcessOutline';
 import ProcessSearch from './ProcessSearch';
 import ProcessStepList from './ProcessStepList';
-import { mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } from '@/lib/workspace-messages';
+import { mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } from '@/lib/workspace-messages';
+import { draftFor, type HeldDraft } from '@/lib/process-map-draft';
 
 /**
  * The modeller is loaded when somebody presses *Edit model* and not before: a
@@ -174,6 +175,11 @@ export interface ProcessMapProps {
    * written against — so a revision saved on another screen opens here.
    */
   openLatest?: () => Promise<OpenedRevision | null>;
+  /**
+   * The project this map belongs to. Part of an unsaved drawing's identity, so
+   * a project with the same source (a duplicate) never opens another's draft.
+   */
+  projectId?: string | null;
 }
 
 export default function ProcessMap({
@@ -191,6 +197,7 @@ export default function ProcessMap({
   catalogTarget,
   save,
   openLatest,
+  projectId = null,
 }: ProcessMapProps) {
   /** A phone shows the map and the steps; modelling by touch is not offered (`DESIGN.md` §5.7). */
   const isPhone = useBreakpointS();
@@ -304,8 +311,12 @@ export default function ProcessMap({
    * source builds a new modeller rather than leaving one alive with the old
    * drawing inside it. `model` is untouched either way — the Ist revision after
    * editing is the Ist revision before it.
+   *
+   * The identity is the project *and* the source (`lib/process-map-draft.ts`):
+   * Duplicate makes a second project with the same source, and its editor must
+   * not open the first one's drawing.
    */
-  const draftRef = useRef<{ source: string; xml: string } | null>(null);
+  const draftRef = useRef<HeldDraft | null>(null);
 
   /**
    * What the tree has open: what the reader opened, plus the way down to the
@@ -418,12 +429,12 @@ export default function ProcessMap({
    * here — it is somebody else's process, and it is dropped by not matching.
    */
   const openWith = useCallback(
-    () => (draftRef.current?.source === source ? draftRef.current.xml : modelProp.xml),
-    [modelProp, source],
+    () => draftFor(draftRef.current, projectId, source) ?? modelProp.xml,
+    [modelProp, projectId, source],
   );
   const keepDraft = useCallback((xml: string) => {
-    draftRef.current = { source, xml };
-  }, [source]);
+    draftRef.current = { projectId, source, xml };
+  }, [projectId, source]);
   const discardDraft = useCallback(() => {
     draftRef.current = null;
     setSession((token) => token + 1);
@@ -664,7 +675,7 @@ export default function ProcessMap({
             // process changes. Either one has to build a new modeller: keeping
             // the old instance would keep the old drawing inside it, whatever
             // `openWith` now returns.
-            key={`${session}|${source}`}
+            key={`${session}|${projectId ?? ''}|${source}`}
             openWith={openWith}
             baseXml={modelProp.technicalXml ?? modelProp.xml}
             istXml={modelProp.xml}

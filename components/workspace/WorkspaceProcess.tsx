@@ -385,6 +385,7 @@ export default function WorkspaceProcess({
               defaultView={isS ? 'steps' : 'map'}
               save={save}
               openLatest={openLatest}
+              projectId={projectId || null}
             />
           ) : map.status === 'failed' ? (
             <p data-workspace-process-failed="" className="m-0 text-[13px] font-medium text-cc-ink-muted">
