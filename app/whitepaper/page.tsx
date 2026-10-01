@@ -173,7 +173,7 @@ export default function WhitepaperPage() {
             Clean Core means keeping the standard SAP ERP core untouched. When custom code is mixed directly into standard classes and tables, every future S/4HANA update becomes slow, risky and expensive. Clean-Core.io turns that uncertainty into a structured, evidence-backed modernization backlog.
           </SectionHeader>
           <div className={`${CALLOUT} mb-8`}>
-            <div className={`${LABEL} mb-2`}>The governing principle — “belegt, nicht behauptet” (proven, not claimed)</div>
+            <div className={`${LABEL} mb-2`}>The governing principle — “proven, not claimed”</div>
             <p className="text-sm leading-relaxed text-cc-ink">
               A deterministic ABAP evidence engine runs before any AI. Every finding, score and routing decision is tied to concrete evidence in your code. The AI writes the human-readable narrative on top — and that narrative is deliberately excluded from the signed evidence, so a signature always attests to server-computed facts, not to free text.
             </p>

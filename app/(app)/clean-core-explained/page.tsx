@@ -329,8 +329,8 @@ export default function CleanCoreExplainedPage() {
         <div className="rounded-3xl border border-cc-line bg-cc-surface-muted p-7 sm:p-10">
           <h3 className="mb-2 text-xl font-extrabold uppercase tracking-tight text-cc-ink">Honest scope</h3>
           <p className="mb-7 max-w-2xl text-sm leading-relaxed text-cc-ink-muted">
-            The governing principle of this project is <em>belegt, nicht behauptet</em> — proven, not
-            claimed. A capability list without limits is a claim, so here are the limits.
+            The governing principle of this project is <em>proven, not claimed</em>.
+            A capability list without limits is a claim, so here are the limits.
           </p>
           <dl className="space-y-0">
             {HONEST_SCOPE.map((s) => (

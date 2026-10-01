@@ -388,11 +388,6 @@ export default function Home() {
       a: 'Custom code that reads or modifies the SAP standard directly is what makes an upgrade expensive: a modification has to be adjusted in SPAU before the upgrade can proceed, native SQL bypasses the database abstraction, and every direct table read relies on a structure SAP never promised to keep. Clean core replaces those with released APIs. Clean-Core.io names them in your own ABAP, object by object against SAP’s published Cloudification Repository, and flags what a generator cannot reach instead of transforming it into something plausible and wrong.',
     },
     {
-      q: 'Wie reduziert Clean Core das Upgrade-Risiko in S/4HANA?',
-      a: 'Teuer wird ein Upgrade durch Eigenentwicklungen, die direkt auf dem SAP-Standard lesen oder ihn modifizieren: Eine Modifikation muss in SPAU angepasst werden, bevor das Upgrade weiterlaufen kann, Native SQL umgeht die Datenbankabstraktion, und jeder direkte Tabellenzugriff baut auf einer Struktur, die SAP nie zugesagt hat. Clean Core ersetzt das durch freigegebene APIs. Clean-Core.io benennt sie in Ihrem eigenen ABAP, Objekt für Objekt gegen SAPs veröffentlichtes Cloudification Repository, und markiert, was ein Generator nicht erreicht, statt es in etwas Plausibles und Falsches zu überführen.',
-      lang: 'de',
-    },
-    {
       q: 'Is Clean-Core.io an SAP product?',
       a: 'No. It is an independent community project, not affiliated with or endorsed by SAP SE. It follows SAP’s clean core level concept and reads SAP’s published Cloudification Repository.',
     },

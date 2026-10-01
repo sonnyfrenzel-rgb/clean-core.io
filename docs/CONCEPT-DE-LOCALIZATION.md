@@ -17,7 +17,7 @@ die steht in der Git-Geschichte.
 |---|---|
 | i18n-Framework | keines (kein `next-intl`, kein Locale-Routing) |
 | Textschlüssel | angelegt: `lib/cc-messages.ts` für die Komponenten in `components/cc/`, die Herkunftswerte als Schlüssel in `lib/provenance.ts`, Level A–D in `lib/clean-core-level.ts` (`DESIGN.md` §3: jede sichtbare Zeichenkette neuer Oberflächen läuft über Textschlüssel, auch solange es nur Englisch gibt) |
-| Sprachauszeichnung | `<html lang="en">` in `app/layout.tsx`; einzelne deutsche Inhalte tragen `lang="de"` (die deutsche FAQ-Antwort auf der Startseite) |
+| Sprachauszeichnung | `<html lang="en">` in `app/layout.tsx`; einzelne deutsche Inhalte tragen `lang="de"`; die deutsche FAQ-Antwort der Startseite ist seit 01.10.2026 entfernt (Sonny: „alles Englisch“), ihre englische Fassung steht direkt davor |
 | Deutsche Seiten | `/datenschutz/de` als eigene, indexierbare Seite mit `hreflang` zur englischen |
 | Produkt | Englisch: Startseite, Wissens- und Katalogseiten, Arbeitsraum (Business-, IT- und Management-Sicht, sechs Ebenen), die sieben Stufen als Werkzeuge, Einstellungen, Mails |
 | Modellausgabe | Englisch, in den Prompts festgelegt; markiert als *Model proposal* |
