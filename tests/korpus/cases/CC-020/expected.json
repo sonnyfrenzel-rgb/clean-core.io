@@ -13,7 +13,7 @@
         }
       ],
       "id": "CC-020-B01",
-      "text": "Ein Datenobjekt des zur Laufzeit benannten Typs wird angelegt; es werden keine Datenbankzeilen geladen."
+      "text": "A data object of the type named at runtime is created; no database rows are loaded."
     },
     {
       "anchors": [
@@ -40,7 +40,7 @@
         }
       ],
       "id": "CC-020-B02",
-      "text": "Nur eine erfolgreiche Komponentenbindung führt zur Ausgabe des Feldwerts."
+      "text": "Only a successful component assignment leads to the field value being output."
     },
     {
       "anchors": [
@@ -60,7 +60,7 @@
         }
       ],
       "id": "CC-020-B03",
-      "text": "Bei erfolgloser Komponentenbindung wird FIELD_NOT_FOUND ausgegeben, sofern dieser Pfad überhaupt erreicht wird."
+      "text": "If the component assignment fails, FIELD_NOT_FOUND is output, provided this path is reached at all."
     }
   ],
   "classes": [

@@ -38,7 +38,7 @@
         }
       ],
       "id": "CC-023-B01",
-      "text": "Im Testmodus (p_test = 'X') wird SIMULATION_ONLY ausgegeben und vor dem UPDATE zurückgekehrt; es findet keine Datenbankänderung statt. Die Vorbelegung 'X' ist ein Default, kein dauerhaftes Schreibverbot: der Benutzer kann sie im Selektionsbild abwählen."
+      "text": "In test mode (p_test = 'X') SIMULATION_ONLY is output and the program returns before the UPDATE; no database change takes place. The preset 'X' is a default, not a permanent write ban: the user can deselect it on the selection screen."
     },
     {
       "anchors": [
@@ -72,7 +72,7 @@
         }
       ],
       "id": "CC-023-B02",
-      "text": "Außerhalb des Testmodus (p_test <> 'X', Zweig ab Zeile 6) wird versucht, NAME1 der KNA1-Zeile zu ändern, deren KUNNR exakt der eingegebenen zehnstelligen Zeichenkette entspricht. Nur bei Treffer (sy-subrc = 0) folgt der Commit-Zweig (B03). p_kunnr ist ohne DDIC-Bezug deklariert und erhält keine ALPHA-Konvertierung (F03): für einen numerischen Kundenschlüssel trifft nur die Eingabe im internen, nullaufgefüllten Format (Vektor 1000 → kein Treffer, 0000001000 → Treffer); ein alphanumerischer Schlüssel braucht keine Nullauffüllung und trifft in der eingegebenen Schreibweise (Gegenvektor ABC123). Ein Treffer ist vom Code nicht garantiert."
+      "text": "Outside test mode (p_test <> 'X', branch from line 6) an attempt is made to change NAME1 of the KNA1 row whose KUNNR exactly equals the entered ten-character string. Only on a match (sy-subrc = 0) does the commit branch (B03) follow. p_kunnr is declared without a DDIC reference and receives no ALPHA conversion (F03): for a numeric customer key only input in the internal, zero-padded format matches (vector 1000 → no match, 0000001000 → match); an alphanumeric key needs no zero padding and matches as entered (counter-vector ABC123). A match is not guaranteed by the code."
     },
     {
       "anchors": [
@@ -106,7 +106,7 @@
         }
       ],
       "id": "CC-023-B03",
-      "text": "Bei sy-subrc = 0 nach dem UPDATE wird COMMIT WORK AND WAIT aufgerufen, sonst ROLLBACK WORK. Eine separate Prüfung des Commit-Ergebnisses ist nicht sichtbar; der Code hat keine weitere fachliche Ergebnisprüfung. Das ist eine Beschreibung, kein Defektbefund."
+      "text": "If sy-subrc = 0 after the UPDATE, COMMIT WORK AND WAIT is called, otherwise ROLLBACK WORK. A separate check of the commit result is not visible; the code has no further business result check. This is a description, not a defect finding."
     }
   ],
   "classes": [

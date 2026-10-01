@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-059-B01",
-      "text": "Bei Anlage oder Änderung eines Auftrags wird status auf M gesetzt, wenn der Nettobetrag größer als 10000 ist, sonst auf A."
+      "text": "When an order is created or changed, status is set to M if the net amount is greater than 10000, otherwise to A."
     },
     {
       "anchors": [
@@ -40,7 +40,7 @@
         }
       ],
       "id": "CC-059-B02",
-      "text": "Die Ableitung ist kein Genehmigungsschritt: es wird ein Statuswert geschrieben; kein Workflow, keine Person, keine Benachrichtigung."
+      "text": "The derivation is not an approval step: a status value is written; no workflow, no person, no notification."
     },
     {
       "anchors": [
@@ -60,7 +60,7 @@
         }
       ],
       "id": "CC-059-B03",
-      "text": "Persistenz: angekündigt, nicht persistiert. Der MODIFY wirkt auf den RAP-Transaktionspuffer; gespeichert wird erst beim SAVE der RAP-LUW durch den Aufrufer (COMMIT ENTITIES), der in dieser Scheibe nicht enthalten ist."
+      "text": "Persistence: announced, not persisted. The MODIFY acts on the RAP transactional buffer; it is saved only at the SAVE of the RAP LUW by the caller (COMMIT ENTITIES), which is not contained in this slice."
     }
   ],
   "classes": [
@@ -199,10 +199,10 @@
     }
   ],
   "forbiddenConclusions": [
-    "Profil 2, source.abap:1 — kein A ohne S01 (False Green); kein B/C/D wegen S01 (Briefing Regel 7).",
-    "Profil 1, source.abap:1 — kein A „weil RAP\"; die Sprachversion ist standard.",
-    "source.abap:13 — kein write-Befund nach R02 (EML MODIFY ist kein Datenbank-UPDATE auf eine SAP-Tabelle; das BO ist kundeneigen).",
-    "source.abap:13 — kein transaction-Knoten: die Determination persistiert nichts (siehe B03)."
+    "Profile 2, source.abap:1 — no A without S01 (false green); no B/C/D because of S01 (briefing rule 7).",
+    "Profile 1, source.abap:1 — no A \"because RAP\"; the language version is standard.",
+    "source.abap:13 — no write finding under R02 (EML MODIFY is not a database UPDATE on an SAP table; the BO is customer-specific).",
+    "source.abap:13 — no transaction node: the determination persists nothing (see B03)."
   ],
   "id": "CC-059",
   "independence": [

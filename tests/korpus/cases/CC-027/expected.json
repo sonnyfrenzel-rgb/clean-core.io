@@ -31,7 +31,7 @@
         }
       ],
       "id": "CC-027-B01",
-      "text": "Der Report registriert den Baustein mit Fall-ID und Route zur Verbuchung."
+      "text": "The report registers the function module with case ID and route for the update task."
     },
     {
       "anchors": [
@@ -58,7 +58,7 @@
         }
       ],
       "id": "CC-027-B02",
-      "text": "In der gelieferten Scheibe wird kein COMMIT WORK ausgeführt und kein Statement mit impliziter COMMIT-WORK-Wirkung erreicht (Vollständigkeitsbeleg: Zeilen 4–10 sind die ganze Scheibe). Innerhalb der Scheibe wird der registrierte Baustein nicht angestoßen und nicht ausgeführt; eine Datenbankänderung findet nicht statt — nicht persistiert (zulässig, weil keine Datenbankänderung vorliegt). REGISTERED und END_OF_REPORT sind Ausgaben, keine Bestätigungen."
+      "text": "In the supplied slice no COMMIT WORK is executed and no statement with an implicit COMMIT WORK effect is reached (completeness evidence: lines 4–10 are the whole slice). Within the slice the registered function module is neither triggered nor executed; no database change takes place — not persisted (admissible, because there is no database change). REGISTERED and END_OF_REPORT are outputs, not confirmations."
     }
   ],
   "classes": [
@@ -160,12 +160,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:10 — kein transaction- und kein async-Knoten aus dem Reportende (kein erfundener Dispatch).",
-    "source.abap:10 — kein Knoten und kein Fachsatz „Registrierung durch ROLLBACK verworfen\" (discarded); richtig ist orphaned — nicht ausgeführt (REV2-11).",
-    "source.abap:10 — kein Fachsatz „der implizite Datenbank-Commit am Dialogschrittende führt die Verbuchung aus\": ein Datenbank-Commit ist kein COMMIT WORK (S05, S08, S09).",
-    "source.abap:5 — kein Fachsatz „die Verbuchung läuft nach Programmende\" (kein Träger in der Scheibe).",
-    "source.abap:5 — kein Fehlerbefund „COMMIT WORK fehlt\" ohne Klärung der vorgesehenen Transaktionsverantwortung (Fallbogen §6); W01 klärt das, der Korpus urteilt nicht.",
-    "gesamte Scheibe — kein security_and_authorization-Befund (wie CC-026)."
+    "source.abap:10 — no transaction node and no async node from the end of the report (no invented dispatch).",
+    "source.abap:10 — no node and no business statement \"registration discarded by ROLLBACK\" (discarded); correct is orphaned — not executed (REV2-11).",
+    "source.abap:10 — no business statement \"the implicit database commit at the end of the dialog step executes the update task\": a database commit is not a COMMIT WORK (S05, S08, S09).",
+    "source.abap:5 — no business statement \"the update task runs after the end of the program\" (no carrier in the slice).",
+    "source.abap:5 — no error finding \"COMMIT WORK missing\" without clarifying the intended transaction responsibility (case sheet §6); W01 clarifies this, the corpus does not judge.",
+    "whole slice — no security_and_authorization finding (as in CC-026)."
   ],
   "id": "CC-027",
   "independence": [

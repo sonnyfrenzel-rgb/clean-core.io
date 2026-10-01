@@ -34,7 +34,7 @@
         }
       ],
       "id": "CC-051-B01",
-      "text": "Der eingegebene Kunde wird aus dem eingegebenen Mandanten gelesen, nicht aus dem Anmeldemandanten."
+      "text": "The entered customer is read from the entered client, not from the logon client."
     },
     {
       "anchors": [
@@ -61,7 +61,7 @@
         }
       ],
       "id": "CC-051-B02",
-      "text": "Ohne Treffer wird NO_MATCH ausgegeben und der Reportingblock verlassen."
+      "text": "If there is no match, NO_MATCH is output and the reporting block is exited."
     },
     {
       "anchors": [
@@ -74,7 +74,7 @@
         }
       ],
       "id": "CC-051-B03",
-      "text": "Bei Treffer werden Mandant, Kundennummer und Name ausgegeben."
+      "text": "If there is a match, client, customer number and name are output."
     }
   ],
   "classes": [
@@ -134,9 +134,9 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:6 — Kein D: CLIENT SPECIFIED ist kein Schreibzugriff und keine Modifikation.",
-    "source.abap:7 — mandt = @p_mandt ist keine „Filterung im eigenen Mandanten\"; der Fachsatz heißt „Kunde aus Mandant p_mandt\", nicht „Kundenliste\".",
-    "source.abap:5 — Der CDS-Nachfolger darf nicht als Drop-in genannt werden; die Nachfolgerliste bleibt erhalten, drop_in_compatible bleibt unbewiesen und ist hier durch die Mandantenachse widerlegt."
+    "source.abap:6 — No D: CLIENT SPECIFIED is not a write access and not a modification.",
+    "source.abap:7 — mandt = @p_mandt is not \"filtering in the own client\"; the business statement is \"customer from client p_mandt\", not \"customer list\".",
+    "source.abap:5 — The CDS successor must not be named as a drop-in; the successor list is retained, drop_in_compatible remains unproven and is refuted here by the client axis."
   ],
   "id": "CC-051",
   "independence": [

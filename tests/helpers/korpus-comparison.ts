@@ -1357,16 +1357,21 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
  *
  * Eine Streichliste ist eine Auslegung, und sie steht deshalb hier, sichtbar und
  * vollständig, statt in einer Ähnlichkeitszahl zu verschwinden. Sie enthält
- * ausschließlich deutsche Funktionswörter — kein Fachwort, kein ABAP-Bezeichner,
+ * ausschließlich englische Funktionswörter — kein Fachwort, kein ABAP-Bezeichner,
  * nichts, was zwei Sätze inhaltlich unterscheiden könnte.
+ *
+ * English since 01.10.2026 (owner decision "alles Englisch"): the engine's
+ * business statements and the case book's expected statements are English, and
+ * the list is the English counterpart of the German one it replaces, word for
+ * word where English has the word (`der/die/das` → `the`, `wird/werden` →
+ * `is/are`, `ohne` → `without` …). Words under three letters fall out anyway.
  */
 export const STATEMENT_STOPWORDS: ReadonlySet<string> = new Set([
-  'der', 'die', 'das', 'den', 'dem', 'des', 'ein', 'eine', 'einer', 'einem', 'einen', 'eines',
-  'und', 'oder', 'aber', 'nicht', 'kein', 'keine', 'wird', 'werden', 'wurde', 'worden', 'sind',
-  'ist', 'war', 'sein', 'seine', 'hat', 'haben', 'als', 'wie', 'mit', 'ohne', 'von', 'vom',
-  'zum', 'zur', 'fuer', 'ueber', 'unter', 'auf', 'aus', 'bei', 'nach', 'vor', 'durch', 'gegen',
-  'nur', 'auch', 'noch', 'dann', 'wenn', 'dass', 'sich', 'ihre', 'ihr', 'alle', 'jeder', 'jede',
-  'jedes', 'man', 'pro', 'dabei', 'damit', 'dadurch',
+  'the', 'and', 'but', 'not', 'are', 'was', 'were', 'been', 'being', 'has', 'have', 'had',
+  'with', 'without', 'from', 'for', 'over', 'under', 'after', 'before', 'through', 'against',
+  'only', 'also', 'still', 'then', 'when', 'that', 'this', 'these', 'those', 'its', 'their',
+  'they', 'them', 'all', 'each', 'every', 'per', 'thereby', 'thus', 'there', 'than', 'how',
+  'does', 'did', 'any', 'via', 'into', 'which',
 ]);
 
 /**
@@ -1666,7 +1671,7 @@ export interface ForbiddenConclusion {
  * Entscheidung einen Namen hat und in `compareBusinessStatements` zitiert
  * werden kann.
  */
-export const FORBIDDEN_WHOLE_SLICE = 'gesamte Scheibe';
+export const FORBIDDEN_WHOLE_SLICE = 'whole slice';
 
 /**
  * Das Präfix eines verbotenen Satzes ist ein **Geltungsbereich** und keine
@@ -1680,8 +1685,8 @@ export const FORBIDDEN_WHOLE_SLICE = 'gesamte Scheibe';
  */
 function forbiddenScopeResidue(prefix: string): string {
   return prefix
-    .replace(/Profile?\s*\d+(\s*(und|oder|,)\s*\d+)*/g, '')
-    .replace(/beide Profile/g, '')
+    .replace(/Profile?\s*\d+(\s*(and|or|,)\s*\d+)*/g, '')
+    .replace(/both profiles/g, '')
     .replace(new RegExp(FORBIDDEN_WHOLE_SLICE, 'g'), '')
     .replace(/[A-Za-z0-9_.]+\.abap/g, '')
     .replace(/[:\d+–—…\-\s,]/g, '')
@@ -1697,8 +1702,8 @@ function forbiddenAnchors(prefix: string, fallbackFile: string | null): Array<{ 
     // Zeile 2 werden. Tokenoffsets (`+4`, `+1 … +3`) bezeichnen eine Stelle
     // *innerhalb* der Anweisung an derselben Zeile und ändern den Anker nicht.
     const piece = rawPiece
-      .replace(/Profile?\s*\d+(\s*(und|oder)\s*\d+)*/g, '')
-      .replace(/beide Profile/g, '')
+      .replace(/Profile?\s*\d+(\s*(and|or)\s*\d+)*/g, '')
+      .replace(/both profiles/g, '')
       .replace(/\+\s*\d+/g, '');
     const file = /([A-Za-z0-9_.]+\.abap)\s*:/.exec(piece);
     if (file) current = file[1];
@@ -1737,7 +1742,9 @@ function forbiddenClause(body: string): string {
   let cut = body.length;
   for (let i = 0; i < body.length; i += 1) {
     const ch = body[i];
-    if (ch === '„') quoted = true;
+    // English quotes open and close with the same mark; the German „…“ of
+    // the case book before 01.10.2026 is still read.
+    if (ch === '„' || (!quoted && (ch === '"' || ch === '“'))) quoted = true;
     else if (quoted && (ch === '"' || ch === '“' || ch === '”')) quoted = false;
     else if (!quoted && ch === '(') depth += 1;
     else if (!quoted && ch === ')') depth = Math.max(0, depth - 1);
@@ -1776,11 +1783,15 @@ function forbiddenClause(body: string): string {
  * ohnehin im Zitat (Regel 1 in `forbiddenCores`).
  */
 export const FORBIDDEN_PACKAGING: ReadonlySet<string> = new Set([
-  'nicht', 'nie', 'kein', 'keine', 'keinen', 'keiner', 'keinem', 'keines', 'weder',
-  'melden', 'meldet', 'gemeldet', 'ableiten', 'abgeleitet', 'behaupten', 'behauptet',
-  'unterstellen', 'erfinden', 'erfundener', 'erfundenen', 'erfundene', 'kodieren',
-  'klassifizieren', 'bewerten', 'werten', 'gewertet', 'behandeln', 'modellieren',
-  'vorschlagen', 'verwerfen', 'darf', 'duerfen',
+  // English since 01.10.2026, the counterpart of the German list word for word:
+  // negation (nicht, nie, kein…, weder) and the reporting verbs (melden,
+  // ableiten, behaupten, unterstellen, erfinden, kodieren, klassifizieren,
+  // bewerten, werten, behandeln, modellieren, vorschlagen, verwerfen, dürfen).
+  'not', 'never', 'none', 'neither', 'nor', 'dont', 'doesnt',
+  'report', 'reports', 'reported', 'derive', 'derived', 'claim', 'claimed',
+  'imply', 'implied', 'invent', 'invented', 'encode', 'encoded',
+  'classify', 'classified', 'assess', 'assessed', 'rate', 'rated', 'treat', 'treated', 'model', 'modelled',
+  'propose', 'proposed', 'discard', 'discarded', 'may', 'must',
 ]);
 
 /** Ein Wort so normalisieren, wie `statementTokens` es tut — für den Abgleich oben. */
@@ -1833,7 +1844,7 @@ export const MIN_FORBIDDEN_CORE_TOKENS = 2;
  * Deutsche Anführungszeichen: „…" — geöffnet wird mit U+201E, geschlossen im
  * Fallbuch mal mit U+201C, mal mit dem geraden `"`. Beides wird genommen.
  */
-const QUOTED_CORE = /„([^„]*?)["“”]/g;
+const QUOTED_CORE = /(?:„|"|“)([^„"“”]*?)["“”]/g;
 
 export function forbiddenCores(clause: string): string[] {
   const marks = clause.matchAll(QUOTED_CORE);

@@ -13,7 +13,7 @@
         }
       ],
       "id": "CC-022-B01",
-      "text": "Ein statisch benannter Partneraufruf erhält den Betrag25000."
+      "text": "A statically named partner call receives the amount 25000."
     },
     {
       "anchors": [
@@ -26,7 +26,7 @@
         }
       ],
       "id": "CC-022-B02",
-      "text": "Der Rückgabewert wird ausgegeben; die Partnerimplementierung bleibt unbekannt."
+      "text": "The return value is output; the partner implementation remains unknown."
     }
   ],
   "classes": [
@@ -64,7 +64,7 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:4 — Kein direkter Tabellenzugriff und keine begründete SAP-intern-Einstufung."
+    "source.abap:4 — No direct table access and no justified SAP-internal classification."
   ],
   "id": "CC-022",
   "independence": [],

@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-054-B01",
-      "text": "Zwei fest hinterlegte Zeilen (Kundennummer, Name) werden in einem ALV-Grid angezeigt."
+      "text": "Two hard-coded rows (customer number, name) are displayed in an ALV grid."
     },
     {
       "anchors": [
@@ -47,7 +47,7 @@
         }
       ],
       "id": "CC-054-B02",
-      "text": "Bei Doppelklick auf eine Zelle wird deren Wert als Informationsmeldung angezeigt; jedes andere Benutzerkommando bleibt ohne Reaktion."
+      "text": "On a double-click on a cell, its value is displayed as an information message; every other user command gets no response."
     }
   ],
   "classes": [
@@ -108,10 +108,10 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:2 — Kommentar ist kein Enhancement, kein Userexit und kein Hostkontext: kein D, kein R32-Marker, kein R10 (R13a).",
-    "source.abap:21 — Das FORM darf nicht als unerreichbar oder überflüssig gemeldet werden.",
-    "source.abap:24 — Die Informationsmeldung ist kein Persistenzsatz; kein Transaktionsknoten.",
-    "source.abap:14 — Kein D wegen SAP-GUI-Technik (R11); kein A wegen fehlender SQL."
+    "source.abap:2 — A comment is not an enhancement, not a user exit and not a host context: no D, no R32 marker, no R10 (R13a).",
+    "source.abap:21 — The FORM must not be reported as unreachable or superfluous.",
+    "source.abap:24 — The information message is not a persistence statement; no transaction node.",
+    "source.abap:14 — No D because of SAP GUI technology (R11); no A because of missing SQL."
   ],
   "id": "CC-054",
   "independence": [

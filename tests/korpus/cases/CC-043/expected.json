@@ -34,7 +34,7 @@
         }
       ],
       "id": "CC-043-B01",
-      "text": "Drei Unterprogramme laufen in der Reihenfolge read_hdr, read_items, sum_items; ihre Wirkung, auch auf gv_total, ist im Slice unbekannt."
+      "text": "Three subroutines run in the order read_hdr, read_items, sum_items; their effect, including on gv_total, is unknown in the slice."
     },
     {
       "anchors": [
@@ -54,7 +54,7 @@
         }
       ],
       "id": "CC-043-B02",
-      "text": "write_log läuft nur bei gesetztem Häkchen; seine Wirkung ist unbekannt."
+      "text": "write_log runs only when the checkbox is ticked; its effect is unknown."
     },
     {
       "anchors": [
@@ -74,7 +74,7 @@
         }
       ],
       "id": "CC-043-B03",
-      "text": "DONE und gv_total werden nach Rückkehr aller Aufrufe ausgegeben; der Wert von gv_total ist ohne Include nicht belegbar."
+      "text": "DONE and gv_total are output after all calls have returned; the value of gv_total cannot be evidenced without the include."
     }
   ],
   "classes": [
@@ -113,10 +113,10 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:6 — Nicht ein Knoten und nicht ein Anker für drei Aufrufe. Zwei verschiedene Knoten mit Typ opaque_call und Quelle source.abap:6 ohne Tokenoffset sind eine mehrdeutige Signatur (Prüfung F05) und werden abgewiesen.",
-    "source.abap:6 — Nicht als PERFORM read_hdr mit den Parametern read_items, sum_items lesen.",
-    "source.abap:6, source.abap:8 — Kein R07-Befund (dynamisches Ziel). Die FORM-Namen sind statisch.",
-    "source.abap:6+1 … +3 — Die Reihenfolge ist Teil des Sollvertrags: read_hdr vor read_items vor sum_items. Ein Graph mit anderer Reihenfolge oder mit Selbstschleife auf einem der drei Knoten ist falsch."
+    "source.abap:6 — Not one node and not one anchor for three calls. Two different nodes with type opaque_call and source source.abap:6 without a token offset are an ambiguous signature (check F05) and are rejected.",
+    "source.abap:6 — Do not read it as PERFORM read_hdr with the parameters read_items, sum_items.",
+    "source.abap:6, source.abap:8 — No R07 finding (dynamic target). The FORM names are static.",
+    "source.abap:6+1 … +3 — The order is part of the expected contract: read_hdr before read_items before sum_items. A graph with a different order or with a self-loop on one of the three nodes is wrong."
   ],
   "id": "CC-043",
   "independence": [

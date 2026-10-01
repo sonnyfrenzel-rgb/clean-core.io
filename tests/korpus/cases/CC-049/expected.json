@@ -34,7 +34,7 @@
         }
       ],
       "id": "CC-049-B01",
-      "text": "Ohne Anzeigeberechtigung (F_KNA1_BUK, Aktivität 03) für den eingegebenen Buchungskreis wird NO_AUTH ausgegeben und der Reportingblock verlassen."
+      "text": "Without display authorization (F_KNA1_BUK, activity 03) for the entered company code, NO_AUTH is output and the reporting block is exited."
     },
     {
       "anchors": [
@@ -54,7 +54,7 @@
         }
       ],
       "id": "CC-049-B02",
-      "text": "Nur wenn die Berechtigungsprüfung bestanden ist, werden die Kunden des eingegebenen Buchungskreises gelesen."
+      "text": "Only if the authorization check is passed are the customers of the entered company code read."
     },
     {
       "anchors": [
@@ -74,7 +74,7 @@
         }
       ],
       "id": "CC-049-B03",
-      "text": "Bei Treffern werden Kundennummer und Buchungskreis als Liste ausgegeben; ohne Treffer erfolgt keine Ausgabe (kein Leermengenzweig)."
+      "text": "If there are matches, customer number and company code are output as a list; without a match there is no output (no empty-set branch)."
     }
   ],
   "classes": [
@@ -152,9 +152,9 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:16 — Aus dieser Prüfung darf kein Gateway, kein Abbruchzweig und kein Fachsatz „nur mit F_KNA1_GEN-Berechtigung wird ausgegeben\" abgeleitet werden.",
-    "source.abap:4 — Der Sicherheitsbefund hebt oder senkt das Level nicht; C bleibt C, weder „B, weil geprüft\" noch „D, weil sensibel\".",
-    "source.abap:11 — Ein CDS-Nachfolger ersetzt die Berechtigungsprüfung nicht; „Berechtigung wird von DCL übernommen\" ist keine aus dem Code ablesbare Wahrheit."
+    "source.abap:16 — From this check no gateway, no abort branch and no business statement \"output only with F_KNA1_GEN authorization\" may be derived.",
+    "source.abap:4 — The security finding neither raises nor lowers the level; C stays C, neither \"B, because checked\" nor \"D, because sensitive\".",
+    "source.abap:11 — A CDS successor does not replace the authorization check; \"authorization is taken over by DCL\" is not a truth readable from the code."
   ],
   "id": "CC-049",
   "independence": [

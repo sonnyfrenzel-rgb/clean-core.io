@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-025-B01",
-      "text": "Negative Beträge werden vor allen anderen Prüfungen als ungültig eingeordnet."
+      "text": "Negative amounts are classified as invalid before all other checks."
     },
     {
       "anchors": [
@@ -47,7 +47,7 @@
         }
       ],
       "id": "CC-025-B02",
-      "text": "Nicht negative Nicht-EUR-Fälle werden zur Währungsprüfung geroutet; der Code rechnet keine Währung um."
+      "text": "Non-negative non-EUR cases are routed to the currency check; the code does not convert any currency."
     },
     {
       "anchors": [
@@ -74,7 +74,7 @@
         }
       ],
       "id": "CC-025-B03",
-      "text": "Ein nicht negativer dringender EUR-Fall bis einschließlich50000 erhält nachts ohne gesetzte Vertretungsmarkierung DELEGATE_REQUIRED; sonst EMERGENCY_ROUTE."
+      "text": "A non-negative urgent EUR case up to and including 50000 receives DELEGATE_REQUIRED at night when no deputy flag is set; otherwise EMERGENCY_ROUTE."
     },
     {
       "anchors": [
@@ -87,7 +87,7 @@
         }
       ],
       "id": "CC-025-B04",
-      "text": "EMERGENCY_ROUTE ist ein berechneter Text. Es findet weder Bestellung, Auszahlung noch reale Freigabe statt."
+      "text": "EMERGENCY_ROUTE is a calculated text. Neither a purchase order, a payout nor a real approval takes place."
     },
     {
       "anchors": [
@@ -107,7 +107,7 @@
         }
       ],
       "id": "CC-025-B05",
-      "text": "Bei nicht negativen EUR-Fällen außerhalb des priorisierten Notfallzweigs führen Beträge größer10000 zu MANAGER_ROUTE, kleinere oder gleiche zu AUTO_ROUTE."
+      "text": "For non-negative EUR cases outside the prioritized emergency branch, amounts greater than 10000 lead to MANAGER_ROUTE, smaller or equal ones to AUTO_ROUTE."
     }
   ],
   "classes": [
@@ -124,7 +124,7 @@
   "expectedByProfile": null,
   "findings": [],
   "forbiddenConclusions": [
-    "source.abap:17 — Keine tatsächlich erfolgte Genehmigung, kein belegter Standard-Fit, keine Einsparung aus diesem Satz ableiten."
+    "source.abap:17 — Derive from this statement no approval actually given, no evidenced standard fit and no savings."
   ],
   "id": "CC-025",
   "independence": [],

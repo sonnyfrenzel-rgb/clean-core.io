@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-045-B01",
-      "text": "Ist der Kundennummern-Range vom Selektionsbild leer, wird NO_RESTRICTION ausgegeben; eine Datenbankselektion findet im Slice nicht statt."
+      "text": "If the customer number range from the selection screen is empty, NO_RESTRICTION is output; no database selection takes place in the slice."
     },
     {
       "anchors": [
@@ -61,7 +61,7 @@
         }
       ],
       "id": "CC-045-B02",
-      "text": "Eine lokal gesetzte Kundennummer wird in die um ein Kennzeichen erweiterte Struktur übernommen und mit dem Kennzeichen ausgegeben."
+      "text": "A locally set customer number is placed in the structure extended by a flag and output together with the flag."
     }
   ],
   "classes": [
@@ -160,12 +160,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:5 — Kein R16-Befund „Include nicht geliefert“. INCLUDE STRUCTURE ist eine Typanweisung, kein Programm-Include.",
-    "source.abap:2, 3, 5, 9 — Kein Lesebefund im Sinn eines ausgeführten SELECT. Es wird nichts gelesen; die Abhängigkeit ist eine Typabhängigkeit.",
-    "source.abap:8 — Kein fünfter Befund. ty_cust ist ein lokaler Typ; die KNA1-Abhängigkeit ist an Zeile 5 deklariert und wird nicht an jeder Verwendung des lokalen Typs wiederholt.",
-    "source.abap:11–13, 17 — Keine Befunde an den Zuweisungen und Ausgaben; sie berühren nur lokale Datenobjekte.",
-    "Kein Nachfolger I_CUSTOMER als Drop-in für eine Typreferenz vorschlagen (R29: ein CDS-Lesemodell ersetzt keinen Strukturtyp).",
-    "source.abap:14 — Nicht behaupten, der Report selektiere „nur die eingegebenen Kunden“. Es gibt keine Selektion."
+    "source.abap:5 — No R16 finding \"include not supplied\". INCLUDE STRUCTURE is a type statement, not a program include.",
+    "source.abap:2, 3, 5, 9 — No read finding in the sense of an executed SELECT. Nothing is read; the dependency is a type dependency.",
+    "source.abap:8 — No fifth finding. ty_cust is a local type; the KNA1 dependency is declared at line 5 and is not repeated at every use of the local type.",
+    "source.abap:11–13, 17 — No findings at the assignments and outputs; they touch only local data objects.",
+    "Do not propose the successor I_CUSTOMER as a drop-in for a type reference (R29: a CDS read model does not replace a structure type).",
+    "source.abap:14 — Do not claim the report selects \"only the entered customers\". There is no selection."
   ],
   "id": "CC-045",
   "independence": [

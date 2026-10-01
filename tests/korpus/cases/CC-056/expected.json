@@ -29,7 +29,7 @@
         }
       ],
       "id": "CC-056-B01",
-      "text": "Ohne Länderschlüssel wird NO_COUNTRY ausgegeben und der Reportingblock verlassen."
+      "text": "Without a country key NO_COUNTRY is output and the reporting block is exited."
     },
     {
       "anchors": [
@@ -63,7 +63,7 @@
         }
       ],
       "id": "CC-056-B02",
-      "text": "Mit Länderschlüssel wird CHILD_START ausgegeben, das Kindprogramm mit diesem Länderschlüssel gestartet, und nach dessen Ende CHILD_DONE ausgegeben. Was das Kind tut, ist nicht Teil dieses Satzes."
+      "text": "With a country key CHILD_START is output, the child program is started with this country key, and after it ends CHILD_DONE is output. What the child does is not part of this statement."
     }
   ],
   "classes": [
@@ -122,10 +122,10 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:9 — Kein D: SUBMIT ist kein Eingriff in SAP-Objekte; DeepSeeks „Level D\" ist eine Wertung, kein SAP-Level.",
-    "source.abap:9 — Kein C: eine fehlende kundeneigene Quelle ist kein SAP-internes Objekt (Sinn von v1-R16, hier ohne Regelzitat).",
-    "source.abap:12 — Kein Fachsatz über das, was das Kind getan, gelesen oder ausgegeben hat.",
-    "Kein Knoten „Kindprogramm liest Kunden\" oder ähnliches: das Innere bleibt opak."
+    "source.abap:9 — No D: SUBMIT is not an intervention in SAP objects; DeepSeek's \"level D\" is an assessment, not an SAP level.",
+    "source.abap:9 — No C: a missing customer-specific source is not an SAP-internal object (meaning of v1 R16, here without rule citation).",
+    "source.abap:12 — No business statement about what the child did, read or output.",
+    "No node \"child program reads customers\" or similar: the inside remains opaque."
   ],
   "id": "CC-056",
   "independence": [

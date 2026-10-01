@@ -31,7 +31,7 @@
         }
       ],
       "id": "CC-026-B01",
-      "text": "Fall-ID und Route werden als Parameter eines zur Verbuchung registrierten Aufrufs festgehalten; der Baustein wird an Zeile 6 nicht ausgeführt, an der Aufrufstelle wird nichts geändert."
+      "text": "Case ID and route are recorded as parameters of a call registered for the update task; the function module is not executed at line 6, and nothing is changed at the call site."
     },
     {
       "anchors": [
@@ -58,7 +58,7 @@
         }
       ],
       "id": "CC-026-B02",
-      "text": "Ohne Abbruchkennzeichen wird COMMIT WORK aufgerufen. Im stipulierten nicht lokalen Modus stößt das die Ausführung des registrierten Bausteins in einem Verbucherprozess an. COMMITTED wird ausgegeben, ohne dass der Code den Verbuchungserfolg prüft — angestoßen, nicht als ausgeführt oder persistiert belegt."
+      "text": "Without the abort flag COMMIT WORK is called. In the stipulated non-local mode this triggers the execution of the registered function module in an update work process. COMMITTED is output without the code checking the success of the update — triggered, not evidenced as executed or persisted."
     },
     {
       "anchors": [
@@ -85,7 +85,7 @@
         }
       ],
       "id": "CC-026-B03",
-      "text": "Mit Abbruchkennzeichen löscht ROLLBACK WORK die Registrierung, DISCARDED wird ausgegeben; im gelieferten Zweig wird der Baustein nicht ausgeführt."
+      "text": "With the abort flag ROLLBACK WORK deletes the registration and DISCARDED is output; in the supplied branch the function module is not executed."
     },
     {
       "anchors": [
@@ -105,7 +105,7 @@
         }
       ],
       "id": "CC-026-B04",
-      "text": "REGISTERED wird vor der Verzweigung (Zeile 11) in beiden Zweigen ausgegeben und belegt nur das Erreichen dieser Stelle. In der gelieferten Scheibe liegt vor Zeile 10 keine Operation, die Daten ändern kann — die Registrierung in Zeile 6 ändert nichts (F01)."
+      "text": "REGISTERED is output before the branching (line 11) in both branches and only evidences that this point was reached. In the supplied slice there is no operation before line 10 that can change data — the registration in line 6 changes nothing (F01)."
     }
   ],
   "classes": [
@@ -225,10 +225,10 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:6 — kein synchroner call-opaque mit Kante „und damit erledigt\" (CC-005-Form; Grok H-023, GLM A-018).",
-    "source.abap:16 — kein Fachsatz „Route gespeichert\" (siehe „Nicht tragbar\").",
-    "source.abap:6 — kein Level B für die Gesamtscheibe aus „Standard-ABAP-Mechanik\"; B beschreibt nur den sichtbaren Teil (R16, R03@1.1.0, Fallbogen §1).",
-    "gesamte Scheibe — kein security_and_authorization-Befund „Berechtigungsprüfung fehlt\": die fehlende Bausteinquelle umfasst auch die dort möglichen Prüfungen; ein fehlender sichtbarer Check ist keine Beobachtung im Sinne von R28@2.1.0."
+    "source.abap:6 — no synchronous call-opaque with an edge \"and thus done\" (CC-005 form; Grok H-023, GLM A-018).",
+    "source.abap:16 — no business statement \"route saved\" (see \"Cannot be supported\").",
+    "source.abap:6 — no level B for the whole slice from \"standard ABAP mechanics\"; B describes only the visible part (R16, R03@1.1.0, case sheet §1).",
+    "whole slice — no security_and_authorization finding \"authorization check missing\": the missing function module source also covers the checks possible there; a missing visible check is not an observation in the sense of R28@2.1.0."
   ],
   "id": "CC-026",
   "independence": [

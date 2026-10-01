@@ -13,7 +13,7 @@
         }
       ],
       "id": "CC-024-B01",
-      "text": "Eine existierende Zeile der kundeneigenen Tabelle erhält den eingegebenen Routentext."
+      "text": "An existing row of the customer-specific table receives the entered route text."
     },
     {
       "anchors": [
@@ -33,7 +33,7 @@
         }
       ],
       "id": "CC-024-B02",
-      "text": "Wenn UPDATE keine passende Zeile trifft, wird MISSING_CASE ausgegeben; der Code legt keine neue Zeile an."
+      "text": "If UPDATE does not hit a matching row, MISSING_CASE is output; the code does not create a new row."
     },
     {
       "anchors": [
@@ -53,7 +53,7 @@
         }
       ],
       "id": "CC-024-B03",
-      "text": "RECORDED bestätigt in diesem Code den Speicherpfad, nicht eine organisatorisch mandatierte Entscheidung."
+      "text": "In this code RECORDED confirms the save path, not an organizationally mandated decision."
     }
   ],
   "classes": [

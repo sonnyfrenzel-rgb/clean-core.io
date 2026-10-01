@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-044-B01",
-      "text": "Ohne Eingabe wird NO_INPUT ausgegeben und der Block verlassen; der Baustein wird nicht gerufen."
+      "text": "Without input NO_INPUT is output and the block is exited; the function module is not called."
     },
     {
       "anchors": [
@@ -61,7 +61,7 @@
         }
       ],
       "id": "CC-044-B02",
-      "text": "Bei Eingabe wird p_id an CONVERSION_EXIT_ALPHA_INPUT übergeben und dessen Ausgabe aus lv_internal ausgegeben."
+      "text": "With input, p_id is passed to CONVERSION_EXIT_ALPHA_INPUT and its output is output from lv_internal."
     }
   ],
   "classes": [
@@ -99,10 +99,10 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:10 — Kein Befund mit Primäranker auf der Literalzeile. Ein Befund, der nur Zeile 10 nennt, ist eine Verschiebung auf eine formal gültige Zeile (Prüfung F01) und wird nicht als Treffer gewertet.",
-    "source.abap:9–14 — Kein Bereichsanker als Primäranker. Der Statementbereich ist erlaubt als Zusatzangabe, nicht als Identität (KA-004: eine Konvention, nicht zwei).",
-    "source.abap:9 — Nicht als dynamischen Aufruf behandeln, weil das Literal nicht auf derselben Zeile steht.",
-    "source.abap:9 — Kein zweiter Befund für dasselbe Statement, weil es sich über sechs Zeilen erstreckt."
+    "source.abap:10 — No finding with a primary anchor on the literal line. A finding that names only line 10 is a shift to a formally valid line (check F01) and is not counted as a hit.",
+    "source.abap:9–14 — No range anchor as the primary anchor. The statement range is allowed as additional information, not as identity (KA-004: one convention, not two).",
+    "source.abap:9 — Do not treat it as a dynamic call because the literal is not on the same line.",
+    "source.abap:9 — No second finding for the same statement because it spans six lines."
   ],
   "id": "CC-044",
   "independence": [

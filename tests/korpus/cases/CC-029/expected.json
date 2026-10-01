@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-029-B01",
-      "text": "Vor dem Schreiben wird eine Sperre auf den Fall angefordert; die Route wird nur geändert, wenn die Sperre gesetzt werden konnte."
+      "text": "Before writing, a lock on the case is requested; the route is changed only if the lock could be set."
     },
     {
       "anchors": [
@@ -54,7 +54,7 @@
         }
       ],
       "id": "CC-029-B02",
-      "text": "Ist der Fall fremdgesperrt oder die Sperranforderung gescheitert, wird LOCK_FAILED ausgegeben und der Block verlassen; es wird weder geschrieben noch entsperrt."
+      "text": "If the case is locked by another user or the lock request failed, LOCK_FAILED is output and the block is exited; nothing is written and nothing is unlocked."
     },
     {
       "anchors": [
@@ -95,7 +95,7 @@
         }
       ],
       "id": "CC-029-B03",
-      "text": "Nach dem Schreiben folgt bei sy-subrc = 0 COMMIT WORK, sonst ROLLBACK WORK; in beiden Fällen wird danach die Sperre freigegeben und DONE ausgegeben. DONE trägt keine Aussage über Erfolg."
+      "text": "After writing, COMMIT WORK follows if sy-subrc = 0, otherwise ROLLBACK WORK; in both cases the lock is then released and DONE is output. DONE makes no statement about success."
     }
   ],
   "classes": [

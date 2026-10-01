@@ -34,7 +34,7 @@
         }
       ],
       "id": "CC-033-B01",
-      "text": "Die Route des Falls wird geändert; fehlt der Fall, wird MISSING_CASE ausgegeben und der Block ohne Commit verlassen — nichts ist geändert."
+      "text": "The route of the case is changed; if the case is missing, MISSING_CASE is output and the block is exited without a commit — nothing is changed."
     },
     {
       "anchors": [
@@ -61,7 +61,7 @@
         }
       ],
       "id": "CC-033-B02",
-      "text": "Fehlt danach der Kopfsatz des Falls, wird die Fehlermeldung 001(ZCC) vom Typ E ausgegeben. Im Dialogkontext beendet sie die Verarbeitung; COMMIT WORK wird nicht erreicht. Die bereits ausgeführte Routenänderung ist in diesem Zweig nicht als persistiert belegt."
+      "text": "If the header record of the case is then missing, the error message 001(ZCC) of type E is output. In a dialog context it terminates processing; COMMIT WORK is not reached. The route change already executed is not evidenced as persisted in this branch."
     },
     {
       "anchors": [
@@ -95,7 +95,7 @@
         }
       ],
       "id": "CC-033-B03",
-      "text": "Treffen beide Updates, wird COMMIT WORK ausgeführt und RECORDED ausgegeben."
+      "text": "If both updates hit, COMMIT WORK is executed and RECORDED is output."
     }
   ],
   "classes": [

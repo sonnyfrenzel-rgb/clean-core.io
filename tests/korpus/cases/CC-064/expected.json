@@ -36,7 +36,7 @@
         }
       ],
       "id": "CC-064-B01",
-      "text": "Ohne Berechtigung auf S_TCODE mit Transaktionscode SE38 wird der Block ohne Ausgabe verlassen."
+      "text": "Without authorization for S_TCODE with transaction code SE38 the block is exited without output."
     },
     {
       "anchors": [
@@ -56,7 +56,7 @@
         }
       ],
       "id": "CC-064-B02",
-      "text": "Mit dieser Berechtigung wird der Text „Guarded output\" ausgegeben."
+      "text": "With this authorization the text \"Guarded output\" is output."
     }
   ],
   "classes": [
@@ -95,12 +95,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:3 — Nicht „geprüft ohne Wirkung\" (R28@2.0.0: „AUTHORITY-CHECK ohne Auswertung von sy-subrc\"; CC-049-F03-Muster, das nur das Direktmuster verlangte). Die Auswertung geschieht über den gesicherten Wert; die Regel muss den Datenfluss verlangen, nicht das Token sy-subrc in der nächsten Zeile.",
-    "source.abap:5 — Nicht: die Zuweisung in :5 „verbraucht\" oder überschreibt sy-subrc. Zuweisungen setzen sy-subrc nicht; und geprüft wird ohnehin lv_auth_result.",
-    "source.abap:4 — lv_auth_result nicht als unbenutzte Kopie verwerfen: :6 liest sie.",
-    "source.abap:3 — Kein Fachsatz, die Prüfung sei fachlich angemessen oder hinreichend für irgendeine andere Operation (expectation.json: „belegt keine angemessene Autorisierung einer anderen Fachoperation\").",
-    "source.abap:3 — Das Level nicht verändern: weder „B, weil geprüft\" noch „D, weil Berechtigungsobjekt\".",
-    "source.abap:7 — Kein Fachsatz „NO_AUTH wird gemeldet\": der Abbruch ist stumm."
+    "source.abap:3 — Not \"checked without effect\" (R28@2.0.0: \"AUTHORITY-CHECK without evaluation of sy-subrc\"; CC-049-F03 pattern, which only required the direct pattern). The evaluation happens via the saved value; the rule must require the data flow, not the token sy-subrc in the next line.",
+    "source.abap:5 — Not: the assignment in :5 \"consumes\" or overwrites sy-subrc. Assignments do not set sy-subrc; and what is checked is lv_auth_result anyway.",
+    "source.abap:4 — Do not discard lv_auth_result as an unused copy: :6 reads it.",
+    "source.abap:3 — No business statement that the check is adequate from a business perspective or sufficient for any other operation (expectation.json: \"does not evidence adequate authorization of another business operation\").",
+    "source.abap:3 — Do not change the level: neither \"B, because checked\" nor \"D, because authorization object\".",
+    "source.abap:7 — No business statement \"NO_AUTH is reported\": the exit is silent."
   ],
   "id": "CC-064",
   "independence": [

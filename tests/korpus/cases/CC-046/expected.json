@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-046-B01",
-      "text": "Vor dem Selektionsbild werden Land DE und der Listtitel vorbelegt."
+      "text": "Before the selection screen, country DE and the list title are preset."
     },
     {
       "anchors": [
@@ -47,7 +47,7 @@
         }
       ],
       "id": "CC-046-B02",
-      "text": "Nach dem Ausführen wird die Eingabe in Großbuchstaben gewandelt; eine Ablehnung der Eingabe gibt es nicht."
+      "text": "After execution the input is converted to upper case; there is no rejection of the input."
     },
     {
       "anchors": [
@@ -88,7 +88,7 @@
         }
       ],
       "id": "CC-046-B03",
-      "text": "Die Grundliste besteht aus Land und einer festen Zeile; die erste Ausgabe löst den Seitenkopf mit Titel und Linie aus."
+      "text": "The basic list consists of the country and a fixed line; the first output triggers the page header with title and line."
     },
     {
       "anchors": [
@@ -108,7 +108,7 @@
         }
       ],
       "id": "CC-046-B04",
-      "text": "Wählt der Benutzer eine Listzeile, wird deren Inhalt als DETAIL in einer Verzweigungsliste ausgegeben; das kann beliebig oft oder nie geschehen."
+      "text": "If the user selects a list line, its content is output as DETAIL in a details list; this can happen any number of times or never."
     }
   ],
   "classes": [
@@ -126,12 +126,12 @@
   "expectedByProfile": null,
   "findings": [],
   "forbiddenConclusions": [
-    "source.abap:1–15 — Kein leeres Skelett und kein „kein Kontrollfluss gefunden“, weil START-OF-SELECTION fehlt (R33).",
-    "source.abap:4, 5 — Nicht als „unerreichbar“ oder „Code vor dem ersten Ereignis, wird nicht ausgeführt“ bewerten.",
-    "source.abap:6, 9, 11, 14 — Nicht als vier unabhängige Programme oder vier Startknoten ohne Kanten. Die Ereignisreihenfolge ist Sollvertrag: INITIALIZATION → Selektionsbild → AT SELECTION-SCREEN → implizites START-OF-SELECTION → (TOP-OF-PAGE bei erster Seitenausgabe) → Grundliste → (AT LINE-SELECTION je Zeilenwahl).",
-    "source.abap:15 — Keine TOP-OF-PAGE-Kante aus der Verzweigungsliste. Für Verzweigungslisten gilt TOP-OF-PAGE DURING LINE-SELECTION, das hier fehlt.",
-    "source.abap:14 — Keinen Benutzer, keine Rolle und keine „Prüfung durch Sachbearbeiter“ als Knoten erfinden (R19).",
-    "Kein D und kein R16: es gibt weder SAP-Objekt noch fehlende Quelle."
+    "source.abap:1–15 — No empty skeleton and no \"no control flow found\" because START-OF-SELECTION is missing (R33).",
+    "source.abap:4, 5 — Do not assess it as \"unreachable\" or \"code before the first event, is not executed\".",
+    "source.abap:6, 9, 11, 14 — Not as four independent programs or four start nodes without edges. The event order is the expected contract: INITIALIZATION → selection screen → AT SELECTION-SCREEN → implicit START-OF-SELECTION → (TOP-OF-PAGE at the first page output) → basic list → (AT LINE-SELECTION per line selection).",
+    "source.abap:15 — No TOP-OF-PAGE edge from the details list. For details lists TOP-OF-PAGE DURING LINE-SELECTION applies, which is missing here.",
+    "source.abap:14 — Do not invent a user, a role or a \"check by a clerk\" as a node (R19).",
+    "No D and no R16: there is neither an SAP object nor a missing source."
   ],
   "id": "CC-046",
   "independence": [

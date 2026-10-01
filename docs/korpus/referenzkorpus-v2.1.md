@@ -1279,13 +1279,13 @@ Quelle: SAP-PCE22; 136428–136446.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-001-B01** — Es werden Kunden mit dem eingegebenen Länderschlüssel selektiert.  
+**CC-001-B01** — Customers with the entered country key are selected.
 Anker: source.abap:6. Kontext: /business_scope, /execution_assumptions.
 
-**CC-001-B02** — Ohne Treffer wird NO_MATCH ausgegeben und der Reportingblock verlassen.  
+**CC-001-B02** — If there is no match, NO_MATCH is output and the reporting block is exited.
 Anker: source.abap:9, source.abap:11. Kontext: /business_scope, /execution_assumptions.
 
-**CC-001-B03** — Bei Treffern werden Kundennummer und Name als Liste ausgegeben.  
+**CC-001-B03** — If there are matches, customer number and name are output as a list.
 Anker: source.abap:14. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -1411,7 +1411,7 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:15` — Kein ungesichertes Leertabellen-FAE melden; Guard und Return sind vorhanden.
+- source.abap:15 — Do not report an unguarded empty-table FAE; guard and return are present.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -1434,13 +1434,13 @@ Quelle: SAP-PCE22; 136448–136465.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-002-B01** — Nur eine nicht leere Kundennummer wird als Selektionsschlüssel aufgenommen.  
+**CC-002-B01** — Only a non-empty customer number is added as a selection key.
 Anker: source.abap:6, source.abap:6–7. Kontext: /business_scope, /execution_assumptions.
 
-**CC-002-B02** — Bei leerer Schlüsselliste wird vor der FAE-Abfrage abgebrochen.  
+**CC-002-B02** — If the key list is empty, processing is aborted before the FAE query.
 Anker: source.abap:9, source.abap:11. Kontext: /business_scope, /execution_assumptions.
 
-**CC-002-B03** — Das Ergebnis enthält Kundennummer, Buchungskreis und Abstimmkonto; nicht jede beliebige Stammdateneigenschaft.  
+**CC-002-B03** — The result contains customer number, company code and reconciliation account; not any arbitrary master data attribute.
 Anker: source.abap:13. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -1559,7 +1559,7 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:14` — Kein realer Manager-Task, keine Bestellung oder tatsächliche Genehmigung belegt.
+- source.abap:14 — No real manager task, no purchase order and no actual approval is evidenced.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -1567,13 +1567,13 @@ Keine explizite externe SAP-Repository-Identität im gelieferten Scope. Dynamisc
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-003-B01** — Negative Beträge werden als INVALID eingeordnet.  
+**CC-003-B01** — Negative amounts are classified as INVALID.
 Anker: source.abap:9, source.abap:9–10. Kontext: /business_scope, /execution_assumptions.
 
-**CC-003-B02** — Nicht negative Beträge bis einschließlich 10000 erhalten AUTO_ROUTE.  
+**CC-003-B02** — Non-negative amounts up to and including 10000 receive AUTO_ROUTE.
 Anker: source.abap:11, source.abap:12. Kontext: /business_scope, /execution_assumptions.
 
-**CC-003-B03** — Für größere Beträge wird MANAGER_ROUTE zurückgegeben; der Code führt keine menschliche Genehmigung aus.  
+**CC-003-B03** — For greater amounts MANAGER_ROUTE is returned; the code does not perform any human approval.
 Anker: source.abap:14, source.abap:9–14. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -1716,7 +1716,7 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:10` — Nicht wegen notToBeReleased allein zu D machen.
+- source.abap:10 — Do not make it D because of notToBeReleased alone.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -1730,10 +1730,10 @@ Quelle: SAP-OVERLAP, SAP-CLASSIC; SAP blog CL_HTTP_UTILITY overlap; classic JSON
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-004-B01** — Der Wrapper ruft die URL-Escaping-Methode von CL_HTTP_UTILITY auf.  
+**CC-004-B01** — The wrapper calls the URL escaping method of CL_HTTP_UTILITY.
 Anker: source.abap:10. Kontext: /business_scope, /execution_assumptions.
 
-**CC-004-B02** — Der Eingabetext wird dem lokalen Wrapper übergeben; der gelieferte Quelltext enthält keinen expliziten HTTP-Request.  
+**CC-004-B02** — The input text is passed to the local wrapper; the supplied source code contains no explicit HTTP request.
 Anker: source.abap:14, source.abap:10–11. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -1849,10 +1849,10 @@ Quelle: SAP-PCE22, SAP-CLASSIC; release INPUT 141169–141178; classic INPUT 314
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-005-B01** — Der Code übergibt p_id an CONVERSION_EXIT_ALPHA_INPUT und übernimmt dessen Ausgabe nach lv_internal.  
+**CC-005-B01** — The code passes p_id to CONVERSION_EXIT_ALPHA_INPUT and takes its output into lv_internal.
 Anker: source.abap:6, source.abap:7, source.abap:8. Kontext: /business_scope, /execution_assumptions.
 
-**CC-005-B02** — Danach wird lv_internal an CONVERSION_EXIT_ALPHA_OUTPUT übergeben; dessen Ausgabe landet in lv_external.  
+**CC-005-B02** — Then lv_internal is passed to CONVERSION_EXIT_ALPHA_OUTPUT; its output ends up in lv_external.
 Anker: source.abap:9, source.abap:10, source.abap:11. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -1943,7 +1943,7 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:6` — Nicht als unauflösbares dynamisches Ziel behandeln.
+- source.abap:6 — Do not treat it as an unresolvable dynamic target.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -1957,10 +1957,10 @@ Quelle: SAP-PCE22, SAP-CLASSIC; release INPUT 141169–141178; classic INPUT 314
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-006-B01** — Das Aufrufziel ist die unveränderliche Konstante CONVERSION_EXIT_ALPHA_INPUT.  
+**CC-006-B01** — The call target is the immutable constant CONVERSION_EXIT_ALPHA_INPUT.
 Anker: source.abap:2, source.abap:6. Kontext: /business_scope, /execution_assumptions.
 
-**CC-006-B02** — Das konvertierte Ergebnis wird in lv_result übernommen.  
+**CC-006-B02** — The converted result is placed in lv_result.
 Anker: source.abap:8. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -2112,10 +2112,10 @@ Quelle: SAP-PCE22; 136562–136578.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-007-B01** — Es werden nur Kunden des angegebenen Landes berücksichtigt.  
+**CC-007-B01** — Only customers of the specified country are considered.
 Anker: source.abap:8. Kontext: /business_scope, /execution_assumptions.
 
-**CC-007-B02** — Ausgegeben werden Kombinationen vorhandener Company- und Sales-Area-Sätze je Kunde; nicht zwingend eine Zeile je Kunde.  
+**CC-007-B02** — The output consists of combinations of existing company and sales area records per customer; not necessarily one row per customer.
 Anker: source.abap:6, source.abap:7. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -2285,10 +2285,10 @@ Quelle: SAP-PCE22; 136562–136578.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-008-B01** — Kunden ohne passenden Company-Satz im gewählten Buchungskreis bleiben nicht im Ergebnis.  
+**CC-008-B01** — Customers without a matching company record in the selected company code do not remain in the result.
 Anker: source.abap:8, source.abap:5–8. Kontext: /business_scope, /execution_assumptions.
 
-**CC-008-B02** — Ein fehlender Sales-Area-Satz allein entfernt einen sonst passenden Kunden nicht.  
+**CC-008-B02** — A missing sales area record alone does not remove an otherwise matching customer.
 Anker: source.abap:7, source.abap:5–8. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -2478,13 +2478,13 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**, nicht pauschal „kein N
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-009-B01** — Die konfigurierte BAdI-Implementierung wird angefordert.  
+**CC-009-B01** — The configured BAdI implementation is requested.
 Anker: source.abap:6. Kontext: /business_scope, /execution_assumptions, /dependencies.
 
-**CC-009-B02** — Der Betrag wird der Methode determine übergeben und ein Routentext übernommen; dieser Aufruf ist nicht selbst ein menschlicher Freigabeprozess.  
+**CC-009-B02** — The amount is passed to the method determine and a route text is taken over; this call is not itself a human approval process.
 Anker: source.abap:7. Kontext: /business_scope, /execution_assumptions, /dependencies.
 
-**CC-009-B03** — Die im Fixture einzige aktive Implementierung setzt für Beträge größer10000 MANAGER_ROUTE, ansonsten AUTO_ROUTE.  
+**CC-009-B03** — The only active implementation in the fixture sets MANAGER_ROUTE for amounts greater than 10000, otherwise AUTO_ROUTE.
 Anker: implementation.abap:7, implementation.abap:8, implementation.abap:10. Kontext: /business_scope, /execution_assumptions, /dependencies.
 
 ### Erwartetes Prozessskelett
@@ -2599,10 +2599,10 @@ Keine explizite externe SAP-Repository-Identität im gelieferten Scope. Dynamisc
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-010-B01** — Zu Beginn des Host-Ausschnitts wird die Review-Markierung N gesetzt.  
+**CC-010-B01** — At the start of the host excerpt the review flag N is set.
 Anker: source.abap:8. Kontext: /business_scope, /execution_assumptions, /host_metadata.
 
-**CC-010-B02** — Ein Betrag größer als 20000 setzt die Review-Markierung auf Y; Gleichheit nicht.  
+**CC-010-B02** — An amount greater than 20000 sets the review flag to Y; equality does not.
 Anker: source.abap:10, source.abap:11. Kontext: /business_scope, /execution_assumptions, /host_metadata.
 
 ### Erwartetes Prozessskelett
@@ -2702,7 +2702,7 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:7` — Nicht unbekanntes Ziel behaupten; syntaktisch trotzdem nicht CONSTANTS-static.
+- source.abap:7 — Do not claim an unknown target; syntactically it is nevertheless not CONSTANTS-static.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -2716,10 +2716,10 @@ Quelle: SAP-PCE22, SAP-CLASSIC; release INPUT 141169–141178; classic INPUT 314
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-011-B01** — Im gelieferten geradlinigen Code wird genau der zuvor zugewiesene Funktionsbaustein aufgerufen.  
+**CC-011-B01** — In the supplied straight-line code, exactly the previously assigned function module is called.
 Anker: source.abap:6, source.abap:7. Kontext: /business_scope, /execution_assumptions.
 
-**CC-011-B02** — Das vom Funktionsbaustein zurückgegebene Feld wird ausgegeben.  
+**CC-011-B02** — The field returned by the function module is output.
 Anker: source.abap:10. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -2827,13 +2827,13 @@ Keine explizite externe SAP-Repository-Identität im gelieferten Scope. Dynamisc
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-012-B01** — Ein Funktionsbaustein wird nur bei nicht leerem Namen aufgerufen.  
+**CC-012-B01** — A function module is called only if the name is not empty.
 Anker: source.abap:8, source.abap:8–11. Kontext: /business_scope, /execution_assumptions.
 
-**CC-012-B02** — Das externe Unterprogramm wird bei beiden ausgefüllten Namensfeldern gesucht und nur bei Existenz ausgeführt.  
+**CC-012-B02** — The external subroutine is looked up when both name fields are filled and executed only if it exists.
 Anker: source.abap:13, source.abap:14. Kontext: /business_scope, /execution_assumptions.
 
-**CC-012-B03** — DISPATCH_RETURNED belegt nur das Erreichen der Ausgabe nach zurückgekehrten oder übersprungenen Aufrufen.  
+**CC-012-B03** — DISPATCH_RETURNED only evidences that the output was reached after returned or skipped calls.
 Anker: source.abap:16, source.abap:8–16. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -2952,7 +2952,7 @@ ENDMODULE.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:1` — Nicht allein wegen MODULE POOL/Dynpro D vergeben.
+- source.abap:1 — Do not assign D solely because of MODULE POOL/Dynpro.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -2960,13 +2960,13 @@ Keine explizite externe SAP-Repository-Identität im gelieferten Scope. Dynamisc
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-013-B01** — Im PBO wird der GUI-Status MAIN gesetzt.  
+**CC-013-B01** — In the PBO the GUI status MAIN is set.
 Anker: source.abap:6. Kontext: /business_scope, /execution_assumptions, /dynpro.
 
-**CC-013-B02** — Nur CHECK prüft den Grenzwert und setzt einen Routentext.  
+**CC-013-B02** — Only CHECK checks the threshold and sets a route text.
 Anker: source.abap:10, source.abap:11, source.abap:10–18. Kontext: /business_scope, /execution_assumptions, /dynpro.
 
-**CC-013-B03** — BACK beendet die Screenfolge; andere Funktionscodes führen zu keiner Regelentscheidung.  
+**CC-013-B03** — BACK ends the screen sequence; other function codes lead to no rule decision.
 Anker: source.abap:16, source.abap:17. Kontext: /business_scope, /execution_assumptions, /dynpro.
 
 ### Erwartetes Prozessskelett
@@ -3069,10 +3069,10 @@ Keine explizite externe SAP-Repository-Identität im gelieferten Scope. Dynamisc
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-014-B01** — Das Programm ruft eine Screenfolge ab0200 auf.  
+**CC-014-B01** — The program calls a screen sequence starting at 0200.
 Anker: source.abap:4. Kontext: /business_scope, /execution_assumptions, /missing_dependencies.
 
-**CC-014-B02** — Nach normaler Rückkehr wird gv_result ausgegeben; sein in der Screenfolge möglicher Wert bleibt unbekannt.  
+**CC-014-B02** — After a normal return gv_result is output; its possible value within the screen sequence remains unknown.
 Anker: source.abap:5. Kontext: /business_scope, /execution_assumptions, /missing_dependencies.
 
 ### Erwartetes Prozessskelett
@@ -3170,10 +3170,10 @@ Keine explizite externe SAP-Repository-Identität im gelieferten Scope. Dynamisc
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-015-B01** — Ohne explizit gesetztes p_read wird der Kernelaufruf nicht erreicht.  
+**CC-015-B01** — Without an explicitly set p_read the kernel call is not reached.
 Anker: source.abap:6, source.abap:7, source.abap:8. Kontext: /business_scope, /execution_assumptions.
 
-**CC-015-B02** — Bei gesetztem Schalter wird der Profilparameter rdisp/myname angefragt; der tatsächliche Rückgabewert ist nicht im Quelltext bekannt.  
+**CC-015-B02** — When the switch is set, the profile parameter rdisp/myname is requested; the actual return value is not known from the source code.
 Anker: source.abap:10, source.abap:3, source.abap:10–12. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -3261,10 +3261,10 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:4` — Kommentar ist kein Kernelaufruf.
-- `source.abap:5` — Kommentar ist kein SELECT.
-- `source.abap:6` — Stringliteral ist kein UPDATE.
-- `source.abap:7` — Stringtemplate enthält keinen ausgeführten Funktionsbausteinaufruf.
+- source.abap:4 — A comment is not a kernel call.
+- source.abap:5 — A comment is not a SELECT.
+- source.abap:6 — A string literal is not an UPDATE.
+- source.abap:7 — The string template contains no executed function module call.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -3272,10 +3272,10 @@ Keine explizite externe SAP-Repository-Identität im gelieferten Scope. Dynamisc
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-016-B01** — Ein Text mit ABAP-ähnlichen Schlüsselwörtern wird in eine Stringvariable geschrieben.  
+**CC-016-B01** — A text containing ABAP-like keywords is written into a string variable.
 Anker: source.abap:6. Kontext: /business_scope, /execution_assumptions.
 
-**CC-016-B02** — Der Text wird ausgegeben; der sichtbare Code führt weder Kernelaufruf noch Datenbankänderung aus.  
+**CC-016-B02** — The text is output; the visible code performs neither a kernel call nor a database change.
 Anker: source.abap:8, source.abap:3–8. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -3418,13 +3418,13 @@ Keine explizite externe SAP-Repository-Identität im gelieferten Scope. Dynamisc
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-017-B01** — Das Objekt hinter der Basisklassenreferenz ist eine Instanz der Kindklasse.  
+**CC-017-B01** — The object behind the base class reference is an instance of the child class.
 Anker: source.abap:32, source.abap:31–32. Kontext: /business_scope, /execution_assumptions.
 
-**CC-017-B02** — Die Kindklasse weist negative Beträge zurück, ohne die Basismethode auszuführen.  
+**CC-017-B02** — The child class rejects negative amounts without executing the base method.
 Anker: source.abap:23, source.abap:25, source.abap:23–25. Kontext: /business_scope, /execution_assumptions.
 
-**CC-017-B03** — Nicht negative Beträge werden durch den expliziten Super-Aufruf nach der Basisregel verarbeitet.  
+**CC-017-B03** — Non-negative amounts are processed according to the base rule via the explicit super call.
 Anker: source.abap:27, source.abap:23–27. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -3547,10 +3547,10 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**, nicht pauschal „kein N
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-018-B01** — Die lokale Kindklasse erbt von einer nicht gelieferten kundeneigenen Klasse.  
+**CC-018-B01** — The local child class inherits from a customer-specific class that is not supplied.
 Anker: source.abap:2. Kontext: /business_scope, /execution_assumptions, /missing_dependencies.
 
-**CC-018-B02** — Der Override delegiert an eine unbekannte Basismethode; ihr fachliches Verhalten ist nicht belegt.  
+**CC-018-B02** — The override delegates to an unknown base method; its business behavior is not evidenced.
 Anker: source.abap:8. Kontext: /business_scope, /execution_assumptions, /missing_dependencies.
 
 ### Erwartetes Prozessskelett
@@ -3644,7 +3644,7 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:9` — RTTI nicht pauschal als unauflösbar oder Cloud-verboten klassifizieren.
+- source.abap:9 — Do not classify RTTI wholesale as unresolvable or cloud-forbidden.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -3666,13 +3666,13 @@ Quelle: SAP-PCE22; 6013–6022.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-019-B01** — Die lokale Struktur enthält AMOUNT und CURRENCY.  
+**CC-019-B01** — The local structure contains AMOUNT and CURRENCY.
 Anker: source.abap:2, source.abap:2–5. Kontext: /business_scope, /execution_assumptions.
 
-**CC-019-B02** — Der Code ermittelt Metadaten dieser Struktur; er berechnet keine Beträge und liest keine SAP-Stammdatentabelle.  
+**CC-019-B02** — The code determines metadata of this structure; it calculates no amounts and reads no SAP master data table.
 Anker: source.abap:9, source.abap:10. Kontext: /business_scope, /execution_assumptions.
 
-**CC-019-B03** — Die Namen der Strukturkomponenten werden ausgegeben.  
+**CC-019-B03** — The names of the structure components are output.
 Anker: source.abap:12. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -3789,13 +3789,13 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**, nicht pauschal „kein N
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-020-B01** — Ein Datenobjekt des zur Laufzeit benannten Typs wird angelegt; es werden keine Datenbankzeilen geladen.  
+**CC-020-B01** — A data object of the type named at runtime is created; no database rows are loaded.
 Anker: source.abap:8. Kontext: /business_scope, /execution_assumptions, /source_completeness.
 
-**CC-020-B02** — Nur eine erfolgreiche Komponentenbindung führt zur Ausgabe des Feldwerts.  
+**CC-020-B02** — Only a successful component assignment leads to the field value being output.
 Anker: source.abap:10, source.abap:11, source.abap:10–12. Kontext: /business_scope, /execution_assumptions, /source_completeness.
 
-**CC-020-B03** — Bei erfolgloser Komponentenbindung wird FIELD_NOT_FOUND ausgegeben, sofern dieser Pfad überhaupt erreicht wird.  
+**CC-020-B03** — If the component assignment fails, FIELD_NOT_FOUND is output, provided this path is reached at all.
 Anker: source.abap:14, source.abap:11–14. Kontext: /business_scope, /execution_assumptions, /source_completeness.
 
 ### Erwartetes Prozessskelett
@@ -3894,10 +3894,10 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**, nicht pauschal „kein N
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-021-B01** — Der Report benötigt das nicht gelieferte Include zcc_ref_021_rules.  
+**CC-021-B01** — The report requires the include zcc_ref_021_rules, which is not supplied.
 Anker: source.abap:4. Kontext: /business_scope, /execution_assumptions, /missing_dependencies.
 
-**CC-021-B02** — Betrag und Ergebnisfeld werden an determine_route übergeben; die eigentliche Regel ist unbekannt.  
+**CC-021-B02** — Amount and result field are passed to determine_route; the actual rule is unknown.
 Anker: source.abap:6. Kontext: /business_scope, /execution_assumptions, /missing_dependencies.
 
 ### Erwartetes Prozessskelett
@@ -3975,7 +3975,7 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:4` — Kein direkter Tabellenzugriff und keine begründete SAP-intern-Einstufung.
+- source.abap:4 — No direct table access and no justified SAP-internal classification.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -3987,10 +3987,10 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**, nicht pauschal „kein N
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-022-B01** — Ein statisch benannter Partneraufruf erhält den Betrag25000.  
+**CC-022-B01** — A statically named partner call receives the amount 25000.
 Anker: source.abap:4. Kontext: /business_scope, /execution_assumptions, /missing_dependencies.
 
-**CC-022-B02** — Der Rückgabewert wird ausgegeben; die Partnerimplementierung bleibt unbekannt.  
+**CC-022-B02** — The return value is output; the partner implementation remains unknown.
 Anker: source.abap:5. Kontext: /business_scope, /execution_assumptions, /missing_dependencies.
 
 ### Erwartetes Prozessskelett
@@ -4133,17 +4133,17 @@ Quelle: SAP-PCE22; 136428–136446. Das Gegenreview hat denselben Eintrag in der
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-023-B01** — Im Testmodus (`p_test = 'X'`) wird SIMULATION_ONLY ausgegeben und vor dem UPDATE zurückgekehrt; es findet keine Datenbankänderung statt. Die Vorbelegung `'X'` ist ein Default, kein dauerhaftes Schreibverbot: der Benutzer kann sie im Selektionsbild abwählen.  
+**CC-023-B01** — In test mode (p_test = 'X') SIMULATION_ONLY is output and the program returns before the UPDATE; no database change takes place. The preset 'X' is a default, not a permanent write ban: the user can deselect it on the selection screen.
 Anker: source.abap:4, source.abap:6, source.abap:7, source.abap:8. Kontext: /business_scope, /execution_assumptions.
 
 **Korrektur v2.1 (Fallbogen CC-023, B01 „stimme zu"):** vorher „Der voreingestellte Testmodus führt keine Datenbankänderung aus." → jetzt mit dem Zusatz, dass `DEFAULT 'X'` Vorbelegung und kein Schreibverbot ist, und mit Anker auf Zeile 4 → warum: die alte Fassung ließ die Lesart „das Programm schreibt nie" zu.
 
-**CC-023-B02** — Außerhalb des Testmodus (`p_test <> 'X'`, Zweig ab Zeile 6) wird versucht, NAME1 der KNA1-Zeile zu ändern, deren KUNNR exakt der eingegebenen zehnstelligen Zeichenkette entspricht. Nur bei Treffer (`sy-subrc = 0`) folgt der Commit-Zweig (B03). `p_kunnr` ist ohne DDIC-Bezug deklariert und erhält keine ALPHA-Konvertierung (F03): für einen **numerischen** Kundenschlüssel trifft nur die Eingabe im internen, nullaufgefüllten Format (Vektor `1000` → kein Treffer, `0000001000` → Treffer); ein **alphanumerischer** Schlüssel braucht keine Nullauffüllung und trifft in der eingegebenen Schreibweise (Gegenvektor `ABC123`). Ein Treffer ist vom Code nicht garantiert.  
+**CC-023-B02** — Outside test mode (p_test <> 'X', branch from line 6) an attempt is made to change NAME1 of the KNA1 row whose KUNNR exactly equals the entered ten-character string. Only on a match (sy-subrc = 0) does the commit branch (B03) follow. p_kunnr is declared without a DDIC reference and receives no ALPHA conversion (F03): for a numeric customer key only input in the internal, zero-padded format matches (vector 1000 → no match, 0000001000 → match); an alphanumeric key needs no zero padding and matches as entered (counter-vector ABC123). A match is not guaranteed by the code.
 Anker: source.abap:10, source.abap:2, source.abap:6, source.abap:11. Kontext: /business_scope, /execution_assumptions (Eingabeformat); Bedingung: `p_test <> 'X'`. Achse: `db_luw` (direkte Datenbankänderung, kein Verbuchungsbaustein); Behauptungsstärke: **Versuch** — „Zeilen betroffen" erst mit `sy-subrc = 0` (B03).
 
 **Korrektur v2.1 (Fallbogen CC-023 / REV2-10; v2 §11.4):** vorher (v1 und v2-Fallkörper) „Außerhalb des Testmodus wird NAME1 des angegebenen Kunden direkt in KNA1 geändert." → v2 §11.4(b) schlug vor: „…dessen Schlüssel exakt der eingegebenen zehnstelligen Zeichenkette entspricht. Eine Eingabe ohne führende Nullen trifft keinen Satz …" → jetzt: Versuch statt Änderung, Treffer als Bedingung, Nullauffüllung nur für numerische Schlüssel, alphanumerischer Gegenvektor → warum: die v1-Fassung war unbedingt (Fable KA-102, vom Review als „widerspreche der Unbedingtheit" bestätigt); die §11.4-Fassung war ein neuer Überall-Satz, der für zulässige alphanumerische Schlüssel falsch ist (S15). Die Vektoren stehen unter „Zusätzliche fachliche Prüfeingaben".
 
-**CC-023-B03** — Bei `sy-subrc = 0` nach dem UPDATE wird COMMIT WORK AND WAIT aufgerufen, sonst ROLLBACK WORK. Eine separate Prüfung des Commit-Ergebnisses ist nicht sichtbar; der Code hat keine weitere fachliche Ergebnisprüfung. Das ist eine Beschreibung, kein Defektbefund.  
+**CC-023-B03** — If sy-subrc = 0 after the UPDATE, COMMIT WORK AND WAIT is called, otherwise ROLLBACK WORK. A separate check of the commit result is not visible; the code has no further business result check. This is a description, not a defect finding.
 Anker: source.abap:11, source.abap:12, source.abap:15, source.abap:10–17. Kontext: /business_scope, /execution_assumptions. Achse: `db_luw`; Behauptungsstärke: bei `sy-subrc = 0` **Zeilen betroffen** (mindestens eine) und **Commit erfolgt**; nicht *fachlich bestätigt*. Im ROLLBACK-Zweig: Rollback belegt → „nicht persistiert" zulässig (R25@2.1.0 Achse 5).
 
 ### Zusätzliche fachliche Prüfeingaben
@@ -4299,13 +4299,13 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**, nicht pauschal „kein N
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-024-B01** — Eine existierende Zeile der kundeneigenen Tabelle erhält den eingegebenen Routentext.  
+**CC-024-B01** — An existing row of the customer-specific table receives the entered route text.
 Anker: source.abap:10. Kontext: /business_scope, /execution_assumptions.
 
-**CC-024-B02** — Wenn UPDATE keine passende Zeile trifft, wird MISSING_CASE ausgegeben; der Code legt keine neue Zeile an.  
+**CC-024-B02** — If UPDATE does not hit a matching row, MISSING_CASE is output; the code does not create a new row.
 Anker: source.abap:16, source.abap:11–16. Kontext: /business_scope, /execution_assumptions.
 
-**CC-024-B03** — RECORDED bestätigt in diesem Code den Speicherpfad, nicht eine organisatorisch mandatierte Entscheidung.  
+**CC-024-B03** — In this code RECORDED confirms the save path, not an organizationally mandated decision.
 Anker: source.abap:13, source.abap:11–13. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -4435,7 +4435,7 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:17` — Keine tatsächlich erfolgte Genehmigung, kein belegter Standard-Fit, keine Einsparung aus diesem Satz ableiten.
+- source.abap:17 — Derive from this statement no approval actually given, no evidenced standard fit and no savings.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -4443,19 +4443,19 @@ Keine explizite externe SAP-Repository-Identität im gelieferten Scope. Dynamisc
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-025-B01** — Negative Beträge werden vor allen anderen Prüfungen als ungültig eingeordnet.  
+**CC-025-B01** — Negative amounts are classified as invalid before all other checks.
 Anker: source.abap:9, source.abap:9–10. Kontext: /business_scope, /execution_assumptions.
 
-**CC-025-B02** — Nicht negative Nicht-EUR-Fälle werden zur Währungsprüfung geroutet; der Code rechnet keine Währung um.  
+**CC-025-B02** — Non-negative non-EUR cases are routed to the currency check; the code does not convert any currency.
 Anker: source.abap:11, source.abap:12, source.abap:9–12. Kontext: /business_scope, /execution_assumptions.
 
-**CC-025-B03** — Ein nicht negativer dringender EUR-Fall bis einschließlich50000 erhält nachts ohne gesetzte Vertretungsmarkierung DELEGATE_REQUIRED; sonst EMERGENCY_ROUTE.  
+**CC-025-B03** — A non-negative urgent EUR case up to and including 50000 receives DELEGATE_REQUIRED at night when no deputy flag is set; otherwise EMERGENCY_ROUTE.
 Anker: source.abap:13, source.abap:14, source.abap:9–17. Kontext: /business_scope, /execution_assumptions.
 
-**CC-025-B04** — EMERGENCY_ROUTE ist ein berechneter Text. Es findet weder Bestellung, Auszahlung noch reale Freigabe statt.  
+**CC-025-B04** — EMERGENCY_ROUTE is a calculated text. Neither a purchase order, a payout nor a real approval takes place.
 Anker: source.abap:17. Kontext: /business_scope, /execution_assumptions.
 
-**CC-025-B05** — Bei nicht negativen EUR-Fällen außerhalb des priorisierten Notfallzweigs führen Beträge größer10000 zu MANAGER_ROUTE, kleinere oder gleiche zu AUTO_ROUTE.  
+**CC-025-B05** — For non-negative EUR cases outside the prioritized emergency branch, amounts greater than 10000 lead to MANAGER_ROUTE, smaller or equal ones to AUTO_ROUTE.
 Anker: source.abap:19, source.abap:9–22. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -4831,10 +4831,10 @@ Kein `MESSAGE` vom Typ E/I/W in der Scheibe; die Listausgabe am Ende ist ein Dia
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:6` — kein synchroner `call-opaque` mit Kante „und damit erledigt" (CC-005-Form; Grok H-023, GLM A-018).
-- `source.abap:16` — kein Fachsatz „Route gespeichert" (siehe „Nicht tragbar").
-- `source.abap:6` — kein Level B für die Gesamtscheibe aus „Standard-ABAP-Mechanik"; B beschreibt nur den sichtbaren Teil (R16, R03@1.1.0, Fallbogen §1).
-- gesamte Scheibe — kein `security_and_authorization`-Befund „Berechtigungsprüfung fehlt": die fehlende Bausteinquelle umfasst auch die dort möglichen Prüfungen; ein fehlender sichtbarer Check ist keine Beobachtung im Sinne von R28@2.1.0.
+- source.abap:6 — no synchronous call-opaque with an edge "and thus done" (CC-005 form; Grok H-023, GLM A-018).
+- source.abap:16 — no business statement "route saved" (see "Cannot be supported").
+- source.abap:6 — no level B for the whole slice from "standard ABAP mechanics"; B describes only the visible part (R16, R03@1.1.0, case sheet §1).
+- whole slice — no security_and_authorization finding "authorization check missing": the missing function module source also covers the checks possible there; a missing visible check is not an observation in the sense of R28@2.1.0.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -4846,20 +4846,20 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**. Die Implementierung des 
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-026-B01** — Fall-ID und Route werden als Parameter eines zur Verbuchung registrierten Aufrufs festgehalten; der Baustein wird an Zeile 6 nicht ausgeführt, an der Aufrufstelle wird nichts geändert.  
+**CC-026-B01** — Case ID and route are recorded as parameters of a call registered for the update task; the function module is not executed at line 6, and nothing is changed at the call site.
 Anker: source.abap:6, source.abap:8, source.abap:9. Kontext: /execution_assumptions (runtime_context=dialog, update_mode=nicht lokal). Achse: `update_registration`; Behauptungsstärke: **registriert**.
 
 **Korrektur v2.1 (Fallbogen CC-026, B01 „stimme zu, präzisieren"):** vorher „Der Baustein wird mit Fall-ID und Route zur Verbuchung registriert; an der Aufrufstelle wird nichts geändert." → jetzt „als Parameter eines registrierten Aufrufs festgehalten … nicht ausgeführt", mit Achse und Stärke → warum: die Behauptungsstärke „registriert" wird ausgeschrieben (R25@2.1.0 Achse 5).
 
-**CC-026-B02** — Ohne Abbruchkennzeichen wird COMMIT WORK aufgerufen. Im stipulierten nicht lokalen Modus stößt das die Ausführung des registrierten Bausteins in einem Verbucherprozess an. COMMITTED wird ausgegeben, ohne dass der Code den Verbuchungserfolg prüft — angestoßen, nicht als ausgeführt oder persistiert belegt.  
+**CC-026-B02** — Without the abort flag COMMIT WORK is called. In the stipulated non-local mode this triggers the execution of the registered function module in an update work process. COMMITTED is output without the code checking the success of the update — triggered, not evidenced as executed or persisted.
 Anker: source.abap:11, source.abap:15, source.abap:16. Kontext: /execution_assumptions (update_mode=nicht lokal); Bedingung: `p_abort <> 'X'`. Achsen: `dispatch`, `sap_luw`; Behauptungsstärke: **registriert und angestoßen** — nicht *ausgeführt*.
 
 **Korrektur v2.1 (Fallbogen CC-026, B02 „stimme nur unter Bedingung zu"):** vorher „löst COMMIT WORK die Ausführung des registrierten Bausteins in einem Verbucherprozess aus … angekündigt, nicht als persistiert belegt" → jetzt mit der Bedingung „im stipulierten nicht lokalen Modus" und „angestoßen" statt „angekündigt" → warum: der Verbucherprozess ist Folge des Modus; „angestoßen" ist die Zustandsstufe, die der Code trägt (REV2-01, R25@2.1.0 Achse 4).
 
-**CC-026-B03** — Mit Abbruchkennzeichen löscht ROLLBACK WORK die Registrierung, DISCARDED wird ausgegeben; im gelieferten Zweig wird der Baustein nicht ausgeführt.  
+**CC-026-B03** — With the abort flag ROLLBACK WORK deletes the registration and DISCARDED is output; in the supplied branch the function module is not executed.
 Anker: source.abap:11, source.abap:12, source.abap:13. Kontext: /execution_assumptions; Bedingung: `p_abort = 'X'`. Achse: `update_registration` (`discarded`), `sap_luw`; Rollback belegt → „nicht persistiert" zulässig.
 
-**CC-026-B04** — REGISTERED wird vor der Verzweigung (Zeile 11) in beiden Zweigen ausgegeben und belegt nur das Erreichen dieser Stelle. In der gelieferten Scheibe liegt vor Zeile 10 keine Operation, die Daten ändern kann — die Registrierung in Zeile 6 ändert nichts (F01).  
+**CC-026-B04** — REGISTERED is output before the branching (line 11) in both branches and only evidences that this point was reached. In the supplied slice there is no operation before line 10 that can change data — the registration in line 6 changes nothing (F01).
 Anker: source.abap:10, source.abap:6–17. Kontext: /execution_assumptions. Achse: `persistence_evidence` = `none`.
 
 **Korrektur v2.1 (Fallbogen CC-026, B04 „enger formulieren"):** vorher „REGISTERED wird in beiden Zweigen ausgegeben, bevor irgendeine Datenänderung möglich ist." → jetzt „belegt nur das Erreichen dieser Stelle; in der Scheibe liegt davor keine datenändernde Operation" → warum: „irgendeine" behauptete Wirkungslosigkeit aller denkbaren Laufzeitaktivitäten; tragbar ist die Aussage über die Scheibe.
@@ -5029,12 +5029,12 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:10` — kein `transaction`- und kein `async`-Knoten aus dem Reportende (kein erfundener Dispatch).
-- `source.abap:10` — kein Knoten und kein Fachsatz „Registrierung durch ROLLBACK verworfen" (`discarded`); richtig ist `orphaned` — nicht ausgeführt (REV2-11).
-- `source.abap:10` — kein Fachsatz „der implizite Datenbank-Commit am Dialogschrittende führt die Verbuchung aus": ein Datenbank-Commit ist kein COMMIT WORK (S05, S08, S09).
-- `source.abap:5` — kein Fachsatz „die Verbuchung läuft nach Programmende" (kein Träger in der Scheibe).
-- `source.abap:5` — kein Fehlerbefund „COMMIT WORK fehlt" ohne Klärung der vorgesehenen Transaktionsverantwortung (Fallbogen §6); W01 klärt das, der Korpus urteilt nicht.
-- gesamte Scheibe — kein `security_and_authorization`-Befund (wie CC-026).
+- source.abap:10 — no transaction node and no async node from the end of the report (no invented dispatch).
+- source.abap:10 — no node and no business statement "registration discarded by ROLLBACK" (discarded); correct is orphaned — not executed (REV2-11).
+- source.abap:10 — no business statement "the implicit database commit at the end of the dialog step executes the update task": a database commit is not a COMMIT WORK (S05, S08, S09).
+- source.abap:5 — no business statement "the update task runs after the end of the program" (no carrier in the slice).
+- source.abap:5 — no error finding "COMMIT WORK missing" without clarifying the intended transaction responsibility (case sheet §6); W01 clarifies this, the corpus does not judge.
+- whole slice — no security_and_authorization finding (as in CC-026).
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -5046,10 +5046,10 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-027-B01** — Der Report registriert den Baustein mit Fall-ID und Route zur Verbuchung.  
+**CC-027-B01** — The report registers the function module with case ID and route for the update task.
 Anker: source.abap:5, source.abap:7, source.abap:8. Kontext: /execution_assumptions (runtime_context=dialog). Achse: `update_registration`; Behauptungsstärke: **registriert**.
 
-**CC-027-B02** — In der gelieferten Scheibe wird kein COMMIT WORK ausgeführt und kein Statement mit impliziter COMMIT-WORK-Wirkung erreicht (Vollständigkeitsbeleg: Zeilen 4–10 sind die ganze Scheibe). Innerhalb der Scheibe wird der registrierte Baustein nicht angestoßen und nicht ausgeführt; eine Datenbankänderung findet nicht statt — nicht persistiert (zulässig, weil keine Datenbankänderung vorliegt). REGISTERED und END_OF_REPORT sind Ausgaben, keine Bestätigungen.  
+**CC-027-B02** — In the supplied slice no COMMIT WORK is executed and no statement with an implicit COMMIT WORK effect is reached (completeness evidence: lines 4–10 are the whole slice). Within the slice the registered function module is neither triggered nor executed; no database change takes place — not persisted (admissible, because there is no database change). REGISTERED and END_OF_REPORT are outputs, not confirmations.
 Anker: source.abap:4–10 (gesamte Scheibe), source.abap:9, source.abap:10. Kontext: /execution_assumptions. Achsen: `dispatch` = keiner, `persistence_evidence` = `none`; Behauptungsstärke: **registriert**, keine Stufe darüber.
 
 **Korrektur v2.1 (Fallbogen CC-027, B02 „stimme nur in enger Fassung zu"):** vorher „In der gelieferten Scheibe wird kein COMMIT WORK ausgeführt. Die Registrierung ist angekündigt, nicht persistiert; REGISTERED und END_OF_REPORT belegen nur das Erreichen der Ausgaben." → jetzt mit dem Vollständigkeitsbeleg über die ganze Scheibe als Anker, „nicht angestoßen, nicht ausgeführt" als Zustände, und „nicht persistiert" mit der Begründung, warum es hier zulässig ist (keine Datenbankänderung; R25@2.1.0 Achse 5) → warum: der Satz ohne Scope und Begründung ließ die Lesart „nie persistiert, egal was der Aufrufer tut" zu; B02 braucht die ganze Scheibe als Beleg für das Fehlen eines COMMIT (Fallbogen §7), nicht nur Zeile 10.
@@ -5218,13 +5218,13 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-028-B01** — Ein Verkaufsauftrag mit der eingegebenen Auftragsart und dem Auftraggeber wird zur Anlage übergeben; der BAPI-Aufruf selbst persistiert nichts.  
+**CC-028-B01** — A sales order with the entered order type and sold-to party is passed for creation; the BAPI call itself persists nothing.
 Anker: source.abap:9, source.abap:10, source.abap:11. Kontext: /execution_assumptions (runtime_context=dialog).
 
-**CC-028-B02** — Meldet RETURN mindestens eine Zeile vom Typ E, wird ERROR ausgegeben und der Block verlassen; es wird kein Commit ausgeführt. Ein Auftrag ist in diesem Zweig nicht als angelegt belegt.  
+**CC-028-B02** — If RETURN reports at least one row of type E, ERROR is output and the block is exited; no commit is executed. An order is not evidenced as created in this branch.
 Anker: source.abap:16, source.abap:17, source.abap:18. Kontext: /execution_assumptions.
 
-**CC-028-B03** — Ohne E-Zeile wird BAPI_TRANSACTION_COMMIT mit WAIT aufgerufen und danach CREATED mit der Belegnummer ausgegeben. Erst dieser Aufruf macht die Anlage persistent; sein Ergebnis wird im Code nicht geprüft.  
+**CC-028-B03** — Without an E row BAPI_TRANSACTION_COMMIT is called with WAIT and then CREATED is output with the document number. Only this call makes the creation persistent; its result is not checked in the code.
 Anker: source.abap:16, source.abap:20, source.abap:21, source.abap:22. Kontext: /execution_assumptions.
 
 **Nicht tragbar:** „Zeile 11 legt den Auftrag an." Träger der Anlage ist Zeile 20 unter der Bedingung aus Zeile 16.
@@ -5404,13 +5404,13 @@ Nachfolgerlisten: `[]` **mit obiger Statusbegründung**. Die TADIR-Zuordnung gen
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-029-B01** — Vor dem Schreiben wird eine Sperre auf den Fall angefordert; die Route wird nur geändert, wenn die Sperre gesetzt werden konnte.  
+**CC-029-B01** — Before writing, a lock on the case is requested; the route is changed only if the lock could be set.
 Anker: source.abap:5, source.abap:10, source.abap:14. Kontext: /execution_assumptions (runtime_context=dialog).
 
-**CC-029-B02** — Ist der Fall fremdgesperrt oder die Sperranforderung gescheitert, wird LOCK_FAILED ausgegeben und der Block verlassen; es wird weder geschrieben noch entsperrt.  
+**CC-029-B02** — If the case is locked by another user or the lock request failed, LOCK_FAILED is output and the block is exited; nothing is written and nothing is unlocked.
 Anker: source.abap:10, source.abap:11, source.abap:12. Kontext: /execution_assumptions.
 
-**CC-029-B03** — Nach dem Schreiben folgt bei sy-subrc = 0 COMMIT WORK, sonst ROLLBACK WORK; in beiden Fällen wird danach die Sperre freigegeben und DONE ausgegeben. DONE trägt keine Aussage über Erfolg.  
+**CC-029-B03** — After writing, COMMIT WORK follows if sy-subrc = 0, otherwise ROLLBACK WORK; in both cases the lock is then released and DONE is output. DONE makes no statement about success.
 Anker: source.abap:15, source.abap:16, source.abap:18, source.abap:20, source.abap:22. Kontext: /execution_assumptions.
 
 **Nicht tragbar:** „Wenn DONE erscheint, ist die Route gespeichert" — DONE steht auch hinter dem Rollback-Zweig.
@@ -5585,13 +5585,13 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-030-B01** — Für jeden offenen Fall wird die Route auf den eingegebenen Wert gesetzt und sofort committet — eine LUW je Zeile.  
+**CC-030-B01** — For each open case the route is set to the entered value and committed immediately — one LUW per row.
 Anker: source.abap:6, source.abap:8, source.abap:9, source.abap:10. Kontext: /execution_assumptions (runtime_context=dialog).
 
-**CC-030-B02** — Gibt es mehr als eine offene Zeile, bricht der Report nach dem ersten Commit beim Weiterlesen vom geschlossenen Cursor mit einem Laufzeitfehler ab; die bis dahin committeten Änderungen bleiben. DONE wird nicht erreicht.  
+**CC-030-B02** — If there is more than one open row, the report aborts with a runtime error after the first commit when reading further from the closed cursor; the changes committed up to then remain. DONE is not reached.
 Anker: source.abap:10, source.abap:12, source.abap:4–12. Kontext: /execution_assumptions (Testdaten: mehr als eine offene Zeile).
 
-**CC-030-B03** — Bei höchstens einer offenen Zeile wird die Schleife regulär beendet und DONE ausgegeben. Der Fehler ist datenabhängig, nicht codeabhängig sichtbar.  
+**CC-030-B03** — With at most one open row the loop ends regularly and DONE is output. The error is data-dependent, not visible from the code.
 Anker: source.abap:12, source.abap:13. Kontext: /execution_assumptions.
 
 **Nicht tragbar:** „Alle offenen Fälle werden geroutet." Der Code trägt das nur für den Fall, dass die Schleife ihren Cursor nach dem Commit nicht mehr braucht.
@@ -5768,16 +5768,16 @@ Cloud-Rohzustand: `not_applicable`; Classic-Rohzustand: `not_applicable`. Nachfo
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-031-B01** — Die Route des angegebenen Falls wird geändert; fehlt der Fall, wird MISSING_CASE ausgegeben und der Block ohne Commit verlassen — nichts ist geändert.  
+**CC-031-B01** — The route of the specified case is changed; if the case is missing, MISSING_CASE is output and the block is exited without a commit — nothing is changed.
 Anker: source.abap:6, source.abap:7, source.abap:8, source.abap:9. Kontext: /execution_assumptions (runtime_context=dialog).
 
-**CC-031-B02** — Nach erfolgreicher Änderung wird ein entferntes System über die eingegebene Destination benachrichtigt. Welches System und was dort geschieht, ist aus der Scheibe nicht ableitbar.  
+**CC-031-B02** — After a successful change a remote system is notified via the entered destination. Which system, and what happens there, cannot be derived from the slice.
 Anker: source.abap:11, source.abap:12, source.abap:13. Kontext: /execution_assumptions.
 
-**CC-031-B03** — Schlägt die Benachrichtigung fehl, wird ROLLBACK WORK ausgeführt und NOTIFY_FAILED ausgegeben; die Routenänderung bleibt dennoch gespeichert, weil der RFC-Aufruf sie bereits implizit festgeschrieben hat.  
+**CC-031-B03** — If the notification fails, ROLLBACK WORK is executed and NOTIFY_FAILED is output; the route change nevertheless remains saved, because the RFC call has already committed it implicitly.
 Anker: source.abap:17, source.abap:18, source.abap:19. Kontext: source.abap:6 (Änderung), source.abap:11 (impliziter Commit), /execution_assumptions.
 
-**CC-031-B04** — Gelingt die Benachrichtigung, folgen COMMIT WORK und RECORDED.  
+**CC-031-B04** — If the notification succeeds, COMMIT WORK and RECORDED follow.
 Anker: source.abap:17, source.abap:22, source.abap:23. Kontext: /execution_assumptions.
 
 **Nicht tragbar:** „Bei Benachrichtigungsfehler bleibt der Fall unverändert." Genau diese Aussage würde eine Transformation nach RAP als Absicht übernehmen und das Verhalten ändern (Fable KA-086).
@@ -5945,13 +5945,13 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-032-B01** — Die Routenberechnung für den Fall wird asynchron in einer eigenen Task gestartet. Scheitert der Start (Kommunikation, System, Ressourcen), wird NOT_STARTED ausgegeben und der Block verlassen.  
+**CC-032-B01** — The route calculation for the case is started asynchronously in a separate task. If the start fails (communication, system, resources), NOT_STARTED is output and the block is exited.
 Anker: source.abap:6, source.abap:7, source.abap:13, source.abap:14, source.abap:15. Kontext: /execution_assumptions (runtime_context=dialog).
 
-**CC-032-B02** — Gelingt der Start, wird STARTED ausgegeben; ein Ergebnis liegt zu diesem Zeitpunkt nicht vor.  
+**CC-032-B02** — If the start succeeds, STARTED is output; no result is available at this point.
 Anker: source.abap:13, source.abap:17. Kontext: /execution_assumptions.
 
-**CC-032-B03** — Das Ergebnis trifft ausschließlich im Callback ein und wird dort nach gv_route übernommen; der Zeitpunkt steht nicht im Code. In dieser Scheibe wird gv_route nirgends ausgegeben oder weiterverwendet.  
+**CC-032-B03** — The result arrives exclusively in the callback and is placed in gv_route there; the point in time is not in the code. In this slice gv_route is never output or used further.
 Anker: source.abap:8, source.abap:18, source.abap:19, source.abap:20, source.abap:21. Kontext: /execution_assumptions.
 
 **Nicht tragbar:** „Der Report ermittelt die Route des Falls." Es gibt keinen Konsumenten des Ergebnisses; die Scheibe startet eine Berechnung, mehr nicht.
@@ -6098,13 +6098,13 @@ Nachfolgerlisten: `[]` **mit obiger Statusbegründung**.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-033-B01** — Die Route des Falls wird geändert; fehlt der Fall, wird MISSING_CASE ausgegeben und der Block ohne Commit verlassen — nichts ist geändert.  
+**CC-033-B01** — The route of the case is changed; if the case is missing, MISSING_CASE is output and the block is exited without a commit — nothing is changed.
 Anker: source.abap:5, source.abap:6, source.abap:7, source.abap:8. Kontext: /execution_assumptions (runtime_context=dialog).
 
-**CC-033-B02** — Fehlt danach der Kopfsatz des Falls, wird die Fehlermeldung 001(ZCC) vom Typ E ausgegeben. Im Dialogkontext beendet sie die Verarbeitung; COMMIT WORK wird nicht erreicht. Die bereits ausgeführte Routenänderung ist in diesem Zweig nicht als persistiert belegt.  
+**CC-033-B02** — If the header record of the case is then missing, the error message 001(ZCC) of type E is output. In a dialog context it terminates processing; COMMIT WORK is not reached. The route change already executed is not evidenced as persisted in this branch.
 Anker: source.abap:10, source.abap:11, source.abap:12. Kontext: source.abap:5 (vorherige Änderung), source.abap:14 (nicht erreicht), /execution_assumptions (runtime_context=dialog).
 
-**CC-033-B03** — Treffen beide Updates, wird COMMIT WORK ausgeführt und RECORDED ausgegeben.  
+**CC-033-B03** — If both updates hit, COMMIT WORK is executed and RECORDED is output.
 Anker: source.abap:6, source.abap:11, source.abap:14, source.abap:15. Kontext: /execution_assumptions.
 
 **Nicht tragbar (ohne bestätigten Laufzeitkontext):** sowohl „Die E-Meldung rollt die Routenänderung zurück" als auch „Die Routenänderung bleibt gespeichert". Der Code trägt nur: kein COMMIT WORK auf diesem Pfad.
@@ -6290,12 +6290,12 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:11` — Nicht „Stringliteral ist kein UPDATE" (CC-016-Lesart). R13a gilt nur für Literale ohne Konsument; hier ist der Konsument Zeile 15.
-- `source.abap:11` — Nicht „Template führt Code aus" im Sinne von CE-01/CC-061: die eingebetteten Ausdrücke sind Datenobjekte (F01).
-- `source.abap:14` — Nicht B, weil „eigene Klasse/ADBC-Wrapper". Die Wirkung ist ein KNA1-Update.
-- `source.abap:15` — Nicht Unknown. Tabelle, Operation und Feld stehen statisch im Template; unbekannt ist nur der effektive Zeilenscope (B02).
-- `source.abap:11` — Kein Fachsatz, der die Änderung auf genau den eingegebenen Kunden im aktuellen Mandanten **garantiert** (REV2-04).
-- gesamte Scheibe — Kein Befund „Berechtigungsprüfung fehlt" als bewiesene Schwachstelle: im Slice ist keine sichtbar, Start-/Systemberechtigungen liegen außerhalb. Der Injektionsbefund F03 ist davon unabhängig.
+- source.abap:11 — Not "a string literal is not an UPDATE" (CC-016 reading). R13a applies only to literals without a consumer; here the consumer is line 15.
+- source.abap:11 — Not "the template executes code" in the sense of CE-01/CC-061: the embedded expressions are data objects (F01).
+- source.abap:14 — Not B because of "own class/ADBC wrapper". The effect is a KNA1 update.
+- source.abap:15 — Not Unknown. Table, operation and field are stated statically in the template; only the effective row scope is unknown (B02).
+- source.abap:11 — No business statement that guarantees the change is limited to exactly the entered customer in the current client (REV2-04).
+- whole slice — No finding "authorization check missing" as a proven vulnerability: none is visible in the slice, start/system authorizations lie outside. The injection finding F03 is independent of this.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -6330,20 +6330,20 @@ Cloud-Rohzustand: `not_asserted`; Classic-Rohzustand: `not_asserted`. Nachfolger
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-034-B01** — Bei initialem `p_kunnr` wird NO_KEY ausgegeben und vor dem SQL-Aufbau zurückgekehrt; es wird kein SQL gebaut und nichts geschrieben.  
+**CC-034-B01** — If p_kunnr is initial, NO_KEY is output and the program returns before the SQL is built; no SQL is built and nothing is written.
 Anker: source.abap:7, source.abap:8, source.abap:9. Kontext: /business_scope, /execution_assumptions.
 
-**CC-034-B02** — Nach dem Guard (Zeile 7) wird ein UPDATE-Text gebaut, der NAME1 in KNA1 für den eingegebenen Kunden im aktuellen Mandanten ändern **soll** (beabsichtigter Filter `MANDT = sy-mandt AND KUNNR = p_kunnr`; der Mandant steht explizit im Text, weil Native SQL keinen automatischen Mandantenfilter hat, S11), und in Zeile 15 ausgeführt. Drei Bedingungen: (1) der Schlüsselguard wurde passiert; (2) die Operation ist ein **Versuch** — ein Treffer ist nicht garantiert (Nulltreffer landet in B04; bei numerischem Schlüssel ohne Nullauffüllung kein Treffer, vgl. CC-023-F03); (3) der **tatsächlich betroffene Zeilenscope ist eingabeabhängig**: weil `p_name` und `p_kunnr` ungeprüft in den interpretierten Text eingesetzt werden (F03), garantiert der Code die Begrenzung auf diesen Kunden und diesen Mandanten nicht — eine Eingabe innerhalb der 35 Zeichen von `p_name` kann den WHERE-Filter aufheben. Bei nicht manipulierten, im internen Format passenden Werten wird versucht, genau die passende Zeile zu ändern.  
+**CC-034-B02** — After the guard (line 7) an UPDATE text is built that is meant to change NAME1 in KNA1 for the entered customer in the current client (intended filter MANDT = sy-mandt AND KUNNR = p_kunnr; the client is stated explicitly in the text because Native SQL has no automatic client filter, S11), and it is executed in line 15. Three conditions: (1) the key guard was passed; (2) the operation is an attempt — a match is not guaranteed (zero matches end up in B04; with a numeric key without zero padding there is no match, cf. CC-023-F03); (3) the row scope actually affected depends on the input: because p_name and p_kunnr are inserted unchecked into the interpreted text (F03), the code does not guarantee the restriction to this customer and this client — an input within the 35 characters of p_name can cancel the WHERE filter. With unmanipulated values that match in the internal format, an attempt is made to change exactly the matching row.
 Anker: source.abap:11, source.abap:15, source.abap:2, source.abap:3, source.abap:7. Kontext: /business_scope, /execution_assumptions; Bedingung: `p_kunnr IS NOT INITIAL` (Zeile 7); Scope: eingabeabhängig. Achse: `db_luw` (Standardverbindung); Behauptungsstärke: **Versuch** (R25@2.1.0 Achse 5; Befund-Autor zu REV2-04: „Claim-Stärke: Versuch").
 
 **Korrektur v2.1 (Fallbogen CC-034 / REV2-04, Architekturreview §5):** vorher „Nach dem Guard wird NAME1 des angegebenen Kunden im aktuellen Mandanten per Native SQL geändert; der Mandant steht explizit im SQL-Text, weil Native SQL keinen automatischen Mandantenfilter hat." → jetzt Versuch mit beabsichtigtem, nicht garantiertem Filter; effektive Zielmenge eingabeabhängig; gebundene Parameter als Gegenfall → warum: der alte Satz garantierte einen Scope, den der Code bei ungeprüfter Eingabe im SQL-Text nicht garantieren kann; er widersprach dem eigenen Sicherheitsbefund F03. Das Review hat das im lokalen SQLite-Gegenmodell mit drei Wegwerfzeilen in zwei Mandanten nachgestellt (alle drei geändert; mit gebundenem Parameter nur die bezeichnete Zeile) — kein HANA-Test, kein Angriff auf ein SAP-System, aber die logische Widerlegung der Garantie. Der Sicherheitsbefund F03 bleibt unverändert bestehen; ein korrekter technischer Befund allein verhindert die falsche fachliche Erzählung nicht (REV2-04).
 
-**CC-034-B03** — Wirft die Datenbank eine SQL-Ausnahme, wird ROLLBACK WORK ausgeführt, DB_ERROR ausgegeben und abgebrochen. Zurückgerollt wird die aktuelle Datenbank-LUW der Standardverbindung; aus dieser LUW ist nichts persistiert. Über frühere, bereits abgeschlossene LUWs sagt das nichts.  
+**CC-034-B03** — If the database raises an SQL exception, ROLLBACK WORK is executed, DB_ERROR is output and processing is aborted. What is rolled back is the current database LUW of the default connection; nothing from this LUW is persisted. This says nothing about earlier LUWs that were already completed.
 Anker: source.abap:16, source.abap:17, source.abap:18, source.abap:19. Kontext: /execution_assumptions (db_connection=Standardverbindung). Achse: `db_luw`; Rollback belegt → „nicht persistiert" ist für diese LUW zulässig (R25@2.1.0 Achse 5).
 
 **Korrektur v2.1 (Fallbogen CC-034, B03 „stimme nur im DB-Scope zu"):** vorher „… und abgebrochen; nichts ist persistiert." → jetzt „aus dieser LUW ist nichts persistiert; über frühere LUWs keine Aussage" → warum: Scope des Rollbacks benennen.
 
-**CC-034-B04** — Sind null Zeilen betroffen (`lv_rows = 0`), folgt ROLLBACK WORK und NO_UPDATE; sonst wird mit COMMIT WORK (Zeile 26) die Datenbank-LUW abgeschlossen und UPDATE_COMMITTED ausgegeben. Der Code prüft nicht auf genau eine betroffene Zeile (`lv_rows <> 0`, nicht `= 1`) und belegt keine Einhaltung des beabsichtigten Kunden-/Mandantenscopes (B02). Dass COMMIT WORK den ADBC-Update auf der Standardverbindung einschließt, ist mit S08/S10 belegt, nicht nativ ausgeführt.  
+**CC-034-B04** — If zero rows are affected (lv_rows = 0), ROLLBACK WORK and NO_UPDATE follow; otherwise the database LUW is completed with COMMIT WORK (line 26) and UPDATE_COMMITTED is output. The code does not check for exactly one affected row (lv_rows <> 0, not = 1) and does not evidence compliance with the intended customer/client scope (B02). That COMMIT WORK includes the ADBC update on the default connection is evidenced by S08/S10, not executed natively.
 Anker: source.abap:21, source.abap:22, source.abap:26, source.abap:27. Kontext: /business_scope, /execution_assumptions; Bedingung: `lv_rows = 0` bzw. `lv_rows <> 0`. Achse: `db_luw`; Behauptungsstärke im Nichtnull-Pfad: **Zeilen betroffen** (mindestens eine, Scope offen) und **Commit erfolgt**; nicht *fachlich bestätigt*. Im Nullpfad: Rollback belegt, nichts persistiert.
 
 **Korrektur v2.1 (Fallbogen CC-034, B04 „stimme mit Präzisierung zu"):** vorher „… sonst wird mit COMMIT WORK persistiert und UPDATE_COMMITTED ausgegeben. Dass COMMIT WORK den ADBC-Update … einschließt, ist Ausführungsannahme des Fixtures (Prüferfrage 1)." → jetzt mit „nicht genau eine Zeile" und „kein Scopebeleg", und die Ausführungsannahme ist mit S08/S10 belegt → warum: Prüferfrage 1 vom Review beantwortet; `lv_rows <> 0` war als „der Kunde wurde geändert" lesbar.
@@ -6547,12 +6547,12 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:11` — Nicht „kein Open-SQL-UPDATE, also B". Native SQL ist kein Wrapper und kein Kernelaufruf (K08 im v1-Sinn), sondern eigene Klasse K13.
-- `source.abap:12` — Nicht als Kommentar oder Literal ohne Konsument lesen; der Konsument ist Zeile 11.
-- `source.abap:12` — **Kein Injektionsbefund**: `:p_name`, `:lv_mandt`, `:p_kunnr` sind gebundene Hostvariablen, kein Textaufbau. Das ist der Gegenfall zu CC-034-F03; eine Engine, die beide Fälle unter derselben Taint-Regel meldet, ist falsch. R28@2.1.0 („gebundene Werte sind Daten, kein Injektionsbefund — CC-035") und R13b@2.1.0 Rolle (c). Bestätigt vom Review (S11).
-- `source.abap:13` — Kein Befund „mandantenübergreifend": Native SQL hat keine automatische Mandantenbehandlung, aber der Block filtert explizit auf `:lv_mandt` = `sy-mandt` (Zeile 10). Das ist weder ein vollständiger Berechtigungsnachweis noch ein mandantenübergreifender Zugriff.
-- gesamte Scheibe — Kein Befund „Berechtigungsprüfung fehlt" als bewiesene Schwachstelle (wie CC-034).
-- `source.abap:11` — Kein Gateway auf `sy-subrc`/`sy-dbcnt` im As-is-Skelett; das wäre ein Änderungsentwurf (W02).
+- source.abap:11 — Not "no Open SQL UPDATE, therefore B". Native SQL is neither a wrapper nor a kernel call (K08 in the v1 sense), but a class of its own, K13.
+- source.abap:12 — Do not read it as a comment or as a literal without a consumer; the consumer is line 11.
+- source.abap:12 — No injection finding: :p_name, :lv_mandt, :p_kunnr are bound host variables, not text construction. This is the counter-case to CC-034-F03; an engine that reports both cases under the same taint rule is wrong. R28@2.1.0 ("bound values are data, not an injection finding — CC-035") and R13b@2.1.0 role (c). Confirmed by the review (S11).
+- source.abap:13 — No finding "cross-client": Native SQL has no automatic client handling, but the block filters explicitly on :lv_mandt = sy-mandt (line 10). This is neither complete proof of authorization nor cross-client access.
+- whole slice — No finding "authorization check missing" as a proven vulnerability (as in CC-034).
+- source.abap:11 — No gateway on sy-subrc/sy-dbcnt in the as-is skeleton; that would be a change draft (W02).
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -6577,15 +6577,15 @@ Quelle: SAP-PCE22; 136428–136446 (wie CC-001/CC-023); vom Review in der Webans
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-035-B01** — Bei initialem Namen wird NO_NAME ausgegeben und vor dem Datenbankaufruf zurückgekehrt; es wird nichts geschrieben.  
+**CC-035-B01** — If the name is initial, NO_NAME is output and the program returns before the database call; nothing is written.
 Anker: source.abap:6, source.abap:7, source.abap:8. Kontext: /business_scope, /execution_assumptions.
 
-**CC-035-B02** — Nach dem Guard (Zeile 6) wird per Native SQL **versucht**, NAME1 der KNA1-Zeilen zu ändern, deren MANDT dem in Zeile 10 übernommenen `sy-mandt` und deren KUNNR dem gebundenen `p_kunnr` entspricht. Weil die Werte gebundene Hostvariablen sind, ist der Filter für jede Eingabe wirksam (Gegenfall zu CC-034-B02); ob eine Zeile getroffen wird, garantiert der Code nicht — kein Treffer bei unbekanntem Kunden oder, bei numerischem Schlüssel, bei Eingabe ohne Nullauffüllung (vgl. CC-023-F03).  
+**CC-035-B02** — After the guard (line 6) an attempt is made via Native SQL to change NAME1 of the KNA1 rows whose MANDT equals the sy-mandt taken over in line 10 and whose KUNNR equals the bound p_kunnr. Because the values are bound host variables, the filter is effective for every input (counter-case to CC-034-B02); whether a row is hit is not guaranteed by the code — no match for an unknown customer or, with a numeric key, for input without zero padding (cf. CC-023-F03).
 Anker: source.abap:11, source.abap:10, source.abap:12–13. Kontext: /business_scope, /execution_assumptions; Bedingung: `p_name IS NOT INITIAL` (Zeile 6). Achse: `db_luw` (Standardverbindung); Behauptungsstärke: **Versuch** (R25@2.1.0 Achse 5).
 
 **Korrektur v2.1 (Fallbogen CC-035, B02 „enger formulieren"):** vorher „Nach dem Guard wird NAME1 des angegebenen Kunden im aktuellen Mandanten per Native SQL geändert; der Mandant wird in Zeile 10 explizit gesetzt und in Zeile 13 explizit gefiltert." → jetzt Versuch mit gebundenen Schlüsseln; Filter wirksam, Treffer nicht garantiert → warum: der Code garantiert weder einen passenden Kunden noch eine positive Trefferzahl; die Bindung ist der Unterschied zu CC-034 und muss im Satz stehen.
 
-**CC-035-B03** — Nach normalem Abschluss von ENDEXEC folgt ohne Trefferprüfung COMMIT WORK und die Ausgabe UPDATE_COMMITTED; weder `sy-dbcnt` noch `sy-subrc` werden ausgewertet. Persistenz wird also auch dann gemeldet, wenn keine Zeile geändert wurde. Bei nicht abgefangenem Datenbankfehler wird dieser Normalpfad nicht erreicht (nicht modellierter Laufzeitfehler).  
+**CC-035-B03** — After ENDEXEC completes normally, COMMIT WORK and the output UPDATE_COMMITTED follow without a match check; neither sy-dbcnt nor sy-subrc is evaluated. Persistence is therefore reported even when no row was changed. If a database error is not caught, this normal path is not reached (runtime error not modeled).
 Anker: source.abap:15, source.abap:16, source.abap:11–16. Kontext: /business_scope, /execution_assumptions. Achse: `db_luw`; Behauptungsstärke: **Commit erfolgt** — *Zeilen betroffen* ist nicht belegt, *fachlich bestätigt* nicht.
 
 ### Zusätzliche fachliche Prüfeingaben
@@ -6766,9 +6766,9 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:10` — Nicht Unknown, nicht `known_worst_level` D: die Zielmenge ist ein Singleton aus vollständigem Datenfluss. Die Bindungsart bleibt syntaktisch dynamisch (R06-Trennung wie CC-011), das ändert die Zielmenge nicht.
-- `source.abap:2` — Nicht „Literal ohne Wirkung" (R13a): der Konsument ist Zeile 11.
-- `source.abap:10` — Kein `security_and_authorization`-Befund „generischer Tabellenzugriff": das Ziel ist nicht generisch.
+- source.abap:10 — Not Unknown, not known_worst_level D: the target set is a singleton from complete data flow. The binding type remains syntactically dynamic (R06 separation as in CC-011); this does not change the target set.
+- source.abap:2 — Not "literal without effect" (R13a): the consumer is line 11.
+- source.abap:10 — No security_and_authorization finding "generic table access": the target is not generic.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -6791,13 +6791,13 @@ Quelle: SAP-PCE22; 136428–136446 (wie CC-001).
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-036-B01** — Es werden Kunden mit dem eingegebenen Länderschlüssel selektiert; die Tabelle ist über die Konstante in Zeile 2 festgelegt.  
+**CC-036-B01** — Customers with the entered country key are selected; the table is fixed via the constant in line 2.
 Anker: source.abap:10, source.abap:12, source.abap:2. Kontext: /business_scope, /execution_assumptions.
 
-**CC-036-B02** — Ohne Treffer wird NO_MATCH ausgegeben und der Reportingblock verlassen.  
+**CC-036-B02** — If there is no match, NO_MATCH is output and the reporting block is exited.
 Anker: source.abap:15, source.abap:16, source.abap:17. Kontext: /business_scope, /execution_assumptions.
 
-**CC-036-B03** — Bei Treffern werden Kundennummer und Name als Liste ausgegeben.  
+**CC-036-B03** — If there are matches, customer number and name are output as a list.
 Anker: source.abap:20. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -6916,10 +6916,10 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:9` — Kein C-Befund auf KNA1 aus dem DEFAULT (`default_dynamic_target_not_exhaustive`).
-- `source.abap:9` — Nicht B, weil „kein SAP-Objekt sichtbar". Unsichtbar ist nicht abwesend.
-- `source.abap:9` — Nicht D als Level. D ist `known_worst_level`, das Level ist Unknown.
-- `source.abap:9` — Den Sicherheitsbefund nicht in das Level hineinrechnen (kein „Unknown, aber eigentlich D wegen Security").
+- source.abap:9 — No C finding on KNA1 from the DEFAULT (default_dynamic_target_not_exhaustive).
+- source.abap:9 — Not B because "no SAP object visible". Invisible is not absent.
+- source.abap:9 — Not D as the level. D is known_worst_level, the level is Unknown.
+- source.abap:9 — Do not factor the security finding into the level (no "Unknown, but actually D because of security").
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -6942,10 +6942,10 @@ Quelle: SAP-PCE22; 136428–136446. Der Eintrag beschreibt die Vorbelegung, nich
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-037-B01** — Ohne Tabellennamen wird NO_TABLE ausgegeben und der Block verlassen.  
+**CC-037-B01** — Without a table name NO_TABLE is output and the block is exited.
 Anker: source.abap:5, source.abap:6, source.abap:7. Kontext: /business_scope, /execution_assumptions.
 
-**CC-037-B02** — Nach dem Guard wird die Zeilenzahl der eingegebenen Tabelle gezählt und mit dem Namen ausgegeben. Welche Tabelle das ist, entscheidet die Eingabe zur Laufzeit; ein Fachsatz über „Kunden" ist hier nicht tragbar.  
+**CC-037-B02** — After the guard the number of rows of the entered table is counted and output with the name. Which table that is, is decided by the input at runtime; a business statement about "customers" cannot be supported here.
 Anker: source.abap:9, source.abap:12. Kontext: /business_scope, /execution_assumptions; Bedingung: `p_tab IS NOT INITIAL` (Zeile 5).
 
 ### Erwartetes Prozessskelett
@@ -7111,12 +7111,12 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:14` — Nicht B „kundeneigene Tabelle" aus dem DEFAULT `ZCC_LOG_A` (R20/CC-024 gilt nur für ein statisch bekanntes Z-Ziel; R07@1.1.0: Vorbelegung ist keine Singleton-Garantie).
-- `source.abap:14` — Nicht D als Level und **nicht D als `known_worst_level`**; D ist `potential_worst_level` (REV2-03).
-- `source.abap:14` — Umgekehrt: diese Unknown-Antwort gilt für ein dynamisches **Ziel**. Ein dynamisches WHERE bei statischem FROM (CE-02, im Korpus CC-062) lässt die Tabellenidentität bekannt — dort ist die Zielmenge nicht Unknown (`predicate_resolution = unknown`, R26@2.1.0).
-- `source.abap:12`, `:13` — Kein Injektionsbefund für `p_key`/`p_text`: sie fließen als gebundene Werte in die Arbeitsstruktur, nicht als Text in interpretiertes SQL (R28@2.1.0). Der Sicherheitsbefund F02 betrifft das Ziel, nicht den Inhalt.
-- `source.abap:5` — Die Typabhängigkeit auf die kundeneigene Struktur ist kein SAP-Befund und kein Ersatz für die fehlende Zielmenge.
-- `source.abap:16` — COMMIT WORK macht das Ziel nicht bekannter; Persistenz ist bedingt auf `sy-subrc = 0`.
+- source.abap:14 — Not B "customer-specific table" from the DEFAULT ZCC_LOG_A (R20/CC-024 applies only to a statically known Z target; R07@1.1.0: a preset is not a singleton guarantee).
+- source.abap:14 — Not D as the level and not D as known_worst_level; D is potential_worst_level (REV2-03).
+- source.abap:14 — Conversely: this Unknown answer applies to a dynamic target. A dynamic WHERE with a static FROM (CE-02, in the corpus CC-062) leaves the table identity known — there the target set is not Unknown (predicate_resolution = unknown, R26@2.1.0).
+- source.abap:12, :13 — No injection finding for p_key/p_text: they flow as bound values into the work structure, not as text into interpreted SQL (R28@2.1.0). The security finding F02 concerns the target, not the content.
+- source.abap:5 — The type dependency on the customer-specific structure is not an SAP finding and no substitute for the missing target set.
+- source.abap:16 — COMMIT WORK does not make the target any better known; persistence is conditional on sy-subrc = 0.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -7135,15 +7135,15 @@ Nachfolgerlisten: `[]` **mit obiger Statusbegründung**. Die tatsächliche Zielm
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-038-B01** — Ohne Schlüssel wird NO_KEY ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.  
+**CC-038-B01** — Without a key NO_KEY is output and the program returns before the database operation; nothing is written.
 Anker: source.abap:7, source.abap:8, source.abap:9. Kontext: /business_scope, /execution_assumptions.
 
-**CC-038-B02** — Nach dem Guard wird eine Arbeitsstruktur aus Mandant, Schlüssel und Text gefüllt und **versucht**, sie per MODIFY (einfügen oder überschreiben) in die eingegebene Tabelle zu schreiben. Welche Tabelle das ist, entscheidet die Eingabe zur Laufzeit; ob der Versuch gelingt und welchen Zeilenscope er hat, hängt davon ab, dass das Ziel existiert und strukturell verträglich ist — sonst nicht modellierte Laufzeitausnahme.  
+**CC-038-B02** — After the guard a work structure is filled from client, key and text, and an attempt is made to write it into the entered table via MODIFY (insert or overwrite). Which table that is, is decided by the input at runtime; whether the attempt succeeds and what row scope it has depends on the target existing and being structurally compatible — otherwise a runtime exception that is not modeled.
 Anker: source.abap:11, source.abap:12, source.abap:13, source.abap:14. Kontext: /business_scope, /execution_assumptions; Bedingung: `p_key IS NOT INITIAL` (Zeile 7). Achse: `db_luw`; Behauptungsstärke: **Versuch**.
 
 **Korrektur v2.1 (Fallbogen CC-038, B02 „stimme nur bedingt zu"):** vorher „wird eine Zeile … in die eingegebene Tabelle eingefügt oder überschrieben (MODIFY-Semantik)" → jetzt „versucht …; Erfolg und Zeilenscope hängen vom existierenden, kompatiblen Ziel ab" → warum: die alte Fassung behauptete die Ausführung; der Code trägt den Versuch (R25@2.1.0 Achse 5).
 
-**CC-038-B03** — Bei normalem MODIFY-Abschluss mit `sy-subrc = 0` wird mit COMMIT WORK persistiert und SAVED ausgegeben; sonst ROLLBACK WORK und NOT_SAVED. Nicht abgefangene Ausnahmen (nicht existierende oder strukturell abweichende Zieltabelle) erreichen keinen der beiden Zweige.  
+**CC-038-B03** — If MODIFY completes normally with sy-subrc = 0, the data is persisted with COMMIT WORK and SAVED is output; otherwise ROLLBACK WORK and NOT_SAVED. Uncaught exceptions (non-existent or structurally deviating target table) reach neither of the two branches.
 Anker: source.abap:15, source.abap:16, source.abap:19, source.abap:14–21. Kontext: /business_scope, /execution_assumptions. Achse: `db_luw`; Behauptungsstärke bei `sy-subrc = 0`: **Zeilen betroffen** (eine) und **Commit erfolgt** — in ein Ziel, das nicht bekannt ist.
 
 **Korrektur v2.1 (Fallbogen CC-038, B03 „stimme im Normalfluss zu"):** vorher ohne den Ausnahmeabgang → jetzt mit „nicht abgefangene Ausnahmen erreichen keinen der beiden Zweige" → warum: Abstraktionsgrenze im Fachsatz benennen (R19@1.1.0).
@@ -7300,10 +7300,10 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:9`, `source.abap:10`, `source.abap:12` — Nicht „Literal ohne Wirkung" (R13a); der Konsument ist Zeile 13.
-- `source.abap:13` — Nicht B „keine SAP-Abhängigkeit sichtbar". Die Abhängigkeiten stehen im erzeugten Code, den der Analysator nicht sieht.
-- `source.abap:18` — Nicht als CC-012-Befund „externes Programm unbekannt, Allowlist verlangt" kodieren; die Allowlist wäre hier eine Allowlist über ABAP-Quelltext.
-- `source.abap:13` — Nicht als Kernelaufruf (K08 im v1-Sinn, R12) einordnen; die Anweisung ist dokumentierte ABAP-Syntax, ihr Ergebnis ist unbekannt.
+- source.abap:9, source.abap:10, source.abap:12 — Not "literal without effect" (R13a); the consumer is line 13.
+- source.abap:13 — Not B "no SAP dependency visible". The dependencies are in the generated code, which the analyzer does not see.
+- source.abap:18 — Do not encode it as a CC-012 finding "external program unknown, allowlist required"; the allowlist here would be an allowlist over ABAP source code.
+- source.abap:13 — Do not classify it as a kernel call (K08 in the v1 sense, R12); the statement is documented ABAP syntax, its result is unknown.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -7311,13 +7311,13 @@ Keine explizite externe SAP-Repository-Identität im gelieferten Scope. Das erze
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-039-B01** — Die Bewertungsregel steht nicht im Programm, sondern in der Eingabe `p_rule`; das Programm liefert nur den Rahmen (Programmkopf, FORM-Signatur, ENDFORM).  
+**CC-039-B01** — The evaluation rule is not in the program but in the input p_rule; the program only provides the frame (program header, FORM signature, ENDFORM).
 Anker: source.abap:11, source.abap:9, source.abap:10, source.abap:12. Kontext: /business_scope, /execution_assumptions.
 
-**CC-039-B02** — Scheitert die Erzeugung, wird GENERATION_FAILED mit der Meldung ausgegeben und der Block verlassen; keine Routine wird ausgeführt.  
+**CC-039-B02** — If the generation fails, GENERATION_FAILED is output with the message and the block is exited; no routine is executed.
 Anker: source.abap:14, source.abap:15, source.abap:16. Kontext: /execution_assumptions; Bedingung: `sy-subrc <> 0` nach Zeile 13.
 
-**CC-039-B03** — Sonst wird die erzeugte Routine mit dem Betrag aufgerufen und das Ergebnis ausgegeben. Was die Routine mit dem Betrag tut, ist statisch nicht bestimmbar; ein Fachsatz über „Routing" oder „Grenzwert" ist nicht tragbar.  
+**CC-039-B03** — Otherwise the generated routine is called with the amount and the result is output. What the routine does with the amount cannot be determined statically; a business statement about "routing" or "threshold" cannot be supported.
 Anker: source.abap:18, source.abap:19. Kontext: /business_scope, /execution_assumptions; Bedingung: `sy-subrc = 0` nach Zeile 13.
 
 ### Erwartetes Prozessskelett
@@ -7470,10 +7470,10 @@ ENDCLASS.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:9` — Nicht als CC-020-artiges Unknown **ohne** Objektabhängigkeit kodieren; SAPMV45A und VBAK müssen als Objekte erscheinen.
-- `source.abap:9` — Nicht B „Standard-ABAP ohne SAP-Objekt". Das SAP-Objekt steht im Literal.
-- `source.abap:9` — Nicht D als Level: der Fall ist lesend, und für den Zugriffsweg ist keine SAP-Einstufung belegt. D ist `known_worst_level`.
-- `source.abap:9` — Kein `security_and_authorization`-Befund: lesend, ohne Eingabe, ohne generisches Ziel.
+- source.abap:9 — Do not encode it as a CC-020-like Unknown without object dependency; SAPMV45A and VBAK must appear as objects.
+- source.abap:9 — Not B "standard ABAP without SAP object". The SAP object is in the literal.
+- source.abap:9 — Not D as the level: the case is read-only, and no SAP classification is evidenced for the access path. D is known_worst_level.
+- source.abap:9 — No security_and_authorization finding: read-only, without input, without a generic target.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -7491,10 +7491,10 @@ Nachfolgerliste: `[]` — „nicht nachgeschlagen", nicht „existiert nicht". E
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-040-B01** — Außerhalb des Aufrufkontexts von SAPMV45A liefert die Methode eine leere Belegnummer.  
+**CC-040-B01** — Outside the call context of SAPMV45A the method returns an empty document number.
 Anker: source.abap:9, source.abap:10, source.abap:11, source.abap:12. Kontext: /execution_assumptions; Bedingung: `sy-subrc <> 0` nach Zeile 9.
 
-**CC-040-B02** — Innerhalb dieses Kontexts liefert sie die Belegnummer des gerade bearbeiteten Kundenauftrags aus dem Programmspeicher von SAPMV45A. Dass VBAK-VBELN dort diese Bedeutung hat, ist Fixture-Annahme (Beleggrad erinnert), nicht aus dem gelieferten Code ablesbar.  
+**CC-040-B02** — Within this context it returns the document number of the sales order currently being processed from the program memory of SAPMV45A. That VBAK-VBELN has this meaning there is a fixture assumption (evidence grade: recalled), not readable from the supplied code.
 Anker: source.abap:9, source.abap:14. Kontext: /execution_assumptions; Bedingung: `sy-subrc = 0` nach Zeile 9.
 
 ### Erwartetes Prozessskelett
@@ -7668,11 +7668,11 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:25` — Nicht Unknown (CC-012-Lesart): keine Eingabe fließt in den Namen, nur in die Auswahl.
-- `source.abap:25` — Nicht Singleton (CC-011-Lesart): das erste Assignment ist nicht das einzige.
-- `source.abap:25` — Syntaktisch bleibt der Aufruf dynamisch (R06-Trennung); die Bindungsart wird nicht auf „statisch" umetikettiert.
-- `source.abap:25` — Kein R14-Befund: Klasse `FINAL`, keine Redefinition, kein Interface, statischer Typ gleich dynamischem Typ.
-- `source.abap:20`, `source.abap:22` — Die Literale sind über den Konsumenten (Zeile 25) Zielnamen (R13b), keine Texte ohne Wirkung.
+- source.abap:25 — Not Unknown (CC-012 reading): no input flows into the name, only into the selection.
+- source.abap:25 — Not a singleton (CC-011 reading): the first assignment is not the only one.
+- source.abap:25 — Syntactically the call remains dynamic (R06 separation); the binding type is not relabeled as "static".
+- source.abap:25 — No R14 finding: class FINAL, no redefinition, no interface, static type equal to dynamic type.
+- source.abap:20, source.abap:22 — Via the consumer (line 25) the literals are target names (R13b), not texts without effect.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -7695,10 +7695,10 @@ Ein Auswerter, der nur das erste Element vergleicht oder die Menge auf ein Eleme
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-041-B01** — Mit gesetztem Kennzeichen wird nach Name gelesen, sonst nach ID; die Wahl fällt vor dem Aufruf und hängt nur vom Kennzeichen ab.  
+**CC-041-B01** — With the flag set, the read is by name, otherwise by ID; the choice is made before the call and depends only on the flag.
 Anker: source.abap:19, source.abap:20, source.abap:22. Kontext: /business_scope, /execution_assumptions.
 
-**CC-041-B02** — Das Ergebnis der gewählten Methode wird ausgegeben.  
+**CC-041-B02** — The result of the chosen method is output.
 Anker: source.abap:25, source.abap:27. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -7814,11 +7814,11 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:4` — Kein Lesebefund an der Definitionszeile. `&1` ist kein Tabellenname; ein Befund „Lesen von &1“ oder „Tabelle unbekannt“ ist falsch.
-- `source.abap:4` — Kein R26-Befund „dynamisches FROM“. Der Platzhalter wird bei der Übersetzung ersetzt; es gibt keinen Laufzeitwert.
-- `source.abap:3–5` — Nicht als Kommentar oder Literal (R13a) verwerfen. Die Definition ist Code; ihre Wirkung liegt an Zeile 7 und 9.
-- `source.abap:7`, `source.abap:9` — Nicht als opaker Aufruf modellieren. Das Makro ist im Slice definiert und expandierbar; der Knoten ist ein `read`.
-- Kein dritter Lesebefund. Zwei Aufrufe, zwei Befunde, zwei Objekte.
+- source.abap:4 — No read finding at the definition line. &1 is not a table name; a finding "reading of &1" or "table unknown" is wrong.
+- source.abap:4 — No R26 finding "dynamic FROM". The placeholder is replaced at compile time; there is no runtime value.
+- source.abap:3–5 — Do not discard it as a comment or literal (R13a). The definition is code; its effect lies at lines 7 and 9.
+- source.abap:7, source.abap:9 — Do not model it as an opaque call. The macro is defined in the slice and expandable; the node is a read.
+- No third read finding. Two calls, two findings, two objects.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -7858,10 +7858,10 @@ Quelle: SAP-PCE22; wie CC-002 (136448–136465).
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-042-B01** — Die Zahl aller Sätze in KNA1 wird ohne Einschränkung ermittelt und ausgegeben.  
+**CC-042-B01** — The number of all records in KNA1 is determined without restriction and output.
 Anker: source.abap:7 (Bindung `&1 = kna1`), source.abap:4 (Statement), source.abap:8. Kontext: /business_scope, /execution_assumptions; unbedingter Pfad, kein Guard.
 
-**CC-042-B02** — Danach wird die Zahl aller Sätze in KNB1 ohne Einschränkung ermittelt und ausgegeben; lv_count wird dabei überschrieben.  
+**CC-042-B02** — Then the number of all records in KNB1 is determined without restriction and output; lv_count is overwritten in the process.
 Anker: source.abap:9 (Bindung `&1 = knb1`), source.abap:4 (Statement), source.abap:10. Kontext: /business_scope, /execution_assumptions; unbedingter Pfad, kein Guard.
 
 ### Erwartetes Prozessskelett
@@ -7997,10 +7997,10 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:6` — Nicht ein Knoten und nicht ein Anker für drei Aufrufe. Zwei verschiedene Knoten mit Typ `opaque_call` und Quelle `source.abap:6` ohne Tokenoffset sind eine mehrdeutige Signatur (Prüfung F05) und werden abgewiesen.
-- `source.abap:6` — Nicht als `PERFORM read_hdr` mit den Parametern `read_items`, `sum_items` lesen.
-- `source.abap:6`, `source.abap:8` — Kein R07-Befund (dynamisches Ziel). Die FORM-Namen sind statisch.
-- `source.abap:6+1` … `+3` — Die Reihenfolge ist Teil des Sollvertrags: read_hdr vor read_items vor sum_items. Ein Graph mit anderer Reihenfolge oder mit Selbstschleife auf einem der drei Knoten ist falsch.
+- source.abap:6 — Not one node and not one anchor for three calls. Two different nodes with type opaque_call and source source.abap:6 without a token offset are an ambiguous signature (check F05) and are rejected.
+- source.abap:6 — Do not read it as PERFORM read_hdr with the parameters read_items, sum_items.
+- source.abap:6, source.abap:8 — No R07 finding (dynamic target). The FORM names are static.
+- source.abap:6+1 … +3 — The order is part of the expected contract: read_hdr before read_items before sum_items. A graph with a different order or with a self-loop on one of the three nodes is wrong.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -8014,13 +8014,13 @@ Keine SAP-Repository-Identität im gelieferten Scope. Die FORMs können SAP-Obje
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-043-B01** — Drei Unterprogramme laufen in der Reihenfolge read_hdr, read_items, sum_items; ihre Wirkung, auch auf gv_total, ist im Slice unbekannt.  
+**CC-043-B01** — Three subroutines run in the order read_hdr, read_items, sum_items; their effect, including on gv_total, is unknown in the slice.
 Anker: source.abap:6+1, source.abap:6+2, source.abap:6+3, source.abap:4. Kontext: /business_scope, /execution_assumptions, /missing_dependencies; unbedingter Pfad.
 
-**CC-043-B02** — write_log läuft nur bei gesetztem Häkchen; seine Wirkung ist unbekannt.  
+**CC-043-B02** — write_log runs only when the checkbox is ticked; its effect is unknown.
 Anker: source.abap:7, source.abap:8. Kontext: /business_scope, /execution_assumptions, /missing_dependencies; Zweig `p_log = 'X'`.
 
-**CC-043-B03** — DONE und gv_total werden nach Rückkehr aller Aufrufe ausgegeben; der Wert von gv_total ist ohne Include nicht belegbar.  
+**CC-043-B03** — DONE and gv_total are output after all calls have returned; the value of gv_total cannot be evidenced without the include.
 Anker: source.abap:10, source.abap:6–9. Kontext: /business_scope, /execution_assumptions, /missing_dependencies.
 
 ### Erwartetes Prozessskelett
@@ -8158,10 +8158,10 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:10` — Kein Befund mit Primäranker auf der Literalzeile. Ein Befund, der nur Zeile 10 nennt, ist eine Verschiebung auf eine formal gültige Zeile (Prüfung F01) und wird nicht als Treffer gewertet.
-- `source.abap:9–14` — Kein Bereichsanker als Primäranker. Der Statementbereich ist erlaubt als Zusatzangabe, nicht als Identität (KA-004: eine Konvention, nicht zwei).
-- `source.abap:9` — Nicht als dynamischen Aufruf behandeln, weil das Literal nicht auf derselben Zeile steht.
-- `source.abap:9` — Kein zweiter Befund für dasselbe Statement, weil es sich über sechs Zeilen erstreckt.
+- source.abap:10 — No finding with a primary anchor on the literal line. A finding that names only line 10 is a shift to a formally valid line (check F01) and is not counted as a hit.
+- source.abap:9–14 — No range anchor as the primary anchor. The statement range is allowed as additional information, not as identity (KA-004: one convention, not two).
+- source.abap:9 — Do not treat it as a dynamic call because the literal is not on the same line.
+- source.abap:9 — No second finding for the same statement because it spans six lines.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -8175,10 +8175,10 @@ Quelle: SAP-PCE22, SAP-CLASSIC; wie CC-005 (release INPUT 141169–141178; class
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-044-B01** — Ohne Eingabe wird NO_INPUT ausgegeben und der Block verlassen; der Baustein wird nicht gerufen.  
+**CC-044-B01** — Without input NO_INPUT is output and the block is exited; the function module is not called.
 Anker: source.abap:5, source.abap:6, source.abap:7. Kontext: /business_scope, /execution_assumptions; Zweig `p_id IS INITIAL`.
 
-**CC-044-B02** — Bei Eingabe wird p_id an CONVERSION_EXIT_ALPHA_INPUT übergeben und dessen Ausgabe aus lv_internal ausgegeben.  
+**CC-044-B02** — With input, p_id is passed to CONVERSION_EXIT_ALPHA_INPUT and its output is output from lv_internal.
 Anker: source.abap:9 (Statement; Literal 9+2), source.abap:12, source.abap:14, source.abap:15. Kontext: /business_scope, /execution_assumptions; Zweig `p_id IS NOT INITIAL`.
 
 ### Erwartetes Prozessskelett
@@ -8306,12 +8306,12 @@ Vier Befunde, ein Objekt, eine Ursache in vier syntaktischen Formen. Ein Werkzeu
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:5` — Kein R16-Befund „Include nicht geliefert“. `INCLUDE STRUCTURE` ist eine Typanweisung, kein Programm-Include.
-- `source.abap:2`, `3`, `5`, `9` — Kein Lesebefund im Sinn eines ausgeführten SELECT. Es wird nichts gelesen; die Abhängigkeit ist eine Typabhängigkeit.
-- `source.abap:8` — Kein fünfter Befund. `ty_cust` ist ein lokaler Typ; die KNA1-Abhängigkeit ist an Zeile 5 deklariert und wird nicht an jeder Verwendung des lokalen Typs wiederholt.
-- `source.abap:11–13`, `17` — Keine Befunde an den Zuweisungen und Ausgaben; sie berühren nur lokale Datenobjekte.
-- Kein Nachfolger I_CUSTOMER als Drop-in für eine Typreferenz vorschlagen (R29: ein CDS-Lesemodell ersetzt keinen Strukturtyp).
-- `source.abap:14` — Nicht behaupten, der Report selektiere „nur die eingegebenen Kunden“. Es gibt keine Selektion.
+- source.abap:5 — No R16 finding "include not supplied". INCLUDE STRUCTURE is a type statement, not a program include.
+- source.abap:2, 3, 5, 9 — No read finding in the sense of an executed SELECT. Nothing is read; the dependency is a type dependency.
+- source.abap:8 — No fifth finding. ty_cust is a local type; the KNA1 dependency is declared at line 5 and is not repeated at every use of the local type.
+- source.abap:11–13, 17 — No findings at the assignments and outputs; they touch only local data objects.
+- Do not propose the successor I_CUSTOMER as a drop-in for a type reference (R29: a CDS read model does not replace a structure type).
+- source.abap:14 — Do not claim the report selects "only the entered customers". There is no selection.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -8334,10 +8334,10 @@ Quelle: SAP-PCE22; wie CC-001 (136428–136446). Der gelistete Nachfolger ist ei
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-045-B01** — Ist der Kundennummern-Range vom Selektionsbild leer, wird NO_RESTRICTION ausgegeben; eine Datenbankselektion findet im Slice nicht statt.  
+**CC-045-B01** — If the customer number range from the selection screen is empty, NO_RESTRICTION is output; no database selection takes place in the slice.
 Anker: source.abap:14, source.abap:15, source.abap:10–17 (kein SELECT). Kontext: /business_scope, /execution_assumptions; Zweig `s_kunnr[] IS INITIAL`.
 
-**CC-045-B02** — Eine lokal gesetzte Kundennummer wird in die um ein Kennzeichen erweiterte Struktur übernommen und mit dem Kennzeichen ausgegeben.  
+**CC-045-B02** — A locally set customer number is placed in the structure extended by a flag and output together with the flag.
 Anker: source.abap:11, source.abap:12, source.abap:13, source.abap:17. Kontext: /business_scope, /execution_assumptions; unbedingter Pfad.
 
 ### Erwartetes Prozessskelett
@@ -8457,12 +8457,12 @@ AT LINE-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:1–15` — Kein leeres Skelett und kein „kein Kontrollfluss gefunden“, weil `START-OF-SELECTION` fehlt (R33).
-- `source.abap:4`, `5` — Nicht als „unerreichbar“ oder „Code vor dem ersten Ereignis, wird nicht ausgeführt“ bewerten.
-- `source.abap:6`, `9`, `11`, `14` — Nicht als vier unabhängige Programme oder vier Startknoten ohne Kanten. Die Ereignisreihenfolge ist Sollvertrag: INITIALIZATION → Selektionsbild → AT SELECTION-SCREEN → implizites START-OF-SELECTION → (TOP-OF-PAGE bei erster Seitenausgabe) → Grundliste → (AT LINE-SELECTION je Zeilenwahl).
-- `source.abap:15` — Keine TOP-OF-PAGE-Kante aus der Verzweigungsliste. Für Verzweigungslisten gilt `TOP-OF-PAGE DURING LINE-SELECTION`, das hier fehlt.
-- `source.abap:14` — Keinen Benutzer, keine Rolle und keine „Prüfung durch Sachbearbeiter“ als Knoten erfinden (R19).
-- Kein D und kein R16: es gibt weder SAP-Objekt noch fehlende Quelle.
+- source.abap:1–15 — No empty skeleton and no "no control flow found" because START-OF-SELECTION is missing (R33).
+- source.abap:4, 5 — Do not assess it as "unreachable" or "code before the first event, is not executed".
+- source.abap:6, 9, 11, 14 — Not as four independent programs or four start nodes without edges. The event order is the expected contract: INITIALIZATION → selection screen → AT SELECTION-SCREEN → implicit START-OF-SELECTION → (TOP-OF-PAGE at the first page output) → basic list → (AT LINE-SELECTION per line selection).
+- source.abap:15 — No TOP-OF-PAGE edge from the details list. For details lists TOP-OF-PAGE DURING LINE-SELECTION applies, which is missing here.
+- source.abap:14 — Do not invent a user, a role or a "check by a clerk" as a node (R19).
+- No D and no R16: there is neither an SAP object nor a missing source.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -8470,16 +8470,16 @@ Keine explizite externe SAP-Repository-Identität im gelieferten Scope. `sy-lise
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-046-B01** — Vor dem Selektionsbild werden Land DE und der Listtitel vorbelegt.  
+**CC-046-B01** — Before the selection screen, country DE and the list title are preset.
 Anker: source.abap:6, source.abap:7, source.abap:8. Kontext: /business_scope, /execution_assumptions; läuft genau einmal, vor jeder Benutzereingabe.
 
-**CC-046-B02** — Nach dem Ausführen wird die Eingabe in Großbuchstaben gewandelt; eine Ablehnung der Eingabe gibt es nicht.  
+**CC-046-B02** — After execution the input is converted to upper case; there is no rejection of the input.
 Anker: source.abap:9, source.abap:10. Kontext: /business_scope, /execution_assumptions; kein Fehlerpfad, das Bild wird nicht erneut angezeigt.
 
-**CC-046-B03** — Die Grundliste besteht aus Land und einer festen Zeile; die erste Ausgabe löst den Seitenkopf mit Titel und Linie aus.  
+**CC-046-B03** — The basic list consists of the country and a fixed line; the first output triggers the page header with title and line.
 Anker: source.abap:4, source.abap:5, source.abap:11, source.abap:12, source.abap:13. Kontext: /business_scope, /execution_assumptions; impliziter Block START-OF-SELECTION.
 
-**CC-046-B04** — Wählt der Benutzer eine Listzeile, wird deren Inhalt als DETAIL in einer Verzweigungsliste ausgegeben; das kann beliebig oft oder nie geschehen.  
+**CC-046-B04** — If the user selects a list line, its content is output as DETAIL in a details list; this can happen any number of times or never.
 Anker: source.abap:14, source.abap:15. Kontext: /business_scope, /execution_assumptions; Benutzerereignis, 0..n-mal.
 
 ### Erwartetes Prozessskelett
@@ -8617,11 +8617,11 @@ END-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:1–10` — Nicht „keine Findings, B“, weil kein SELECT, kein CALL FUNCTION und keine Klasse vorkommt. Der Report liest eine Stammdatentabelle.
-- `source.abap:6` — `GET` ist kein Unterprogrammaufruf, kein LOOP über eine interne Tabelle des Reports und kein READ TABLE. Es ist ein Ereignisblock, den die LDB je gelesenem Satz auslöst.
-- `source.abap:2` — Kein R16-Befund. DDF ist ein SAP-Objekt; dass seine Implementierung nicht im Slice liegt, ist keine unaufgelöste kundeneigene Abhängigkeit.
-- Kein Selektionsbild aus dem Quelltext ableiten oder erfinden; es stammt aus der LDB und ist im Slice nicht sichtbar.
-- `source.abap:4–5` — Nicht als Ort des Lesens deuten; START-OF-SELECTION läuft vor dem ersten GET und liest nichts.
+- source.abap:1–10 — Not "no findings, B" because no SELECT, no CALL FUNCTION and no class occurs. The report reads a master data table.
+- source.abap:6 — GET is not a subroutine call, not a LOOP over an internal table of the report and not a READ TABLE. It is an event block that the LDB triggers for each record read.
+- source.abap:2 — No R16 finding. DDF is an SAP object; that its implementation is not in the slice is not an unresolved customer-specific dependency.
+- Do not derive or invent a selection screen from the source code; it comes from the LDB and is not visible in the slice.
+- source.abap:4–5 — Do not interpret it as the place of reading; START-OF-SELECTION runs before the first GET and reads nothing.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -8650,10 +8650,10 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**, nicht pauschal „kein N
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-047-B01** — Jeder von der LDB gelieferte KNA1-Satz erhöht den Zähler und wird mit Kundennummer und Name ausgegeben; welche Sätze das sind, bestimmt die LDB mit ihrem Selektionsbild, nicht der Report.  
+**CC-047-B01** — Each KNA1 record supplied by the LDB increments the counter and is output with customer number and name; which records these are is determined by the LDB with its selection screen, not by the report.
 Anker: source.abap:6, source.abap:7, source.abap:8. Kontext: /business_scope, /execution_assumptions, /ldb_binding (Kontextbeleg); je Satz, 0..n-mal.
 
-**CC-047-B02** — Nach dem letzten Satz wird die Anzahl als COUNT ausgegeben; der Zähler beginnt bei 0.  
+**CC-047-B02** — After the last record the count is output as COUNT; the counter starts at 0.
 Anker: source.abap:9, source.abap:10, source.abap:5. Kontext: /business_scope, /execution_assumptions; auch bei 0 Sätzen.
 
 ### Erwartetes Prozessskelett
@@ -8783,12 +8783,12 @@ ENDFORM.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:7` — Nicht „Programmende“ und nicht „Liste ohne END“. Der falsche CHECK verlässt den Ereignisblock START-OF-SELECTION; END-OF-SELECTION läuft trotzdem.
-- `source.abap:9` — Nicht „Schleife verlassen“ (das wäre EXIT) und nicht „Block verlassen“. Der falsche CHECK springt zur nächsten Iteration.
-- `source.abap:16` — Nicht „Programmende“ und nicht „Schleife“. Der falsche CHECK verlässt die FORM; die Verarbeitung geht nach dem PERFORM weiter.
-- `source.abap:7`, `9`, `16` — Keine pauschale Übersetzung „Prüfung nicht erfolgreich → Ende des gesamten Prozesses“ für alle drei (Prüfung §8.2).
-- `source.abap:12` — Nicht als opaker Aufruf. Die FORM steht in Zeile 15–18.
-- `source.abap:14` — Nicht als bedingte Ausgabe. END erscheint auf jedem Pfad.
+- source.abap:7 — Not "end of program" and not "list without END". The false CHECK exits the event block START-OF-SELECTION; END-OF-SELECTION runs nevertheless.
+- source.abap:9 — Not "loop exited" (that would be EXIT) and not "block exited". The false CHECK jumps to the next iteration.
+- source.abap:16 — Not "end of program" and not "loop". The false CHECK exits the FORM; processing continues after the PERFORM.
+- source.abap:7, 9, 16 — No blanket translation "check not successful → end of the entire process" for all three (check §8.2).
+- source.abap:12 — Not as an opaque call. The FORM is in lines 15–18.
+- source.abap:14 — Not as a conditional output. END appears on every path.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -8796,16 +8796,16 @@ Keine explizite externe SAP-Repository-Identität im gelieferten Scope. Kommenta
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-048-B01** — Bei negativem Mindestwert wird weder summiert noch eine Summe ausgegeben; die Liste enthält nur END.  
+**CC-048-B01** — If the minimum value is negative, nothing is summed and no sum is output; the list contains only END.
 Anker: source.abap:7 (Bedingung), source.abap:13, source.abap:14 (Ziel). Kontext: /business_scope, /execution_assumptions; Zweig `p_min < 0`; CHECK im Ereignisblock verlässt den Block, nicht das Programm.
 
-**CC-048-B02** — Nur Werte, die mindestens dem Mindestwert entsprechen, gehen in die Summe ein; kleinere werden übersprungen, die Schleife läuft weiter.  
+**CC-048-B02** — Only values that are at least the minimum value are included in the sum; smaller ones are skipped, the loop continues.
 Anker: source.abap:9 (Bedingung), source.abap:10, source.abap:8 (Ziel bei falscher Bedingung). Kontext: /business_scope, /execution_assumptions; je Iteration; Zweig `p_min >= 0` davor.
 
-**CC-048-B03** — Die Summe wird nur ausgegeben, wenn sie größer als 0 ist; sonst wird das Unterprogramm ohne Ausgabe verlassen.  
+**CC-048-B03** — The sum is output only if it is greater than 0; otherwise the subroutine is exited without output.
 Anker: source.abap:16 (Bedingung), source.abap:17, source.abap:18 (Ziel bei falscher Bedingung), source.abap:12. Kontext: /business_scope, /execution_assumptions; Zweige `p_min >= 0` und Schleife durchlaufen davor.
 
-**CC-048-B04** — END wird auf jedem Pfad ausgegeben, auch nach jedem der drei abgebrochenen Kontexte.  
+**CC-048-B04** — END is output on every path, including after each of the three exited contexts.
 Anker: source.abap:14, source.abap:5–13. Kontext: /business_scope, /execution_assumptions; unbedingt.
 
 ### Erwartetes Prozessskelett
@@ -8959,9 +8959,9 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:16` — Aus dieser Prüfung darf kein Gateway, kein Abbruchzweig und kein Fachsatz „nur mit F_KNA1_GEN-Berechtigung wird ausgegeben" abgeleitet werden.
-- `source.abap:4` — Der Sicherheitsbefund hebt oder senkt das Level nicht; C bleibt C, weder „B, weil geprüft" noch „D, weil sensibel".
-- `source.abap:11` — Ein CDS-Nachfolger ersetzt die Berechtigungsprüfung nicht; „Berechtigung wird von DCL übernommen" ist keine aus dem Code ablesbare Wahrheit.
+- source.abap:16 — From this check no gateway, no abort branch and no business statement "output only with F_KNA1_GEN authorization" may be derived.
+- source.abap:4 — The security finding neither raises nor lowers the level; C stays C, neither "B, because checked" nor "D, because sensitive".
+- source.abap:11 — A CDS successor does not replace the authorization check; "authorization is taken over by DCL" is not a truth readable from the code.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -8992,13 +8992,13 @@ Cloud-Rohzustand: `not_observed_in_extract`; Classic-Rohzustand: `not_asserted`.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-049-B01** — Ohne Anzeigeberechtigung (F_KNA1_BUK, Aktivität 03) für den eingegebenen Buchungskreis wird NO_AUTH ausgegeben und der Reportingblock verlassen.  
+**CC-049-B01** — Without display authorization (F_KNA1_BUK, activity 03) for the entered company code, NO_AUTH is output and the reporting block is exited.
 Anker: source.abap:4, source.abap:7, source.abap:8, source.abap:9. Kontext: Auswertung `sy-subrc <> 0` in :7; /business_scope, /execution_assumptions.
 
-**CC-049-B02** — Nur wenn die Berechtigungsprüfung bestanden ist, werden die Kunden des eingegebenen Buchungskreises gelesen.  
+**CC-049-B02** — Only if the authorization check is passed are the customers of the entered company code read.
 Anker: source.abap:11, source.abap:13. Kontext: Zweig „nicht abgebrochen" aus :7; /business_scope, /execution_assumptions.
 
-**CC-049-B03** — Bei Treffern werden Kundennummer und Buchungskreis als Liste ausgegeben; ohne Treffer erfolgt keine Ausgabe (kein Leermengenzweig).  
+**CC-049-B03** — If there are matches, customer number and company code are output as a list; without a match there is no output (no empty-set branch).
 Anker: source.abap:18, source.abap:19. Kontext: /business_scope, /execution_assumptions.
 
 Kein Fachsatz zu source.abap:16: geprüft ohne Wirkung (R28).
@@ -9173,9 +9173,9 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:5` — Kein R01-C: I_CUSTOMER ist im Profil freigegeben, nicht intern.
-- `source.abap:5` — Kein D und kein „B mit Abschlag": das A–D-Level kann „unsicher" nicht sagen; der Befund steht in der eigenen Aussageklasse.
-- `source.abap:1` — Kein A: der REPORT mit WRITE-Liste ist klassisches ABAP; usable bezeichnet die API-Oberfläche, nicht die Implementierung.
+- source.abap:5 — No R01 C: I_CUSTOMER is released in the profile, not internal.
+- source.abap:5 — No D and no "B with a discount": the A–D level cannot express "insecure"; the finding belongs in its own statement class.
+- source.abap:1 — No A: the REPORT with a WRITE list is classic ABAP; usable refers to the API surface, not the implementation.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -9187,13 +9187,13 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-050-B01** — Es werden Kunden mit dem eingegebenen Länderschlüssel gelesen, **unter Umgehung der Zugriffskontrolle der Entität** — die Treffermenge ist nicht auf die Berechtigung des Benutzers eingeschränkt.  
+**CC-050-B01** — Customers with the entered country key are read, bypassing the access control of the entity — the result set is not restricted to the user's authorization.
 Anker: source.abap:4, source.abap:5, source.abap:6. Kontext: /business_scope, /execution_assumptions, /profile (DCL vorhanden).
 
-**CC-050-B02** — Ohne Treffer wird NO_MATCH ausgegeben und der Reportingblock verlassen.  
+**CC-050-B02** — If there is no match, NO_MATCH is output and the reporting block is exited.
 Anker: source.abap:9, source.abap:11. Kontext: /business_scope, /execution_assumptions.
 
-**CC-050-B03** — Bei Treffern werden Kundennummer und Name als Liste ausgegeben.  
+**CC-050-B03** — If there are matches, customer number and name are output as a list.
 Anker: source.abap:14. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -9350,9 +9350,9 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:6` — Kein D: CLIENT SPECIFIED ist kein Schreibzugriff und keine Modifikation.
-- `source.abap:7` — `mandt = @p_mandt` ist keine „Filterung im eigenen Mandanten"; der Fachsatz heißt „Kunde aus Mandant p_mandt", nicht „Kundenliste".
-- `source.abap:5` — Der CDS-Nachfolger darf nicht als Drop-in genannt werden; die Nachfolgerliste bleibt erhalten, `drop_in_compatible` bleibt unbewiesen und ist hier durch die Mandantenachse widerlegt.
+- source.abap:6 — No D: CLIENT SPECIFIED is not a write access and not a modification.
+- source.abap:7 — mandt = @p_mandt is not "filtering in the own client"; the business statement is "customer from client p_mandt", not "customer list".
+- source.abap:5 — The CDS successor must not be named as a drop-in; the successor list is retained, drop_in_compatible remains unproven and is refuted here by the client axis.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -9375,13 +9375,13 @@ Quelle: SAP-PCE22; 136428–136446 (wie CC-001).
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-051-B01** — Der eingegebene Kunde wird aus dem eingegebenen Mandanten gelesen, nicht aus dem Anmeldemandanten.  
+**CC-051-B01** — The entered customer is read from the entered client, not from the logon client.
 Anker: source.abap:5, source.abap:6, source.abap:7, source.abap:8. Kontext: `CLIENT SPECIFIED` in :6 und Mandantenbedingung in :7; /business_scope, /execution_assumptions.
 
-**CC-051-B02** — Ohne Treffer wird NO_MATCH ausgegeben und der Reportingblock verlassen.  
+**CC-051-B02** — If there is no match, NO_MATCH is output and the reporting block is exited.
 Anker: source.abap:10, source.abap:11, source.abap:12. Kontext: Auswertung `sy-subrc <> 0`; /business_scope, /execution_assumptions.
 
-**CC-051-B03** — Bei Treffer werden Mandant, Kundennummer und Name ausgegeben.  
+**CC-051-B03** — If there is a match, client, customer number and name are output.
 Anker: source.abap:14. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -9532,9 +9532,9 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:5` — Kein D: Lesen ist kein Schreiben; das Level darf die Sensibilität nicht ausdrücken.
-- `source.abap:5` — Kein erfundener CDS-Nachfolger für Benutzerstammdaten; die leere Liste ist begründet, nicht unbekannt.
-- `source.abap:12` — Die Ausgabe von Benutzername und Sperrstatus ist für sich kein Sicherheitsbefund; der Befund hängt an BCODE (:4+3, :13).
+- source.abap:5 — No D: reading is not writing; the level must not express the sensitivity.
+- source.abap:5 — No invented CDS successor for user master data; the empty list is justified, not unknown.
+- source.abap:12 — The output of user name and lock status is not in itself a "security finding"; the finding is attached to BCODE (:4+3, :13).
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -9546,13 +9546,13 @@ Nachfolgerliste: `[]` — **Begründung: kein Nachfolger; der Zugriff auf Kennwo
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-052-B01** — Für den eingegebenen Benutzer werden Benutzername und Sperrstatus ausgegeben.  
+**CC-052-B01** — For the entered user, user name and lock status are output.
 Anker: source.abap:4, source.abap:6, source.abap:12. Kontext: Zweig „Treffer" aus :8; /business_scope, /execution_assumptions.
 
-**CC-052-B02** — Für den eingegebenen Benutzer wird der Kennwort-Hash ausgegeben.  
+**CC-052-B02** — For the entered user, the password hash is output.
 Anker: source.abap:4, source.abap:13. Kontext: Zweig „Treffer" aus :8; /business_scope, /execution_assumptions. Dieser Satz ist Fachsatz und Sicherheitsbefund zugleich; er wird nicht weggelassen, weil er unangenehm ist.
 
-**CC-052-B03** — Ohne Treffer wird NO_USER ausgegeben und der Reportingblock verlassen.  
+**CC-052-B03** — If there is no match, NO_USER is output and the reporting block is exited.
 Anker: source.abap:8, source.abap:9, source.abap:10. Kontext: Auswertung `sy-subrc <> 0`; /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -9688,13 +9688,13 @@ Die Sollantwort des Falls ist Variante 1. Variante 2 ist der Vertrag für einen 
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:1` — **Kein D aus dem FORM-Namen** und kein D aus dem Dateinamen MV45AFZZ (Fable KA-052-Lesart; v2-Fassung dieses Falls). Der Name ist ein Hinweis (F01), das Level braucht den Mechanismus (F02).
-- `source.abap:1` — Kein B „Standard-ABAP ohne SAP-Abhängigkeit": `vbak` ist unaufgelöst; ohne Host oder eigene Deklaration ist die Abhängigkeit offen (Unterschied zu CC-068, wo `REPORT`, eigene Deklaration und eigener PERFORM die Hypothese widerlegen).
-- `source.abap:1` — **Unknown ist hier die richtige Antwort.** Die v2-Zeile „Kein `Unknown` ‚Hostmetadaten fehlen': CC-010 verlangt ein Fixture für einen Z-Report; hier ist der Host im Code" ist zurückgenommen (REV2-02).
-- `source.abap:8` — `vbak-lifsk = lv_block` ist eine Zuweisung an die Arbeitsstruktur, **kein** Datenbank-UPDATE: kein R02-Befund, kein `write`-Knoten.
-- `source.abap:4` — `vbak` ist ohne Beleg keine SAP-Tabelle; keine R01-Abhängigkeit auf TABL/VBAK behaupten (Fallbogen §7: „eine undeklarierte globale Variable wird nicht dadurch zur SAP-Tabelle").
-- Kein Fachsatz „die Liefersperre wird gespeichert": angekündigt, nicht persistiert im Ausschnitt; ob ein Host sie speichert, ist nicht ableitbar.
-- gesamte Scheibe — kein Berechtigungsbefund allein aus dem fehlenden Check im Exitfragment: Hostkontrollen können außerhalb liegen (R28@2.1.0: keine Beobachtung).
+- source.abap:1 — No D from the FORM name and no D from the file name MV45AFZZ (Fable KA-052 reading; v2 version of this case). The name is a hint (F01); the level needs the mechanism (F02).
+- source.abap:1 — No B "standard ABAP without SAP dependency": vbak is unresolved; without a host or an own declaration the dependency is open (difference from CC-068, where REPORT, own declaration and own PERFORM refute the hypothesis).
+- source.abap:1 — Unknown is the correct answer here. The v2 line "No Unknown 'host metadata missing': CC-010 requires a fixture for a Z report; here the host is in the code" is withdrawn (REV2-02).
+- source.abap:8 — vbak-lifsk = lv_block is an assignment to the work structure, not a database UPDATE: no R02 finding, no write node.
+- source.abap:4 — Without evidence vbak is not an SAP table; do not claim an R01 dependency on TABL/VBAK (case sheet §7: "an undeclared global variable does not thereby become an SAP table").
+- No business statement "the delivery block is saved": announced, not persisted in the excerpt; whether a host saves it cannot be derived.
+- whole slice — no authorization finding solely from the missing check in the exit fragment: host controls may lie outside (R28@2.1.0: no observation).
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -9710,12 +9710,12 @@ Cloud-Rohzustand: `not_observed_in_extract`; Classic-Rohzustand: `not_asserted`.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-053-B01** — Enthält die Arbeitsstruktur `vbak` bei Aufruf die Auftragsart TA und einen Nettowert größer als 20000 (Gleichheit nicht), wird lokal der Sperrkennzeichen-Kandidat 01 ermittelt. Währung des Nettowerts und Bedeutung des Sperrcodes sind im Code nicht belegt; der Typ von NETWR hängt am Hostkontext (F03).  
+**CC-053-B01** — If the work structure vbak contains, at the time of the call, the order type TA and a net value greater than 20000 (equality does not count), the block indicator candidate 01 is determined locally. The currency of the net value and the meaning of the block code are not evidenced in the code; the type of NETWR depends on the host context (F03).
 Anker: source.abap:4, source.abap:5. Kontext: Vorbelegung leer in :3; /business_scope, /execution_assumptions (Hosthypothese).
 
 **Korrektur v2.1 (Fallbogen CC-053, B01 „stimme zu mit Kontext"):** vorher „Bei Auftragsart TA und einem Nettowert größer als 20000 (Gleichheit nicht) wird der Sperrkennzeichen-Kandidat 01 ermittelt." → jetzt mit „Arbeitsstruktur bei Aufruf", Währungs- und Sperrcodevorbehalt → warum: R23 (kein Betragssatz ohne Währung); der Satz beschreibt lokale Logik über gelieferte Werte, nicht Belegdaten.
 
-**CC-053-B02** — Nur wenn ein Sperrkennzeichen-Kandidat ermittelt wurde, wird er in das Feld LIFSK der Struktur `vbak` übernommen — ein vorhandener anderer Wert wird dabei überschrieben. Andernfalls bleibt ein bereits vorhandener LIFSK-Wert unverändert (negativer Pfad). Angekündigt, nicht persistiert im Ausschnitt: kein COMMIT, kein Datenbankzugriff; ob und wann ein Host den Wert speichert, ist aus dem Ausschnitt nicht ableitbar.  
+**CC-053-B02** — Only if a block indicator candidate was determined is it placed in the field LIFSK of the structure vbak — an existing different value is overwritten in the process. Otherwise an already existing LIFSK value remains unchanged (negative path). Announced, not persisted in the excerpt: no COMMIT, no database access; whether and when a host saves the value cannot be derived from the excerpt.
 Anker: source.abap:7, source.abap:8. Kontext: Zweig aus :7; Hosthypothese aus F01; /business_scope, /execution_assumptions. Achse: keine Transaktion in der Scheibe; `persistence_evidence = none`.
 
 **Korrektur v2.1 (Fallbogen CC-053, B02 „stimme teilweise zu"):** vorher „… in den Belegkopf der Arbeitsstruktur übernommen — angekündigt, nicht persistiert im Ausschnitt (kein COMMIT; das Sichern übernimmt der Host nach dem FORM)." → jetzt mit dem negativen Pfad (vorhandener Wert bleibt), dem Überschreiben und ohne „das Sichern übernimmt der Host" → warum: „Belegkopf" und „der Host sichert" setzten den Host voraus, der nicht belegt ist; der negative Pfad ist fachlich relevant (bestehende Sperre bleibt) und war nicht ausgeschrieben.
@@ -9887,10 +9887,10 @@ ENDFORM.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:2` — Kommentar ist kein Enhancement, kein Userexit und kein Hostkontext: kein D, kein R32-Marker, kein R10 (R13a).
-- `source.abap:21` — Das FORM darf nicht als unerreichbar oder überflüssig gemeldet werden.
-- `source.abap:24` — Die Informationsmeldung ist kein Persistenzsatz; kein Transaktionsknoten.
-- `source.abap:14` — Kein D wegen SAP-GUI-Technik (R11); kein A wegen fehlender SQL.
+- source.abap:2 — A comment is not an enhancement, not a user exit and not a host context: no D, no R32 marker, no R10 (R13a).
+- source.abap:21 — The FORM must not be reported as unreachable or superfluous.
+- source.abap:24 — The information message is not a persistence statement; no transaction node.
+- source.abap:14 — No D because of SAP GUI technology (R11); no A because of missing SQL.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -9904,10 +9904,10 @@ Der Typpool SLIS (:8, :22) ist eine DDIC-Typabhängigkeit nach R29; R29 gehört 
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-054-B01** — Zwei fest hinterlegte Zeilen (Kundennummer, Name) werden in einem ALV-Grid angezeigt.  
+**CC-054-B01** — Two hard-coded rows (customer number, name) are displayed in an ALV grid.
 Anker: source.abap:10, source.abap:12, source.abap:14. Kontext: /business_scope, /execution_assumptions.
 
-**CC-054-B02** — Bei Doppelklick auf eine Zelle wird deren Wert als Informationsmeldung angezeigt; jedes andere Benutzerkommando bleibt ohne Reaktion.  
+**CC-054-B02** — On a double-click on a cell, its value is displayed as an information message; every other user command gets no response.
 Anker: source.abap:23, source.abap:24. Kontext: Erreichbarkeit über den Callback aus :17 (F01); Bedingung `iv_ucomm = '&IC1'`; /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -10051,10 +10051,10 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:12` — `'KNA1-NAME1'` ist kein `UPDATE kna1`: kein R02-Befund, kein D aus dem Feldnamen.
-- `source.abap:14` — Nicht „keine Befunde, B": ein Batch-Input ist keine SAP-abhängigkeitsfreie Standard-ABAP-Zeile.
-- `source.abap:14` — Kein D „Anti-Clean-Core": SAP-LEVEL nennt Batch-Input nicht unter D; die Einstufung C ist ein Kandidat (Prüferfrage), D wäre erfunden.
-- `source.abap:21` — BDC_DONE ist kein Nachweis „Kunde angelegt": keine E-Meldung ist kein Erfolgsbeweis (Abbruch ohne E-Meldung, Warnungen, Umleitung im Ziel).
+- source.abap:12 — 'KNA1-NAME1' is not an UPDATE kna1: no R02 finding, no D from the field name.
+- source.abap:14 — Not "no findings, B": a batch input is not a standard ABAP line free of SAP dependencies.
+- source.abap:14 — No D "anti-clean-core": SAP-LEVEL does not list batch input under D; the classification C is a candidate (reviewer question), D would be invented.
+- source.abap:21 — BDC_DONE is not evidence of "customer created": no E message is not proof of success (abort without E message, warnings, redirection in the target).
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -10070,10 +10070,10 @@ Die Strukturen BDCDATA (:4) und BDCMSGCOLL (:5) sind DDIC-Typabhängigkeiten nac
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-055-B01** — Für den eingegebenen Kunden wird die Anlage über die Transaktion XD01 mit dem eingegebenen Namen angestoßen und synchron verbucht; ob und was persistiert wird, entscheidet die aufgerufene Transaktion — im Ausschnitt gibt es keinen COMMIT und keinen Erfolgsnachweis außer dem Fehlen einer E-Meldung.  
+**CC-055-B01** — For the entered customer, the creation is triggered via transaction XD01 with the entered name and updated synchronously; whether and what is persisted is decided by the called transaction — in the excerpt there is no COMMIT and no evidence of success other than the absence of an E message.
 Anker: source.abap:7, source.abap:9, source.abap:12, source.abap:14. Kontext: `UPDATE 'S'` in :15; /business_scope, /execution_assumptions, /profile (Zielsystem).
 
-**CC-055-B02** — Enthält die Meldungstabelle eine Fehlermeldung, wird BDC_ERROR ausgegeben, sonst BDC_DONE.  
+**CC-055-B02** — If the message table contains an error message, BDC_ERROR is output, otherwise BDC_DONE.
 Anker: source.abap:17, source.abap:18, source.abap:19, source.abap:21. Kontext: Auswertung `sy-subrc = 0` nach READ TABLE; /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -10236,10 +10236,10 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:9` — Kein D: SUBMIT ist kein Eingriff in SAP-Objekte; DeepSeeks „Level D" ist eine Wertung, kein SAP-Level.
-- `source.abap:9` — Kein C: eine fehlende kundeneigene Quelle ist kein SAP-internes Objekt (Sinn von v1-R16, hier ohne Regelzitat).
-- `source.abap:12` — Kein Fachsatz über das, was das Kind getan, gelesen oder ausgegeben hat.
-- Kein Knoten „Kindprogramm liest Kunden" oder ähnliches: das Innere bleibt opak.
+- source.abap:9 — No D: SUBMIT is not an intervention in SAP objects; DeepSeek's "level D" is an assessment, not an SAP level.
+- source.abap:9 — No C: a missing customer-specific source is not an SAP-internal object (meaning of v1 R16, here without rule citation).
+- source.abap:12 — No business statement about what the child did, read or output.
+- No node "child program reads customers" or similar: the inside remains opaque.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -10251,10 +10251,10 @@ Keine SAP-Repository-Identität im gelieferten Scope. Das ist kein automatisches
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-056-B01** — Ohne Länderschlüssel wird NO_COUNTRY ausgegeben und der Reportingblock verlassen.  
+**CC-056-B01** — Without a country key NO_COUNTRY is output and the reporting block is exited.
 Anker: source.abap:4, source.abap:5, source.abap:6. Kontext: /business_scope, /execution_assumptions.
 
-**CC-056-B02** — Mit Länderschlüssel wird CHILD_START ausgegeben, das Kindprogramm mit diesem Länderschlüssel gestartet, und nach dessen Ende CHILD_DONE ausgegeben. Was das Kind tut, ist nicht Teil dieses Satzes.  
+**CC-056-B02** — With a country key CHILD_START is output, the child program is started with this country key, and after it ends CHILD_DONE is output. What the child does is not part of this statement.
 Anker: source.abap:8, source.abap:9, source.abap:10, source.abap:12. Kontext: Zweig „nicht abgebrochen" aus :4; /business_scope, /execution_assumptions, /missing_dependency.
 
 ### Erwartetes Prozessskelett
@@ -10445,11 +10445,11 @@ ENDCLASS.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- Profil 2, `source.abap:10+4` — kein Level C melden; kein „C mit Nachfolger I_CUSTOMER" als Klassifikation. Der Nachfolger ist ein Hinweis, das Level ist n/a.
-- Profil 2, `source.abap:1` — kein `Unknown`: die Antwort ist entscheidbar (nicht aktivierbar), nicht unentscheidbar. `Unknown` ist epistemisch etwas anderes als „nicht anwendbar" (Fallbogen §7).
-- Profil 2 — kein leeres Skelett und kein `process = not_applicable` für das Source-Modell (REV2-12).
-- Profil 1, `source.abap:1` — kein B „weil es eine Klasse und kein Report ist"; der Artefakttyp ändert R01 nicht.
-- beide Profile — kein Sicherheitsbefund aus diesem Slice; ein Wechsel zu CDS kann Berechtigungs-/Filtersemantik verändern, was aus dem Nachfolgernamen nicht ableitbar ist (Fallbogen §6).
+- Profile 2, source.abap:10+4 — do not report level C; no "C with successor I_CUSTOMER" as a classification. The successor is a hint, the level is n/a.
+- Profile 2, source.abap:1 — no Unknown: the answer is decidable (cannot be activated), not undecidable. Unknown is epistemically something different from "not applicable" (case sheet §7).
+- Profile 2 — no empty skeleton and no process = not_applicable for the source model (REV2-12).
+- Profile 1, source.abap:1 — no B "because it is a class and not a report"; the artifact type does not change R01.
+- both profiles — no security finding from this slice; a switch to CDS can change authorization/filter semantics, which cannot be derived from the successor name (case sheet §6).
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -10474,12 +10474,12 @@ Quelle: SAP-PCE22; 136428–136446 (wie CC-001; keine eigene Neuabfrage). Das Re
 
 Die Sätze beschreiben in Profil 1 das Verhalten der ausführbaren Quelle. In Profil 2 beschreiben sie die rekonstruierte Altlogik (`source_process`), nicht ein Zielverhalten; der Comparator darf sie dort nicht als „im Ziel belegt" werten, aber auch nicht verwerfen.
 
-**CC-057-B01** — Die Methode **versucht**, für den exakt übergebenen Schlüssel den Länderschlüssel aus KNA1 zu lesen; nur bei Treffer (`sy-subrc = 0`) wird der gefundene Wert übernommen.  
+**CC-057-B01** — The method attempts to read the country key from KNA1 for the exactly passed key; only on a match (sy-subrc = 0) is the value found taken over.
 Anker: source.abap:10+4, source.abap:12, source.abap:14, source.abap:15. Kontext: /execution_assumptions (Eingabeformat: numerischer Schlüssel nur nullaufgefüllt, alphanumerischer in seiner Schreibweise — S15).
 
 **Korrektur v2.1 (Fallbogen CC-057, B01 „enger formulieren"; REV2-10):** vorher „Für die übergebene Kundennummer wird der Länderschlüssel aus KNA1 gelesen." mit Kontext „ohne führende Nullen kein Treffer" → jetzt Versuch mit Trefferbedingung, Eingabeformat nach numerisch/alphanumerisch unterschieden → warum: der Satz behauptete den Treffer; der Kontextsatz war der zu weite ALPHA-Satz (S15).
 
-**CC-057-B02** — Ohne Treffer bleibt der Rückgabewert initial; der sichtbare Code erzeugt keine Fehlermeldung und keinen Abbruch. Nicht abgefangene Datenbank-/Laufzeitfehler sind davon zu unterscheiden (nicht modelliert).  
+**CC-057-B02** — Without a match the return value remains initial; the visible code produces no error message and no termination. Uncaught database/runtime errors are to be distinguished from this (not modeled).
 Anker: source.abap:14, source.abap:16. Kontext: /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -10629,12 +10629,12 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- Profil 1, `source.abap:4+5` — kein R01-Befund (C) für I_CUSTOMER; kein „Nachfolger fehlt" (das Objekt ist selbst released).
-- Profil 1 und 2, `source.abap:1` — aus `cloud_api_surface = usable` kein „Report ist cloud-fähig" ableiten (CC-019-Heuristik).
-- Profil 2, `source.abap:4+5` — die SELECT-Zeile nicht als Ursache der Nichtaktivierbarkeit melden.
-- Profil 2 — kein leeres Skelett (REV2-12).
-- beide Profile, `source.abap:4` — kein „Berechtigung geprüft" oder „DCL wirksam" aus dem Wort `released`; kein `security_and_authorization`-Befund (kein `WITH PRIVILEGED ACCESS`, keine Beobachtung).
-- beide Profile, `source.abap:4` — keine Feldgleichheit `CustomerName` ≙ `KNA1-NAME1` über Releases hinweg unterstellen (S21).
+- Profile 1, source.abap:4+5 — no R01 finding (C) for I_CUSTOMER; no "successor missing" (the object is itself released).
+- Profile 1 and 2, source.abap:1 — do not derive "report is cloud-ready" from cloud_api_surface = usable (CC-019 heuristic).
+- Profile 2, source.abap:4+5 — do not report the SELECT line as the cause of the inability to activate.
+- Profile 2 — no empty skeleton (REV2-12).
+- both profiles, source.abap:4 — no "authorization checked" or "DCL effective" from the word released; no security_and_authorization finding (no WITH PRIVILEGED ACCESS, no observation).
+- both profiles, source.abap:4 — do not assume field equality CustomerName ≙ KNA1-NAME1 across releases (S21).
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -10652,15 +10652,15 @@ Quelle: SAP-PCE22; 136428–136446 (dort als Nachfolger von KNA1 beobachtet) und
 
 Gelten in Profil 1; in Profil 2 als `source_process` (siehe CC-057).
 
-**CC-058-B01** — Es werden Kunden mit dem eingegebenen Länderschlüssel selektiert (Modellscope). Native Gültigkeit der Feldnamen im Zielrelease und die DCL des Lesemodells sind getrennt zu prüfen; die Public Edition 2608 ändert die Herkunft von `CustomerName` (S21) — nicht auf das 2023-Fixture zu übertragen, aber eine Warnung gegen releaseübergreifende Feldgleichheit.  
+**CC-058-B01** — Customers with the entered country key are selected (model scope). Native validity of the field names in the target release and the DCL of the read model must be checked separately; Public Edition 2608 changes the origin of CustomerName (S21) — not to be transferred to the 2023 fixture, but a warning against assuming field equality across releases.
 Anker: source.abap:6, source.abap:4. Kontext: /business_scope, /execution_assumptions.
 
 **Korrektur v2.1 (Fallbogen CC-058, B01 „stimme zu im Modellscope"):** vorher ohne Vorbehalt → jetzt mit Modellscope und S21-Hinweis → warum: Feldsemantik über Releases ist nicht aus dem Nachfolgernamen ableitbar (REV2-14, S21).
 
-**CC-058-B02** — Ohne Treffer wird NO_MATCH ausgegeben und der Reportingblock verlassen.  
+**CC-058-B02** — If there is no match, NO_MATCH is output and the reporting block is exited.
 Anker: source.abap:9, source.abap:11. Kontext: /business_scope, /execution_assumptions.
 
-**CC-058-B03** — Bei Treffern werden Kundennummer und Name der gelieferten Ergebnismenge als Liste ausgegeben. Ob das Lesemodell dieselbe Menge liefert wie KNA1 in CC-001 (Berechtigungsfilter, Feldsemantik), ist nicht aus dem Code ablesbar und nicht belegt.  
+**CC-058-B03** — If there are matches, customer number and name of the supplied result set are output as a list. Whether the read model supplies the same set as KNA1 in CC-001 (authorization filter, field semantics) cannot be read from the code and is not evidenced.
 Anker: source.abap:14, source.abap:13. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -10824,10 +10824,10 @@ ENDCLASS.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- Profil 2, `source.abap:1` — kein A ohne S01 (False Green); kein B/C/D **wegen** S01 (Briefing Regel 7).
-- Profil 1, `source.abap:1` — kein A „weil RAP"; die Sprachversion ist standard.
-- `source.abap:13` — kein `write`-Befund nach R02 (EML MODIFY ist kein Datenbank-UPDATE auf eine SAP-Tabelle; das BO ist kundeneigen).
-- `source.abap:13` — kein `transaction`-Knoten: die Determination persistiert nichts (siehe B03).
+- Profile 2, source.abap:1 — no A without S01 (false green); no B/C/D because of S01 (briefing rule 7).
+- Profile 1, source.abap:1 — no A "because RAP"; the language version is standard.
+- source.abap:13 — no write finding under R02 (EML MODIFY is not a database UPDATE on an SAP table; the BO is customer-specific).
+- source.abap:13 — no transaction node: the determination persists nothing (see B03).
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -10843,13 +10843,13 @@ Nachfolgerliste: `[]` — RAP-Basisklasse, kein Nachfolgerkonzept.
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-059-B01** — Bei Anlage oder Änderung eines Auftrags wird `status` auf M gesetzt, wenn der Nettobetrag größer als 10000 ist, sonst auf A.  
+**CC-059-B01** — When an order is created or changed, status is set to M if the net amount is greater than 10000, otherwise to A.
 Anker: source.abap:13, source.abap:18 (Sekundäranker, Bedingungszeile). Kontext: /rap_context (Determination ON MODIFY), /execution_assumptions (LOCAL MODE: ohne BO-Berechtigungsprüfung — S01).
 
-**CC-059-B02** — Die Ableitung ist kein Genehmigungsschritt: es wird ein Statuswert geschrieben; kein Workflow, keine Person, keine Benachrichtigung.  
+**CC-059-B02** — The derivation is not an approval step: a status value is written; no workflow, no person, no notification.
 Anker: source.abap:15, source.abap:18. Kontext: /business_scope.
 
-**CC-059-B03** — Persistenz: angekündigt, nicht persistiert. Der MODIFY wirkt auf den RAP-Transaktionspuffer; gespeichert wird erst beim SAVE der RAP-LUW durch den Aufrufer (`COMMIT ENTITIES`), der in dieser Scheibe nicht enthalten ist.  
+**CC-059-B03** — Persistence: announced, not persisted. The MODIFY acts on the RAP transactional buffer; it is saved only at the SAVE of the RAP LUW by the caller (COMMIT ENTITIES), which is not contained in this slice.
 Anker: source.abap:13, source.abap:20. Kontext: /rap_context, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -11067,13 +11067,13 @@ ENDCLASS.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- Profil 2, `zcl_route_service.clas.abap:11` — kein `known_worst_level = A` oder `none`, „weil der Wrapper freigegeben ist" (R30).
-- Profil 2, `zcl_route_service.clas.abap:1` — kein `component_level = C` für den Konsumenten, „weil der Wrapper KNA1 liest" (der Vertrag stoppt das Komponentenlevel).
-- Profil 2 — kein „A" für den **Scope** `extension` und kein A-Label ohne Scope-Angabe: eine nackte A-Kachel mit verborgenem C-Unterbau ist irreführend (REV2-08).
-- Profil 1, `zcl_customer_api.clas.abap:1` — kein B für den Wrapper „weil es ein Z-Objekt ist" (Grok H-001: die Fassade ändert das Level nicht).
-- beide Profile, `zcl_customer_api.clas.abap:10` — kein `Unknown` für den Konsumenten: der Wrapper ist geliefert, `completeness` ist vollständig (R16-Logik greift nicht).
-- beide Profile, `zcl_route_service.clas.abap:12` — kein Fachsatz „Kunde existiert nicht" / „Kunde unbekannt" aus `lv_name IS INITIAL` (F04).
-- beide Profile — kein „Berechtigung geprüft" aus C1; kein `security_and_authorization`-Befund erfunden (keine Beobachtung; die KNA1-Abfrage kann Zugriffskontrollen brauchen, die im Slice nicht nachweisbar sind).
+- Profile 2, zcl_route_service.clas.abap:11 — no known_worst_level = A or none "because the wrapper is released" (R30).
+- Profile 2, zcl_route_service.clas.abap:1 — no component_level = C for the consumer "because the wrapper reads KNA1" (the contract stops the component level).
+- Profile 2 — no "A" for the scope extension and no A label without a scope indication: a bare A tile with a hidden C substructure is misleading (REV2-08).
+- Profile 1, zcl_customer_api.clas.abap:1 — no B for the wrapper "because it is a Z object" (Grok H-001: the facade does not change the level).
+- both profiles, zcl_customer_api.clas.abap:10 — no Unknown for the consumer: the wrapper is supplied, completeness is complete (R16 logic does not apply).
+- both profiles, zcl_route_service.clas.abap:12 — no business statement "customer does not exist" / "customer unknown" from lv_name IS INITIAL (F04).
+- both profiles — no "authorization checked" from C1; no invented security_and_authorization finding (no observation; the KNA1 query may need access controls that cannot be demonstrated in the slice).
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -11103,17 +11103,17 @@ Identität: `{"tadirObject": "CLAS", "tadirObjName": "ZCL_ROUTE_SERVICE", "objec
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-060-B01** — Liefert `get_name` einen initialen String — kein Satz in KNA1 gefunden **oder** ein vorhandener Kunde mit initialem NAME1 —, setzt `determine` die Route UNKNOWN_CUSTOMER und kehrt zurück; die Betragsregel wird nicht ausgewertet.  
+**CC-060-B01** — If get_name returns an initial string — no record found in KNA1, or an existing customer with an initial NAME1 —, determine sets the route UNKNOWN_CUSTOMER and returns; the amount rule is not evaluated.
 Anker: zcl_route_service.clas.abap:11, :12, :13, :14; zcl_customer_api.clas.abap:10–16 (Wrapperbezug). Kontext: /execution_assumptions (Eingabeformat: numerischer Schlüssel ohne Nullauffüllung → kein Treffer → UNKNOWN_CUSTOMER; alphanumerischer Schlüssel trifft in seiner Schreibweise — S15).
 
 **Korrektur v2.1 (Fallbogen CC-060, B01 „stimme in präziser Fassung zu"; REV2-09, REV2-10):** vorher „Ist zur Kundennummer kein Name ermittelbar, lautet die Route UNKNOWN_CUSTOMER …" mit Kontext „ohne führende Nullen kein Treffer" → jetzt „initialer String — kein Satz oder initialer NAME1", mit Wrapperbezug und bedingtem Eingabeformat → warum: der Wrapper liefert keinen Existenzindikator; der ALPHA-Kontextsatz war zu weit (S15).
 
-**CC-060-B02** — Bei **nicht initialem zurückgegebenem Namen** ist die Route MANAGER_ROUTE, wenn `iv_amount` größer als 10000 ist (Gleichheit: AUTO_ROUTE), sonst AUTO_ROUTE. Der Code prüft keine Währung (R23), keine tatsächlich erfolgte Freigabe und keinen unabhängigen Existenzindikator; die Route ist ein berechneter Text, keine Genehmigung (R18).  
+**CC-060-B02** — If the returned name is not initial, the route is MANAGER_ROUTE if iv_amount is greater than 10000 (equality: AUTO_ROUTE), otherwise AUTO_ROUTE. The code checks no currency (R23), no approval actually given and no independent existence indicator; the route is a calculated text, not an approval (R18).
 Anker: zcl_route_service.clas.abap:16 (`expression_path` `#cond`, `#arm1`, `#arm2`), :12. Kontext: /business_scope; Zweig „Name nicht initial" (B01 davor).
 
 **Korrektur v2.1 (Fallbogen CC-060, B02 „widerspreche der Verkürzung ‚bekannter Kunde'"; REV2-09):** vorher „Bei bekanntem Kunden ist die Route MANAGER_ROUTE, wenn der Betrag größer als 10000 ist, sonst AUTO_ROUTE." → jetzt „bei nicht initialem zurückgegebenem Namen …", mit Grenzwert, Währungs- und Genehmigungsvorbehalt → warum: der Code trägt „Name nicht initial", nicht „Kunde bekannt"; ein Umbau auf ein explizites `found`-Kennzeichen wäre eine fachliche Änderung, kein Refactoring (W04).
 
-**CC-060-B03** — Die vorliegende Wrapperimplementierung liest NAME1 aus KNA1; der Konsumententext verwendet nur die Wrapper-API und sieht die Herkunft nicht. Das Analysepaket enthält beide Quellen (`scope_members`) und stellt den transitiven Bezug dar — das ist der Grund, warum `extension_level` und `known_worst_level` C sind, während `component_level` des Konsumenten es nicht ist.  
+**CC-060-B03** — The present wrapper implementation reads NAME1 from KNA1; the consumer text uses only the wrapper API and does not see the origin. The analysis package contains both sources (scope_members) and shows the transitive relationship — this is the reason why extension_level and known_worst_level are C, while the consumer's component_level is not.
 Anker: zcl_customer_api.clas.abap:10+4, :10–15; zcl_route_service.clas.abap:11. Kontext: /business_scope.
 
 ### Zusätzliche fachliche Prüfeingaben
@@ -11279,12 +11279,12 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:14` — Nicht „Stringtemplate ohne Konsument ist kein Statement" (R13a@2.0.0; CC-016-Lesart „Stringtemplate enthält keinen ausgeführten Aufruf"). CC-016 bleibt richtig: dort ist der eingebettete Ausdruck ein Variablenlesen (`{ lv_text }`) und der Rest Text. Hier ist der eingebettete Ausdruck ein Aufruf.
-- `source.abap:14` — Kein R13b-Befund: es gibt keinen interpretierenden Konsumenten (kein ADBC, kein `GENERATE`, kein dynamisches SQL). Der Aufruf ist gewöhnliches ABAP innerhalb des Ausdrucks, kein „Literal wird Code".
-- `source.abap:14` — Nicht als toten Code oder entfernbare Zuweisung werten, weil `unused_text` unbenutzt ist: die rechte Seite hat einen Seiteneffekt.
-- `source.abap:14` — Kein R06/R07-Befund „dynamischer Aufruf": Klasse und Methode stehen statisch.
-- `source.abap:10`, `source.abap:14` — Kein Phantomobjekt aus dem Text `tick`.
-- `source.abap:15` — Kein Fachsatz „es wird 0 ausgegeben"; das wäre die Folge der v2-Lesart, die den Aufruf verliert.
+- source.abap:14 — Not "a string template without a consumer is not a statement" (R13a@2.0.0; CC-016 reading "string template contains no executed call"). CC-016 remains correct: there the embedded expression is a variable read ({ lv_text }) and the rest is text. Here the embedded expression is a call.
+- source.abap:14 — No R13b finding: there is no interpreting consumer (no ADBC, no GENERATE, no dynamic SQL). The call is ordinary ABAP within the expression, not "a literal becomes code".
+- source.abap:14 — Do not assess it as dead code or a removable assignment because unused_text is unused: the right-hand side has a side effect.
+- source.abap:14 — No R06/R07 finding "dynamic call": class and method are stated statically.
+- source.abap:10, source.abap:14 — No phantom object from the text tick.
+- source.abap:15 — No business statement "0 is output"; that would be the consequence of the v2 reading, which loses the call.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -11292,10 +11292,10 @@ Keine SAP-Repository-Identität im gelieferten Scope. `LCL_COUNTER` ist eine lok
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-061-B01** — Beim Auswerten des Templates wird `tick` genau einmal aufgerufen; der Zähler steigt von 0 auf 1; der gelieferte Text „tick" wird nicht weiterverwendet.  
+**CC-061-B01** — When the template is evaluated, tick is called exactly once; the counter rises from 0 to 1; the returned text "tick" is not used further.
 Anker: source.abap:14, source.abap:9. Kontext: unbedingter Pfad; /execution_assumptions (Erwartung aus Sprachsemantik S12, nicht ausgeführt).
 
-**CC-061-B02** — Der Zählerstand wird ausgegeben; Sollwert 1.  
+**CC-061-B02** — The counter value is output; expected value 1.
 Anker: source.abap:15. Kontext: nach B01; /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -11401,12 +11401,12 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:5` — Nicht Zielmenge `Unknown` und nicht Level `Unknown` wegen des dynamischen WHERE (R26@2.0.0: „Dynamisches FROM, WHERE, DML-Ziel: Zielmenge Unknown, `known_worst_level` D"; CC-037/CC-038-Muster). Das FROM ist statisch; ein unbekanntes Prädikat macht `FROM kna1` nicht zu einem unbekannten Objekt.
-- `source.abap:5` — Nicht `known_worst_level` D. Kein DML, kein dynamisches FROM; ein nur vermuteter Worst Case heißt nicht „known".
-- `source.abap:2` — Kein Fachsatz „Kunden in Deutschland werden gezählt" aus dem `DEFAULT`; Vorbelegung ist keine Zielmenge.
-- `source.abap:5` — Nicht „Injektion wie CC-034" im Sinne beliebigen SQL: Open SQL interpretiert eine WHERE-Bedingung, nicht einen freien Statementtext. Die Wirkung ist Prädikatmanipulation.
-- `source.abap:5` — Den Sicherheitsbefund nicht in das Level rechnen (kein „C, eigentlich D wegen Security").
-- `source.abap:5` — Nicht „kein Befund, weil die Tabelle bekannt ist": Prädikat aus Eingabe bleibt F02 und F03.
+- source.abap:5 — Not target set Unknown and not level Unknown because of the dynamic WHERE (R26@2.0.0: "Dynamic FROM, WHERE, DML target: target set Unknown, known_worst_level D"; CC-037/CC-038 pattern). The FROM is static; an unknown predicate does not turn FROM kna1 into an unknown object.
+- source.abap:5 — Not known_worst_level D. No DML, no dynamic FROM; a merely presumed worst case is not "known".
+- source.abap:2 — No business statement "customers in Germany are counted" from the DEFAULT; a preset is not a target set.
+- source.abap:5 — Not "injection as in CC-034" in the sense of arbitrary SQL: Open SQL interprets a WHERE condition, not a free statement text. The effect is predicate manipulation.
+- source.abap:5 — Do not factor the security finding into the level (no "C, actually D because of security").
+- source.abap:5 — Not "no finding because the table is known": a predicate from input remains F02 and F03.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -11431,10 +11431,10 @@ Das Prädikat ist kein Objekt: `unresolved_targets` per FROM ist leer. Sollte di
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-062-B01** — Es wird die Zahl der KNA1-Sätze im Anmeldemandanten gezählt, die das zur Laufzeit eingegebene Prädikat erfüllen; welche Sätze das sind, entscheidet die Eingabe. Ein Fachsatz „Kunden in DE" ist nicht tragbar.  
+**CC-062-B01** — The number of KNA1 records in the logon client that satisfy the predicate entered at runtime is counted; which records these are is decided by the input. A business statement "customers in DE" cannot be supported.
 Anker: source.abap:5, source.abap:2. Kontext: unbedingter Pfad, kein Guard; /business_scope, /execution_assumptions.
 
-**CC-062-B02** — Die Zahl wird ausgegeben; bei null Treffern die 0. Bei leerer Eingabe (nur Leerzeichen) gilt nach Autorenerinnerung keine Bedingung, und alle Sätze des Mandanten werden gezählt (Beleggrad erinnert, Prüferfrage 3).  
+**CC-062-B02** — The number is output; with zero matches, 0. With empty input (only spaces), according to the author's recollection no condition applies and all records of the client are counted (evidence grade: recalled, reviewer question 3).
 Anker: source.abap:6, source.abap:5. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -11536,12 +11536,12 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:5` — Nicht „mandantenübergreifender Zugriff" (R28@2.0.0: „`CLIENT SPECIFIED` = mandantenübergreifend"; CC-051-F02-Muster). Das Prädikat begrenzt auf `sy-mandt`; ein Zusatz ist keine Ergebnismenge.
-- `source.abap:6` — Kein Fachsatz „Kunde aus einem anderen Mandanten" und kein „Kunde aus Mandant p_mandt": es gibt keine Mandanteneingabe.
-- `source.abap:5` — Nicht „kein Befund, weil harmlos": die Deaktivierung der Mandantenautomatik bleibt Beobachtung (F02, info).
-- `source.abap:5` — Nicht D (kein Schreiben, keine Modifikation) und nicht B (KNA1 ist intern).
-- `source.abap:5` — Nicht `Unknown` für den Mandanten: er ist durch das Prädikat auf den Anmeldemandanten festgelegt.
-- `source.abap:5` — Den Nachfolger nicht als Drop-in nennen; „Mandantenachse steht nicht entgegen" ist keine Äquivalenzaussage.
+- source.abap:5 — Not "cross-client access" (R28@2.0.0: "CLIENT SPECIFIED = cross-client"; CC-051-F02 pattern). The predicate restricts to sy-mandt; an addition is not a result set.
+- source.abap:6 — No business statement "customer from another client" and no "customer from client p_mandt": there is no client input.
+- source.abap:5 — Not "no finding because harmless": the deactivation of the automatic client handling remains an observation (F02, info).
+- source.abap:5 — Not D (no writing, no modification) and not B (KNA1 is internal).
+- source.abap:5 — Not Unknown for the client: it is fixed to the logon client by the predicate.
+- source.abap:5 — Do not name the successor as a drop-in; "the client axis is no obstacle" is not an equivalence statement.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -11564,10 +11564,10 @@ Quelle: SAP-PCE22; 136428–136446 (wie CC-001, S19).
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-063-B01** — Der Name des eingegebenen Kunden wird aus dem Anmeldemandanten gelesen; die Mandantenbegrenzung steht ausdrücklich im Prädikat, nicht in der Automatik. Höchstens ein Satz (Schlüssel MANDT, KUNNR).  
+**CC-063-B01** — The name of the entered customer is read from the logon client; the client restriction is stated explicitly in the predicate, not in the automatic handling. At most one record (key MANDT, KUNNR).
 Anker: source.abap:5, source.abap:6. Kontext: `CLIENT SPECIFIED` in :5, `mandt = sy-mandt` in :6; unbedingter Pfad; /business_scope, /execution_assumptions.
 
-**CC-063-B02** — Der Name wird ausgegeben. Ohne Treffer bleibt `lv_name` initial und eine leere Zeile erscheint; `sy-subrc` wird nicht ausgewertet, es gibt keinen Leertreffer-Zweig. Ein leerer oder nicht nullaufgefüllter numerischer Schlüssel verfehlt (Profilannahmen).  
+**CC-063-B02** — The name is output. Without a match lv_name remains initial and an empty line appears; sy-subrc is not evaluated, there is no empty-match branch. An empty or non-zero-padded numeric key misses (profile assumptions).
 Anker: source.abap:7, source.abap:5. Kontext: /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -11671,12 +11671,12 @@ Keine A–D-Findings im endlichen Regelvertrag: Level B nach R03 unter der Profi
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:3` — Nicht „geprüft ohne Wirkung" (R28@2.0.0: „`AUTHORITY-CHECK` ohne Auswertung von `sy-subrc`"; CC-049-F03-Muster, das nur das Direktmuster verlangte). Die Auswertung geschieht über den gesicherten Wert; die Regel muss den Datenfluss verlangen, nicht das Token `sy-subrc` in der nächsten Zeile.
-- `source.abap:5` — Nicht: die Zuweisung in :5 „verbraucht" oder überschreibt `sy-subrc`. Zuweisungen setzen `sy-subrc` nicht; und geprüft wird ohnehin `lv_auth_result`.
-- `source.abap:4` — `lv_auth_result` nicht als unbenutzte Kopie verwerfen: :6 liest sie.
-- `source.abap:3` — Kein Fachsatz, die Prüfung sei fachlich angemessen oder hinreichend für irgendeine andere Operation (`expectation.json`: „belegt keine angemessene Autorisierung einer anderen Fachoperation").
-- `source.abap:3` — Das Level nicht verändern: weder „B, weil geprüft" noch „D, weil Berechtigungsobjekt".
-- `source.abap:7` — Kein Fachsatz „NO_AUTH wird gemeldet": der Abbruch ist stumm.
+- source.abap:3 — Not "checked without effect" (R28@2.0.0: "AUTHORITY-CHECK without evaluation of sy-subrc"; CC-049-F03 pattern, which only required the direct pattern). The evaluation happens via the saved value; the rule must require the data flow, not the token sy-subrc in the next line.
+- source.abap:5 — Not: the assignment in :5 "consumes" or overwrites sy-subrc. Assignments do not set sy-subrc; and what is checked is lv_auth_result anyway.
+- source.abap:4 — Do not discard lv_auth_result as an unused copy: :6 reads it.
+- source.abap:3 — No business statement that the check is adequate from a business perspective or sufficient for any other operation (expectation.json: "does not evidence adequate authorization of another business operation").
+- source.abap:3 — Do not change the level: neither "B, because checked" nor "D, because authorization object".
+- source.abap:7 — No business statement "NO_AUTH is reported": the exit is silent.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -11688,10 +11688,10 @@ Nachfolgerliste: `[]` **mit obiger Statusbegründung**. Keine weiteren SAP-Repos
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-064-B01** — Ohne Berechtigung auf S_TCODE mit Transaktionscode SE38 wird der Block ohne Ausgabe verlassen.  
+**CC-064-B01** — Without authorization for S_TCODE with transaction code SE38 the block is exited without output.
 Anker: source.abap:3, source.abap:4, source.abap:6, source.abap:7. Kontext: Auswertung `lv_auth_result <> 0` in :6, Wert aus :4; /business_scope, /execution_assumptions.
 
-**CC-064-B02** — Mit dieser Berechtigung wird der Text „Guarded output" ausgegeben.  
+**CC-064-B02** — With this authorization the text "Guarded output" is output.
 Anker: source.abap:9, source.abap:5. Kontext: Zweig „nicht abgebrochen" aus :6; /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -11816,12 +11816,12 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `caller.abap:3` — Nicht „das Skelett endet an der Systemgrenze" (R34@2.0.0-Wortlaut). :4 ist erreichbar und liegt nach der Rückkehr; ein Graph ohne o und done ist falsch.
-- `caller.abap:3` — Keine Knotenbeschriftung „impliziter Commit" (R25@2.0.0-Liste, CC-056-Knoten x) ohne belegten Dialogschritt im Kind.
-- `caller.abap:4` — Kein Fachsatz über das, was das Kind getan hat; RETURNED belegt nur die Rückkehr.
-- `caller.abap:3` — Kein C und kein D für ein kundeneigenes Ziel; im partiellen Scope Unknown, nicht „kein Befund".
-- `caller.abap:3` — Kein Knoten „Kindprogramm setzt Wert 1" im partiellen Scope; und auch im erweiterten Scope kein Fachsatz „das Kind liefert 1 an den Aufrufer" — `lv_value` ist lokal im Kind und mit dessen Ende weg.
-- `caller.abap:3` — Nicht als `opaque_call` (FORM/Methode) modellieren: es ist eine Programmgrenze, Knotentyp `external_program`.
+- caller.abap:3 — Not "the skeleton ends at the system boundary" (R34@2.0.0 wording). :4 is reachable and lies after the return; a graph without o and done is wrong.
+- caller.abap:3 — No node label "implicit commit" (R25@2.0.0 list, CC-056 node x) without an evidenced dialog step in the child.
+- caller.abap:4 — No business statement about what the child did; RETURNED only evidences the return.
+- caller.abap:3 — No C and no D for a customer-specific target; in the partial scope Unknown, not "no finding".
+- caller.abap:3 — No node "child program sets value 1" in the partial scope; and in the extended scope no business statement "the child returns 1 to the caller" either — lv_value is local to the child and gone when it ends.
+- caller.abap:3 — Do not model it as opaque_call (FORM/method): it is a program boundary, node type external_program.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -11833,7 +11833,7 @@ Keine SAP-Repository-Identität im gelieferten Scope. Das ist kein automatisches
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-065-B01** — Das Kindprogramm wird synchron gestartet; nach seiner normalen Beendigung wird RETURNED ausgegeben. Was das Kind tut, ist im partiellen Scope kein Teil dieses Satzes.  
+**CC-065-B01** — The child program is started synchronously; after it ends normally, RETURNED is output. What the child does is, in the partial scope, not part of this statement.
 Anker: caller.abap:3, caller.abap:4. Kontext: unbedingter Pfad; Rückkehr nur bei normalem Ende des Kindes; /business_scope, /execution_assumptions, /missing_dependency (partiell).
 
 **CC-065-B02** (nur erweiterter Scope) — Das Kind weist einer lokalen Variablen den Wert 1 zu und endet ohne Ausgabe, ohne Datenbankzugriff und ohne Dialogschritt; nach außen ist nichts beobachtbar.  
@@ -11956,11 +11956,11 @@ Keine A–D-Findings im endlichen Regelvertrag. Das klassifiziert Standard-ABAP 
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:7` — Nicht ein Knoten und nicht ein Anker für zwei Ausgaben (R27@2.0.0-Lesart „Wirkungsort ist die Aufrufstelle" ohne Ordinal — die Lesart, unter der die beiden Wirkungen zusammenfallen). Zwei Knoten mit Typ `output` und Quelle `source.abap:7` ohne Ordinal sind eine mehrdeutige Signatur (Prüfung F05) und werden abgewiesen.
-- `source.abap:3`, `source.abap:4` — Kein Knoten und kein Befund mit Primäranker an der Definition; das bleibt richtig aus CC-042. Die Definition ist Herkunft (Sekundäranker).
-- `source.abap:7` — Nicht als opaker Aufruf: das Makro ist im Slice definiert und expandierbar.
-- `source.abap:7` — `two_outputs` nicht als PERFORM oder Methodenaufruf lesen; `'A' 'B'` sind Makroargumente, keine Parameter eines Unterprogramms; kein R13a-„Literal ohne Konsument" — die Literale werden zu Statementteilen.
-- Kein dritter Knoten; die Reihenfolge A vor B ist Teil des Sollvertrags.
+- source.abap:7 — Not one node and not one anchor for two outputs (R27@2.0.0 reading "the place of effect is the call site" without an ordinal — the reading under which the two effects collapse into one). Two nodes with type output and source source.abap:7 without an ordinal are an ambiguous signature (check F05) and are rejected.
+- source.abap:3, source.abap:4 — No node and no finding with a primary anchor at the definition; this remains correct from CC-042. The definition is origin (secondary anchor).
+- source.abap:7 — Not as an opaque call: the macro is defined in the slice and expandable.
+- source.abap:7 — Do not read two_outputs as a PERFORM or method call; 'A' 'B' are macro arguments, not parameters of a subroutine; no R13a "literal without consumer" — the literals become parts of statements.
+- No third node; the order A before B is part of the expected contract.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -11968,7 +11968,7 @@ Keine SAP-Repository-Identität im gelieferten Scope. Das Makro ist kein Reposit
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-066-B01** — Es wird zuerst A, dann B je auf einer neuen Zeile ausgegeben.  
+**CC-066-B01** — First A, then B is output, each on a new line.
 Anker: source.abap:7#e1 (Bindung `&1 = 'A'`, Statement :3), source.abap:7#e2 (Bindung `&2 = 'B'`, Statement :4). Kontext: unbedingter Pfad; /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett
@@ -12072,12 +12072,12 @@ START-OF-SELECTION.
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:6` — Nicht „ungesichertes Leertabellen-FAE" (v2 §7.1-Lesart „ASSERT ist kein Guard"; Fable §5/4 als allgemeine Semantik gelesen). Die Fortsetzung mit leerer Tabelle ist verhindert.
-- `source.abap:5` — Kein Fachsatz „bei leerer Schlüsselliste wird vor der FAE-Abfrage abgebrochen" im Sinne von CC-002-B02 (definiertes Ende, NO_INPUT): hier endet der Lauf mit Laufzeitfehler. „Verhindert" und „sanft beendet" sind zwei Aussagen.
-- `source.abap:5` — Nicht mit `ASSERT ID … CONDITION …` gleichsetzen: ohne ID ist ASSERT immer aktiv (S13); mit ID hängt es an der Checkpoint-Gruppe — Grok H-102, nicht gebaut.
-- `source.abap:6` — Das Level nicht aus dem ASSERT ableiten; C bleibt C. Auch nicht „kein C, weil unerreichbar".
-- Kein Fachsatz „Kunden werden gefunden": `found` wird nicht verwendet, und :6 ist im Slice nicht erreichbar.
-- `source.abap:5` — Kein `gateway` mit zwei „always"-Kanten: der negative Zweig ist ein Abbruch, kein Weiterlauf.
+- source.abap:6 — Not "unguarded empty-table FAE" (v2 §7.1 reading "ASSERT is not a guard"; Fable §5/4 read as general semantics). Continuation with an empty table is prevented.
+- source.abap:5 — No business statement "if the key list is empty, processing is aborted before the FAE query" in the sense of CC-002-B02 (defined end, NO_INPUT): here the run ends with a runtime error. "Prevented" and "ended gracefully" are two different statements.
+- source.abap:5 — Do not equate it with ASSERT ID … CONDITION …: without ID, ASSERT is always active (S13); with ID it depends on the checkpoint group — Grok H-102, not built.
+- source.abap:6 — Do not derive the level from the ASSERT; C stays C. Nor "no C, because unreachable".
+- No business statement "customers are found": found is not used, and :6 is not reachable in the slice.
+- source.abap:5 — No gateway with two "always" edges: the negative branch is an abort, not a continuation.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -12100,7 +12100,7 @@ Quelle: SAP-PCE22; 136428–136446 (wie CC-001, S19).
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-067-B01** — Bei leerer Schlüsseltabelle bricht der Lauf vor der Datenbankabfrage mit einem Laufzeitfehler ab (ASSERTION_FAILED); es gibt keinen definierten Weiterlauf und keine Ausgabe. Im gelieferten Slice ist das der einzige mögliche Lauf, weil `keys` nie gefüllt wird.  
+**CC-067-B01** — If the key table is empty, the run aborts with a runtime error before the database query (ASSERTION_FAILED); there is no defined continuation and no output. In the supplied slice this is the only possible run, because keys is never filled.
 Anker: source.abap:5, source.abap:3. Kontext: `lines( keys ) = 0`; /execution_assumptions.
 
 **CC-067-B02** (bedingt; im Slice nicht erreichbar) — Nur mit nicht leerer Schlüsseltabelle würden die Kundennummern der Schlüssel aus KNA1 gelesen; das Ergebnis wird nicht weiterverwendet.  
@@ -12223,12 +12223,12 @@ Keine A–D-Findings im endlichen Regelvertrag. Das klassifiziert Standard-ABAP 
 
 **Explizit unzulässige Schlussfolgerungen:**
 
-- `source.abap:10` — Kein D aus dem FORM-Namen (R32@2.0.0-Lesart „`MV45AFZZ` u. ä. sind Marker, aus denen D folgt"; CC-053-F01/F02-Muster; Fable KA-052 „namentlich erkennbar ohne Metadaten"). Der Name ist ein Hinweis; die drei Gegenbelege entscheiden.
-- `source.abap:7`, `source.abap:11`, `source.abap:12` — Kein SAP-Objekt VBAK (TABL) in der Objektliste: `vbak` ist ein Programmdatenobjekt mit eigenem Typ. Kein R29-Befund, kein R02-Befund, kein `write`-Knoten.
-- `source.abap:10` — Kein Unknown „Hostmetadaten fehlen" (CC-010-Lesart): `REPORT` und eigene Deklaration entscheiden — es gibt keinen Host, den Metadaten belegen könnten.
-- `source.abap:12` — Kein Fachsatz „Liefersperre am Kundenauftrag" oder „SD-Beleg wird gesperrt": es gibt keinen Beleg, nur ein Feld einer eigenen Struktur.
-- `source.abap:1` — Nicht A: klassischer REPORT mit FORM.
-- `source.abap:10` — Nicht „Marker im Kommentar" (R13a-Gegenprobe aus R32): der Name steht in Code, ist aber trotzdem nur Hypothese — die Gegenprobe des Kommentars und dieser Fall sind zwei verschiedene Gegenfälle.
+- source.abap:10 — No D from the FORM name (R32@2.0.0 reading "MV45AFZZ and the like are markers from which D follows"; CC-053-F01/F02 pattern; Fable KA-052 "recognizable by name without metadata"). The name is a hint; the three counter-evidences decide.
+- source.abap:7, source.abap:11, source.abap:12 — No SAP object VBAK (TABL) in the object list: vbak is a program data object with its own type. No R29 finding, no R02 finding, no write node.
+- source.abap:10 — No Unknown "host metadata missing" (CC-010 reading): REPORT and own declaration decide — there is no host that metadata could evidence.
+- source.abap:12 — No business statement "delivery block on the sales order" or "SD document is blocked": there is no document, only a field of an own structure.
+- source.abap:1 — Not A: classic REPORT with FORM.
+- source.abap:10 — Not "marker in the comment" (R13a counter-check from R32): the name is in code, but is nevertheless only a hypothesis — the comment counter-check and this case are two different counter-cases.
 
 ### SAP-/Repository-Objekte und Nachfolger
 
@@ -12236,7 +12236,7 @@ Keine SAP-Repository-Identität im gelieferten Scope. `ZCE_OWN_FORM` ist ein kun
 
 ### Fachliche Ground-Truth-Kandidaten
 
-**CC-068-B01** — Erfüllt die eigene Kopfstruktur Auftragsart TA und Wert größer als 20000 (Gleichheit nicht; Wert ohne Währung), wird das Feld `lifsk` der Struktur auf 01 gesetzt. Im gelieferten Slice wird die Struktur nie gefüllt: der Zweig ist nicht erreichbar, es wird nichts ausgegeben und nichts persistiert.  
+**CC-068-B01** — If the program's own header structure meets order type TA and value greater than 20000 (equality does not count; value without currency), the field lifsk of the structure is set to 01. In the supplied slice the structure is never filled: the branch is not reachable, nothing is output and nothing is persisted.
 Anker: source.abap:11, source.abap:12, source.abap:7. Kontext: Aufruf :9 unbedingt; Zweig aus :11; /business_scope, /execution_assumptions.
 
 ### Erwartetes Prozessskelett

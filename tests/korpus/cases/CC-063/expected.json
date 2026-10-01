@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-063-B01",
-      "text": "Der Name des eingegebenen Kunden wird aus dem Anmeldemandanten gelesen; die Mandantenbegrenzung steht ausdrücklich im Prädikat, nicht in der Automatik. Höchstens ein Satz (Schlüssel MANDT, KUNNR)."
+      "text": "The name of the entered customer is read from the logon client; the client restriction is stated explicitly in the predicate, not in the automatic handling. At most one record (key MANDT, KUNNR)."
     },
     {
       "anchors": [
@@ -40,7 +40,7 @@
         }
       ],
       "id": "CC-063-B02",
-      "text": "Der Name wird ausgegeben. Ohne Treffer bleibt lv_name initial und eine leere Zeile erscheint; sy-subrc wird nicht ausgewertet, es gibt keinen Leertreffer-Zweig. Ein leerer oder nicht nullaufgefüllter numerischer Schlüssel verfehlt (Profilannahmen)."
+      "text": "The name is output. Without a match lv_name remains initial and an empty line appears; sy-subrc is not evaluated, there is no empty-match branch. An empty or non-zero-padded numeric key misses (profile assumptions)."
     }
   ],
   "classes": [
@@ -98,12 +98,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:5 — Nicht „mandantenübergreifender Zugriff\" (R28@2.0.0: „CLIENT SPECIFIED = mandantenübergreifend\"; CC-051-F02-Muster). Das Prädikat begrenzt auf sy-mandt; ein Zusatz ist keine Ergebnismenge.",
-    "source.abap:6 — Kein Fachsatz „Kunde aus einem anderen Mandanten\" und kein „Kunde aus Mandant p_mandt\": es gibt keine Mandanteneingabe.",
-    "source.abap:5 — Nicht „kein Befund, weil harmlos\": die Deaktivierung der Mandantenautomatik bleibt Beobachtung (F02, info).",
-    "source.abap:5 — Nicht D (kein Schreiben, keine Modifikation) und nicht B (KNA1 ist intern).",
-    "source.abap:5 — Nicht Unknown für den Mandanten: er ist durch das Prädikat auf den Anmeldemandanten festgelegt.",
-    "source.abap:5 — Den Nachfolger nicht als Drop-in nennen; „Mandantenachse steht nicht entgegen\" ist keine Äquivalenzaussage."
+    "source.abap:5 — Not \"cross-client access\" (R28@2.0.0: \"CLIENT SPECIFIED = cross-client\"; CC-051-F02 pattern). The predicate restricts to sy-mandt; an addition is not a result set.",
+    "source.abap:6 — No business statement \"customer from another client\" and no \"customer from client p_mandt\": there is no client input.",
+    "source.abap:5 — Not \"no finding because harmless\": the deactivation of the automatic client handling remains an observation (F02, info).",
+    "source.abap:5 — Not D (no writing, no modification) and not B (KNA1 is internal).",
+    "source.abap:5 — Not Unknown for the client: it is fixed to the logon client by the predicate.",
+    "source.abap:5 — Do not name the successor as a drop-in; \"the client axis is no obstacle\" is not an equivalence statement."
   ],
   "id": "CC-063",
   "independence": [

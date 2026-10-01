@@ -31,7 +31,7 @@
         }
       ],
       "id": "CC-035-B01",
-      "text": "Bei initialem Namen wird NO_NAME ausgegeben und vor dem Datenbankaufruf zurückgekehrt; es wird nichts geschrieben."
+      "text": "If the name is initial, NO_NAME is output and the program returns before the database call; nothing is written."
     },
     {
       "anchors": [
@@ -58,7 +58,7 @@
         }
       ],
       "id": "CC-035-B02",
-      "text": "Nach dem Guard (Zeile 6) wird per Native SQL versucht, NAME1 der KNA1-Zeilen zu ändern, deren MANDT dem in Zeile 10 übernommenen sy-mandt und deren KUNNR dem gebundenen p_kunnr entspricht. Weil die Werte gebundene Hostvariablen sind, ist der Filter für jede Eingabe wirksam (Gegenfall zu CC-034-B02); ob eine Zeile getroffen wird, garantiert der Code nicht — kein Treffer bei unbekanntem Kunden oder, bei numerischem Schlüssel, bei Eingabe ohne Nullauffüllung (vgl. CC-023-F03)."
+      "text": "After the guard (line 6) an attempt is made via Native SQL to change NAME1 of the KNA1 rows whose MANDT equals the sy-mandt taken over in line 10 and whose KUNNR equals the bound p_kunnr. Because the values are bound host variables, the filter is effective for every input (counter-case to CC-034-B02); whether a row is hit is not guaranteed by the code — no match for an unknown customer or, with a numeric key, for input without zero padding (cf. CC-023-F03)."
     },
     {
       "anchors": [
@@ -85,7 +85,7 @@
         }
       ],
       "id": "CC-035-B03",
-      "text": "Nach normalem Abschluss von ENDEXEC folgt ohne Trefferprüfung COMMIT WORK und die Ausgabe UPDATE_COMMITTED; weder sy-dbcnt noch sy-subrc werden ausgewertet. Persistenz wird also auch dann gemeldet, wenn keine Zeile geändert wurde. Bei nicht abgefangenem Datenbankfehler wird dieser Normalpfad nicht erreicht (nicht modellierter Laufzeitfehler)."
+      "text": "After ENDEXEC completes normally, COMMIT WORK and the output UPDATE_COMMITTED follow without a match check; neither sy-dbcnt nor sy-subrc is evaluated. Persistence is therefore reported even when no row was changed. If a database error is not caught, this normal path is not reached (runtime error not modeled)."
     }
   ],
   "classes": [
@@ -186,12 +186,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:11 — Nicht „kein Open-SQL-UPDATE, also B\". Native SQL ist kein Wrapper und kein Kernelaufruf (K08 im v1-Sinn), sondern eigene Klasse K13.",
-    "source.abap:12 — Nicht als Kommentar oder Literal ohne Konsument lesen; der Konsument ist Zeile 11.",
-    "source.abap:12 — Kein Injektionsbefund: :p_name, :lv_mandt, :p_kunnr sind gebundene Hostvariablen, kein Textaufbau. Das ist der Gegenfall zu CC-034-F03; eine Engine, die beide Fälle unter derselben Taint-Regel meldet, ist falsch. R28@2.1.0 („gebundene Werte sind Daten, kein Injektionsbefund — CC-035\") und R13b@2.1.0 Rolle (c). Bestätigt vom Review (S11).",
-    "source.abap:13 — Kein Befund „mandantenübergreifend\": Native SQL hat keine automatische Mandantenbehandlung, aber der Block filtert explizit auf :lv_mandt = sy-mandt (Zeile 10). Das ist weder ein vollständiger Berechtigungsnachweis noch ein mandantenübergreifender Zugriff.",
-    "gesamte Scheibe — Kein Befund „Berechtigungsprüfung fehlt\" als bewiesene Schwachstelle (wie CC-034).",
-    "source.abap:11 — Kein Gateway auf sy-subrc/sy-dbcnt im As-is-Skelett; das wäre ein Änderungsentwurf (W02)."
+    "source.abap:11 — Not \"no Open SQL UPDATE, therefore B\". Native SQL is neither a wrapper nor a kernel call (K08 in the v1 sense), but a class of its own, K13.",
+    "source.abap:12 — Do not read it as a comment or as a literal without a consumer; the consumer is line 11.",
+    "source.abap:12 — No injection finding: :p_name, :lv_mandt, :p_kunnr are bound host variables, not text construction. This is the counter-case to CC-034-F03; an engine that reports both cases under the same taint rule is wrong. R28@2.1.0 (\"bound values are data, not an injection finding — CC-035\") and R13b@2.1.0 role (c). Confirmed by the review (S11).",
+    "source.abap:13 — No finding \"cross-client\": Native SQL has no automatic client handling, but the block filters explicitly on :lv_mandt = sy-mandt (line 10). This is neither complete proof of authorization nor cross-client access.",
+    "whole slice — No finding \"authorization check missing\" as a proven vulnerability (as in CC-034).",
+    "source.abap:11 — No gateway on sy-subrc/sy-dbcnt in the as-is skeleton; that would be a change draft (W02)."
   ],
   "id": "CC-035",
   "independence": [

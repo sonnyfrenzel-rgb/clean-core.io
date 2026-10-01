@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-012-B01",
-      "text": "Ein Funktionsbaustein wird nur bei nicht leerem Namen aufgerufen."
+      "text": "A function module is called only if the name is not empty."
     },
     {
       "anchors": [
@@ -40,7 +40,7 @@
         }
       ],
       "id": "CC-012-B02",
-      "text": "Das externe Unterprogramm wird bei beiden ausgefüllten Namensfeldern gesucht und nur bei Existenz ausgeführt."
+      "text": "The external subroutine is looked up when both name fields are filled and executed only if it exists."
     },
     {
       "anchors": [
@@ -60,7 +60,7 @@
         }
       ],
       "id": "CC-012-B03",
-      "text": "DISPATCH_RETURNED belegt nur das Erreichen der Ausgabe nach zurückgekehrten oder übersprungenen Aufrufen."
+      "text": "DISPATCH_RETURNED only evidences that the output was reached after returned or skipped calls."
     }
   ],
   "classes": [

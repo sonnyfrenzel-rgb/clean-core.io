@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-067-B01",
-      "text": "Bei leerer Schlüsseltabelle bricht der Lauf vor der Datenbankabfrage mit einem Laufzeitfehler ab (ASSERTION_FAILED); es gibt keinen definierten Weiterlauf und keine Ausgabe. Im gelieferten Slice ist das der einzige mögliche Lauf, weil keys nie gefüllt wird."
+      "text": "If the key table is empty, the run aborts with a runtime error before the database query (ASSERTION_FAILED); there is no defined continuation and no output. In the supplied slice this is the only possible run, because keys is never filled."
     }
   ],
   "classes": [
@@ -79,12 +79,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:6 — Nicht „ungesichertes Leertabellen-FAE\" (v2 §7.1-Lesart „ASSERT ist kein Guard\"; Fable §5/4 als allgemeine Semantik gelesen). Die Fortsetzung mit leerer Tabelle ist verhindert.",
-    "source.abap:5 — Kein Fachsatz „bei leerer Schlüsselliste wird vor der FAE-Abfrage abgebrochen\" im Sinne von CC-002-B02 (definiertes Ende, NO_INPUT): hier endet der Lauf mit Laufzeitfehler. „Verhindert\" und „sanft beendet\" sind zwei Aussagen.",
-    "source.abap:5 — Nicht mit ASSERT ID … CONDITION … gleichsetzen: ohne ID ist ASSERT immer aktiv (S13); mit ID hängt es an der Checkpoint-Gruppe — Grok H-102, nicht gebaut.",
-    "source.abap:6 — Das Level nicht aus dem ASSERT ableiten; C bleibt C. Auch nicht „kein C, weil unerreichbar\".",
-    "Kein Fachsatz „Kunden werden gefunden\": found wird nicht verwendet, und :6 ist im Slice nicht erreichbar.",
-    "source.abap:5 — Kein gateway mit zwei „always\"-Kanten: der negative Zweig ist ein Abbruch, kein Weiterlauf."
+    "source.abap:6 — Not \"unguarded empty-table FAE\" (v2 §7.1 reading \"ASSERT is not a guard\"; Fable §5/4 read as general semantics). Continuation with an empty table is prevented.",
+    "source.abap:5 — No business statement \"if the key list is empty, processing is aborted before the FAE query\" in the sense of CC-002-B02 (defined end, NO_INPUT): here the run ends with a runtime error. \"Prevented\" and \"ended gracefully\" are two different statements.",
+    "source.abap:5 — Do not equate it with ASSERT ID … CONDITION …: without ID, ASSERT is always active (S13); with ID it depends on the checkpoint group — Grok H-102, not built.",
+    "source.abap:6 — Do not derive the level from the ASSERT; C stays C. Nor \"no C, because unreachable\".",
+    "No business statement \"customers are found\": found is not used, and :6 is not reachable in the slice.",
+    "source.abap:5 — No gateway with two \"always\" edges: the negative branch is an abort, not a continuation."
   ],
   "id": "CC-067",
   "independence": [

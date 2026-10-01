@@ -13,7 +13,7 @@
         }
       ],
       "id": "CC-016-B01",
-      "text": "Ein Text mit ABAP-ähnlichen Schlüsselwörtern wird in eine Stringvariable geschrieben."
+      "text": "A text containing ABAP-like keywords is written into a string variable."
     },
     {
       "anchors": [
@@ -33,7 +33,7 @@
         }
       ],
       "id": "CC-016-B02",
-      "text": "Der Text wird ausgegeben; der sichtbare Code führt weder Kernelaufruf noch Datenbankänderung aus."
+      "text": "The text is output; the visible code performs neither a kernel call nor a database change."
     }
   ],
   "classes": [
@@ -51,10 +51,10 @@
   "expectedByProfile": null,
   "findings": [],
   "forbiddenConclusions": [
-    "source.abap:4 — Kommentar ist kein Kernelaufruf.",
-    "source.abap:5 — Kommentar ist kein SELECT.",
-    "source.abap:6 — Stringliteral ist kein UPDATE.",
-    "source.abap:7 — Stringtemplate enthält keinen ausgeführten Funktionsbausteinaufruf."
+    "source.abap:4 — A comment is not a kernel call.",
+    "source.abap:5 — A comment is not a SELECT.",
+    "source.abap:6 — A string literal is not an UPDATE.",
+    "source.abap:7 — The string template contains no executed function module call."
   ],
   "id": "CC-016",
   "independence": [],

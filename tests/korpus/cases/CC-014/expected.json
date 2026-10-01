@@ -13,7 +13,7 @@
         }
       ],
       "id": "CC-014-B01",
-      "text": "Das Programm ruft eine Screenfolge ab0200 auf."
+      "text": "The program calls a screen sequence starting at 0200."
     },
     {
       "anchors": [
@@ -26,7 +26,7 @@
         }
       ],
       "id": "CC-014-B02",
-      "text": "Nach normaler Rückkehr wird gv_result ausgegeben; sein in der Screenfolge möglicher Wert bleibt unbekannt."
+      "text": "After a normal return gv_result is output; its possible value within the screen sequence remains unknown."
     }
   ],
   "classes": [

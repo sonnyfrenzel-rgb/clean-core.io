@@ -13,7 +13,7 @@
         }
       ],
       "id": "CC-013-B01",
-      "text": "Im PBO wird der GUI-Status MAIN gesetzt."
+      "text": "In the PBO the GUI status MAIN is set."
     },
     {
       "anchors": [
@@ -40,7 +40,7 @@
         }
       ],
       "id": "CC-013-B02",
-      "text": "Nur CHECK prüft den Grenzwert und setzt einen Routentext."
+      "text": "Only CHECK checks the threshold and sets a route text."
     },
     {
       "anchors": [
@@ -60,7 +60,7 @@
         }
       ],
       "id": "CC-013-B03",
-      "text": "BACK beendet die Screenfolge; andere Funktionscodes führen zu keiner Regelentscheidung."
+      "text": "BACK ends the screen sequence; other function codes lead to no rule decision."
     }
   ],
   "classes": [
@@ -98,7 +98,7 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:1 — Nicht allein wegen MODULE POOL/Dynpro D vergeben."
+    "source.abap:1 — Do not assign D solely because of MODULE POOL/Dynpro."
   ],
   "id": "CC-013",
   "independence": [],

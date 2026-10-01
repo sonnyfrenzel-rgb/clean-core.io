@@ -22,7 +22,7 @@
         }
       ],
       "id": "CC-065-B01",
-      "text": "Das Kindprogramm wird synchron gestartet; nach seiner normalen Beendigung wird RETURNED ausgegeben. Was das Kind tut, ist im partiellen Scope kein Teil dieses Satzes."
+      "text": "The child program is started synchronously; after it ends normally, RETURNED is output. What the child does is, in the partial scope, not part of this statement."
     }
   ],
   "classes": [
@@ -101,12 +101,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "caller.abap:3 — Nicht „das Skelett endet an der Systemgrenze\" (R34@2.0.0-Wortlaut). :4 ist erreichbar und liegt nach der Rückkehr; ein Graph ohne o und done ist falsch.",
-    "caller.abap:3 — Keine Knotenbeschriftung „impliziter Commit\" (R25@2.0.0-Liste, CC-056-Knoten x) ohne belegten Dialogschritt im Kind.",
-    "caller.abap:4 — Kein Fachsatz über das, was das Kind getan hat; RETURNED belegt nur die Rückkehr.",
-    "caller.abap:3 — Kein C und kein D für ein kundeneigenes Ziel; im partiellen Scope Unknown, nicht „kein Befund\".",
-    "caller.abap:3 — Kein Knoten „Kindprogramm setzt Wert 1\" im partiellen Scope; und auch im erweiterten Scope kein Fachsatz „das Kind liefert 1 an den Aufrufer\" — lv_value ist lokal im Kind und mit dessen Ende weg.",
-    "caller.abap:3 — Nicht als opaque_call (FORM/Methode) modellieren: es ist eine Programmgrenze, Knotentyp external_program."
+    "caller.abap:3 — Not \"the skeleton ends at the system boundary\" (R34@2.0.0 wording). :4 is reachable and lies after the return; a graph without o and done is wrong.",
+    "caller.abap:3 — No node label \"implicit commit\" (R25@2.0.0 list, CC-056 node x) without an evidenced dialog step in the child.",
+    "caller.abap:4 — No business statement about what the child did; RETURNED only evidences the return.",
+    "caller.abap:3 — No C and no D for a customer-specific target; in the partial scope Unknown, not \"no finding\".",
+    "caller.abap:3 — No node \"child program sets value 1\" in the partial scope; and in the extended scope no business statement \"the child returns 1 to the caller\" either — lv_value is local to the child and gone when it ends.",
+    "caller.abap:3 — Do not model it as opaque_call (FORM/method): it is a program boundary, node type external_program."
   ],
   "id": "CC-065",
   "independence": [

@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-047-B01",
-      "text": "Jeder von der LDB gelieferte KNA1-Satz erhöht den Zähler und wird mit Kundennummer und Name ausgegeben; welche Sätze das sind, bestimmt die LDB mit ihrem Selektionsbild, nicht der Report."
+      "text": "Each KNA1 record supplied by the LDB increments the counter and is output with customer number and name; which records these are is determined by the LDB with its selection screen, not by the report."
     },
     {
       "anchors": [
@@ -54,7 +54,7 @@
         }
       ],
       "id": "CC-047-B02",
-      "text": "Nach dem letzten Satz wird die Anzahl als COUNT ausgegeben; der Zähler beginnt bei 0."
+      "text": "After the last record the count is output as COUNT; the counter starts at 0."
     }
   ],
   "classes": [
@@ -113,11 +113,11 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:1–10 — Nicht „keine Findings, B“, weil kein SELECT, kein CALL FUNCTION und keine Klasse vorkommt. Der Report liest eine Stammdatentabelle.",
-    "source.abap:6 — GET ist kein Unterprogrammaufruf, kein LOOP über eine interne Tabelle des Reports und kein READ TABLE. Es ist ein Ereignisblock, den die LDB je gelesenem Satz auslöst.",
-    "source.abap:2 — Kein R16-Befund. DDF ist ein SAP-Objekt; dass seine Implementierung nicht im Slice liegt, ist keine unaufgelöste kundeneigene Abhängigkeit.",
-    "Kein Selektionsbild aus dem Quelltext ableiten oder erfinden; es stammt aus der LDB und ist im Slice nicht sichtbar.",
-    "source.abap:4–5 — Nicht als Ort des Lesens deuten; START-OF-SELECTION läuft vor dem ersten GET und liest nichts."
+    "source.abap:1–10 — Not \"no findings, B\" because no SELECT, no CALL FUNCTION and no class occurs. The report reads a master data table.",
+    "source.abap:6 — GET is not a subroutine call, not a LOOP over an internal table of the report and not a READ TABLE. It is an event block that the LDB triggers for each record read.",
+    "source.abap:2 — No R16 finding. DDF is an SAP object; that its implementation is not in the slice is not an unresolved customer-specific dependency.",
+    "Do not derive or invent a selection screen from the source code; it comes from the LDB and is not visible in the slice.",
+    "source.abap:4–5 — Do not interpret it as the place of reading; START-OF-SELECTION runs before the first GET and reads nothing."
   ],
   "id": "CC-047",
   "independence": [

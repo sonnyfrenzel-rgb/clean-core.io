@@ -1,318 +1,290 @@
 /**
- * Das Wörterbuch, das aus einem ABAP-Bezeichner ein **fachliches** Wort macht.
+ * The dictionary that turns an ABAP identifier into a **business** word.
  *
- * Roadmap 17.7, Forderung 1 (Sonny, 23.09.2026): der Satz muss den Code für
- * einen Fachbereichsmenschen verständlich machen — nicht „SELECT auf KNA1",
- * sondern was fachlich geschieht. Genau daran hängt dieses Modul: `KNA1` sind
- * Kunden, `LAND1` ist ein Länderschlüssel, `NETWR` ein Nettowert.
+ * Roadmap 17.7, requirement 1 (Sonny, 23.09.2026): the sentence must make the
+ * code understandable for a business reader — not "SELECT on KNA1", but what
+ * happens in business terms. This module is where that hangs: `KNA1` are
+ * customers, `LAND1` is a country key, `NETWR` a net value.
  *
- * **Eine Übersetzung ist eine Auslegung, und sie steht deshalb hier, sichtbar
- * und vollständig, statt in einem Satzbaustein zu verschwinden** — dasselbe
- * Prinzip wie `RULE_BRIDGES` und `STATEMENT_STOPWORDS` im Korpus-Vergleicher.
- * Wer eine Zeile für falsch hält, findet sie an einer Stelle und kann sie
- * belegen oder streichen.
+ * **A translation is an interpretation, so it stands here, visible and
+ * complete, instead of disappearing into a sentence template** — the same
+ * principle as `RULE_BRIDGES` and `STATEMENT_STOPWORDS` in the corpus
+ * comparison. Whoever thinks a line is wrong finds it in one place and can
+ * prove it or strike it out.
  *
- * **Die ehrliche Grenze:** die Liste ist am Referenzkorpus gewachsen und
- * deckt dessen Felder. Ein unbekannter Bezeichner wird **nicht** geraten — er
- * steht so im Satz, wie der Quelltext ihn schreibt (das ist dann derselbe
- * wörtliche Umgang wie Regel 6 im Skelett), und die Stelle bleibt damit
- * belegbar statt erfunden.
+ * English since the owner decision of 01.10.2026 ("alles Englisch"): the
+ * business statements are product text, and product text is English. The
+ * words follow the German entries they replace one for one; the English label
+ * vocabulary of the process map is `plain-glossary.ts`.
  *
- * Kein Import, keine Abhängigkeit: reine Daten, damit auch eine
- * Client-Komponente sie lesen kann.
+ * **The honest limit:** the list grew with the reference corpus and covers its
+ * fields. An unknown identifier is **not** guessed — it stands in the sentence
+ * as the source writes it (the same literal handling as rule 6 in the
+ * skeleton), so the place stays provable instead of invented.
+ *
+ * No import, no dependency: pure data, so a client component can read it too.
  */
 
 export interface BusinessTerm {
-  /** Wie ein Fachsatz die Sache in der Einzahl nennt. */
+  /** How a business statement names one of it, lower case mid-sentence. */
   singular: string;
-  /** Die Mehrzahl — Deutsch beugt, und ein Dice-Maß sieht den Unterschied. */
+  /** The plural. */
   plural: string;
-  /**
-   * Der Genitiv Singular („des Falls", „des Kunden").
-   *
-   * Er steht hier, weil „die Route eines Fall" kein deutscher Satz ist und ein
-   * Fachbereichsmensch bei so etwas aufhört zu lesen. Ohne Angabe wird er
-   * nicht gebildet, sondern es bleibt beim Nominativ — geraten wird auch in
-   * der Grammatik nichts.
-   */
-  genitive: string;
 }
 
-const term = (singular: string, plural: string, genitive?: string): BusinessTerm => ({
+const term = (singular: string, plural?: string): BusinessTerm => ({
   singular,
-  plural,
-  genitive: genitive ?? singular,
+  plural: plural ?? `${singular}s`,
 });
+/** A word that does not inflect (status, data …). */
+const same = (word: string): BusinessTerm => ({ singular: word, plural: word });
 
 /**
- * Datenbankfelder und Variablenstämme → Fachwort.
+ * Database fields and variable stems → business word.
  *
- * Der Schlüssel ist kleingeschrieben und ohne die üblichen ABAP-Präfixe
- * (`lv_`, `gv_`, `ls_`, `iv_`, `p_` …), die `stemOf` abschneidet.
+ * The key is lower case and without the usual ABAP prefixes (`lv_`, `gv_`,
+ * `ls_`, `iv_`, `p_` …) that `stemOf` cuts off.
  */
 export const FIELD_TERMS: Readonly<Record<string, BusinessTerm>> = Object.freeze({
-  kunnr: term('Kundennummer', 'Kundennummern'),
-  customer: term('Kundennummer', 'Kundennummern'),
-  name1: term('Name', 'Namen'),
-  customername: term('Name', 'Namen'),
-  name: term('Name', 'Namen'),
-  land1: term('Länderschlüssel', 'Länderschlüssel'),
-  land: term('Länderschlüssel', 'Länderschlüssel'),
-  country: term('Länderschlüssel', 'Länderschlüssel'),
-  bukrs: term('Buchungskreis', 'Buchungskreise'),
-  akont: term('Abstimmkonto', 'Abstimmkonten'),
-  vkorg: term('Verkaufsorganisation', 'Verkaufsorganisationen'),
-  vtweg: term('Vertriebsweg', 'Vertriebswege'),
-  spart: term('Sparte', 'Sparten'),
-  mandt: term('Mandant', 'Mandanten'),
-  bname: term('Benutzername', 'Benutzernamen'),
-  bcode: term('Kennwort-Hash', 'Kennwort-Hashes'),
-  uflag: term('Sperrstatus', 'Sperrstatus'),
-  vbeln: term('Belegnummer', 'Belegnummern'),
-  auart: term('Auftragsart', 'Auftragsarten'),
-  netwr: term('Nettowert', 'Nettowerte'),
-  lifsk: term('Sperrkennzeichen', 'Sperrkennzeichen'),
-  amount: term('Betrag', 'Beträge'),
-  amt: term('Betrag', 'Beträge'),
-  betrag: term('Betrag', 'Beträge'),
-  route: term('Route', 'Routen'),
-  status: term('Status', 'Status'),
-  count: term('Anzahl', 'Anzahlen'),
-  sum: term('Summe', 'Summen'),
-  min: term('Mindestwert', 'Mindestwerte'),
-  value: term('Wert', 'Werte'),
-  text: term('Text', 'Texte'),
-  key: term('Schlüssel', 'Schlüssel'),
-  keys: term('Schlüssel', 'Schlüssel'),
-  id: term('Fall', 'Fälle'),
-  case_id: term('Fall', 'Fälle'),
-  case: term('Fall', 'Fälle'),
-  review: term('Review-Markierung', 'Review-Markierungen'),
-  title: term('Listtitel', 'Listtitel'),
-  tab: term('Tabelle', 'Tabellen'),
-  func: term('Funktionsbaustein', 'Funktionsbausteine'),
-  function: term('Funktionsbaustein', 'Funktionsbausteine'),
-  prog: term('Programm', 'Programme'),
-  form: term('Unterprogramm', 'Unterprogramme'),
-  dest: term('Destination', 'Destinationen'),
-  field: term('Feld', 'Felder'),
-  rows: term('Zeile', 'Zeilen'),
-  row: term('Zeile', 'Zeilen'),
-  result: term('Ergebnis', 'Ergebnisse'),
-  total: term('Summe', 'Summen'),
-  rule: term('Regel', 'Regeln'),
-  user: term('Benutzer', 'Benutzer'),
-  type: term('Typ', 'Typen'),
-  where: term('Prädikat', 'Prädikate'),
+  kunnr: term('customer number'),
+  customer: term('customer number'),
+  name1: term('name'),
+  customername: term('name'),
+  name: term('name'),
+  land1: term('country key'),
+  land: term('country key'),
+  country: term('country key'),
+  bukrs: term('company code'),
+  akont: term('reconciliation account'),
+  vkorg: term('sales organization'),
+  vtweg: term('distribution channel'),
+  spart: term('division'),
+  mandt: term('client'),
+  bname: term('user name'),
+  bcode: term('password hash', 'password hashes'),
+  uflag: same('lock status'),
+  vbeln: term('document number'),
+  auart: term('order type'),
+  netwr: term('net value'),
+  lifsk: term('delivery block'),
+  amount: term('amount'),
+  amt: term('amount'),
+  betrag: term('amount'),
+  route: term('route'),
+  status: same('status'),
+  count: term('count'),
+  sum: term('sum'),
+  min: term('minimum value'),
+  value: term('value'),
+  text: term('text'),
+  key: term('key'),
+  keys: term('key'),
+  id: term('case'),
+  case_id: term('case'),
+  case: term('case'),
+  review: term('review flag'),
+  title: term('list title'),
+  tab: term('table'),
+  func: term('function module'),
+  function: term('function module'),
+  prog: term('program'),
+  form: term('subroutine'),
+  dest: term('destination'),
+  field: term('field'),
+  rows: term('row'),
+  row: term('row'),
+  result: term('result'),
+  total: term('sum'),
+  rule: term('rule'),
+  user: term('user'),
+  type: term('type'),
+  where: term('predicate'),
 
-  // --- SAP-Standardfelder (Datenelemente), modulübergreifend -------------
+  // --- SAP standard fields (data elements), across modules ----------------
   //
-  // Quelle: die Kurzbeschreibungen der SAP-Standard-Datenelemente im ABAP
-  // Dictionary (SE11) bzw. im SAP Help Portal, auf das fachliche Wort
-  // verkürzt. Aufgenommen sind die gängigen Schlüssel- und Mengenfelder der
-  // Kernmodule — nicht Felder, die zufällig in einem Testfall stehen, und kein
-  // kundeneigenes (Z/Y) Feld. Ein Feld, das hier fehlt, bleibt im Satz, wie
-  // es im Quelltext heißt.
-  matnr: term('Materialnummer', 'Materialnummern'),
-  werks: term('Werk', 'Werke'),
-  lgort: term('Lagerort', 'Lagerorte'),
-  charg: term('Charge', 'Chargen'),
-  menge: term('Menge', 'Mengen'),
-  meins: term('Mengeneinheit', 'Mengeneinheiten'),
-  waers: term('Währung', 'Währungen'),
-  waerk: term('Belegwährung', 'Belegwährungen'),
-  posnr: term('Positionsnummer', 'Positionsnummern'),
-  ebeln: term('Bestellnummer', 'Bestellnummern'),
-  ebelp: term('Bestellposition', 'Bestellpositionen'),
-  banfn: term('Bestellanforderungsnummer', 'Bestellanforderungsnummern'),
-  lifnr: term('Lieferantennummer', 'Lieferantennummern'),
-  belnr: term('Belegnummer', 'Belegnummern'),
-  gjahr: term('Geschäftsjahr', 'Geschäftsjahre'),
-  budat: term('Buchungsdatum', 'Buchungsdaten'),
-  bldat: term('Belegdatum', 'Belegdaten'),
-  hkont: term('Sachkonto', 'Sachkonten'),
-  saknr: term('Sachkonto', 'Sachkonten'),
-  kostl: term('Kostenstelle', 'Kostenstellen'),
-  prctr: term('Profitcenter', 'Profitcenter'),
-  kokrs: term('Kostenrechnungskreis', 'Kostenrechnungskreise'),
-  aufnr: term('Auftragsnummer', 'Auftragsnummern'),
-  ekorg: term('Einkaufsorganisation', 'Einkaufsorganisationen'),
-  ekgrp: term('Einkäufergruppe', 'Einkäufergruppen'),
-  bwart: term('Bewegungsart', 'Bewegungsarten'),
-  mblnr: term('Materialbelegnummer', 'Materialbelegnummern'),
-  pernr: term('Personalnummer', 'Personalnummern'),
-  equnr: term('Equipmentnummer', 'Equipmentnummern'),
-  qmnum: term('Meldungsnummer', 'Meldungsnummern'),
-  vornr: term('Vorgangsnummer', 'Vorgangsnummern'),
-  arbpl: term('Arbeitsplatz', 'Arbeitsplätze'),
-  abgru: term('Absagegrund', 'Absagegründe'),
-  faksk: term('Fakturasperre', 'Fakturasperren'),
-  aufsd: term('Auftragssperre', 'Auftragssperren'),
-  loevm: term('Löschvormerkung', 'Löschvormerkungen'),
-  kwmeng: term('Auftragsmenge', 'Auftragsmengen'),
-  lfimg: term('Liefermenge', 'Liefermengen'),
-  vstel: term('Versandstelle', 'Versandstellen'),
-  spras: term('Sprache', 'Sprachen'),
-  ernam: term('Erfasser', 'Erfasser'),
-  erdat: term('Anlagedatum', 'Anlagedaten'),
-  aedat: term('Änderungsdatum', 'Änderungsdaten'),
-  dmbtr: term('Betrag in Hauswährung', 'Beträge in Hauswährung'),
-  wrbtr: term('Betrag in Belegwährung', 'Beträge in Belegwährung'),
-  shkzg: term('Soll/Haben-Kennzeichen', 'Soll/Haben-Kennzeichen'),
+  // Source: the short descriptions of the SAP standard data elements in the
+  // ABAP Dictionary (SE11) or the SAP Help Portal, shortened to the business
+  // word. Included are the common key and quantity fields of the core modules
+  // — not fields that happen to stand in a test case, and no customer (Z/Y)
+  // field. A field missing here stays in the sentence as the source names it.
+  matnr: term('material number'),
+  werks: term('plant'),
+  lgort: term('storage location'),
+  charg: term('batch', 'batches'),
+  menge: term('quantity', 'quantities'),
+  meins: term('unit of measure', 'units of measure'),
+  waers: term('currency', 'currencies'),
+  waerk: term('document currency', 'document currencies'),
+  posnr: term('item number'),
+  ebeln: term('purchase order number'),
+  ebelp: term('purchase order item'),
+  banfn: term('purchase requisition number'),
+  lifnr: term('supplier number'),
+  belnr: term('document number'),
+  gjahr: term('fiscal year'),
+  budat: term('posting date'),
+  bldat: term('document date'),
+  hkont: term('G/L account'),
+  saknr: term('G/L account'),
+  kostl: term('cost center'),
+  prctr: term('profit center'),
+  kokrs: term('controlling area'),
+  aufnr: term('order number'),
+  ekorg: term('purchasing organization'),
+  ekgrp: term('purchasing group'),
+  bwart: term('movement type'),
+  mblnr: term('material document number'),
+  pernr: term('personnel number'),
+  equnr: term('equipment number'),
+  qmnum: term('notification number'),
+  vornr: term('operation number'),
+  arbpl: term('work center'),
+  abgru: term('rejection reason'),
+  faksk: term('billing block'),
+  aufsd: term('order block'),
+  loevm: term('deletion flag'),
+  kwmeng: term('order quantity', 'order quantities'),
+  lfimg: term('delivery quantity', 'delivery quantities'),
+  vstel: term('shipping point'),
+  spras: term('language'),
+  ernam: term('creator'),
+  erdat: term('creation date'),
+  aedat: term('change date'),
+  dmbtr: term('amount in local currency', 'amounts in local currency'),
+  wrbtr: term('amount in document currency', 'amounts in document currency'),
+  shkzg: term('debit/credit indicator'),
 });
 
 /**
- * Datenbanktabellen und Lesemodelle → die fachliche Menge dahinter.
+ * Database tables and read models → the business set behind them.
  *
- * Ein Fachbereichsmensch liest „Kunden", nicht „KNA1". Der technische Name
- * bleibt im Anker und in der Evidenz; er verschwindet nicht, er steht nur
- * nicht im Satz.
+ * A business reader reads "customers", not "KNA1". The technical name stays in
+ * the anchor and in the evidence; it does not disappear, it just does not
+ * stand in the sentence.
  */
 export const TABLE_TERMS: Readonly<Record<string, BusinessTerm>> = Object.freeze({
-  kna1: term('Kunde', 'Kunden', 'Kunden'),
-  knb1: term('Kunde', 'Kunden', 'Kunden'),
-  knvv: term('Kunde', 'Kunden', 'Kunden'),
-  i_customer: term('Kunde', 'Kunden', 'Kunden'),
-  usr02: term('Benutzer', 'Benutzer', 'Benutzers'),
-  vbak: term('Auftrag', 'Aufträge', 'Auftrags'),
-  zi_order: term('Auftrag', 'Aufträge', 'Auftrags'),
-  zcc_decision: term('Fall', 'Fälle', 'Falls'),
-  zcc_case: term('Fall', 'Fälle', 'Falls'),
+  kna1: term('customer'),
+  knb1: term('customer'),
+  knvv: term('customer'),
+  i_customer: term('customer'),
+  usr02: term('user'),
+  vbak: term('order'),
+  zi_order: term('order'),
+  zcc_decision: term('case'),
+  zcc_case: term('case'),
 
-  // --- SAP-Standardtabellen, je Modul die gängigen -----------------------
+  // --- SAP standard tables, the common ones per module --------------------
   //
-  // Quelle: die Kurzbeschreibungen der Tabellen im ABAP Dictionary (SE11) und
-  // die Tabellenübersichten der Module im SAP Help Portal, auf das fachliche
-  // Wort gebracht. Aufgenommen sind je Modul die Stamm- und Belegtabellen,
-  // die in fast jedem Kundencode vorkommen — keine Auswahl nach Testfällen und
-  // keine kundeneigene (Z/Y) Tabelle.
+  // Source: the short descriptions of the tables in the ABAP Dictionary (SE11)
+  // and the module table overviews in the SAP Help Portal, brought to the
+  // business word. Included per module are the master and document tables that
+  // occur in almost every customer code — no selection by test case and no
+  // customer (Z/Y) table.
   //
-  // Vertrieb (SD)
-  vbap: term('Auftragsposition', 'Auftragspositionen', 'Auftragsposition'),
-  vbep: term('Einteilung', 'Einteilungen', 'Einteilung'),
-  vbpa: term('Belegpartner', 'Belegpartner', 'Belegpartners'),
-  vbfa: term('Belegfluss-Satz', 'Belegfluss-Sätze', 'Belegfluss-Satzes'),
-  likp: term('Lieferung', 'Lieferungen', 'Lieferung'),
-  lips: term('Lieferposition', 'Lieferpositionen', 'Lieferposition'),
-  vbrk: term('Faktura', 'Fakturen', 'Faktura'),
-  vbrp: term('Fakturaposition', 'Fakturapositionen', 'Fakturaposition'),
-  konv: term('Konditionssatz', 'Konditionssätze', 'Konditionssatzes'),
-  knvp: term('Kundenpartner', 'Kundenpartner', 'Kundenpartners'),
-  // Materialwirtschaft (MM)
-  mara: term('Material', 'Materialien', 'Materials'),
-  makt: term('Materialkurztext', 'Materialkurztexte', 'Materialkurztexts'),
-  marc: term('Werksdatensatz zum Material', 'Werksdatensätze zu Materialien', 'Werksdatensatzes zum Material'),
-  mard: term('Lagerortbestand', 'Lagerortbestände', 'Lagerortbestands'),
-  mbew: term('Materialbewertung', 'Materialbewertungen', 'Materialbewertung'),
-  mkpf: term('Materialbeleg', 'Materialbelege', 'Materialbelegs'),
-  mseg: term('Materialbelegposition', 'Materialbelegpositionen', 'Materialbelegposition'),
-  mch1: term('Charge', 'Chargen', 'Charge'),
-  mcha: term('Charge', 'Chargen', 'Charge'),
-  ekko: term('Bestellung', 'Bestellungen', 'Bestellung'),
-  ekpo: term('Bestellposition', 'Bestellpositionen', 'Bestellposition'),
-  eket: term('Bestelleinteilung', 'Bestelleinteilungen', 'Bestelleinteilung'),
-  eban: term('Bestellanforderung', 'Bestellanforderungen', 'Bestellanforderung'),
-  lfa1: term('Lieferant', 'Lieferanten', 'Lieferanten'),
-  lfb1: term('Lieferant', 'Lieferanten', 'Lieferanten'),
-  t001w: term('Werk', 'Werke', 'Werks'),
-  t001l: term('Lagerort', 'Lagerorte', 'Lagerorts'),
-  // Finanzwesen (FI)
-  bkpf: term('Buchhaltungsbeleg', 'Buchhaltungsbelege', 'Buchhaltungsbelegs'),
-  bseg: term('Buchhaltungsbelegposition', 'Buchhaltungsbelegpositionen', 'Buchhaltungsbelegposition'),
-  acdoca: term('Journalbuchungsposition', 'Journalbuchungspositionen', 'Journalbuchungsposition'),
-  bsid: term('offener Debitorenposten', 'offene Debitorenposten', 'offenen Debitorenpostens'),
-  bsad: term('ausgeglichener Debitorenposten', 'ausgeglichene Debitorenposten', 'ausgeglichenen Debitorenpostens'),
-  bsik: term('offener Kreditorenposten', 'offene Kreditorenposten', 'offenen Kreditorenpostens'),
-  bsak: term('ausgeglichener Kreditorenposten', 'ausgeglichene Kreditorenposten', 'ausgeglichenen Kreditorenpostens'),
-  bsis: term('offener Sachkontenposten', 'offene Sachkontenposten', 'offenen Sachkontenpostens'),
-  bsas: term('ausgeglichener Sachkontenposten', 'ausgeglichene Sachkontenposten', 'ausgeglichenen Sachkontenpostens'),
-  ska1: term('Sachkonto', 'Sachkonten', 'Sachkontos'),
-  skb1: term('Sachkonto', 'Sachkonten', 'Sachkontos'),
-  t001: term('Buchungskreis', 'Buchungskreise', 'Buchungskreises'),
-  tcurr: term('Wechselkurs', 'Wechselkurse', 'Wechselkurses'),
+  // Sales (SD)
+  vbap: term('order item'),
+  vbep: term('schedule line'),
+  vbpa: term('document partner'),
+  vbfa: term('document flow record'),
+  likp: term('delivery', 'deliveries'),
+  lips: term('delivery item'),
+  vbrk: term('billing document'),
+  vbrp: term('billing document item'),
+  konv: term('condition record'),
+  knvp: term('customer partner'),
+  // Materials management (MM)
+  mara: term('material'),
+  makt: term('material short text'),
+  marc: term('plant record of a material', 'plant records of materials'),
+  mard: term('storage location stock'),
+  mbew: term('material valuation'),
+  mkpf: term('material document'),
+  mseg: term('material document item'),
+  mch1: term('batch', 'batches'),
+  mcha: term('batch', 'batches'),
+  ekko: term('purchase order'),
+  ekpo: term('purchase order item'),
+  eket: term('purchase order schedule line'),
+  eban: term('purchase requisition'),
+  lfa1: term('supplier'),
+  lfb1: term('supplier'),
+  t001w: term('plant'),
+  t001l: term('storage location'),
+  // Financial accounting (FI)
+  bkpf: term('accounting document'),
+  bseg: term('accounting document item'),
+  acdoca: term('journal entry item'),
+  bsid: term('open customer item'),
+  bsad: term('cleared customer item'),
+  bsik: term('open supplier item'),
+  bsak: term('cleared supplier item'),
+  bsis: term('open G/L account item'),
+  bsas: term('cleared G/L account item'),
+  ska1: term('G/L account'),
+  skb1: term('G/L account'),
+  t001: term('company code'),
+  tcurr: term('exchange rate'),
   // Controlling (CO)
-  csks: term('Kostenstelle', 'Kostenstellen', 'Kostenstelle'),
-  cska: term('Kostenart', 'Kostenarten', 'Kostenart'),
-  cepc: term('Profitcenter', 'Profitcenter', 'Profitcenters'),
-  aufk: term('Auftragsstammsatz', 'Auftragsstammsätze', 'Auftragsstammsatzes'),
-  // Produktion (PP)
-  afko: term('Fertigungsauftrag', 'Fertigungsaufträge', 'Fertigungsauftrags'),
-  afpo: term('Fertigungsauftragsposition', 'Fertigungsauftragspositionen', 'Fertigungsauftragsposition'),
-  afvc: term('Vorgang', 'Vorgänge', 'Vorgangs'),
-  resb: term('Reservierungsposition', 'Reservierungspositionen', 'Reservierungsposition'),
-  stko: term('Stückliste', 'Stücklisten', 'Stückliste'),
-  stpo: term('Stücklistenposition', 'Stücklistenpositionen', 'Stücklistenposition'),
-  plko: term('Arbeitsplan', 'Arbeitspläne', 'Arbeitsplans'),
-  crhd: term('Arbeitsplatz', 'Arbeitsplätze', 'Arbeitsplatzes'),
-  // Instandhaltung und Qualität (PM/QM)
-  equi: term('Equipment', 'Equipments', 'Equipments'),
-  iflot: term('Technischer Platz', 'Technische Plätze', 'Technischen Platzes'),
-  qmel: term('Meldung', 'Meldungen', 'Meldung'),
-  afih: term('Instandhaltungsauftrag', 'Instandhaltungsaufträge', 'Instandhaltungsauftrags'),
-  imptt: term('Messpunkt', 'Messpunkte', 'Messpunkts'),
-  imrg: term('Messbeleg', 'Messbelege', 'Messbelegs'),
-  qals: term('Prüflos', 'Prüflose', 'Prüfloses'),
-  // Logistik-Ausführung (LE/WM)
-  vttk: term('Transport', 'Transporte', 'Transports'),
-  vttp: term('Transportposition', 'Transportpositionen', 'Transportposition'),
-  ltak: term('Transportauftrag', 'Transportaufträge', 'Transportauftrags'),
-  ltap: term('Transportauftragsposition', 'Transportauftragspositionen', 'Transportauftragsposition'),
-  lqua: term('Quant', 'Quants', 'Quants'),
-  lagp: term('Lagerplatz', 'Lagerplätze', 'Lagerplatzes'),
-  // Personal (HR)
-  pa0000: term('Personalmaßnahme', 'Personalmaßnahmen', 'Personalmaßnahme'),
-  pa0001: term('Organisatorische Zuordnung', 'Organisatorische Zuordnungen', 'Organisatorischen Zuordnung'),
-  pa0002: term('Satz Personaldaten', 'Sätze Personaldaten', 'Satzes Personaldaten'),
-  pa0008: term('Satz Basisbezüge', 'Sätze Basisbezüge', 'Satzes Basisbezüge'),
-  // Übergreifend (Basis, Geschäftspartner, Adressen, Nachrichten, IDoc)
-  but000: term('Geschäftspartner', 'Geschäftspartner', 'Geschäftspartners'),
-  adrc: term('Adresse', 'Adressen', 'Adresse'),
-  adr6: term('E-Mail-Adresse', 'E-Mail-Adressen', 'E-Mail-Adresse'),
-  tvarvc: term('Variableneintrag', 'Variableneinträge', 'Variableneintrags'),
-  t100: term('Meldungstext', 'Meldungstexte', 'Meldungstexts'),
-  jest: term('Objektstatus', 'Objektstatus', 'Objektstatus'),
-  nast: term('Nachricht', 'Nachrichten', 'Nachricht'),
-  edidc: term('IDoc-Kontrollsatz', 'IDoc-Kontrollsätze', 'IDoc-Kontrollsatzes'),
-  edid4: term('IDoc-Datensatz', 'IDoc-Datensätze', 'IDoc-Datensatzes'),
-  tbtco: term('Hintergrundjob', 'Hintergrundjobs', 'Hintergrundjobs'),
+  csks: term('cost center'),
+  cska: term('cost element'),
+  cepc: term('profit center'),
+  aufk: term('order master record'),
+  // Production (PP)
+  afko: term('production order'),
+  afpo: term('production order item'),
+  afvc: term('operation'),
+  resb: term('reservation item'),
+  stko: term('bill of material', 'bills of material'),
+  stpo: term('bill of material item'),
+  plko: term('routing'),
+  crhd: term('work center'),
+  // Plant maintenance and quality (PM/QM)
+  equi: term('equipment', 'equipment'),
+  iflot: term('functional location'),
+  qmel: term('notification'),
+  afih: term('maintenance order'),
+  imptt: term('measuring point'),
+  imrg: term('measurement document'),
+  qals: term('inspection lot'),
+  // Logistics execution (LE/WM)
+  vttk: term('shipment'),
+  vttp: term('shipment item'),
+  ltak: term('transfer order'),
+  ltap: term('transfer order item'),
+  lqua: term('quant'),
+  lagp: term('storage bin'),
+  // Human resources (HR)
+  pa0000: term('personnel action'),
+  pa0001: term('organizational assignment'),
+  pa0002: term('personal data record'),
+  pa0008: term('basic pay record'),
+  // Cross-application (Basis, business partner, addresses, messages, IDoc)
+  but000: term('business partner'),
+  adrc: term('address', 'addresses'),
+  adr6: term('e-mail address', 'e-mail addresses'),
+  tvarvc: term('variable entry', 'variable entries'),
+  t100: term('message text'),
+  jest: same('object status'),
+  nast: term('output message'),
+  edidc: term('IDoc control record'),
+  edid4: term('IDoc data record'),
+  tbtco: term('background job'),
 });
 
-/** Das grammatische Geschlecht der Tabellenwörter oben, für den Artikel im Genitiv. */
-const TABLE_GENUS: Readonly<Record<string, Genus>> = Object.freeze({
-  Kunde: 'm', Benutzer: 'm', Auftrag: 'm', Fall: 'm',
-  Auftragsposition: 'f', Einteilung: 'f', Belegpartner: 'm', 'Belegfluss-Satz': 'm', Lieferung: 'f',
-  Lieferposition: 'f', Faktura: 'f', Fakturaposition: 'f', Konditionssatz: 'm', Kundenpartner: 'm',
-  Material: 'n', Materialkurztext: 'm', 'Werksdatensatz zum Material': 'm', Lagerortbestand: 'm',
-  Materialbewertung: 'f', Materialbeleg: 'm', Materialbelegposition: 'f', Charge: 'f', Bestellung: 'f',
-  Bestellposition: 'f', Bestelleinteilung: 'f', Bestellanforderung: 'f', Lieferant: 'm', Werk: 'n', Lagerort: 'm',
-  Buchhaltungsbeleg: 'm', Buchhaltungsbelegposition: 'f', Journalbuchungsposition: 'f',
-  'offener Debitorenposten': 'm', 'ausgeglichener Debitorenposten': 'm', 'offener Kreditorenposten': 'm',
-  'ausgeglichener Kreditorenposten': 'm', 'offener Sachkontenposten': 'm', 'ausgeglichener Sachkontenposten': 'm',
-  Sachkonto: 'n', Buchungskreis: 'm', Wechselkurs: 'm', Kostenstelle: 'f', Kostenart: 'f', Profitcenter: 'n',
-  Auftragsstammsatz: 'm', Fertigungsauftrag: 'm', Fertigungsauftragsposition: 'f', Vorgang: 'm',
-  Reservierungsposition: 'f', Stückliste: 'f', Stücklistenposition: 'f', Arbeitsplan: 'm', Arbeitsplatz: 'm',
-  Equipment: 'n', 'Technischer Platz': 'm', Meldung: 'f', Instandhaltungsauftrag: 'm', Messpunkt: 'm',
-  Messbeleg: 'm', Prüflos: 'n', Transport: 'm', Transportposition: 'f', Transportauftrag: 'm',
-  Transportauftragsposition: 'f', Quant: 'n', Lagerplatz: 'm', Personalmaßnahme: 'f',
-  'Organisatorische Zuordnung': 'f', 'Satz Personaldaten': 'm', 'Satz Basisbezüge': 'm', Geschäftspartner: 'm',
-  Adresse: 'f', 'E-Mail-Adresse': 'f', Variableneintrag: 'm', Meldungstext: 'm', Objektstatus: 'm',
-  Nachricht: 'f', 'IDoc-Kontrollsatz': 'm', 'IDoc-Datensatz': 'm', Hintergrundjob: 'm',
-});
-
-/** „des Kunden", „der Bestellung" — der Genitiv mit dem Artikel, den das Wort verlangt. */
+/** "of the customer", "of the purchase order" — the possessive a sentence hangs after a noun. */
 export function genitivePhrase(entity: BusinessTerm): string {
-  return `${TABLE_GENUS[entity.singular] === 'f' ? 'der' : 'des'} ${entity.genitive}`;
+  return `of the ${entity.singular}`;
 }
 
-/** Die ABAP-Präfixe, die über die Sache nichts sagen — nur über die Sichtbarkeit. */
+/** The ABAP prefixes that say nothing about the thing — only about its visibility. */
 const PREFIXES = ['lv_', 'gv_', 'ls_', 'lt_', 'gt_', 'gs_', 'iv_', 'ev_', 'cv_', 'rv_', 'it_', 'et_', 'ct_', 'rt_', 'is_', 'es_', 'cs_', 'rs_', 'lo_', 'go_', 'io_', 'ro_', 'p_', 's_'];
 
 /**
- * Der Stamm eines Bezeichners: ohne Präfix, ohne Strukturvorsatz.
+ * The stem of an identifier: without prefix, without structure name.
  *
  * `ls_customer-kunnr` → `kunnr`, `lv_count` → `count`, `p_land` → `land`.
- * Der Feldname hinter dem Bindestrich gewinnt, weil er die Sache benennt und
- * die Struktur nur sagt, wo sie gerade liegt.
+ * The field name behind the dash wins, because it names the thing and the
+ * structure only says where it currently sits.
  */
 export function stemOf(identifier: string): string {
   let name = identifier.trim().toLowerCase().replace(/^[@<]+/, '').replace(/[>]+$/, '');
@@ -330,144 +302,38 @@ export function stemOf(identifier: string): string {
 }
 
 /**
- * Das Fachwort zu einem Bezeichner — oder der Bezeichner selbst.
+ * The business word for an identifier — or the identifier itself.
  *
- * **Nie geraten.** Steht der Stamm nicht im Wörterbuch, trägt der Satz den
- * Namen, den der Quelltext schreibt. Das ist unschöner und belegbar; eine
- * erfundene Fachbezeichnung wäre schöner und falsch.
+ * **Never guessed.** If the stem is not in the dictionary, the sentence carries
+ * the name the source writes. That is less pretty and provable; an invented
+ * business name would be prettier and wrong.
  */
 export function termFor(identifier: string): BusinessTerm {
   const stem = stemOf(identifier);
   const hit = FIELD_TERMS[stem];
   if (hit) return hit;
   const raw = identifier.trim().replace(/<([A-Za-z0-9_]+)>/g, '$1').replace(/^[@<]+/, '').replace(/[>]+$/, '');
-  return term(raw, raw);
+  return same(raw);
 }
 
-/** Die fachliche Menge hinter einem Tabellen- oder Entitätsnamen. */
+/** The business set behind a table or entity name. */
 export function tableTerm(name: string): BusinessTerm | null {
   return TABLE_TERMS[name.trim().toLowerCase()] ?? null;
 }
 
-/** Ob das Wörterbuch einen Bezeichner kennt — dann trägt er ein Fachwort. */
+/** Whether the dictionary knows an identifier — then it carries a business word. */
 export function isKnownField(identifier: string): boolean {
   return FIELD_TERMS[stemOf(identifier)] !== undefined;
 }
 
 /**
- * Das grammatische Geschlecht der Fachwörter oben, nach dem Singular.
+ * An identifier as a noun phrase with its article.
  *
- * Es steht hier, weil ein Satz vor einem Fachwort einen Artikel braucht und
- * „die return_code" oder „die Funktionsbaustein" kein Deutsch ist. Geraten wird
- * auch hier nichts: ein Wort ohne Eintrag bekommt keinen Artikel, sondern die
- * neutrale Form „das Feld …" (`nounPhrase`).
+ * A business word gets "the" ("the amount", "the customer number"); anything
+ * else is "the field lv_x" — true for every identifier and guessing nothing.
  */
-export type Genus = 'm' | 'f' | 'n';
-
-const GENUS: Readonly<Record<string, Genus>> = Object.freeze({
-  Kundennummer: 'f',
-  Name: 'm',
-  Länderschlüssel: 'm',
-  Buchungskreis: 'm',
-  Abstimmkonto: 'n',
-  Verkaufsorganisation: 'f',
-  Vertriebsweg: 'm',
-  Sparte: 'f',
-  Mandant: 'm',
-  Benutzername: 'm',
-  'Kennwort-Hash': 'm',
-  Sperrstatus: 'm',
-  Belegnummer: 'f',
-  Auftragsart: 'f',
-  Nettowert: 'm',
-  Sperrkennzeichen: 'n',
-  Betrag: 'm',
-  Route: 'f',
-  Status: 'm',
-  Anzahl: 'f',
-  Summe: 'f',
-  Mindestwert: 'm',
-  Wert: 'm',
-  Text: 'm',
-  Schlüssel: 'm',
-  Fall: 'm',
-  'Review-Markierung': 'f',
-  Listtitel: 'm',
-  Tabelle: 'f',
-  Funktionsbaustein: 'm',
-  Programm: 'n',
-  Unterprogramm: 'n',
-  Destination: 'f',
-  Feld: 'n',
-  Zeile: 'f',
-  Ergebnis: 'n',
-  Regel: 'f',
-  Benutzer: 'm',
-  Typ: 'm',
-  Prädikat: 'n',
-  Materialnummer: 'f',
-  Werk: 'n',
-  Lagerort: 'm',
-  Charge: 'f',
-  Menge: 'f',
-  Mengeneinheit: 'f',
-  Währung: 'f',
-  Belegwährung: 'f',
-  Positionsnummer: 'f',
-  Bestellnummer: 'f',
-  Bestellposition: 'f',
-  Bestellanforderungsnummer: 'f',
-  Lieferantennummer: 'f',
-  Geschäftsjahr: 'n',
-  Buchungsdatum: 'n',
-  Belegdatum: 'n',
-  Sachkonto: 'n',
-  Kostenstelle: 'f',
-  Profitcenter: 'n',
-  Kostenrechnungskreis: 'm',
-  Auftragsnummer: 'f',
-  Einkaufsorganisation: 'f',
-  Einkäufergruppe: 'f',
-  Bewegungsart: 'f',
-  Materialbelegnummer: 'f',
-  Personalnummer: 'f',
-  Equipmentnummer: 'f',
-  Meldungsnummer: 'f',
-  Vorgangsnummer: 'f',
-  Arbeitsplatz: 'm',
-  Absagegrund: 'm',
-  Fakturasperre: 'f',
-  Auftragssperre: 'f',
-  Löschvormerkung: 'f',
-  Auftragsmenge: 'f',
-  Liefermenge: 'f',
-  Versandstelle: 'f',
-  Sprache: 'f',
-  Erfasser: 'm',
-  Anlagedatum: 'n',
-  Änderungsdatum: 'n',
-  'Betrag in Hauswährung': 'm',
-  'Betrag in Belegwährung': 'm',
-  'Soll/Haben-Kennzeichen': 'n',
-});
-
-const ARTICLES: Readonly<Record<'nom' | 'akk' | 'dat', Readonly<Record<Genus, string>>>> = Object.freeze({
-  nom: { m: 'der', f: 'die', n: 'das' },
-  akk: { m: 'den', f: 'die', n: 'das' },
-  dat: { m: 'dem', f: 'der', n: 'dem' },
-});
-
-/**
- * Ein Bezeichner als Nominalgruppe mit Artikel, im verlangten Fall.
- *
- * Ein Fachwort mit bekanntem Geschlecht bekommt seinen Artikel („der Betrag",
- * „die Kundennummer"); alles andere heißt „das Feld lv_x" — das ist wahr für
- * jeden Bezeichner und errät kein Geschlecht.
- */
-export function nounPhrase(identifier: string, kasus: 'nom' | 'akk' | 'dat' = 'nom'): string {
-  const word = termFor(identifier);
-  const genus = isKnownField(identifier) ? GENUS[word.singular] : undefined;
-  if (genus) return `${ARTICLES[kasus][genus]} ${word.singular}`;
+export function nounPhrase(identifier: string): string {
+  if (isKnownField(identifier)) return `the ${termFor(identifier).singular}`;
   const raw = identifier.trim().replace(/<([A-Za-z0-9_]+)>/g, '$1').replace(/^[@<]+/, '').replace(/[>]+$/, '');
-  return `${ARTICLES[kasus].n} Feld ${raw}`;
+  return `the field ${raw}`;
 }

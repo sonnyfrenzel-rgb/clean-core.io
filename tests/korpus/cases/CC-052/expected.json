@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-052-B01",
-      "text": "Für den eingegebenen Benutzer werden Benutzername und Sperrstatus ausgegeben."
+      "text": "For the entered user, user name and lock status are output."
     },
     {
       "anchors": [
@@ -47,7 +47,7 @@
         }
       ],
       "id": "CC-052-B02",
-      "text": "Für den eingegebenen Benutzer wird der Kennwort-Hash ausgegeben."
+      "text": "For the entered user, the password hash is output."
     },
     {
       "anchors": [
@@ -74,7 +74,7 @@
         }
       ],
       "id": "CC-052-B03",
-      "text": "Ohne Treffer wird NO_USER ausgegeben und der Reportingblock verlassen."
+      "text": "If there is no match, NO_USER is output and the reporting block is exited."
     }
   ],
   "classes": [
@@ -132,9 +132,9 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:5 — Kein D: Lesen ist kein Schreiben; das Level darf die Sensibilität nicht ausdrücken.",
-    "source.abap:5 — Kein erfundener CDS-Nachfolger für Benutzerstammdaten; die leere Liste ist begründet, nicht unbekannt.",
-    "source.abap:12 — Die Ausgabe von Benutzername und Sperrstatus ist für sich kein Sicherheitsbefund; der Befund hängt an BCODE (:4+3, :13)."
+    "source.abap:5 — No D: reading is not writing; the level must not express the sensitivity.",
+    "source.abap:5 — No invented CDS successor for user master data; the empty list is justified, not unknown.",
+    "source.abap:12 — The output of user name and lock status is not in itself a \"security finding\"; the finding is attached to BCODE (:4+3, :13)."
   ],
   "id": "CC-052",
   "independence": [

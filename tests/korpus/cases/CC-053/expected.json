@@ -26,7 +26,7 @@
         }
       ],
       "id": "CC-053-B01",
-      "text": "Enthält die Arbeitsstruktur vbak bei Aufruf die Auftragsart TA und einen Nettowert größer als 20000 (Gleichheit nicht), wird lokal der Sperrkennzeichen-Kandidat 01 ermittelt. Währung des Nettowerts und Bedeutung des Sperrcodes sind im Code nicht belegt; der Typ von NETWR hängt am Hostkontext (F03)."
+      "text": "If the work structure vbak contains, at the time of the call, the order type TA and a net value greater than 20000 (equality does not count), the block indicator candidate 01 is determined locally. The currency of the net value and the meaning of the block code are not evidenced in the code; the type of NETWR depends on the host context (F03)."
     },
     {
       "anchors": [
@@ -46,7 +46,7 @@
         }
       ],
       "id": "CC-053-B02",
-      "text": "Nur wenn ein Sperrkennzeichen-Kandidat ermittelt wurde, wird er in das Feld LIFSK der Struktur vbak übernommen — ein vorhandener anderer Wert wird dabei überschrieben. Andernfalls bleibt ein bereits vorhandener LIFSK-Wert unverändert (negativer Pfad). Angekündigt, nicht persistiert im Ausschnitt: kein COMMIT, kein Datenbankzugriff; ob und wann ein Host den Wert speichert, ist aus dem Ausschnitt nicht ableitbar."
+      "text": "Only if a block indicator candidate was determined is it placed in the field LIFSK of the structure vbak — an existing different value is overwritten in the process. Otherwise an already existing LIFSK value remains unchanged (negative path). Announced, not persisted in the excerpt: no COMMIT, no database access; whether and when a host saves the value cannot be derived from the excerpt."
     }
   ],
   "classes": [
@@ -259,13 +259,13 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:1 — Kein D aus dem FORM-Namen und kein D aus dem Dateinamen MV45AFZZ (Fable KA-052-Lesart; v2-Fassung dieses Falls). Der Name ist ein Hinweis (F01), das Level braucht den Mechanismus (F02).",
-    "source.abap:1 — Kein B „Standard-ABAP ohne SAP-Abhängigkeit\": vbak ist unaufgelöst; ohne Host oder eigene Deklaration ist die Abhängigkeit offen (Unterschied zu CC-068, wo REPORT, eigene Deklaration und eigener PERFORM die Hypothese widerlegen).",
-    "source.abap:1 — Unknown ist hier die richtige Antwort. Die v2-Zeile „Kein Unknown ‚Hostmetadaten fehlen': CC-010 verlangt ein Fixture für einen Z-Report; hier ist der Host im Code\" ist zurückgenommen (REV2-02).",
-    "source.abap:8 — vbak-lifsk = lv_block ist eine Zuweisung an die Arbeitsstruktur, kein Datenbank-UPDATE: kein R02-Befund, kein write-Knoten.",
-    "source.abap:4 — vbak ist ohne Beleg keine SAP-Tabelle; keine R01-Abhängigkeit auf TABL/VBAK behaupten (Fallbogen §7: „eine undeklarierte globale Variable wird nicht dadurch zur SAP-Tabelle\").",
-    "Kein Fachsatz „die Liefersperre wird gespeichert\": angekündigt, nicht persistiert im Ausschnitt; ob ein Host sie speichert, ist nicht ableitbar.",
-    "gesamte Scheibe — kein Berechtigungsbefund allein aus dem fehlenden Check im Exitfragment: Hostkontrollen können außerhalb liegen (R28@2.1.0: keine Beobachtung)."
+    "source.abap:1 — No D from the FORM name and no D from the file name MV45AFZZ (Fable KA-052 reading; v2 version of this case). The name is a hint (F01); the level needs the mechanism (F02).",
+    "source.abap:1 — No B \"standard ABAP without SAP dependency\": vbak is unresolved; without a host or an own declaration the dependency is open (difference from CC-068, where REPORT, own declaration and own PERFORM refute the hypothesis).",
+    "source.abap:1 — Unknown is the correct answer here. The v2 line \"No Unknown 'host metadata missing': CC-010 requires a fixture for a Z report; here the host is in the code\" is withdrawn (REV2-02).",
+    "source.abap:8 — vbak-lifsk = lv_block is an assignment to the work structure, not a database UPDATE: no R02 finding, no write node.",
+    "source.abap:4 — Without evidence vbak is not an SAP table; do not claim an R01 dependency on TABL/VBAK (case sheet §7: \"an undeclared global variable does not thereby become an SAP table\").",
+    "No business statement \"the delivery block is saved\": announced, not persisted in the excerpt; whether a host saves it cannot be derived.",
+    "whole slice — no authorization finding solely from the missing check in the exit fragment: host controls may lie outside (R28@2.1.0: no observation)."
   ],
   "id": "CC-053",
   "independence": [

@@ -31,16 +31,16 @@ test.describe('the ELSE of a comparison keeps the boundary on the right side', (
 
   test('ELSE of >= 100 is the smaller amounts, without 100', () => {
     const all = elseOf('>=');
-    expect(all).toMatch(/kleinere Beträge/i);
-    expect(all).not.toMatch(/kleinere oder gleiche Beträge/i);
+    expect(all).toMatch(/(?<!equal or )smaller amounts/i);
+    expect(all).not.toMatch(/equal or smaller amounts/i);
   });
 
   test('ELSE of < 100 is the greater or equal amounts', () => {
-    expect(elseOf('<')).toMatch(/größere oder gleiche Beträge/i);
+    expect(elseOf('<')).toMatch(/equal or greater amounts/i);
   });
 
   test('ELSE of > 100 is the smaller or equal amounts', () => {
-    expect(elseOf('>')).toMatch(/kleinere oder gleiche Beträge/i);
+    expect(elseOf('>')).toMatch(/equal or smaller amounts/i);
   });
 });
 
@@ -87,7 +87,7 @@ test('a table cleared after its SELECT is empty, not "without hits"', () => {
     "  WRITE / 'leer'.",
     'ENDIF.',
   )).join(' ');
-  expect(cleared).not.toMatch(/Ohne Treffer/);
+  expect(cleared).not.toMatch(/Without a hit/);
 
   const read = texts(src(
     'REPORT zqa.',
@@ -97,11 +97,11 @@ test('a table cleared after its SELECT is empty, not "without hits"', () => {
     "  WRITE / 'leer'.",
     'ENDIF.',
   )).join(' ');
-  expect(read, 'the control: straight after the SELECT it is a missing hit').toMatch(/Ohne Treffer/);
+  expect(read, 'the control: straight after the SELECT it is a missing hit').toMatch(/Without a hit/);
 });
 
 test('a call result labels its own output only, not a same-named variable elsewhere', () => {
-  const FROM_FUNCTION = /vom Funktionsbaustein zurückgegebene Feld/;
+  const FROM_FUNCTION = /field returned by the function module/;
   const other = texts(src(
     'REPORT zqa.',
     'FORM a.',

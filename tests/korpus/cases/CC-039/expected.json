@@ -34,7 +34,7 @@
         }
       ],
       "id": "CC-039-B01",
-      "text": "Die Bewertungsregel steht nicht im Programm, sondern in der Eingabe p_rule; das Programm liefert nur den Rahmen (Programmkopf, FORM-Signatur, ENDFORM)."
+      "text": "The evaluation rule is not in the program but in the input p_rule; the program only provides the frame (program header, FORM signature, ENDFORM)."
     },
     {
       "anchors": [
@@ -61,7 +61,7 @@
         }
       ],
       "id": "CC-039-B02",
-      "text": "Scheitert die Erzeugung, wird GENERATION_FAILED mit der Meldung ausgegeben und der Block verlassen; keine Routine wird ausgeführt."
+      "text": "If the generation fails, GENERATION_FAILED is output with the message and the block is exited; no routine is executed."
     },
     {
       "anchors": [
@@ -81,7 +81,7 @@
         }
       ],
       "id": "CC-039-B03",
-      "text": "Sonst wird die erzeugte Routine mit dem Betrag aufgerufen und das Ergebnis ausgegeben. Was die Routine mit dem Betrag tut, ist statisch nicht bestimmbar; ein Fachsatz über „Routing\" oder „Grenzwert\" ist nicht tragbar."
+      "text": "Otherwise the generated routine is called with the amount and the result is output. What the routine does with the amount cannot be determined statically; a business statement about \"routing\" or \"threshold\" cannot be supported."
     }
   ],
   "classes": [
@@ -161,10 +161,10 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:9, source.abap:10, source.abap:12 — Nicht „Literal ohne Wirkung\" (R13a); der Konsument ist Zeile 13.",
-    "source.abap:13 — Nicht B „keine SAP-Abhängigkeit sichtbar\". Die Abhängigkeiten stehen im erzeugten Code, den der Analysator nicht sieht.",
-    "source.abap:18 — Nicht als CC-012-Befund „externes Programm unbekannt, Allowlist verlangt\" kodieren; die Allowlist wäre hier eine Allowlist über ABAP-Quelltext.",
-    "source.abap:13 — Nicht als Kernelaufruf (K08 im v1-Sinn, R12) einordnen; die Anweisung ist dokumentierte ABAP-Syntax, ihr Ergebnis ist unbekannt."
+    "source.abap:9, source.abap:10, source.abap:12 — Not \"literal without effect\" (R13a); the consumer is line 13.",
+    "source.abap:13 — Not B \"no SAP dependency visible\". The dependencies are in the generated code, which the analyzer does not see.",
+    "source.abap:18 — Do not encode it as a CC-012 finding \"external program unknown, allowlist required\"; the allowlist here would be an allowlist over ABAP source code.",
+    "source.abap:13 — Do not classify it as a kernel call (K08 in the v1 sense, R12); the statement is documented ABAP syntax, its result is unknown."
   ],
   "id": "CC-039",
   "independence": [

@@ -36,7 +36,7 @@
         }
       ],
       "id": "CC-055-B01",
-      "text": "Für den eingegebenen Kunden wird die Anlage über die Transaktion XD01 mit dem eingegebenen Namen angestoßen und synchron verbucht; ob und was persistiert wird, entscheidet die aufgerufene Transaktion — im Ausschnitt gibt es keinen COMMIT und keinen Erfolgsnachweis außer dem Fehlen einer E-Meldung."
+      "text": "For the entered customer, the creation is triggered via transaction XD01 with the entered name and updated synchronously; whether and what is persisted is decided by the called transaction — in the excerpt there is no COMMIT and no evidence of success other than the absence of an E message."
     },
     {
       "anchors": [
@@ -70,7 +70,7 @@
         }
       ],
       "id": "CC-055-B02",
-      "text": "Enthält die Meldungstabelle eine Fehlermeldung, wird BDC_ERROR ausgegeben, sonst BDC_DONE."
+      "text": "If the message table contains an error message, BDC_ERROR is output, otherwise BDC_DONE."
     }
   ],
   "classes": [
@@ -129,10 +129,10 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:12 — 'KNA1-NAME1' ist kein UPDATE kna1: kein R02-Befund, kein D aus dem Feldnamen.",
-    "source.abap:14 — Nicht „keine Befunde, B\": ein Batch-Input ist keine SAP-abhängigkeitsfreie Standard-ABAP-Zeile.",
-    "source.abap:14 — Kein D „Anti-Clean-Core\": SAP-LEVEL nennt Batch-Input nicht unter D; die Einstufung C ist ein Kandidat (Prüferfrage), D wäre erfunden.",
-    "source.abap:21 — BDC_DONE ist kein Nachweis „Kunde angelegt\": keine E-Meldung ist kein Erfolgsbeweis (Abbruch ohne E-Meldung, Warnungen, Umleitung im Ziel)."
+    "source.abap:12 — 'KNA1-NAME1' is not an UPDATE kna1: no R02 finding, no D from the field name.",
+    "source.abap:14 — Not \"no findings, B\": a batch input is not a standard ABAP line free of SAP dependencies.",
+    "source.abap:14 — No D \"anti-clean-core\": SAP-LEVEL does not list batch input under D; the classification C is a candidate (reviewer question), D would be invented.",
+    "source.abap:21 — BDC_DONE is not evidence of \"customer created\": no E message is not proof of success (abort without E message, warnings, redirection in the target)."
   ],
   "id": "CC-055",
   "independence": [

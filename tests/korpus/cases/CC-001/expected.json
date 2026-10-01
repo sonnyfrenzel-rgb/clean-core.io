@@ -13,7 +13,7 @@
         }
       ],
       "id": "CC-001-B01",
-      "text": "Es werden Kunden mit dem eingegebenen Länderschlüssel selektiert."
+      "text": "Customers with the entered country key are selected."
     },
     {
       "anchors": [
@@ -33,7 +33,7 @@
         }
       ],
       "id": "CC-001-B02",
-      "text": "Ohne Treffer wird NO_MATCH ausgegeben und der Reportingblock verlassen."
+      "text": "If there is no match, NO_MATCH is output and the reporting block is exited."
     },
     {
       "anchors": [
@@ -46,7 +46,7 @@
         }
       ],
       "id": "CC-001-B03",
-      "text": "Bei Treffern werden Kundennummer und Name als Liste ausgegeben."
+      "text": "If there are matches, customer number and name are output as a list."
     }
   ],
   "classes": [

@@ -41,7 +41,7 @@
         }
       ],
       "id": "CC-032-B01",
-      "text": "Die Routenberechnung für den Fall wird asynchron in einer eigenen Task gestartet. Scheitert der Start (Kommunikation, System, Ressourcen), wird NOT_STARTED ausgegeben und der Block verlassen."
+      "text": "The route calculation for the case is started asynchronously in a separate task. If the start fails (communication, system, resources), NOT_STARTED is output and the block is exited."
     },
     {
       "anchors": [
@@ -61,7 +61,7 @@
         }
       ],
       "id": "CC-032-B02",
-      "text": "Gelingt der Start, wird STARTED ausgegeben; ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+      "text": "If the start succeeds, STARTED is output; no result is available at this point."
     },
     {
       "anchors": [
@@ -102,7 +102,7 @@
         }
       ],
       "id": "CC-032-B03",
-      "text": "Das Ergebnis trifft ausschließlich im Callback ein und wird dort nach gv_route übernommen; der Zeitpunkt steht nicht im Code. In dieser Scheibe wird gv_route nirgends ausgegeben oder weiterverwendet."
+      "text": "The result arrives exclusively in the callback and is placed in gv_route there; the point in time is not in the code. In this slice gv_route is never output or used further."
     }
   ],
   "classes": [

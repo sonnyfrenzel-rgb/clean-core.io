@@ -34,7 +34,7 @@
         }
       ],
       "id": "CC-040-B01",
-      "text": "Außerhalb des Aufrufkontexts von SAPMV45A liefert die Methode eine leere Belegnummer."
+      "text": "Outside the call context of SAPMV45A the method returns an empty document number."
     },
     {
       "anchors": [
@@ -54,7 +54,7 @@
         }
       ],
       "id": "CC-040-B02",
-      "text": "Innerhalb dieses Kontexts liefert sie die Belegnummer des gerade bearbeiteten Kundenauftrags aus dem Programmspeicher von SAPMV45A. Dass VBAK-VBELN dort diese Bedeutung hat, ist Fixture-Annahme (Beleggrad erinnert), nicht aus dem gelieferten Code ablesbar."
+      "text": "Within this context it returns the document number of the sales order currently being processed from the program memory of SAPMV45A. That VBAK-VBELN has this meaning there is a fixture assumption (evidence grade: recalled), not readable from the supplied code."
     }
   ],
   "classes": [
@@ -114,10 +114,10 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:9 — Nicht als CC-020-artiges Unknown ohne Objektabhängigkeit kodieren; SAPMV45A und VBAK müssen als Objekte erscheinen.",
-    "source.abap:9 — Nicht B „Standard-ABAP ohne SAP-Objekt\". Das SAP-Objekt steht im Literal.",
-    "source.abap:9 — Nicht D als Level: der Fall ist lesend, und für den Zugriffsweg ist keine SAP-Einstufung belegt. D ist known_worst_level.",
-    "source.abap:9 — Kein security_and_authorization-Befund: lesend, ohne Eingabe, ohne generisches Ziel."
+    "source.abap:9 — Do not encode it as a CC-020-like Unknown without object dependency; SAPMV45A and VBAK must appear as objects.",
+    "source.abap:9 — Not B \"standard ABAP without SAP object\". The SAP object is in the literal.",
+    "source.abap:9 — Not D as the level: the case is read-only, and no SAP classification is evidenced for the access path. D is known_worst_level.",
+    "source.abap:9 — No security_and_authorization finding: read-only, without input, without a generic target."
   ],
   "id": "CC-040",
   "independence": [

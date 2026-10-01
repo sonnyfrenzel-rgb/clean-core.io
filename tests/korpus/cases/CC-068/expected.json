@@ -29,7 +29,7 @@
         }
       ],
       "id": "CC-068-B01",
-      "text": "Erfüllt die eigene Kopfstruktur Auftragsart TA und Wert größer als 20000 (Gleichheit nicht; Wert ohne Währung), wird das Feld lifsk der Struktur auf 01 gesetzt. Im gelieferten Slice wird die Struktur nie gefüllt: der Zweig ist nicht erreichbar, es wird nichts ausgegeben und nichts persistiert."
+      "text": "If the program's own header structure meets order type TA and value greater than 20000 (equality does not count; value without currency), the field lifsk of the structure is set to 01. In the supplied slice the structure is never filled: the branch is not reachable, nothing is output and nothing is persisted."
     }
   ],
   "classes": [
@@ -68,12 +68,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:10 — Kein D aus dem FORM-Namen (R32@2.0.0-Lesart „MV45AFZZ u. ä. sind Marker, aus denen D folgt\"; CC-053-F01/F02-Muster; Fable KA-052 „namentlich erkennbar ohne Metadaten\"). Der Name ist ein Hinweis; die drei Gegenbelege entscheiden.",
-    "source.abap:7, source.abap:11, source.abap:12 — Kein SAP-Objekt VBAK (TABL) in der Objektliste: vbak ist ein Programmdatenobjekt mit eigenem Typ. Kein R29-Befund, kein R02-Befund, kein write-Knoten.",
-    "source.abap:10 — Kein Unknown „Hostmetadaten fehlen\" (CC-010-Lesart): REPORT und eigene Deklaration entscheiden — es gibt keinen Host, den Metadaten belegen könnten.",
-    "source.abap:12 — Kein Fachsatz „Liefersperre am Kundenauftrag\" oder „SD-Beleg wird gesperrt\": es gibt keinen Beleg, nur ein Feld einer eigenen Struktur.",
-    "source.abap:1 — Nicht A: klassischer REPORT mit FORM.",
-    "source.abap:10 — Nicht „Marker im Kommentar\" (R13a-Gegenprobe aus R32): der Name steht in Code, ist aber trotzdem nur Hypothese — die Gegenprobe des Kommentars und dieser Fall sind zwei verschiedene Gegenfälle."
+    "source.abap:10 — No D from the FORM name (R32@2.0.0 reading \"MV45AFZZ and the like are markers from which D follows\"; CC-053-F01/F02 pattern; Fable KA-052 \"recognizable by name without metadata\"). The name is a hint; the three counter-evidences decide.",
+    "source.abap:7, source.abap:11, source.abap:12 — No SAP object VBAK (TABL) in the object list: vbak is a program data object with its own type. No R29 finding, no R02 finding, no write node.",
+    "source.abap:10 — No Unknown \"host metadata missing\" (CC-010 reading): REPORT and own declaration decide — there is no host that metadata could evidence.",
+    "source.abap:12 — No business statement \"delivery block on the sales order\" or \"SD document is blocked\": there is no document, only a field of an own structure.",
+    "source.abap:1 — Not A: classic REPORT with FORM.",
+    "source.abap:10 — Not \"marker in the comment\" (R13a counter-check from R32): the name is in code, but is nevertheless only a hypothesis — the comment counter-check and this case are two different counter-cases."
   ],
   "id": "CC-068",
   "independence": [

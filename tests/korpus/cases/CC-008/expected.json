@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-008-B01",
-      "text": "Kunden ohne passenden Company-Satz im gewählten Buchungskreis bleiben nicht im Ergebnis."
+      "text": "Customers without a matching company record in the selected company code do not remain in the result."
     },
     {
       "anchors": [
@@ -40,7 +40,7 @@
         }
       ],
       "id": "CC-008-B02",
-      "text": "Ein fehlender Sales-Area-Satz allein entfernt einen sonst passenden Kunden nicht."
+      "text": "A missing sales area record alone does not remove an otherwise matching customer."
     }
   ],
   "classes": [
