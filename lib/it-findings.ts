@@ -71,6 +71,12 @@ export interface ItFindingRow {
   /** `CC-017` — the engine's own id for the finding. */
   id: string;
   kind: string;
+  /**
+   * The kind in plain words — "reads of SAP standard tables" — as the
+   * extensibility router prints it. Optional: a row built before it existed
+   * (or a fixture) falls back to the kind itself.
+   */
+  kindLabel?: string;
   title: string;
   severity: 'Critical' | 'High' | 'Medium' | 'Low' | 'Info';
   /** The SAP or customer object the finding is about, upper-cased. `null` when it is about a statement. */
@@ -106,6 +112,17 @@ export interface ItFindingsSource {
   sourceSha256: string;
   /** How many business rules the engine derived from that source at all. */
   rulesDerived: number;
+  /**
+   * The SAP catalog snapshot every level on the rows was read from — the one
+   * of the project's target profile (roadmap 7.10). Optional, so an answer
+   * built before it existed reads as "not recorded", never as a default list.
+   */
+  catalog?: { registryKey: string; sourceSha256: string };
+  /**
+   * What the engine read: the lines of the source, and the constructs it saw
+   * but no detector assesses (`CoverageReport.gaps`). Optional, as above.
+   */
+  coverage?: { lines: number; gaps: Array<{ label: string; count: number; firstLine: number }> };
 }
 
 /* ------------------------------------------------------------------ chain */

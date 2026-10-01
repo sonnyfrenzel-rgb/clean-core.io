@@ -545,7 +545,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         <>
           <Place place="it-chain" className="mt-5">
             <div className="max-w-3xl">{stop('it-chain')}</div>
-            <ItAnswers projectId="demo" findings={itFindings} />
+            <ItAnswers projectId="demo" findings={itFindings} project={project} />
           </Place>
           <div className="mt-5 max-w-3xl">
             <NotDeterminedCard data={open} />
