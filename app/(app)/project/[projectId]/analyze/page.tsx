@@ -13,21 +13,17 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType, getAuth } from '@/lib/firebase';
 import StageProgress from '@/components/StageProgress';
-import { UploadCloud, FileCode2, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Activity, HelpCircle, Info, Layers, Shield, Zap, Cloud } from 'lucide-react';
+import { UploadCloud, FileCode2, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Info, Layers, Shield, Zap, Cloud } from 'lucide-react';
 import clsx from 'clsx';
 import CcButton from '@/components/cc/Button';
-import CcIconButton from '@/components/cc/IconButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
-import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import { CcTag } from '@/components/cc/Tag';
 import CcDialog from '@/components/cc/Dialog';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import CcTable from '@/components/cc/Table';
-import CcTabs from '@/components/cc/Tabs';
+import CcCard from '@/components/cc/Card';
+import CcDisclosure from '@/components/cc/Disclosure';
 import CcField from '@/components/cc/Field';
 import CcCheckbox from '@/components/cc/Checkbox';
-import { CcSeverity } from '@/components/cc/Identifier';
-import { normaliseSeverity } from '@/lib/severity';
 import { STATE_CLASSES } from '@/components/cc/state';
 import type { SemanticState } from '@/lib/provenance';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
@@ -71,7 +67,7 @@ import AssessmentTargetFields from '@/components/analyze/AssessmentTargetFields'
 import { catalogLookupTargetOf, declaredTargetOf, repositoryObjectsOf, type AssessmentTarget } from '@/lib/assessment-target';
 import DataCouplingTable from '@/components/analyze/DataCouplingTable';
 import ComplianceReviewHints from '@/components/ComplianceReviewHints';
-import ReviewTasks from '@/components/ReviewTasks';
+import ReviewTasks, { reviewTasksTitle } from '@/components/ReviewTasks';
 import { deriveReviewTasks } from '@/lib/abap/review-tasks';
 import BusinessValueAudit from '@/components/analyze/BusinessValueAudit';
 import PlainEnglishGuide from '@/components/analyze/PlainEnglishGuide';
@@ -100,6 +96,12 @@ import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
 import type { AtcReport as AtcReportType } from '@/lib/abap/atc-model';
 
 import StageHeader from '@/components/StageHeader';
+import StageFooter from '@/components/StageFooter';
+import { workspaceShellEnabled } from '@/lib/workspace-shell';
+import { coverageCaveat } from '@/lib/abap/coverage';
+import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
+import EvidenceFindingsTable from '@/components/analyze/EvidenceFindingsTable';
+import { analysisAnswer, countFindings, groupEvidenceFindings, shortRoute } from '@/components/analyze/analysis-answer';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
@@ -112,7 +114,7 @@ export default function AnalyzePage() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { profile } = useUserProfile();
+  const { profile, loading: profileLoading } = useUserProfile();
   // Help Mode removed — Ask AI chatbot replaces this functionality
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(0);
@@ -126,8 +128,6 @@ export default function AnalyzePage() {
   const isFromExample = !!project?.fromExample || project?.isExample;
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState('manual-input.abap');
-  const [activeTab, setActiveTab] = useState<'evidence' | 'backlog' | 'detailed' | 'strategy'>('evidence');
-  const [evidenceFilter, setEvidenceFilter] = useState<'All' | 'Critical' | 'High' | 'Medium' | 'Low'>('All');
   const [isSticky, setIsSticky] = useState(false);
   const [routeReport, setRouteReport] = useState<import('@/lib/abap/extensibility-router').ExtensibilityRouteReport | null>(null);
   const [usageReport, setUsageReport] = useState<UsageReportType | null>(null);
@@ -212,7 +212,6 @@ export default function AnalyzePage() {
 
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState('');
-  const [isNavigating, setIsNavigating] = useState(false);
   const [sweepActive, setSweepActive] = useState(false);
   const [sweepFindings, setSweepFindings] = useState<import('@/lib/abap/evidence-model').EvidenceFinding[]>([]);
   const [sweepCode, setSweepCode] = useState('');
@@ -777,6 +776,162 @@ export default function AnalyzePage() {
     modelAvailability.stages,
   ]);
 
+  // ── The results, answer first (ADR-029, §2.11, mockup s8/s4) ──
+  //
+  // The page used to open its results with a report card titled as a report,
+  // four tabs and a ring that read "62% Compliance". What a reader needs first
+  // is the answer: one sentence and four figures, then the findings, the route,
+  // the worklist — and everything else one action deeper, folded with a count,
+  // never removed. All that "could not be determined" is gathered in one place
+  // with its reason, instead of a paragraph wherever it happened to arise.
+  const [notDeterminedOpen, setNotDeterminedOpen] = useState(false);
+  const showNotDetermined = () => {
+    setNotDeterminedOpen(true);
+    window.requestAnimationFrame(() =>
+      document.getElementById('analysis-not-determined')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    );
+  };
+  const findingCounts = useMemo(() => countFindings(groupEvidenceFindings(evidenceFindings)), [evidenceFindings]);
+  const sourceLines = legacyCode ? legacyCode.split('\n').length : 0;
+
+  /** The one section of things not determined, each with its reason — folded, never dropped. */
+  const renderNotDetermined = (items: readonly OpenItem[]) =>
+    items.length === 0 ? null : (
+      <section
+        id="analysis-not-determined"
+        data-analysis-not-determined={items.length}
+        className="scroll-mt-24 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc px-4 py-2 sm:px-6"
+      >
+        <CcDisclosure
+          level={2}
+          density="cozy"
+          title={`${items.length} ${items.length === 1 ? 'thing' : 'things'} this analysis could not determine`}
+          open={notDeterminedOpen}
+          onOpenChange={setNotDeterminedOpen}
+        >
+          <ul className="m-0 p-0 list-none divide-y divide-cc-line">
+            {items.map((item) => (
+              <li key={item.key} data-not-determined-item={item.key} className="py-4 first:pt-2 last:pb-0">
+                <h3 className="m-0 cc-text-h3 text-cc-ink">{item.title}</h3>
+                <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted max-w-3xl">{item.reason}</p>
+                {item.body ? <div className="mt-3">{item.body}</div> : null}
+              </li>
+            ))}
+          </ul>
+        </CcDisclosure>
+      </section>
+    );
+
+  /** What the engine could not settle in the source itself — the same three in both kinds of report. */
+  const sourceOpenItems = (): OpenItem[] => {
+    const items: OpenItem[] = [];
+    if (evidenceReport && coverageCaveat(evidenceReport.coverage)) {
+      items.push({
+        key: 'coverage',
+        title: 'Statements outside the engine’s checks',
+        reason: 'Nobody has judged these statements either way — they are not defects, and not cleared either.',
+        body: <UnassessedConstructs coverage={evidenceReport.coverage} />,
+      });
+    }
+    if (missingDeps.length > 0) {
+      items.push({
+        key: 'missing-objects',
+        title: `${missingDeps.length} ${missingDeps.length === 1 ? 'object' : 'objects'} the code refers to but were not supplied`,
+        reason: 'Without their source the engine cannot resolve what this code inherits or calls through them.',
+        body: <MissingDependencyPrompt missing={missingDeps} />,
+      });
+    }
+    if (reviewTasks.counts.total > 0) {
+      items.push({
+        key: 'check-tasks',
+        title: reviewTasksTitle(reviewTasks.counts.total),
+        reason: 'Each one is a question, not a result: it names the line and the one step that would settle it.',
+        body: <ReviewTasks result={reviewTasks} />,
+      });
+    }
+    return items;
+  };
+
+  /** Inventory, data access, the levels A–D and the review hints — one fold in both kinds of report. */
+  const renderInventory = () => {
+    // Recomputed from the code on the page, on the 1–10 scale.
+    const liveComplexity = legacyCode ? computeComplexityScore(legacyCode) : project?.complexityScore;
+    const liveCriticality = legacyCode ? computeCriticalityScore(legacyCode) : project?.criticalityScore;
+    if (!project) return null;
+    return (
+      <>
+        {(liveComplexity !== undefined || liveCriticality !== undefined) && (
+          <div className="flex flex-wrap gap-4">
+            {liveComplexity !== undefined && (
+              <ScoreMeter
+                title="Complexity measures structural code intricacy: control flow depth, dependency count, and custom object coupling. Scale: 1 = trivial, 5 = moderate, 10 = highly complex."
+                icon={<Layers size={16} aria-hidden="true" />}
+                label="Complexity"
+                value={liveComplexity}
+                caption={liveComplexity >= 7 ? 'High — significant refactoring needed' : liveComplexity >= 4 ? 'Moderate — manageable effort' : 'Low — straightforward migration'}
+              />
+            )}
+            {liveCriticality !== undefined && (
+              <ScoreMeter
+                title="Criticality measures business impact: process priority, data sensitivity, and integration depth. Scale: 1 = low impact, 5 = important, 10 = mission-critical."
+                icon={<Zap size={16} aria-hidden="true" />}
+                label="Criticality"
+                value={liveCriticality}
+                caption={liveCriticality >= 7 ? 'Mission-critical — requires careful planning' : liveCriticality >= 4 ? 'Important — schedule appropriately' : 'Low impact — quick win candidate'}
+              />
+            )}
+          </div>
+        )}
+        <CodeInventoryTable codeInventory={project.codeInventory || []} />
+        <ModuleHeatmap codeInventory={project.codeInventory || []} />
+        <DataCouplingTable dataCoupling={project.dataCoupling || []} />
+        {/* Cloud Readiness Classification (A–D) */}
+        <AssessmentProfileSummary project={project} />
+        <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} deployment={project.s4Deployment} release={project.assessmentProfile?.release} />
+        {/* What those same tables may mean for a compliance review (roadmap
+            7.7) — hints out of the table names, never a classification of
+            anybody's data, and no model call. */}
+        <ComplianceReviewHints dataCoupling={project.dataCoupling || []} />
+        {/* With nothing open, the check tasks say so here, in their own words;
+            with something open they are listed under "could not determine". */}
+        {reviewTasks.counts.total === 0 && <ReviewTasks result={reviewTasks} />}
+      </>
+    );
+  };
+
+  /** The imports a reader made, compared with — never merged into — the engine's findings. */
+  const renderImports = () => {
+    const usage = usageReport || project?.usageReport;
+    const atc = atcReport || project?.atcReport;
+    const showUsage = !!usage && evidenceFindings.length > 0 && !!routeReport;
+    if (!showUsage && !atc) return null;
+    return (
+      <Folded title="Imported usage and ATC results" count={(showUsage ? 1 : 0) + (atc ? 1 : 0)}>
+        {/* v1.22: Usage × Evidence Risk Matrix */}
+        {(usageReport || project?.usageReport) && evidenceFindings.length > 0 && routeReport && (
+          <SectionBoundary name="Usage Risk Matrix">
+            <UsageRiskMatrixFor
+              usageReport={(usageReport || project!.usageReport)!}
+              findings={evidenceFindings}
+              route={routeReport}
+              target={project ? catalogLookupTargetOf(project) : null}
+            />
+          </SectionBoundary>
+        )}
+        {/* Roadmap 7.1: ATC-Import, compared with — never merged into — the
+            engine's own evidence findings. */}
+        {(atcReport || project?.atcReport) && (
+          <SectionBoundary name="ATC Findings Panel">
+            <AtcFindingsPanel
+              atcReport={(atcReport || project!.atcReport)!}
+              findings={evidenceFindings}
+            />
+          </SectionBoundary>
+        )}
+      </Folded>
+    );
+  };
+
   const renderAnalysisContent = () => {
     if (!project?.analysis) {
       // Roadmap 1.2, acceptance V25-A12: *"'nicht erzeugt' statt leer"*.
@@ -787,51 +942,58 @@ export default function AnalyzePage() {
       // follows is that run's evidence, with the one missing part named as
       // missing. Everything here is computed without a model.
       if (!project?.activeRunId) return null;
+      const openItems: OpenItem[] = [
+        ...sourceOpenItems(),
+        {
+          key: 'business-value',
+          title: 'Business value assessment',
+          reason: 'Asset score, value drivers and the plain-English action plan come from the narrative, which this run does not have.',
+          body: <NotGenerated what="Business value assessment" absence={narrativeAbsence} stage="analyze" />,
+        },
+        {
+          key: 'strategy',
+          title: 'Modernisation strategy',
+          reason: 'The standardisation fit and the recommendation prose come from the narrative. The route on this page does not.',
+          body: <NotGenerated what="Modernisation strategy" absence={narrativeAbsence} stage="analyze" />,
+        },
+      ];
+      const evidenceRoute = project.extensibilityRoute ?? null;
       return (
-        <div className="space-y-8 font-sans" data-evidence-only-report>
+        <div className="space-y-6 font-sans" data-evidence-only-report>
+          <AnalysisAnswer
+            answer={analysisAnswer({
+              counts: findingCounts,
+              lines: sourceLines,
+              route: evidenceRoute,
+              routeChosenByReader: false,
+              notDetermined: openItems.length,
+            })}
+            counts={findingCounts}
+            score={signedCleanCoreScore}
+            routeLabel={shortRoute(evidenceRoute)}
+            routeChosenByReader={false}
+            notDetermined={openItems.length}
+            onExplainScore={() => setShowScoreModal(true)}
+            onShowNotDetermined={showNotDetermined}
+          />
+
           <NotGenerated
             what="Analysis narrative"
             absence={narrativeAbsence}
             stage="analyze"
-            hint="Everything below was computed by the evidence engine and is covered by this run's signature. Re-run the analysis once a model is available to add the narrative."
+            hint="Everything on this page was computed by the evidence engine and is covered by this run's signature. Re-run the analysis once a model is available to add the narrative."
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-cc-card border border-cc-line bg-cc-surface shadow-cc px-6 py-5">
-              <span className="cc-text-label text-cc-ink-muted">Clean Core Score</span>
-              <p className="mt-2 cc-text-title text-cc-ink">
-                {signedCleanCoreScore !== null ? `${signedCleanCoreScore}%` : 'Not yet computed'}
-              </p>
-            </div>
-            <div className="rounded-cc-card border border-cc-line bg-cc-surface shadow-cc px-6 py-5">
-              <span className="cc-text-label text-cc-ink-muted">Extensibility route</span>
-              <p className="mt-2 cc-text-h2 text-cc-ink">
-                {project.extensibilityRoute || 'Not determined'}
-              </p>
+          <EvidenceFindingsTable findings={evidenceFindings} />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <CcCard title="Extensibility route" level={2}>
+              <p className="m-0 cc-text-h3 text-cc-ink">{project.extensibilityRoute || 'Not determined'}</p>
               {project.recommendationJustification && (
-                <p className="mt-1 cc-text-cell text-cc-ink-muted">{project.recommendationJustification}</p>
+                <p className="mt-2 cc-text-cell text-cc-ink-muted">{project.recommendationJustification}</p>
               )}
-            </div>
+            </CcCard>
           </div>
-
-          {missingDeps.length > 0 && <MissingDependencyPrompt missing={missingDeps} />}
-
-          <CoverageVerdict findings={findings} summary={findingsSummary} />
-          <ConstructFindings findings={findings} />
-          {evidenceReport && <UnassessedConstructs coverage={evidenceReport.coverage} />}
-
-          <CodeInventoryTable codeInventory={project.codeInventory || []} />
-          <ModuleHeatmap codeInventory={project.codeInventory || []} />
-          <DataCouplingTable dataCoupling={project.dataCoupling || []} />
-          <AssessmentProfileSummary project={project} />
-          <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} deployment={project.s4Deployment} release={project.assessmentProfile?.release} />
-          {/* What those same tables may mean for a compliance review (roadmap
-              7.7) — hints out of the table names, never a classification of
-              anybody's data, and no model call. */}
-          <ComplianceReviewHints dataCoupling={project.dataCoupling || []} />
-          {/* What this reading could not settle, as tasks with a line each
-              (roadmap 7.5) - never a verdict about the code. */}
-          <ReviewTasks result={reviewTasks} />
 
           <GapsWorklist
             projectId={projectId as string}
@@ -842,20 +1004,19 @@ export default function AnalyzePage() {
             onUpdateWorklist={handleUpdateWorklist}
           />
 
-          <NotGenerated
-            what="Business value assessment"
-            absence={narrativeAbsence}
-            stage="analyze"
-            hint="Asset score, value drivers and the plain-English action plan come from the narrative."
-          />
-          <NotGenerated
-            what="Modernisation strategy"
-            absence={narrativeAbsence}
-            stage="analyze"
-            hint="The standardisation fit and the recommendation prose come from the narrative. The route above does not."
-          />
+          {renderNotDetermined(openItems)}
 
-          <WhyScorePanel project={project} />
+          <Folded title="Language constructs the engine resolved" count={findings.length}>
+            <CoverageVerdict findings={findings} summary={findingsSummary} />
+            <ConstructFindings findings={findings} />
+          </Folded>
+
+          <Folded title="Code inventory, data access and clean core levels A–D">
+            {renderInventory()}
+            <WhyScorePanel project={project} />
+          </Folded>
+
+          {renderImports()}
         </div>
       );
     }
@@ -863,7 +1024,7 @@ export default function AnalyzePage() {
     // The one reader of a stored analysis: every stored shape, amounts of money masked (lib/money-honesty.ts).
     // Not JSON → null, and the markdown fallback below masks its text the same way.
     const analysisData = readStoredAnalysis<AnalysisData>(project.analysis);
-    // The narrative's gaps, one reading for the Gaps Backlog tab (`lib/model-gaps.ts`).
+    // The narrative's gaps, one reading for the worklist (`lib/model-gaps.ts`).
     const analysisGapsReading = readModelGaps(analysisData?.gaps);
 
     /**
@@ -899,405 +1060,232 @@ export default function AnalyzePage() {
           `3. Decouple unique, high-value custom intellectual property into a modern, upgrade-stable ${analysisData.extensibilityRouting?.recommendedRoute || 'decoupled'} architecture.`
         ]
       };
-const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP');
       const checkpoints = analysisData.extensibilityRouting?.decisionTreeCheckpoints;
       const comparative = analysisData.extensibilityRouting?.comparativeAnalysis;
+      const shownRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || null;
+      const routeForCards = shownRoute || 'Side-by-Side (SAP BTP)';
+      const isBtp = routeForCards.includes('BTP');
+      const rationale = analysisData.extensibilityRouting?.rationale;
+      const planIsModel = modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) !== null;
+
+      // The action plan, with the line that says whose it is (D.10b, from
+      // D.13): the model's, marked as a proposal — or the page's generic
+      // guidance, which is the same for every run and is said to be.
+      const actionPlan = (
+        <div className="space-y-3">
+          <div data-action-plan-origin={modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) ? 'model' : 'generic'} className="flex flex-wrap items-center gap-2">
+            <span className="cc-text-label text-cc-ink-muted">Action plan</span>
+            {modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) ? (
+              <CcProvenanceChip value="proposed" />
+            ) : (
+              <span className="cc-text-meta text-cc-ink-muted">
+                Generic guidance — no action plan was returned for this run.
+              </span>
+            )}
+          </div>
+          <PlainEnglishGuide
+            plainEnglishActionPlan={bizFallback.plainEnglishActionPlan}
+            extensibilityRoute={project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Decoupled Extension'}
+          />
+        </div>
+      );
+
+      const openItems: OpenItem[] = [...sourceOpenItems()];
+      if (!routeIsOverridden && signedRouteConfidence === null) {
+        openItems.push({
+          key: 'route-confidence',
+          title: 'How certain the route recommendation is',
+          reason: 'This run recorded no confidence for its route, so none is shown — a missing figure is not filled in.',
+        });
+      }
+      if (!routeIsOverridden && !rationale) {
+        openItems.push({
+          key: 'route-rationale',
+          title: 'Why this route was recommended',
+          reason: 'No rationale was recorded for this route. The route itself comes from fixed rules over the findings.',
+        });
+      }
+      if (!analysisData.standardFit?.potential) {
+        openItems.push({
+          key: 'standard-fit',
+          title: 'How much of it the SAP standard covers',
+          reason: 'The narrative named no standard fit for this code.',
+        });
+      }
+      if (!planIsModel) {
+        openItems.push({
+          key: 'action-plan',
+          title: 'An action plan for this code',
+          reason: 'No action plan was returned for this run. The steps below are generic guidance, the same for every analysis — not derived from this code.',
+          body: actionPlan,
+        });
+      }
+
+      const answer = analysisAnswer({
+        counts: findingCounts,
+        lines: sourceLines,
+        route: shownRoute,
+        routeChosenByReader: routeIsOverridden,
+        notDetermined: openItems.length,
+      });
 
       return (
-        <div className="space-y-8 font-sans">
-          {/* The four report sections: the WAI-ARIA tabs of §2 (CcTabs, D.10b).
-              Panels that are not chosen stay in the document, only hidden. */}
-          {activeTab === 'evidence' && (
-            <p className="cc-text-meta text-cc-ink-muted">
-              Explore all 4 report sections before proceeding to Solution Design.
-            </p>
-          )}
-          <CcTabs
-            label="Report sections"
-            density="cozy"
-            value={activeTab}
-            onChange={setActiveTab}
-            tabs={[
-            // Decision & Evidence
-            { value: 'evidence', label: 'Decision & Evidence', content: (
-            <div className="space-y-10 motion-safe:animate-in fade-in duration-300">
-              {/* Missing Dependency Prompt — surfaces gaps upfront */}
-              {missingDeps.length > 0 && (
-                <MissingDependencyPrompt missing={missingDeps} />
-              )}
-              {/* Core metrics panel */}
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
-                {/* Clean Core Score, as signed. A light card: dark surfaces are
-                    for code only (ADR-028), and the ring is ink — a score is a
-                    measurement, not a proof, so it is not green (ADR-007). */}
-                <div className="bg-cc-surface text-cc-ink rounded-cc-card p-6 flex flex-col items-center justify-center text-center shadow-cc border border-cc-line">
-                  <div className="flex items-center gap-1 mb-4">
-                    <span className="cc-text-label text-cc-ink-muted">Clean Core Score</span>
-                    <CcIconButton
-                      label="Explain Clean Core Score"
-                      onClick={() => setShowScoreModal(true)}
-                      title="Explain Clean Core Score"
-                    >
-                      <HelpCircle size={16} aria-hidden="true" />
-                    </CcIconButton>
-                  </div>
+        <div className="space-y-6 font-sans">
+          <AnalysisAnswer
+            answer={answer}
+            counts={findingCounts}
+            score={signedCleanCoreScore}
+            routeLabel={shortRoute(shownRoute)}
+            routeChosenByReader={routeIsOverridden}
+            notDetermined={openItems.length}
+            onExplainScore={() => setShowScoreModal(true)}
+            onShowNotDetermined={showNotDetermined}
+          />
 
-                  <div className="relative w-36 h-36 flex items-center justify-center mb-4">
-                    <svg className="w-full h-full transform -rotate-90" aria-hidden="true">
-                      <circle cx="72" cy="72" r="56" className="stroke-cc-line fill-none" strokeWidth="8" />
-                      <circle
-                        cx="72"
-                        cy="72"
-                        r="56"
-                        className="stroke-cc-ink fill-none transition-all duration-1000 ease-out"
-                        strokeWidth="8"
-                        strokeDasharray="351.8"
-                        strokeDashoffset={351.8 - (351.8 * (signedCleanCoreScore ?? 0)) / 100}
-                      />
-                    </svg>
-                    <div className="absolute flex flex-col items-center">
-                      <span className="cc-text-title text-cc-ink">
-                        {signedCleanCoreScore !== null ? `${signedCleanCoreScore}%` : '—'}
-                      </span>
-                      <span className="cc-text-meta text-cc-ink-muted">
-                        {signedCleanCoreScore !== null ? 'Compliance' : 'Not yet computed'}
-                      </span>
-                    </div>
-                  </div>
+          <EvidenceFindingsTable findings={evidenceFindings} />
 
-                  <p className="cc-text-meta text-cc-ink-muted mt-2 max-w-[200px]">Higher score indicates better alignment with standard extensibility guidelines.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div className="min-w-0">
+              {/* The route, as the rules recommended it or as the reader chose it. */}
+              <CcCard title="Extensibility route" level={2}>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* The preservation register names this element as where
+                      `extensibilityRoute` becomes visible; see
+                      docs/registers/preservation-register.json. */}
+                  <span data-stage-output="extensibilityRoute" className={ROUTE_TAG_CLASS}>
+                    {isBtp
+                      ? <GlossaryTerm termKey="BTP" className="border-b-0 text-cc-ink">BTP Side-by-Side</GlossaryTerm>
+                      : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">ABAP Cloud (RAP)</GlossaryTerm>}
+                  </span>
+                  <span className="cc-text-meta text-cc-ink-muted">
+                    {routeIsOverridden
+                      ? 'Chosen by you'
+                      : signedRouteConfidence !== null
+                        ? `${signedRouteConfidence}% Conf.`
+                        : 'Confidence not computed'}
+                  </span>
                 </div>
+                <h3 className="m-0 mt-3 cc-text-identifier text-cc-ink">
+                  {/* After a switch, the recommended route's artefact is not the target
+                      (QA full review of fc787674705f, 08fd882e60b3). */}
+                  Target: {(!routeIsOverridden && analysisData.extensibilityRouting?.targetArtifact) || (isBtp
+                    ? <GlossaryTerm termKey="CAP" className="border-b-0 text-cc-ink">SAP BTP Node.js App (CAP)</GlossaryTerm>
+                    : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">RAP Business Object</GlossaryTerm>)}
+                </h3>
+                {routeIsOverridden ? (
+                  // The confidence and the reasoning belong to the route
+                  // that was recommended. Printed beside a route the user
+                  // switched to, they read as support for the opposite
+                  // decision (QA review of 33471220d6e9, 210bafeb4c8b).
+                  <p className="mt-1 cc-text-cell text-cc-ink-muted">
+                    You changed this route. The recommendation was{' '}
+                    <span className="font-semibold text-cc-ink">{analysisData.extensibilityRouting?.recommendedRoute}</span>
+                    {signedRouteConfidence !== null
+                      ? ` at ${signedRouteConfidence}% confidence`
+                      : ''}
+                    {rationale ? `: ${rationale}` : '.'}
+                  </p>
+                ) : rationale ? (
+                  <p className="mt-1 cc-text-cell text-cc-ink-muted">{rationale}</p>
+                ) : (
+                  // Said in one short line here; the reason is in the list of
+                  // things not determined.
+                  <p className="mt-1 cc-text-cell text-cc-ink-muted">No rationale recorded.</p>
+                )}
+                <p className="mt-3 cc-text-meta text-cc-ink-muted">
+                  Target system: {(project.s4Deployment || 'public') === 'public' ? 'S/4HANA Public Cloud' : 'Private Cloud / RISE'}
+                </p>
 
-                {/* Extensibility Router Card */}
-                <div className="bg-cc-surface rounded-cc-card p-6 border border-cc-line shadow-cc flex flex-col justify-between">
-                  <div>
-                    <span className="cc-text-label text-cc-ink-muted">Extensibility Router</span>
-                    <div className="flex flex-wrap items-center gap-2 mt-2 mb-3">
-                      {/* The preservation register names this element as where
-                          `extensibilityRoute` becomes visible; see
-                          docs/registers/preservation-register.json. */}
-                      <span data-stage-output="extensibilityRoute" className={ROUTE_TAG_CLASS}>
-                        {(project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)').includes('BTP')
-                          ? <GlossaryTerm termKey="BTP" className="border-b-0 text-cc-ink">BTP Side-by-Side</GlossaryTerm>
-                          : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">ABAP Cloud (RAP)</GlossaryTerm>}
-                      </span>
-                      <span className="cc-text-meta text-cc-ink-muted">
-                        {routeIsOverridden
-                          ? 'Chosen by you'
-                          : signedRouteConfidence !== null
-                            ? `${signedRouteConfidence}% Conf.`
-                            : 'Confidence not computed'}
-                      </span>
-                    </div>
-                    <h3 className="cc-text-identifier text-cc-ink mb-1">
-                      {/* After a switch, the recommended route's artefact is not the target
-                          (QA full review of fc787674705f, 08fd882e60b3). */}
-                      Target: {(!routeIsOverridden && analysisData.extensibilityRouting?.targetArtifact) || ((project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || '').includes('BTP')
-                        ? <GlossaryTerm termKey="CAP" className="border-b-0 text-cc-ink">SAP BTP Node.js App (CAP)</GlossaryTerm>
-                        : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">RAP Business Object</GlossaryTerm>)}
-                    </h3>
-                    {routeIsOverridden ? (
-                      // The confidence and the reasoning belong to the route
-                      // that was recommended. Printed beside a route the user
-                      // switched to, they read as support for the opposite
-                      // decision (QA review of 33471220d6e9, 210bafeb4c8b).
-                      <p className="cc-text-cell text-cc-ink-muted">
-                        You changed this route. The recommendation was{' '}
-                        <span className="font-semibold text-cc-ink">{analysisData.extensibilityRouting?.recommendedRoute}</span>
-                        {signedRouteConfidence !== null
-                          ? ` at ${signedRouteConfidence}% confidence`
-                          : ''}
-                        {analysisData.extensibilityRouting?.rationale ? `: ${analysisData.extensibilityRouting.rationale}` : '.'}
-                      </p>
-                    ) : (
-                      <p className="cc-text-cell text-cc-ink-muted line-clamp-4">
-                        {/* The fallback used to credit "AI" with a routing
-                            decision nobody recorded (§3.1). Said as missing. */}
-                        {analysisData.extensibilityRouting?.rationale || 'No rationale was recorded for this route.'}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Interactive Override Button */}
-                  <div className="border-t border-cc-line pt-4 mt-4 flex flex-wrap items-center justify-between gap-2">
-                    <span className="cc-text-label text-cc-ink-muted">Override Route</span>
-                    <CcButton
-                      variant="ghost"
-                      icon={<RefreshCw size={16} aria-hidden="true" />}
-                      onClick={async () => {
-                        const currentRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)';
-                        const nextRoute = currentRoute.includes('BTP') ? 'In-App (ABAP Cloud)' : 'Side-by-Side (SAP BTP)';
-
-                        const docRef = doc(getDb(), 'projects', projectId as string);
-                        await updateDoc(docRef, { extensibilityRoute: nextRoute });
-                        setProject((prev: any) => prev ? { ...prev, extensibilityRoute: nextRoute } : prev);
-                      }}
-                    >
-                      Switch Track
-                    </CcButton>
-                  </div>
-                </div>
-
-                {/* ── Evidence Metadata Bar — Confidence + Evidence Count + Assumptions ── */}
+                {/* ── The evidence behind the route, while the run that computed it is on screen ── */}
                 {routeReport && (
-                  <div className="bg-cc-surface-muted rounded-cc-card px-4 py-3 border border-cc-line flex flex-wrap items-center gap-4 lg:col-span-4">
-                    <div className="flex items-center gap-2">
-                      <span className="cc-text-label text-cc-ink-muted">Confidence</span>
-                      <span className={clsx('cc-text-meta', STATE_CLASSES[scoreState(routeReport.confidenceScore, 'higher-is-better')].text)}>{routeReport.confidenceScore}%</span>
-                    </div>
-                    <div className="h-4 w-px bg-cc-line"></div>
-                    <div className="flex items-center gap-2">
-                      <span className="cc-text-label text-cc-ink-muted">Based on</span>
-                      <span className="cc-text-meta text-cc-ink">
-                        {routeReport.evidenceCounts.totalFindings} findings
-                        {routeReport.evidenceCounts.criticalFindings > 0 && (
-                          <span className="text-cc-error ml-1">({routeReport.evidenceCounts.criticalFindings} critical)</span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="h-4 w-px bg-cc-line"></div>
-                    <div className="flex items-center gap-2">
-                      <span className="cc-text-label text-cc-ink-muted">Supporting</span>
-                      <span className="cc-text-meta text-cc-ink">{routeReport.evidenceCounts.supportingFindings} findings drive the route</span>
-                    </div>
+                  <div className="mt-3 rounded-cc-row bg-cc-surface-muted px-3 py-2 border border-cc-line flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <span className="cc-text-meta text-cc-ink-muted">
+                      Confidence{' '}
+                      <span className={STATE_CLASSES[scoreState(routeReport.confidenceScore, 'higher-is-better')].text}>{routeReport.confidenceScore}%</span>
+                    </span>
+                    <span className="cc-text-meta text-cc-ink">
+                      Based on {routeReport.evidenceCounts.totalFindings} findings
+                      {routeReport.evidenceCounts.criticalFindings > 0 && (
+                        <span className="text-cc-error ml-1">({routeReport.evidenceCounts.criticalFindings} critical)</span>
+                      )}
+                    </span>
+                    <span className="cc-text-meta text-cc-ink">{routeReport.evidenceCounts.supportingFindings} findings drive the route</span>
                     {routeReport.assumptions.length > 0 && (
-                      <>
-                        <div className="h-4 w-px bg-cc-line"></div>
-                        <details className="cc-text-cell text-cc-ink-muted cursor-pointer">
-                          <summary className="cc-text-label text-cc-ink-muted hover:text-cc-ink">
-                            {routeReport.assumptions.length} Assumption{routeReport.assumptions.length > 1 ? 's' : ''}
-                          </summary>
-                          <ul className="mt-2 space-y-1 pl-2 max-w-xl">
-                            {routeReport.assumptions.map((a, i) => (
-                              <li key={i} className="cc-text-cell text-cc-ink-muted">• {a}</li>
-                            ))}
-                          </ul>
-                        </details>
-                      </>
+                      <CcDisclosure title="Assumptions" count={routeReport.assumptions.length}>
+                        <ul className="mt-1 space-y-1 pl-2">
+                          {routeReport.assumptions.map((a, i) => (
+                            <li key={i} className="cc-text-cell text-cc-ink-muted">• {a}</li>
+                          ))}
+                        </ul>
+                      </CcDisclosure>
                     )}
                   </div>
                 )}
-                {/* Project Summary Card */}
-                <div className="bg-cc-surface rounded-cc-card p-6 border border-cc-line shadow-cc flex flex-col justify-between lg:col-span-2 overflow-hidden">
-                  <div className="min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="cc-text-label text-cc-ink-muted">Analysis Summary</span>
-                      <CcTag>
-                        {(project.s4Deployment || 'public') === 'public' ? 'S/4HANA Public Cloud' : 'Private Cloud / RISE'}
-                      </CcTag>
-                    </div>
-                    <h3 className="cc-text-h2 text-cc-ink mt-2 mb-3 break-words">{analysisData.projectTitle || project.name}</h3>
-                    {/*
-                      The summary is the one narrative field a reader treats as
-                      the report's conclusion, and it is outside the signature by
-                      design. It now shows which of its sentences point at a line
-                      of the program and which do not.
-                    */}
+
+                {/* Interactive override: the reader's choice, marked as theirs above. */}
+                <div className="border-t border-cc-line pt-3 mt-4 flex flex-wrap items-center justify-between gap-2">
+                  <span className="cc-text-meta text-cc-ink-muted">Not the route you want?</span>
+                  <CcButton
+                    variant="ghost"
+                    icon={<RefreshCw size={16} aria-hidden="true" />}
+                    onClick={async () => {
+                      const currentRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)';
+                      const nextRoute = currentRoute.includes('BTP') ? 'In-App (ABAP Cloud)' : 'Side-by-Side (SAP BTP)';
+
+                      const docRef = doc(getDb(), 'projects', projectId as string);
+                      await updateDoc(docRef, { extensibilityRoute: nextRoute });
+                      setProject((prev: any) => prev ? { ...prev, extensibilityRoute: nextRoute } : prev);
+                    }}
+                  >
+                    {isBtp ? 'Switch to ABAP Cloud' : 'Switch to BTP'}
+                  </CcButton>
+                </div>
+              </CcCard>
+            </div>
+
+            <div className="min-w-0">
+              {/* What the model wrote about this code — outside the signature by
+                  design, so marked as a proposal. */}
+              <CcCard title="Summary" level={2} meta={<CcProvenanceChip value="proposed" />}>
+                <div className="min-w-0">
+                  {/*
+                    The summary is the one narrative field a reader treats as
+                    the report's conclusion, and it is outside the signature by
+                    design. It shows which of its sentences point at a line
+                    of the program and which do not.
+                  */}
+                  {analysisData.summary ? (
                     <AnchoredNarrative
                       text={analysisData.summary}
                       findings={evidenceFindings}
-                      totalLines={legacyCode ? legacyCode.split('\n').length : 0}
+                      totalLines={sourceLines}
                     />
-                  </div>
-                  <div className="border-t border-cc-line pt-4 mt-6 flex flex-wrap items-center gap-6">
+                  ) : (
+                    <p className="m-0 cc-text-cell text-cc-ink-muted">The narrative has no summary.</p>
+                  )}
+                  <dl className="m-0 mt-4 pt-3 border-t border-cc-line grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <span className="cc-text-label text-cc-ink-muted">Standard Fit</span>
-                      <div className="flex items-center gap-2 mt-1">
+                      <dt className="cc-text-label text-cc-ink-muted">Standard fit</dt>
+                      <dd className="m-0 mt-1 flex items-center gap-2">
                         {/* The model's estimate: the word carries it and the dot
                             stays neutral — green would claim a proof (ADR-007). */}
                         <span aria-hidden="true" className="w-2 h-2 rounded-full bg-cc-neutral"></span>
                         <span className="cc-text-meta text-cc-ink">{analysisData.standardFit?.potential || 'Not determined'}</span>
-                      </div>
+                      </dd>
                     </div>
-                    <div className="h-8 w-px bg-cc-line"></div>
                     <div>
-                      <span className="cc-text-label text-cc-ink-muted">Target Process</span>
-                      <p className="cc-text-meta text-cc-ink mt-1">{analysisData.standardFit?.targetStandardProcess || 'N/A'}</p>
+                      <dt className="cc-text-label text-cc-ink-muted">Closest standard process</dt>
+                      <dd className="m-0 mt-1 cc-text-meta text-cc-ink">{analysisData.standardFit?.targetStandardProcess || 'Not named'}</dd>
                     </div>
-                  </div>
+                  </dl>
                 </div>
-              </div>
-
-              {/* Coverage verdict donut chart */}
-              <CoverageVerdict findings={findings} summary={findingsSummary} />
-
-              {/* Construct Findings checklist */}
-              <ConstructFindings findings={findings} />
-
-              {/* What the detectors did not judge — CR-06. Rendered next to the
-                  findings rather than inside them: a construct nobody assessed
-                  is a limit of the question, not a defect in the answer. */}
-              {evidenceReport && <UnassessedConstructs coverage={evidenceReport.coverage} />}
-
-              {/* v1.22: Usage × Evidence Risk Matrix */}
-              {(usageReport || project?.usageReport) && evidenceFindings.length > 0 && routeReport && (
-                <SectionBoundary name="Usage Risk Matrix">
-                  <UsageRiskMatrixFor
-                    usageReport={(usageReport || project!.usageReport)!}
-                    findings={evidenceFindings}
-                    route={routeReport}
-                    target={project ? catalogLookupTargetOf(project) : null}
-                  />
-                </SectionBoundary>
-              )}
-
-              {/* Roadmap 7.1: ATC-Import, compared with — never merged into —
-                  the engine's own evidence findings. Shown whenever an import
-                  exists, independent of whether the engine found anything for
-                  the same objects: an ATC-only view is exactly the point when
-                  it happens. */}
-              {(atcReport || project?.atcReport) && (
-                <SectionBoundary name="ATC Findings Panel">
-                  <AtcFindingsPanel
-                    atcReport={(atcReport || project!.atcReport)!}
-                    findings={evidenceFindings}
-                  />
-                </SectionBoundary>
-              )}
-
-              {/* ── Evidence Findings Detail Table — deduplicated, sorted, filterable ── */}
-              {evidenceFindings.length > 0 && (() => {
-                // Deduplicate by kind+objectName, aggregate lines
-                const sevOrder: Record<string, number> = { Critical: 0, High: 1, Medium: 2, Low: 3, Info: 4 };
-                const grouped = new Map<string, { finding: typeof evidenceFindings[0]; lines: number[]; snippets: string[] }>();
-                for (const ef of evidenceFindings) {
-                  const key = `${ef.kind}::${ef.objectName || ef.title}`;
-                  const existing = grouped.get(key);
-                  if (existing) {
-                    existing.lines.push(ef.lineStart);
-                    if (ef.snippet && !existing.snippets.includes(ef.snippet)) existing.snippets.push(ef.snippet);
-                  } else {
-                    grouped.set(key, { finding: ef, lines: [ef.lineStart], snippets: ef.snippet ? [ef.snippet] : [] });
-                  }
-                }
-                const deduped = Array.from(grouped.values())
-                  .sort((a, b) => (sevOrder[a.finding.severity] ?? 9) - (sevOrder[b.finding.severity] ?? 9));
-                const filtered = evidenceFilter === 'All' ? deduped : deduped.filter(d => d.finding.severity === evidenceFilter);
-                const sevCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
-                for (const d of deduped) {
-                  const s = d.finding.severity;
-                  if (s in sevCounts) sevCounts[s as keyof typeof sevCounts]++;
-                }
-
-                return (
-                <div className="bg-cc-surface border border-cc-line rounded-cc-card shadow-cc overflow-hidden">
-                  <div className="px-6 py-4 border-b border-cc-line flex flex-wrap items-center gap-2">
-                    <FileCode2 size={16} aria-hidden="true" className="text-cc-ink-muted" />
-                    <h3 className="cc-text-h3 text-cc-ink">Evidence Findings</h3>
-                    <span className="cc-text-meta text-cc-ink-muted">
-                      {deduped.length} unique {deduped.length === 1 ? 'finding' : 'findings'}
-                    </span>
-                    {/* Severity filter: one choice of what is shown — a
-                        segmented control, not five coloured buttons (§1.5). */}
-                    <div className="ml-auto max-w-full overflow-x-auto">
-                      <CcSegmentedControl
-                        label="Filter findings by severity"
-                        value={evidenceFilter}
-                        onChange={setEvidenceFilter}
-                        segments={(['All', 'Critical', 'High', 'Medium', 'Low'] as const).map((level) => {
-                          const count = level === 'All' ? deduped.length : sevCounts[level as keyof typeof sevCounts];
-                          return { value: level, label: `${level}${count > 0 ? ` (${count})` : ''}` };
-                        })}
-                      />
-                    </div>
-                  </div>
-                  <div className="px-3 py-3">
-                    {filtered.length === 0 ? (
-                      <p className="px-3 py-6 text-center cc-text-cell text-cc-ink-muted">No findings match the selected filter.</p>
-                    ) : (
-                      <CcTable
-                        caption="Evidence findings, deduplicated by pattern and object"
-                        limit={5}
-                        columns={EVIDENCE_COLUMNS}
-                        rows={filtered.map(({ finding: ef, lines, snippets }, idx) => {
-                          const sev = normaliseSeverity(ef.severity);
-                          return {
-                            key: `${ef.kind}-${idx}`,
-                            cells: {
-                              pattern: (
-                                <>
-                                  <div className="cc-text-cell font-semibold text-cc-ink">
-                                    {ef.title}{lines.length > 1 ? ` (${lines.length}×)` : ''}
-                                  </div>
-                                  <div className="cc-text-meta font-medium text-cc-ink-muted mt-0.5 font-cc-mono">{ef.kind}</div>
-                                </>
-                              ),
-                              lines: <span className="cc-text-cell font-cc-mono text-cc-ink-muted">{lines.join(', ')}</span>,
-                              snippet: (
-                                <>
-                                  {snippets.slice(0, 2).map((s, i) => (
-                                    <code key={i} className="block cc-text-meta font-medium font-cc-mono bg-cc-surface-muted border border-cc-line text-cc-ink px-2 rounded-[4px] mb-1 max-w-xs overflow-hidden text-ellipsis whitespace-nowrap" title={s}>
-                                      {s}
-                                    </code>
-                                  ))}
-                                  {snippets.length > 2 && <span className="cc-text-meta text-cc-ink-muted">+{snippets.length - 2} more</span>}
-                                </>
-                              ),
-                              severity: sev ? <CcSeverity value={sev} /> : <span className="cc-text-meta text-cc-ink-muted">{ef.severity || '—'}</span>,
-                              // Which part of the engine produced the row — a plain label, not a proof mark.
-                              source: (
-                                <CcTag>
-                                  {ef.source === 'static-parser' ? 'Parser' :
-                                   ef.source === 'catalog-match' ? 'Catalog' :
-                                   'LLM'}
-                                </CcTag>
-                              ),
-                              replacement: ef.sapReplacement ? (
-                                <div className="inline-block">
-                                  <div className="cc-text-cell font-medium text-cc-ink">{ef.sapReplacement.objectName}</div>
-                                  <span className={clsx('cc-text-meta', STATE_CLASSES[replacementState(ef.sapReplacement.confidence)].text)}>
-                                    {ef.sapReplacement.confidence}
-                                    {ef.sapReplacement.catalogVersion && <span className="text-cc-ink-muted ml-1">(v{ef.sapReplacement.catalogVersion})</span>}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-cc-ink-muted">—</span>
-                              ),
-                              target: (
-                                <span className="inline-flex flex-col gap-1">
-                                  {(ef.targetOptions || []).slice(0, 2).map((opt, i) => (
-                                    <span key={i} className="block cc-text-meta font-medium text-cc-ink-muted">{opt}</span>
-                                  ))}
-                                  {(ef.targetOptions || []).length > 2 && (
-                                    <span className="cc-text-meta text-cc-ink-muted">+{(ef.targetOptions || []).length - 2}</span>
-                                  )}
-                                </span>
-                              ),
-                            },
-                          };
-                        })}
-                      />
-                    )}
-                  </div>
-                </div>
-              );
-              })()}
-
-              {/* Executive Plain English Guide — bottom of Decision & Evidence.
-                  Its plan is either the model's or the page's generic fallback
-                  (bizFallback above); the line over it says which, since the
-                  component itself cannot tell (D.10b, from D.13). */}
-              <div data-action-plan-origin={modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) ? 'model' : 'generic'} className="flex flex-wrap items-center gap-2">
-                <span className="cc-text-label text-cc-ink-muted">Action plan</span>
-                {modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) ? (
-                  <CcProvenanceChip value="proposed" />
-                ) : (
-                  <span className="cc-text-meta text-cc-ink-muted">
-                    Generic guidance — no action plan was returned for this run.
-                  </span>
-                )}
-              </div>
-              <PlainEnglishGuide 
-                plainEnglishActionPlan={bizFallback.plainEnglishActionPlan}
-                extensibilityRoute={project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Decoupled Extension'}
-              />
+              </CcCard>
             </div>
-            ) },
+          </div>
 
-            // Gaps Backlog
-            { value: 'backlog', label: 'Gaps Backlog', content: (
-            <SectionBoundary name="Gaps Backlog">
-            <div data-stage-output="worklist" className="motion-safe:animate-in fade-in duration-300">
+          {/* The worklist: every finding and every gap as a task. */}
+          <SectionBoundary name="Gaps Backlog">
+            <div data-stage-output="worklist">
               <GapsWorklist
                 projectId={projectId as string}
                 project={project}
@@ -1308,122 +1296,72 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 onUpdateWorklist={handleUpdateWorklist}
               />
             </div>
-            </SectionBoundary>
-            ) },
+          </SectionBoundary>
 
-            // Detailed Assessment
-            { value: 'detailed', label: 'Assessment & Value', content: (
-            <SectionBoundary name="Assessment & Value">
-            <div className="space-y-10 motion-safe:animate-in fade-in duration-300">
-              {/* Complexity & Criticality badges — live recomputed */}
-              {(() => {
-                // Recompute live from code to ensure new 1-10 scale is used
-                const liveComplexity = legacyCode ? computeComplexityScore(legacyCode) : project.complexityScore;
-                const liveCriticality = legacyCode ? computeCriticalityScore(legacyCode) : project.criticalityScore;
-                if (liveComplexity === undefined && liveCriticality === undefined) return null;
-                return (
-                  <div className="flex flex-wrap gap-4">
-                    {liveComplexity !== undefined && (
-                      <ScoreMeter
-                        title="Complexity measures structural code intricacy: control flow depth, dependency count, and custom object coupling. Scale: 1 = trivial, 5 = moderate, 10 = highly complex."
-                        icon={<Layers size={16} aria-hidden="true" />}
-                        label="Complexity"
-                        value={liveComplexity}
-                        caption={liveComplexity >= 7 ? 'High — significant refactoring needed' : liveComplexity >= 4 ? 'Moderate — manageable effort' : 'Low — straightforward migration'}
-                      />
-                    )}
-                    {liveCriticality !== undefined && (
-                      <ScoreMeter
-                        title="Criticality measures business impact: process priority, data sensitivity, and integration depth. Scale: 1 = low impact, 5 = important, 10 = mission-critical."
-                        icon={<Zap size={16} aria-hidden="true" />}
-                        label="Criticality"
-                        value={liveCriticality}
-                        caption={liveCriticality >= 7 ? 'Mission-critical — requires careful planning' : liveCriticality >= 4 ? 'Important — schedule appropriately' : 'Low impact — quick win candidate'}
-                      />
-                    )}
-                  </div>
-                );
-              })()}
+          {renderNotDetermined(openItems)}
 
-              {/* Code Inventory Table */}
-              <CodeInventoryTable codeInventory={project.codeInventory || []} />
-
-              {/* Module Risk Heatmap */}
-              <ModuleHeatmap codeInventory={project.codeInventory || []} />
-
-              {/* Data Coupling Table */}
-              <DataCouplingTable dataCoupling={project.dataCoupling || []} />
-
-              {/* Cloud Readiness Classification (A–D) */}
-              <AssessmentProfileSummary project={project} />
-              <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} deployment={project.s4Deployment} release={project.assessmentProfile?.release} />
-
-              {/* Compliance review hints (roadmap 7.7) — hints out of the table
-                  names, never a classification of anybody's data. */}
-              <ComplianceReviewHints dataCoupling={project.dataCoupling || []} />
-
-              {/* Check tasks (roadmap 7.5) - what this reading could not
-                  settle, as tasks with a line each, never a verdict. */}
-              <ReviewTasks result={reviewTasks} />
-
-              {/* Valuation details */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-                <div className="lg:col-span-12 flex flex-col">
-                  <BusinessValueAudit projectId={projectId as string} bizFallback={bizFallback} />
-                </div>
-              </div>
-            </div>
-            </SectionBoundary>
-            ) },
-
-            // Modernization Strategy
-            { value: 'strategy', label: 'Modernization Strategy', content: (
+          <Folded title="Why this route — decision path and standard fit">
             <SectionBoundary name="Modernization Strategy">
-            <div className="space-y-10 motion-safe:animate-in fade-in duration-300">
-              {/* Decision matrix pathway */}
-              <ExtensibilityDecisionMatrix 
-                extensibilityRoute={project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)'}
-                decisionTreeCheckpoints={checkpoints}
-                comparativeAnalysis={comparative}
-              />
+              <div className="space-y-8">
+                {/* Decision matrix pathway */}
+                <ExtensibilityDecisionMatrix
+                  extensibilityRoute={routeForCards}
+                  decisionTreeCheckpoints={checkpoints}
+                  comparativeAnalysis={comparative}
+                />
 
-              {/* S/4HANA Standard Fit */}
-              <TargetScopeMapping 
-                showHelpMode={false}
-                standardFit={analysisData.standardFit}
-              />
+                {/* S/4HANA Standard Fit */}
+                <TargetScopeMapping
+                  showHelpMode={false}
+                  standardFit={analysisData.standardFit}
+                />
 
-              {/* Core Clean recommendations — reconciled to avoid contradictions */}
-              {(() => {
-                const recs = analysisData.recommendations;
-                if (!recs) return null;
-                const reconciledRecs = { ...recs };
-                
-                // Reconcile: if decommissioning says "retire" but cloudReadiness says "rewrite", fix cloudReadiness
-                const isRetire = /\b(retire|retired|decommission|removed|delete|obsolete)\b/i.test(recs.decommissioning || '');
-                const isRewrite = /\b(rewrit|rewrite|rewritten|must be rewritten)\b/i.test(recs.cloudReadiness || '');
-                
-                if (isRetire && isRewrite) {
-                  // Extract the standard replacement from keepCoreClean if available
-                  const standardMatch = (recs.keepCoreClean || '').match(/(?:released|standard|use)\s+(?:CDS\s+view\s+)?([A-Z_][A-Z0-9_]*)/i);
-                  const standardObj = standardMatch ? standardMatch[1] : 'the released standard object';
-                  reconciledRecs.cloudReadiness = `No rewrite needed. Since the function module is being retired and replaced by ${standardObj}, no ABAP Cloud migration of the legacy code is required. Simply adopt the standard replacement and remove the custom object.`;
-                }
-                
-                return (
-                  <ModernizationStrategy 
-                    showHelpMode={false}
-                    recommendations={reconciledRecs}
-                  />
-                );
-              })()}
+                {/* Core Clean recommendations — reconciled to avoid contradictions */}
+                {(() => {
+                  const recs = analysisData.recommendations;
+                  if (!recs) return null;
+                  const reconciledRecs = { ...recs };
 
-              {/* Next Steps */}
-            </div>
+                  // Reconcile: if decommissioning says "retire" but cloudReadiness says "rewrite", fix cloudReadiness
+                  const isRetire = /\b(retire|retired|decommission|removed|delete|obsolete)\b/i.test(recs.decommissioning || '');
+                  const isRewrite = /\b(rewrit|rewrite|rewritten|must be rewritten)\b/i.test(recs.cloudReadiness || '');
+
+                  if (isRetire && isRewrite) {
+                    // Extract the standard replacement from keepCoreClean if available
+                    const standardMatch = (recs.keepCoreClean || '').match(/(?:released|standard|use)\s+(?:CDS\s+view\s+)?([A-Z_][A-Z0-9_]*)/i);
+                    const standardObj = standardMatch ? standardMatch[1] : 'the released standard object';
+                    reconciledRecs.cloudReadiness = `No rewrite needed. Since the function module is being retired and replaced by ${standardObj}, no ABAP Cloud migration of the legacy code is required. Simply adopt the standard replacement and remove the custom object.`;
+                  }
+
+                  return (
+                    <ModernizationStrategy
+                      showHelpMode={false}
+                      recommendations={reconciledRecs}
+                    />
+                  );
+                })()}
+              </div>
             </SectionBoundary>
-            ) },
-          ]}
-          />
+          </Folded>
+
+          <Folded title="Language constructs the engine resolved" count={findings.length}>
+            {/* Coverage verdict and the construct checklist, with its Confirm. */}
+            <CoverageVerdict findings={findings} summary={findingsSummary} />
+            <ConstructFindings findings={findings} />
+          </Folded>
+
+          <Folded title="Code inventory, data access and clean core levels A–D">
+            <SectionBoundary name="Assessment & Value">
+              <div className="space-y-8">{renderInventory()}</div>
+            </SectionBoundary>
+          </Folded>
+
+          <Folded title={planIsModel ? 'Business value and action plan' : 'Business value'}>
+            <BusinessValueAudit projectId={projectId as string} bizFallback={bizFallback} />
+            {planIsModel && actionPlan}
+          </Folded>
+
+          {renderImports()}
         </div>
       );
     }
@@ -1440,6 +1378,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
   };
 
   const phases = workflowSteps(project);
+  /** The run's report is on screen rather than the upload form. */
+  const hasResults = !!(project?.analysis || project?.activeRunId);
+  const shell = workspaceShellEnabled(profile);
 
   if (loading && !project) return (
     <div className="h-[60vh] flex flex-col items-center justify-center">
@@ -1449,11 +1390,19 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
   );
 
   return (
-    <div className="motion-safe:animate-in fade-in duration-500 max-w-5xl mx-auto">
+    <div
+      className={clsx(
+        'motion-safe:animate-in fade-in duration-500',
+        // The results use the full width of the app, as the other stages and
+        // the workspace do; the upload form keeps its reading width.
+        hasResults ? 'w-full' : 'max-w-5xl mx-auto',
+      )}
+    >
       {/* Sticky Decision-Header. Bound to the run rather than to the narrative
           (roadmap 1.2): the route and the score in it are the run's, and a run
-          without a narrative has both. */}
-      {(project?.analysis || project?.activeRunId) && (
+          without a narrative has both. Only for accounts without the
+          workspace: there a stage is a tool, with no "continue" (ADR-050). */}
+      {hasResults && !profileLoading && !shell && project && (
         <div
           className={clsx(
             "fixed left-0 right-0 z-50 transition-all duration-500 font-sans bg-cc-surface border-b border-cc-line shadow-cc",
@@ -1471,9 +1420,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
               {/* Score */}
               <div className="flex items-center gap-1">
-                <span className="cc-text-label text-cc-ink-muted">Compliance:</span>
+                <span className="cc-text-label text-cc-ink-muted">Clean Core Score:</span>
                 <span className="cc-text-identifier text-cc-ink">
-                  {signedCleanCoreScore !== null ? `${signedCleanCoreScore}%` : '—'}
+                  {signedCleanCoreScore !== null ? `${signedCleanCoreScore} of 100` : 'Not yet computed'}
                 </span>
               </div>
 
@@ -1498,8 +1447,24 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 
       <StageProgress steps={phases} current="analyze" projectId={projectId as string} />
 
-      <StageHeader projectName={project?.name} stage="analyze">
-        Extracting business intelligence and technical dependencies from your legacy assets.
+      <StageHeader
+        projectName={project?.name}
+        stage="analyze"
+        actions={
+          hasResults && project?.analysis ? (
+            <CcButton
+              variant="secondary"
+              icon={<FileCode2 size={16} aria-hidden="true" />}
+              onClick={() => exportToConfluence()}
+            >
+              Export Confluence
+            </CcButton>
+          ) : undefined
+        }
+      >
+        {hasResults
+          ? 'What the evidence engine found in this code, the route it recommends, and what is still open.'
+          : 'Extracting business intelligence and technical dependencies from your legacy assets.'}
       </StageHeader>
 
       {error && (
@@ -1858,58 +1823,15 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
           </div>
         )
       ) : (
-        <div className="space-y-10 motion-safe:animate-in slide-in-from-bottom-6">
-          <div id="analysis-report" className="bg-cc-surface rounded-cc-card shadow-cc border border-cc-line overflow-hidden">
-            <div className="px-6 py-6 md:px-10 border-b border-cc-line">
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Activity className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" />
-                    <span className="cc-text-label text-cc-ink-muted">Technical & Business Report</span>
-                  </div>
-                  <h2 className="cc-text-h2 text-cc-ink">Business Analysis Report</h2>
-                  <p className="cc-text-body text-cc-ink-muted mt-1 max-w-2xl">Comprehensive assessment of legacy logic, business value, and modernization potential.</p>
-                </div>
-                <div className="flex gap-3 shrink-0 items-center">
-                  <CcButton
-                    variant="secondary"
-                    icon={<FileCode2 size={16} aria-hidden="true" />}
-                    onClick={() => exportToConfluence()}
-                  >
-                    Export Confluence
-                  </CcButton>
-                </div>
-              </div>
-            </div>
+        <div id="analysis-report" className="motion-safe:animate-in slide-in-from-bottom-6">
+          {renderAnalysisContent()}
 
-            <div className="p-6 md:p-12 bg-cc-surface">
-              {renderAnalysisContent()}
-            </div>
-
-            {/* Realigned Premium Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 px-6 py-8 md:px-12 bg-cc-surface-muted border-t border-cc-line">
-              <CcButton
-                variant="ghost"
-                density="cozy"
-                icon={<ArrowLeft size={16} aria-hidden="true" />}
-                onClick={() => router.push('/dashboard')}
-              >
-                Return to Dashboard
-              </CcButton>
-
-              <CcButton
-                variant="primary"
-                density="cozy"
-                busy={isNavigating}
-                onClick={() => {
-                  setIsNavigating(true);
-                  router.push(`/project/${projectId}/design`);
-                }}
-              >
-                Continue to Design <ArrowRight size={16} aria-hidden="true" />
-              </CcButton>
-            </div>
-          </div>
+          <StageFooter
+            backPath="/dashboard"
+            backLabel="Return to Dashboard"
+            proceedPath={`/project/${projectId}/design`}
+            proceedLabel="Continue to Design"
+          />
         </div>
       )}
 
@@ -1918,7 +1840,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
       <CcDialog
         open={showScoreModal}
         title="Understanding Clean Core"
-        lead="The Clean Core compliance score determines the long-term maintainability of your ERP core, grading custom elements against modern SAP S/4HANA extensibility patterns."
+        lead="The Clean Core Score is our own grade for this one piece of code, 0–100, higher is better — a grade, not a compliance percentage, and not an SAP figure. It is computed by fixed rules from the findings, before any model runs."
         onClose={() => setShowScoreModal(false)}
       >
         <div className="space-y-3">
@@ -2039,17 +1961,6 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
 const ROUTE_TAG_CLASS =
   'inline-flex items-center rounded-[4px] border border-cc-line bg-cc-surface-muted px-2 cc-text-meta text-cc-ink whitespace-nowrap';
 
-/** The columns of the evidence findings table (CcTable, D.10b). */
-const EVIDENCE_COLUMNS = [
-  { key: 'pattern', label: 'Pattern', width: '22%' },
-  { key: 'lines', label: 'Lines' },
-  { key: 'snippet', label: 'Code Snippet' },
-  { key: 'severity', label: 'Severity' },
-  { key: 'source', label: 'Source' },
-  { key: 'replacement', label: 'SAP Replacement' },
-  { key: 'target', label: 'Target' },
-] as const;
-
 /** A deployment choice card. Chosen = ink outline, never green (§1.1: choosing proves nothing). */
 const DEPLOYMENT_CARD_CLASS =
   'p-4 rounded-cc-card border cursor-pointer flex flex-col justify-between min-h-[140px]';
@@ -2148,10 +2059,10 @@ function DeploymentChoice({
 
 /** The four tiers the score explanation lists — the same words as before, in one place. */
 const SCORE_TIERS = [
-  { score: '100%', title: 'Zero Customization / Standard Fit', text: 'Leverages native SAP standard best practices. Absolutely zero custom code or maintenance overhead.' },
-  { score: '90%', title: 'Transformed Extensibility (Side-by-Side)', text: 'Custom logic completely transformed via public APIs (e.g. running on Node.js/TypeScript). Easy to maintain and upgrade.' },
-  { score: '85%', title: 'Key-User / In-App Extensibility', text: 'High-level custom elements built inside SAP using standard extension points, without modifying database core tables.' },
-  { score: '0%', title: 'Direct Core Modification', text: 'Direct alteration of standard SAP core objects, leading to major regression risks and upgrade blocks.' },
+  { score: '100', title: 'Zero Customization / Standard Fit', text: 'Leverages native SAP standard best practices. Absolutely zero custom code or maintenance overhead.' },
+  { score: '90', title: 'Transformed Extensibility (Side-by-Side)', text: 'Custom logic completely transformed via public APIs (e.g. running on Node.js/TypeScript). Easy to maintain and upgrade.' },
+  { score: '85', title: 'Key-User / In-App Extensibility', text: 'High-level custom elements built inside SAP using standard extension points, without modifying database core tables.' },
+  { score: '0', title: 'Direct Core Modification', text: 'Direct alteration of standard SAP core objects, leading to major regression risks and upgrade blocks.' },
 ] as const;
 
 /**
@@ -2164,11 +2075,27 @@ function scoreState(value: number, direction: 'higher-is-better' | 'lower-is-bet
   return value >= 7 ? 'error' : value >= 4 ? 'warning' : 'neutral';
 }
 
-/** A catalog match is imported evidence (information); a candidate is to be checked. */
-function replacementState(confidence: string | undefined): SemanticState {
-  if (confidence === 'Catalog Match' || confidence === 'Verified') return 'information';
-  if (confidence === 'Candidate') return 'warning';
-  return 'error';
+/** One entry of "could not determine": what, why, and the panel that holds its detail. */
+interface OpenItem {
+  /** A stable id for the entry — a data attribute, never shown. */
+  key: string;
+  title: string;
+  reason: string;
+  body?: React.ReactNode;
+}
+
+/**
+ * A section folded with its count (§2.11: "Business rules (7) · Show"). The
+ * content stays in the document and prints; it is only not shown first.
+ */
+function Folded({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
+  return (
+    <section className="rounded-cc-card border border-cc-line bg-cc-surface shadow-cc px-4 py-2 sm:px-6">
+      <CcDisclosure level={2} density="cozy" title={title} count={count}>
+        <div className="space-y-8 pt-2">{children}</div>
+      </CcDisclosure>
+    </section>
+  );
 }
 
 /** Complexity or criticality on the 1–10 scale, with its bar. */
