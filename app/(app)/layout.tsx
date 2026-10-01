@@ -43,6 +43,16 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   const router = useRouter();
   const { profile } = useUserProfile();
   const isProjectStep = pathname.includes('/project/');
+  // Pages of the signed-in product that are not a project: they carry the
+  // one-line legal footer of a stage, not the marketing footer (mockup s1, s7).
+  const isAppPage =
+    isProjectStep ||
+    pathname.startsWith('/admin/workspace') ||
+    pathname.startsWith('/admin/new-project') ||
+    pathname.startsWith('/invitation');
+  // The object page uses the full frame (mockup s1: map and source column side
+  // by side); the stages and every other page keep the reading width.
+  const isObjectPage = /^\/project\/[^/]+\/?$/.test(pathname ?? '');
 
   // Scroll to top on every page navigation
   useEffect(() => {
@@ -155,6 +165,10 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
     const stage = /^\/project\/[^/]+\/([^/?#]+)/.exec(pathname ?? '')?.[1];
     if (stage) return PHASES.find((p) => p.key === stage)?.label ?? null;
     if (pathname?.startsWith('/settings')) return 'Settings & Profile';
+    // The 3.0 list report is "My workspace" itself, and a new project is a step
+    // of it — neither is the Admin Console, whatever folder they live in.
+    if (pathname?.startsWith('/admin/workspace')) return null;
+    if (pathname?.startsWith('/admin/new-project')) return 'New project';
     if (pathname?.startsWith('/admin')) return 'Admin Console';
     return null;
   })();
@@ -170,7 +184,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   // The search slot of §2.1: a button only while a project search is on the
   // page (the object page's ⌘K dialog), opening it by a named event.
   const projectSearch = useProjectSearchAvailable();
-  const atWorkspace = pathname === '/dashboard';
+  const atWorkspace = pathname === '/dashboard' || pathname === '/admin/workspace';
 
   return (
     <div className="min-h-screen flex flex-col bg-cc-page">
@@ -199,7 +213,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           assistant, Help and the account menu on the right. White surface and a
           1 px rule — no blur, no shadow, no green hover (ADR-007). */}
       <header className="cc-no-print sticky top-0 z-cc-sticky border-b border-cc-line bg-cc-surface">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
+        <div className={cn('mx-auto flex h-14 items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8', isObjectPage ? 'max-w-screen-2xl' : 'max-w-7xl')}>
           {/* Home means the dashboard for someone signed in and the landing page
               for everyone else. The same shell serves both, and a hard link to
               /dashboard was a dead end for a visitor who arrived on /knowledge
@@ -434,7 +448,11 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           as broken. See the component for the whole reasoning. */}
       <TermsReacceptGate />
 
-      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-32">
+      <main id="main-content" tabIndex={-1} className={cn(
+          'flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-32',
+          isObjectPage ? 'max-w-screen-2xl' : 'max-w-7xl',
+        )}
+      >
         {children}
       </main>
       {/* The legal links of every page in this shell live here, in one of
@@ -452,7 +470,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           footer reads as "page ends here", which is the wrong signal in the
           middle of a seven-stage flow. The legally required links stay, and the
           complete footer keeps its place on every other page. */}
-      {isProjectStep ? (
+      {isAppPage ? (
         <footer className="cc-no-print border-t border-cc-line bg-cc-surface">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] font-medium text-cc-ink-muted">
             <Link href="/impressum" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Legal Notice</Link>
