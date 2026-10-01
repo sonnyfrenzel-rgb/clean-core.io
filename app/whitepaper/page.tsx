@@ -16,7 +16,7 @@ import { SUPPORT_MATRIX } from '@/lib/abap/support-matrix';
 // query: position 12 at 0% CTR over three months. Lead with what was searched for.
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Whitepaper — Free Modernization Guide (PDF) | Clean-Core.io',
-  description: 'Free SAP Clean Core whitepaper: how to assess custom ABAP, route it to in-app RAP or side-by-side BTP CAP, and keep a defensible audit trail. Read it here or download the PDF. Community-built, complementary to SAP ADT and ATC.',
+  description: 'Free SAP Clean Core whitepaper: assess custom ABAP, route it to in-app RAP or side-by-side CAP, keep an audit trail you can check. Read online or as PDF.',
   alternates: {
     canonical: 'https://clean-core.io/whitepaper',
   },

@@ -10,14 +10,14 @@ import SupportLevelMark from '@/components/analyze/SupportLevelMark';
 import CcTable from '@/components/cc/Table';
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'How It Works — Transformation Methodology & Coverage | Clean-Core.io',
-  description: 'Understand the Clean-Core.io transformation pipeline: deterministic ABAP parsing, SAP API Hub mapping, and target code generation with an honest coverage matrix.',
+  title: 'How It Works — ABAP Evidence Engine, Model Boundary & Coverage | Clean-Core.io',
+  description: 'How Clean-Core.io reads custom ABAP deterministically, checks SAP objects against SAP’s Cloudification Repository, and where the model starts — with limits.',
   alternates: {
     canonical: 'https://clean-core.io/how-it-works',
   },
   openGraph: {
-    title: 'How It Works — Transformation Methodology & Coverage | Clean-Core.io',
-    description: 'Understand the Clean-Core.io transformation pipeline: deterministic ABAP parsing, SAP API Hub mapping, and target code generation.',
+    title: 'How It Works — ABAP Evidence Engine, Model Boundary & Coverage | Clean-Core.io',
+    description: 'How Clean-Core.io reads custom ABAP before any model does, maps SAP objects against SAP’s Cloudification Repository, and where the language model starts — with its coverage and limits.',
     url: 'https://clean-core.io/how-it-works',
     type: 'website',
   }
