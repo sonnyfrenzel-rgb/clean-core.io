@@ -4,7 +4,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
-import { revealEconomicsField } from './helpers/economics';
+import { openEconomicsRow } from './helpers/economics';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -102,7 +102,7 @@ test('the sliders hold the uploaded size and a year without updates (246b1ea24db
   const packs = page.getByLabel('Feature pack updates per year');
   await expect(upgrades).toHaveAttribute('min', '0');
   await expect(packs).toHaveAttribute('min', '0');
-  await revealEconomicsField(page, '[data-economics-row="upgrades"] input[type="range"]');
+  await openEconomicsRow(page, 'upgrades');
   await upgrades.fill('0');
   await expect(upgrades).toHaveValue('0');
   await expect(page.locator('body')).toContainText('0 upgrades');

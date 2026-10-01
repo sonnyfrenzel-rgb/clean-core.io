@@ -27,3 +27,10 @@ export async function fillEconomics(page: Page, selector: string, value: string)
   await revealEconomicsField(page, selector);
   await page.fill(selector, value);
 }
+
+/** Open one checklist row by its key, if it is closed. */
+export async function openEconomicsRow(page: Page, key: string) {
+  const toggle = page.locator(`[data-economics-row="${key}"] [data-economics-row-toggle]`);
+  if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+}
