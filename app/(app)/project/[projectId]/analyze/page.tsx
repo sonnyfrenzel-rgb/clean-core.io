@@ -103,6 +103,7 @@ import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { takeOwnCodeHandoff } from '@/lib/own-code-handoff';
 
 export default function AnalyzePage() {
   const { projectId } = useParams();
@@ -192,6 +193,22 @@ export default function AnalyzePage() {
           setAssessmentTarget(declaredTargetOf(hydratedProject));
           if (hydratedProject.fromExample || hydratedProject.isExample) {
             setAcceptedTerms(true);
+          }
+          // Arriving from "Start analysis" on the own-code page (mockup 2.8
+          // s11): the reader has read the pledge there and ticked the lines
+          // that look like personal data for exactly this source, so neither
+          // is asked twice. The key only counts if it is the key of the text
+          // loaded here. What the run still needs — the target operating
+          // model — is asked in the dialog that starts it. Module memory only
+          // (lib/own-code-handoff.ts): a reload asks as before.
+          const handoff = takeOwnCodeHandoff(projectId as string);
+          if (handoff) {
+            setAcceptedTerms(true);
+            if (handoff.personalDataKey) setPersonalDataAckFor(handoff.personalDataKey);
+            if (!hydratedProject.activeRunId && hydratedProject.legacyCode) {
+              setModalSelection((hydratedProject.s4Deployment as 'public' | 'private' | undefined) ?? null);
+              setShowConceptQuestion(true);
+            }
           }
           // v1.22: restore persisted usage report
           if (hydratedProject.usageReport) {
