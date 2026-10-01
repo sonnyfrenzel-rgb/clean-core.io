@@ -3,6 +3,7 @@ import path from 'path';
 import { notDetermined } from '@/lib/workspace-model';
 import { kindWord, tokenizeAbapLine, EARLY_END_WORD, type CodeToken } from '@/lib/process-map';
 import type { LandingHero } from '@/lib/landing-process';
+import type { BusinessRule } from '@/lib/abap/business-rule-set';
 
 /**
  * What the hero's source card can show — landing mockup, section `hero`.
@@ -38,6 +39,69 @@ export interface HeroSnippets {
 }
 
 const CONTEXT = 3;
+
+/* ------------------------------------------------------------------ *
+ * Which rules the hero names
+ * ------------------------------------------------------------------ */
+
+/**
+ * A rule as a phrase in the hero's sentence. A tolerance on a percentage
+ * (`lv_dev_pct > 5`) reads as what it is for a business reader — "tolerance
+ * 5 %"; everything else is the plain-language phrase it was given.
+ */
+export function heroRulePhrase(rule: Pick<BusinessRule, 'classes' | 'parameters'>, phrase: string): string {
+  const p = rule.parameters;
+  if (rule.classes.includes('toleranz') && p.length === 1 && /(pct|percent|prozent)/i.test(p[0].subject ?? '')
+    && /^(>|GT|>=|GE)$/i.test(p[0].operator) && /^'?\d+(\.\d+)?'?$/.test(p[0].literal)) {
+    return `tolerance ${p[0].literal.replace(/'/g, '')} %`;
+  }
+  return phrase;
+}
+
+/** How much a rule says about the outcome of the process, for the hero's sentence. */
+export function ruleImpact(rule: Pick<BusinessRule, 'typeBasis' | 'classes' | 'processElements'>): number {
+  // 1. It changes the outcome: the flow ends, is rejected or held where it holds.
+  const decides = rule.typeBasis.some((b) => b.basis === 'ends-flow' || b.basis === 'else-ends-flow' || b.basis === 'check-leaves');
+  // 2. What kind of value it is: a tolerance or money threshold, an organisational
+  //    unit (plant, company code, purchasing organisation), a list of exceptions or blocks.
+  const kind = rule.classes.includes('toleranz') || rule.classes.includes('organisationseinheit')
+    ? 3
+    : rule.classes.includes('ausnahmeliste') ? 2 : 0;
+  // 3. A reader can find it on the map.
+  const drawn = rule.processElements.length > 0 ? 2 : 0;
+  return (decides ? 4 : 0) + kind + drawn;
+}
+
+/**
+ * The rules the hero's "found in the code" sentence names — by business
+ * impact, not by how short their text is (landing mockup s0/s1: "tolerance
+ * 5 %, plant 1000, vendor block list").
+ *
+ * Deterministic order:
+ *   1. only rules with a place on the map (the sentence's anchors open a step);
+ *   2. higher `ruleImpact` first;
+ *   3. among equals, one of each kind of value before a second of the same
+ *      kind (a tolerance, an organisational unit, a list) — three different
+ *      facts read better than two thresholds;
+ *   4. then the engine's own order (rule id).
+ */
+export function pickHeroRules<R extends Pick<BusinessRule, 'id' | 'typeBasis' | 'classes' | 'processElements'>>(rules: R[], count = 3): R[] {
+  const order = new Map(rules.map((r, i) => [r.id, i]));
+  const ranked = rules
+    .filter((r) => r.processElements.length > 0)
+    .sort((a, b) => ruleImpact(b) - ruleImpact(a) || (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  const kindOf = (r: R) => r.classes[0] ?? 'other';
+  const picked: R[] = [];
+  const kinds = new Set<string>();
+  for (const r of ranked) {
+    if (picked.length >= count) break;
+    if (kinds.has(kindOf(r)) && ranked.some((o) => !picked.includes(o) && o !== r && !kinds.has(kindOf(o)) && ruleImpact(o) === ruleImpact(r))) continue;
+    picked.push(r);
+    kinds.add(kindOf(r));
+  }
+  for (const r of ranked) if (picked.length < count && !picked.includes(r)) picked.push(r);
+  return picked;
+}
 
 export function heroSnippets(hero: LandingHero, fileName: string): HeroSnippets {
   const source = fs

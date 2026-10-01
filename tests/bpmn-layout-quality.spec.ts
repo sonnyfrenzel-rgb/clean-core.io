@@ -96,10 +96,13 @@ test('the business reading draws the report events as one flow, and the technica
 for (const file of files) {
   test(`${file}: the business excerpt (top to bottom) is clean, and every element in it is anchored`, () => {
     const model = businessExcerpt(modelOf(file, 'plain'), { steps: 5, mainElements: 7 });
-    const layout = layoutModel(model, { direction: 'TB', compact: true });
-    const plane = layout.planes.get(model.root.id)!;
-    const report = measureDrawing(planeDrawing(model.root, plane));
-    const bad = ZERO_METRICS.filter((k) => report[k] !== 0).map((k) => `${k}=${report[k]}: ${report.details.slice(0, 3).join(' | ')}`);
+    const bad: string[] = [];
+    for (const narrow of [false, true]) {
+      const layout = layoutModel(model, { direction: 'TB', compact: true, narrow });
+      const plane = layout.planes.get(model.root.id)!;
+      const report = measureDrawing(planeDrawing(model.root, plane));
+      bad.push(...ZERO_METRICS.filter((k) => report[k] !== 0).map((k) => `${narrow ? 'phone ' : ''}${k}=${report[k]}: ${report.details.slice(0, 3).join(' | ')}`));
+    }
     expect(bad, bad.join(' / ')).toEqual([]);
     for (const n of model.root.nodes) expect(n.anchorLabel ?? n.source.anchor, `${n.name} has no anchor`).toBeTruthy();
   });
@@ -182,4 +185,12 @@ test('the landing hero excerpt is compact: at most seven main-line elements, a m
   const report = measureDrawing(planeDrawing(model.root, plane));
   // The mockup's diagram is about 460–520 px; the drawing is fitted to a max height on top.
   expect(report.height).toBeLessThan(640);
+});
+
+test('the phone excerpt is narrow enough to draw at 12 px type in a 390 px viewport', () => {
+  const model = businessExcerpt(modelOf('Z_MM_PO_APPROVAL.abap', 'plain'), { steps: 5, mainElements: 7 });
+  const plane = layoutModel(model, { direction: 'TB', compact: true, narrow: true }).planes.get(model.root.id)!;
+  const report = measureDrawing(planeDrawing(model.root, plane));
+  // The hero's card is about 310 px wide inside at 390 px; 12 px type stays at least 11 px.
+  expect(report.width).toBeLessThanOrEqual(330);
 });

@@ -108,6 +108,12 @@ export interface LayoutOptions {
    * when the layout opens a gap. The zero-collision rules hold all the same.
    */
   compact?: boolean;
+  /**
+   * With `compact` and top to bottom: a drawing for a phone. Narrower steps,
+   * a decision's question above-right of the diamond and an event's name under
+   * the circle, so nothing hangs out to the left of the main line.
+   */
+  narrow?: boolean;
 }
 
 /** The spacing a layout works with — the normal one, or `compact`. */
@@ -123,10 +129,15 @@ interface Spacing {
   dock: number;
   /** Clearance between a routed line and a shape. */
   clear: number;
+  /** Narrowest activity top to bottom. */
+  taskMin: number;
+  /** Phone drawing: labels right of and under the main line, not left of it. */
+  narrow: boolean;
 }
 
-const NORMAL: Spacing = { col: 56, row: 44, grow: 18, flowAlong: 36, flowAcross: 30, eventMain: 28, labelSteps: [24, 36], dock: 21, clear: 8 };
-const COMPACT: Spacing = { col: 22, row: 28, grow: 6, flowAlong: 26, flowAcross: 16, eventMain: 6, labelSteps: [4, 12, 24], dock: 6, clear: 3 };
+const NORMAL: Spacing = { col: 56, row: 44, grow: 18, flowAlong: 36, flowAcross: 30, eventMain: 28, labelSteps: [24, 36], dock: 21, clear: 8, taskMin: 170, narrow: false };
+const COMPACT: Spacing = { col: 22, row: 28, grow: 6, flowAlong: 26, flowAcross: 16, eventMain: 6, labelSteps: [4, 12, 24], dock: 6, clear: 3, taskMin: 170, narrow: false };
+const NARROW: Spacing = { ...COMPACT, taskMin: 128, narrow: true };
 
 /* ------------------------------------------------------------------ *
  * Sizes and type
@@ -186,12 +197,12 @@ const isGateway = (tag: BpmnTag) => tag.endsWith('Gateway');
 const kindOf = (tag: BpmnTag): ShapeKind => (isEvent(tag) ? 'event' : isGateway(tag) ? 'gateway' : 'task');
 
 /** The wrapped name of an activity and the box it needs. */
-export function taskText(name: string, anchor: string | null, direction: Direction, fact?: string): { lines: string[]; width: number; height: number } {
+export function taskText(name: string, anchor: string | null, direction: Direction, fact?: string, tbMin = TASK_TB_MIN): { lines: string[]; width: number; height: number } {
   const lh = lineHeight(LABEL_FONT);
   const reserve = (anchor ? lineHeight(ANCHOR_FONT) : 0) + (fact ? lineHeight(ANCHOR_FONT) : 0);
   const factFits = (width: number) => !fact || textWidth(fact, ANCHOR_FONT) <= width - 2 * TASK_PADDING;
   if (direction === 'TB') {
-    for (const width of [TASK_TB_MIN, 200, 230, 260]) {
+    for (const width of [tbMin, Math.max(tbMin, 200), 230, 260]) {
       const lines = wrapText(name, width - 2 * TASK_PADDING - 8, LABEL_FONT, true);
       if ((lines.length <= 2 && factFits(width)) || width === 260) {
         const w = Math.max(width, (anchor ? anchorWidth(anchor) : 0) + 2 * TASK_PADDING + 8);
@@ -233,7 +244,7 @@ function labelBlock(text: string, anchor: string | null, maxWidth: number): { li
 export function layoutModel(model: ExportModel, options: LayoutOptions = {}): DiagramLayout {
   const direction = options.direction ?? 'LR';
   const planes = new Map<string, PlaneLayout>();
-  for (const container of model.containers) planes.set(container.id, layoutContainer(container, direction, options.wrap, options.compact ? COMPACT : NORMAL));
+  for (const container of model.containers) planes.set(container.id, layoutContainer(container, direction, options.wrap, options.compact ? (options.narrow && direction === 'TB' ? NARROW : COMPACT) : NORMAL));
 
   if (!model.pools.length) return { planes, direction };
 
@@ -512,7 +523,7 @@ function layoutContainer(container: ExportContainer, direction: Direction, wrap:
   const sizeOf = (n: ExportNode): [number, number] => {
     if (isEvent(n.tag)) return [EVENT, EVENT];
     if (isGateway(n.tag)) return direction === 'TB' ? [GATEWAY_TB, GATEWAY_TB] : [GATEWAY_LR, GATEWAY_LR];
-    const t = taskText(n.name, anchorOf(n), direction, n.fact);
+    const t = taskText(n.name, anchorOf(n), direction, n.fact, sp.taskMin);
     if (hosts.has(n.id)) t.height += BOUNDARY_ROOM;
     // The collapsed-phase marker (or the loop marker) sits on the foot of the box.
     if (n.tag === 'subProcess' || n.source.detail?.multiInstance === true) t.height += MARKER_ROOM;
@@ -551,6 +562,14 @@ function layoutContainer(container: ExportContainer, direction: Direction, wrap:
       else gaps.row[it.band][it.row - 1] = Math.max(gaps.row[it.band][it.row - 1], above + 24);
     } else if ((it.kind === 'event' || it.kind === 'store') && direction === 'LR') {
       gaps.row[it.band][it.row] = Math.max(gaps.row[it.band][it.row], block.height + 30);
+    } else if (direction === 'TB' && sp.narrow && it.kind !== 'task') {
+      // Phone: the question sits above-right of the diamond, a name under its
+      // circle — the gap before the shape (main axis) holds the question.
+      if (it.kind === 'gateway') {
+        if (it.col > 0) gaps.col[it.band][it.col - 1] = Math.max(gaps.col[it.band][it.col - 1], block.height + 8);
+      } else {
+        gaps.col[it.band][it.col] = Math.max(gaps.col[it.band][it.col], block.height + sp.eventMain);
+      }
     } else if (direction === 'TB' && it.kind !== 'task') {
       // Beside the shape: the gap before its column (cross axis) holds it.
       const side = block.width + 20 - (it.width / 2);
@@ -793,12 +812,18 @@ function attemptPlane(
           { x: cx + 8, y: s.y + s.height - 2 },
           { x: cx - w / 2, y: s.y + s.height + 6 },
         ]
-        : [
-          { x: s.x - 8 - w, y: cy - h / 2 },
-          { x: s.x - 8 - w, y: s.y - 2 - h },
-          { x: s.x + s.width + 8, y: s.y - 2 - h },
-          { x: s.x + s.width + 8, y: cy - h / 2 },
-        ]);
+        : sp.narrow
+          ? [
+            { x: cx + 8, y: s.y + 4 - h },
+            { x: s.x + s.width + 4, y: s.y + 6 - h },
+            { x: s.x - 8 - w, y: cy - h / 2 },
+          ]
+          : [
+            { x: s.x - 8 - w, y: cy - h / 2 },
+            { x: s.x - 8 - w, y: s.y - 2 - h },
+            { x: s.x + s.width + 8, y: s.y - 2 - h },
+            { x: s.x + s.width + 8, y: cy - h / 2 },
+          ]);
     } else if (isEvent(n.tag)) {
       labelFor(n.id, n.name, nodeAnchor(n), EVENT_LABEL_W, (w, h) => LR
         ? [
@@ -807,12 +832,18 @@ function attemptPlane(
           { x: s.x + s.width + 6, y: s.y + s.height + 2 },
           { x: s.x - 6 - w, y: s.y + s.height + 2 },
         ]
-        : [
-          { x: s.x - 8 - w, y: cy - h / 2 },
-          { x: cx - w / 2, y: s.y + s.height + 5 },
-          { x: s.x + s.width + 8, y: cy - h / 2 },
-          { x: cx - w / 2, y: s.y - 5 - h },
-        ]);
+        : sp.narrow
+          ? [
+            { x: cx - w / 2, y: s.y + s.height + 4 },
+            { x: s.x + s.width + 6, y: cy - h / 2 },
+            { x: s.x - 8 - w, y: cy - h / 2 },
+          ]
+          : [
+            { x: s.x - 8 - w, y: cy - h / 2 },
+            { x: cx - w / 2, y: s.y + s.height + 5 },
+            { x: s.x + s.width + 8, y: cy - h / 2 },
+            { x: cx - w / 2, y: s.y - 5 - h },
+          ]);
     }
   }
   for (const ref of container.storeRefs) {

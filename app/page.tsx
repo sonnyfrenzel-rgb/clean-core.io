@@ -547,13 +547,26 @@ export default function Home() {
                 mapNote="Excerpt · first steps"
                 anchoredSentence={`${hero.process.anchored} of ${hero.process.flowNodes} elements of the whole program carry a line anchor.`}
                 diagram={
-                  <BpmnPlaneSvg
-                    plane={hero.plane}
-                    idPrefix="hero"
-                    fit
-                    maxHeight={520}
-                    title={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code: each step with the decisions in it that end the process. Every element carries its line anchor.`}
-                  />
+                  <>
+                    <div className="flow-wide">
+                      <BpmnPlaneSvg
+                        plane={hero.plane}
+                        idPrefix="hero"
+                        fit
+                        maxHeight={520}
+                        title={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code: each step with the decisions in it that end the process. Every element carries its line anchor.`}
+                      />
+                    </div>
+                    {/* A phone gets the same excerpt drawn narrow, at its own width, never scrolled sideways. */}
+                    <div className="flow-narrow">
+                      <BpmnPlaneSvg
+                        plane={hero.planeNarrow}
+                        idPrefix="hero-n"
+                        fit
+                        title={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code. Every element carries its line anchor.`}
+                      />
+                    </div>
+                  </>
                 }
               />
             </figure>
