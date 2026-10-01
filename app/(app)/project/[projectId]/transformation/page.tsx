@@ -1042,11 +1042,11 @@ CMD ["node", "srv/service.js"]`
           <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
             {scoreRing(48, 4)}
             <span className="absolute cc-text-meta font-cc-mono text-cc-ink">
-              {currentScore === undefined ? '—' : `${currentScore}%`}
+              {currentScore === undefined ? '—' : currentScore}
             </span>
           </div>
           <div className="space-y-1">
-            <div className="cc-text-label text-cc-ink-muted">Clean Core Score</div>
+            <div className="cc-text-label text-cc-ink-muted" title="A grade out of 100, not a compliance percentage">Clean Core Score · of 100</div>
             <CcButton icon={<Layers size={16} aria-hidden="true" />} onClick={() => setDrawerOpen(true)}>
               View Grounding Audit
             </CcButton>
@@ -1058,6 +1058,38 @@ CMD ["node", "srv/service.js"]`
           </div>
         </div>
       </div>
+
+      {/* The stage's answer, before the code (ADR-050). */}
+      <section
+        data-transformation-answer={files.length > 0 ? 'generated' : 'none'}
+        aria-labelledby="transformation-answer"
+        className="mb-6 rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc md:p-6"
+      >
+        {files.length > 0 ? (
+          <>
+            <h2 id="transformation-answer" className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
+              {files.length} file{files.length === 1 ? '' : 's'} of {isAbapCloud ? 'ABAP Cloud (RAP)' : 'Node.js (TypeScript)'} code, written by the model
+              <CcProvenanceChip value="proposed" />
+            </h2>
+            <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
+              Not compiled and not run here. The Testing tool runs it against mocks; nothing has checked it against a
+              system of yours.
+              {openSignOffs > 0
+                ? ` ${openSignOffs} finding${openSignOffs === 1 ? '' : 's'} in the grounding audit still need${openSignOffs === 1 ? 's' : ''} your sign-off.`
+                : ''}
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 id="transformation-answer" className="m-0 cc-text-h2 text-cc-ink">No transformed code yet</h2>
+            <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
+              {blockers.length > 0
+                ? blockers.join(' ')
+                : modelOff ?? 'The code is generated from the signed analysis and the approved design when you run the engine.'}
+            </p>
+          </>
+        )}
+      </section>
 
       <div className="mb-6 flex flex-wrap gap-2">
         <CcButton
@@ -1281,7 +1313,7 @@ CMD ["node", "srv/service.js"]`
             <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
               {scoreRing(80, 6)}
               <span className="absolute cc-text-identifier font-cc-mono text-cc-ink">
-                {currentScore === undefined ? '—' : `${currentScore}%`}
+                {currentScore === undefined ? '—' : currentScore}
               </span>
             </div>
             <div>

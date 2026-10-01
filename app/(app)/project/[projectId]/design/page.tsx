@@ -18,7 +18,7 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import NotGenerated from '@/components/NotGenerated';
 import { saveAs } from '@/lib/fileSaver';
 import GlossaryTerm from '@/components/GlossaryTerm';
-import ArchitectSignOff from '@/components/ArchitectSignOff';
+import ArchitectSignOff, { architectureOptionLabel } from '@/components/ArchitectSignOff';
 import type { TargetArchitecture } from '@/components/ArchitectSignOff';
 import { recommendedArchitecture } from '@/lib/project-commands';
 import { runProjectCommand } from '@/lib/project-command-client';
@@ -30,6 +30,9 @@ import { getSecurityExplanation } from '@/components/design/SecurityHardeningChe
 import { getCloudServiceDetails } from '@/components/design/CloudServiceIntegrations';
 
 import CcSkeleton from '@/components/cc/Skeleton';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import CcLinkButton from '@/components/cc/LinkButton';
+import CcDateText from '@/components/cc/DateText';
 import StageFooter from '@/components/StageFooter';
 import { withoutUnapprovedMoney, withoutUnapprovedMoneyDeep } from '@/lib/money-honesty';
 
@@ -614,7 +617,7 @@ ${responseText.substring(0, 4000)}`;
 
           {/* Architect sign-off / decision — always last. The panel is its own
               card; this wrapper only names the region. */}
-          <section aria-label="Architect sign-off">
+          <section aria-label="Architect sign-off" id="architect-sign-off" className="scroll-mt-24">
               <ArchitectSignOff
                 // The two shapes `originalRecommendation` arrives in — the five
                 // architecture codes and the router's own route names — are
@@ -711,7 +714,7 @@ ${responseText.substring(0, 4000)}`;
 
       <StageProgress steps={phases} current="design" projectId={projectId as string} />
 
-      <StageHeader projectName={project?.name} stage="design">Review the generated target architecture and technical design.</StageHeader>
+      <StageHeader projectName={project?.name} stage="design">Where this code should run after the change, and the design that gets it there.</StageHeader>
 
       <div className="overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc">
         <div role="status" className="flex items-center gap-3 border-b border-cc-line bg-cc-surface-muted px-4 py-4 sm:px-8">
@@ -787,8 +790,23 @@ ${responseText.substring(0, 4000)}`;
           </div>
         ) : null}
       >
-        Review the generated target architecture and technical design.
+        Where this code should run after the change, and the design that gets it there.
       </StageHeader>
+
+      <DesignAnswer
+        recommended={architectureOptionLabel(
+          recommendedArchitecture({
+            originalRecommendation: project?.originalRecommendation,
+            extensibilityRoute: project?.extensibilityRoute,
+          }),
+        )}
+        confirmed={signOffCurrent ? architectureOptionLabel(project?.targetArchitecture) : null}
+        confirmedBy={signOffCurrent ? project?.approvedBy ?? null : null}
+        confirmedAt={signOffCurrent && project?.architectSignOffAt ? String(project.architectSignOffAt) : null}
+        hasDocument={Boolean(design)}
+        canSignOff={Boolean(design) && designIsStructured(design)}
+        stale={designStale || stale.signOff}
+      />
 
       <div
         id="design-report"
@@ -799,7 +817,7 @@ ${responseText.substring(0, 4000)}`;
           <div className="flex min-w-0 items-center gap-3">
             <LayoutTemplate size={20} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
             <div className="min-w-0">
-              <h2 className="m-0 truncate cc-text-h2 text-cc-ink">Architecture &amp; Design Specification</h2>
+              <h2 className="m-0 truncate cc-text-h2 text-cc-ink">Design document</h2>
               <p className="m-0 truncate cc-text-cell text-cc-ink-muted">Project: {project?.name || 'Loading...'}</p>
             </div>
           </div>
@@ -863,5 +881,95 @@ ${responseText.substring(0, 4000)}`;
 
 
     </div>
+  );
+}
+
+/** Whether a stored design is the structured kind that carries the sign-off panel. */
+function designIsStructured(design: string | null | undefined): boolean {
+  if (!design) return false;
+  const t = design.trim();
+  if (!(t.startsWith('{') || (t.includes('{') && t.includes('}')))) return false;
+  try {
+    return Boolean(cleanAndParseJSON(design));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The stage's answer, before the document (ADR-050: each stage leads with its
+ * answer). Where should this code run, who said so, and is it confirmed — in
+ * one card, from what is on record: the analysis's recommendation and the
+ * account's own sign-off. Nothing here is new: both stood at the very end of
+ * a long document, under ten sections of generated design.
+ */
+function DesignAnswer({
+  recommended,
+  confirmed,
+  confirmedBy,
+  confirmedAt,
+  hasDocument,
+  canSignOff,
+  stale,
+}: {
+  recommended: string | null;
+  confirmed: string | null;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
+  hasDocument: boolean;
+  canSignOff: boolean;
+  stale: boolean;
+}) {
+  return (
+    <section
+      data-design-answer={confirmed ? 'confirmed' : recommended ? 'recommended' : 'none'}
+      aria-labelledby="design-answer"
+      className="mb-6 rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc md:p-6"
+    >
+      {confirmed ? (
+        <>
+          <h2 id="design-answer" className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
+            Target: {confirmed} <CcProvenanceChip value="confirmed" />
+          </h2>
+          <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
+            Confirmed{confirmedBy ? <> by {confirmedBy}</> : null}
+            {confirmedAt ? <> on <CcDateText value={confirmedAt} format="text" /></> : null}. A self-declaration by the
+            signed-in account, not an organisational mandate.
+          </p>
+        </>
+      ) : recommended ? (
+        <>
+          <h2 id="design-answer" className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
+            Recommended target: {recommended} <CcProvenanceChip value="reconstructed" />
+          </h2>
+          <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
+            {stale
+              ? 'The design or its sign-off belongs to an earlier source, so nothing is confirmed for the code under review.'
+              : 'Recommended from the analysis of the code. Not confirmed yet.'}{' '}
+            {canSignOff
+              ? 'Review the design and confirm or change the target at the end of it.'
+              : hasDocument
+                ? 'This design document has no sign-off section; regenerate it to confirm a target.'
+                : 'Generate the design document to review and confirm it.'}
+          </p>
+          {canSignOff ? (
+            <div className="mt-3">
+              <CcLinkButton href="#architect-sign-off" variant="secondary">
+                Go to the sign-off
+              </CcLinkButton>
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <h2 id="design-answer" className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
+            Target not determined <CcProvenanceChip value="not-determined" />
+          </h2>
+          <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
+            The analysis on record recommends no target architecture. Run the analysis, then generate the design.
+          </p>
+        </>
+      )}
+    </section>
   );
 }
