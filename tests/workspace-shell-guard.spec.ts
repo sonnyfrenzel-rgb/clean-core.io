@@ -672,6 +672,14 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
       .evaluateAll((els) => els.map((el) => el.getAttribute('data-recorded')));
     expect(recorded.length).toBeGreaterThan(4);
     expect([...new Set(recorded)], 'a meta value appeared from nowhere').toEqual(['no']);
+
+    // A fold folds back (QA review of 247b20c16e38): the row stays, and the
+    // same button closes what it opened.
+    const fold = page.locator('[data-workspace-status-fold] button');
+    await expect(fold).toHaveAttribute('aria-expanded', 'true');
+    await fold.click();
+    await expect(page.locator('[data-workspace-status-line]'), 'the project status cannot be folded again').toHaveCount(0);
+    await expect(fold).toHaveAttribute('aria-expanded', 'false');
   });
 
   test('a project with a signed run says so — and unverified work is still not green', async ({ page }) => {

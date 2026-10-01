@@ -20,6 +20,7 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'page.projectStatus': 'Project status',
   'page.nothingOnRecord': 'Nothing on record yet for any of the seven',
   'page.showProjectStatus': 'Show project status',
+  'page.hideProjectStatus': 'Hide project status',
   'page.showTipsAgain': 'Show tips again',
 
   // Search ⌘K — components/workspace/CommandSearch.tsx, roadmap 6.6.

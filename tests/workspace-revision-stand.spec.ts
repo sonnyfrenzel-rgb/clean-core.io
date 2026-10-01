@@ -125,6 +125,26 @@ test.describe('the Stand probe costs one read per window (CR-15)', () => {
     expect(await probe()).toEqual({ revision: 5 });
   });
 
+  test("the screen's own save is its Stand — inside the window, and over a read already in flight", async () => {
+    // QA review of 247b20c16e38: the map in the Business view writes process
+    // revisions, the very thing the Stand counts. Without `adopt` the reader's
+    // own save came back from the next check as "written somewhere else".
+    let clock = 0;
+    const probe = createStandProbe(async () => ({ revision: 1 }), () => clock);
+    expect(await probe()).toEqual({ revision: 1 });
+    probe.adopt({ revision: 2 });
+    clock += 1;
+    expect(await probe(), 'the window answered with the Stand from before the own save').toEqual({ revision: 2 });
+
+    // A read that left before the save and lands after it must not put the old Stand back.
+    const gate = deferred<RevisionStand | null>();
+    const late = createStandProbe(() => gate.promise, () => 0);
+    const inFlight = late();
+    late.adopt({ revision: 4 });
+    gate.resolve({ revision: 3 });
+    expect(await inFlight).toEqual({ revision: 4 });
+  });
+
   test('the window is claimed before the read is awaited — read out of the source', () => {
     // The one thing the tests above cannot show: that a later edit does not
     // move the two lines below the `await`, which leaves the concurrent burst
@@ -193,6 +213,23 @@ test.describe('where the Stand is asked (CR-15)', () => {
     const write = revoke.indexOf('await revokeProjectAccess(');
     expect(gate, 'the writing action asks nothing about the Stand').toBeGreaterThan(-1);
     expect(gate, 'the Stand is checked after the revocation was already sent').toBeLessThan(write);
+  });
+
+  test('saving the map is a writing action: it waits for the Stand, and its revision becomes the Stand', () => {
+    // QA review of 247b20c16e38 (d6088ec86091): the Business view's map saved
+    // revisions without the check every other write on the page asks first.
+    const process = read('components/workspace/WorkspaceProcess.tsx');
+    const save = process.slice(process.indexOf('const save = useCallback'));
+    const gate = save.indexOf('await beforeWrite()');
+    expect(gate, 'saving the map asks nothing about the Stand').toBeGreaterThan(-1);
+    expect(gate, 'the Stand is checked after the baseline was already written').toBeLessThan(save.indexOf('await ensureProcessBaseline('));
+    expect(gate).toBeLessThan(save.indexOf('await saveProcessRevision('));
+    expect(save, 'an own save is not handed to the Stand').toContain('onWritten?.(outcome.record.revision)');
+
+    const shell = read('components/workspace/WorkspaceShell.tsx');
+    const mounted = shell.slice(shell.indexOf('<WorkspaceProcess'), shell.indexOf('/>', shell.indexOf('<WorkspaceProcess')));
+    expect(mounted).toContain('beforeWrite={stand.checkBeforeWrite}');
+    expect(mounted).toContain('onWritten={stand.adopt}');
   });
 
   test('nothing about the Stand is stored, and nothing about it calls a model', () => {

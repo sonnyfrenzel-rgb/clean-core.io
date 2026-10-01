@@ -26,6 +26,8 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.showFullSource': 'Show full source',
   'biz.showMarkedOnly': 'Show only the marked lines',
   'biz.saveNoProject': 'This project could not be identified, so nothing was saved.',
+  'biz.saveOvertaken':
+    'This process was saved somewhere else while this screen was open, so nothing was saved. The notice at the top says how to go on.',
 
   // The head of the object page — components/workspace/HeadActions.tsx.
   'biz.eyebrowProject': 'Project',

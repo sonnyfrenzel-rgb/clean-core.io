@@ -86,6 +86,12 @@ export interface WorkspaceRevision {
    * into a dead screen, not what keeps the store consistent.
    */
   checkBeforeWrite: () => Promise<boolean>;
+  /**
+   * A revision this screen wrote itself — the map saved from the Business
+   * view. It becomes the Stand the screen holds, so the reader's own save is
+   * never reported back to them as somebody else's.
+   */
+  adopt: (revision: number) => void;
 }
 
 export function useWorkspaceRevision(
@@ -176,6 +182,16 @@ export function useWorkspaceRevision(
     return !standMoved(held, latest);
   }, [check, held]);
 
+  const adopt = useCallback(
+    (revision: number) => {
+      probe.adopt({ revision });
+      first.current = false;
+      setHeld(revision);
+      setSeen(revision);
+    },
+    [probe],
+  );
+
   return {
     held,
     seen,
@@ -183,5 +199,6 @@ export function useWorkspaceRevision(
     keep,
     refresh,
     checkBeforeWrite,
+    adopt,
   };
 }
