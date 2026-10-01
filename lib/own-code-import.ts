@@ -82,7 +82,11 @@ export type OwnCodeIssue =
   | { kind: 'zip-skipped'; names: readonly string[] }
   | { kind: 'second-program'; object: string; main: string }
   | { kind: 'not-referenced'; object: string }
-  | { kind: 'missing-includes'; names: readonly string[] };
+  | { kind: 'missing-includes'; names: readonly string[] }
+  /** The includes form a loop — `chain` starts and ends with the same name. */
+  | { kind: 'include-cycle'; chain: readonly string[] }
+  /** One include is named more than once; `lines` are lines of this file. */
+  | { kind: 'include-repeated'; name: string; lines: readonly number[] };
 
 export type OwnCodeState = 'ok' | 'warning' | 'error';
 
@@ -262,33 +266,70 @@ function newlineOf(text: string): string {
 export function expandIncludes(
   main: OwnCodeSource,
   byName: ReadonlyMap<string, OwnCodeSource>,
-): { text: string; used: string[]; missing: string[] } {
+): { text: string; used: string[]; missing: string[]; repeated: { in: string; name: string; line: number }[] } {
   const used: string[] = [main.object];
+  const repeated: { in: string; name: string; line: number }[] = [];
   const missing: string[] = [];
   const nl = newlineOf(main.text);
 
   const expand = (source: OwnCodeSource, stack: string[]): string => {
     const lines = source.text.replace(/\r?\n$/, '').split(/\r?\n/);
     const out: string[] = [];
-    for (const line of lines) {
+    lines.forEach((line, index) => {
       const match = isCommentLine(line) ? null : INCLUDE_LINE.exec(line);
       const name = match?.[2]?.toUpperCase();
       const include = name ? byName.get(name) : undefined;
+      // A second INCLUDE of a text already put in place, which is also how a
+      // loop shows up from inside. Left as written and reported: the caller
+      // refuses the assembly, see `assembleOwnCode`.
+      if (name && include && (stack.includes(name) || used.includes(name))) {
+        repeated.push({ in: source.object, name, line: index + 1 });
+      }
       if (!name || !include || stack.includes(name) || used.includes(name)) {
         if (name && !include && !missing.includes(name)) missing.push(name);
         out.push(line);
-        continue;
+        return;
       }
       used.push(name);
       out.push(`*${line}`);
       out.push(`${INCLUDE_OPEN_MARK} ${name} · ${include.file}`);
       out.push(expand(include, [...stack, name]));
       out.push(`${INCLUDE_CLOSE_MARK} ${name}`);
-    }
+    });
     return out.join(nl);
   };
 
-  return { text: expand(main, [main.object]), used, missing };
+  return { text: expand(main, [main.object]), used, missing, repeated };
+}
+
+/**
+ * Every loop among the uploaded sources' INCLUDE statements, each once, as a
+ * chain that starts and ends with the same name (`A → B → A`). Looked for over
+ * all sources, not only from the main program: a loop between two includes
+ * nobody else names would otherwise slip through as "read after the program".
+ */
+export function includeCycles(byName: ReadonlyMap<string, OwnCodeSource>): string[][] {
+  const cycles: string[][] = [];
+  const seen = new Set<string>();
+  const done = new Set<string>();
+  const visit = (name: string, path: string[]) => {
+    if (path.includes(name)) {
+      const chain = [...path.slice(path.indexOf(name)), name];
+      const key = [...chain.slice(0, -1)].sort().join('>');
+      if (!seen.has(key)) {
+        seen.add(key);
+        cycles.push(chain);
+      }
+      return;
+    }
+    if (done.has(name)) return;
+    const source = byName.get(name);
+    if (!source) return;
+    for (const next of includesNamed(source.text)) visit(next, [...path, name]);
+    done.add(name);
+  };
+  for (const name of byName.keys()) visit(name, []);
+  return cycles;
 }
 
 /* ------------------------------------------------------------ all the files */
@@ -310,6 +351,8 @@ const ERROR_KINDS = new Set<OwnCodeIssue['kind']>([
   'zip-limit',
   'zip-empty',
   'second-program',
+  'include-cycle',
+  'include-repeated',
 ]);
 
 export function issueIsError(issue: OwnCodeIssue): boolean {
@@ -389,6 +432,29 @@ export function assembleOwnCode(files: readonly OwnCodeFile[]): OwnCodeAssembly 
   if (main) {
     const expanded = expandIncludes(main, byName);
     missing = expanded.missing;
+    // Loops and repeats stop the start rather than being resolved quietly.
+    // SAP does not activate a program whose includes loop, and an include
+    // named twice puts its FORMs and DATA in twice — a program the system
+    // would not activate either. Reading each text once would analyse a
+    // program that does not exist; leaving the second statement in would let
+    // the engine report a text that *was* uploaded as "not read". So the file
+    // that carries the statement is named, with its line, and the reader
+    // decides which INCLUDE goes.
+    const cycles = includeCycles(byName);
+    for (const chain of cycles) {
+      ownerOf.get(chain[0])?.issues.push({ kind: 'include-cycle', chain });
+    }
+    const inCycle = new Set(cycles.flatMap((c) => c.slice(0, -1)));
+    const repeats = new Map<string, number[]>();
+    for (const r of expanded.repeated) {
+      if (inCycle.has(r.name) && inCycle.has(r.in)) continue;
+      const key = `${r.in}|${r.name}`;
+      repeats.set(key, [...(repeats.get(key) ?? []), r.line]);
+    }
+    for (const [key, lines] of repeats) {
+      const [owner, name] = key.split('|');
+      ownerOf.get(owner)?.issues.push({ kind: 'include-repeated', name, lines });
+    }
     const parts = [expanded.text];
     objects.push(...expanded.used);
     // Sources nobody names are still read — after the program, marked, so

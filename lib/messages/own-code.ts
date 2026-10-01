@@ -152,6 +152,10 @@ export function ownCodeIssueText(issue: OwnCodeIssue): string {
       return `${issue.object} is a second program besides ${issue.main}. One project holds one program with its includes — remove one.`;
     case 'not-referenced':
       return `${issue.object} is not named by an INCLUDE statement. It is read after the program.`;
+    case 'include-cycle':
+      return `The includes form a loop: ${issue.chain.join(' → ')}. SAP would not activate this program either — remove the INCLUDE line that closes the loop.`;
+    case 'include-repeated':
+      return `${issue.name} is included more than once (${issue.lines.length === 1 ? 'line' : 'lines'} ${issue.lines.join(', ')} of this file, after it was already read). Its routines and data would stand twice — remove the extra INCLUDE line.`;
     case 'missing-includes':
       return `Referenced but missing: ${list(issue.names)}. These stay Not determined.`;
   }

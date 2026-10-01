@@ -13,7 +13,7 @@ import {
   readSourceBytes,
   type OwnCodeFile,
 } from '../lib/own-code-import';
-import { readZipSources } from '../lib/own-code-zip';
+import { readUploadedFile, readZipSources } from '../lib/own-code-zip';
 import { leaveOwnCodeHandoff, takeOwnCodeHandoff } from '../lib/own-code-handoff';
 import { deriveReviewTasks } from '../lib/abap/review-tasks';
 import { looksLikeAbap } from '../lib/abap-input-check';
@@ -31,6 +31,7 @@ import { ownCodeIssueText } from '../lib/messages/own-code';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+const read_ = read;
 const enc = (text: string) => new TextEncoder().encode(text);
 
 let seq = 0;
@@ -273,5 +274,74 @@ test.describe('own code: the handoff to Analyze', () => {
     const push = analyze.indexOf("router.push(`/project/${projectId}?first=1`)");
     expect(push).toBeGreaterThan(runId);
     expect(analyze.slice(runId, push)).toContain('openWorkspaceAfterRunRef.current && workspaceShellEnabled(profile)');
+  });
+});
+
+test.describe('own code: QA review of acd1eb0d73aa', () => {
+  test('7f4da1440c2b: a ZIP above the ceiling is refused by its size, before a byte is read', async () => {
+    let read = 0;
+    const huge = {
+      name: 'everything.zip',
+      size: OWN_CODE_ZIP_LIMITS.archiveBytes + 1,
+      arrayBuffer: async () => {
+        read++;
+        return new ArrayBuffer(0);
+      },
+    };
+    const row = await readUploadedFile(huge, 'z1');
+    expect(read, 'the archive was read into memory before its size was asked').toBe(0);
+    expect(row.issues).toEqual([{ kind: 'too-large', bytes: huge.size, limit: OWN_CODE_ZIP_LIMITS.archiveBytes }]);
+    // And the page goes through this one door.
+    const page = read_('components/workspace/OwnCodeImport.tsx');
+    expect(page).toContain('readUploadedFile(file');
+    expect(page).not.toContain('arrayBuffer()');
+  });
+
+  test('d1e304e51241: includes that loop stop the start and name the loop', () => {
+    const a = assembleOwnCode([
+      file('Z_MAIN.abap', 'REPORT z_main.\nINCLUDE z_a.\n'),
+      file('Z_A.abap', 'FORM a.\nENDFORM.\nINCLUDE z_b.\n'),
+      file('Z_B.abap', 'FORM b.\nENDFORM.\nINCLUDE z_a.\n'),
+    ]);
+    expect(assemblyReady(a)).toBe(false);
+    const issues = a.rows.flatMap((r) => r.issues.map((i) => ({ row: r.name, ...i })));
+    expect(issues.filter((i) => i.kind === 'include-cycle')).toEqual([
+      { row: 'Z_A.abap', kind: 'include-cycle', chain: ['Z_A', 'Z_B', 'Z_A'] },
+    ]);
+    expect(a.attention.map((r) => r.name)).toEqual(['Z_A.abap']);
+  });
+
+  test('d1e304e51241: a loop between includes the program never names is caught too', () => {
+    const a = assembleOwnCode([
+      file('Z_MAIN.abap', 'REPORT z_main.\nWRITE 1.\n'),
+      file('Z_A.abap', 'FORM a.\nENDFORM.\nINCLUDE z_b.\n'),
+      file('Z_B.abap', 'FORM b.\nENDFORM.\nINCLUDE z_a.\n'),
+    ]);
+    expect(assemblyReady(a)).toBe(false);
+    expect(a.rows.some((r) => r.issues.some((i) => i.kind === 'include-cycle'))).toBe(true);
+  });
+
+  test('d1e304e51241: an include named twice stops the start and names the lines', () => {
+    const a = assembleOwnCode([
+      file('Z_MAIN.abap', 'REPORT z_main.\nINCLUDE z_top.\nWRITE 1.\nINCLUDE z_top.\n'),
+      file('Z_TOP.abap', 'DATA gv TYPE i.\n'),
+    ]);
+    expect(assemblyReady(a)).toBe(false);
+    const main = a.rows.find((r) => r.name === 'Z_MAIN.abap')!;
+    expect(main.state).toBe('error');
+    expect(main.issues).toContainEqual({ kind: 'include-repeated', name: 'Z_TOP', lines: [4] });
+    expect(ownCodeIssueText(main.issues.find((i) => i.kind === 'include-repeated')!)).toContain('line 4');
+  });
+
+  test('d1e304e51241: a program that includes itself is a loop', () => {
+    const a = assembleOwnCode([file('Z_SELF.abap', 'REPORT z_self.\nINCLUDE z_self.\n')]);
+    expect(assemblyReady(a)).toBe(false);
+    expect(a.rows[0].issues).toContainEqual({ kind: 'include-cycle', chain: ['Z_SELF', 'Z_SELF'] });
+  });
+
+  test('d1e304e51241: a clean program with includes is untouched by the check', () => {
+    const a = assembleOwnCode([file('z_demo_main.abap', MAIN), file('Z_DEMO_TOP.abap', TOP), file('Z_DEMO_F01.abap', F01)]);
+    expect(a.rows.flatMap((r) => r.issues.map((i) => i.kind)).filter((k) => k.startsWith('include-'))).toEqual([]);
+    expect(assemblyReady(a)).toBe(true);
   });
 });
