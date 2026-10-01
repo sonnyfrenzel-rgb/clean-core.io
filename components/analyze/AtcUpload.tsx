@@ -128,7 +128,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
     if (chosen) choose(chosen);
   };
 
-  const confirm = async () => {
+  const confirmImport = async () => {
     if (!preview || hintPending || saving) return;
     readSeq.current++;
     setSaving(true);
@@ -325,7 +325,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
           <div className="flex flex-wrap items-center gap-3">
             <CcButton
               variant="primary"
-              onClick={() => void confirm()}
+              onClick={() => void confirmImport()}
               busy={saving}
               disabled={preview.findings.length === 0 || hintPending}
               data-atc-confirm

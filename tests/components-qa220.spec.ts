@@ -169,8 +169,12 @@ test.describe('what the text claims', () => {
     expect(visible).not.toMatch(/Clean-Core\.io configures secure tunnels/);
     // Every question on both lists carries the same answer on both: the
     // FAQPage JSON-LD is built from the page's copy, the reader sees this one.
+    // Double-quoted or template literals: the BAIP naming (roadmap 3.0.15) turned
+    // the entries that name the platform into templates over the shared constant.
     const pairs = (src: string) =>
-      new Map([...src.matchAll(/question:\s*"([^"]+)",\s*answer:\s*"((?:[^"\\]|\\.)*)"/g)].map((m) => [m[1], m[2]]));
+      new Map(
+        [...src.matchAll(/question:\s*(["`])((?:(?!\1)[^\\]|\\.)+)\1,\s*answer:\s*(["`])((?:(?!\3)[^\\]|\\.)*)\3/g)].map((m) => [m[2], m[4]]),
+      );
     const shown = pairs(visible);
     const structured = pairs(page);
     const shared = [...shown.keys()].filter((q) => structured.has(q));

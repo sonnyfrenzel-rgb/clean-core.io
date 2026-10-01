@@ -188,7 +188,7 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
     if (chosen) choose(chosen);
   };
 
-  const confirm = async () => {
+  const confirmImport = async () => {
     // The import is what sends the file's contents on. Nothing is refused here
     // — the tick is what is asked for, and the button below says so.
     if (!preview || hintPending || saving) return;
@@ -444,7 +444,7 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
           <div className="flex flex-wrap items-center gap-3">
             <CcButton
               variant="primary"
-              onClick={() => void confirm()}
+              onClick={() => void confirmImport()}
               busy={saving}
               disabled={preview.records.length === 0 || hintPending}
               data-usage-confirm
