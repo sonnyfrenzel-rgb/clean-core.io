@@ -108,7 +108,8 @@ test.describe('the legal pages are reachable without an account', () => {
   // Roadmap 3.0.6 (decision 24.09.2026) removed the dismissible banner that
   // used to repeat the two links above the shell bar. The footer is now the one
   // place they stand on every page of this shell, so both of its branches are
-  // held to them: the one-line footer inside a workflow step, and SiteFooter
+  // held to them: the one-line footer inside the product (a project, its stages, My workspace,
+  // a new project, an invitation), and SiteFooter
   // everywhere else.
   test('both footers of the shell link the public versions', () => {
     const s = withoutComments('app/(app)/layout.tsx');
@@ -119,7 +120,7 @@ test.describe('the legal pages are reachable without an account', () => {
     expect(s).not.toContain('/settings#legal');
     // The footer is not conditional on anything but the branch: one of the two
     // renders on every route.
-    const branches = s.match(/\{isProjectStep \? \(([\s\S]*?)\) : \(([\s\S]*?)\)\}\s*<div className="cc-no-print">/);
+    const branches = s.match(/\{isAppPage \? \(([\s\S]*?)\) : \(([\s\S]*?)\)\}\s*<div className="cc-no-print">/);
     expect(branches, 'the footer branch of the shell was not found').not.toBeNull();
     const [, stepFooter, otherFooter] = branches!;
     expect(stepFooter).toContain('<footer');

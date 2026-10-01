@@ -1,7 +1,7 @@
 ---
 name: ux-review-intake
 description: |
-  Intake of the Clean-Core.io UX agent's reviews (Muse Spark 1.3). Use it after every push to `main`, after the
+  Intake of the Clean-Core.io UX agent's reviews (OpenRouter Auto Router, image-capable models only). Use it after every push to `main`, after the
   first full UX review of the product, when the SessionStart context reports undecided UX findings, or when Sonny
   asks about UX findings. It tells you how to fetch and open the sealed report and its screenshots, verify each
   finding against code and picture, record the decision in docs/ux/register.json, and schedule accepted findings

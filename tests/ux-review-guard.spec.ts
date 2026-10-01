@@ -24,17 +24,34 @@ const job = (name: string) => {
   return next < 0 ? src.slice(start) : src.slice(start, start + 3 + next);
 };
 
-test.describe('one pinned model that can only read', () => {
-  test('Muse Spark 1.3, no tools, no fallbacks, no data collection — the id in exactly one file', async () => {
-    const { UX_MODEL } = await lib('config.mjs');
-    expect(UX_MODEL).toBe('meta/muse-spark-1.3');
+test.describe('the Auto Router, image-capable models only, and it can only read', () => {
+  test('cost tier high under a price ceiling, no tools, no fallbacks, no data collection — and no model id pinned', async () => {
+    // Owner decision, 01.10.2026: no pinned model. Until then meta/muse-spark-1.3.
+    const { UX_ROUTER, PRICE_PER_MTOK } = await lib('config.mjs');
+    expect(UX_ROUTER.costTier).toBe('high');
+    expect(PRICE_PER_MTOK).toBe(UX_ROUTER.maxPrice);
     const src = read('scripts/ux/review.mjs');
-    expect(src).toMatch(/callReviewer\(\{\s*apiKey: env\.OPENROUTER_API_KEY,\s*model: UX_MODEL,/);
+    expect(src).toMatch(/callReviewer\(\{\s*apiKey: env\.OPENROUTER_API_KEY,\s*costTier: UX_ROUTER\.costTier,\s*maxPrice: UX_ROUTER\.maxPrice,/);
     expect(src).not.toMatch(/tools:|tool_choice/);
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
-    expect(buildRequest({ system: 's', user: [], schema: {}, effort: 'low', model: UX_MODEL }).provider).toEqual({ allow_fallbacks: false, data_collection: 'deny' });
-    const hits = (fs.readdirSync(path.resolve(ROOT, 'scripts/ux'), { recursive: true }) as string[]).filter((f) => String(f).endsWith('.mjs') && read(`scripts/ux/${String(f).replace(/\\/g, '/')}`).includes('muse-spark'));
-    expect(hits.map(String)).toEqual([path.join('lib', 'config.mjs')]);
+    const req = buildRequest({ system: 's', user: [], schema: {}, effort: 'low', costTier: UX_ROUTER.costTier, maxPrice: UX_ROUTER.maxPrice });
+    expect(req.model).toBe('openrouter/auto');
+    expect(req.plugins).toEqual([{ id: 'auto-router', cost_tier: 'high' }]);
+    expect(req.provider).toEqual({ allow_fallbacks: false, data_collection: 'deny', require_parameters: true, max_price: { prompt: UX_ROUTER.maxPrice.input, completion: UX_ROUTER.maxPrice.output } });
+    const hits = (fs.readdirSync(path.resolve(ROOT, 'scripts/ux'), { recursive: true }) as string[]).filter((f) => String(f).endsWith('.mjs') && /['"`](openai|anthropic|google|meta|deepseek|z-ai|moonshotai)\/[a-z0-9.-]+['"`]/.test(read(`scripts/ux/${String(f).replace(/\\/g, '/')}`)));
+    expect(hits.map(String)).toEqual([]);
+  });
+
+  test('a review of screenshots is accepted only from a model that reads images, and every report names who answered', () => {
+    const src = read('scripts/ux/review.mjs');
+    // Every call that carries pictures asks callReviewer to confirm the model against the public model list
+    // (scripts/qa/lib/openrouter.mjs confirmInputs; behaviour in tests/qa-review-guard.spec.ts).
+    expect(src).toMatch(/inputs: c\.picked\.length \? \['image'\] : null,/);
+    expect(src).toMatch(/model: AUTO_MODEL,\s*costTier: UX_ROUTER\.costTier,\s*maxPrice: UX_ROUTER\.maxPrice,\s*models: modelsOf\(answered\),/);
+    expect(src).toMatch(/reviewed by \$\{summary\.models\}/);
+    const design = read('scripts/ux/design-review.mjs');
+    expect(design).toMatch(/inputs: images\.length \? \['image'\] : null,/);
+    expect(design).toMatch(/answeredBy: r\.model/);
   });
 
   test('the answer has one strict shape: every object closed, every field required', async () => {
@@ -155,10 +172,14 @@ test.describe('spend stays within an estimated budget per mode', () => {
     expect(BUDGETS.full.maxCostUsd).toBeLessThanOrEqual(6);
     expect(BUDGETS.delta.maxCostUsd).toBeLessThanOrEqual(1.5);
     expect(BUDGETS['self-test'].maxCostUsd).toBeLessThanOrEqual(0.3);
-    expect(PRICE_PER_MTOK).toEqual({ input: 1.25, output: 4.25 });
+    // Since 01.10.2026 the price is the ceiling the request carries (provider.max_price), not a model's list price.
+    expect(PRICE_PER_MTOK).toEqual({ input: 1.25, output: 5 });
     const withImages = estimateCostUsd({ chars: 0, images: 10, maxOutputTokens: 0 });
-    expect(withImages).toBeCloseTo((10 * TOKENS_PER_IMAGE * 1.25) / 1e6, 8);
-    expect(estimateCostUsd({ chars: 0, images: 0, maxOutputTokens: 40_000 })).toBeCloseTo(0.17, 5);
+    expect(withImages).toBeCloseTo((10 * TOKENS_PER_IMAGE * PRICE_PER_MTOK.input) / 1e6, 8);
+    expect(estimateCostUsd({ chars: 0, images: 0, maxOutputTokens: 40_000 })).toBeCloseTo((40_000 * PRICE_PER_MTOK.output) / 1e6, 5);
+    // Every planned call of a full review still fits the cap at the ceiling, with room.
+    const fullCall = estimateCostUsd({ chars: BUDGETS.full.maxBatchChars, images: BUDGETS.full.maxImagesPerCall, maxOutputTokens: BUDGETS.full.maxOutputTokens });
+    expect(fullCall * (BUDGETS.full.maxBatches + 1)).toBeLessThan(BUDGETS.full.maxCostUsd);
     expect(withinBudget(BUDGETS.delta, 0, { chars: 200_000, images: 12 })).toBe(true);
     expect(withinBudget(BUDGETS.delta, 1.4, { chars: 200_000, images: 12 })).toBe(false);
     expect(read('scripts/ux/review.mjs')).toMatch(/if \(!withinBudget\(budget, spent, \{ chars: brief\.length \+ text\.length \+ SCHEMA_CHARS, images: c\.picked\.length \}\)\) return null;/);
@@ -172,8 +193,9 @@ test.describe('nothing it finds leaks', () => {
     expect(src).toMatch(/if \(LOCAL\) \{\s*writeFileSync\(join\(OUT_DIR, `ux-review\.\$\{head\.slice\(0, 12\)\}\.json`\)/);
     expect(src).toMatch(/console\.error\(`UX review failed: \$\{String\(err\?\.message \|\| err\)\.split\('\\n'\)\[0\]\}`\)/);
     const { publicSummary } = await lib('report.mjs');
-    const s = publicSummary({ range: { head: 'a'.repeat(40) }, mode: 'delta', meta: { modelCalls: 2, costUsd: 0.4 }, ux_health: 'poor', findings: [{ severity: 'critical' }] });
-    expect(s).toEqual({ head: 'a'.repeat(12), mode: 'delta', status: 'completed, sealed', modelCalls: 2, costUsd: 0.4 });
+    const s = publicSummary({ range: { head: 'a'.repeat(40) }, mode: 'delta', meta: { modelCalls: 2, costUsd: 0.4, models: ['moonshotai/kimi-k3'] }, ux_health: 'poor', findings: [{ severity: 'critical' }] });
+    // Which model(s) the Auto Router chose is metadata like the cost (owner decision, 01.10.2026).
+    expect(s).toEqual({ head: 'a'.repeat(12), mode: 'delta', status: 'completed, sealed', modelCalls: 2, costUsd: 0.4, models: 'moonshotai/kimi-k3' });
     expect(read('.gitignore')).toMatch(/^\.ux-review\/$/m);
   });
 

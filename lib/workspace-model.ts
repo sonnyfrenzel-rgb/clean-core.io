@@ -40,6 +40,8 @@ import type { ObjectStatusValue } from './object-status';
 import type { ProvenanceValue } from './provenance';
 import { INPUT_IDS, type InputManifest } from './input-manifest';
 import { assessCoverage, type UnassessedConstruct } from './abap/coverage';
+import type { BusinessRuleSet } from './abap/business-rule-set';
+import { capabilityKeyOf } from './abap/standard-coverage';
 
 /* ------------------------------------------------------------------ views */
 
@@ -559,7 +561,16 @@ function ownershipOf(entry: { isCustom?: unknown; isStandard?: unknown }): strin
  * it" claim `DESIGN.md` §5.3 forbids, one layer down. So an empty layer carries
  * the sentence that names the artefact that is missing, and no row.
  */
-export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
+export function workspaceLayers(
+  project: Project | null,
+  /**
+   * The engine's reading of the source, once the first look has done it — the
+   * business rules for *Need & process* and the capabilities they form for
+   * *Standard fit*. Without it both layers count only what is stored on the
+   * project, which is what they did before mockup screens s2 and s3 were built.
+   */
+  reading: { ruleSet: BusinessRuleSet } | null = null,
+): WorkspaceLayer[] {
   const usage = project?.usageReport ?? null;
   const usageRecords = Array.isArray(usage?.records) ? usage.records : [];
   const inventory = Array.isArray(project?.codeInventory) ? project.codeInventory : [];
@@ -577,7 +588,17 @@ export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
   const FIRST = 5;
 
   /* ------------------------------------------------------------- need */
-  const needRows: LayerRow[] = usageRecords.filter(isRecord).map((record, i) => ({
+  const rules = reading?.ruleSet.rules ?? [];
+  const ruleRows: LayerRow[] = rules.map((rule) => {
+    const first = rule.sentences[0]?.anchors[0];
+    return {
+      key: `rule-${rule.id}`,
+      label: rule.id,
+      value: rule.label,
+      anchor: first ? (first.lineEnd > first.lineStart ? `L${first.lineStart}–L${first.lineEnd}` : `L${first.lineStart}`) : null,
+    };
+  });
+  const usageRows: LayerRow[] = usageRecords.filter(isRecord).map((record, i) => ({
     key: `usage-${i}`,
     label: nameOr(record.objectName, 'object name not recorded'),
     // `null` is not zero (`lib/workspace-rows.ts`): an export with no call
@@ -587,6 +608,25 @@ export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
       typeof record.callCount === 'number'
         ? `${plural(record.callCount, 'call')} in the measured window`
         : 'no call count in the export',
+    anchor: null,
+  }));
+
+  const needRows: LayerRow[] = [...ruleRows, ...usageRows];
+
+  /* --------------------------------------------------------- standard */
+  // One row per capability — the rules that decide the same subject (roadmap
+  // 7.2). The evidence behind each, read against SAP's catalogue, is the
+  // layer's own table (`components/workspace/StandardFitTable.tsx`); here it is
+  // only counted, so the bar and the section agree on whether there is a table.
+  const capabilities = new Map<string, string[]>();
+  for (const rule of rules) {
+    const key = capabilityKeyOf(rule);
+    if (key) capabilities.set(key, [...(capabilities.get(key) ?? []), rule.id]);
+  }
+  const standardRows: LayerRow[] = [...capabilities.entries()].map(([key, ids]) => ({
+    key: `capability-${key}`,
+    label: key,
+    value: ids.join(', '),
     anchor: null,
   }));
 
@@ -673,21 +713,29 @@ export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
       key: 'need',
       label: 'Need & process',
       hash: '#need',
-      count: needRows.length > 0 ? plural(needRows.length, 'object with usage') : null,
+      count:
+        needRows.length > 0
+          ? [
+              ruleRows.length > 0 ? plural(ruleRows.length, 'rule') : null,
+              usageRows.length > 0 ? plural(usageRows.length, 'object with usage') : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')
+          : null,
       missing: 'The process reconstructed from the code, and the rules hidden in it, are not here yet.',
       rows: needRows.slice(0, FIRST),
       total: needRows.length,
-      provenance: needRows.length > 0 ? 'imported' : 'not-determined',
+      provenance: ruleRows.length > 0 ? 'reconstructed' : usageRows.length > 0 ? 'imported' : 'not-determined',
     },
     {
       key: 'standard',
       label: 'Standard fit',
       hash: '#standard',
-      count: null,
+      count: standardRows.length > 0 ? `${standardRows.length} ${standardRows.length === 1 ? 'capability' : 'capabilities'}` : null,
       missing: 'No standard candidate carries an evidence level yet.',
-      rows: [],
-      total: 0,
-      provenance: 'not-determined',
+      rows: standardRows.slice(0, FIRST),
+      total: standardRows.length,
+      provenance: standardRows.length > 0 ? 'reconstructed' : 'not-determined',
     },
     {
       key: 'costs',

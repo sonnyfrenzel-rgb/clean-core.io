@@ -23,7 +23,7 @@ function kindOf(n: LandingNode): string {
 
 function shapeOf(n: LandingNode): string {
   if (n.tag === 'exclusiveGateway' || n.tag === 'parallelGateway') return 'shape gw';
-  if (n.tag === 'startEvent' || n.tag === 'endEvent' || n.tag === 'intermediateCatchEvent') return 'shape end';
+  if (n.tag.endsWith('Event')) return 'shape end';
   return 'shape';
 }
 
@@ -62,30 +62,61 @@ function StepList({ nodes }: { nodes: LandingNode[] }) {
   );
 }
 
-export default function ProcessMapPanel({ process, title }: { process: LandingProcess; title: string }) {
+export default function ProcessMapPanel({
+  process,
+  title,
+  technical,
+  vertical,
+}: {
+  process: LandingProcess;
+  title: string;
+  /** The same process with the code's own names, for the Technical names switch. */
+  technical?: LandingProcess;
+  /** The same levels laid out top to bottom, drawn instead on a narrow screen. */
+  vertical?: { plain: LandingProcess; technical: LandingProcess };
+}) {
   const lines = (n: number) => n.toLocaleString('en-US');
   const root = process.planes[0];
   const phases = root.nodes.filter((n) => n.opens).length;
-  const planes: ExplorerPlane[] = process.planes.map((p) => ({
-    id: p.id,
-    label: p.label,
-    parent: p.parent,
-    anchor: p.anchor ? anchorText(p.anchor) : null,
-    map: (
-      <BpmnPlaneSvg
-        plane={p}
-        idPrefix={`pm-${p.id}`}
-        interactive
-        scale={p.parent ? 1 : 0.92}
-        title={
-          p.parent
-            ? `The phase ${p.label} of ${process.program} as BPMN, reconstructed from the code.`
-            : `The overview of ${process.program} as BPMN, reconstructed from the code: one row per event block, every phase collapsed.`
-        }
-      />
-    ),
-    steps: <StepList nodes={p.nodes} />,
-  }));
+  const byId = (p?: LandingProcess) => new Map((p?.planes ?? []).map((x) => [x.id, x]));
+  const technicalById = byId(technical);
+  const verticalById = byId(vertical?.plain);
+  const verticalTechnicalById = byId(vertical?.technical);
+  const svg = (p: LandingProcess['planes'][number], key: string, fit = false) => (
+    <BpmnPlaneSvg
+      plane={p}
+      idPrefix={`pm-${key}-${p.id}`}
+      interactive
+      fit={fit}
+      scale={p.parent ? 1 : 0.92}
+      title={
+        p.parent
+          ? `The phase ${p.label} of ${process.program} as BPMN, reconstructed from the code.`
+          : `The overview of ${process.program} as BPMN, reconstructed from the code: the run as one flow, every phase collapsed.`
+      }
+    />
+  );
+  /** Wide screens get the left-to-right map, narrow ones the top-to-bottom one at the box's width. */
+  const map = (wide: LandingProcess['planes'][number], narrow: LandingProcess['planes'][number] | undefined, key: string) => (narrow ? (
+    <>
+      <div className="flow-wide">{svg(wide, key)}</div>
+      <div className="flow-narrow">{svg(narrow, `${key}-v`, true)}</div>
+    </>
+  ) : svg(wide, key));
+  const planes: ExplorerPlane[] = process.planes.map((p) => {
+    const t = technicalById.get(p.id);
+    return {
+      id: p.id,
+      label: p.label,
+      technicalLabel: t?.label ?? p.label,
+      parent: p.parent,
+      anchor: p.anchor ? anchorText(p.anchor) : null,
+      map: map(p, verticalById.get(p.id), 'plain'),
+      steps: <StepList nodes={p.nodes} />,
+      technicalMap: t ? map(t, verticalTechnicalById.get(p.id), 'technical') : undefined,
+      technicalSteps: t ? <StepList nodes={t.nodes} /> : undefined,
+    };
+  });
   const nd = process.notDrawn;
 
   return (

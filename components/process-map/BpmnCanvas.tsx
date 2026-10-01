@@ -5,6 +5,9 @@ import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import './process-map.css';
+import { fitWithPadding, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
+import { LABEL_FONT, TASK_PADDING } from '@/lib/bpmn/layout';
+import { wrapText } from '@/lib/bpmn/text-metrics';
 
 /**
  * The diagram half of the process map — roadmap 2.5, reading only.
@@ -45,6 +48,10 @@ export interface BpmnCanvasNode {
   unanchoredLabel: string;
   /** ADR-054: the word shown above an early end, or null for every other element. */
   earlyLabel?: string | null;
+  /** `L182` / `L60–75` — drawn under the element's name; null without one. */
+  anchor?: string | null;
+  /** A phase's counted fact, drawn above its anchor ("2 decisions · 1 error end"). */
+  fact?: string | null;
 }
 
 export interface BpmnCanvasProps {
@@ -81,7 +88,7 @@ export interface BpmnCanvasProps {
   excluded?: ReadonlySet<string>;
 }
 
-interface CanvasService {
+interface CanvasService extends ViewboxCanvas {
   zoom(level: string | number): void;
   getContainer(): HTMLElement;
   addMarker(element: string, marker: string): void;
@@ -105,6 +112,8 @@ interface Shape {
   id: string;
   width?: number;
   height?: number;
+  label?: Shape;
+  businessObject?: { name?: string };
 }
 
 interface ElementRegistryService {
@@ -200,7 +209,7 @@ export default function BpmnCanvas({
       if (!host) return;
       const { default: NavigatedViewer } = await import('bpmn-js/lib/NavigatedViewer');
       if (cancelled) return;
-      viewer = new NavigatedViewer({ container: host }) as unknown as ViewerLike;
+      viewer = new NavigatedViewer({ container: host, textRenderer: textRendererConfig(host), bpmnRenderer: rendererColors(host) }) as unknown as ViewerLike;
       viewerRef.current = viewer;
 
       try {
@@ -254,6 +263,38 @@ export default function BpmnCanvas({
         button.addEventListener('focus', () => handlers.current.onActiveChange(id));
 
         overlays.add(id, 'cc-node', { position: { top: 0, left: 0 }, scale: true, html: button });
+
+        // The line anchor under the name: inside an activity at its foot, under
+        // the external label of an event or a gateway. The layout left the room.
+        if (node.anchor) {
+          const tag = document.createElement('span');
+          tag.className = 'cc-map-anchor';
+          tag.setAttribute('aria-hidden', 'true');
+          if (node.fact && !shape.label) {
+            const fact = document.createElement('span');
+            fact.className = 'cc-map-fact';
+            fact.textContent = node.fact;
+            tag.appendChild(fact);
+          }
+          const code = document.createElement('span');
+          code.className = 'cc-map-anchor-code';
+          code.textContent = node.anchor;
+          tag.appendChild(code);
+          const label = shape.label;
+          if (label && label.width && label.height) {
+            tag.style.width = `${label.width}px`;
+            overlays.add(label.id, 'cc-anchor', { position: { top: label.height, left: 0 }, scale: true, html: tag });
+          } else if (shape.width > 60) {
+            // Right under the name, which bpmn-js centres in the box.
+            const lines = wrapText(shape.businessObject?.name ?? '', shape.width - 2 * TASK_PADDING, LABEL_FONT, true).length;
+            tag.style.width = `${shape.width}px`;
+            overlays.add(id, 'cc-anchor', {
+              position: { top: Math.round(shape.height / 2 + (lines * LABEL_FONT * 1.2) / 2 + 1), left: 0 },
+              scale: true,
+              html: tag,
+            });
+          }
+        }
       }
 
       // Drilling into a sub-process is bpmn-js's own behaviour on a collapsed
@@ -267,7 +308,7 @@ export default function BpmnCanvas({
         applyRovingTabIndex(host, activeRef.current);
       });
 
-      canvas.zoom('fit-viewport');
+      fitWithPadding(canvas);
       applyRovingTabIndex(host, activeRef.current);
     };
 
@@ -296,7 +337,7 @@ export default function BpmnCanvas({
     const current = canvas.getRootElement();
     if (current && (target as { id?: string }).id === current.id) return;
     canvas.setRootElement(target);
-    canvas.zoom('fit-viewport');
+    fitWithPadding(canvas);
   }, [plane]);
 
   /** Roving tabindex and the selection mark, read back off the diagram's own DOM. */

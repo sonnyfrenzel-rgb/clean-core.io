@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, CircleDashed } from 'lucide-react';
+import { ArrowRight, Check, CircleDashed, FileCode } from 'lucide-react';
 import CcCard from '@/components/cc/Card';
 import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
@@ -9,6 +9,13 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcSwitch from '@/components/cc/Switch';
 import { CcRulePropertyTag } from '@/components/cc/Tag';
+import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
+import FirstLookBuildUp from './FirstLookBuildUp';
+import { requestRuleEditing, useIsOwner } from './BusinessRulesEditor';
+import { BUILD_UP_BUDGET } from '@/lib/first-look-buildup';
+import { rulesConfirmed, stepStrip, type StepChip } from '@/lib/rules-editor';
+import { tokenizeAbapLine } from '@/lib/process-map';
+import { useProcessStates } from '@/hooks/useProcessStates';
 import {
   buildFirstLook,
   businessLanguageStage,
@@ -21,13 +28,11 @@ import {
   readTableAccess,
   revealedRules,
   tablesOf,
-  STAGE_LABELS,
   traceabilityOf,
   yourProcessStage,
   type DecisionLine,
   type FirstLookFigure,
   type FirstLookStage,
-  type FirstLookStageId,
   type ProcessName,
   type ProcessReading,
   type SourceReading,
@@ -47,7 +52,8 @@ import {
   firstLookOpenGroup,
   firstLookOpenTitle,
   firstLookReading,
-  firstLookReadingNext,
+  firstLookConfirmRules,
+  firstLookOf,
 } from '@/lib/workspace-messages';
 
 /**
@@ -87,6 +93,9 @@ import {
  */
 
 const HAS_WINDOW = typeof window !== 'undefined';
+
+/** Stage 3 without a stored naming — the technical names stay. */
+const NO_NAMING: { record: ProcessNamingRecord | null } = { record: null };
 
 function useReducedMotion(): boolean {
   // Read in an effect, never during render: the server has no `matchMedia`, and
@@ -178,6 +187,8 @@ interface Result {
   open: NotDetermined;
   /** The same reading, re-cut for a business reader (`lib/business-card.ts`). */
   card: BusinessCard;
+  /** The first steps of the first entry, in plain words — the strip of moment 4. */
+  steps: { steps: StepChip[]; more: boolean };
 }
 
 export default function FirstLook({
@@ -290,9 +301,17 @@ export default function FirstLook({
     return afterPaint(() => setRules(readRules(source, process)));
   }, [source, hasSource, process]);
 
+  /**
+   * "Das Modell hält nicht auf" (mockup s0, DESIGN.md §5.2): the stored naming
+   * is one network read, and once the build-up's budget is spent — or the reader
+   * skipped — the end state does not wait for it. The process stands with the
+   * names it has; a naming that arrives later changes them once.
+   */
+  const [elapsed, setElapsed] = useState(0);
+  const namingNow = naming ?? (skipped || elapsed >= BUILD_UP_BUDGET.endAt ? NO_NAMING : null);
   const named = useMemo(
-    () => (process && naming ? applyNaming(process.context, naming.record) : null),
-    [process, naming],
+    () => (process && namingNow ? applyNaming(process.context, namingNow.record) : null),
+    [process, namingNow],
   );
 
   const stages = useMemo<(FirstLookStage | null)[]>(() => {
@@ -327,6 +346,7 @@ export default function FirstLook({
         open,
         wording: plainWordingFor(source, process.skeleton),
       }),
+      steps: stepStrip(process.skeleton, source),
     };
   }, [hasSource, source, process, named, rules, access, project]);
 
@@ -352,6 +372,60 @@ export default function FirstLook({
 
   const skip = useCallback(() => setSkipped(true), []);
 
+  /**
+   * The build-up's clock — mockup `s0`, "Zeitbudget ≤ 3 s".
+   *
+   * Runs only when a build-up was asked for and nobody asked for less movement
+   * or pressed Skip. The lines light up over the budget in
+   * `lib/first-look-buildup.ts`; the end state takes over at its end, or as
+   * soon as the engine is done if that is later — never a wait of its own.
+   */
+  const animate = buildUp && !reduced && !skipped && hasSource;
+  useEffect(() => {
+    if (!animate || !HAS_WINDOW || typeof window.requestAnimationFrame !== 'function') return;
+    let handle = 0;
+    const start = window.performance.now();
+    const tick = (now: number) => {
+      const next = now - start;
+      setElapsed(next);
+      if (next < BUILD_UP_BUDGET.endAt) handle = window.requestAnimationFrame(tick);
+    };
+    handle = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(handle);
+  }, [animate, readingKey]);
+  const playing = animate && (elapsed < BUILD_UP_BUDGET.endAt || !complete);
+
+  const owner = useIsOwner(project);
+  const [sourceOpen, setSourceOpen] = useState(false);
+
+  /** The lines the card points to — the rules and the decisions — for "Show source". */
+  const sourceListing = useMemo<CcCodeLine[]>(() => {
+    if (!result) return [];
+    const all = source.split(/\r\n|\r|\n/);
+    const wanted = new Set<number>();
+    const add = (anchor: string | null) => {
+      const m = anchor ? /^L(\d+)(?:-(\d+))?$/.exec(anchor) : null;
+      if (!m) return;
+      const from = Number(m[1]);
+      const to = m[2] ? Math.min(Number(m[2]), from + 2) : from;
+      for (let n = from; n <= to; n += 1) wanted.add(n);
+    };
+    for (const rule of result.card.rules) rule.anchors.slice(0, 2).forEach(add);
+    for (const decision of result.card.decisions) add(decision.anchor);
+    return [...wanted]
+      .sort((a, b) => a - b)
+      .slice(0, 48)
+      .map((n) => ({ number: n, tokens: tokenizeAbapLine(all[n - 1] ?? ''), highlighted: true }));
+  }, [result, source]);
+  const { outcome: states } = useProcessStates(projectId, hasSource);
+  // No reconstructed baseline yet means nobody has confirmed anything: 0 of n,
+  // which is a fact. Only a read that failed leaves the figure not determined.
+  const confirmed = useMemo(() => {
+    if (states?.ok) return rulesConfirmed(states.view);
+    if (states && states.code === 'no-baseline' && rules) return { confirmed: 0, total: rules.rules.length };
+    return null;
+  }, [states, rules]);
+
   const reached = stages.filter(Boolean).length + (finalStage ? 1 : 0);
 
   const shown: (FirstLookStage | null)[] = hasSource
@@ -367,7 +441,21 @@ export default function FirstLook({
    * region that is inserted together with its text is not reliably read at all.
    * It now stands once, after the card, for the whole life of this component.
    */
-  const latest = [...shown].reverse().find((s): s is FirstLookStage => s !== null) ?? null;
+  // While the build-up plays, the stage on the screen is the one announced —
+  // the engine is usually done long before the picture is, and announcing its
+  // fourth stage while the first is painted would read the screen out of order.
+  const playingIndex = !playing
+    ? null
+    : elapsed < BUILD_UP_BUDGET.processFrom
+      ? 0
+      : elapsed < BUILD_UP_BUDGET.namesFrom
+        ? 1
+        : 2;
+  const latest =
+    (playingIndex !== null ? shown.slice(0, playingIndex + 1) : shown)
+      .slice()
+      .reverse()
+      .find((s): s is FirstLookStage => s !== null) ?? null;
   const announcement = latest ? `${latest.label}: ${latest.result}` : '';
   const live = (
     <span aria-live="polite" data-first-look-live="" className="sr-only">
@@ -387,7 +475,7 @@ export default function FirstLook({
     // project's `h1` (§2.9), and a card title there would skip a level (§2.3).
     return (
       <>
-        <section data-first-look="waiting" data-reduced-motion={reduced ? 'true' : 'false'} className="max-w-3xl">
+        <section data-first-look="waiting" data-reduced-motion={reduced ? 'true' : 'false'}>
           <CcCard title={wt('firstLook.title')} level={2} meta={<CcProvenanceChip value="reconstructed" />}>
             <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
               {firstLookReading(sourceName)}
@@ -401,36 +489,23 @@ export default function FirstLook({
 
   /* ------------------------------------------------------------ the build-up */
 
-  if (!complete) {
-    const nextId = (['code-read', 'process-recognised', 'business-language', 'your-process'] as const)[
-      Math.min(reached, 3)
-    ] as FirstLookStageId;
-
+  if (playing) {
     return (
       <>
-      <section data-first-look="building" data-reached={reached} className="max-w-3xl">
-        <CcCard
-          title={wt('firstLook.title')}
-          level={2}
-          meta={<CcProvenanceChip value="reconstructed" />}
-          actions={
-            <CcButton onClick={skip} data-first-look-skip="">
-              {wt('firstLook.skip')}
-            </CcButton>
-          }
-        >
-          <ol data-first-look-stages="building" className="m-0 flex list-none flex-col gap-2 p-0">
-            {shown.map((stage, i) => (
-              <StageRow key={stage?.id ?? `pending-${i}`} stage={stage} />
-            ))}
-          </ol>
-          {/* No spinner and no bar: the line says what is being read (§5.1). */}
-          <p className="m-0 mt-2 text-[13px] leading-snug font-medium text-cc-ink-muted">
-            {firstLookReadingNext(STAGE_LABELS[nextId], sourceName)}
-          </p>
-        </CcCard>
-      </section>
-      {live}
+        <section data-first-look="building" data-reached={reached}>
+          <div className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc">
+            <FirstLookBuildUp
+              source={source}
+              sourceName={sourceName}
+              access={access}
+              skeleton={process?.skeleton ?? null}
+              named={named}
+              elapsed={elapsed}
+              onSkip={skip}
+            />
+          </div>
+        </section>
+        {live}
       </>
     );
   }
@@ -439,39 +514,80 @@ export default function FirstLook({
 
   return (
     <>
-    <section
-      data-first-look={endStateOnly ? 'end-state' : 'complete'}
-      data-reduced-motion={reduced ? 'true' : 'false'}
-      className="max-w-3xl"
-    >
-      <CcCard title={wt('firstLook.cardTitle')} level={2} meta={<CcProvenanceChip value="reconstructed" />}>
-        {result ? (
-          <EndState result={result} proposedName={proposedName} />
-        ) : (
-          <p data-first-look-result="none" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
-            {wt('firstLook.noSource')}
-          </p>
-        )}
-
-        {/* The four stages stay on the page after the build-up: they are the
-            receipt for every figure above. Folded, not removed — the process
-            owner reads the answer, the sceptic opens the receipt. Open when
-            there is no answer, because then the stages are all there is. */}
-        <div className="mt-4 border-t border-cc-line pt-2">
-          <CcDisclosure title={wt('firstLook.derivedTitle')} defaultOpen={!result} level={3}>
-            <ol
-              data-first-look-stages={endStateOnly ? 'end-state' : 'built'}
-              className="m-0 flex list-none flex-col gap-2 p-0"
+      <section
+        data-first-look={endStateOnly ? 'end-state' : 'complete'}
+        data-reduced-motion={reduced ? 'true' : 'false'}
+      >
+        <CcCard
+          title={wt('firstLook.cardTitle')}
+          level={2}
+          // No chip on "nothing to show": a provenance says where a statement
+          // came from, and an empty project makes none (audit row 17).
+          meta={result ? <CcProvenanceChip value="reconstructed" /> : null}
+          actions={
+            result && sourceListing.length > 0 ? (
+              <span className="cc-no-print">
+                <CcButton
+                  variant="ghost"
+                  icon={<FileCode size={16} aria-hidden={true} />}
+                  aria-expanded={sourceOpen}
+                  onClick={() => setSourceOpen((v) => !v)}
+                  data-first-look-show-source=""
+                >
+                  {sourceOpen ? wt('firstLook.hideSource') : wt('firstLook.showSource')}
+                </CcButton>
+              </span>
+            ) : null
+          }
+        >
+          {result ? (
+            <div
+              className={
+                sourceOpen ? 'grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)]' : undefined
+              }
             >
-              {shown.map((stage, i) => (
-                <StageRow key={stage?.id ?? `done-${i}`} stage={stage} />
-              ))}
-            </ol>
-          </CcDisclosure>
-        </div>
-      </CcCard>
-    </section>
-    {live}
+              <EndState result={result} proposedName={proposedName} confirmed={confirmed} owner={owner} />
+              {sourceOpen ? (
+                <div data-first-look-source="" className="min-w-0">
+                  <CcCodeSurface lines={sourceListing} label={wt('firstLook.sourceLabel')} />
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <p data-first-look-result="none" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
+              {wt('firstLook.noSource')}
+            </p>
+          )}
+
+          {/* The four stages stay on the page after the build-up: they are the
+              receipt for every figure above. Folded, not removed — the process
+              owner reads the answer, the sceptic opens the receipt. Open when
+              there is no answer, because then the stages are all there is. */}
+          <div className="mt-4 border-t border-cc-line pt-2">
+            <CcDisclosure title={wt('firstLook.derivedTitle')} defaultOpen={!result} level={3}>
+              <ol
+                data-first-look-stages={endStateOnly ? 'end-state' : 'built'}
+                className="m-0 flex list-none flex-col gap-2 p-0"
+              >
+                {shown.map((stage, i) => (
+                  <StageRow key={stage?.id ?? `done-${i}`} stage={stage} />
+                ))}
+              </ol>
+              {result ? (
+                <dl data-first-look-meanings="" className="m-0 mt-3 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)]">
+                  {result.card.facts.map((fact) => (
+                    <React.Fragment key={fact.key}>
+                      <dt className="text-[12px] font-semibold text-cc-ink">{fact.label}</dt>
+                      <dd className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{fact.explanation}</dd>
+                    </React.Fragment>
+                  ))}
+                </dl>
+              ) : null}
+            </CcDisclosure>
+          </div>
+        </CcCard>
+      </section>
+      {live}
     </>
   );
 }
@@ -496,7 +612,7 @@ function CodeText({ children }: { children: string }) {
  * One key figure. The traceability figure carries the counts it was made of
  * as data attributes, so a check can recompute the percentage from them.
  */
-function Fact({ fact, traceability }: { fact: CardFact; traceability?: Traceability }) {
+function Fact({ fact, label, traceability }: { fact: CardFact; label: string; traceability?: Traceability }) {
   return (
     <li
       data-first-look-fact={fact.key}
@@ -508,15 +624,14 @@ function Fact({ fact, traceability }: { fact: CardFact; traceability?: Traceabil
             'data-nodes': traceability.nodes,
           }
         : {})}
-      className="flex min-w-0 flex-col gap-1"
+      className="text-[13px] font-medium text-cc-ink-muted"
     >
+      {label}{' '}
       {fact.value === null ? (
-        <span className="text-[13px] leading-tight font-medium text-cc-ink-muted">{wt('decision.notDetermined')}</span>
+        <b className="font-semibold text-cc-ink-muted">{wt('decision.notDetermined')}</b>
       ) : (
-        <span className="text-[22px] leading-tight font-extrabold text-cc-ink">{fact.value}</span>
+        <b className="font-bold text-cc-ink">{fact.value}</b>
       )}
-      <span className="text-[13px] leading-snug font-semibold text-cc-ink">{fact.label}</span>
-      <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">{fact.explanation}</span>
     </li>
   );
 }
@@ -530,12 +645,30 @@ function Fact({ fact, traceability }: { fact: CardFact; traceability?: Traceabil
  * code behind it on request. Nothing on the top needs ABAP to read; nothing
  * the first look knew is gone.
  */
-function EndState({ result, proposedName }: { result: Result; proposedName: string | null }) {
+function EndState({
+  result,
+  proposedName,
+  confirmed,
+  owner,
+}: {
+  result: Result;
+  proposedName: string | null;
+  /** "Rules confirmed x of n" from the Bedarfsrevision, or null when it could not be read. */
+  confirmed: { confirmed: number; total: number } | null;
+  /** Only the owner confirms; a reader is offered to review. */
+  owner: boolean;
+}) {
   const { card } = result;
   const [showCode, setShowCode] = useState(false);
   const more = card.rules.length - card.featured.length;
   const trace = card.facts.find((f) => f.key === 'traceability');
   const others = card.facts.filter((f) => f.key !== 'traceability');
+  const openRules = () => {
+    // The rules live in the Need & process layer; the layer is chosen by the
+    // address (ADR-018), and the editor opens there for the owner.
+    window.location.hash = 'need';
+    requestRuleEditing();
+  };
   // The switch shows the code *behind* a plain line; where every line is
   // already code it would switch nothing, so it is not offered.
   const anyPlain = card.rules.some((r) => r.sentence) || card.decisions.some((d) => d.question);
@@ -545,7 +678,10 @@ function EndState({ result, proposedName }: { result: Result; proposedName: stri
       <div className="flex flex-col gap-1">
         {proposedName ? (
           <div className="flex flex-wrap items-center gap-2">
-            <h3 data-first-look-proposed-name="" className="m-0 text-[15px] leading-tight font-bold text-cc-ink">
+            <h3
+              data-first-look-proposed-name=""
+              className="m-0 text-[22px] leading-tight font-extrabold tracking-[-0.02em] text-cc-ink"
+            >
               {proposedName}
             </h3>
             <CcProvenanceChip value="proposed" note={wt('firstLook.nameNote')} />
@@ -561,7 +697,7 @@ function EndState({ result, proposedName }: { result: Result; proposedName: stri
         ) : (
           <h3
             data-first-look-process-name={result.processName.name ? 'named' : 'unnamed'}
-            className="m-0 font-cc-mono text-[15px] leading-tight font-bold text-cc-ink"
+            className="m-0 font-cc-mono text-[22px] leading-tight font-extrabold tracking-[-0.02em] text-cc-ink"
           >
             {result.processName.name ?? wt('firstLook.noProgramName')}
           </h3>
@@ -638,13 +774,86 @@ function EndState({ result, proposedName }: { result: Result; proposedName: stri
         </div>
       </div>
 
-      {/* Four figures, each with the one line that explains it. */}
-      <ul aria-label={wt('firstLook.keyFacts')} className="m-0 grid list-none grid-cols-2 gap-x-4 gap-y-3 p-0 sm:grid-cols-4">
+      {/* The figures in one line (mockup s0, moment 4): traceability, rules
+          confirmed, and the engine's counts. What each means is one click
+          deeper, under "How this was derived". */}
+      <ul
+        aria-label={wt('firstLook.keyFacts')}
+        className="m-0 flex list-none flex-wrap gap-x-6 gap-y-2 border-y border-cc-line p-0 py-2"
+      >
+        {trace ? <Fact fact={trace} label={wt('firstLook.stripTrace')} traceability={result.traceability} /> : null}
+        <li data-first-look-fact="rules-confirmed" data-origin={confirmed ? 'engine' : 'absent'} className="text-[13px] font-medium text-cc-ink-muted">
+          {wt('firstLook.stripConfirmed')}{' '}
+          <b className="font-bold text-cc-ink">
+            {confirmed ? firstLookOf(confirmed.confirmed, confirmed.total) : wt('firstLook.stripNotDetermined')}
+          </b>
+        </li>
         {others.map((fact) => (
-          <Fact key={fact.key} fact={fact} />
+          <Fact
+            key={fact.key}
+            fact={fact}
+            label={
+              fact.key === 'rules'
+                ? wt('firstLook.stripRules')
+                : fact.key === 'decisions'
+                  ? wt('firstLook.stripDecisions')
+                  : wt('firstLook.stripOpen')
+            }
+          />
         ))}
-        {trace ? <Fact fact={trace} traceability={result.traceability} /> : null}
       </ul>
+
+      {/* The first steps, in plain words and with their lines — the map in one
+          row. The full map is the process layer's; this only says it exists. */}
+      {result.steps.steps.length > 0 ? (
+        <ol
+          aria-label={wt('firstLook.stepsLabel')}
+          data-first-look-steps=""
+          className="m-0 flex list-none flex-wrap items-center gap-x-1 gap-y-2 p-0"
+        >
+          {result.steps.steps.map((step, i) => (
+            <li key={step.id} className="flex items-center gap-1">
+              {i > 0 ? (
+                <span aria-hidden={true} className="text-[12px] text-cc-ink-muted">
+                  →
+                </span>
+              ) : null}
+              <span
+                data-first-look-step={step.decision ? 'decision' : 'step'}
+                className={
+                  step.decision
+                    ? 'inline-flex items-center gap-1 rounded-cc-row border border-dashed border-cc-information px-2 py-1 text-[12px] font-semibold text-cc-ink'
+                    : 'inline-flex items-center gap-1 rounded-cc-row border border-cc-information-border px-2 py-1 text-[12px] font-semibold text-cc-ink'
+                }
+              >
+                {step.label}
+                {step.anchor ? (
+                  <span className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">{step.anchor}</span>
+                ) : null}
+              </span>
+            </li>
+          ))}
+          {result.steps.more ? (
+            <li aria-hidden={true} className="text-[12px] text-cc-ink-muted">
+              → …
+            </li>
+          ) : null}
+        </ol>
+      ) : null}
+
+      {card.rules.length > 0 ? (
+        <div className="cc-no-print flex flex-wrap items-center gap-3">
+          <CcButton
+            variant={owner ? 'primary' : 'secondary'}
+            onClick={openRules}
+            data-first-look-confirm-rules=""
+          >
+            {firstLookConfirmRules(card.rules.length, owner)}
+            <ArrowRight size={16} aria-hidden={true} />
+          </CcButton>
+          <span className="text-[12px] font-medium text-cc-ink-muted">{wt('firstLook.confirmNote')}</span>
+        </div>
+      ) : null}
 
       {/* One click deeper: every rule and every decision in plain words, each
           with its line — and the code it was read from, on request. */}

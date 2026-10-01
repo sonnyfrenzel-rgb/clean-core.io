@@ -15,6 +15,9 @@ export const PROCESS_MAP_MESSAGES = {
   'map.viewSteps': 'Steps',
   'map.stopEditing': 'Stop editing',
   'map.editModel': 'Edit model',
+  'map.technicalNames': 'Technical names',
+  'map.plainNamesNote':
+    'Names in plain language are read from the code without a model (Reconstructed). Technical names shows the names the code itself uses.',
   'map.businessNames': 'Business names',
   'map.lanesProposed': 'Lanes proposed:',
   'map.stepsLabel': 'Steps.',

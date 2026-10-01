@@ -222,3 +222,34 @@
     background: Highlight;
   }
 }
+
+/*
+ * bpmn-js brings a breadcrumb of its own into a drilled-in plane and lays it
+ * over the diagram's top left corner, on top of the shapes there. The map has
+ * its path in the toolbar above the canvas (`ProcessBreadcrumb`), so the
+ * drawing keeps its corner.
+ */
+.cc-map-canvas .bjs-breadcrumbs {
+  display: none;
+}
+
+/* The line anchor under a name — the mono face, muted, never a click target. */
+.cc-map-anchor {
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  line-height: 13px;
+  color: var(--cc-ink-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* A phase's counted fact, above its anchor, in the page face; the anchor in mono. */
+.cc-map-fact {
+  display: block;
+}
+
+.cc-map-anchor-code {
+  display: block;
+  font-family: var(--font-cc-mono);
+}

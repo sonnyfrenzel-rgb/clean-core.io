@@ -25,7 +25,7 @@ export interface HeroWorkspaceProps {
   program: string;
   title: string;
   anchoredSentence: string;
-  rules: { total: number; shown: Array<{ id: string; label: string; line: number }> };
+  rules: { total: number; shown: Array<{ id: string; label: string; plain?: string; line: number }> };
   notDetermined: { total: number; groups: Array<{ label: string; anchors: number[] }>; includes: number[] };
   snippets: Record<string, HeroSnippet>;
   initial: string;
@@ -141,7 +141,8 @@ export default function HeroWorkspace(props: HeroWorkspaceProps) {
               {props.rules.shown.map((r, i) => (
                 <span key={r.id}>
                   <span className="v">
-                    <code title={r.label}>{r.label.replace(/\b[a-z]{2}_[a-z0-9_]+-(?=[a-z])/g, '')}</code>
+                    {/* The rule in plain language; the condition as the code writes it on hover and in the source card. */}
+                    {r.plain ? <span title={r.label}>{r.plain}</span> : <code title={r.label}>{r.label}</code>}
                     {anchor(r.line)}
                   </span>
                   {i < props.rules.shown.length - 1 ? ', ' : props.rules.total > props.rules.shown.length ? ', …' : ''}

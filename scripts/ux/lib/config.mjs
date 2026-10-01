@@ -4,11 +4,21 @@
  * Guard spec: tests/ux-review-guard.spec.ts.
  */
 
-/** Pinned: Meta's Muse Spark 1.3 on OpenRouter, multimodal. Not the "Contributor" variant, which trades prompts for price. */
-export const UX_MODEL = 'meta/muse-spark-1.3';
+/**
+ * Owner decision, 01.10.2026: no pinned model. Every call goes to `openrouter/auto` (scripts/qa/lib/openrouter.mjs
+ * buildRequest) within the cost band `high`; until then the reviewer was pinned to meta/muse-spark-1.3.
+ *
+ * Every call carries screenshots, so it asks callReviewer to confirm the model that answered reads images
+ * (`inputs: ['image']`): a review from a model that could not see them fails the call and is never accepted.
+ * Probed 01.10.2026: with an image, `high` chose moonshotai/kimi-k3 and google/gemini-3.8-flash, both image-capable.
+ *
+ * `maxPrice` (USD per million tokens) is sent as `provider.max_price`, so no endpoint above it serves a call, and
+ * every estimate below is made at exactly that price. The reports name every model that answered (meta.models).
+ */
+export const UX_ROUTER = { costTier: 'high', maxPrice: { input: 1.25, output: 5 } };
 
-/** OpenRouter list price, 15.09.2026, USD per million tokens. */
-export const PRICE_PER_MTOK = { input: 1.25, output: 4.25 };
+/** Every estimate at the ceiling the request carries. */
+export const PRICE_PER_MTOK = UX_ROUTER.maxPrice;
 
 /**
  * Characters per input token, deliberately low. Source with line-number prefixes
@@ -17,7 +27,11 @@ export const PRICE_PER_MTOK = { input: 1.25, output: 4.25 };
  */
 export const CHARS_PER_TOKEN = 2.5;
 
-/** What a screenshot is assumed to cost as input. Deliberately high: an underestimate would let a call past the budget. */
+/**
+ * What a screenshot is assumed to cost as input. Deliberately high: an underestimate would let a call past the budget.
+ * It holds for models that bill images as input tokens; one that bills a fixed price per image is not bounded by
+ * `max_price` on the prompt, which is one reason the actual cost (`usage.cost`) is what counts against the cap.
+ */
 export const TOKENS_PER_IMAGE = 1_600;
 
 /**

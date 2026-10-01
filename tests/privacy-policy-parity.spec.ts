@@ -75,6 +75,10 @@ test.describe('the privacy policy in two languages', () => {
     expect(de).toMatch(/href="\/datenschutz"/);
     expect(en, 'hreflang is what tells a search engine these are translations').toContain('hrefLang="de"');
     expect(de).toContain('hrefLang="en"');
+    // QA 36c5c5b3ec14: hrefLang describes the target; the link text itself is in
+    // the other language, so a screen reader needs `lang` on it to pronounce it.
+    expect(en).toMatch(/hrefLang="de"\s+lang="de"/);
+    expect(de).toMatch(/hrefLang="en"\s+lang="en"/);
     // The alternates in the metadata, which is what actually reaches the crawler.
     expect(en).toContain("de: 'https://clean-core.io/datenschutz/de'");
     expect(de).toContain("en: 'https://clean-core.io/datenschutz'");

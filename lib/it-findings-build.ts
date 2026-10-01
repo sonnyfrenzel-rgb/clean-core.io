@@ -3,7 +3,8 @@ import { buildAbapEvidence, type EvidenceFinding } from '@/lib/abap/evidence-mod
 import { buildProcessFacts } from '@/lib/abap/process-facts';
 import { containerAt } from '@/lib/abap/block-structure';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
-import { gradeSapObjectUse } from '@/lib/abap/catalog-service';
+import { getCatalogSnapshotRef, gradeSapObjectUse } from '@/lib/abap/catalog-service';
+import { routeKindLabel } from '@/lib/abap/extensibility-router';
 import { CLASSIC_VIEW_META, CLOUD_VIEW_META, type ObjectUse } from '@/lib/abap/abcd-classification';
 import type { ItFindingRow, ItFindingsSource } from './it-findings';
 
@@ -56,6 +57,7 @@ function rowOf(
   return {
     id: finding.id,
     kind: finding.kind,
+    kindLabel: routeKindLabel(finding.kind),
     title: finding.title,
     severity: finding.severity,
     objectName,
@@ -71,6 +73,11 @@ function rowOf(
     rulesCoveringLine,
     rulesInRoutine,
   };
+}
+
+/** Lines of the source as an editor counts them — CRLF and LF alike. */
+function lineCount(source: string): number {
+  return source.split(/\r?\n/).length;
 }
 
 /**
@@ -123,5 +130,14 @@ export function findingsOf(
     return rowOf(finding, routine, covering, inRoutine, catalogSnapshot);
   });
 
-  return { rows, sourceSha256: sha256Hex(source), rulesDerived: rules.rules.length };
+  return {
+    rows,
+    sourceSha256: sha256Hex(source),
+    rulesDerived: rules.rules.length,
+    catalog: getCatalogSnapshotRef(catalogSnapshot),
+    coverage: {
+      lines: lineCount(source),
+      gaps: evidence.coverage.gaps.map((g) => ({ label: g.label, count: g.count, firstLine: g.firstLine })),
+    },
+  };
 }

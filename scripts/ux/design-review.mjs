@@ -5,8 +5,8 @@
  *
  *   node scripts/ux/design-review.mjs [--mockups=docs/roadmap/clean-core-mockups-v2_8.html] [--design-only] [--dry]
  *
- * Same model, brief and guardrails as the release review (docs/UX-REVIEW-AGENT.md): no tools, pinned model,
- * `data_collection: deny`, redacted text, a cost cap. The result is written to .ux-review/design/ (git-ignored)
+ * Same router, brief and guardrails as the release review (docs/UX-REVIEW-AGENT.md): no tools, the Auto Router at
+ * UX_ROUTER with only image-capable models accepted, `data_collection: deny`, redacted text, a cost cap. The result is written to .ux-review/design/ (git-ignored)
  * and printed; nothing leaves the machine except the request to OpenRouter.
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -15,7 +15,8 @@ import { pathToFileURL } from 'node:url';
 import { callReviewer } from '../qa/lib/openrouter.mjs';
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { loadDotEnv } from '../qa/lib/store.mjs';
-import { PRICE_PER_MTOK, TOKENS_PER_IMAGE, UX_MODEL } from './lib/config.mjs';
+import { AUTO_MODEL } from '../qa/lib/config.mjs';
+import { PRICE_PER_MTOK, TOKENS_PER_IMAGE, UX_ROUTER } from './lib/config.mjs';
 import { loadBrief } from './lib/prompt.mjs';
 
 const DRY = process.argv.includes('--dry');
@@ -131,7 +132,9 @@ async function main() {
     user,
     schema: DESIGN_REVIEW_SCHEMA,
     effort: 'high',
-    model: UX_MODEL,
+    costTier: UX_ROUTER.costTier,
+    maxPrice: UX_ROUTER.maxPrice,
+    inputs: images.length ? ['image'] : null,
     maxTokens: MAX_OUTPUT_TOKENS,
     name: 'ux_design_review',
     title: 'Clean-Core.io UX Design Review',
@@ -140,9 +143,9 @@ async function main() {
 
   mkdirSync(OUT, { recursive: true });
   const file = join(OUT, `design-review-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
-  writeFileSync(file, JSON.stringify({ model: UX_MODEL, mockups: MOCKUPS, images: images.map((i) => i.name), usage: r.usage, review: r.review }, null, 2));
+  writeFileSync(file, JSON.stringify({ model: AUTO_MODEL, costTier: UX_ROUTER.costTier, answeredBy: r.model, mockups: MOCKUPS, images: images.map((i) => i.name), usage: r.usage, review: r.review }, null, 2));
   const v = r.review;
-  console.log(`\nUrteil: ${v.verdict} · Kosten $${r.usage?.cost ?? 'unbekannt'}\n\n${v.summary}\n`);
+  console.log(`\nUrteil: ${v.verdict} · Modell ${r.model ?? 'unbekannt'} · Kosten $${r.usage?.cost ?? 'unbekannt'}\n\n${v.summary}\n`);
   for (const f of v.findings) console.log(`[${f.severity}] ${f.target} · ${f.section} — ${f.title}\n  Beobachtung: ${f.observation}\n  Empfehlung: ${f.recommendation}\n  Warum: ${f.rationale}\n`);
   console.log(`Stärken:\n${v.strengths.map((s) => `  + ${s}`).join('\n')}\n\nOffene Fragen:\n${v.open_questions.map((q) => `  ? ${q}`).join('\n')}\n\n${file}`);
 }

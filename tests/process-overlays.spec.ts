@@ -306,7 +306,10 @@ test.describe('the level overlay', () => {
     expect(overlay?.note).toBe(LEVEL_OVERLAY_NOTE);
     expect(LEVEL_OVERLAY_NOTE).toContain('abap-atc-cr-cv-s4hc');
     expect(LEVEL_OVERLAY_NOTE).toContain('Public Edition');
-    expect(LEVEL_OVERLAY_NOTE).toContain('no second snapshot');
+    // Since 7.10 the Private Edition lists ship too; the note names how the list is chosen
+    // instead of saying there is only one.
+    expect(LEVEL_OVERLAY_NOTE).toContain('Private Edition list');
+    expect(LEVEL_OVERLAY_NOTE).not.toContain('no second snapshot');
   });
 
   test('an object the lookup did not answer for does not become a level', () => {

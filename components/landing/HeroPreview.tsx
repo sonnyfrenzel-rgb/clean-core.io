@@ -1,5 +1,5 @@
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import BpmnPlaneSvg, { anchorText } from '@/components/landing/BpmnPlaneSvg';
+import BpmnPlaneSvg from '@/components/landing/BpmnPlaneSvg';
 import type { LandingHero } from '@/lib/landing-process';
 import type { CodeToken } from '@/lib/process-map';
 
@@ -13,8 +13,9 @@ import type { CodeToken } from '@/lib/process-map';
  * not-determined constructs, the plane with its anchors, the code lines. The
  * frame around it is the workspace's layout, not a capture of it.
  *
- * Hover or focus a step or a line: the step and its code line light up
- * together. Done in CSS with `:has()`, one rule per anchored line, so the
+ * Focus or hover a step, or hover a line: the step and its code line light up
+ * together. Only the steps are Tab stops (QA c912b926e44d): forty focusable
+ * code lines would be forty stops with nothing to activate. Done in CSS with `:has()`, one rule per anchored line, so the
  * behaviour costs the page no JavaScript.
  */
 
@@ -46,14 +47,13 @@ export default function HeroPreview({ hero, title }: { hero: LandingHero; title:
     .join('');
   const first = code[0]?.number ?? 0;
   const last = code[code.length - 1]?.number ?? 0;
-  const calledAt = plane.anchor ? anchorText(plane.anchor) : null;
 
   return (
     <figure className="m-0" data-hero-preview="">
       <style>{css}</style>
       <figcaption className="mb-3 text-center text-sm font-medium text-cc-ink-muted">
-        Demo project {hero.process.program} · fictitious code, read by the engine when this page was built. Hover or
-        focus a step or a code line — both light up together.
+        Demo project {hero.process.program} · fictitious code, read by the engine when this page was built. Focus or
+        hover a step, or hover a code line — both light up together.
       </figcaption>
       <div className="overflow-hidden rounded-[20px] border border-cc-line bg-cc-surface text-left shadow-[0_24px_64px_rgb(11_28_48/0.10)]">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-cc-line px-4 py-3 sm:px-5">
@@ -122,25 +122,8 @@ export default function HeroPreview({ hero, title }: { hero: LandingHero; title:
             </div>
           </div>
 
-          <div className="rounded-2xl border border-cc-line">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-cc-line px-4 py-3">
-              <p className="text-sm font-bold text-cc-ink">Process — reconstructed from code</p>
-              <p className="font-cc-mono text-xs text-cc-ink-muted">
-                {hero.process.program} <span aria-hidden="true">›</span> {plane.label}
-                {calledAt ? ` · called at ${calledAt}` : ''}
-              </p>
-            </div>
-            <div className="overflow-x-auto p-2">
-              <BpmnPlaneSvg
-                plane={plane}
-                idPrefix="hero"
-                scale={1.05}
-                title={`The routine ${plane.label} of ${hero.process.program} as BPMN, reconstructed from the code. Every element carries its line anchor.`}
-              />
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-2xl bg-cc-code-bg">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+          <div className="flex min-w-0 flex-col overflow-hidden rounded-2xl bg-cc-code-bg">
             <p className="flex flex-wrap items-center justify-between gap-2 border-b border-cc-on-dark/15 px-4 py-3 text-sm font-semibold text-cc-on-dark">
               <span>
                 {hero.process.program} <span className="font-cc-mono text-xs font-medium text-cc-code-muted">L{first}–{last}</span>
@@ -165,6 +148,26 @@ export default function HeroPreview({ hero, title }: { hero: LandingHero; title:
                 </li>
               ))}
             </ol>
+            {hero.caption ? (
+              <p data-hero-caption className="mt-auto border-t border-cc-on-dark/15 px-4 py-3 text-sm font-medium text-cc-on-dark">{hero.caption}</p>
+            ) : null}
+          </div>
+          <div className="min-w-0 rounded-2xl border border-cc-line">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-cc-line px-4 py-3">
+              <p className="text-sm font-bold text-cc-ink">Process — reconstructed from code</p>
+              <CcProvenanceChip value="reconstructed" />
+              <p className="ml-auto text-xs font-medium text-cc-ink-muted">{plane.label}</p>
+            </div>
+            <div className="overflow-x-auto p-2">
+              <BpmnPlaneSvg
+                plane={plane}
+                idPrefix="hero"
+                scale={0.9}
+                title={`The first steps of ${hero.process.program} as BPMN, reconstructed from the code: each step with the decisions in it that end the process. Every element carries its line anchor.`}
+              />
+            </div>
+          </div>
+
           </div>
         </div>
       </div>

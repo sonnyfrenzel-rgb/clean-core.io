@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Clean-Core.io — Free SAP Clean Core Accelerator',
-    description: 'Free community web app that reads custom SAP ABAP and turns it into an evidence-backed Clean Core decision. Every statement is tied to a line of the code; complementary to your SAP tooling.',
+    description: 'Free community web app that reads custom SAP ABAP and turns it into an evidence-backed Clean Core decision. Every element of the process points to the line it came from; complementary to your SAP tooling.',
     url: 'https://clean-core.io',
     type: 'website',
     siteName: 'Clean-Core.io',
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Clean-Core.io — Free SAP Clean Core Accelerator',
-    description: 'Free community web app that reads custom SAP ABAP and turns it into an evidence-backed Clean Core decision. Every statement is tied to a line of the code; complementary to your SAP tooling.',
+    description: 'Free community web app that reads custom SAP ABAP and turns it into an evidence-backed Clean Core decision. Every element of the process points to the line it came from; complementary to your SAP tooling.',
     images: ['https://clean-core.io/og-image.png'],
   },
 };

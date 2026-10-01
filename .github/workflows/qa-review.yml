@@ -1,8 +1,9 @@
 name: QA Review
 
-# The QA agent: every push to `dev` gets a delta review by one pinned model and a
-# smoke check of the revision it deployed; every release on `main` gets a review of
-# the whole code base by the flagship model. Runbook and guardrails:
+# The QA agent: every push to `dev` gets a delta review by OpenRouter's Auto Router
+# (cost tier high) and a smoke check of the revision it deployed; every release on
+# `main` gets a review of the whole code base at cost tier xhigh. The router picks
+# the model per call; each sealed report names the models that answered. Runbook and guardrails:
 # docs/QA-REVIEW-LOOP.md.
 #
 # Read-only by construction — the token below can read code and workflow runs and
@@ -120,7 +121,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-  # Every release on main: the whole code base, batch by batch, by the flagship model
+  # Every release on main: the whole code base, batch by batch, by the Auto Router at xhigh
   # (scripts/qa/full-review.mjs). Same guardrails as the delta review — read-only token,
   # no npm ci, no tools for the model, sealed result — and it gates nothing: its findings
   # are verified and fixed on dev (docs/QA-REVIEW-LOOP.md §10).

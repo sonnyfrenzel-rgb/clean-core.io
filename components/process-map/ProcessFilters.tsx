@@ -133,8 +133,8 @@ export default function ProcessFilters({
       </div>
 
       {/* Roadmap 6.3 — what a mark does not say.
-          A level is read against the one released-object snapshot this product
-          ships, and a usage count is what an export recorded rather than a
+          A level is read against the release list of the project's target
+          edition, and a usage count is what an export recorded rather than a
           verdict on use. Both sentences belong beside the marks, not in a
           document nobody opens, so an overlay carries its own and it is on
           screen exactly while the overlay is. */}

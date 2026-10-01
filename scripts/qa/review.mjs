@@ -6,16 +6,16 @@
  *   node scripts/qa/review.mjs --local    maintainer: reads .env.local, also writes and prints the plaintext locally
  *   node scripts/qa/review.mjs --dry      maintainer: delta, triage, batches and estimated cost — no model call
  *
- * Guardrails (docs/QA-REVIEW-LOOP.md §2): reads the repository, calls one pinned
- * model without tools, writes one sealed file. It never writes to the
+ * Guardrails (docs/QA-REVIEW-LOOP.md §2): reads the repository, calls OpenRouter's
+ * Auto Router (cost tier ROUTER.delta) without tools, writes one sealed file. It never writes to the
  * repository, to GitHub or to any other system.
  */
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BUDGET, EFFORT, estimateCostUsd, publicByDesignValues, QA_MODEL, withinBudget } from './lib/config.mjs';
+import { AUTO_MODEL, BUDGET, EFFORT, estimateCostUsd, publicByDesignValues, ROUTER, withinBudget } from './lib/config.mjs';
 import { seal } from './lib/crypto.mjs';
 import { addedLines, callersOf, changedFiles, chooseBase, commitIdOrNull, commitMessages, fileDiff, git, isAncestor, isClaimSource, isReviewable, mergeBaseWithMain, resolveRange, touchedSymbols } from './lib/git-delta.mjs';
-import { callReviewer } from './lib/openrouter.mjs';
+import { callReviewer, modelsOf } from './lib/openrouter.mjs';
 import { packBatches, partLabel, partsOf } from './lib/pack.mjs';
 import { buildUserMessage, carriedChars, carriedFor, loadBrief, REVIEW_SCHEMA } from './lib/prompt.mjs';
 import { redactSecrets } from './lib/redact.mjs';
@@ -111,6 +111,7 @@ async function main() {
           batches: batches.map((b) => ({ entries: b.files.map((f) => (f.part ? `${f.path} part ${partLabel(f)}` : f.path)), chars: b.chars, carriedOpen: carriedFor(b.files, shared).open.length })),
           notReviewed,
           effort,
+          router: ROUTER.delta,
           estimatedCostUsd,
           redactedSecrets: secretHits.length,
         },
@@ -134,12 +135,14 @@ async function main() {
       for (const b of batches.slice(i)) for (const f of b.files) notReviewed.push({ path: f.path, ...(f.part ? { part: partLabel(f) } : {}), reason: `outside the $${BUDGET.maxCostUsd} cost cap` });
       break;
     }
-    const r = await callReviewer({ apiKey: env.OPENROUTER_API_KEY, system: outgoingSystem, user, schema: REVIEW_SCHEMA, effort });
+    const r = await callReviewer({ apiKey: env.OPENROUTER_API_KEY, system: outgoingSystem, user, schema: REVIEW_SCHEMA, effort, costTier: ROUTER.delta.costTier, maxPrice: ROUTER.delta.maxPrice });
     spentForCap += typeof r.usage?.cost === 'number' ? r.usage.cost : estimateCostUsd(outgoingSystem.length + user.length, 1);
     // `shown`: the carried findings this batch was given — the only ones it may mark resolved (report.mjs).
     results.push({ ...r, files: [...new Set(batches[i].files.map((f) => f.path))], shown: carriedFor(batches[i].files, shared).open.map((f) => f.fingerprint) });
   }
   const modelCalls = results.length;
+  // Before the secret findings join the results: they come from no model.
+  const models = modelsOf(results);
   const costUsd = actualCost(results.map((r) => r.usage));
 
   // A credential in the delta is reported without a model and without its value.
@@ -167,7 +170,11 @@ async function main() {
     meta: {
       // A re-run keeps the run id; the attempt tells its results apart from an earlier attempt's.
       run: { id: env.GITHUB_RUN_ID || null, attempt: env.GITHUB_RUN_ATTEMPT || null },
-      model: QA_MODEL,
+      // The Auto Router chooses per call (owner decision, 01.10.2026): `model` is what was asked for, `models` who answered.
+      model: AUTO_MODEL,
+      costTier: ROUTER.delta.costTier,
+      maxPrice: ROUTER.delta.maxPrice,
+      models,
       effort,
       modelCalls,
       estimatedCostUsd,
@@ -183,9 +190,9 @@ async function main() {
   writeFileSync(join(OUT_DIR, 'qa-review.enc.json'), JSON.stringify(seal(report, secret)));
 
   const summary = publicSummary(report);
-  console.log(`QA review ${summary.head}: ${summary.status} · ${summary.modelCalls} model call(s) · $${summary.costUsd}`);
+  console.log(`QA review ${summary.head}: ${summary.status} · ${summary.modelCalls} model call(s) · $${summary.costUsd} · ${summary.models}`);
   if (env.GITHUB_STEP_SUMMARY) {
-    appendFileSync(env.GITHUB_STEP_SUMMARY, `### QA review\n\n\`${summary.head}\` — ${summary.status} · ${summary.modelCalls} model call(s) · $${summary.costUsd}\n\nThe report is sealed. Read it locally with \`node scripts/qa/await.mjs\`.\n`);
+    appendFileSync(env.GITHUB_STEP_SUMMARY, `### QA review\n\n\`${summary.head}\` — ${summary.status} · ${summary.modelCalls} model call(s) · $${summary.costUsd} · reviewed by ${summary.models}\n\nThe report is sealed. Read it locally with \`node scripts/qa/await.mjs\`.\n`);
   }
 
   if (LOCAL) {

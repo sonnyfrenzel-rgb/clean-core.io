@@ -43,7 +43,11 @@ diese Datei** — das betrifft vor allem Konto, Rollen, Teilen und die Reihenfol
    eine E-Mail-Adresse: Die eingeladene Person meldet sich wie gewohnt an,
    akzeptiert die Terms und bekommt Einsicht.
 
-**USP:** Vom unverstandenen Z-Programm zur belegten Entscheidung — frei,
+**USP (von Sonny freigegeben am 01.10.2026, wörtlich zu verwenden):** „From custom ABAP
+nobody understands to a reviewed, tested rebuild — on one chain of evidence you can
+check." Langfassung und die Grenzen, die mit ihr reisen (der Code ist ein Entwurf zur
+Prüfung; die Tests prüfen gegen Testszenarien, nicht im echten S/4-System), stehen im
+`README.md`. Zuvor: Vom unverstandenen Z-Programm zur belegten Entscheidung — frei,
 verifizierbar, ohne SAP-Lizenz.
 
 ---

@@ -5,6 +5,10 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcEmptyState } from '@/components/cc/EmptyState';
 import type { WorkspaceLayer } from '@/lib/workspace-model';
+import type { SourceReading } from '@/lib/first-look';
+import type { Project } from '@/lib/types';
+import BusinessRulesEditor from './BusinessRulesEditor';
+import StandardFitTable from './StandardFitTable';
 import { wt, layerSectionShowing } from '@/lib/workspace-messages';
 
 /**
@@ -30,8 +34,29 @@ import { wt, layerSectionShowing } from '@/lib/workspace-messages';
  * heading is an `h2`, because the project title is the `h1` and no level is
  * skipped (§2.3).
  */
-export default function WorkspaceLayerSection({ layer }: { layer: WorkspaceLayer }) {
+export default function WorkspaceLayerSection({
+  layer,
+  project = null,
+  projectId = '',
+  reading = null,
+}: {
+  layer: WorkspaceLayer;
+  /**
+   * The project, its id and the first look's reading of its source. With them,
+   * *Need & process* shows the business rules and their one editing mode
+   * (mockup `s2`) and *Standard fit* its table (`s3`); without them both fall
+   * back to the plain rows, as every other layer does.
+   */
+  project?: Project | null;
+  projectId?: string;
+  reading?: SourceReading | null;
+}) {
   const empty = layer.rows.length === 0;
+  const withRules = layer.key === 'need' && reading !== null && reading.ruleSet.rules.length > 0 && projectId !== '';
+  const withFit = layer.key === 'standard' && !empty && projectId !== '';
+  // The rules are shown by the editor; the rows that are left are the usage
+  // records, which keep the plain row list below it.
+  const rows = withRules ? layer.rows.filter((row) => !row.key.startsWith('rule-')) : layer.rows;
 
   return (
     <section
@@ -52,7 +77,16 @@ export default function WorkspaceLayerSection({ layer }: { layer: WorkspaceLayer
         <CcProvenanceChip value={layer.provenance} />
       </div>
 
-      {empty ? (
+      {withRules ? (
+        <div className="mt-2" data-workspace-layer-rules="">
+          <BusinessRulesEditor project={project} projectId={projectId} reading={reading} />
+        </div>
+      ) : null}
+      {withFit ? (
+        <div className="mt-2" data-workspace-layer-fit="">
+          <StandardFitTable project={project} projectId={projectId} />
+        </div>
+      ) : empty ? (
         // Not a blank area and not a spinner: the reason, in the same words the
         // bar uses under "More", so a reader who arrives here from either
         // direction reads one sentence rather than two versions of it.
@@ -61,13 +95,13 @@ export default function WorkspaceLayerSection({ layer }: { layer: WorkspaceLayer
             <span data-workspace-layer-absent-reason="">{layer.missing}</span>
           </CcEmptyState>
         </div>
-      ) : (
+      ) : rows.length === 0 ? null : (
         <>
           <ul
             data-workspace-layer-rows={layer.key}
             className="m-0 mt-2 list-none space-y-2 p-0"
           >
-            {layer.rows.map((row) => (
+            {rows.map((row) => (
               <li
                 key={row.key}
                 data-workspace-layer-row={row.key}
@@ -86,7 +120,7 @@ export default function WorkspaceLayerSection({ layer }: { layer: WorkspaceLayer
               </li>
             ))}
           </ul>
-          {layer.total > layer.rows.length && (
+          {!withRules && layer.total > layer.rows.length && (
             // §2.11: the first five, and the count of what is behind them. A
             // statement of fact, not a button, until there is a place to open.
             <p

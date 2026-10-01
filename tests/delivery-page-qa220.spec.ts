@@ -159,7 +159,7 @@ test.describe('delivery page — QA full review of v2.20.0', () => {
 
     await expect(page.locator('button[data-stage-output="businessDocumentation"]')).toBeDisabled();
 
-    const header = page.locator('button', { hasText: 'Compliance Audit Pack' });
+    const header = page.locator('button', { hasText: 'Audit pack contents' });
     await expect(header).toContainText('Blocked');
     await expect(header).not.toContainText('Ready');
   });

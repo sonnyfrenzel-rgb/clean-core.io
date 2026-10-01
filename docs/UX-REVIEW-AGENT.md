@@ -2,9 +2,22 @@
 
 **Stand 15.09.2026 · eingeführt mit v2.9.17 · läuft bei jedem Push auf `main`, bis Sonny ihn widerruft**
 
+> **Model routing since 01.10.2026 (owner decision).** No model is pinned any more. Every
+> call goes to OpenRouter's Auto Router (`openrouter/auto`) at cost tier **`high`**, under a
+> price ceiling of **$1.25 input / $5 output per M tokens** (`provider.max_price`,
+> `UX_ROUTER` in `scripts/ux/lib/config.mjs`), with `data_collection: 'deny'`,
+> `require_parameters: true` and `allow_fallbacks: false`. The budgets per mode are
+> unchanged; every estimate is made at the ceiling, and the actual `usage.cost` counts.
+> Every call carries screenshots, so after each answer the model that answered is looked up
+> in OpenRouter's public model list: if it cannot read images, or cannot be identified, the
+> call fails and its review is never accepted. Each sealed report and the step summary
+> name the models that answered (`meta.models`). Muse Spark 1.3 and its prices below
+> describe the period before 01.10.2026.
+
+
 Jede neue Version auf `main` bekommt eine UX-Review ihres Deltas. Die allererste Review
 nimmt sich das ganze Produkt vor, Bereich für Bereich, und schließt mit einer
-End-to-End-Synthese. Das Modell ist Metas **Muse Spark 1.3** über OpenRouter, multimodal:
+End-to-End-Synthese. Das Modell wählt seit 01.10.2026 der **OpenRouter Auto Router** (vorher Metas Muse Spark 1.3), nur bildfähige Modelle:
 Es liest den Code und sieht die Screens. Sein einziges Ziel ist eine möglichst perfekte
 UX. Es findet Probleme, hinterfragt Design-Entscheidungen, sieht neue Features aus
 Nutzersicht und prüft Farben, Formen, Schriften und Muster auf Stimmigkeit. Claude Code
@@ -31,7 +44,7 @@ Befunde in die Roadmap ein. Der Agent selbst ändert nichts.
                         1. Design-Scan: Farben, Schriftgrade, Radien, Schatten, Button-Stile,
                            A11y-Heuristiken, Sprachsignale — deterministisch, ohne Token
                         2. Bereiche aus dem Import-Graphen: welcher Screen welche Komponente zeigt
-                        3. Muse Spark 1.3: Code + Scan + Screenshots je Aufruf, striktes Schema
+                        3. Auto Router (high, nur bildfähig): Code + Scan + Screenshots je Aufruf, striktes Schema
                         4. Bericht versiegelt (AES-256-GCM, UX_REVIEW_KEY)
 
  Claude Code (lokal) ── node scripts/ux/inbox.mjs <sha>
@@ -56,7 +69,7 @@ einen Bereich, dessen Seiten sie rendern, sonst zum System.
 
 | Baustein | Datei | Aufgabe |
 |---|---|---|
-| Modell, Budgets, Bereiche | `scripts/ux/lib/config.mjs` | die einzige Stelle für Modell-ID, Preise, Budgets je Modus, Bereiche, Screen-Namen und die Auflösung von `auto` |
+| Modell, Budgets, Bereiche | `scripts/ux/lib/config.mjs` | die einzige Stelle für Kostenstufe und Preisobergrenze des Auto Routers, Budgets je Modus, Bereiche, Screen-Namen und die Auflösung von `auto` |
 | UX-Anweisung | `docs/ux/ux-brief.md` | Rolle, Nutzer, Produktregeln, Richtung 3.0, zehn Prüfperspektiven, Schweregrade, die drei Modi |
 | Design-Scan | `scripts/ux/lib/scan.mjs` | Zählungen über alle UX-Dateien; für ein Release die neu eingeführten seltenen Tokens |
 | Bereiche | `scripts/ux/lib/areas.mjs` | Import-Graph, Zuordnung, Pakete ohne geschnittene Dateien |
