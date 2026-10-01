@@ -452,7 +452,15 @@ function ChapterPanel({
         element={selectedElement}
         source={source}
         fileName={fileName}
-        onClose={() => onSelect(null)}
+        onClose={() => {
+          // Back to the node it was opened from, as the map's own card does —
+          // not to the top of the page (`DESIGN.md` §5.7).
+          const id = selectedElement.id;
+          onSelect(null);
+          requestAnimationFrame(() => {
+            document.querySelector<HTMLElement>(`[data-map-node="${CSS.escape(id)}"]`)?.focus();
+          });
+        }}
       />
     </div>
   ) : null;

@@ -739,7 +739,7 @@ export default function ProcessMap({
       >
         <div
           className={stage
-            ? 'order-2 grid min-w-0 gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:grid-rows-[auto_1fr] lg:items-start [&>*:last-child]:lg:col-start-2 [&>*:last-child]:lg:row-span-2 [&>*:last-child]:lg:row-start-1'
+            ? 'order-2 grid min-w-0 gap-2 lg:max-h-[440px] lg:overflow-y-auto lg:pr-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:grid-rows-[auto_1fr] lg:items-start [&>*:last-child]:lg:col-start-2 [&>*:last-child]:lg:row-span-2 [&>*:last-child]:lg:row-start-1'
             : 'flex min-w-0 flex-col gap-2'}
         >
           <ProcessSearch model={model} nav={nav} onJump={onJump} />
