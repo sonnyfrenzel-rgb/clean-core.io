@@ -8,7 +8,11 @@ import {
   buildHandoverChain,
   chainSummary,
   confirmationsOf,
+  handoverFacets,
+  handoverGroups,
   handoverNextStep,
+  handoverStatusLine,
+  handoverStillNeeded,
   handoverTimeline,
   signedSourceOf,
   type HandoverProject,
@@ -155,6 +159,44 @@ test.describe('the handover reads what is on record', () => {
     expect(chainSummary(buildHandoverChain(fresh, workflowSteps(fresh))).of).toBe(9);
   });
 
+  test('the object page: four steps over all nine links, and what is still needed names its tool', () => {
+    const fresh = project({ solutionDesign: '# Design', extensibilityRoute: 'Side-by-Side (SAP BTP)' });
+    const phases = workflowSteps(fresh);
+    const chain = buildHandoverChain(fresh, phases);
+    const state = { blockers: [] as string[], exportedAt: null };
+    const groups = handoverGroups(fresh, chain, state);
+    expect(groups.map((g) => g.label)).toEqual(['Requirement', 'Decision', 'Receipt', 'Delivery artefact']);
+    // Every one of the nine links stands behind exactly one step.
+    expect(groups.flatMap((g) => g.links.map((l) => l.key)).sort()).toEqual([...HANDOVER_LINKS].sort());
+    const decision = groups.find((g) => g.key === 'decision')!;
+    expect(decision.title).toBe('Side-by-Side (SAP BTP)');
+    expect(decision.sub).toBe('Recommended, not confirmed');
+    // Nothing sealed: the package is not determined, never proven.
+    expect(groups.find((g) => g.key === 'delivery')!.provenance).toBe('not-determined');
+    expect(groups.find((g) => g.key === 'receipt')!.provenance).toBe('not-determined');
+
+    const needed = handoverStillNeeded(fresh, chain, state);
+    const keys = needed.map((n) => n.key);
+    expect(keys).toEqual(expect.arrayContaining(['design', 'transformation', 'documentation', 'tests', 'economics', 'decision', 'audit-pack']));
+    expect(keys).not.toContain('run');
+    expect(needed.find((n) => n.key === 'decision')!.stage).toBe('management');
+
+    const facets = handoverFacets(fresh, phases, chain, state);
+    expect(facets.map((f) => f.value)).toEqual(['Not handed over', 'Available', 'Pending', 'No tests']);
+    expect(facets[0].sub).toBe(`${needed.length} things a handover still needs`);
+    expect(handoverStatusLine(fresh, chain).map((s) => `${s.label} ${s.value}`)).toEqual([
+      'Run signed', 'Decision not confirmed', 'Receipts none', 'Engine v2.20.0 · no model',
+    ]);
+
+    // A sealed pack is not acceptance, and an untested suite never reads as a run.
+    const sealed = { blockers: [] as string[], exportedAt: '2026-09-20T10:00:00.000Z' };
+    expect(handoverFacets(fresh, phases, chain, sealed)[0].basis).toContain('delivery is not acceptance');
+    expect(handoverStillNeeded(fresh, chain, sealed).map((n) => n.key)).not.toContain('audit-pack');
+    const blocked = { blockers: ['the generated code'], exportedAt: '2026-09-20T10:00:00.000Z' };
+    expect(handoverFacets(fresh, phases, chain, blocked)[0].value).toBe('Blocked');
+    expect(handoverStillNeeded(fresh, chain, blocked).map((n) => n.key)).toContain('audit-pack');
+  });
+
   test('the page speaks the product’s vocabulary, not the old score language', () => {
     const src = read(PAGE);
     for (const gone of ['Compliance tier', 'MEDIUM RISK', 'Board Presentation', 'Interactive Strategic Map', 'Integrity Report', 'Return to Dashboard', 'Compliance Audit Pack', 'Level 5']) {
@@ -182,6 +224,12 @@ test.describe('the handover on screen', () => {
 
     const links = page.locator('[data-chain-link]');
     await expect(links).toHaveCount(9, { timeout: 60000 });
+    // The pack's four steps lead; the nine links sit one level deeper (proposal A).
+    await expect(page.locator('[data-chain-group]')).toHaveCount(4);
+    await expect(page.locator('[data-chain-group="decision"]')).toContainText('Side-by-Side BTP (CAP)');
+    await expect(page.locator('[data-delivery-facet]')).toHaveCount(4);
+    await expect(page.locator('[data-still-needed-item="economics"]')).toBeVisible();
+    await page.locator('[data-chain-detail] [data-cc-disclosure-trigger]').click();
     await expect(page.locator('[data-chain-link="economics"]')).toHaveAttribute('data-chain-state', 'open');
     await expect(page.locator('[data-chain-link="design"]')).toContainText('Side-by-Side BTP (CAP)');
     await expect(page.locator('[data-handover-next]')).toBeVisible();

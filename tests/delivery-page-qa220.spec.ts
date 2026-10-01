@@ -154,6 +154,8 @@ test.describe('delivery page — QA full review of v2.20.0', () => {
     await page.goto(`/project/${STALE_TESTS}/delivery`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stale-notice]')).toBeVisible({ timeout: 60000 });
 
+    // The nine links sit one level deeper, behind "Link by link" (proposal A).
+    await page.locator('[data-chain-detail] [data-cc-disclosure-trigger]').click();
     await expect(page.locator('[data-coverage-stale]')).toBeVisible();
     await expect(page.locator('[data-coverage-provenance]')).toHaveCount(0);
 
