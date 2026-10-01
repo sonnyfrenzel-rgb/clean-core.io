@@ -558,7 +558,7 @@ jobs:
           neither decides anything. */}
 
       <StageProgress steps={phases} current="delivery" projectId={projectId as string} />
-      <StageHeader projectName={project?.name} stage="delivery" />
+      <StageHeader stage="delivery" projectName={project?.name} />
       <CcSkeleton shape="cards" label="Finalizing delivery package..." count={4} />
     </div>
   );
@@ -591,7 +591,7 @@ jobs:
           for deployment" on every project, including one with nothing but an
           analysis run behind it. Block D, D.19: the title is the stage's name
           from `PHASES`, left-aligned like every other stage. */}
-      <StageHeader projectName={project?.name} stage="delivery">
+      <StageHeader stage="delivery" projectName={project?.name}>
         {/* `proven`, not `done`. The material can all be present while the test
             run behind the verdicts never happened — `testCases[].status` is
             client-writable and used to be read as an execution (QA full review

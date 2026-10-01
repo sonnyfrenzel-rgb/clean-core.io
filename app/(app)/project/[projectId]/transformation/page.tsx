@@ -953,7 +953,7 @@ CMD ["node", "srv/service.js"]`
 
       <StageProgress steps={phases} current="transformation" projectId={projectId as string} />
 
-      <StageHeader projectName={project?.name} stage="transformation">
+      <StageHeader stage="transformation" projectName={project?.name}>
         <span data-track-loading>{track.loading}</span>
       </StageHeader>
 
@@ -1019,7 +1019,7 @@ CMD ["node", "srv/service.js"]`
             Transformations: 4 / 5" — remaining-of-total, while the header said
             "1 / 5 Transformations", used-of-total. The header carries it once. */}
         <div className="flex-1 min-w-0">
-          <StageHeader projectName={project?.name} stage="transformation">
+          <StageHeader stage="transformation" projectName={project?.name}>
             {/* The track decides the words (roadmap 0.2, UX-037): the in-app
                 track generates RAP artefacts, and the lead used to promise
                 Node.js over them anyway. */}

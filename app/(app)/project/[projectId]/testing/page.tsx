@@ -994,7 +994,7 @@ export default function TestingSandboxPage() {
         ]}
       />
 
-      <StageHeader projectName={project?.name} stage="testing">
+      <StageHeader stage="testing" projectName={project?.name}>
         {isAbapCloud
           ? 'Generate ABAP Unit test class stubs. Nothing is compiled or executed in SAP ADT here: a mock run is simulated, and a tenant is only checked for connectivity.'
           : 'Generate test cases and run them against mocks in a restricted Node.js process.'}

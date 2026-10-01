@@ -840,7 +840,7 @@ Structure the JSON exactly like this:
           neither decides anything. */}
 
       <StageProgress steps={phases} current="documentation" projectId={projectId as string} />
-      <StageHeader projectName={project?.name} stage="documentation" />
+      <StageHeader stage="documentation" projectName={project?.name} />
       <CcSkeleton shape="cards" label="documentation" count={2} />
     </div>
   );
@@ -1272,7 +1272,7 @@ Structure the JSON exactly like this:
 
       <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6 mb-8 mt-6 md:mt-8">
         <div>
-          <StageHeader projectName={project?.name} stage="documentation">
+          <StageHeader stage="documentation" projectName={project?.name}>
             The process as the code runs it, drawn as a map you can export as BPMN 2.0, and the documentation
             written from it.
           </StageHeader>
