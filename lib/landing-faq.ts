@@ -25,7 +25,7 @@ export interface LandingFaq {
 
 const trust = (id: string) => TRUST_CLAIMS.find((c) => c.id === id)!.text;
 
-/** "Far from clean core", "Significant rework", … — the band labels as the score page shows them. */
+/** The band labels as the score page shows them, read from `SCORE_BANDS`. */
 const bandLabels = SCORE_BANDS.map((b) => `${b.label} (${b.from}–${b.to})`).join(', ');
 
 export const LANDING_FAQ: LandingFaq[] = [
