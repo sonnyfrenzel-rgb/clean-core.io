@@ -123,6 +123,25 @@ function rulesByNode(source: string, model: ProcessMapModel): Map<string, string
  * ------------------------------------------------------------------ */
 
 test.describe('the outline of the 1.000-line example', () => {
+  test('the plain reading folds events, never steps: the same 50 steps as the technical file', () => {
+    // ADR-054. The plain reading joins the report events into one flow; where
+    // two blocks cannot be joined directly, the second block's start becomes a
+    // milestone (`intermediateThrowEvent`). That milestone is the same event
+    // drawn differently, so the steps of both readings are the same elements —
+    // not one more. Until 01.10.2026 the milestone was counted as a step: the
+    // map numbered "Selection processed" as a step and the acceptance below
+    // measured 51.
+    const source = exampleSource();
+    const steps = (model: ProcessMapModel) =>
+      model.elements.filter((element) => !element.event).map((element) => element.id).sort();
+    const reading = readingModel(source);
+    expect(steps(reading)).toEqual(steps(exampleModel(source)));
+    expect(steps(reading)).toHaveLength(50);
+    const milestones = reading.elements.filter((element) => element.tag === 'intermediateThrowEvent');
+    expect(milestones.length, 'the example has no milestone, so this check would be vacuous').toBeGreaterThan(0);
+    for (const milestone of milestones) expect(milestone.event, `${milestone.id} counted as a step`).toBe(true);
+  });
+
   test('it is the 77 flow nodes on 16 levels, each with one address', () => {
     const source = exampleSource();
     const model = exampleModel(source);

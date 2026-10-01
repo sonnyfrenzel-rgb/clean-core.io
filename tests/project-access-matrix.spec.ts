@@ -247,6 +247,17 @@ const CASES: RouteCase[] = [
     readerAdmitted: true,
   },
   {
+    key: 'app/api/projects/[projectId]/standard-fit/route.ts#GET',
+    what: 'the Standard fit layer — coverage, counter-checks and user changes derived from the customer\'s source',
+    method: 'GET',
+    path: (p) => `/api/projects/${p}/standard-fit`,
+    refusal: 404,
+    // The fixture stages source, so the view is derived; owner and reader read
+    // the same comparison.
+    owner: [200],
+    readerAdmitted: true,
+  },
+  {
     key: 'app/api/projects/[projectId]/contract/route.ts#GET',
     what: 'the architecture contract the generation follows',
     method: 'GET',
@@ -647,6 +658,7 @@ test('403-vs-404: what a refusal tells a stranger about a project they cannot se
       'app/api/projects/[projectId]/process-states/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/process-states/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/findings/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/standard-fit/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/contract/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/contract/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/repair-drafts/route.ts#POST → 404 vs 404',
