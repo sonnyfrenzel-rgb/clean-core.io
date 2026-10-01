@@ -91,8 +91,10 @@ test('every route that reads from a tenant reads through the bounded helper', ()
 
     // `safeFetch` decides where the request may go; these are what may come
     // back. A bare `.text()` or `.json()` on a response is the unbounded read.
-    const unbounded = [...src.matchAll(/\b(\w+)\.(text|json)\(\)/g)]
-      .filter((m) => /^(response|resp|tokenResp|res)$/i.test(m[1]))
+    // Carried QA finding 37526ddd7705: every body read counts, whatever the
+    // variable is called; only the incoming request is not a tenant response.
+    const unbounded = [...src.matchAll(/\b(\w+)\.(text|json|arrayBuffer|blob)\(\)/g)]
+      .filter((m) => !/^(req|request)$/.test(m[1]))
       .map((m) => m[0]);
     expect(
       unbounded,
