@@ -120,6 +120,26 @@ test.describe('the handover reads what is on record', () => {
     expect(confirmationsOf(p).map((c) => c.what)).toContain('Ran the test suite in the sandbox');
   });
 
+  test('a recorded run with no pass or fail is not called "no run on record" (QA review of a88149856dcc)', () => {
+    const base = project({
+      generatedCode: 'export const ok = 1;\n',
+      testSuite: { code: "test('t1', () => {});" },
+      testCases: [{ id: 't1', name: 'Case', category: 'Unit', status: 'Not run' }],
+    });
+    const p = { ...base, testRunReceipt: receiptFor(base, [{ id: 't1', status: 'Error' }]) } as HandoverProject;
+    const chain = buildHandoverChain(p, workflowSteps(p));
+    const state = { blockers: [] as string[], exportedAt: null };
+    // The status line on the same screen reads the receipt as a run…
+    expect(handoverStatusLine(p, chain).find((s) => s.key === 'receipts')!.value).toBe('sandbox test run');
+    // …so the receipt step does not deny it.
+    const sub = handoverGroups(p, chain, state).find((g) => g.key === 'receipt')!.sub;
+    expect(sub).not.toContain('no run on record');
+    expect(sub).toContain('the recorded run returned no pass or fail');
+    // Without a receipt the absence is still said.
+    const none = project({ generatedCode: base.generatedCode, testSuite: base.testSuite, testCases: base.testCases });
+    expect(handoverGroups(none, buildHandoverChain(none, workflowSteps(none)), state).find((g) => g.key === 'receipt')!.sub).toContain('no run on record');
+  });
+
   test('a confirmed decision names the account and stays a self-declaration', () => {
     const decision = buildProjectDecision({
       summary: 'Build this object as Side-by-Side BTP (CAP), as the signed-off target architecture says.',

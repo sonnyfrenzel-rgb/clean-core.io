@@ -704,15 +704,21 @@ export function handoverGroups(
           })
         : group('decision', { title: route ?? 'Target architecture', sub: 'No design drafted, nothing confirmed.', provenance: 'not-determined', provenanceNote: 'open' });
 
-  // Receipt — an execution on record, or the honest absence of one.
+  // Receipt — an execution on record, or the honest absence of one. A covering
+  // receipt whose verdicts hold no pass or fail is still a run on record — the
+  // status line says "Receipts: sandbox test run" for it — so this line does
+  // not call it absent (QA review of a88149856dcc).
   const tests = by('tests');
+  const ranWithoutVerdict = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]) !== null;
   const receipt = group('receipt', {
     title: 'Test run',
     sub: tests.state === 'open'
       ? 'No test suite generated.'
       : tests.provenance === 'demonstrated-mock' || tests.state === 'stale'
         ? tests.value!
-        : `${tests.value}, no run on record`,
+        : ranWithoutVerdict
+          ? `${tests.value}, the recorded run returned no pass or fail`
+          : `${tests.value}, no run on record`,
     provenance: tests.provenance,
     provenanceNote: tests.state === 'open' ? 'none' : tests.provenanceNote,
   });
