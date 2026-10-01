@@ -91,8 +91,14 @@ export async function POST(request: NextRequest) {
     let account;
     try {
       account = await adminAuth.getUser(uid);
-    } catch {
-      return NextResponse.json({ error: 'No such account.' }, { status: 404 });
+    } catch (lookupErr: unknown) {
+      // Only "no such user" is a 404. An Auth outage is not a missing account,
+      // and saying so sent the operator looking for an account that exists
+      // (carried QA finding 27b5c754d332); the outer catch answers it as a 500.
+      if ((lookupErr as { code?: string })?.code === 'auth/user-not-found') {
+        return NextResponse.json({ error: 'No such account.' }, { status: 404 });
+      }
+      throw lookupErr;
     }
 
     const email = account.email;

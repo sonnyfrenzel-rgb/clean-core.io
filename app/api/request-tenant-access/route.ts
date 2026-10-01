@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
           <!-- Administrative Actions -->
           <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; text-align: center;">
             <h3 style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.05em;">Administrative Controls:</h3>
-            <p style="font-size: 13px; color: #64748b; margin: 0 0 20px 0; line-height: 1.5;">Click the button below to instantly unlock custom tenant connection capabilities for this user.</p>
+            <p style="font-size: 13px; color: #64748b; margin: 0 0 20px 0; line-height: 1.5;">The button below opens a review page where you confirm or reject unlocking custom tenant connection capabilities for this user.</p>
             
             <div style="margin-bottom: 16px;">
               <a href="${approveUrl}" style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);">

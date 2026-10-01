@@ -462,3 +462,21 @@ test('a failed-mail warning in the admin console names no address the registerin
   expect(warnings.length, 'the admin console has no mail warnings where this test looks').toBeGreaterThanOrEqual(4);
   for (const warning of warnings) expect(warning).not.toContain('targetReq.email');
 });
+
+test('the approval mail calls only a missing account "no such account"', () => {
+  // Carried QA finding 27b5c754d332: every Auth lookup error was answered 404
+  // "No such account.", an outage included. The emulator cannot make getUser
+  // fail any other way, so the branch is read off the source.
+  const route = fs.readFileSync(path.join(process.cwd(), 'app', 'api', 'send-approval-email', 'route.ts'), 'utf8');
+  const lookup = route.slice(route.indexOf('adminAuth.getUser(uid)'), route.indexOf('const email = account.email'));
+  expect(lookup).toContain("=== 'auth/user-not-found'");
+  expect(lookup).toContain('throw lookupErr');
+});
+
+test('the tenant-access mail does not promise an instant unlock behind a confirmation page', () => {
+  // Carried QA finding a1c5a937205a: the link opens a page that waits for a
+  // click (no `auto`), while the mail said the button unlocks instantly.
+  const route = fs.readFileSync(path.join(process.cwd(), 'app', 'api', 'request-tenant-access', 'route.ts'), 'utf8');
+  expect(route).not.toContain('instantly unlock');
+  expect(route).toContain('opens a review page');
+});
