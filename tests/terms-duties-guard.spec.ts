@@ -230,6 +230,10 @@ test.describe('and a reader opening the page finds them', () => {
       rendered,
       'the effective version a reader sees is not the one the gate compares against',
     ).toContain(normalise('effective 6 October 2026 (v2.2.0)'));
+    // On the authoritative line itself, not anywhere on the page: the archive
+    // list further down also says "effective …" for every earlier version
+    // (carried QA finding a76871dd992d).
+    await expect(page.getByText(/Consolidated version — effective/)).toContainText('effective 6 October 2026 (v2.2.0)');
     expect(TERMS_VERSION).toBe('2026-10-06');
     // And the two clauses that version was raised for, on the same page.
     expect(rendered).toContain(normalise('at least 18 years old'));
