@@ -13,6 +13,7 @@ import {
 } from '../lib/generation-direction';
 import { contractOfProject, declaredDeviation } from '../lib/contract-build';
 import { INPUT_IDS, analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
+import { sha256Hex } from '../lib/artefact-digest';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 
@@ -38,7 +39,9 @@ ENDEXEC.
 /** With `null`, the deployment entry is absent — the contract is then blocked. */
 function manifestFor(deployment: 'public' | 'private' | null) {
   const inputs = analysisRunInputs({
-    sourceSha256: 'a'.repeat(64),
+    // The digest of the source the fixtures analyse: a contract built from a
+    // project whose source is not the run's is blocked (79759e45695d).
+    sourceSha256: sha256Hex(SOURCE_OFF_STACK),
     deploymentTarget: deployment || 'public',
     catalogVersion: '2026.FPS01',
     rulesetVersion: 'rules-v1.0',
@@ -221,6 +224,30 @@ test('the project build derives the same contract the direction is taken from', 
   expect(d.ok && d.track).toBe('in-app-rap');
 
   expect(contractOfProject({ legacyCode: '   ' }, null)).toEqual({ ok: false, code: 'no-source' });
+});
+
+test('a project whose source or target moved since the run gets a blocked contract, not one bound to the old run', () => {
+  // Carried QA finding 79759e45695d: the contract analysed the project's
+  // current source and deployment and bound them to the run's manifest.
+  const project = {
+    activeRunId: 'run-1',
+    legacyCode: SOURCE_OFF_STACK,
+    s4Deployment: 'public' as const,
+    auditMetadata: { inputFingerprint: { fileName: 'z_mm_po_f01.abap' } },
+  };
+  const same = contractOfProject(project, manifestFor('public'));
+  expect(same.ok && contractCoverage(same.contract).limits.map((l) => l.code)).not.toContain('inputs-differ');
+
+  const edited = contractOfProject({ ...project, legacyCode: `${SOURCE_OFF_STACK}
+WRITE 'edited'.` }, manifestFor('public'));
+  expect(edited.ok).toBe(true);
+  if (!edited.ok) return;
+  expect(contractCoverage(edited.contract).state).toBe('blocked');
+  expect(contractCoverage(edited.contract).limits.find((l) => l.code === 'inputs-differ')?.subject).toBe('source');
+  expect(generationDirection(edited.contract).ok).toBe(false);
+
+  const moved = contractOfProject({ ...project, s4Deployment: 'private' }, manifestFor('public'));
+  expect(moved.ok && contractCoverage(moved.contract).limits.find((l) => l.code === 'inputs-differ')?.subject).toBe('target deployment');
 });
 
 /* ---------- the seam the page must not step around ---------- */

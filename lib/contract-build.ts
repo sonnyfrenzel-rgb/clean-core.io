@@ -8,7 +8,8 @@ import {
   type ContractDeviation,
   type TargetRoute,
 } from '@/lib/architecture-contract';
-import type { InputManifest } from '@/lib/input-manifest';
+import { INPUT_IDS, type InputManifest } from '@/lib/input-manifest';
+import { sha256Hex } from '@/lib/artefact-digest';
 import type { TargetArchitectureCode } from '@/lib/project-commands';
 
 /**
@@ -154,6 +155,29 @@ export function contractOfProject(
       evidence,
       route,
       deviation: deviation.deviation,
+      inputsDiffer: inputsDifferingFromRun(inputManifest, source, deployment),
     }),
   };
+}
+
+/**
+ * The inputs this build reads from the project that are not the ones the run
+ * recorded. The contract is derived from the project's *current* source and
+ * deployment and bound to the run's manifest; where the two differ, it would
+ * pair the run's signature with evidence about something else (carried QA
+ * finding 79759e45695d). Only inputs the manifest records are compared — a
+ * manifest without a deployment entry is already blocked as `target-not-bound`.
+ */
+export function inputsDifferingFromRun(
+  manifest: InputManifest | null,
+  source: string,
+  deployment: 'private' | 'public' | undefined,
+): string[] {
+  if (!manifest) return [];
+  const differ: string[] = [];
+  const recordedSource = manifest.inputs.find((i) => i.id === INPUT_IDS.source);
+  if (recordedSource && recordedSource.sha256 !== sha256Hex(source)) differ.push('source');
+  const recordedTarget = manifest.inputs.find((i) => i.id === INPUT_IDS.deployment);
+  if (recordedTarget && recordedTarget.revision !== deployment) differ.push('target deployment');
+  return differ;
 }
