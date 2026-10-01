@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useId, useState } from 'react';
 import Link from 'next/link';
 import CcButton from '@/components/cc/Button';
 import CcMessageBox from '@/components/cc/MessageBox';
@@ -51,6 +51,9 @@ export default function OpenInvitations({
   // A withdrawal is not undoable — the link is dead — so it is asked, in a
   // Message Box, like every destructive action (§1.5, §2.6).
   const [asking, setAsking] = useState<OpenInvitationEntry | null>(null);
+  // Two of these can stand on one page (the Sharing section and the share
+  // dialog); a literal id would label both with the first one's heading.
+  const titleId = useId();
 
   const load = useCallback(
     () => (projectId ? loadOpenInvitations(projectId) : loadAccountOpenInvitations()),
@@ -59,11 +62,16 @@ export default function OpenInvitations({
 
   useEffect(() => {
     let alive = true;
-    load().then((list) => {
-      if (!alive) return;
-      setEntries(list);
-      if (list && onCount) onCount(list.length);
-    });
+    load()
+      .then((list) => {
+        if (!alive) return;
+        setEntries(list);
+        if (list && onCount) onCount(list.length);
+      })
+      .catch(() => {
+        // The token could not be refreshed: a failed read, like any other.
+        if (alive) setEntries(null);
+      });
     return () => {
       alive = false;
     };
@@ -94,9 +102,9 @@ export default function OpenInvitations({
   if (entries.length === 0 && !emptyText) return null;
 
   return (
-    <section data-open-invitations={projectId ? 'project' : 'account'} aria-labelledby="open-invitations-title">
+    <section data-open-invitations={projectId ? 'project' : 'account'} aria-labelledby={titleId}>
       <h3
-        id="open-invitations-title"
+        id={titleId}
         className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase"
       >
         {wt('invites.waitingTitle')}
