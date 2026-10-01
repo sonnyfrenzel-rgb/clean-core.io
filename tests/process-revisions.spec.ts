@@ -193,6 +193,14 @@ test.describe('what a revision may hold', () => {
     expect(await checkRevisionXml(huge)).toMatchObject({ ok: false, code: 'too-large' });
   });
 
+  test('the size limit counts bytes, not characters', async () => {
+    // Carried QA finding 43c81664dd53: a model under the limit in characters
+    // and over it in UTF-8 bytes passed, and the Firestore write then failed.
+    const wide = `${BEFORE}<!-- ${'€'.repeat(Math.ceil(MAX_REVISION_XML / 3) + 10)} -->`;
+    expect(wide.length, 'the fixture is not under the limit in characters').toBeLessThan(MAX_REVISION_XML);
+    expect(await checkRevisionXml(wide)).toMatchObject({ ok: false, code: 'too-large' });
+  });
+
   test('the structural floor is parsing, not a regex: unclosed and foreign documents fail, the default namespace passes', async () => {
     // Gegenreview c5085bb, CR-20 — the three probes the review ran against the
     // regex, with the answers it should have given.
