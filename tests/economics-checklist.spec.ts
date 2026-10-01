@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { comparisonChecklist, forecastChecklist, openRows } from '../lib/economics-checklist';
-import { initialCostAssumptions } from '../components/tco/OptionComparison';
+import { initialCostAssumptions, optionGroups } from '../components/tco/OptionComparison';
 import { costComparison, proposeEffort, type CostAssumptions } from '../lib/cost-assumptions';
 
 /**
@@ -81,6 +81,47 @@ test('any open row means the comparison refuses, and the other way round', () =>
   for (const v of variants) {
     expect(openRows(comparisonChecklist(v)).length, JSON.stringify(v).slice(0, 80)).toBeGreaterThan(0);
     expect(costComparison(v).winner).toBeNull();
+  }
+});
+
+test('each option card opens a group for every gap the comparison holds against that option (QA review of a88149856dcc)', () => {
+  // The card reads the option's groups from the comparison's own gaps by code
+  // and subject (components/tco/OptionComparison.tsx, optionGroups). Pinned
+  // here against what lib/cost-assumptions actually writes, so a renamed
+  // subject or a new refusal code cannot leave a card saying "its own figures
+  // are in" while the comparison refuses the option.
+  const full = complete();
+  const bad = { devDays: -1, testDays: 0 };
+  const edit = (id: string, change: Record<string, unknown>): CostAssumptions => ({
+    ...full,
+    options: full.options.map((o) => (o.id === id ? { ...o, ...change } : o)),
+  });
+  const variants: CostAssumptions[] = [full];
+  for (const o of full.options) {
+    variants.push(
+      edit(o.id, { oneOff: null }),
+      edit(o.id, { oneOff: { low: bad, high: bad } }),
+      edit(o.id, { oneOff: { low: o.oneOff!.high, high: { devDays: 0, testDays: 0 } } }),
+      edit(o.id, { effortSource: 'proposal-unconfirmed' }),
+      edit(o.id, { perRelease: null }),
+      edit(o.id, { perRelease: bad }),
+      edit(o.id, { maintenanceBaselinePerYear: o.maintenanceBaselinePerYear ? null : { devDays: 1, testDays: 0 } }),
+      edit(o.id, { maintenanceBaselinePerYear: bad }),
+      edit(o.id, { upgradeDelay: null }),
+      edit(o.id, { upgradeDelay: { state: 'stated', value: { releasesDeferred: -1 } } }),
+    );
+  }
+  for (const v of variants) {
+    const comparison = costComparison(v);
+    for (const option of v.options) {
+      const cost = comparison.costs.find((c) => c.optionId === option.id);
+      const name = `"${option.label || option.id}"`;
+      const own = (cost?.coverage.gaps ?? []).filter((g) => g.severity === 'rejects' && (g.subject ?? '').includes(name));
+      const open = optionGroups(cost, option).filter((g) => g.open);
+      const where = `${option.id}: ${own.map((g) => g.code).join(', ') || 'no gap'}`;
+      if (own.length > 0) expect(open.length, `${where} — the card shows no open group`).toBeGreaterThan(0);
+      else expect(open.map((g) => g.key), `${where} — the card opens a group nothing refuses`).toEqual([]);
+    }
   }
 });
 

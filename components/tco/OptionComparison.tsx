@@ -218,7 +218,7 @@ interface OptionGroup {
   open: boolean;
 }
 
-function optionGroups(cost: CostComparison['costs'][number] | undefined, option: CostOption): OptionGroup[] {
+export function optionGroups(cost: CostComparison['costs'][number] | undefined, option: CostOption): OptionGroup[] {
   const name = `"${option.label || option.id}"`;
   const gaps = (cost?.coverage.gaps ?? []).filter((g) => (g.subject ?? '').includes(name));
   const has = (code: string, subjectStart?: string) =>
