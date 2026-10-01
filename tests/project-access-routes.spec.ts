@@ -142,13 +142,16 @@ test('the revocation closes the rule and the route in the same instant', async (
 
   // …and the rules, with the same token that worked a moment ago.
   await signInWithEmailAndPassword(auth, READER, PASSWORD);
-  let denied = false;
+  // Only a permission refusal counts: an emulator that is down or a token that
+  // does not verify throws too, and used to pass as "denied" (carried QA
+  // finding 4ee3c4e07d3e).
+  let refusal: string | null = null;
   try {
     await getDoc(doc(db, 'projects', PROJECT));
-  } catch {
-    denied = true;
+  } catch (err) {
+    refusal = (err as { code?: string }).code ?? String(err);
   }
-  expect(denied, 'after the revocation the read fails at the rules, not just on screen').toBe(true);
+  expect(refusal, 'after the revocation the read fails at the rules, not just on screen').toBe('permission-denied');
 
   // The overview agrees, and the owner still has their project.
   const list = await request.get(url('/readers'), as('owner'));
