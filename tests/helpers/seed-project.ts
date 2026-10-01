@@ -75,14 +75,19 @@ const RICH_WORKLIST = [
   { id: 'w3', title: 'Credit scoring rule — architect decision', status: 'open', severity: 'Medium' },
 ];
 
-const RICH_LEGACY = `REPORT zcredit_check.
+// The remote call is what makes this a side-by-side project: the engine routes
+// the source, not the stored `extensibilityRoute`, and without a construct that
+// drives the code off the stack it recommends in-app RAP. The fixture used to
+// store "Side-by-Side" over code the engine routes in-app, and the Design stage
+// then showed both answers at once.
+export const RICH_LEGACY = `REPORT zcredit_check.
 DATA: ls_order TYPE vbak,
       lt_items TYPE STANDARD TABLE OF vbap.
 
 SELECT SINGLE * FROM vbak INTO ls_order WHERE vbeln = p_vbeln.
 SELECT * FROM vbap INTO TABLE lt_items WHERE vbeln = p_vbeln.
 
-CALL FUNCTION 'CREDIT_LIMIT_CHECK'
+CALL FUNCTION 'CREDIT_LIMIT_CHECK' DESTINATION 'CRM_CREDIT'
   EXPORTING kunnr = ls_order-kunnr.
 
 WRITE: / 'Credit check complete.'.

@@ -20,6 +20,7 @@ import { saveAs } from '@/lib/fileSaver';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import ArchitectSignOff, { architectureOptionLabel } from '@/components/ArchitectSignOff';
 import { recommendedArchitecture } from '@/lib/project-commands';
+import { storedRouteOf } from '@/lib/design-recommendation';
 import { runProjectCommand } from '@/lib/project-command-client';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
 import { withPreviewPolicy } from '@/lib/export-preview';
@@ -792,12 +793,12 @@ ${responseText.substring(0, 4000)}`;
       originalRecommendation: project?.originalRecommendation,
       extensibilityRoute: project?.extensibilityRoute,
     }) || 'rap';
-  const recommendedLabel = architectureOptionLabel(
-    recommendedArchitecture({
-      originalRecommendation: project?.originalRecommendation,
-      extensibilityRoute: project?.extensibilityRoute,
-    }),
-  );
+  // What the project stores — the run's recommendation or the route switch. The
+  // card's answer is the contract's; this is named only where it differs
+  // (`lib/design-recommendation.ts`). The sign-off below still receives the
+  // stored value: it is the one `approve-architecture` checks a departure
+  // against on the server.
+  const storedRoute = storedRouteOf(project, recommendedArchitecture);
   const canSignOff = Boolean(design) && designIsStructured(design);
 
   // The sign-off, unchanged: the same panel, the same commands, the same
@@ -930,7 +931,7 @@ ${responseText.substring(0, 4000)}`;
           targetLine={targetLine}
           targetKpi={targetKpi}
           confidence={typeof project?.recommendationConfidence === 'number' ? project.recommendationConfidence : null}
-          recommendedLabel={recommendedLabel}
+          storedRoute={storedRoute}
           confirmed={
             signOffCurrent
               ? {
