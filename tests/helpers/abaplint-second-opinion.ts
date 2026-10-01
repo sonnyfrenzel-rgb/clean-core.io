@@ -195,7 +195,7 @@ function lintBranches(structure: LintStructure): Map<string, string> {
     for (const node of nodes) {
       const start = node.getFirstToken().getStart().getRow();
       const end = node.getLastToken().getStart().getRow();
-      out.set(`${kind}@L${start}`, `${kind} L${start}-${end} arms:${armRows(node).join(',')}`);
+      setOnce(out, `${kind}@L${start}`, `${kind} L${start}-${end} arms:${armRows(node).join(',')}`);
     }
   };
 
@@ -205,12 +205,25 @@ function lintBranches(structure: LintStructure): Map<string, string> {
   return out;
 }
 
+/**
+ * Keys are per source line, so a second construct on the same line gets an
+ * occurrence suffix (`PERFORM@L1`, `PERFORM@L1#2`) instead of overwriting the
+ * first. Both sides add in source order, so the n-th occurrence meets the n-th
+ * (carried QA findings 7d5c59d90ae0 / 67393e16c02f).
+ */
+function setOnce(out: Map<string, string>, key: string, value: string): void {
+  let at = key;
+  for (let n = 2; out.has(at); n++) at = `${key}#${n}`;
+  out.set(at, value);
+}
+
 function ourBranches(source: string): Map<string, string> {
   const out = new Map<string, string>();
   const report = readControlFlow(source);
   for (const branch of report.branches) {
     const arms = branch.arms.map((arm) => arm.header.lineStart).sort((a, b) => a - b);
-    out.set(
+    setOnce(
+      out,
       `${branch.kind}@L${branch.lineStart}`,
       `${branch.kind} L${branch.lineStart}-${branch.lineEnd} arms:${arms.join(',')}`,
     );
@@ -228,14 +241,14 @@ function ourBranches(source: string): Map<string, string> {
 function lintSubroutines(file: abaplint.ABAPFile): Map<string, string> {
   const out = new Map<string, string>();
   for (const form of file.getInfo().listFormDefinitions()) {
-    out.set(`FORM@L${form.identifier.getStart().getRow()}`, `FORM ${form.name.toUpperCase()}`);
+    setOnce(out, `FORM@L${form.identifier.getStart().getRow()}`, `FORM ${form.name.toUpperCase()}`);
   }
   for (const node of file.getStatements()) {
     if (nodeType(node) !== 'Perform') continue;
     const name = node.findFirstExpression(abaplint.Expressions.FormName);
     const dynamic = node.findFirstExpression(abaplint.Expressions.Dynamic);
     const target = name ? name.concatTokens().toUpperCase() : dynamic ? '(dynamic)' : '(unreadable)';
-    out.set(`PERFORM@L${node.getStart().getRow()}`, `PERFORM ${target}`);
+    setOnce(out, `PERFORM@L${node.getStart().getRow()}`, `PERFORM ${target}`);
   }
   return out;
 }
@@ -243,9 +256,9 @@ function lintSubroutines(file: abaplint.ABAPFile): Map<string, string> {
 function ourSubroutines(source: string): Map<string, string> {
   const out = new Map<string, string>();
   const graph = readCallGraph(source);
-  for (const form of graph.forms) out.set(`FORM@L${form.lineStart}`, `FORM ${form.name}`);
+  for (const form of graph.forms) setOnce(out, `FORM@L${form.lineStart}`, `FORM ${form.name}`);
   for (const call of graph.performs) {
-    out.set(`PERFORM@L${call.lineStart}`, `PERFORM ${call.dynamic && !call.target ? '(dynamic)' : call.target ?? '(unreadable)'}`);
+    setOnce(out, `PERFORM@L${call.lineStart}`, `PERFORM ${call.dynamic && !call.target ? '(dynamic)' : call.target ?? '(unreadable)'}`);
   }
   return out;
 }

@@ -298,6 +298,20 @@ test.describe('the four defects abaplint found in the statement reader', () => {
       'ENDIF.',
     ]);
   });
+
+  test('two calls on one line are two calls on both sides (carried QA findings 7d5c59d90ae0 / 67393e16c02f)', () => {
+    const source = agreesCompletely('two-performs-one-line', [
+      'REPORT z.',
+      'START-OF-SELECTION.',
+      '  PERFORM first. PERFORM second.',
+      'FORM first.',
+      'ENDFORM.',
+      'FORM second.',
+      'ENDFORM.',
+    ]);
+    const counts = agreementCounts('two-performs-one-line', source);
+    expect([counts.performsOurs, counts.performsAbaplint]).toEqual([2, 2]);
+  });
 });
 
 /**
