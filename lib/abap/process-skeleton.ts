@@ -1025,6 +1025,12 @@ class SkeletonBuilder {
   private deregisteredHandlers = new Set<string>();
   /** Bound handlers whose `SET HANDLER` the walk has passed, so a later `RAISE EVENT` may run them. */
   private registeredInWalk = new Set<string>();
+  /**
+   * Boundary events of a TRY that nothing enters: no node to attach to, and the
+   * flow before the TRY already cut off (`LEAVE PROGRAM`, `SUBMIT` …) in a
+   * region that has steps before it. Carried QA findings ba3b2a7987ef / 1b831a4853c2.
+   */
+  private cutOffBoundaries = new Set<string>();
   /** > 0 while a branch whose arms the reader cannot separate is walked — no registration counts there. */
   private registrationFrozen = 0;
   /** The event blocks of the report (one program run), for `registeredBefore`. */
@@ -3104,6 +3110,13 @@ class SkeletonBuilder {
     // protected part broke off somewhere, so it — and each handler after it —
     // starts from what was registered before the TRY.
     const registered = new Set(this.registeredInWalk);
+    // Nothing enters the TRY although its region already drew steps: what stood
+    // before it does not come back. At the start of a region an empty `incoming`
+    // only means the walk began here, and the region's entry reaches it. A
+    // routine's end event is added before its body is walked and is no step.
+    const cutOff = incoming.length === 0
+      && this.nodes.slice(0, beforeProtected)
+        .some((n) => n.region === ctx.region.key && n.id !== ctx.region.endNodeId);
     const exits = this.walkRange(block.openIndex + 1, protectedTo, ctx, incoming);
     const attachedTo = this.nodes.slice(beforeProtected).find((n) => n.region === ctx.region.key) ?? null;
 
@@ -3126,6 +3139,7 @@ class SkeletonBuilder {
         for (const entry of incoming) {
           this.edges.push({ from: entry.from, to: boundary.id, kind: 'boundary', condition: '' });
         }
+        if (cutOff) this.cutOffBoundaries.add(boundary.id);
       }
       const to = (handlers[h + 1] ?? block.closeIndex) - 1;
       this.registeredInWalk = new Set(registered);
@@ -3964,7 +3978,9 @@ class SkeletonBuilder {
     const entryNodes = new Set(this.regions.map((r) => r.entryNodeId));
     for (const node of this.nodes) {
       if (reached.has(node.id) || entryNodes.has(node.id) || node.kind === 'start') continue;
-      if (node.kind === 'error-boundary') continue;
+      // A boundary is skipped unless its TRY was entered by nothing after an
+      // abort (carried QA findings ba3b2a7987ef / 1b831a4853c2).
+      if (node.kind === 'error-boundary' && !this.cutOffBoundaries.has(node.id)) continue;
       const statement = node.anchor ? this.statements[node.anchor.statementIndex] : undefined;
       this.notes.push({
         reason: 'unreachable-after-abort',

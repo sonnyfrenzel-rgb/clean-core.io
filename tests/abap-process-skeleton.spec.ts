@@ -955,6 +955,42 @@ test.describe('the steps the walker used to miss (b88c77b4b5d1, CR-07)', () => {
     expect(skeleton.edges.some((e) => e.to === boundary!.id), 'and something leads to it').toBe(true);
     expect(skeleton.notes.map((n) => n.reason)).not.toContain('unreachable-after-abort');
   });
+
+  test('a handler of a step-free TRY after LEAVE PROGRAM is unreachable, and says so (carried QA findings ba3b2a7987ef / 1b831a4853c2)', () => {
+    const code = [
+      'REPORT zdead.',
+      'START-OF-SELECTION.',
+      '  LEAVE PROGRAM.',
+      '  TRY.',
+      '      lv_x = 1.',
+      '    CATCH cx_root.',
+      "      UPDATE zlog SET done = 'X'.",
+      '  ENDTRY.',
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(code);
+    const stranded = skeleton.notes.filter((n) => n.reason === 'unreachable-after-abort');
+    expect(stranded.map((n) => n.lineStart)).toContain(6);
+  });
+
+  test('every handler of a step-free TRY at the start of a routine stays reachable', () => {
+    const code = [
+      'REPORT zform.',
+      'START-OF-SELECTION.',
+      '  PERFORM run.',
+      'FORM run.',
+      '  TRY.',
+      '      lv_x = 1.',
+      '    CATCH cx_sy_arithmetic_error.',
+      "      UPDATE zlog SET kind = 'A'.",
+      '    CATCH cx_root.',
+      "      UPDATE zlog SET kind = 'B'.",
+      '  ENDTRY.',
+      'ENDFORM.',
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(code);
+    expect(skeleton.nodes.filter((n) => n.kind === 'error-boundary')).toHaveLength(2);
+    expect(skeleton.notes.map((n) => n.reason)).not.toContain('unreachable-after-abort');
+  });
 });
 
 /* ================================================================== *
