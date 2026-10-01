@@ -578,8 +578,7 @@
           {
             "field": "worklist",
             "locator": "[data-stage-output=\"worklist\"]",
-            "opensWith": "Gaps Backlog",
-            "why": "the backlog panel behind the Gaps Backlog tab; its counts come from findings and analysis gaps as well as this field, so only its presence is asserted"
+            "why": "the backlog panel, shown on the page since the answer-first Analyze (the Gaps Backlog tab is gone); its counts come from findings and analysis gaps as well as this field, so only its presence is asserted"
           }
         ],
         "onlyAfterARun": [
