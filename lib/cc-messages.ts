@@ -66,7 +66,7 @@ export const CC_MESSAGES = {
 
   // "My workspace" as a List Report — roadmap 1.8, DESIGN.md §2.2, mockup s7.
   'workspace.title': 'My workspace',
-  'workspace.lead': 'Every project is one case. The demo is the same for every account.',
+  'workspace.lead': 'Every project is one case — yours, and the ones shared with you for reading.',
   'workspace.projects': 'Projects',
   'workspace.noun': 'projects',
   'workspace.newProject': 'New project',

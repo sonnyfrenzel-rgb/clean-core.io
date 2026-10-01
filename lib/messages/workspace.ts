@@ -23,8 +23,9 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'ask.endsFlow': 'ends the flow here',
   'ask.oneRule': 'One rule stands on this decision:',
   // CoachMarks
-  'coach.gotIt': 'Got it',
-  'coach.skipTips': 'Skip tips',
+  'coach.next': 'Next',
+  'coach.done': 'Done',
+  'coach.dismissAll': 'Dismiss all',
   // LayerBar
   'layerBar.label': 'Layers',
   'layerBar.empty': 'empty',
@@ -157,7 +158,126 @@ export const WORKSPACE_PAGE_MESSAGES = {
   // WorkspaceListReport (the rest of its text is in lib/cc-messages.ts)
   'listReport.accessDenied': 'Access denied',
   'listReport.adminOnly': 'This page is restricted to Clean-Core.io system administrators.',
+  // My workspace — the 3.0 list (mockup s7), its sharing section and row menu
+  'myWorkspace.colLevels': 'Levels',
+  'myWorkspace.colRules': 'Rules confirmed',
+  'myWorkspace.filterLevel': 'Clean-core level',
+  'myWorkspace.anyLevel': 'Any level',
+  'myWorkspace.levelOption': 'Has findings at level',
+  'myWorkspace.filterAccess': 'Access',
+  'myWorkspace.accessAll': 'Mine and shared',
+  'myWorkspace.accessOwn': 'Mine',
+  'myWorkspace.accessShared': 'Shared with me',
+  'myWorkspace.sortLastChange': 'Last change',
+  'myWorkspace.sortName': 'Name',
+  'myWorkspace.sortLabel': 'Sort by',
+  'myWorkspace.sharedTag': 'Read only',
+  'myWorkspace.sharedLine': 'shared with you to read',
+  'myWorkspace.reading': 'reading…',
+  'myWorkspace.levelsNone': 'no levels',
+  'myWorkspace.rulesNotCounted': 'not counted',
+  'myWorkspace.openProject': 'Open',
+  'myWorkspace.moreActions': 'More actions for',
+  'myWorkspace.invite': 'Invite to read…',
+  'myWorkspace.duplicate': 'Duplicate',
+  'myWorkspace.exportJson': 'Export as JSON',
+  'myWorkspace.deliverables': 'Deliverables',
+  'myWorkspace.delete': 'Delete…',
+  'myWorkspace.deleteTitle': 'Delete project',
+  'myWorkspace.deleteFailed': 'The project could not be deleted.',
+  'myWorkspace.duplicateFailed': 'The project could not be duplicated.',
+  'myWorkspace.yourTurnIntro': 'What is waiting for you, taken from each project — no model call.',
+  'myWorkspace.yourTurnNothing':
+    'Nothing is waiting for you: every project of yours is either finished as far as this product goes, or has nothing staged yet.',
+  'myWorkspace.exampleHeadline': 'Example project — fictitious code.',
+  'myWorkspace.exampleBody':
+    'The findings and any signature are real engine output on a program written for demonstration.',
+  'myWorkspace.sharingTitle': 'Sharing',
+  'myWorkspace.sharingLead':
+    'Read access by invitation only: one link, bound to one confirmed e-mail address, with an expiry. There are no public links.',
+  'myWorkspace.sharedWithYouTitle': 'Shared with you',
+  'myWorkspace.sharedWithYouEmpty': 'Nobody has shared a project with you yet.',
+  'myWorkspace.sharedWithYouNote':
+    'You can read these projects, source code included. Generating, confirming, signing and exporting stay with their owners.',
+  'myWorkspace.noOpenInvitations': 'No invitation of yours is waiting for an answer.',
+  // WorkspacePrintSheet — the workspace on paper (DESIGN.md §7.1, mockup s10)
+  'print.brand': 'Clean-Core.io',
+  'print.processTitle': 'Process',
+  'print.noSteps': 'No process could be read from this source.',
+  'print.stepListInstead':
+    'The map does not fit the page width at 11 px or more, so the step list prints instead — the same steps, in the order the flow runs.',
+  'print.noRules': 'No business rule stands in this code.',
+  'print.colRule': 'Rule',
+  'print.colDecision': 'Decision',
+  'print.colBasis': 'Basis',
+  'print.notConfirmed': 'Not confirmed yet',
+  'print.notDeterminedNoSource': 'Not determined — nothing was staged to assess',
+  'print.footer':
+    'Printed from the workspace. Line anchors and IDs are printed as text. Reconstructed means read from the code, not confirmed by anyone.',
+  // Open invitations — owner decision 01.10.2026
+  'invites.waitingTitle': 'Waiting for an answer',
+  'invites.expiresOn': 'Link expires on',
+  'invites.withdraw': 'Withdraw',
+  'invites.withdrawTitle': 'Withdraw this invitation?',
+  'invites.withdrawFailed': 'The invitation could not be withdrawn.',
 } as const;
+
+/** WorkspacePrintSheet — "P-0412 · run 7f3a… · revision 4 · printed 2026-10-01". */
+export function printHeaderLine(input: {
+  projectId: string;
+  runId: string | null;
+  revision: number | null;
+  date: string;
+}): string {
+  const run = input.runId ? `run ${input.runId}` : 'no signed run';
+  const revision = input.revision && input.revision > 0 ? `need revision ${input.revision}` : 'no confirmed need yet';
+  return `${input.projectId} · ${run} · ${revision} · printed ${input.date}`;
+}
+
+/** WorkspacePrintSheet — "Business rules · 7". */
+export function printRulesTitle(n: number): string {
+  return `Business rules · ${n}`;
+}
+
+/** WorkspacePrintSheet — "3 not determined". */
+export function printNotDeterminedTitle(n: number): string {
+  return n === 0 ? 'Not determined — nothing was stepped over' : `${n} not determined`;
+}
+
+/** CoachMarks — "1 of 3". */
+export function coachPositionLabel(position: number, total: number): string {
+  return `${position} of ${total}`;
+}
+
+/** OpenInvitations — what a withdrawal does, said before it is done. */
+export function withdrawSentence(email: string): string {
+  return `The link sent to ${email} stops working at once. If they have not opened it yet, they never will; you can invite them again later.`;
+}
+
+/** My workspace — "Showing 5 of 24" under the table. */
+export function showingRowsLabel(shown: number, total: number): string {
+  return `Showing ${shown} of ${total}`;
+}
+
+/** My workspace — "4 of 7" rules confirmed. */
+export function rulesConfirmedLabel(confirmed: number, total: number): string {
+  return `${confirmed} of ${total}`;
+}
+
+/** My workspace — the spoken name of a level count chip. */
+export function levelCountLabel(level: string, count: number): string {
+  return `${count} ${count === 1 ? 'finding' : 'findings'} at level ${level}`;
+}
+
+/** My workspace — the "Your turn" title with how many projects wait. */
+export function yourTurnCountLabel(n: number): string {
+  return n === 1 ? '1 project is waiting for you' : `${n} projects are waiting for you`;
+}
+
+/** My workspace — "Delete project" Message Box text. */
+export function deleteProjectSentence(name: string): string {
+  return `“${name}” and everything generated for it will be deleted, including its signed runs and every invitation to read it. This cannot be undone.`;
+}
 
 /** AccessList — uids on the read list with no accepted invitation behind them. */
 export function accessUnaccountedLabel(n: number): string {

@@ -48,6 +48,8 @@ const SIGN_IN = `spec-${process.pid}-${Math.random().toString(36).slice(2)}-Aa1!
 const STAGED_ID = `ws-staged-${STAMP}`;
 const STALE_ID = `ws-stale-${STAMP}`;
 const RUN_ID = `ws-run-${STAMP}`;
+const SHARED_ID = `ws-shared-${STAMP}`;
+const INVITE_ID = `wsInvite${STAMP}`;
 
 /** Real ABAP, so the engine has something to find if a run is ever started on it. */
 const PROGRAM = [
@@ -84,7 +86,9 @@ async function signIn(page: Page, email: string) {
 async function openWorkspace(page: Page) {
   await page.setViewportSize({ width: 1440, height: 1400 });
   await signIn(page, ADMIN_EMAIL);
-  await page.goto('/admin/workspace', { waitUntil: 'domcontentloaded' });
+  // Since 01.10.2026 there is one "My workspace", at /dashboard: the 3.0 list
+  // for an account with the switch on, the old page for every other account.
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-cc-workspace]', { timeout: 60000 });
   await page.waitForSelector('[data-cc-object-identifier-title]', { timeout: 60000 });
   // Measured styles, not animations. Disabling transitions before anything is
@@ -110,7 +114,7 @@ test.beforeAll(async () => {
     activatedAt: new Date(), transformationsUsed: 1, transformationsLimit: 5,
     termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
   };
-  await adminSetDoc('users', adminUid, { ...profile, email: ADMIN_EMAIL, isAdmin: true });
+  await adminSetDoc('users', adminUid, { ...profile, email: ADMIN_EMAIL, isAdmin: true, workspaceShell: true });
   await adminSetDoc('users', communityUid, { ...profile, email: COMMUNITY_EMAIL, isAdmin: false });
 });
 
@@ -124,27 +128,28 @@ test('the server under test is the one that was changed', async ({ page }) => {
   await expect(page.locator('[data-cc-table]')).toHaveCount(1);
 });
 
-test('a community account cannot reach it, and its dashboard is unchanged', async ({ page }) => {
+test('a community account keeps its dashboard, and the old address of the list leads there', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await signIn(page, COMMUNITY_EMAIL);
 
+  // /admin/workspace was where the 3.0 list grew; it now redirects to the one
+  // "My workspace" — which for an account without the switch is the old page.
   await page.goto('/admin/workspace', { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(3000);
-  expect(
-    await page.locator('[data-cc-workspace]').count(),
-    'the list report renders for a community account',
-  ).toBe(0);
-  await expect(page.locator('text=Access denied')).toBeVisible();
-
-  // The other half of the phase-1 exit criterion: with the switch off, nothing
-  // about the product a community account uses has moved.
-  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.waitForURL(/\/dashboard$/, { timeout: 60000 });
   await page.waitForSelector('[data-testid="demo-entry"]', { timeout: 60000 });
   expect(
     await page.locator('[data-cc-workspace]').count(),
-    'the new workspace leaked into /dashboard',
+    'the new workspace leaked into /dashboard for a community account',
   ).toBe(0);
   await expect(page.locator('[data-testid="demo-entry-title"]')).toBeVisible();
+});
+
+test('the switch decides which "My workspace" /dashboard shows — and there is only one at a time', async ({ page }) => {
+  test.setTimeout(180 * 1000);
+  await openWorkspace(page);
+  await expect(page.locator('[data-cc-workspace]')).toHaveCount(1);
+  expect(await page.locator('[data-dashboard]').count(), 'both workspaces rendered').toBe(0);
+  await expect(page.locator('h1')).toHaveText(CC_MESSAGES['workspace.title']);
 });
 
 test.describe('before the first project', () => {
@@ -223,6 +228,64 @@ test.describe('with projects', () => {
         },
       },
     });
+  });
+
+  test('a project shared with the account is listed as read only, offers no owner action, and the access filter finds it', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await adminSetDoc('projects', SHARED_ID, {
+      name: 'Shared credit limit check', userId: communityUid, createdAt: new Date(), status: 'uploaded',
+      legacyCode: PROGRAM, readers: [adminUid],
+    });
+    await openWorkspace(page);
+
+    const row = page.locator(`[data-cc-table-row="${SHARED_ID}"]`);
+    await expect(row).toBeVisible({ timeout: 60000 });
+    await expect(row.locator('[data-workspace-access="shared"]')).toBeVisible();
+    await expect(row).toContainText('Read only');
+    // Read access only: no run, no menu of owner actions — just open.
+    expect(await row.locator(`[data-workspace-run="${SHARED_ID}"]`).count()).toBe(0);
+    expect(await row.locator(`[data-workspace-more="${SHARED_ID}"]`).count()).toBe(0);
+    await expect(row.locator(`[data-workspace-open-button="${SHARED_ID}"]`)).toBeVisible();
+
+    // The sharing section names it too.
+    await expect(page.locator(`[data-workspace-shared-row="${SHARED_ID}"]`)).toBeVisible();
+
+    // Access: "Shared with me" keeps it and drops the own rows and the demo.
+    await page.getByLabel('Access').selectOption('shared');
+    const titles = await rowTitles(page);
+    expect(titles).toEqual(['Shared credit limit check']);
+  });
+
+  test('the row menu keeps every owner action and opens the invite dialog with what is still waiting', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    const now = Date.now();
+    await adminSetDoc(`projects/${STAGED_ID}/invitations`, INVITE_ID, {
+      id: INVITE_ID, projectId: STAGED_ID, email: 'waiting.reader@example.com',
+      invitedBy: { uid: adminUid, name: 'List Report' }, invitedAt: new Date(now).toISOString(),
+      expiresAt: new Date(now + 7 * 864e5).toISOString(), status: 'pending',
+      acceptedBy: null, acceptedAt: null, revokedAt: null,
+    });
+    await openWorkspace(page);
+
+    await page.click(`[data-workspace-more="${STAGED_ID}"]`);
+    const panel = page.locator(`[data-workspace-more-panel="${STAGED_ID}"]`);
+    await expect(panel).toBeVisible();
+    for (const label of ['Invite to read…', 'Duplicate', 'Export as JSON', 'Deliverables', 'Delete…']) {
+      await expect(panel.getByText(label, { exact: true })).toBeVisible();
+    }
+    await panel.locator('[data-invite-open]').click();
+
+    const dialog = page.locator('[data-invite-dialog]');
+    await expect(dialog).toBeVisible();
+    const waiting = dialog.locator(`[data-open-invitation="${INVITE_ID}"]`);
+    await expect(waiting).toBeVisible({ timeout: 60000 });
+    await expect(waiting).toContainText('waiting.reader@example.com');
+    await expect(waiting.locator('[data-open-invitation-expires]')).toContainText('Link expires on');
+
+    // Withdraw asks first, then the link is dead and the entry leaves the list.
+    await waiting.locator(`[data-open-invitation-withdraw="${INVITE_ID}"]`).click();
+    await page.locator('[data-cc-message-box]').getByRole('button', { name: 'Withdraw' }).click();
+    await expect(dialog.locator(`[data-open-invitation="${INVITE_ID}"]`)).toHaveCount(0, { timeout: 60000 });
   });
 
   test('every column of a project that has done nothing says so', async ({ page }) => {
