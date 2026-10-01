@@ -817,7 +817,9 @@ ${responseText.substring(0, 4000)}`;
           <div className="flex min-w-0 items-center gap-3">
             <LayoutTemplate size={20} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
             <div className="min-w-0">
-              <h2 className="m-0 truncate cc-text-h2 text-cc-ink">Design document</h2>
+              <h2 className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
+                Design document {design ? <CcProvenanceChip value="proposed" /> : null}
+              </h2>
               <p className="m-0 truncate cc-text-cell text-cc-ink-muted">Project: {project?.name || 'Loading...'}</p>
             </div>
           </div>
