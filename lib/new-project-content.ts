@@ -121,9 +121,16 @@ export function cleanCoreLadder(): CleanCoreLevelEntry[] {
   return CLEAN_CORE_LEVEL_VALUES.map((value) => cleanCoreLevel(value));
 }
 
-/** The sentence under the ladder — §6.1.1, verbatim. */
+/**
+ * The sentence under the ladder — §6.1.1. It names both sources a level can
+ * have: an SAP object's level is read from SAP's data, but the customer's own
+ * objects are not in that data and are graded from the code (`own-object`,
+ * `heuristic` in `lib/abap/abcd-classification.ts`), labelled as such where
+ * they appear. Calling every level "our reading of SAP's published data" told
+ * the reader a code-derived grade came from SAP (QA finding e93bd3965211).
+ */
 export const CLEAN_CORE_LEVEL_CAVEAT =
-  "Levels follow SAP's clean core level concept. The level shown for an object is our reading of SAP's published data — an orientation, never part of a signed audit pack. Confirm with ABAP Test Cockpit.";
+  "Levels follow SAP's clean core level concept. The level shown for an SAP object is our reading of SAP's published data; your own objects, which SAP has not classified, are graded from your code and labelled as such. Either way it is an orientation, never part of a signed audit pack. Confirm with ABAP Test Cockpit.";
 
 /* --------------------------- glance 3: where the evidence comes from */
 
