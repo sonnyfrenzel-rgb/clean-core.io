@@ -126,12 +126,12 @@ test.describe('the eight programs this product ships', () => {
         const token = candidate.viaConstant
           ? candidate.viaConstant.name
           : candidate.literal.split(/,\s*| AND /)[0];
+        // Carried QA findings 95fde6e9443a / ace5761758c9: the token has to
+        // START at the offset — "occurs somewhere after it" accepted offset 0.
         expect(
-          candidate.conditionText.slice(candidate.valueOffset),
-          `${where}: offset ${candidate.valueOffset} does not point at ${token}`,
-        ).toContain(token);
-        expect(candidate.conditionText.indexOf(token), `${where}: token not in the text`)
-          .toBeGreaterThanOrEqual(0);
+          candidate.conditionText.startsWith(token, candidate.valueOffset),
+          `${where}: offset ${candidate.valueOffset} does not point at ${token} in ${candidate.conditionText}`,
+        ).toBe(true);
       }
     }
   });
