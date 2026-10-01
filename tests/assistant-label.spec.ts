@@ -135,6 +135,41 @@ async function openFrom(page: Page, trigger: ReturnType<Page['locator']>): Promi
   }).toPass({ timeout: 60000 });
 }
 
+/**
+ * Opens the assistant the way the shell bar offers it since 01.10.2026: one
+ * help button, whose menu leads with the assistant (Sonny: two "?" buttons
+ * side by side read as irrational). The menu is opened again inside the loop
+ * when it is not showing, for the same hydration reason `openFrom` clicks in
+ * one.
+ */
+async function openFromShell(page: Page): Promise<void> {
+  const button = page.locator('[data-help-menu-trigger]');
+  const item = page.locator('[data-assistant-trigger="header"]');
+  await expect(button).toBeVisible({ timeout: 90000 });
+  const panel = page.locator('[data-chatbot-scope]');
+  await expect(async () => {
+    const alreadyOpen = await panel.isVisible().catch(() => false);
+    if (!alreadyOpen) {
+      const menuShowing = await item.isVisible().catch(() => false);
+      if (!menuShowing) await button.click({ timeout: 15000 });
+      await item.click({ timeout: 5000 });
+    }
+    await expect(panel, 'the assistant panel never opened').toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 60000 });
+}
+
+/** The help menu of the shell bar, open, and its assistant item. */
+async function assistantItem(page: Page): Promise<ReturnType<Page['locator']>> {
+  const button = page.locator('[data-help-menu-trigger]');
+  const item = page.locator('[data-assistant-trigger="header"]');
+  await expect(async () => {
+    const menuShowing = await item.isVisible().catch(() => false);
+    if (!menuShowing) await button.click({ timeout: 15000 });
+    await expect(item).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 60000 });
+  return item;
+}
+
 async function signIn(page: Page, email: string): Promise<void> {
   await signInViaLanding(page, email, PASSWORD);
 }
@@ -170,12 +205,19 @@ test.describe('what the header button promises, and what opens', () => {
     // so the header is real and the path is provably not a project path.
     await page.goto('/knowledge', { waitUntil: 'domcontentloaded' });
 
-    const trigger = page.locator('[data-assistant-trigger="header"]');
+    // One help button in the shell bar; outside a project it says "Help".
+    const trigger = page.locator('[data-help-menu-trigger]');
     await expect(trigger).toBeVisible({ timeout: 90000 });
-    await expect(trigger, 'the shell still advertises "Ask AI"').toContainText('Ask the assistant');
+    await expect(trigger).toHaveText('Help');
     await expect(trigger, 'a case is promised where there is no case').not.toContainText('Ask this case');
 
-    await openFrom(page, trigger);
+    // Its first item is the assistant, under the name of what will open.
+    const item = await assistantItem(page);
+    await expect(page.locator('[data-help-menu-panel] [role="menuitem"]').first()).toHaveAttribute('data-assistant-trigger', 'header');
+    await expect(item, 'the shell still advertises "Ask AI"').toContainText('Ask the assistant');
+    await expect(item, 'a case is promised where there is no case').not.toContainText('Ask this case');
+
+    await openFromShell(page);
 
     // What actually opened: the general assistant, not the case one.
     await expect(page.locator('[data-chatbot-title]')).toHaveText('SAP Modernization Assistant');
@@ -209,11 +251,15 @@ test.describe('and inside a project', () => {
     await signIn(page, OWNER);
     await page.goto(`/project/${LIVE_PROJECT}/analyze`, { waitUntil: 'domcontentloaded' });
 
-    const trigger = page.locator('[data-assistant-trigger="header"]');
+    const trigger = page.locator('[data-help-menu-trigger]');
     await expect(trigger).toBeVisible({ timeout: 90000 });
-    await expect(trigger, 'the header does not follow the boundary into a project').toContainText('Ask this case');
+    await expect(trigger, 'the header does not follow the boundary into a project').toHaveText('Ask this case');
 
-    await openFrom(page, trigger);
+    const item = await assistantItem(page);
+    await expect(page.locator('[data-help-menu-panel] [role="menuitem"]').first()).toHaveAttribute('data-assistant-trigger', 'header');
+    await expect(item, 'the menu does not follow the boundary into a project').toContainText('Ask this case');
+
+    await openFromShell(page);
 
     // The panel names the same thing the button did, and states the boundary
     // that makes the name true.
@@ -251,8 +297,10 @@ test.describe('Escape hands the focus back to what opened the panel', () => {
     await signIn(page, OWNER);
     await page.goto('/knowledge', { waitUntil: 'domcontentloaded' });
 
-    const trigger = page.locator('[data-assistant-trigger="header"]');
-    await openFrom(page, trigger);
+    // Opened from the help menu, the panel hands the focus back to the help
+    // button: the menu item that opened it is gone with the menu.
+    const trigger = page.locator('[data-help-menu-trigger]');
+    await openFromShell(page);
 
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-chatbot-scope]')).toBeHidden();
@@ -272,7 +320,9 @@ test.describe('one entry per width (D.8, Sonny 30.09.2026)', () => {
    */
   const DEFAULT_OWNER = `${unique('assistant-entry')}@cleancore-test.io`;
   const OPTED_IN = `${unique('assistant-entry-on')}@cleancore-test.io`;
-  const ENTRIES = '[data-assistant-trigger="header"], [data-chatbot-toggle]';
+  // The shell bar's entry is the help button whose menu leads with the
+  // assistant (01.10.2026); the menu item itself is only there while it is open.
+  const ENTRIES = '[data-help-menu-trigger], [data-chatbot-toggle]';
 
   const seed = async (email: string, extra: Record<string, unknown>) => {
     const cred = await createUserWithEmailAndPassword(clientAuth, email, PASSWORD);
@@ -305,7 +355,7 @@ test.describe('one entry per width (D.8, Sonny 30.09.2026)', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await signIn(page, DEFAULT_OWNER);
     await page.goto('/knowledge', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-assistant-trigger="header"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-help-menu-trigger]')).toBeVisible({ timeout: 90000 });
     // Wait for the profile to land, so "hidden" is not just "not loaded yet".
     await expect(page.locator('[data-account-menu]')).not.toHaveText('', { timeout: 60000 });
     await expect.poll(() => visibleEntries(page), { timeout: 30000 }).toEqual(['header']);

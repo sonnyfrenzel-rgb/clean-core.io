@@ -31,6 +31,21 @@ test.describe('keyboard shortcuts list only keys that work (§5.9 item 12)', () 
     expect(read('app/(app)/layout.tsx')).toContain('<ShellHelpMenu');
   });
 
+  test('one help entry in the shell bar, and the assistant leads its menu (Sonny, 01.10.2026)', () => {
+    const layout = code('app/(app)/layout.tsx');
+    // No second "?" button for the assistant beside the help menu.
+    expect(layout, 'the shell bar has its own assistant button again').not.toContain('data-assistant-trigger="header"');
+    expect(layout).toContain('<ShellHelpMenu assistantLabel={assistantLabel} inProject={inProject} />');
+    // The trigger names itself with visible words, not an aria-label that says something else.
+    const trigger = menu.slice(menu.indexOf('data-help-menu-trigger=""'), menu.indexOf('</button>', menu.indexOf('data-help-menu-trigger=""')));
+    expect(trigger).toContain("{inProject ? 'Ask this case' : 'Help'}");
+    expect(trigger).not.toContain('aria-label=');
+    // The first item of the menu is the assistant.
+    const panel = menu.slice(menu.indexOf('{...menuProps}'));
+    const first = panel.match(/<(button|Link)\b[^>]*>/)?.[0] ?? '';
+    expect(first, 'the assistant is not the first item of the help menu').toContain('data-assistant-trigger="header"');
+  });
+
   test('every key it lists has a handler in the code it names', () => {
     // Ctrl/⌘ K — the workspace search and the process-map search.
     expect(menu).toContain("keys: ['Ctrl', 'K']");

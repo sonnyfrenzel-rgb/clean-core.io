@@ -527,8 +527,9 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
    * One entry, not two — block D, step D.8 (`DESIGN.md` §2.1: the shell bar
    * carries help; §1.5: four button styles, none of them a green bubble).
    *
-   * The shell bar has the named trigger ("Ask this case" / "Ask the assistant")
-   * from breakpoint `sm` up, and the help and account menus carry it too. Below
+   * The shell bar's help menu leads with the named trigger ("Ask this case" /
+   * "Ask the assistant") from breakpoint `sm` up, and the account menu carries
+   * it too. Below
    * `sm` the shell bar has no room for it, so there this floating button is the
    * one direct way in and it is always shown. From `sm` up it is off unless
    * the reader switched it on ("Floating assistant button" on /settings, saved

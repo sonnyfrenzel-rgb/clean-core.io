@@ -258,6 +258,10 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await page.keyboard.press('Enter');
     await expect(help).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('[data-help-menu-panel][role="menu"]')).toBeVisible();
+    // The assistant leads the menu (one help entry since 01.10.2026); the
+    // arrow key reaches the shortcuts next.
+    await expect(page.locator('[data-assistant-trigger="header"][role="menuitem"]')).toBeFocused();
+    await page.keyboard.press('ArrowDown');
     await expect(page.locator('[data-help-shortcuts-open][role="menuitem"]')).toBeFocused();
     await page.locator('[data-help-shortcuts-open]').click();
 
