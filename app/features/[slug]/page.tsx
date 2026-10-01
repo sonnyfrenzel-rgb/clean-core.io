@@ -2,7 +2,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Check, Info, Layers, Globe, Cpu, Activity, ShieldCheck, Workflow } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Info, Layers, Globe, Code2, Activity, ShieldCheck, Workflow } from 'lucide-react';
+import { publicButton } from '@/components/landing/public-button';
 import { FEATURE_SLUGS, getFeature } from '@/lib/features-content';
 import { jsonLdHtml } from '@/lib/json-ld';
 
@@ -11,7 +12,7 @@ export const revalidate = 300;
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   'extensibility-routing': Layers,
   'cloudification-catalog': Globe,
-  'rap-cap-engine': Cpu,
+  'rap-cap-engine': Code2,
   'modernization-assessment': Activity,
   'audit-evidence': ShieldCheck,
   'process-blueprints': Workflow,
@@ -46,42 +47,42 @@ export default async function FeaturePage({ params }: { params: Promise<{ slug: 
       {/* Back to the feature grid on the landing (same spot you came from) */}
       <Link
         href="/#features"
-        className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-green-600 transition-colors mb-8"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-cc-ink-muted underline-offset-4 hover:text-cc-ink hover:underline transition-colors mb-8"
       >
         <ArrowLeft size={16} /> Back to features
       </Link>
 
       {/* Hero */}
       <div className="mb-12">
-        <div className="w-16 h-16 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center mb-6">
-          <Icon className="w-8 h-8 text-green-600" />
+        <div className="w-16 h-16 rounded-2xl bg-cc-brand-surface border border-cc-line shadow-sm flex items-center justify-center mb-6">
+          <Icon className="w-8 h-8 text-cc-brand-strong" />
         </div>
-        <span className="text-[11px] font-black text-green-700 uppercase tracking-widest">{f.eyebrow}</span>
-        <h1 className="text-3xl md:text-4xl font-black text-gray-950 tracking-tight mt-2 mb-4 leading-tight">{f.title}</h1>
-        <p className="text-lg text-gray-600 font-light leading-relaxed">{f.summary}</p>
-        <span className="inline-flex items-center gap-2 mt-5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs font-bold">
+        <span className="inline-flex items-center rounded-full border border-cc-brand-strong/25 bg-cc-brand-surface px-3 py-1 text-xs font-bold uppercase tracking-[0.08em] text-cc-brand-strong">{f.eyebrow}</span>
+        <h1 className="text-3xl md:text-4xl font-extrabold text-cc-ink tracking-[-0.03em] mt-4 mb-4 leading-tight text-balance">{f.title}</h1>
+        <p className="text-lg text-cc-ink-muted font-medium leading-relaxed">{f.summary}</p>
+        <span className="inline-flex items-center gap-2 mt-5 px-3 py-1 rounded-full bg-cc-surface border border-cc-field-border text-cc-ink text-xs font-semibold">
           {f.stage}
         </span>
       </div>
 
       {/* What it is */}
       <section className="mb-10">
-        <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">What it is</h2>
+        <h2 className="cc-text-label text-cc-ink-muted mb-4">What it is</h2>
         <div className="space-y-4">
           {f.what.map((p, i) => (
-            <p key={i} className="text-gray-700 leading-relaxed">{p}</p>
+            <p key={i} className="text-cc-ink leading-relaxed">{p}</p>
           ))}
         </div>
       </section>
 
       {/* Capabilities */}
       <section className="mb-10">
-        <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">What’s possible</h2>
+        <h2 className="cc-text-label text-cc-ink-muted mb-4">What’s possible</h2>
         <ul className="space-y-3">
           {f.capabilities.map((c, i) => (
-            <li key={i} className="flex items-start gap-3 bg-white border border-gray-200/70 rounded-2xl px-5 py-4 shadow-sm">
-              <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-              <span className="text-gray-800 font-medium">{c}</span>
+            <li key={i} className="flex items-start gap-3 bg-cc-surface border border-cc-line rounded-2xl px-5 py-4 shadow-sm">
+              <Check className="w-5 h-5 text-cc-ink shrink-0 mt-0.5" aria-hidden="true" />
+              <span className="text-cc-ink font-medium">{c}</span>
             </li>
           ))}
         </ul>
@@ -89,12 +90,12 @@ export default async function FeaturePage({ params }: { params: Promise<{ slug: 
 
       {/* Honest limitations */}
       <section className="mb-12">
-        <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Honest scope &amp; limitations</h2>
+        <h2 className="cc-text-label text-cc-ink-muted mb-4">Honest scope &amp; limitations</h2>
         <ul className="space-y-3">
           {f.limitations.map((l, i) => (
-            <li key={i} className="flex items-start gap-3 bg-amber-50/60 border border-amber-200/70 rounded-2xl px-5 py-4">
-              <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-              <span className="text-amber-900 font-medium">{l}</span>
+            <li key={i} className="flex items-start gap-3 bg-cc-warning-bg border border-cc-warning-border rounded-2xl px-5 py-4">
+              <Info className="w-5 h-5 text-cc-warning shrink-0 mt-0.5" aria-hidden="true" />
+              <span className="text-cc-ink font-medium">{l}</span>
             </li>
           ))}
         </ul>
@@ -103,13 +104,13 @@ export default async function FeaturePage({ params }: { params: Promise<{ slug: 
       {/* Related */}
       {f.related.length > 0 && (
         <section className="mb-12">
-          <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Related</h2>
+          <h2 className="cc-text-label text-cc-ink-muted mb-4">Related</h2>
           <div className="flex flex-wrap gap-3">
             {f.related.map((r) => (
               <Link
                 key={r.href}
                 href={r.href}
-                className="inline-flex items-center gap-1.5 text-sm font-bold text-green-700 hover:text-green-800 bg-green-50 hover:bg-green-100 border border-green-100 rounded-full px-4 py-2 transition-colors"
+                className={publicButton('secondary', 'sm')}
               >
                 {r.label} <ArrowRight size={14} />
               </Link>
@@ -119,12 +120,12 @@ export default async function FeaturePage({ params }: { params: Promise<{ slug: 
       )}
 
       {/* CTA */}
-      <div className="rounded-3xl border border-gray-200 bg-white shadow-sm p-8 text-center">
-        <p className="text-gray-600 font-medium mb-1">Free · community-built · complementary to your SAP tooling</p>
-        <h3 className="text-2xl font-black text-gray-950 tracking-tight mb-6">Try it on your own code.</h3>
+      <div className="rounded-3xl border border-cc-line bg-cc-surface shadow-sm p-8 text-center">
+        <p className="text-cc-ink-muted font-medium mb-1">Free · community-built · complementary to your SAP tooling</p>
+        <h3 className="text-2xl font-extrabold text-cc-ink tracking-[-0.02em] mb-6">Try it on your own code.</h3>
         <Link
           href="/#access"
-          className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white font-black px-8 py-4 rounded-2xl uppercase tracking-widest text-sm transition-colors"
+          className={publicButton('primary')}
         >
           Get free access <ArrowRight size={16} />
         </Link>

@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { seedStageProject } from './helpers/seed-project';
+import { seedStageProject, signInThroughForm } from './helpers/seed-project';
+import { pageSettled } from './helpers/design-rendered';
+import { TYPE_SCALE_PX } from './helpers/design-rules';
 import { stageBackLink, stageHref, workspaceBackHref, WORKSPACE_RETURN } from '../lib/workspace-back-href';
 
 /**
@@ -186,6 +188,85 @@ test.describe('every stage renders its title identically', () => {
       `stage titles disagree:\n${seen.map((s) => `${s.stage.padEnd(15)} ${s.key}`).join('\n')}`,
     ).toHaveLength(1);
     expect(offSpec, `stage headers off DESIGN.md §2.3:\n${offSpec.join('\n')}`).toEqual([]);
+  });
+});
+
+/**
+ * The scale, not only the title (D.30).
+ *
+ * "All seven titles agree" says nothing about the rest of the page: a stage
+ * could carry a 30 px / 800 heading under its 22 px title, or a model's
+ * Markdown at browser defaults, and the comparison above would stay green. So
+ * on every stage of a used project, every text a reader sees sits on the
+ * §1.2 scale — 11, 12, 13, 14, 15 or 22 px, never heavier than 800 — the page
+ * has one title (the stage's `h1`; generated Markdown in `.cc-prose` keeps its
+ * own headings, see CLAUDE.md), and no heading is larger than that title.
+ *
+ * Read out, by identity: the code surface (`CcCodeSurface`, `pre`, `code`) —
+ * quoted code has its own mono sizes — chart SVG, whose tick labels Recharts
+ * sizes itself, and visually hidden text (a table caption for screen readers).
+ */
+test.describe('every stage stays on the type scale', () => {
+  test('text on the scale, one title, no heading above it — all seven stages', async ({ page }) => {
+    test.setTimeout(10 * 60 * 1000);
+    const seeded = await seedStageProject({ prefix: 'stagescale', admin: true, acceptTerms: true, rich: true });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await signInThroughForm(page, { email: seeded.email, password: seeded.password });
+
+    const css = read('app/globals.css');
+    const role = css.match(/@utility cc-text-title\s*\{([^}]*)\}/)![1];
+    const titlePx = parseFloat(role.match(/font-size:\s*([\d.]+)px/)![1]);
+    const scale = [...TYPE_SCALE_PX] as number[];
+    expect(scale).toContain(titlePx);
+
+    const found: string[] = [];
+    let measured = 0;
+    for (const stage of STAGES) {
+      await page.goto(`/project/${seeded.projectId}/${stage}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
+      await page.locator('[data-stage-title]').first().waitFor({ timeout: 90_000 });
+      await page.waitForFunction(pageSettled, 750, { polling: 150, timeout: 60_000 });
+      const r = await page.evaluate(
+        ({ scale, titlePx }) => {
+          const main = document.querySelector('main') ?? document.body;
+          const hidden = (el: Element) => {
+            const s = getComputedStyle(el);
+            if (s.display === 'none' || s.visibility === 'hidden') return true;
+            const box = (el as HTMLElement).getBoundingClientRect();
+            return box.width <= 1 && box.height <= 1;
+          };
+          const out: string[] = [];
+          let texts = 0;
+          for (const el of Array.from(main.querySelectorAll('*'))) {
+            const own = Array.from(el.childNodes)
+              .filter((n) => n.nodeType === Node.TEXT_NODE)
+              .map((n) => (n.textContent || '').trim())
+              .join('');
+            if (!own) continue;
+            if (el.closest('[data-cc-code-surface], pre, code, svg')) continue;
+            if (hidden(el)) continue;
+            texts += 1;
+            const s = getComputedStyle(el);
+            const px = parseFloat(s.fontSize);
+            const weight = parseInt(s.fontWeight, 10) || 400;
+            const what = `<${el.tagName.toLowerCase()} class="${(el.getAttribute('class') || '').slice(0, 60)}"> "${own.slice(0, 40)}"`;
+            if (!scale.includes(px)) out.push(`${px}px off the scale — ${what}`);
+            if (weight > 800) out.push(`weight ${weight} — ${what}`);
+          }
+          for (const h of Array.from(main.querySelectorAll('h1, h2, h3, h4, h5, h6'))) {
+            if (hidden(h) || h.hasAttribute('data-stage-title')) continue;
+            const what = `<${h.tagName.toLowerCase()}> "${(h.textContent || '').trim().slice(0, 40)}"`;
+            if (h.tagName === 'H1' && !h.closest('.cc-prose')) out.push(`a second page title — ${what}`);
+            if (parseFloat(getComputedStyle(h).fontSize) > titlePx) out.push(`a heading larger than the title — ${what}`);
+          }
+          return { out, texts };
+        },
+        { scale, titlePx },
+      );
+      measured += r.texts;
+      for (const line of r.out) found.push(`${stage}: ${line}`);
+    }
+    expect(measured, 'nothing measured — the check would be vacuous').toBeGreaterThan(200);
+    expect(found, 'text off DESIGN.md §1.2 on a stage').toEqual([]);
   });
 });
 

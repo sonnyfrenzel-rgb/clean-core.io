@@ -99,7 +99,6 @@ import { getRunCapabilities } from '@/lib/run-capabilities';
 import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
 import type { AtcReport as AtcReportType } from '@/lib/abap/atc-model';
 
-import { DocumentSkeleton } from '@/components/Skeleton';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
@@ -1108,7 +1107,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                         {/* The model's estimate: the word carries it and the dot
                             stays neutral — green would claim a proof (ADR-007). */}
                         <span aria-hidden="true" className="w-2 h-2 rounded-full bg-cc-neutral"></span>
-                        <span className="cc-text-meta text-cc-ink">{analysisData.standardFit?.potential || 'Not computed'}</span>
+                        <span className="cc-text-meta text-cc-ink">{analysisData.standardFit?.potential || 'Not determined'}</span>
                       </div>
                     </div>
                     <div className="h-8 w-px bg-cc-line"></div>
@@ -1433,22 +1432,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
     return (
       <>
       <div
-        className="prose prose-base md:prose-lg max-w-none text-cc-ink
-          prose-headings:text-cc-ink prose-headings:font-extrabold prose-headings:tracking-tight
-          prose-h1:text-2xl md:text-3xl prose-h1:mb-6 prose-h1:mt-8
-          prose-h2:text-xl md:text-2xl prose-h2:mb-4 prose-h2:mt-6
-          prose-h3:text-lg md:text-xl prose-h3:mb-3 prose-h3:mt-4
-          prose-p:text-cc-ink-muted prose-p:leading-relaxed prose-p:text-base md:prose-p:text-lg prose-p:mb-6
-          prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-6
-          prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-6
-          prose-li:mb-2
-          prose-strong:text-cc-ink prose-strong:font-bold
-          prose-blockquote:border-l-4 prose-blockquote:border-cc-line prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:my-6 prose-blockquote:text-cc-ink-muted
-          prose-code:bg-cc-surface-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:font-cc-mono prose-code:text-xs prose-code:text-cc-ink
-          prose-table:w-full prose-table:my-6 prose-table:border-collapse prose-table:rounded-cc-card prose-table:overflow-hidden prose-table:border prose-table:border-cc-line
-          prose-th:bg-cc-surface-muted prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:text-[11px] prose-th:font-semibold prose-th:text-cc-ink-muted prose-th:uppercase prose-th:tracking-[0.08em] prose-th:border-b prose-th:border-cc-line
-          prose-td:px-4 prose-td:py-3 prose-td:text-xs md:text-sm prose-td:text-cc-ink prose-td:border-b prose-td:border-cc-line
-        "
+        className="cc-prose"
         dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(withoutUnapprovedMoney(project.analysis)) }}
       />
       <WhyScorePanel project={project} />

@@ -264,7 +264,7 @@ export default function DecisionCard({
           {view.summary}
         </p>
 
-        <dl className="m-0 mt-2.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13px]">
+        <dl className="m-0 mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-[13px]">
           <dt className="font-semibold text-cc-ink-muted">{wt('decision.binds')}</dt>
           <dd className="m-0 min-w-0">
             <ul data-decision-binds="" className="m-0 list-none space-y-1 p-0">
@@ -282,7 +282,7 @@ export default function DecisionCard({
           <dt className="font-semibold text-cc-ink-muted">{wt('decision.reversible')}</dt>
           <dd className="m-0 min-w-0" data-decision-reversible={shown.reversibility.answer}>
             <span className="font-semibold text-cc-ink">{view.reversible.answer}</span>
-            <span className="mt-0.5 block text-[12px] leading-snug font-medium text-cc-ink-muted">
+            <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">
               {view.reversible.detail}
             </span>
           </dd>
@@ -306,7 +306,7 @@ export default function DecisionCard({
               </span>
             ) : null}
             {conditionsOpen ? (
-              <ul id="decision-conditions" data-decision-conditions="" className="m-0 mt-2 list-none space-y-1.5 p-0">
+              <ul id="decision-conditions" data-decision-conditions="" className="m-0 mt-2 list-none space-y-2 p-0">
                 {view.conditions.map((c) => (
                   <li
                     key={c.id}
@@ -335,7 +335,7 @@ export default function DecisionCard({
           <p
             id="decision-blocked-reason"
             data-decision-coverage-sentence=""
-            className="m-0 mt-2.5 text-[12px] leading-snug font-medium text-cc-ink-muted"
+            className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink-muted"
           >
             {view.coverage.state === 'blocked' ? wt('decision.cannotConfirmYet') : wt('decision.qualified')}{' '}
             {view.coverage.sentence}
@@ -343,13 +343,13 @@ export default function DecisionCard({
         ) : null}
 
         {moved ? (
-          <p data-decision-moved="" className="m-0 mt-2.5 text-[12px] leading-snug font-medium text-cc-ink">
+          <p data-decision-moved="" className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink">
             {decisionMovedSentence(answer.draft.revision)}
           </p>
         ) : null}
 
         {isConfirmed && answer.stored?.confirmation ? (
-          <p data-decision-confirmed-by="" className="m-0 mt-2.5 text-[12px] leading-snug font-medium text-cc-ink">
+          <p data-decision-confirmed-by="" className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink">
             {decisionConfirmedBy(answer.stored.confirmation.account, answer.stored.confirmation.at.slice(0, 10))}
           </p>
         ) : null}
@@ -359,7 +359,7 @@ export default function DecisionCard({
         </p>
 
         {refusal ? (
-          <div className="mt-2.5" data-decision-refusal="">
+          <div className="mt-3" data-decision-refusal="">
             <CcMessageStrip state="error" headline={refusal.headline} announce={true}>
               {refusal.sentence}
             </CcMessageStrip>
@@ -367,7 +367,7 @@ export default function DecisionCard({
         ) : null}
 
         {/* The timeline — folded, as the mockup folds it. */}
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-cc-line pt-2.5">
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-cc-line pt-3">
           <h4 className="m-0 text-[13px] font-bold text-cc-ink">{decisionTimelineTitle(shown.timeline.length)}</h4>
           {shown.timeline.length > 0 ? (
             <span className="text-[12px] font-medium text-cc-ink-muted">
@@ -437,7 +437,7 @@ export default function DecisionCard({
 function Binding({ binding }: { binding: CardBinding }) {
   return (
     <li data-decision-binding={binding.key} data-decision-binding-determined={binding.value === null ? 'no' : 'yes'}>
-      <span className="flex flex-wrap items-center gap-1.5">
+      <span className="flex flex-wrap items-center gap-2">
         <span className="font-medium text-cc-ink-muted">{binding.label}</span>
         {binding.value === null ? (
           <span className="font-semibold text-cc-ink-muted">{wt('decision.notDetermined')}</span>
@@ -447,9 +447,9 @@ function Binding({ binding }: { binding: CardBinding }) {
         <CcProvenanceChip value={binding.provenance} />
       </span>
       {binding.value === null ? (
-        <span className="mt-0.5 block text-[12px] leading-snug font-medium text-cc-ink-muted">{binding.reason}</span>
+        <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">{binding.reason}</span>
       ) : binding.note ? (
-        <span className="mt-0.5 block text-[12px] leading-snug font-medium text-cc-ink-muted">{binding.note}</span>
+        <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">{binding.note}</span>
       ) : null}
     </li>
   );

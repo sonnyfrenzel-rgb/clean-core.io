@@ -5,6 +5,10 @@ import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import { publicButton } from '@/components/landing/public-button';
+import { CcCleanCoreLevel } from '@/components/cc/Identifier';
+import { CcTag } from '@/components/cc/Tag';
+import CcTable from '@/components/cc/Table';
 import { getPublishedGradeDistribution } from '@/lib/abap/catalog-service';
 import { ABCD_META, GRADES, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 
@@ -46,6 +50,35 @@ const CENSUS_STATES: Record<CloudReadinessGrade, string> = {
   Unknown: 'no state published',
 };
 
+/**
+ * The public knowledge-page look (block D, D.23a): `--cc-*` tokens instead of
+ * the palette, nothing heavier than 800, nothing under 11 px, the generous
+ * public radii (DESIGN.md §1.4, ADR-051). The hero is light with the landing
+ * page's mesh at .18 — the dark gradient banner it replaces was a surface the
+ * product does not have.
+ */
+const PAGE = 'mx-auto max-w-5xl space-y-12 px-4 py-10 text-cc-ink sm:px-6';
+const HERO = 'relative overflow-hidden rounded-3xl border border-cc-line bg-cc-surface p-8 shadow-cc sm:p-12';
+const HERO_MESH =
+  'radial-gradient(38% 42% at 10% 12%,var(--cc-seq-3) 0%,transparent 70%),radial-gradient(34% 40% at 90% 10%,var(--cc-brand) 0%,transparent 70%),radial-gradient(46% 40% at 55% 62%,var(--cc-chart-3) 0%,transparent 72%)';
+const EYEBROW =
+  'inline-flex items-center gap-2 rounded-full border border-cc-line bg-cc-brand-surface px-4 py-1 text-xs font-bold uppercase tracking-[0.08em] text-cc-brand-strong';
+const H1 = 'text-4xl font-extrabold leading-none tracking-[-0.035em] text-cc-ink sm:text-6xl';
+const H2 = 'text-3xl font-extrabold tracking-[-0.03em] text-cc-ink';
+const BODY = 'font-medium leading-relaxed text-cc-ink';
+const CHECK = 'shrink-0 text-cc-brand-strong';
+const SIDE_CARD = 'rounded-3xl border border-cc-line p-6';
+const SIDE_TITLE = 'text-lg font-bold text-cc-ink';
+const SIDE_LIST = 'space-y-3 text-sm font-semibold text-cc-ink';
+const SIDE_LABEL = 'cc-text-label text-cc-ink-muted';
+const LINK =
+  'font-semibold text-cc-brand-strong underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus';
+const SIDE_LINK = `block ${LINK}`;
+const FAQ_BOX = 'space-y-6 rounded-3xl border border-cc-line bg-cc-surface-muted p-8';
+const FAQ_TITLE = 'text-2xl font-extrabold text-cc-ink';
+const FOOTER_LINE =
+  'border-t border-cc-line pt-10 text-center font-cc-mono text-xs font-semibold uppercase tracking-wider text-cc-ink-muted';
+
 export default function CleanCoreClassificationPage() {
   // Server component: reads the generated artifacts directly, no client payload.
   const census = getPublishedGradeDistribution();
@@ -61,7 +94,7 @@ export default function CleanCoreClassificationPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-12 animate-in fade-in duration-300 bg-white min-h-screen text-gray-900 font-sans">
+    <div className={PAGE}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson).replace(/</g, '\\u003c') }} />
 
       {/* Navigation */}
@@ -70,16 +103,16 @@ export default function CleanCoreClassificationPage() {
       </div>
 
       {/* Hero */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[2.5rem] p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-slate-700/30">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.08),transparent)] pointer-events-none"></div>
-        <div className="relative z-10 max-w-4xl space-y-6">
-          <div className="inline-flex items-center gap-2 bg-green-500/15 border border-green-400/30 px-4 py-1.5 rounded-full text-xs font-bold text-green-400 tracking-wide uppercase">
-            <Layers size={14} /> Clean Core Classification
+      <div className={HERO}>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.18]" style={{ background: HERO_MESH }} />
+        <div className="relative max-w-4xl space-y-6">
+          <div className={EYEBROW}>
+            <Layers size={14} aria-hidden="true" /> Clean Core Classification
           </div>
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none text-slate-50">
-            Object Classification <span className="text-green-400">A–D</span>
+          <h1 className={H1}>
+            Object Classification <span className="text-cc-brand-strong">A–D</span>
           </h1>
-          <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
+          <p className="max-w-2xl text-lg font-medium leading-relaxed text-cc-ink-muted">
             SAP grades clean-core extensions A, B, C or D by API release status, upgrade safety and extensibility compliance — superseding the older Tier 1/2/3 model. Here is the model, the full distribution across SAP’s published data, and how Clean-Core.io derives a grade for your custom code.
           </p>
         </div>
@@ -92,28 +125,32 @@ export default function CleanCoreClassificationPage() {
       />
 
       {/* Main */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
-        <div className="md:col-span-2 space-y-8">
+      <div className="grid grid-cols-1 gap-8 pt-4 md:grid-cols-3">
+        <div className="space-y-8 md:col-span-2">
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-955">From Tier 1/2/3 to A/B/C/D</h2>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <h2 className={H2}>From Tier 1/2/3 to A/B/C/D</h2>
+            <p className={BODY}>
               The Cloudification Repository is the key governance tool for SAP Clean Core analysis. It classifies technical objects by <strong>API release status, upgrade safety and extensibility compliance</strong>. The community has moved from the older Tier 1/2/3 wording to a clearer four-grade cloud-readiness scheme:
             </p>
             <div className="space-y-4 pt-2">
+              {/* The level wears the one identifier of DESIGN.md §4.1 — its colour
+                  from §1.8 (A information, never green), not one of its own. */}
               {GRADES.map((g) => (
-                <div key={g} className="p-5 border border-cc-line bg-cc-surface rounded-2xl flex items-start gap-4">
-                  <span className={`shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl text-lg font-black border ${ABCD_META[g].badge}`}>{g}</span>
+                <div key={g} className="flex items-start gap-4 rounded-2xl border border-cc-line bg-cc-surface p-5">
+                  <span className="shrink-0 pt-1">
+                    <CcCleanCoreLevel value={g} />
+                  </span>
                   <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-black text-gray-955 text-base">{ABCD_META[g].label}</h3>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-white border border-gray-200 rounded-full px-2 py-0.5">ATC (our reading): {ABCD_META[g].atcReading}</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base font-bold text-cc-ink">{ABCD_META[g].label}</h3>
+                      <CcTag>ATC (our reading): {ABCD_META[g].atcReading}</CcTag>
                     </div>
-                    <p className="text-xs text-gray-600 mt-1 font-medium leading-relaxed">{ABCD_META[g].description}</p>
+                    <p className="mt-1 text-sm font-medium leading-relaxed text-cc-ink-muted">{ABCD_META[g].description}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               The classification flow is simple: <strong>object identification → repository lookup → grade classification → remediation decision → Clean Core alignment.</strong>
             </p>
             {/*
@@ -122,13 +159,10 @@ export default function CleanCoreClassificationPage() {
               22 objects. Summarising that here would flatten it back into the
               single letter that made it unreadable in the first place.
             */}
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               The repository lookup merges two SAP files that answer different questions, and the
               order of that merge is a decision rather than a detail.{' '}
-              <Link
-                href="/method/levels"
-                className="font-bold text-gray-955 underline underline-offset-2 hover:text-gray-600"
-              >
+              <Link href="/method/levels" className={LINK}>
                 The precedence rule is published in full
               </Link>
               , with the counts behind each branch and the objects where the two files disagree.
@@ -143,50 +177,50 @@ export default function CleanCoreClassificationPage() {
             said plainly below so it cannot be mis-cited as a customer benchmark.
           */}
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+            <h2 className={H2}>
               A–D across everything SAP publishes
             </h2>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               Applying the rules above to SAP&rsquo;s own two repository files grades{' '}
               <strong>{census.totalObjects.toLocaleString('en-US')}</strong> objects. This is a census of
               SAP&rsquo;s published data &mdash; <strong>not</strong> a benchmark of any customer&rsquo;s
               custom code, where the mix looks very different.
             </p>
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
-              <table className="w-full border-collapse text-left text-sm">
-                <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500">
-                  <tr>
-                    <th scope="col" className="px-5 py-3 font-black">Level</th>
-                    <th scope="col" className="px-5 py-3 font-black">SAP state</th>
-                    <th scope="col" className="px-5 py-3 font-black text-right">Objects</th>
-                    <th scope="col" className="px-5 py-3 font-black text-right">Share</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {GRADES.map((g) => (
-                    <tr key={g}>
-                      <td className="px-5 py-3">
-                        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-black border ${ABCD_META[g].badge}`}>{g}</span>
-                        <span className="ml-2 font-bold text-slate-800">{ABCD_META[g].short}</span>
-                      </td>
-                      <td className="px-5 py-3 text-slate-600 font-medium">{CENSUS_STATES[g]}</td>
-                      <td className="px-5 py-3 text-right font-black text-slate-900 tabular-nums">
-                        {census.distribution[g].toLocaleString('en-US')}
-                      </td>
-                      <td className="px-5 py-3 text-right text-slate-600 font-medium tabular-nums">
+            <div className="rounded-2xl border border-cc-line bg-cc-surface px-2 pt-3">
+              <CcTable
+                caption="A–D across everything SAP publishes"
+                columns={[
+                  { key: 'level', label: 'Level' },
+                  { key: 'state', label: 'SAP state' },
+                  { key: 'objects', label: 'Objects', numeric: true },
+                  { key: 'share', label: 'Share', numeric: true },
+                ]}
+                rows={GRADES.map((g) => ({
+                  key: g,
+                  cells: {
+                    level: (
+                      <span key="level" className="inline-flex items-center gap-2">
+                        <CcCleanCoreLevel value={g} />
+                        <span className="font-bold text-cc-ink">{ABCD_META[g].short}</span>
+                      </span>
+                    ),
+                    state: <span key="state" className="text-cc-ink-muted">{CENSUS_STATES[g]}</span>,
+                    objects: <span key="objects" className="font-bold">{census.distribution[g].toLocaleString('en-US')}</span>,
+                    share: (
+                      <span key="share" className="text-cc-ink-muted">
                         {((census.distribution[g] / census.totalObjects) * 100).toFixed(1)}&thinsp;%
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </span>
+                    ),
+                  },
+                }))}
+              />
             </div>
-            <p className="text-xs text-gray-500 leading-relaxed">
+            <p className="text-xs leading-relaxed text-cc-ink-muted">
               Sources, so the figures can be reproduced: <code>objectReleaseInfoLatest.json</code>{' '}
               (sha256 {census.releaseSource.sha256}, fetched {census.releaseSource.fetchedAt}) and{' '}
               <code>objectClassifications_SAP.json</code> (sha256 {census.classificationSource.sha256},
               fetched {census.classificationSource.fetchedAt}), both from the{' '}
-              <a href="https://github.com/SAP/abap-atc-cr-cv-s4hc" target="_blank" rel="noreferrer" className="underline hover:text-gray-700">
+              <a href="https://github.com/SAP/abap-atc-cr-cv-s4hc" target="_blank" rel="noreferrer" className="underline hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus">
                 SAP Cloudification Repository
               </a>{' '}
               (Apache-2.0). Counted by Clean-Core.io {APP_VERSION}. Objects appearing in both files are
@@ -195,26 +229,26 @@ export default function CleanCoreClassificationPage() {
           </section>
 
           <section className="space-y-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-3xl font-black tracking-tight text-gray-955">How Clean-Core.io applies it</h2>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 border border-emerald-300 rounded-full px-2 py-0.5">Catalog-backed · two-tier</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className={H2}>How Clean-Core.io applies it</h2>
+              <CcTag>Catalog-backed · two-tier</CcTag>
             </div>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               Every grade carries its provenance, because the two are not equally strong. Where SAP has published a state for an object, the grade is a <strong>lookup</strong>: <code>released</code> &rarr; A, <code>classicAPI</code> &rarr; B, <code>noAPI</code> and <code>notToBeReleased</code> &rarr; D, <code>deprecated</code> &rarr; C with a successor and D without. An SAP object listed in neither file is graded C, which is what the clean core level concept defines level C to be &mdash; SAP-internal, not classified for customer use. Only your own Z/Y objects, which SAP cannot have classified, fall back to a <strong>heuristic</strong> over access type, risk and object type, and they are labelled as estimated wherever they appear.
             </p>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               It remains <strong>not</strong> an authoritative SAP ATC classification and is <strong>not</strong> part of the signed audit pack. Verify every grade with SAP ADT / ATC for your specific target release &mdash; a grade is release-dependent, and an object released in 2025 is still unreleased against a 2023 target.
             </p>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               Used that way it speeds up first-pass triage and the technical-debt conversation — a starting point for the defensible A–D remediation plan you then confirm against SAP's own tooling.
             </p>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               For a hands-on walkthrough of the A–D model — how to classify each object and what to do with grade C and D code — see our SAP Community post:{' '}
               <a
                 href="https://community.sap.com/t5/technology-blog-posts-by-members/clean-core-levels-a-d-how-to-classify-your-custom-abap-and-what-to-do-with/ba-p/14437956"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-green-600 font-bold hover:underline"
+                className={LINK}
               >
                 Clean Core Levels A–D: how to classify your custom ABAP ↗
               </a>.
@@ -224,45 +258,45 @@ export default function CleanCoreClassificationPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 space-y-6">
-            <h3 className="font-black text-lg text-gray-955 uppercase tracking-tight">Why it matters</h3>
-            <ul className="space-y-3 font-bold text-sm text-gray-700">
-              <li className="flex gap-2 items-center"><Check className="text-green-600 shrink-0" size={16} /> Faster custom-code assessment</li>
-              <li className="flex gap-2 items-center"><Check className="text-green-600 shrink-0" size={16} /> Clear technical-debt control</li>
-              <li className="flex gap-2 items-center"><Check className="text-green-600 shrink-0" size={16} /> Upgrade-stable development</li>
-              <li className="flex gap-2 items-center"><Check className="text-green-600 shrink-0" size={16} /> Defensible A–D remediation plan</li>
+          <div className={`${SIDE_CARD} space-y-6 bg-cc-surface-muted`}>
+            <h3 className={SIDE_TITLE}>Why it matters</h3>
+            <ul className={SIDE_LIST}>
+              <li className="flex items-center gap-2"><Check className={CHECK} size={16} aria-hidden="true" /> Faster custom-code assessment</li>
+              <li className="flex items-center gap-2"><Check className={CHECK} size={16} aria-hidden="true" /> Clear technical-debt control</li>
+              <li className="flex items-center gap-2"><Check className={CHECK} size={16} aria-hidden="true" /> Upgrade-stable development</li>
+              <li className="flex items-center gap-2"><Check className={CHECK} size={16} aria-hidden="true" /> Defensible A–D remediation plan</li>
             </ul>
-            <div className="pt-4 border-t border-gray-200">
-              <Link href="/?auth=signup" className="block text-center bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all text-sm">
+            <div className="border-t border-cc-line pt-4">
+              <Link href="/?auth=signup" className={`${publicButton('primary')} w-full`}>
                 Classify your code
               </Link>
             </div>
           </div>
 
-          <div className="border border-slate-200 rounded-[2rem] p-6 space-y-4 bg-white">
-            <h3 className="font-black text-sm text-gray-400 uppercase tracking-wider">Related Topics</h3>
-            <div className="space-y-2 font-bold text-sm">
-              <Link href="/abap-custom-code-analysis" className="block text-green-600 hover:underline">→ ABAP Custom Code Analysis</Link>
-              <Link href="/clean-core-score" className="block text-green-600 hover:underline">→ What is the Clean Core Score?</Link>
+          <div className={`${SIDE_CARD} space-y-4 bg-cc-surface`}>
+            <h3 className={SIDE_LABEL}>Related Topics</h3>
+            <div className="space-y-2 text-sm">
+              <Link href="/abap-custom-code-analysis" className={SIDE_LINK}>→ ABAP Custom Code Analysis</Link>
+              <Link href="/clean-core-score" className={SIDE_LINK}>→ What is the Clean Core Score?</Link>
             </div>
           </div>
         </div>
       </div>
 
       {/* FAQ */}
-      <div className="bg-slate-50 border border-gray-200 rounded-[2.5rem] p-8 space-y-6">
-        <h2 className="text-2xl font-black text-gray-955">Frequently Asked Questions (FAQ)</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-bold text-sm">
+      <div className={FAQ_BOX}>
+        <h2 className={FAQ_TITLE}>Frequently Asked Questions (FAQ)</h2>
+        <div className="grid grid-cols-1 gap-6 text-sm md:grid-cols-2">
           {faqs.map((faq, idx) => (
             <div key={idx} className="space-y-2">
-              <h3 className="text-gray-955 font-black">{faq.question}</h3>
-              <p className="text-gray-600 font-medium leading-relaxed">{faq.answer}</p>
+              <h3 className="font-bold text-cc-ink">{faq.question}</h3>
+              <p className="font-medium leading-relaxed text-cc-ink-muted">{faq.answer}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="text-center text-[10px] text-gray-500 font-mono font-bold uppercase tracking-wider pt-10 border-t border-gray-200">
+      <div className={FOOTER_LINE}>
         Clean-Core.io {APP_VERSION} • {APP_RELEASE_DATE} • Free Community Edition
       </div>
     </div>

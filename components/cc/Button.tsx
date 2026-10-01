@@ -92,6 +92,17 @@ export interface CcButtonProps
    * React 19 hands `ref` to a function component as a prop (block D, D.5e).
    */
   ref?: React.Ref<HTMLButtonElement>;
+  /**
+   * The label. It sits in a flex row with the icon (`gap-1`), so a run of
+   * text and every element among the children is its own flex item:
+   * `Showing <b>3</b> of 12` becomes three items, the spaces at their edges
+   * are dropped and the 4 px gap stands in for them, and a long label no
+   * longer wraps as one sentence. A label that mixes text and elements goes
+   * in **one** `<span>` — `<span>Showing <b>3</b> of 12</span>` — and a
+   * trailing icon (an external-link arrow) stays a sibling of that span.
+   * (Block D, D.32/D.30: left as a rule rather than an extra wrapper, because
+   * a wrapper would move every icon that is passed as a child today.)
+   */
   children: React.ReactNode;
 }
 

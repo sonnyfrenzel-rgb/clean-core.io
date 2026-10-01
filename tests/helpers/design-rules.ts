@@ -1,17 +1,15 @@
 /**
  * The rules of `tests/design-source-guard.spec.ts`, as pure functions.
  *
- * Pure on purpose: no `fs`, no network, no Playwright. The spec and the
- * baseline script (`scripts/design/baseline.ts`) both import this file, so the
- * number the guard compares and the number the script writes are computed by
- * the same code — a ceiling can never be lowered to a count the guard would not
- * reproduce.
+ * Pure on purpose: no `fs`, no network, no Playwright — the spec feeds them the
+ * files on disk and, for its negative probes, sources written in memory.
  *
- * Every rule is a source heuristic, not a rendered measurement. It counts
- * occurrences per file; the counts are orders of magnitude, the rendered truth
- * belongs to `tests/design-rendered-guard.spec.ts` (D.2). What the heuristic
- * must be is *stable*: the same source always gives the same count, so a
- * ceiling means something.
+ * Every rule is a source heuristic, not a rendered measurement; the rendered
+ * truth belongs to `tests/design-rendered-guard.spec.ts` (D.2). Since D.30 the
+ * guard asks for zero hits in every file. From D.1 to D.30 it held a ceiling
+ * per file and rule in `tests/design-baseline/<group>.json`, lowered step by
+ * step; the lists reached zero and were deleted with D.30. What remains are the
+ * named exceptions below, each a rule with its reason rather than a list entry.
  *
  * Where each rule comes from (DESIGN.md):
  *   R1  type below 11 px ............................ §1.2 "Untergrenze 11 px"
@@ -81,7 +79,7 @@ export interface Hit {
 }
 
 // ---------------------------------------------------------------------------
-// Which files, which group, which step
+// Which files, and the named exceptions
 // ---------------------------------------------------------------------------
 
 /**
@@ -106,6 +104,46 @@ export const STANDALONE_EXPORT_TEMPLATES = [
 export const STANDALONE_EXPORT_FILES = [STANDALONE_EXPORT_STYLE, ...STANDALONE_EXPORT_TEMPLATES] as const;
 
 /**
+ * Named rule exceptions for the library (block D, D.33). The library holds
+ * itself to every rule; these are the two places where DESIGN.md itself says a
+ * rule does not apply, written as a rule with its reason rather than as an
+ * entry in a baseline list. Each is as narrow as its case: one attribute in one
+ * file, one piece of arithmetic. (The looks §1.5 fixes outside the four
+ * buttons — icon button "wie ghost", the segmented control — need none: they
+ * are shared constants in the library, like `CC_BUTTON_*`.)
+ *
+ * TABLE_ROW_OPEN (R9) — DESIGN.md §2.4 and `CcTable`: `onOpen` on a row is a
+ *   mouse shortcut beside a real link in a cell, never the only way in, so the
+ *   row has no role and no key handler on purpose (a role on a `<tr>` would
+ *   break the table for a screen reader). Only the `<tr data-cc-table-row>` in
+ *   `components/cc/Table.tsx`.
+ *
+ * TOUCH_TARGET_COMPENSATION (R18) — DESIGN.md §2.9/§2.10 (WG-03): the "Why?"
+ *   target is 24 px and grows to 44 px on a phone and under a coarse pointer; a
+ *   negative margin of exactly (44 − 24) / 2 = 10 px (`-m-2.5`) under the same
+ *   variant keeps the row from growing. That is arithmetic on a hit area, not a
+ *   spacing step, so it passes only in a tag that is `h-6 w-6` and `h-11 w-11`
+ *   under the very variant that carries the margin.
+ */
+export const TABLE_ROW_OPEN = { file: 'components/cc/Table.tsx', attribute: 'data-cc-table-row' } as const;
+export const TOUCH_TARGET_COMPENSATION = { margin: '-m-2.5', base: ['h-6', 'w-6'], grown: ['h-11', 'w-11'] } as const;
+
+/** True when a `-m-2.5` at `index` is TOUCH_TARGET_COMPENSATION inside `tagText`. */
+function compensatesTouchTarget(code: string, index: number, tagText: string | undefined): boolean {
+  if (!tagText) return false;
+  // The variant prefix written right before the margin, e.g. `max-[600px]:`.
+  let start = index;
+  while (start > 0 && !/[\s'"`{}]/.test(code[start - 1])) start--;
+  const variant = code.slice(start, index);
+  if (!variant || !variant.endsWith(':')) return false;
+  const tokens = new Set(tagText.split(/[\s'"`{}()+,]+/).filter(Boolean));
+  return (
+    TOUCH_TARGET_COMPENSATION.base.every((k) => tokens.has(k)) &&
+    TOUCH_TARGET_COMPENSATION.grown.every((k) => tokens.has(`${variant}${k}`))
+  );
+}
+
+/**
  * The files the guard reads: every `.tsx` under `app/` and `components/`
  * (route handlers under `app/api/` are not UI), plus the `.ts` style modules
  * under `components/` (e.g. `components/cc/state.ts`, where class strings live).
@@ -118,190 +156,66 @@ export function isUiFile(rel: string): boolean {
   return false;
 }
 
-const S = 'app/(app)/project/[projectId]/';
-
 /**
- * File → baseline group and the step (luecken-und-plan.md §4) that brings it to
- * zero. First match wins. One group per baseline file, and a group is only ever
- * edited by one lane at a time, so two parallel steps never write the same file.
- *
- * Groups deliberately split `workspace` (D.29) out of `library` (D.5a–d): both
- * are Lane A, but that way the library steps and the text-key step never race
- * on one JSON file.
+ * Public pages (§1.4 "Öffentliche Seiten": 22–28 px radii, mesh, shadows "wie
+ * heute", E-5). R12 is a workspace rule and does not apply to them. The list is
+ * the public surfaces of the plan's Lane C: landing, public header and footer,
+ * catalogue and method, public content, legal and account-action pages, and the
+ * knowledge pages.
  */
-const GROUPS: { match: (rel: string) => boolean; group: string; step: string }[] = [
-  // Lane A
-  { match: (r) => r.startsWith('components/cc/') || r.startsWith('app/(app)/admin/design-system/'), group: 'library', step: 'D.5a' },
-  {
-    match: (r) =>
-      r.startsWith('components/workspace/') ||
-      r.startsWith('components/process-map/') ||
-      r === `${S}page.tsx` ||
-      r === 'components/demo/DemoWorkspaceShell.tsx' ||
-      r === 'components/demo/DemoTourStop.tsx' ||
-      r.startsWith('app/(app)/demo/workspace/'),
-    group: 'workspace',
-    step: 'D.29',
-  },
-  // Lane B — the seven tools
-  {
-    match: (r) =>
-      [
-        'StageHeader', 'Stepper', 'VerificationRail', 'NavigationButtons', 'BackLink', 'StaleNotice',
-        'LegacyRunBanner', 'NotGenerated', 'SectionBoundary', 'ErrorBoundary', 'CollapsibleAccordion',
-      ].some((n) => r === `components/${n}.tsx`) || (r.startsWith(S) && /\/(documentation|testing)\/error\.tsx$/.test(r)),
-    group: 'stage-frame',
-    step: 'D.9',
-  },
-  { match: (r) => r.startsWith(`${S}analyze/`), group: 'analyze-page', step: 'D.10a' },
-  {
-    match: (r) =>
-      [
-        'EvidenceSweep', 'SweepVerdictBar', 'SweepCodeViewer', 'ConstructFindings', 'UnassessedConstructs',
-        'CodeInventoryTable', 'DataCouplingTable', 'AbcdClassificationPanel', 'CoverageVerdict', 'AnchoredNarrative',
-        'PreAnalysisPreview', 'MissingDependencyPrompt', 'WhyScorePanel',
-      ].some((n) => r === `components/analyze/${n}.tsx`),
-    group: 'analyze-evidence',
-    step: 'D.11',
-  },
-  {
-    match: (r) =>
-      ['GapsWorklist', 'GapsPrioritization', 'AtcFindingsPanel', 'AtcUpload', 'UsageUpload', 'UsageRiskMatrix', 'ModuleHeatmap']
-        .some((n) => r === `components/analyze/${n}.tsx`),
-    group: 'analyze-worklists',
-    step: 'D.12',
-  },
-  // Everything else under components/analyze is strategy (D.13 names all six).
-  { match: (r) => r.startsWith('components/analyze/'), group: 'analyze-strategy', step: 'D.13' },
-  { match: (r) => r.startsWith(`${S}design/`) || r === 'components/ArchitectSignOff.tsx', group: 'design', step: 'D.14a' },
-  { match: (r) => r.startsWith('components/design/'), group: 'design', step: 'D.14b' },
-  { match: (r) => r.startsWith(`${S}transformation/`) || r === 'components/CodeHighlighter.tsx', group: 'transformation', step: 'D.15' },
-  { match: (r) => r.startsWith(`${S}documentation/`), group: 'documentation', step: 'D.16a' },
-  {
-    match: (r) =>
-      r.startsWith('components/documentation/') ||
-      r.startsWith('components/process-revisions/') ||
-      ['PresentationViewer', 'DocumentSection', 'MermaidDiagram', 'ProcessFlow'].some((n) => r === `components/${n}.tsx`),
-    group: 'documentation',
-    step: 'D.16b',
-  },
-  { match: (r) => r.startsWith(`${S}testing/`) || r === 'components/TestingCharts.tsx', group: 'testing', step: 'D.17a' },
-  { match: (r) => r.startsWith(`${S}tco/`) || r.startsWith('components/tco/'), group: 'tco', step: 'D.18' },
-  {
-    match: (r) =>
-      r.startsWith(`${S}delivery/`) ||
-      ['ComplianceReviewHints', 'PersonalDataHints', 'ReviewTasks', 'ModelStagesCard'].some((n) => r === `components/${n}.tsx`),
-    group: 'delivery',
-    step: 'D.19',
-  },
-  // Lane C — frame, account, public
-  {
-    match: (r) =>
-      r === 'app/(app)/layout.tsx' ||
-      r === 'app/layout.tsx' ||
-      ['ShellHelpMenu', 'HeaderAuthButton', 'MaintenanceNotice'].some((n) => r === `components/${n}.tsx`),
-    group: 'shell',
-    step: 'D.6',
-  },
-  {
-    match: (r) => ['UserOnboarding', 'TermsReacceptGate'].some((n) => r === `components/${n}.tsx`) || r === 'app/components/LegalOverlay.tsx',
-    group: 'onboarding',
-    step: 'D.7',
-  },
-  {
-    match: (r) => ['GlossaryChatbot', 'GlossarySidebar', 'GlossaryTerm', 'QuickAnswer'].some((n) => r === `components/${n}.tsx`),
-    group: 'glossary',
-    step: 'D.8',
-  },
-  { match: (r) => r.startsWith('app/(app)/settings/'), group: 'settings', step: 'D.20a' },
-  { match: (r) => r.startsWith('app/(app)/admin/') || r.startsWith('components/admin/'), group: 'admin', step: 'D.21' },
-  {
-    // The old dashboard and what D.22c checked and kept: `Skeleton` (the
-    // analyze/design/testing stages), `ProcessStrip` (the landing showroom) and
-    // the process-states cards (their rendered spec). The orphans went in D.22c.
-    match: (r) =>
-      r.startsWith('app/(app)/dashboard/') ||
-      r.startsWith('components/process-states/') ||
-      ['StarterExamples', 'Skeleton', 'ProcessStrip'].some((n) => r === `components/${n}.tsx`),
-    group: 'dashboard-legacy',
-    step: 'D.22',
-  },
-  {
-    // E-6 as changed by Sonny on 24.09.2026: the stage demo is rebuilt, not removed.
-    match: (r) => r.startsWith('app/(app)/demo/') || r.startsWith('components/demo/'),
-    group: 'demo-legacy',
-    step: 'D.22b',
-  },
-  {
-    match: (r) =>
-      ['clean-core-explained', 'clean-core-score', 'how-it-works', 'sap-cloudification', 'abap-custom-code-analysis', 'sap-clean-core-object-classification']
-        .some((n) => r.startsWith(`app/(app)/${n}/`)),
-    group: 'knowledge',
-    step: 'D.23a',
-  },
-  {
-    match: (r) =>
-      ['knowledge', 'how-to', 'about', 'trust', 'tenant-security', 'first-run', 'verify-pack', 'invitation'].some((n) => r.startsWith(`app/(app)/${n}/`)) ||
-      ['KnowledgeClient', 'HowToClient', 'GuideShareBar', 'TrustBeforeUpload', 'InviteReaderDialog'].some((n) => r === `components/${n}.tsx`),
-    group: 'knowledge',
-    step: 'D.23b',
-  },
-  {
-    match: (r) =>
-      r === 'app/catalog/layout.tsx' ||
-      r === 'app/features/layout.tsx' ||
-      ['PublicHeader', 'SiteFooter', 'SapTrademarkNotice'].some((n) => r === `components/${n}.tsx`),
-    group: 'public-header',
-    step: 'D.24',
-  },
-  { match: (r) => r.startsWith('app/catalog/') || r.startsWith('components/catalog/') || r.startsWith('app/method/'), group: 'catalog', step: 'D.25a' },
-  {
-    match: (r) =>
-      ['whitepaper', 'facts', 'reference-analysis', 'licenses', 'clean-core-explained-print', 'features'].some((n) => r.startsWith(`app/${n}/`)),
-    group: 'public-content',
-    step: 'D.25b',
-  },
-  {
-    match: (r) =>
-      ['terms', 'datenschutz', 'impressum', 'auth', 'survey', 'unsubscribe'].some((n) => r.startsWith(`app/${n}/`)) ||
-      r === 'app/error.tsx' ||
-      r === 'app/not-found.tsx',
-    group: 'legal',
-    step: 'D.26',
-  },
-  {
-    match: (r) =>
-      r === 'app/page.tsx' ||
-      r.startsWith('components/landing/') ||
-      [
-        'LandingModals', 'SectionHeader', 'BenefitCard', 'FooterCTA', 'HeroCTA', 'LandingProcess', 'PilotWarningBanner',
-        'PricingCTA', 'SamplePackageDownload', 'TransformationShowroom', 'TransformationReplay',
-      ].some((n) => r === `components/${n}.tsx`),
-    group: 'landing',
-    step: 'D.27',
-  },
+const PUBLIC_SURFACE: ((rel: string) => boolean)[] = [
+  // landing (D.27), the landing mesh included
+  (r) =>
+    r === 'app/page.tsx' ||
+    r.startsWith('components/landing/') ||
+    [
+      'LandingModals', 'SectionHeader', 'BenefitCard', 'FooterCTA', 'HeroCTA', 'LandingProcess', 'PilotWarningBanner',
+      'PricingCTA', 'SamplePackageDownload', 'TransformationShowroom', 'TransformationReplay',
+    ].some((n) => r === `components/${n}.tsx`),
+  // public header and footer (D.24)
+  (r) =>
+    r === 'app/catalog/layout.tsx' ||
+    r === 'app/features/layout.tsx' ||
+    ['PublicHeader', 'SiteFooter', 'SapTrademarkNotice'].some((n) => r === `components/${n}.tsx`),
+  // catalogue and level method (D.25a)
+  (r) => r.startsWith('app/catalog/') || r.startsWith('components/catalog/') || r.startsWith('app/method/'),
+  // public content (D.25b)
+  (r) =>
+    ['whitepaper', 'facts', 'reference-analysis', 'licenses', 'clean-core-explained-print', 'features'].some((n) => r.startsWith(`app/${n}/`)),
+  // legal and account-action pages (D.26), `app/datenschutz/de` included
+  (r) =>
+    ['terms', 'datenschutz', 'impressum', 'auth', 'survey', 'unsubscribe'].some((n) => r.startsWith(`app/${n}/`)) ||
+    r === 'app/error.tsx' ||
+    r === 'app/not-found.tsx',
+  // knowledge pages (D.23a/b)
+  (r) =>
+    [
+      'clean-core-explained', 'clean-core-score', 'how-it-works', 'sap-cloudification', 'abap-custom-code-analysis',
+      'sap-clean-core-object-classification', 'knowledge', 'how-to', 'about', 'trust', 'tenant-security', 'first-run',
+      'verify-pack', 'invitation',
+    ].some((n) => r.startsWith(`app/(app)/${n}/`)) ||
+    ['KnowledgeClient', 'HowToClient', 'GuideShareBar', 'TrustBeforeUpload', 'InviteReaderDialog'].some((n) => r === `components/${n}.tsx`),
 ];
 
-export const GROUP_NAMES = [...new Set(GROUPS.map((g) => g.group))].sort();
-
-/** The group and step a file belongs to, or `null` when no step owns it yet. */
-export function groupOf(rel: string): { group: string; step: string } | null {
-  const hit = GROUPS.find((g) => g.match(rel));
-  return hit ? { group: hit.group, step: hit.step } : null;
+/** True for a public page (§1.4); see PUBLIC_SURFACE. */
+export function isPublicFile(rel: string): boolean {
+  return PUBLIC_SURFACE.some((m) => m(rel));
 }
 
 /**
- * Groups whose files are public pages (§1.4 "Öffentliche Seiten": 22–28 px
- * radii, mesh, shadows "wie heute"). R12 does not apply there.
+ * R12 is a workspace rule: everything that is not a public page and belongs to
+ * the application — the authenticated shell, the components, the root layout
+ * and `app/components/`. The standalone exports under `lib/` are documents, not
+ * workspace.
  */
-const PUBLIC_GROUPS = new Set(['landing', 'public-header', 'catalog', 'public-content', 'legal', 'knowledge']);
-
-/** R12 is a workspace rule: everything that is not a public page. */
 export function isWorkspaceFile(rel: string): boolean {
-  const g = groupOf(rel);
-  if (g) return !PUBLIC_GROUPS.has(g.group);
-  // An unmapped file under the authenticated shell is workspace; elsewhere public.
-  return rel.startsWith('app/(app)/') || rel.startsWith('components/');
+  if (isPublicFile(rel)) return false;
+  return (
+    rel.startsWith('app/(app)/') ||
+    rel.startsWith('components/') ||
+    rel.startsWith('app/components/') ||
+    rel === 'app/layout.tsx'
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -545,6 +459,7 @@ export function scanFile(rel: string, source: string): Hit[] {
 
   // R18 — half spacing steps
   each(RE_SPACING, (m) => {
+    if (m[0] === TOUCH_TARGET_COMPENSATION.margin && compensatesTouchTarget(code, m.index, enclosingTag(m.index)?.text)) return;
     if (m[2] !== undefined) {
       const v = parseFloat(m[2]);
       if (v % 4 === 0) return;
@@ -628,7 +543,8 @@ export function scanFile(rel: string, source: string): Hit[] {
       /^(div|span|li|tr|td)$/.test(t.name) &&
       /\bonClick=/.test(t.text) &&
       !/\bdata-(?:backdrop|cc-scrim)\b/.test(t.text) &&
-      !/\brole=["']option["']/.test(t.text)
+      !/\brole=["']option["']/.test(t.text) &&
+      !(rel === TABLE_ROW_OPEN.file && t.name === 'tr' && t.text.includes(`${TABLE_ROW_OPEN.attribute}=`))
     ) {
       if (!/\brole=/.test(t.text) || !/\bonKey(?:Down|Up|Press)=/.test(t.text)) add('R9', t.start, t.text.slice(0, 100));
     }
@@ -660,104 +576,4 @@ export function countHits(hits: Hit[]): RuleCounts {
   const out: RuleCounts = {};
   for (const h of hits) out[h.rule] = (out[h.rule] ?? 0) + 1;
   return out;
-}
-
-// ---------------------------------------------------------------------------
-// Baseline files and the ratchet
-// ---------------------------------------------------------------------------
-
-export interface BaselineEntry extends RuleCounts {
-  step: string;
-}
-export interface BaselineFile {
-  $comment?: string;
-  group: string;
-  files: Record<string, BaselineEntry>;
-}
-
-export const STEP_PATTERN = /^D\.\d+[a-z]?$/;
-
-export interface RatchetFinding {
-  kind: 'over' | 'under' | 'unlisted' | 'stale' | 'malformed';
-  rel: string;
-  rule?: RuleId;
-  count?: number;
-  ceiling?: number;
-  message: string;
-}
-
-/**
- * Compare measured counts against the ceilings. `counts` holds every UI file on
- * disk (zero-count files included); `baseline` is every group file merged.
- */
-export function ratchet(
-  counts: Map<string, RuleCounts>,
-  baseline: Map<string, { group: string; entry: BaselineEntry }>,
-): RatchetFinding[] {
-  const out: RatchetFinding[] = [];
-  for (const [rel, c] of counts) {
-    const listed = baseline.get(rel);
-    for (const rule of RULE_IDS) {
-      const n = c[rule] ?? 0;
-      const ceiling = listed ? (listed.entry[rule] ?? 0) : 0;
-      if (n > ceiling) {
-        out.push({
-          kind: listed ? 'over' : 'unlisted',
-          rel,
-          rule,
-          count: n,
-          ceiling,
-          message: `${rel}: ${rule} (${RULE_TITLES[rule]}) ${n} > ceiling ${ceiling}`,
-        });
-      } else if (n < ceiling) {
-        out.push({
-          kind: 'under',
-          rel,
-          rule,
-          count: n,
-          ceiling,
-          message: `${rel}: ${rule} ${n} < ceiling ${ceiling} — lower it: npm run design:baseline -- --group ${listed!.group}`,
-        });
-      }
-    }
-  }
-  for (const [rel, { group }] of baseline) {
-    if (!counts.has(rel)) {
-      out.push({ kind: 'stale', rel, message: `${rel}: listed in ${group}.json but not a UI file on disk — remove the entry` });
-    }
-  }
-  return out;
-}
-
-/** Structural checks on one group file (test 4). */
-export function validateBaseline(file: BaselineFile, fileName: string): string[] {
-  const problems: string[] = [];
-  if (`${file.group}.json` !== fileName) problems.push(`${fileName}: "group" is "${file.group}"`);
-  for (const [rel, entry] of Object.entries(file.files ?? {})) {
-    if (!STEP_PATTERN.test(entry.step ?? '')) problems.push(`${fileName} ${rel}: step "${entry.step}" does not name a step D.x`);
-    const owner = groupOf(rel);
-    if (!owner || owner.group !== file.group) problems.push(`${fileName} ${rel}: belongs to group ${owner?.group ?? '(none)'}, not ${file.group}`);
-    const keys = Object.keys(entry).filter((k) => k !== 'step');
-    if (keys.length === 0) problems.push(`${fileName} ${rel}: an entry without a rule is an empty exception — remove it`);
-    for (const k of keys) {
-      if (!(RULE_IDS as readonly string[]).includes(k)) problems.push(`${fileName} ${rel}: unknown rule ${k}`);
-      const v = (entry as unknown as Record<string, unknown>)[k];
-      if (!Number.isInteger(v) || (v as number) <= 0) problems.push(`${fileName} ${rel}: ${k} must be a positive integer (omit zero)`);
-    }
-  }
-  return problems;
-}
-
-/** Serialise an entry with the step first and rules in order, zeros omitted. */
-export function makeEntry(step: string, counts: RuleCounts): BaselineEntry | null {
-  const entry: BaselineEntry = { step };
-  let any = false;
-  for (const r of RULE_IDS) {
-    const n = counts[r] ?? 0;
-    if (n > 0) {
-      entry[r] = n;
-      any = true;
-    }
-  }
-  return any ? entry : null;
 }

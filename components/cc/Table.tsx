@@ -64,6 +64,13 @@ export interface CcTableRowSpec {
   onOpen?: () => void;
   /** Marks the row as the reader's current one — ink, never a state colour (§1.1). */
   selected?: boolean;
+  /**
+   * Sets the row apart as the one the page is about — "ours" among others'
+   * figures on `/clean-core-score` (D.33). The muted surface and a bar in ink at
+   * the start; never a state colour, because being ours proves nothing (§1.1,
+   * ADR-007). Content, not a filter: a reader must still be told in words.
+   */
+  emphasis?: boolean;
 }
 
 export interface CcTableProps {
@@ -133,16 +140,20 @@ export default function CcTable({ caption, columns, rows, limit }: CcTableProps)
             <React.Fragment key={row.key}>
               <tr
                 data-cc-table-row={row.key}
+                data-cc-table-emphasis={row.emphasis ? '' : undefined}
                 onClick={row.onOpen ? (event) => openRow(event, row.onOpen!) : undefined}
                 className={cn(
                   'border-b border-cc-line',
                   beyond(index) ? 'hidden print:table-row' : 'block sm:table-row',
-                  row.selected ? 'bg-cc-surface-muted' : 'bg-cc-surface',
+                  row.selected || row.emphasis ? 'bg-cc-surface-muted' : 'bg-cc-surface',
                   row.onOpen ? 'cursor-pointer hover:bg-cc-surface-muted' : null,
                 )}
               >
                 {first ? (
-                  <td className={CELL} style={first.width ? { width: first.width } : undefined}>
+                  <td
+                    className={cn(CELL, row.emphasis ? 'shadow-[inset_3px_0_0_var(--cc-ink)]' : null)}
+                    style={first.width ? { width: first.width } : undefined}
+                  >
                     {row.cells[first.key]}
                   </td>
                 ) : null}
@@ -168,7 +179,11 @@ export default function CcTable({ caption, columns, rows, limit }: CcTableProps)
                           {column.label}
                         </span>
                       )}
-                      {row.cells[column.key]}
+                      {/* The cell in a keyed fragment of its own: beside the S-label it
+                          is the second child of the cell, and an element a server
+                          component passed in arrives unvalidated, so React asked every
+                          caller for a key it has no use for (D.33). */}
+                      <React.Fragment key="cell">{row.cells[column.key]}</React.Fragment>
                     </td>
                   ))
                 )}

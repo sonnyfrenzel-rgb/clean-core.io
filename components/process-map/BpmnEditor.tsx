@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import { saveDraft } from './draft-save';
+import CcButton from '@/components/cc/Button';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import './process-map.css';
@@ -782,31 +783,29 @@ export default function BpmnEditor({
         data-editor-palette=""
         role="group"
         aria-label={wt('mapEditor.paletteLabel')}
-        className="flex flex-col gap-1.5 rounded-cc-card border border-cc-line bg-cc-surface-muted p-2"
+        className="flex flex-col gap-2 rounded-cc-card border border-cc-line bg-cc-surface-muted p-2"
       >
         {PALETTE_GROUPS.map((group) => (
-          <div key={group} className="flex flex-wrap items-center gap-1.5">
+          <div key={group} className="flex flex-wrap items-center gap-2">
             <span className="w-20 shrink-0 text-[11px] font-semibold tracking-[0.06em] text-cc-ink-muted uppercase">
               {group}
             </span>
             {EDITOR_PALETTE.filter((entry) => entry.group === group).map((entry) => (
-              <button
+              <CcButton
                 key={entry.id}
-                type="button"
                 data-palette-item={entry.id}
                 data-palette-type={entry.type}
                 onClick={() => add(entry)}
-                className="rounded-cc-row border border-cc-line bg-cc-surface px-2 py-0.5 text-[11px] font-semibold text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
               >
                 {entry.label}
-              </button>
+              </CcButton>
             ))}
           </div>
         ))}
       </div>
 
       {/* ---------------- what the selection can do ---------------- */}
-      <div data-editor-actions="" className="flex flex-wrap items-center gap-1.5">
+      <div data-editor-actions="" className="flex flex-wrap items-center gap-2">
         <label className="text-[11px] font-semibold tracking-[0.06em] text-cc-ink-muted uppercase" htmlFor="cc-editor-name">
           {wt('mapEditor.name')}
         </label>
@@ -818,38 +817,18 @@ export default function BpmnEditor({
           placeholder={activeRow ? activeRow.label : wt('mapEditor.pickElement')}
           className="h-8 min-w-0 flex-1 rounded-cc-row border border-cc-field-border bg-cc-surface px-2 text-[13px] font-medium text-cc-ink"
         />
-        <button
-          type="button"
-          data-editor-rename=""
-          onClick={rename}
-          className="rounded-cc-row border border-cc-line bg-cc-surface px-2 py-0.5 text-[11px] font-semibold text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
-        >
+        <CcButton data-editor-rename="" onClick={rename}>
           {wt('mapEditor.rename')}
-        </button>
-        <button
-          type="button"
-          data-editor-delete=""
-          onClick={remove}
-          className="rounded-cc-row border border-cc-line bg-cc-surface px-2 py-0.5 text-[11px] font-semibold text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
-        >
+        </CcButton>
+        <CcButton data-editor-delete="" onClick={remove}>
           {wt('mapEditor.delete')}
-        </button>
-        <button
-          type="button"
-          data-editor-undo=""
-          onClick={undo}
-          className="rounded-cc-row border border-cc-line bg-cc-surface px-2 py-0.5 text-[11px] font-semibold text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
-        >
+        </CcButton>
+        <CcButton data-editor-undo="" onClick={undo}>
           {wt('mapEditor.undo')}
-        </button>
-        <button
-          type="button"
-          data-editor-redo=""
-          onClick={redo}
-          className="rounded-cc-row border border-cc-line bg-cc-surface px-2 py-0.5 text-[11px] font-semibold text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
-        >
+        </CcButton>
+        <CcButton data-editor-redo="" onClick={redo}>
           {wt('mapEditor.redo')}
-        </button>
+        </CcButton>
       </div>
 
       {note ? (
@@ -884,7 +863,7 @@ export default function BpmnEditor({
               data-drawn={row.drawn ? 'true' : 'false'}
               tabIndex={row.id === current || (!current && row === rows[0]) ? 0 : -1}
               onClick={() => pick(row.id)}
-              className="block w-full truncate rounded-cc-row px-1.5 py-0.5 text-left text-[12px] font-medium text-cc-ink-muted hover:text-cc-ink aria-selected:bg-cc-surface-muted aria-selected:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
+              className="block w-full truncate rounded-cc-row px-2 py-0.5 text-left text-[12px] font-medium text-cc-ink-muted hover:text-cc-ink aria-selected:bg-cc-surface-muted aria-selected:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
             >
               {row.kind}: {row.label}
               {row.drawn ? <span data-draft-drawn="">{' · '}{wt('mapEditor.drawn')}</span> : null}
@@ -898,23 +877,12 @@ export default function BpmnEditor({
         data-process-editor-footer=""
         className="flex flex-wrap items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-2"
       >
-        <button
-          type="button"
-          data-editor-save=""
-          disabled={saving}
-          onClick={() => void onSave()}
-          className="rounded-cc-row bg-cc-brand-strong px-3 py-1 text-[12px] font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
-        >
+        <CcButton variant="primary" data-editor-save="" busy={saving} onClick={() => void onSave()}>
           {wt('mapEditor.save')}
-        </button>
-        <button
-          type="button"
-          data-editor-discard=""
-          onClick={onDiscard}
-          className="rounded-cc-row px-3 py-1 text-[12px] font-semibold text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
-        >
+        </CcButton>
+        <CcButton data-editor-discard="" onClick={onDiscard}>
           {wt('mapEditor.discard')}
-        </button>
+        </CcButton>
         {dirty ? (
           <span data-editor-dirty className="text-[12px] font-semibold text-cc-ink">{wt('mapEditor.unsaved')}</span>
         ) : null}

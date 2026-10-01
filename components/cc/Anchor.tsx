@@ -41,7 +41,7 @@ export interface CcAnchorProps {
 
 export default function CcAnchor({ children, tone = 'linked', onOpen, label }: CcAnchorProps) {
   const className = cn(
-    'inline-block rounded-[4px] border px-1.5 align-middle font-cc-mono',
+    'inline-block rounded-[4px] border px-1 align-middle font-cc-mono',
     'text-[11px] font-semibold leading-[17px] whitespace-nowrap',
     TONE_CLASSES[tone],
   );

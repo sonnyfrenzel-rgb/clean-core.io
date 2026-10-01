@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/cc-messages';
 import {
@@ -13,7 +12,7 @@ import {
   searchSourceLineLabel,
 } from '@/lib/workspace-messages';
 import { onOpenProjectSearch, registerProjectSearch } from '@/lib/shell-context';
-import CcIconButton from '@/components/cc/IconButton';
+import CcDialog from '@/components/cc/Dialog';
 import CcTag from '@/components/cc/Tag';
 import CcAnchor from '@/components/cc/Anchor';
 import {
@@ -83,11 +82,7 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
   const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState(0);
 
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const openerRef = useRef<HTMLElement | null>(null);
   const listId = useId();
-  const titleId = useId();
   const router = useRouter();
 
   const index = useMemo(
@@ -128,7 +123,6 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
       const tag = target?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
       event.preventDefault();
-      openerRef.current = document.activeElement as HTMLElement | null;
       setOpen(true);
     };
     document.addEventListener('keydown', onKey);
@@ -138,69 +132,12 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
   /** The shell's search button: present while this dialog is, and opening it by event. */
   useEffect(() => {
     const unregister = registerProjectSearch();
-    const stop = onOpenProjectSearch(() => {
-      openerRef.current = document.activeElement as HTMLElement | null;
-      setOpen(true);
-    });
+    const stop = onOpenProjectSearch(() => setOpen(true));
     return () => {
       stop();
       unregister();
     };
   }, []);
-
-  /** The focus trap, the `inert` siblings, and giving the focus back on close. */
-  useEffect(() => {
-    if (!open) return undefined;
-
-    inputRef.current?.focus();
-
-    const container = dialogRef.current?.parentElement;
-    const releasedSiblings: HTMLElement[] = [];
-    if (container) {
-      for (const node of Array.from(document.body.children)) {
-        if (node === container || !(node instanceof HTMLElement) || node.hasAttribute('inert')) continue;
-        node.setAttribute('inert', '');
-        releasedSiblings.push(node);
-      }
-    }
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        close();
-        return;
-      }
-      if (event.key !== 'Tab') return;
-      const root = dialogRef.current;
-      if (!root) return;
-      const focusable = [
-        ...root.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input, [tabindex]:not([tabindex="-1"])'),
-      ].filter((el) => el.offsetParent !== null);
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-      if (!active || !root.contains(active)) {
-        event.preventDefault();
-        first.focus();
-        return;
-      }
-      if (event.shiftKey && active === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', onKeyDown, true);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown, true);
-      for (const node of releasedSiblings) node.removeAttribute('inert');
-      openerRef.current?.focus();
-    };
-  }, [open, close]);
 
   const onInputKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -219,143 +156,118 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
     [at, launch, shown],
   );
 
+  // The modal part — the dimmed page going `inert`, the focus starting in the
+  // field and held inside, Escape, and the focus going back to the button (or
+  // the place Ctrl+K was pressed) — is `CcDialog`'s, the one modal of the
+  // product (§2.6; block D, D.32). Its layer carries `data-command-search`.
   return (
-    <>
-      {open && typeof document !== 'undefined'
-        ? createPortal(
-            <div data-command-search-layer="" className="fixed inset-0 z-cc-overlay flex items-start justify-center p-4 pt-[12vh]">
-              <div
-                data-cc-scrim=""
-                aria-hidden={true}
-                onClick={close}
-                className="absolute inset-0 bg-cc-overlay/45"
-              />
-              <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby={titleId}
-                data-command-search=""
-                className="relative flex w-full max-w-xl flex-col gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc-dialog"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <h2 id={titleId} className="m-0 text-[13px] font-bold text-cc-ink">
-                    {wt('search.title')}
-                  </h2>
-                  <CcIconButton label={wt('search.close')} onClick={close}>
-                    <X size={16} aria-hidden={true} />
-                  </CcIconButton>
-                </div>
+    <CcDialog open={open} title={wt('search.title')} onClose={close} data-command-search="">
+      <div className="flex flex-col gap-3">
+        {/* The input is the field — its border and its focus ring (§1.6, the
+            product's one ring) are its own; the icon sits inside it. */}
+        <div className="relative flex items-center gap-2">
+          <Search
+            size={14}
+            aria-hidden={true}
+            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-cc-ink-muted"
+          />
+          <input
+              type="search"
+            role="combobox"
+            aria-expanded={shown.length > 0}
+            aria-controls={listId}
+            /* The arrow keys move a cursor the focus never follows, so
+               the field names the option it points at (QA full review
+               of v2.20.0). */
+            aria-activedescendant={shown.length > 0 ? `${listId}-option-${at}` : undefined}
+            aria-label={wt('search.fieldName')}
+            placeholder={wt('search.placeholder')}
+            data-command-search-input=""
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setCursor(0);
+            }}
+            onKeyDown={onInputKeyDown}
+            className="min-w-0 flex-1 rounded-cc-row border border-cc-field-border bg-cc-surface py-2 pr-3 pl-8 text-[13px] font-medium text-cc-ink placeholder:text-cc-ink-muted"
+          />
+          {query ? (
+            <span className="shrink-0 font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
+              {searchFoundLabel(results.length)}
+            </span>
+          ) : null}
+        </div>
 
-                <div
+        {query && shown.length === 0 ? (
+          <p data-command-search-empty="" className="m-0 text-[12px] font-medium text-cc-ink-muted">
+            {searchNothingMatches(query)}
+          </p>
+        ) : null}
+
+        {shown.length > 0 ? (
+          <ul
+            id={listId}
+            role="listbox"
+            aria-label={wt('search.results')}
+            data-command-search-results=""
+            className="m-0 flex max-h-[50vh] list-none flex-col gap-2 overflow-y-auto p-0"
+          >
+            {shown.map((result, i) => (
+              <li
+                key={result.id}
+                id={`${listId}-option-${i}`}
+                role="option"
+                aria-selected={i === at}
+                data-command-search-hit={result.kind}
+                className={cn(
+                  'rounded-cc-row border border-cc-line px-3 py-2',
+                  i === at ? 'bg-cc-surface-muted' : 'bg-cc-surface',
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() => launch(result)}
+                  onMouseEnter={() => setCursor(i)}
+                  disabled={!result.href}
                   className={cn(
-                    'flex items-center gap-2 rounded-cc-row border border-cc-field-border bg-cc-surface px-3 py-2',
-                    'focus-within:outline-2 focus-within:outline-offset-1 focus-within:outline-cc-focus',
+                    'flex w-full flex-wrap items-center gap-2 bg-transparent text-left',
+                    result.href ? 'cursor-pointer' : 'cursor-default',
                   )}
                 >
-                  <Search size={14} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
-                  <input
-                    ref={inputRef}
-                    type="search"
-                    role="combobox"
-                    aria-expanded={shown.length > 0}
-                    aria-controls={listId}
-                    /* The arrow keys move a cursor the focus never follows, so
-                       the field names the option it points at (QA full review
-                       of v2.20.0). */
-                    aria-activedescendant={shown.length > 0 ? `${listId}-option-${at}` : undefined}
-                    aria-label={wt('search.fieldName')}
-                    placeholder={wt('search.placeholder')}
-                    data-command-search-input=""
-                    value={query}
-                    onChange={(event) => {
-                      setQuery(event.target.value);
-                      setCursor(0);
-                    }}
-                    onKeyDown={onInputKeyDown}
-                    className="min-w-0 flex-1 bg-transparent text-[13px] font-medium text-cc-ink outline-none placeholder:text-cc-ink-muted"
-                  />
-                  {query ? (
-                    <span className="shrink-0 font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
-                      {searchFoundLabel(results.length)}
+                  <CcTag>{SEARCH_KIND_LABEL[result.kind]}</CcTag>
+                  <span className="text-[13px] font-semibold text-cc-ink">{result.title}</span>
+                  {result.anchor ? (
+                    <CcAnchor label={searchSourceLineLabel(result.anchor)}>{result.anchor}</CcAnchor>
+                  ) : null}
+                  {result.detail ? (
+                    <span className="min-w-0 truncate text-[12px] font-medium text-cc-ink-muted">
+                      {result.detail}
                     </span>
                   ) : null}
-                </div>
+                </button>
 
-                {query && shown.length === 0 ? (
-                  <p data-command-search-empty="" className="m-0 text-[12px] font-medium text-cc-ink-muted">
-                    {searchNothingMatches(query)}
-                  </p>
-                ) : null}
-
-                {shown.length > 0 ? (
-                  <ul
-                    id={listId}
-                    role="listbox"
-                    aria-label={wt('search.results')}
-                    data-command-search-results=""
-                    className="m-0 flex max-h-[50vh] list-none flex-col gap-1.5 overflow-y-auto p-0"
-                  >
-                    {shown.map((result, i) => (
-                      <li
-                        key={result.id}
-                        id={`${listId}-option-${i}`}
-                        role="option"
-                        aria-selected={i === at}
-                        data-command-search-hit={result.kind}
-                        className={cn(
-                          'rounded-cc-row border border-cc-line px-3 py-2',
-                          i === at ? 'bg-cc-surface-muted' : 'bg-cc-surface',
-                        )}
+                {result.kind === 'glossary' ? (
+                  <div data-command-search-glossary-answer="" className="mt-2 space-y-1 pl-1">
+                    <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink">
+                      {result.glossaryAnswer}
+                    </p>
+                    <p className="m-0 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-cc-ink-muted">
+                      <span data-command-search-no-model-call="">{t('run.noModelCall')}</span>
+                      <span aria-hidden={true}>·</span>
+                      <span
+                        data-command-search-glossary-source=""
+                        data-source-origin={result.glossarySourceOrigin ?? 'absent'}
                       >
-                        <button
-                          type="button"
-                          onClick={() => launch(result)}
-                          onMouseEnter={() => setCursor(i)}
-                          disabled={!result.href}
-                          className={cn(
-                            'flex w-full flex-wrap items-center gap-2 bg-transparent text-left',
-                            result.href ? 'cursor-pointer' : 'cursor-default',
-                          )}
-                        >
-                          <CcTag>{SEARCH_KIND_LABEL[result.kind]}</CcTag>
-                          <span className="text-[13px] font-semibold text-cc-ink">{result.title}</span>
-                          {result.anchor ? (
-                            <CcAnchor label={searchSourceLineLabel(result.anchor)}>{result.anchor}</CcAnchor>
-                          ) : null}
-                          {result.detail ? (
-                            <span className="min-w-0 truncate text-[12px] font-medium text-cc-ink-muted">
-                              {result.detail}
-                            </span>
-                          ) : null}
-                        </button>
-
-                        {result.kind === 'glossary' ? (
-                          <div data-command-search-glossary-answer="" className="mt-1.5 space-y-1 pl-1">
-                            <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink">
-                              {result.glossaryAnswer}
-                            </p>
-                            <p className="m-0 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-cc-ink-muted">
-                              <span data-command-search-no-model-call="">{t('run.noModelCall')}</span>
-                              <span aria-hidden={true}>·</span>
-                              <span
-                                data-command-search-glossary-source=""
-                                data-source-origin={result.glossarySourceOrigin ?? 'absent'}
-                              >
-                                {result.glossarySource}
-                              </span>
-                            </p>
-                          </div>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
+                        {result.glossarySource}
+                      </span>
+                    </p>
+                  </div>
                 ) : null}
-              </div>
-            </div>,
-            document.body,
-          )
-        : null}
-    </>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </CcDialog>
   );
 }

@@ -20,7 +20,7 @@ test.describe('public pages, signed out', () => {
     test.setTimeout(90000);
   });
 
-  test('the landing page shows its title, hero, the six feature cards, both access cards, the edition badge and the call to action', async ({ page }) => {
+  test('the landing page shows its title, hero, links to the six feature pages, both access cards, the edition badge and the call to action', async ({ page }) => {
     await page.goto('/');
 
     await expect(page).toHaveTitle(/Clean-Core/i);
@@ -29,16 +29,11 @@ test.describe('public pages, signed out', () => {
     await expect(heroHeading).toBeVisible();
     await expect(heroHeading).toContainText(/Clean Core Accelerator/i);
 
-    // The six feature cards, by their stable test ids.
-    for (const id of [
-      'feature-extensibility-routing',
-      'feature-sap-api-hub-mapping',
-      'feature-dual-rap-cap-engine',
-      'feature-business-value-audit-tco',
-      'feature-adt-cockpit-simulation',
-      'feature-bpmn-2-0-business-sop',
-    ]) {
-      await expect(page.getByTestId(id), id).toBeVisible();
+    // The six feature cards went with the 3.0 landing page (roadmap 3.0.6); the
+    // feature pages did not — they have search reach and the page links into
+    // them from the sections that describe each feature.
+    for (const slug of ['extensibility-routing', 'cloudification-catalog', 'rap-cap-engine', 'modernization-assessment', 'audit-evidence', 'process-blueprints']) {
+      await expect(page.locator(`main a[href="/features/${slug}"]`).first(), `/features/${slug}`).toBeVisible();
     }
 
     // The two access cards: the free community edition and bring-your-own-key.

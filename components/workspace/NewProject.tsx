@@ -49,6 +49,13 @@ import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import { CcRunCost } from '@/components/cc/RunIndicator';
 import { wt, newProjectCatalogLine, newProjectExampleSize } from '@/lib/workspace-messages';
 
+/** A choice card and an example row: chosen is an ink outline, never green (§1.1). */
+const CHOICE_CARD = 'block cursor-pointer rounded-cc-card border p-3 text-left';
+const EXAMPLE_ROW = 'flex w-full cursor-pointer flex-wrap items-center gap-2 rounded-cc-row border px-3 py-2 text-left';
+const CHOICE_ON = 'border-cc-ink bg-cc-surface-muted ring-1 ring-cc-ink';
+const CHOICE_OFF = 'border-cc-field-border bg-cc-surface hover:border-cc-ink-muted';
+const EXAMPLE_OFF = 'border-cc-line bg-cc-surface hover:border-cc-field-border';
+
 /**
  * "New project" — first understand, then start. `DESIGN.md` §6.1.1, roadmap 2.7.
  *
@@ -250,7 +257,7 @@ export default function NewProject({
           <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">
             {wt('newProject.title')}
           </h1>
-          <p data-new-project-core="" className="mt-0.5 max-w-3xl text-[13px] font-medium text-cc-ink-muted">
+          <p data-new-project-core="" className="mt-1 max-w-3xl text-[13px] font-medium text-cc-ink-muted">
             {NEW_PROJECT_CORE}
           </p>
         </div>
@@ -266,7 +273,7 @@ export default function NewProject({
                     <li
                       key={line.key}
                       data-new-project-difference={line.key}
-                      className="flex items-start gap-2.5 text-[13px] leading-snug font-medium text-cc-ink"
+                      className="flex items-start gap-2 text-[13px] leading-snug font-medium text-cc-ink"
                     >
                       <span aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted">
                         <Icon size={16} />
@@ -288,7 +295,7 @@ export default function NewProject({
                 <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
                   {CLEAN_CORE_MEANING}
                 </p>
-                <ul className="m-0 mt-3 list-none space-y-1.5 p-0">
+                <ul className="m-0 mt-3 list-none space-y-2 p-0">
                   {CLEAN_CORE_SCHEMA.map((part) => (
                     <li
                       key={part.key}
@@ -311,7 +318,7 @@ export default function NewProject({
               </CcCard>
 
               <CcCard title={wt('newProject.fourLevels')}>
-                <ul data-new-project-ladder="" className="m-0 list-none space-y-1.5 p-0">
+                <ul data-new-project-ladder="" className="m-0 list-none space-y-2 p-0">
                   {ladder.map((level) => (
                     <li
                       key={level.value}
@@ -350,7 +357,7 @@ export default function NewProject({
                         {station.note}
                       </span>
                       {station.figures && station.figures.length > 0 ? (
-                        <ul className="m-0 mt-1.5 list-none space-y-1 p-0">
+                        <ul className="m-0 mt-2 list-none space-y-1 p-0">
                           {station.figures.map((artifact) => (
                             <li
                               key={artifact.file}
@@ -401,51 +408,67 @@ export default function NewProject({
 
         {/* ------------------------------------------- part 2: how to start */}
         <CcCard title={wt('newProject.howStart')} level={2}>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {/* Two choice cards (§6.1.1) as radio cards, like the deployment
+              choice of Analyze (D.10b): a native radio carries the keyboard and
+              the focus ring, the card around it is its label, so a click
+              anywhere on it still chooses. Chosen is an ink outline, never
+              green — choosing proves nothing (§1.1). */}
+          <div role="radiogroup" aria-label={wt('newProject.howStart')} className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {(['example', 'own-code'] as StartChoice[]).map((key) => {
               const card = START_CHOICES[key];
               const selected = choice === key;
               return (
-                <button
+                <label
                   key={key}
-                  type="button"
                   data-start-choice={key}
-                  aria-pressed={selected}
-                  onClick={() => setChoice(key)}
-                  className={
-                    selected
-                      ? 'rounded-cc-card border border-cc-brand-strong bg-cc-brand-surface p-3 text-left'
-                      : 'rounded-cc-card border border-cc-field-border bg-cc-surface p-3 text-left'
-                  }
+                  data-selected={selected ? 'true' : 'false'}
+                  className={selected ? `${CHOICE_CARD} ${CHOICE_ON}` : `${CHOICE_CARD} ${CHOICE_OFF}`}
                 >
-                  <b className="text-[13px] font-bold text-cc-ink">{card.title}</b>
-                  <span className="mt-0.5 block text-[12px] leading-snug font-medium text-cc-ink-muted">
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="new-project-start"
+                      value={key}
+                      checked={selected}
+                      onChange={() => setChoice(key)}
+                      className="size-4 shrink-0 cursor-pointer accent-cc-ink"
+                    />
+                    <b className="text-[13px] font-bold text-cc-ink">{card.title}</b>
+                  </span>
+                  <span className="mt-1 block text-[12px] leading-snug font-medium text-cc-ink-muted">
                     {card.body}
                   </span>
-                </button>
+                </label>
               );
             })}
           </div>
 
           {choice === 'example' ? (
             <div className="mt-3">
-              <ul data-new-project-examples="" className="m-0 list-none space-y-1.5 p-0">
+              <ul
+                data-new-project-examples=""
+                role="radiogroup"
+                aria-label={START_CHOICES.example.title}
+                className="m-0 list-none space-y-2 p-0"
+              >
                 {STARTER_EXAMPLES.map((item) => {
                   const cost = describeStarterExampleCost(profile, item.name);
                   const selected = item.file === example.file;
                   return (
-                    <li key={item.file}>
-                      <button
-                        type="button"
+                    <li key={item.file} role="none">
+                      <label
                         data-example={item.name}
-                        aria-pressed={selected}
-                        onClick={() => setExample(item)}
-                        className={
-                          selected
-                            ? 'flex w-full flex-wrap items-center gap-2 rounded-cc-row border border-cc-brand-strong bg-cc-brand-surface px-3 py-2 text-left'
-                            : 'flex w-full flex-wrap items-center gap-2 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2 text-left'
-                        }
+                        data-selected={selected ? 'true' : 'false'}
+                        className={selected ? `${EXAMPLE_ROW} ${CHOICE_ON}` : `${EXAMPLE_ROW} ${EXAMPLE_OFF}`}
                       >
+                        <input
+                          type="radio"
+                          name="new-project-example"
+                          value={item.file}
+                          checked={selected}
+                          onChange={() => setExample(item)}
+                          className="size-4 shrink-0 cursor-pointer accent-cc-ink"
+                        />
                         <span className="font-cc-mono text-[12px] font-bold text-cc-ink">
                           {item.name}
                         </span>
@@ -461,7 +484,7 @@ export default function NewProject({
                         <span className="w-full text-[12px] leading-snug font-medium text-cc-ink-muted">
                           {item.summary}
                         </span>
-                      </button>
+                      </label>
                     </li>
                   );
                 })}

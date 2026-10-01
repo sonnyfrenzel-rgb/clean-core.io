@@ -627,6 +627,8 @@ export default function DesignSystemGallery() {
             rows={[
               {
                 key: 'demo',
+                // `emphasis` (D.33): the row the surrounding page is about.
+                emphasis: true,
                 cells: {
                   project: (
                     <CcObjectIdentifier

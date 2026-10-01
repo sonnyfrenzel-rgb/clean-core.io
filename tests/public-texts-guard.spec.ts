@@ -77,6 +77,8 @@ interface Entry {
   reason: string;
   effort: 'none' | 'XS' | 'S' | 'M' | 'L';
   guard: Guard;
+  /** Datum, an dem die Entscheidung vollzogen wurde (update, archive oder delete). */
+  executed?: string;
 }
 interface Retired { id: string; patterns: string[]; allowIfLine?: string; samples: { hit: string; allowed: string } }
 interface Term { id: string; en: string; de: string | null; variants: { pattern: string; flags: string; note: string }[] }
@@ -226,10 +228,24 @@ test.describe('öffentliche Texte aus einem Guss (3.0.8)', () => {
     expect(problems).toEqual([]);
   });
 
-  test('der Entwurf der 3.0-README hält (a) und (b) schon heute', () => {
-    // Was mit 3.0 zur README wird, soll nicht erst dann gegen den Guard laufen.
+  test('die umgestellten Texte halten (a) und (b) schon heute', () => {
+    // Was mit 3.0.8 umgestellt ist, soll nicht erst mit dem Schalter gegen den
+    // Guard laufen. Die README war bis dahin der Entwurf docs/drafts/README-3.0.md;
+    // er ist mit der Umstellung zur README.md geworden und geloescht. Jede Datei,
+    // deren Umstellung die Inventur als vollzogen fuehrt (`executed` bei
+    // update), wird hier sofort gemessen.
     const v = vocabulary();
-    const text = read('docs/drafts/README-3.0.md');
+    const done = register().files.filter((e) => e.decision === 'update' && e.executed && !(e.path in CHRONICLE));
+    expect(done.map((e) => e.path)).toContain('README.md');
+    for (const e of done) {
+      expect(retiredHits(read(e.path), v), `${e.path} (a)`).toEqual([]);
+      expect(termHits(read(e.path), v), `${e.path} (b)`).toEqual([]);
+    }
+  });
+
+  test('die README selbst', () => {
+    const v = vocabulary();
+    const text = read('README.md');
     expect(retiredHits(text, v)).toEqual([]);
     expect(termHits(text, v)).toEqual([]);
   });

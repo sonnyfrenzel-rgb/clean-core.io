@@ -39,7 +39,7 @@ export default function CcToast({ open, children, onDismiss, durationMs = 4000 }
     <div
       role="status"
       data-cc-toast=""
-      className="fixed right-6 bottom-6 z-cc-toast flex items-center gap-2.5 rounded-cc-row bg-cc-overlay px-3.5 py-2.5 text-[13px] font-medium text-cc-on-dark shadow-cc-dialog"
+      className="fixed right-6 bottom-6 z-cc-toast flex items-center gap-2 rounded-cc-row bg-cc-overlay px-4 py-3 text-[13px] font-medium text-cc-on-dark shadow-cc-dialog"
     >
       <Check size={16} aria-hidden={true} />
       {children}

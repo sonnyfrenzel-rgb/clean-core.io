@@ -31,25 +31,40 @@ test.describe('accessibility', () => {
   });
 
   test('0a3321f70e07 · the invitation dialog is modal and its field is labelled', () => {
+    // Since D.23b the dialog is a CcDialog: the library holds the modality the
+    // fix added by hand (portal to body, focus to the first field, Escape,
+    // inert page), and CcField ties the label to the input.
     const src = code('components/InviteReaderDialog.tsx');
-    expect(src).toContain("useCcModal<HTMLDivElement>({ open: hydrated, onClose, initialFocus: 'first-field' })");
-    expect(src).toContain('createPortal(');
-    expect(src).toMatch(/ref=\{dialogRef\}[\s\S]{0,80}role="dialog"/);
-    expect(src).toContain('htmlFor={emailId}');
-    expect(src).toMatch(/id=\{emailId\}\s*data-invite-email/);
+    expect(src).toMatch(/<CcDialog\s+open\s+data-invite-dialog=""\s+title="Invite someone to read this project"/);
+    expect(src).toMatch(/<CcField\s+label="Email address"/);
+    expect(src).toMatch(/id=\{control\.id\}\s*data-invite-email/);
+    const dialog = code('components/cc/Dialog.tsx');
+    expect(dialog).toMatch(/useCcModal<HTMLDivElement>\(\{\s*open: shown,[\s\S]{0,80}initialFocus: 'first-field',/);
+    expect(dialog).toContain('createPortal(');
+    expect(code('components/cc/Field.tsx')).toMatch(/<label htmlFor=\{id\}/);
   });
 
   test('ff8ea3bf638e · the sign-in overlay is a modal dialog', () => {
+    // Since D.27 the access dialog is one CcDialog: the library holds what the
+    // fix added by hand — portal to body, focus held, page inert, Escape.
     const src = code('components/LandingModals.tsx');
-    expect(src).toMatch(/useCcModal<HTMLDivElement>\(\{\s*open: hydrated && Boolean\(authParam\),\s*onClose: closeAuthModal,/);
-    expect(src).toMatch(/hydrated && createPortal\(\s*<AnimatePresence>/);
-    expect(src).toMatch(/<motion\.div\s*ref=\{authDialogRef\}\s*role="dialog"\s*aria-modal="true"/);
+    expect(src).toMatch(/<CcDialog open=\{!!authParam\} onClose=\{closeAuthModal\}/);
+    const dialog = code('components/cc/Dialog.tsx');
+    expect(dialog).toMatch(/useCcModal<HTMLDivElement>\(\{\s*open: shown,/);
+    expect(dialog).toContain('createPortal(');
+    expect(dialog).toMatch(/role="dialog"/);
+    expect(dialog).toMatch(/aria-modal="true"/);
   });
 
   test('6334d1944a89 · both consent boxes show the keyboard focus', () => {
+    // Since D.27 both are CcCheckbox: the input itself is the painted square
+    // (`appearance-none`, not `sr-only`), so the focus ring lands on it.
     const src = code('components/LandingModals.tsx');
-    expect(src.match(/className="peer sr-only"/g)?.length).toBe(2);
-    expect(src.match(/peer-focus-visible:outline-cc-focus/g)?.length).toBe(2);
+    expect(src.match(/<CcCheckbox\s+checked=\{agreed(GDPR|Terms)\}/g)?.length).toBe(2);
+    expect(src).not.toMatch(/className="(peer )?sr-only"/);
+    const box = code('components/cc/Checkbox.tsx');
+    expect(box).toMatch(/'peer m-0 size-4 shrink-0 cursor-pointer appearance-none/);
+    expect(box).not.toContain('sr-only');
   });
 
   test('9d4a841bcb58 · pointer and focus hold the three-views stage separately', () => {
@@ -174,16 +189,7 @@ test.describe('what the text claims', () => {
     expect(code('components/SectionBoundary.tsx')).not.toMatch(/older analysis run/);
   });
 
-  test('773b0c7c8e87 · the sample reader does not promise open orders', () => {
-    const src = read('components/SamplePackageDownload.tsx');
-    // The view filters on the order type only, so the doc says so.
-    expect(src).toContain("where SalesOrderType = 'OR'");
-    expect(src).not.toMatch(/Read open standard sales orders/);
-  });
-
-  test('5c514527ae4e · the CAP projection keeps the company-code filter of its input', () => {
-    const src = read('components/TransformationShowroom.tsx');
-    expect(src).toMatch(/WHERE<\/span>\{` bukrs = `\}<span className="text-green-700">'1000'/);
-    expect(src).toContain("} where CompanyCode = '1000';");
-  });
+  // 773b0c7c8e87 and 5c514527ae4e held the wording of SamplePackageDownload and
+  // TransformationShowroom. 3.0.6 removed both components; claims-honesty-guard
+  // (fa9e39148077) now holds that they stay gone.
 });

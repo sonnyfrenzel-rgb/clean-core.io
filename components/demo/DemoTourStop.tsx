@@ -53,7 +53,7 @@ export default function DemoTourStop({
             {wt('tour.invitationLead')}
           </span>
         </span>
-        <span className="flex shrink-0 flex-wrap items-center gap-1.5">
+        <span className="flex shrink-0 flex-wrap items-center gap-2">
           <span data-demo-tour-new-project="" className="contents">
             <CcLinkButton
               href={TOUR_INVITATION_HREF}
@@ -83,7 +83,7 @@ export default function DemoTourStop({
       data-demo-tour-station={station.place}
       role="note"
       aria-label={tourStationLabel(tourPositionLabel(index, total), station.title)}
-      className="mb-2 flex flex-wrap items-start gap-2.5 rounded-cc-row border border-cc-information-border bg-cc-information-bg px-3 py-2"
+      className="mb-2 flex flex-wrap items-start gap-2 rounded-cc-row border border-cc-information-border bg-cc-information-bg px-3 py-2"
     >
       <span aria-hidden={true} className="mt-0.5 shrink-0 text-cc-information">
         <Compass size={16} />
@@ -95,7 +95,7 @@ export default function DemoTourStop({
         <b className="text-[13px] font-semibold text-cc-ink">{station.title}</b>
         <span className="block text-[12px] leading-snug font-medium text-cc-ink-muted">{station.body}</span>
       </span>
-      <span className="flex shrink-0 flex-wrap items-center gap-1.5">
+      <span className="flex shrink-0 flex-wrap items-center gap-2">
         <CcButton variant="secondary" onClick={onNext} data-demo-tour-next="">
           {wt('tour.next')}
         </CcButton>

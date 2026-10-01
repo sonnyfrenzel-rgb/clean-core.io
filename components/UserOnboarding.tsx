@@ -271,17 +271,19 @@ export default function UserOnboarding() {
             </ul>
           </div>
 
-          {/* System disclaimer and terms. It says what happens — a language
-              model writes part of every analysis and all generated code — and
-              leaves out the label: §3.1 has no "powered by Generative AI", and
-              the provenance of a given text is the job of the chip where that
-              text is shown. */}
+          {/* System disclaimer and terms. It says what happens — the engine
+              computes findings, route and score without a model; the model steps
+              are written by a language model — and leaves out the label: §3.1
+              has no "powered by Generative AI", and the provenance of a given
+              text is the job of the chip where that text is shown. The same fact
+              as section 4.1 of the Terms since v2.2.0 (QA c9ab2c6a6c1c). */}
           <CcMessageStrip state="warning" headline="System disclaimer and terms.">
-            This application is a <strong>free community project</strong>. Parts of every analysis and all
-            generated code are written by a language model (Google Gemini) and may contain inaccuracies, invented
-            details or syntax errors.
+            This application is a <strong>free community project</strong>. Findings, route and score come from a
+            deterministic engine, without a language model. Summaries, designs, generated code, documentation and
+            tests are written by a language model (Google Gemini) where you use those steps, and may contain
+            inaccuracies, invented details or syntax errors.
             <span className="mt-2 block">
-              We assume <strong>no warranty, guarantees, or liability</strong> for the performance, reliability, or execution safety of generated codes. Before deploying any output, it must be thoroughly inspected and verified by qualified software architects.
+              Both are drafts, not a guarantee. Before deploying any output, it must be thoroughly inspected and verified by qualified software architects. Liability is set out in section 4 of the Terms.
             </span>
             <span className="mt-2 block font-semibold">
               By creating a workspace, you acknowledge these conditions and agree to our{' '}
@@ -484,9 +486,9 @@ export default function UserOnboarding() {
           </div>
 
           <div>
-            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">3. AI Code Generation & Liability Disclaimer</h3>
+            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">3. What is computed, and what is generated</h3>
             <p className="m-0 cc-text-body">
-              Modernization analyses and source codes are synthesized automatically using Generative AI models. We assume <strong>no warranty, guarantees, or liability</strong> for the reliability, correctness, security, or compilation status of the generated codes.
+              The findings, the route, the Clean Core Score, the clean core levels and the process reconstructed from your code are computed by a deterministic engine, without a language model. They are evidence, not a guarantee. Summaries, the solution design, generated code, documentation and test suites are written by a language model where you use those steps. Liability is set out in section 4 of the Terms.
             </p>
             <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">
               <strong>Architect Directive:</strong> Before applying or utilizing any generated code in staging or production environments, all files must be thoroughly inspected, validated, and approved by qualified software architects.

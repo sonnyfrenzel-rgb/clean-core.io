@@ -42,7 +42,7 @@ export default function CoachMarkNote({
       data-coach-mark={mark.id}
       role="note"
       aria-label={mark.title}
-      className="mb-2 flex flex-wrap items-start gap-2.5 rounded-cc-row border border-cc-information-border bg-cc-information-bg px-3 py-2"
+      className="mb-2 flex flex-wrap items-start gap-2 rounded-cc-row border border-cc-information-border bg-cc-information-bg px-3 py-2"
     >
       <span aria-hidden={true} className="mt-0.5 shrink-0 text-cc-information">
         <Lightbulb size={16} />
@@ -55,7 +55,7 @@ export default function CoachMarkNote({
           {mark.body}
         </span>
       </span>
-      <span className="flex shrink-0 items-center gap-1.5">
+      <span className="flex shrink-0 items-center gap-2">
         <CcButton onClick={() => onDismiss(mark.id)} data-coach-mark-dismiss={mark.id}>
           {wt('coach.gotIt')}
         </CcButton>

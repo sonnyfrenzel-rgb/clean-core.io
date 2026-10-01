@@ -102,7 +102,7 @@ export default function WorkspaceToolBar({
         <div
           id={panelId}
           data-workspace-tools-panel=""
-          className="absolute left-0 z-20 mt-1 flex w-64 max-w-[calc(100vw-2rem)] flex-col items-stretch gap-1.5 rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc-dialog"
+          className="absolute left-0 z-20 mt-1 flex w-64 max-w-[calc(100vw-2rem)] flex-col items-stretch gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc-dialog"
         >
           {links}
         </div>
@@ -115,7 +115,7 @@ export default function WorkspaceToolBar({
       <>
         <div
           data-workspace-tools="open"
-          className="cc-no-print flex flex-wrap items-center gap-1.5 max-[600px]:hidden"
+          className="cc-no-print flex flex-wrap items-center gap-2 max-[600px]:hidden"
         >
           <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
             {wt('tools.label')}

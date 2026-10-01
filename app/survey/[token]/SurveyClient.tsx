@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Check, Loader2, AlertCircle, Send } from 'lucide-react';
+import CcButton from '@/components/cc/Button';
 import {
   SURVEY_QUESTIONS,
   SURVEY_FREETEXT_PROMPT,
@@ -228,42 +229,42 @@ export default function SurveyClient({
         end of the interaction — which it was not, and the first person to use it
         stopped there. A count of what is left cannot be mistaken for a finish.
       */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+      <div className="rounded-2xl border border-cc-line bg-cc-surface p-4 sm:p-5">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm font-black text-gray-950">
+          <p className="text-sm font-bold text-cc-ink">
             {doneCount} of {totalQuestions} answered
           </p>
           {proposed && status[proposed.question] === 'unconfirmed' && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700">
-              <AlertCircle className="w-3.5 h-3.5" /> not recorded yet
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-cc-warning">
+              <AlertCircle className="w-3.5 h-3.5" aria-hidden="true" /> not recorded yet
             </span>
           )}
           {proposed && status[proposed.question] === 'saving' && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" /> saving
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-cc-ink-muted">
+              <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" aria-hidden="true" /> saving
             </span>
           )}
           {proposed && status[proposed.question] === 'saved' && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-green-700">
-              <Check className="w-3.5 h-3.5" strokeWidth={3} /> saved
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-cc-success">
+              <Check className="w-3.5 h-3.5" strokeWidth={3} aria-hidden="true" /> saved
             </span>
           )}
         </div>
-        <div className="mt-3 flex gap-1.5" aria-hidden>
+        <div className="mt-3 flex gap-1" aria-hidden>
           {Array.from({ length: totalQuestions }).map((_, i) => (
             <span
               key={i}
               className={[
                 'h-1.5 flex-1 rounded-full',
-                i < doneCount ? 'bg-green-600' : 'bg-gray-200',
+                i < doneCount ? 'bg-cc-success' : 'bg-cc-line',
               ].join(' ')}
             />
           ))}
         </div>
         {proposed && proposedLabel && status[proposed.question] === 'unconfirmed' && (
-          <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+          <p className="mt-3 text-sm text-cc-ink-muted leading-relaxed">
             You picked{' '}
-            <span className="font-bold text-gray-950">&ldquo;{proposedLabel}&rdquo;</span> in the
+            <span className="font-bold text-cc-ink">&ldquo;{proposedLabel}&rdquo;</span> in the
             email. It is selected in the first question below — one tap records it, and you can
             pick a different one instead.
           </p>
@@ -278,10 +279,10 @@ export default function SurveyClient({
       */}
       {SURVEY_QUESTIONS.map((q) => (
         <section key={q.id}>
-          <h2 className="text-lg sm:text-xl font-black text-gray-950 tracking-tight leading-snug">
+          <h2 className="text-lg sm:text-xl font-bold text-cc-ink tracking-tight leading-snug">
             {q.prompt}
           </h2>
-          {q.lead && <p className="text-sm text-gray-500 mt-1 leading-relaxed">{q.lead}</p>}
+          {q.lead && <p className="text-sm text-cc-ink-muted mt-1 leading-relaxed">{q.lead}</p>}
 
           <div className="mt-4 space-y-2">
             {q.options.map((o) => {
@@ -289,6 +290,9 @@ export default function SurveyClient({
               // Selected but not yet on the server. Amber rather than green,
               // because green here has meant "recorded" everywhere else on this
               // page and a preselection has not been recorded by anyone.
+              // A choice tile, not one of the four buttons of DESIGN.md §1.5:
+              // its state is the border, the ring and the marker, with no fill
+              // of its own (block D, D.26).
               const awaiting = selected && status[q.id] === 'unconfirmed';
               return (
                 <button
@@ -299,10 +303,10 @@ export default function SurveyClient({
                   className={[
                     'w-full text-left rounded-xl border p-4 transition-colors cursor-pointer',
                     awaiting
-                      ? 'border-amber-500 bg-amber-50'
+                      ? 'border-cc-warning-line ring-1 ring-cc-warning-line'
                       : selected
-                        ? 'border-green-600 bg-green-50'
-                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50',
+                        ? 'border-cc-success ring-1 ring-cc-success'
+                        : 'border-cc-line hover:border-cc-field-border',
                   ].join(' ')}
                 >
                   <span className="flex items-start gap-3">
@@ -314,23 +318,23 @@ export default function SurveyClient({
                         'mt-0.5 shrink-0 w-5 h-5 border-2 flex items-center justify-center',
                         q.multi ? 'rounded-md' : 'rounded-full',
                         awaiting
-                          ? 'border-amber-500 bg-white'
+                          ? 'border-cc-warning-line bg-cc-surface'
                           : selected
-                            ? 'border-green-600 bg-green-600'
-                            : 'border-gray-300',
+                            ? 'border-cc-success bg-cc-success'
+                            : 'border-cc-field-border',
                       ].join(' ')}
                     >
                       {selected && !awaiting && (
-                        <Check className="w-3 h-3 text-white" strokeWidth={4} />
+                        <Check className="w-3 h-3 text-cc-on-dark" strokeWidth={4} aria-hidden="true" />
                       )}
-                      {awaiting && <span className="w-2 h-2 rounded-full bg-amber-500" />}
+                      {awaiting && <span className="w-2 h-2 rounded-full bg-cc-warning-line" />}
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-sm font-bold text-gray-950 leading-snug">
+                      <span className="block text-sm font-bold text-cc-ink leading-snug">
                         {o.label}
                       </span>
                       {o.hint && (
-                        <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">
+                        <span className="block text-xs text-cc-ink-muted mt-1 leading-relaxed">
                           {o.hint}
                         </span>
                       )}
@@ -342,12 +346,12 @@ export default function SurveyClient({
           </div>
 
           {status[q.id] === 'unconfirmed' && (
-            <p className="text-xs font-bold text-amber-700 mt-2">
+            <p className="text-xs font-bold text-cc-warning mt-2">
               Carried over from your email tap — not recorded until you tap it here.
             </p>
           )}
           {status[q.id] === 'error' && (
-            <p className="text-xs font-bold text-red-600 mt-2">
+            <p className="text-xs font-bold text-cc-error mt-2">
               That did not save. Please tap it again.
             </p>
           )}
@@ -374,16 +378,16 @@ export default function SurveyClient({
       */}
       <section>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-gray-500">
+          <span className="inline-flex items-center rounded-full border border-cc-line bg-cc-surface-muted px-2 py-0.5 cc-text-label text-cc-ink-muted">
             Optional
           </span>
         </div>
-        <h2 className="mt-2 text-lg sm:text-xl font-black text-gray-950 tracking-tight leading-snug">
+        <h2 className="mt-2 text-lg sm:text-xl font-bold text-cc-ink tracking-tight leading-snug">
           {SURVEY_FREETEXT_PROMPT}
         </h2>
-        <p className="text-sm text-gray-500 mt-1 leading-relaxed">{SURVEY_FREETEXT_LEAD}</p>
+        <p className="text-sm text-cc-ink-muted mt-1 leading-relaxed">{SURVEY_FREETEXT_LEAD}</p>
 
-        <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
+        <div className="mt-4 rounded-2xl border border-cc-line bg-cc-surface p-4">
           <label htmlFor="survey-comment" className="sr-only">
             {SURVEY_FREETEXT_PROMPT}
           </label>
@@ -397,43 +401,42 @@ export default function SurveyClient({
             rows={4}
             maxLength={SURVEY_FREETEXT_MAX}
             placeholder="What got in the way, what you expected, what you would build instead…"
-            className="w-full rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-950 leading-relaxed outline-none focus:border-green-600 resize-y"
+            className="w-full rounded-xl border border-cc-field-border bg-cc-surface p-3 text-sm text-cc-ink leading-relaxed focus-visible:border-cc-focus focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-cc-focus resize-y"
           />
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-            <button
-              type="button"
+            {/* The ghost button: never the page's primary (see above). `busy`
+                swallows a second press while the note is on its way. */}
+            <CcButton
+              variant="ghost"
+              density="cozy"
+              icon={<Send className="w-4 h-4" aria-hidden="true" />}
+              busy={commentStatus === 'saving'}
               onClick={saveComment}
-              disabled={commentStatus === 'saving' || !commentUnsent}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-950 transition-colors hover:border-gray-400 hover:bg-gray-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-white disabled:text-gray-400 cursor-pointer"
+              disabled={commentStatus !== 'saving' && !commentUnsent}
             >
-              {commentStatus === 'saving' ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
               Send this note
-            </button>
+            </CcButton>
 
             {/* Never a silent grey button. One of these is always true. */}
             <span className="text-xs leading-relaxed">
               {commentStatus === 'error' ? (
-                <span className="font-bold text-red-600">That did not send. Try again.</span>
+                <span className="font-bold text-cc-error">That did not send. Try again.</span>
               ) : commentStatus === 'saving' ? (
-                <span className="text-gray-500">Sending…</span>
+                <span className="text-cc-ink-muted">Sending…</span>
               ) : commentUnsent ? (
-                <span className="font-bold text-gray-600">
+                <span className="font-bold text-cc-ink-muted">
                   Not sent yet — this button sends the note, nothing else.
                 </span>
               ) : sentComment ? (
-                <span className="font-bold text-green-700">Sent — thank you.</span>
+                <span className="font-bold text-cc-success">Sent — thank you.</span>
               ) : (
-                <span className="text-gray-500">
+                <span className="text-cc-ink-muted">
                   Nothing typed, so nothing to send. Your answers above are saved either way.
                 </span>
               )}
             </span>
 
-            <span className="ml-auto text-xs text-gray-400">
+            <span className="ml-auto text-xs text-cc-ink-muted">
               {comment.length}/{SURVEY_FREETEXT_MAX}
             </span>
           </div>
@@ -446,8 +449,8 @@ export default function SurveyClient({
         somewhere further up the page, and "did that count?" is a fair question to
         be left with after tapping something that navigated nowhere.
       */}
-      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
-        <h2 className="text-sm font-black text-gray-950 uppercase tracking-wider">
+      <div className="rounded-2xl border border-cc-line bg-cc-surface-muted p-5">
+        <h2 className="cc-text-label text-cc-ink">
           Your answers
         </h2>
         <dl className="mt-4 space-y-3">
@@ -457,17 +460,17 @@ export default function SurveyClient({
             const picks = chosen(saved[q.id]);
             return (
               <div key={q.id} className="flex flex-col sm:flex-row sm:gap-4">
-                <dt className="text-xs text-gray-500 leading-relaxed sm:w-1/2 shrink-0">
+                <dt className="text-xs text-cc-ink-muted leading-relaxed sm:w-1/2 shrink-0">
                   {q.prompt}
                 </dt>
-                <dd className="text-sm font-bold text-gray-950 leading-relaxed sm:w-1/2">
+                <dd className="text-sm font-bold text-cc-ink leading-relaxed sm:w-1/2">
                   {picks.length === 0 ? (
                     status[q.id] === 'unconfirmed' ? (
-                      <span className="font-medium text-amber-700">
+                      <span className="font-medium text-cc-warning">
                         picked in the email — not recorded yet
                       </span>
                     ) : (
-                      <span className="font-medium text-gray-400">not answered</span>
+                      <span className="font-medium text-cc-ink-muted">not answered</span>
                     )
                   ) : (
                     picks.map((id) => getOption(q.id, id)?.label ?? id).join(' · ')
@@ -477,18 +480,18 @@ export default function SurveyClient({
             );
           })}
         </dl>
-        <p className="mt-5 text-sm text-gray-600 leading-relaxed border-t border-gray-200 pt-4">
+        <p className="mt-5 text-sm text-cc-ink-muted leading-relaxed border-t border-cc-line pt-4">
           {doneCount === totalQuestions ? (
             <>
-              <span className="font-bold text-gray-950">That is everything.</span> You can close
+              <span className="font-bold text-cc-ink">That is everything.</span> You can close
               this page — every answer is already saved. Open the link again any time until{' '}
-              <span className="font-bold text-gray-950">{closesOn}</span> to change one.
+              <span className="font-bold text-cc-ink">{closesOn}</span> to change one.
             </>
           ) : (
             <>
               Leave any of them unanswered if you would rather. Each tap saves as you make it,
               and you can come back until{' '}
-              <span className="font-bold text-gray-950">{closesOn}</span>.
+              <span className="font-bold text-cc-ink">{closesOn}</span>.
             </>
           )}
         </p>

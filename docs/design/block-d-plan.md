@@ -358,7 +358,7 @@ halbe Abstände als „nur berichten")
   `GlossaryText.tsx:40` auf ≥ 11 px.
 - Fertig, wenn: 0 harte JSX-Texte in den drei Ordnern; Katalogtest grün; `workspace-*`-Specs grün.
 
-**D.30 — Ausnahmelisten auf null, Guards scharf** · S · abhängig: alle Flächen-Schritte
+**D.30 — Ausnahmelisten auf null, Guards scharf** · S · abhängig: alle Flächen-Schritte · **done 30.09.2026** (see the closing note at the end)
 - Dateien: `tests/design-baseline/` (löschen), `tests/design-rendered-baseline/` (löschen),
   `tests/design-system-guard.spec.ts`, `tests/design-rendered-guard.spec.ts`, `tests/cc-token-guard.spec.ts`
   (`CC_DIRS` → ganze App), `tests/cc-provenance-guard.spec.ts` (`CC_SOURCE_DIRS` → ganze App),
@@ -664,3 +664,37 @@ ein Push nach `dev` und die QA-Schleife (`qa-review-loop`).
 - **D.29:** Projektname in den Shell-Pfad; Ctrl K per Ereignis an `CommandSearch`; `ABCD_META.color/.badge` (grünes A) und `LEVEL_EMOJI` in `support-matrix.ts` auf Nutzung prüfen; `SupportLevelMark` als feste Liste nach Lane A.
 - **D.30 / Lane A:** R7 zählt `hover:bg-*` als eigene Fläche; R18-Ausnahme erkennt `rounded-cc-row` nicht; `CcButton` reicht keinen `ref` durch (Menü-Trigger brauchen ihn); `CollapsibleAccordion` Prop `badgeSeverity 'green'` umbenennen.
 - **Offen bei Sonny:** Banner-Satz „Powered by Generative AI"; Sign-offs in `ConstructFindings` sind nur lokaler State („Signed Off" verspricht mehr).
+
+### Closing note — Block D complete (D.30, 30.09.2026)
+
+- **No exception list any more.** `tests/design-baseline/` (26 group files, all empty) and
+  `tests/design-rendered-baseline/` (the last ceiling: `/demo/[stage]` headings 1 — the demo stage cards were `h3`
+  under the `h1`, now `level={2}`) are deleted, together with `scripts/design/baseline.ts` and the npm scripts
+  `design:baseline` / `design:rendered-baseline`. `design-source-guard` and `design-rendered-guard` demand zero on
+  every file and every route and fail if either folder comes back.
+- **Every guard reads the whole app** (`app/**` without the route handlers `app/api/**`, and `components/**`):
+  `cc-token-guard` (hex, palette, undeclared tokens, and — new — classes of the never-registered typography plugin),
+  `cc-provenance-guard` (emitters, free severities, retired wordings; comments and data-contract values such as
+  `status === 'Passed'` are not text), `model-text-guard` (symbolism and emoji in source, and rendered on every route
+  of the design walk), `workflow-style-guard` (every visible text on every stage on the §1.2 scale, one title, no
+  heading above it).
+- **What the widened guards found, and the fixes:** retired wordings on the stages (`Passed`/`No verdict` →
+  *Proven*/*Not determined* in Testing, as D.17a planned; `Not computed` → *Not determined*; `Signed off` →
+  *Confirmed*, with the person icon instead of the proof shield); generated Markdown rendered at browser defaults
+  because `@tailwindcss/typography` is installed but never registered (`prose-*` emitted nothing) → one
+  `.cc-prose` in `app/globals.css` on the type scale, used by Analyze, Design, Testing, the dashboard and the
+  assistant; the board presentation preview at 30/18 px → the title, body and figure roles. One historical hex in a
+  `StageHeader` comment table.
+- **Named exceptions, the only ones:** `.md` export, `app/datenschutz/de`, the code surface, the landing mesh and
+  public radii (R12 is a workspace rule), the standalone exports in `lib/`. Each is a rule with its reason in the
+  guard, none a list entry.
+- **Lane A notes:** R7 `hover:bg-*`, R8 `outline-none` + `focus-visible:outline-<n>` and the R18 `rounded-cc-row`
+  chip case were already settled in D.5e (the source guard tests them); `CcButton` forwards `ref` (D.5e); the
+  `badgeSeverity` values are `neutral | warning | error` (no `'green'`). Token review: `--cc-warning` (#92400e) sits
+  at nearly the lightness of `--cc-error` (L* 37.5 vs 40) — bars, chart segments and status dots now take the new
+  `--cc-warning-mark` #d97706 (L* 60, 3.19:1 on white); text keeps `--cc-warning`. `CcButton` documents that a label
+  mixing text and elements goes in one `<span>`.
+- **For the owner:** DESIGN.md 1.8 (the new mark token, `.cc-prose`, §8) is marked as a draft for acceptance. A
+  top-anchored `CcDialog` variant (from D.32) is noted, not decided. "Confirm"/"Confirmed" in `ConstructFindings`
+  is still only local state (the open point above). The request-access mail and the Jira callback page in
+  `app/api/` still carry hex colours — outside the UI scope of the guards, like the mail templates.

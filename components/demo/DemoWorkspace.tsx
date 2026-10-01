@@ -285,7 +285,7 @@ function Analyze({
         </div>
       </div>
 
-      <CcCard title="What the engine did not judge">
+      <CcCard level={2} title="What the engine did not judge">
         <p data-testid="demo-caveat" className="m-0 cc-text-body text-cc-ink">
           {demo.analyze.caveat ??
             'Nothing in this source falls outside what the detectors judge — which is rare enough to be worth saying.'}
@@ -300,7 +300,7 @@ function Analyze({
         </ul>
       </CcCard>
 
-      <CcCard
+      <CcCard level={2}
         title="Findings"
         count={demo.analyze.findings.length}
         actions={
@@ -389,7 +389,7 @@ function Design({
         </p>
       </div>
 
-      <CcCard title="Decision checkpoints">
+      <CcCard level={2} title="Decision checkpoints">
         <ul className="m-0 list-none space-y-3 p-0">
           {r.checkpoints.map((c) => (
             <li key={c.checkpointName} className="border-l-2 border-cc-line pl-3">
@@ -404,7 +404,7 @@ function Design({
         </ul>
       </CcCard>
 
-      <CcCard title="Assumptions behind the route">
+      <CcCard level={2} title="Assumptions behind the route">
         <p className={lead}>
           The engine names them so they can be argued with, rather than folding them into the answer.
         </p>
@@ -417,7 +417,7 @@ function Design({
         </ul>
       </CcCard>
 
-      <CcCard title="Confirm the target architecture">
+      <CcCard level={2} title="Confirm the target architecture">
         <p className="m-0 cc-text-body text-cc-ink-muted">
           On a real project this is the point where a person puts their name to the target — a self-declaration,
           not an organisational approval. In the demo it is a switch in this browser: no name is recorded, nothing
@@ -452,7 +452,7 @@ function Design({
 function Transformation({ demo }: { demo: DemoProject }) {
   return (
     <>
-      <CcCard title="The plan the engine can write on its own">
+      <CcCard level={2} title="The plan the engine can write on its own">
         <p className={lead}>
           One line per finding: where it is, what the route is, and the released successor when the catalog names
           one.{' '}
@@ -494,7 +494,7 @@ function Transformation({ demo }: { demo: DemoProject }) {
 function Documentation({ demo }: { demo: DemoProject }) {
   return (
     <>
-      <CcCard title="Object inventory" count={demo.documentation.inventory.length}>
+      <CcCard level={2} title="Object inventory" count={demo.documentation.inventory.length}>
         <p className={lead}>
           {demo.documentation.inventory.length} objects parsed out of the source, each with the lines it occupies
           — the anchors every later statement hangs on.
@@ -528,7 +528,7 @@ function Documentation({ demo }: { demo: DemoProject }) {
         </div>
       </CcCard>
 
-      <CcCard title="Tables this program is coupled to" count={demo.documentation.coupling.length}>
+      <CcCard level={2} title="Tables this program is coupled to" count={demo.documentation.coupling.length}>
         <p className={lead}>{demo.documentation.coupling.length} tables, read or written directly.</p>
         <ul className="m-0 grid list-none grid-cols-1 gap-2 p-0 sm:grid-cols-2">
           {demo.documentation.coupling.map((t) => (
@@ -548,7 +548,7 @@ function Documentation({ demo }: { demo: DemoProject }) {
 function Testing({ demo }: { demo: DemoProject }) {
   return (
     <>
-      <CcCard title="Nothing here has run">
+      <CcCard level={2} title="Nothing here has run">
         <p className="m-0 cc-text-body text-cc-ink-muted">
           {demo.testing.verdicts.total} tests generated, {demo.testing.verdicts.passed} passed,{' '}
           {demo.testing.verdicts.failed} failed. There is no pass rate, because a rate over nothing is not a
@@ -557,7 +557,7 @@ function Testing({ demo }: { demo: DemoProject }) {
         </p>
       </CcCard>
 
-      <CcCard title="What a tester would have to check by hand" count={demo.testing.manualAreas.length}>
+      <CcCard level={2} title="What a tester would have to check by hand" count={demo.testing.manualAreas.length}>
         <p className={lead}>
           Straight out of the engine&apos;s coverage report: every construct it says it did not judge is a place
           where no generated test can stand in for a person.
@@ -625,7 +625,7 @@ function Economics({
 
   return (
     <>
-      <CcCard title="Your assumptions">
+      <CcCard level={2} title="Your assumptions">
         <p className={lead}>
           Nothing is filled in for you. The model refuses to produce a figure until the numbers behind it are
           yours, and it says which ones are still missing.
@@ -676,7 +676,7 @@ function Economics({
         </div>
       </CcCard>
 
-      <CcCard title="Maintenance effort · scenario">
+      <CcCard level={2} title="Maintenance effort · scenario">
         {forecast === null ? (
           <p data-testid="demo-forecast-refused" className="m-0 cc-text-body text-cc-ink-muted">
             No forecast yet
@@ -685,8 +685,8 @@ function Economics({
           </p>
         ) : (
           <div data-testid="demo-forecast" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Metric title="Legacy effort" value={`${forecast.legacyDevDaysTotal + forecast.legacyTestDaysTotal} days per year`} />
-            <Metric title="After modernisation" value={`${forecast.modernDevDaysTotal + forecast.modernTestDaysTotal} days per year`} />
+            <Metric title="Legacy effort" value={`${days(forecast.legacyDevDaysTotal + forecast.legacyTestDaysTotal)} days per year`} />
+            <Metric title="After modernisation" value={`${days(forecast.modernDevDaysTotal + forecast.modernTestDaysTotal)} days per year`} />
             <Metric title="Overhead reduction" value={`${forecast.overheadReductionPct}%`} />
             <Metric
               title="Payback"
@@ -738,6 +738,15 @@ function NumberField({
   );
 }
 
+/**
+ * A day count as a reader writes it. The sum of two floating-point totals
+ * printed raw read "3.9050000000000002 days" — a precision the model does not
+ * have. One decimal, like the payback months.
+ */
+function days(n: number): string {
+  return n.toLocaleString('en-US', { maximumFractionDigits: 1 });
+}
+
 function Metric({ title, value }: { title: string; value: string }) {
   return (
     <div className="rounded-cc-row border border-cc-line px-3 py-2">
@@ -767,7 +776,7 @@ function Delivery({
         </span>
       </CcMessageStrip>
 
-      <CcCard title="What a real handover would still need" count={demo.delivery.missing.length}>
+      <CcCard level={2} title="What a real handover would still need" count={demo.delivery.missing.length}>
         <ul data-testid="demo-missing" className="m-0 list-none space-y-2 p-0">
           {demo.delivery.missing.map((m) => (
             <li key={m} className="flex items-start gap-2 cc-text-body text-cc-ink">
@@ -778,7 +787,7 @@ function Delivery({
         </ul>
       </CcCard>
 
-      <CcCard title="Record a decision">
+      <CcCard level={2} title="Record a decision">
         <p className="m-0 cc-text-body text-cc-ink-muted">
           Try the shape of it. The choice and the note stay in this browser, they are attributed to nobody, and{' '}
           {DEMO_RESET_LABEL} removes them.

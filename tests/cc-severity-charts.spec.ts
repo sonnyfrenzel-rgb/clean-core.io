@@ -101,13 +101,13 @@ test.describe('the chart palettes are tokens, and never green', () => {
   test('a chart that counts states reads its colour from the fixed list', () => {
     expect(severityChartColor('Critical').token).toBe('--cc-error');
     expect(severityChartColor('High').token).toBe('--cc-error');
-    expect(severityChartColor('Medium').token).toBe('--cc-warning');
+    expect(severityChartColor('Medium').token).toBe('--cc-warning-mark');
     expect(severityChartColor('Low').token).toBe('--cc-neutral');
     expect(severityChartColor('Info').token).toBe('--cc-information');
     // §1.8 / ADR-024: A blue, never green.
     expect(levelChartColor('A').token).toBe('--cc-information');
     expect(levelChartColor('B').token).toBe('--cc-neutral');
-    expect(levelChartColor('C').token).toBe('--cc-warning');
+    expect(levelChartColor('C').token).toBe('--cc-warning-mark');
     expect(levelChartColor('D').token).toBe('--cc-error');
     expect(Object.keys(STATE_CHART_COLORS).sort()).toEqual(['error', 'information', 'neutral', 'warning']);
   });

@@ -298,7 +298,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               <h1 data-workspace-title className="m-0 text-[22px] leading-tight font-extrabold tracking-[-0.02em] text-cc-ink">
                 {demo.title}
               </h1>
-              <span className="rounded-cc-row border border-cc-information-border bg-cc-information-bg px-1.5 text-[11px] font-semibold text-cc-information">
+              <span className="rounded-cc-row border border-cc-information-border bg-cc-information-bg px-2 text-[11px] font-semibold text-cc-information">
                 {DEMO_TAG}
               </span>
             </div>
@@ -306,7 +306,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               {demoSubtitle(demo.subject, demo.sourceFile, demo.totalLines, demo.catalogVersion)}
             </p>
           </div>
-          <div className="flex shrink-0 flex-col items-start gap-1.5">
+          <div className="flex shrink-0 flex-col items-start gap-2">
             <CcSegmentedControl
               label={wt('demo.viewLabel')}
               value={view}
@@ -351,7 +351,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         ) : null}
 
         {/* The seven stages of the demo — the tools of this workspace (ADR-018). */}
-        <nav aria-label={wt('demo.stagesNav')} className="mt-4 flex flex-wrap gap-1.5" data-demo-stages="">
+        <nav aria-label={wt('demo.stagesNav')} className="mt-4 flex flex-wrap gap-2" data-demo-stages="">
           {PHASES.map((p) => (
             <CcLinkButton key={p.key} href={`/demo/${p.key}`}>
               {p.label}
@@ -405,7 +405,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
           <Place place="process-levels">
             {stop('process-levels')}
             <CcCard title={wt('demo.levels')} count={processMap.planes.length}>
-              <ul data-demo-process-levels="" className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+              <ul data-demo-process-levels="" className="m-0 flex list-none flex-wrap gap-2 p-0">
                 {processMap.planes.map((p) => (
                   <li key={p.id ?? 'top'}>
                     <CcButton
@@ -469,7 +469,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               <p className="m-0 mb-2 text-[12px] font-medium text-cc-ink-muted">
                 {wt('demo.standardFitLead')}
               </p>
-              <ul data-demo-standard-fit="" className="m-0 flex list-none flex-col gap-1.5 p-0">
+              <ul data-demo-standard-fit="" className="m-0 flex list-none flex-col gap-2 p-0">
                 {standard.slice(0, 5).map((item) => (
                   <li key={item.findingId} className="flex flex-wrap items-center gap-2 text-[13px] text-cc-ink">
                     <CcAnchor label={demoSourceLineLabel(item.lineStart)}>{`L${item.lineStart}`}</CcAnchor>

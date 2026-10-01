@@ -19,8 +19,7 @@ use Playwright's `test`/`expect` too, they simply never ask for a `page`.
 
 - `testDir` is `./tests`; Playwright picks up `tests/*.spec.ts` and the one
   `tests/board-deck.integrity.test.ts`. Shared code lives in `tests/helpers/`,
-  data in `tests/fixtures/`, `tests/korpus/`, `tests/prozess-benchmark/` and
-  `tests/design-baseline/`.
+  data in `tests/fixtures/`, `tests/korpus/` and `tests/prozess-benchmark/`.
 - **Chromium only.** The config defines a single project, `chromium`
   (`devices['Desktop Chrome']`), and CI installs only Chromium
   (`npx playwright install chromium`). Firefox and WebKit are not run anywhere.

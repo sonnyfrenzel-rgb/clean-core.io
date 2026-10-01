@@ -333,7 +333,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           <Absent>{row.isDemo ? t('workspace.demoLastChange') : t('workspace.noDate')}</Absent>
         ),
         actions: (
-          <span className="flex flex-col items-stretch gap-1.5 sm:items-end">
+          <span className="flex flex-col items-stretch gap-2 sm:items-end">
             {runnable(row) && !cell ? (
               <>
                 <CcButton
@@ -420,7 +420,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">
             {t('workspace.title')}
           </h1>
-          <p className="mt-0.5 text-[13px] font-medium text-cc-ink-muted">{t('workspace.lead')}</p>
+          <p className="mt-1 text-[13px] font-medium text-cc-ink-muted">{t('workspace.lead')}</p>
         </div>
 
         {ownRows.length === 0 ? (
@@ -433,7 +433,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
                 <h2 className="m-0 text-[14px] font-bold text-cc-ink" data-workspace-your-turn="">
                   {t('workspace.yourTurn')}
                 </h2>
-                <p className="mt-0.5 text-[13px] leading-snug font-medium text-cc-ink-muted">
+                <p className="mt-1 text-[13px] leading-snug font-medium text-cc-ink-muted">
                   {t('workspace.yourTurnBody')}
                 </p>
               </div>
@@ -512,7 +512,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
             </div>
           ) : null}
 
-          <p className="mt-2.5 text-[12px] leading-snug font-medium text-cc-ink-muted">
+          <p className="mt-3 text-[12px] leading-snug font-medium text-cc-ink-muted">
             {t('workspace.demoNote')}
           </p>
         </CcCard>

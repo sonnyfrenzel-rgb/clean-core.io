@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { applyActionCode } from 'firebase/auth';
 import { getAuth } from '@/lib/firebase';
 import { CONTACT_EMAIL } from '@/lib/constants';
+import { publicButton } from '@/components/landing/public-button';
 
 type State = 'ready' | 'working' | 'done' | 'error';
 
@@ -75,17 +76,17 @@ export default function AuthActionClient({ mode, oobCode }: { mode: string; oobC
 
   if (state === 'done') {
     return (
-      <div className="rounded-2xl border border-green-200 bg-green-50 p-6" role="status">
-        <h2 className="text-lg font-black text-green-900 mb-2">Your address is confirmed</h2>
-        <p className="text-sm text-green-900/80 leading-relaxed">
+      <div className="rounded-2xl border border-cc-success-border bg-cc-success-bg p-6" role="status">
+        <h2 className="text-lg font-bold text-cc-success mb-2">Your address is confirmed</h2>
+        <p className="text-sm text-cc-ink leading-relaxed">
           Clean-Core.io now knows this mailbox is yours. Nothing else about your account changed.
         </p>
-        <p className="text-sm text-green-900/80 leading-relaxed mt-3">
+        <p className="text-sm text-cc-ink leading-relaxed mt-3">
           Next: sign in (again, if you were signed in before) and open the invitation link from the other email.
         </p>
         <Link
           href="/?auth=signin"
-          className="inline-block mt-4 bg-gray-950 hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-colors"
+          className={`${publicButton('primary', 'sm')} mt-4`}
         >
           Sign in
         </Link>
@@ -95,12 +96,12 @@ export default function AuthActionClient({ mode, oobCode }: { mode: string; oobC
 
   if (state === 'error') {
     return (
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6" role="alert">
-        <h2 className="text-lg font-black text-amber-900 mb-2">The address was not confirmed</h2>
-        <p className="text-sm text-amber-900/80 leading-relaxed">{message}</p>
+      <div className="rounded-2xl border border-cc-warning-border bg-cc-warning-bg p-6" role="alert">
+        <h2 className="text-lg font-bold text-cc-warning mb-2">The address was not confirmed</h2>
+        <p className="text-sm text-cc-ink leading-relaxed">{message}</p>
         <a
           href={`mailto:${CONTACT_EMAIL}?subject=Email%20confirmation`}
-          className="inline-block mt-4 bg-amber-900 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider"
+          className={`${publicButton('primary', 'sm')} mt-4`}
         >
           Write to {CONTACT_EMAIL}
         </a>
@@ -109,8 +110,8 @@ export default function AuthActionClient({ mode, oobCode }: { mode: string; oobC
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6">
-      <p className="text-sm text-gray-600 leading-relaxed mb-5">
+    <div className="rounded-2xl border border-cc-line bg-cc-surface p-6">
+      <p className="text-sm text-cc-ink-muted leading-relaxed mb-5">
         Confirm below that this mailbox belongs to you. This is needed once, before an invitation to read a project
         can open. Nothing is shared with anyone by this step.
       </p>
@@ -118,7 +119,7 @@ export default function AuthActionClient({ mode, oobCode }: { mode: string; oobC
         type="button"
         onClick={confirm}
         disabled={state !== 'ready'}
-        className="inline-flex items-center justify-center bg-gray-950 hover:bg-gray-800 disabled:opacity-60 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-colors cursor-pointer"
+        className={`${publicButton('primary')} cursor-pointer disabled:cursor-not-allowed disabled:opacity-60`}
       >
         {state === 'working' ? 'Confirming…' : 'Confirm my address'}
       </button>

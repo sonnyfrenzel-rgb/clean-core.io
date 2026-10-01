@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 
 export const metadata: Metadata = withTwitterCard({
@@ -20,25 +18,14 @@ export const metadata: Metadata = withTwitterCard({
 
 export default function ImpressumPage() {
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-green-600 hover:opacity-80 transition-opacity">
-            <ArrowLeft className="w-4 h-4" />
-            <span className="font-bold text-lg tracking-tight text-gray-900">Clean-Core<span className="text-green-600">.io</span></span>
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-6 py-16 md:py-24">
-        <h1 className="text-3xl md:text-5xl font-black text-gray-950 tracking-tighter mb-12">
-          Legal Notice <span className="text-gray-400 font-medium text-2xl md:text-3xl">(Impressum)</span>
+    <main className="max-w-3xl mx-auto px-6 py-16 md:py-24">
+        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-cc-ink mb-12">
+          Legal Notice <span className="text-cc-ink-muted font-medium text-2xl md:text-3xl">(Impressum)</span>
         </h1>
 
-        <div className="space-y-10 text-gray-700 leading-relaxed">
+        <div className="space-y-10 text-cc-ink leading-relaxed">
           <section>
-            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
+            <h2 className="text-xl font-bold tracking-tight text-cc-ink mb-3">
               Information according to § 5 DDG (Digitale-Dienste-Gesetz)
             </h2>
             <p className="text-base">
@@ -50,18 +37,18 @@ export default function ImpressumPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
+            <h2 className="text-xl font-bold tracking-tight text-cc-ink mb-3">
               Contact
             </h2>
             <p className="text-base">
               Phone: +49 151 59200157<br />
-              E-Mail: <a href="mailto:info@clean-core.io" className="text-green-600 hover:underline font-semibold">info@clean-core.io</a><br />
-              Website: <a href="https://www.clean-core.io" className="text-green-600 hover:underline font-semibold">www.clean-core.io</a>
+              E-Mail: <a href="mailto:info@clean-core.io" className="font-semibold text-cc-brand-strong underline-offset-4 hover:text-cc-brand-deep hover:underline">info@clean-core.io</a><br />
+              Website: <a href="https://www.clean-core.io" className="font-semibold text-cc-brand-strong underline-offset-4 hover:text-cc-brand-deep hover:underline">www.clean-core.io</a>
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
+            <h2 className="text-xl font-bold tracking-tight text-cc-ink mb-3">
               Responsible for Content under § 18 Abs. 2 MStV
             </h2>
             <p className="text-base">
@@ -72,39 +59,38 @@ export default function ImpressumPage() {
             </p>
           </section>
 
-          <hr className="border-gray-100" />
+          <hr className="border-cc-line" />
 
           <section>
-            <h2 className="text-lg font-black text-gray-900 uppercase tracking-wider mb-3">
+            <h2 className="text-xl font-bold tracking-tight text-cc-ink mb-3">
               Disclaimer
             </h2>
-            <div className="space-y-4 text-sm text-gray-600">
+            <div className="space-y-4 text-sm text-cc-ink-muted">
               <p>
-                <strong className="text-gray-800">Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a free community application using generative AI (Free Community Edition), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
+                <strong className="text-cc-ink">Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a free community application using generative AI (Free Community Edition), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
               </p>
               <p>
-                <strong className="text-gray-800">Copyright:</strong> The content and works created by the site operator on these pages are subject to German copyright law. Contributions from third parties are marked as such. Reproduction, editing, and distribution require written consent.
+                <strong className="text-cc-ink">Copyright:</strong> The content and works created by the site operator on these pages are subject to German copyright law. Contributions from third parties are marked as such. Reproduction, editing, and distribution require written consent.
               </p>
             </div>
           </section>
 
-          <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl">
-            <p className="text-sm text-amber-800 font-bold">
+          <div className="p-5 bg-cc-warning-bg border border-cc-warning-border rounded-2xl">
+            <p className="text-sm text-cc-warning font-bold">
               Important Note: Clean-Core.io is a free community tool for assessing and modernizing legacy SAP code. Generated outputs are drafts and must be reviewed, tested and approved by qualified architects before any productive use.
             </p>
           </div>
 
-          <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl">
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              <strong className="text-slate-600">Trademark Notice:</strong> SAP, S/4HANA, ABAP, BTP, SAP Signavio, SAP Build, and SAP Cloud ALM are trademarks or registered trademarks of SAP SE or its affiliates. Clean-Core.io is an independent project and is not endorsed, certified, or sponsored by SAP SE unless explicitly stated.
+          <div className="p-5 bg-cc-surface-muted border border-cc-line rounded-2xl">
+            <p className="text-xs text-cc-ink-muted leading-relaxed">
+              <strong className="text-cc-ink">Trademark Notice:</strong> SAP, S/4HANA, ABAP, BTP, SAP Signavio, SAP Build, and SAP Cloud ALM are trademarks or registered trademarks of SAP SE or its affiliates. Clean-Core.io is an independent project and is not endorsed, certified, or sponsored by SAP SE unless explicitly stated.
             </p>
           </div>
 
-          <div className="pt-8 border-t border-gray-100 text-center text-[10px] text-gray-400 font-black font-mono uppercase tracking-wider">
+          <div className="pt-8 border-t border-cc-line text-center cc-text-label font-cc-mono text-cc-ink-muted">
             Clean-Core.io {APP_VERSION} ({APP_RELEASE_DATE})
           </div>
         </div>
       </main>
-    </div>
   );
 }

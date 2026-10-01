@@ -64,11 +64,11 @@ export default function CcCodeSurface({
             key={line.number}
             data-cc-code-line={line.highlighted ? 'highlighted' : 'plain'}
             className={cn(
-              'block rounded-[4px] pr-2.5',
+              'block rounded-[4px] pr-3',
               line.highlighted && 'bg-cc-code-hl shadow-[inset_3px_0_0_var(--cc-code-hl-bar)]',
             )}
           >
-            <span className="mr-3.5 inline-block w-10 text-right text-cc-code-muted select-none">
+            <span className="mr-4 inline-block w-10 text-right text-cc-code-muted select-none">
               {line.number}
             </span>
             {line.tokens.map((token, index) => (

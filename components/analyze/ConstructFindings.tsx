@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ShieldCheck, Link2, ExternalLink, SearchX } from 'lucide-react';
+import { UserCheck, Link2, ExternalLink, SearchX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SupportFinding } from '@/lib/abap/class-model';
 import { safeHttpHref } from '@/lib/export-safety';
@@ -142,10 +142,10 @@ export default function ConstructFindings({ findings }: ConstructFindingsProps) 
                 <CcButton
                   variant="ghost"
                   aria-pressed={isSignedOff}
-                  icon={<ShieldCheck size={16} aria-hidden="true" />}
+                  icon={<UserCheck size={16} aria-hidden="true" />}
                   onClick={() => toggleSignOff(key)}
                 >
-                  {isSignedOff ? 'Signed Off' : 'Sign Off'}
+                  {isSignedOff ? 'Confirmed' : 'Confirm'}
                 </CcButton>
               </div>
             </div>

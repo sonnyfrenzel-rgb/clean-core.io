@@ -188,17 +188,17 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
           {publicCloudFitHeadline(summary)}
         </p>
         {summary.targetPlatform && (
-          <p className="m-0 mt-0.5 text-[12px] font-medium text-cc-ink-muted">
+          <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">
             {cloudFitTargetPlatform(TARGET_PLATFORM_LABELS[summary.targetPlatform])}
           </p>
         )}
         {summary.noCatalogMatchNote && (
-          <div className="mt-2.5" data-public-cloud-fit-no-catalog-match="">
+          <div className="mt-3" data-public-cloud-fit-no-catalog-match="">
             <CcMessageStrip state="information">{summary.noCatalogMatchNote}</CcMessageStrip>
           </div>
         )}
         {summary.usageImportCaveat && (
-          <div className="mt-2.5" data-public-cloud-fit-usage-caveat="">
+          <div className="mt-3" data-public-cloud-fit-usage-caveat="">
             <CcMessageStrip state="information">{summary.usageImportCaveat}</CcMessageStrip>
           </div>
         )}
@@ -216,22 +216,22 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
           ))}
 
           <section data-public-cloud-fit-bucket="not-assigned">
-            <h4 className="m-0 flex flex-wrap items-center gap-1.5 text-[12px] font-bold tracking-[0.04em] text-cc-ink uppercase">
+            <h4 className="m-0 flex flex-wrap items-center gap-2 text-[12px] font-bold tracking-[0.04em] text-cc-ink uppercase">
               {cloudFitNotAssigned(notAssigned.length)}
               <CcProvenanceChip value="not-determined" />
             </h4>
             {notAssigned.length === 0 ? (
               <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">{wt('cloudFit.allAssigned')}</p>
             ) : (
-              <ul className="m-0 mt-1.5 list-none space-y-1.5 p-0">
+              <ul className="m-0 mt-2 list-none space-y-2 p-0">
                 {notAssigned.map((a) => (
                   <li
                     key={a.objectName}
                     data-public-cloud-fit-object={a.objectName}
-                    className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-2.5 py-1.5"
+                    className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2"
                   >
                     <div className="text-[12px] font-semibold text-cc-ink">{a.objectName}</div>
-                    <p className="m-0 mt-0.5 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                    <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
                       {a.reason?.detail}
                     </p>
                   </li>
@@ -273,21 +273,21 @@ function BucketSection({
       <h4 className="m-0 text-[12px] font-bold tracking-[0.04em] text-cc-ink uppercase">
         {label} ({rows.length})
       </h4>
-      <p data-public-cloud-fit-meaning className="m-0 mt-0.5 text-[12px] leading-snug font-medium text-cc-ink-muted">
+      <p data-public-cloud-fit-meaning className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
         {meaning}
       </p>
       {rows.length === 0 ? (
         <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">{wt('cloudFit.emptyBucket')}</p>
       ) : (
-        <ul className="m-0 mt-1.5 list-none space-y-1.5 p-0">
+        <ul className="m-0 mt-2 list-none space-y-2 p-0">
           {rows.map((a) => (
             <li
               key={a.objectName}
               data-public-cloud-fit-object={a.objectName}
-              className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-2.5 py-1.5"
+              className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2"
             >
               <div className="text-[12px] font-semibold text-cc-ink">{a.objectName}</div>
-              <p className="m-0 mt-0.5 text-[12px] leading-snug font-medium text-cc-ink-muted">{a.evidence}</p>
+              <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">{a.evidence}</p>
               {a.reviewTask && (
                 <p
                   data-public-cloud-fit-review-task
@@ -297,7 +297,7 @@ function BucketSection({
                 </p>
               )}
               {a.usageNote && (
-                <p className="m-0 mt-0.5 text-[11px] leading-snug font-medium text-cc-ink-muted">{a.usageNote}</p>
+                <p className="m-0 mt-1 text-[11px] leading-snug font-medium text-cc-ink-muted">{a.usageNote}</p>
               )}
             </li>
           ))}

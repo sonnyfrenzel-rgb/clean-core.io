@@ -3,7 +3,6 @@ import path from 'path';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import {
   ARCHIVED_TERMS_VERSIONS,
   archivedTerms,
@@ -69,18 +68,18 @@ function Block({ block }: { block: TermsBlock }) {
     // The archived file's `#` is the document title, which this page already
     // renders as its own `h1`, so the levels step down by one.
     if (block.level === 1) {
-      return <h2 className="text-xl font-black text-gray-900 tracking-tight">{block.text}</h2>;
+      return <h2 className="text-2xl font-extrabold text-cc-ink tracking-tight">{block.text}</h2>;
     }
     // No `uppercase` here, although `/terms` styles its own headings that way.
     // On the live page that is a style; on an archived text it would change what
     // the document says — "PROVIDER / OPERATOR (IMPRINT)" is shouting, and it is
     // not the heading this version carries. `scratch/extract-legal.js` made the
     // same call when it read these headings out with `textContent`.
-    return <h3 className="text-lg font-black text-gray-900 tracking-tight pt-4">{block.text}</h3>;
+    return <h3 className="text-xl font-bold text-cc-ink tracking-tight pt-4">{block.text}</h3>;
   }
   if (block.kind === 'list') {
     return (
-      <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
+      <ul className="list-disc pl-5 space-y-2 text-sm text-cc-ink-muted">
         {block.items.map((item, i) => (
           <li key={i}>{item}</li>
         ))}
@@ -111,30 +110,18 @@ export default async function ArchivedTermsPage({
   const blocks = parseArchivedTerms(archivedText(entry));
 
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900">
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-green-600 hover:opacity-80 transition-opacity">
-            <ArrowLeft className="w-4 h-4" />
-            <span className="font-bold text-lg tracking-tight text-gray-900">
-              Clean-Core<span className="text-green-600">.io</span>
-            </span>
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-6 py-16 md:py-24" data-archived-terms={entry.version}>
-        <h1 className="text-3xl md:text-5xl font-black text-gray-950 tracking-tighter mb-4">
+    <main className="max-w-3xl mx-auto px-6 py-16 md:py-24" data-archived-terms={entry.version}>
+        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-cc-ink mb-4">
           Terms of Service{' '}
-          <span className="text-gray-400 font-medium text-2xl md:text-3xl">{entry.label}, archived</span>
+          <span className="text-cc-ink-muted font-medium text-2xl md:text-3xl">{entry.label}, archived</span>
         </h1>
 
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl mb-10">
-          <p className="text-sm text-amber-800">
+        <div className="p-4 bg-cc-warning-bg border border-cc-warning-border rounded-2xl mb-10">
+          <p className="text-sm text-cc-warning">
             <strong>This version is no longer current.</strong> It is reproduced here unchanged because it
             was in force from {entry.effectiveOn}, and because an account that accepted it is entitled to
             see the words it accepted. The Terms in force today are at{' '}
-            <Link href="/terms" className="text-green-600 hover:underline font-semibold">
+            <Link href="/terms" className="font-semibold text-cc-brand-strong underline-offset-4 hover:text-cc-brand-deep hover:underline">
               clean-core.io/terms
             </Link>
             .
@@ -143,33 +130,32 @@ export default async function ArchivedTermsPage({
 
         <dl className="mb-12 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
           <div>
-            <dt className="text-gray-500 font-semibold">Version</dt>
-            <dd className="text-gray-900 font-mono" data-archived-version>
+            <dt className="text-cc-ink-muted font-semibold">Version</dt>
+            <dd className="text-cc-ink font-cc-mono" data-archived-version>
               {entry.version}
             </dd>
           </div>
           <div>
-            <dt className="text-gray-500 font-semibold">Effective from</dt>
-            <dd className="text-gray-900" data-archived-effective>
+            <dt className="text-cc-ink-muted font-semibold">Effective from</dt>
+            <dd className="text-cc-ink" data-archived-effective>
               {entry.effectiveOn}
             </dd>
           </div>
           <div className="sm:col-span-3">
-            <dt className="text-gray-500 font-semibold">SHA-256 of this text</dt>
+            <dt className="text-cc-ink-muted font-semibold">SHA-256 of this text</dt>
             {/* The digest a consent record carries, printed so the record and the
                 words can be compared by anyone holding both. */}
-            <dd className="text-gray-900 font-mono text-xs break-all" data-archived-sha256>
+            <dd className="text-cc-ink font-cc-mono text-xs break-all" data-archived-sha256>
               {entry.sha256}
             </dd>
           </div>
         </dl>
 
-        <article className="space-y-6 text-gray-700 leading-relaxed" data-archived-text>
+        <article className="space-y-6 text-cc-ink leading-relaxed" data-archived-text>
           {blocks.map((block, i) => (
             <Block key={i} block={block} />
           ))}
         </article>
       </main>
-    </div>
   );
 }

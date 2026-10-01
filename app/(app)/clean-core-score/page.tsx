@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
-import { Activity, ShieldCheck, Check, Sparkles, KeyRound, ArrowLeftRight } from 'lucide-react';
+import { Activity, ShieldCheck, Check, Code2, KeyRound, ArrowLeftRight } from 'lucide-react';
 import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
+import { publicButton } from '@/components/landing/public-button';
+import CcTable from '@/components/cc/Table';
 
 /**
  * The Clean Core Score, explained — and told apart from SAP's own figures.
@@ -124,6 +126,38 @@ const FIGURES = [
   },
 ];
 
+/**
+ * The public knowledge-page look (block D, D.23a): `--cc-*` tokens instead of
+ * the palette, nothing heavier than 800, nothing under 11 px, the generous
+ * public radii (DESIGN.md §1.4, ADR-051). The hero is light with the landing
+ * page's mesh at .18 — the dark gradient banner it replaces was a surface the
+ * product does not have.
+ */
+const PAGE = 'mx-auto max-w-5xl space-y-12 px-4 py-10 text-cc-ink sm:px-6';
+const HERO = 'relative overflow-hidden rounded-3xl border border-cc-line bg-cc-surface p-8 shadow-cc sm:p-12';
+const HERO_MESH =
+  'radial-gradient(38% 42% at 10% 12%,var(--cc-seq-3) 0%,transparent 70%),radial-gradient(34% 40% at 90% 10%,var(--cc-brand) 0%,transparent 70%),radial-gradient(46% 40% at 55% 62%,var(--cc-chart-3) 0%,transparent 72%)';
+const EYEBROW =
+  'inline-flex items-center gap-2 rounded-full border border-cc-line bg-cc-brand-surface px-4 py-1 text-xs font-bold uppercase tracking-[0.08em] text-cc-brand-strong';
+const H1 = 'text-4xl font-extrabold leading-none tracking-[-0.035em] text-cc-ink sm:text-6xl';
+const H2 = 'text-3xl font-extrabold tracking-[-0.03em] text-cc-ink';
+const BODY = 'font-medium leading-relaxed text-cc-ink';
+const CHECK_TOP = 'mt-1 shrink-0 text-cc-brand-strong';
+const SIDE_CARD = 'rounded-3xl border border-cc-line p-6';
+const SIDE_TITLE = 'text-lg font-bold text-cc-ink';
+const SIDE_LIST = 'space-y-3 text-sm font-semibold text-cc-ink';
+const SIDE_LABEL = 'cc-text-label text-cc-ink-muted';
+const LINK =
+  'font-semibold text-cc-brand-strong underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus';
+const SIDE_LINK = `block ${LINK}`;
+const FAQ_BOX = 'space-y-6 rounded-3xl border border-cc-line bg-cc-surface-muted p-8';
+const FAQ_TITLE = 'text-2xl font-extrabold text-cc-ink';
+const FOOTER_LINE =
+  'border-t border-cc-line pt-10 text-center font-cc-mono text-xs font-semibold uppercase tracking-wider text-cc-ink-muted';
+
+const PILLAR = 'space-y-2 rounded-2xl border border-cc-line bg-cc-surface-muted p-6';
+const PILLAR_TEXT = 'text-sm font-medium leading-relaxed text-cc-ink-muted';
+
 export default function CleanCoreScorePage() {
   /**
    * One @graph, four nodes.
@@ -194,7 +228,7 @@ export default function CleanCoreScorePage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-12 animate-in fade-in duration-300 bg-white min-h-screen text-gray-900 font-sans">
+    <div className={PAGE}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson) }}
@@ -206,16 +240,16 @@ export default function CleanCoreScorePage() {
       </div>
 
       {/* Hero Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[2.5rem] p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-slate-700/30">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.08),transparent)] pointer-events-none"></div>
-        <div className="relative z-10 max-w-4xl space-y-6">
-          <div className="inline-flex items-center gap-2 bg-green-500/15 border border-green-400/30 px-4 py-1.5 rounded-full text-xs font-bold text-green-400 tracking-wide uppercase">
-            <Activity size={14} /> Code Metric
+      <div className={HERO}>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.18]" style={{ background: HERO_MESH }} />
+        <div className="relative max-w-4xl space-y-6">
+          <div className={EYEBROW}>
+            <Activity size={14} aria-hidden="true" /> Code Metric
           </div>
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none text-slate-50">
-            SAP Clean Core <span className="text-green-400">Score</span>
+          <h1 className={H1}>
+            SAP Clean Core <span className="text-cc-brand-strong">Score</span>
           </h1>
-          <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
+          <p className="max-w-2xl text-lg font-medium leading-relaxed text-cc-ink-muted">
             One number, 0 to 100, for how far your custom ABAP is decoupled from the SAP standard core.
             Higher is better. It is our measure, not a figure SAP publishes — and it points the
             opposite way to SAP&rsquo;s Technical Debt Score.
@@ -232,25 +266,25 @@ export default function CleanCoreScorePage() {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+      <div className="grid grid-cols-1 gap-8 pt-4 md:grid-cols-3">
         {/* Left 2 Columns: Text content */}
-        <div className="md:col-span-2 space-y-8">
+        <div className="space-y-8 md:col-span-2">
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+            <h2 className={H2}>
               What is the Clean Core Score?
             </h2>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               The <strong>Clean Core Score</strong> is a single figure for how far customer-specific
               ABAP has been decoupled from the SAP standard. It runs from 0% (a fully modified legacy
               system) to 100% (standard ERP without modifications). <strong>Higher is better.</strong>
             </p>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               It is a property of code, not of a company. It is computed from the uploaded source and
               its data dependencies, deterministically, before any AI is involved — the same code
               gives the same score every time, and every verdict behind it can be traced to the code
               it came from — and, where it rests on SAP&apos;s catalog, to the SAP object as well.
             </p>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               By maintaining a &ldquo;clean core,&rdquo; companies keep core processes stable while
               innovations are realized side-by-side on the{' '}
               <strong>SAP Business Technology Platform (BTP)</strong> or in-app via released
@@ -259,47 +293,48 @@ export default function CleanCoreScorePage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+            <h2 className={H2}>
               Not SAP&rsquo;s score — and which way each one points
             </h2>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               <strong>SAP publishes no Clean Core Score.</strong> The names in this field are close
               enough to be mistaken for one another, and one of them runs backwards, so here they are
               side by side. Clean-Core.io is an independent, community-built tool; SAP has not
               endorsed, certified or reviewed this score.
             </p>
 
-            <div className="overflow-x-auto rounded-2xl border border-gray-200">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 text-left">
-                    <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Figure</th>
-                    <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Published by</th>
-                    <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Direction</th>
-                    <th className="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gray-500">What it says</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {FIGURES.map((f) => (
-                    <tr key={f.figure} className={`border-t border-gray-100 align-top ${f.ours ? 'bg-green-50/60' : ''}`}>
-                      <td className="px-4 py-3 font-bold text-gray-955 whitespace-nowrap">
+            <div className="rounded-2xl border border-cc-line bg-cc-surface px-2 pt-3">
+              <CcTable
+                caption="The Clean Core Score next to SAP's three published figures"
+                columns={[
+                  { key: 'figure', label: 'Figure' },
+                  { key: 'who', label: 'Published by' },
+                  { key: 'direction', label: 'Direction' },
+                  { key: 'says', label: 'What it says' },
+                ]}
+                rows={FIGURES.map((f) => ({
+                  key: f.figure,
+                  emphasis: f.ours,
+                  cells: {
+                    figure: (
+                      <span className="font-bold text-cc-ink">
                         {f.figure}
-                        <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                        <span className="block font-cc-mono text-[11px] font-semibold uppercase tracking-wider text-cc-ink-muted">
                           {f.scale}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600 leading-relaxed font-medium">{f.who}</td>
-                      <td className="px-4 py-3 font-bold text-gray-955 whitespace-nowrap">{f.direction}</td>
-                      <td className="px-4 py-3 text-gray-600 leading-relaxed font-medium">{f.says}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </span>
+                    ),
+                    who: <span className="leading-relaxed text-cc-ink-muted">{f.who}</span>,
+                    direction: <span className="whitespace-nowrap font-bold text-cc-ink">{f.direction}</span>,
+                    says: <span className="leading-relaxed text-cc-ink-muted">{f.says}</span>,
+                  },
+                }))}
+              />
             </div>
 
-            <div className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-              <ArrowLeftRight className="text-amber-700 shrink-0 mt-0.5" size={18} />
-              <p className="text-sm text-amber-900 leading-relaxed font-medium">
+            <div className="flex gap-3 rounded-2xl border border-cc-warning-border bg-cc-warning-bg p-5">
+              <ArrowLeftRight className="mt-1 shrink-0 text-cc-warning" size={18} aria-hidden="true" />
+              <p className="text-sm font-medium leading-relaxed text-cc-ink">
                 The one that catches people out: a <strong>high</strong> Clean Core Score is good news,
                 and a <strong>high</strong> SAP Technical Debt Score is bad news. SAP&rsquo;s own
                 description of that figure is &ldquo;a higher score indicating greater technical
@@ -307,14 +342,14 @@ export default function CleanCoreScorePage() {
               </p>
             </div>
 
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               The one SAP figure we do reproduce is the per-object{' '}
-              <Link href="/sap-clean-core-object-classification" className="text-green-600 font-bold hover:underline">
+              <Link href="/sap-clean-core-object-classification" className={LINK}>
                 Clean Core Level A–D
               </Link>
               , derived from SAP&rsquo;s published data. The rule that derives it, and the version of
               that rule, are written out on{' '}
-              <Link href="/method/levels" className="text-green-600 font-bold hover:underline">
+              <Link href="/method/levels" className={LINK}>
                 how the A–D level is derived
               </Link>
               .
@@ -322,41 +357,41 @@ export default function CleanCoreScorePage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+            <h2 className={H2}>
               The Calculation Basis of the KPI
             </h2>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               Our analysis algorithm evaluates uploaded custom code projects based on four key pillars:
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-slate-50 border border-gray-150 p-6 rounded-2xl space-y-2">
-                <ShieldCheck className="text-green-600" size={24} />
-                <h3 className="text-base font-bold text-gray-955">API &amp; Interface Release</h3>
-                <p className="text-xs text-gray-600 leading-relaxed font-medium">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className={PILLAR}>
+                <ShieldCheck className="text-cc-brand-strong" size={24} aria-hidden="true" />
+                <h3 className="text-base font-bold text-cc-ink">API &amp; Interface Release</h3>
+                <p className={PILLAR_TEXT}>
                   Checks whether the SAP APIs and Data Dictionary objects used are officially released by SAP for cloud extensions.
                 </p>
               </div>
 
-              <div className="bg-slate-50 border border-gray-150 p-6 rounded-2xl space-y-2">
-                <Activity className="text-green-600" size={24} />
-                <h3 className="text-base font-bold text-gray-955">Degree of Coupling</h3>
-                <p className="text-xs text-gray-600 leading-relaxed font-medium">
+              <div className={PILLAR}>
+                <Activity className="text-cc-brand-strong" size={24} aria-hidden="true" />
+                <h3 className="text-base font-bold text-cc-ink">Degree of Coupling</h3>
+                <p className={PILLAR_TEXT}>
                   Measures how strongly custom tables and business processes are interwoven with SAP ERP modules.
                 </p>
               </div>
 
-              <div className="bg-slate-50 border border-gray-150 p-6 rounded-2xl space-y-2">
-                <Sparkles className="text-green-600" size={24} />
-                <h3 className="text-base font-bold text-gray-955">Modern ABAP Cloud</h3>
-                <p className="text-xs text-gray-600 leading-relaxed font-medium">
+              <div className={PILLAR}>
+                <Code2 className="text-cc-brand-strong" size={24} aria-hidden="true" />
+                <h3 className="text-base font-bold text-cc-ink">Modern ABAP Cloud</h3>
+                <p className={PILLAR_TEXT}>
                   Validates the usage of modern ABAP Cloud syntax (RAP Model) instead of outdated legacy ABAP reports.
                 </p>
               </div>
 
-              <div className="bg-slate-50 border border-gray-150 p-6 rounded-2xl space-y-2">
-                <KeyRound className="text-green-600" size={24} />
-                <h3 className="text-base font-bold text-gray-955">Key-User Extensibility</h3>
-                <p className="text-xs text-gray-600 leading-relaxed font-medium">
+              <div className={PILLAR}>
+                <KeyRound className="text-cc-brand-strong" size={24} aria-hidden="true" />
+                <h3 className="text-base font-bold text-cc-ink">Key-User Extensibility</h3>
+                <p className={PILLAR_TEXT}>
                   Checks whether in-app changes go through released key-user extension points rather than modifying SAP objects.
                 </p>
               </div>
@@ -364,14 +399,14 @@ export default function CleanCoreScorePage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+            <h2 className={H2}>
               What the score does not tell you
             </h2>
-            <ul className="space-y-3 text-gray-700 leading-relaxed font-medium">
+            <ul className="space-y-3 font-medium leading-relaxed text-cc-ink">
               <li className="flex gap-3">
-                <span className="mt-2 w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                <span aria-hidden="true" className="mt-2 h-2 w-2 shrink-0 rounded-full bg-cc-neutral-border" />
                 <span>
-                  <strong className="text-gray-955">Not a cost, a saving or an ROI.</strong> The score
+                  <strong className="text-cc-ink">Not a cost, a saving or an ROI.</strong> The score
                   measures code structure. The analysis states no money figure and the board deck
                   states none. The Economics stage is the one place the score enters one: it models
                   upgrade effort from rates you enter yourself and the score of the signed run, on
@@ -380,18 +415,18 @@ export default function CleanCoreScorePage() {
                 </span>
               </li>
               <li className="flex gap-3">
-                <span className="mt-2 w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                <span aria-hidden="true" className="mt-2 h-2 w-2 shrink-0 rounded-full bg-cc-neutral-border" />
                 <span>
-                  <strong className="text-gray-955">Not an SAP verdict.</strong> SAP ADT and the SAP
+                  <strong className="text-cc-ink">Not an SAP verdict.</strong> SAP ADT and the SAP
                   ABAP Test Cockpit (ATC), run against your target release, are the authoritative
                   checks. This is preparation for them, not a substitute, and not an SAP
                   certification.
                 </span>
               </li>
               <li className="flex gap-3">
-                <span className="mt-2 w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                <span aria-hidden="true" className="mt-2 h-2 w-2 shrink-0 rounded-full bg-cc-neutral-border" />
                 <span>
-                  <strong className="text-gray-955">Not a promise about your upgrade.</strong> Static
+                  <strong className="text-cc-ink">Not a promise about your upgrade.</strong> Static
                   analysis cannot resolve everything — dynamic calls, Dynpro flows and batch input are
                   named rather than guessed at. A score is evidence for a decision, and the decision
                   stays with you.
@@ -403,51 +438,48 @@ export default function CleanCoreScorePage() {
 
         {/* Right Column: Key Metrics / Sidebar */}
         <div className="space-y-6">
-          <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 space-y-6">
-            <h3 className="font-black text-lg text-gray-955 uppercase tracking-tight">What the number gives you</h3>
-            <ul className="space-y-3 font-bold text-sm text-gray-700">
-              <li className="flex gap-2 items-start">
-                <Check className="text-green-600 shrink-0 mt-0.5" size={16} /> One figure for a code base, on a published rule
+          <div className={`${SIDE_CARD} space-y-6 bg-cc-surface-muted`}>
+            <h3 className={SIDE_TITLE}>What the number gives you</h3>
+            <ul className={SIDE_LIST}>
+              <li className="flex items-start gap-2">
+                <Check className={CHECK_TOP} size={16} aria-hidden="true" /> One figure for a code base, on a published rule
               </li>
-              <li className="flex gap-2 items-start">
-                <Check className="text-green-600 shrink-0 mt-0.5" size={16} /> Every verdict traceable to the code, catalog verdicts to SAP&rsquo;s object data
+              <li className="flex items-start gap-2">
+                <Check className={CHECK_TOP} size={16} aria-hidden="true" /> Every verdict traceable to the code, catalog verdicts to SAP&rsquo;s object data
               </li>
-              <li className="flex gap-2 items-start">
-                <Check className="text-green-600 shrink-0 mt-0.5" size={16} /> Critical couplings named with line numbers
+              <li className="flex items-start gap-2">
+                <Check className={CHECK_TOP} size={16} aria-hidden="true" /> Critical couplings named with line numbers
               </li>
-              <li className="flex gap-2 items-start">
-                <Check className="text-green-600 shrink-0 mt-0.5" size={16} /> Recomputed on the server and signed into the run
+              <li className="flex items-start gap-2">
+                <Check className={CHECK_TOP} size={16} aria-hidden="true" /> Recomputed on the server and signed into the run
               </li>
             </ul>
-            <div className="pt-4 border-t border-gray-200">
-              <Link
-                href="/?auth=signup"
-                className="block text-center bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all text-sm"
-              >
+            <div className="border-t border-cc-line pt-4">
+              <Link href="/?auth=signup" className={`${publicButton('primary')} w-full`}>
                 Calculate Score
               </Link>
             </div>
           </div>
 
-          <div className="border border-slate-200 rounded-[2rem] p-6 space-y-4 bg-white">
-            <h3 className="font-black text-sm text-gray-400 uppercase tracking-wider">Related Topics</h3>
-            <div className="space-y-2 font-bold text-sm">
-              <Link href="/abap-custom-code-analysis" className="block text-green-600 hover:underline">
+          <div className={`${SIDE_CARD} space-y-4 bg-cc-surface`}>
+            <h3 className={SIDE_LABEL}>Related Topics</h3>
+            <div className="space-y-2 text-sm">
+              <Link href="/abap-custom-code-analysis" className={SIDE_LINK}>
                 → ABAP Custom Code Analysis
               </Link>
-              <Link href="/sap-clean-core-object-classification" className="block text-green-600 hover:underline">
+              <Link href="/sap-clean-core-object-classification" className={SIDE_LINK}>
                 → Clean Core Object Classification (A–D)
               </Link>
-              <Link href="/method/levels" className="block text-green-600 hover:underline">
+              <Link href="/method/levels" className={SIDE_LINK}>
                 → How the A–D level is derived
               </Link>
-              <Link href="/how-it-works" className="block text-green-600 hover:underline">
+              <Link href="/how-it-works" className={SIDE_LINK}>
                 → How the evidence engine works
               </Link>
-              <Link href="/catalog" className="block text-green-600 hover:underline">
+              <Link href="/catalog" className={SIDE_LINK}>
                 → SAP object catalog
               </Link>
-              <Link href="/reference-analysis" className="block text-green-600 hover:underline">
+              <Link href="/reference-analysis" className={SIDE_LINK}>
                 → A worked example, end to end
               </Link>
             </div>
@@ -456,20 +488,20 @@ export default function CleanCoreScorePage() {
       </div>
 
       {/* FAQs */}
-      <div className="bg-slate-50 border border-gray-200 rounded-[2.5rem] p-8 space-y-6">
-        <h2 className="text-2xl font-black text-gray-955">Frequently Asked Questions (FAQ)</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-bold text-sm">
+      <div className={FAQ_BOX}>
+        <h2 className={FAQ_TITLE}>Frequently Asked Questions (FAQ)</h2>
+        <div className="grid grid-cols-1 gap-6 text-sm md:grid-cols-2">
           {faqs.map((faq, idx) => (
             <div key={idx} className="space-y-2">
-              <h3 className="text-gray-955 font-black">{faq.question}</h3>
-              <p className="text-gray-600 font-medium leading-relaxed">{faq.answer}</p>
+              <h3 className="font-bold text-cc-ink">{faq.question}</h3>
+              <p className="font-medium leading-relaxed text-cc-ink-muted">{faq.answer}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Footer Disclaimer */}
-      <div className="text-center text-[10px] text-gray-500 font-mono font-bold uppercase tracking-wider pt-10 border-t border-gray-200">
+      <div className={FOOTER_LINE}>
         Clean-Core.io {APP_VERSION} • {APP_RELEASE_DATE} • Free Community Edition
       </div>
     </div>

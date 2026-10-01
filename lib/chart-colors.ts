@@ -65,7 +65,7 @@ function color(token: string, bg: string, fill: string, stroke: string): ChartCo
  */
 export const STATE_CHART_COLORS: Readonly<Record<ChartState, ChartColor>> = Object.freeze({
   error: color('--cc-error', 'bg-cc-error', 'fill-cc-error', 'stroke-cc-error'),
-  warning: color('--cc-warning', 'bg-cc-warning', 'fill-cc-warning', 'stroke-cc-warning'),
+  warning: color('--cc-warning-mark', 'bg-cc-warning-mark', 'fill-cc-warning-mark', 'stroke-cc-warning-mark'),
   neutral: color('--cc-neutral', 'bg-cc-neutral', 'fill-cc-neutral', 'stroke-cc-neutral'),
   information: color(
     '--cc-information',

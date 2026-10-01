@@ -17,6 +17,24 @@ import { cn } from '@/lib/utils';
  * one. That single rule is why the views switcher is not the green pill it was
  * in the first mockup.
  */
+/**
+ * The fixed look of §1.5, exported like `CC_BUTTON_*` for the one control that
+ * has to be a segment row without being this component — the need choice of
+ * the process states (`components/process-states/StateChoice.tsx`) has no
+ * answer until one is picked and disables itself while saving, neither of which
+ * a view switch ever needs. Shared rather than copied, so the two cannot drift.
+ */
+export const CC_SEGMENTED_GROUP =
+  'inline-flex gap-0.5 rounded-cc-row border border-cc-field-border bg-cc-surface-muted p-0.5';
+
+export function ccSegmentClass(selected: boolean): string {
+  return cn(
+    'inline-flex items-center gap-1 rounded-[6px] px-2 py-1 text-[12px] whitespace-nowrap pointer-coarse:min-h-11 pointer-coarse:px-3',
+    'disabled:opacity-60 disabled:cursor-not-allowed',
+    selected ? 'bg-cc-ink text-cc-on-dark font-semibold' : 'bg-transparent text-cc-ink-muted font-medium',
+  );
+}
+
 export interface CcSegment<T extends string> {
   value: T;
   label: string;
@@ -50,7 +68,7 @@ export default function CcSegmentedControl<T extends string>({
       role="radiogroup"
       aria-label={label}
       data-cc-segmented=""
-      className="inline-flex gap-0.5 rounded-cc-row border border-cc-field-border bg-cc-surface-muted p-0.5"
+      className={CC_SEGMENTED_GROUP}
       onKeyDown={(event) => {
         if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
           event.preventDefault();
@@ -73,12 +91,7 @@ export default function CcSegmentedControl<T extends string>({
             tabIndex={selected ? 0 : -1}
             data-cc-segment={selected ? 'on' : 'off'}
             onClick={() => onChange(segment.value)}
-            className={cn(
-              'inline-flex items-center gap-1 rounded-[6px] px-2 py-1 text-[12px] whitespace-nowrap pointer-coarse:min-h-11 pointer-coarse:px-3',
-              selected
-                ? 'bg-cc-ink text-cc-on-dark font-semibold'
-                : 'bg-transparent text-cc-ink-muted font-medium',
-            )}
+            className={ccSegmentClass(selected)}
           >
             {segment.icon}
             {segment.label}

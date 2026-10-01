@@ -24,34 +24,34 @@ const withoutComments = (rel: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '');
 
-test.describe('the comparison matrix has one definition', () => {
-  test('both breakpoints render the same array', () => {
+test.describe('the toolchain table has one definition', () => {
+  // Roadmap 3.0.6 replaced the SAP-versus-Clean-Core.io comparison matrix with
+  // the mockup's toolchain table (ATC, ADT, SAP Signavio, SAP Cloud ALM). The
+  // mechanism this guard protects stays: one array, one renderer — the table
+  // stacks on a phone through CSS rather than through a second copy, which is
+  // how the old matrix drifted in three places.
+  test('one array, rendered once', () => {
     const s = read('app/page.tsx');
-    expect(s).toContain('const comparisonRows');
-    // Once for the cards under `md`, once for the desktop rows.
-    expect((s.match(/comparisonRows\.map\(/g) || []).length).toBe(2);
+    expect(s).toContain('const toolchainRows');
+    expect((s.match(/toolchainRows\.map\(/g) || []).length).toBe(1);
+    expect(s).not.toContain('const comparisonRows');
   });
 
-  test('no capability row is spelled out inline any more', () => {
+  test('no tool row is spelled out inline', () => {
     const s = read('app/page.tsx');
-    const body = s.slice(s.indexOf('const comparisonRows'));
-    const decl = body.slice(0, body.indexOf('return ('));
-    const jsx = body.slice(body.indexOf('return ('));
-    // Every row title belongs to the one declaration; a second occurrence in the
-    // markup means the array has been copied back into the JSX.
-    for (const title of ['Sandbox Verification', 'Business Process Blueprinting', 'Developer HUD']) {
-      expect(decl, `${title} missing from the shared array`).toContain(title);
-      expect(jsx, `${title} written out in the markup again`).not.toContain(title);
+    const body = s.slice(s.indexOf('const toolchainRows'));
+    const decl = body.slice(0, body.indexOf('const schemaJson'));
+    const jsx = s.slice(s.lastIndexOf('return ('));
+    for (const tool of ['ABAP Test Cockpit (ATC)', 'ABAP Development Tools (ADT)', 'SAP Cloud ALM']) {
+      expect(decl, `${tool} missing from the shared array`).toContain(tool);
+      expect(jsx, `${tool} written out in the markup again`).not.toContain(tool);
     }
   });
 
-  test('the renderers style from the grade, not from the badge text', () => {
+  test('the ATC row reads the object count from lib/facts.ts', () => {
     const s = read('app/page.tsx');
-    // Comparing badge strings is what let "Not Supported" and "Not Available"
-    // drift apart while both still rendered correctly.
-    expect(s).not.toContain("row.sap.badge === 'Not Supported'");
-    expect(s).not.toContain("row.sap.badge === 'Static Check'");
-    expect((s.match(/row\.sap\.level === 'none'/g) || []).length).toBeGreaterThanOrEqual(1);
+    const decl = s.slice(s.indexOf('const toolchainRows'), s.indexOf('const schemaJson'));
+    expect(decl).toContain('${catalogObjects}');
   });
 });
 
@@ -91,7 +91,9 @@ test.describe('the object count is read, not typed', () => {
 
 test.describe('stamped dates follow the release', () => {
   test('nothing carries a frozen month next to a live version', () => {
-    for (const rel of ['components/TransformationShowroom.tsx', 'components/SamplePackageDownload.tsx']) {
+    // The showroom and its sample package carried this stamp until 3.0.6 removed
+    // them (Sonny, 24.09.2026); the version line in the landing footer still does.
+    for (const rel of ['app/page.tsx']) {
       const s = read(rel);
       const jsx = s.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
       // `{APP_VERSION} · July 2026` moved further from the truth with every
@@ -103,15 +105,44 @@ test.describe('stamped dates follow the release', () => {
 });
 
 test.describe('the legal pages are reachable without an account', () => {
-  test('the shell banner links the public versions', () => {
-    const s = read('app/(app)/layout.tsx');
+  // Roadmap 3.0.6 (decision 24.09.2026) removed the dismissible banner that
+  // used to repeat the two links above the shell bar. The footer is now the one
+  // place they stand on every page of this shell, so both of its branches are
+  // held to them: the one-line footer inside a workflow step, and SiteFooter
+  // everywhere else.
+  test('both footers of the shell link the public versions', () => {
+    const s = withoutComments('app/(app)/layout.tsx');
     // This layout wraps /knowledge, /how-to and /first-run, which are in the
     // sitemap and reachable signed-out. A privacy policy behind a login does not
     // satisfy § 5 DDG / Art. 12–13 GDPR.
     expect(s).not.toContain('/settings#privacy');
     expect(s).not.toContain('/settings#legal');
-    expect(s).toContain('href="/datenschutz"');
-    expect(s).toContain('href="/impressum"');
+    // The footer is not conditional on anything but the branch: one of the two
+    // renders on every route.
+    const branches = s.match(/\{isProjectStep \? \(([\s\S]*?)\) : \(([\s\S]*?)\)\}\s*<div className="cc-no-print">/);
+    expect(branches, 'the footer branch of the shell was not found').not.toBeNull();
+    const [, stepFooter, otherFooter] = branches!;
+    expect(stepFooter).toContain('<footer');
+    expect(stepFooter).toContain('href="/datenschutz"');
+    expect(stepFooter).toContain('href="/impressum"');
+    expect(stepFooter).toContain('href="/terms"');
+    expect(otherFooter).toContain('<footer');
+    expect(otherFooter).toContain('<SiteFooter />');
+    const site = read('components/SiteFooter.tsx');
+    expect(site).toContain("href: '/datenschutz'");
+    expect(site).toContain("href: '/impressum'");
+    expect(site).toContain("href: '/terms'");
+  });
+
+  test('a signed-out reader of a shell page finds both links in the footer', async ({ page }) => {
+    test.setTimeout(120000);
+    for (const route of ['/how-it-works', '/knowledge']) {
+      await page.goto(route, { waitUntil: 'domcontentloaded' });
+      const footer = page.locator('footer').last();
+      for (const href of ['/datenschutz', '/impressum']) {
+        await expect(footer.locator(`a[href="${href}"]`).first(), `${route} footer has no ${href}`).toBeVisible({ timeout: 60000 });
+      }
+    }
   });
 
   test('the logo is not a dead end for a signed-out reader', () => {
@@ -122,11 +153,11 @@ test.describe('the legal pages are reachable without an account', () => {
 
 test.describe('the roll-call says whose naming it is', () => {
   test('the provenance difference is explained, not left to be found', () => {
-    const s = read('components/BenefitCard.tsx');
-    const jsx = s.slice(s.indexOf('return (')).replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+    const s = read('app/page.tsx');
+    const jsx = s.slice(s.lastIndexOf('return (')).replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
     // The engine may hand a developer API_SALES_ORDER_SRV for VBAK while this
     // list shows SAP's I_SALESDOCUMENT. Unexplained, that reads as an error.
-    expect(jsx).toContain('successors SAP');
+    expect(jsx).toContain('successor from SAP');
     expect(jsx).toMatch(/curated field-level/);
   });
 });

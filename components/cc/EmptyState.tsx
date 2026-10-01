@@ -43,10 +43,10 @@ export function CcEmptyState({
       data-cc-empty-state="empty"
       className="rounded-cc-row border border-dashed border-cc-field-border bg-cc-surface px-5 py-6 text-center"
     >
-      {illustration ? <div className="mb-1.5 flex justify-center">{illustration}</div> : null}
+      {illustration ? <div className="mb-2 flex justify-center">{illustration}</div> : null}
       <div className="text-[14px] font-bold text-cc-ink">{title}</div>
       {children ? (
-        <p className="mx-auto mt-1 mb-2.5 max-w-md text-[12px] font-medium leading-snug text-cc-ink-muted">
+        <p className="mx-auto mt-1 mb-3 max-w-md text-[12px] font-medium leading-snug text-cc-ink-muted">
           {children}
         </p>
       ) : null}
@@ -78,14 +78,14 @@ export function CcNoMatches({
       data-cc-empty-state="no-matches"
       className="rounded-cc-row border border-cc-line bg-cc-surface px-5 py-6 text-center"
     >
-      <div className="mb-1.5 flex justify-center text-cc-ink-muted">
+      <div className="mb-2 flex justify-center text-cc-ink-muted">
         <Filter size={20} aria-hidden={true} />
       </div>
       <div data-cc-no-match-title="" className="text-[14px] font-bold text-cc-ink">
         {title ?? t('filter.noMatch')}
       </div>
       {reason ? (
-        <p className="mx-auto mt-1 mb-2.5 max-w-md text-[12px] font-medium leading-snug text-cc-ink-muted">
+        <p className="mx-auto mt-1 mb-3 max-w-md text-[12px] font-medium leading-snug text-cc-ink-muted">
           {reason}
         </p>
       ) : null}

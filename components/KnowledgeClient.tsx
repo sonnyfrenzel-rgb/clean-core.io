@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  HelpCircle, ChevronRight, Database, Shield, Cpu, RefreshCw, Layers, Server, Check
+import {
+  HelpCircle, ChevronRight, Database, Shield, FileCode2, RefreshCw, Layers, Server
 } from 'lucide-react';
+import { CcTag } from '@/components/cc/Tag';
 
 const faqs = [
   {
@@ -33,7 +34,7 @@ const faqs = [
   {
     question: "How does Clean-Core.io help modernize legacy ABAP?",
     answer: "A deterministic ABAP evidence engine parses the custom code first (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. Google Gemini then narrates and drafts modern TypeScript/Node.js (CAP) or ABAP Cloud (RAP) on top of that evidence, and can generate draft test suites and BPMN 2.0 XML blueprints. All AI output is a draft for architect review — it accelerates the assessment; it complements SAP's own tooling and does not replace human judgment.",
-    icon: Cpu,
+    icon: FileCode2,
     tag: "Automation Engine"
   }
 ];
@@ -65,12 +66,12 @@ export default function KnowledgeClient() {
       
       {/* FAQ Section (2/3 width) */}
       <div className="lg:col-span-2 space-y-6">
-        <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 shadow-xl border border-gray-100 space-y-6">
+        <div className="bg-cc-surface rounded-3xl p-6 sm:p-8 border border-cc-line space-y-6">
           <div className="space-y-1">
-            <h2 className="text-2xl font-black text-gray-950 flex items-center gap-3">
-              <HelpCircle className="text-green-600" /> Frequently Asked Questions
+            <h2 className="text-2xl font-extrabold text-cc-ink flex items-center gap-3">
+              <HelpCircle className="text-cc-brand-strong" aria-hidden="true" /> Frequently Asked Questions
             </h2>
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">
+            <p className="text-xs text-cc-ink-muted font-bold uppercase tracking-wider">
               Structured architectural explanations for developers and crawler extraction
             </p>
           </div>
@@ -82,7 +83,7 @@ export default function KnowledgeClient() {
               return (
                 <article
                   key={i}
-                  className={`border border-slate-100 rounded-2xl p-5 transition-all duration-300 ${isActive ? 'bg-green-50/20 border-green-250 ring-1 ring-green-200 shadow-md' : 'bg-slate-50/40 hover:bg-slate-50/80 border-slate-200/50'}`}
+                  className={`border rounded-2xl p-5 transition-all duration-300 ${isActive ? 'bg-cc-brand-surface border-cc-brand ring-1 ring-cc-brand' : 'bg-cc-surface-muted hover:bg-cc-surface border-cc-line'}`}
                 >
                   <h3 className="m-0">
                     <button
@@ -93,20 +94,19 @@ export default function KnowledgeClient() {
                       onClick={() => setActiveFaq(isActive ? null : i)}
                       className="flex items-start gap-4 w-full text-left cursor-pointer"
                     >
-                      <div className={`p-2.5 rounded-xl border ${isActive ? 'bg-green-500/10 border-green-500/20 text-green-600' : 'bg-white border-slate-200 text-slate-500'} shrink-0`}>
-                        <Icon size={20} />
+                      <div className={`p-2 rounded-xl border ${isActive ? 'bg-cc-surface border-cc-brand text-cc-brand-strong' : 'bg-cc-surface border-cc-line text-cc-ink-muted'} shrink-0`}>
+                        <Icon size={20} aria-hidden="true" />
                       </div>
                       <div className="space-y-1 flex-1">
-                        <span className="text-[9px] font-black uppercase tracking-wider text-green-600 bg-green-500/10 px-2 py-0.5 rounded">
-                          {faq.tag}
-                        </span>
-                        <span className="block font-bold text-slate-900 text-base sm:text-lg leading-snug pt-1">
+                        <CcTag>{faq.tag}</CcTag>
+                        <span className="block font-bold text-cc-ink text-base sm:text-lg leading-snug pt-1">
                           {faq.question}
                         </span>
                       </div>
                       <ChevronRight
                         size={18}
-                        className={`text-slate-400 shrink-0 transition-transform duration-300 mt-2 ${isActive ? 'rotate-90 text-green-650' : ''}`}
+                        aria-hidden="true"
+                        className={`shrink-0 transition-transform duration-300 mt-2 ${isActive ? 'rotate-90 text-cc-brand-strong' : 'text-cc-ink-muted'}`}
                       />
                     </button>
                   </h3>
@@ -126,7 +126,7 @@ export default function KnowledgeClient() {
                     aria-labelledby={`faq-question-${i}`}
                     className={`grid transition-all duration-300 ease-out ${isActive ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0'}`}
                   >
-                    <p className="overflow-hidden text-sm text-slate-700 font-medium leading-relaxed border-t border-slate-200/50 pt-4">
+                    <p className="overflow-hidden text-sm text-cc-ink font-medium leading-relaxed border-t border-cc-line pt-4">
                       {faq.answer}
                     </p>
                   </div>
@@ -139,19 +139,19 @@ export default function KnowledgeClient() {
 
       {/* Glossary / Definitions Section (1/3 width) */}
       <div className="space-y-6">
-        <div className="bg-gradient-to-b from-white to-green-50/10 rounded-[2.5rem] p-8 shadow-xl border border-gray-100 space-y-6">
-          <h3 className="text-xl font-black text-gray-950 flex items-center gap-2">
-            <Database size={18} className="text-green-600" /> Key Terms
-          </h3>
-          <p className="text-sm text-gray-600 leading-relaxed font-medium">
+        <div className="bg-cc-surface rounded-3xl p-6 sm:p-8 border border-cc-line space-y-6">
+          <h2 className="text-xl font-extrabold text-cc-ink flex items-center gap-2">
+            <Database size={18} className="text-cc-brand-strong" aria-hidden="true" /> Key Terms
+          </h2>
+          <p className="text-sm text-cc-ink-muted leading-relaxed font-medium">
             A quick glossary mapping technical SAP terms to modern integration architectures:
           </p>
 
           <dl className="space-y-6">
             {glossaryTerms.map((term, i) => (
-              <div key={i} className="space-y-1 border-l-2 border-green-500/20 pl-3 hover:border-green-500 transition-colors">
-                <dt className="font-bold text-sm text-gray-900">{term.term}</dt>
-                <dd className="text-xs text-gray-500 leading-relaxed">{term.definition}</dd>
+              <div key={i} className="space-y-1 border-l-2 border-cc-line pl-3 hover:border-cc-brand transition-colors">
+                <dt className="font-bold text-sm text-cc-ink">{term.term}</dt>
+                <dd className="text-xs text-cc-ink-muted leading-relaxed">{term.definition}</dd>
               </div>
             ))}
           </dl>

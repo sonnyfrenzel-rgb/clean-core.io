@@ -27,7 +27,7 @@ import { STATE_CLASSES } from './state';
  */
 const BASE =
   'inline-flex items-stretch overflow-hidden rounded-[4px] border align-middle text-[12px] font-medium leading-[18px] whitespace-nowrap';
-const CODE = 'font-cc-mono text-[11px] font-semibold px-1.5 border-r';
+const CODE = 'font-cc-mono text-[11px] font-semibold px-1 border-r';
 
 export function CcEvidenceLevel({
   value,
@@ -45,7 +45,7 @@ export function CcEvidenceLevel({
       className={cn(BASE, 'bg-cc-surface border-cc-field-border text-cc-ink')}
     >
       <span className={cn(CODE, 'bg-cc-surface-muted border-cc-field-border')}>{entry.value}</span>
-      {withLabel ? <span className="px-1.5">{entry.label}</span> : null}
+      {withLabel ? <span className="px-2">{entry.label}</span> : null}
     </span>
   );
 }
@@ -67,7 +67,7 @@ export function CcCleanCoreLevel({
       className={cn(BASE, 'bg-cc-surface', state.borderStrong, state.text)}
     >
       <span className={cn(CODE, state.bg, state.borderStrong)}>{entry.code}</span>
-      {withLabel ? <span className="px-1.5">{entry.label}</span> : null}
+      {withLabel ? <span className="px-2">{entry.label}</span> : null}
     </span>
   );
 }

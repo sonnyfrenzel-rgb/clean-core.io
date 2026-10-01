@@ -1011,10 +1011,11 @@
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
       "createdAt": "2026-09-15T10:32:48.651Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0.4",
       "reportedSeverity": "medium",
-      "updatedAt": "2026-09-15T10:32:48.651Z"
+      "updatedAt": "2026-09-24T16:12:27.765Z",
+      "fixedIn": "bfb831c"
     },
     {
       "id": "UX-081",

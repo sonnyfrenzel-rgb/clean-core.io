@@ -4,6 +4,7 @@ import { BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import HowToClient from '@/components/HowToClient';
+import { publicButton } from '@/components/landing/public-button';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { HOW_TO_DESCRIPTION, howToSteps } from '@/lib/how-to-content';
 
@@ -43,7 +44,7 @@ export default function HowToPage() {
   };
 
   return (
-    <div data-how-to-page className="space-y-10 animate-in fade-in duration-300">
+    <div data-how-to-page className="space-y-10 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
       
       {/* HowTo JSON-LD Structured Data */}
       <script
@@ -57,22 +58,21 @@ export default function HowToPage() {
         <BackLink />
       </div>
 
-      {/* Upper Glassmorphic Header Card */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[2.5rem] p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-slate-700/30">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.08),transparent)] pointer-events-none"></div>
-        <div className="relative z-10 max-w-4xl space-y-6">
+      {/* Header card */}
+      <div className="bg-cc-surface rounded-3xl p-8 sm:p-12 border border-cc-line">
+        <div className="max-w-4xl space-y-6">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="inline-flex items-center gap-2 bg-green-500/15 border border-green-400/30 px-4 py-1.5 rounded-full text-xs font-bold text-green-400 tracking-wide uppercase">
-              <BookOpen size={14} /> How-to Tutorials
+            <div className="inline-flex items-center gap-2 bg-cc-brand-surface border border-cc-brand px-4 py-1 rounded-full text-xs font-bold text-cc-brand-strong tracking-wide uppercase">
+              <BookOpen size={14} aria-hidden="true" /> How-to Tutorials
             </div>
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 px-4 py-1.5 rounded-full text-xs font-bold text-slate-350 tracking-wide uppercase">
+            <div className="inline-flex items-center gap-2 bg-cc-surface-muted border border-cc-line px-4 py-1 rounded-full text-xs font-bold text-cc-ink-muted tracking-wide uppercase">
               Version {APP_VERSION} ({APP_RELEASE_DATE})
             </div>
           </div>
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none text-slate-50">
-            Clean-Core.io <span className="text-green-400">How-to</span>
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-none text-cc-ink">
+            Clean-Core.io <span className="text-cc-brand-strong">How-to</span>
           </h1>
-          <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
+          <p className="text-lg text-cc-ink-muted leading-relaxed max-w-2xl font-medium">
             {HOW_TO_DESCRIPTION}
           </p>
         </div>
@@ -81,29 +81,31 @@ export default function HowToPage() {
       {/* This page explains what the platform is and why. Anyone who is already
           convinced and just wants to be told which button to press belongs on
           /first-run instead, so send them there before the narrated tour. */}
-      <Link
-        href="/first-run"
-        className="block bg-white border border-green-200 rounded-[2rem] p-6 sm:p-8 shadow-sm hover:shadow-md hover:border-green-300 transition-all group"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center gap-5 justify-between">
-          <div>
-            <span className="text-[10px] font-black text-green-700 uppercase tracking-widest bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
-              Just want to get started?
+      <div className="bg-cc-surface rounded-3xl">
+        <Link
+          href="/first-run"
+          className="block border border-cc-line rounded-3xl p-6 sm:p-8 hover:border-cc-brand transition-colors group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center gap-5 justify-between">
+            <div>
+              <span className="cc-text-label text-cc-brand-strong">
+                Just want to get started?
+              </span>
+              <h2 className="text-2xl font-extrabold text-cc-ink tracking-tight mt-2 mb-2">
+                Your first run, click by click
+              </h2>
+              <p className="text-sm text-cc-ink-muted leading-relaxed max-w-2xl">
+                Seven steps from signing in to a downloadable package, in about fifteen minutes. No SAP
+                connection and no code of your own needed &mdash; there are ready-made examples on the
+                dashboard.
+              </p>
+            </div>
+            <span className={`${publicButton('primary')} shrink-0`}>
+              Open the step-by-step guide
             </span>
-            <h2 className="text-2xl font-black text-gray-950 tracking-tight mt-3 mb-1.5">
-              Your first run, click by click
-            </h2>
-            <p className="text-sm text-gray-600 leading-relaxed max-w-2xl">
-              Seven steps from signing in to a downloadable package, in about fifteen minutes. No SAP
-              connection and no code of your own needed &mdash; there are ready-made examples on the
-              dashboard.
-            </p>
           </div>
-          <span className="inline-flex items-center gap-2 shrink-0 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider shadow group-hover:shadow-lg transition-all">
-            Open the step-by-step guide
-          </span>
-        </div>
-      </Link>
+        </Link>
+      </div>
 
       {/* Client-side Slideshow Component */}
       <HowToClient />

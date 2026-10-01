@@ -2,16 +2,14 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import {
-  GROUP_NAMES,
   RULE_IDS,
-  groupOf,
+  RULE_TITLES,
   countHits,
-  ratchet,
+  isPublicFile,
+  isWorkspaceFile,
   scanFile,
-  validateBaseline,
-  type RuleCounts,
 } from './helpers/design-rules';
-import { BASELINE_DIR, REPO_ROOT, measureAll, mergedBaseline, readBaselineFiles } from './helpers/design-baseline-io';
+import { REPO_ROOT, measureAll } from './helpers/design-source-files';
 
 /**
  * DESIGN.md for the whole app, not only for the new namespace — Block D, step D.1.
@@ -24,31 +22,15 @@ import { BASELINE_DIR, REPO_ROOT, measureAll, mergedBaseline, readBaselineFiles 
  * `app/**` and `components/**` (not `app/api`), with nineteen source rules R1–R19
  * defined and explained in `tests/helpers/design-rules.ts`.
  *
- * It cannot demand zero today, so it demands *no worse, and progress recorded*:
- *
- *   - `tests/design-baseline/<group>.json` holds, per file and rule, today's
- *     count as a ceiling. One file per group of the plan's steps, so two steps
- *     running in parallel never edit the same list.
- *   - More than the ceiling is red (test 1). A file without an entry has
- *     ceiling 0 — a new file has no exception (test 3).
- *   - **Fewer than the ceiling is also red** (test 2) until the ceiling is
- *     lowered in the same commit. That is the ratchet: progress cannot be made
- *     silently and then lost silently.
- *   - Every exception names the step D.x that removes it (test 4).
- *
- * How a step lowers its ceiling
- * -----------------------------
- * After removing hits, run
- *
- *     npm run design:baseline -- --group <group>
- *
- * It rewrites `tests/design-baseline/<group>.json` with every ceiling that went
- * DOWN, drops rules and files that reached zero, and refuses (exit 1, naming
- * the line) if any count went UP — ceilings are never raised, by the script or
- * by hand. `npm run design:baseline -- --report --group <group>` shows the
- * difference without writing. Commit the JSON with the code. The group of a
- * file is in `groupOf()` in `tests/helpers/design-rules.ts`; the failure
- * message of test 2 names it as well.
+ * It demands zero: no file may hold a hit of any rule (D.30). From D.1 to
+ * D.30 it demanded *no worse, and progress recorded* — a ceiling per file and
+ * rule in `tests/design-baseline/<group>.json`, one list per group of the
+ * plan's steps, lowered in the same commit as the code (`npm run
+ * design:baseline`). Every list reached zero; D.30 deleted the folder and the
+ * script. What is left are named exceptions, each written in
+ * `tests/helpers/design-rules.ts` as a rule with its reason, never as a list:
+ * the standalone exports (R3 in `lib/export-style.ts`, R11 in the templates),
+ * the public pages (R12, §1.4), and the two library cases of D.33.
  *
  * Accepted decisions this enforces (24.09.2026): E-1 / ADR-047 — 12 px is the
  * "meta/chip" step of the type scale, so R19 allows 11/12/13/14/15/22 px;
@@ -60,7 +42,6 @@ import { BASELINE_DIR, REPO_ROOT, measureAll, mergedBaseline, readBaselineFiles 
  */
 
 const counts = measureAll();
-const baseline = mergedBaseline();
 
 function hitsFor(rel: string, rule?: string) {
   return scanFile(rel, fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8'))
@@ -70,7 +51,7 @@ function hitsFor(rel: string, rule?: string) {
     .join('\n');
 }
 
-test.describe('design source guard (DESIGN.md, app-wide ratchet)', () => {
+test.describe('design source guard (DESIGN.md, app-wide, zero)', () => {
   test('the guard reads the app: every page and component is measured', () => {
     // A walk that silently found nothing would make every test below vacuous.
     expect(counts.size).toBeGreaterThan(200);
@@ -79,66 +60,42 @@ test.describe('design source guard (DESIGN.md, app-wide ratchet)', () => {
     expect([...counts.keys()].some((r) => r.startsWith('app/api/'))).toBe(false);
   });
 
-  test('1 · no file is above its ceiling', () => {
-    const over = ratchet(counts, baseline).filter((f) => f.kind === 'over');
-    expect(
-      over.map((f) => `${f.message}\n${hitsFor(f.rel, f.rule)}`),
-      'A file got worse. Replace the hit with the design-system equivalent (luecken-und-plan.md §4, translation table); ceilings are never raised.',
-    ).toEqual([]);
-  });
-
-  test('2 · no ceiling is above today\'s count — progress is written down', () => {
-    const under = ratchet(counts, baseline).filter((f) => f.kind === 'under');
-    expect(
-      under.map((f) => f.message),
-      'Hits were removed — good. Lower the ceiling in the same commit: npm run design:baseline -- --group <group>.',
-    ).toEqual([]);
-  });
-
-  test('3 · a file without an entry has no hits, and no entry outlives its file', () => {
-    const findings = ratchet(counts, baseline).filter((f) => f.kind === 'unlisted' || f.kind === 'stale');
-    expect(
-      findings.map((f) => (f.kind === 'unlisted' ? `${f.message} (no exception for this file)\n${hitsFor(f.rel, f.rule)}` : f.message)),
-      'New files have no exception. Use the components in components/cc and the tokens in app/globals.css.',
-    ).toEqual([]);
-  });
-
-  test('4 · every exception names its step, sits in its group, and no file is listed twice', () => {
-    const files = readBaselineFiles();
-    const problems: string[] = [];
-    const seen = new Map<string, string>();
-    for (const { fileName, data } of files) {
-      if (!GROUP_NAMES.includes(data.group)) problems.push(`${fileName}: unknown group "${data.group}"`);
-      problems.push(...validateBaseline(data, fileName));
-      for (const rel of Object.keys(data.files ?? {})) {
-        if (seen.has(rel)) problems.push(`${rel}: listed in ${seen.get(rel)} and ${fileName}`);
-        seen.set(rel, fileName);
+  test('no file has a hit of any rule', () => {
+    const found: string[] = [];
+    for (const [rel, c] of counts) {
+      for (const rule of RULE_IDS) {
+        if ((c[rule] ?? 0) > 0) found.push(`${rel}: ${rule} (${RULE_TITLES[rule]}) ${c[rule]}\n${hitsFor(rel, rule)}`);
       }
     }
-    expect(problems).toEqual([]);
+    expect(
+      found,
+      'Replace the hit with the design-system equivalent (block-d-plan.md §4, translation table): the components in components/cc and the tokens in app/globals.css. There is no exception list.',
+    ).toEqual([]);
+  });
+
+  test('no exception list has come back', () => {
+    // D.30 deleted the per-group ceilings. A folder of them coming back would be
+    // an exception list this spec no longer reads — green for the wrong reason.
+    const folder = path.join(REPO_ROOT, 'tests', 'design-baseline');
+    expect(fs.existsSync(folder), `${folder} exists — there are no ceilings since D.30; fix the code instead`).toBe(false);
   });
 
   test('the guard bites: a new hit in a clean file or a new file turns it red', () => {
-    // Negative probes, in memory: the same functions the tests above use, fed
+    // Negative probes, in memory: the same functions the test above uses, fed
     // with a source that has one more violation than the file on disk.
-    const probe = (rel: string, source: string) => {
-      const c = new Map<string, RuleCounts>(counts);
-      c.set(rel, countHits(scanFile(rel, source)));
-      return ratchet(c, baseline).filter((f) => f.kind === 'over' || f.kind === 'unlisted');
-    };
+    const probe = (rel: string, source: string) => countHits(scanFile(rel, source));
 
-    // 10 px in a workspace component (a file the library already holds clean on R1).
+    // 10 px in a workspace component that is clean on disk.
     const nextStep = 'components/workspace/NextStepCard.tsx';
     const original = fs.readFileSync(path.join(REPO_ROOT, nextStep), 'utf8');
-    expect(counts.get(nextStep)?.R1 ?? 0).toBe(baseline.get(nextStep)?.entry.R1 ?? 0);
+    expect(counts.get(nextStep)?.R1 ?? 0).toBe(0);
     const worse = original.replace(/className="/, 'className="text-[10px] ');
     expect(worse).not.toBe(original);
-    expect(probe(nextStep, worse).map((f) => `${f.rel} ${f.rule}`)).toContain(`${nextStep} R1`);
+    expect(probe(nextStep, worse).R1).toBe(1);
 
     // A native alert in a file that does not exist yet.
     const fresh = 'components/NewThing.tsx';
-    const found = probe(fresh, "export function NewThing() {\n  return <button onClick={() => alert('saved')}>Save</button>;\n}\n");
-    expect(found.map((f) => `${f.kind} ${f.rule}`)).toContain('unlisted R6');
+    expect(probe(fresh, "export function NewThing() {\n  return <button onClick={() => alert('saved')}>Save</button>;\n}\n").R6).toBe(1);
 
     // And each rule fires on a line written for it, so a regex that stopped
     // matching cannot pass as "no hits".
@@ -177,6 +134,24 @@ test.describe('design source guard (DESIGN.md, app-wide ratchet)', () => {
       '<div data-backdrop onClick={close} />',
     ].join('\n');
     expect(scanFile('components/workspace/Probe.tsx', allowed).map((h) => `${h.rule} ${h.snippet}`)).toEqual([]);
+  });
+
+  test('the named library exceptions are exactly as wide as their case (D.33)', () => {
+    const rules = (rel: string, source: string) => scanFile(rel, source).map((h) => h.rule);
+    // TOUCH_TARGET_COMPENSATION: -m-2.5 only where the same variant grows 24 px to 44 px.
+    const why = 'h-6 w-6 max-[600px]:-m-2.5 max-[600px]:h-11 max-[600px]:w-11';
+    expect(rules('components/cc/Probe.tsx', `<button className="${why}">?</button>`)).toEqual([]);
+    expect(rules('components/cc/Probe.tsx', '<button className="h-6 w-6 max-[600px]:-m-2.5 pointer-coarse:h-11 pointer-coarse:w-11">?</button>')).toEqual(['R18']);
+    expect(rules('components/cc/Probe.tsx', '<button className="h-8 w-8 max-[600px]:-m-2.5 max-[600px]:h-11 max-[600px]:w-11">?</button>')).toEqual(['R18']);
+    expect(rules('components/cc/Probe.tsx', '<div className="-m-2.5">x</div>')).toEqual(['R18']);
+    // TABLE_ROW_OPEN: the library table's row, and nothing else.
+    expect(rules('components/cc/Table.tsx', '<tr data-cc-table-row={k} onClick={go}><td /></tr>')).toEqual([]);
+    expect(rules('components/cc/Table.tsx', '<tr onClick={go}><td /></tr>')).toEqual(['R9']);
+    expect(rules('components/workspace/Probe.tsx', '<tr data-cc-table-row={k} onClick={go}><td /></tr>')).toEqual(['R9']);
+    // No exception for a look: a hand-built segment row counts, the library's shared look does not.
+    const segment = '<button role="radio" className="bg-cc-ink px-2">x</button>';
+    expect(rules('components/cc/SegmentedControl.tsx', segment)).toEqual(['R7']);
+    expect(rules('components/process-states/Probe.tsx', '<button role="radio" className={ccSegmentClass(on)}>x</button>')).toEqual([]);
   });
 
   test('a `//` that is not a comment hides nothing after it (QA c07adecd2fb5, 01bcfd747ee8)', () => {
@@ -225,14 +200,15 @@ test.describe('design source guard (DESIGN.md, app-wide ratchet)', () => {
     expect(rules('<button role="menuitem" className="px-3 py-2 hover:bg-cc-surface-muted">x</button>')).toEqual([]);
     expect(rules('<button role="option" className="px-3 py-2 hover:bg-cc-surface-muted">x</button>')).toEqual([]);
 
-    // The group map names no file that is gone (GapAccordionCard went in D.12).
-    expect(groupOf('components/analyze/GapAccordionCard.tsx')?.group).not.toBe('analyze-worklists');
-  });
-
-  test('every group of the plan has its own baseline file', () => {
-    // Parallel steps edit different JSON files; that only holds if each group
-    // exists as its own file (an empty `files` is fine — it means "clean").
-    const onDisk = fs.existsSync(BASELINE_DIR) ? fs.readdirSync(BASELINE_DIR).filter((n) => n.endsWith('.json')) : [];
-    expect(onDisk.sort()).toEqual(GROUP_NAMES.map((g) => `${g}.json`).sort());
+    // R12 knows the two rooms apart: public pages may keep their radii and
+    // mesh (§1.4, E-5), the workspace may not.
+    expect(isPublicFile('app/page.tsx')).toBe(true);
+    expect(isPublicFile('app/datenschutz/de/page.tsx')).toBe(true);
+    expect(isWorkspaceFile('app/(app)/project/[projectId]/analyze/page.tsx')).toBe(true);
+    expect(isWorkspaceFile('components/workspace/NextStepCard.tsx')).toBe(true);
+    expect(isWorkspaceFile('lib/export-style.ts')).toBe(false);
+    const big = '<div className="rounded-3xl shadow-2xl">x</div>';
+    expect(scanFile('app/page.tsx', big).map((h) => h.rule)).toEqual([]);
+    expect(scanFile('components/workspace/Probe.tsx', big).map((h) => h.rule)).toEqual(['R12', 'R12']);
   });
 });

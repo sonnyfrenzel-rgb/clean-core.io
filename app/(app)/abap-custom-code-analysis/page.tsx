@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { getFacts, formatObjectCount } from '@/lib/facts';
-import { Cpu, Activity, ShieldCheck, Link2, Check } from 'lucide-react';
+import { ScanSearch, Activity, ShieldCheck, Link2, Check } from 'lucide-react';
 import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import { publicButton } from '@/components/landing/public-button';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'Free ABAP Static Code Analysis Tool for S/4HANA Clean Core | Clean-Core.io',
@@ -56,6 +57,40 @@ const faqs = [
   }
 ];
 
+/**
+ * The public knowledge-page look (block D, D.23a): `--cc-*` tokens instead of
+ * the palette, nothing heavier than 800, nothing under 11 px, the generous
+ * public radii (DESIGN.md §1.4, ADR-051). The hero is light with the landing
+ * page's mesh at .18 — the dark gradient banner it replaces was a surface the
+ * product does not have.
+ */
+const PAGE = 'mx-auto max-w-5xl space-y-12 px-4 py-10 text-cc-ink sm:px-6';
+const HERO = 'relative overflow-hidden rounded-3xl border border-cc-line bg-cc-surface p-8 shadow-cc sm:p-12';
+const HERO_MESH =
+  'radial-gradient(38% 42% at 10% 12%,var(--cc-seq-3) 0%,transparent 70%),radial-gradient(34% 40% at 90% 10%,var(--cc-brand) 0%,transparent 70%),radial-gradient(46% 40% at 55% 62%,var(--cc-chart-3) 0%,transparent 72%)';
+const EYEBROW =
+  'inline-flex items-center gap-2 rounded-full border border-cc-line bg-cc-brand-surface px-4 py-1 text-xs font-bold uppercase tracking-[0.08em] text-cc-brand-strong';
+const H1 = 'text-4xl font-extrabold leading-none tracking-[-0.035em] text-cc-ink sm:text-6xl';
+const H2 = 'text-3xl font-extrabold tracking-[-0.03em] text-cc-ink';
+const H3 = 'text-lg font-bold text-cc-ink';
+const BODY = 'font-medium leading-relaxed text-cc-ink';
+const STEP_ICON =
+  'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-cc-line bg-cc-brand-surface text-cc-brand-strong';
+const STEP_TEXT = 'mt-1 text-sm font-medium text-cc-ink-muted';
+const CHECK = 'shrink-0 text-cc-brand-strong';
+const CHECK_TOP = 'mt-1 shrink-0 text-cc-brand-strong';
+const SIDE_CARD = 'rounded-3xl border border-cc-line p-6';
+const SIDE_TITLE = 'text-lg font-bold text-cc-ink';
+const SIDE_LIST = 'space-y-3 text-sm font-semibold text-cc-ink';
+const SIDE_LABEL = 'cc-text-label text-cc-ink-muted';
+const LINK =
+  'font-semibold text-cc-brand-strong underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus';
+const SIDE_LINK = `block ${LINK}`;
+const FAQ_BOX = 'space-y-6 rounded-3xl border border-cc-line bg-cc-surface-muted p-8';
+const FAQ_TITLE = 'text-2xl font-extrabold text-cc-ink';
+const FOOTER_LINE =
+  'border-t border-cc-line pt-10 text-center font-cc-mono text-xs font-semibold uppercase tracking-wider text-cc-ink-muted';
+
 export default function AbapAnalysisPage() {
 
   /**
@@ -81,7 +116,7 @@ export default function AbapAnalysisPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-12 animate-in fade-in duration-300 bg-white min-h-screen text-gray-900 font-sans">
+    <div className={PAGE}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson) }}
@@ -93,79 +128,79 @@ export default function AbapAnalysisPage() {
       </div>
 
       {/* Hero Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[2.5rem] p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-slate-700/30">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.08),transparent)] pointer-events-none"></div>
-        <div className="relative z-10 max-w-4xl space-y-6">
-          <div className="inline-flex items-center gap-2 bg-green-500/15 border border-green-400/30 px-4 py-1.5 rounded-full text-xs font-bold text-green-400 tracking-wide uppercase">
-            <Cpu size={14} /> Core Technology
+      <div className={HERO}>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.18]" style={{ background: HERO_MESH }} />
+        <div className="relative max-w-4xl space-y-6">
+          <div className={EYEBROW}>
+            <ScanSearch size={14} aria-hidden="true" /> Core Technology
           </div>
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-none text-slate-50">
-            ABAP Static Code <span className="text-green-400">Analysis</span>
+          <h1 className={H1}>
+            ABAP Static Code <span className="text-cc-brand-strong">Analysis</span>
           </h1>
-          <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-medium">
+          <p className="max-w-2xl text-lg font-medium leading-relaxed text-cc-ink-muted">
             A free tool to run static analysis on your custom ABAP — detect risky table access and unreleased calls, then map them to released SAP APIs. Decouple legacy systems into an upgrade-safe S/4HANA architecture.
           </p>
         </div>
       </div>
 
       {/* GEO Quick Answer Block */}
-      <QuickAnswer 
+      <QuickAnswer
         question="Why analyze custom ABAP code before an S/4HANA upgrade?"
         answer="Legacy SAP systems often have tight syntax coupling to standard tables (e.g. VBAK, BSEG, LIKP) or unreleased function modules. During an S/4HANA migration, database structures change, which breaks custom programs. Automated custom code analysis detects these dependencies and maps direct database reads to modern, cloud-released OData APIs and BTP CAP or RAP architectures, preventing upgrade blockages."
       />
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+      <div className="grid grid-cols-1 gap-8 pt-4 md:grid-cols-3">
         {/* Left 2 Columns: Text content */}
-        <div className="md:col-span-2 space-y-8">
+        <div className="space-y-8 md:col-span-2">
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+            <h2 className={H2}>
               The Challenge: Custom Code as an Upgrade Blocker
             </h2>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               In SAP ERP systems that have grown over decades, there are often thousands of lines of custom ABAP developments. Many of these directly access standard tables or unreleased SAP function modules. During an upgrade to <strong>SAP S/4HANA</strong>, this tight coupling leads to system breakages, high modernization costs, and months of testing phases.
             </p>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               Manual <strong>ABAP custom code analysis</strong> and subsequent refactoring is extremely time-consuming. This is exactly where the free Clean-Core.io tool comes in: it reads your legacy ABAP, runs a deterministic <strong>static code analysis</strong>, and traces data flows to isolate the dependencies automatically.
             </p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+            <h2 className={H2}>
               How the Automated Pipeline Works
             </h2>
             <div className="space-y-4">
               <div className="flex gap-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-green-50 border border-green-200 rounded-xl flex items-center justify-center text-green-600">
-                  <ShieldCheck size={20} />
+                <div className={STEP_ICON}>
+                  <ShieldCheck size={20} aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-955">Deterministic Static Parsing</h3>
-                  <p className="text-gray-600 text-sm font-medium mt-1">
+                  <h3 className={H3}>Deterministic Static Parsing</h3>
+                  <p className={STEP_TEXT}>
                     The ABAP source is scanned deterministically with token- and rule-based static analysis. This detects control flows, database operations (SELECT, INSERT, UPDATE, MODIFY, DELETE), and external calls — before any AI runs.
                   </p>
                 </div>
               </div>
 
               <div className="flex gap-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-green-50 border border-green-200 rounded-xl flex items-center justify-center text-green-600">
-                  <Link2 size={20} />
+                <div className={STEP_ICON}>
+                  <Link2 size={20} aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-955">SAP Cloudification Catalog</h3>
-                  <p className="text-gray-600 text-sm font-medium mt-1">
+                  <h3 className={H3}>SAP Cloudification Catalog</h3>
+                  <p className={STEP_TEXT}>
                     Detected table accesses are resolved against SAP&apos;s official Cloudification Repository ({catalogObjects} classified objects) layered with curated field-level entries. Each mapping links to the official successor with its source layer and confidence level.
                   </p>
                 </div>
               </div>
 
               <div className="flex gap-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-green-50 border border-green-200 rounded-xl flex items-center justify-center text-green-600">
-                  <Activity size={20} />
+                <div className={STEP_ICON}>
+                  <Activity size={20} aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-955">Target Architecture Routing</h3>
-                  <p className="text-gray-600 text-sm font-medium mt-1">
+                  <h3 className={H3}>Target Architecture Routing</h3>
+                  <p className={STEP_TEXT}>
                     Based on the determined degree of coupling, the router decides whether the code should be rewritten in-app in ABAP Cloud (RAP) or decoupled as a side-by-side service on SAP BTP (Node.js CAP).
                   </p>
                 </div>
@@ -174,19 +209,19 @@ export default function AbapAnalysisPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-3xl font-black tracking-tight text-gray-955">
+            <h2 className={H2}>
               What the ABAP static analysis detects
             </h2>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               The scan surfaces the clean-core risks that most often block an S/4HANA upgrade, each as concrete, line-level evidence:
             </p>
-            <ul className="space-y-2 text-gray-700 font-medium">
-              <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Direct standard-table access</strong> (reads and writes to VBAK, BSEG, LIKP, KNA1 …) with the released API or CDS successor where the catalog lists one — an access without a listed successor stays marked as unresolved.</span></li>
-              <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Unreleased or not-to-be-released objects</strong> and remote function calls, checked against SAP&apos;s Cloudification Repository. A local <code>CALL FUNCTION</code> is not assessed yet, and the result lists it as not assessed.</span></li>
-              <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Modifications, implicit enhancements and native SQL</strong> — the not-recommended patterns that break on upgrade.</span></li>
-              <li className="flex gap-2"><Check className="text-green-600 shrink-0 mt-1" size={16} /> <span><strong>Dynpro / classic UI, BDC and RFC coupling</strong> that needs a redesign rather than a lift-and-shift.</span></li>
+            <ul className="space-y-2 font-medium text-cc-ink">
+              <li className="flex gap-2"><Check className={CHECK_TOP} size={16} aria-hidden="true" /> <span><strong>Direct standard-table access</strong> (reads and writes to VBAK, BSEG, LIKP, KNA1 …) with the released API or CDS successor where the catalog lists one — an access without a listed successor stays marked as unresolved.</span></li>
+              <li className="flex gap-2"><Check className={CHECK_TOP} size={16} aria-hidden="true" /> <span><strong>Unreleased or not-to-be-released objects</strong> and remote function calls, checked against SAP&apos;s Cloudification Repository. A local <code>CALL FUNCTION</code> is not assessed yet, and the result lists it as not assessed.</span></li>
+              <li className="flex gap-2"><Check className={CHECK_TOP} size={16} aria-hidden="true" /> <span><strong>Modifications, implicit enhancements and native SQL</strong> — the not-recommended patterns that break on upgrade.</span></li>
+              <li className="flex gap-2"><Check className={CHECK_TOP} size={16} aria-hidden="true" /> <span><strong>Dynpro / classic UI, BDC and RFC coupling</strong> that needs a redesign rather than a lift-and-shift.</span></li>
             </ul>
-            <p className="text-gray-700 leading-relaxed font-medium">
+            <p className={BODY}>
               Every finding is deterministic evidence for a qualified architect to review — not a black-box verdict. It is complementary to SAP ADT and ATC, not a replacement.
             </p>
           </section>
@@ -194,57 +229,54 @@ export default function AbapAnalysisPage() {
 
         {/* Right Column: Key Metrics / Sidebar */}
         <div className="space-y-6">
-          <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 space-y-6">
-            <h3 className="font-black text-lg text-gray-955 uppercase tracking-tight">Benefits at a glance</h3>
-            <ul className="space-y-3 font-bold text-sm text-gray-700">
-              <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> First pass in minutes, not a workshop
+          <div className={`${SIDE_CARD} space-y-6 bg-cc-surface-muted`}>
+            <h3 className={SIDE_TITLE}>Benefits at a glance</h3>
+            <ul className={SIDE_LIST}>
+              <li className="flex items-center gap-2">
+                <Check className={CHECK} size={16} aria-hidden="true" /> First pass in minutes, not a workshop
               </li>
-              <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> Automatic OData API mapping
+              <li className="flex items-center gap-2">
+                <Check className={CHECK} size={16} aria-hidden="true" /> Automatic OData API mapping
               </li>
-              <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> SAP Clean Core guideline compliant
+              <li className="flex items-center gap-2">
+                <Check className={CHECK} size={16} aria-hidden="true" /> SAP Clean Core guideline compliant
               </li>
-              <li className="flex gap-2 items-center">
-                <Check className="text-green-600 shrink-0" size={16} /> Reduces technical upgrade debt
+              <li className="flex items-center gap-2">
+                <Check className={CHECK} size={16} aria-hidden="true" /> Reduces technical upgrade debt
               </li>
             </ul>
-            <div className="pt-4 border-t border-gray-200">
-              <Link 
-                href="/?auth=signup" 
-                className="block text-center bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all text-sm"
-              >
+            <div className="border-t border-cc-line pt-4">
+              <Link href="/?auth=signup" className={`${publicButton('primary')} w-full`}>
                 Analyze for Free
               </Link>
             </div>
           </div>
 
-          <div className="border border-slate-200 rounded-[2rem] p-6 space-y-4 bg-white">
-            <h3 className="font-black text-sm text-gray-400 uppercase tracking-wider">Related Topics</h3>
-            <div className="space-y-2 font-bold text-sm">
-              <Link href="/clean-core-score" className="block text-green-600 hover:underline">
+          <div className={`${SIDE_CARD} space-y-4 bg-cc-surface`}>
+            <h3 className={SIDE_LABEL}>Related Topics</h3>
+            <div className="space-y-2 text-sm">
+              <Link href="/clean-core-score" className={SIDE_LINK}>
                 → What is the Clean Core Score?
               </Link>
-              <Link href="/sap-clean-core-object-classification" className="block text-green-600 hover:underline">
+              <Link href="/sap-clean-core-object-classification" className={SIDE_LINK}>
                 → Clean Core Object Classification (A–D)
               </Link>
-              <Link href="/sap-cloudification" className="block text-green-600 hover:underline">
+              <Link href="/sap-cloudification" className={SIDE_LINK}>
                 → SAP Cloudification: how to cloudify ABAP
               </Link>
-              <Link href="/knowledge" className="block text-green-600 hover:underline">
+              <Link href="/knowledge" className={SIDE_LINK}>
                 → SAP Clean Core guide (RAP vs CAP)
               </Link>
             </div>
           </div>
 
-          <div className="border border-slate-200 rounded-[2rem] p-6 space-y-4 bg-white">
-            <h3 className="font-black text-sm text-gray-400 uppercase tracking-wider">Further reading</h3>
+          <div className={`${SIDE_CARD} space-y-4 bg-cc-surface`}>
+            <h3 className={SIDE_LABEL}>Further reading</h3>
             <a
               href="https://community.sap.com/t5/technology-blog-posts-by-members/you-can-t-clean-what-you-can-t-see-visibility-and-kpis-for-the/ba-p/14448151"
               target="_blank"
               rel="noopener noreferrer"
-              className="block text-green-600 hover:underline font-bold text-sm"
+              className={`${SIDE_LINK} text-sm`}
             >
               → You can&apos;t clean what you can&apos;t see: visibility &amp; KPIs (SAP Community) ↗
             </a>
@@ -253,20 +285,20 @@ export default function AbapAnalysisPage() {
       </div>
 
       {/* FAQs */}
-      <div className="bg-slate-50 border border-gray-200 rounded-[2.5rem] p-8 space-y-6">
-        <h2 className="text-2xl font-black text-gray-955">Frequently Asked Questions (FAQ)</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-bold text-sm">
+      <div className={FAQ_BOX}>
+        <h2 className={FAQ_TITLE}>Frequently Asked Questions (FAQ)</h2>
+        <div className="grid grid-cols-1 gap-6 text-sm md:grid-cols-2">
           {faqs.map((faq, idx) => (
             <div key={idx} className="space-y-2">
-              <h3 className="text-gray-955 font-black">{faq.question}</h3>
-              <p className="text-gray-600 font-medium leading-relaxed">{faq.answer}</p>
+              <h3 className="font-bold text-cc-ink">{faq.question}</h3>
+              <p className="font-medium leading-relaxed text-cc-ink-muted">{faq.answer}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Footer Disclaimer */}
-      <div className="text-center text-[10px] text-gray-500 font-mono font-bold uppercase tracking-wider pt-10 border-t border-gray-200">
+      <div className={FOOTER_LINE}>
         Clean-Core.io {APP_VERSION} • {APP_RELEASE_DATE} • Free Community Edition
       </div>
     </div>

@@ -73,6 +73,11 @@ Weiß — `error` `#b91c1c` 6,47 : 1, `warning` `#b45309` 5,02 : 1 (dunkler Text
 `#047857` 5,48 : 1, `information` `#1d4ed8` 6,70 : 1; ebenso die Rahmen der Umriss- und Strich-Chips (§4). Die hellen Rahmenfarben der Tabelle oben sind nur für Flächen, deren Grenze der Text
 trägt (gefüllte Chips, Message Strips).
 
+**Warn-Marken** (Balken, Diagrammsegment, Status-Punkt) nehmen `--cc-warning-mark` `#d97706`, nicht die Schriftfarbe
+`#92400e`: die liegt fast auf der Helligkeit von `error` (L* 37,5 gegen 40) und war im Balken neben Rot ohne Farbsehen
+nicht zu unterscheiden. `#d97706` hat L* 60 und 3,19 : 1 auf Weiß — genug für eine Grafik (WCAG 1.4.11), nie für
+Schrift (D.30).
+
 **Dunkel gibt es genau zweimal** (ADR-028): die **Code-Fläche** `--cc-code-bg` für Quelltext — die einzige dunkle
 Fläche für Inhalt — und die **Überlagerung** `--cc-overlay` = `#0b1c30` (Weiß darauf 17,2 : 1) für vorübergehende
 Schichten über dem Inhalt: Coach Mark und Toast. Ein gewähltes Segment trägt `--cc-ink` als kleine Fläche; das ist
@@ -194,6 +199,7 @@ Radius wie das Element. Nie `outline: none` ohne diesen Ersatz. Die Fokusreihenf
   (ADR-024) — die Level stammen aus SAPs Klassifikationsdatei, sind also *Imported*, kein Nachweis, und stehen nie im
   signierten Audit-Pack; Grün bekommen sie deshalb nicht. Schwere: Critical und High `error`, Medium `warning`, Low
   `neutral`, Info `information`, jeweils mit dem Wort (ADR-049) — eine Schwere ist kein Nachweis und bekommt kein Grün.
+- Die Warnfarbe einer Marke in einem Diagramm ist `--cc-warning-mark` (§1.1), nicht die Schriftfarbe.
 - **Alle anderen Diagramme** verwenden die kategoriale Palette und nie eine Zustandsfarbe: `#334155`, `#4f46e5`,
   `#0d9488`, `#9333ea`, `#c026d3`. Sequenziell (Mengen, Verlauf): Indigo `#e0e7ff` → `#a5b4fc` → `#6366f1` → `#3730a3`.
 - Jede Zahl im Diagramm auch als Text erreichbar (Tabelle oder `aria-label`).
@@ -996,7 +1002,7 @@ Sonny 15.09.2026):
 - **Kein kommerzielles Projekt:** *„Clean-Core.io is a free community project. There is no paid tier, we accept no
   payment, and we do not sell, rent or commercially use your code."* (Terms §2, Privacy Policy)
 - **Form:** eine Karte „Your code and your trust" in der Seitenspalte des Import-Dialogs, Aussagen als kurze Zeilen
-  mit Icon, Links als Text; auf S unter dem Formular, eingeklappt mit „Why you can trust this · Show". Keine Siegel,
+  mit Icon, Links als Text; auf S unter dem Formular; auf jeder Größe eingeklappt mit „Why you can trust this · Show" (Sonny 30.09.2026: auch auf dem Desktop). Keine Siegel,
   keine Zertifikats-Logos, keine Superlative.
 
 ### 6.2 Wollen (nach Nutzen gereiht)
@@ -1038,19 +1044,20 @@ Sonny 15.09.2026):
 
 | Regel | Guard |
 |---|---|
-| Landing- und Stufenköpfe aus einer Komponente | `tests/landing-style-guard.spec.ts`, `tests/workflow-style-guard.spec.ts` (vorhanden) |
+| Landing- und Stufenköpfe aus einer Komponente; jede Stufe auf der Skala §1.2 | `tests/landing-style-guard.spec.ts`, `tests/workflow-style-guard.spec.ts` — seit D.30 auch die Skala: jeder sichtbare Text einer Stufe auf 11/12/13/14/15/22 px, ≤ 800, ein Seitentitel, keine Überschrift größer als er |
 | **Kontrast aller Token-Paare** (Text ≥ 4,5 : 1; Feld-, Button-, Value-State- und Chip-Rahmen sowie Fokus ≥ 3 : 1 gegen ihre Fläche) | Kontrast-Guard aus Schritt 1.5: rechnet WCAG-Kontraste aus den Tokens in `app/globals.css` — ohne neue Abhängigkeit; axe/pa11y auf gerenderten Seiten danach als eigener Schritt |
 | Chips in drei Formen (gefüllt, Umriss, gestrichelt) nach §4; unter `forced-colors` und im Druck unterscheidbar | Guard aus Schritt 1.5 über `lib/provenance.ts`, gerendert mit `forcedColors: 'active'` |
 | Prozesskarte: ein Tab-Halt, Pfeiltasten, benannte Knoten, Schrittliste gleichwertig (§5.7) | gerenderter Tastatur-Test aus Schritt 2.5 |
 | Überschriftenfolge `h1` → `h2` → `h3` je Sicht; jede Live-Region höchstens eine Ansage je Ereignis; Message Box modal und `inert` dahinter | gerenderter Test aus Schritt 3.0.4 |
 | Objektstatus, Evidenzstufe, Level, Regel-Eigenschaft und Schwere nur aus ihren festen Listen, in ihrer Form (§4.1) | Guard aus Schritt 1.5 |
-| Tokens statt Hex-Literale, vier Button-Stile, Schrift ≥ 11 px, Abstände aus der Skala | Style-Guard aus Schritt 1.5 |
-| Herkunft nur aus `lib/provenance.ts`; Grün nur für `proven`/`success` | Guard aus Schritt 1.5 |
+| Tokens statt Hex-Literale, vier Button-Stile, Schrift ≥ 11 px, Abstände aus der Skala | `tests/design-source-guard.spec.ts` (R1–R19) und `tests/cc-token-guard.spec.ts` (Hex, Palette, nicht deklarierte Tokens, Klassen des nicht registrierten Typography-Plugins) über ganz `app/**` und `components/**` (ohne die Route-Handler `app/api/**`); gerendert `tests/design-rendered-guard.spec.ts` auf jeder Route. Seit D.30 **null, ohne Ausnahmeliste** — die Obergrenzen `tests/design-baseline/` und `tests/design-rendered-baseline/` sind gelöscht |
+| Herkunft nur aus `lib/provenance.ts`; Grün nur für `proven`/`success` | `tests/cc-provenance-guard.spec.ts` — seit D.30 app-weit: nur der Chip malt Herkunft, nur `CcSeverity` Schwere, kein abgelöstes Wort als Text |
 | Keine Zustandsfarbe ohne Text; Fokusring an jedem bedienbaren Element | Style-Guard, gerendert geprüft |
 | Sichtbare Texte neuer Komponenten nur über Textschlüssel | Guard aus Schritt 1.5 |
-| **Keine KI-Spuren:** keine Markdown-Reste, Blocklisten-Wendungen oder KI-Symbolik in gerenderten Seiten, HTML-/PDF-Exporten und Mails | Guard aus Schritt 1.5: scannt den gerenderten Text und die Exporte gegen Markdown-Reste und die **Blockliste** aus §3.1 (`.md`-Exporte ausgenommen); Copy-Guard über `app/`, `components/`, `lib/`. Die **Stilliste** prüfen QA- und UX-Agent als Hinweis, kein Guard |
+| **Keine KI-Spuren:** keine Markdown-Reste, Blocklisten-Wendungen oder KI-Symbolik in gerenderten Seiten, HTML-/PDF-Exporten und Mails | Guard aus Schritt 1.5: scannt den gerenderten Text und die Exporte gegen Markdown-Reste und die **Blockliste** aus §3.1 (`.md`-Exporte ausgenommen); Copy-Guard über `app/`, `components/`, `lib/`; seit D.30 Symbolik und Emoji über jeden Bildschirm (`app/**` ohne `app/api/**`, `components/**`) und gerendert auf jeder Route des Design-Rundgangs (`tests/model-text-guard.spec.ts`). Die **Stilliste** prüfen QA- und UX-Agent als Hinweis, kein Guard |
 | Druckbild: Chips mit Wort, keine Leisten | gerenderter Test mit `emulateMedia({ media: 'print' })` |
 | Kein Dark Mode | Guard aus Schritt 1.6 |
+| **Benannte Ausnahmen** — die einzigen (D.30) | `.md`-Export (Markdown ist dort Format, kein Rest); `app/datenschutz/de` (Rechtstext auf Deutsch, E-7); Code-Fläche (`CcCodeSurface`, `pre`, `code`: zitierter Code, eigene Mono-Größen); Landing-Mesh und öffentliche Radien (§1.4, E-5: R12 gilt nur im Arbeitsraum); Standalone-Exporte in `lib/` (Farben einmal als Werte in `lib/export-style.ts`, rohe Tabellen in den Vorlagen) — jede als Regel mit Grund im Guard, keine als Listeneintrag |
 
 ---
 
@@ -1058,6 +1065,7 @@ Sonny 15.09.2026):
 
 | Version | Datum | Was |
 |---|---|---|
+| 1.8 (Entwurf, zur Abnahme durch Sonny) | 30.09.2026 | Block D abgeschlossen (D.30): alle Guards gelten für `app/**` und `components/**`, die Ausnahmelisten sind gelöscht, nur benannte Ausnahmen bleiben (§8); `--cc-warning-mark` `#d97706` für Warn-Marken in Balken und Punkten (§1.1, §1.8); generierter Markdown-Text in `.cc-prose` auf der Skala §1.2 |
 | 1.7 | 27.09.2026 | Fachsatz als Vorschlag des Modells über dem Satz der Engine, Widerspruch als Randstrich mit Worten statt Chip, Anfordern nur per Knopf mit Kostenzeile (§5.10, ADR-055, Roadmap 17.10) |
 | 1.6 | 27.09.2026 | Ereignisse in Teilprozessen und an frühen Ausstiegen (ADR-054, Sonny 27.09.2026): jeder aufklappbare Teilprozess beginnt in seiner Ebene an einem Startereignis auf der `FORM`-/`METHOD`-Zeile; `RETURN`, `EXIT` außerhalb von Schleifen und `STOP` enden auf einem eigenen Endereignis mit der Bedingung an der Kante — direkt vor dem Blockschluss bleibt es das normale Ende; ein verlassender `CHECK` bleibt bedingter Fluss auf das normale Ende. Ereignisse zählen nirgends als Schritt, ein vorzeitiges Ende heißt „End (early)" (§5.8) |
 | 1.5 | 24.09.2026 | Entscheidungen E-1 bis E-7 aus Block D („die ganze App aus einem Guss"), Sonny 24.09.2026 (ADR-047 bis ADR-053): 12 px / 600 als Stufe „Meta/Chip" in der Skala (§1.2); 2 px nur in Chips, Kennungen und zur Icon-Ausrichtung, 6/10/14 px nicht (§1.3); Stufenkopf wie Projekttitel 22 px / 800, `--cc-ink`, neutrales Icon, „Back to workspace" (§1.2, §2.3); Schwere eines Befunds als feste Liste `lib/severity.ts` mit Kennungsform und Farben (§1.8, §4.1, §8); Tokens statt Palette auch auf öffentlichen Seiten, große Radien und Mesh nur dort (Einleitung, §1); altes Dashboard und alte Stufen-Demo werden nach dieser Datei neu gebaut, nichts wird entfernt statt umgebaut (§2.2, §6.1.2); deutsche Datenschutzerklärung als Rechtstext-Ausnahme von §3 |

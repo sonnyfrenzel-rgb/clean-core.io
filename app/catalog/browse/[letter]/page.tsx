@@ -7,6 +7,14 @@ import {
   CATALOG_LETTERS,
 } from '@/lib/abap/catalog-index';
 import CatalogAttribution from '@/components/catalog/CatalogAttribution';
+import { publicButton } from '@/components/landing/public-button';
+import {
+  CATALOG_CRUMBS,
+  CATALOG_CRUMB_LINK,
+  CATALOG_TILE_ITEM,
+  CATALOG_TILE_LINK,
+  CATALOG_TITLE,
+} from '@/components/catalog/catalog-style';
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 
@@ -43,15 +51,15 @@ export default async function CatalogBrowsePage({
 
   return (
     <main className="max-w-3xl mx-auto px-6 py-16">
-      <nav className="text-sm text-slate-500 mb-6">
-        <Link href="/catalog" className="hover:text-slate-700">Catalog</Link>
+      <nav aria-label="Breadcrumb" className={CATALOG_CRUMBS}>
+        <Link href="/catalog" className={CATALOG_CRUMB_LINK}>Catalog</Link>
         <span className="mx-2">/</span>
-        <span className="font-bold text-slate-700">{label}</span>
+        <span aria-current="page" className="font-semibold text-cc-ink">{label}</span>
       </nav>
 
-      <h1 className="text-3xl font-black text-gray-900 mb-6">
+      <h1 className={`${CATALOG_TITLE} text-3xl mb-6`}>
         SAP objects — {label}{' '}
-        <span className="text-slate-400 text-lg font-bold">({objects.length})</span>
+        <span className="text-cc-ink-muted text-lg font-bold">({objects.length})</span>
       </h1>
 
       <div className="flex flex-wrap gap-2 mb-10">
@@ -59,11 +67,8 @@ export default async function CatalogBrowsePage({
           <Link
             key={l}
             href={`/catalog/browse/${l.toLowerCase()}`}
-            className={`w-10 h-10 flex items-center justify-center rounded-lg border text-sm font-black transition-colors ${
-              l === L
-                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-400'
-            }`}
+            aria-current={l === L ? 'page' : undefined}
+            className={`${publicButton(l === L ? 'secondary' : 'ghost', 'sm')} min-w-11`}
           >
             {l === '0' ? '0-9' : l}
           </Link>
@@ -71,19 +76,17 @@ export default async function CatalogBrowsePage({
       </div>
 
       {objects.length === 0 ? (
-        <p className="text-slate-500">No objects in this range.</p>
+        <p className="text-cc-ink-muted">No objects in this range.</p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {objects.map((n) => (
-            <Link
-              key={n}
-              href={`/catalog/${objectToSlug(n)}`}
-              className="px-3 py-2 rounded-lg border border-slate-100 bg-white font-mono text-sm font-bold text-slate-700 hover:border-emerald-400 hover:text-emerald-700 truncate"
-            >
-              {n}
-            </Link>
+            <li key={n} className={CATALOG_TILE_ITEM}>
+              <Link href={`/catalog/${objectToSlug(n)}`} className={CATALOG_TILE_LINK}>
+                {n}
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       <CatalogAttribution />

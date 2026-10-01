@@ -114,7 +114,7 @@ export default function ProcessStepList({
                 condition is the text of the branch in the code, never a
                 paraphrase of it. */}
             {element.branches.length > 1 ? (
-              <ul className="ml-3 flex flex-col gap-0.5">
+              <ul className="ml-3 flex flex-col gap-1">
                 {element.branches.map((branch, i) => (
                   <li key={`${branch.to}-${i}`} className="text-[12px] font-medium text-cc-ink-muted">
                     {branch.condition ? (
@@ -129,7 +129,7 @@ export default function ProcessStepList({
               </ul>
             ) : null}
 
-            <span className="flex flex-wrap items-center gap-1.5">
+            <span className="flex flex-wrap items-center gap-2">
               {element.anchor ? (
                 <CcAnchor tone={isSelected ? 'hot' : 'linked'}>
                   {element.anchor.lineStart === element.anchor.lineEnd

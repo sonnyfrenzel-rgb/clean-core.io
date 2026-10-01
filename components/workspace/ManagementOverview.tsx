@@ -84,15 +84,13 @@ const TONE_CLASS: Record<SegmentTone, string> = {
   // `components/cc/state.ts`, never green: a level is imported, not proven.
   'level-A': 'bg-cc-information',
   'level-B': 'bg-cc-neutral',
-  'level-C': 'bg-cc-warning',
+  'level-C': 'bg-cc-warning-mark',
   'level-D': 'bg-cc-error',
+  // The one area that is not a category: no fill colour, a dashed outline —
+  // a form rather than a hue, so it survives a printer without colour and a
+  // contrast theme (`app/globals.css` keeps the dashes under forced-colors).
+  // No hatching gradient: §1.4 keeps gradients out of the workspace (D.32).
   'not-determined': 'bg-cc-surface-muted border border-dashed border-cc-field-border',
-};
-
-/** Hatching for the one area that is not a category. A pattern, so it survives a printer without colour. */
-const HATCH: React.CSSProperties = {
-  backgroundImage:
-    'repeating-linear-gradient(135deg, var(--cc-field-border) 0 1px, transparent 1px 6px)',
 };
 
 function Swatch({ tone }: { tone: SegmentTone }) {
@@ -101,7 +99,6 @@ function Swatch({ tone }: { tone: SegmentTone }) {
       aria-hidden="true"
       data-chart-swatch=""
       data-not-determined={tone === 'not-determined' ? '' : undefined}
-      style={tone === 'not-determined' ? HATCH : undefined}
       className={cn('inline-block h-3 w-3 shrink-0 rounded-[2px] align-middle', TONE_CLASS[tone])}
     />
   );
@@ -125,7 +122,7 @@ function StackedBar({ label, segments, chart }: { label: string; segments: reado
             key={s.key}
             data-chart-segment={s.key}
             data-not-determined={s.notDetermined ? '' : undefined}
-            style={{ flexGrow: s.count, flexBasis: 0, ...(s.notDetermined ? HATCH : {}) }}
+            style={{ flexGrow: s.count, flexBasis: 0 }}
             className={cn('block h-full min-w-[4px]', TONE_CLASS[s.tone])}
           />
         ))}
@@ -133,10 +130,11 @@ function StackedBar({ label, segments, chart }: { label: string; segments: reado
   );
 }
 
-const TH = 'px-2 pb-1 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase';
-const TD = 'border-t border-cc-line px-2 py-1 text-[12px] font-medium text-cc-ink';
-
-/** The legend and the numbers in one — a real table, so a screen reader reads it as one. */
+/**
+ * The legend and the numbers in one — a real table (`CcTable`, §2.4), so a
+ * screen reader reads it as one. The row key and the "not determined" mark sit
+ * on the label, which is where the swatch that ties a row to its segment is.
+ */
 function SegmentTable({
   caption,
   unit,
@@ -150,38 +148,31 @@ function SegmentTable({
   rows: Array<{ key: string; label: string; tone?: SegmentTone; notDetermined: boolean; counts: number[] }>;
 }) {
   return (
-    <table data-overview-table="" className="mt-2 w-full border-collapse text-left">
-      <caption className="sr-only">{caption}</caption>
-      <thead>
-        <tr>
-          <th scope="col" className={TH}>
-            {unit}
-          </th>
-          {columns.map((c) => (
-            <th key={c} scope="col" className={cn(TH, 'text-right')}>
-              {c}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={r.key} data-overview-row={r.key} data-not-determined={r.notDetermined ? '' : undefined}>
-            <th scope="row" className={cn(TD, 'font-semibold')}>
-              <span className="inline-flex items-center gap-2">
+    <div data-overview-table="" className="mt-2">
+      <CcTable
+        caption={caption}
+        columns={[
+          { key: 'label', label: unit },
+          ...columns.map((c) => ({ key: `n:${c}`, label: c, numeric: true })),
+        ]}
+        rows={rows.map((r) => ({
+          key: r.key,
+          cells: {
+            label: (
+              <span
+                data-overview-row={r.key}
+                data-not-determined={r.notDetermined ? '' : undefined}
+                className="inline-flex items-center gap-2 font-semibold"
+              >
                 {r.tone ? <Swatch tone={r.tone} /> : null}
                 {r.label}
               </span>
-            </th>
-            {r.counts.map((n, i) => (
-              <td key={columns[i]} className={cn(TD, 'text-right tabular-nums')}>
-                {n}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+            ),
+            ...Object.fromEntries(columns.map((c, i) => [`n:${c}`, r.counts[i]])),
+          },
+        }))}
+      />
+    </div>
   );
 }
 
@@ -450,7 +441,7 @@ export default function ManagementOverview({
       <h2
         id="management-answers-heading"
         data-management-headline=""
-        className="m-0 text-[16px] leading-snug font-bold text-cc-ink"
+        className="m-0 cc-text-h2 text-cc-ink"
       >
         {overview.headline}
       </h2>
@@ -472,7 +463,7 @@ export default function ManagementOverview({
                   <h4 className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
                     {wt('mgmt.waitsFor')}
                   </h4>
-                  <ul data-overview-waits="" className="m-0 mt-1 list-disc space-y-0.5 pl-5">
+                  <ul data-overview-waits="" className="m-0 mt-1 list-disc space-y-1 pl-5">
                     {dec.waitsFor.map((w) => (
                       <li key={w} className="text-[12px] font-medium text-cc-ink">
                         {w}
@@ -573,31 +564,28 @@ export default function ManagementOverview({
               </p>
               <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink">{readiness.sentence}</p>
               {readiness.points.length > 0 ? (
-                <table data-overview-table="" className="mt-2 w-full border-collapse text-left">
-                  <caption className="sr-only">{wt('mgmt.trendCaption')}</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col" className={TH}>
-                        {wt('mgmt.colDate')}
-                      </th>
-                      <th scope="col" className={TH}>
-                        {wt('mgmt.colRun')}
-                      </th>
-                      <th scope="col" className={cn(TH, 'text-right')}>
-                        {wt('mgmt.colScore')}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {readiness.points.map((p) => (
-                      <tr key={p.runId} data-overview-row={p.runId}>
-                        <td className={cn(TD, 'font-cc-mono')}>{p.date ?? wt('mgmt.notRecorded')}</td>
-                        <td className={cn(TD, 'font-cc-mono')}>{p.runId}</td>
-                        <td className={cn(TD, 'text-right tabular-nums')}>{p.score}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div data-overview-table="" className="mt-2">
+                  <CcTable
+                    caption={wt('mgmt.trendCaption')}
+                    columns={[
+                      { key: 'date', label: wt('mgmt.colDate') },
+                      { key: 'run', label: wt('mgmt.colRun') },
+                      { key: 'score', label: wt('mgmt.colScore'), numeric: true },
+                    ]}
+                    rows={readiness.points.map((p) => ({
+                      key: p.runId,
+                      cells: {
+                        date: (
+                          <span data-overview-row={p.runId} className="font-cc-mono">
+                            {p.date ?? wt('mgmt.notRecorded')}
+                          </span>
+                        ),
+                        run: <span className="font-cc-mono">{p.runId}</span>,
+                        score: p.score,
+                      },
+                    }))}
+                  />
+                </div>
               ) : null}
               <div
                 data-overview-not-determined="readiness"

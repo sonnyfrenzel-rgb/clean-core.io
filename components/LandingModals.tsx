@@ -18,29 +18,106 @@ import {
 } from 'firebase/auth';
 import { getAuth, getDb } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { 
-  X, 
-  ArrowRight, 
-  ShieldCheck, 
-  Key, 
-  CheckCircle2, 
-  Mail, 
-  Lock, 
-  ArrowLeft, 
-  Eye, 
-  EyeOff, 
-  Check,
-  MessageSquare,
+import {
+  ArrowRight,
+  ShieldCheck,
+  Key,
+  CheckCircle2,
+  Mail,
+  Lock,
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  type LucideIcon,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { createPortal } from 'react-dom';
-import { useCcHydrated, useCcModal } from '@/components/cc/modal';
 import LegalOverlay from '@/app/components/LegalOverlay';
 import { COMMUNITY_QUOTA } from '@/lib/constants';
 import { finishRegistration } from '@/hooks/useUserProfile';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import MaintenanceNotice from '@/components/MaintenanceNotice';
 import { safeReturnPath } from '@/lib/return-path';
+import { cn } from '@/lib/utils';
+import CcDialog from '@/components/cc/Dialog';
+import CcButton from '@/components/cc/Button';
+import CcField from '@/components/cc/Field';
+import CcCheckbox from '@/components/cc/Checkbox';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+
+type AuthMode = 'signin' | 'signup' | 'forgot' | 'mfa' | 'success';
+
+/** The dialog's title per step: the heading each screen used to draw itself. */
+const AUTH_TITLE: Record<AuthMode, string> = {
+  signin: 'Welcome Back',
+  signup: 'Create Account',
+  forgot: 'Reset Password',
+  success: 'Check your Inbox',
+  mfa: 'Two-Factor Auth',
+};
+
+/** A link inside running text: ink and underlined, never a surface of its own. */
+const INLINE_LINK = 'font-semibold text-cc-ink underline underline-offset-2 hover:text-cc-information';
+
+/** A public dialog, so the cozy 40 px field of DESIGN.md §2.7 rather than the compact 32 px one. */
+const FIELD = 'min-h-10';
+const FIELD_WITH_ICON = 'min-h-10 pl-9';
+const FIELD_ICON = 'pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-cc-ink-muted';
+
+/** A heading inside a legal summary, as in the onboarding dialog's. */
+const LEGAL_H3 = 'm-0 mb-2 cc-text-h3 text-cc-ink';
+
+/** The icon above a one-purpose step (reset, sent, second factor). Decoration only. */
+function DialogMark({ icon: Icon, centered = false }: { icon: LucideIcon; centered?: boolean }) {
+  return (
+    <div
+      aria-hidden={true}
+      className={cn(
+        'mb-4 flex h-12 w-12 items-center justify-center rounded-cc-card border border-cc-line bg-cc-brand-surface text-cc-brand-strong',
+        centered && 'mx-auto',
+      )}
+    >
+      <Icon size={24} />
+    </div>
+  );
+}
+
+/** Show or hide the password: an icon button laid into the field's right edge. */
+function PasswordToggle({ shown, onToggle }: { shown: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="absolute top-1/2 right-1 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-cc-row text-cc-ink-muted hover:text-cc-ink"
+      aria-label="Show password"
+      aria-pressed={shown}
+    >
+      {shown ? <EyeOff size={16} aria-hidden={true} /> : <Eye size={16} aria-hidden={true} />}
+    </button>
+  );
+}
+
+/** The divider between the e-mail form and the Google button. */
+function OrContinueWith() {
+  return (
+    <div className="relative py-2">
+      <div className="absolute inset-x-0 top-1/2 border-t border-cc-line" aria-hidden={true} />
+      <p className="relative m-0 flex justify-center">
+        <span className="bg-cc-surface px-3 cc-text-label text-cc-ink-muted">or continue with</span>
+      </p>
+    </div>
+  );
+}
+
+/** The Google "G" in the button's own ink; the button says "Google Account" in words. */
+function GoogleMark() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden={true}>
+      <path
+        fill="currentColor"
+        d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.2-5.136 4.2A5.72 5.72 0 0 1 8.24 12.9a5.72 5.72 0 0 1 5.751-5.7 5.6 5.6 0 0 1 3.916 1.547l3.076-3.076A10.15 10.15 0 0 0 14.004 2a10.05 10.05 0 0 0-10 10.05 10.05 10.05 0 0 0 10 10.05c5.787 0 9.878-3.9 9.878-9.882 0-.67-.066-1.3-.2-1.933H12.24Z"
+      />
+    </svg>
+  );
+}
 
 export default function LandingModals() {
   const auth = getAuth();
@@ -69,7 +146,7 @@ export default function LandingModals() {
   const afterSignIn = safeReturnPath(searchParams.get('next')) ?? '/dashboard';
 
   // Local state mirroring
-  const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'forgot' | 'mfa' | 'success'>('signin');
+  const [authMode, setAuthMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -160,22 +237,6 @@ export default function LandingModals() {
     updateQueryParams('auth', null);
   };
 
-  /**
-   * The sign-in dialog is modal the way every other layer is
-   * (`components/cc/modal.ts`, DESIGN.md §2.6): the page behind goes inert,
-   * focus moves to the first field and stays in the dialog, Escape closes it,
-   * and closing hands focus back to what opened it. It is portalled to `body`
-   * because that inerting spares only a direct child of it, and it waits for
-   * hydration because the server has no `body` to portal to (QA full review of
-   * v2.20.0).
-   */
-  const hydrated = useCcHydrated();
-  const authDialogRef = useCcModal<HTMLDivElement>({
-    open: hydrated && Boolean(authParam),
-    onClose: closeAuthModal,
-    initialFocus: 'first-field',
-  });
-
   const handleSignIn = async () => {
     const provider = new GoogleAuthProvider();
     try {
@@ -203,11 +264,13 @@ export default function LandingModals() {
       }, 850);
     } catch (error: any) {
       if (interceptSecondFactor(error)) return;
-      console.error('Error signing in with popup:', error);
       const code = error?.code || '';
+      // A closed popup, or a second click that superseded the first popup, is
+      // not an error: the reader changed their mind or clicked twice.
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
         return;
       }
+      console.error('Error signing in with popup:', error);
       // Log the actual error for debugging — don't silently redirect
       console.error('[handleSignIn] Google popup error code:', code, 'message:', error?.message);
       if (code === 'auth/popup-blocked') {
@@ -422,20 +485,27 @@ export default function LandingModals() {
     if (/[^A-Za-z0-9]/.test(pw)) score++;
     else feedback.push('At least one special character');
     
+    // State colours of §1.1 with the word beside them: the check ran, so
+    // success is honest for the two passing grades, and the label tells Good
+    // from Strong.
     let label = 'Weak';
-    let color = 'bg-red-500';
+    let color = 'bg-cc-error';
+    let text = 'text-cc-error';
     if (score === 2) {
       label = 'Fair';
-      color = 'bg-amber-500';
+      color = 'bg-cc-warning-line';
+      text = 'text-cc-warning';
     } else if (score === 3) {
       label = 'Good';
-      color = 'bg-yellow-500';
+      color = 'bg-cc-success';
+      text = 'text-cc-success';
     } else if (score === 4) {
       label = 'Strong';
-      color = 'bg-green-600';
+      color = 'bg-cc-success';
+      text = 'text-cc-success';
     }
-    
-    return { score, label, color, feedback };
+
+    return { score, label, color, text, feedback };
   };
 
   const handleMfaInputChange = (val: string, index: number) => {
@@ -496,539 +566,498 @@ export default function LandingModals() {
     }
   };
 
+  const strength = getPasswordStrength(password);
+
   return (
     <>
       {isNavigating && (
-        <div className="fixed top-0 left-0 w-full h-1 bg-gray-900/10 z-[60]">
-          <div className="h-full bg-green-600 animate-pulse w-full"></div>
+        // Above the dialog it follows: the sign-in has gone through and the
+        // page is on its way, so this bar belongs on top of every layer.
+        <div className="fixed top-0 left-0 z-cc-toast h-1 w-full bg-cc-ink/10">
+          <div className="h-full w-full bg-cc-brand-strong motion-safe:animate-pulse"></div>
         </div>
       )}
 
-      {/* Auth Modal */}
-      {hydrated && createPortal(
-      <AnimatePresence>
-        {authParam && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4">
-            <motion.div
-              ref={authDialogRef}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Sign in or register"
-              tabIndex={-1}
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              transition={{ type: 'spring', duration: 0.4 }}
-              className="bg-white rounded-2xl sm:rounded-[2.5rem] w-full max-w-md shadow-2xl border border-gray-100 overflow-hidden relative max-h-[95vh] overflow-y-auto my-auto"
-            >
-              {/* Close Button */}
-              <button aria-label="Close" type="button"
-                onClick={closeAuthModal}
-                className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-              >
-                <X size={16} strokeWidth={2.5} />
-              </button>
+      {/*
+        The access dialog — sign-in, registration, password reset and the second
+        factor — as one `CcDialog` (block D, D.27). What changed is the frame:
+        the library's dialog holds the focus, puts the page behind it out of
+        reach and closes on Escape. What did not change is anything the account
+        depends on: every field, which of them are required, both agreements,
+        the order of the steps and every call they make are the ones above. Each
+        form stays a native <form> inside the dialog body rather than the
+        dialog's own `onSubmit`, so the browser still checks `required` and
+        `type="email"` before a submit handler runs, exactly as before.
+      */}
+      <CcDialog open={!!authParam} onClose={closeAuthModal} title={AUTH_TITLE[authMode]} data-access-dialog={authMode}>
+        {authMode === 'mfa' ? (
+          /* MFA Interceptor Screen */
+          <div>
+            <DialogMark icon={ShieldCheck} />
+            <p className="mb-5 cc-text-body text-cc-ink-muted">
+              Enter the 6-digit code from your authenticator app (Google Authenticator, Authy, 1Password, …). Your sign-in completes only with it.
+            </p>
 
-              {authMode === 'mfa' ? (
-                /* MFA Interceptor Screen */
-                <div className="p-8 sm:p-10">
-                  <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 border border-green-150">
-                    <ShieldCheck className="w-8 h-8 text-green-600 animate-pulse" />
+            <div className="space-y-5">
+              {/* 6 Digit Input boxes */}
+              <div role="group" aria-label="Authentication code" className="flex justify-between gap-2">
+                {mfaCode.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    id={`mfa-input-${idx}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    aria-label={`Digit ${idx + 1} of 6`}
+                    onChange={(e) => handleMfaInputChange(e.target.value, idx)}
+                    onKeyDown={(e) => handleMfaKeyDown(e, idx)}
+                    onPaste={idx === 0 ? handleMfaPaste : undefined}
+                    className="h-14 w-12 rounded-cc-row border border-cc-field-border bg-cc-surface text-center font-cc-mono text-[22px] font-bold text-cc-ink"
+                    autoFocus={idx === 0}
+                    autoComplete="one-time-code"
+                  />
+                ))}
+              </div>
+
+              {authError && <CcMessageStrip state="error">{authError}</CcMessageStrip>}
+
+              <p className="m-0 text-center text-[12px] font-medium leading-normal text-cc-ink-muted">
+                Make sure your authenticator's clock is in sync. Lost the authenticator? Write to info@clean-core.io from your account address — an administrator removes the factor after confirming with you, and you set it up again in Settings.
+              </p>
+
+              <div className="flex flex-col">
+                <CcButton variant="ghost" density="cozy" onClick={closeAuthModal} icon={<ArrowLeft size={16} aria-hidden={true} />}>
+                  Back to Sign In
+                </CcButton>
+              </div>
+            </div>
+          </div>
+        ) : authMode === 'forgot' ? (
+          /* Forgot Password Screen */
+          <form onSubmit={handleForgotPassword}>
+            <DialogMark icon={Key} />
+            <p className="mb-5 cc-text-body text-cc-ink-muted">
+              Enter your email address and we'll send you a secure link to reset your password.
+            </p>
+
+            <div className="space-y-4">
+              <CcField label="Email Address" required>
+                {(c) => (
+                  <div className="relative">
+                    <Mail size={16} aria-hidden={true} className={FIELD_ICON} />
+                    <input
+                      id={c.id}
+                      type="email"
+                      required={c.required}
+                      aria-required={c.ariaRequired}
+                      aria-describedby={c.describedBy}
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@company.com"
+                      className={cn(c.className, FIELD_WITH_ICON)}
+                    />
                   </div>
-                  <h3 className="text-3xl font-black text-gray-950 tracking-tight mb-2">Two-Factor Auth</h3>
-                  <p className="text-sm font-medium text-gray-500 mb-8 leading-relaxed">
-                    Enter the 6-digit code from your authenticator app (Google Authenticator, Authy, 1Password, …). Your sign-in completes only with it.
-                  </p>
+                )}
+              </CcField>
 
-                  <div className="space-y-6">
-                    {/* 6 Digit Input boxes */}
-                    <div className="flex justify-between gap-2.5">
-                      {mfaCode.map((digit, idx) => (
-                        <input
-                          key={idx}
-                          id={`mfa-input-${idx}`}
-                          type="text"
-                          maxLength={1}
-                          value={digit}
-                          onChange={(e) => handleMfaInputChange(e.target.value, idx)}
-                          onKeyDown={(e) => handleMfaKeyDown(e, idx)}
-                          onPaste={idx === 0 ? handleMfaPaste : undefined}
-                          className="w-12 h-14 bg-gray-50 border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none rounded-xl text-center font-black text-xl text-gray-900 transition-all font-mono shadow-sm"
-                          autoFocus={idx === 0}
-                          autoComplete="one-time-code"
+              {authError && <CcMessageStrip state="error">{authError}</CcMessageStrip>}
+
+              <div className="flex flex-col gap-2">
+                <CcButton type="submit" variant="primary" density="cozy" disabled={isSubmitting}>
+                  {isSubmitting ? 'Sending...' : 'Send Reset Link'} <ArrowRight size={16} aria-hidden={true} />
+                </CcButton>
+                <CcButton
+                  variant="ghost"
+                  density="cozy"
+                  onClick={() => { setAuthMode('signin'); setAuthError(''); updateQueryParams('auth', 'signin'); }}
+                  icon={<ArrowLeft size={16} aria-hidden={true} />}
+                >
+                  Back to Sign In
+                </CcButton>
+              </div>
+            </div>
+          </form>
+        ) : authMode === 'success' ? (
+          /* Reset Password Success Screen */
+          <div className="text-center">
+            <DialogMark icon={CheckCircle2} centered />
+            <p className="mb-5 cc-text-body text-cc-ink-muted">
+              We've sent a password reset link to <span className="font-semibold text-cc-ink">{email}</span>. Please click the link in that email to reset your credentials.
+            </p>
+
+            <div className="flex flex-col">
+              <CcButton
+                variant="primary"
+                density="cozy"
+                onClick={() => { setAuthMode('signin'); setEmail(''); setAuthError(''); updateQueryParams('auth', 'signin'); }}
+              >
+                Back to Sign In
+              </CcButton>
+            </div>
+          </div>
+        ) : authMode === 'signup' ? (
+          /* Sign Up Screen */
+          <form onSubmit={handleEmailSignUp}>
+            <p className="m-0 mb-4 cc-text-cell text-cc-ink-muted">
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => { setAuthMode('signin'); setAuthError(''); updateQueryParams('auth', 'signin'); }}
+                className={INLINE_LINK}
+              >
+                Sign In
+              </button>
+            </p>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <CcField label="First Name" required>
+                  {(c) => (
+                    <input
+                      id={c.id}
+                      type="text"
+                      required={c.required}
+                      aria-required={c.ariaRequired}
+                      aria-describedby={c.describedBy}
+                      autoComplete="given-name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="John"
+                      className={cn(c.className, FIELD)}
+                    />
+                  )}
+                </CcField>
+                <CcField label="Last Name" required>
+                  {(c) => (
+                    <input
+                      id={c.id}
+                      type="text"
+                      required={c.required}
+                      aria-required={c.ariaRequired}
+                      aria-describedby={c.describedBy}
+                      autoComplete="family-name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Doe"
+                      className={cn(c.className, FIELD)}
+                    />
+                  )}
+                </CcField>
+              </div>
+
+              <CcField label="Email Address" required>
+                {(c) => (
+                  <div className="relative">
+                    <Mail size={16} aria-hidden={true} className={FIELD_ICON} />
+                    <input
+                      id={c.id}
+                      type="email"
+                      required={c.required}
+                      aria-required={c.ariaRequired}
+                      aria-describedby={c.describedBy}
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@company.com"
+                      className={cn(c.className, FIELD_WITH_ICON)}
+                    />
+                  </div>
+                )}
+              </CcField>
+
+              <div>
+                <CcField label="Password" required>
+                  {(c) => (
+                    <div className="relative">
+                      <Lock size={16} aria-hidden={true} className={FIELD_ICON} />
+                      <input
+                        id={c.id}
+                        type={showPassword ? 'text' : 'password'}
+                        required={c.required}
+                        aria-required={c.ariaRequired}
+                        aria-describedby={c.describedBy}
+                        autoComplete="new-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className={cn(c.className, FIELD_WITH_ICON, 'pr-12')}
+                      />
+                      <PasswordToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />
+                    </div>
+                  )}
+                </CcField>
+
+                {/* Password strength meter */}
+                {password && (
+                  <div data-password-strength={strength.score} className="mt-2 space-y-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="cc-text-label text-cc-ink-muted">Password Strength</span>
+                      <span className={cn('cc-text-meta', strength.text)}>{strength.label}</span>
+                    </div>
+                    <div className="grid h-1 grid-cols-4 gap-1" aria-hidden={true}>
+                      {[1, 2, 3, 4].map((step) => (
+                        <div
+                          key={step}
+                          className={cn('h-full rounded-full', strength.score >= step ? strength.color : 'bg-cc-line')}
                         />
                       ))}
                     </div>
-
-                    {authError && (
-                      <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-2.5 text-xs text-red-700 font-bold">
-                        <X size={14} className="shrink-0 mt-0.5" />
-                        <span>{authError}</span>
-                      </div>
+                    {strength.feedback.length > 0 && (
+                      <ul className="m-0 list-disc space-y-1 pl-4 text-[12px] font-medium text-cc-ink-muted">
+                        {strength.feedback.map((f, i) => (
+                          <li key={i}>{f}</li>
+                        ))}
+                      </ul>
                     )}
-
-                    <div className="pt-2">
-                      <p className="text-xs text-center text-gray-400 font-medium leading-normal">
-                        Make sure your authenticator's clock is in sync. Lost the authenticator? Write to info@clean-core.io from your account address — an administrator removes the factor after confirming with you, and you set it up again in Settings.
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={closeAuthModal}
-                      className="w-full py-4 text-sm font-bold text-gray-500 hover:text-gray-905 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <ArrowLeft size={14} /> Back to Sign In
-                    </button>
                   </div>
-                </div>
-              ) : authMode === 'forgot' ? (
-                /* Forgot Password Screen */
-                <form onSubmit={handleForgotPassword} className="p-8 sm:p-10">
-                  <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 border border-green-150">
-                    <Key className="w-8 h-8 text-green-600" />
+                )}
+              </div>
+
+              {/* Match or mismatch is a check that actually ran, so it is a
+                  value state on the field (§2.7) — icon and text, not a colour. */}
+              <CcField
+                label="Confirm Password"
+                required
+                valueState={confirmPassword ? (password !== confirmPassword ? 'error' : 'success') : undefined}
+                message={confirmPassword ? (password !== confirmPassword ? 'Passwords do not match' : 'Passwords match') : undefined}
+              >
+                {(c) => (
+                  <div className="relative">
+                    <Lock size={16} aria-hidden={true} className={FIELD_ICON} />
+                    <input
+                      id={c.id}
+                      type={showPassword ? 'text' : 'password'}
+                      required={c.required}
+                      aria-required={c.ariaRequired}
+                      aria-invalid={c.invalid || undefined}
+                      aria-describedby={c.describedBy}
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className={cn(c.className, FIELD_WITH_ICON)}
+                    />
                   </div>
-                  <h3 className="text-3xl font-black text-gray-955 tracking-tight mb-2">Reset Password</h3>
-                  <p className="text-sm font-medium text-gray-500 mb-8 leading-relaxed">
-                    Enter your email address and we'll send you a secure link to reset your password.
-                  </p>
+                )}
+              </CcField>
 
-                  <div className="space-y-5">
-                    <div>
-                      <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
-                      <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input
-                          type="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="name@company.com"
-                          className="w-full bg-gray-50 border border-gray-200 pl-12 pr-4 py-3.5 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-medium text-gray-900 text-sm"
-                        />
-                      </div>
-                    </div>
+              {/*
+                Optional, and the only free-text field in the form. Nobody
+                is gated on it, but two sentences about the use case is the
+                difference between a row in a list and knowing who arrived —
+                and the admin notification has always had a place to print
+                it. The Google path kept asking; this one stopped, and sent
+                an empty string instead.
+              */}
+              <div>
+                <CcField label="Motivation / Use Case (Optional)">
+                  {(c) => (
+                    <textarea
+                      id={c.id}
+                      aria-describedby={c.describedBy}
+                      value={motivation}
+                      onChange={(e) => setMotivation(e.target.value)}
+                      placeholder="Which SAP system, and what are you trying to find out?"
+                      rows={2}
+                      maxLength={2000}
+                      className={cn(c.className, 'resize-none py-2 leading-normal')}
+                    />
+                  )}
+                </CcField>
+              </div>
 
-                    {authError && (
-                      <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-2.5 text-xs text-red-700 font-bold">
-                        <X size={14} className="shrink-0 mt-0.5" />
-                        <span>{authError}</span>
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {isSubmitting ? 'Sending...' : 'Send Reset Link'} <ArrowRight size={14} />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => { setAuthMode('signin'); setAuthError(''); updateQueryParams('auth', 'signin'); }}
-                      className="w-full py-2 text-sm font-bold text-gray-500 hover:text-gray-905 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <ArrowLeft size={14} /> Back to Sign In
-                    </button>
-                  </div>
-                </form>
-              ) : authMode === 'success' ? (
-                /* Reset Password Success Screen */
-                <div className="p-8 sm:p-10 text-center">
-                  <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 mx-auto border border-green-150">
-                    <CheckCircle2 className="w-8 h-8 text-green-600" />
-                  </div>
-                  <h3 className="text-3xl font-black text-gray-955 tracking-tight mb-2">Check your Inbox</h3>
-                  <p className="text-sm font-medium text-gray-500 mb-8 leading-relaxed">
-                    We've sent a password reset link to <span className="font-bold text-gray-900">{email}</span>. Please click the link in that email to reset your credentials.
-                  </p>
-
-                  <button
-                    onClick={() => { setAuthMode('signin'); setEmail(''); setAuthError(''); updateQueryParams('auth', 'signin'); }}
-                    className="w-full bg-gray-955 hover:bg-gray-800 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-lg flex items-center justify-center gap-2"
-                  >
-                    Back to Sign In
-                  </button>
-                </div>
-              ) : authMode === 'signup' ? (
-                /* Sign Up Screen */
-                <form onSubmit={handleEmailSignUp} className="p-5 sm:p-8">
-                  <div className="text-center mb-4 sm:mb-6">
-                    <h3 className="text-2xl sm:text-3xl font-black text-gray-955 tracking-tight mb-1">Create Account</h3>
-                    <p className="text-xs font-bold text-gray-500">
-                      Already have an account?{' '}
+              {/* Legal consent checkboxes (required for registration) */}
+              <div className="space-y-2 border-t border-cc-line pt-3">
+                <CcCheckbox
+                  checked={agreedGDPR}
+                  onChange={setAgreedGDPR}
+                  required
+                  label={
+                    <>
+                      I agree to the{' '}
                       <button
                         type="button"
-                        onClick={() => { setAuthMode('signin'); setAuthError(''); updateQueryParams('auth', 'signin'); }}
-                        className="text-green-600 hover:underline"
+                        onClick={(e) => { e.preventDefault(); setShowDatenschutz(true); }}
+                        className={INLINE_LINK}
                       >
-                        Sign In
+                        GDPR provisions and Privacy Policy
+                      </button>{' '}
+                      and understand this is a Free Community Edition.
+                    </>
+                  }
+                />
+                <CcCheckbox
+                  checked={agreedTerms}
+                  onChange={setAgreedTerms}
+                  required
+                  label={
+                    <>
+                      I accept the{' '}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); setShowTermsOverlay(true); }}
+                        className={INLINE_LINK}
+                      >
+                        Terms of Service and Guidelines
                       </button>
-                    </p>
+                      .
+                    </>
+                  }
+                />
+              </div>
+
+              {/* The disclaimer states the fact and drops the label (§3.1 has no
+                  "powered by Generative AI" and no symbol for it). The fact is
+                  the one section 4.1 of the Terms states since v2.2.0: findings,
+                  route and score are the deterministic engine's, and only the
+                  model steps are written by a language model — which an account
+                  can switch off (QA c9ab2c6a6c1c). Kept in step with the Terms
+                  summary below and the onboarding dialog. */}
+              <CcMessageStrip state="warning" headline="Disclaimer.">
+                Findings, route and score come from a deterministic engine, without a language model. Summaries,
+                designs, generated code, documentation and tests are written by a language model where you use those
+                steps, and may contain errors. Both are drafts, not a guarantee: have qualified architects verify them
+                before deployment. Liability: Terms, section 4.
+              </CcMessageStrip>
+
+              {authError && <CcMessageStrip state="error">{authError}</CcMessageStrip>}
+
+              <div className="flex flex-col">
+                <CcButton
+                  type="submit"
+                  variant="primary"
+                  density="cozy"
+                  disabled={isSubmitting || (!!confirmPassword && password !== confirmPassword) || !agreedGDPR || !agreedTerms}
+                >
+                  {isSubmitting ? 'Registering...' : 'Register'} <ArrowRight size={16} aria-hidden={true} />
+                </CcButton>
+              </div>
+
+              <OrContinueWith />
+
+              <div className="flex flex-col gap-2">
+                <CcButton
+                  variant="ghost"
+                  density="cozy"
+                  onClick={handleSignIn}
+                  disabled={!agreedGDPR || !agreedTerms}
+                  icon={<GoogleMark />}
+                >
+                  Google Account
+                </CcButton>
+                {(!agreedGDPR || !agreedTerms) && (
+                  <p className="m-0 text-center text-[12px] font-medium text-cc-ink-muted">
+                    Accept the data protection notice and the terms above to continue with Google.
+                  </p>
+                )}
+              </div>
+            </div>
+          </form>
+        ) : (
+          /* Sign In Screen (Default) */
+          <form onSubmit={handleEmailSignIn}>
+            {/* Incident notice — self-expiring, see components/MaintenanceNotice.tsx */}
+            <MaintenanceNotice />
+            <div className="mb-5 flex items-center justify-between gap-3 rounded-cc-card border border-cc-line bg-cc-brand-surface p-4">
+              <div>
+                <p className="m-0 mb-1 cc-text-label text-cc-ink-muted">New to Clean-Core.io?</p>
+                <p className="m-0 cc-text-cell text-cc-ink">Join our free community program</p>
+              </div>
+              <CcButton
+                variant="secondary"
+                onClick={() => { setAuthMode('signup'); setAuthError(''); updateQueryParams('auth', 'signup'); }}
+              >
+                Create Account
+              </CcButton>
+            </div>
+
+            <div className="space-y-4">
+              <CcField label="Email Address" required>
+                {(c) => (
+                  <div className="relative">
+                    <Mail size={16} aria-hidden={true} className={FIELD_ICON} />
+                    <input
+                      id={c.id}
+                      type="email"
+                      required={c.required}
+                      aria-required={c.ariaRequired}
+                      aria-describedby={c.describedBy}
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@company.com"
+                      className={cn(c.className, FIELD_WITH_ICON)}
+                    />
                   </div>
+                )}
+              </CcField>
 
-                  <div className="space-y-3 sm:space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">First Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)}
-                          placeholder="John"
-                          className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-medium text-gray-900 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">Last Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={lastName}
-                          onChange={(e) => setLastName(e.target.value)}
-                          placeholder="Doe"
-                          className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-medium text-gray-900 text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">Email Address</label>
-                      <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                          type="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="name@company.com"
-                          className="w-full bg-gray-50 border border-gray-200 pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-medium text-gray-900 text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">Password</label>
-                      <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          required
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full bg-gray-50 border border-gray-200 pl-11 pr-11 py-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-medium text-gray-900 text-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-                          aria-label="Show password"
-                          aria-pressed={showPassword}
-                        >
-                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-
-                      {/* Password strength meter */}
-                      {password && (
-                        <div className="mt-2.5 space-y-1.5 bg-gray-50 p-3 rounded-xl border border-gray-150">
-                          <div className="flex justify-between items-center text-[10px] font-bold">
-                            <span className="text-gray-500 uppercase tracking-wider">Password Strength</span>
-                            <span className={`font-black uppercase tracking-wider ${
-                              getPasswordStrength(password).score === 4 ? 'text-green-600' :
-                              getPasswordStrength(password).score === 3 ? 'text-yellow-600' :
-                              getPasswordStrength(password).score === 2 ? 'text-amber-600' : 'text-red-500'
-                            }`}>{getPasswordStrength(password).label}</span>
-                          </div>
-                          <div className="grid grid-cols-4 gap-1 h-1.5">
-                            {[1, 2, 3, 4].map((step) => (
-                              <div
-                                key={step}
-                                className={`h-full rounded-full transition-all duration-300 ${
-                                  getPasswordStrength(password).score >= step
-                                    ? getPasswordStrength(password).color
-                                    : 'bg-gray-200'
-                                  }`}
-                              />
-                            ))}
-                          </div>
-                          {getPasswordStrength(password).feedback.length > 0 && (
-                            <ul className="text-[9px] text-gray-400 font-semibold italic space-y-0.5 list-disc pl-3">
-                              {getPasswordStrength(password).feedback.map((f, i) => (
-                                <li key={i}>{f}</li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">Confirm Password</label>
-                      <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          required
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full bg-gray-50 border border-gray-200 pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-medium text-gray-900 text-sm"
-                        />
-                      </div>
-                      {confirmPassword && password !== confirmPassword && (
-                        <p className="text-[10px] font-bold text-red-500 mt-1 flex items-center gap-1">
-                          <X size={10} /> Passwords do not match
-                        </p>
-                      )}
-                      {confirmPassword && password === confirmPassword && (
-                        <p className="text-[10px] font-bold text-green-600 mt-1 flex items-center gap-1">
-                          <Check size={10} /> Passwords match
-                        </p>
-                      )}
-                    </div>
-
-                    {/*
-                      Optional, and the only free-text field in the form. Nobody
-                      is gated on it, but two sentences about the use case is the
-                      difference between a row in a list and knowing who arrived —
-                      and the admin notification has always had a place to print
-                      it. The Google path kept asking; this one stopped, and sent
-                      an empty string instead.
-                    */}
-                    <div>
-                      <label className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">
-                        <MessageSquare size={12} /> Motivation / Use Case (Optional)
-                      </label>
-                      <textarea
-                        value={motivation}
-                        onChange={(e) => setMotivation(e.target.value)}
-                        placeholder="Which SAP system, and what are you trying to find out?"
-                        rows={2}
-                        maxLength={2000}
-                        className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-medium text-gray-900 text-sm resize-none"
+              <div>
+                <CcField label="Password" required>
+                  {(c) => (
+                    <div className="relative">
+                      <Lock size={16} aria-hidden={true} className={FIELD_ICON} />
+                      <input
+                        id={c.id}
+                        type={showPassword ? 'text' : 'password'}
+                        required={c.required}
+                        aria-required={c.ariaRequired}
+                        aria-describedby={c.describedBy}
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className={cn(c.className, FIELD_WITH_ICON, 'pr-12')}
                       />
+                      <PasswordToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />
                     </div>
+                  )}
+                </CcField>
+                <p className="m-0 mt-1 text-right">
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('forgot'); setAuthError(''); updateQueryParams('auth', 'forgot'); }}
+                    className={cn(INLINE_LINK, 'text-[12px]')}
+                  >
+                    Forgot Password?
+                  </button>
+                </p>
+              </div>
 
-                    {/* Legal consent checkboxes (required for registration) */}
-                    <div className="space-y-2.5 pt-3 border-t border-gray-100">
-                      <label className="flex items-start gap-2.5 cursor-pointer group">
-                        <div className="relative mt-0.5 shrink-0">
-                          <input 
-                            type="checkbox" 
-                            checked={agreedGDPR} 
-                            onChange={(e) => setAgreedGDPR(e.target.checked)}
-                            className="peer sr-only"
-                          />
-                          {/* The input is visually hidden, so the box carries its focus ring. */}
-                          <div className={`w-4 h-4 border-2 rounded transition-all flex items-center justify-center peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-solid peer-focus-visible:outline-cc-focus ${agreedGDPR ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
-                            {agreedGDPR && <Check className="w-3 h-3 text-white" />}
-                          </div>
-                        </div>
-                        <span className="text-[10px] text-gray-600 leading-relaxed font-medium">
-                          I agree to the{' '}
-                          <button 
-                            type="button" 
-                            onClick={(e) => { e.preventDefault(); setShowDatenschutz(true); }}
-                            className="text-gray-950 font-bold underline hover:text-green-600 transition-colors"
-                          >
-                            GDPR provisions and Privacy Policy
-                          </button>{' '}
-                          and understand this is a Free Community Edition.
-                        </span>
-                      </label>
+              {authError && <CcMessageStrip state="error">{authError}</CcMessageStrip>}
 
-                      <label className="flex items-start gap-2.5 cursor-pointer group">
-                        <div className="relative mt-0.5 shrink-0">
-                          <input 
-                            type="checkbox" 
-                            checked={agreedTerms} 
-                            onChange={(e) => setAgreedTerms(e.target.checked)}
-                            className="peer sr-only"
-                          />
-                          {/* The input is visually hidden, so the box carries its focus ring. */}
-                          <div className={`w-4 h-4 border-2 rounded transition-all flex items-center justify-center peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-solid peer-focus-visible:outline-cc-focus ${agreedTerms ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
-                            {agreedTerms && <Check className="w-3 h-3 text-white" />}
-                          </div>
-                        </div>
-                        <span className="text-[10px] text-gray-600 leading-relaxed font-medium">
-                          I accept the{' '}
-                          <button 
-                            type="button" 
-                            onClick={(e) => { e.preventDefault(); setShowTermsOverlay(true); }}
-                            className="text-gray-950 font-bold underline hover:text-green-600 transition-colors"
-                          >
-                            Terms of Service and Guidelines
-                          </button>
-                          .
-                        </span>
-                      </label>
-                    </div>
+              <div className="flex flex-col">
+                <CcButton type="submit" variant="primary" density="cozy" disabled={isSubmitting}>
+                  {isSubmitting ? 'Signing In...' : 'Sign In'} <ArrowRight size={16} aria-hidden={true} />
+                </CcButton>
+              </div>
 
-                    {/* AI Disclaimer */}
-                    <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-200/60 text-[9px] text-amber-900 leading-relaxed font-medium">
-                      <strong>⚡ Disclaimer:</strong> All analyses are powered by Generative AI and may contain inaccuracies. No warranty or liability assumed. Generated code must be verified by qualified architects before deployment.
-                    </div>
+              <OrContinueWith />
 
-                    {authError && (
-                      <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-2.5 text-xs text-red-700 font-bold">
-                        <X size={14} className="shrink-0 mt-0.5" />
-                        <span>{authError}</span>
-                      </div>
-                    )}
+              <div className="flex flex-col">
+                <CcButton variant="ghost" density="cozy" onClick={handleSignIn} icon={<GoogleMark />}>
+                  Google Account
+                </CcButton>
+              </div>
 
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || (!!confirmPassword && password !== confirmPassword) || !agreedGDPR || !agreedTerms}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-black text-sm transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {isSubmitting ? 'Registering...' : 'Register'} <ArrowRight size={14} />
-                    </button>
-
-                    <div className="relative py-2.5">
-                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
-                      <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-gray-400 bg-white px-3">or continue with</div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleSignIn}
-                      disabled={!agreedGDPR || !agreedTerms}
-                      className="w-full bg-gray-50 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed text-gray-900 border border-gray-200 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2.5 shadow-sm"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.2-5.136 4.2A5.72 5.72 0 0 1 8.24 12.9a5.72 5.72 0 0 1 5.751-5.7 5.6 5.6 0 0 1 3.916 1.547l3.076-3.076A10.15 10.15 0 0 0 14.004 2a10.05 10.05 0 0 0-10 10.05 10.05 10.05 0 0 0 10 10.05c5.787 0 9.878-3.9 9.878-9.882 0-.67-.066-1.3-.2-1.933H12.24Z"/></svg>
-                      Google Account
-                    </button>
-                    {(!agreedGDPR || !agreedTerms) && (
-                      <p className="text-[10px] text-gray-400 text-center font-medium">
-                        Accept the data protection notice and the terms above to continue with Google.
-                      </p>
-                    )}
-                  </div>
-                </form>
-              ) : (
-                /* Sign In Screen (Default) */
-                <form onSubmit={handleEmailSignIn} className="p-8 sm:p-10">
-                  <div className="text-center mb-6">
-                    <h3 className="text-3xl font-black text-gray-950 tracking-tight mb-1">Welcome Back</h3>
-                    {/* Incident notice — self-expiring, see components/MaintenanceNotice.tsx */}
-                    <MaintenanceNotice />
-                    <div className="mt-4 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-200/80 rounded-2xl flex items-center justify-between gap-3 shadow-inner text-left animate-in fade-in slide-in-from-top-2 duration-500">
-                      <div>
-                        <p className="text-[10px] font-black text-green-800 uppercase tracking-widest leading-none mb-1">New to Clean-Core.io?</p>
-                        <p className="text-[11px] text-gray-500 font-bold leading-none">Join our free community program</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => { setAuthMode('signup'); setAuthError(''); updateQueryParams('auth', 'signup'); }}
-                        className="bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all shadow hover:shadow-green-600/15 cursor-pointer shrink-0"
-                      >
-                        Create Account
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1.5">Email Address</label>
-                      <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                          type="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="name@company.com"
-                          className="w-full bg-gray-50 border border-gray-200 pl-11 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-medium text-gray-900 text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between items-center mb-1.5">
-                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider">Password</label>
-                        <button
-                          type="button"
-                          onClick={() => { setAuthMode('forgot'); setAuthError(''); updateQueryParams('auth', 'forgot'); }}
-                          className="text-[10px] font-bold text-green-600 hover:underline"
-                        >
-                          Forgot Password?
-                        </button>
-                      </div>
-                      <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          required
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full bg-gray-50 border border-gray-200 pl-11 pr-11 py-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-medium text-gray-900 text-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
-                          aria-label="Show password"
-                          aria-pressed={showPassword}
-                        >
-                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {authError && (
-                      <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-2.5 text-xs text-red-700 font-bold">
-                        <X size={14} className="shrink-0 mt-0.5" />
-                        <span>{authError}</span>
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-black text-sm transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {isSubmitting ? 'Signing In...' : 'Sign In'} <ArrowRight size={14} />
-                    </button>
-
-                    <div className="relative py-2.5">
-                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
-                      <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-gray-400 bg-white px-3">or continue with</div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleSignIn}
-                      className="w-full bg-gray-50 hover:bg-gray-100 text-gray-900 border border-gray-200 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2.5 shadow-sm"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.2-5.136 4.2A5.72 5.72 0 0 1 8.24 12.9a5.72 5.72 0 0 1 5.751-5.7 5.6 5.6 0 0 1 3.916 1.547l3.076-3.076A10.15 10.15 0 0 0 14.004 2a10.05 10.05 0 0 0-10 10.05 10.05 10.05 0 0 0 10 10.05c5.787 0 9.878-3.9 9.878-9.882 0-.67-.066-1.3-.2-1.933H12.24Z"/></svg>
-                      Google Account
-                    </button>
-
-                    <p className="text-[9px] text-gray-400 text-center leading-relaxed font-medium pt-1">
-                      By signing in, you agree to our{' '}
-                      <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="underline hover:text-green-600">Privacy Policy</a>{' '}
-                      and{' '}
-                      <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-green-600">Terms</a>.
-                    </p>
-                  </div>
-                </form>
-              )}
-            </motion.div>
-          </div>
+              <p className="m-0 text-center text-[12px] font-medium leading-relaxed text-cc-ink-muted">
+                By signing in, you agree to our{' '}
+                <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className={INLINE_LINK}>Privacy Policy</a>{' '}
+                and{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className={INLINE_LINK}>Terms</a>.
+              </p>
+            </div>
+          </form>
         )}
-      </AnimatePresence>,
-      document.body,
-      )}
+      </CcDialog>
 
       {/* Legal Overlays */}
       <LegalOverlay isOpen={legalParam === 'impressum'} onClose={() => updateQueryParams('legal', null)} title="Legal Notice (Impressum)">
-        <div className="space-y-6 text-slate-800">
+        <div className="space-y-6 text-cc-ink">
           <div>
-            <h3 className="text-lg font-bold mb-2">Information according to § 5 TMG</h3>
+            <h3 className={LEGAL_H3}>Information according to § 5 TMG</h3>
             <p className="text-sm leading-relaxed">
               Felix Frenzel<br />
               Hellerstraße 9<br />
@@ -1038,7 +1067,7 @@ export default function LandingModals() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">Contact</h3>
+            <h3 className={LEGAL_H3}>Contact</h3>
             <p className="text-sm leading-relaxed">
               Phone: +49 151 59200157<br />
               E-Mail: info@clean-core.io<br />
@@ -1047,7 +1076,7 @@ export default function LandingModals() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">Responsible for Content under § 18 Abs. 2 MStV</h3>
+            <h3 className={LEGAL_H3}>Responsible for Content under § 18 Abs. 2 MStV</h3>
             <p className="text-sm leading-relaxed">
               Felix Frenzel<br />
               Hellerstraße 9<br />
@@ -1056,44 +1085,44 @@ export default function LandingModals() {
             </p>
           </div>
 
-          <div className="pt-4 border-t border-slate-100">
-            <h3 className="text-base font-bold mb-2 text-slate-900">Disclaimer</h3>
-            <p className="text-xs text-slate-500 leading-normal mb-3">
+          <div className="border-t border-cc-line pt-4">
+            <h3 className={LEGAL_H3}>Disclaimer</h3>
+            <p className="mb-3 text-xs leading-normal text-cc-ink-muted">
               <strong>Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a free community application using generative AI (Free Community Edition), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
             </p>
-            <p className="text-xs text-slate-500 leading-normal">
+            <p className="text-xs leading-normal text-cc-ink-muted">
               <strong>Copyright:</strong> The content and works created by the site operator on these pages are subject to German copyright law. Contributions from third parties are marked as such. Reproduction, editing, and distribution require written consent.
             </p>
           </div>
 
-          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 p-3 rounded-lg font-bold">
+          <CcMessageStrip state="warning">
             Important Note: Clean-Core.io is a free community tool for assessing and modernizing legacy SAP code. Generated outputs are drafts and must be reviewed, tested and approved by qualified architects before any productive use.
-          </p>
+          </CcMessageStrip>
 
-          <div className="pt-4 border-t border-slate-100 text-center text-[10px] text-slate-400 font-black font-mono uppercase tracking-wider">
+          <div className="border-t border-cc-line pt-4 text-center font-cc-mono text-[12px] font-semibold text-cc-ink-muted">
             Clean-Core.io {APP_VERSION} ({APP_RELEASE_DATE})
           </div>
         </div>
       </LegalOverlay>
 
       <LegalOverlay isOpen={legalParam === 'privacy'} onClose={() => updateQueryParams('legal', null)} title="Privacy Policy (GDPR Compliance)">
-        <div className="space-y-6 text-slate-800">
+        <div className="space-y-6 text-cc-ink">
           <div>
-            <h3 className="text-lg font-bold mb-2">1. Privacy at a Glance</h3>
+            <h3 className={LEGAL_H3}>1. Privacy at a Glance</h3>
             <p className="text-sm leading-relaxed mb-2">
               Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our platform program.
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-cc-ink-muted">
               <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: info@clean-core.io.
             </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">2. Data Collection & Processing Purposes</h3>
+            <h3 className={LEGAL_H3}>2. Data Collection & Processing Purposes</h3>
             <p className="text-sm leading-relaxed mb-3">
               We process personal data of our users only as far as necessary to provide a functional community platform as well as our contents and services.
             </p>
-            <ul className="list-disc pl-5 space-y-2 text-xs text-slate-600">
+            <ul className="list-disc pl-5 space-y-2 text-xs text-cc-ink-muted">
               <li>
                 <strong>Google Authentication (Firebase Auth):</strong> To sign in, we use Google Sign-In. This securely reads your name, email address, and profile picture from your Google account to authenticate your user session and establish access privileges.
               </li>
@@ -1110,21 +1139,21 @@ export default function LandingModals() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">3. Processing of Source Code & Project Assets</h3>
+            <h3 className={LEGAL_H3}>3. Processing of Source Code & Project Assets</h3>
             <p className="text-sm leading-relaxed">
               The ABAP source files you upload and the generated modernization artifacts (such as solution designs, TypeScript code, and test cases) are stored in our secure Google Firebase cloud environment in Europe.
             </p>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-cc-ink-muted mt-2">
               <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Under Google's applicable API data-use terms, this content is not used to train Google's foundational AI models. When you use your own key (BYOK), the terms of your own Google account additionally apply.
             </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">4. Cloud Node Hosting & Third-Party Services</h3>
+            <h3 className={LEGAL_H3}>4. Cloud Node Hosting & Third-Party Services</h3>
             <p className="text-sm leading-relaxed">
               To provide this service, we rely on the following trusted cloud services:
             </p>
-            <ul className="list-disc pl-5 space-y-2 text-xs text-slate-600">
+            <ul className="list-disc pl-5 space-y-2 text-xs text-cc-ink-muted">
               <li>
                 <strong>Google Cloud Platform & Firebase:</strong> Hosting (Cloud Run) and database (Firestore) on European servers in the <strong>Belgium (europe-west1)</strong> region — data residency in the EU, operated in line with GDPR requirements. The sign-in, Firebase Authentication, is a Google service not tied to a region and is covered by the international-transfer safeguards in the full privacy policy.
               </li>
@@ -1135,11 +1164,11 @@ export default function LandingModals() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">5. Your Rights Under GDPR (including Art. 17 Deletion)</h3>
+            <h3 className={LEGAL_H3}>5. Your Rights Under GDPR (including Art. 17 Deletion)</h3>
             <p className="text-sm leading-relaxed mb-2">
               Since our platform is hosted in compliance with EU regulations, you have all rights under the General Data Protection Regulation (GDPR):
             </p>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-slate-600">
+            <ul className="list-disc pl-5 space-y-1 text-xs text-cc-ink-muted">
               <li>Right of Access (Art. 15 GDPR)</li>
               <li>Right to Rectification (Art. 16 GDPR)</li>
               <li>Right to Erasure / "Right to be Forgotten" (Art. 17 GDPR)</li>
@@ -1147,7 +1176,7 @@ export default function LandingModals() {
               <li>Right to Data Portability (Art. 20 GDPR)</li>
               <li>Right to Withdraw Consent (Art. 7 Abs. 3 GDPR)</li>
             </ul>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-cc-ink-muted mt-2">
               To exercise these rights, particularly to erase your data, you can trigger account deletion directly in your Profile Settings under the <strong>Danger Zone</strong>, which immediately deletes your live database and authentication entries, including every project and the source code in it. Residual copies in encrypted backups age out within 30 days, and the record of administrative actions on an account is kept for 24 months; the full privacy policy at clean-core.io/datenschutz says what else deletion does not reach. Alternatively, contact us at <strong>info@clean-core.io</strong>.
             </p>
           </div>
@@ -1156,20 +1185,20 @@ export default function LandingModals() {
 
       {/* Signup-specific GDPR overlay */}
       <LegalOverlay isOpen={showDatenschutz} onClose={() => setShowDatenschutz(false)} title="Privacy Policy (GDPR Compliance)">
-        <div className="space-y-6 text-slate-800">
+        <div className="space-y-6 text-cc-ink">
           <div>
-            <h3 className="text-lg font-bold mb-2">1. Privacy at a Glance</h3>
+            <h3 className={LEGAL_H3}>1. Privacy at a Glance</h3>
             <p className="text-sm leading-relaxed mb-2">
               Protecting your personal data is our top priority. Below, we inform you about what data we collect, process, and store during your visit and use of our platform program.
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-cc-ink-muted">
               <strong>Controller:</strong> Felix Frenzel, Hellerstraße 9, 96047 Bamberg, Germany, E-Mail: info@clean-core.io.
             </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">2. Data Collection & Processing</h3>
-            <ul className="list-disc pl-5 space-y-2 text-xs text-slate-600">
+            <h3 className={LEGAL_H3}>2. Data Collection & Processing</h3>
+            <ul className="list-disc pl-5 space-y-2 text-xs text-cc-ink-muted">
               <li><strong>Google Authentication (Firebase Auth):</strong> Your name, email, and profile picture are used to authenticate your session.</li>
               <li><strong>Email and password (Firebase Auth):</strong> If you register with an email address instead, we process that address and the name you enter; the password is handled by Firebase Authentication and is never visible to us.</li>
               <li><strong>Firestore User Profiles:</strong> We store metadata about your usage (transformation count, system limits, name) in our secure database.</li>
@@ -1178,22 +1207,22 @@ export default function LandingModals() {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">3. Source Code Processing</h3>
+            <h3 className={LEGAL_H3}>3. Source Code Processing</h3>
             <p className="text-sm leading-relaxed">
               Uploaded ABAP files and generated artifacts are stored in Google Firebase (Europe). For AI-driven modernization, source code is transmitted over encrypted channels to the Google Gemini API. We do not retain it outside your project, and we do not use it to train models; Google&apos;s handling of API data is governed by their applicable API terms.
             </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-bold mb-2">4. Your GDPR Rights</h3>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-slate-600">
+            <h3 className={LEGAL_H3}>4. Your GDPR Rights</h3>
+            <ul className="list-disc pl-5 space-y-1 text-xs text-cc-ink-muted">
               <li>Right of Access (Art. 15 GDPR)</li>
               <li>Right to Rectification (Art. 16 GDPR)</li>
               <li>Right to Erasure / &quot;Right to be Forgotten&quot; (Art. 17 GDPR)</li>
               <li>Right to Data Portability (Art. 20 GDPR)</li>
               <li>Right to Withdraw Consent (Art. 7 Abs. 3 GDPR)</li>
             </ul>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-cc-ink-muted mt-2">
               To exercise these rights, use account deletion in Profile Settings or contact <strong>info@clean-core.io</strong>.
             </p>
           </div>
@@ -1202,31 +1231,33 @@ export default function LandingModals() {
 
       {/* Signup-specific Terms overlay */}
       <LegalOverlay isOpen={showTermsOverlay} onClose={() => setShowTermsOverlay(false)} title="Terms of Service & Guidelines">
-        <div className="space-y-6 text-slate-800">
-          <a href="/terms" target="_blank" rel="noopener noreferrer" className="block p-3 bg-green-50 border border-green-200 rounded-lg text-sm font-semibold text-green-800 hover:bg-green-100 transition-colors">
-            This is a short summary. Read the full, authoritative Terms of Service &amp; Community Guidelines at clean-core.io/terms ↗
-          </a>
+        <div className="space-y-6 text-cc-ink">
+          <CcMessageStrip state="information">
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className={INLINE_LINK}>
+              This is a short summary. Read the full, authoritative Terms of Service &amp; Community Guidelines at clean-core.io/terms ↗
+            </a>
+          </CcMessageStrip>
           <div>
-            <h3 className="text-lg font-bold mb-2">1. Scope and Purpose</h3>
+            <h3 className={LEGAL_H3}>1. Scope and Purpose</h3>
             <p className="text-sm leading-relaxed">
               This Clean-Core.io free community program is designed solely for research and evaluation purposes in the domain of automated code modernization (ABAP to Cloud-Native). By participating, you help shape and improve this community utility.
             </p>
           </div>
           <div>
-            <h3 className="text-lg font-bold mb-2">2. Free Community Edition Usage</h3>
-            <p className="text-sm leading-relaxed text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100 font-medium">
+            <h3 className={LEGAL_H3}>2. Free Community Edition Usage</h3>
+            <CcMessageStrip state="warning">
               Platform access is completely free of charge. Clean-Core.io is a non-commercial community project provided for research and evaluation purposes. Generated code and evidence are drafts — review, test and approve them with qualified architects before any productive use.
-            </p>
+            </CcMessageStrip>
           </div>
           <div>
-            <h3 className="text-lg font-bold mb-2">3. AI Liability Disclaimer</h3>
+            <h3 className={LEGAL_H3}>3. What is computed, and what is generated</h3>
             <p className="text-sm leading-relaxed">
-              All code and analyses are generated by AI models. We assume no warranty, guarantees, or liability for reliability, correctness, or security of outputs. All generated artifacts must be verified by qualified software architects before deployment.
+              The findings, the route, the Clean Core Score, the clean core levels and the process reconstructed from your code are computed by a deterministic engine, without a language model. They are evidence, not a guarantee. Summaries, the solution design, generated code, documentation and test suites are written by a language model where you use those steps. All of it is a draft and must be verified by qualified software architects before deployment. Liability is set out in section 4 of the Terms.
             </p>
           </div>
           <div>
-            <h3 className="text-lg font-bold mb-2">4. Code of Conduct</h3>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-slate-600">
+            <h3 className={LEGAL_H3}>4. Code of Conduct</h3>
+            <ul className="list-disc pl-5 space-y-1 text-xs text-cc-ink-muted">
               <li>Do not upload malicious software, illegal scripts, or IP-violating source code.</li>
               <li>Maintain a respectful, professional tone in community spaces.</li>
               <li>Report system issues to help refine the engine.</li>

@@ -53,14 +53,14 @@ export default function ProcessMiniMap({
           data-minimap-row={row.plane ?? 'top'}
           data-open={row.plane === plane ? 'true' : 'false'}
           className={cn(
-            'flex items-center gap-1.5 rounded-cc-row px-1 py-0.5',
+            'flex items-center gap-2 rounded-cc-row px-1 py-0.5',
             row.plane === plane && 'bg-cc-surface-muted',
           )}
         >
           <span className="w-8 shrink-0 truncate font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
             {row.outline || '—'}
           </span>
-          <span className="flex min-w-0 flex-wrap gap-0.5">
+          <span className="flex min-w-0 flex-wrap gap-1">
             {row.cells.map((cell) => (
               <button
                 key={cell.id}

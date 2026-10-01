@@ -268,7 +268,6 @@ export default function ProcessOutline({
         role="tree"
         aria-label={mapOutlineLabel(model.processName)}
         data-process-outline-tree=""
-        onKeyDown={handleKeyDown}
         className="max-h-[420px] overflow-y-auto md:max-h-[520px]"
       >
         {shown.map((row) => {
@@ -298,6 +297,10 @@ export default function ProcessOutline({
               data-lit={dim ? 'off' : 'on'}
               tabIndex={element.id === roving ? 0 : -1}
               onFocus={() => onActiveChange(element.id)}
+              // The tree's keys live on the rows: a row is the only thing in
+              // the tree that takes the focus (roving tabindex), so every key
+              // press lands on one (§5.7).
+              onKeyDown={handleKeyDown}
               onClick={(event) => {
                 if ((event.target as HTMLElement).closest('[data-tree-twisty]')) return;
                 // A click on a phase opens it, the way Enter and a double-click
@@ -315,7 +318,7 @@ export default function ProcessOutline({
               )}
             >
               <div
-                className="flex items-start gap-1 py-1.5 pr-2"
+                className="flex items-start gap-1 py-1 pr-2"
                 style={{ paddingLeft: `${4 + (row.depth - 1) * 14}px` }}
               >
                 {row.hasChildren ? (
@@ -335,8 +338,8 @@ export default function ProcessOutline({
                   <span aria-hidden={true} className="mt-0.5 w-[17px] shrink-0" />
                 )}
 
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="flex flex-wrap items-baseline gap-x-1.5">
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="flex flex-wrap items-baseline gap-x-2">
                     <span data-outline-number className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
                       {row.outline}
                     </span>
