@@ -263,7 +263,12 @@ export async function POST(
         // path after its erasure (QA full review of a12774cd2b7f).
         const current = await tx.get(db.collection('projects').doc(gate.projectId));
         if (!current.exists || current.data()?.userId !== gate.uid) throw projectGone;
-        const existing = await tx.get(ref.parent);
+        // Only invitations that have not expired can hold a slot, so only they
+        // are read: the history of accepted, withdrawn and expired ones grows
+        // for the life of the project and was read whole on every invitation
+        // (carried QA finding dbab5852246e). `expiresAt` is an ISO string, so
+        // the range compares in time order; one field, no composite index.
+        const existing = await tx.get(ref.parent.where('expiresAt', '>', invitedAt.toISOString()));
         const open = existing.docs.filter((d: InviteDoc) =>
           isOpen(d.data() as unknown as Pick<Invitation, 'status' | 'expiresAt'>, invitedAt),
         ).length;

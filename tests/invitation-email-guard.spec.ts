@@ -216,3 +216,11 @@ test.describe('a mail that could not be sent', () => {
     expect(route).not.toContain('Nothing was sent, and the invitation was withdrawn.');
   });
 });
+
+test('the open-invitation ceiling is counted from the invitations that have not expired, not the whole history', () => {
+  // Carried QA finding dbab5852246e: the transaction read every invitation the
+  // project ever had to count the ones still waiting.
+  const route = fs.readFileSync(path.resolve(__dirname, '..', 'app/api/projects/[projectId]/invitations/route.ts'), 'utf8');
+  expect(route).not.toContain('tx.get(ref.parent)');
+  expect(route).toContain("tx.get(ref.parent.where('expiresAt', '>', invitedAt.toISOString()))");
+});
