@@ -47,8 +47,12 @@ export const BUDGETS = {
   full: { maxCostUsd: 6, maxBatchChars: 360_000, maxBatches: 12, maxImagesPerCall: 16, maxOutputTokens: 40_000, effort: 'medium', synthesisEffort: 'high' },
   /** One release on main. */
   delta: { maxCostUsd: 1.5, maxBatchChars: 240_000, maxBatches: 3, maxImagesPerCall: 12, maxOutputTokens: 24_000, effort: 'medium', synthesisEffort: 'medium' },
-  /** The agent itself changed on dev: the whole chain once, small. Never a checkpoint. */
-  'self-test': { maxCostUsd: 0.3, maxBatchChars: 40_000, maxBatches: 1, maxImagesPerCall: 2, maxOutputTokens: 8_000, effort: 'low', synthesisEffort: 'low' },
+  /**
+   * The agent itself changed on dev: the whole chain once, small. Never a checkpoint.
+   * Output 16k since 01.10.2026 (owner's go): at 8k the router's model ran out mid-JSON
+   * on a88149856dcc and the self-test ended without a result.
+   */
+  'self-test': { maxCostUsd: 0.3, maxBatchChars: 40_000, maxBatches: 1, maxImagesPerCall: 2, maxOutputTokens: 16_000, effort: 'low', synthesisEffort: 'low' },
 };
 
 export const REQUEST_TIMEOUT_MS = 15 * 60_000;

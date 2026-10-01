@@ -172,6 +172,10 @@ test.describe('spend stays within an estimated budget per mode', () => {
     expect(BUDGETS.full.maxCostUsd).toBeLessThanOrEqual(6);
     expect(BUDGETS.delta.maxCostUsd).toBeLessThanOrEqual(1.5);
     expect(BUDGETS['self-test'].maxCostUsd).toBeLessThanOrEqual(0.3);
+    // 8k output cut the self-test of a88149856dcc mid-JSON; its one call must still fit the cap at 16k.
+    expect(BUDGETS['self-test'].maxOutputTokens).toBeGreaterThanOrEqual(16_000);
+    const selfTestCall = estimateCostUsd({ chars: BUDGETS['self-test'].maxBatchChars, images: BUDGETS['self-test'].maxImagesPerCall, maxOutputTokens: BUDGETS['self-test'].maxOutputTokens });
+    expect(selfTestCall).toBeLessThan(BUDGETS['self-test'].maxCostUsd);
     // Since 01.10.2026 the price is the ceiling the request carries (provider.max_price), not a model's list price.
     expect(PRICE_PER_MTOK).toEqual({ input: 1.25, output: 5 });
     const withImages = estimateCostUsd({ chars: 0, images: 10, maxOutputTokens: 0 });
