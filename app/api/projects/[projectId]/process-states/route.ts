@@ -19,6 +19,7 @@ import {
   PROCESS_STATE_COLLECTION,
   PROCESS_STATE_FORMAT_VERSION,
   applyStateChoices,
+  sameAnswer,
   checkStateChoices,
   isStateEntry,
   type ProcessStateView,
@@ -534,8 +535,8 @@ export async function POST(
     // date the answer was *given*, and it did not change.
     const held = new Map(stored.entries.map((e) => [e.subject, e]));
     const moved = checked.choices.some((choice) => {
-      const entry = held.get(choice.subject);
-      return !entry || entry.state !== choice.state || (entry.note ?? null) !== (choice.note ?? null);
+      // State, note, value source and "also applies to" — any of them moving is a new answer.
+      return !sameAnswer(held.get(choice.subject), choice);
     });
     if (!moved) {
       return NextResponse.json({ view: viewOf(subjects, stored), created: false, unchanged: true });

@@ -245,11 +245,17 @@ test('a changed confirmed rule marks only the elements drawn from it', async ({ 
         kind: 'rule',
         state: 'change',
         note: 'The tolerance comes from configuration per material group.',
+        valueSource: { kind: 'customizing', note: 'Tolerance key per material group' },
       }],
     },
   });
   expect(res.status(), await res.text()).toBe(201);
   const next = (await res.json()).view as ProcessStateView;
+  // The value source of mockup s2 is stored with the answer, as the server read it.
+  expect(next.entries.find((e) => e.subject === link.rule)?.valueSource).toEqual({
+    kind: 'customizing',
+    note: 'Tolerance key per material group',
+  });
 
   const states = readProcessStates(next.entries, subjectIdsOf(next.subjects));
   const marks = markAffectedDerivations(states, next.links);
@@ -264,6 +270,29 @@ test('a changed confirmed rule marks only the elements drawn from it', async ({ 
   for (const id of other.elements) {
     expect(marks.some((m) => m.element === id), `${id} belongs to ${other.rule}, which nobody changed`).toBe(false);
   }
+});
+
+test('a rule changed without saying where the new value comes from is refused, and nothing is written', async ({ request }) => {
+  const current = await view(request);
+  const rule = current.subjects.find((x) => x.kind === 'rule')!;
+  const res = await request.post(path, {
+    headers: headers(),
+    data: { baseRevision: current.revision, choices: [{ subject: rule.subject, kind: 'rule', state: 'change', note: 'New text' }] },
+  });
+  expect(res.status(), await res.text()).toBe(400);
+  expect((await res.json()).code).toBe('source-required');
+  expect((await view(request)).revision).toBe(current.revision);
+
+  // A value source on a Drop is not an answer this product takes.
+  const drop = await request.post(path, {
+    headers: headers(),
+    data: {
+      baseRevision: current.revision,
+      choices: [{ subject: rule.subject, kind: 'rule', state: 'drop', note: 'Gone', valueSource: { kind: 'unknown', note: null } }],
+    },
+  });
+  expect(drop.status(), await drop.text()).toBe(400);
+  expect((await drop.json()).code).toBe('source-invalid');
 });
 
 test('the reconstructed Ist is unchanged after confirming, and no process revision was added', async ({ request }) => {
