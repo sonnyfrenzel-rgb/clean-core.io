@@ -102,7 +102,31 @@ export interface LayoutOptions {
    * level reads without scrolling sideways (owner, 01.10.2026). Off by default.
    */
   wrap?: number;
+  /**
+   * Tight spacing for a small picture (the landing hero's excerpt): about
+   * 20–28 px between one shape and the next instead of 44–56, and smaller steps
+   * when the layout opens a gap. The zero-collision rules hold all the same.
+   */
+  compact?: boolean;
 }
+
+/** The spacing a layout works with — the normal one, or `compact`. */
+interface Spacing {
+  col: number;
+  row: number;
+  grow: number;
+  flowAlong: number;
+  flowAcross: number;
+  eventMain: number;
+  /** Where a branch label may start along its leg, and the docking zone it keeps clear. */
+  labelSteps: number[];
+  dock: number;
+  /** Clearance between a routed line and a shape. */
+  clear: number;
+}
+
+const NORMAL: Spacing = { col: 56, row: 44, grow: 18, flowAlong: 36, flowAcross: 30, eventMain: 28, labelSteps: [24, 36], dock: 21, clear: 8 };
+const COMPACT: Spacing = { col: 22, row: 28, grow: 6, flowAlong: 26, flowAcross: 16, eventMain: 6, labelSteps: [4, 12, 24], dock: 6, clear: 3 };
 
 /* ------------------------------------------------------------------ *
  * Sizes and type
@@ -134,11 +158,7 @@ const POOL_GAP = 40;
 const ORIGIN_X = 180;
 const ORIGIN_Y = 80;
 const BAND_GAP = 60;
-const COL_GAP = 56;
-const ROW_GAP = 44;
 /** Clearance between a routed line and a shape. */
-const CLEAR = 8;
-const GROW = 18;
 const MAX_ROUNDS = 14;
 
 const EVENT_LABEL_W = 120;
@@ -213,7 +233,7 @@ function labelBlock(text: string, anchor: string | null, maxWidth: number): { li
 export function layoutModel(model: ExportModel, options: LayoutOptions = {}): DiagramLayout {
   const direction = options.direction ?? 'LR';
   const planes = new Map<string, PlaneLayout>();
-  for (const container of model.containers) planes.set(container.id, layoutContainer(container, direction, options.wrap));
+  for (const container of model.containers) planes.set(container.id, layoutContainer(container, direction, options.wrap, options.compact ? COMPACT : NORMAL));
 
   if (!model.pools.length) return { planes, direction };
 
@@ -346,7 +366,9 @@ function gridOfBand(container: ExportContainer, bandIndex: number, sizeOf: (n: E
     }
   }
   for (const n of placed) if (!rank.has(n.id)) rank.set(n.id, 0);
-  if (band.endId && placedIds.has(band.endId)) {
+  // The end event of a region is its last column. A band that ends in
+  // something else (an excerpt's "more steps" marker) keeps its own rank.
+  if (band.endId && placedIds.has(band.endId) && byId.get(band.endId)?.tag === 'endEvent') {
     const others = placed.filter((n) => n.id !== band.endId).map((n) => rank.get(n.id) ?? 0);
     rank.set(band.endId, Math.max(rank.get(band.endId) ?? 0, others.length ? Math.max(...others) + 1 : 0));
   }
@@ -480,7 +502,7 @@ interface Gaps {
   lead: number[];
 }
 
-function layoutContainer(container: ExportContainer, direction: Direction, wrap?: number): PlaneLayout {
+function layoutContainer(container: ExportContainer, direction: Direction, wrap: number | undefined, sp: Spacing): PlaneLayout {
   const byId = new Map(container.nodes.map((n) => [n.id, n]));
   const anchorOf = (n: ExportNode) => nodeAnchor(n);
   const taskSize = new Map<string, { lines: string[]; width: number; height: number }>();
@@ -500,8 +522,8 @@ function layoutContainer(container: ExportContainer, direction: Direction, wrap?
   const grids = container.bands.map((_, i) => wrapGrid(gridOfBand(container, i, sizeOf), wrap));
 
   const gaps: Gaps = {
-    col: grids.map((g) => new Array(g.cols).fill(COL_GAP)),
-    row: grids.map((g) => new Array(g.rows).fill(ROW_GAP)),
+    col: grids.map((g) => new Array(g.cols).fill(sp.col)),
+    row: grids.map((g) => new Array(g.rows).fill(sp.row)),
     lead: grids.map(() => 0),
   };
   // Room for what is known before anything is placed: branch labels next to
@@ -515,9 +537,9 @@ function layoutContainer(container: ExportContainer, direction: Direction, wrap?
     if (!text || !s) continue;
     const block = labelBlock(text, null, FLOW_LABEL_W);
     const along = direction === 'LR' ? block.width : block.height;
-    gaps.col[s.band][s.col] = Math.max(gaps.col[s.band][s.col], along + 36);
+    gaps.col[s.band][s.col] = Math.max(gaps.col[s.band][s.col], along + sp.flowAlong);
     const across = direction === 'LR' ? block.height : block.width;
-    gaps.row[s.band][s.row] = Math.max(gaps.row[s.band][s.row], across + 30);
+    gaps.row[s.band][s.row] = Math.max(gaps.row[s.band][s.row], across + sp.flowAcross);
   }
   for (const it of grids.flatMap((g) => g.items)) {
     const node = byId.get(it.id);
@@ -534,7 +556,12 @@ function layoutContainer(container: ExportContainer, direction: Direction, wrap?
       const side = block.width + 20 - (it.width / 2);
       if (it.row === 0) gaps.lead[it.band] = Math.max(gaps.lead[it.band], side);
       else gaps.row[it.band][it.row - 1] = Math.max(gaps.row[it.band][it.row - 1], side + 20);
-      if (it.kind === 'event') gaps.col[it.band][it.col] = Math.max(gaps.col[it.band][it.col], block.height + 20);
+      // The name sits beside the circle; only what it reaches past the circle needs room.
+      if (it.kind === 'event') {
+        const over = Math.max(0, (block.height - it.height) / 2) + sp.eventMain;
+        gaps.col[it.band][it.col] = Math.max(gaps.col[it.band][it.col], over);
+        if (it.col > 0) gaps.col[it.band][it.col - 1] = Math.max(gaps.col[it.band][it.col - 1], over);
+      }
     }
   }
 
@@ -550,7 +577,7 @@ function layoutContainer(container: ExportContainer, direction: Direction, wrap?
   let bestScore = Infinity;
   let bestRound = 0;
   for (let round = 0; round < MAX_ROUNDS && round - bestRound <= 4; round += 1) {
-    const attempt = attemptPlane(container, direction, grids, gaps, taskSize);
+    const attempt = attemptPlane(container, direction, grids, gaps, taskSize, sp);
     const report = measureDrawing(planeDrawing(container, attempt.plane));
     const score = ZERO_METRICS.reduce((n, k) => n + (report[k] as number), 0) + attempt.unrouted.length * 5;
     if (score < bestScore) {
@@ -569,18 +596,18 @@ function layoutContainer(container: ExportContainer, direction: Direction, wrap?
         const it = owner(raw) ?? itemOf.get(raw);
         if (!it) continue;
         const b = it.band;
-        gaps.col[b][it.col] += GROW;
-        if (it.col > 0) gaps.col[b][it.col - 1] += GROW;
-        gaps.row[b][it.row] += GROW;
-        if (it.row > 0) gaps.row[b][it.row - 1] += GROW;
-        else gaps.lead[b] += GROW;
+        gaps.col[b][it.col] += sp.grow;
+        if (it.col > 0) gaps.col[b][it.col - 1] += sp.grow;
+        gaps.row[b][it.row] += sp.grow;
+        if (it.row > 0) gaps.row[b][it.row - 1] += sp.grow;
+        else gaps.lead[b] += sp.grow;
         grown = true;
       }
     }
     if (!grown) {
       // Nothing to blame by name: give every gap a little more.
-      gaps.col.forEach((c) => c.forEach((_, i) => { c[i] += GROW; }));
-      gaps.row.forEach((r) => r.forEach((_, i) => { r[i] += GROW; }));
+      gaps.col.forEach((c) => c.forEach((_, i) => { c[i] += sp.grow; }));
+      gaps.row.forEach((r) => r.forEach((_, i) => { r[i] += sp.grow; }));
     }
   }
   return best as PlaneLayout;
@@ -628,6 +655,7 @@ function attemptPlane(
   grids: BandGrid[],
   gaps: Gaps,
   taskSize: Map<string, { lines: string[]; width: number; height: number }>,
+  sp: Spacing,
 ): Attempt {
   const plane: PlaneLayout = { shapes: new Map(), edges: new Map(), labels: new Map(), inside: new Map() };
   const byId = new Map(container.nodes.map((n) => [n.id, n]));
@@ -802,7 +830,7 @@ function attemptPlane(
   const obstacles: Bounds[] = [];
   for (const [id, b] of plane.shapes) {
     void id;
-    obstacles.push(inflate(b, CLEAR));
+    obstacles.push(inflate(b, sp.clear));
   }
   for (const l of placedLabels) obstacles.push(inflate(l, 3));
   const xs: number[] = [];
@@ -828,7 +856,7 @@ function attemptPlane(
   for (let x = Math.floor((minX - 60) / 10) * 10; x <= maxX + 60; x += 10) xs.push(x);
   for (let y = Math.floor((minY - 60) / 10) * 10; y <= maxY + 60; y += 10) ys.push(y);
 
-  const ports = new PortBook(plane, byId, direction);
+  const ports = new PortBook(plane, byId, direction, sp.clear);
   for (const p of ports.allLines()) {
     xs.push(p.x);
     ys.push(p.y);
@@ -853,7 +881,7 @@ function attemptPlane(
       const b = points[leg];
       const len = Math.abs(b.x - a.x) + Math.abs(b.y - a.y);
       const size = a.y === b.y ? w : h;
-      const steps = [24, 36];
+      const steps = [...sp.labelSteps];
       for (let d = 44; d + size <= len && steps.length < 14; d += 20) steps.push(d);
       for (const d of steps) {
         if (d < 0 || d + (a.y === b.y ? w : h) > len + 4) continue;
@@ -873,7 +901,7 @@ function attemptPlane(
       // Clear of the docking zone round both ends: a label there would close
       // the ports the next lines of the same shapes need.
       const ends = [f.sourceId, f.targetId].map((id) => plane.shapes.get(id)).filter((b): b is Bounds => !!b);
-      if (ends.some((b) => hit(box, inflate(b, 21)))) continue;
+      if (ends.some((b) => hit(box, inflate(b, sp.dock)))) continue;
       if (edgeList().some(([, pts]) => polylineHits(pts, inflate(box, 1)))) continue;
       const mine = distBoxPolyline(box, points);
       const other = Math.min(Infinity, ...edgeList().filter(([id]) => id !== f.id && container.flows.some((g) => g.id === id)).map(([, pts]) => distBoxPolyline(box, pts)));
@@ -962,7 +990,7 @@ const SLOT_STEP = 10;
 class PortBook {
   private used = new Map<string, number[]>();
 
-  constructor(private plane: PlaneLayout, private byId: Map<string, ExportNode>, private direction: Direction) {}
+  constructor(private plane: PlaneLayout, private byId: Map<string, ExportNode>, private direction: Direction, private clear = 8) {}
 
   private kind(id: string): ShapeKind {
     const n = this.byId.get(id);
@@ -1002,7 +1030,7 @@ class PortBook {
   /** The end of the stub: clear of the shape's box and its clearance, whatever the outline. */
   stub(id: string, side: Side, p: Point): Point {
     const b = this.plane.shapes.get(id) as Bounds;
-    const out = CLEAR + 6;
+    const out = this.clear + 6;
     return side === 'left' ? { x: b.x - out, y: p.y }
       : side === 'right' ? { x: b.x + b.width + out, y: p.y }
         : side === 'top' ? { x: p.x, y: b.y - out }

@@ -78,7 +78,7 @@
 .lp3 .reveal .v code { font-size: 15px; font-weight: 700; }
 .lp3 .nd-t { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
 .lp3 .nd-d { font-size: 13px; font-weight: 500; color: var(--cc-ink); line-height: 1.85; margin-top: 2px; }
-.lp3 .split { display: grid; grid-template-columns: 500px minmax(0, 1fr); gap: 16px; margin-top: 14px; align-items: stretch; }
+.lp3 .split { display: grid; grid-template-columns: 500px minmax(0, 1fr); gap: 16px; margin-top: 14px; align-items: start; }
 
 /* line anchor — the mockup's `.anc`, pressable where it opens a snippet */
 .lp3 .anc { display: inline-flex; align-items: center; justify-content: center; min-height: 24px; min-width: 24px; font: 600 12px/1 var(--cc-font-mono); color: var(--cc-ink); background: var(--cc-surface-muted); border: 1px solid var(--cc-line); border-radius: 4px; padding: 0 6px; white-space: nowrap; vertical-align: middle; margin-left: 4px; text-decoration: none; }
@@ -101,7 +101,8 @@
 .lp3 .cc-head .i { color: var(--cc-code-ink); }
 .lp3 .darktag { display: inline-flex; align-items: center; font: 600 12px/20px var(--cc-font-mono); border: 1px solid color-mix(in srgb, var(--cc-code-ink) 30%, transparent); color: var(--cc-code-ink); border-radius: 4px; padding: 0 6px; }
 .lp3 .cc-head .r { margin-left: auto; font-weight: 500; color: var(--cc-code-ink); font-size: 12px; }
-.lp3 .code { margin: 0; padding: 10px 0; font: 12px/22px var(--cc-font-mono); white-space: pre; overflow-x: auto; color: var(--cc-code-ink); flex: 1; }
+/* sized to its lines, never taller than the process card beside it */
+.lp3 .code { margin: 0; padding: 10px 0; font: 12px/22px var(--cc-font-mono); white-space: pre; overflow: auto; color: var(--cc-code-ink); max-height: 460px; }
 .lp3 .code:focus-visible { outline: 2px solid var(--cc-code-hl-bar); outline-offset: -2px; }
 .lp3 .code .l { display: block; padding-right: 14px; min-width: max-content; }
 .lp3 .code .ln { display: inline-block; width: 44px; text-align: right; margin-right: 14px; color: var(--cc-code-muted); }
