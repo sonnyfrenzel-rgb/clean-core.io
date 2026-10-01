@@ -4,7 +4,7 @@ import { useId, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
-import { loadStarterExample, type StarterExample } from '@/lib/starter-examples';
+import { landViewedCode, loadStarterExample, type StarterExample, type ViewedCode } from '@/lib/starter-examples';
 import {
   COMMUNITY_QUOTA_FALLBACK,
   quotaExhausted,
@@ -74,7 +74,7 @@ export default function StarterExamples({
   const [confirming, setConfirming] = useState<string | null>(null);
   const [limitHit, setLimitHit] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
-  const [viewing, setViewing] = useState<{ title: string; code: string | null } | null>(null);
+  const [viewing, setViewing] = useState<ViewedCode | null>(null);
   const [costOpen, setCostOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -144,9 +144,9 @@ export default function StarterExamples({
     setViewing({ title: item.example.name, code: null });
     try {
       const code = await loadStarterExample(item.example.file);
-      setViewing({ title: item.example.name, code });
+      setViewing((current) => landViewedCode(current, item.example.name, code));
     } catch {
-      setViewing({ title: item.example.name, code: '' });
+      setViewing((current) => landViewedCode(current, item.example.name, ''));
     }
   };
 
