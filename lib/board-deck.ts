@@ -85,25 +85,29 @@ export function buildBoardDeck(input: {
     ? `recorded — self-attested${project.approvedBy ? ` by ${project.approvedBy}` : ''}, not an organisational approval`
     : 'not recorded';
 
+  // What the findings say, in the product's own words: the worst support
+  // level among the findings — never a risk tier or a compliance grade the
+  // engine did not compute. "HIGH / MEDIUM / LOW RISK" read as an assessment of
+  // business risk, and nothing here measured one.
   let recommendation: string;
-  let riskRating: string;
+  let verdict: string;
   let requiredActions: string;
 
   if (overallLevel === null) {
     recommendation = 'No verdict — no findings were detected, so coverage is not established';
-    riskRating = 'NOT DETERMINED';
+    verdict = 'Not determined';
     requiredActions = 'Establish coverage first: analyse the complete source, and check the delivery page for a detector error.';
   } else if (overallLevel === 'not-supported') {
-    recommendation = 'Core Redesign Required before release';
-    riskRating = 'HIGH RISK';
-    requiredActions = 'Block deployment, redesign unsupported structures.';
+    recommendation = 'Redesign needed before release';
+    verdict = 'Blocks release — at least one construct has no automatic path';
+    requiredActions = 'Do not deploy as is; redesign the unsupported structures first.';
   } else if (overallLevel === 'partial') {
     recommendation = 'Release only with architect sign-off';
-    riskRating = 'MEDIUM RISK';
-    requiredActions = `Lead Architect sign-off before transport (sign-off ${signOff}).`;
+    verdict = 'Needs an architect decision — some constructs are only partly supported';
+    requiredActions = `Architect sign-off before transport (sign-off ${signOff}).`;
   } else {
     recommendation = 'No blocking findings — release decision open';
-    riskRating = 'LOW RISK';
+    verdict = 'No blocking finding — every construct found has an automatic path';
     requiredActions = `No blocking finding among ${findings.length}; the release decision is the architect's (sign-off ${signOff}).`;
   }
 
@@ -124,10 +128,10 @@ export function buildBoardDeck(input: {
     title: 'Clean-Core Transformation Briefing',
     type: 'split',
     subtitle: `Recommendation: ${recommendation}`,
-    leftContent: `**Decision summary:**\n\n• **Target Architecture**: Clean Core Compliance tier using ${project.extensibilityRoute || 'In-App RAP / Side-by-Side CAP'}.\n• **Overall Readiness**: Clean Core Score is **${measured(project.cleanCoreScore, (v) => `${v}/100`)}**.\n• **Rollup Risk Rating**: **${riskRating}** (${overallLevel ? overallLevel.toUpperCase() : 'no findings to roll up'}).\n• **Required Actions**: ${requiredActions}`,
-    rightContent: `**Governance Status:**\n\n• **Risk Assessment**: ${riskRating}\n• **Architect Sign-Off**: ${signOff}\n• **Evidence Level**: Evidentiary Board Presentation derived from the deterministic evidence engine\n• **Fingerprint Identity**: ${project.auditMetadata?.inputFingerprint?.sha256?.substring(0, 12) || 'N/A'}\n• **Model Registry**: ${project.auditMetadata?.modelCard?.model || `Clean-Core Compiler ${APP_VERSION}`}`,
+    leftContent: `**What the findings say:**\n\n• **Recommended route**: ${project.extensibilityRoute || 'not determined'} — the engine's recommendation, not a decision.\n• **Clean Core Score**: **${measured(project.cleanCoreScore, (v) => `${v}/100`)}** — a grade from the signed run, not a compliance percentage.\n• **Findings verdict**: **${verdict}** (${overallLevel ? `worst level: ${LEVEL_LABEL[overallLevel]}` : 'no findings to roll up'}).\n• **Required actions**: ${requiredActions}`,
+    rightContent: `**What stands behind this:**\n\n• **Findings verdict**: ${verdict}\n• **Architect Sign-Off**: ${signOff}\n• **Source**: the signed run and the deterministic evidence engine — no model wrote these slides\n• **Source fingerprint**: ${project.auditMetadata?.inputFingerprint?.sha256?.substring(0, 12) || 'not recorded'}\n• **Engine**: ${project.auditMetadata?.modelCard?.engineVersion || APP_VERSION}${project.auditMetadata?.modelCard?.model ? ` · model ${project.auditMetadata.modelCard.model} for the narrative` : project.auditMetadata?.modelCard?.modelParticipation === 'none' ? ' · no model took part' : ' · model not recorded'}`,
     speakerNotes: overallLevel
-      ? `Decision-first board briefing. This project is rated as ${riskRating} due to worst-case rollup of ${overallLevel} compliance across ${findings.length} finding(s). The target architecture is ${project.extensibilityRoute || 'standard Cloud SDK'}. Architect sign-off ${signOff}.`
+      ? `Decision-first briefing. Findings verdict: ${verdict}, from the worst support level (${LEVEL_LABEL[overallLevel]}) across ${findings.length} finding(s). The engine recommends ${project.extensibilityRoute || 'no route'}. Architect sign-off ${signOff}.`
       : 'No verdict: the static analysis returned no findings, which is what a trivial program and a failed detector have in common. Establish coverage before this briefing is used for a decision.'
   };
 
@@ -143,10 +147,15 @@ export function buildBoardDeck(input: {
   // bullets and the "zero manual rewrites" note all read as a clean bill, and
   // slide 1 has just said there is no verdict (QA 30215a402132).
   const nothingEstablished = findings.length === 0;
+  const fullyByConstruct = Object.entries(
+    findings
+      .filter((f) => f.level === 'fully')
+      .reduce((acc, f) => ({ ...acc, [f.title]: (acc[f.title] ?? 0) + 1 }), {} as Record<string, number>),
+  );
   const slide2: SlideData = {
-    title: nothingEstablished ? 'Capabilities — Not Determined' : 'Fully Supported Capabilities',
+    title: nothingEstablished ? 'Capabilities — Not Determined' : 'What Has an Automatic Path',
     type: 'metrics',
-    subtitle: nothingEstablished ? 'No findings were detected; coverage is not established' : 'High-confidence automated Clean Core migrations',
+    subtitle: nothingEstablished ? 'No findings were detected; coverage is not established' : 'Constructs the support matrix maps automatically',
     metrics: [
       // With nothing established, a coverage figure on a slide titled "Not
       // Determined" reads as coverage of these findings, which it is not (QA
@@ -162,15 +171,14 @@ export function buildBoardDeck(input: {
           'No capability can be stated: the static analysis returned no findings, which is what a trivial program and a failed detector have in common.',
           'Establish coverage — analyse the complete source, check the delivery page for a detector error — before this slide is used.',
         ]
-      : [
-          'Direct SELECT mappings resolved to released CDS views / APIs.',
-          'Static CALL FUNCTION replaced with equivalent Cloud SDK actions.',
-          'Simple wrapper classes fully decomposed into target modern framework architecture.',
-          'ABAP OO inheritance chains fully resolved to cloud-compatible types.',
-        ],
+      : fullyByConstruct.length > 0
+        // The constructs this source contains, not a generic list of what the
+        // product can do in general.
+        ? fullyByConstruct.map(([title, n]) => `${title} — ${n} occurrence${n === 1 ? '' : 's'}.`)
+        : [`None of the ${findings.length} finding(s) has a fully automatic path.`],
     speakerNotes: nothingEstablished
       ? 'Nothing to present here: no findings, no coverage, no capability statement.'
-      : 'These metrics show the automated conversion confidence. These parts of the code require zero manual code rewrites or custom logic redesigns.'
+      : 'These constructs have an automatic mapping in the support matrix. The generated code is still not compiled or tested — a mapping is not a delivery.'
   };
 
   // Slide 3: Where an Expert Must Step In (Partial Support) (matrix slide)
@@ -210,11 +218,11 @@ export function buildBoardDeck(input: {
   }
 
   const slide3: SlideData = {
-    title: 'Architect Attention — Partial Compliance',
+    title: 'Needs an Architect Decision — Partly Supported',
     type: 'matrix',
-    subtitle: 'Manual code verification and custom logic review recommended',
+    subtitle: 'Constructs with an automatic path that a person has to check',
     rows: partialRows,
-    speakerNotes: 'These constructs require manual developer verification or architect sign-off because they cannot be statically resolved with 100% confidence.'
+    speakerNotes: 'These constructs need a developer to verify them or an architect to sign off, because the static analysis cannot resolve them on its own.'
   };
 
   // Slide 4: Where Gaps Exist (Not Supported) (matrix slide)
@@ -252,9 +260,9 @@ export function buildBoardDeck(input: {
   }
 
   const slide4: SlideData = {
-    title: 'Governance Gaps — Not Supported',
+    title: 'No Automatic Path — Not Supported',
     type: 'matrix',
-    subtitle: 'Core refactoring required before modernization can proceed',
+    subtitle: 'Constructs that need a redesign before they can move',
     rows: notSupportedRows,
     speakerNotes: 'Unsupported patterns are hard blockers for automatic modernization. These areas require re-architecting (e.g. converting SAP GUI Dynpro screens to SAP Fiori/UI5).'
   };
@@ -379,11 +387,11 @@ export function buildBoardDeck(input: {
   }
 
   const slide7: SlideData = {
-    title: 'Strategic Risk Register & Quality Gates',
+    title: 'Open Points and the Check Each Needs',
     type: 'risk',
-    subtitle: 'Evidentiary mitigations required prior to production release',
+    subtitle: 'What the analysis flagged, who would act, and what would show it is handled',
     rows: riskRows,
-    speakerNotes: 'This register summarizes the project-specific risks identified during static analysis. Each risk has an assigned owner, clear mitigation strategy, and a concrete gate.'
+    speakerNotes: 'The points the static analysis flagged for this project. The owner column names a role, not a person — nobody has been assigned here.'
   };
 
   const slides: SlideData[] = [slide1, slide2, slide3, slide4, slide5, slide6, slide7];
@@ -398,7 +406,7 @@ export function buildBoardDeck(input: {
     title: project.name || 'Executive Summary',
     // ISO 8601 like every export date (DESIGN.md §3), not the reader's locale.
     date: formatIsoDate(new Date()) ?? '',
-    author: 'Clean-Core Transformation Board',
+    author: 'Clean-Core.io',
     slides
   };
 }

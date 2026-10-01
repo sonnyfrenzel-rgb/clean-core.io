@@ -44,9 +44,11 @@ test.describe('Board Deck Integrity & Drift Verification', () => {
     
     // Slide 1 (type split) should recommend Core Redesign / High Risk
     const slide1 = deck.slides[0];
-    expect(slide1.subtitle).toContain('Core Redesign Required');
-    expect(slide1.leftContent).toContain('HIGH RISK');
-    expect(slide1.leftContent).toContain('Block deployment');
+    expect(slide1.subtitle).toContain('Redesign needed before release');
+    expect(slide1.leftContent).toContain('Blocks release');
+    expect(slide1.leftContent).toContain('Do not deploy as is');
+    // The old score language: a risk tier and a compliance tier nobody computed.
+    expect(JSON.stringify(deck)).not.toMatch(/HIGH RISK|MEDIUM RISK|LOW RISK|Compliance tier|Overall Readiness|Model Registry/);
   });
 
   test('partial-only findings ask for the architect, and report the sign-off as it is', () => {
@@ -66,8 +68,9 @@ test.describe('Board Deck Integrity & Drift Verification', () => {
     
     const slide1 = deck.slides[0];
     expect(slide1.subtitle).toContain('Release only with architect sign-off');
-    expect(slide1.leftContent).toContain('MEDIUM RISK');
-    expect(slide1.leftContent).toContain('Lead Architect sign-off');
+    expect(slide1.leftContent).toContain('Needs an architect decision');
+    expect(slide1.leftContent).toContain('Architect sign-off before transport');
+    expect(JSON.stringify(deck)).not.toMatch(/RISK|Compliance tier/);
     // The deck used to say "Conditional Go-Live Approved" here, an approval
     // nobody had given: baseProject carries no sign-off, and the deck says so.
     expect(slide1.leftContent).toContain('sign-off not recorded');
@@ -89,12 +92,12 @@ test.describe('Board Deck Integrity & Drift Verification', () => {
 
     const slide1 = deck.slides[0];
     expect(slide1.subtitle).toContain('No verdict');
-    expect(slide1.leftContent).toContain('NOT DETERMINED');
+    expect(slide1.leftContent).toContain('**Findings verdict**: **Not determined**');
     expect(slide1.leftContent).toContain('Establish coverage first');
-    expect(slide1.leftContent).not.toContain('LOW RISK');
+    expect(slide1.leftContent).not.toContain('No blocking finding');
     expect(slide1.speakerNotes).toContain('No verdict');
     const text = JSON.stringify(deck);
-    expect(text).not.toMatch(/approved|proceed to release|fully compliant|zero gaps|LOW RISK/i);
+    expect(text).not.toMatch(/approved|proceed to release|fully compliant|zero gaps|LOW RISK|no blocking finding/i);
 
     // Slides 2–5 say "not established" instead of drawing a green row or a
     // capability, and the whole serialised deck carries no capability or
@@ -134,7 +137,7 @@ test.describe('Board Deck Integrity & Drift Verification', () => {
     const deck = buildBoardDeck({ project: baseProject, findings });
     const slide1 = deck.slides[0];
     expect(slide1.subtitle).toContain('No blocking findings — release decision open');
-    expect(slide1.leftContent).toContain('LOW RISK');
+    expect(slide1.leftContent).toContain('No blocking finding');
     expect(slide1.leftContent).toContain("the release decision is the architect's");
     expect(JSON.stringify(deck)).not.toMatch(/approved|proceed to release queue/i);
     // Findings by level, not an object count derived from finding counts.
