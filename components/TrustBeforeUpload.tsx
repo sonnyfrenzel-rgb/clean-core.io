@@ -84,63 +84,92 @@ function SourceLinks({ claim }: { claim: TrustClaim }) {
   );
 }
 
-export default function TrustBeforeUpload() {
+/**
+ * `part` lets a page place the two halves apart: the own-code page (mockup
+ * 2.8 s11) puts the card beside the form and the pledge above its start
+ * button. Analyze keeps both together, as before. Either way the card opens
+ * collapsed on every size (Sonny, 30.09.2026).
+ */
+export default function TrustBeforeUpload({ part = 'both' }: { part?: 'both' | 'card' | 'pledge' }) {
   const [open, setOpen] = useState(false);
+
+  const pledge = (
+    <p
+      data-trust-pledge
+      className={clsx(
+        'text-cc-ink-muted leading-relaxed',
+        part === 'both' ? 'text-xs sm:text-sm text-center max-w-2xl mx-auto' : 'm-0 text-[13px] font-medium',
+      )}
+    >
+      <span data-trust-claim={TRUST_PLEDGE.id}>{TRUST_PLEDGE.text}</span>{' '}
+      <SourceLinks claim={TRUST_PLEDGE} />
+    </p>
+  );
+
+  if (part === 'pledge') return pledge;
+
+  const card = (
+    <div
+      data-trust-card
+      className={clsx(
+        'bg-cc-surface rounded-cc-card border border-cc-line',
+        part === 'card' ? 'p-4 shadow-cc' : 'p-6 sm:p-8',
+      )}
+    >
+      <div className={clsx('flex gap-4', part === 'card' ? 'flex-col items-start gap-2' : 'items-center justify-between')}>
+        <h3
+          data-trust-title
+          className={clsx(
+            'm-0 font-bold text-cc-ink',
+            part === 'card' ? 'text-[14px] leading-tight' : 'text-base tracking-tight',
+          )}
+        >
+          {TRUST_CARD_TITLE}
+        </h3>
+        <button
+          type="button"
+          data-trust-toggle
+          aria-expanded={open}
+          aria-controls="trust-claim-list"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-1 text-xs font-semibold text-cc-brand-strong hover:text-cc-brand-deep"
+        >
+          {TRUST_CARD_DISCLOSURE} · {open ? TRUST_CARD_HIDE : TRUST_CARD_SHOW}
+          <ChevronDown
+            size={14}
+            className={clsx('transition-transform', open && 'rotate-180')}
+            aria-hidden="true"
+          />
+        </button>
+      </div>
+
+      <ul
+        id="trust-claim-list"
+        className={clsx(part === 'card' ? 'mt-4 space-y-3' : 'mt-5 space-y-3', open ? 'block' : 'hidden')}
+      >
+        {TRUST_CLAIMS.map((claim) => {
+          const Icon = ICONS[claim.icon];
+          return (
+            <li key={claim.id} className="flex items-start gap-3">
+              <Icon size={15} className="text-cc-brand-strong mt-0.5 shrink-0" aria-hidden="true" />
+              <p className={clsx('text-cc-ink-muted leading-relaxed', part === 'card' ? 'm-0 text-[13px]' : 'text-xs sm:text-sm')}>
+                <span data-trust-claim={claim.id}>{claim.text}</span>{' '}
+                <SourceLinks claim={claim} />
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+
+  if (part === 'card') return <div data-trust-block>{card}</div>;
 
   return (
     <div data-trust-block className="space-y-4">
       {/* What you confirm by uploading — a line, not a second tick box. */}
-      <p
-        data-trust-pledge
-        className="text-xs sm:text-sm text-cc-ink-muted leading-relaxed text-center max-w-2xl mx-auto"
-      >
-        <span data-trust-claim={TRUST_PLEDGE.id}>{TRUST_PLEDGE.text}</span>{' '}
-        <SourceLinks claim={TRUST_PLEDGE} />
-      </p>
-
-      <div
-        data-trust-card
-        className="bg-cc-surface rounded-cc-card border border-cc-line p-6 sm:p-8"
-      >
-        <div className="flex items-center justify-between gap-4">
-          <h3 data-trust-title className="text-base font-bold text-cc-ink tracking-tight">
-            {TRUST_CARD_TITLE}
-          </h3>
-          <button
-            type="button"
-            data-trust-toggle
-            aria-expanded={open}
-            aria-controls="trust-claim-list"
-            onClick={() => setOpen((v) => !v)}
-            className="flex items-center gap-1 text-xs font-semibold text-cc-brand-strong hover:text-cc-brand-deep"
-          >
-            {TRUST_CARD_DISCLOSURE} · {open ? TRUST_CARD_HIDE : TRUST_CARD_SHOW}
-            <ChevronDown
-              size={14}
-              className={clsx('transition-transform', open && 'rotate-180')}
-              aria-hidden="true"
-            />
-          </button>
-        </div>
-
-        <ul
-          id="trust-claim-list"
-          className={clsx('mt-5 space-y-3', open ? 'block' : 'hidden')}
-        >
-          {TRUST_CLAIMS.map((claim) => {
-            const Icon = ICONS[claim.icon];
-            return (
-              <li key={claim.id} className="flex items-start gap-3">
-                <Icon size={15} className="text-cc-brand-strong mt-0.5 shrink-0" aria-hidden="true" />
-                <p className="text-xs sm:text-sm text-cc-ink-muted leading-relaxed">
-                  <span data-trust-claim={claim.id}>{claim.text}</span>{' '}
-                  <SourceLinks claim={claim} />
-                </p>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      {pledge}
+      {card}
     </div>
   );
 }
