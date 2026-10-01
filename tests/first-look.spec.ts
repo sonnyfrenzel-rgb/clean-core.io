@@ -625,6 +625,11 @@ test.describe('"New project" explains before it starts', () => {
     await expect(page.locator('[data-new-project-level-caveat]')).toContainText(
       'never part of a signed audit pack',
     );
+    // QA finding e93bd3965211: a level for the customer's own object is graded
+    // from the code, not read from SAP's data, and the caveat says so.
+    await expect(page.locator('[data-new-project-level-caveat]')).toContainText(
+      'your own objects, which SAP has not classified, are graded from your code',
+    );
   });
 
   test('the catalog figures come from the catalog, not from the copy', async ({ page }) => {

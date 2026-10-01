@@ -275,7 +275,7 @@ function Analyze({
             {demo.analyze.cleanCoreScore}
           </p>
           <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-            {scoreBand(demo.analyze.cleanCoreScore).label} ({bandRange(scoreBand(demo.analyze.cleanCoreScore))}, {SCORE_BANDS_SOURCE.charAt(0).toLowerCase()}{SCORE_BANDS_SOURCE.slice(1)}).
+            {scoreBand(demo.analyze.cleanCoreScore).label} ({bandRange(scoreBand(demo.analyze.cleanCoreScore))}, {SCORE_BANDS_SOURCE}).
             Computed by the engine in this release from {demo.analyze.findings.length} findings. Not signed — see
             the strip above.
           </p>

@@ -189,7 +189,49 @@ test.describe('the executive summary of an audit pack', () => {
   });
 });
 
+/**
+ * The 500 answers of one route source that carry an error's text, directly
+ * (`{ error: e.message }`) or through a local the text was put into.
+ */
+function messageLeaks(src: string): number[] {
+  // Carried QA finding 96af10679a29: the text can also arrive through a
+  // local — `const detail = e.message; … { error: detail }`. QA finding
+  // b3353601c398: or be assigned to it later — `let detail = 'Failed.'; …
+  // catch (e) { detail = e.message; }` — so every assignment counts, not only
+  // the initializer.
+  const fromMessage = [
+    ...src.matchAll(/(?:const|let)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=([^;]*);/g),
+    ...src.matchAll(/(?<![\w$.])([A-Za-z_$][\w$]*)\s*=(?![=>])([^;]*);/g),
+  ]
+    .filter((m) => /\.message\b/.test(m[2]))
+    .map((m) => m[1]);
+  const lines: number[] = [];
+  for (let at = src.indexOf('status: 500'); at >= 0; at = src.indexOf('status: 500', at + 1)) {
+    // A word inside a quoted fixed sentence is not a reference to a local
+    // ('… during test execution.' is not the local `execution`).
+    const call = src
+      .slice(src.lastIndexOf('NextResponse.json(', at), at)
+      .replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/g, "''");
+    const viaLocal = fromMessage.some((name) => new RegExp(String.raw`(?<![\w$.])${name.replace(/\$/g, '\\$')}(?![\w$])`).test(call));
+    if (/\b\w+\??\.message\b/.test(call) || viaLocal) lines.push(src.slice(0, at).split('\n').length);
+  }
+  return lines;
+}
+
 test.describe('an internal error answered by a route', () => {
+  test('the check sees the text however it reaches the answer', () => {
+    const declared = "try { x(); } catch (e) { const detail = (e as Error).message; return NextResponse.json({ error: detail }, { status: 500 }); }";
+    const reassigned = "let detail = 'Failed.';\ntry { x(); } catch (e) { detail = (e as Error).message; }\nreturn NextResponse.json({ error: detail }, { status: 500 });";
+    const direct = "catch (e) { return NextResponse.json({ error: e.message }, { status: 500 }); }";
+    const fixed = "let detail = 'Failed.';\nif (a === b.message) detail = 'Other.';\nreturn NextResponse.json({ error: detail }, { status: 500 });";
+    expect(messageLeaks(declared)).toHaveLength(1);
+    expect(messageLeaks(reassigned), 'a local assigned from .message after its declaration').toHaveLength(1);
+    expect(messageLeaks(direct)).toHaveLength(1);
+    expect(messageLeaks(fixed), 'a comparison with .message is not an assignment').toEqual([]);
+    const quoted = "const execution = { m: o.message };\nreturn NextResponse.json({ error: 'Failed during execution.' }, { status: 500 });";
+    expect(messageLeaks(quoted), 'a word inside the fixed sentence is not the local').toEqual([]);
+  });
+
   test('reaches the caller as a fixed sentence, never as the error text', () => {
     const routes: string[] = [];
     const walk = (dir: string) => {
@@ -206,17 +248,7 @@ test.describe('an internal error answered by a route', () => {
     const TEST_ONLY = new Set(['app/api/test/seed/route.ts']);
     const offenders: string[] = [];
     for (const rel of routes.filter((r) => !TEST_ONLY.has(r))) {
-      const src = read(rel);
-      // Carried QA finding 96af10679a29: the text can also arrive through a
-      // local — `const detail = e.message; … { error: detail }`.
-      const fromMessage = [...src.matchAll(/(?:const|let)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=([^;]*);/g)]
-        .filter((m) => /\.message\b/.test(m[2]))
-        .map((m) => m[1]);
-      for (let at = src.indexOf('status: 500'); at >= 0; at = src.indexOf('status: 500', at + 1)) {
-        const call = src.slice(src.lastIndexOf('NextResponse.json(', at), at);
-        const viaLocal = fromMessage.some((name) => new RegExp(String.raw`(?<![\w$.])${name.replace(/\$/g, '\\$')}(?![\w$])`).test(call));
-        if (/\b\w+\??\.message\b/.test(call) || viaLocal) offenders.push(`${rel}:${src.slice(0, at).split('\n').length}`);
-      }
+      for (const line of messageLeaks(read(rel))) offenders.push(`${rel}:${line}`);
     }
     expect(offenders).toEqual([]);
   });

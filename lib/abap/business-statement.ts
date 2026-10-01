@@ -811,12 +811,15 @@ const SELECT_LIST = /^SELECT\s+(?:SINGLE\s+)?(?:DISTINCT\s+)?(.+?)\s+FROM\s+/i;
 /** Der Satz zu einem `SELECT` — die häufigste fachliche Aussage nach der Ausgabe. */
 /**
  * Does any `IF`/`ELSEIF`/`CHECK` of the source test the table for content —
- * `IS NOT INITIAL`, `NOT … IS INITIAL`, or `lines( … ) > 0`?
+ * `IS NOT INITIAL`, `NOT … IS INITIAL`, `lines( … ) > 0` or `lines( … ) >= 1`
+ * (QA finding 66d825effb5c)? A guard written another way — a `DESCRIBE TABLE`
+ * count tested afterwards, a check in a called routine — is not seen, and the
+ * caveat then errs on the side of warning.
  */
 function nonEmptyGuarded(table: string, statements: readonly AbapStatement[]): boolean {
   const t = `${escapeForRegExp(table)}(?:\\[\\])?`;
   const guard = new RegExp(
-    `(?:\\b${t}\\s+IS\\s+NOT\\s+INITIAL\\b|\\bNOT\\s+${t}\\s+IS\\s+INITIAL\\b|\\blines\\(\\s*${t}\\s*\\)\\s*(?:>|GT|<>|NE)\\s*0\\b)`,
+    `(?:\\b${t}\\s+IS\\s+NOT\\s+INITIAL\\b|\\bNOT\\s+${t}\\s+IS\\s+INITIAL\\b|\\blines\\(\\s*${t}\\s*\\)\\s*(?:(?:>|GT|<>|NE)\\s*0|(?:>=|GE)\\s*1)\\b)`,
     'i',
   );
   return statements.some((s) => /^(?:IF|ELSEIF|CHECK)$/.test(s.keyword) && guard.test(s.text));

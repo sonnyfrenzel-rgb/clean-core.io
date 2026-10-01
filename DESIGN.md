@@ -896,7 +896,8 @@ Browser):
      `warning`, D `error`) und je einer Zeile: **A** released SAP APIs and extension points · **B** classic SAP APIs
      following SAP's recommendations · **C** internal SAP objects — only with a changelog check before each upgrade ·
      **D** not recommended — modifications, implicit enhancements, writes to SAP tables. Darunter: *„Levels follow
-     SAP's clean core level concept. The level shown for an object is our reading of SAP's published data — an
+     SAP's clean core level concept. The level shown for an SAP object is our reading of SAP's published data; your
+     own objects, which SAP has not classified, are graded from your code and labelled as such. Either way it is an
      orientation, never part of a signed audit pack. Confirm with ABAP Test Cockpit."*
   3. **Where the evidence comes from.** Ein Fluss in Leserichtung — nebeneinander, wo die Breite reicht, sonst von
      oben nach unten —, jede Station mit Herkunfts-Chip (§4):

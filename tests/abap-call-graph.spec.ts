@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { readCallGraph } from '../lib/abap/call-graph';
+import { readCallGraph, type SubmitCall } from '../lib/abap/call-graph';
 import { buildProcessFacts } from '../lib/abap/process-facts';
 
 /**
@@ -261,6 +261,10 @@ test.describe('function modules, transactions and reports', () => {
     expect(call.program).toBe('C_REPORT');
     expect(call.resolvedFrom).toBe('name');
     expect(call.dynamic).toBe(false);
+    // The type says the same, so nobody reads `constant` off a SUBMIT (QA
+    // finding 43a0a7a59521) — checked by the compiler, not at run time.
+    const sources: Record<NonNullable<SubmitCall['resolvedFrom']>, true> = { literal: true, name: true };
+    expect(Object.keys(sources)).toEqual(['literal', 'name']);
   });
 });
 

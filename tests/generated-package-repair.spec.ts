@@ -157,6 +157,19 @@ test.describe('the repair aims at the file the compiler named', () => {
     ).toEqual({ kind: 'package', index: 0 });
   });
 
+  test('a package file at the root named test.ts never takes the suite\'s error', () => {
+    // QA finding 2df28c419550: the sandbox writes the suite over a root
+    // `test.ts`, so its full path is the suite's path too.
+    const pkg = JSON.stringify([
+      { path: 'test.ts', content: 'x' },
+      { path: 'app.ts', content: 'export const a = 1;' },
+    ]);
+    expect(
+      repairTarget({ code: pkg, suite: SUITE, errorText: '/tmp/cc-tests-x/test.ts:2:9: ERROR: Expected ";"' }),
+    ).toEqual({ kind: 'test' });
+    expect(namedFileIndex(JSON.parse(pkg), 'test.ts:2:9: ERROR')).toBe(-1);
+  });
+
   test('an error that names nothing stays with the package, which is the artefact under test', () => {
     expect(repairTarget({ code: stored, suite: SUITE, errorText: 'Build failed with 1 error' })).toEqual({
       kind: 'package',

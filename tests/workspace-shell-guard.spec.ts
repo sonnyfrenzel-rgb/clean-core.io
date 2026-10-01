@@ -960,6 +960,15 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     });
     expect(badBody.status(), 'a misspelled body reported success').toBe(400);
 
+    // A JSON `null` body is the same 400, not a TypeError answered as 500
+    // (carried QA finding 8c778be1d34d, behaviour asked for by QA finding
+    // 85123a06a2b7).
+    const nullBody = await request.post('/api/workspace-shell', {
+      headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      data: 'null',
+    });
+    expect(nullBody.status(), await nullBody.text()).toBe(400);
+
     const on = await request.post('/api/workspace-shell', {
       headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
       data: { enabled: true },

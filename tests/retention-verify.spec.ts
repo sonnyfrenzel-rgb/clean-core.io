@@ -270,6 +270,19 @@ test.describe('production and the document, side by side', () => {
     expect(verdict(facts, '_Required').ok, 'the other bucket is judged on its own').toBe(true);
   });
 
+  test('a log bucket whose retention cannot be read fails its check and says so', () => {
+    // QA finding 00f9026e92c9: an unreadable retention is NaN, and NaN must not
+    // reach a comparison that lets it pass.
+    const facts = agreeingFacts();
+    facts.defaultLogBucket = { ...facts.defaultLogBucket, retentionDays: Number.NaN };
+    facts.requiredLogBucket = { ...facts.requiredLogBucket, retentionDays: Number.NaN };
+    for (const bucket of ['_Default', '_Required']) {
+      const v = verdict(facts, bucket);
+      expect(v.ok, `${bucket}: an unreadable retention passed`).toBe(false);
+      expect(v.detail).toContain('an unreadable period');
+    }
+  });
+
   test('point-in-time recovery is checked as state and as window', () => {
     const off = agreeingFacts();
     off.database = { ...off.database, pointInTimeRecoveryEnabled: false };

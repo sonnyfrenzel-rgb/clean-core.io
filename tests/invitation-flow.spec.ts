@@ -485,6 +485,14 @@ test('the invitation subcollection is not client-readable and `readers` is not c
 test('three invitations wait at once, and the fourth waits for a withdrawal', async ({ request }) => {
   const address = (n: number) => `ceiling-${n}-${STAMP}@cleancore-test.io`;
 
+  // The project still holds the invitation seeded in `beforeAll`: `pending` on
+  // the record, past its expiry. Three new ones going through below is the
+  // behavioural proof that an expired invitation takes no slot — the route's
+  // query and its `isOpen` count both (QA finding 2f217bbadb19).
+  const expired = (await adminGetDoc(invitationCollectionPath(PROJECT_ID), EXPIRED_ID)) as Invitation;
+  expect(expired.status, 'the expired fixture is no longer pending on the record').toBe('pending');
+  expect(effectiveStatus(expired), 'the fixture is not expired').toBe('expired');
+
   const open: string[] = [];
   for (let n = 1; n <= INVITATION_MAX_OPEN; n++) {
     const created = await invite(request, { email: address(n) });
