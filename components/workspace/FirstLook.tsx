@@ -6,6 +6,8 @@ import CcCard from '@/components/cc/Card';
 import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import CcDisclosure from '@/components/cc/Disclosure';
+import CcSwitch from '@/components/cc/Switch';
 import { CcRulePropertyTag } from '@/components/cc/Tag';
 import {
   buildFirstLook,
@@ -16,8 +18,9 @@ import {
   processStage,
   readProcess,
   readRules,
-  readTables,
+  readTableAccess,
   revealedRules,
+  tablesOf,
   STAGE_LABELS,
   traceabilityOf,
   yourProcessStage,
@@ -27,7 +30,6 @@ import {
   type FirstLookStageId,
   type ProcessName,
   type ProcessReading,
-  type RevealedRule,
   type SourceReading,
   type Traceability,
 } from '@/lib/first-look';
@@ -35,14 +37,17 @@ import { notDetermined, type NotDetermined } from '@/lib/workspace-model';
 import { applyNaming, type ProcessNamingRecord } from '@/lib/process-naming';
 import { fetchProcessNaming } from '@/lib/process-naming-client';
 import type { BusinessRuleSet } from '@/lib/abap/business-rule-set';
+import type { TableDependency } from '@/lib/abap/table-dependencies';
+import { buildBusinessCard, headlineLead, plainWordingFor, type BusinessCard, type CardFact } from '@/lib/business-card';
 import type { Project } from '@/lib/types';
 import {
   wt,
-  firstLookDecisionsLine,
+  firstLookMoreRules,
+  firstLookOutcomes,
+  firstLookOpenGroup,
+  firstLookOpenTitle,
   firstLookReading,
   firstLookReadingNext,
-  firstLookShowingDecisions,
-  firstLookShowingRules,
 } from '@/lib/workspace-messages';
 
 /**
@@ -169,8 +174,10 @@ interface Result {
   processName: ProcessName;
   traceability: Traceability;
   decisions: DecisionLine[];
-  rules: RevealedRule[];
+  ruleCount: number;
   open: NotDetermined;
+  /** The same reading, re-cut for a business reader (`lib/business-card.ts`). */
+  card: BusinessCard;
 }
 
 export default function FirstLook({
@@ -179,6 +186,7 @@ export default function FirstLook({
   buildUp = true,
   onReading,
   namingFrom = 'project',
+  proposedName = null,
 }: {
   project: Project | null;
   projectId: string;
@@ -200,6 +208,12 @@ export default function FirstLook({
    * the stage reports the absence instead of asking a route that would refuse.
    */
   namingFrom?: 'project' | 'none';
+  /**
+   * A process name the model proposed, when one exists. Shown as the title
+   * with the chip *Model proposal · name*; the program's own name stays under
+   * it. Without one, the program's name is the title.
+   */
+  proposedName?: string | null;
 }) {
   const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
   const hasSource = source.trim().length > 0;
@@ -208,7 +222,7 @@ export default function FirstLook({
   const reduced = useReducedMotion();
 
   const [skipped, setSkipped] = useState(false);
-  const [tables, setTables] = useState<ReadonlySet<string> | null>(null);
+  const [access, setAccess] = useState<TableDependency[] | null>(null);
   const [process, setProcess] = useState<ProcessReading | null>(null);
   const [naming, setNaming] = useState<{ record: ProcessNamingRecord | null } | null>(null);
   const [rules, setRules] = useState<BusinessRuleSet | null>(null);
@@ -233,7 +247,7 @@ export default function FirstLook({
   const [readFor, setReadFor] = useState(readingKey);
   if (readFor !== readingKey) {
     setReadFor(readingKey);
-    setTables(null);
+    setAccess(null);
     setProcess(null);
     setNaming(null);
     setRules(null);
@@ -243,8 +257,9 @@ export default function FirstLook({
   /* ---- stage 1's work ---- */
   useEffect(() => {
     if (!hasSource) return;
-    return afterPaint(() => setTables(readTables(source)));
+    return afterPaint(() => setAccess(readTableAccess(source)));
   }, [source, hasSource]);
+  const tables = useMemo(() => (access ? tablesOf(access) : null), [access]);
 
   /* ---- stage 2's work, once stage 1 has been painted ---- */
   useEffect(() => {
@@ -295,19 +310,32 @@ export default function FirstLook({
   }, [hasSource, project, tables, process, named]);
 
   const result = useMemo<Result | null>(() => {
-    if (!hasSource || !process || !named || !rules) return null;
+    if (!hasSource || !process || !named || !rules || !access) return null;
+    const traceability = traceabilityOf(named);
+    const open = notDetermined(project);
     return {
       processName: processNameOf(rules),
-      traceability: traceabilityOf(named),
+      traceability,
       decisions: decisionLines(process.skeleton),
-      rules: revealedRules(rules),
-      open: notDetermined(project),
+      ruleCount: rules.rules.length,
+      open,
+      card: buildBusinessCard({
+        skeleton: process.skeleton,
+        ruleSet: rules,
+        dependencies: access,
+        traceability,
+        open,
+        wording: plainWordingFor(source, process.skeleton),
+      }),
     };
-  }, [hasSource, process, named, rules, project]);
+  }, [hasSource, source, process, named, rules, access, project]);
 
   const finalStage = useMemo<FirstLookStage | null>(
-    () => (result ? yourProcessStage(result.rules, result.traceability, result.open) : null),
-    [result],
+    () =>
+      result && rules
+        ? yourProcessStage(revealedRules(rules), result.traceability, result.open)
+        : null,
+    [result, rules],
   );
 
   const complete = !hasSource || result !== null;
@@ -416,101 +444,9 @@ export default function FirstLook({
       data-reduced-motion={reduced ? 'true' : 'false'}
       className="max-w-3xl"
     >
-      <CcCard
-        title={STAGE_LABELS['your-process']}
-        level={2}
-        meta={<CcProvenanceChip value="reconstructed" />}
-      >
+      <CcCard title={wt('firstLook.cardTitle')} level={2} meta={<CcProvenanceChip value="reconstructed" />}>
         {result ? (
-          <div data-first-look-result="" className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3
-                data-first-look-process-name={result.processName.name ? 'named' : 'unnamed'}
-                className="m-0 font-cc-mono text-[15px] leading-tight font-bold text-cc-ink"
-              >
-                {result.processName.name ?? wt('firstLook.noProgramName')}
-              </h3>
-            </div>
-            {result.processName.reason ? (
-              <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                {result.processName.reason}
-              </p>
-            ) : null}
-
-            {/* Traceability — the quote the phase's "Fertig, wenn" list asks for. */}
-            <p
-              data-first-look-traceability=""
-              data-anchored={result.traceability.anchored}
-              data-nodes={result.traceability.nodes}
-              className="m-0 text-[13px] leading-snug font-medium text-cc-ink"
-            >
-              {result.traceability.sentence}
-            </p>
-
-            {/* The reveal line — §5.1. It says the rule stands in the program and
-                nothing about whether anyone wrote it down (`lib/rule-property.ts`). */}
-            <div data-first-look-reveal="" data-count={result.rules.length}>
-              <p className="m-0 text-[13px] leading-snug font-semibold text-cc-ink">
-                {finalStage?.result}
-              </p>
-              {result.rules.length > 0 ? (
-                <ul className="m-0 mt-2 list-none space-y-2 p-0">
-                  {result.rules.slice(0, 6).map((rule) => (
-                    <li
-                      key={rule.id}
-                      data-first-look-rule={rule.id}
-                      className="flex flex-wrap items-center gap-2 text-[13px] text-cc-ink"
-                    >
-                      <span className="font-cc-mono text-[12px]">{rule.label}</span>
-                      <CcRulePropertyTag value={rule.property} />
-                      {rule.anchors.slice(0, 4).map((anchor) => (
-                        <CcAnchor key={anchor} label={`${wt('firstLook.sourceLine')} ${anchor}`}>
-                          {anchor}
-                        </CcAnchor>
-                      ))}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              {result.rules.length > 6 ? (
-                <p className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted">
-                  {firstLookShowingRules(6, result.rules.length)}
-                </p>
-              ) : null}
-            </div>
-
-            {/* The decisions, with the condition as the source writes it. */}
-            <div data-first-look-decisions="" data-count={result.decisions.length}>
-              <p className="m-0 text-[13px] leading-snug font-semibold text-cc-ink">
-                {firstLookDecisionsLine(result.decisions.length)}
-              </p>
-              {result.decisions.length > 0 ? (
-                <ul className="m-0 mt-2 list-none space-y-2 p-0">
-                  {result.decisions.slice(0, 5).map((decision) => (
-                    <li
-                      key={decision.nodeId}
-                      data-first-look-decision={decision.nodeId}
-                      className="flex flex-wrap items-center gap-2 text-[13px] text-cc-ink"
-                    >
-                      <span className="font-cc-mono text-[12px]">{decision.label}</span>
-                      {decision.anchor ? (
-                        <CcAnchor label={`${wt('firstLook.sourceLine')} ${decision.anchor}`}>
-                          {decision.anchor}
-                        </CcAnchor>
-                      ) : (
-                        <CcAnchor tone="unlinked">{wt('firstLook.noLine')}</CcAnchor>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              {result.decisions.length > 5 ? (
-                <p className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted">
-                  {firstLookShowingDecisions(5, result.decisions.length)}
-                </p>
-              ) : null}
-            </div>
-          </div>
+          <EndState result={result} proposedName={proposedName} />
         ) : (
           <p data-first-look-result="none" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
             {wt('firstLook.noSource')}
@@ -518,18 +454,273 @@ export default function FirstLook({
         )}
 
         {/* The four stages stay on the page after the build-up: they are the
-            receipt for the numbers above, not a loading screen. */}
-        <ol
-          data-first-look-stages={endStateOnly ? 'end-state' : 'built'}
-          className="m-0 mt-4 flex list-none flex-col gap-2 border-t border-cc-line p-0 pt-3"
-        >
-          {shown.map((stage, i) => (
-            <StageRow key={stage?.id ?? `done-${i}`} stage={stage} />
-          ))}
-        </ol>
+            receipt for every figure above. Folded, not removed — the process
+            owner reads the answer, the sceptic opens the receipt. Open when
+            there is no answer, because then the stages are all there is. */}
+        <div className="mt-4 border-t border-cc-line pt-2">
+          <CcDisclosure title={wt('firstLook.derivedTitle')} defaultOpen={!result} level={3}>
+            <ol
+              data-first-look-stages={endStateOnly ? 'end-state' : 'built'}
+              className="m-0 flex list-none flex-col gap-2 p-0"
+            >
+              {shown.map((stage, i) => (
+                <StageRow key={stage?.id ?? `done-${i}`} stage={stage} />
+              ))}
+            </ol>
+          </CcDisclosure>
+        </div>
       </CcCard>
     </section>
     {live}
     </>
+  );
+}
+
+/* ------------------------------------------------------- the end state, parts */
+
+/** A line anchor chip, labelled for a screen reader. */
+function Anchor({ anchor }: { anchor: string | null }) {
+  return anchor ? (
+    <CcAnchor label={`${wt('firstLook.sourceLine')} ${anchor}`}>{anchor}</CcAnchor>
+  ) : (
+    <CcAnchor tone="unlinked">{wt('firstLook.noLine')}</CcAnchor>
+  );
+}
+
+/** Code shown as code — the fallback when the wording has no plain words. */
+function CodeText({ children }: { children: string }) {
+  return <code className="font-cc-mono text-[12px] font-medium text-cc-ink">{children}</code>;
+}
+
+/**
+ * One key figure. The traceability figure carries the counts it was made of
+ * as data attributes, so a check can recompute the percentage from them.
+ */
+function Fact({ fact, traceability }: { fact: CardFact; traceability?: Traceability }) {
+  return (
+    <li
+      data-first-look-fact={fact.key}
+      data-origin={fact.origin}
+      {...(traceability
+        ? {
+            'data-first-look-traceability': '',
+            'data-anchored': traceability.anchored,
+            'data-nodes': traceability.nodes,
+          }
+        : {})}
+      className="flex min-w-0 flex-col gap-1"
+    >
+      {fact.value === null ? (
+        <span className="text-[13px] leading-tight font-medium text-cc-ink-muted">{wt('decision.notDetermined')}</span>
+      ) : (
+        <span className="text-[22px] leading-tight font-extrabold text-cc-ink">{fact.value}</span>
+      )}
+      <span className="text-[13px] leading-snug font-semibold text-cc-ink">{fact.label}</span>
+      <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">{fact.explanation}</span>
+    </li>
+  );
+}
+
+/**
+ * The answer, for a business reader — `lib/business-card.ts`.
+ *
+ * Top: the name, one plain sentence, the rules found in the code in one
+ * sentence beside what is not determined, and four figures. Below, folded:
+ * every rule and every decision in plain words, each with its line, and the
+ * code behind it on request. Nothing on the top needs ABAP to read; nothing
+ * the first look knew is gone.
+ */
+function EndState({ result, proposedName }: { result: Result; proposedName: string | null }) {
+  const { card } = result;
+  const [showCode, setShowCode] = useState(false);
+  const more = card.rules.length - card.featured.length;
+  const trace = card.facts.find((f) => f.key === 'traceability');
+  const others = card.facts.filter((f) => f.key !== 'traceability');
+  // The switch shows the code *behind* a plain line; where every line is
+  // already code it would switch nothing, so it is not offered.
+  const anyPlain = card.rules.some((r) => r.sentence) || card.decisions.some((d) => d.question);
+
+  return (
+    <div data-first-look-result="" className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        {proposedName ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 data-first-look-proposed-name="" className="m-0 text-[15px] leading-tight font-bold text-cc-ink">
+              {proposedName}
+            </h3>
+            <CcProvenanceChip value="proposed" note={wt('firstLook.nameNote')} />
+          </div>
+        ) : null}
+        {proposedName ? (
+          <p
+            data-first-look-process-name={result.processName.name ? 'named' : 'unnamed'}
+            className="m-0 font-cc-mono text-[12px] leading-tight font-medium text-cc-ink-muted"
+          >
+            {result.processName.name ?? wt('firstLook.noProgramName')}
+          </p>
+        ) : (
+          <h3
+            data-first-look-process-name={result.processName.name ? 'named' : 'unnamed'}
+            className="m-0 font-cc-mono text-[15px] leading-tight font-bold text-cc-ink"
+          >
+            {result.processName.name ?? wt('firstLook.noProgramName')}
+          </h3>
+        )}
+        {result.processName.reason ? (
+          <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{result.processName.reason}</p>
+        ) : null}
+        <p data-first-look-summary={card.summary.kind} className="m-0 text-[15px] leading-snug font-medium text-cc-ink">
+          {card.summary.sentence}
+        </p>
+        {showCode && card.summary.technical ? (
+          <p data-first-look-code="" className="m-0">
+            <CodeText>{card.summary.technical}</CodeText>
+          </p>
+        ) : null}
+      </div>
+
+      {/* Found in the code, and beside it what is not determined (§5.1: "Der
+          Zweifel wird sofort beantwortet"). Stacked on a phone. */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div
+          data-first-look-reveal=""
+          data-count={result.ruleCount}
+          className="rounded-cc-card border border-cc-line px-4 py-3"
+        >
+          <p className="m-0 mb-1 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase">
+            {wt('firstLook.foundInCode')}
+          </p>
+          <p className="m-0 text-[15px] leading-relaxed font-semibold text-cc-ink">
+            {headlineLead(result.ruleCount)}
+            {card.featured.length > 0 ? ' — ' : null}
+            {card.featured.map((rule, i) => (
+              <React.Fragment key={rule.id}>
+                {i > 0 ? ', ' : null}
+                <span data-first-look-featured={rule.id}>
+                  {rule.phrase ?? <CodeText>{rule.code}</CodeText>} <Anchor anchor={rule.anchors[0] ?? null} />
+                </span>
+              </React.Fragment>
+            ))}
+            {more > 0 ? `, ${firstLookMoreRules(more)}` : null}
+            {card.featured.length > 0 ? '.' : null}
+          </p>
+        </div>
+        <div
+          data-first-look-open={card.open.noSource ? 'no-source' : String(card.open.count)}
+          className="rounded-cc-card border border-cc-line bg-cc-surface-muted px-4 py-3"
+        >
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <p className="m-0 text-[15px] leading-tight font-bold text-cc-ink">{firstLookOpenTitle(card.open.count)}</p>
+            <CcProvenanceChip value="not-determined" />
+          </div>
+          {card.open.count === 0 ? (
+            <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">{wt('firstLook.nothingOpen')}</p>
+          ) : (
+            <p className="m-0 text-[13px] leading-relaxed font-medium text-cc-ink">
+              {card.open.groups.map((group, i) => (
+                <React.Fragment key={group.label}>
+                  {i > 0 ? ' · ' : null}
+                  <span data-first-look-open-group={group.count}>
+                    {group.count > 1 ? firstLookOpenGroup(group.label, group.count) : group.label}{' '}
+                    {group.anchors.map((anchor) => (
+                      <React.Fragment key={anchor}>
+                        <Anchor anchor={anchor} />{' '}
+                      </React.Fragment>
+                    ))}
+                    {group.count > group.anchors.length ? '…' : null}
+                  </span>
+                </React.Fragment>
+              ))}
+              {' · '}
+              {wt('firstLook.openReasons')}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Four figures, each with the one line that explains it. */}
+      <ul aria-label={wt('firstLook.keyFacts')} className="m-0 grid list-none grid-cols-2 gap-x-4 gap-y-3 p-0 sm:grid-cols-4">
+        {others.map((fact) => (
+          <Fact key={fact.key} fact={fact} />
+        ))}
+        {trace ? <Fact fact={trace} traceability={result.traceability} /> : null}
+      </ul>
+
+      {/* One click deeper: every rule and every decision in plain words, each
+          with its line — and the code it was read from, on request. */}
+      <div className="flex flex-col gap-1 border-t border-cc-line pt-2">
+        {anyPlain ? (
+        <div className="pt-1">
+          <CcSwitch label={wt('firstLook.showCode')} checked={showCode} onChange={setShowCode} />
+        </div>
+        ) : null}
+        <CcDisclosure title={wt('firstLook.rulesTitle')} count={card.rules.length} level={3}>
+          {card.rules.length === 0 ? (
+            <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('firstLook.noRulesInList')}</p>
+          ) : (
+            <ul className="m-0 list-none space-y-2 p-0">
+              {card.rules.map((rule) => (
+                <li key={rule.id} data-first-look-rule={rule.id} className="flex flex-col gap-1 text-[13px] text-cc-ink">
+                  <span className="flex flex-wrap items-center gap-2">
+                    {rule.sentence ? (
+                      <span className="font-medium">{rule.sentence}</span>
+                    ) : (
+                      <CodeText>{rule.code}</CodeText>
+                    )}
+                    {rule.anchors.slice(0, 4).map((anchor) => (
+                      <Anchor key={anchor} anchor={anchor} />
+                    ))}
+                  </span>
+                  {showCode && rule.sentence ? (
+                    <span data-first-look-code="" className="flex flex-wrap items-center gap-2">
+                      <CodeText>{rule.code}</CodeText>
+                      <CcRulePropertyTag value="hard-coded" />
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CcDisclosure>
+
+        <div data-first-look-decisions="" data-count={card.decisions.length}>
+          <CcDisclosure title={wt('firstLook.decisionsTitle')} count={card.decisions.length} level={3}>
+            {card.decisions.length === 0 ? (
+              <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('firstLook.noDecision')}</p>
+            ) : (
+              <ul className="m-0 list-none space-y-2 p-0">
+                {card.decisions.map((decision) => (
+                  <li
+                    key={decision.nodeId}
+                    data-first-look-decision={decision.nodeId}
+                    className="flex flex-col gap-1 text-[13px] text-cc-ink"
+                  >
+                    <span className="flex flex-wrap items-center gap-2">
+                      {decision.question ? (
+                        <span className="font-medium">{decision.question}</span>
+                      ) : (
+                        <CodeText>{decision.code}</CodeText>
+                      )}
+                      <Anchor anchor={decision.anchor} />
+                    </span>
+                    {decision.outcomes.length > 0 ? (
+                      <span className="text-[12px] font-medium text-cc-ink-muted">
+                        {firstLookOutcomes(decision.outcomes)}
+                      </span>
+                    ) : null}
+                    {showCode && decision.question ? (
+                      <span data-first-look-code="">
+                        <CodeText>{decision.code}</CodeText>
+                      </span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CcDisclosure>
+        </div>
+
+      </div>
+    </div>
   );
 }

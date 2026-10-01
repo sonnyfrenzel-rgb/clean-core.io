@@ -46,7 +46,7 @@
 import { buildProcessFacts } from './abap/process-facts';
 import type { ProcessSkeleton, SkeletonNode } from './abap/process-skeleton';
 import { deriveBusinessRulesFrom, type BusinessRuleSet } from './abap/business-rule-set';
-import { readTableDependencies } from './abap/table-dependencies';
+import { readTableDependencies, type TableDependency } from './abap/table-dependencies';
 import {
   applyNaming,
   namingContextFrom,
@@ -233,9 +233,23 @@ export interface ProcessReading {
   facts: ReturnType<typeof buildProcessFacts>;
 }
 
-/** Stage 1's own work: which tables this source depends on. */
+/**
+ * Stage 1's own work: every table access of the source, in statement order —
+ * the Business card's summary needs to know which tables are read and which
+ * are changed, and reading the source twice for it would be a second parse.
+ */
+export function readTableAccess(source: string): TableDependency[] {
+  return readTableDependencies(source).dependencies;
+}
+
+/** Which tables this source depends on. */
+export function tablesOf(dependencies: readonly TableDependency[]): Set<string> {
+  return new Set(dependencies.map((d) => d.table));
+}
+
+/** Stage 1's work for a caller that needs only the names. */
 export function readTables(source: string): Set<string> {
-  return new Set(readTableDependencies(source).dependencies.map((d) => d.table));
+  return tablesOf(readTableAccess(source));
 }
 
 /** Stage 2's own work: the skeleton, and the context a naming applies to. */

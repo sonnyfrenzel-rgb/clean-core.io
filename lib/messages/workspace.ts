@@ -104,6 +104,17 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'firstLook.noLine': 'no line',
   'firstLook.noDecision': 'No decision — this source has no branch the engine draws as a gateway.',
   'firstLook.noSource': 'No source has been staged, so there is no process to show. This is not a result.',
+  'firstLook.cardTitle': 'Your process',
+  'firstLook.nameNote': 'name',
+  'firstLook.foundInCode': 'Found in the code',
+  'firstLook.rulesTitle': 'Rules fixed in the program',
+  'firstLook.decisionsTitle': 'Decisions',
+  'firstLook.derivedTitle': 'How this was derived',
+  'firstLook.showCode': 'Show the code behind each line',
+  'firstLook.keyFacts': 'Key facts',
+  'firstLook.nothingOpen': 'Every construct fell inside what the detectors judge. That is the boundary of the question, not a clean bill.',
+  'firstLook.openReasons': 'Each point with its reason under Not determined.',
+  'firstLook.noRulesInList': 'No hard-coded rule to list.',
   // PublicCloudFitPanel
   'cloudFit.title': 'Public-Cloud-Fit and the four buckets',
   'cloudFit.noSource': 'No source has been staged, so no object can be sorted into a bucket yet.',
@@ -254,6 +265,26 @@ export function firstLookShowingDecisions(shown: number, total: number): string 
 }
 
 /** FirstLook — the line over the decisions. */
+/** "and 8 more" after the headline's three rules. */
+export function firstLookMoreRules(n: number): string {
+  return `and ${n} more`;
+}
+
+/** "Outcomes: approved · rejected". */
+export function firstLookOutcomes(outcomes: readonly string[]): string {
+  return `Outcomes: ${outcomes.join(' · ')}`;
+}
+
+/** "Local function-module call (6)". */
+export function firstLookOpenGroup(label: string, n: number): string {
+  return `${label} (${n})`;
+}
+
+/** "9 not determined". */
+export function firstLookOpenTitle(n: number): string {
+  return `${n} not determined`;
+}
+
 export function firstLookDecisionsLine(n: number): string {
   if (n === 0) return WORKSPACE_PAGE_MESSAGES['firstLook.noDecision'];
   return `${n} ${n === 1 ? 'decision' : 'decisions'}, each with the condition as your code writes it.`;
