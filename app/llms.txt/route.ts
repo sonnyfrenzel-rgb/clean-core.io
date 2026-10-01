@@ -60,6 +60,28 @@ through draft and test to a decision. ATC stays the authority.
 
 Version: ${facts.engineVersion} (${facts.engineReleaseDate})
 
+## What the workspace holds
+
+- A workspace per project. The business process is reconstructed from the ABAP code as
+  BPMN 2.0, with a line anchor on every element, or the reason it has none.
+- A BPMN editor with revisions: every save is a new revision; the reconstruction itself
+  is never overwritten. The process leaves and comes back as a BPMN 2.0 XML file. There
+  is no connection to SAP Signavio, and import into SAP Signavio has not been verified.
+- SAP's clean core level A–D for every SAP object the code touches, and the Clean Core
+  Score (0–100, higher is better) in four bands.
+- Business, IT and Management views of the same facts.
+- Seven tools: Analyze, Design, Transformation, Documentation, Testing, Economics,
+  Delivery. Their layout is oriented on SAP Fiori patterns; it is not an SAP Fiori app
+  and not endorsed by SAP.
+- Read access by invitation: a link bound to one confirmed e-mail address, including
+  the source code, with expiry and revocation. No public links.
+- A demo project with a guided tour in every account.
+- Free, with no paid tier. Stored in the EU (Google Cloud, Belgium). No analytics,
+  advertising or tracking cookies.
+
+The full set of questions and answers from the start page, as plain text, is at
+${baseUrl}/llms-full.txt.
+
 ## Figures worth citing
 
 All figures are derived from the generated catalog artifact, not asserted by hand — the
@@ -86,6 +108,11 @@ Apache-2.0. Normalized and enriched by Clean-Core.io.
 - [ABAP custom code analysis](${baseUrl}/abap-custom-code-analysis): free browser-based first-pass static analysis.
 - [SAP cloudification explained](${baseUrl}/sap-cloudification): what "cloudify" means for custom ABAP.
 - [Whitepaper](${baseUrl}/whitepaper): the long-form methodology.
+- [Clean core explained](${baseUrl}/clean-core-explained): SAP clean core from first principles, without the jargon.
+- [Your first run](${baseUrl}/first-run): what one analysis shows, step by step.
+- [Reference analysis](${baseUrl}/reference-analysis): one published, reproducible run on real legacy ABAP.
+- [Verify an audit pack](${baseUrl}/verify-pack): check that an exported pack is complete, unchanged and signed.
+- [Trust and privacy](${baseUrl}/trust): where data is stored, who can read it, what is never done with it.
 
 ## Naming — the Clean Core Score is not an SAP figure
 
