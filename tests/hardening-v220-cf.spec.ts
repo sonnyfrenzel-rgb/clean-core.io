@@ -244,8 +244,13 @@ test.describe('the administrator mail routes', () => {
 
 test.describe('the HTML documents served from public/', () => {
   test('load nothing from another origin when a visitor opens them', () => {
-    const pages = fs.readdirSync(path.join(ROOT, 'public')).filter((f) => f.endsWith('.html'));
-    expect(pages.length).toBeGreaterThan(0);
+    const served = fs.readdirSync(path.join(ROOT, 'public'));
+    // The directory is the one we serve (the share card lives there), so an empty
+    // HTML list below is a finding of fact, not a wrong path. Since 01.10.2026 it is
+    // empty: the whitepaper template, the last HTML document here, was retired when
+    // the whitepaper became one page with a print edition (/whitepaper-print).
+    expect(served, 'public/ is not the served directory').toContain('social-card.png');
+    const pages = served.filter((f) => f.endsWith('.html'));
     const external = /@import\s+(?:url\(\s*)?['"]?https?:|<(?:link|script|img|iframe|source)\b[^>]*\b(?:href|src)\s*=\s*["']?https?:/i;
     for (const page of pages) expect(read(`public/${page}`), `public/${page} fetches from another origin`).not.toMatch(external);
   });
