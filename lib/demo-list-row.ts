@@ -37,7 +37,8 @@ function computeDemoListRow(): WorkspaceDemoRow {
   const levels = levelsOf(findings);
   return {
     lines: demo.totalLines,
-    findings: demo.analyze.findings.length,
+    // As a real project's row counts them (its worklist): one per pattern and object.
+    findings: demo.analyze.distinctFindings,
     levels: levels.state === 'ready' ? levels.value : null,
     rules: findings.rulesDerived,
   };

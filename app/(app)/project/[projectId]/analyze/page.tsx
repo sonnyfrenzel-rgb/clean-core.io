@@ -104,12 +104,13 @@ import EvidenceFindingsTable from '@/components/analyze/EvidenceFindingsTable';
 import { analysisAnswer, countFindings, groupEvidenceFindings, plainRoute } from '@/components/analyze/analysis-answer';
 import { BAIP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE, isSideBySideRoute, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
 import CleanCoreScoreSection from '@/components/analyze/CleanCoreScoreSection';
+import CleanCoreScoreDialog from '@/components/analyze/CleanCoreScoreDialog';
 import ObjectSection from '@/components/analyze/ObjectSection';
 import CcAnchor from '@/components/cc/Anchor';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import { accessUseOfKind, findingRows, processStepBands, SEVERITY_ORDER } from '@/lib/findings-view';
-import { SCORE_BANDS, SCORE_BANDS_SOURCE, SCORE_NATURE, scoreBreakdown } from '@/lib/clean-core-score';
+import { scoreBreakdown } from '@/lib/clean-core-score';
 import { readProcess } from '@/lib/first-look';
 import { catalogForReader } from '@/lib/messages/demo';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
@@ -2076,38 +2077,8 @@ export default function AnalyzePage() {
         </div>
       )}
 
-      {/* Clean Core Score explanation — a CcDialog (D.10b): focus kept inside,
-          Escape closes, focus returns to the button that opened it. */}
-      <CcDialog
-        open={showScoreModal}
-        title="Understanding Clean Core"
-        lead="The Clean Core Score is our own grade for this one piece of code, 0–100, higher is better — a grade, not a compliance percentage, and not an SAP figure. It is computed by fixed rules from the findings, before any model runs."
-        onClose={() => setShowScoreModal(false)}
-      >
-        <div className="space-y-3">
-          {/* The bands are read off the score's own deduction table
-              (lib/clean-core-score.ts) — Clean-Core.io's official bands. The four
-              "architecture tiers" that stood here (100 / 90 / 85 / 0) were
-              archetypes no rule produced: the floor is 5, and a modification
-              costs at most 40. */}
-          <p className="cc-text-label text-cc-ink-muted">What a score means</p>
-          {[...SCORE_BANDS].reverse().map((band) => (
-            <div key={band.key} data-score-dialog-band={band.key} className="flex gap-4 p-3 rounded-cc-row bg-cc-surface-muted border border-cc-line">
-              <span className="w-16 h-10 rounded-cc-row border border-cc-field-border bg-cc-surface text-cc-ink font-cc-mono cc-text-meta flex items-center justify-center shrink-0">
-                {band.from}–{band.to}
-              </span>
-              <div className="space-y-1">
-                <h3 className="cc-text-h3 text-cc-ink">{band.label}</h3>
-                <p className="cc-text-cell text-cc-ink-muted">{band.meaning}</p>
-                <p className="cc-text-meta font-medium text-cc-ink-muted">{band.because}</p>
-              </div>
-            </div>
-          ))}
-          <p className="cc-text-meta font-medium text-cc-ink-muted">
-            {SCORE_BANDS_SOURCE}. {SCORE_NATURE}.
-          </p>
-        </div>
-      </CcDialog>
+      {/* Clean Core Score explanation — the one dialog the demo shows too. */}
+      <CleanCoreScoreDialog open={showScoreModal} onClose={() => setShowScoreModal(false)} />
 
       {/* Target Operating Model concept question — a CcDialog (D.10b). */}
       <CcDialog

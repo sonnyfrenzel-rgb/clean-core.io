@@ -35,7 +35,10 @@ import { TOUR_STATIONS, type TourPlace } from '@/lib/demo-tour';
  */
 
 export interface DemoReleaseFigures {
+  /** Occurrences — one per source line a pattern was found on (`EvidenceReport.findings`). */
   findings: number;
+  /** Findings as Analyze lists and counts them — one per pattern and object (`findingRows`). */
+  distinctFindings: number;
   critical: number;
   high: number;
   medium: number;
@@ -83,6 +86,7 @@ export function figuresOf(data: DemoWorkspaceData): DemoReleaseFigures {
   const s = demo.analyze.summary;
   return {
     findings: demo.analyze.findings.length,
+    distinctFindings: demo.analyze.distinctFindings,
     critical: s.criticalCount,
     high: s.highCount,
     medium: s.mediumCount,

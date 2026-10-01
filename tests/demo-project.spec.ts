@@ -12,6 +12,8 @@ import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { PHASES } from '../lib/workflow-steps';
 import { TERMS_VERSION } from '../lib/constants';
+import { scoreBreakdown, scoreBand } from '../lib/clean-core-score';
+import { findingRows } from '../lib/findings-view';
 
 /**
  * The demo project — roadmap step 0.10, `DESIGN.md` §6.1.2.
@@ -67,6 +69,23 @@ test.describe('the demo is a real run, not a story about one', () => {
     );
     expect(demo.analyze.summary).toEqual(evidence.summary);
     expect(demo.analyze.cleanCoreScore).toBe(route.cleanCoreScore);
+    // The score is computed, by the table the real run uses, and the breakdown
+    // the page shows arrives at it — recomputed here the way the Analyze page
+    // recomputes it, not read back from the demo.
+    const gaps = evidence.coverage && !evidence.coverage.complete ? evidence.coverage.gaps.length : 0;
+    expect(scoreBreakdown(evidence.findings, gaps).score).toBe(route.cleanCoreScore);
+    expect(demo.analyze.scoreBreakdown).toEqual(scoreBreakdown(evidence.findings, gaps));
+    // Two counts, two units: occurrences (one per line) and findings as the
+    // Analyze stage lists them (one per pattern and object). This example has
+    // patterns that repeat on one object, so the two differ — a demo that
+    // printed the first under the second's name said 31 where a run says 25.
+    expect(demo.analyze.distinctFindings).toBe(findingRows(evidence.findings).length);
+    expect(demo.analyze.distinctFindings, 'no repeated pattern left — the unit check below proves nothing').toBeLessThan(
+      evidence.findings.length,
+    );
+    expect(demo.rail.find((r) => r.key === 'analyze')?.detail).toContain(
+      `${demo.analyze.distinctFindings} findings at ${evidence.findings.length} places`,
+    );
     expect(demo.design.recommendedRoute).toBe(route.recommendedRoute);
     expect(demo.design.confidenceScore).toBe(route.confidenceScore);
     expect(demo.analyze.coverage.gaps).toEqual(evidence.coverage.gaps);
@@ -197,46 +216,59 @@ test.describe('every demo screen says what it is', () => {
 });
 
 test.describe('the demo is operable, and its state never leaves the browser', () => {
-  test('a review survives a reload and "Reset demo" throws it away', async ({ page }) => {
-    await openStage(page, 'analyze');
-
-    const first = page.getByTestId('demo-findings').locator('li').first();
-    const tick = first.locator('button[aria-pressed]');
-    await expect(tick).toHaveAttribute('aria-pressed', 'false');
-    await tick.click();
-    await expect(tick).toHaveAttribute('aria-pressed', 'true');
-
+  test('a value survives a reload and "Reset demo" throws it away', async ({ page }) => {
+    // The demo's own state is the reader's assumptions and decisions; Analyze
+    // is the real object page now and keeps nothing of its own.
+    await openStage(page, 'tco');
+    await fillEconomics(page, '[data-testid="demo-dev-rate"]', '900');
+    const stored = () => page.evaluate((key) => window.localStorage.getItem(key), DEMO_STORAGE_KEY);
     // It lives in this browser — and only there.
-    const stored = await page.evaluate((key) => window.localStorage.getItem(key), DEMO_STORAGE_KEY);
-    expect(stored, 'the demo did not keep its state in the browser').toContain('reviewed');
+    await expect.poll(stored, { message: 'the demo did not keep its state in the browser' }).toContain('"devRate":900');
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
-    await expect(page.getByTestId('demo-findings').locator('li').first().locator('button[aria-pressed]')).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    expect(await stored()).toContain('"devRate":900');
 
     await page.getByTestId('demo-reset').click();
-    await expect(page.getByTestId('demo-findings').locator('li').first().locator('button[aria-pressed]')).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    );
-    const afterReset = await page.evaluate((key) => window.localStorage.getItem(key), DEMO_STORAGE_KEY);
-    expect(afterReset === null || !afterReset.includes('CC-')).toBe(true);
+    await expect.poll(stored).not.toContain('"devRate":900');
   });
 
-  test('the filter narrows the list the engine produced', async ({ page }) => {
-    await openStage(page, 'analyze');
+  test('Analyze is the object page of a real run, fed by the engine', async ({ page }) => {
     const demo = buildDemoProject();
-    const all = demo.analyze.findings.length;
-    const medium = demo.analyze.summary.mediumCount;
-    expect(medium, 'no Medium findings — the filter assertion would be vacuous').toBeGreaterThan(0);
-    expect(medium).toBeLessThan(all);
+    await openStage(page, 'analyze');
+    const head = page.locator('[data-analysis-answer]');
+    await expect(head).toBeVisible();
+    // The finding count of a real run of the same example: one per pattern and object.
+    await expect(head.locator('h2')).toContainText(`${demo.analyze.distinctFindings} findings to review in this code`);
+    await expect(page.locator('[data-analysis-facet="Findings"]')).toContainText(String(demo.analyze.distinctFindings));
+    // The score, computed, with Clean-Core.io's band.
+    const band = scoreBand(demo.analyze.cleanCoreScore);
+    const scoreFacet = page.locator('[data-analysis-facet="Clean Core Score"]');
+    await expect(scoreFacet).toContainText(`${demo.analyze.cleanCoreScore} of 100`);
+    await expect(scoreFacet).toContainText(band.label);
+    await expect(page.locator(`[data-score-band="${band.key}"][data-score-band-current="true"]`)).toBeVisible();
+    await expect(page.locator('[data-score-breakdown="shown"]')).toBeVisible();
+    // The levels were looked up on the server — a demo never waits on the catalog.
+    await expect(page.locator('[data-analysis-facet="Level distribution"] [data-level-bar]')).toBeVisible();
+    // The model's part is said to be missing, not filled in.
+    await expect(page.getByTestId('demo-stage-analyze')).toContainText('The demo stops where the model begins.');
+    await expect(page.locator('[data-analysis-status]')).toContainText('demo, never signed');
 
-    await expect(page.getByTestId('demo-findings').locator('li')).toHaveCount(all);
-    await page.getByTestId('demo-filter-Medium').click();
-    await expect(page.getByTestId('demo-findings').locator('li')).toHaveCount(medium);
+    // Where in the program: a dot opens the source at its line.
+    const first = demo.analyze.findings.find((f) => f.severity === 'Critical') ?? demo.analyze.findings[0];
+    await page.locator(`[data-program-map-dot="${first.lineStart}"]`).first().click();
+    const panel = page.locator('[data-analyze-source-panel]');
+    await expect(panel).toBeVisible();
+    await expect(panel).toContainText(demo.sourceFile);
+
+    // The worklist a run stores — one item per finding — operable, and kept in this browser only.
+    const statuses = page.locator('[data-worklist-status]');
+    await expect(statuses.first()).toBeVisible();
+    expect(demo.analyze.worklist).toHaveLength(demo.analyze.distinctFindings);
+    await statuses.first().selectOption('in_review');
+    await expect
+      .poll(() => page.evaluate((key) => window.localStorage.getItem(key), DEMO_STORAGE_KEY))
+      .toContain('"status":"in_review"');
   });
 
   test('Economics shows no output until the assumptions are the reader’s', async ({ page }) => {

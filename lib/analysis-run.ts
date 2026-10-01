@@ -2,7 +2,8 @@ import { getAuth } from '@/lib/firebase';
 import { callGeminiWithReceipt } from '@/lib/gemini';
 import type { ModelReceipt } from '@/lib/model-receipt';
 import { buildAnalysisPrompt } from '@/lib/analysis-prompt';
-import { buildAbapEvidence, type EvidenceFinding } from '@/lib/abap/evidence-model';
+import { buildAbapEvidence } from '@/lib/abap/evidence-model';
+import { findingsWorklist } from '@/lib/findings-worklist';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import {
   extractCodeInventory,
@@ -113,41 +114,10 @@ export class AnalysisRunCancelled extends Error {
 }
 
 /**
- * The deterministic half of the initial worklist: one item per grouped finding.
- *
- * Moved here from the Analyze stage so the workspace produces the identical
- * worklist. It is reached from four places now — a parsed narrative, an
- * unparseable one, a run with no narrative at all (roadmap 1.2), and a run
- * started from the list report (roadmap 1.8).
+ * The deterministic half of the initial worklist — in `lib/findings-worklist.ts`
+ * since the demo builds the same worklist without a path to this module's run.
  */
-export function findingsWorklist(
-  findings: EvidenceFinding[],
-  fileName: string,
-): Record<string, unknown>[] {
-  const grouped = new Map<string, { finding: EvidenceFinding; lines: number[] }>();
-  for (const f of findings) {
-    const groupKey = `${f.kind}::${f.objectName || f.title}`;
-    const existing = grouped.get(groupKey);
-    if (existing) {
-      existing.lines.push(f.lineStart);
-    } else {
-      grouped.set(groupKey, { finding: f, lines: [f.lineStart] });
-    }
-  }
-  return Array.from(grouped.values()).map(({ finding: f, lines }, idx) => ({
-    id: `finding-${f.kind}-${idx}`,
-    title: lines.length > 1 ? `${f.title} (${lines.length}×)` : f.title,
-    category: 'Finding',
-    level: f.severity === 'Critical' || f.severity === 'High' ? 'not-supported' : 'partial',
-    severity: f.severity === 'Critical' || f.severity === 'High' ? 'High' : f.severity === 'Medium' ? 'Medium' : 'Low',
-    location: lines.length > 1 ? `${fileName}:${lines.join(', ')}` : `${fileName}:${lines[0]}`,
-    recommendation: f.recommendation,
-    status: 'open',
-    effort: f.severity === 'Critical' ? 'High' : f.severity === 'High' || f.severity === 'Medium' ? 'Medium' : 'Low',
-    targetAnchor: f.kind,
-    detail: f.technicalDetail,
-  }));
-}
+export { findingsWorklist } from './findings-worklist';
 
 /** "1 program, 668 lines" — the scope sentence §2.8 asks for before a long run. */
 export function runScope(legacyCode: string): string {

@@ -128,7 +128,9 @@ test.describe('one source for the score bands', () => {
       'lib/handover.ts',
       'lib/management-answers.ts',
       'lib/management-overview.ts',
-      'components/demo/DemoWorkspace.tsx',
+      // The demo's Analyze stage (it moved out of DemoWorkspace.tsx onto the real page's components).
+      'components/demo/DemoAnalyze.tsx',
+      'components/analyze/CleanCoreScoreDialog.tsx',
       'app/facts/page.tsx',
       'components/whitepaper/WhitepaperDocument.tsx',
       'app/reference-analysis/page.tsx',
