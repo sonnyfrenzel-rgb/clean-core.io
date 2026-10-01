@@ -13,6 +13,7 @@ import {
   ACCESS_OWNER_ONLY,
   SECURITY_MODEL_URL,
   TRUST_CARD_DISCLOSURE,
+  TRUST_CARD_HIDE,
   TRUST_CARD_SHOW,
   TRUST_CARD_TITLE,
   TRUST_CLAIMS,
@@ -335,6 +336,10 @@ test.describe('the card on the upload screen', () => {
     test.setTimeout(180 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     await openUpload(page);
+    // Collapsed on every size since 30.09.2026: open it, as a reader would,
+    // before reading what it shows — innerText skips what is hidden.
+    await page.locator('[data-trust-toggle]').click();
+    await expect(page.locator('[data-trust-toggle]')).toHaveAttribute('aria-expanded', 'true');
 
     const rendered = await page.locator('[data-trust-claim]').evaluateAll((els) =>
       els.map((el) => ({ id: el.getAttribute('data-trust-claim'), text: (el.textContent || '').trim() })),
@@ -346,6 +351,9 @@ test.describe('the card on the upload screen', () => {
     let rest = await page.locator('[data-trust-block]').innerText();
     const known = [
       TRUST_CARD_TITLE,
+      // The toggle the card carries since 30.09.2026, as it reads once open.
+      TRUST_CARD_DISCLOSURE,
+      TRUST_CARD_HIDE,
       ...ALL_CLAIMS.flatMap((c) => [c.text, ...c.sources.map((s) => s.label)]),
     ];
     for (const piece of known) {
@@ -389,6 +397,8 @@ test.describe('the card on the upload screen', () => {
     test.setTimeout(180 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     await openUpload(page);
+    // Collapsed since 30.09.2026: the sentence is one click away, so open it.
+    await page.locator('[data-trust-toggle]').click();
 
     const block = (await page.locator('[data-trust-block]').innerText()).toLowerCase();
     // This test used to assert the opposite, and was right to: `DESIGN.md`
