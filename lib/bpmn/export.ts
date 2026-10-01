@@ -1,7 +1,11 @@
 import { buildProcessSkeleton, type ProcessSkeleton, type SkeletonNode } from '../abap/process-skeleton';
 import type { ProvenanceValue } from '../provenance';
 import { APP_VERSION } from '../version';
-import { layoutModel, type Bounds, type PlaneLayout, type Point } from './layout';
+import { anchorText, flowText, layoutModel, type Bounds, type Direction, type PlaneLayout, type Point } from './layout';
+
+/** Columns per row on a reading surface (workspace, landing, download): wide levels wrap. */
+export const READING_WRAP = 6;
+import { plainLabels } from '../abap/plain-language';
 import {
   buildExportModel,
   isMultiInstanceLoop,
@@ -42,6 +46,19 @@ export interface BpmnExportOptions {
   sourceFileName: string;
   /** Recorded as `exporterVersion`. Defaults to this release. */
   exporterVersion?: string;
+  /**
+   * `plain` names every element for a business reader (`lib/abap/plain-language.ts`,
+   * deterministic, provenance `reconstructed`) and labels every branch; the
+   * source token travels in the trace and the documentation. `technical` (the
+   * default) names elements by the token itself.
+   */
+  names?: 'plain' | 'technical';
+  /** The ABAP source — lets plain names read declarations and message texts. */
+  source?: string;
+  /** Layout direction. Default left to right. */
+  direction?: Direction;
+  /** Most columns in one row before a band continues below (`LayoutOptions.wrap`). */
+  wrap?: number;
 }
 
 export interface BpmnExportStats {
@@ -92,14 +109,16 @@ export interface BpmnExport {
 
 /** The export API. `skeleton` is `buildProcessSkeleton(source)` of the source the signed run analysed. */
 export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOptions): BpmnExport {
-  const model = buildExportModel(skeleton);
+  const model = buildExportModel(skeleton, {
+    labels: options.names === 'plain' ? plainLabels(skeleton, options.source) : undefined,
+  });
   const nodes = model.containers.flatMap((c) => c.nodes);
   const anchored = nodes.filter((n) => n.source.anchor).length;
   model.root.annotations.unshift({
     id: 'note-reconstruction',
     text: reconstructionNote(options, anchored, nodes.length),
   });
-  const layout = layoutModel(model);
+  const layout = layoutModel(model, { direction: options.direction, wrap: options.wrap });
 
   const elementNode: Record<string, string> = {};
   const dataByElement: Record<string, ElementData> = {};
@@ -189,7 +208,24 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
 
 /** The same, for a caller that holds the source rather than the skeleton. */
 export function buildBpmnExportFromSource(source: string, options: BpmnExportOptions): BpmnExport {
-  return buildBpmnExport(buildProcessSkeleton(source), options);
+  return buildBpmnExport(buildProcessSkeleton(source), { source, ...options });
+}
+
+/**
+ * The two files a reading surface draws from — the workspace map, the demo,
+ * the download: plain names, report events as one flow, wide levels wrapped;
+ * and beside it the technical file the "Technical names" switch shows. One
+ * function, so the hook, the demo and the specs build exactly the same thing.
+ */
+export function buildReadingExports(
+  source: string,
+  options: Pick<BpmnExportOptions, 'processName' | 'sourceFileName' | 'exporterVersion'>,
+): { bpmn: BpmnExport; technical: BpmnExport } {
+  const skeleton = buildProcessSkeleton(source);
+  return {
+    bpmn: buildBpmnExport(skeleton, { ...options, source, names: 'plain', wrap: READING_WRAP }),
+    technical: buildBpmnExport(skeleton, { ...options, source, wrap: READING_WRAP }),
+  };
 }
 
 /** A file name for the download: the name, reduced to characters every file system keeps. */
@@ -347,16 +383,22 @@ function containerContent(container: ExportContainer, options: BpmnExportOptions
   for (const node of container.nodes) out.push(flowNode(node, container, options));
   for (const flow of container.flows) {
     const conditional = flow.condition !== '';
+    const shown = flowText(flow);
+    // What the flow says on the map (a branch label, or the condition cut to
+    // fit) is its name; the whole condition is its expression, its trace and,
+    // when the name is not the condition, its documentation.
     out.push(el('bpmn:sequenceFlow', [
       ['id', flow.id],
-      ['name', conditional ? flow.condition : undefined],
+      ['name', shown || undefined],
       ['sourceRef', flow.sourceId],
       ['targetRef', flow.targetId],
     ], [
+      ...(conditional && shown !== flow.condition ? [textEl('bpmn:documentation', `Condition in the code: ${flow.condition}`)] : []),
       el('bpmn:extensionElements', [], [trace({
         kind: flow.edge.kind,
-        reason: flow.bypassOf ? 'guard-bypass' : flow.edge.reason,
+        reason: flow.bypassOf ? 'guard-bypass' : flow.runtimeOrder ? 'runtime-order' : flow.edge.reason,
         bypasses: flow.bypassOf,
+        condition: conditional ? flow.condition : undefined,
       })]),
       ...(conditional
         ? [textEl('bpmn:conditionExpression', flow.condition, [['xsi:type', 'bpmn:tFormalExpression']])]
@@ -387,8 +429,17 @@ function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExp
     attrs.push(['gatewayDirection', node.source.detail?.direction === 'converging' ? 'Converging' : 'Diverging']);
   }
 
+  const extra: Record<string, string> = {};
+  if (node.fallback) extra.fallback = node.fallback;
+  if (node.name !== node.technicalName) extra.technicalName = node.technicalName;
+  if (node.fact) extra.fact = node.fact;
+  const anchor = anchorText(node.source.anchor);
   const children: XmlElement[] = [
-    el('bpmn:extensionElements', [], [nodeTrace(node.source, options.sourceFileName, node.fallback ? { fallback: node.fallback } : {})]),
+    // A plain name says what the step is; the documentation keeps what the code wrote.
+    ...(node.name !== node.technicalName
+      ? [textEl('bpmn:documentation', `In the code: ${node.technicalName}${anchor ? ` (${anchor.replace(/^L/, 'line ')})` : ''}`)]
+      : []),
+    el('bpmn:extensionElements', [], [nodeTrace(node.source, options.sourceFileName, extra)]),
     ...node.incoming.map((id) => textEl('bpmn:incoming', id)),
     ...node.outgoing.map((id) => textEl('bpmn:outgoing', id)),
   ];
@@ -437,13 +488,19 @@ function waypoints(points: Point[]): XmlElement[] {
 
 function planeElements(container: ExportContainer, plane: PlaneLayout): XmlElement[] {
   const out: XmlElement[] = [];
+  // A label's own bounds (BPMN DI `BPMNLabel`): where the layout put the name,
+  // so a modeller draws it there rather than on top of a line.
+  const label = (id: string): XmlElement[] => {
+    const l = plane.labels.get(id);
+    return l && l.lines.length ? [el('bpmndi:BPMNLabel', [], [bounds(l.nameBox)])] : [];
+  };
   const shape = (id: string, extra: Array<[string, string | boolean]> = []) => {
     const b = plane.shapes.get(id);
-    if (b) out.push(el('bpmndi:BPMNShape', [['id', `${id}_di`], ['bpmnElement', id], ...extra], [bounds(b)]));
+    if (b) out.push(el('bpmndi:BPMNShape', [['id', `${id}_di`], ['bpmnElement', id], ...extra], [bounds(b), ...label(id)]));
   };
   const edge = (id: string) => {
     const points = plane.edges.get(id);
-    if (points) out.push(el('bpmndi:BPMNEdge', [['id', `${id}_di`], ['bpmnElement', id]], waypoints(points)));
+    if (points) out.push(el('bpmndi:BPMNEdge', [['id', `${id}_di`], ['bpmnElement', id]], [...waypoints(points), ...label(id)]));
   };
   // Hosts before the boundary events on them, so a reader draws the host first.
   for (const node of container.nodes) {

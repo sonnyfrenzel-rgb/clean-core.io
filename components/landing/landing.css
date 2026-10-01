@@ -402,6 +402,16 @@
 .lp3 .shape.gw { width: 11px; height: 11px; transform: rotate(45deg); border-radius: 2px; margin-left: 2px; }
 .lp3 .shape.end { width: 13px; height: 13px; border-radius: 999px; background: var(--cc-surface); border: 2px solid var(--cc-information); }
 
+/* orientation in the map: level, phases with "you are here", legend, more → */
+.lp3 .flow-bar .lvl { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--cc-ink-muted); }
+.lp3 .phase-row { display: flex; align-items: center; gap: 8px; overflow-x: auto; margin: 0 0 10px; padding-bottom: 2px; }
+.lp3 .phase-row .k { font-size: 12px; font-weight: 600; color: var(--cc-ink-muted); flex: none; }
+.lp3 .phase-row .wbtn { flex: none; }
+.lp3 .flow-help .mk { display: inline-grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--cc-field-border); border-radius: 3px; font-size: 12px; font-weight: 700; line-height: 1; color: var(--cc-ink); vertical-align: -3px; }
+.lp3 .flow-wrap { position: relative; }
+.lp3 .flow-narrow { display: none; }
+.lp3 .flow-more { position: absolute; top: 1px; bottom: 1px; right: 1px; display: flex; align-items: center; padding: 0 12px 0 32px; border-radius: 0 12px 12px 0; background: linear-gradient(to left, var(--cc-surface) 60%, transparent); font-size: 12px; font-weight: 600; color: var(--cc-ink-muted); pointer-events: none; }
+
 /* the hero's diagram: the step kept and the step hovered */
 .lp3 .mc-slot [data-l] { cursor: pointer; }
 .lp3 .mc-slot [data-l].is-sel .cc-bpmn-shape { stroke: var(--cc-ink); stroke-width: 2.5px; fill: var(--cc-information-bg); }
@@ -454,6 +464,8 @@
   .lp3 .lk-hit .go { grid-column: 1 / -1; }
   .lp3 .feat4 { grid-template-columns: minmax(0, 1fr); gap: 22px; margin-top: 32px; }
   .lp3 .flow-bar .r { margin-left: 0; }
+  .lp3 .flow-wide { display: none; }
+  .lp3 .flow-narrow { display: block; }
   .lp3 .ph-btn { grid-template-columns: 22px minmax(0, 1fr); }
   .lp3 .ph-btn .rg { grid-column: 2; }
   .lp3 .refgrid { grid-template-columns: minmax(0, 1fr); gap: 16px; }

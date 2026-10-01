@@ -8,7 +8,7 @@ import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { sha256Hex } from '../lib/artefact-digest';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
-import { buildBpmnExportFromSource } from '../lib/bpmn/export';
+import { buildBpmnExportFromSource, READING_WRAP } from '../lib/bpmn/export';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -141,6 +141,7 @@ test('the documentation stage hands over a PDF and the BPMN in one archive', asy
   // source. It is the file the export produced, unchanged.
   const bpmn = await zip.file(bpmnName as string)!.async('string');
   expect(bpmn).toBe(
-    buildBpmnExportFromSource(PROGRAM, { processName: PROJECT_NAME, sourceFileName: FILE_NAME }).xml,
+    // The file "Export BPMN" on the same page writes: plain names, wide levels wrapped.
+    buildBpmnExportFromSource(PROGRAM, { processName: PROJECT_NAME, sourceFileName: FILE_NAME, names: 'plain', wrap: READING_WRAP }).xml,
   );
 });

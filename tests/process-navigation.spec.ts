@@ -6,7 +6,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { sha256Hex } from '../lib/artefact-digest';
-import { buildBpmnExportFromSource, CC_NAMESPACE } from '../lib/bpmn/export';
+import { buildBpmnExportFromSource, buildReadingExports, CC_NAMESPACE } from '../lib/bpmn/export';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { buildProcessMapModel, type ProcessMapModel } from '../lib/process-map';
 import { deriveBusinessRules, rulesForElement } from '../lib/abap/business-rule-set';
@@ -91,6 +91,20 @@ function exampleModel(source = exampleSource()): ProcessMapModel {
   });
   const named = applyNaming(namingContextOf(source), null, 'no-key');
   return buildProcessMapModel({ bpmn, named, fileName: FILE_NAME });
+}
+
+/**
+ * The model as the page builds it (`hooks/useProcessMap.ts`): the plain reading,
+ * report events as one flow, and the technical file beside it. What the page
+ * draws is compared against this; the structure of the file against the above.
+ */
+function readingModel(source = exampleSource()): ProcessMapModel {
+  const { bpmn, technical } = buildReadingExports(source, {
+    processName: PROCESS_NAME,
+    sourceFileName: FILE_NAME,
+  });
+  const named = applyNaming(namingContextOf(source), null, 'no-key');
+  return buildProcessMapModel({ bpmn, technical, named, fileName: FILE_NAME });
 }
 
 function rulesByNode(source: string, model: ProcessMapModel): Map<string, string[]> {
@@ -544,9 +558,11 @@ async function openMap(page: Page) {
   await page.locator('[data-process-outline-tree]').waitFor({ timeout: 90000 });
   // The outline is built from the model; the rules that feed the problem lines
   // arrive one dynamic import later.
+  // Every row of the overview the page builds (the plain reading draws the
+  // report events as one flow, so the overview has its own count).
   await expect
     .poll(async () => page.locator('[data-tree-node]').count(), { timeout: 60000 })
-    .toBeGreaterThan(20);
+    .toBe(buildNavigation(readingModel()).roots.length);
 }
 
 /**
@@ -646,7 +662,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await openMap(page);
 
     const source = exampleSource();
-    const model = exampleModel(source);
+    const model = readingModel(source);
     const nav = buildNavigation(model);
     const rules = rulesByNode(source, model);
 
@@ -667,13 +683,13 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     }
   });
 
-  test('the measured acceptance: 50 steps and 37 events, mouse and keyboard, both at most three', async ({ page }) => {
+  test('the measured acceptance: 50 steps and every event, mouse and keyboard, both at most three', async ({ page }) => {
     test.setTimeout(900 * 1000);
     await page.setViewportSize({ width: 1600, height: 1100 });
     await signIn(page);
     await openMap(page);
 
-    const model = exampleModel();
+    const model = readingModel();
     const nav = buildNavigation(model);
     const counts: Array<{ outline: string; id: string; mouse: number; keyboard: number }> = [];
 
@@ -741,7 +757,11 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     /* ---- the measurement, stated ---- */
     // ADR-054: steps and events apart — the events are measured, never counted as steps.
     const isEvent = (id: string) => model.elements.find((element) => element.id === id)?.event === true;
-    expect(counts.length, 'not every element of the example was measured').toBe(87);
+    // Every element the page draws (82: the plain reading draws the four report
+    // events as one flow, so five event elements are only in Technical names),
+    // and still all 50 steps.
+    expect(counts.length, 'not every element of the example was measured').toBe(model.elements.length);
+    expect(model.elements.length).toBe(82);
     expect(counts.filter((count) => !isEvent(count.id)), 'the steps of the example').toHaveLength(50);
     const worstMouse = Math.max(...counts.map((count) => count.mouse));
     const worstKeyboard = Math.max(...counts.map((count) => count.keyboard));
@@ -768,7 +788,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await page.setViewportSize({ width: 1600, height: 1100 });
     await signIn(page);
 
-    const model = exampleModel();
+    const model = readingModel();
     const nav = buildNavigation(model);
     const deep = nav.order.find((id) => (nav.entries.get(id)?.ancestors.length ?? 0) > 0) as string;
     const plane = nav.entries.get(deep)?.plane as string;
@@ -813,7 +833,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await signIn(page);
     await openMap(page);
 
-    const model = exampleModel();
+    const model = readingModel();
     const nav = buildNavigation(model);
 
     const read = async () => ({
@@ -851,7 +871,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await openMap(page);
 
     const source = exampleSource();
-    const model = exampleModel(source);
+    const model = readingModel(source);
     const nav = buildNavigation(model);
     const overlays = buildOverlays(model, nav, rulesByNode(source, model));
     const hardCoded = overlays[0];
@@ -902,7 +922,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await openMap(page);
 
     const source = exampleSource();
-    const model = exampleModel(source);
+    const model = readingModel(source);
     const nav = buildNavigation(model);
     const calls = readCallGraph(source);
     const findings = buildAbapEvidence(source, FILE_NAME).findings;
@@ -956,7 +976,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await signIn(page);
     await openMap(page);
 
-    const model = exampleModel();
+    const model = readingModel();
     const nav = buildNavigation(model);
 
     // A level whose main path is a *part* of it. On the top level of a report
@@ -997,7 +1017,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await openMap(page);
 
     const source = exampleSource();
-    const model = exampleModel(source);
+    const model = readingModel(source);
     const nav = buildNavigation(model);
     const switches = readRunSwitches(source, model);
     const declared = new Map(switches.map((entry) => [entry.name, entry.defaultOn ?? true]));

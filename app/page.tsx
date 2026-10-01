@@ -193,6 +193,12 @@ export default function Home() {
   const heroData = heroSnippets(hero, DEMO_SOURCE_FILE);
   const referenceProcess = landingProcess(reference.fileName, reference.fileName.replace(/(_\d+LOC)?\.abap$/i, ''));
   const catalogHref = (name: string) => (withPage.has(name) ? `/catalog/${objectToSlug(name)}` : '/sap-clean-core-object-classification');
+  const referenceTechnical = landingProcess(reference.fileName, referenceProcess.program, 'technical');
+  // A phone reads the same levels top to bottom rather than scrolling sideways.
+  const referenceVertical = {
+    plain: landingProcess(reference.fileName, referenceProcess.program, 'plain', 'TB'),
+    technical: landingProcess(reference.fileName, referenceProcess.program, 'technical', 'TB'),
+  };
 
   /* The A–D ladder: each level with a real object the catalog puts there today. */
   const ladder = (['A', 'B', 'C', 'D'] as const).map((level) => {
@@ -537,14 +543,15 @@ export default function Home() {
                 notDetermined={heroData.notDetermined}
                 snippets={heroData.snippets}
                 initial={heroData.initial}
-                mapTitle={`The routine ${hero.plane.label} of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code`}
-                mapNote={`${hero.plane.label} · called at L${hero.plane.anchor?.lineStart ?? ''}`}
+                mapTitle={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code`}
+                mapNote="Excerpt · first steps"
                 anchoredSentence={`${hero.process.anchored} of ${hero.process.flowNodes} elements of the whole program carry a line anchor.`}
                 diagram={
                   <BpmnPlaneSvg
                     plane={hero.plane}
                     idPrefix="hero"
-                    title={`The routine ${hero.plane.label} of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code. Every element carries its line anchor.`}
+                    fit
+                    title={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code: each step with the decisions in it that end the process. Every element carries its line anchor.`}
                   />
                 }
               />
@@ -806,7 +813,7 @@ export default function Home() {
                 example — with the mouse, the keyboard, or as a list of steps.
               </p>
             </div>
-            <ProcessMapPanel process={referenceProcess} title={referenceProcess.program} />
+            <ProcessMapPanel process={referenceProcess} technical={referenceTechnical} vertical={referenceVertical} title={referenceProcess.program} />
             <div className="feat4">
               {[
                 { t: 'Every element points to its lines', d: 'Start and end events, tasks, decisions and sub-processes each carry a line anchor. Decisions keep their condition from the code; proposed lanes are marked as proposals, never as your organisation.' },

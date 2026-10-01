@@ -127,11 +127,10 @@ export function useProcessMap(
           availabilityKnown ? { known: true, keyAvailable, stages: { naming: namingStageOn } } : null,
         ),
       );
-      const bpmn = exporter.buildBpmnExportFromSource(source, {
-        processName: processName || fileName,
-        sourceFileName: fileName,
-      });
-      const model = mapper.buildProcessMapModel({ bpmn, named, fileName });
+      // Plain names for the reader, the technical file beside it for the
+      // "Technical names" switch — the same skeleton, the same anchors.
+      const { bpmn, technical } = exporter.buildReadingExports(source, { processName: processName || fileName, sourceFileName: fileName });
+      const model = mapper.buildProcessMapModel({ bpmn, technical, named, fileName });
       if (cancelled) return;
 
       setHeld({ key, model, measuredAt: null, failed: false });

@@ -7,7 +7,7 @@ import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { sha256Hex } from '../lib/artefact-digest';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
-import { buildBpmnExportFromSource } from '../lib/bpmn/export';
+import { buildBpmnExportFromSource, buildReadingExports } from '../lib/bpmn/export';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { buildProcessMapModel, type ProcessMapModel } from '../lib/process-map';
 import {
@@ -66,6 +66,19 @@ function exampleModel(source = exampleSource()): ProcessMapModel {
   });
   const named = applyNaming(namingContextOf(source), null, 'no-key');
   return buildProcessMapModel({ bpmn, named, fileName: FILE_NAME });
+}
+
+/**
+ * The model as the page builds it (`hooks/useProcessMap.ts`): plain reading plus
+ * the technical file. What the reading canvas draws is counted against this.
+ */
+function readingModel(source = exampleSource()): ProcessMapModel {
+  const { bpmn, technical } = buildReadingExports(source, {
+    processName: PROCESS_NAME,
+    sourceFileName: FILE_NAME,
+  });
+  const named = applyNaming(namingContextOf(source), null, 'no-key');
+  return buildProcessMapModel({ bpmn, technical, named, fileName: FILE_NAME });
 }
 
 function labelsOf(model: ProcessMapModel): Map<string, string> {
@@ -543,7 +556,7 @@ test.describe('the editor of roadmap 3.1', () => {
     await signIn(page);
     await openMap(page);
 
-    const model = exampleModel();
+    const model = readingModel();
     const traceability = await page.locator('[data-process-map-traceability]').innerText();
     const rowsBefore = await page.locator('[data-tree-node]').count();
     expect(traceability).toContain(model.traceability.sentence);
