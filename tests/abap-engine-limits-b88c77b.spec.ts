@@ -226,14 +226,24 @@ test.describe('the business rules of a large source', () => {
     // **the rule count is identical in all eight programs** (16 · 0 · 1 · 0 · 1
     // · 11 · 1 · 0) and the only differing field anywhere in the three sets is
     // `region`. No rule was gained, lost, re-anchored or re-worded.
+    //
+    // **8ad735c9 (fix/print-levels-english) moved three more, by one string.**
+    // The caveat on a numeric threshold over an amount was German and is
+    // English now: "Betrag, Währung nicht aus dem Code ableitbar" → "the
+    // currency of the amount". Compared field by field against the output
+    // before that commit: in the 1.000-line example (14×), `Z_MM_PO_APPROVAL`
+    // (1×) and `Z_ORDER_INTEGRITY_CHECK` (1×) the only differing value is
+    // `rules[].parameters[].caveat`, that one pair and no other; rule counts
+    // unchanged. The QA fixes of a88149856dcc merged beside it (SELECT inside
+    // SELECT…ENDSELECT, indented PARAMETERS) move none of these digests.
     const pinned: Record<string, string> = {
-      'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': 'd83a38a7ca1e1033df59b53f4bf577c86b6fc2f17db4dcfbdcce384218ba6756',
+      'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': '2d026c887a78b3055d9cea9cde801d25486dcf9b182a5b2c264e990e06e79e50',
       'Z_BUSINESS_PARTNER_SYNC.txt': '9a1e899f8ffd59c50e81c7d18470accd28c53f9c2ee86d40ba639822f0692b1e',
       'Z_EMPLOYEE_EXPENSE_VAL.txt': '778f3a442c623d3e30eaab88fd1f5befe19b207b928512c7f653eb3af198b276',
       'Z_INVOICE_EXTRACTOR.txt': '35d9750084364efced78c549d1813632fd7e28dbf81e3ed5052601ce693a8b19',
       'Z_MATERIAL_STOCK_CALC.txt': '2212a619e000b96735210221c2535e23d076c65f23cbd5f1c3f8c99e3f500a1b',
-      'Z_MM_PO_APPROVAL.abap': '0a209e8c7c13b96c1921e4a60784bafd768465c4304583b485fee3b991c78d6f',
-      'Z_ORDER_INTEGRITY_CHECK.txt': '74408766ed94e42280d8085bfd3f67d139652bf88a8706bc91e843f191e6554f',
+      'Z_MM_PO_APPROVAL.abap': 'edc3a52b47d9f8d5c2fa08754da0e5927d5a6d48abcb3974fc7913d841500b5f',
+      'Z_ORDER_INTEGRITY_CHECK.txt': '637f970bd6e90a83b09b145bc90610332111a52f8380f9e77dfbf4795906094e',
       'Z_SALES_ORDER_CREATOR.txt': '7b079dd80f1dc957a1c6c298de9e68cc6fb21515621ff38b0948fb8c6626f177',
     };
     for (const [name, digest] of Object.entries(pinned)) {
@@ -247,9 +257,10 @@ test.describe('the business rules of a large source', () => {
     // Unmoved by 2.17 (b) — the count is the measurement here, and the digest
     // moved for the one reason the test above names: the 1.000-line program at
     // the head of this composite carries ten rules inside a `LOOP AT`, and they
-    // name the loop's region now.
+    // name the loop's region now. Moved again by 8ad735c9: 814 caveats read
+    // "the currency of the amount" instead of the German sentence, nothing else.
     expect(set.rules).toHaveLength(817);
-    expect(sha(set)).toBe('6fd381e019dcd72c30944d69837b986e3c9ab673a20119ece4bc82b3c908ec21');
+    expect(sha(set)).toBe('69d0dd9afa5568afd8f47c11ed0b8c818c16d4bf77dc9fe304009994c9b00fcb');
   });
 });
 
