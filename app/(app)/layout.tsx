@@ -54,6 +54,9 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   // The object page uses the full frame (mockup s1: map and source column side
   // by side); the stages and every other page keep the reading width.
   const isObjectPage = /^\/project\/[^/]+\/?$/.test(pathname ?? '');
+  // The Documentation stage draws its process map as a canvas (owner decision
+  // 01.10.2026, proposal B) and takes the object page's width for it.
+  const isWidePage = isObjectPage || /^\/project\/[^/]+\/documentation\/?$/.test(pathname ?? '');
 
   // Scroll to top on every page navigation
   useEffect(() => {
@@ -214,7 +217,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           assistant, Help and the account menu on the right. White surface and a
           1 px rule — no blur, no shadow, no green hover (ADR-007). */}
       <header className="cc-no-print sticky top-0 z-cc-sticky border-b border-cc-line bg-cc-surface">
-        <div className={cn('mx-auto flex h-14 items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8', isObjectPage ? 'max-w-screen-2xl' : 'max-w-7xl')}>
+        <div className={cn('mx-auto flex h-14 items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8', isWidePage ? 'max-w-screen-2xl' : 'max-w-7xl')}>
           {/* Home means the dashboard for someone signed in and the landing page
               for everyone else. The same shell serves both, and a hard link to
               /dashboard was a dead end for a visitor who arrived on /knowledge
@@ -443,7 +446,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
 
       <main id="main-content" tabIndex={-1} className={cn(
           'flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-32',
-          isObjectPage ? 'max-w-screen-2xl' : 'max-w-7xl',
+          isWidePage ? 'max-w-screen-2xl' : 'max-w-7xl',
         )}
       >
         {children}

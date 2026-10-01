@@ -13,6 +13,16 @@ import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { PHASES, type PhaseKey, type PhaseState } from '@/lib/workflow-steps';
 import type { CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
+import { buildReadingExports } from '@/lib/bpmn/export';
+import { applyNaming, namingContextOf } from '@/lib/process-naming';
+import { buildProcessMapModel, type ProcessMapModel } from '@/lib/process-map';
+import { buildNavigation } from '@/lib/process-navigation';
+import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
+import { readCallGraph } from '@/lib/abap/call-graph';
+import { readTableDependencies } from '@/lib/abap/table-dependencies';
+import { objectSites, sitesByElement } from '@/lib/process-overlays';
+import { buildProcessDocumentation } from '@/lib/process-documentation-build';
+import { buildProcessHandbook, handbookToData, type ProcessHandbookData } from '@/lib/process-handbook';
 import {
   DEMO_OBJECT_NAME,
   DEMO_PROJECT_TITLE,
@@ -148,6 +158,14 @@ export interface DemoProject {
   documentation: {
     inventory: CodeInventoryItem[];
     coupling: DataCouplingEntry[];
+    /**
+     * The process map and its handbook — the same reading a real project's
+     * Documentation stage draws (owner decision 01.10.2026, proposal B), read
+     * here on the server from the example file. No model is involved: the
+     * plain names, chapters, rules and exceptions are all the engine's.
+     * Null when the reader could not get through the file.
+     */
+    process: { model: ProcessMapModel; handbook: ProcessHandbookData } | null;
   };
 
   testing: {
@@ -215,8 +233,8 @@ function buildRail(demo: Omit<DemoProject, 'rail'>): DemoRailStep[] {
     railStep(
       'documentation',
       'partial',
-      'Inventory only',
-      `${demo.documentation.inventory.length} objects and ${demo.documentation.coupling.length} tables inventoried. The written blueprint comes from a real run.`,
+      demo.documentation.process ? 'Read from the code' : 'Inventory only',
+      `${demo.documentation.process ? `${demo.documentation.process.handbook.chapters.length} handbook chapters read from the code, ` : ''}${demo.documentation.inventory.length} objects and ${demo.documentation.coupling.length} tables inventoried. The business layer comes from a model in a real run.`,
     ),
     railStep(
       'testing',
@@ -297,6 +315,35 @@ export function assertNoTrustChain(demo: unknown): void {
 }
 
 /** The demo, rebuilt from the file on disk on every request. */
+/** The map and the handbook of the demo source, exactly as the stage builds them. */
+function demoProcess(source: string): DemoProject['documentation']['process'] {
+  try {
+    const { bpmn, technical } = buildReadingExports(source, { processName: DEMO_PROJECT_TITLE, sourceFileName: DEMO_SOURCE_FILE });
+    const full = buildProcessMapModel({
+      bpmn,
+      technical,
+      named: applyNaming(namingContextOf(source), null, 'no-key'),
+      fileName: DEMO_SOURCE_FILE,
+    });
+    const nav = buildNavigation(full);
+    const calls = readCallGraph(source);
+    const sites = sitesByElement(full, nav, objectSites(readTableDependencies(source), calls), calls);
+    const handbook = buildProcessHandbook({
+      model: full,
+      nav,
+      doc: buildProcessDocumentation({ source, map: full }),
+      rules: deriveBusinessRules(source),
+      sites,
+      source,
+    });
+    // The technical file is the toggle's; the demo draws the plain reading only.
+    const model: ProcessMapModel = { ...full, technicalXml: undefined };
+    return { model, handbook: handbookToData(handbook) };
+  } catch {
+    return null;
+  }
+}
+
 export function buildDemoProject(): DemoProject {
   const source = fs.readFileSync(DEMO_PATH, 'utf8');
   const lines = source.split(/\r?\n/);
@@ -335,6 +382,7 @@ export function buildDemoProject(): DemoProject {
     documentation: {
       inventory: extractCodeInventory(source),
       coupling: extractDataCoupling(source),
+      process: demoProcess(source),
     },
     testing: {
       verdicts: { total: 0, passed: 0, failed: 0, withoutVerdict: 0 },
