@@ -561,3 +561,40 @@
   .lp3 .chain { padding: 20px; margin-top: 28px; }
   .lp3 .chain5 { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ---------- the chain of evidence in the hero, compact (USP, 01.10.2026) ---------- */
+.lp3 .hchain { margin: 32px auto 0; max-width: 1040px; }
+.lp3 .hchain-k { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--cc-ink-muted); }
+.lp3 .hchain ol { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px; }
+.lp3 .hchain li { position: relative; min-width: 0; }
+.lp3 .hchain li + li::before { content: '→'; position: absolute; left: -19px; top: 50%; transform: translateY(-50%); width: 14px; text-align: center; font-size: 15px; font-weight: 700; color: var(--cc-ink-muted); }
+.lp3 .hchain a { display: flex; align-items: center; gap: 10px; height: 100%; min-height: 56px; padding: 10px 12px; border: 1px solid var(--cc-line); border-radius: 14px; background: var(--cc-surface); box-shadow: var(--lp-sh); text-align: left; text-decoration: none; color: var(--cc-ink); transition: border-color 150ms ease; }
+.lp3 .hchain a:hover { border-color: var(--cc-ink); }
+.lp3 .hchain a:focus-visible { outline: 2px solid var(--cc-focus); outline-offset: 2px; }
+.lp3 .hchain .no { flex: none; width: 26px; height: 26px; border-radius: 999px; border: 1px solid var(--cc-field-border); display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--cc-ink); background: var(--cc-surface); }
+.lp3 .hchain .tx { display: flex; flex-direction: column; min-width: 0; }
+.lp3 .hchain .t { font-size: 15px; font-weight: 700; line-height: 1.3; }
+.lp3 .hchain .m { font-size: 13px; font-weight: 500; line-height: 1.35; color: var(--cc-ink-muted); }
+.lp3 .hero-lead { max-width: 800px; }
+.lp3 .hlimits { margin: 14px auto 0; max-width: 760px; font-size: 14px; line-height: 1.55; font-weight: 500; color: var(--cc-ink-muted); }
+@media (prefers-reduced-motion: reduce) { .lp3 .hchain a { transition: none; } }
+
+/* the contrast row in "What is": categories, then Clean-Core.io */
+.lp3 ul.diff { list-style: none; margin: 0; padding: 0; }
+.lp3 .dcard.us { border-color: var(--cc-ink); box-shadow: inset 0 3px 0 var(--cc-ink), var(--lp-sh); }
+.lp3 .dcard.us h3 { color: var(--cc-ink); }
+.lp3 .dcard p.more { font-size: 15px; font-weight: 500; line-height: 1.6; letter-spacing: 0; color: var(--cc-ink-muted); margin-top: 10px; }
+.lp3 .chain + .deep { text-align: center; }
+
+@media (max-width: 1100px) {
+  .lp3 .hchain ol { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .lp3 .hchain li + li::before { content: none; }
+}
+@media (max-width: 760px) {
+  .lp3 .hchain { margin-top: 24px; }
+  .lp3 .hchain ol { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .lp3 .hchain a { min-height: 44px; padding: 6px 12px; }
+  .lp3 .hchain .tx { flex-direction: row; align-items: baseline; flex-wrap: wrap; gap: 0 8px; }
+  .lp3 .hlimits { font-size: 13px; }
+  .lp3 .dcard p.more { font-size: 15px; }
+}
