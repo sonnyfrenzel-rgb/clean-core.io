@@ -22,6 +22,8 @@ import { tcoForecast, TCO_TARGET_SCORE } from '@/lib/tco-model';
 import type { PhaseKey } from '@/lib/workflow-steps';
 import type { DemoProject } from '@/lib/demo-project';
 import { catalogForReader } from '@/lib/messages/demo';
+import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
+import { trackOfRoute } from '@/lib/transformation-view';
 import {
   DEMO_INVITATION,
   DEMO_QUOTA_NOTICE,
@@ -451,45 +453,28 @@ function Design({
   );
 }
 
+/**
+ * The Transformation tool of the demo — the same Object Page as a real
+ * project (proposal A, owner decision 01.10.2026), from the same engine run.
+ * `files={null}`: a demo makes no model call, so the package and every
+ * "generated change" say where the demo stops instead of showing a file.
+ * The route of each finding is its own (`findingTarget`), not the first
+ * option of its kind — that column used to read "Developer Extensibility /
+ * RAP" on every row of a side-by-side demo.
+ */
 function Transformation({ demo }: { demo: DemoProject }) {
+  const track = trackOfRoute(demo.design.recommendedRoute);
   return (
-    <>
-      <CcCard level={2} title="The plan the engine can write on its own">
-        <p className={lead}>
-          One line per finding: where it is, what the route is, and the released successor when the catalog names
-          one.{' '}
-          {demo.transformation.unplanned > 0
-            ? `${demo.transformation.unplanned} findings carry no target option and are left out rather than guessed at.`
-            : 'Every finding carries at least one target option.'}
-        </p>
-        <div data-testid="demo-plan">
-          <CcTable
-            caption="Transformation plan written by the engine"
-            columns={[
-              { key: 'line', label: 'Line', width: '5rem' },
-              { key: 'finding', label: 'Finding' },
-              { key: 'route', label: 'Route' },
-              { key: 'successor', label: 'Successor' },
-            ]}
-            rows={demo.transformation.plan.map((p) => ({
-              key: p.findingId,
-              cells: {
-                line: <Line n={p.lineStart} />,
-                finding: (
-                  <>
-                    <span className="font-semibold text-cc-ink">{p.title}</span>
-                    <span className="mt-1 block text-cc-ink-muted">{p.recommendation}</span>
-                  </>
-                ),
-                route: p.target,
-                successor: p.successor ? `${p.successor} (${p.successorProvenance})` : 'none in the catalog',
-              },
-            }))}
-          />
-        </div>
-      </CcCard>
-      <ModelHalfNotice what="The transformed code" />
-    </>
+    <div data-testid="demo-plan">
+      <TransformationObjectPage
+        findings={demo.analyze.findings}
+        coverage={demo.analyze.coverage}
+        track={track}
+        codeKind={track === 'side-by-side' ? 'Node.js (TypeScript)' : 'ABAP Cloud (RAP)'}
+        files={null}
+        openSignOffs={null}
+      />
+    </div>
   );
 }
 

@@ -13,6 +13,7 @@ import { readCallGraph } from '@/lib/abap/call-graph';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { PHASES, type PhaseKey, type PhaseState } from '@/lib/workflow-steps';
+import { findingTarget, trackOfRoute, type ProjectTrack, type TargetKind } from '@/lib/transformation-view';
 import type { CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import {
   DEMO_OBJECT_NAME,
@@ -86,8 +87,20 @@ export interface DemoPlanItem {
   title: string;
   lineStart: number;
   severity: EvidenceFinding['severity'];
-  /** The route the engine offers first for this finding. */
+  /**
+   * This finding's target, against the demo's route: the released successor
+   * where the catalog names one, the custom table where the code writes its
+   * own, and only for a construct without an object the option on the
+   * project's route (`findingTarget`). It used to be the finding's first
+   * `targetOptions` entry, which is the in-app option for almost every kind —
+   * so a side-by-side demo printed "Developer Extensibility / RAP" on every row.
+   */
   target: string;
+  targetKind: TargetKind;
+  /** Whether the project's route is among the finding's options; null when the finding names an object. */
+  routeFit: 'matches' | 'differs' | null;
+  /** The engine's options for this kind of finding, all of them, in its order. */
+  targetOptions: string[];
   recommendation: string;
   successor: string | null;
   successorProvenance: string | null;
@@ -242,21 +255,24 @@ function buildRail(demo: Omit<DemoProject, 'rail'>): DemoRailStep[] {
   ];
 }
 
-function planOf(findings: EvidenceFinding[]): { plan: DemoPlanItem[]; unplanned: number } {
+function planOf(findings: EvidenceFinding[], track: ProjectTrack): { plan: DemoPlanItem[]; unplanned: number } {
   const plan: DemoPlanItem[] = [];
   let unplanned = 0;
   for (const finding of findings) {
-    const target = finding.targetOptions?.[0];
-    if (!target) {
+    if (!finding.targetOptions?.length) {
       unplanned += 1;
       continue;
     }
+    const target = findingTarget(finding, track);
     plan.push({
       findingId: finding.id,
       title: finding.title,
       lineStart: finding.lineStart,
       severity: finding.severity,
-      target,
+      target: target.label,
+      targetKind: target.kind,
+      routeFit: target.routeFit,
+      targetOptions: [...finding.targetOptions],
       recommendation: finding.recommendation,
       successor: finding.sapReplacement?.objectName ?? null,
       successorProvenance: finding.sapReplacement?.confidence ?? null,
@@ -310,7 +326,7 @@ export function buildDemoProject(): DemoProject {
   const catalogSnapshot = catalogSnapshotKeyForProject({ s4Deployment: DEMO_DEPLOYMENT });
   const evidence = buildAbapEvidence(source, DEMO_SOURCE_FILE, DEMO_DEPLOYMENT, catalogSnapshot);
   const route = routeExtensibility(evidence, DEMO_DEPLOYMENT);
-  const { plan, unplanned } = planOf(evidence.findings);
+  const { plan, unplanned } = planOf(evidence.findings, trackOfRoute(route.recommendedRoute));
 
   const withoutRail: Omit<DemoProject, 'rail'> = {
     isDemo: true,

@@ -861,7 +861,12 @@ export function buildArchitectureContract(args: {
       });
       continue;
     }
-    // In-app rejected: the drivers are the reason, with lines.
+    // In-app rejected: the drivers are the reason, with lines. Without drivers
+    // there are two different states, and only one of them is a deviation:
+    // the recommended route can be side-by-side while this contract has no
+    // drivers simply because the run bound no target deployment (the rule
+    // needs it, see `drivers` above). Saying "see the declared deviation" there
+    // pointed the reader at a record that does not exist.
     alternatives.push({
       id,
       label: ALTERNATIVE_LABELS[id],
@@ -871,7 +876,11 @@ export function buildArchitectureContract(args: {
           ? `Rejected on the evidence: ${driverSentence(
               drivers,
             )} cannot run unchanged on the strict ABAP Cloud stack and would have to be replaced or decoupled first.`
-          : 'A route other than the recommended one was chosen and no construct of this run drives it off the stack, so the on-stack option is not rejected on evidence. See the declared deviation.',
+          : deviation
+            ? 'A route other than the recommended one was chosen and no construct of this run drives it off the stack, so the on-stack option is not rejected on evidence. See the declared deviation.'
+            : !deployment
+              ? 'The run bound no target deployment, and the rule that moves code off the stack depends on it, so this contract cannot reject the on-stack option on evidence. It stays open until the target is bound.'
+              : 'No construct of this run drives the code off the stack, so the on-stack option is not rejected on evidence.',
       basis: drivers.length > 0 ? 'evidence' : 'not-determined',
       citations: driverCitations(drivers),
     });
