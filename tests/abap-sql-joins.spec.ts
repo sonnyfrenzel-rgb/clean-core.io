@@ -180,4 +180,16 @@ test.describe('a three-table query is counted as three', () => {
     expect(model.joins.map((j) => j.type)).toEqual(['inner', 'left-outer', 'cross']);
     expect(model.joins.map((j) => j.table.alias)).toEqual(['I', 'K', 'T']);
   });
+
+  test('JOIN inside a quoted ON value is not a join (carried QA finding 8a7790223de2)', () => {
+    const model = parseSelect(
+      "SELECT h~vbeln FROM vbak AS h JOIN vbap AS i ON i~kind = 'JOIN fake_table' INTO TABLE @lt_rows WHERE h~vbeln = @lv_vbeln.",
+      'test.abap',
+      1,
+    );
+    expect(model.joins).toHaveLength(1);
+    expect(model.joins[0].table.name).toBe('VBAP');
+    // The ON text keeps its literal as written.
+    expect(JSON.stringify(model.joins[0])).toContain("'JOIN fake_table'");
+  });
 });
