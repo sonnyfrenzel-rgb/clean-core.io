@@ -27,6 +27,9 @@ import CcSelect from '@/components/cc/Select';
 import CcTextarea from '@/components/cc/Textarea';
 import { STATE_CLASSES } from '@/components/cc/state';
 import { stateChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
+import { provenance } from '@/lib/provenance';
+// The runner executes against mocks only, so a pass is "Demonstrated · mock", never "Proven" (QA f2dc77c6c912).
+const RUNNER_PASS = provenance('demonstrated-mock').label;
 import type { TestingPieSlice } from '@/components/TestingCharts';
 import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -768,7 +771,7 @@ export default function TestingSandboxPage() {
   // `lib/chart-colors.ts` (§1.8): no chart is green, so a pass is `information`
   // there, a failure `error`, and "no verdict" the dashed not-determined area.
   const pieData: TestingPieSlice[] = stats ? [
-    { name: 'Proven', value: stats.passed, color: stateChartColor('information').value },
+    { name: RUNNER_PASS, value: stats.passed, color: stateChartColor('information').value },
     { name: 'Failed', value: stats.failed, color: stateChartColor('error').value },
     ...(stats.inconclusive > 0
       ? [{ name: 'Not determined', value: stats.inconclusive, color: 'var(--cc-surface-muted)', notDetermined: true }]
@@ -1979,7 +1982,7 @@ export default function TestingSandboxPage() {
             <div className={clsx(CARD, 'px-4 py-2 flex items-center gap-4')}>
               <div className="flex items-center gap-2">
                 <span data-chart-swatch aria-hidden="true" className={clsx('w-2 h-2 rounded-full', stateChartColor('information').bg)}></span>
-                <span className="cc-text-meta text-cc-ink">{stats.passed} Proven</span>
+                <span className="cc-text-meta text-cc-ink">{stats.passed} {RUNNER_PASS}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span data-chart-swatch aria-hidden="true" className={clsx('w-2 h-2 rounded-full', stateChartColor('error').bg)}></span>
@@ -2003,7 +2006,7 @@ export default function TestingSandboxPage() {
               <div className="mt-4 flex justify-center gap-8">
                 <div className="text-center">
                   <p className="cc-text-title text-cc-ink">{stats.passed}</p>
-                  <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>Proven</p>
+                  <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>{RUNNER_PASS}</p>
                 </div>
                 <div className="text-center">
                   <p className="cc-text-title text-cc-ink">{stats.failed}</p>
