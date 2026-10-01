@@ -675,7 +675,10 @@ Structure the JSON exactly like this:
     let cancelled = false;
     void ensureProcessBaseline(idStr).then((outcome) => {
       if (cancelled || !outcome.ok) return;
-      baseRevision.current = outcome.record.revision;
+      // Forward only: a Save pressed before this answer landed has already
+      // moved the base past revision 1, and setting it back would get the next
+      // save refused as `revision-moved` (carried QA finding 85a623a08fcf).
+      baseRevision.current = newerBase(baseRevision.current, outcome.record.revision);
       setRevisionsKey((token) => token + 1);
     });
     return () => { cancelled = true; };
