@@ -18,7 +18,7 @@ import {
   type HandoverProject,
 } from '../lib/handover';
 import { buildAuditPackContents } from '../lib/audit-pack-build';
-import { workflowSteps, handoverBlockers } from '../lib/workflow-steps';
+import { workflowSteps, handoverBlockers, testEvidence } from '../lib/workflow-steps';
 import { buildProjectDecision } from '../lib/project-decision-build';
 import { SELF_DECLARATION } from '../lib/project-decision';
 import { sha256Hex } from '../lib/artefact-digest';
@@ -277,4 +277,22 @@ test.describe('the handover on screen', () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, 'the page scrolls sideways at 390 px').toBeLessThanOrEqual(0);
   });
+});
+
+test('one verdict under a duplicated case id is counted once (QA review of a88149856dcc)', () => {
+  const base = {
+    activeRunId: 'run-0001',
+    legacyCode: SOURCE,
+    generatedCode: 'export const ok = 1;\n',
+    testSuite: { code: "test('t1', () => {});" },
+    testCases: [
+      { id: 't1', name: 'Case', category: 'Unit', status: 'Passed' },
+      { id: 't1', name: 'Same id', category: 'Unit', status: 'Passed' },
+    ],
+  };
+  const p = { ...base, testRunReceipt: receiptFor(base, [{ id: 't1', status: 'Passed' }]) } as unknown as Parameters<typeof testEvidence>[0];
+  const evidence = testEvidence(p);
+  expect(evidence.total).toBe(2);
+  // One run verdict cannot make two cases verified.
+  expect(evidence.attestedPasses).toBe(1);
 });
