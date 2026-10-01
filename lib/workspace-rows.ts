@@ -2,6 +2,7 @@ import type { Project } from '@/lib/types';
 import { formatIsoDate } from '@/lib/format';
 import type { ObjectStatusValue } from '@/lib/object-status';
 import { staleness, workflowSteps, workflowSummary } from '@/lib/workflow-steps';
+import { projectProgress, type ProjectStage } from '@/lib/project-progress';
 
 /**
  * One row of "My workspace" — `DESIGN.md` §2.2, §2.4, mockup s7.
@@ -67,6 +68,12 @@ export interface WorkspaceRow {
   hasRun: boolean;
   /** Started from one of the shipped examples: fictitious code, real engine output. */
   fromExample: boolean;
+  /**
+   * Where the project stands in plain words (`lib/project-progress.ts`) — what
+   * the Status filter offers. `null` for the demo, which is not a project of
+   * anybody's and has no steps of its own.
+   */
+  stage: ProjectStage | null;
 }
 
 /**
@@ -170,10 +177,17 @@ export function toWorkspaceRow(
     access,
     hasRun,
     fromExample: project.fromExample === true,
+    stage: projectProgress(project).stage,
   };
 }
 
 /** The status filter's options — "Any status" is the screen's, not this list's. */
+/** The stages the rows are in, in the order a project moves — what the Status filter offers. */
+export function stagesPresent(rows: readonly WorkspaceRow[]): ProjectStage[] {
+  const order: ProjectStage[] = ['not-started', 'not-analysed', 'in-progress', 'all-done', 'handed-over'];
+  return order.filter((stage) => rows.some((row) => row.stage === stage));
+}
+
 export function statusesPresent(rows: readonly WorkspaceRow[]): ObjectStatusValue[] {
   const seen: ObjectStatusValue[] = [];
   for (const row of rows) if (!seen.includes(row.status)) seen.push(row.status);
@@ -182,7 +196,7 @@ export function statusesPresent(rows: readonly WorkspaceRow[]): ObjectStatusValu
 
 export interface WorkspaceFilter {
   search: string;
-  /** An object status, or '' for any. */
+  /** A project stage (`ProjectStage`), or '' for any. */
   status: string;
   /** A clean core level the project has findings at — 'A' … 'D' — or '' for any. */
   level: string;
@@ -232,7 +246,7 @@ export function applyWorkspaceFilter(
 ): WorkspaceRow[] {
   const needle = filter.search.trim().toLowerCase();
   return rows.filter((row) => {
-    if (filter.status && row.status !== filter.status) return false;
+    if (filter.status && row.stage !== filter.status) return false;
     if (filter.access && (row.isDemo || row.access !== filter.access)) return false;
     if (filter.level && hasLevel(row, filter.level) === false) return false;
     if (!needle) return true;

@@ -14,6 +14,8 @@ import { yourTurnItems } from '../lib/your-turn';
 import { processStepList } from '../lib/process-step-list';
 import { readSource } from '../lib/first-look';
 import { printHeaderLine } from '../lib/workspace-messages';
+import { projectProgress, SEGMENT_CLASS } from '../lib/project-progress';
+import { PHASES } from '../lib/workflow-steps';
 import type { ItFindingRow } from '../lib/it-findings';
 import type { Project } from '../lib/types';
 
@@ -162,5 +164,49 @@ test.describe('the workspace on paper — lib/process-step-list.ts', () => {
       'P-1 · run r1 · need revision 4 · printed 2026-10-01',
     );
     expect(printHeaderLine({ projectId: 'P-1', runId: null, revision: null, date: '2026-10-01' })).toContain('no signed run');
+  });
+});
+
+test.describe('a row a business reader understands — lib/project-progress.ts (owner feedback 01.10.2026)', () => {
+  const staged = { id: 'p', name: 'p', legacyCode: 'REPORT z.' } as Project & { id: string };
+  const analysed = {
+    id: 'q', name: 'q', legacyCode: 'REPORT z.', activeRunId: 'run-1', status: 'analyzed',
+    analysis: '{"cleanCoreScore": 40}', solutionDesign: '# design', worklist: [],
+  } as unknown as Project & { id: string };
+
+  for (const [name, project] of [['staged', staged], ['analysed', analysed], ['empty', { id: 'e', name: 'e' }]] as const) {
+    test(`${name}: the count is the number of done segments, and every segment names its step`, () => {
+      const progress = projectProgress(project as Project);
+      const doneSegments = progress.segments.filter((s) => s.state === 'done' || s.state === 'done-verified').length;
+      expect(progress.done).toBe(doneSegments);
+      expect(progress.countLabel).toBe(`${doneSegments} of ${progress.total} steps done`);
+      expect(progress.segments.map((s) => s.label)).toEqual(PHASES.map((p) => p.label));
+      for (const s of progress.segments) expect(s.label.length).toBeGreaterThan(0);
+    });
+  }
+
+  test('no done segment is drawn in the in-progress amber, and only verified work is green', () => {
+    expect(SEGMENT_CLASS.done).not.toMatch(/warning|success/);
+    expect(SEGMENT_CLASS['done-verified']).toMatch(/success/);
+    expect(SEGMENT_CLASS['done-verified']).not.toMatch(/warning/);
+    expect(SEGMENT_CLASS['in-progress']).toMatch(/warning/);
+    for (const state of ['not-started', 'stale', 'done'] as const) expect(SEGMENT_CLASS[state]).not.toMatch(/success/);
+    expect(SEGMENT_CLASS.stale).toMatch(/border-dashed/);
+    // Five states, five different looks.
+    expect(new Set(Object.values(SEGMENT_CLASS)).size).toBe(5);
+  });
+
+  test('the sentence is plain words — never a bare "draft" — and the next action says what it does', () => {
+    const s = projectProgress(staged);
+    expect(s.stage).toBe('not-analysed');
+    expect(s.sentence).toMatch(/^Not analysed yet/);
+    expect(s.sentence).not.toMatch(/\bdraft\b/i);
+    expect(s.next).toEqual({ label: 'Run the analysis', path: 'analyze' });
+    const e = projectProgress({ name: 'e' } as Project);
+    expect(e.stage).toBe('not-started');
+    expect(e.next?.label).toBe('Upload the code');
+    const a = projectProgress(analysed);
+    expect(a.stage).toBe('in-progress');
+    expect(a.sentence).toContain(a.countLabel);
   });
 });

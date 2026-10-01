@@ -14,9 +14,9 @@ import { quotaExhausted, runsRemaining, runsAreSelfFunded } from '@/lib/run-quot
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
-import { workflowSteps, workflowSummary, testEvidence, staleness, phaseTone, PHASE_TONE_CLASS, PHASES } from '@/lib/workflow-steps';
-import { projectStatus } from '@/lib/workspace-rows';
-import { objectStatus, type ObjectStatusValue } from '@/lib/object-status';
+import { workflowSteps, workflowSummary, testEvidence, staleness, PHASES } from '@/lib/workflow-steps';
+import { projectProgress, PROJECT_STAGE_LABEL, type ProjectStage } from '@/lib/project-progress';
+import ProjectProgressCell, { ProgressLegend } from '@/components/ProjectProgress';
 
 import StarterExamples, { type ExampleSnippet } from '@/components/StarterExamples';
 import DemoEntryCard from '@/components/demo/DemoEntryCard';
@@ -33,7 +33,6 @@ import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageBox from '@/components/cc/MessageBox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcObjectIdentifier from '@/components/cc/ObjectIdentifier';
-import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcSelect from '@/components/cc/Select';
 import CcSkeleton from '@/components/cc/Skeleton';
 import CcTable, { type CcTableColumn, type CcTableRowSpec } from '@/components/cc/Table';
@@ -324,7 +323,7 @@ export default function Dashboard() {
 
   // The project list's live filter (§2.5).
   const [projectSearch, setProjectSearch] = useState('');
-  const [projectStatusFilter, setProjectStatusFilter] = useState<ObjectStatusValue | ''>('');
+  const [projectStatusFilter, setProjectStatusFilter] = useState<ProjectStage | ''>('');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [inviting, setInviting] = useState<{ id: string; name: string } | null>(null);
 
@@ -612,20 +611,19 @@ export default function Dashboard() {
   };
 
   const rows = useMemo(
-    () => projects.map((project) => ({ project, status: projectStatus(project) })),
+    () => projects.map((project) => ({ project, progress: projectProgress(project) })),
     [projects],
   );
   const shownRows = useMemo(() => {
     const needle = projectSearch.trim().toLowerCase();
-    return rows.filter(({ project, status }) => {
-      if (projectStatusFilter && status.status !== projectStatusFilter) return false;
+    return rows.filter(({ project, progress }) => {
+      if (projectStatusFilter && progress.stage !== projectStatusFilter) return false;
       return !needle || `${project.name ?? ''} ${project.id}`.toLowerCase().includes(needle);
     });
   }, [rows, projectSearch, projectStatusFilter]);
   const statusesInList = useMemo(() => {
-    const seen: ObjectStatusValue[] = [];
-    for (const r of rows) if (!seen.includes(r.status.status)) seen.push(r.status.status);
-    return seen;
+    const order: ProjectStage[] = ['not-started', 'not-analysed', 'in-progress', 'all-done', 'handed-over'];
+    return order.filter((stage) => rows.some((r) => r.progress.stage === stage));
   }, [rows]);
   const projectFilterActive = projectSearch.trim().length > 0 || projectStatusFilter !== '';
   const clearProjectFilter = useCallback(() => {
@@ -748,10 +746,7 @@ export default function Dashboard() {
     </CcMessageStrip>
   );
 
-  const tableRows: CcTableRowSpec[] = shownRows.map(({ project, status }) => {
-    const phases = workflowSteps(project);
-    const { doneCount, total, next } = workflowSummary(phases);
-    const statusLabel = doneCount === total ? 'All phases complete' : `${next.label} · ${next.badge}`;
+  const tableRows: CcTableRowSpec[] = shownRows.map(({ project, progress }) => {
     const isOpen = !!expanded[project.id];
     const toggle = () => setExpanded((prev) => ({ ...prev, [project.id]: !prev[project.id] }));
 
@@ -777,32 +772,10 @@ export default function Dashboard() {
             </Link>
           </span>
         ),
-        progress: (
-          <span className="flex w-full flex-col gap-2" data-project-progress>
-            <span className="flex flex-wrap items-center gap-2">
-              <CcObjectStatus value={status.status} />
-              <span className="ml-auto cc-text-meta tabular-nums text-cc-ink-muted">{doneCount}/{total}</span>
-            </span>
-            <span className="cc-text-meta text-cc-ink-muted" title={next.detail}>{statusLabel}</span>
-            {/* The seven phases in the stepper's colours, so the row and the
-                stage pages cannot tell two different stories. The ladder is
-                `phaseTone` from the shared contract, never `project.status`. */}
-            <ol className="m-0 flex list-none gap-1 p-0" aria-label="Phases">
-              {phases.map((p) => (
-                <li
-                  key={p.key}
-                  title={`${p.n}. ${p.label} — ${p.badge}: ${p.detail}`}
-                  data-phase={p.key}
-                  data-phase-state={p.state}
-                  data-phase-tone={phaseTone(p)}
-                  className={`h-2 flex-1 rounded-full ${PHASE_TONE_CLASS[phaseTone(p)].fill}`}
-                >
-                  <span className="sr-only">{`${p.label}: ${p.badge}`}</span>
-                </li>
-              ))}
-            </ol>
-          </span>
-        ),
+        // One plain sentence, the seven steps as a bar that agrees with its
+        // count, and the next action as a link (owner feedback 01.10.2026,
+        // `lib/project-progress.ts`). The phase contract is the only source.
+        progress: <ProjectProgressCell progress={progress} projectHref={`/project/${project.id}`} id={project.id} />,
         created: (
           <span className="font-cc-mono text-[12px]">
             <CcDateText value={project.createdAt} format="iso" fallback="no date recorded" />
@@ -977,13 +950,13 @@ export default function Dashboard() {
                   active={projectFilterActive}
                   onClear={clearProjectFilter}
                 >
-                  <CcSelect<ObjectStatusValue | 'any'>
+                  <CcSelect<ProjectStage | 'any'>
                     label="Status"
                     value={projectStatusFilter || 'any'}
                     onChange={(v) => setProjectStatusFilter(v === 'any' ? '' : v)}
                     options={[
                       { value: 'any', label: 'Any status' },
-                      ...statusesInList.map((value) => ({ value, label: objectStatus(value).label })),
+                      ...statusesInList.map((value) => ({ value, label: PROJECT_STAGE_LABEL[value] })),
                     ]}
                   />
                 </CcFilterBar>
@@ -994,7 +967,11 @@ export default function Dashboard() {
                     onClear={clearProjectFilter}
                   />
                 ) : (
-                  <CcTable caption="Projects" columns={PROJECT_COLUMNS} rows={tableRows} />
+                  <>
+                    {/* What the step bar in every row means (owner feedback 01.10.2026). */}
+                    <ProgressLegend />
+                    <CcTable caption="Projects" columns={PROJECT_COLUMNS} rows={tableRows} />
+                  </>
                 )}
               </div>
             )}

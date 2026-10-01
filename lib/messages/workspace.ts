@@ -189,6 +189,7 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'myWorkspace.yourTurnIntro': 'The next step of each, taken from the project itself — no model call.',
   'myWorkspace.yourTurnNothing':
     'Nothing is waiting for you: every project of yours is either finished as far as this product goes, or has nothing staged yet.',
+  'myWorkspace.demoSentence': 'A worked example to read — nothing in it is signed, run or saved.',
   'myWorkspace.exampleHeadline': 'Example project — fictitious code.',
   'myWorkspace.exampleBody':
     'The findings and any signature are real engine output on a program written for demonstration.',

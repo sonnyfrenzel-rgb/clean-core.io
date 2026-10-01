@@ -35,7 +35,7 @@ import {
   applyWorkspaceFilter,
   filterIsActive,
   sortWorkspaceRows,
-  statusesPresent,
+  stagesPresent,
   toWorkspaceRow,
   EMPTY_FILTER,
   type WorkspaceFilter,
@@ -43,7 +43,8 @@ import {
   type WorkspaceSort,
 } from '@/lib/workspace-rows';
 import { ROW_LEVELS, rowHasLevel, type RowFacts, type RowLevels } from '@/lib/workspace-row-facts';
-import { objectStatus } from '@/lib/object-status';
+import { projectProgress, PROJECT_STAGE_LABEL } from '@/lib/project-progress';
+import ProjectProgressCell, { ProgressLegend } from '@/components/ProjectProgress';
 import { AnalysisRunCancelled, runAnalysis, runScope, type AnalysisRunStage } from '@/lib/analysis-run';
 import { declaredTargetOf } from '@/lib/assessment-target';
 import type { Project } from '@/lib/types';
@@ -54,7 +55,6 @@ import CcFilterBar from '@/components/cc/FilterBar';
 import CcMessageBox from '@/components/cc/MessageBox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcObjectIdentifier from '@/components/cc/ObjectIdentifier';
-import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcRunIndicator, { CcRunCost } from '@/components/cc/RunIndicator';
 import CcSelect from '@/components/cc/Select';
@@ -124,7 +124,7 @@ const COLUMNS: readonly CcTableColumn[] = [
   { key: 'findings', label: t('workspace.colFindings'), numeric: true, width: '88px' },
   { key: 'levels', label: wt('myWorkspace.colLevels'), width: '172px' },
   { key: 'rules', label: wt('myWorkspace.colRules'), numeric: true, width: '120px' },
-  { key: 'status', label: t('workspace.colStatus'), width: '210px' },
+  { key: 'status', label: t('workspace.colStatus'), width: '240px' },
   { key: 'lastChange', label: t('workspace.colLastChange'), numeric: true, width: '112px' },
   { key: 'actions', label: t('workspace.colActions'), action: true, width: '96px' },
 ];
@@ -302,6 +302,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
       access: 'own',
       hasRun: false,
       fromExample: false,
+      stage: null,
     }),
     [demo.lines, demo.findings],
   );
@@ -536,10 +537,21 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
         levels: analysed ? <LevelsCell facts={rowFacts?.levels} /> : <Absent>{t('workspace.notAnalysed')}</Absent>,
         rules: analysed ? <RulesCell facts={rowFacts?.rules} /> : <Absent>{t('workspace.notAnalysed')}</Absent>,
         status: (
-          <span className="flex flex-col items-start gap-1">
-            <CcObjectStatus value={row.status} />
+          <span className="flex w-full flex-col items-start gap-1">
+            {row.isDemo ? (
+              // The demo is nobody's project and has no steps of its own: one
+              // plain sentence, never a status it did not earn.
+              <span className="text-[13px] leading-snug font-semibold text-cc-ink" data-project-sentence="">
+                {wt('myWorkspace.demoSentence')}
+              </span>
+            ) : (
+              <ProjectProgressCell
+                progress={projectProgress(projectById.get(row.id) ?? null)}
+                projectHref={`/project/${row.id}`}
+                id={row.id}
+              />
+            )}
             {row.stale ? <CcProvenanceChip value="stale" note={row.stale.note} /> : null}
-            <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">{row.statusDetail}</span>
             {runnable(row) && !cell ? (
               <span className="mt-1 flex flex-col items-start gap-1">
                 <CcButton
@@ -696,7 +708,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
                   onChange={(v) => setFilter((f) => ({ ...f, status: v === 'any' ? '' : v }))}
                   options={[
                     { value: 'any', label: t('workspace.anyStatus') },
-                    ...statusesPresent(allRows).map((value) => ({ value, label: objectStatus(value).label })),
+                    ...stagesPresent(allRows).map((value) => ({ value, label: PROJECT_STAGE_LABEL[value] })),
                   ]}
                 />
                 <CcSelect<string>
@@ -732,7 +744,13 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           {shownRows.length === 0 ? (
             <CcNoMatches title={t('workspace.noMatch')} reason={t('workspace.noMatchReason')} onClear={clear} />
           ) : (
-            <CcTable caption={t('workspace.projects')} columns={COLUMNS} rows={tableRows} />
+            <>
+              {/* What the step bar in every row means — one line, above the list. */}
+              <div className="mb-2">
+                <ProgressLegend />
+              </div>
+              <CcTable caption={t('workspace.projects')} columns={COLUMNS} rows={tableRows} />
+            </>
           )}
 
           {shownRows.length > FIRST_ROWS ? (
@@ -791,7 +809,9 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
                         >
                           {row.name}
                         </Link>
-                        <CcObjectStatus value={row.status} />
+                        <span className="text-[12px] font-medium text-cc-ink-muted">
+                          {row.stage ? PROJECT_STAGE_LABEL[row.stage] : null}
+                        </span>
                       </li>
                     ))}
                   </ul>

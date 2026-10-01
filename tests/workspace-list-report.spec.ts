@@ -5,6 +5,7 @@ import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { CC_MESSAGES } from '../lib/cc-messages';
+import { WORKSPACE_MESSAGES } from '../lib/workspace-messages';
 import { DEMO_PROJECT_TITLE, DEMO_TAG } from '../lib/demo-marks';
 import { OBJECT_STATUS } from '../lib/object-status';
 import { signInViaLanding } from './helpers/sign-in';
@@ -166,14 +167,12 @@ test.describe('before the first project', () => {
 
     // Roadmap 0.10 marks every phase of the demo unproven: it produces no signed
     // run and executes no test. A first row that reads as a finished project is
-    // the flattery this screen exists to refuse.
-    const demoStatus = await page
-      .locator('[data-cc-table-row] [data-cc-object-status]')
-      .first()
-      .getAttribute('data-cc-object-status');
-    expect(demoStatus, 'the demo row claims a status it did not earn').not.toBe('handed-over');
-    expect(demoStatus).not.toBe('done');
-    expect(demoStatus).toBe('partial');
+    // the flattery this screen exists to refuse — so the demo row says in one
+    // plain sentence what it is, and carries no status word and no step bar.
+    const demoRow = page.locator('[data-cc-table-row]').first();
+    await expect(demoRow.locator('[data-project-sentence]')).toHaveText(WORKSPACE_MESSAGES['myWorkspace.demoSentence']);
+    await expect(demoRow).not.toContainText('handed over');
+    expect(await demoRow.locator('[data-progress-bar]').count()).toBe(0);
     expect(
       await page.locator('[data-cc-table] [data-provenance="proven"]').count(),
       'the demo row carries a proof chip',
@@ -310,12 +309,14 @@ test.describe('with projects', () => {
     ).toBe(0);
     await expect(row).toContainText(CC_MESSAGES['workspace.notAnalysed']);
 
-    // Status: one of the ten object statuses, and the one that means "there is
-    // text here and nothing has proved anything about it".
-    await expect(row.locator('[data-cc-object-status="draft"]')).toBeVisible();
-    await expect(row.locator('[data-cc-object-status-label]')).toHaveText(
-      OBJECT_STATUS['draft'].label,
-    );
+    // Status: one plain sentence, not a bare "draft" (owner feedback 01.10.2026),
+    // a bar whose done segments are the count, and the next action as a link.
+    await expect(row.locator('[data-project-progress]')).toHaveAttribute('data-project-stage', 'not-analysed');
+    await expect(row.locator('[data-project-sentence]')).toContainText('Not analysed yet');
+    expect(await row.locator('[data-cc-object-status]').count(), 'a bare status word is back').toBe(0);
+    await expect(row.locator('[data-project-count]')).toHaveText('0 of 7 steps done');
+    expect(await row.locator('[data-progress-bar] [data-segment-state^="done"]').count()).toBe(0);
+    await expect(row.locator('[data-project-next]')).toHaveText('Next: Run the analysis');
 
     // Last change: the ISO date of §3, in mono.
     await expect(row.locator('[data-cc-table-cell="lastChange"]')).toContainText(
@@ -331,14 +332,11 @@ test.describe('with projects', () => {
     await expect(row).toBeVisible();
     await expect(row.locator('[data-provenance="stale"]')).toBeVisible();
 
-    // DESIGN.md §4.1: *stale* and *signed* are provenance, not object statuses —
-    // which is how "stale" once ended up next to "failed" in the same red.
-    const status = await row
-      .locator('[data-cc-object-status]')
-      .first()
-      .getAttribute('data-cc-object-status');
-    expect(status, 'stale was rendered as an object status').not.toBe('failed');
-    expect(Object.keys(OBJECT_STATUS)).toContain(status);
+    // DESIGN.md §4.1: *stale* is provenance, not a status of its own — the row
+    // says it in its sentence, and the stale step is drawn dashed, never red.
+    await expect(row.locator('[data-project-sentence]')).toContainText('no longer match the code');
+    const counted = await row.locator('[data-progress-bar] [data-segment-state^="done"]').count();
+    await expect(row.locator('[data-project-count]')).toHaveText(`${counted} of 7 steps done`);
 
     // It counted the findings that are on record, and did not invent a level.
     await expect(row.locator('[data-workspace-findings]')).toHaveText('2');
