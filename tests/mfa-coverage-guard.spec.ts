@@ -20,6 +20,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { GATED_FILES, MUST_NOT_GATE, MUST_STEP_UP, STEP_UP_IMPLEMENTATION } from './helpers/gated-routes';
+import { classifyMfaPaste, OLD_RECOVERY_CODE_MESSAGE } from '../lib/mfa-paste';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -184,5 +185,28 @@ test.describe('the client never holds a session that is waiting for its second f
     expect(s).not.toMatch(/placeholder="[^"]*(?:backup|recovery)[^"]*"/i);
     expect(s).not.toMatch(/label[^\n]*(?:backup|recovery) code/i);
     expect(s).toContain('Lost the authenticator?');
+  });
+
+  test('an old recovery code pasted into the sign-in is told it no longer exists, and is never verified', () => {
+    // Carried QA finding 108f6c87b29f: the decision itself, called — not the
+    // wording found near it in the source.
+    for (const old of ['CC-AB12-CD34', '  cc-ab12-cd34\n']) {
+      const paste = classifyMfaPaste(old);
+      expect(paste.kind, `${JSON.stringify(old)} is not recognised as an old code`).toBe('old-recovery-code');
+      expect(paste.kind === 'old-recovery-code' && paste.message).toBe(OLD_RECOVERY_CODE_MESSAGE);
+    }
+    expect(OLD_RECOVERY_CODE_MESSAGE).toMatch(/no longer exist/);
+    expect(classifyMfaPaste(' 123456 ')).toEqual({ kind: 'totp', code: '123456' });
+    for (const other of ['12345', '1234567', 'abcdef', 'CC-AB12-CD345', '']) {
+      expect(classifyMfaPaste(other).kind, JSON.stringify(other)).toBe('ignore');
+    }
+    // The wiring: the paste handler asks this function and shows its message.
+    const s = source();
+    const at = s.indexOf('const handleMfaPaste');
+    expect(at).toBeGreaterThan(-1);
+    const handler = s.slice(at, s.indexOf('};', at));
+    expect(handler).toContain('classifyMfaPaste(');
+    expect(handler).toContain('setAuthError(paste.message)');
+    expect(handler.indexOf('return;'), 'an old code falls through to the verification').toBeLessThan(handler.indexOf('handleVerifyMfa('));
   });
 });
