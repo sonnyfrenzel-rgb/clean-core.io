@@ -13,7 +13,6 @@ import ShellHelpMenu, {
   SHELL_TRIGGER,
   useShellMenu,
 } from '@/components/ShellHelpMenu';
-import CcButton from '@/components/cc/Button';
 import CcIconButton from '@/components/cc/IconButton';
 import CcMessageBox from '@/components/cc/MessageBox';
 import CcTag from '@/components/cc/Tag';
@@ -314,20 +313,12 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
               </span>
             )}
 
-            <span className="hidden sm:inline-flex">
-              <CcButton
-                variant="ghost"
-                icon={<HelpCircle size={16} aria-hidden={true} />}
-                onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
-                data-assistant-trigger="header"
-              >
-                {assistantLabel}
-              </CcButton>
-            </span>
-
-            {/* Help, where §2.1 puts it in the shell bar — "Keyboard shortcuts"
-                lives here (§5.9 item 12, roadmap 3.0.4). */}
-            <ShellHelpMenu assistantLabel={assistantLabel} />
+            {/* Help, where §2.1 puts it in the shell bar: one button with the
+                "?" and a word on it, whose menu leads with the assistant and
+                then lists keyboard shortcuts (§5.9 item 12, roadmap 3.0.4) and
+                "How it works". There used to be two "?" buttons side by side —
+                the assistant and this menu (Sonny, 01.10.2026). */}
+            <ShellHelpMenu assistantLabel={assistantLabel} inProject={inProject} />
 
             <div ref={accountMenuRootRef} className="relative">
               <button

@@ -2,9 +2,9 @@
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, CircleHelp, Keyboard, X } from 'lucide-react';
+import { BookOpen, ChevronDown, CircleHelp, Keyboard, MessageSquare, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CC_BUTTON_BASE, CC_BUTTON_VARIANT_CLASSES } from '@/components/cc/Button';
+import { CC_BUTTON_BASE, CC_BUTTON_DENSITY_CLASSES, CC_BUTTON_VARIANT_CLASSES } from '@/components/cc/Button';
 import CcIconButton from '@/components/cc/IconButton';
 
 /**
@@ -32,10 +32,22 @@ import CcIconButton from '@/components/cc/IconButton';
  *
  * `?` (Shift + /) opens the list from anywhere that is not a text field.
  *
+ * **One entry for help, not two** (Sonny, 01.10.2026: two question-mark
+ * buttons side by side read as irrational). The shell bar used to carry a
+ * ghost button "Ask this case" that opened the assistant *and* this menu as a
+ * bare "?" beside it. Now there is this one button, with the "?" and a word on
+ * it — "Ask this case" in a project, "Help" elsewhere — and the assistant is
+ * the first item of the menu, set apart from the rest: one more press to the
+ * panel, and one place to look for any kind of help. The menu item carries
+ * `data-assistant-trigger="header"`, the contract the specs open the
+ * assistant from the shell bar by; the panel hands the focus back to this
+ * button when it closes.
+ *
  * Below `sm` the trigger is not shown: on a phone the shell bar already holds
  * the logo, the path, the quota and the account, and a fifth element pushed it
- * past the screen. The assistant is in the account menu there, and a phone has
- * no keyboard to list shortcuts for; a tablet with one still gets `?`.
+ * past the screen. The assistant is the floating button and in the account
+ * menu there, and a phone has no keyboard to list shortcuts for; a tablet with
+ * one still gets `?`.
  */
 
 /**
@@ -241,9 +253,16 @@ function isTyping(target: EventTarget | null): boolean {
 
 export default function ShellHelpMenu({
   assistantLabel,
+  inProject,
 }: {
   /** "Ask this case" inside a project, "Ask the assistant" elsewhere — the layout decides. */
   assistantLabel: string;
+  /**
+   * Inside a project the button says what most readers open it for, "Ask this
+   * case"; elsewhere it says "Help". The assistant item then says which of the
+   * two boundaries of the assistant will open (`components/GlossaryChatbot.tsx`).
+   */
+  inProject: boolean;
 }) {
   const {
     open: menuOpen,
@@ -305,15 +324,41 @@ export default function ShellHelpMenu({
       <button
         ref={triggerRef}
         {...triggerProps}
-        aria-label="Help"
         data-help-menu-trigger=""
-        className={cn(SHELL_TRIGGER, 'hidden w-8 sm:inline-flex pointer-coarse:w-11')}
+        className={cn(SHELL_TRIGGER, CC_BUTTON_DENSITY_CLASSES.compact, 'hidden pr-2 sm:inline-flex')}
       >
+        {/* The visible words are the accessible name: no `aria-label` that
+            would say something else than the button does (WCAG 2.5.3). */}
         <CircleHelp size={16} aria-hidden={true} />
+        {inProject ? 'Ask this case' : 'Help'}
+        <ChevronDown size={14} aria-hidden={true} className="text-cc-ink-muted" />
       </button>
 
       {menuOpen && (
         <div ref={menuRef} {...menuProps} aria-label="Help" data-help-menu-panel="" className={cn(SHELL_MENU_PANEL, SHELL_MENU_ITEMS)}>
+          {/* The assistant first, and set apart: the icon on an ink tile and a
+              line under the name that says what it answers from. */}
+          <button
+            type="button"
+            role="menuitem"
+            tabIndex={-1}
+            data-assistant-trigger="header"
+            onClick={() => {
+              closeMenu(false);
+              window.dispatchEvent(new CustomEvent('open-chatbot', { detail: { returnFocusTo: triggerRef.current } }));
+            }}
+          >
+            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-cc-row bg-cc-ink text-cc-on-dark">
+              <MessageSquare size={14} aria-hidden={true} />
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="font-bold">{assistantLabel}</span>
+              <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">
+                {inProject ? 'Answers from the evidence of this project' : 'Questions about Clean Core and this product'}
+              </span>
+            </span>
+          </button>
+          <hr className={SHELL_MENU_SEPARATOR} />
           <button
             type="button"
             role="menuitem"
@@ -325,18 +370,6 @@ export default function ShellHelpMenu({
             <kbd className="ml-auto rounded-[4px] border border-cc-line bg-cc-surface-muted px-1 font-cc-mono text-[11px] font-medium text-cc-ink-muted" aria-hidden={true}>
               ?
             </kbd>
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            tabIndex={-1}
-            data-assistant-trigger="help"
-            onClick={() => {
-              closeMenu(false);
-              window.dispatchEvent(new CustomEvent('open-chatbot', { detail: { returnFocusTo: triggerRef.current } }));
-            }}
-          >
-            <CircleHelp size={16} aria-hidden={true} /> {assistantLabel}
           </button>
           <Link href="/how-it-works" role="menuitem" tabIndex={-1} onClick={() => closeMenu(false)}>
             <BookOpen size={16} aria-hidden={true} /> How it works

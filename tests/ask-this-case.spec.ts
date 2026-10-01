@@ -363,8 +363,14 @@ async function openChat(page: Page): Promise<void> {
   // The header button: since D.8 (Sonny, 30.09.2026) the floating button is
   // off on desktop by default, and this spec runs at desktop width. The same
   // checks, through the entry a desktop reader actually has.
+  //
+  // Since 01.10.2026 (Sonny: two "?" buttons side by side) the shell bar has
+  // one help button, and the assistant is the first item of its menu, carrying
+  // `data-assistant-trigger="header"`. The menu is opened inside the loop
+  // whenever it is not showing.
+  const button = page.locator('[data-help-menu-trigger]');
   const toggle = page.locator('[data-assistant-trigger="header"]');
-  await expect(toggle).toBeVisible({ timeout: 90000 });
+  await expect(button).toBeVisible({ timeout: 90000 });
   const panel = page.locator('[data-chatbot-scope]');
 
   // Nothing here is optional: the assertion is the last line of the block and
@@ -382,7 +388,11 @@ async function openChat(page: Page): Promise<void> {
   // for months.
   await expect(async () => {
     const alreadyOpen = await panel.isVisible().catch(() => false);
-    if (!alreadyOpen) await toggle.click({ timeout: 15000 });
+    if (!alreadyOpen) {
+      const menuShowing = await toggle.isVisible().catch(() => false);
+      if (!menuShowing) await button.click({ timeout: 15000 });
+      await toggle.click({ timeout: 5000 });
+    }
     await expect(panel, 'the assistant panel never opened').toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 60000 });
 }
@@ -423,9 +433,9 @@ test.describe('the assistant, inside a project, in a browser', () => {
     await signIn(page, OWNER);
     await page.goto(`/project/${LIVE_PROJECT}/analyze`, { waitUntil: 'domcontentloaded' });
 
-    const toggle = page.locator('[data-assistant-trigger="header"]');
-    await expect(toggle).toBeVisible({ timeout: 90000 });
-    await expect(toggle, 'the assistant still advertises itself as "Ask AI"').toContainText('Ask this case');
+    const button = page.locator('[data-help-menu-trigger]');
+    await expect(button).toBeVisible({ timeout: 90000 });
+    await expect(button, 'the assistant still advertises itself as "Ask AI"').toContainText('Ask this case');
     await openChat(page);
 
     // The panel says which boundary is in force before anything is typed.
