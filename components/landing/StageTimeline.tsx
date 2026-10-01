@@ -67,6 +67,24 @@ export default function StageTimeline({ stages }: { stages: TimelineStage[] }) {
     e.preventDefault();
   };
 
+  // A link to `#stage-<key>` (the hero's chain of evidence) opens that stage: the
+  // tab on a desktop, the disclosure on a phone. Without JavaScript the anchor
+  // still lands on the timeline.
+  const keys = stages.map((s) => s.key).join(' ');
+  useEffect(() => {
+    const order = keys.split(' ');
+    const pick = () => {
+      const m = /^#stage-([a-z]+)$/.exec(window.location.hash);
+      const i = m ? order.indexOf(m[1]) : -1;
+      if (i < 0) return;
+      setCurrent(i);
+      setOpen((prev) => new Set(prev).add(i));
+    };
+    pick();
+    window.addEventListener('hashchange', pick);
+    return () => window.removeEventListener('hashchange', pick);
+  }, [keys]);
+
   const toggle = (i: number) =>
     setOpen((prev) => {
       const next = new Set(prev);
@@ -77,6 +95,9 @@ export default function StageTimeline({ stages }: { stages: TimelineStage[] }) {
 
   return (
     <div className="mx-auto mt-12 w-full max-w-6xl px-4 sm:px-6" data-stage-timeline="">
+      {stages.map((s) => (
+        <span key={s.key} id={`stage-${s.key}`} aria-hidden="true" className="block h-0 scroll-mt-24" />
+      ))}
       {/* Desktop: the timeline and its panel. */}
       <div className="hidden md:block">
         <div className="relative" ref={track}>
