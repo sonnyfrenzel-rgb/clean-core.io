@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
@@ -12,7 +12,7 @@ import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import StageProgress from '@/components/StageProgress';
 import type { Project } from '@/lib/types';
-import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft, Check, Circle, Plug } from 'lucide-react';
+import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft, Check, Circle, Plug, Lock, TestTube } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -56,7 +56,16 @@ import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import StaleNotice from '@/components/StaleNotice';
 import { STORED_TEST_SUITE_REJECTED } from './test-suite-schema';
-import TestingStatus from '@/components/testing/TestingStatus';
+import TestingHeader, { TestingMetaLine, type MetaPart } from '@/components/testing/TestingHeader';
+import SectionAnchorBar from '@/components/testing/SectionAnchorBar';
+import ToolSection from '@/components/testing/ToolSection';
+import TestPipeline from '@/components/testing/TestPipeline';
+import HandChecks from '@/components/testing/HandChecks';
+import type { StripTick } from '@/components/testing/ProgramStrip';
+import { readProgram } from '@/components/testing/program-reading';
+import { coveringTestRunReceipt } from '@/lib/test-receipt';
+import { catalogForReader } from '@/lib/messages/demo';
+import { normaliseSeverity } from '@/lib/severity';
 import LastRunRow from '@/components/testing/LastRunRow';
 import TabExplainer from '@/components/testing/TabExplainer';
 import { lastRun, scenarios } from '@/components/testing/testing-summary';
@@ -140,8 +149,8 @@ const ENV_SEGMENTS = [
   { value: 'live', label: 'Check tenant connection' },
 ] as const;
 
-/** Main column and right rail, as in mockup s8; one column on a phone. */
-const RAIL_GRID = 'grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-4 items-start';
+/** Main column and a 360 px side column, as in proposal A; one column below `lg`. */
+const RAIL_GRID = 'grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-5 items-start';
 
 const AUTH_TYPE_OPTIONS = [
   { value: 'basic', label: 'Basic Authentication (Username + Password)' },
@@ -841,6 +850,19 @@ export default function TestingSandboxPage() {
    */
   const VERDICT_STATE = { pass: 'success', fail: 'error', none: 'neutral' } as const;
 
+  /**
+   * A scenario's last verdict, from the same record as the facet tiles: the
+   * covering receipt when there is one, else this session's run. Never the
+   * status string stored on the case — a browser can write that.
+   */
+  const receiptVerdicts = new Map((coveringTestRunReceipt(project)?.verdicts ?? []).map((v) => [v.id, v.status as string]));
+  const sessionVerdicts = new Map((testResults ?? []).map((r) => [String(r.id ?? ''), r.status as string | undefined]));
+  const verdictOf = (tc: { id?: unknown }): string | null => {
+    const id = String(tc.id ?? '');
+    const v = run.kind === 'recorded' ? receiptVerdicts.get(id) : run.kind === 'session' ? sessionVerdicts.get(id) : undefined;
+    return v ?? null;
+  };
+
   // Tests without a verdict get their own slice. Leaving them out would make a
   // chart of four passes and twenty skips look like a clean sweep. Colours from
   // `lib/chart-colors.ts` (§1.8): no chart is green, so a pass is `information`
@@ -932,6 +954,55 @@ export default function TestingSandboxPage() {
 
   const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
 
+  /** The engine's coverage report and the program's routines, read from the source on the project. */
+  const program = useMemo(() => readProgram(project?.legacyCode), [project?.legacyCode]);
+  /**
+   * The findings for the strip's ticks. The evidence engine carries the SAP
+   * catalog, so it is loaded after the page rather than in its bundle; until it
+   * arrives the strip shows the routines and the hand-check marks only.
+   */
+  const [tickState, setTickState] = useState<{ code: string; ticks: StripTick[] } | null>(null);
+  const evidenceFile = project?.auditMetadata?.inputFingerprint?.fileName || 'main.abap';
+  const evidenceDeployment = project?.s4Deployment === 'public' ? 'public' : 'private';
+  useEffect(() => {
+    const code = project?.legacyCode;
+    if (typeof code !== 'string' || !code.trim()) return undefined;
+    let live = true;
+    import('@/lib/abap/evidence-model')
+      .then(({ buildAbapEvidence }) => {
+        if (!live) return;
+        const report = buildAbapEvidence(code, evidenceFile, evidenceDeployment);
+        setTickState({
+          code,
+          ticks: report.findings.flatMap((f) => {
+            const severity = normaliseSeverity(f.severity);
+            return severity ? [{ id: f.id, line: f.lineStart, severity, title: f.title }] : [];
+          }),
+        });
+      })
+      .catch((err) => {
+        // The strip still shows the routines and the hand-check marks.
+        console.error('The evidence engine could not be loaded for the program strip:', err);
+      });
+    return () => {
+      live = false;
+    };
+  }, [project?.legacyCode, evidenceFile, evidenceDeployment]);
+  /** Ticks only for the source they were computed from. */
+  const findingTicks: StripTick[] = tickState && tickState.code === project?.legacyCode ? tickState.ticks : [];
+
+  /** The mono line under the lead: file, size, catalog and engine of the active run — only what was recorded. */
+  const metaParts: MetaPart[] = [];
+  {
+    const fp = project?.auditMetadata?.inputFingerprint;
+    const card = project?.auditMetadata?.modelCard;
+    if (fp?.fileName) metaParts.push({ value: fp.fileName });
+    const lineCount = fp?.lineCount ?? program?.lines;
+    if (lineCount) metaParts.push({ value: `${lineCount} lines` });
+    if (card?.catalogVersion) metaParts.push({ label: 'catalog', value: catalogForReader(card.catalogVersion), title: card.catalogVersion });
+    if (card?.engineVersion) metaParts.push({ label: 'engine', value: card.engineVersion });
+  }
+
   const phases = workflowSteps(project);
   /** The last run, from the receipt on the project or this session — never assumed. */
   const run = lastRun(project, testResults);
@@ -1003,233 +1074,118 @@ export default function TestingSandboxPage() {
           : 'Generate test cases and run them against mocks in a restricted Node.js process.'}
       </StageHeader>
 
-      {/* The answer first (mockup s8): where testing stands, in one sentence,
-          from the case list, the receipt and this session — before any tab. */}
-      <TestingStatus
-        caseCount={testCases.length}
+      {/* The answer first (proposal A, owner decision 01.10.2026): the meta line,
+          four facet tiles and the status line — where testing stands, from the
+          case list, the receipt and this session — before any tab. */}
+      <TestingMetaLine parts={metaParts} />
+      <TestingHeader
+        scenarios={{
+          count: testCases.length,
+          rejected: !!storedSuiteRejected,
+          emptyReason: modelAvailability.enabled('testing')
+            ? 'Generate them from the target code, then run them against mocks'
+            : 'Generating them needs the testing model, which is not available for this account',
+        }}
         run={run}
-        rejected={!!storedSuiteRejected}
         blocked={testRunBlocked(project)}
-        canGenerate={modelAvailability.enabled('testing')}
         isAbapCloud={isAbapCloud}
+        handChecks={{
+          count: program ? program.gaps.length : null,
+          lines: program ? program.gaps.map((g) => g.firstLine) : [],
+        }}
+        tenantLocked={LIVE_TEST_EXECUTION.locked}
+        status={[
+          testCases.length > 0
+            ? { label: 'Suite', value: 'model proposal', tone: 'proposal' }
+            : { label: 'Suite', value: 'not written yet', tone: 'plain' },
+          {
+            label: 'Runner',
+            value: isAbapCloud ? 'simulated, ABAP Unit stubs' : 'restricted Node.js process, mocks',
+            tone: 'plain',
+          },
+          { label: 'Tenant', value: 'connection check only', tone: 'plain' },
+        ]}
       />
+
+      {/* The sections of the mock tab, as an anchor bar under the app header.
+          The tenant tab has no sections of its own to jump between. */}
+      {activeEnvTab === 'mock' ? (
+        <SectionAnchorBar
+          items={[
+            { id: 'testing-verified', label: 'From written to verified' },
+            { id: 'testing-scenarios', label: 'Scenarios', count: testCases.length },
+            { id: 'testing-hand', label: 'Check by hand', count: program ? program.gaps.length : undefined },
+          ]}
+        />
+      ) : null}
 
       {/* Two parts of the stage, so two tabs (DESIGN.md §2, mockup s8) — they
           replace the "Validation Environment" switch. The choice is still the
           project's `s4Environment` and still goes through `handleEnvChange`:
-          what "Run Selected" may do has not changed, only where it stands. The
+          what the run button may do has not changed, only where it stands. The
           lock is not on a tab: it stands once, inside the tenant tab it applies
           to (ADR-004). */}
       <div data-testing-tabs className="mb-8">
         <CcTabs
           label="Testing"
           density="cozy"
+          appearance="pill"
           value={activeEnvTab}
           onChange={(env) => handleEnvChange(env)}
           tabs={[
             {
               value: ENV_SEGMENTS[0].value,
               label: testCases.length > 0 ? `${ENV_SEGMENTS[0].label} (${scenarios(testCases.length)})` : ENV_SEGMENTS[0].label,
+              icon: <TestTube size={14} aria-hidden="true" />,
               content: (
                 <div data-testing-panel="mock" className={RAIL_GRID}>
-                  <div className="flex min-w-0 flex-col gap-4">
-                    {/* ── Scenarios ── */}
-                    <section data-testing-scenarios aria-labelledby="testing-scenarios-title" className={clsx(CARD, 'overflow-hidden flex flex-col')}>
-                      <div className="bg-cc-surface-muted border-b border-cc-line px-4 md:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <ListChecks className="w-5 h-5 text-cc-ink-muted shrink-0" aria-hidden="true" />
-                          <h2 id="testing-scenarios-title" className="cc-text-h2 text-cc-ink">Scenarios</h2>
-                          {testCases.length > 0 && (
-                            <span className="cc-text-meta text-cc-ink-muted">{scenarios(testCases.length)}</span>
-                          )}
-                        </div>
-                        {/* Only once the suite exists. Before that this button and the one in
-                            the empty state below were the same action, offered twice on one
-                            screen — "Generate Suite" here, "Generate Test Suite" in the
-                            middle of the card. */}
-                        {testCases.length > 0 && (
-                          <CcButton
-                            onClick={handleGenerate}
-                            disabled={isGenerating || !modelAvailability.enabled('testing')}
-                            icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
-                          >
-                            {isGenerating ? 'Generating...' : 'Regenerate Suite'}
-                          </CcButton>
-                        )}
-                      </div>
-
-                      <div className="p-4 md:p-6 max-h-[640px] overflow-auto">
-                        {testCases.length === 0 && !modelAvailability.enabled('testing') ? (
-              /* Roadmap 1.2 / V25-A12 — "Generate Your Test Suite" over a button
-                 the server refuses tells the reader nothing about why. */
-              <div className="h-full flex items-center justify-center px-4 py-8">
-                <NotGenerated
-                  what="Test suite"
-                  absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
-                  stage="testing"
-                  hint={
-                    modelAvailability.keyAvailable
-                      ? 'Turn the testing stage back on in Settings to generate it.'
-                      : 'Add your own Gemini API key in Settings to generate it.'
-                  }
-                />
-              </div>
-            ) : testCases.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8 bg-cc-surface-muted rounded-cc-card border border-dashed border-cc-field-border max-w-md mx-auto my-auto min-h-[300px]">
-                <ListChecks className="w-10 h-10 text-cc-ink-muted mb-4" aria-hidden="true" />
-                <h3 className="cc-text-h2 text-cc-ink">Generate the scenarios</h3>
-                {/* A stored suite that cannot be drawn is a fact about this
-                    project, not the same thing as never having generated one.
-                    Without this line the reader is told to start something he
-                    already did, and the reason his last suite vanished is
-                    nowhere on the screen. */}
-                {storedSuiteRejected ? (
-                  <p data-stored-test-suite-rejected className="cc-text-cell text-cc-ink-muted mt-2 max-w-xs leading-relaxed">
-                    {STORED_TEST_SUITE_REJECTED}
-                  </p>
-                ) : (
-                  <p className="cc-text-cell text-cc-ink-muted mt-2 max-w-xs leading-relaxed">
-                    The testing model writes the scenarios from the target code. Generate them first, then run them here against mocks.
-                  </p>
-                )}
-
-                {genError && (
-                  <p data-test-generation-error role="alert" className="mt-4 max-w-xs cc-text-cell font-semibold leading-relaxed text-cc-error">
-                    {genError}
-                  </p>
-                )}
-
-                {/* `animate-bounce` removed. It made the only action on an empty
-                    step bounce for ever — an attention-grab aimed at something the
-                    reader is already looking at, and the loudest element on a page
-                    whose other primaries sit still. It also made the button
-                    impossible to click under test: Playwright waits for an element
-                    to stop moving, and this one never did. */}
-                <div className="mt-6">
-                  <CcButton
-                    variant="primary"
-                    density="cozy"
-                    onClick={handleGenerate}
-                    disabled={isGenerating}
-                    icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
-                  >
-                    {isGenerating ? 'Generating Suite...' : 'Generate Test Suite'}
-                  </CcButton>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {/* The same message as in the empty state, because "Regenerate
-                    Suite" can be refused too — and there the previous suite is
-                    still on the screen, so without this the button simply
-                    appears to do nothing. */}
-                {genError && (
-                  <div data-test-generation-error>
-                    <CcMessageStrip state="error">{genError}</CcMessageStrip>
-                  </div>
-                )}
-
-                {/* Why "Regenerate Suite" is disabled — the same way out the
-                    empty state names. */}
-                {!modelAvailability.enabled('testing') && (
-                  <div data-regenerate-unavailable>
-                    <CcMessageStrip state="neutral">
-                      {modelAvailability.keyAvailable
-                        ? 'Regenerating is off: turn the testing stage back on in Settings.'
-                        : 'Regenerating needs a model key: add your own Gemini API key in Settings.'}
-                    </CcMessageStrip>
-                  </div>
-                )}
-
-                {/* The reason itself is in the notice at the top of the page. */}
-                {testRunBlocked(project) && (
-                  <div data-stale-run-hint>
-                    <CcMessageStrip state="neutral">Running is off until the suite is regenerated for the current source — the notice at the top says which stage comes first.</CcMessageStrip>
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <span data-stage-output="testCases" className={LABEL}>{selectedTestCases.length} of {testCases.length} selected</span>
-                    <CcButton
-                      variant="ghost"
-                      onClick={exportTestCasesToExcel}
-                      icon={<Download size={14} aria-hidden="true" />}
+                  <div className="flex min-w-0 flex-col gap-5">
+                    {/* ── From written to verified: the pipeline, the run button, and this session's results ── */}
+                    <ToolSection
+                      id="testing-verified"
+                      data-testing-results=""
+                      title="From written to verified"
+                      actions={
+                        <CcButton
+                          variant="primary"
+                          onClick={handleRun}
+                          disabled={isRunning || selectedTestCases.length === 0 || (activeEnvTab === 'live' && !s4Url) || (activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION.locked) || testRunBlocked(project)}
+                          icon={isRunning ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Play className="w-4 h-4" />}
+                        >
+                          {isRunning
+                            ? 'Running...'
+                            : selectedTestCases.length > 0 && selectedTestCases.length < testCases.length
+                              ? `Run ${selectedTestCases.length} selected against mocks`
+                              : 'Run tests against mocks'}
+                        </CcButton>
+                      }
+                      lead={
+                        testCases.length === 0
+                          ? 'Nothing to run yet — the scenarios are written first.'
+                          : isAbapCloud
+                            ? `Simulates a run of the ${scenarios(testCases.length)} against mocks — nothing is compiled or executed here, and never on a tenant.`
+                            : selectedTestCases.length > 0 && selectedTestCases.length < testCases.length
+                              ? `Runs the ${selectedTestCases.length} selected of ${scenarios(testCases.length)} in the restricted test runner, against mocks — never on a tenant.`
+                              : `Runs all ${scenarios(testCases.length)} in the restricted test runner, against mocks — never on a tenant.`
+                      }
                     >
-                      Export Excel
-                    </CcButton>
-                    {exportError && (
-                      <span data-export-error role="alert" className="flex items-center gap-2 cc-text-meta text-cc-error">
-                        <AlertTriangle className="w-4 h-4 shrink-0" />
-                        {exportError}
-                      </span>
-                    )}
-                  </div>
-                  <CcButton
-                    variant="primary"
-                    onClick={handleRun}
-                    disabled={isRunning || selectedTestCases.length === 0 || (activeEnvTab === 'live' && !s4Url) || (activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION.locked) || testRunBlocked(project)}
-                    icon={isRunning ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Play className="w-4 h-4" />}
-                  >
-                    {isRunning ? 'Running...' : 'Run Selected'}
-                  </CcButton>
-                </div>
-                {/* The whole row is the checkbox's label, so a click anywhere on
-                    it ticks the box and the box is what the keyboard reaches —
-                    a clickable row alone was out of reach of Tab and Space. The
-                    label's text (id, category, description) is the box's name. */}
-                {testCases.map((tc, i) => (
-                  <label
-                    key={i}
-                    className={clsx(
-                      "flex items-start gap-3 p-3 md:p-4 rounded-cc-row border transition-colors cursor-pointer",
-                      selectedTestCases.includes(i) ? "border-cc-ink bg-cc-surface" : "border-cc-line hover:border-cc-field-border hover:bg-cc-surface-muted"
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedTestCases.includes(i)}
-                      onChange={() => toggleTestCase(i)}
-                      className="mt-1 w-4 h-4 shrink-0 cursor-pointer rounded border-cc-field-border accent-cc-ink"
-                    />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-cc-mono text-[12px] font-semibold text-cc-ink">{renderSafeValue(tc.id)}</span>
-                        {tc.category && (
-                          <CcTag>{renderSafeValue(tc.category)}</CcTag>
-                        )}
-                      </div>
-                      {/* The scenario's name first — what it checks, in words — and
-                          its description under it where the model wrote one. */}
-                      <p className="cc-text-cell font-semibold text-cc-ink truncate sm:whitespace-normal">{renderSafeValue(tc.name) || renderSafeValue(tc.description)}</p>
-                      {tc.name && tc.description ? (
-                        <p className="cc-text-meta text-cc-ink-muted truncate sm:whitespace-normal">{renderSafeValue(tc.description)}</p>
-                      ) : null}
-                    </div>
-                  </label>
-                ))}
-              </div>
-            )}
-                      </div>
-                    </section>
-
-                    {/* ── Results ── */}
-                    <section data-testing-results aria-labelledby="testing-results-title" className={clsx(CARD, 'p-4 md:p-6')}>
-                      <h2 id="testing-results-title" className="cc-text-h2 text-cc-ink mb-1">Results</h2>
-                      {!testResults && !aiExplanation ? (
-                        <p className="cc-text-cell text-cc-ink-muted">
-                          {testCases.length === 0
-                            ? 'Nothing has run yet — there are no scenarios to run.'
-                            : 'Nothing has run in this session. Select scenarios and run them; each result appears here. The last recorded run is under On record.'}
-                        </p>
-                      ) : (
-                        <p className="cc-text-cell text-cc-ink-muted mb-4">
-                          {isAbapCloud
-                            ? 'This run was simulated against mocks — it is not an ABAP Unit run, and no scenario has a verdict from it.'
-                            : 'Results of the run in this session, against mocks — real results for the code, not for a tenant.'}
-                        </p>
+                      {/* The reason itself is in the notice at the top of the page. */}
+                      {testRunBlocked(project) && testCases.length > 0 && (
+                        <div data-stale-run-hint className="mb-4">
+                          <CcMessageStrip state="neutral">Running is off until the suite is regenerated for the current source — the notice at the top says which stage comes first.</CcMessageStrip>
+                        </div>
                       )}
 
+                      <TestPipeline written={testCases.length} run={run} />
+
+                      {(testResults || aiExplanation) && (
+                        <div className="mt-5 border-t border-cc-line pt-4">
+                          <h3 id="testing-results-title" className="m-0 cc-text-h3 text-cc-ink">Results</h3>
+                          <p className="m-0 mt-1 mb-4 cc-text-cell text-cc-ink-muted">
+                            {isAbapCloud
+                              ? 'This run was simulated against mocks — it is not an ABAP Unit run, and no scenario has a verdict from it.'
+                              : 'Results of the run in this session, against mocks — real results for the code, not for a tenant.'}
+                          </p>
                       {/* CR-14: the runner replaces every npm package the generated code
           imports with an empty proxy so the module can load. A pass against it
           says the logic ran — not that it works with those libraries — and until
@@ -1400,7 +1356,207 @@ export default function TestingSandboxPage() {
       )}
 
 
-                    </section>
+                        </div>
+                      )}
+                    </ToolSection>
+
+                    {/* ── Scenarios ── */}
+                    <ToolSection
+                      id="testing-scenarios"
+                      data-testing-scenarios=""
+                      title="Scenarios"
+                      titleExtra={testCases.length > 0 ? <CcProvenanceChip value="proposed" /> : null}
+                      actions={
+                        // Only once the suite exists. Before that this button and the one in
+                        // the empty state below were the same action, offered twice on one
+                        // screen — "Generate Suite" here, "Generate Test Suite" in the
+                        // middle of the card.
+                        testCases.length > 0 ? (
+                          <>
+                            <CcButton
+                              variant="ghost"
+                              onClick={exportTestCasesToExcel}
+                              icon={<Download size={14} aria-hidden="true" />}
+                            >
+                              Export Excel
+                            </CcButton>
+                            <CcButton
+                              onClick={handleGenerate}
+                              disabled={isGenerating || !modelAvailability.enabled('testing')}
+                              icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
+                            >
+                              {isGenerating ? 'Generating...' : 'Regenerate Suite'}
+                            </CcButton>
+                          </>
+                        ) : null
+                      }
+                      lead={
+                        testCases.length > 0
+                          ? 'Written by the testing model from the generated code — one row each, with its last verdict. Untick a scenario to leave it out of the next run.'
+                          : undefined
+                      }
+                    >
+                        {testCases.length === 0 && !modelAvailability.enabled('testing') ? (
+              /* Roadmap 1.2 / V25-A12 — "Generate Your Test Suite" over a button
+                 the server refuses tells the reader nothing about why. */
+              <div className="flex items-center justify-center px-4 py-8">
+                <NotGenerated
+                  what="Test suite"
+                  absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
+                  stage="testing"
+                  hint={
+                    modelAvailability.keyAvailable
+                      ? 'Turn the testing stage back on in Settings to generate it.'
+                      : 'Add your own Gemini API key in Settings to generate it.'
+                  }
+                />
+              </div>
+            ) : testCases.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center px-4 py-8 bg-cc-surface-muted rounded-cc-card border border-dashed border-cc-field-border">
+                <ListChecks className="w-10 h-10 text-cc-ink-muted mb-4" aria-hidden="true" />
+                <h3 className="cc-text-h2 text-cc-ink">Generate the scenarios</h3>
+                {/* A stored suite that cannot be drawn is a fact about this
+                    project, not the same thing as never having generated one.
+                    Without this line the reader is told to start something he
+                    already did, and the reason his last suite vanished is
+                    nowhere on the screen. */}
+                {storedSuiteRejected ? (
+                  <p data-stored-test-suite-rejected className="cc-text-cell text-cc-ink-muted mt-2 max-w-sm leading-relaxed">
+                    {STORED_TEST_SUITE_REJECTED}
+                  </p>
+                ) : (
+                  <p className="cc-text-cell text-cc-ink-muted mt-2 max-w-sm leading-relaxed">
+                    The testing model writes the scenarios from the target code. Generate them first, then run them here against mocks.
+                  </p>
+                )}
+
+                {genError && (
+                  <p data-test-generation-error role="alert" className="mt-4 max-w-sm cc-text-cell font-semibold leading-relaxed text-cc-error">
+                    {genError}
+                  </p>
+                )}
+
+                {/* `animate-bounce` removed. It made the only action on an empty
+                    step bounce for ever — an attention-grab aimed at something the
+                    reader is already looking at, and the loudest element on a page
+                    whose other primaries sit still. It also made the button
+                    impossible to click under test: Playwright waits for an element
+                    to stop moving, and this one never did. */}
+                <div className="mt-6">
+                  <CcButton
+                    variant="primary"
+                    density="cozy"
+                    onClick={handleGenerate}
+                    disabled={isGenerating}
+                    icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
+                  >
+                    {isGenerating ? 'Generating Suite...' : 'Generate Test Suite'}
+                  </CcButton>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* The same message as in the empty state, because "Regenerate
+                    Suite" can be refused too — and there the previous suite is
+                    still on the screen, so without this the button simply
+                    appears to do nothing. */}
+                {genError && (
+                  <div data-test-generation-error>
+                    <CcMessageStrip state="error">{genError}</CcMessageStrip>
+                  </div>
+                )}
+
+                {/* Why "Regenerate Suite" is disabled — the same way out the
+                    empty state names. */}
+                {!modelAvailability.enabled('testing') && (
+                  <div data-regenerate-unavailable>
+                    <CcMessageStrip state="neutral">
+                      {modelAvailability.keyAvailable
+                        ? 'Regenerating is off: turn the testing stage back on in Settings.'
+                        : 'Regenerating needs a model key: add your own Gemini API key in Settings.'}
+                    </CcMessageStrip>
+                  </div>
+                )}
+
+                {exportError && (
+                  <span data-export-error role="alert" className="flex items-center gap-2 cc-text-meta text-cc-error">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    {exportError}
+                  </span>
+                )}
+
+                <p data-stage-output="testCases" className={clsx(LABEL, 'm-0')}>{selectedTestCases.length} of {testCases.length} selected</p>
+                {/* The whole row is the checkbox's label, so a click anywhere on
+                    it ticks the box and the box is what the keyboard reaches —
+                    a clickable row alone was out of reach of Tab and Space. The
+                    label's text (id, category, description) is the box's name. */}
+                <div className="max-h-[640px] space-y-2 overflow-auto">
+                {testCases.map((tc, i) => {
+                  const verdict = verdictOf(tc);
+                  return (
+                  <label
+                    key={i}
+                    className={clsx(
+                      "flex items-start gap-3 p-3 rounded-cc-row border transition-colors cursor-pointer",
+                      selectedTestCases.includes(i) ? "border-cc-ink bg-cc-surface" : "border-cc-line hover:border-cc-field-border hover:bg-cc-surface-muted"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedTestCases.includes(i)}
+                      onChange={() => toggleTestCase(i)}
+                      className="mt-1 w-4 h-4 shrink-0 cursor-pointer rounded border-cc-field-border accent-cc-ink"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="font-cc-mono text-[12px] font-semibold text-cc-ink">{renderSafeValue(tc.id)}</span>
+                        {tc.category && (
+                          <CcTag>{renderSafeValue(tc.category)}</CcTag>
+                        )}
+                      </div>
+                      {/* The scenario's name first — what it checks, in words — and
+                          its description under it where the model wrote one. */}
+                      <p className="cc-text-cell font-semibold text-cc-ink truncate sm:whitespace-normal">{renderSafeValue(tc.name) || renderSafeValue(tc.description)}</p>
+                      {tc.name && tc.description ? (
+                        <p className="cc-text-meta text-cc-ink-muted truncate sm:whitespace-normal">{renderSafeValue(tc.description)}</p>
+                      ) : null}
+                    </div>
+                    {/* The last verdict, from the receipt or this session — never
+                        the status string stored on the case. */}
+                    <span data-scenario-verdict={verdict ? verdictTone(verdict) : 'not-run'} className="shrink-0">
+                      {verdict === 'Passed' ? (
+                        // A pass here is against mocks — "Demonstrated · mock", never green.
+                        <CcProvenanceChip value="demonstrated-mock" />
+                      ) : verdict === 'Failed' ? (
+                        <CcStateText state="error">Failed</CcStateText>
+                      ) : verdict ? (
+                        <CcStateText state="neutral" hollow>{verdict}</CcStateText>
+                      ) : (
+                        <CcStateText state="neutral" hollow>Not run</CcStateText>
+                      )}
+                    </span>
+                  </label>
+                  );
+                })}
+                </div>
+              </div>
+            )}
+                    </ToolSection>
+
+                    {/* ── What a tester checks by hand: the engine's coverage report ── */}
+                    <ToolSection
+                      id="testing-hand"
+                      data-testing-hand=""
+                      title="What a tester checks by hand"
+                      aside={program ? program.gaps.length : undefined}
+                      lead="Straight from the engine’s coverage report: every construct it did not judge."
+                    >
+                      <HandChecks
+                        noSource={!program}
+                        gaps={program?.gaps ?? []}
+                        strip={program ? { lines: program.lines, bands: program.bands, marks: program.marks, ticks: findingTicks } : null}
+                      />
+                    </ToolSection>
 
                     {/* ── Run output: the console, one level deeper ── */}
                     {/* Folded until there is something to read: a run opens it
@@ -1452,17 +1608,64 @@ export default function TestingSandboxPage() {
                   </div>
 
                   <aside aria-label="About running tests against mocks" className="flex min-w-0 flex-col gap-4">
-                    <CcCard title="On record" level={2}>
-                      <LastRunRow run={run} />
+                    <TabExplainer
+                      items={isAbapCloud ? [
+                        { text: 'Writes ABAP Unit local test class stubs for the RAP behaviour' },
+                        { text: 'Stands in for database access with SQL test doubles' },
+                        { text: 'Does not compile or run the stubs — a run here is simulated', not: true },
+                        { text: 'Does not run generated tests on a tenant', not: true },
+                      ] : [
+                        { text: 'Runs the generated suite in a restricted Node.js process' },
+                        { text: 'Uses SAP mocks, not your system' },
+                        { text: 'Names every package it had to replace with an empty stand-in' },
+                        { text: 'Does not run generated tests on a tenant', not: true },
+                      ]}
+                    />
+
+                    {/* The tenant in one card: what is open, what stays locked, and the
+                        way to the other tab. The lock itself is said once, there. */}
+                    <CcCard
+                      title="Tenant connection"
+                      level={2}
+                      meta={
+                        connectionStatus === 'connected' && lastCheck?.ok ? (
+                          <CcProvenanceChip value="proven" />
+                        ) : (
+                          <span className="inline-flex items-center gap-1">
+                            <CcProvenanceChip value="not-determined" />
+                            <span className="cc-text-meta text-cc-ink-muted">{savedS4?.url ? '· not checked' : '· not yet'}</span>
+                          </span>
+                        )
+                      }
+                    >
+                      <p data-tenant-summary className="m-0 cc-text-cell text-cc-ink">
+                        {profile?.s4TenantAccessAllowed || profile?.isAdmin
+                          ? `${profile?.s4TenantAccessAllowed ? 'BYOT is granted for this account' : 'Open to administrators'}: connection check, metadata read and one read-only OData call are open. Running tests on a tenant stays locked.`
+                          : profile?.s4TenantAccessRequested
+                            ? 'Your request for bring your own tenant (BYOT) is with an administrator. Running tests on a tenant stays locked.'
+                            : 'Bring your own tenant (BYOT) opens a connection check, a metadata read and one read-only OData call. Running tests on a tenant stays locked.'}
+                      </p>
+                      <div className="mt-3">
+                        <CcButton onClick={() => handleEnvChange('live')} icon={<Lock size={14} aria-hidden="true" />}>
+                          {savedS4?.url
+                            ? 'Open the connection'
+                            : profile?.s4TenantAccessAllowed || profile?.isAdmin
+                              ? 'Set up connection'
+                              : profile?.s4TenantAccessRequested
+                                ? 'See the request'
+                                : 'Request access'}
+                        </CcButton>
+                      </div>
                     </CcCard>
 
                     {/* The figure the third marketing tile used to carry, with its
-                        reasoning: a model's estimate, said to be one. */}
-                    <CcCard title="Coverage estimate" level={2} meta={project?.coverageEstimate && !storedSuiteRejected ? <CcProvenanceChip value="proposed" /> : undefined}>
-                      {typeof project?.coverageEstimate?.percentage === 'number' && !storedSuiteRejected
-                        ? <p className="cc-text-title text-cc-ink mb-2"><span data-stage-output="coverageEstimate">{`${project.coverageEstimate.percentage}%`}</span></p>
-                        : <p className="cc-text-cell text-cc-ink-muted">Not estimated yet — the estimate is written with the scenarios.</p>}
-                      {project?.coverageEstimate && !storedSuiteRejected ? (
+                        reasoning: a model's estimate, said to be one. Only where one
+                        was written — the facet tiles already say what is missing. */}
+                    {project?.coverageEstimate && !storedSuiteRejected ? (
+                      <CcCard title="Coverage estimate" level={2} meta={<CcProvenanceChip value="proposed" />}>
+                        {typeof project?.coverageEstimate?.percentage === 'number'
+                          ? <p className="cc-text-title text-cc-ink mb-2"><span data-stage-output="coverageEstimate">{`${project.coverageEstimate.percentage}%`}</span></p>
+                          : null}
                         <div className="space-y-3">
                           <p className="cc-text-meta text-cc-ink-muted">The testing model{"'"}s estimate of how much of the logic the scenarios reach — not a measured coverage.</p>
                           <div>
@@ -1474,25 +1677,8 @@ export default function TestingSandboxPage() {
                             <p className="cc-text-cell text-cc-ink">{project.coverageEstimate.missingCoverage || 'No missing coverage information.'}</p>
                           </div>
                         </div>
-                      ) : null}
-                    </CcCard>
-
-                    <TabExplainer
-                      items={isAbapCloud ? [
-                        { text: 'Writes ABAP Unit local test class stubs for the RAP behaviour' },
-                        { text: 'Stands in for database access with SQL test doubles' },
-                        { text: 'Does not compile or run the stubs — a run here is simulated', not: true },
-                        { text: 'Does not run anything on a tenant', not: true },
-                      ] : [
-                        { text: 'Runs the generated code for real, in a restricted child process on the server' },
-                        { text: 'Answers SAP calls from a library of mocked SAP responses' },
-                        { text: 'Names every package it had to replace with an empty stand-in' },
-                        { text: 'Does not run anything on a tenant', not: true },
-                      ]}
-                      note={isAbapCloud
-                        ? 'An ABAP Unit run in your own system is what gives the stubs a verdict.'
-                        : 'Real results for the code, not for a tenant. No model call to run; a failed run may ask the testing model to explain or repair it.'}
-                    />
+                      </CcCard>
+                    ) : null}
                   </aside>
                 </div>
               ),
@@ -1500,6 +1686,7 @@ export default function TestingSandboxPage() {
             {
               value: ENV_SEGMENTS[1].value,
               label: ENV_SEGMENTS[1].label,
+              icon: <Lock size={14} aria-hidden="true" />,
               content: (
                 <div data-testing-panel="live" className={RAIL_GRID}>
                   <div className="flex min-w-0 flex-col gap-4">

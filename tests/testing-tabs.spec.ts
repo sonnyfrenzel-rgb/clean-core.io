@@ -1,7 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
 import { adminMergeDoc } from './helpers/admin-seed';
-import { countVerdicts, countsLine, lastRun, scenarios } from '../components/testing/testing-summary';
+import fs from 'fs';
+import path from 'path';
+import { countVerdicts, countsLine, deliveryTestingTitle, lastRun, scenarios } from '../components/testing/testing-summary';
+import { receiptFor } from './helpers/test-receipt';
 
 /**
  * The Testing stage as two tabs (mockup s8): "Run tests against mocks" and
@@ -38,6 +41,53 @@ test.describe('where testing stands, from what is on record', () => {
   });
 });
 
+test.describe('Delivery and Testing read the same record', () => {
+  // The seeded project: three cases, two of them stored as "Passed", no run.
+  // Delivery said "2 of 3 Sandbox tests passed" while Testing said "3 scenarios
+  // written, not run yet" — Delivery counted the client-writable status
+  // strings, Testing the server's receipt. Both now read the receipt.
+  const seeded = {
+    activeRunId: 'run-1',
+    generatedCode: 'export const ok = true;',
+    testSuite: { code: 'test("t1", () => {});' },
+    testCases: [
+      { id: 't1', name: 'Credit limit within bounds', category: 'Unit', status: 'Passed' },
+      { id: 't2', name: 'Credit limit exceeded', category: 'Unit', status: 'Passed' },
+      { id: 't3', name: 'Missing customer master', category: 'Edge' },
+    ],
+  };
+
+  test('stored "Passed" strings without a receipt: both say not run', () => {
+    expect(lastRun(seeded, null)).toEqual({ kind: 'none' });
+    expect(deliveryTestingTitle(seeded, false)).toBe('Test draft: 3 Sandbox tests, no run on record');
+    expect(deliveryTestingTitle(seeded, true)).toBe('Test draft: 3 ABAP Unit tests, no run on record');
+    expect(deliveryTestingTitle({ testCases: [] }, false)).toBe('No test suite generated');
+  });
+
+  test('a covering receipt: both report its verdicts, not the stored strings', () => {
+    const receipt = receiptFor(seeded, [
+      { id: 't1', status: 'Passed' },
+      { id: 't2', status: 'Failed' },
+      { id: 't3', status: 'Passed' },
+    ]);
+    const project = { ...seeded, testRunReceipt: receipt };
+    const run = lastRun(project, null);
+    expect(run.kind).toBe('recorded');
+    if (run.kind === 'recorded') expect(run.counts).toEqual({ passed: 2, failed: 1, noResult: 0, total: 3 });
+    expect(deliveryTestingTitle(project, false)).toBe('2 of 3 Sandbox tests passed');
+    // A receipt for other code covers nothing: back to a draft on both screens.
+    const rewritten = { ...project, generatedCode: 'export const ok = false;' };
+    expect(lastRun(rewritten, null).kind).toBe('earlier');
+    expect(deliveryTestingTitle(rewritten, false)).toBe('Test draft: 3 Sandbox tests, no run on record');
+  });
+
+  test('the delivery page takes its headline from that function', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'app/(app)/project/[projectId]/delivery/page.tsx'), 'utf8');
+    expect(src).toContain('deliveryTestingTitle(project, isAbapCloud)');
+    expect(src, 'Delivery counts stored status strings for its headline again').not.toMatch(/\$\{testsPassed\} of \$\{testCaseCount\}/);
+  });
+});
+
 test.describe('the Testing stage in two tabs', () => {
   test.describe.configure({ mode: 'serial' });
   let account: SeededProject;
@@ -60,25 +110,34 @@ test.describe('the Testing stage in two tabs', () => {
     await expect(mock).toHaveAttribute('aria-selected', 'true');
     await expect(tenant).toHaveAttribute('aria-selected', 'false');
 
-    // The answer first: one sentence, before the tabs, from the case list and
-    // the record. The seed has a case marked Passed and no receipt — so it has
-    // not run, whatever the stored string says.
+    // The answer first: the facet tiles, before the tabs, from the case list and
+    // the record (proposal A). The seed has a case marked Passed and no receipt —
+    // so it has not run, whatever the stored string says.
     const status = page.locator('[data-testing-status]');
     await expect(status).toHaveAttribute('data-testing-status', 'none');
-    await expect(status).toContainText('1 scenario written, not run yet.');
+    await expect(status.locator('[data-testing-facet="scenarios"]')).toContainText('1written');
+    await expect(status.locator('[data-testing-facet="last-run"]')).toContainText('None');
+    await expect(status.locator('[data-testing-facet="last-run"]')).toContainText('No run on record yet');
+    await expect(status.locator('[data-testing-facet="tenant-tests"]')).toContainText('Locked');
     const statusBox = (await status.boundingBox())!;
     const listBox = (await list.boundingBox())!;
     expect(statusBox.y, 'the status line stands above the tabs').toBeLessThan(listBox.y);
 
-    // The mock panel: scenarios, results, coverage, and what the tab does.
+    // The mock panel: the pipeline, the scenarios, the hand checks, and what the tab does.
     const mockPanel = page.locator('[data-testing-panel="mock"]');
     await expect(mockPanel).toBeVisible();
+    await expect(mockPanel.getByRole('heading', { name: 'From written to verified' })).toBeVisible();
     await expect(mockPanel.getByRole('heading', { name: 'Scenarios' })).toBeVisible();
-    await expect(mockPanel.getByRole('heading', { name: 'Results' })).toBeVisible();
-    await expect(mockPanel.getByRole('heading', { name: 'Coverage estimate' })).toBeVisible();
-    await expect(mockPanel.locator('[data-last-run="none"]')).toContainText('No run on record yet.');
-    await expect(mockPanel.locator('[data-tab-explainer]')).toContainText('restricted child process');
-    await expect(page.getByRole('button', { name: /Run Selected/ })).toBeVisible();
+    await expect(mockPanel.getByRole('heading', { name: 'What a tester checks by hand' })).toBeVisible();
+    // No run: the pipeline has no pass or fail figure, only dashes.
+    await expect(mockPanel.locator('[data-test-pipeline="none"] [data-pipeline-step="passed"]')).toContainText('—');
+    await expect(mockPanel.locator('[data-test-pipeline="none"] [data-pipeline-step="failed"]')).toContainText('—');
+    // Nor does any scenario row take the stored "Passed" for a verdict.
+    await expect(mockPanel.locator('[data-scenario-verdict="not-run"]')).toHaveCount(1);
+    // No estimate was written, so no estimate card stands in for one.
+    await expect(mockPanel.getByRole('heading', { name: 'Coverage estimate' })).toHaveCount(0);
+    await expect(mockPanel.locator('[data-tab-explainer]')).toContainText('restricted Node.js process');
+    await expect(mockPanel.getByRole('button', { name: /^Run tests against mocks$/ })).toBeVisible();
     // The three tiles are gone; their content is in the rail.
     for (const tile of ['Real Execution, Against Mocks', 'SAP Mock Library', 'Validation Environment']) {
       await expect(page.getByText(tile, { exact: true })).toHaveCount(0);

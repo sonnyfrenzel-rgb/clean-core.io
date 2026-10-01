@@ -9,6 +9,7 @@ import {
   computeCriticalityScore,
 } from '@/lib/abap/code-assessment';
 import { coverageCaveat, type CoverageReport } from '@/lib/abap/coverage';
+import { readCallGraph } from '@/lib/abap/call-graph';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { PHASES, type PhaseKey, type PhaseState } from '@/lib/workflow-steps';
@@ -167,6 +168,8 @@ export interface DemoProject {
     /** All zero, and said out loud: no test in this demo has run. */
     verdicts: { total: number; passed: number; failed: number; withoutVerdict: number };
     manualAreas: DemoManualArea[];
+    /** The program's routines (`FORM … ENDFORM`), for the Testing tool's program strip. */
+    routines: Array<{ name: string; lineStart: number; lineEnd: number }>;
   };
 
   economics: {
@@ -359,6 +362,7 @@ export function buildDemoProject(): DemoProject {
         why: u.why,
         line: u.line,
       })),
+      routines: readCallGraph(source).forms.map((f) => ({ name: f.name, lineStart: f.lineStart, lineEnd: f.lineEnd })),
     },
     economics: { loc: linesOfCode, scoreBefore: route.cleanCoreScore },
     delivery: { missing: missingForHandover() },

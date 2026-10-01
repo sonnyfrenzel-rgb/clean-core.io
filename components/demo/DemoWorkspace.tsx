@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { RotateCcw, ArrowRight, CheckCircle2, Circle, FileCode2 } from 'lucide-react';
 import StageHeader from '@/components/StageHeader';
+import DemoTesting from '@/components/demo/DemoTesting';
 import Stepper from '@/components/Stepper';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcAnchor from '@/components/cc/Anchor';
-import CcField from '@/components/cc/Field';
 import CcIconButton from '@/components/cc/IconButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcTable from '@/components/cc/Table';
@@ -161,7 +161,7 @@ export default function DemoWorkspace({ demo, stage }: { demo: DemoProject; stag
         {stage === 'design' && <Design demo={demo} state={state} patch={patch} />}
         {stage === 'transformation' && <Transformation demo={demo} />}
         {stage === 'documentation' && <Documentation demo={demo} />}
-        {stage === 'testing' && <Testing demo={demo} />}
+        {stage === 'testing' && <DemoTesting demo={demo} />}
         {stage === 'tco' && (
           <DemoEconomics
             loc={demo.economics.loc}
@@ -534,38 +534,6 @@ function Documentation({ demo }: { demo: DemoProject }) {
       </CcCard>
 
       <ModelHalfNotice what="The written blueprint, and the process drawing on top of it," />
-    </>
-  );
-}
-
-function Testing({ demo }: { demo: DemoProject }) {
-  return (
-    <>
-      <CcCard level={2} title="Nothing here has run">
-        <p className="m-0 cc-text-body text-cc-ink-muted">
-          {demo.testing.verdicts.total} tests generated, {demo.testing.verdicts.passed} passed,{' '}
-          {demo.testing.verdicts.failed} failed. There is no pass rate, because a rate over nothing is not a
-          number. A real run generates a suite from the transformed code and executes it in a restricted runner;
-          the demo has neither.
-        </p>
-      </CcCard>
-
-      <CcCard level={2} title="What a tester would have to check by hand" count={demo.testing.manualAreas.length}>
-        <p className={lead}>
-          Straight out of the engine&apos;s coverage report: every construct it says it did not judge is a place
-          where no generated test can stand in for a person.
-        </p>
-        <ul data-testid="demo-manual-areas" className="m-0 list-none space-y-3 p-0">
-          {demo.testing.manualAreas.map((a) => (
-            <li key={`${a.label}-${a.line}`} className="border-l-2 border-cc-warning-line pl-3">
-              <p className="m-0 flex flex-wrap items-center gap-2 cc-text-h3 text-cc-ink">
-                {a.label} <Line n={a.line} />
-              </p>
-              <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{a.why}</p>
-            </li>
-          ))}
-        </ul>
-      </CcCard>
     </>
   );
 }
