@@ -25,7 +25,7 @@ import { TERMS_VERSION } from '../lib/constants';
  *   - "Technical names" shows the code's token without making it the name;
  *   - a BPMN 2.0 file imports as the next revision — summary first, anchors only
  *     where the Ist has them — and a broken file is refused with a sentence;
- *   - "Compare with Ist" names what was added; "Tidy layout" is one undo step;
+ *   - "Compare with the as-is process" names what was added; "Tidy layout" is one undo step;
  *   - the newest revision saved anywhere is offered when the editor opens;
  *   - through all of it, revision 1 — the reconstructed Ist — is byte for byte
  *     what it was.
