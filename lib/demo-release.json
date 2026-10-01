@@ -5,9 +5,9 @@
     "file": "Z_MM_PO_APPROVAL.abap",
     "sha256": "80df6fb337142ee4cb5733202582da4ac555c8dc6fd457c36d50ef506eae5781"
   },
-  "ruleVersion": "levels b5dbbbbcbcc8 · latest@407843e4 · classifications-sap@0081fb9c",
-  "catalogVersion": "2024.FPS02 + CR:latest@407843e4 (25467 entries, fetched 2026-09-15)",
-  "engineOutput": "bdd154c802f43c76cd80c04f7b3d28b706f89ff3ffd54ab3242a6616291440db",
+  "ruleVersion": "levels b5dbbbbcbcc8 · latest@407843e4 · classifications-sap@70a9e6f4",
+  "catalogVersion": "2024.FPS02 + CR:latest@407843e4 (25467 entries, fetched 2026-10-01)",
+  "engineOutput": "d64d7aa054d4eeba1dda62e821198238ec1b60c0cf613dea2bb86ecb7f466e15",
   "figures": {
     "findings": 31,
     "critical": 2,

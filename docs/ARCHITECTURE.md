@@ -85,14 +85,14 @@ SAP's [Cloudification Repository](https://github.com/SAP/abap-atc-cr-cv-s4hc) sh
 | Artifact | Source | formatVersion | Entries | States |
 |---|---|---|---|---|
 | `cloudification-repo.latest.json` | `objectReleaseInfoLatest.json` | 1 | 25,467 | `released`, `deprecated`, `notToBeReleased` |
-| `cloudification-repo.classifications-sap.json` | `objectClassifications_SAP.json` | 2 | 8,587 | `classicAPI`, `noAPI` |
+| `cloudification-repo.classifications-sap.json` | `objectClassifications_SAP.json` | 2 | 8,600 | `classicAPI`, `noAPI` |
 
-They are **near-disjoint** — 190 keys overlap — so the second file is additional coverage, not a restatement. Together they classify **33,864** objects (release file synced 2026-09-15, classifications 2026-08-26; before that sync the release file dated from 2026-07-01 and the total was 32,103).
+They are **near-disjoint** — 190 keys overlap — so the second file is additional coverage, not a restatement. Together they classify **33,877** objects (both files checked against SAP on 2026-10-01: the release file unchanged since its 2026-09-15 content, the classifications grown from 8,587 to 8,600; before 2026-09-15 the release file dated from 2026-07-01 and the total was 32,103).
 
 Two things about the second file are easy to get wrong:
 
 - **FUGR rows name the function GROUP in `tadirObjName` and the function MODULE in `objectKey`.** Custom code calls the module (`CALL FUNCTION 'BAPI_…'`), so `normalizeClassificationFile()` indexes FUGR rows by `objectKey` and everything else by `tadirObjName`. Indexing all rows the same way would file 5,246 entries under a name nothing looks up.
-- **`released` beats `classicAPI`** on the 196 overlapping objects. Reversed, released (level A) objects would be silently downgraded to B.
+- **`released` beats `classicAPI`** on the 190 overlapping objects. Reversed, released (level A) objects would be silently downgraded to B.
 
 `scripts/sync-cloudification-repo.ts` dispatches on the registry entry (`CLASSIFICATION_RELEASES`) rather than sniffing the payload, and throws on a shape mismatch — a half-parsed catalog would produce confidently wrong grades.
 
