@@ -254,13 +254,15 @@ export default function SettingsPage() {
    * context, a denied permission) still reported success, and the person went
    * on to paste nothing (UX review of 52f171091948, 1b363262f915).
    */
-  const [mfaCopied, setMfaCopied] = useState<'idle' | 'secret' | 'link' | 'failed'>('idle');
+  // Which copy failed is kept: the recovery for the link is not the recovery
+  // for the key (carried QA finding 91cf1930b78a).
+  const [mfaCopied, setMfaCopied] = useState<'idle' | 'secret' | 'link' | 'failed-secret' | 'failed-link'>('idle');
   const copyMfa = async (what: 'secret' | 'link', text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setMfaCopied(what);
     } catch {
-      setMfaCopied('failed');
+      setMfaCopied(what === 'secret' ? 'failed-secret' : 'failed-link');
     }
   };
   const [verificationMailSent, setVerificationMailSent] = useState(false);
@@ -1923,9 +1925,14 @@ export default function SettingsPage() {
                 <p role="status" aria-live="polite" className="m-0 min-h-4 text-[12px] font-semibold">
                   {mfaCopied === 'secret' && <span className="text-cc-success">Setup key copied.</span>}
                   {mfaCopied === 'link' && <span className="text-cc-success">Setup link copied.</span>}
-                  {mfaCopied === 'failed' && (
-                    <span className="text-cc-warning">
+                  {mfaCopied === 'failed-secret' && (
+                    <span className="text-cc-warning" data-mfa-copy-failed="secret">
                       Your browser did not allow the copy. Select the key above and copy it by hand.
+                    </span>
+                  )}
+                  {mfaCopied === 'failed-link' && (
+                    <span className="text-cc-warning" data-mfa-copy-failed="link">
+                      Your browser did not allow the copy of the setup link. Select the key above and copy it by hand instead — it sets up the same account.
                     </span>
                   )}
                 </p>
