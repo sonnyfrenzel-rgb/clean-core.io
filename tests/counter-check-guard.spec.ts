@@ -416,7 +416,7 @@ test.describe('the test data need', () => {
     // An amount whose currency the code never states. Somebody preparing the
     // record would otherwise have to guess, and a guess here is a wrong test.
     for (const scenario of forRule(po, 'BR-010')) {
-      expect(scenario.data[0].caveat).toBe('Betrag, Währung nicht aus dem Code ableitbar');
+      expect(scenario.data[0].caveat).toBe('the currency of the amount');
       expect(scenario.notes.join(' ')).toContain('Not stated in the code');
       // The same condition also tests something the engine could not read.
       expect(scenario.notes.join(' ')).toContain('compares more than the engine could read');

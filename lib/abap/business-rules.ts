@@ -385,10 +385,10 @@ interface Caveat { text: string }
 function caveatFor(subject: string | null, value: string): Caveat | null {
   if (!looksNumeric(value)) return null;
   if (hits(subject, MONEY_FIELD)) {
-    return { text: 'Betrag, Währung nicht aus dem Code ableitbar' };
+    return { text: 'the currency of the amount' };
   }
   if (hits(subject, QUANTITY_FIELD)) {
-    return { text: 'Menge, Einheit nicht aus dem Code ableitbar' };
+    return { text: 'the unit of the quantity' };
   }
   return null;
 }
