@@ -243,7 +243,6 @@ export default function WorkspaceShell({
   const meta = useMemo(() => metaLine(project, projectId), [project, projectId]);
   const eyebrow = useMemo(() => workspaceEyebrow(project), [project]);
   const statuses = useMemo(() => workspaceStatusLine(project), [project]);
-  const layers = useMemo(() => workspaceLayers(project), [project]);
   const tools = useMemo(() => workspaceTools(project), [project]);
   const open = useMemo(() => notDetermined(project), [project]);
   // What a project stored by an earlier version does not carry (roadmap 3.0.2).
@@ -260,6 +259,8 @@ export default function WorkspaceShell({
    */
   const [reading, setReading] = useState<SourceReading | null>(null);
   const onReading = useCallback((next: SourceReading) => setReading(next), []);
+  // The layers count the rules and capabilities of that reading (mockups s2, s3).
+  const layers = useMemo(() => workspaceLayers(project, reading), [project, reading]);
 
   /** Deterministic, from the branches of the code. No model call (§5.3). */
   const answer: PreAnswered | null = useMemo(
@@ -438,8 +439,8 @@ export default function WorkspaceShell({
     // The content of the chosen layer (`DESIGN.md` §2.3 item 5, roadmap 6.2);
     // the anchor bar scrolls the reader here by the section's own `id`.
     layerSection: (
-      <div className={view === 'business' ? 'mt-5' : 'mt-5 max-w-3xl'}>
-        <WorkspaceLayerSection layer={currentLayerSection} />
+      <div className="mt-5">
+        <WorkspaceLayerSection layer={currentLayerSection} project={project} projectId={projectId} reading={reading} />
       </div>
     ),
     // The first look — four stages, then the head of the content (§5.1, §5.5):
