@@ -83,10 +83,13 @@ test.describe('state and ordering', () => {
     const src = code('components/GlossaryChatbot.tsx');
     const helper = src.slice(src.indexOf('const answerInProject'), src.indexOf('const handleSend'));
     // After each wait — the evidence read and the model call — before anything is said.
-    expect(helper.match(/if \(currentProjectRef\.current !== id\) return;/g)?.length).toBe(2);
+    // The check also drops an answer for an earlier conversation in the same
+    // project (2b1101d8e13e), so it is `moved()` rather than the bare comparison.
+    expect(helper).toContain('const moved = () => currentProjectRef.current !== id ||');
+    expect(helper.match(/if \(moved\(\)\) return;/g)?.length).toBe(2);
     const send = src.slice(src.indexOf('const handleSend'));
-    expect(send).toMatch(/console\.error\('Ask this case error:', error\);\s*if \(currentProjectRef\.current !== projectId\) return;/);
-    expect(send).toMatch(/callGemini\(promptContext[^;]*;\s*if \(currentProjectRef\.current !== null\) return;/);
+    expect(send).toMatch(/console\.error\('Ask this case error:', error\);\s*if \(currentProjectRef\.current !== projectId \|\| superseded\(\)\) return;/);
+    expect(send).toMatch(/callGemini\(promptContext[^;]*;\s*if \(currentProjectRef\.current !== null \|\| superseded\(\)\) return;/);
   });
 
   test('e62f8d0d8462 · an older diagram render does not overwrite a newer one', () => {
