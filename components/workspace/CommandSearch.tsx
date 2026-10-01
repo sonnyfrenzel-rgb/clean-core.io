@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search } from 'lucide-react';
+import { BookOpen, Diamond, FileCode2, ListChecks, Search, SearchCheck, Workflow } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/cc-messages';
 import {
@@ -13,12 +13,13 @@ import {
 } from '@/lib/workspace-messages';
 import { onOpenProjectSearch, registerProjectSearch } from '@/lib/shell-context';
 import CcDialog from '@/components/cc/Dialog';
-import CcTag from '@/components/cc/Tag';
 import CcAnchor from '@/components/cc/Anchor';
 import {
   buildWorkspaceSearchIndex,
+  groupSearchResults,
   searchWorkspace,
-  SEARCH_KIND_LABEL,
+  SEARCH_GROUP_LABEL,
+  type SearchGroup,
   type SearchResult,
 } from '@/lib/workspace-search';
 import type { SourceReading } from '@/lib/first-look';
@@ -74,8 +75,18 @@ export interface CommandSearchProps {
   reading: SourceReading | null;
 }
 
-/** Matches `ProcessSearch`'s own cap — enough to scan, never a wall of rows. */
-const LISTED = 8;
+/** Per group: enough to scan, never a wall of rows (mockup s9 shows one or two). */
+const PER_GROUP = 4;
+
+/** One plain icon per group (§1.7: line icons, no model-work symbols). */
+const GROUP_ICON: Record<SearchGroup, React.ReactNode> = {
+  process: <Workflow size={14} aria-hidden={true} />,
+  decision: <Diamond size={14} aria-hidden={true} />,
+  rule: <ListChecks size={14} aria-hidden={true} />,
+  finding: <SearchCheck size={14} aria-hidden={true} />,
+  code: <FileCode2 size={14} aria-hidden={true} />,
+  glossary: <BookOpen size={14} aria-hidden={true} />,
+};
 
 export default function CommandSearch({ projectId, project, reading }: CommandSearchProps) {
   const [open, setOpen] = useState(false);
@@ -94,7 +105,13 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
     () => searchWorkspace(index, { projectId, legacyCode: project?.legacyCode }, query),
     [index, project?.legacyCode, projectId, query],
   );
-  const shown = results.slice(0, LISTED);
+  // Grouped by what the reader is looking for (§2.10, mockup s9), each group
+  // in the ranking the search gave it; the cursor walks the groups in order.
+  const groups = useMemo(
+    () => groupSearchResults(results).map((g) => ({ ...g, results: g.results.slice(0, PER_GROUP) })),
+    [results],
+  );
+  const shown = useMemo(() => groups.flatMap((g) => g.results), [groups]);
   const at = shown.length ? Math.min(cursor, shown.length - 1) : 0;
 
   const close = useCallback(() => {
@@ -205,68 +222,98 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
         ) : null}
 
         {shown.length > 0 ? (
-          <ul
+          <div
             id={listId}
             role="listbox"
             aria-label={wt('search.results')}
             data-command-search-results=""
-            className="m-0 flex max-h-[50vh] list-none flex-col gap-2 overflow-y-auto p-0"
+            className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto"
           >
-            {shown.map((result, i) => (
-              <li
-                key={result.id}
-                id={`${listId}-option-${i}`}
-                role="option"
-                aria-selected={i === at}
-                data-command-search-hit={result.kind}
-                className={cn(
-                  'rounded-cc-row border border-cc-line px-3 py-2',
-                  i === at ? 'bg-cc-surface-muted' : 'bg-cc-surface',
-                )}
-              >
-                <button
-                  type="button"
-                  onClick={() => launch(result)}
-                  onMouseEnter={() => setCursor(i)}
-                  disabled={!result.href}
-                  className={cn(
-                    'flex w-full flex-wrap items-center gap-2 bg-transparent text-left',
-                    result.href ? 'cursor-pointer' : 'cursor-default',
-                  )}
+            {groups.map(({ group, results: hits }) => (
+              <div key={group} role="group" aria-labelledby={`${listId}-${group}`} data-command-search-group={group}>
+                <p
+                  id={`${listId}-${group}`}
+                  className="m-0 mb-1 px-1 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase"
                 >
-                  <CcTag>{SEARCH_KIND_LABEL[result.kind]}</CcTag>
-                  <span className="text-[13px] font-semibold text-cc-ink">{result.title}</span>
-                  {result.anchor ? (
-                    <CcAnchor label={searchSourceLineLabel(result.anchor)}>{result.anchor}</CcAnchor>
-                  ) : null}
-                  {result.detail ? (
-                    <span className="min-w-0 truncate text-[12px] font-medium text-cc-ink-muted">
-                      {result.detail}
-                    </span>
-                  ) : null}
-                </button>
-
-                {result.kind === 'glossary' ? (
-                  <div data-command-search-glossary-answer="" className="mt-2 space-y-1 pl-1">
-                    <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink">
-                      {result.glossaryAnswer}
-                    </p>
-                    <p className="m-0 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-cc-ink-muted">
-                      <span data-command-search-no-model-call="">{t('run.noModelCall')}</span>
-                      <span aria-hidden={true}>·</span>
-                      <span
-                        data-command-search-glossary-source=""
-                        data-source-origin={result.glossarySourceOrigin ?? 'absent'}
+                  {SEARCH_GROUP_LABEL[group]}
+                </p>
+                <ul role="presentation" className="m-0 flex list-none flex-col gap-1 p-0">
+                  {hits.map((result) => {
+                    const i = shown.indexOf(result);
+                    return (
+                      <li
+                        key={result.id}
+                        id={`${listId}-option-${i}`}
+                        role="option"
+                        aria-selected={i === at}
+                        data-command-search-hit={result.kind}
+                        className={cn(
+                          'rounded-cc-row px-2 py-1',
+                          i === at ? 'bg-cc-surface-muted' : 'bg-cc-surface',
+                        )}
                       >
-                        {result.glossarySource}
-                      </span>
-                    </p>
-                  </div>
-                ) : null}
-              </li>
+                        <button
+                          type="button"
+                          onClick={() => launch(result)}
+                          onMouseEnter={() => setCursor(i)}
+                          disabled={!result.href}
+                          title={result.technical ?? undefined}
+                          className={cn(
+                            'flex min-h-8 w-full items-center gap-2 bg-transparent text-left',
+                            result.href ? 'cursor-pointer' : 'cursor-default',
+                          )}
+                        >
+                          <span className="shrink-0 text-cc-ink-muted">{GROUP_ICON[group]}</span>
+                          {group === 'code' ? (
+                            <span className="min-w-0 flex-1 truncate font-cc-mono text-[12px] font-medium text-cc-ink">
+                              {result.detail}
+                            </span>
+                          ) : (
+                            <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-cc-ink">
+                              {result.title}
+                            </span>
+                          )}
+                          {group === 'rule' ? (
+                            <span className="shrink-0 font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
+                              {result.id.replace(/^rule:/, '')}
+                            </span>
+                          ) : null}
+                          {result.anchor ? (
+                            <span className="shrink-0">
+                              <CcAnchor label={searchSourceLineLabel(result.anchor)}>{result.anchor}</CcAnchor>
+                            </span>
+                          ) : null}
+                        </button>
+
+                        {result.kind === 'glossary' ? (
+                          <div data-command-search-glossary-answer="" className="mt-1 mb-1 space-y-1 pl-6">
+                            <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink">
+                              {result.glossaryAnswer}
+                            </p>
+                            <p className="m-0 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-cc-ink-muted">
+                              <span data-command-search-no-model-call="">{t('run.noModelCall')}</span>
+                              <span aria-hidden={true}>·</span>
+                              <span
+                                data-command-search-glossary-source=""
+                                data-source-origin={result.glossarySourceOrigin ?? 'absent'}
+                              >
+                                {result.glossarySource}
+                              </span>
+                            </p>
+                          </div>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         ) : null}
+
+        <p data-command-search-footer="" className="m-0 text-[12px] font-medium text-cc-ink-muted">
+          {wt('search.footer')}
+        </p>
       </div>
     </CcDialog>
   );
