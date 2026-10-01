@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { buildProcessSkeleton, type ProcessSkeleton } from '@/lib/abap/process-skeleton';
 import { buildExportModel, isEarlyEnd, isMultiInstanceLoop, type BpmnTag, type ExportContainer, type ExportModel } from '@/lib/bpmn/model';
-import { layoutModel, type Bounds, type DiagramLayout, type Point } from '@/lib/bpmn/layout';
+import { layoutModel, type Bounds, type DiagramLayout, type Direction, type PlacedLabel, type Point } from '@/lib/bpmn/layout';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
 import { notDetermined } from '@/lib/workspace-model';
 import { tokenizeAbapLine, type CodeToken } from '@/lib/process-map';
@@ -40,6 +40,10 @@ export interface LandingNode {
   box: Bounds;
   /** The container id of the plane a collapsed sub-process opens. */
   opens: string | null;
+  /** Name and anchor beside an event or a gateway, where the layout put them. */
+  label: PlacedLabel | null;
+  /** The wrapped name inside an activity. */
+  inside: string[] | null;
 }
 
 export interface LandingFlow {
@@ -47,8 +51,8 @@ export interface LandingFlow {
   points: Point[];
   /** The condition as the code writes it; empty for an unconditional flow. */
   condition: string;
-  /** Shown on the flow: `yes` when it repeats the gateway's own condition. */
-  label: string;
+  /** What the flow says on the map, wrapped and placed by the layout; null when nothing. */
+  label: PlacedLabel | null;
   back: boolean;
 }
 
@@ -56,6 +60,7 @@ export interface LandingStore {
   id: string;
   table: string;
   box: Bounds;
+  label: PlacedLabel | null;
 }
 
 export interface LandingPlane {
@@ -111,13 +116,6 @@ function anchorOf(a: { lineStart: number; lineEnd: number } | null | undefined) 
   return a ? { lineStart: a.lineStart, lineEnd: a.lineEnd } : null;
 }
 
-/** "IF x = 1" and the flow "x = 1": the flow is the gateway's yes. */
-function flowLabel(condition: string, gatewayName: string | undefined): string {
-  if (!condition) return '';
-  const own = (gatewayName ?? '').replace(/^(IF|ELSEIF|CHECK|WHILE|CASE|WHEN)\s+/i, '').trim();
-  return own && own === condition.trim() ? 'yes' : condition;
-}
-
 function planeOf(
   container: ExportContainer,
   model: ExportModel,
@@ -142,17 +140,18 @@ function planeOf(
       anchor: anchorOf(n.source.anchor),
       box,
       opens: n.inner?.id ?? null,
+      label: plane.labels.get(n.id) ?? null,
+      inside: plane.inside.get(n.id)?.lines ?? null,
     }];
   });
-  const nameById = new Map(container.nodes.map((n) => [n.id, n.name]));
   const flows: LandingFlow[] = container.flows.flatMap((f) => {
     const points = plane.edges.get(f.id);
     if (!points) return [];
-    return [{ id: f.id, points, condition: f.condition, label: flowLabel(f.condition, nameById.get(f.sourceId)), back: f.back }];
+    return [{ id: f.id, points, condition: f.condition, label: plane.labels.get(f.id) ?? null, back: f.back }];
   });
   const stores: LandingStore[] = container.storeRefs.flatMap((r) => {
     const box = plane.shapes.get(r.id);
-    return box ? [{ id: r.id, table: r.table, box }] : [];
+    return box ? [{ id: r.id, table: r.name ?? r.table, box, label: plane.labels.get(r.id) ?? null }] : [];
   });
   const associations = container.dataAssociations.flatMap((a) => {
     const points = plane.edges.get(a.id);
@@ -184,21 +183,23 @@ function planeOf(
     maxX = Math.max(maxX, x);
     maxY = Math.max(maxY, y);
   };
-  for (const b of [...nodes.map((n) => n.box), ...stores.map((s) => s.box), ...pools.map((p) => p.box)]) {
+  const labelBoxes = [...plane.labels.values()].map((l) => l.box);
+  for (const b of [...nodes.map((n) => n.box), ...stores.map((s) => s.box), ...pools.map((p) => p.box), ...labelBoxes]) {
     grow(b.x, b.y);
     grow(b.x + b.width, b.y + b.height);
   }
   for (const f of [...flows.map((f) => f.points), ...associations, ...messages.map((m) => m.points)]) for (const p of f) grow(p.x, p.y);
-  const frame: Bounds = { x: minX - 80, y: minY - 75, width: maxX - minX + 200, height: maxY - minY + 125 };
+  // Everything drawn, labels included, and a margin that only frames it.
+  const frame: Bounds = { x: minX - 24, y: minY - 24, width: maxX - minX + 48, height: maxY - minY + 48 };
 
   return { id: container.id, label, anchor, frame, nodes, flows, stores, associations, pools, messages, parent };
 }
 
-function buildProcess(fileName: string, program: string): { process: LandingProcess; skeleton: ProcessSkeleton; source: string } {
+function buildProcess(fileName: string, program: string, direction: Direction = 'LR'): { process: LandingProcess; skeleton: ProcessSkeleton; source: string } {
   const source = readExample(fileName);
   const skeleton = buildProcessSkeleton(source);
   const model = buildExportModel(skeleton);
-  const layout = layoutModel(model);
+  const layout = layoutModel(model, { direction });
 
   const planes: LandingPlane[] = [planeOf(model.root, model, layout, program, null, null)];
   const walk = (container: ExportContainer) => {

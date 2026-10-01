@@ -131,6 +131,12 @@ export interface ExportFlow {
    * tell a way past a switch from a branch of the process.
    */
   bypassOf?: string;
+  /**
+   * What the flow says on the canvas when that is not its condition — a
+   * branch label (`Yes`, `No`, a `WHEN` value). Undefined: the condition is
+   * the label, as the file has always written it.
+   */
+  label?: string;
 }
 
 export interface ExportBand {
@@ -150,6 +156,8 @@ export interface ExportStoreRef {
   storeId: string;
   table: string;
   band: number;
+  /** A readable name for the table; undefined: the table name is the name. */
+  name?: string;
 }
 
 export interface ExportDataAssociation {

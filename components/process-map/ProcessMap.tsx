@@ -26,6 +26,7 @@ import {
   type ProcessSearchHit,
 } from '@/lib/process-navigation';
 import BpmnCanvas from './BpmnCanvas';
+import { anchorText } from '@/lib/bpmn/layout';
 import BpmnEditor, { type SaveProcessModel } from './BpmnEditor';
 import ProcessBreadcrumb from './ProcessBreadcrumb';
 import ProcessCodeCard from './ProcessCodeCard';
@@ -355,6 +356,7 @@ export default function ProcessMap({
       unanchored: e.anchor === null,
       unanchoredLabel: UNANCHORED,
       earlyLabel: e.early ? EARLY_END_WORD : null,
+      anchor: anchorText(e.anchor),
     }])),
     [model],
   );

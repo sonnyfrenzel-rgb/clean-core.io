@@ -437,13 +437,19 @@ function waypoints(points: Point[]): XmlElement[] {
 
 function planeElements(container: ExportContainer, plane: PlaneLayout): XmlElement[] {
   const out: XmlElement[] = [];
+  // A label's own bounds (BPMN DI `BPMNLabel`): where the layout put the name,
+  // so a modeller draws it there rather than on top of a line.
+  const label = (id: string): XmlElement[] => {
+    const l = plane.labels.get(id);
+    return l && l.lines.length ? [el('bpmndi:BPMNLabel', [], [bounds(l.nameBox)])] : [];
+  };
   const shape = (id: string, extra: Array<[string, string | boolean]> = []) => {
     const b = plane.shapes.get(id);
-    if (b) out.push(el('bpmndi:BPMNShape', [['id', `${id}_di`], ['bpmnElement', id], ...extra], [bounds(b)]));
+    if (b) out.push(el('bpmndi:BPMNShape', [['id', `${id}_di`], ['bpmnElement', id], ...extra], [bounds(b), ...label(id)]));
   };
   const edge = (id: string) => {
     const points = plane.edges.get(id);
-    if (points) out.push(el('bpmndi:BPMNEdge', [['id', `${id}_di`], ['bpmnElement', id]], waypoints(points)));
+    if (points) out.push(el('bpmndi:BPMNEdge', [['id', `${id}_di`], ['bpmnElement', id]], [...waypoints(points), ...label(id)]));
   };
   // Hosts before the boundary events on them, so a reader draws the host first.
   for (const node of container.nodes) {

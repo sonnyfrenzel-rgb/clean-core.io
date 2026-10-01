@@ -1,6 +1,7 @@
 import { kindWord, EARLY_END_WORD } from '@/lib/process-map';
 import type { LandingNode, LandingPlane } from '@/lib/landing-process';
-import type { Point } from '@/lib/bpmn/layout';
+import { ANCHOR_FONT, LABEL_FONT, type PlacedLabel, type Point } from '@/lib/bpmn/layout';
+import { lineHeight } from '@/lib/bpmn/text-metrics';
 
 /**
  * One plane of a reconstructed process, drawn as SVG on the server — roadmap
@@ -17,30 +18,31 @@ import type { Point } from '@/lib/bpmn/layout';
  * landing page ships the drawing as HTML and no diagram library at all.
  */
 
-const LINE_H = 14;
+const LINE_H = lineHeight(LABEL_FONT);
+const ANCHOR_H = lineHeight(ANCHOR_FONT);
 
-/** Break a technical name into lines of at most `width` characters, at `_`, spaces and `-`. */
-function wrap(text: string, width: number, max: number): string[] {
-  const parts = text.split(/(?<=[_\s-])/);
-  const lines: string[] = [];
-  let current = '';
-  for (const part of parts) {
-    if ((current + part).trimEnd().length > width && current) {
-      lines.push(current.trimEnd());
-      current = part.trimStart();
-    } else {
-      current += part;
-    }
-    while (current.length > width) {
-      lines.push(current.slice(0, width));
-      current = current.slice(width);
-    }
-  }
-  if (current.trim()) lines.push(current.trimEnd());
-  if (lines.length <= max) return lines;
-  const kept = lines.slice(0, max);
-  kept[max - 1] = `${kept[max - 1].slice(0, Math.max(0, width - 1))}…`;
-  return kept;
+/**
+ * A label exactly where the layout placed it: the name lines centred in the
+ * box, the anchor under them. The layout measured and wrapped the text
+ * (`lib/bpmn/text-metrics.ts`), so nothing here breaks a line of its own.
+ */
+function LabelText({ label, muted = false }: { label: PlacedLabel; muted?: boolean }) {
+  const cx = label.box.x + label.box.width / 2;
+  const nameH = label.lines.length * LINE_H;
+  return (
+    <>
+      {label.lines.map((l, i) => (
+        <text key={i} x={cx} y={label.box.y + 11 + i * LINE_H} textAnchor="middle" fontSize={LABEL_FONT} className={muted ? 'fill-cc-ink-muted' : 'fill-cc-ink'}>
+          {l}
+        </text>
+      ))}
+      {label.anchor && (
+        <text x={cx} y={label.box.y + nameH + 10} textAnchor="middle" fontSize={ANCHOR_FONT} className="cc-bpmn-anchor font-cc-mono fill-cc-ink-muted">
+          {label.anchor}
+        </text>
+      )}
+    </>
+  );
 }
 
 export function anchorText(a: { lineStart: number; lineEnd: number } | null): string {
@@ -132,7 +134,6 @@ function Node({ node, interactive }: { node: LandingNode; interactive: boolean }
 
   if (node.tag === 'startEvent' || node.tag === 'endEvent' || node.tag === 'boundaryEvent' || node.tag === 'intermediateCatchEvent') {
     const end = node.tag === 'endEvent';
-    const label = node.tag === 'boundaryEvent' ? [] : wrap(node.name, 20, 2);
     return (
       <g {...common}>
         <title>{name}</title>
@@ -145,23 +146,13 @@ function Node({ node, interactive }: { node: LandingNode; interactive: boolean }
         />
         {node.tag === 'boundaryEvent' && <circle cx={cx} cy={cy} r={width / 2 - 3.5} className="fill-none stroke-cc-error" strokeWidth={1.2} />}
         {node.error && <ErrorMark cx={cx} cy={cy} />}
-        {label.map((l, i) => (
-          <text key={i} x={cx} y={y + height + 16 + i * LINE_H} textAnchor="middle" fontSize={12} className="fill-cc-ink">
-            {l}
-          </text>
-        ))}
-        {node.tag !== 'boundaryEvent' && (
-          <text x={cx} y={y + height + 16 + label.length * LINE_H} textAnchor="middle" fontSize={11} className="cc-bpmn-anchor font-cc-mono fill-cc-ink-muted">
-            {anchor}
-          </text>
-        )}
+        {node.label && <LabelText label={node.label} />}
       </g>
     );
   }
 
   if (node.tag === 'exclusiveGateway' || node.tag === 'parallelGateway') {
-    const label = wrap(node.name, 24, 3);
-    const m = 9;
+    const m = width * 0.18;
     return (
       <g {...common}>
         <title>{name}</title>
@@ -173,25 +164,19 @@ function Node({ node, interactive }: { node: LandingNode; interactive: boolean }
         {node.tag === 'parallelGateway' ? (
           <path d={`M${cx - m} ${cy} H${cx + m} M${cx} ${cy - m} V${cy + m}`} className="stroke-cc-information" strokeWidth={2.5} />
         ) : (
-          <path d={`M${cx - 7} ${cy - 7} L${cx + 7} ${cy + 7} M${cx + 7} ${cy - 7} L${cx - 7} ${cy + 7}`} className="stroke-cc-information" strokeWidth={2.5} />
+          <path d={`M${cx - m * 0.8} ${cy - m * 0.8} L${cx + m * 0.8} ${cy + m * 0.8} M${cx + m * 0.8} ${cy - m * 0.8} L${cx - m * 0.8} ${cy + m * 0.8}`} className="stroke-cc-information" strokeWidth={2.5} />
         )}
-        {/* Above the diamond: below it the branches leave, and a label there sits on their line. */}
-        {label.map((l, i) => (
-          <text key={i} x={cx} y={y - 8 - (label.length - i) * LINE_H} textAnchor="middle" fontSize={12} className="fill-cc-ink">
-            {l}
-          </text>
-        ))}
-        <text x={cx} y={y - 8} textAnchor="middle" fontSize={11} className="cc-bpmn-anchor font-cc-mono fill-cc-ink-muted">
-          {anchor}
-        </text>
+        {node.label && <LabelText label={node.label} />}
       </g>
     );
   }
 
   // Activities: task kinds, a collapsed sub-process, a call activity.
   const glyph = ['serviceTask', 'sendTask', 'userTask', 'businessRuleTask'].includes(node.tag);
-  const label = wrap(node.name, 13, 3);
-  const top = y + height / 2 - ((label.length + 1) * LINE_H) / 2 + 11;
+  const label = node.inside ?? [node.name];
+  // The block of name lines and the anchor line, centred in the box.
+  const block = label.length * LINE_H + (node.anchor ? ANCHOR_H : 0);
+  const top = y + (height - block) / 2;
   return (
     <g {...common}>
       <title>{name}</title>
@@ -206,11 +191,11 @@ function Node({ node, interactive }: { node: LandingNode; interactive: boolean }
       />
       {glyph && <TaskGlyph node={node} />}
       {label.map((l, i) => (
-        <text key={i} x={cx} y={top + i * LINE_H} textAnchor="middle" fontSize={12} fontWeight={600} className="fill-cc-ink">
+        <text key={i} x={cx} y={top + 11 + i * LINE_H} textAnchor="middle" fontSize={LABEL_FONT} fontWeight={600} className="fill-cc-ink">
           {l}
         </text>
       ))}
-      <text x={cx} y={top + label.length * LINE_H} textAnchor="middle" fontSize={11} className="cc-bpmn-anchor font-cc-mono fill-cc-ink-muted">
+      <text x={cx} y={top + label.length * LINE_H + 10} textAnchor="middle" fontSize={ANCHOR_FONT} className="cc-bpmn-anchor font-cc-mono fill-cc-ink-muted">
         {anchor}
       </text>
       {node.tag === 'subProcess' && !node.multiInstance && (
@@ -291,33 +276,12 @@ export default function BpmnPlaneSvg({ plane, idPrefix, interactive = false, sca
         ))}
       </g>
       <g aria-hidden="true">
-        {plane.flows
-          .filter((f) => f.label)
-          .map((f) => {
-            // On the longest leg of the flow: the first leg often ends at a
-            // label under an event, the longest one runs through open space.
-            let a = f.points[0];
-            let b = f.points[1] ?? a;
-            for (let i = 1; i < f.points.length; i += 1) {
-              const [p, q] = [f.points[i - 1], f.points[i]];
-              if (Math.hypot(q.x - p.x, q.y - p.y) > Math.hypot(b.x - a.x, b.y - a.y)) [a, b] = [p, q];
-            }
-            const text = f.label.length > 26 ? `${f.label.slice(0, 25)}…` : f.label;
-            const vertical = Math.abs(a.x - b.x) < 1;
-            return (
-              <text
-                key={`l${f.id}`}
-                x={vertical ? a.x + 6 : (a.x + b.x) / 2}
-                y={vertical ? (a.y + b.y) / 2 + 4 : a.y - 7}
-                textAnchor={vertical ? 'start' : 'middle'}
-                fontSize={11}
-                className="fill-cc-ink-muted"
-              >
-                <title>{f.condition}</title>
-                {text}
-              </text>
-            );
-          })}
+        {plane.flows.map((f) => (f.label ? (
+          <g key={`l${f.id}`}>
+            <title>{f.condition}</title>
+            <LabelText label={f.label} muted />
+          </g>
+        ) : null))}
       </g>
 
       {plane.stores.map((s) => {
@@ -330,9 +294,7 @@ export default function BpmnPlaneSvg({ plane, idPrefix, interactive = false, sca
               strokeWidth={1.3}
             />
             <path d={`M${x} ${y + 8} A${width / 2} 8 0 0 0 ${x + width} ${y + 8}`} className="fill-none stroke-cc-ink-muted" strokeWidth={1.3} />
-            <text x={x + width / 2} y={y + height + 15} textAnchor="middle" fontSize={11} className="font-cc-mono fill-cc-ink-muted">
-              {s.table}
-            </text>
+            {s.label && <LabelText label={s.label} muted />}
           </g>
         );
       })}
