@@ -3,7 +3,8 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { readControlFlow } from '../lib/abap/control-flow';
 import { readStatements } from '../lib/abap/statement-reader';
-import { readBlocks } from '../lib/abap/block-structure';
+import { readBlocks, containerAt } from '../lib/abap/block-structure';
+import { readCallGraph } from '../lib/abap/call-graph';
 
 /**
  * Where the program decides — roadmap 2.1.
@@ -334,4 +335,20 @@ test('a SELECT SINGLE or SELECT INTO TABLE inside a SELECT loop does not take it
     '  ENDLOOP.',
     'ENDSELECT.',
   ]).filter((b) => b[0] === 'select')).toEqual([['select', 2, 5, true]]);
+});
+
+test('a line inside FUNCTION … ENDFUNCTION belongs to the function module, not the event before it (carried QA findings ea12fd0bac04 / 46734b4a0a61)', () => {
+  const source = [
+    'FUNCTION-POOL zfg.',
+    'INITIALIZATION.',
+    '  lv_init = 1.',
+    'FUNCTION z_foo.',
+    "  CALL FUNCTION 'BAPI_X'.",
+    'ENDFUNCTION.',
+  ].join(String.fromCharCode(10));
+  const { containers } = readBlocks(readStatements(source));
+  expect(containerAt(containers, 5)).toMatchObject({ kind: 'function', name: 'Z_FOO', lineStart: 4, lineEnd: 6 });
+  // The event block stops where the function module starts.
+  expect(containerAt(containers, 3)).toMatchObject({ kind: 'event', name: 'INITIALIZATION', lineEnd: 3 });
+  expect(readCallGraph(source).functionModules[0].caller).toBe('Z_FOO');
 });
