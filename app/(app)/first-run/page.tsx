@@ -67,15 +67,15 @@ const STEPS: Step[] = [
     action: 'Scroll to "Try it with an example"',
     detail:
       'Below your projects there is a panel of ready-made legacy reports. They are fictional, but written the way grown enterprise ABAP actually looks — and they are the same objects the analysis engine is regression-tested against.',
-    see: `${STARTER_EXAMPLES.length} example cards, each naming the object, its size, and the Clean Core problem it demonstrates.`,
+    see: 'One recommended example under "Start here", three more chosen for what they show, and the rest behind "More examples" — each card naming the object, its size, and the Clean Core problem it demonstrates.',
     note: 'This is the step that saves you the most time. Nothing has to be exported from an SAP system, and no customer code leaves anybody\'s estate.',
   },
   {
     n: 3,
     where: 'Dashboard',
-    action: 'Click one card — Z_MATERIAL_STOCK_CALC is a good first pick',
+    action: 'Press Start on the card under "Start here" — Z_MM_PO_APPROVAL, the case the demo project is built on',
     detail:
-      'One click creates the project, stages the source, and takes you straight to stage 1, Analyze. At 99 lines it is small enough to read in full, and it has the single most common Clean Core problem in it: direct reads on MARA, MARC and MARD where released SAP APIs exist.',
+      'One click creates the project, stages the source, and takes you straight to stage 1, Analyze. At 668 lines it is a real approval process — vendor block list, price tolerance, approval by department head or manager — and it shows the honest gaps too: two includes the code names but does not contain are marked Not determined, never guessed.',
     see: 'The Analyze stage, with a green "Source Code Ready" panel confirming the source is staged.',
   },
   {

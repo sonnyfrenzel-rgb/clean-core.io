@@ -457,6 +457,8 @@ test.describe('the screen says what the click costs, before the click', () => {
     const panel = page.getByTestId('starter-examples');
     await expect(panel.getByRole('heading', { name: /Try it with an example/i })).toBeVisible({ timeout: 45000 });
 
+    // Every example on screen: the first four up front, the rest under "More examples".
+    await panel.locator('[data-examples-more] button').first().click();
     // The one that ran is marked as such; the others are marked free.
     await expect(panel.getByTestId('starter-example-ran-before')).toHaveCount(1);
     await expect(panel.getByTestId('starter-example-free')).toHaveCount(STARTER_EXAMPLES.length - 1);
@@ -469,7 +471,7 @@ test.describe('the screen says what the click costs, before the click', () => {
     await expect(panel.getByTestId('starter-example-ran-before'), 'the ran-before badge says a further run costs one')
       .toHaveText(/uses a run/i);
 
-    await panel.getByTestId('starter-example-name').filter({ hasText: /^Z_MATERIAL_STOCK_CALC$/ }).click();
+    await panel.locator('[data-example-start="Z_MATERIAL_STOCK_CALC"]').click();
 
     const warning = panel.getByTestId('starter-example-rerun-warning');
     await expect(warning).toBeVisible({ timeout: 15000 });
@@ -480,7 +482,7 @@ test.describe('the screen says what the click costs, before the click', () => {
     await expect(page).toHaveURL(/\/dashboard/);
 
     // A free one goes straight through, so the warning is not simply a broken card.
-    await panel.getByTestId('starter-example-name').filter({ hasText: /^Z_INVOICE_EXTRACTOR$/ }).click();
+    await panel.locator('[data-example-start="Z_INVOICE_EXTRACTOR"]').click();
     await page.waitForURL(/\/project\/[^/]+\/analyze/, { timeout: 45000 });
   });
 });

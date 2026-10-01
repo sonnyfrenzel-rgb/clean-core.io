@@ -659,12 +659,14 @@ test.describe('"New project" explains before it starts', () => {
     await page.goto('/admin/new-project', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-cc-new-project]')).toBeVisible({ timeout: 60000 });
 
-    // An example: free the first time, and the sentence says both halves.
-    await expect(page.locator('[data-new-project-quota="example"]')).toContainText(
-      'examples don’t use your analysis runs the first time',
-    );
+    // An example: free the first time, said in one line, and the whole rule
+    // one click away (owner feedback 01.10.2026: the long footnote overwhelmed).
+    const cost = page.locator('[data-new-project-examples] [data-examples-cost]');
+    await expect(cost).toContainText('Free the first time for each example');
+    await cost.getByRole('button', { name: 'How runs are counted' }).click();
+    await expect(cost).toContainText('examples don’t use your analysis runs the first time');
     expect(
-      await page.locator('[data-example-quota]').evaluateAll((els) =>
+      await page.locator('[data-new-project-examples] [data-testid="starter-example-free"]').evaluateAll((els) =>
         [...new Set(els.map((el) => (el.textContent || '').trim()))],
       ),
     ).toEqual([STARTER_BADGE_FREE]);
