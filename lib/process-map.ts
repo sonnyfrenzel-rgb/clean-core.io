@@ -307,10 +307,19 @@ export function kindWord(tag: string): string {
  */
 export const EARLY_END_WORD = 'End (early)';
 
-/** Start and end events: where a level begins and ends. Never a step (ADR-054). */
-const EVENT_TAGS = new Set(['startEvent', 'endEvent']);
+/**
+ * Start and end events: where a level begins and ends. Never a step (ADR-054).
+ *
+ * And the milestone where two report-event blocks meet: the plain reading folds
+ * an `END-OF-SELECTION` start into an `intermediateThrowEvent` (`lib/bpmn/model.ts`),
+ * which is still that event, drawn as one — it takes no step number and no step
+ * counter counts it, or folding the blocks would add a step the code never had.
+ * A boundary event is not here: it sits on an activity and was always measured
+ * with the steps.
+ */
+const EVENT_TAGS = new Set(['startEvent', 'endEvent', 'intermediateThrowEvent']);
 
-/** True for a start or an end event — the elements no counter of steps may count. */
+/** True for a start, end or milestone event — the elements no counter of steps may count. */
 export function isEventTag(tag: string): boolean {
   return EVENT_TAGS.has(tag);
 }
