@@ -87,7 +87,7 @@ export interface TransactionCall extends CallSite {
 }
 
 export interface SubmitCall extends CallSite {
-  /** The report name, when it is a literal, a bare name, or a constant declared here. */
+  /** The report name, when it is a literal or a bare name — ABAP reads no constant after a bare `SUBMIT`. */
   program?: string;
   programExpression: string;
   /** `name` is the bare report name ABAP takes literally after `SUBMIT`. */
@@ -230,14 +230,26 @@ function readFormParameters(tail: string): FormParameter[] {
   const out: FormParameter[] = [];
   for (let i = 0; i < marks.length; i++) {
     const body = tail.slice(marks[i].from, i + 1 < marks.length ? marks[i + 1].keywordAt : tail.length);
-    let mode: 'name' | 'type' | 'ref' = 'name';
+    // `kind`/`table`/`of`: the words of a table or line type — `LIKE LINE OF
+    // itab`, `TYPE STANDARD TABLE OF t`, `TYPE RANGE OF f` — which are part of
+    // the type, not parameters (carried QA finding 9dc8f13ac86b). A generic
+    // `TYPE ANY TABLE` or `TYPE STANDARD TABLE` ends without `OF`, so the next
+    // word there is a parameter again.
+    let mode: 'name' | 'type' | 'ref' | 'kind' | 'table' | 'of' = 'name';
     for (const token of body.split(/[\s,]+/).filter(Boolean)) {
       const upper = token.toUpperCase();
       if (upper === 'TYPE' || upper === 'LIKE' || upper === 'STRUCTURE') { mode = 'type'; continue; }
       if (mode === 'type') {
-        mode = upper === 'REF' ? 'ref' : 'name';
+        if (upper === 'REF') mode = 'ref';
+        else if (upper === 'LINE' || upper === 'RANGE') mode = 'table';
+        else if (upper === 'TABLE') mode = 'table';
+        else if (['STANDARD', 'SORTED', 'HASHED', 'INDEX', 'ANY'].includes(upper)) mode = 'kind';
+        else mode = 'name';
         continue;
       }
+      if (mode === 'kind' && upper === 'TABLE') { mode = 'table'; continue; }
+      if (mode === 'table' && upper === 'OF') { mode = 'of'; continue; }
+      if (mode === 'of') { mode = 'name'; continue; }
       if (mode === 'ref') { mode = upper === 'TO' ? 'ref' : 'name'; continue; }
       if (upper === 'DEFAULT' || upper === 'OPTIONAL') { mode = 'type'; continue; }
       const wrapped = /^(?:VALUE|REFERENCE)\(\s*([\w/]+)\s*\)$/i.exec(token);
@@ -320,11 +332,7 @@ function readTransaction(
   };
 }
 
-function readSubmit(
-  statement: AbapStatement,
-  site: CallSite,
-  constants: Map<string, string>,
-): SubmitCall | null {
+function readSubmit(statement: AbapStatement, site: CallSite): SubmitCall | null {
   const m = /^SUBMIT\s+(?:\(\s*([\w/]+)\s*\)|('(?:[^']|'')*'|[\w/]+))/i.exec(statement.text);
   if (!m) return null;
   if (m[1]) {
@@ -339,14 +347,14 @@ function readSubmit(
   const token = m[2];
   const { value, literal } = unquote(token);
   // A bare token after SUBMIT is the report name itself — ABAP takes it
-  // literally. Unlike CALL TRANSACTION, where the bare form names a constant far
-  // more often than a transaction.
-  const constant = constants.get(value.toUpperCase());
-  const program = literal ? value : constant ?? value;
-  const from: SubmitCall['resolvedFrom'] = literal ? 'literal' : constant !== undefined ? 'constant' : 'name';
+  // literally, even where a constant of that name is declared: only `(name)`
+  // reads a data object (carried QA finding a69811431418). Unlike CALL
+  // TRANSACTION, where the bare form names a constant far more often than a
+  // transaction.
+  const from: SubmitCall['resolvedFrom'] = literal ? 'literal' : 'name';
   return {
     ...site,
-    program: program.toUpperCase(),
+    program: value.toUpperCase(),
     programExpression: token,
     resolvedFrom: from,
     dynamic: false,
@@ -486,6 +494,12 @@ export function readCallGraphFrom(
     // one does not happen at this place.
     const enclosing = structure.enclosing[statement.index];
     if (enclosing.some((b) => b.kind === 'define')) continue;
+    // Native SQL is the database's language, not ABAP: an `UPDATE` inside
+    // `EXEC SQL … ENDEXEC` is not an Open SQL write, and its table is not read
+    // the way `databaseWriteIn` reads one. The second-opinion baseline already
+    // said no call or write is read out of it; now it is true (carried QA
+    // finding 3b7cbdab1e93).
+    if (statement.nativeSql) continue;
 
     const site = siteOf(statement, containers);
 
@@ -506,7 +520,7 @@ export function readCallGraphFrom(
         continue;
       }
       case 'SUBMIT': {
-        const submit = readSubmit(statement, site, constants);
+        const submit = readSubmit(statement, site);
         if (submit) submits.push(submit);
         continue;
       }

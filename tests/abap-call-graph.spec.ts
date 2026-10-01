@@ -88,6 +88,20 @@ test.describe('the FORM/PERFORM graph of the shipped programs', () => {
       { name: 'CV_AMOUNT', direction: 'changing' },
     ]);
   });
+
+  test('the words of a table or line type are part of the type, not parameters', () => {
+    // Carried QA finding 9dc8f13ac86b: `LIKE LINE OF lt_items` gave the
+    // parameters P, OF and LT_ITEMS.
+    const report = readCallGraph([
+      'FORM f USING p LIKE LINE OF lt_items q TYPE i.', 'ENDFORM.',
+      'FORM g TABLES t TYPE STANDARD TABLE CHANGING c TYPE TABLE OF mara r TYPE RANGE OF matnr.', 'ENDFORM.',
+      'FORM h USING x TYPE ANY y TYPE REF TO cl_x z TYPE ANY TABLE w.', 'ENDFORM.',
+    ].join('\n'));
+    const names = (form: string) => report.forms.find((f) => f.name === form)?.parameters.map((p) => p.name);
+    expect(names('F')).toEqual(['P', 'Q']);
+    expect(names('G')).toEqual(['T', 'C', 'R']);
+    expect(names('H')).toEqual(['X', 'Y', 'Z', 'W']);
+  });
 });
 
 test.describe('calls the graph cannot close', () => {
@@ -237,6 +251,17 @@ test.describe('function modules, transactions and reports', () => {
     expect(call.program).toBeUndefined();
     expect(call.programExpression).toBe('(lv_prog)');
   });
+
+  test('a bare SUBMIT names the report even where a constant of that name exists', () => {
+    // Carried QA finding a69811431418: ABAP reads the bare operand after SUBMIT
+    // as the report name; only `SUBMIT (c_report)` would read the constant.
+    const call = readCallGraph(
+      "CONSTANTS c_report TYPE syrepid VALUE 'Z_REAL'.\nFORM go.\n  SUBMIT c_report AND RETURN.\nENDFORM.",
+    ).submits[0];
+    expect(call.program).toBe('C_REPORT');
+    expect(call.resolvedFrom).toBe('name');
+    expect(call.dynamic).toBe(false);
+  });
 });
 
 test.describe('AUTHORITY-CHECK with object and fields', () => {
@@ -342,5 +367,27 @@ test.describe('the seam the process skeleton reads', () => {
     expect(branch!.lineStart).toBeGreaterThanOrEqual(
       facts.calls.forms.find((f) => f.name === 'DECIDE_APPROVAL')!.lineStart,
     );
+  });
+});
+
+test.describe('native SQL is not an Open SQL write', () => {
+  // Carried QA finding 3b7cbdab1e93: the dispatch read the keyword of a
+  // statement inside EXEC SQL … ENDEXEC and reported it as an ABAP database
+  // write, while tests/helpers/abaplint-baseline.json says no write is read out
+  // of native SQL.
+  test('UPDATE, INSERT and DELETE inside EXEC SQL give no database write', () => {
+    const source = [
+      'REPORT z.',
+      'EXEC SQL.',
+      "  UPDATE zlog SET message = 'x'",
+      'ENDEXEC.',
+      "EXEC SQL. INSERT INTO zlog VALUES ('a') ENDEXEC.",
+      'EXEC SQL.',
+      '  DELETE FROM zlog',
+      'ENDEXEC.',
+      "UPDATE zlog SET message = 'y' WHERE id = 1.",
+    ].join(String.fromCharCode(10));
+    const writes = readCallGraph(source).databaseWrites;
+    expect(writes.map((w) => [w.keyword, w.table, w.lineStart])).toEqual([['UPDATE', 'ZLOG', 9]]);
   });
 });
