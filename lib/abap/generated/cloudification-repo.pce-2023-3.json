@@ -3,7 +3,7 @@
   "source": "https://raw.githubusercontent.com/SAP/abap-atc-cr-cv-s4hc/main/src/objectReleaseInfo_PCE2023_3.json",
   "release": "pce-2023-3",
   "formatVersion": "1",
-  "fetchedAt": "2026-09-30T12:38:38.051Z",
+  "fetchedAt": "2026-10-01T17:59:00.389Z",
   "sourceSha256": "a2ae2db5368e72b46329b6f5e1364ca3b92728edb3c6c5adadf1078af1c03ed1",
   "entryCount": 12198
  },
