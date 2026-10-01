@@ -66,6 +66,7 @@ import {
 } from '@/lib/demo-tour';
 import type { DemoWorkspaceData } from '@/lib/demo-workspace';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
+import { routeLabel } from '@/lib/sap-naming';
 import {
   demoConfirmRoute,
   demoEvidence,
@@ -225,7 +226,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
       overview,
       fit,
       costs: { state: 'not-entered', reason: wt('demo.costsNotEntered') },
-      proposal: demo.design.recommendedRoute,
+      proposal: routeLabel(demo.design.recommendedRoute),
     });
   }, [management, fit, findingsRead, demo.rail, demo.design.recommendedRoute]);
   const executiveHref = useCallback(
@@ -644,7 +645,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
             {stop('decision')}
             <CcCard title={wt('demo.openDecision')} meta={<CcProvenanceChip value="proposed" />}>
               <p className="m-0 text-[13px] font-medium text-cc-ink">
-                {wt('demo.proposedFromEvidence')} <b className="font-semibold">{demo.design.recommendedRoute}</b>.
+                {wt('demo.proposedFromEvidence')} <b className="font-semibold">{routeLabel(demo.design.recommendedRoute)}</b>.
               </p>
               <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">{demo.design.rationale}</p>
               <p className="m-0 mt-2 text-[12px] font-medium text-cc-ink-muted">
@@ -657,7 +658,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
                   aria-pressed={state.targetConfirmed}
                   data-demo-confirm-route=""
                 >
-                  {state.targetConfirmed ? wt('demo.confirmedWithdraw') : demoConfirmRoute(demo.design.recommendedRoute)}
+                  {state.targetConfirmed ? wt('demo.confirmedWithdraw') : demoConfirmRoute(routeLabel(demo.design.recommendedRoute))}
                 </CcButton>
               </div>
             </CcCard>

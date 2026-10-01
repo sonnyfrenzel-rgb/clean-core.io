@@ -15,7 +15,7 @@ import { CcSeverity } from '@/components/cc/Identifier';
  */
 const ARCH: Record<string, string> = {
   rap: 'In-App ABAP Cloud (RAP)',
-  cap: 'Side-by-Side BTP (CAP)',
+  cap: 'Side-by-Side BAIP (CAP)',
   integration: 'SAP Integration Suite',
   event: 'SAP Event Mesh',
   retire: 'Retire / Decommission',

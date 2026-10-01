@@ -52,6 +52,7 @@ import StaleNotice from '@/components/StaleNotice';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { BAIP } from '@/lib/sap-naming';
 
 /**
  * A file the workspace can show and the next stage can read. The model's answer
@@ -655,7 +656,7 @@ CMD ["node", "srv/service.js"]`
            - db/schema.cds: SAP CAP schema definition OR TypeORM entities mapping legacy database tables
            - package.json: Application dependencies, metadata, and scripts
            - Dockerfile: Multi-stage container setup for production
-           - erp-triggers/zcl_core_event_publisher.clas.abap: CRITICAL! S/4HANA-side event trigger: a clean ABAP Cloud class (or BAdI implementation) that intercepts transactional updates in the core ERP database and publishes the event payload asynchronously to the BTP Event Mesh/REST endpoint.
+           - erp-triggers/zcl_core_event_publisher.clas.abap: CRITICAL! S/4HANA-side event trigger: a clean ABAP Cloud class (or BAdI implementation) that intercepts transactional updates in the core ERP database and publishes the event payload asynchronously to the SAP Event Mesh/REST endpoint on ${BAIP}.
         4. Use modern patterns (async/await, dependency injection, structured logging).
         5. CRITICAL FOR SANDBOX: Use standard Node.js built-ins (like 'fetch', 'console') where possible. If you must use external libraries, restrict yourself strictly to: express, pino, pino-pretty, typeorm, @sap-cloud-sdk/http-client, @sap/xssec, and passport. Do NOT use any other external npm modules.
         6. CRITICAL: Do NOT import specific strategies like 'XS720Strategy' from '@sap/xssec' if they are not standard exports. Use standard passport-jwt or mock the authentication middleware entirely.

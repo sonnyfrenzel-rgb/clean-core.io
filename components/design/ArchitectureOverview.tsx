@@ -2,6 +2,7 @@
 
 import { Terminal, Layers } from 'lucide-react';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import { BAIP, sapNamesForDisplay } from '@/lib/sap-naming';
 
 interface ArchitectureOverviewProps {
   overview?: {
@@ -36,7 +37,7 @@ export default function ArchitectureOverview({ overview }: ArchitectureOverviewP
           <span className="cc-text-label text-cc-ink-muted">Runtime Platform</span>
           <div className="flex items-center gap-2 mt-1">
             <Layers className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" />
-            <span className="cc-text-h3 text-cc-ink">{overview?.runtimePlatform || 'SAP BTP'}</span>
+            <span className="cc-text-h3 text-cc-ink">{overview?.runtimePlatform ? sapNamesForDisplay(overview.runtimePlatform) : BAIP}</span>
           </div>
         </div>
       </div>

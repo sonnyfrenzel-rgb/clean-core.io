@@ -13,7 +13,7 @@ import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { itAtcComparison, wt } from '@/lib/workspace-messages';
 import { routesNamed, type CatalogProfile } from '@/lib/it-view';
 import type { ItFindingsSource } from '@/lib/it-findings';
-import type { ArchitectureContract } from '@/lib/architecture-contract';
+import { contractForDisplay, type ArchitectureContract } from '@/lib/architecture-contract';
 import type { GenerationDecision } from '@/lib/generation-direction';
 import type { Project } from '@/lib/types';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
@@ -248,7 +248,7 @@ function useContract(projectId: string, enabled: boolean): ContractRead {
         if (!res.ok || !body || !body.decision) {
           return done({ state: 'absent', reason: body?.error || wt('it.contractUnread') });
         }
-        done({ state: 'ready', value: { contract: body.contract ?? null, decision: body.decision } });
+        done({ state: 'ready', value: { contract: body.contract ? contractForDisplay(body.contract) : null, decision: body.decision } });
       } catch {
         done({ state: 'absent', reason: wt('it.contractUnread') });
       }

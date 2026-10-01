@@ -21,6 +21,7 @@ import {
   type ProjectDecision,
 } from './project-decision';
 import type { ProvenanceValue } from './provenance';
+import { sapNamesForDisplay } from './sap-naming';
 
 /**
  * The Management overview — roadmap 3.0.10.
@@ -585,7 +586,7 @@ export function decisionOverviewCard(decision: Loaded<DecisionRead>): DecisionOv
     ).sentence,
     identity,
     status: d.status,
-    summary: d.summary,
+    summary: sapNamesForDisplay(d.summary),
     waitsFor,
     qualifiers,
     conditions,

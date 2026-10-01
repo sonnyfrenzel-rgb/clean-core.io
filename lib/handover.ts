@@ -34,6 +34,7 @@ import { testEvidence, staleness } from './workflow-steps';
 import { coveringTestRunReceipt } from './test-receipt';
 import { isEngineDocumentation } from './process-documentation';
 import { readStoredDecision, ARCHITECTURE_OPTION, type StoredDecision } from './decision-draft';
+import { routeLabel, sapNamesForDisplay } from './sap-naming';
 import { buildEvidenceChain, type EvidenceChain } from './evidence-chain';
 import { sha256Hex } from './artefact-digest';
 import { toDate } from './format';
@@ -140,7 +141,7 @@ export function storedDecisionOf(project: HandoverProject | null): StoredDecisio
 /** The signed-off target in words, or `null` when nothing is signed off. */
 export function signedOffTarget(project: HandoverProject | null): string | null {
   if (!project?.approvedByArchitect || !project.targetArchitecture) return null;
-  return ARCHITECTURE_OPTION[project.targetArchitecture]?.label ?? project.targetArchitecture;
+  return sapNamesForDisplay(ARCHITECTURE_OPTION[project.targetArchitecture]?.label ?? project.targetArchitecture);
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -684,7 +685,8 @@ export function handoverGroups(
   const decisionLink = by('decision');
   const stored = storedDecisionOf(project);
   const target = signedOffTarget(project);
-  const route = str(project.extensibilityRoute);
+  const storedRoute = str(project.extensibilityRoute);
+  const route = storedRoute ? routeLabel(storedRoute) : storedRoute;
   const decision = design.state === 'stale'
     ? group('decision', { title: target ?? route ?? 'Target design', sub: 'Made for a previous source.', provenance: 'stale', provenanceNote: design.provenanceNote })
     : decisionLink.state === 'on-record' && stored
@@ -839,7 +841,8 @@ export function handoverFacets(
         : { key: 'audit-pack', label: 'Audit pack', value: 'Partial', sub: 'No input fingerprint — run the analysis again', provenance: 'not-determined', basis: 'The run on record carries no input fingerprint.' };
 
   const target = signedOffTarget(project);
-  const route = str(project.extensibilityRoute);
+  const storedRoute = str(project.extensibilityRoute);
+  const route = storedRoute ? routeLabel(storedRoute) : storedRoute;
   const designPhase = phase('design');
   const decisionFacet: HandoverFacet = target
     ? { key: 'decision', label: 'Architecture decision', value: 'Confirmed', sub: `${target}${str(project.approvedBy) ? ` · by ${project.approvedBy}` : ''}`, provenance: 'confirmed', basis: 'The signed-in account’s sign-off — a self-declaration, not an organisational mandate.' }

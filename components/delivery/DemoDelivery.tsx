@@ -10,6 +10,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcTextarea from '@/components/cc/Textarea';
 import { NOT_SIGNED, SIGNED_COVERS } from '@/lib/handover';
 import { PHASES } from '@/lib/workflow-steps';
+import { routeLabel } from '@/lib/sap-naming';
 import { APP_VERSION } from '@/lib/version';
 import { DEMO_RESET_LABEL } from '@/lib/demo-marks';
 import { catalogForReader } from '@/lib/messages/demo';
@@ -56,7 +57,7 @@ export default function DemoDelivery({
   state: DemoDeliveryState;
   patch: (n: Partial<DemoDeliveryState>) => void;
 }) {
-  const route = demo.design.recommendedRoute;
+  const route = routeLabel(demo.design.recommendedRoute);
   const findings = demo.analyze.findings.length;
   const missing = demo.delivery.missing;
   const ran = demo.testing.verdicts.passed + demo.testing.verdicts.failed;

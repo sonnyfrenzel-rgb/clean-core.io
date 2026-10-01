@@ -5,6 +5,7 @@ import { ArrowRight, Shield, BarChart3, Zap, AlertTriangle, Cloud, Code2 } from 
 import type { SupportFinding } from '@/lib/abap/class-model';
 import SupportLevelMark from '@/components/analyze/SupportLevelMark';
 import { bandRange, scoreBand } from '@/lib/clean-core-score';
+import { BAIP, isSideBySideRoute } from '@/lib/sap-naming';
 
 interface RoutingRationaleProps {
   /** Optional: absent on runs created before the extensibility router (pre-v1.14). */
@@ -44,7 +45,7 @@ export default function RoutingRationale({
 
   if (!extensibilityRoute) return null;
 
-  const isBtp = extensibilityRoute.includes('BTP');
+  const isBtp = isSideBySideRoute(extensibilityRoute);
 
   return (
     <div className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc">
@@ -65,7 +66,7 @@ export default function RoutingRationale({
           </div>
           <span className="inline-flex items-center gap-2 cc-text-h3 text-cc-ink">
             {isBtp ? <Cloud className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" /> : <Code2 className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" />}
-            {isBtp ? 'BTP Side-by-Side' : 'ABAP Cloud (RAP)'}
+            {isBtp ? `${BAIP} Side-by-Side` : 'ABAP Cloud (RAP)'}
           </span>
         </div>
 
@@ -146,7 +147,7 @@ export default function RoutingRationale({
           <p className="cc-text-cell text-cc-ink">
             {isBtp ? (
               <>The analysis identified constructs requiring side-by-side decoupling (dynamic calls, BAdI enhancements, or screen flows).
-              A <strong className="font-semibold">BTP CAP extension</strong> preserves core integrity while enabling full custom logic outside the ERP boundary.</>
+              A <strong className="font-semibold">{`${BAIP} CAP extension`}</strong> preserves core integrity while enabling full custom logic outside the ERP boundary.</>
             ) : (
               <>The analysis confirmed high standard-fit compatibility with no blocking constructs.
               An <strong className="font-semibold">on-stack RAP extension</strong> maximizes reuse of existing CDS views, business logic, and transactional boundaries.</>

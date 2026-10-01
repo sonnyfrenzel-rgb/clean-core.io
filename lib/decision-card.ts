@@ -21,7 +21,8 @@ import {
   type ProjectDecision,
 } from './project-decision';
 import type { ProvenanceValue } from './provenance';
-import { ALTERNATIVE_LABELS } from './architecture-contract';
+import { alternativeLabelForDisplay } from './architecture-contract';
+import { sapNamesForDisplay } from './sap-naming';
 
 /** The four bindings the "Binds" line names, in the mockup's order. The run has its own line. */
 export const CARD_BINDINGS: readonly DecisionBindingKey[] = DECISION_BINDINGS.filter((k) => k !== 'run');
@@ -121,7 +122,7 @@ export function bindingShown(key: DecisionBindingKey, revision: string): string 
     const c = /^(blocked:)?(qualified:)?([^/]+)\/([a-z-]+?)(\+deviation)?\+[0-9a-f]+$/.exec(revision);
     if (!c) return revision;
     const [, blocked, qualified, id, route, deviation] = c;
-    const routeLabel = (ALTERNATIVE_LABELS as Record<string, string>)[route] ?? route.replace(/-/g, ' ');
+    const routeLabel = alternativeLabelForDisplay(route) ?? route.replace(/-/g, ' ');
     const state = blocked ? 'blocked by a limit' : qualified ? 'draft with open limits' : 'complete';
     return `${id}, ${routeLabel}${deviation ? ', deviating from the route the engine named' : ''} — ${state}`;
   }
@@ -141,7 +142,8 @@ export function bindingShown(key: DecisionBindingKey, revision: string): string 
     ];
     return `${parts.join(', ')}${unconfirmed ? ' — not all assumptions confirmed' : ''}`;
   }
-  return revision;
+  // The option binding carries the stored label bytes (`lib/decision-draft.ts`).
+  return sapNamesForDisplay(revision);
 }
 
 /** "1 open · 2 met" — never a count for a status nobody holds, and never a zero standing for "none". */
@@ -196,7 +198,7 @@ export function decisionCardView(decision: ProjectDecision): DecisionCardView {
   return {
     identity: `${decision.decisionId} · revision ${decision.revision}`,
     status: decision.status,
-    summary: decision.summary,
+    summary: sapNamesForDisplay(decision.summary),
     bindings,
     run,
     reversible,

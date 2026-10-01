@@ -39,7 +39,7 @@ const architectureOptions: ArchitectureOption[] = [
   {
     value: 'cap',
     label: 'Side-by-Side Extensibility (CAP / Node.js)',
-    focus: 'Decoupled cloud services on SAP BTP, independent of the ERP core.',
+    focus: 'Decoupled cloud services on BAIP, independent of the ERP core.',
     bestFor: 'Custom data models under Public Edition, third-party API consumers, multi-tenant services, independently scaled workloads.',
     notFor: 'Synchronous ERP posting validations or direct standard table joins.',
     motto: 'Decouple custom logic to keep the core upgrade-safe.',

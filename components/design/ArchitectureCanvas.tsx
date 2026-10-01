@@ -4,6 +4,7 @@ import React, { useId } from 'react';
 import { ArrowDown } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import type { ArchitectureCanvasModel, CanvasSuccessor } from '@/lib/architecture-canvas';
+import { BAIP_FORMERLY } from '@/lib/sap-naming';
 
 /**
  * The target architecture as one picture — proposal B "Canvas first" of the
@@ -325,7 +326,7 @@ function WideCanvas({ model, targetLine, selected, onSelect, description }: Arch
         {inApp ? 'ABAP Cloud on the stack' : 'SAP Business AI Platform'}
       </text>
       <text x={rX + 20} y={55} fontFamily={SANS} fontSize={12} fill={C.muted}>
-        {inApp ? 'in-app developer extensibility · customer namespace' : 'formerly SAP BTP · side-by-side, own lifecycle'}
+        {inApp ? 'in-app developer extensibility · customer namespace' : `${BAIP_FORMERLY} · side-by-side, own lifecycle`}
       </text>
 
       <Pick k="runtime" label={inApp ? 'RAP business object, runtime stipulated by the route' : 'CAP service, runtime stipulated by the route'} selected={selected} onSelect={onSelect}>
@@ -473,7 +474,7 @@ function TallCanvas({ model, targetLine }: ArchitectureCanvasProps) {
         <p className="m-0 text-[13px] font-extrabold text-cc-ink">
           {inApp ? 'ABAP Cloud on the stack' : 'SAP Business AI Platform'}
           <span className="block text-[12px] font-medium text-cc-ink-muted">
-            {inApp ? 'in-app developer extensibility' : 'formerly SAP BTP · side-by-side'}
+            {inApp ? 'in-app developer extensibility' : `${BAIP_FORMERLY} · side-by-side`}
           </span>
         </p>
         <div className="mt-2 rounded-cc-row border bg-cc-surface px-3 py-2 text-[13px]" style={{ borderColor: inApp ? 'var(--cc-brand-strong)' : C.btp }}>

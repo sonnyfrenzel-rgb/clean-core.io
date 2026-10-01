@@ -1534,7 +1534,7 @@ export default function SettingsPage() {
                 <div className="flex-1 space-y-2">
                   <p className="m-0 cc-text-label text-cc-ink">Setup guide</p>
                   <p className="m-0 cc-text-cell text-cc-ink-muted">
-                    Step-by-step help for Basic Auth, OAuth 2.0 client credentials, SAP API Hub sandbox keys and SAP BTP destination JSON.
+                    Step-by-step help for Basic Auth, OAuth 2.0 client credentials, SAP API Hub sandbox keys and SAP Destination service JSON.
                   </p>
                 </div>
               </div>
@@ -1577,7 +1577,7 @@ export default function SettingsPage() {
                     { value: 'basic', label: 'User name and password' },
                     { value: 'oauth2', label: 'OAuth 2.0 client credentials' },
                     { value: 'sap_hub', label: 'SAP Accelerator Hub sandbox key' },
-                    { value: 'btp_destination', label: 'SAP BTP destination (JSON)' },
+                    { value: 'btp_destination', label: 'SAP Destination service (JSON)' },
                   ]}
                 />
 
@@ -1590,7 +1590,7 @@ export default function SettingsPage() {
                       value={s4TokenUrl}
                       onChange={setS4TokenUrl}
                       placeholder="https://mysubaccount.authentication.eu10.hana.ondemand.com/oauth/token"
-                      help={<>The XSUAA or IAS token endpoint of your BTP subaccount, used for <span className="font-bold">grant_type=client_credentials</span>.</>}
+                      help={<>The XSUAA or IAS token endpoint of your BAIP subaccount, used for <span className="font-bold">grant_type=client_credentials</span>.</>}
                     />
                   </div>
                 )}
@@ -1598,12 +1598,12 @@ export default function SettingsPage() {
                 {s4AuthType === 'btp_destination' && (
                   <div className="col-span-1 md:col-span-2">
                     <CcTextarea
-                      label="SAP BTP destination (JSON)"
+                      label="SAP Destination service (JSON)"
                       required
                       rows={8}
                       value={btpDestinationJson}
                       onChange={handleBtpJsonChange}
-                      help={<>Paste the full JSON export from the BTP cockpit&apos;s destination service. Supports <span className="font-bold">BasicAuthentication</span>, <span className="font-bold">OAuth2ClientCredentials</span> and <span className="font-bold">PrincipalPropagation</span>.</>}
+                      help={<>Paste the full JSON export from the destination service in the SAP BTP cockpit. Supports <span className="font-bold">BasicAuthentication</span>, <span className="font-bold">OAuth2ClientCredentials</span> and <span className="font-bold">PrincipalPropagation</span>.</>}
                       placeholder={`{
   "Name": "S4_CLOUDSANDBOX",
   "Type": "HTTP",

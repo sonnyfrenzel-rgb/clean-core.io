@@ -425,7 +425,7 @@ export default function TcoCalculatorPage() {
               <ChecklistLine row={row('dev-rate')} summary={perDay(devRate)}>
                 <FigureField
                   label="Developer day rate"
-                  hint="Your rate for SAP ABAP / BTP development, per day."
+                  hint="Your rate for SAP ABAP / BAIP development, per day."
                   value={devRate}
                   onChange={setDevRate}
                   suffix={currency ? `${currency} / day` : '/ day'}

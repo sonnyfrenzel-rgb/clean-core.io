@@ -14,6 +14,7 @@
  */
 
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
+import { BAIP, BAIP_FIRST, isSideBySideRoute } from '@/lib/sap-naming';
 
 export type SeverityKey = 'Critical' | 'High' | 'Medium' | 'Low';
 
@@ -73,10 +74,13 @@ export function findingTitle(title: string): string {
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
-/** The route as a reader says it — never the stored enum. */
-export function plainRoute(route: string | null | undefined): string | null {
+/**
+ * The route as a reader says it — never the stored enum. `first` is the
+ * platform's first mention on the page (roadmap 3.0.15, `lib/sap-naming.ts`).
+ */
+export function plainRoute(route: string | null | undefined, first = false): string | null {
   if (!route) return null;
-  if (route.includes('BTP')) return 'a side-by-side extension on SAP BTP';
+  if (isSideBySideRoute(route)) return `a side-by-side extension on ${first ? BAIP_FIRST : BAIP}`;
   if (route.includes('ABAP Cloud') || route.includes('RAP')) return 'on-stack ABAP Cloud inside S/4HANA';
   return null;
 }
@@ -84,7 +88,7 @@ export function plainRoute(route: string | null | undefined): string | null {
 /** The short form for a figure tile. */
 export function shortRoute(route: string | null | undefined): string | null {
   if (!route) return null;
-  if (route.includes('BTP')) return 'BTP side-by-side';
+  if (isSideBySideRoute(route)) return `${BAIP} side-by-side`;
   if (route.includes('ABAP Cloud') || route.includes('RAP')) return 'ABAP Cloud on-stack';
   return null;
 }
@@ -111,7 +115,7 @@ export interface AnalysisAnswerText {
 export function analysisAnswer(input: AnswerInput): AnalysisAnswerText {
   const { counts, lines, route, routeChosenByReader, notDetermined } = input;
   const { Critical: critical, High: high, Medium: medium, Low: low } = counts.bySeverity;
-  const routeWords = plainRoute(route);
+  const routeWords = plainRoute(route, true);
 
   let headline: string;
   if (counts.total === 0) {
