@@ -252,7 +252,7 @@ export function measureDrawing(drawing: Drawing): QualityReport {
       x: s.box.x + s.box.width / 2 - blockW / 2,
       y: s.box.y + s.box.height / 2 - blockH / 2,
       width: blockW,
-      height: blockH + (s.inside.reserve ? 0 : 0),
+      height: blockH,
     };
     for (const b of shapes) {
       if (b.attachedTo !== s.id) continue;
