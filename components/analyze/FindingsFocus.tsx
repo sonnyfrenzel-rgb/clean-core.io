@@ -60,7 +60,7 @@ export default function FindingsFocus({ picks, onShow }: { picks: readonly Focus
                   onClick={() => onShow(ef.kind)}
                   className="self-start cc-text-meta font-semibold text-cc-ink underline-offset-2 hover:underline"
                 >
-                  Show in the list
+                  Show in the list<span className="sr-only">: {calmTitle(ef.title)}</span>
                 </button>
               ) : null}
             </li>
