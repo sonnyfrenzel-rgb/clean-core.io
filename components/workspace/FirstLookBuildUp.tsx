@@ -245,7 +245,12 @@ export default function FirstLookBuildUp({
   return (
     <div data-first-look-buildup={stage} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h2 className="m-0 text-[14px] leading-tight font-bold text-cc-ink">{buildUpStageLabel(stage)}</h2>
+        {/* The live region: the stage is announced when it changes, once per
+            stage. The counters and the reading line are not live — they change
+            every few hundred milliseconds and would talk over everything. */}
+        <h2 data-first-look-stage="" aria-live="polite" aria-atomic={true} className="m-0 text-[14px] leading-tight font-bold text-cc-ink">
+          {buildUpStageLabel(stage)}
+        </h2>
         <span data-first-look-reading="" className="min-w-0 text-[12px] font-medium text-cc-ink-muted">
           {buildUpLive(sourceName, lines.length, container)}
         </span>
