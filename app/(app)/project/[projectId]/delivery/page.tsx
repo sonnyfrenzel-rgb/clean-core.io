@@ -42,6 +42,7 @@ import CcLinkButton from '@/components/cc/LinkButton';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcDateText from '@/components/cc/DateText';
 import { CONDITION_STATUS_LABEL, conditionsSummary } from '@/lib/decision-card';
+import { catalogForReader } from '@/lib/messages/demo';
 import {
   AUDIT_PACK_FILES,
   NOT_SIGNED,
@@ -695,7 +696,8 @@ jobs:
           items={[
             { key: 'file', value: fingerprint?.fileName || null },
             { key: 'lines', value: typeof fingerprint?.lineCount === 'number' ? `${fingerprint.lineCount} lines` : null },
-            { key: 'catalog', label: 'catalog', value: catalog },
+            // The revision key carries a hash; the screen says what it means (machine-strings guard).
+            { key: 'catalog', label: 'catalog', value: catalog ? catalogForReader(catalog) : null },
             { key: 'engine', label: 'engine', value: engineVersion },
           ]}
         />

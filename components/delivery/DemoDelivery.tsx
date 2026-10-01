@@ -12,6 +12,7 @@ import { NOT_SIGNED, SIGNED_COVERS } from '@/lib/handover';
 import { PHASES } from '@/lib/workflow-steps';
 import { APP_VERSION } from '@/lib/version';
 import { DEMO_RESET_LABEL } from '@/lib/demo-marks';
+import { catalogForReader } from '@/lib/messages/demo';
 import type { DemoProject } from '@/lib/demo-project';
 import { STATE_CLASSES } from '@/components/cc/state';
 import { cn } from '@/lib/utils';
@@ -66,7 +67,7 @@ export default function DemoDelivery({
           items={[
             { key: 'file', value: demo.sourceFile },
             { key: 'lines', value: `${demo.totalLines} lines` },
-            { key: 'catalog', label: 'catalog', value: demo.catalogVersion },
+            { key: 'catalog', label: 'catalog', value: catalogForReader(demo.catalogVersion) },
             { key: 'snapshot', label: 'snapshot', value: demo.catalogSnapshot },
             { key: 'engine', label: 'engine', value: APP_VERSION },
           ]}

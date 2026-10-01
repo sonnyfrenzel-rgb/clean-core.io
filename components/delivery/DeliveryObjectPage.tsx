@@ -73,7 +73,7 @@ export function DeliveryFacets({ facets }: { facets: FacetData[] }) {
             <span className="cc-text-label text-cc-ink-muted">{f.label}</span>
             <CcWhyPopover subject={`${f.label}: ${f.value}`} provenance={f.provenance} basis={f.basis} />
           </div>
-          <p data-delivery-facet-value="" className="m-0 mt-1 cc-text-figure text-cc-ink">
+          <p data-delivery-facet-value="" className="m-0 mt-1 cc-text-h2 font-extrabold text-cc-ink sm:cc-text-figure">
             {f.value}
           </p>
           <p className="m-0 mt-1 cc-text-meta font-medium break-words text-cc-ink-muted">{f.sub}</p>
