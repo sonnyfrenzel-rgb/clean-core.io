@@ -1,6 +1,6 @@
 import { GET as llmsTxt } from '@/app/llms.txt/route';
 import { LANDING_FAQ } from '@/lib/landing-faq';
-import { BAIP, BAIP_FIRST, BAIP_FORMERLY, SAP_BTP_ABAP_ENVIRONMENT } from '@/lib/sap-naming';
+import { BAIP, BAIP_FIRST, BAIP_FORMERLY, BAIP_NAME, SAP_BTP_ABAP_ENVIRONMENT } from '@/lib/sap-naming';
 
 /**
  * /llms-full.txt — `/llms.txt` plus the long answers (llmstxt.org convention).
@@ -29,7 +29,7 @@ const GLOSSARY: Array<[string, string]> = [
   ['Clean Core Score', 'A 0–100 measure published by Clean-Core.io, higher is better. Not an SAP metric, and not SAP’s Technical Debt Score, where higher is worse.'],
   ['BPMN 2.0', 'Business Process Model and Notation, the OMG standard for process diagrams, with an XML format for exchanging them between tools. Clean-Core.io exports and imports BPMN 2.0 XML files.'],
   ['SAP Signavio', 'SAP’s process modelling and mining suite. Clean-Core.io has no connection to a Signavio workspace; whether its BPMN files import into SAP Signavio has not been verified.'],
-  [`SAP Business AI Platform (${BAIP})`, `The platform portfolio SAP presented at Sapphire 2026, ${BAIP_FORMERLY}, together with Business Data Cloud and Business Transformation Management. Services whose SAP name still carries the former name — the ${SAP_BTP_ABAP_ENVIRONMENT}, for one — keep it.`],
+  [`${BAIP_NAME} (${BAIP})`, `The platform portfolio SAP presented at Sapphire 2026, ${BAIP_FORMERLY}, together with Business Data Cloud and Business Transformation Management. Services whose SAP name still carries the former name — the ${SAP_BTP_ABAP_ENVIRONMENT}, for one — keep it.`],
   ['RAP and CAP', 'The ABAP RESTful Application Programming Model (in-app, ABAP Cloud) and the SAP Cloud Application Programming Model (side-by-side, Node.js or Java). Clean-Core.io drafts code for either route; a draft is for a person to review.'],
   ['ABAP Test Cockpit (ATC)', 'SAP’s in-system check tool, the authoritative check for clean core violations. Clean-Core.io does not replace it.'],
   ['Signed analysis run', 'An immutable record of one completed analysis, signed by the Clean-Core.io server (HMAC and Ed25519). A signature proves origin and integrity, not correctness.'],

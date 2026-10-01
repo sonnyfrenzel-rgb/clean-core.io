@@ -13,7 +13,9 @@
  *
  *   - **Prose** (a public page, an export, a mail, the assistant's knowledge,
  *     a summary sentence): the first mention in that page or document is
- *     `BAIP_FIRST`, every later one `BAIP`.
+ *     `BAIP_FIRST`, every later one `BAIP`. An FAQ answer, a glossary entry
+ *     and a JSON-LD answer are read on their own (a tooltip, a search result),
+ *     so each counts as its own document.
  *   - **Labels** (route names, chips, tiles, table cells, chart rows, diagram
  *     boxes): always `BAIP`. A label is read next to the page's own lead or
  *     summary, which carries `BAIP_FIRST` where the platform is introduced.

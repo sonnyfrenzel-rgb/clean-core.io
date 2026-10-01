@@ -13,7 +13,7 @@
  * likelihood of confusion would be squarely in the same field.
  */
 
-import { BAIP, BAIP_FIRST, BAIP_FORMERLY } from './sap-naming';
+import { BAIP, BAIP_FIRST, BAIP_FORMERLY, BAIP_NAME } from './sap-naming';
 
 export type NoteKind = 'remember' | 'tip' | 'warning' | 'advanced' | 'jargon';
 
@@ -167,7 +167,7 @@ export const GUIDE_PARTS: Part[] = [
               'Your code runs outside the SAP system, on a separate platform, and talks to SAP over published interfaces. More freedom, more moving parts.',
           },
           {
-            term: `SAP Business AI Platform (${BAIP})`,
+            term: `${BAIP_NAME} (${BAIP})`,
             definition:
               `SAP's cloud platform where side-by-side extensions live, ${BAIP_FORMERLY} (Business Technology Platform). Think of it as the sanctioned place to put things that no longer belong inside the ERP.`,
           },

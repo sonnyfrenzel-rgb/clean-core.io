@@ -18,7 +18,7 @@
  * because it reads as evidence.
  */
 
-import { BAIP, BAIP_FIRST, FORMER_PLATFORM_NAMES } from './sap-naming';
+import { BAIP, BAIP_FIRST, BAIP_NAME, FORMER_PLATFORM_NAMES } from './sap-naming';
 
 /** Where a term's definition comes from — `origin` and `absentReason` after `lib/first-look.ts`. */
 export type GlossarySourceOrigin =
@@ -215,7 +215,7 @@ const ENTRIES: Record<string, GlossaryEntry> = {
   BAIP: {
     term: BAIP_FIRST,
     shortName: BAIP,
-    aliases: FORMER_PLATFORM_NAMES,
+    aliases: [BAIP_NAME, ...FORMER_PLATFORM_NAMES],
     category: 'Side-by-side Extension',
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
