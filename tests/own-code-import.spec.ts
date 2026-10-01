@@ -321,6 +321,16 @@ test.describe('own code: QA review of acd1eb0d73aa', () => {
     expect(a.rows.some((r) => r.issues.some((i) => i.kind === 'include-cycle'))).toBe(true);
   });
 
+  test('a8d92f4d4a2f: the loop is named on the same file whichever order the files were dropped in', () => {
+    const main = file('Z_MAIN.abap', 'REPORT z_main.\nWRITE 1.\n');
+    const za = file('Z_A.abap', 'FORM a.\nENDFORM.\nINCLUDE z_b.\n');
+    const zb = file('Z_B.abap', 'FORM b.\nENDFORM.\nINCLUDE z_a.\n');
+    const cycleRows = (files: Parameters<typeof assembleOwnCode>[0]) =>
+      assembleOwnCode(files).rows.filter((r) => r.issues.some((i) => i.kind === 'include-cycle')).map((r) => r.name);
+    expect(cycleRows([main, za, zb])).toEqual(['Z_A.abap']);
+    expect(cycleRows([main, zb, za])).toEqual(['Z_A.abap']);
+  });
+
   test('d1e304e51241: an include named twice stops the start and names the lines', () => {
     const a = assembleOwnCode([
       file('Z_MAIN.abap', 'REPORT z_main.\nINCLUDE z_top.\nWRITE 1.\nINCLUDE z_top.\n'),

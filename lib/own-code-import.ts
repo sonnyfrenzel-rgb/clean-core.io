@@ -328,7 +328,10 @@ export function includeCycles(byName: ReadonlyMap<string, OwnCodeSource>): strin
     for (const next of includesNamed(source.text)) visit(next, [...path, name]);
     done.add(name);
   };
-  for (const name of byName.keys()) visit(name, []);
+  // In name order, not upload order: the cycle is reported on the file it
+  // starts from, and that must not depend on which file was dropped first
+  // (carried QA finding a8d92f4d4a2f).
+  for (const name of [...byName.keys()].sort()) visit(name, []);
   return cycles;
 }
 
