@@ -3,38 +3,45 @@
 /**
  * Options with costs — roadmap 7.4, the screen half.
  *
- * Every amount on this panel comes out of one revision of stated assumptions
- * (`lib/cost-assumptions.ts`), and the panel shows which revision under the
- * figures. Nothing here has a default: no currency, no day rate, no observation
- * period, no effort. A field nobody filled in is a named gap with a sentence,
- * never a zero — and while any option is missing a mandatory field, the
- * comparison refuses to name a cheapest one and says which option stopped it.
+ * The shared figures (currency, day rates, time horizon, release cadence) are
+ * entered once, in the stage's checklist (`EconomicsChecklist`) — they used to
+ * be asked for a second time here, beside a forecast that asked for the same day
+ * rates (audit 01.10.2026, row 7). This module draws what is per option — the
+ * effort fields and what each option costs — and the verdict.
  *
- * `lib/tco-model.ts` and the forecast above this panel are a different thing
- * and stay a different thing: that is a demonstration of one modernisation
- * against assumed coefficients; this prices options against each other,
- * including doing nothing.
+ * Every amount on this panel comes out of one revision of stated assumptions
+ * (`lib/cost-assumptions.ts`), and the panel shows which revision, one level
+ * deeper. Nothing here has a default: no currency, no day rate, no observation
+ * period, no effort. A field nobody filled in is a named gap, never a zero —
+ * and while any option is missing a mandatory field, the comparison refuses to
+ * name a cheapest one and says which option stopped it.
+ *
+ * `lib/tco-model.ts` and the savings forecast are a different thing and stay a
+ * different thing: that is a demonstration of one modernisation against
+ * assumed coefficients; this prices options against each other, including
+ * doing nothing.
  */
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   COMPARISON_KIND,
   BASELINE_KINDS,
   COST_ASSUMPTIONS_VERSION,
-  costComparison,
   emptyCostAssumptions,
   formatAmount,
   formatAmountRange,
-  proposeEffort,
   type CostAssumptions,
+  type CostComparison,
   type CostOption,
   type EffortDays,
+  type EffortProposal,
 } from '@/lib/cost-assumptions';
-import { Scale, AlertTriangle, Sigma, CircleAlert } from 'lucide-react';
+import { CircleAlert } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
-import CcCheckbox from '@/components/cc/Checkbox';
-import CcField, { CcRequiredNote } from '@/components/cc/Field';
+import CcField from '@/components/cc/Field';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import CcDisclosure from '@/components/cc/Disclosure';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
 
 /**
@@ -74,6 +81,14 @@ const SEED_OPTIONS: CostOption[] = [
     effortSource: 'stated',
   },
 ];
+
+/**
+ * The assumptions the stage starts from: every figure absent, the three options
+ * by name only. The page holds them; this module only says what they are.
+ */
+export function initialCostAssumptions(): CostAssumptions {
+  return { ...emptyCostAssumptions(), version: COST_ASSUMPTIONS_VERSION, options: SEED_OPTIONS };
+}
 
 const num = (raw: string): number | null => {
   if (raw.trim() === '') return null;
@@ -120,8 +135,7 @@ const CARD = 'cc-card rounded-cc-card border bg-cc-surface shadow-cc';
 /**
  * A figure the reader states. Every field on this panel is mandatory (ADR-035),
  * so every one carries the asterisk and `aria-required`. An empty field says
- * so once the reader has left it (§2.7: on blur, not on the first keystroke);
- * until then the option's own "Not determined" below names the gap.
+ * so once the reader has left it (§2.7: on blur, not on the first keystroke).
  */
 function NumField({
   id,
@@ -154,7 +168,7 @@ function NumField({
           min={0}
           step="any"
           value={value ?? ''}
-          placeholder="— enter your figure"
+          placeholder="enter your figure"
           data-cost-field={id}
           aria-required={ariaRequired}
           aria-describedby={describedBy}
@@ -198,126 +212,80 @@ function EffortFields({
   );
 }
 
+/** The gaps that belong to this option alone — the shared ones stand in the checklist, once. */
+function ownGaps(cost: CostComparison['costs'][number] | undefined, option: CostOption): string[] {
+  if (!cost) return [];
+  const name = `"${option.label || option.id}"`;
+  return cost.coverage.gaps.filter((g) => g.sentence.includes(name)).map((g) => g.sentence);
+}
+
+/** The refusal in a few words; the whole sentence stays one click deeper. */
+function refusalHeadline(comparison: CostComparison, options: CostOption[]): string {
+  const incomplete = comparison.costs.filter((c) => !c.total).map((c) => c.label);
+  switch (comparison.refusal?.code) {
+    case 'assumptions-incomplete':
+      return 'No option can be priced until the open figures in the checklist above are filled in.';
+    case 'option-incomplete':
+      return `Not every option is complete yet: ${incomplete.join(', ')}.`;
+    case 'too-few-options':
+      return 'One option on its own is not a comparison.';
+    case 'ranges-overlap':
+      return 'The two lowest options overlap inside their effort ranges, so neither is established as cheaper.';
+    default:
+      return options.length === 0 ? 'There is no option to compare.' : 'No option is established as cheapest.';
+  }
+}
+
 /**
- * The currency is the stage's, not the panel's (roadmap 7.11).
- *
- * It is still stated exactly once, in the field below, and still has no
- * default. What changed is where the value lives: the page holds it, so the
- * forecast above this panel prices in the same unit instead of printing a euro
- * sign nobody chose. Every other assumption here stays local to the panel —
- * the forecast above does not read a day rate of this comparison.
+ * The options, each with its own effort and what it costs, and the verdict —
+ * or the refusal, which is the point of roadmap 7.4.
  */
 export default function OptionComparison({
-  loc,
+  assumptions,
+  comparison,
+  proposal,
   currency,
-  onCurrencyChange,
+  onPatchOption,
 }: {
-  loc: number | null;
+  assumptions: CostAssumptions;
+  comparison: CostComparison;
+  proposal: EffortProposal | null;
   currency: string;
-  onCurrencyChange: (currency: string) => void;
+  onPatchOption: (id: string, patch: Partial<CostOption>) => void;
 }) {
-  const [stated, setStated] = useState<CostAssumptions>(() => ({
-    ...emptyCostAssumptions(),
-    version: COST_ASSUMPTIONS_VERSION,
-    options: SEED_OPTIONS,
-  }));
-
-  // One record, and the currency in it is the stage's.
-  const assumptions = useMemo<CostAssumptions>(() => ({ ...stated, currency }), [stated, currency]);
-
-  const proposal = useMemo(() => proposeEffort(loc), [loc]);
-  const comparison = useMemo(() => costComparison(assumptions), [assumptions]);
-
-  const patch = (p: Partial<CostAssumptions>) => setStated((a) => ({ ...a, ...p }));
-  const patchOption = (id: string, p: Partial<CostOption>) =>
-    setStated((a) => ({ ...a, options: a.options.map((o) => (o.id === id ? { ...o, ...p } : o)) }));
+  const patchOption = onPatchOption;
+  const winnerLabel = comparison.winner
+    ? comparison.costs.find((c) => c.optionId === comparison.winner)?.label
+    : null;
+  const years = assumptions.horizonYears;
+  // Open by itself once there is a lead to overturn, until the reader decides otherwise.
+  const [tippingChoice, setTippingChoice] = useState<boolean | null>(null);
+  const tippingOpen = tippingChoice ?? comparison.tippingPoints.length > 0;
 
   return (
     <section className="space-y-4" data-cost-comparison aria-labelledby="cost-comparison-title">
-      <div className={`p-4 md:p-6 print:hidden border-cc-line ${CARD}`}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="cost-comparison-title" className="cc-text-h2 text-cc-ink flex items-center gap-2">
-            <Scale size={16} aria-hidden="true" className="text-cc-ink-muted" />
-            Options and costs
-          </h2>
-          <CcRequiredNote />
-        </div>
-        <p className="mt-2 cc-text-body text-cc-ink-muted">
-          Every amount below comes from one revision of the assumptions you state here — there is no
-          default currency, no default day rate and no default observation period. While an option is
-          missing a mandatory field, no option is called cheapest.
-        </p>
-
-        {/* The shared assumptions. */}
-        <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
-          <CurrencyField currency={currency} onCurrencyChange={onCurrencyChange} />
-
-          <NumField
-            id="dev-day-rate"
-            label="Development day rate"
-            value={assumptions.devDayRate}
-            onChange={(v) => patch({ devDayRate: v })}
-            hint="Your rate for development effort."
-          />
-          <NumField
-            id="test-day-rate"
-            label="Test / key-user day rate"
-            value={assumptions.testDayRate}
-            onChange={(v) => patch({ testDayRate: v })}
-            hint="Your rate for the people who run the regression tests."
-          />
-          <NumField
-            id="horizon-years"
-            label="Observation period (years)"
-            value={assumptions.horizonYears}
-            onChange={(v) => patch({ horizonYears: v })}
-            hint="One-off and running effort are only comparable over a period you name."
-          />
-
-          <div className="space-y-2">
-            <NumField
-              id="release-cadence"
-              label="Releases per year"
-              value={assumptions.releaseCadence?.perYear ?? null}
-              onChange={(v) =>
-                patch({ releaseCadence: v === null ? null : { perYear: v, confirmed: false } })
-              }
-              hint="How often the running effort falls due."
-            />
-            {/* The confirmation is part of the mandatory cadence (ADR-035). */}
-            <div data-cost-field="release-cadence-confirmed">
-              <CcCheckbox
-                label={'I confirm this cadence. Until then it is a proposal, and no amount is shown (ADR‑035).'}
-                required
-                checked={assumptions.releaseCadence?.confirmed ?? false}
-                disabled={!assumptions.releaseCadence}
-                onChange={(checked) =>
-                  patch(
-                    assumptions.releaseCadence
-                      ? { releaseCadence: { ...assumptions.releaseCadence, confirmed: checked } }
-                      : {},
-                  )
-                }
-              />
-            </div>
-          </div>
-        </div>
-
-        {proposal ? (
-          <div className="mt-6" data-cost-proposal>
-            <CcMessageStrip state="warning" headline="A proposal, not a field.">
-              {proposal.sentence} Use the buttons on each option to take it over; nothing applies it for you.
-            </CcMessageStrip>
-          </div>
-        ) : null}
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="cost-comparison-title" className="cc-text-h2 text-cc-ink">
+          Options ({assumptions.options.length}) · effort as ranges
+        </h2>
+        <span className="cc-text-meta text-cc-ink-muted">Every field is yours to fill; none has a default.</span>
       </div>
 
-      {/* One card per option: the fields, then what it costs or why it does not. */}
+      {proposal ? (
+        <div className="print:hidden" data-cost-proposal>
+          <CcMessageStrip state="warning" headline="A proposal, not a figure of yours.">
+            {proposal.sentence} Take it over per option with the button in its card; nothing applies it for you.
+          </CcMessageStrip>
+        </div>
+      ) : null}
+
+      {/* One card per option: what it costs (or what it still lacks), then its fields. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {assumptions.options.map((option) => {
           const cost = comparison.costs.find((c) => c.optionId === option.id);
           const isComparison = option.kind === COMPARISON_KIND;
           const needsBaseline = BASELINE_KINDS.has(option.kind);
+          const missing = ownGaps(cost, option);
           return (
             <div
               key={option.id}
@@ -332,6 +300,63 @@ export default function OptionComparison({
               <div className="flex items-baseline justify-between gap-2">
                 <h3 className="cc-text-h3 text-cc-ink">{option.label}</h3>
                 {isComparison ? <CcTag>Comparison option</CcTag> : null}
+              </div>
+
+              <div className="mt-3 border-b border-cc-line pb-4" data-cost-option-result={option.id}>
+                {cost && cost.total ? (
+                  <>
+                    <span className="flex flex-wrap items-center gap-2 cc-text-label text-cc-ink-muted">
+                      Total over {years} year{years === 1 ? '' : 's'}
+                      <CcProvenanceChip value="simulation" />
+                    </span>
+                    <p className="mt-1 cc-text-h2 text-cc-ink" data-cost-option-total={option.id}>
+                      {formatAmountRange(cost.total, currency)}
+                    </p>
+                    <dl className="mt-3 space-y-1 cc-text-cell text-cc-ink-muted">
+                      <div className="flex justify-between gap-2">
+                        <dt>One-off</dt>
+                        <dd>{formatAmountRange(cost.oneOff, currency)}</dd>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <dt>Per release &times; {cost.releasesInHorizon}</dt>
+                        <dd>{formatAmount(cost.runningTotal, currency)}</dd>
+                      </div>
+                      {needsBaseline ? (
+                        <div className="flex justify-between gap-2">
+                          <dt>Maintenance baseline</dt>
+                          <dd>{formatAmount(cost.baselineTotal, currency)}</dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                    {cost.coverage.state === 'unconfirmed' ? (
+                      // Something to check, so the warning state — with its
+                      // icon, never the colour alone (§2.7).
+                      <p className="mt-3 flex items-start gap-1 cc-text-cell text-cc-warning">
+                        <CircleAlert size={14} aria-hidden="true" className="mt-1 shrink-0" />
+                        <span>{cost.coverage.sentence}</span>
+                      </p>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    {/* No figure is not a warning: it is the absence of a
+                        verdict, and it stands neutral (§1.1). */}
+                    <p className="cc-text-h3 text-cc-ink" data-cost-option-not-determined={option.id}>
+                      Not determined
+                    </p>
+                    {missing.length > 0 ? (
+                      <ul className="mt-1 list-disc space-y-1 pl-5 cc-text-cell text-cc-ink-muted">
+                        {missing.map((m) => (
+                          <li key={m}>{m}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-1 cc-text-cell text-cc-ink-muted">
+                        Its own figures are in; it waits for the open figures in the checklist above.
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
 
               <div className="mt-4 space-y-4 print:hidden">
@@ -373,7 +398,7 @@ export default function OptionComparison({
 
                 <EffortFields
                   idPrefix={`${option.id}-per-release`}
-                  label="Running effort per release"
+                  label="Recurring effort per release"
                   value={option.perRelease}
                   onChange={(v) => patchOption(option.id, { perRelease: v })}
                 />
@@ -421,70 +446,19 @@ export default function OptionComparison({
                   </fieldset>
                 ) : null}
               </div>
-
-              {/* What it costs, or the sentence that says why it does not. */}
-              <div className="mt-4 border-t border-cc-line pt-4" data-cost-option-result={option.id}>
-                {cost && cost.total ? (
-                  <>
-                    <span className="block cc-text-label text-cc-ink-muted">
-                      Total over the observation period
-                    </span>
-                    <p className="mt-1 cc-text-h2 text-cc-ink" data-cost-option-total={option.id}>
-                      {formatAmountRange(cost.total, currency)}
-                    </p>
-                    <dl className="mt-3 space-y-1 cc-text-cell text-cc-ink-muted">
-                      <div className="flex justify-between gap-2">
-                        <dt>One-off</dt>
-                        <dd>{formatAmountRange(cost.oneOff, currency)}</dd>
-                      </div>
-                      <div className="flex justify-between gap-2">
-                        <dt>Per release &times; {cost.releasesInHorizon}</dt>
-                        <dd>{formatAmount(cost.runningTotal, currency)}</dd>
-                      </div>
-                      {needsBaseline ? (
-                        <div className="flex justify-between gap-2">
-                          <dt>Maintenance baseline</dt>
-                          <dd>{formatAmount(cost.baselineTotal, currency)}</dd>
-                        </div>
-                      ) : null}
-                    </dl>
-                    {cost.coverage.state === 'unconfirmed' ? (
-                      // Something to check, so the warning state — with its
-                      // icon, never the colour alone (§2.7).
-                      <p className="mt-3 flex items-start gap-1 cc-text-cell text-cc-warning">
-                        <CircleAlert size={14} aria-hidden="true" className="mt-1 shrink-0" />
-                        <span>{cost.coverage.sentence}</span>
-                      </p>
-                    ) : null}
-                  </>
-                ) : (
-                  <>
-                    {/* No figure is not a warning: it is the absence of a
-                        verdict, and it stands neutral (§1.1). */}
-                    <p className="cc-text-h3 text-cc-ink" data-cost-option-not-determined={option.id}>
-                      Not determined
-                    </p>
-                    <p className="mt-1 cc-text-cell text-cc-ink-muted">
-                      {cost?.coverage.sentence || 'No assumptions carry an amount for this option yet.'}
-                    </p>
-                  </>
-                )}
-              </div>
             </div>
           );
         })}
       </div>
 
-      {/* The verdict — or the refusal, which is the point of the step. */}
+      {/* The verdict — or the refusal in a few words, with the whole reason one click deeper. */}
       <div className={`p-4 md:p-6 border-cc-line ${CARD}`}>
         {comparison.winner ? (
           <div data-cost-winner={comparison.winner}>
-            <span className="block cc-text-label text-cc-ink-muted">
-              Lowest cost over the observation period
+            <span className="flex flex-wrap items-center gap-2 cc-text-label text-cc-ink-muted">
+              Lowest cost over the time horizon <CcProvenanceChip value="simulation" />
             </span>
-            <h3 className="mt-1 text-[22px] font-bold tracking-tight text-cc-ink">
-              {comparison.costs.find((c) => c.optionId === comparison.winner)?.label}
-            </h3>
+            <h3 className="mt-1 cc-text-h2 text-cc-ink">{winnerLabel}</h3>
             <p className="mt-2 cc-text-body text-cc-ink-muted">
               Its upper bound is below every other option&rsquo;s lower bound, so the ordering does not
               depend on where inside the one-off range the effort lands. Lowest cost is not the same as
@@ -493,94 +467,66 @@ export default function OptionComparison({
           </div>
         ) : (
           <div data-cost-no-winner={comparison.refusal?.code || 'unknown'}>
-            <span className="flex items-center gap-2 cc-text-label text-cc-ink-muted">
-              <AlertTriangle size={16} aria-hidden="true" /> No cheapest option
-            </span>
-            <p className="mt-2 cc-text-body text-cc-ink">{comparison.refusal?.sentence}</p>
+            <h3 className="cc-text-h3 text-cc-ink">No cheapest option yet</h3>
+            <p className="mt-1 cc-text-body text-cc-ink">{refusalHeadline(comparison, assumptions.options)}</p>
+            {comparison.refusal?.sentence ? (
+              <div className="mt-2">
+                <CcDisclosure title="The full reason">
+                  <p className="cc-text-cell text-cc-ink-muted" data-cost-refusal-sentence>
+                    {comparison.refusal.sentence}
+                  </p>
+                </CcDisclosure>
+              </div>
+            ) : null}
           </div>
         )}
 
-        <div className="mt-6 border-t border-cc-line pt-4">
-          <span className="flex items-center gap-2 cc-text-label text-cc-ink-muted">
-            <Sigma size={16} aria-hidden="true" /> How far an assumption has to move before the answer changes
-          </span>
-          {comparison.tippingPoints.length > 0 ? (
-            <ul className="mt-3 space-y-2" data-cost-tipping-points>
-              {comparison.tippingPoints.map((point) => {
-                const found = point.risesBy !== null || point.fallsBy !== null;
-                return (
-                  <li
-                    key={point.field}
-                    data-cost-tipping-field={point.field}
-                    data-cost-tipping-found={found ? 'yes' : 'no'}
-                    className={`cc-text-cell ${found ? 'text-cc-ink font-semibold' : 'text-cc-ink-muted'}`}
-                  >
-                    {point.sentence}
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="mt-3 cc-text-cell text-cc-ink-muted" data-cost-tipping-points-empty>
-              {comparison.tippingPointsSentence}
+        <div className="mt-4 border-t border-cc-line pt-3">
+          <CcDisclosure
+            title="How far an assumption has to move before the answer changes"
+            open={tippingOpen}
+            onOpenChange={setTippingChoice}
+          >
+            {comparison.tippingPoints.length > 0 ? (
+              <ul className="space-y-2" data-cost-tipping-points>
+                {comparison.tippingPoints.map((point) => {
+                  const found = point.risesBy !== null || point.fallsBy !== null;
+                  return (
+                    <li
+                      key={point.field}
+                      data-cost-tipping-field={point.field}
+                      data-cost-tipping-found={found ? 'yes' : 'no'}
+                      className={`cc-text-cell ${found ? 'text-cc-ink font-semibold' : 'text-cc-ink-muted'}`}
+                    >
+                      {point.sentence}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="cc-text-cell text-cc-ink-muted" data-cost-tipping-points-empty>
+                {comparison.tippingPointsSentence}
+              </p>
+            )}
+            <p className="mt-3 cc-text-meta text-cc-ink-muted">
+              Each distance is solved from the figures you stated, not sampled at a chosen spread. It says
+              where the answer flips, not how likely that is &mdash; nothing here knows the distribution of a day rate.
             </p>
-          )}
-          <p className="mt-3 cc-text-meta text-cc-ink-muted">
-            Each distance is solved from the figures you stated, not sampled at a chosen spread. It says
-            where the answer flips, not how likely that is &mdash; nothing here knows the distribution of a day rate.
-          </p>
+          </CcDisclosure>
         </div>
 
-        <p className="mt-6 border-t border-cc-line pt-4 cc-text-meta text-cc-ink-muted">
-          Assumption revision: <code data-cost-revision className="font-cc-mono text-cc-ink">{comparison.revision}</code>
-        </p>
+        {/* The revision every amount comes from — a technical name, one level deeper. */}
+        <div className="mt-2">
+          <CcDisclosure title="Technical details">
+            <p className="cc-text-meta text-cc-ink-muted">
+              Assumption revision:{' '}
+              <code data-cost-revision className="font-cc-mono text-cc-ink break-all">
+                {comparison.revision}
+              </code>
+            </p>
+          </CcDisclosure>
+        </div>
       </div>
     </section>
-  );
-}
-
-/**
- * The stage's currency (roadmap 7.11), stated here once and nowhere else.
- * Mandatory (ADR-035) and without a default; an empty field says so once the
- * reader has left it.
- */
-function CurrencyField({
-  currency,
-  onCurrencyChange,
-}: {
-  currency: string;
-  onCurrencyChange: (currency: string) => void;
-}) {
-  const [left, setLeft] = useState(false);
-  const missing = !currency && left;
-  return (
-    <CcField
-      label="Currency"
-      required
-      help={
-        <>
-          The currency your day rates are in &mdash; for this panel and for the forecast above it.
-          Nothing here assumes one.
-        </>
-      }
-      valueState={missing ? 'warning' : undefined}
-      message={missing ? 'Yours to state — there is no default.' : undefined}
-    >
-      {({ id, describedBy, ariaRequired, className }) => (
-        <input
-          id={id}
-          type="text"
-          value={currency}
-          maxLength={8}
-          placeholder="e.g. EUR — no default"
-          data-cost-field="currency"
-          aria-required={ariaRequired}
-          aria-describedby={describedBy}
-          onBlur={() => setLeft(true)}
-          onChange={(e) => onCurrencyChange(e.target.value.trim().toUpperCase())}
-          className={className}
-        />
-      )}
-    </CcField>
   );
 }

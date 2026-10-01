@@ -6,6 +6,7 @@ import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import type { PhaseKey } from '@/lib/workflow-steps';
 import type { WorkspaceView } from '@/lib/workspace-model';
+import { useWorkspaceLayer } from '@/hooks/useWorkspaceLayer';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { wt } from '@/lib/workspace-messages';
 
@@ -52,6 +53,8 @@ export default function WorkspaceToolBar({
   /** IT lays them out; Business and Management fold them into a menu. */
   open: boolean;
 }) {
+  // The layer the reader is in travels with the link, so the way back returns to it.
+  const layer = useWorkspaceLayer();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
@@ -74,7 +77,7 @@ export default function WorkspaceToolBar({
   const links = tools.map((tool) => (
     <CcLinkButton
       key={tool.key}
-      href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}
+      href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools , layer })}
     >
       {tool.label}
     </CcLinkButton>
