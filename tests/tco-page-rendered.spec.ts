@@ -6,6 +6,7 @@ import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
 import { tcoForecast } from '../lib/tco-model';
 import { formatAmount } from '../lib/cost-assumptions';
+import { fillEconomics, revealEconomicsField } from './helpers/economics';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -47,13 +48,13 @@ const INVESTMENT = 15_000;
 const CURRENCY = 'CHF';
 
 async function enterCostFigures(page: import('@playwright/test').Page) {
-  await page.fill('[data-tco-cost="dev-rate"]', String(DEV_RATE));
-  await page.fill('[data-tco-cost="user-rate"]', String(USER_RATE));
-  await page.fill('[data-tco-cost="investment"]', String(INVESTMENT));
+  await fillEconomics(page, '[data-tco-cost="dev-rate"]', String(DEV_RATE));
+  await fillEconomics(page, '[data-tco-cost="user-rate"]', String(USER_RATE));
+  await fillEconomics(page, '[data-tco-cost="investment"]', String(INVESTMENT));
   // Three figures and no unit: the page has no currency of its own any more, so
   // it still shows no amount.
   await expect(page.locator('[data-tco-no-forecast]')).toBeVisible({ timeout: 15000 });
-  await page.fill('[data-cost-field="currency"]', CURRENCY);
+  await fillEconomics(page, '[data-cost-field="currency"]', CURRENCY);
   // Not a sleep: wait for the state the figures produce. A fixed pause is a
   // guess about how fast the page recomputes, and it reads whatever is on
   // screen when it expires (QA review of 84f183b16761, c83ea117ce56).
@@ -189,12 +190,12 @@ test('the option comparison names nothing until every option is complete', async
 
   // The shared assumptions, complete — including the cadence confirmation,
   // which is a mandatory field only once it is confirmed (ADR-035).
-  await page.fill('[data-cost-field="currency"]', 'CHF');
-  await page.fill('[data-cost-field="dev-day-rate"]', '800');
-  await page.fill('[data-cost-field="test-day-rate"]', '600');
-  await page.fill('[data-cost-field="horizon-years"]', '5');
-  await page.fill('[data-cost-field="release-cadence"]', '2');
-  await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]');
+  await fillEconomics(page, '[data-cost-field="currency"]', 'CHF');
+  await fillEconomics(page, '[data-cost-field="dev-day-rate"]', '800');
+  await fillEconomics(page, '[data-cost-field="test-day-rate"]', '600');
+  await fillEconomics(page, '[data-cost-field="horizon-years"]', '5');
+  await fillEconomics(page, '[data-cost-field="release-cadence"]', '2');
+  await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]'); // its row is open: the cadence was just filled in it
 
   // Still nothing: the day rates are there, the options are not, and the panel
   // refuses to call one cheapest instead of comparing what happens to be filled in.
@@ -218,24 +219,25 @@ test('once an option leads, the panel says how far each assumption may move', as
   await openEconomics(page, SCORED);
   await page.waitForSelector('[data-cost-comparison]');
 
-  await page.fill('[data-cost-field="currency"]', 'CHF');
-  await page.fill('[data-cost-field="dev-day-rate"]', '800');
-  await page.fill('[data-cost-field="test-day-rate"]', '600');
-  await page.fill('[data-cost-field="horizon-years"]', '5');
-  await page.fill('[data-cost-field="release-cadence"]', '2');
-  await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]');
+  await fillEconomics(page, '[data-cost-field="currency"]', 'CHF');
+  await fillEconomics(page, '[data-cost-field="dev-day-rate"]', '800');
+  await fillEconomics(page, '[data-cost-field="test-day-rate"]', '600');
+  await fillEconomics(page, '[data-cost-field="horizon-years"]', '5');
+  await fillEconomics(page, '[data-cost-field="release-cadence"]', '2');
+  await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]'); // its row is open: the cadence was just filled in it
 
   // The same effort for every option, taken over from the proposal as the
   // reader's own figure, so what separates them is the maintenance baseline
   // that "Do nothing" and "Keep" carry and "Move to standard" does not.
   for (const id of ['do-nothing', 'keep', 'standard']) {
+    await revealEconomicsField(page, `[data-cost-apply-proposal="${id}"]`);
     await page.click(`[data-cost-apply-proposal="${id}"]`);
   }
   for (const id of ['do-nothing', 'keep']) {
-    await page.fill(`[data-cost-field="${id}-baseline-dev"]`, '1');
-    await page.fill(`[data-cost-field="${id}-baseline-test"]`, '0');
+    await fillEconomics(page, `[data-cost-field="${id}-baseline-dev"]`, '1');
+    await fillEconomics(page, `[data-cost-field="${id}-baseline-test"]`, '0');
   }
-  await page.fill('[data-cost-field="do-nothing-upgrade-delay"]', '2');
+  await fillEconomics(page, '[data-cost-field="do-nothing-upgrade-delay"]', '2');
 
   await expect(page.locator('[data-cost-winner="standard"]')).toBeVisible({ timeout: 15000 });
 
@@ -260,9 +262,9 @@ test('once an option leads, the panel says how far each assumption may move', as
 test('the printed page carries the entered cost figures, and an empty one as "Not determined"', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openEconomics(page, SCORED);
-  await page.fill('[data-tco-cost="dev-rate"]', String(DEV_RATE));
-  await page.fill('[data-tco-cost="user-rate"]', String(USER_RATE));
-  await page.fill('[data-cost-field="currency"]', CURRENCY);
+  await fillEconomics(page, '[data-tco-cost="dev-rate"]', String(DEV_RATE));
+  await fillEconomics(page, '[data-tco-cost="user-rate"]', String(USER_RATE));
+  await fillEconomics(page, '[data-cost-field="currency"]', CURRENCY);
   // The investment stays empty.
   await expect(page.locator('[data-tco-cost="investment"]')).toHaveValue('');
 
