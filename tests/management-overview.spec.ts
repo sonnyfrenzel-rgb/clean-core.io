@@ -450,7 +450,34 @@ test.describe('the overview on the screen — one rendered test per chart', () =
     await signIn(page, ADMIN);
     await page.goto(`/project/${ID}?view=management`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-management-overview]')).toBeVisible({ timeout: 60000 });
+    // The cards stand one action deeper, under the decision panel (§2.11).
+    const fold = page.locator('[data-management-overview] [data-cc-disclosure-trigger]').first();
+    await expect(fold).toContainText('The evidence behind these figures');
+    await fold.click();
+    await expect(fold).toHaveAttribute('aria-expanded', 'true');
   }
+
+  test('the decision panel comes first: question, answer, what is in the way, one next step', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await open(page);
+    const panel = page.locator('[data-management-executive]');
+    await expect(panel.locator('[data-executive-question]')).toContainText('Keep, rebuild, move to SAP standard or retire Z_MGMT_OVERVIEW?');
+    await expect(panel.locator('[data-management-headline]')).toContainText(/Decision DEC-1 is open/, { timeout: 60000 });
+    await expect(panel.locator('[data-executive-blocker]').first()).toBeVisible();
+    await expect(panel.locator('[data-executive-next-action]')).toHaveCount(1);
+    await expect(panel.locator('[data-executive-figure]')).toHaveCount(4);
+    const bar = panel.locator('[data-overview-bar="executive-buckets"]');
+    await expect(bar).toHaveAttribute('role', 'img');
+    await expect(bar).toHaveAttribute('aria-label', /Not assigned \d+/);
+    await expect(panel.locator('[data-executive-phase]')).toHaveCount(7);
+    await expect(panel, 'an amount of money in the decision panel').not.toContainText(/€|EUR/);
+    // The panel stands above the cards it reads.
+    const [p, c] = await Promise.all([
+      panel.boundingBox(),
+      page.locator('[data-overview-card="decision"]').boundingBox(),
+    ]);
+    expect(p!.y).toBeLessThan(c!.y);
+  });
 
   test('(b) buckets: a labelled bar per edition, one table, not assigned as its own row', async ({ page }) => {
     test.setTimeout(240 * 1000);

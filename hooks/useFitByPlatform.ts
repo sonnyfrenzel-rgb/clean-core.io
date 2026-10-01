@@ -1,0 +1,59 @@
+'use client';
+
+import { useMemo } from 'react';
+import { gradeKey, type ObjectUse } from '@/lib/abap/abcd-classification';
+import type { EvidenceFinding } from '@/lib/abap/evidence-model';
+import { publicCloudFitLookupObjects, resolvePublicCloudFit, type PublicCloudFitFinding } from '@/lib/abap/public-cloud-fit-resolver';
+import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
+import type { ItFindingsSource } from '@/lib/it-findings';
+import type { FitByPlatform, Loaded } from '@/lib/management-overview';
+import type { Project } from '@/lib/types';
+
+/**
+ * The same findings resolved into the four buckets for both editions — what
+ * the Management overview reads (roadmap 3.0.10 (b)) and the demo workspace
+ * reads for its decision panel. Moved out of `ManagementOverview.tsx` so both
+ * stand on one derivation rather than two copies of it.
+ *
+ * The findings rows carry `objectName` and `kind`, which is all the resolver
+ * reads. The grades and no-path facts come through `/api/abcd-classify`; until
+ * that answer is in, nothing is concluded (`loading`), and a failed lookup is
+ * `absent` with `lookupFailed` as the reason — never a bucket on a guessed fact.
+ */
+export function useFitByPlatform(
+  findings: Loaded<ItFindingsSource>,
+  project: Project | null,
+  lookupFailed: string,
+): Loaded<FitByPlatform> {
+  const fitFindings = useMemo<PublicCloudFitFinding[] | null>(
+    () =>
+      findings.state === 'ready'
+        ? findings.value.rows.map((r) => ({ objectName: r.objectName ?? '', kind: r.kind as EvidenceFinding['kind'] }))
+        : null,
+    [findings],
+  );
+  const lookupObjects = useMemo(() => (fitFindings ? publicCloudFitLookupObjects(fitFindings) : []), [fitFindings]);
+  const lookup = useAbcdCatalogLookup(lookupObjects);
+
+  return useMemo<Loaded<FitByPlatform>>(() => {
+    if (findings.state === 'loading') return { state: 'loading' };
+    if (findings.state === 'absent') return { state: 'absent', reason: findings.reason };
+    if (!fitFindings || !project) return { state: 'loading' };
+    if (lookupObjects.length > 0 && lookup.status === 'loading') return { state: 'loading' };
+    if (lookupObjects.length > 0 && lookup.status === 'error') return { state: 'absent', reason: lookupFailed };
+    const deps = {
+      gradeObjectUse: (name: string, use: ObjectUse | null) =>
+        lookup.grades[gradeKey(name, use)] ?? { grade: 'Unknown' as const, provenance: 'heuristic' as const },
+      hasNoPath: (name: string) => lookup.noPath[name] ?? false,
+    };
+    const base = { findings: fitFindings, usageReport: project.usageReport ?? null, catalogBasis: null };
+    return {
+      state: 'ready',
+      value: {
+        target: project.s4Deployment ?? null,
+        private: resolvePublicCloudFit({ ...base, targetPlatform: 'private' }, deps),
+        public: resolvePublicCloudFit({ ...base, targetPlatform: 'public' }, deps),
+      },
+    };
+  }, [findings, fitFindings, project, lookupObjects.length, lookup.status, lookup.grades, lookup.noPath, lookupFailed]);
+}

@@ -20,6 +20,14 @@ import WorkspaceLayerSection from '@/components/workspace/LayerSection';
 import WorkspaceStatusLine from '@/components/workspace/StatusLine';
 import ItAnswers from '@/components/workspace/ItAnswers';
 import PublicCloudFitPanel from '@/components/workspace/PublicCloudFitPanel';
+import ManagementExecutive from '@/components/workspace/ManagementExecutive';
+import CcDisclosure from '@/components/cc/Disclosure';
+import { useFitByPlatform } from '@/hooks/useFitByPlatform';
+import { managementExecutive, type ExecutiveTarget } from '@/lib/management-executive';
+import { managementOverview, type Loaded } from '@/lib/management-overview';
+import type { ItFindingsSource } from '@/lib/it-findings';
+import { stageHref } from '@/lib/workspace-back-href';
+import { workflowSteps } from '@/lib/workflow-steps';
 import DemoTourStop from '@/components/demo/DemoTourStop';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDemoTour } from '@/hooks/useDemoTour';
@@ -42,6 +50,7 @@ import { revealedRules, type SourceReading } from '@/lib/first-look';
 import { PHASES } from '@/lib/workflow-steps';
 import {
   DEMO_INVITATION,
+  DEMO_OBJECT_NAME,
   DEMO_RESET_LABEL,
   DEMO_STORAGE_KEY,
   DEMO_STRIP_NOTICE,
@@ -191,6 +200,38 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   const open = useMemo(() => notDetermined(project), [project]);
   const management = useMemo(() => managementAnswers(project, [], open), [project, open]);
 
+  /* ------------------------------------------- the decision panel (Management) */
+  // The same panel the workspace leads its Management view with, from the
+  // demo's own data: the findings arrive with the page, the buckets come
+  // from the same derivation, and there is no run and no decision record —
+  // which the panel says, and then names the step that would change it.
+  const findingsRead = useMemo<Loaded<ItFindingsSource>>(() => ({ state: 'ready', value: itFindings }), [itFindings]);
+  const fit = useFitByPlatform(findingsRead, project, wt('mgmt.lookupFailed'));
+  const executive = useMemo(() => {
+    const decision = { state: 'absent' as const, reason: wt('demo.noDecisionRecord') };
+    const overview = managementOverview({ view: management, fit, findings: findingsRead, decision }, { hasSource: true, hasRun: false });
+    return managementExecutive({
+      subject: DEMO_OBJECT_NAME,
+      mode: 'demo',
+      hasSource: true,
+      hasRun: false,
+      steps: workflowSteps(project),
+      overview,
+      fit,
+      costs: { state: 'not-entered', reason: wt('demo.costsNotEntered') },
+      proposal: demo.design.recommendedRoute,
+    });
+  }, [management, fit, findingsRead, project, demo.design.recommendedRoute]);
+  const executiveHref = useCallback(
+    (target: ExecutiveTarget): string =>
+      target.kind === 'stage'
+        ? stageHref({ base: '/demo', path: target.path, view: 'management' })
+        : target.kind === 'anchor'
+          ? `#${target.id}`
+          : TOUR_INVITATION_HREF,
+    [],
+  );
+
   /* ------------------------------------------------------ the reader's state */
   const [state, setState] = useState<WorkspaceDemoState>({ confirmedRules: [], targetConfirmed: false });
   const [hydrated, setHydrated] = useState(false);
@@ -254,6 +295,17 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   if (!enabled) notFound();
 
   const standard = demo.transformation.plan.filter((p) => p.successor);
+
+  const layerBlock = (
+    <>
+      <div className="mt-5">
+        <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} />
+      </div>
+      <div className="mt-5 max-w-3xl">
+        <WorkspaceLayerSection layer={currentLayerSection} />
+      </div>
+    </>
+  );
 
   return (
     <div className="cc" data-demo-workspace={view} data-demo-ready={hydrated ? 'true' : 'false'}>
@@ -359,12 +411,8 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         </nav>
       </section>
 
-      <div className="mt-5">
-        <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} />
-      </div>
-      <div className="mt-5 max-w-3xl">
-        <WorkspaceLayerSection layer={currentLayerSection} />
-      </div>
+      {/* The layers — after Management's own answer in that view, as in the workspace. */}
+      {view !== 'management' ? layerBlock : null}
 
       {/* ------------------------------------------------------ Business */}
       {view === 'business' ? (
@@ -508,20 +556,25 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         <>
           <Place place="management">
             {stop('management')}
-            <CcCard title={management.headline}>
-              <ul data-demo-management="" className="m-0 flex list-none flex-col gap-2 p-0">
-                {management.answers.map((a) => (
-                  <li key={a.id} className="text-[13px] text-cc-ink">
-                    <b className="font-semibold">{a.headline}</b>
-                    {a.figures.length ? (
-                      <span className="block text-[12px] font-medium text-cc-ink-muted">
-                        {a.figures.map((f) => demoFigure(f.label, f.value, f.absentReason)).join(' · ')}
-                      </span>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </CcCard>
+            <ManagementExecutive summary={executive} hrefFor={executiveHref} />
+            <div className="mt-4">
+              <CcDisclosure title={wt('demo.answersDetail')} count={management.answers.length} level={3}>
+                <CcCard title={management.headline}>
+                  <ul data-demo-management="" className="m-0 flex list-none flex-col gap-2 p-0">
+                    {management.answers.map((a) => (
+                      <li key={a.id} className="text-[13px] text-cc-ink">
+                        <b className="font-semibold">{a.headline}</b>
+                        {a.figures.length ? (
+                          <span className="block text-[12px] font-medium text-cc-ink-muted">
+                            {a.figures.map((f) => demoFigure(f.label, f.value, f.absentReason)).join(' · ')}
+                          </span>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </CcCard>
+              </CcDisclosure>
+            </div>
           </Place>
 
           <Place place="four-buckets">
@@ -580,6 +633,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               </div>
             </CcCard>
           </Place>
+          {layerBlock}
         </>
       ) : null}
     </div>

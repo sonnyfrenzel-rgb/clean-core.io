@@ -251,7 +251,7 @@ export default function Home() {
       label: 'Management',
       question: 'What do I risk, what do I decide?',
       src: landingShotSrc('management'),
-      alt: `Management view of the demo project ${DEMO_OBJECT_NAME}: what is backed by evidence, what stands in the way of a decision, and the four buckets.`,
+      alt: `Management view of the demo project ${DEMO_OBJECT_NAME}: the decision and what stands in its way, the next step, four key figures, where the objects stand in the four buckets and the evidence per phase.`,
       ...landingShotSize('management'),
     },
   ];

@@ -44,6 +44,9 @@ export const DEMO_WORKSPACE_MESSAGES = {
   'demo.startingPoint': 'The measured starting point is the Clean Core Score of this demo run:',
   'demo.enterAssumptions': 'Enter assumptions in Economics',
   'demo.openDecision': 'Open decision',
+  'demo.noDecisionRecord': 'A demo keeps no decision record; the route the evidence proposes is further down and stays in this browser.',
+  'demo.costsNotEntered': 'No assumptions have been entered for this demo.',
+  'demo.answersDetail': 'The answers in detail',
   'demo.proposedFromEvidence': 'Proposed from the evidence:',
   'demo.realProjectNote':
     'On a real project a confirmation records your account against a signed run. Here there is no run and no account, so it binds nothing and stays in this browser.',
