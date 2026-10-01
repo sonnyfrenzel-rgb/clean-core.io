@@ -91,14 +91,15 @@ test('the sliders hold the uploaded size and a year without updates (246b1ea24db
 
   // A range input whose minimum is above its value draws — and reports — the
   // minimum. 420 lines used to become 1,000 on the slider.
-  const loc = page.getByLabel('Legacy lines of code (LoC)');
+  // Labels in plain words since the stage became one checklist (gap/stages).
+  const loc = page.getByLabel('Lines of custom code');
   await expect(loc).toHaveValue(String(LOC));
 
-  const upgrades = page.getByLabel('RISE major upgrades / yr');
-  const packs = page.getByLabel('Feature pack updates / yr');
+  const upgrades = page.getByLabel('Release upgrades per year');
+  const packs = page.getByLabel('Feature pack updates per year');
   await expect(upgrades).toHaveAttribute('min', '0');
   await expect(packs).toHaveAttribute('min', '0');
   await upgrades.fill('0');
   await expect(upgrades).toHaveValue('0');
-  await expect(page.locator('body')).toContainText('0 Upgrades');
+  await expect(page.locator('body')).toContainText('0 upgrades');
 });
