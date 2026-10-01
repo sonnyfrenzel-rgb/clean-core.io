@@ -76,6 +76,7 @@ export default function StarterExamples({
   const [failed, setFailed] = useState<string | null>(null);
   const [viewing, setViewing] = useState<{ title: string; code: string | null } | null>(null);
   const [costOpen, setCostOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [kind, setKind] = useState<'' | 'example' | 'snippet'>('');
   const costId = useId();
@@ -193,14 +194,18 @@ export default function StarterExamples({
           <span data-testid="starter-example-name" className="min-w-0 truncate font-cc-mono cc-text-identifier text-cc-ink">
             {name}
           </span>
-          <CcTag>{lines(item.kind === 'example' ? item.example.lines : (described?.lines ?? 0))}</CcTag>
-          {item.kind === 'example' ? (
-            <span data-testid={cost?.free ? 'starter-example-free' : 'starter-example-ran-before'}>
-              <CcTag>{cost?.badge}</CcTag>
-            </span>
-          ) : (
-            <CcTag>{selfFunded ? 'Short snippet' : 'Short snippet · uses a run'}</CcTag>
-          )}
+          {/* The tags travel as one group: on a phone they move under the name
+              together instead of leaving one badge on a line of its own. */}
+          <span data-example-tags="" className="inline-flex flex-nowrap items-center gap-2">
+            <CcTag>{lines(item.kind === 'example' ? item.example.lines : (described?.lines ?? 0))}</CcTag>
+            {item.kind === 'example' ? (
+              <span data-testid={cost?.free ? 'starter-example-free' : 'starter-example-ran-before'}>
+                <CcTag>{cost?.badge}</CcTag>
+              </span>
+            ) : (
+              <CcTag>{selfFunded ? 'Short snippet' : 'Short snippet · uses a run'}</CcTag>
+            )}
+          </span>
         </div>
         <p className="m-0 cc-text-cell text-cc-ink">
           {item.kind === 'example' ? item.example.summary : (described?.title ?? `${described?.kind} ${name}`)}
@@ -282,6 +287,16 @@ export default function StarterExamples({
           <p className="mt-1 mb-0 max-w-2xl cc-text-cell text-cc-ink-muted">
             Fictional, realistic legacy ABAP — no code of your own needed. One click and you are in the analysis.
           </p>
+          <div className="mt-1">
+          <button
+            type="button"
+            data-examples-about=""
+            onClick={() => setAboutOpen(true)}
+            className="rounded-cc-row cc-text-meta font-semibold text-cc-brand-strong underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+          >
+            What are these examples for?
+          </button>
+          </div>
         </div>
       ) : null}
 
@@ -382,12 +397,58 @@ export default function StarterExamples({
           <Info size={14} aria-hidden={true} />
           How runs are counted
         </button>
+        {heading ? null : (
+            <button
+              type="button"
+              data-examples-about=""
+              onClick={() => setAboutOpen(true)}
+              className="rounded-cc-row cc-text-meta font-semibold text-cc-brand-strong underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+            >
+              What are these examples for?
+            </button>
+        )}
         {costOpen ? (
           <p id={costId} role="note" className="m-0 w-full max-w-3xl rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 cc-text-meta text-cc-ink">
             {starterExampleFootnote(account)}
           </p>
         ) : null}
       </div>
+
+      <CcDialog
+        open={aboutOpen}
+        onClose={() => setAboutOpen(false)}
+        title="What are these examples for?"
+        lead="Try Clean-Core.io without uploading your own SAP source code first."
+        actions={
+          <CcButton variant="primary" onClick={() => setAboutOpen(false)}>
+            Got it
+          </CcButton>
+        }
+      >
+        <div data-examples-about-body="" className="flex flex-col gap-3">
+          <p className="m-0">
+            Concerns about uploading your own sensitive ABAP directly are natural. These examples exist to remove
+            that entry barrier: explore the platform with fictional code first.
+          </p>
+          <p className="m-0 font-semibold">What you can try with them:</p>
+          <ul className="m-0 flex list-disc flex-col gap-2 pl-4">
+            <li>
+              <strong>Run the pipeline:</strong> start a project and follow the analysis stage by stage.
+            </li>
+            <li>
+              <strong>Understand the target architecture:</strong> see how legacy ABAP is structured into a modern
+              service, complete with CDS schemas and BTP bindings.
+            </li>
+            <li>
+              <strong>Try sandbox testing:</strong> run the generated tests in a restricted runner with live logs.
+            </li>
+          </ul>
+          <p className="m-0 border-t border-cc-line pt-3 cc-text-meta text-cc-ink-muted">
+            On data privacy: uploads are processed by the server and stored in your private workspace; nothing is
+            shared with other accounts.
+          </p>
+        </div>
+      </CcDialog>
 
       <CcDialog
         open={!!viewing}
