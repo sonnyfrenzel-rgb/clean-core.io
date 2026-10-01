@@ -21,6 +21,7 @@
 
 import { CLEAN_CORE_LEVEL_VALUES, cleanCoreLevel, type CleanCoreLevelEntry } from './clean-core-level';
 import type { ProvenanceValue } from './provenance';
+import { BAIP, BAIP_FIRST } from './sap-naming';
 
 /** *Ein Satz Kern* — §6.1.1, first bullet. */
 export const NEW_PROJECT_CORE =
@@ -60,7 +61,7 @@ export const NEW_PROJECT_DIFFERENCES: readonly DifferenceLine[] = Object.freeze(
 /* --------------------------------------- glance 1: what clean core means */
 
 export const CLEAN_CORE_MEANING =
-  'Keep the SAP core standard: extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP.';
+  `Keep the SAP core standard: extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on ${BAIP_FIRST}.`;
 
 /**
  * The small schema beside the sentence — §6.1.1: the SAP core as a block with
@@ -94,7 +95,7 @@ export const CLEAN_CORE_SCHEMA: readonly CoreSchemaPart[] = Object.freeze([
   Object.freeze({
     key: 'side-by-side',
     label: 'Side-by-side',
-    note: 'A separate service on SAP BTP, reaching the core through released interfaces.',
+    note: `A separate service on ${BAIP}, reaching the core through released interfaces.`,
     place: 'outside' as const,
   }),
   Object.freeze({

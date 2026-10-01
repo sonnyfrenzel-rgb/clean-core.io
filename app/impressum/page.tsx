@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import { BAIP_FIRST } from '@/lib/sap-naming';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'Impressum – Legal Notice | Clean-Core.io',
@@ -83,7 +84,7 @@ export default function ImpressumPage() {
 
           <div className="p-5 bg-cc-surface-muted border border-cc-line rounded-2xl">
             <p className="text-xs text-cc-ink-muted leading-relaxed">
-              <strong className="text-cc-ink">Trademark Notice:</strong> SAP, S/4HANA, ABAP, BTP, SAP Signavio, SAP Build, and SAP Cloud ALM are trademarks or registered trademarks of SAP SE or its affiliates. Clean-Core.io is an independent project and is not endorsed, certified, or sponsored by SAP SE unless explicitly stated.
+              <strong className="text-cc-ink">Trademark Notice:</strong> SAP, S/4HANA, ABAP, {BAIP_FIRST}, SAP Signavio, SAP Build, and SAP Cloud ALM are trademarks or registered trademarks of SAP SE or its affiliates. Clean-Core.io is an independent project and is not endorsed, certified, or sponsored by SAP SE unless explicitly stated.
             </p>
           </div>
 

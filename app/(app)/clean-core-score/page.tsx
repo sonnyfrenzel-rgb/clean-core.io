@@ -7,6 +7,7 @@ import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
 import { publicButton } from '@/components/landing/public-button';
 import CcTable from '@/components/cc/Table';
+import { BAIP_FIRST } from '@/lib/sap-naming';
 import {
   SCORE_BANDS,
   SCORE_BANDS_SOURCE,
@@ -301,7 +302,7 @@ export default function CleanCoreScorePage() {
             <p className={BODY}>
               By maintaining a &ldquo;clean core,&rdquo; companies keep core processes stable while
               innovations are realized side-by-side on the{' '}
-              <strong>SAP Business Technology Platform (BTP)</strong> or in-app via released
+              <strong>{BAIP_FIRST}</strong> or in-app via released
               interfaces. The score says how far a given code base has got with that.
             </p>
           </section>

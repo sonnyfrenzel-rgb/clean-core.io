@@ -1,6 +1,7 @@
 import { DEMO_ROUTE } from './demo-marks';
 import { LIVE_TEST_EXECUTION } from './locked-paths';
 import { PHASES, type PhaseKey } from './workflow-steps';
+import { BAIP, BAIP_FIRST } from './sap-naming';
 
 /**
  * What `/how-to` says about each phase — and nothing it says about a phase
@@ -51,14 +52,14 @@ export interface PhaseHowTo {
 
 /** The page's own description: meta, Open Graph, JSON-LD and the lead under the title. */
 export const HOW_TO_DESCRIPTION =
-  'How custom ABAP moves through the phases of Clean-Core.io, from the analysis of the source to the handover of what is on record, on the in-app RAP track or the side-by-side CAP track on SAP BTP.';
+  `How custom ABAP moves through the phases of Clean-Core.io, from the analysis of the source to the handover of what is on record, on the in-app RAP track or the side-by-side CAP track on ${BAIP_FIRST}.`;
 
 export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
   analyze: {
     summary:
       'Stage an ABAP source (your own file or a starter example), choose the target deployment and run the analysis. A deterministic engine reads the code before any model does, and the result is recorded as a signed run.',
     details: [
-      'The engine reports each finding with its line in the source, computes the Clean Core Score and recommends an extensibility route: in-app ABAP Cloud (RAP) or side-by-side on SAP BTP (CAP).',
+      `The engine reports each finding with its line in the source, computes the Clean Core Score and recommends an extensibility route: in-app ABAP Cloud (RAP) or side-by-side on ${BAIP} (CAP).`,
       'You can switch the route, and the later phases follow the route on the project.',
       'If a model is available, it adds a narrative report; without one, the run is signed over the evidence alone.',
       'Every later phase opens only once a signed run exists.',
@@ -84,7 +85,7 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
   design: {
     summary: 'A model drafts the target architecture for the route on the project, and you record which target you accept.',
     details: [
-      'On the RAP track the draft is a RAP design inside SAP S/4HANA; on the CAP track it is a SAP CAP design on SAP BTP.',
+      `On the RAP track the draft is a RAP design inside SAP S/4HANA; on the CAP track it is a SAP CAP design on ${BAIP}.`,
       'It covers the project structure, service endpoints, data consistency, security requirements and a phased roadmap.',
       'The draft is model output. Review it before you accept it.',
       'Accepting records the target, your account and the time on the server: a self-declaration, not a mandate.',

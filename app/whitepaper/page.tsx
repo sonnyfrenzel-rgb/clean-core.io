@@ -10,6 +10,7 @@ import { APP_VERSION } from '@/lib/version';
 import { getReferenceAnalysis } from '@/lib/reference-analysis';
 import { SUPPORT_MATRIX } from '@/lib/abap/support-matrix';
 import { scoreBand } from '@/lib/clean-core-score';
+import { BAIP_FIRST } from '@/lib/sap-naming';
 
 // Search demand for this page is the generic term — "clean core whitepaper",
 // "sap clean core whitepaper", "sap clean core pdf" — not the product name. The
@@ -61,7 +62,7 @@ const securityTrust = [
 ];
 
 const rapCapRows = [
-  { dim: 'Runtime engine', rap: 'Runs natively within the S/4HANA core.', cap: 'Runs decoupled on SAP BTP (Node.js/TS).' },
+  { dim: 'Runtime engine', rap: 'Runs natively within the S/4HANA core.', cap: `Runs decoupled on ${BAIP_FIRST} (Node.js/TS).` },
   { dim: 'Interfaces', rap: 'Synchronous released CDS views.', cap: 'Decoupled via OData APIs or Event Mesh.' },
   { dim: 'RISE compliance', rap: 'Strict SaaS compliance (zero core modifications).', cap: 'Upgrade-resilient classic custom API wrappers.' },
   { dim: 'Focus case', rap: 'Immediate database updates and transactional locks.', cap: 'Customer portals, mobile apps, external SaaS.' },
@@ -270,7 +271,7 @@ export default function WhitepaperPage() {
               columns={[
                 { key: 'dim', label: 'Dimension', width: '22%' },
                 { key: 'rap', label: 'In-App ABAP Cloud (RAP)' },
-                { key: 'cap', label: 'Side-by-Side (BTP CAP)' },
+                { key: 'cap', label: 'Side-by-Side (CAP)' },
               ]}
               rows={rapCapRows.map((row) => ({
                 key: row.dim,

@@ -7,6 +7,7 @@ import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { publicButton } from '@/components/landing/public-button';
+import { BAIP, BAIP_FIRST } from '@/lib/sap-naming';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'Free ABAP Static Code Analysis Tool for S/4HANA Clean Core | Clean-Core.io',
@@ -53,7 +54,7 @@ const faqs = [
   },
   {
     question: "How do I plan SAP custom code remediation?",
-    answer: "Prioritise by risk. Use the A–D readiness grade to fix the highest-risk objects first, re-point direct table reads to released CDS views or OData APIs, and route the remaining logic to in-app ABAP Cloud (RAP) or side-by-side BTP (CAP). Objects with no released path are flagged for re-architecture rather than a drop-in successor. Every step is deterministic evidence for an architect to confirm with SAP ADT/ATC."
+    answer: `Prioritise by risk. Use the A–D readiness grade to fix the highest-risk objects first, re-point direct table reads to released CDS views or OData APIs, and route the remaining logic to in-app ABAP Cloud (RAP) or side-by-side CAP on ${BAIP_FIRST}. Objects with no released path are flagged for re-architecture rather than a drop-in successor. Every step is deterministic evidence for an architect to confirm with SAP ADT/ATC.`
   }
 ];
 
@@ -146,7 +147,7 @@ export default function AbapAnalysisPage() {
       {/* GEO Quick Answer Block */}
       <QuickAnswer
         question="Why analyze custom ABAP code before an S/4HANA upgrade?"
-        answer="Legacy SAP systems often have tight syntax coupling to standard tables (e.g. VBAK, BSEG, LIKP) or unreleased function modules. During an S/4HANA migration, database structures change, which breaks custom programs. Automated custom code analysis detects these dependencies and maps direct database reads to modern, cloud-released OData APIs and BTP CAP or RAP architectures, preventing upgrade blockages."
+        answer={`Legacy SAP systems often have tight syntax coupling to standard tables (e.g. VBAK, BSEG, LIKP) or unreleased function modules. During an S/4HANA migration, database structures change, which breaks custom programs. Automated custom code analysis detects these dependencies and maps direct database reads to modern, cloud-released OData APIs and CAP (on ${BAIP_FIRST}) or RAP architectures, preventing upgrade blockages.`}
       />
 
       {/* Main Content */}
@@ -201,7 +202,7 @@ export default function AbapAnalysisPage() {
                 <div>
                   <h3 className={H3}>Target Architecture Routing</h3>
                   <p className={STEP_TEXT}>
-                    Based on the determined degree of coupling, the router decides whether the code should be rewritten in-app in ABAP Cloud (RAP) or decoupled as a side-by-side service on SAP BTP (Node.js CAP).
+                    Based on the determined degree of coupling, the router decides whether the code should be rewritten in-app in ABAP Cloud (RAP) or decoupled as a side-by-side service on {BAIP} (Node.js CAP).
                   </p>
                 </div>
               </div>

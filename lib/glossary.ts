@@ -18,6 +18,8 @@
  * because it reads as evidence.
  */
 
+import { BAIP, BAIP_FIRST, FORMER_PLATFORM_NAMES } from './sap-naming';
+
 /** Where a term's definition comes from — `origin` and `absentReason` after `lib/first-look.ts`. */
 export type GlossarySourceOrigin =
   /** SAP's own published catalog, the copy this repository syncs and can point at. */
@@ -64,7 +66,7 @@ const NOT_CITED = 'no SAP publication is recorded for this entry';
 export interface GlossaryItem {
   term: string;
   shortName: string;
-  category: 'ERP Core' | 'BTP Extension' | 'Architecture' | 'Integration' | 'Product';
+  category: 'ERP Core' | 'Side-by-side Extension' | 'Architecture' | 'Integration' | 'Product';
   definition: string;
   cleanCoreImplication: string;
   /**
@@ -72,6 +74,8 @@ export interface GlossaryItem {
    * `product` — this product's own vocabulary (`DESIGN.md` §6.1 group B).
    */
   kind: 'sap' | 'product';
+  /** Former or alternative names a reader may type; matched by the lookup, never displayed. */
+  aliases?: readonly string[];
   /** Always present. `origin: 'absent'` where no publication is recorded. */
   sourceRef: GlossarySource;
   /**
@@ -118,11 +122,11 @@ const ENTRIES: Record<string, GlossaryEntry> = {
   CAP: {
     term: 'Cloud Application Programming Model',
     shortName: 'CAP',
-    category: 'BTP Extension',
+    category: 'Side-by-side Extension',
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
-    definition: 'An open and opinionated framework of languages, libraries, and tools for building enterprise-grade cloud services and microservices on SAP BTP. It supports both Node.js (TypeScript) and Java.',
-    cleanCoreImplication: 'CAP is the ideal framework for BTP Side-by-Side Extensibility, keeping custom extensions completely separate from the S/4HANA core systems.'
+    definition: `An open and opinionated framework of languages, libraries, and tools for building enterprise-grade cloud services and microservices on ${BAIP_FIRST}. It supports both Node.js (TypeScript) and Java.`,
+    cleanCoreImplication: `CAP is the ideal framework for Side-by-Side Extensibility on ${BAIP}, keeping custom extensions completely separate from the S/4HANA core systems.`
   },
   'SAP LUW': {
     term: 'SAP Logical Unit of Work',
@@ -167,7 +171,7 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
     definition: 'An open standard, REST-based protocol for building and consuming APIs. SAP standard interfaces, RAP business objects, and CAP applications expose services primarily as OData v2 or v4 feeds.',
-    cleanCoreImplication: 'Standardizing integrations on OData ensures seamless connectivity between SAP core, SAP BTP extensions, and external third-party portals.'
+    cleanCoreImplication: `Standardizing integrations on OData ensures seamless connectivity between SAP core, ${BAIP} extensions, and external third-party portals.`
   },
   abapGit: {
     term: 'abapGit Client',
@@ -181,20 +185,20 @@ const ENTRIES: Record<string, GlossaryEntry> = {
   'Event Mesh': {
     term: 'SAP Integration Suite, Event Mesh',
     shortName: 'Event Mesh',
-    category: 'BTP Extension',
+    category: 'Side-by-side Extension',
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
-    definition: 'A fully managed, event-driven messaging service on SAP BTP. It allows applications to communicate asynchronously via lightweight events (e.g. document created) using message queues.',
-    cleanCoreImplication: 'Using an Event Mesh enables absolute side-by-side decoupling, notifying BTP extensions of core ERP updates asynchronously without blocking ERP user threads.'
+    definition: `A fully managed, event-driven messaging service on ${BAIP_FIRST}. It allows applications to communicate asynchronously via lightweight events (e.g. document created) using message queues.`,
+    cleanCoreImplication: `Using an Event Mesh enables absolute side-by-side decoupling, notifying ${BAIP} extensions of core ERP updates asynchronously without blocking ERP user threads.`
   },
   Destination: {
-    term: 'SAP BTP Destination Service',
+    term: 'SAP Destination service',
     shortName: 'Destination',
     category: 'Integration',
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
-    definition: 'A secure cloud registry on SAP BTP used to define connection credentials, authentication certificates, and URLs to target systems (e.g. standard ERP, external SaaS APIs).',
-    cleanCoreImplication: 'Destinations externalize connection endpoints from extension source code, shielding BTP microservices from specific ERP landscape adjustments.'
+    definition: `A secure cloud registry on ${BAIP_FIRST} used to define connection credentials, authentication certificates, and URLs to target systems (e.g. standard ERP, external SaaS APIs).`,
+    cleanCoreImplication: `Destinations externalize connection endpoints from extension source code, shielding ${BAIP} microservices from specific ERP landscape adjustments.`
   },
   'Released Interface': {
     term: 'Released Stable SAP Interface',
@@ -205,23 +209,18 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     definition: 'An official SAP object (CDS view, BAPI, class, or service) that has been explicitly certified by SAP as stable and released for customer custom extensions.',
     cleanCoreImplication: 'Using only released stable interfaces protects custom extensions from breaking during automatic cloud system upgrades, as SAP guarantees their backward compatibility.'
   },
-  BTP: {
-    term: 'SAP Business Technology Platform',
-    shortName: 'BTP',
-    category: 'BTP Extension',
+  // One entry for the platform (roadmap 3.0.15; `DESIGN.md` §6.1 had marked the
+  // two former entries for merging). A reader who types the former name still
+  // finds it through `aliases`.
+  BAIP: {
+    term: BAIP_FIRST,
+    shortName: BAIP,
+    aliases: FORMER_PLATFORM_NAMES,
+    category: 'Side-by-side Extension',
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
     definition: 'SAP\'s unified cloud platform bringing together application development, data and analytics, integration, automation, and AI capabilities in a single environment.',
-    cleanCoreImplication: 'SAP BTP is the designated environment for hosting Side-by-Side extensions, keeping the digital ERP core system clean and stable.'
-  },
-  'SAP BTP': {
-    term: 'SAP Business Technology Platform',
-    shortName: 'SAP BTP',
-    category: 'BTP Extension',
-    kind: 'sap',
-    sourceRef: noSource(NOT_CITED),
-    definition: 'SAP\'s unified cloud platform bringing together application development, data and analytics, integration, automation, and AI capabilities in a single environment.',
-    cleanCoreImplication: 'SAP BTP is the designated environment for hosting Side-by-Side extensions, keeping the digital ERP core system clean and stable.'
+    cleanCoreImplication: `${BAIP} is the designated environment for hosting Side-by-Side extensions, keeping the digital ERP core system clean and stable.`
   },
 
   /* ------------------------------------- A . SAP and Clean Core (DESIGN.md 6.1) */
@@ -299,12 +298,12 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     cleanCoreImplication: 'It is the clean-core route for logic that must run inside the standard transaction and cannot wait for an asynchronous call.',
   },
   'Side-by-side extensibility': {
-    term: 'Side-by-side extensibility (SAP BTP)',
+    term: `Side-by-side extensibility (${BAIP})`,
     shortName: 'Side-by-side extensibility',
-    category: 'BTP Extension',
+    category: 'Side-by-side Extension',
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
-    definition: 'Running the extension outside the ERP system, on SAP BTP, and reaching the core only through released APIs and events.',
+    definition: `Running the extension outside the ERP system, on ${BAIP_FIRST}, and reaching the core only through released APIs and events.`,
     cleanCoreImplication: 'It keeps the core untouched entirely, at the price of a network hop - so it does not suit logic that must block the standard transaction.',
   },
   Modification: {

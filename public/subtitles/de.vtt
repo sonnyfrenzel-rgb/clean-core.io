@@ -4,7 +4,7 @@ WEBVTT
 Modifikationen des ERP-Kerns sind das größte Hindernis für S/4HANA-Upgrades.
 
 00:07.500 --> 00:16.000
-Willkommen bei Clean-Core.io – dem automatisierten Tool zur Entkopplung von Legacy-ABAP in moderne Cloud-Services auf SAP BTP.
+Willkommen bei Clean-Core.io – dem automatisierten Tool zur Entkopplung von Legacy-ABAP in moderne Cloud-Services auf der SAP Business AI Platform (BAIP).
 
 00:16.000 --> 00:25.000
 Unsere Plattform ermöglicht es IT-Architekten, den digitalen SAP-Kern sauber zu halten und gleichzeitig die Cloud-Transformation zu beschleunigen.
@@ -25,7 +25,7 @@ Als Nächstes trennt unsere Scoring-Engine veralteten Code von aktiven Anforderu
 Standard-SAP-Funktionen werden nativ zugeordnet, um unnötige Neuentwicklungen zu vermeiden.
 
 01:15.000 --> 01:25.000
-Nur die verbleibenden, kundenspezifischen Delta-Anforderungen werden für die side-by-side Entkopplung auf SAP BTP vorbereitet.
+Nur die verbleibenden, kundenspezifischen Delta-Anforderungen werden für die side-by-side Entkopplung auf BAIP vorbereitet.
 
 01:25.000 --> 01:35.000
 Nun navigieren wir zum Target Architecture Blueprint. Hier entwerfen wir das moderne, cloud-native Schema.
@@ -34,7 +34,7 @@ Nun navigieren wir zum Target Architecture Blueprint. Hier entwerfen wir das mod
 Mithilfe sicherer, zustandsloser Gemini-API-Proxies wird Ihr ERP-Legacy-Code analysiert und in eine modulare Node.js-Ordnerstruktur konvertiert.
 
 01:47.000 --> 02:00.000
-Die visuelle Konsole zeigt generierte cds-Schemata, TypeScript-Controller, Dockerfiles und Bindungen zum BTP Destination Manager.
+Die visuelle Konsole zeigt generierte cds-Schemata, TypeScript-Controller, Dockerfiles und Bindungen zum SAP Destination service.
 
 02:00.000 --> 02:10.000
 Im Bereich Code-Transformation können Sie die side-by-side Konvertierung im Detail überprüfen.
@@ -43,7 +43,7 @@ Im Bereich Code-Transformation können Sie die side-by-side Konvertierung im Det
 Die Scroll-Sync-Vergleichsansicht ordnet die alten ABAP-Statements direkt ihren modernen TypeScript-Äquivalenten zu.
 
 02:20.000 --> 02:30.000
-Architekten können den refaktorierten Code auditieren und die Einhaltung von Sicherheitsstandards und BTP-SDK-Konventionen prüfen.
+Architekten können den refaktorierten Code auditieren und die Einhaltung von Sicherheitsstandards und SAP-Cloud-SDK-Konventionen prüfen.
 
 02:30.000 --> 02:42.000
 Zur Verifizierung stellt die Plattform den neuen TypeScript-Code automatisch in einer isolierten Test-Sandbox bereit.

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { GUIDE_PARTS, GUIDE_FAQ, NOTE_LABELS } from '@/lib/clean-core-guide';
 import { CAPABILITIES, HONEST_SCOPE } from '@/lib/clean-core-capabilities';
+import { BAIP_FIRST } from '@/lib/sap-naming';
 
 /**
  * Paper edition of /clean-core-explained.
@@ -508,7 +509,7 @@ export default function CleanCoreExplainedPrintPage() {
               info@clean-core.io — this document is better for them.
             </p>
             <p>
-              SAP, S/4HANA, ABAP and SAP BTP are trademarks of SAP SE. Clean-Core.io is an
+              SAP, S/4HANA, ABAP and {BAIP_FIRST} are trademarks of SAP SE. Clean-Core.io is an
               independent community project and is not affiliated with or endorsed by SAP SE.
             </p>
           </div>

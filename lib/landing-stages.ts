@@ -1,5 +1,6 @@
 import type { ProvenanceValue } from './provenance';
 import { PHASES, type PhaseKey } from './workflow-steps';
+import { BAIP_FIRST } from './sap-naming';
 
 /**
  * The seven stages as the landing page's timeline shows them — roadmap 3.0.6
@@ -53,7 +54,7 @@ export const LANDING_STAGE_TEXT: Readonly<Record<PhaseKey, LandingStageText>> = 
   },
   design: {
     lines: [
-      'A model drafts the target architecture for the route on the project: RAP inside SAP S/4HANA or CAP on SAP BTP.',
+      `A model drafts the target architecture for the route on the project: RAP inside SAP S/4HANA or CAP on ${BAIP_FIRST}.`,
       'You review the draft and record which target you accept — a self-declaration, not a mandate.',
     ],
     worker: 'model',

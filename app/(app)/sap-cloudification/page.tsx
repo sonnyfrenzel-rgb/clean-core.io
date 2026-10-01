@@ -7,6 +7,7 @@ import QuickAnswer from '@/components/QuickAnswer';
 import { getFacts } from '@/lib/facts';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { publicButton } from '@/components/landing/public-button';
+import { BAIP, BAIP_FIRST } from '@/lib/sap-naming';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Cloudification Repository: Look Up an Object’s Released Successor | Clean-Core.io',
@@ -28,12 +29,12 @@ const faqs = [
   {
     question: 'What is SAP cloudification?',
     answer:
-      'SAP cloudification is the process of making custom ABAP cloud-ready for S/4HANA: replacing direct access to standard tables and unreleased objects with SAP-released APIs and CDS views, and moving logic to a clean-core-compliant model — in-app ABAP Cloud (RAP) or side-by-side on SAP BTP (CAP). The goal is a decoupled extension layer, so future upgrades stay clean.',
+      `SAP cloudification is the process of making custom ABAP cloud-ready for S/4HANA: replacing direct access to standard tables and unreleased objects with SAP-released APIs and CDS views, and moving logic to a clean-core-compliant model — in-app ABAP Cloud (RAP) or side-by-side CAP on ${BAIP_FIRST}. The goal is a decoupled extension layer, so future upgrades stay clean.`,
   },
   {
     question: 'How do you cloudify SAP custom code?',
     answer:
-      'Assess each object your code touches against SAP’s released-object contract, replace unreleased calls with their released successors (OData/CDS/RAP BOs), and route the remaining logic to the right target: in-app ABAP Cloud (RAP) where it belongs on the core, or a decoupled side-by-side CAP service on SAP BTP where it does not. Objects with no released path are re-architected, not force-fit. Clean-Core.io automates the assessment and drafts the first compliant version for an architect to review.',
+      `Assess each object your code touches against SAP’s released-object contract, replace unreleased calls with their released successors (OData/CDS/RAP BOs), and route the remaining logic to the right target: in-app ABAP Cloud (RAP) where it belongs on the core, or a decoupled side-by-side CAP service on ${BAIP_FIRST} where it does not. Objects with no released path are re-architected, not force-fit. Clean-Core.io automates the assessment and drafts the first compliant version for an architect to review.`,
   },
   {
     question: 'Is “SAP Cloudify” an official SAP product?',
@@ -175,7 +176,7 @@ export default function SapCloudificationPage() {
       {/* GEO Quick Answer Block */}
       <QuickAnswer
         question="What does it mean to cloudify SAP custom code?"
-        answer="Cloudifying SAP means making custom ABAP cloud-ready for S/4HANA: replacing direct access to standard tables and unreleased objects with SAP-released APIs and CDS views, and rewriting logic either in-app in ABAP Cloud (RAP) or side-by-side on SAP BTP (CAP). It follows SAP's Clean Core principle so extensions stay decoupled from the digital core and upgrades stay clean. There is no single SAP product called 'Cloudify'; the reference dataset that drives it is SAP's public Cloudification Repository, which maps legacy objects to their released successors."
+        answer={`Cloudifying SAP means making custom ABAP cloud-ready for S/4HANA: replacing direct access to standard tables and unreleased objects with SAP-released APIs and CDS views, and rewriting logic either in-app in ABAP Cloud (RAP) or side-by-side CAP on ${BAIP_FIRST}. It follows SAP's Clean Core principle so extensions stay decoupled from the digital core and upgrades stay clean. There is no single SAP product called 'Cloudify'; the reference dataset that drives it is SAP's public Cloudification Repository, which maps legacy objects to their released successors.`}
       />
 
       {/* Main Content */}
@@ -195,7 +196,7 @@ export default function SapCloudificationPage() {
             </p>
             <p className={BODY}>
               Logic that legitimately belongs on the core is rebuilt <strong>in-app in ABAP Cloud (RAP)</strong>;
-              logic that does not is decoupled into a <strong>side-by-side service on SAP BTP (CAP)</strong>. The
+              logic that does not is decoupled into a <strong>side-by-side CAP service on {BAIP}</strong>. The
               result is an extension layer that survives S/4HANA upgrades instead of breaking on them.
             </p>
           </section>
@@ -262,7 +263,7 @@ export default function SapCloudificationPage() {
                   <h3 className={H3}>3. Route: in-app RAP vs side-by-side CAP</h3>
                   <p className={STEP_TEXT}>
                     Based on the degree of coupling, the router recommends rewriting the logic in-app in
-                    ABAP Cloud (RAP) or decoupling it as a side-by-side service on SAP BTP (Node.js CAP) —
+                    ABAP Cloud (RAP) or decoupling it as a side-by-side service on {BAIP} (Node.js CAP) —
                     a recommendation for a qualified architect to sign off.
                   </p>
                 </div>
