@@ -263,8 +263,9 @@ test.describe('a signed-in account reading its own project', () => {
      * their own code that nothing had assessed.
      */
     await page.goto(`/project/${BTP}/analyze`, { waitUntil: 'domcontentloaded' });
-    // A real ARIA tab since D.10b (CcTabs), no longer an aria-pressed button.
-    await page.getByRole('tab', { name: 'Modernization Strategy' }).click({ timeout: 60000 });
+    // Folded under "Why this route" since the stage became a tool page (§2.11);
+    // it was a CcTab before, an aria-pressed button before that.
+    await page.getByRole('button', { name: /Why this route/ }).click({ timeout: 60000 });
     await page.waitForSelector('text=Extensibility Decision Matrix', { timeout: 60000 });
 
     // One for the checkpoints, one for the track comparison: the panel says twice

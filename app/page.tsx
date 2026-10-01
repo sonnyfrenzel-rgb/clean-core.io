@@ -551,6 +551,7 @@ export default function Home() {
                     plane={hero.plane}
                     idPrefix="hero"
                     fit
+                    maxHeight={520}
                     title={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code: each step with the decisions in it that end the process. Every element carries its line anchor.`}
                   />
                 }

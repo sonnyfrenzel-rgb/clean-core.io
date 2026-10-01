@@ -28,11 +28,17 @@ import type { ProcessSkeleton, SkeletonNode } from './abap/process-skeleton';
 import { plainLabels } from './abap/plain-language';
 import type { PlainWording } from './business-card';
 import { anchorLabel } from './first-look';
+import { capabilityKeyOf } from './abap/standard-coverage';
 import {
   ELEMENT_STATES,
   MAX_STATE_NOTE,
+  MAX_VALUE_SOURCE_NOTE,
   STATE_LABELS,
   noteRequired,
+  sameAnswer,
+  valueSourceAllowed,
+  valueSourceRequired,
+  type ValueSourceKind,
   type ElementState,
   type ProcessStateView,
   type RuleLink,
@@ -56,6 +62,12 @@ export interface EditorRule {
   code: string;
   /** Every place the rule stands, `L87`, `L398-414`. */
   anchors: string[];
+  /**
+   * The other rules that decide the same subject (`capabilityKeyOf`) — what
+   * "Also applies to" may offer. Empty when the rule stands alone, and then the
+   * field is not shown: there is nothing in the code it could apply to.
+   */
+  siblings: string[];
 }
 
 const sentenceCase = (text: string): string =>
@@ -63,7 +75,13 @@ const sentenceCase = (text: string): string =>
 
 /** The rules of a reading, worded. Same order as the rule set — `BR-001` first. */
 export function editorRules(ruleSet: BusinessRuleSet, wording: PlainWording): EditorRule[] {
+  const byKey = new Map<string, string[]>();
+  for (const rule of ruleSet.rules) {
+    const key = capabilityKeyOf(rule);
+    if (key) byKey.set(key, [...(byKey.get(key) ?? []), rule.id]);
+  }
   return ruleSet.rules.map((rule) => {
+    const key = capabilityKeyOf(rule);
     // A phrase is only a name when it says something in words: "1000 1000" is
     // two values, not a name, and is not shown as one.
     const raw = wording.rulePhrase(rule);
@@ -81,6 +99,7 @@ export function editorRules(ruleSet: BusinessRuleSet, wording: PlainWording): Ed
       anchors: [
         ...new Set(rule.sentences.flatMap((s) => s.anchors.map((a) => anchorLabel(a.lineStart, a.lineEnd)))),
       ],
+      siblings: key ? (byKey.get(key) ?? []).filter((id) => id !== rule.id) : [],
     };
   });
 }
@@ -91,6 +110,11 @@ export function editorRules(ruleSet: BusinessRuleSet, wording: PlainWording): Ed
 export interface DraftEntry {
   state: ElementState | null;
   note: string;
+  /** Where the value comes from — Keep and Change only; `''` is not chosen. */
+  sourceKind?: ValueSourceKind | '';
+  sourceNote?: string;
+  /** Other rules of the same subject this answer also applies to. */
+  appliesTo?: string[];
 }
 
 export type RuleDraft = Record<string, DraftEntry>;
@@ -113,7 +137,13 @@ export function draftFrom(rules: readonly EditorRule[], entries: Record<string, 
   const draft: RuleDraft = {};
   for (const rule of rules) {
     const entry = entries[rule.id];
-    draft[rule.id] = { state: entry?.state ?? null, note: entry?.note ?? '' };
+    draft[rule.id] = {
+      state: entry?.state ?? null,
+      note: entry?.note ?? '',
+      sourceKind: entry?.valueSource?.kind ?? '',
+      sourceNote: entry?.valueSource?.note ?? '',
+      appliesTo: [...(entry?.appliesTo ?? [])],
+    };
   }
   return draft;
 }
@@ -124,9 +154,21 @@ export function draftChoices(draft: RuleDraft, entries: Record<string, StateEntr
   for (const [id, entry] of Object.entries(draft)) {
     if (!entry.state) continue;
     const note = entry.note.trim();
-    const held = entries[id];
-    if (held && held.state === entry.state && (held.note ?? '') === note) continue;
-    out.push({ subject: id, kind: 'rule', state: entry.state, note: note === '' ? null : note });
+    const withSource = valueSourceAllowed(entry.state);
+    const sourceNote = (entry.sourceNote ?? '').trim();
+    const choice: StateChoiceInput = {
+      subject: id,
+      kind: 'rule',
+      state: entry.state,
+      note: note === '' ? null : note,
+      valueSource:
+        withSource && entry.sourceKind
+          ? { kind: entry.sourceKind, note: sourceNote === '' ? null : sourceNote }
+          : null,
+      appliesTo: withSource ? [...(entry.appliesTo ?? [])].sort() : [],
+    };
+    if (sameAnswer(entries[id], choice)) continue;
+    out.push(choice);
   }
   return out.sort((a, b) => (a.subject < b.subject ? -1 : a.subject > b.subject ? 1 : 0));
 }
@@ -134,8 +176,11 @@ export function draftChoices(draft: RuleDraft, entries: Record<string, StateEntr
 /** One field that keeps the draft from being saved. */
 export interface DraftProblem {
   ruleId: string;
-  /** `missing` — the state needs a reason; `too-long` — over `MAX_STATE_NOTE`. */
-  kind: 'missing' | 'too-long';
+  /**
+   * `missing` — the state needs a reason; `too-long` — over the limit;
+   * `source-missing` — a change that does not say where the new value comes from.
+   */
+  kind: 'missing' | 'too-long' | 'source-missing';
 }
 
 /** What blocks a save. Only Change and Drop without a reason, and a note over the limit. */
@@ -146,6 +191,8 @@ export function draftProblems(draft: RuleDraft): DraftProblem[] {
     const note = entry.note.trim();
     if (noteRequired(entry.state) && note === '') out.push({ ruleId, kind: 'missing' });
     else if (note.length > MAX_STATE_NOTE) out.push({ ruleId, kind: 'too-long' });
+    else if (valueSourceRequired(entry.state) && !entry.sourceKind) out.push({ ruleId, kind: 'source-missing' });
+    else if ((entry.sourceNote ?? '').trim().length > MAX_VALUE_SOURCE_NOTE) out.push({ ruleId, kind: 'too-long' });
   }
   return out.sort((a, b) => (a.ruleId < b.ruleId ? -1 : a.ruleId > b.ruleId ? 1 : 0));
 }
@@ -163,7 +210,7 @@ export interface DraftSummary {
 
 export function draftSummary(rules: readonly EditorRule[], draft: RuleDraft): DraftSummary {
   const summary: DraftSummary = { keep: [], change: [], drop: [], clarify: [], untouched: [], missing: [] };
-  const missing = new Set(draftProblems(draft).filter((p) => p.kind === 'missing').map((p) => p.ruleId));
+  const missing = new Set(draftProblems(draft).filter((p) => p.kind !== 'too-long').map((p) => p.ruleId));
   for (const rule of rules) {
     const state = draft[rule.id]?.state ?? null;
     if (!state) summary.untouched.push(rule.id);

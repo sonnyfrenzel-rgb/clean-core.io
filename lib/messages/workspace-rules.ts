@@ -50,6 +50,15 @@ export const WORKSPACE_RULES_MESSAGES = {
     'Nothing else changes: the signed run, the reconstructed process and the findings stay exactly as they are.',
   'rules.everySave': 'Every save is a revision.',
   'rules.discard': 'Discard',
+  'rules.source': 'Where the value comes from',
+  'rules.sourceNew': 'Where the new value comes from',
+  'rules.sourcePlaceholder': 'Choose a source',
+  'rules.sourceMissing': 'Say where the new value comes from — choose Unknown if nobody knows yet.',
+  'rules.sourceUnknown': 'Unknown is an answer: it stays visible as an open point of this rule.',
+  'rules.sourceNote': 'Which table, document or regulation',
+  'rules.sourceNoteHelp': 'Optional — for example the customizing table or the paragraph of a regulation.',
+  'rules.appliesTo': 'Also applies to',
+  'rules.appliesToHelp': 'Other rules in the code that decide the same field.',
   // StandardFitTable
   'fit.reading': 'Comparing the rules with SAP standard…',
   'fit.title': 'Standard fit by capability',
@@ -304,4 +313,26 @@ export function firstLookConfirmRules(n: number, owner: boolean): string {
 /** "3 of 7". */
 export function firstLookOf(part: number, whole: number): string {
   return `${part} of ${whole}`;
+}
+
+const VALUE_SOURCE_WORDS = {
+  customizing: 'Customizing table',
+  'business-requirement': 'Business requirement',
+  'legal-regulatory': 'Legal or regulatory',
+  unknown: 'Unknown',
+} as const;
+
+/** The word of a value source. */
+export function rulesValueSourceLabel(kind: keyof typeof VALUE_SOURCE_WORDS): string {
+  return VALUE_SOURCE_WORDS[kind];
+}
+
+/** "Value source: Customizing table · T16FS release strategy". */
+export function rulesValueSourceLine(kind: keyof typeof VALUE_SOURCE_WORDS, note: string | null): string {
+  return `Value source: ${VALUE_SOURCE_WORDS[kind]}${note ? ` · ${note}` : ''}`;
+}
+
+/** "Also applies to BR-010, BR-011". */
+export function rulesAppliesToLine(ids: readonly string[]): string {
+  return `Also applies to ${ids.join(', ')}`;
 }

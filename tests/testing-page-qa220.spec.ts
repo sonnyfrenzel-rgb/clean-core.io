@@ -17,7 +17,11 @@ const page = () => fs.readFileSync(path.join(SEGMENT, 'page.tsx'), 'utf8').repla
 /** The rendered half only — comments above the handlers name the wording they replaced. */
 const rendered = () => {
   const s = page();
-  return s.slice(s.indexOf('  return (\n    <div className="bg-cc-page'));
+  // The stage's main return — a plain `min-h-screen` wrapper since the stages
+  // use the app main's own width and padding (mockup s8 rebuild).
+  const start = s.indexOf('  return (\n    <div className="min-h-screen">');
+  expect(start, 'the main return of the testing page was not found').toBeGreaterThan(-1);
+  return s.slice(start);
 };
 /** The body of `const <name> = async (...) => { ... };` at component level. */
 const handler = (name: string) => {

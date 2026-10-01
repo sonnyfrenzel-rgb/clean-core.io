@@ -95,8 +95,8 @@ test('the business reading draws the report events as one flow, and the technica
 
 for (const file of files) {
   test(`${file}: the business excerpt (top to bottom) is clean, and every element in it is anchored`, () => {
-    const model = businessExcerpt(modelOf(file, 'plain'), { steps: 5 });
-    const layout = layoutModel(model, { direction: 'TB' });
+    const model = businessExcerpt(modelOf(file, 'plain'), { steps: 5, mainElements: 7 });
+    const layout = layoutModel(model, { direction: 'TB', compact: true });
     const plane = layout.planes.get(model.root.id)!;
     const report = measureDrawing(planeDrawing(model.root, plane));
     const bad = ZERO_METRICS.filter((k) => report[k] !== 0).map((k) => `${k}=${report[k]}: ${report.details.slice(0, 3).join(' | ')}`);
@@ -170,4 +170,16 @@ test('the text measure wraps like bpmn-js and never hands back a line wider than
       for (const line of wrapText(text, width, 12)) expect(textWidth(line, 12)).toBeLessThanOrEqual(width);
     }
   }
+});
+
+test('the landing hero excerpt is compact: at most seven main-line elements, a marker for the rest, and short', () => {
+  const model = businessExcerpt(modelOf('Z_MM_PO_APPROVAL.abap', 'plain'), { steps: 5, mainElements: 7 });
+  const marker = model.root.nodes.find((n) => n.id === 'ex-continues');
+  expect(marker?.name).toMatch(/^\d+ more steps?$/);
+  expect(marker?.anchorLabel).toBeTruthy();
+  const layout = layoutModel(model, { direction: 'TB', compact: true });
+  const plane = layout.planes.get(model.root.id)!;
+  const report = measureDrawing(planeDrawing(model.root, plane));
+  // The mockup's diagram is about 460–520 px; the drawing is fitted to a max height on top.
+  expect(report.height).toBeLessThan(640);
 });

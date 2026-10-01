@@ -143,13 +143,21 @@ test.describe('every view reads the contract', () => {
 
   test('every stepper has its rail beside it — in the loaded page, not only the loading state', () => {
     // Four pages rendered the rail in their early `loading` return and nowhere
-    // else, so it disappeared as soon as there was something to report.
+    // else, so it disappeared as soon as there was something to report. Since
+    // the stages became tools of the workspace (ADR-050, mockup s8) both are
+    // drawn by one component, `StageProgress`, for accounts without the
+    // workspace — so the pair cannot come apart, and every return of every
+    // stage renders it.
+    const progress = read('components/StageProgress.tsx');
+    expect((progress.match(/<Stepper\s/g) || []).length).toBe(1);
+    expect((progress.match(/<VerificationRail\s/g) || []).length).toBe(1);
     for (const p of PAGES) {
       const src = read(stage(p));
-      const steppers = (src.match(/<Stepper\s/g) || []).length;
-      const rails = (src.match(/<VerificationRail\s/g) || []).length;
-      expect(steppers, `${p} renders no stepper`).toBeGreaterThan(0);
-      expect(rails, `${p}: ${steppers} stepper(s), ${rails} rail(s)`).toBe(steppers);
+      expect(src, `${p} draws a stepper of its own`).not.toMatch(/<Stepper\s|<VerificationRail\s/);
+      const frames = (src.match(/<StageProgress\s/g) || []).length;
+      const headers = (src.match(/<StageHeader\s/g) || []).length;
+      expect(frames, `${p} renders no stage progress`).toBeGreaterThan(0);
+      expect(frames, `${p}: ${frames} progress frame(s), ${headers} header(s)`).toBe(headers);
     }
   });
 

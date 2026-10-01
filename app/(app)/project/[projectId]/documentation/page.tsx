@@ -6,8 +6,8 @@ import { doc, updateDoc, runTransaction } from 'firebase/firestore';
 import { getAuth, getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
-import Stepper from '@/components/Stepper';
-import NavigationButtons from '@/components/NavigationButtons';
+import StageProgress from '@/components/StageProgress';
+import StageFooter from '@/components/StageFooter';
 import { Download, RefreshCw, FileCode2, Briefcase, Target, Users, Settings, Activity, Layers, Box, Lock, Rocket } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
@@ -32,7 +32,6 @@ import CcStateText from '@/components/cc/StateText';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import { saveAs } from '@/lib/fileSaver';
-import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
@@ -843,10 +842,9 @@ Structure the JSON exactly like this:
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
-      <VerificationRail steps={phases} current="documentation" projectId={projectId as string} />
 
-      <Stepper steps={phases} current="documentation" projectId={projectId as string} />
-      <StageHeader stage="documentation" />
+      <StageProgress steps={phases} current="documentation" projectId={projectId as string} />
+      <StageHeader stage="documentation" projectName={project?.name} />
       <CcSkeleton shape="cards" label="documentation" count={2} />
     </div>
   );
@@ -1260,12 +1258,11 @@ Structure the JSON exactly like this:
   );
 
   return (
-    <div className="bg-cc-page min-h-screen p-4 md:p-8">
+    <div className="min-h-screen">
       {/* Rendered here as well as in the loading state — it used to exist only
           there, and disappeared as soon as the page had loaded. */}
-      <VerificationRail steps={phases} current="documentation" projectId={projectId as string} />
 
-      <Stepper steps={phases} current="documentation" projectId={projectId as string} />
+      <StageProgress steps={phases} current="documentation" projectId={projectId as string} />
 
       <StaleNotice
         title={`Built for ${previousBasis(project)}`}
@@ -1279,8 +1276,9 @@ Structure the JSON exactly like this:
 
       <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6 mb-8 mt-6 md:mt-8">
         <div>
-          <StageHeader stage="documentation">
-            Business Architecture &amp; BPMN Map
+          <StageHeader stage="documentation" projectName={project?.name}>
+            The process as the code runs it, drawn as a map you can export as BPMN 2.0, and the documentation
+            written from it.
           </StageHeader>
 
           {/* Roadmap 0.2 (UX-029). Two badges used to stand here —
@@ -1414,6 +1412,35 @@ Structure the JSON exactly like this:
           documentation below it is written from the same reading (3.0.5); a
           blueprint stored before that is a model's account and is marked as
           one. Putting the evidence first is the order `DESIGN.md` §5 asks for. */}
+      {/* The stage's answer, before the map (ADR-050). */}
+      <section
+        data-documentation-answer={processMap.model ? 'process' : 'none'}
+        aria-labelledby="documentation-answer"
+        className={clsx(SECTION, 'mb-6 p-4 md:p-6')}
+      >
+        {processMap.model ? (
+          <>
+            <h2 id="documentation-answer" className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
+              {processMap.model.overview} <CcProvenanceChip value="reconstructed" />
+            </h2>
+            <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
+              Read from the code of {processMap.model.fileName}. {processMap.model.traceability.sentence}
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 id="documentation-answer" className="m-0 cc-text-h2 text-cc-ink">
+              {signedSource && processMap.status === 'loading' ? 'Reading the process from the code…' : 'No process map yet'}
+            </h2>
+            <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
+              {signedSource
+                ? processMap.reason ?? 'The map is drawn from the signed analysis as soon as it has been read.'
+                : 'The map is drawn from a signed analysis of the code. Run the analysis first.'}
+            </p>
+          </>
+        )}
+      </section>
+
       {signedSource && (
         <div data-process-map-section className={clsx(SECTION, 'mb-8')}>
           {processMap.model ? (
@@ -1636,7 +1663,7 @@ Structure the JSON exactly like this:
         )}
       </CcDialog>
 
-      <NavigationButtons
+      <StageFooter
         backPath={`/project/${projectId}/transformation`}
         backLabel="Back to Transformation"
         proceedPath={`/project/${projectId}/testing`}

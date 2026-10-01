@@ -6,10 +6,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
-import Stepper from '@/components/Stepper';
+import StageProgress from '@/components/StageProgress';
 import { Code2, ArrowRight, RefreshCw, FileCode2, Terminal, CheckCircle2, Folder, Lock, Unlock, Layers } from 'lucide-react';
 import clsx from 'clsx';
-import NavigationButtons from '@/components/NavigationButtons';
+import StageFooter from '@/components/StageFooter';
 import CodeHighlighter from '@/components/CodeHighlighter';
 import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
@@ -35,7 +35,6 @@ import { holdsStoredPackage, missingArtefacts, usableTestSuite, type ProjectFile
 import { duplicatePaths } from './duplicate-paths';
 import { matchCdsView } from '@/lib/abap/cds-catalog';
 import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
-import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
@@ -951,11 +950,10 @@ CMD ["node", "srv/service.js"]`
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
-      <VerificationRail steps={phases} current="transformation" projectId={projectId as string} />
 
-      <Stepper steps={phases} current="transformation" projectId={projectId as string} />
+      <StageProgress steps={phases} current="transformation" projectId={projectId as string} />
 
-      <StageHeader stage="transformation">
+      <StageHeader stage="transformation" projectName={project?.name}>
         <span data-track-loading>{track.loading}</span>
       </StageHeader>
 
@@ -1013,16 +1011,15 @@ CMD ["node", "srv/service.js"]`
     <div className="max-w-7xl mx-auto">
       {/* Rendered here as well as in the loading state — it used to exist only
           there, and disappeared as soon as the page had loaded. */}
-      <VerificationRail steps={phases} current="transformation" projectId={projectId as string} />
 
-      <Stepper steps={phases} current="transformation" projectId={projectId as string} />
+      <StageProgress steps={phases} current="transformation" projectId={projectId as string} />
 
       <div className="mb-8 flex flex-col md:flex-row md:items-start justify-between gap-6">
         {/* The quota used to be stated a third time here, as "Free
             Transformations: 4 / 5" — remaining-of-total, while the header said
             "1 / 5 Transformations", used-of-total. The header carries it once. */}
         <div className="flex-1 min-w-0">
-          <StageHeader stage="transformation">
+          <StageHeader stage="transformation" projectName={project?.name}>
             {/* The track decides the words (roadmap 0.2, UX-037): the in-app
                 track generates RAP artefacts, and the lead used to promise
                 Node.js over them anyway. */}
@@ -1045,11 +1042,11 @@ CMD ["node", "srv/service.js"]`
           <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
             {scoreRing(48, 4)}
             <span className="absolute cc-text-meta font-cc-mono text-cc-ink">
-              {currentScore === undefined ? '—' : `${currentScore}%`}
+              {currentScore === undefined ? '—' : currentScore}
             </span>
           </div>
           <div className="space-y-1">
-            <div className="cc-text-label text-cc-ink-muted">Clean Core Score</div>
+            <div className="cc-text-label text-cc-ink-muted" title="A grade out of 100, not a compliance percentage">Clean Core Score · of 100</div>
             <CcButton icon={<Layers size={16} aria-hidden="true" />} onClick={() => setDrawerOpen(true)}>
               View Grounding Audit
             </CcButton>
@@ -1061,6 +1058,38 @@ CMD ["node", "srv/service.js"]`
           </div>
         </div>
       </div>
+
+      {/* The stage's answer, before the code (ADR-050). */}
+      <section
+        data-transformation-answer={files.length > 0 ? 'generated' : 'none'}
+        aria-labelledby="transformation-answer"
+        className="mb-6 rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc md:p-6"
+      >
+        {files.length > 0 ? (
+          <>
+            <h2 id="transformation-answer" className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
+              {files.length} file{files.length === 1 ? '' : 's'} of {isAbapCloud ? 'ABAP Cloud (RAP)' : 'Node.js (TypeScript)'} code, written by the model
+              <CcProvenanceChip value="proposed" />
+            </h2>
+            <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
+              Not compiled and not run here. The Testing tool runs it against mocks; nothing has checked it against a
+              system of yours.
+              {openSignOffs > 0
+                ? ` ${openSignOffs} finding${openSignOffs === 1 ? '' : 's'} in the grounding audit still need${openSignOffs === 1 ? 's' : ''} your sign-off.`
+                : ''}
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 id="transformation-answer" className="m-0 cc-text-h2 text-cc-ink">No transformed code yet</h2>
+            <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
+              {blockers.length > 0
+                ? blockers.join(' ')
+                : modelOff ?? 'The code is generated from the signed analysis and the approved design when you run the engine.'}
+            </p>
+          </>
+        )}
+      </section>
 
       <div className="mb-6 flex flex-wrap gap-2">
         <CcButton
@@ -1284,7 +1313,7 @@ CMD ["node", "srv/service.js"]`
             <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
               {scoreRing(80, 6)}
               <span className="absolute cc-text-identifier font-cc-mono text-cc-ink">
-                {currentScore === undefined ? '—' : `${currentScore}%`}
+                {currentScore === undefined ? '—' : currentScore}
               </span>
             </div>
             <div>
@@ -1420,7 +1449,7 @@ CMD ["node", "srv/service.js"]`
         </div>
       </CcDialog>
 
-      <NavigationButtons
+      <StageFooter
         backPath={`/project/${projectId}/design`}
         backLabel="Back to Design"
         proceedPath={`/project/${projectId}/documentation`}

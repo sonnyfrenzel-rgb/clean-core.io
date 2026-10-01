@@ -31,6 +31,12 @@ import { anchorText } from './layout';
 export interface ExcerptOptions {
   /** How many steps of the main line. */
   steps?: number;
+  /**
+   * Most elements on the main line (start, steps, decisions). Where the excerpt
+   * stops early it ends in a marker that says how many steps follow, so a
+   * reader never mistakes the cut for the end of the process.
+   */
+  mainElements?: number;
 }
 
 const MAX_EXIT_STEPS = 3;
@@ -51,7 +57,8 @@ export function businessExcerpt(model: ExportModel, options: ExcerptOptions = {}
   const anchors = new Map<string, string[]>();
   let flowCount = 0;
   const copy = (n: ExportNode, patch: Partial<ExportNode> = {}): ExportNode => {
-    const c: ExportNode = { ...n, ...patch, incoming: [], outgoing: [], inner: undefined, attachedTo: undefined, band: 0 };
+    // Name and anchor only: an excerpt is a first look, the counted facts are in the full map.
+    const c: ExportNode = { ...n, fact: undefined, ...patch, incoming: [], outgoing: [], inner: undefined, attachedTo: undefined, band: 0 };
     nodes.push(c);
     return c;
   };
@@ -105,9 +112,13 @@ export function businessExcerpt(model: ExportModel, options: ExcerptOptions = {}
   if (!start) return { ...model, containers: [model.root] };
   let last = copy(start, { id: `ex-${start.id}` });
   let steps = 0;
+  let main = 1;
+  const maxMain = options.mainElements ?? Infinity;
+  /** The step the excerpt stopped before, when it stopped for room. */
+  let cutAt: ExportNode | null = null;
   let cur: ExportNode | undefined = start;
   const seen = new Set<string>();
-  while (cur && steps < limit && !seen.has(cur.id)) {
+  walk: while (cur && steps < limit && !seen.has(cur.id)) {
     seen.add(cur.id);
     const outs = outOf(root, cur.id);
     // On along the branch that does not end the process.
@@ -119,6 +130,11 @@ export function businessExcerpt(model: ExportModel, options: ExcerptOptions = {}
     if (n.tag.endsWith('Gateway') || n.tag.endsWith('Event')) continue;
 
     const routineRange = n.inner ? rangeOf(n.inner, byId) : null;
+    if (main + 1 > maxMain) {
+      cutAt = n;
+      break;
+    }
+    main += 1;
     const step = copy(n, { id: `ex-${n.id}`, tag: n.tag === 'subProcess' ? 'task' : n.tag, anchorLabel: routineRange ?? undefined });
     join(last, step);
     last = step;
@@ -142,6 +158,12 @@ export function businessExcerpt(model: ExportModel, options: ExcerptOptions = {}
         else stay ??= f;
       }
       if (!exits.length || !stay) continue;
+      if (main + 1 > maxMain) {
+        // The routine's own step is drawn; what follows it is not.
+        cutAt = byId.get(outOf(root, n.id).find((f) => !isEnd(byId.get(f.targetId)))?.targetId ?? '') ?? n;
+        break walk;
+      }
+      main += 1;
       const decision = copy(g, { id: `ex-${g.id}` });
       join(last, decision);
       for (const exit of exits) {
@@ -160,6 +182,28 @@ export function businessExcerpt(model: ExportModel, options: ExcerptOptions = {}
       last = decision;
     }
   }
+  // ---- where the excerpt stops for room: a marker with what follows ----
+  if (cutAt) {
+    let remaining = 0;
+    const counted = new Set<string>();
+    for (let at: ExportNode | undefined = cutAt; at && !counted.has(at.id) && !isEnd(at);) {
+      counted.add(at.id);
+      if (!at.tag.endsWith('Gateway') && !at.tag.endsWith('Event')) remaining += 1;
+      const on: ExportFlow | undefined = outOf(root, at.id).find((f) => !isEnd(byId.get(f.targetId)) && !f.back);
+      at = on ? byId.get(on.targetId) : undefined;
+    }
+    if (remaining > 0) {
+      const range = cutAt.inner ? rangeOf(cutAt.inner, byId) : null;
+      const marker = copy(cutAt, {
+        id: 'ex-continues',
+        tag: 'intermediateThrowEvent',
+        name: `${remaining} more ${remaining === 1 ? 'step' : 'steps'}`,
+        anchorLabel: range ?? anchorText(cutAt.source.anchor) ?? undefined,
+      });
+      join(last, marker);
+      last = marker;
+    }
+  }
   // Labels of the ways on, now that their targets exist.
   for (const f of flows) {
     const stay = pendingLabel.get(f.sourceId);
@@ -172,8 +216,9 @@ export function businessExcerpt(model: ExportModel, options: ExcerptOptions = {}
   const container: ExportContainer = {
     id: 'excerpt',
     tag: 'process',
-    // The main line ends at its last step: the layout keeps that line straight
-    // and sends every exit to the side.
+    // The main line ends at its last element, so the layout keeps that line
+    // straight and sends every exit to the side; an exit still sits on the rank
+    // right after its decision (only an end *event* is pushed to the last rank).
     bands: [{ key: 'excerpt', anchorId: 'excerpt', nodeIds: nodes.map((n) => n.id), entryId: nodes[0]?.id ?? null, endId: last.id }],
     nodes,
     flows,

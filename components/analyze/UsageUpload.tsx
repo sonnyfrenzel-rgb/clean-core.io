@@ -242,12 +242,15 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
   // ── Declare, then drop ──────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <CcField label="Source format" help={SOURCE_OPTIONS.find(o => o.value === selectedSource)?.description}>
+      {/* One aligned row of short labels — the explanations differ in length,
+          so they sit in one line under the row instead of pushing each control
+          to a different height (owner, 01.10.2026). */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <CcField label="Source format">
           {(control) => (
             <select
               id={control.id}
-              aria-describedby={control.describedBy}
+              aria-describedby={`${control.describedBy ?? ''} usage-declare-help`.trim()}
               value={selectedSource}
               onChange={(e) => declare({ source: e.target.value as UsageSource | 'auto' })}
               data-usage-source
@@ -262,14 +265,13 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
 
         <CcField
           label="Date format in the export"
-          help="ISO and SAP YYYYMMDD dates are read either way; any other date needs this."
           valueState={dateLocale ? undefined : 'warning'}
           message={dateLocale ? undefined : 'Not declared yet.'}
         >
           {(control) => (
             <select
               id={control.id}
-              aria-describedby={control.describedBy}
+              aria-describedby={`${control.describedBy ?? ''} usage-declare-help`.trim()}
               value={dateLocale}
               onChange={(e) => declare({ dateLocale: e.target.value as UsageDateLocale | '' })}
               data-usage-date-locale
@@ -282,39 +284,38 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
           )}
         </CcField>
 
-        <fieldset className="flex min-w-0 flex-col gap-1">
-          <legend className="text-[13px] font-semibold text-cc-ink">Monitoring window (declared)</legend>
-          <p className="cc-text-meta text-cc-ink-muted">
-            When monitoring actually ran. Zero calls count as disuse only over 13 months or more.
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <CcField label="From">
-              {(control) => (
-                <input
-                  id={control.id}
-                  type="date"
-                  value={windowFrom}
-                  onChange={(e) => declare({ windowFrom: e.target.value })}
-                  data-usage-window-from
-                  className={control.className}
-                />
-              )}
-            </CcField>
-            <CcField label="To">
-              {(control) => (
-                <input
-                  id={control.id}
-                  type="date"
-                  value={windowTo}
-                  onChange={(e) => declare({ windowTo: e.target.value })}
-                  data-usage-window-to
-                  className={control.className}
-                />
-              )}
-            </CcField>
-          </div>
-        </fieldset>
+        <CcField label="Monitored from">
+          {(control) => (
+            <input
+              id={control.id}
+              type="date"
+              aria-describedby={`${control.describedBy ?? ''} usage-declare-help`.trim()}
+              value={windowFrom}
+              onChange={(e) => declare({ windowFrom: e.target.value })}
+              data-usage-window-from
+              className={control.className}
+            />
+          )}
+        </CcField>
+        <CcField label="Monitored to">
+          {(control) => (
+            <input
+              id={control.id}
+              type="date"
+              aria-describedby={`${control.describedBy ?? ''} usage-declare-help`.trim()}
+              value={windowTo}
+              onChange={(e) => declare({ windowTo: e.target.value })}
+              data-usage-window-to
+              className={control.className}
+            />
+          )}
+        </CcField>
       </div>
+      <p id="usage-declare-help" className="cc-text-meta text-cc-ink-muted">
+        {SOURCE_OPTIONS.find(o => o.value === selectedSource)?.description}. ISO and SAP YYYYMMDD dates are read either way; any
+        other date needs a declared format. The monitoring window is when monitoring actually ran — zero calls count as
+        disuse only over 13 months or more.
+      </p>
 
       {/* Drop zone */}
       <div
