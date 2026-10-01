@@ -1272,8 +1272,8 @@
           {
             "field": "testSuite",
             "locator": "[data-stage-output=\"testSuite\"]",
-            "opensWith": "View Module Code",
-            "why": "the generated suite, behind the terminal toggle"
+            "opensWith": ["Run output and module code", "View Module Code"],
+            "why": "the generated suite, behind the terminal toggle inside the folded run output (testing rebuilt as two tabs, mockup s8)"
           },
           {
             "field": "coverageEstimate",
