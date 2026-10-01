@@ -171,13 +171,19 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
     }
   });
 
-  test('Business reads process, Not determined, Next step — in that order in the DOM (§2.9)', () => {
+  test('Business reads the answer, Next step, the map, then the folded detail — in that order in the DOM (mockup s1, §2.9)', () => {
     const shell = read('components/workspace/WorkspaceShell.tsx');
     const block = shell.match(/const BUSINESS_ORDER[^=]*=\s*\[([\s\S]*?)\]/);
     expect(block, 'no Business order').not.toBeNull();
     const order = [...block![1].matchAll(/'([a-zA-Z]+)'/g)].map((m) => m[1]);
-    expect(order.indexOf('firstLook')).toBeLessThan(order.indexOf('notDetermined'));
-    expect(order.indexOf('notDetermined')).toBeLessThan(order.indexOf('nextStep'));
+    // The answer first — it carries the not-determined count and groups beside
+    // what was found (FirstLook), so the doubt is still answered at once.
+    expect(order[0]).toBe('firstLook');
+    expect(order.indexOf('firstLook')).toBeLessThan(order.indexOf('nextStep'));
+    expect(order.indexOf('nextStep')).toBeLessThan(order.indexOf('process'));
+    expect(order.indexOf('process')).toBeLessThan(order.indexOf('layerSection'));
+    // The detail of what is not determined is folded and last, never absent.
+    expect(order[order.length - 1]).toBe('notDetermined');
   });
 
   test('on a phone the toolbar is a menu in every view (§2.9)', () => {
