@@ -168,7 +168,7 @@ test.describe('the target profile names the snapshot that answered', () => {
   });
 });
 
-test.describe('the IT order in the shell', () => {
+test.describe('the IT order in the shell, as the source writes it (the page is measured below)', () => {
   test('IT opens with its own answer; the layers and the Business blocks follow it', () => {
     const shell = read('components/workspace/WorkspaceShell.tsx');
     expect(shell).toMatch(/const IT_HEAD: readonly ContentBlock\[\] = \[\];/);
@@ -244,6 +244,10 @@ test.describe('the IT view on a real project', () => {
     const answerTop = await page.locator('[data-it-headline]').boundingBox();
     const notDetermined = await page.locator('#not-determined').boundingBox();
     expect(answerTop && notDetermined && answerTop.y < notDetermined.y).toBe(true);
+    // And above the first block of IT_TAIL, the layer bar — the order the source
+    // guard above reads, measured on the page (QA review of 247b20c16e38).
+    const layerBar = await page.locator('[data-workspace-layers]').first().boundingBox();
+    expect(answerTop && layerBar && answerTop.y < layerBar.y, 'the layer bar stands above the IT answer').toBe(true);
     await expect(page.locator('[data-it-headline]')).toContainText(/\d+ findings · /);
 
     // Four facet tiles, each with its coverage.
