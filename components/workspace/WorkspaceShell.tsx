@@ -91,15 +91,16 @@ const BUSINESS_ORDER: readonly ContentBlock[] = [
  */
 const WorkspaceProcess = dynamic(() => import('./WorkspaceProcess'), { ssr: false });
 
-/** "Next step" at the top of the content in IT and Management — §2.3 item 5. */
-const OTHER_ORDER: readonly ContentBlock[] = [
-  'layerBar',
-  'nextStep',
-  'layerSection',
-  'firstLook',
-  'ask',
-  'notDetermined',
-];
+
+/**
+ * IT opens with its own answer (mockup v2.8 `s4`, gap audit row 6): the answer
+ * line, the facet tiles and — inside the IT panel, under the answer — "Next
+ * step" (§2.3 item 5). The layers and the reading of the code, which answer
+ * the other two views' questions, follow after it; before this order the IT
+ * answer started some 2,700 px down, under Costs and the Business blocks.
+ */
+const IT_HEAD: readonly ContentBlock[] = [];
+const IT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'firstLook', 'ask', 'notDetermined'];
 
 /**
  * Management opens with its answer, then "Next step" (ADR-029, §2.3 item 5);
@@ -505,7 +506,7 @@ export default function WorkspaceShell({
     ),
   };
   const contentOrder: readonly ContentBlock[] =
-    view === 'business' ? BUSINESS_ORDER : view === 'management' ? MANAGEMENT_HEAD : OTHER_ORDER;
+    view === 'business' ? BUSINESS_ORDER : view === 'management' ? MANAGEMENT_HEAD : IT_HEAD;
 
   return (
     <div className="cc" data-workspace-shell={view}>
@@ -647,9 +648,22 @@ export default function WorkspaceShell({
           browser (`lib/first-look.ts`). */}
       {view === 'it' && (
         <div className="mt-5">
-          <ItAnswers projectId={projectId} />
+          <ItAnswers
+            projectId={projectId}
+            project={project}
+            nextStep={
+              // Full width under the answer, as mockup `s4` has it.
+              <div className="mt-4">
+                <div className="cc-no-print">
+                  <CoachMarkNote mark={currentMark} slot="next-step" onDismiss={marks.dismiss} onDismissAll={marks.dismissAll} />
+                </div>
+                <NextStepCard point={nextStep} projectId={projectId} view={view} level={2} />
+              </div>
+            }
+          />
         </div>
       )}
+      {view === 'it' ? IT_TAIL.map((key) => <React.Fragment key={key}>{contentBlocks[key]}</React.Fragment>) : null}
 
       {/* The steering one-pager (roadmap 8.6, mockup screen 5: "Steering
           one-pager" in Management's tool row) — figures only, each with its
