@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { readControlFlow } from '../lib/abap/control-flow';
 import { readStatements } from '../lib/abap/statement-reader';
+import { readBlocks } from '../lib/abap/block-structure';
 
 /**
  * Where the program decides — roadmap 2.1.
@@ -304,4 +305,33 @@ test.describe('a period is not always the end of a statement', () => {
     const st = readStatements('REPORT z.\nlv = 1. IF lv > 0. ENDIF.');
     expect(st.map((s) => s.text)).toEqual(['REPORT z', 'lv = 1', 'IF lv > 0', 'ENDIF']);
   });
+});
+
+test('a SELECT SINGLE or SELECT INTO TABLE inside a SELECT loop does not take its ENDSELECT (QA review of a88149856dcc)', () => {
+  const blocksOf = (lines: string[]) =>
+    readBlocks(readStatements(lines.join('\n'))).blocks.map((b) => [b.kind, b.lineStart, b.lineEnd, b.terminated]);
+  for (const inner of [
+    '  SELECT SINGLE * FROM kna1 INTO wa_kna1 WHERE kunnr = wa_vbak-kunnr.',
+    '  SELECT * FROM vbap INTO TABLE lt_vbap WHERE vbeln = wa_vbak-vbeln.',
+    '  SELECT * FROM vbap APPENDING CORRESPONDING FIELDS OF TABLE lt_vbap WHERE vbeln = wa_vbak-vbeln.',
+  ]) {
+    const blocks = blocksOf([
+      'REPORT z.',
+      'SELECT * FROM vbak INTO wa_vbak WHERE vbeln > 1.',
+      inner,
+      '  WRITE wa_vbak-vbeln.',
+      'ENDSELECT.',
+      'WRITE done.',
+    ]);
+    // The loop is the outer SELECT, lines 2 to 5 — not the inner statement.
+    expect(blocks, inner).toEqual([['select', 2, 5, true]]);
+  }
+  // A package-wise SELECT into a table is a loop of its own and keeps its ENDSELECT.
+  expect(blocksOf([
+    'REPORT z.',
+    'SELECT * FROM vbak INTO TABLE lt_vbak PACKAGE SIZE 100.',
+    '  LOOP AT lt_vbak INTO wa_vbak.',
+    '  ENDLOOP.',
+    'ENDSELECT.',
+  ]).filter((b) => b[0] === 'select')).toEqual([['select', 2, 5, true]]);
 });
