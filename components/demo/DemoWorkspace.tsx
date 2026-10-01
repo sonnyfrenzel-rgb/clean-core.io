@@ -23,8 +23,9 @@ import DemoDelivery from '@/components/delivery/DemoDelivery';
 import { catalogForReader } from '@/lib/messages/demo';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
 import { trackOfRoute } from '@/lib/transformation-view';
-import { routeLabel } from '@/lib/sap-naming';
 import DemoDocumentation from './DemoDocumentation';
+import DemoDesign from './DemoDesign';
+import type { DemoDesignData } from '@/lib/demo-design';
 import {
   DEMO_INVITATION,
   DEMO_QUOTA_NOTICE,
@@ -101,7 +102,16 @@ const label = 'cc-text-label text-cc-ink-muted';
 const lead = 'm-0 mb-3 cc-text-cell text-cc-ink-muted';
 const num = (n: number) => formatNumber(n) ?? String(n);
 
-export default function DemoWorkspace({ demo, stage }: { demo: DemoProject; stage: PhaseKey }) {
+export default function DemoWorkspace({
+  demo,
+  stage,
+  design = null,
+}: {
+  demo: DemoProject;
+  stage: PhaseKey;
+  /** The Design stage's contract and findings (`lib/demo-design.ts`); built for that stage only. */
+  design?: DemoDesignData | null;
+}) {
   const [state, setState] = useState<DemoState>(EMPTY_STATE);
   const [hydrated, setHydrated] = useState(false);
 
@@ -161,7 +171,7 @@ export default function DemoWorkspace({ demo, stage }: { demo: DemoProject; stag
 
       <div data-testid={`demo-stage-${stage}`} className="space-y-6">
         {stage === 'analyze' && <Analyze demo={demo} state={state} patch={patch} />}
-        {stage === 'design' && <Design demo={demo} state={state} patch={patch} />}
+        {stage === 'design' && <Design demo={demo} data={design} state={state} patch={patch} />}
         {stage === 'transformation' && <Transformation demo={demo} />}
         {stage === 'documentation' && <Documentation demo={demo} />}
         {stage === 'testing' && <DemoTesting demo={demo} />}
@@ -381,85 +391,23 @@ function Analyze({
 
 function Design({
   demo,
+  data,
   state,
   patch,
 }: {
   demo: DemoProject;
+  data: DemoDesignData | null;
   state: DemoState;
   patch: (n: Partial<DemoState>) => void;
 }) {
-  const r = demo.design;
+  // The tool a real project's Design stage is (owner direction B, canvas first).
   return (
-    <>
-      <div className={tile}>
-        <span className={label}>Proposed route</span>
-        <p data-testid="demo-route" className="m-0 mt-2 cc-text-title text-cc-ink">
-          {routeLabel(r.recommendedRoute)}
-        </p>
-        <p className="m-0 mt-2 cc-text-body text-cc-ink-muted">{r.rationale}</p>
-        <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted">
-          Target artefact: <span className="font-semibold text-cc-ink">{r.targetArtifact}</span> · routing
-          confidence {r.confidenceScore} · deployment assumed {demo.deployment}
-        </p>
-      </div>
-
-      <CcCard level={2} title="Decision checkpoints">
-        <ul className="m-0 list-none space-y-3 p-0">
-          {r.checkpoints.map((c) => (
-            <li key={c.checkpointName} className="border-l-2 border-cc-line pl-3">
-              <p className="m-0 cc-text-h3 text-cc-ink">{c.checkpointName}</p>
-              <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{c.question}</p>
-              <p className="m-0 mt-1 cc-text-cell text-cc-ink">
-                <span className="font-semibold">{c.resultState}: </span>
-                {c.evaluation}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </CcCard>
-
-      <CcCard level={2} title="Assumptions behind the route">
-        <p className={lead}>
-          The engine names them so they can be argued with, rather than folding them into the answer.
-        </p>
-        <ul className="m-0 list-disc space-y-1 pl-5">
-          {r.assumptions.map((a) => (
-            <li key={a} className="cc-text-cell text-cc-ink-muted">
-              {a}
-            </li>
-          ))}
-        </ul>
-      </CcCard>
-
-      <CcCard level={2} title="Confirm the target architecture">
-        <p className="m-0 cc-text-body text-cc-ink-muted">
-          On a real project this is the point where a person puts their name to the target — a self-declaration,
-          not an organisational approval. In the demo it is a switch in this browser: no name is recorded, nothing
-          is stored, and nothing downstream is unlocked by it.
-        </p>
-        <div className="mt-4">
-          {/* The action is the page's primary button; once pressed it steps
-              back to ghost rather than turning into a success colour — green
-              says "proven" (§1.1), and a switch in a browser proves nothing. */}
-          <CcButton
-            variant={state.targetConfirmed ? 'ghost' : 'primary'}
-            density="cozy"
-            data-testid="demo-confirm-target"
-            aria-pressed={state.targetConfirmed}
-            onClick={() => patch({ targetConfirmed: !state.targetConfirmed })}
-            icon={
-              state.targetConfirmed ? (
-                <CheckCircle2 size={16} aria-hidden={true} />
-              ) : (
-                <Circle size={16} aria-hidden={true} />
-              )
-            }
-          >
-            {state.targetConfirmed ? 'Confirmed in this browser' : `Confirm ${routeLabel(r.recommendedRoute)}`}
-          </CcButton>
-        </div>
-      </CcCard>
-    </>
+    <DemoDesign
+      demo={demo}
+      data={data}
+      confirmed={state.targetConfirmed}
+      onConfirm={(targetConfirmed) => patch({ targetConfirmed })}
+    />
   );
 }
 
