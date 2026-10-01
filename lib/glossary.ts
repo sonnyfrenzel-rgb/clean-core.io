@@ -377,7 +377,7 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     kind: 'sap',
     sourceRef: noSource('BPMN 2.0 is an OMG standard, not an SAP publication; no specification reference is recorded here'),
     definition: 'The standard notation for drawing business processes as tasks, gateways and events, exchangeable between tools as XML.',
-    cleanCoreImplication: 'It is how this product hands a reconstructed process to SAP Signavio and back - as a file, with a line anchor on every element.',
+    cleanCoreImplication: 'It is how this product hands a reconstructed process to SAP Signavio and back - as a file, with a line anchor on each element where the code gives one.',
   },
   'SAP Signavio': {
     term: 'SAP Signavio Process Transformation Suite',

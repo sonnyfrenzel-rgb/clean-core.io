@@ -598,3 +598,18 @@ test.describe('and the page it all stands on is not public', () => {
     expect(visible, 'the gallery renders without an admin account').toBe(0);
   });
 });
+
+test.describe('the README names the list as it is', () => {
+  // QA f36956785982 / dcde10e5c93d / 3da4bd1da49e / 281cd07963f5: the README
+  // said "nine" and separated the labels with the same "·" that sits inside
+  // "Demonstrated · mock", so a reader counted ten. The sentence now has to
+  // carry the count of `PROVENANCE_VALUES` and the labels in order, comma-separated.
+  test('the README count and labels match lib/provenance.ts', () => {
+    const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+    const text = read('README.md').replace(/\r\n/g, '\n').replace(/\s*\n\s*/g, ' ');
+    const m = text.match(/one of (\w+) provenance values: ([^.]+)\./);
+    expect(m, 'README no longer states the provenance vocabulary').not.toBeNull();
+    expect(m![1]).toBe(words[PROVENANCE_VALUES.length]);
+    expect(m![2].split(', ')).toEqual([...PROVENANCE_LABELS]);
+  });
+});

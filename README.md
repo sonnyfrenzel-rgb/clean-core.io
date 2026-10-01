@@ -24,8 +24,9 @@ Model proposal.
 
 - **The process, read from the code.** The engine reconstructs the business process the
   program implements and draws it as BPMN. Every element carries the line it came from
-  (`L243`), including the business rules that are hard-coded in the program. What the
-  engine could not determine is listed as *not determined*, with the reason.
+  (`L243`), or the reason it has none, including the business rules that are hard-coded in
+  the program. What the engine could not determine is listed as *not determined*, with
+  the reason.
 - **One workspace, three views.** Each project opens in a workspace with three views of
   the same content. The Business view asks *"Do I still need this, and what changes for
   me?"*, the IT view *"What exactly, where to, and is it right?"*, the Management view
@@ -41,8 +42,8 @@ Model proposal.
   that produced it. The level is an orientation, not an ATC result, and is not part of
   the signed audit pack.
 - **Where each statement comes from.** Every statement carries one of nine provenance
-  values: Proven · Confirmed · Reconstructed · Imported · Model proposal · Simulation ·
-  Demonstrated · mock · Stale · Not determined. *Confirmed* means the signed-in account
+  values: Proven, Confirmed, Reconstructed, Imported, Model proposal, Simulation,
+  Demonstrated · mock, Stale, Not determined. *Confirmed* means the signed-in account
   confirmed it: a self-declaration, not a mandate.
 - **Signed runs.** Every completed analysis is stored as an immutable run, signed with
   HMAC and Ed25519, and a signed export can be verified against it.
