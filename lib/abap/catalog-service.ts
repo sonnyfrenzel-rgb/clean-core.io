@@ -36,7 +36,7 @@ import { enumerateLevelRule, fingerprintLevelRule } from './level-rule-version';
 // The stub shipped with this patch keeps the build green until the first sync runs.
 import crLatest from './generated/cloudification-repo.latest.json';
 // formatVersion 2 companion file: classicAPI / noAPI. Near-disjoint from the
-// release file (190 of 8,587 keys overlap at the 2026-09-15 sync), so it is additional coverage.
+// release file (190 of 8,600 keys overlap at the 2026-10-01 sync), so it is additional coverage.
 import crClassifications from './generated/cloudification-repo.classifications-sap.json';
 
 const CR: CloudificationArtifact = crLatest as unknown as CloudificationArtifact;
@@ -193,7 +193,7 @@ export const MERGED_CATALOG_SIZE = Object.keys(MERGED_TABLE_MAP).length;
  *
  * `classifiedObjects` counts the UNION of both repository artifacts, because
  * that is the set of objects we can state a clean core level for. Counting only
- * the release file would understate coverage by the 8,587 objects the
+ * the release file would understate coverage by the 8,410 objects the
  * classification file adds — and would contradict the A–D census on
  * /sap-clean-core-object-classification, which is the kind of mismatch that gets
  * a figure mis-cited.

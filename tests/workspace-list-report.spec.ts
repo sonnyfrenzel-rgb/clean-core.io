@@ -386,16 +386,25 @@ test.describe('with projects', () => {
     expect(noMatchTitle).not.toBe(CC_MESSAGES['workspace.emptyTitle']);
     await expect(page.locator('[data-workspace-projects] [data-cc-clear-filters]')).toBeVisible();
 
-    // And the count says how many of how many, in a live region.
-    await expect(page.locator('[data-workspace-projects] [data-cc-filter-count]')).toContainText(
-      `0 ${CC_MESSAGES['filter.of']} ${before.length} ${CC_MESSAGES['workspace.noun']}`,
+    // And the count says how many of how many, in a live region. The total is
+    // read off the count, not off `before`: the own projects and the one shared
+    // with this account arrive by separate reads, and `before` can be taken
+    // between them (CI c25437ab: "0 of 4" against three rows counted early).
+    // Clearing the filter then has to show exactly that many rows — the same
+    // claim, without the race.
+    const count = page.locator('[data-workspace-projects] [data-cc-filter-count]');
+    const counted = new RegExp(
+      `^\\s*0 ${CC_MESSAGES['filter.of']} (\\d+) ${CC_MESSAGES['workspace.noun']}\\s*$`,
+    );
+    await expect(count).toHaveText(counted);
+    const total = Number(counted.exec(await count.innerText())?.[1]);
+    expect(total, 'the count names fewer projects than the table first showed').toBeGreaterThanOrEqual(
+      before.length,
     );
 
     await page.click('[data-workspace-projects] [data-cc-clear-filters]');
     await expect(page.locator('[data-cc-empty-state="no-matches"]')).toHaveCount(0);
-    await expect(page.locator('[data-cc-table] [data-cc-object-identifier-title]')).toHaveCount(
-      before.length,
-    );
+    await expect(page.locator('[data-cc-table] [data-cc-object-identifier-title]')).toHaveCount(total);
   });
 
   test('a run says its price before the click', async ({ page }) => {

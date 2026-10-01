@@ -3,9 +3,9 @@
   "source": "https://raw.githubusercontent.com/SAP/abap-atc-cr-cv-s4hc/main/src/objectClassifications_SAP.json",
   "release": "classifications-sap",
   "formatVersion": "2",
-  "fetchedAt": "2026-08-26T08:20:02.179Z",
-  "sourceSha256": "0081fb9c334650389afa651d26948e42a0744e450a98ab5f3c7b776f1ddfbc57",
-  "entryCount": 8587
+  "fetchedAt": "2026-10-01T17:59:00.777Z",
+  "sourceSha256": "70a9e6f427bdb8dd92e9fa19b7dda273b4f59d46eb6c8763bc865e24edb69ae7",
+  "entryCount": 8600
  },
  "entries": {
   "/ACCGO/CAS_APPL_APPLY_API": {
@@ -1637,6 +1637,21 @@
    "state": "classicAPI",
    "tadir": "INTF",
    "appComponent": "CA-GTF-APE"
+  },
+  "/APEU/CL_BO_OPERATOR_BPEM": {
+   "state": "classicAPI",
+   "tadir": "CLAS",
+   "appComponent": "CA-GTF-APE"
+  },
+  "/APEU/IF_CONSTANTS": {
+   "state": "classicAPI",
+   "tadir": "INTF",
+   "appComponent": "IS-U-MD-MCM"
+  },
+  "/APEU/IF_MCM_CONSTANTS_PROC": {
+   "state": "classicAPI",
+   "tadir": "INTF",
+   "appComponent": "IS-U-MD-MCM"
   },
   "/ATL/BAPI_FOREC_CHANGE": {
    "state": "classicAPI",
@@ -38745,6 +38760,11 @@
    "tadir": "FUNC",
    "appComponent": "BC-MID-ALE"
   },
+  "CHANGE_POINTERS_READ_MODE_SET": {
+   "state": "classicAPI",
+   "tadir": "FUNC",
+   "appComponent": "BC-MID-ALE"
+  },
   "CHANGE_POINTERS_STATUS_WRITE": {
    "state": "classicAPI",
    "tadir": "FUNC",
@@ -41887,7 +41907,7 @@
   "CL_SADL_COND_PROV_FACTORY_PUB": {
    "state": "classicAPI",
    "tadir": "CLAS",
-   "appComponent": "BC-ESI-ESF-BSA"
+   "appComponent": "BC-ESI-RAP-RTE"
   },
   "CL_SALV_AGGREGATION": {
    "state": "classicAPI",
@@ -45688,6 +45708,16 @@
    ],
    "appComponent": "BC-SRV-COM"
   },
+  "CX_BO_ACTION_CANCELLED": {
+   "state": "classicAPI",
+   "tadir": "CLAS",
+   "appComponent": "BC-BMT-WFM"
+  },
+  "CX_BO_ERROR": {
+   "state": "classicAPI",
+   "tadir": "CLAS",
+   "appComponent": "BC-BMT-WFM"
+  },
   "CX_CHIP_CATALOG": {
    "state": "classicAPI",
    "tadir": "CLAS",
@@ -46047,7 +46077,7 @@
   "CX_SADL_EXIT_FILTER_NOT_SUPP": {
    "state": "classicAPI",
    "tadir": "CLAS",
-   "appComponent": "BC-ESI-ESF-BSA"
+   "appComponent": "BC-ESI-RAP-RTE"
   },
   "CX_SALV_ACCESS_ERROR": {
    "state": "classicAPI",
@@ -46690,6 +46720,11 @@
    "tadir": "CLAS",
    "appComponent": "BC-BMT-WFM"
   },
+  "CX_SWO_RUNTIME_ERROR": {
+   "state": "classicAPI",
+   "tadir": "CLAS",
+   "appComponent": "BC-DWB-TOO-BOB"
+  },
   "CX_SXML_PARSE_ERROR": {
    "state": "classicAPI",
    "tadir": "CLAS",
@@ -47318,6 +47353,22 @@
    "appComponent": "BC-SRV-ASF-CAL",
    "labels": [
     "remote-enabled"
+   ]
+  },
+  "DDCDS_DOMAIN_VALUE": {
+   "state": "classicAPI",
+   "tadir": "DDLS",
+   "appComponent": "BC-DWB-DIC",
+   "labels": [
+    "transactional-consistent"
+   ]
+  },
+  "DDCDS_DOMAIN_VALUE_T": {
+   "state": "classicAPI",
+   "tadir": "DDLS",
+   "appComponent": "BC-DWB-DIC",
+   "labels": [
+    "transactional-consistent"
    ]
   },
   "DDIF_DOMA_GET": {
@@ -52232,22 +52283,22 @@
   "IF_SADL_COND_PROVIDER_GENERIC": {
    "state": "classicAPI",
    "tadir": "INTF",
-   "appComponent": "BC-ESI-ESF-BSA"
+   "appComponent": "BC-ESI-RAP-RTE"
   },
   "IF_SADL_EXIT_FILTER_TRANSFORM": {
    "state": "classicAPI",
    "tadir": "INTF",
-   "appComponent": "BC-ESI-ESF-BSA"
+   "appComponent": "BC-ESI-RAP-RTE"
   },
   "IF_SADL_SIMPLE_COND_ELEMENT": {
    "state": "classicAPI",
    "tadir": "INTF",
-   "appComponent": "BC-ESI-ESF-BSA"
+   "appComponent": "BC-ESI-RAP-RTE"
   },
   "IF_SADL_SIMPLE_COND_FACTORY": {
    "state": "classicAPI",
    "tadir": "INTF",
-   "appComponent": "BC-ESI-ESF-BSA"
+   "appComponent": "BC-ESI-RAP-RTE"
   },
   "IF_SALV_COLTYPE": {
    "state": "classicAPI",
@@ -58753,6 +58804,17 @@
    "tadir": "FUNC",
    "appComponent": "BC-DWB-TOO-CLA"
   },
+  "SEO_CLASS_DELETE": {
+   "state": "noAPI",
+   "tadir": "FUNC",
+   "successors": [
+    {
+     "name": "SEOQ",
+     "tadir": "FUGR"
+    }
+   ],
+   "appComponent": "BC-DWB-TOO-CLA"
+  },
   "SEO_CLASS_DELETE_COMPLETE": {
    "state": "classicAPI",
    "tadir": "FUNC",
@@ -58784,6 +58846,22 @@
    "appComponent": "BC-DWB-TOO-CLA"
   },
   "SEO_INHERITANC_READ": {
+   "state": "classicAPI",
+   "tadir": "FUNC",
+   "appComponent": "BC-DWB-TOO-CLA"
+  },
+  "SEO_INTERFACE_DELETE": {
+   "state": "noAPI",
+   "tadir": "FUNC",
+   "successors": [
+    {
+     "name": "SEOQ",
+     "tadir": "FUGR"
+    }
+   ],
+   "appComponent": "BC-DWB-TOO-CLA"
+  },
+  "SEO_INTERFACE_DELETE_COMPLETE": {
    "state": "classicAPI",
    "tadir": "FUNC",
    "appComponent": "BC-DWB-TOO-CLA"
@@ -58907,6 +58985,14 @@
    ]
   },
   "SO_DLI_READ_API1": {
+   "state": "classicAPI",
+   "tadir": "FUNC",
+   "appComponent": "BC-SRV-COM",
+   "labels": [
+    "remote-enabled"
+   ]
+  },
+  "SO_DOCUMENT_DELETE_API1": {
    "state": "classicAPI",
    "tadir": "FUNC",
    "appComponent": "BC-SRV-COM",

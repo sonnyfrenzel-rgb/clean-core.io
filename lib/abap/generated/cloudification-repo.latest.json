@@ -3,7 +3,7 @@
   "source": "https://raw.githubusercontent.com/SAP/abap-atc-cr-cv-s4hc/main/src/objectReleaseInfoLatest.json",
   "release": "latest",
   "formatVersion": "1",
-  "fetchedAt": "2026-09-15T15:18:30.665Z",
+  "fetchedAt": "2026-10-01T17:58:55.026Z",
   "sourceSha256": "407843e4a566cd20beb348c07e298188d261f93950b25ea15eea66307ed6b63d",
   "entryCount": 25467
  },

@@ -194,6 +194,16 @@ export default function BpmnCanvas({
   // diagram must not, or the viewer would be torn down on every keystroke.
   const handlers = useRef<Handlers>({ onActivate, onActiveChange, onPlaneChange });
   const activeRef = useRef<string | null>(active);
+  /**
+   * The focus was on a node when the diagram was torn down. A new model from
+   * the parent rebuilds the viewer — measured on the Documentation page some
+   * 0.8–1 s after first paint — and the rebuild replaces every node button, so
+   * a reader who had already tabbed into the map was left on `<body>`: the next
+   * Enter opened nothing and Escape had nowhere to return to (CI c25437ab,
+   * process-map.spec.ts:308, one run in five locally). The new diagram gives the
+   * focus back to the node it was on.
+   */
+  const refocusRef = useRef(false);
 
   useEffect(() => {
     handlers.current = { onActivate, onActiveChange, onPlaneChange };
@@ -203,6 +213,7 @@ export default function BpmnCanvas({
   useEffect(() => {
     let cancelled = false;
     let viewer: ViewerLike | null = null;
+    const hostAtStart = hostRef.current;
 
     const build = async () => {
       const host = hostRef.current;
@@ -310,12 +321,22 @@ export default function BpmnCanvas({
 
       fitWithPadding(canvas);
       applyRovingTabIndex(host, activeRef.current);
+
+      if (refocusRef.current) {
+        refocusRef.current = false;
+        const lost = !document.activeElement || document.activeElement === document.body;
+        const id = activeRef.current;
+        if (lost && id) host.querySelector<HTMLButtonElement>(`[data-map-node="${CSS.escape(id)}"]`)?.focus();
+      }
     };
 
     void build();
 
     return () => {
       cancelled = true;
+      // Read before the viewer goes: its buttons are still in the host here.
+      const focused = document.activeElement;
+      if (focused && hostAtStart?.contains(focused)) refocusRef.current = true;
       try {
         viewer?.destroy();
       } catch {
