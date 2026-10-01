@@ -67,7 +67,7 @@ export default function ImpressumPage() {
             </h2>
             <div className="space-y-4 text-sm text-cc-ink-muted">
               <p>
-                <strong className="text-cc-ink">Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a free community application using generative AI (Free Community Edition), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
+                <strong className="text-cc-ink">Liability for Content:</strong> The contents of our pages were created with the greatest care. This is a free community application (Free Community Edition): a deterministic analysis engine reads the code, and a language model writes only drafts on top of it — such as the code proposal, the documentation and the test suite. We therefore cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
               </p>
               <p>
                 <strong className="text-cc-ink">Copyright:</strong> The content and works created by the site operator on these pages are subject to German copyright law. Contributions from third parties are marked as such. Reproduction, editing, and distribution require written consent.

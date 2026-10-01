@@ -64,8 +64,8 @@ export default function DocumentationStageError({
         <AlertCircle size={20} className="mx-auto mb-3 text-cc-error" aria-hidden="true" />
         <h2 className="m-0 mb-3 cc-text-h2 text-cc-ink">This stage could not be displayed</h2>
         <p className="m-0 mb-6 cc-text-body text-cc-ink-muted">
-          The documentation stage stopped while drawing. Nothing was changed, and nothing was deleted —
-          the stored blueprint is as it was. What caused it is not recorded beyond the technical details below.
+          The documentation stage stopped while drawing the page. Drawing a page deletes nothing, but if a generation or a save
+          was running when it stopped, whether it finished is not known here — reload to see the documentation that is stored. What caused it is not recorded beyond the technical details below.
         </p>
         {/* Folded, not open: the sentence above is what a reader acts on; the raw
             message is for whoever reports it (UX review of ac27aed, UX-149). */}

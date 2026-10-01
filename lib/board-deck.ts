@@ -144,9 +144,9 @@ export function buildBoardDeck(input: {
   // slide 1 has just said there is no verdict (QA 30215a402132).
   const nothingEstablished = findings.length === 0;
   const slide2: SlideData = {
-    title: nothingEstablished ? 'Capabilities — Not Determined' : 'Fully Supported Capabilities',
+    title: nothingEstablished ? 'Capabilities — Not Determined' : 'What the Transformation Rules Cover',
     type: 'metrics',
-    subtitle: nothingEstablished ? 'No findings were detected; coverage is not established' : 'High-confidence automated Clean Core migrations',
+    subtitle: nothingEstablished ? 'No findings were detected; coverage is not established' : 'Findings matched against the rules, by level — a rule match, not a converted program',
     metrics: [
       // With nothing established, a coverage figure on a slide titled "Not
       // Determined" reads as coverage of these findings, which it is not (QA
@@ -163,14 +163,17 @@ export function buildBoardDeck(input: {
           'Establish coverage — analyse the complete source, check the delivery page for a detector error — before this slide is used.',
         ]
       : [
-          'Direct SELECT mappings resolved to released CDS views / APIs.',
-          'Static CALL FUNCTION replaced with equivalent Cloud SDK actions.',
-          'Simple wrapper classes fully decomposed into target modern framework architecture.',
-          'ABAP OO inheritance chains fully resolved to cloud-compatible types.',
+          // These used to be four fixed capability claims — "Static CALL FUNCTION
+          // replaced with equivalent Cloud SDK actions" among them — printed for
+          // every project, whatever its findings. Each line now counts this
+          // project's findings, and none says that anything was replaced.
+          `${counts.fully} finding(s) match a rule that maps the construct fully.`,
+          `${counts.partial} finding(s) match only in part and need an architect's decision; ${counts.notSupported} match no rule.`,
+          'A rule match says a mapping exists. It does not say the code was transformed, compiled or tested.',
         ],
     speakerNotes: nothingEstablished
       ? 'Nothing to present here: no findings, no coverage, no capability statement.'
-      : 'These metrics show the automated conversion confidence. These parts of the code require zero manual code rewrites or custom logic redesigns.'
+      : 'These counts are what the static analysis matched against the transformation rules. A full match means a rule exists for the construct; whether the generated code is right is decided by review and tests, not by this slide.'
   };
 
   // Slide 3: Where an Expert Must Step In (Partial Support) (matrix slide)

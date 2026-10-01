@@ -45,9 +45,12 @@ import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
  * "My workspace" — the dashboard every account sees (block D, D.22a).
  *
  * Rebuilt to `DESIGN.md` §2.2 (List Report) and mockup 2.8 s7, not removed
- * (ADR-052): everything the old dashboard did is still here — the project list,
- * Continue, Duplicate, Export, Delete, Invite, the deliverables of a project,
- * the quota, the "Your turn" card, the examples and the announcements. The
+ * (ADR-052): the project list, Continue, Duplicate, Export, Delete, Invite, the
+ * deliverables of a project, the quota, the "Your turn" card, the shipped starter
+ * examples and the announcements are all still here. One thing is not: the
+ * personal example library (uploading your own ABAP file to an `abap_examples`
+ * list, browsing and deleting it) went with the redesign and has no successor
+ * on this page — a project is where your own code goes. The
  * admin-only list report (`components/workspace/WorkspaceListReport.tsx`) is the
  * model; this page does not use it, so a community account's workspace never
  * carries `data-cc-workspace`.
@@ -1298,7 +1301,7 @@ export default function Dashboard() {
         open={showWorkspaceInfo}
         onClose={() => setShowWorkspaceInfo(false)}
         title="What is the Clean-Core workspace?"
-        lead="Your central place for modernizing custom legacy SAP code into cloud-ready, extensible architectures."
+        lead="Your central place for understanding custom SAP code and deciding what becomes of it."
         actions={
           <CcButton variant="primary" onClick={() => setShowWorkspaceInfo(false)}>
             Got it
@@ -1309,8 +1312,9 @@ export default function Dashboard() {
           <div>
             <h3 className="m-0 cc-text-h3 text-cc-ink">Transformation pipeline</h3>
             <p className="mt-1 mb-0">
-              Transform custom monolithic ABAP reports and transactions into modular TypeScript and Node.js
-              solutions built in line with Clean Core standards.
+              A deterministic engine reads your ABAP and finds what stands in the way of Clean Core. On top of that
+              evidence a language model drafts a TypeScript and Node.js proposal; a draft is a starting point that
+              needs review and tests, not a solution that already meets Clean Core.
             </p>
           </div>
           <div>

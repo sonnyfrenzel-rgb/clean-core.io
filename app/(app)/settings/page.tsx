@@ -1900,9 +1900,9 @@ export default function SettingsPage() {
               </div>
 
               <div className="border-t border-cc-line pt-4">
-                <span className="block mb-1 cc-text-label text-cc-ink">AI Processing Notice</span>
+                <span className="block mb-1 cc-text-label text-cc-ink">Where a language model is used</span>
                 <p className="">
-                  Code analysis, solution design mapping, test cases, and modernizations are dynamically synthesized using Generative AI models. AI systems may output incorrect code, hallucinations, or compile issues.
+                  The findings, the route and the Clean Core Score come from a deterministic engine that reads your code; no model is involved in them. A language model (Google Gemini) writes only drafts on top of that evidence: the analysis narrative, business names for the process, the solution design, the code proposal, the documentation and the test suite. A draft can be wrong — code that does not compile, a statement the code does not support — so review a draft before you rely on it.
                 </p>
               </div>
 
