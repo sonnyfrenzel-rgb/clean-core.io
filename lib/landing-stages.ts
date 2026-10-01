@@ -38,73 +38,73 @@ export interface LandingStageText {
   lines: readonly [string, string];
   worker: StageWorker;
   provenance: readonly ProvenanceValue[];
-  /** What the picture from the demo project shows, for the `alt` text. */
+  /** What the stage's picture shows (`lib/landing-shots.ts`), for the `alt` text. */
   shows: string;
 }
 
 export const LANDING_STAGE_TEXT: Readonly<Record<PhaseKey, LandingStageText>> = {
   analyze: {
     lines: [
-      'A deterministic engine reads the ABAP before any model does: every finding with its line, the Clean Core Score and a recommended extensibility route.',
-      'The result is recorded as a signed run, and every later stage builds on it.',
+      'A deterministic engine reads the ABAP before any model does: every finding at its line, a map of where in the program they sit, and the Clean Core Score on a scale that says what the number means and what moved it.',
+      'The result is recorded as a signed run, the extensibility route follows from fixed rules, and every later stage builds on it.',
     ],
     worker: 'engine',
     provenance: ['proven'],
-    shows: 'the Clean Core Score, the source, what the engine did not judge, and the first findings with their lines',
+    shows: 'the findings at a glance, the Clean Core Score on its scale with what it means, and the extensibility route the fixed rules recommend',
   },
   design: {
     lines: [
-      `A model drafts the target architecture for the route on the project: RAP inside SAP S/4HANA or CAP on ${BAIP_FIRST}.`,
-      'You review the draft and record which target you accept — a self-declaration, not a mandate.',
+      `The target architecture as a canvas, drawn from the run: what stays inside SAP S/4HANA behind the clean core boundary, which released API replaces which lines, what has no released successor, and on the side-by-side track what runs on ${BAIP_FIRST}.`,
+      'A model writes the design document beside it; you record which target you accept — a self-declaration, not a mandate.',
     ],
     worker: 'model',
-    provenance: ['proposed', 'confirmed'],
-    shows: 'the route proposed from the evidence and the decision checkpoints behind it',
+    provenance: ['reconstructed', 'proposed', 'confirmed'],
+    shows: 'the target architecture canvas with the released successors and their lines, and the decision panel with the recommended route and the alternatives',
   },
   transformation: {
     lines: [
-      'A model generates the target code from the source, the analysis and the design: ABAP Cloud artefacts on the RAP track, a Node.js project on the CAP track.',
+      'A model generates the target code from the source, the analysis and the design: ABAP Cloud artefacts on the RAP track, a Node.js project on the CAP track. Beside it, the engine’s plan shows where every finding goes.',
       'Nothing compiles or tests it in this stage; it is a draft you review.',
     ],
     worker: 'model',
     provenance: ['proposed'],
-    shows: 'the plan the engine writes on its own — one line per finding, with its route and the released successor where the catalog names one',
+    shows: 'the plan the engine writes on its own — every kind of finding flowing to its target, a released successor where the catalog names one — and where the demo stops because it makes no model call',
   },
   documentation: {
     lines: [
-      'The process documentation is read out of the analysed source, every statement with its lines; what the code does not say is listed as not determined.',
+      'The process is read out of the analysed source as a map, every step with its line, and written up chapter by chapter with its rules, exceptions and data; what the code does not say is listed as not determined.',
       'A business layer with SOPs and a RACI matrix is a model draft, written only when you ask for it.',
     ],
     worker: 'engine',
     provenance: ['reconstructed', 'proposed'],
-    shows: 'the tables the program reads or writes, SAP standard or custom, each with a risk',
+    shows: 'the process map read from the code beside its first chapter, with the lines, the table it reads and the exception it raises',
   },
   testing: {
     lines: [
-      'A model writes a test suite for the generated code; on the CAP track the suite can be run against mocks in an isolated test runner.',
+      'A model writes test scenarios for the generated code; on the CAP track they run against mocks in an isolated test runner, never on your system. The engine lists what a tester has to check by hand, with the lines.',
       'On the RAP track the ABAP Unit run is only simulated, and a pass never means the code works in SAP.',
     ],
     worker: 'model',
     provenance: ['proposed', 'demonstrated-mock'],
-    shows: 'that nothing has run in the demo, and the constructs a tester would have to check by hand, with their lines',
+    shows: 'that nothing has run in the demo, the areas a tester checks by hand with their lines, and that tests on a tenant stay locked',
   },
   tco: {
     lines: [
-      'A demonstration model prices the upgrade effort with cost figures you enter, on assumed coefficients.',
+      'A demonstration model compares doing nothing, keeping the code and moving to SAP standard on cost figures you enter and assumed coefficients, and lists every input still open.',
       'It is not a business case, and it shows no forecast until your own figures are in.',
     ],
     worker: 'engine',
     provenance: ['simulation'],
-    shows: 'assumptions entered by hand and the maintenance-effort scenario computed from them',
+    shows: 'assumptions entered by hand, none left open, and the maintenance-effort scenario computed from them',
   },
   delivery: {
     lines: [
-      'Delivery offers the delivery bundle and the audit pack the server signs over the signed run, both blocked while anything was built for a previous source.',
+      'Delivery shows the chain from requirement to decision, receipt and artefact, what a handover still needs, and the audit pack the server signs over the signed run — blocked while anything was built for a previous source.',
       'A pack can be checked on the Verify Pack page; whether to deploy stays an architect’s decision.',
     ],
     worker: 'engine',
     provenance: ['proven'],
-    shows: 'that no pack leaves the demo, and what a real handover would still need',
+    shows: 'a signed run with its audit pack available, the evidence chain from requirement to handover, and the next step the rules name',
   },
 };
 

@@ -57,7 +57,7 @@ import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_ROUTE, DEMO_SOURCE_FILE, DEM
 import { TOUR_STATIONS, TOUR_INVITATION_TITLE, TOUR_INVITATION_ACTION, tourPositionLabel } from '@/lib/demo-tour';
 import { landingHero, landingProcess } from '@/lib/landing-process';
 import { heroSnippets } from '@/lib/landing-hero';
-import { landingShotSrc, stageShot } from '@/lib/landing-shots';
+import { STAGE_SHOT_CAPTION, STAGE_SHOT_SOURCE, landingShotSrc, stageShot } from '@/lib/landing-shots';
 import { landingStages } from '@/lib/landing-stages';
 import { landingShotSize } from '@/lib/landing-shot-size';
 import { LANDING_FAQ } from '@/lib/landing-faq';
@@ -74,7 +74,8 @@ import '@/components/landing/landing.css';
  *   - **Every product picture is the product's own output.** The hero and the
  *     process section draw the BPMN the export writes for the shipped examples
  *     (`lib/landing-process.ts`); the seven stages are captures of the demo
- *     project (`lib/landing-shots.ts`). Nothing is drawn for the page.
+ *     project or of a real run of the example, each captioned as such
+ *     (`lib/landing-shots.ts`). Nothing is drawn for the page.
  *   - **Every figure and every claim is read, not typed.** Object counts from
  *     `lib/facts.ts`, the reference run from `lib/reference-analysis.ts`, levels
  *     and successors from the catalog at render time, provenance words from
@@ -318,7 +319,8 @@ export default function Home() {
   const stages: TimelineStage[] = landingStages().map((stage) => ({
     ...stage,
     src: landingShotSrc(stageShot(stage.key)),
-    alt: `${stage.title} stage of the demo project ${DEMO_OBJECT_NAME}: ${stage.shows}.`,
+    alt: `${stage.title} stage of ${STAGE_SHOT_SOURCE[stage.key] === 'run' ? 'a real run of the example program' : 'the demo project'} ${DEMO_OBJECT_NAME}: ${stage.shows}.`,
+    caption: STAGE_SHOT_CAPTION[STAGE_SHOT_SOURCE[stage.key]],
     ...landingShotSize(stageShot(stage.key)),
   }));
 
