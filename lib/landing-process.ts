@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { buildProcessSkeleton, type ProcessSkeleton } from '@/lib/abap/process-skeleton';
 import { conditionToPhrase, plainContext, plainLabels, type PlainContext } from '@/lib/abap/plain-language';
-import { READING_WRAP } from '@/lib/bpmn/export';
 import { businessExcerpt } from '@/lib/bpmn/excerpt';
 import { buildExportModel, isEarlyEnd, isMultiInstanceLoop, type BpmnTag, type ExportContainer, type ExportModel } from '@/lib/bpmn/model';
 import { layoutModel, type Bounds, type DiagramLayout, type Direction, type PlacedLabel, type Point } from '@/lib/bpmn/layout';
@@ -115,6 +114,9 @@ export interface LandingProcess {
     helperList: Array<{ name: string; lineStart: number; lineEnd: number; callSites: number }>;
   };
 }
+
+/** Columns per row on the landing page's map. */
+const LANDING_WRAP = 4;
 
 const EXAMPLES = path.join(process.cwd(), 'public', 'starter-examples');
 
@@ -233,7 +235,9 @@ function buildProcess(
   // the page's reader is a business reader. The technical names are the same
   // process, one switch away.
   const model = buildExportModel(skeleton, names === 'plain' ? { labels: plainLabels(skeleton, source) } : {});
-  const layout = layoutModel(model, { direction, wrap: direction === 'LR' ? READING_WRAP : undefined });
+  // The landing's map box is about 1,070 px wide: four columns a row fit it
+  // without scrolling sideways.
+  const layout = layoutModel(model, { direction, wrap: direction === 'LR' ? LANDING_WRAP : undefined });
 
   const planes: LandingPlane[] = [planeOf(model.root, model, layout, program, null, null)];
   const walk = (container: ExportContainer) => {

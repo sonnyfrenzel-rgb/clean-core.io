@@ -130,7 +130,9 @@ export function heroSnippets(hero: LandingHero, fileName: string): HeroSnippets 
 
   // The rule on the drawn routine opens the card, as in the mockup.
   const onPlane = hero.rules.shown.find((r) => hero.plane.nodes.some((n) => n.anchor?.lineStart === r.line));
-  const initial = String(onPlane?.line ?? hero.plane.nodes.find((n) => n.anchor)?.anchor?.lineStart ?? rFrom);
+  // Otherwise the first decision of the shown routine — as the mockup opens on one.
+  const decision = hero.plane.nodes.find((n) => n.tag === 'exclusiveGateway' && n.anchor && n.anchor.lineStart >= rFrom && n.anchor.lineStart <= rTo);
+  const initial = String(onPlane?.line ?? decision?.anchor?.lineStart ?? hero.plane.nodes.find((n) => n.anchor)?.anchor?.lineStart ?? rFrom);
 
   return {
     snippets,
