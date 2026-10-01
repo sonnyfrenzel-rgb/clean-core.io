@@ -47,8 +47,13 @@ export const AUDIT = {
    * is the cost OpenRouter reports for each call.
    */
   maxCostUsd: 20,
-  /** The self-test on dev proves the chain, not the judgement: two files, one consultant call, the CISO, the mail. */
-  selfTestCostUsd: 0.2,
+  /**
+   * The self-test on dev proves the chain, not the judgement: two files, one consultant call, the CISO, the mail.
+   * $0.20 until 01.10.2026; at the Auto Router's ceiling the CISO reserve of a self-test alone is $0.20 and the
+   * whole chain about $0.27 at its worst case, so the consultant would never have fit. $0.35 keeps the worst case
+   * under 80 %; the live self-test of 01.10.2026 cost a few cents.
+   */
+  selfTestCostUsd: 0.35,
   selfTestFiles: ['app/api/health/route.ts', 'middleware.ts'],
   /**
    * Numbered source per consultant call, in characters. Measured 15.09.2026: one call on 284,000 characters at

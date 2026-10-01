@@ -4,7 +4,7 @@
  *
  *   node scripts/security/audit.mjs              CI: full audit, sealed with the public key
  *   SECURITY_AUDIT_MODE=self-test node scripts/security/audit.mjs
- *                                                the same chain on two files with a $0.20 cap — run on dev when the
+ *                                                the same chain on two files with a $0.35 cap — run on dev when the
  *                                                agent itself changes, so every link is proven before main
  *
  * Guardrails (docs/SECURITY-AUDIT-AGENT.md §2): a pipeline of model calls without tools. Five consultants receive

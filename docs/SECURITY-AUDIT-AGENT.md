@@ -25,7 +25,9 @@ auch nur ein Kandidat seinen Code bekam, bestätigte nichts — und die Mail sag
 > `scripts/security/lib/team.mjs`). Every reserve and estimate is made at that ceiling;
 > what counts against the cap is the actual `usage.cost`. The cap is now **$20 per
 > release** (was $5): at the ceiling the CISO reserve alone is about $5.90 and a whole run
-> at its worst case about $14.90, under 80 % of the cap.
+> at its worst case about $14.90, under 80 % of the cap. The self-test cap is $0.35 (was
+> $0.20, which the self-test's CISO reserve alone now fills); the live self-test of
+> 01.10.2026 made 3 calls, all answered by z-ai/glm-5.3, for $0.0293.
 >
 > The provider allowlist `['Fireworks', 'CoreWeave', 'Together']` is gone: it named the
 > endpoints of one model and means nothing once the model is free. What still stands

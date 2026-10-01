@@ -38,7 +38,8 @@ test.describe('the agent has no tools and a small budget', () => {
     // 5 → 20 USD with the Auto Router — the CISO reserve alone is about $5.9 at the ceiling. An upper bound;
     // what counts against it is the cost OpenRouter reports.
     expect(AUDIT.maxCostUsd).toBe(20);
-    expect(AUDIT.selfTestCostUsd).toBeLessThanOrEqual(0.2);
+    // $0.20 until 01.10.2026; at the Auto Router's price ceiling the self-test's CISO reserve alone is $0.20.
+    expect(AUDIT.selfTestCostUsd).toBeLessThanOrEqual(0.35);
     // Read, never imported: audit.mjs is an entry point and would start an audit.
     const src = read('scripts/security/audit.mjs');
     expect(src).not.toMatch(/claude-code|npx|child_process|spawn\(|execFile|--tools|Agent|Workflow/);
