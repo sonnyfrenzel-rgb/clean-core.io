@@ -56,6 +56,8 @@ export function businessExcerpt(model: ExportModel, options: ExcerptOptions = {}
     return c;
   };
   const join = (from: ExportNode, to: ExportNode, template?: ExportFlow) => {
+    // Two exits through one shared step need its way on only once.
+    if (!template && flows.some((f) => f.sourceId === from.id && f.targetId === to.id)) return;
     const id = `ex-fl-${(flowCount += 1)}`;
     const f: ExportFlow = {
       id,

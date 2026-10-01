@@ -229,10 +229,12 @@ export interface BpmnPlaneSvgProps {
   interactive?: boolean;
   /** Drawing scale on a wide screen; the scroller keeps it from shrinking on a phone. */
   scale?: number;
+  /** Shrink to the box's width instead (the top-to-bottom drawing on a phone). */
+  fit?: boolean;
   title: string;
 }
 
-export default function BpmnPlaneSvg({ plane, idPrefix, interactive = false, scale = 1, title }: BpmnPlaneSvgProps) {
+export default function BpmnPlaneSvg({ plane, idPrefix, interactive = false, scale = 1, fit = false, title }: BpmnPlaneSvgProps) {
   const { frame } = plane;
   const arrow = `${idPrefix}-arrow`;
   const messageArrow = `${idPrefix}-msg`;
@@ -243,8 +245,8 @@ export default function BpmnPlaneSvg({ plane, idPrefix, interactive = false, sca
       viewBox={`${frame.x} ${frame.y} ${frame.width} ${frame.height}`}
       width={Math.round(frame.width * scale)}
       height={Math.round(frame.height * scale)}
-      className="block h-auto max-w-none"
-      style={{ minWidth: Math.round(frame.width * scale * 0.9) }}
+      className={fit ? 'block h-auto w-full' : 'block h-auto max-w-none'}
+      style={fit ? { maxWidth: Math.round(frame.width * scale) } : { minWidth: Math.round(frame.width * scale * 0.9) }}
       role="group"
       aria-label={title}
       data-bpmn-plane={plane.id}

@@ -59,9 +59,10 @@ export default function ProcessMapPanel({
   const technicalById = byId(technical);
   const verticalById = byId(vertical?.plain);
   const verticalTechnicalById = byId(vertical?.technical);
-  const svg = (p: LandingProcess['planes'][number], key: string) => (
+  const svg = (p: LandingProcess['planes'][number], key: string, fit = false) => (
     <BpmnPlaneSvg
       plane={p}
+      fit={fit}
       idPrefix={`pm-${key}-${p.id}`}
       interactive
       scale={p.parent ? 1 : 0.92}
@@ -76,7 +77,7 @@ export default function ProcessMapPanel({
   const map = (wide: LandingProcess['planes'][number], narrow: LandingProcess['planes'][number] | undefined, key: string) => (narrow ? (
     <>
       <div className="hidden md:block">{svg(wide, key)}</div>
-      <div className="md:hidden">{svg(narrow, `${key}-v`)}</div>
+      <div className="md:hidden">{svg(narrow, `${key}-v`, true)}</div>
     </>
   ) : svg(wide, key));
   const planes: ExplorerPlane[] = process.planes.map((p) => {
