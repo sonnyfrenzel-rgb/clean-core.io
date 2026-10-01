@@ -212,6 +212,7 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'print.colDecision': 'Decision',
   'print.colBasis': 'Basis',
   'print.notConfirmed': 'Not confirmed yet',
+  'print.decisionNotRead': 'Not read for this printout',
   'print.notDeterminedNoSource': 'Not determined — nothing was staged to assess',
   'print.footer':
     'Printed from the workspace. Line anchors and IDs are printed as text. Reconstructed means read from the code, not confirmed by anyone.',
