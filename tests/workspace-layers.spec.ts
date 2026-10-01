@@ -387,4 +387,18 @@ test.describe('the layers on the screen', () => {
       'choosing a layer threw the reader back into another view',
     ).toBe('it');
   });
+  test('the view switch moves the focus with the selection on the arrow keys (QA review of a88149856dcc)', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await signIn(page, ADMIN);
+    await page.goto(`/project/${RUN_ID}?view=business#costs`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    const radio = (name: string) =>
+      page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: name });
+    await radio('Business').focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page).toHaveURL(/[?&]view=it\b/, { timeout: 30000 });
+    await expect(radio('IT')).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await expect(radio('Business')).toBeFocused();
+  });
 });
