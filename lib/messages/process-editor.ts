@@ -74,6 +74,7 @@ export const PROCESS_EDITOR_MESSAGES = {
 
   // Element list
   'editor.elementsHeading': 'Elements',
+  'editor.unnamed': 'Unnamed',
 
   // Compare
   'editor.compareTitle': 'Compared with the reconstructed Ist',

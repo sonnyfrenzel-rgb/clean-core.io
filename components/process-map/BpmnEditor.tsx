@@ -652,7 +652,7 @@ export default function BpmnEditor({
   );
 
   const rows: DraftRow[] = useMemo(() => parsedDraft.elements.map((element) => {
-    const plain = element.name || labels.get(element.id) || element.id;
+    const plain = element.name || labels.get(element.id) || wt('editor.unnamed');
     const shown = technical ? (element.trace?.technicalName || plain) : plain;
     return {
       id: element.id,
@@ -940,6 +940,8 @@ export default function BpmnEditor({
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
+    // The dialog opens over the page; in full screen only the editor is on show.
+    if (document.fullscreenElement) await document.exitFullscreen().catch(() => undefined);
     setImporting({ fileName: file.name, outcome: null, saved: null });
     // Bytes before characters: a file larger than any revision is never read into memory as text.
     if (file.size > MAX_IMPORT_CHARS * 4) {

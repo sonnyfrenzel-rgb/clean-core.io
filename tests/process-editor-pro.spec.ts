@@ -263,8 +263,8 @@ test.describe('the professional BPMN editor', () => {
     await expect(dialog).toBeVisible({ timeout: 30000 });
     await expect(dialog.locator('[data-editor-import-summary]')).toContainText('order-from-signavio.bpmn');
     await expect(dialog.locator('[data-import-by-name]')).toBeVisible();
-    // Recognised are nearly all; the task drawn in the other tool is among the few that are not.
-    expect(Number(await dialog.locator('[data-import-outside]').getAttribute('data-import-outside'))).toBeLessThanOrEqual(7);
+    // Every element of the Ist is recognised; only the task drawn in the other tool is outside.
+    await expect(dialog.locator('[data-import-outside]')).toHaveAttribute('data-import-outside', '1');
     await expect(dialog.locator('[data-import-list="added"]')).toContainText('Approve in Signavio');
     await expect(dialog).toContainText('Line anchors or statuses written in the file itself were not taken over.');
 
@@ -351,6 +351,8 @@ test.describe('the professional BPMN editor', () => {
     await page.locator('[data-process-edit-toggle]').click();
     await expect(page.locator('[data-process-editor-phone]')).toBeVisible();
     await expect(page.locator('[data-process-editor]')).toHaveCount(0);
+    // The reading view stays under the notice: the outline is still there to read.
+    await expect(page.locator('[data-tree-node]').first()).toBeVisible();
     // The notice adds no width of its own to the page.
     expect(await width()).toBeLessThanOrEqual(before);
   });

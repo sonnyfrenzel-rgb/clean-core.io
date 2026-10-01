@@ -29,8 +29,8 @@ interface Picture {
   view: Box;
 }
 
-const WIDTH = 200;
-const HEIGHT = 130;
+const WIDTH = 168;
+const HEIGHT = 104;
 
 function picture(modeler: ModelerLike): Picture | null {
   const canvas = modeler.get<CanvasService>('canvas');

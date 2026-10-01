@@ -648,12 +648,14 @@ export default function ProcessMap({
         </p>
       ) : null}
 
-      {editing && view === 'map' ? (
-        isPhone ? (
-          <CcMessageStrip state="information" headline={wt('editor.phoneTitle')}>
-            <span data-process-editor-phone="">{wt('editor.phoneBody')}</span>
-          </CcMessageStrip>
-        ) : (
+      {editing && isPhone ? (
+        <CcMessageStrip state="information" headline={wt('editor.phoneTitle')}>
+          <span data-process-editor-phone="">{wt('editor.phoneBody')}</span>
+        </CcMessageStrip>
+      ) : null}
+
+      {editing && view === 'map' && !isPhone ? (
+        (
           // Editing takes the whole width: the outline, the filters and the code
           // card belong to reading, and the properties panel shows the code of
           // the element on the canvas.

@@ -64,12 +64,13 @@ test.describe('BPMN 2.0 import', () => {
     if (!result.ok) return;
     expect(result.summary.matchedById).toBe(0);
     // "Start" and "Done" repeat on every level: they are recognised inside a
-    // sub-process that was itself recognised. What stays ambiguous even there
-    // is left without an anchor rather than guessed — measured: 78 of 82.
-    expect(result.summary.matchedByName).toBeGreaterThanOrEqual(75);
-    expect(result.summary.outside).toBeLessThanOrEqual(6);
+    // sub-process that was itself recognised, and two decisions of one name on
+    // one level by the element they are entered from. All 82 come back, and
+    // the comparison with the Ist finds nothing — a lossless round trip.
+    expect(result.summary.matchedByName).toBe(result.summary.flowNodes);
+    expect(result.summary.outside).toBe(0);
+    expect(result.summary.diff.identical, result.summary.diff.summary).toBe(true);
     expect(result.summary.anchored).toBe(result.summary.matchedByName);
-    expect(result.summary.outside).toBe(result.summary.flowNodes - result.summary.matchedByName);
     // What the reader of the product sees: an anchored element is one of the Ist's, at the Ist's lines.
     const istTrace = new Map(parseBpmn(base).elements.map((e) => [e.id, e.trace]));
     for (const element of parseBpmn(result.xml).elements) {
