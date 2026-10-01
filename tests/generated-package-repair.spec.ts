@@ -143,6 +143,20 @@ test.describe('the repair aims at the file the compiler named', () => {
     ).toEqual({ kind: 'package', index: 0 });
   });
 
+  test('a package file named exactly test.ts does not take the suite\'s error', () => {
+    // Carried QA finding d87fb0856761: the basename match ran before the suite
+    // check, so `tests/test.ts` in the package was repaired for an error in the
+    // sandbox's own `test.ts`.
+    const pkg = JSON.stringify([{ path: 'tests/test.ts', content: 'x' }]);
+    expect(
+      repairTarget({ code: pkg, suite: SUITE, errorText: 'C:\\Temp\\cc-tests-x\\test.ts:2:9: ERROR: Expected ";"' }),
+    ).toEqual({ kind: 'test' });
+    // Named by its own path, it is still the package's.
+    expect(
+      repairTarget({ code: pkg, suite: SUITE, errorText: 'tests/test.ts:1:1: ERROR: Unexpected "x"' }),
+    ).toEqual({ kind: 'package', index: 0 });
+  });
+
   test('an error that names nothing stays with the package, which is the artefact under test', () => {
     expect(repairTarget({ code: stored, suite: SUITE, errorText: 'Build failed with 1 error' })).toEqual({
       kind: 'package',

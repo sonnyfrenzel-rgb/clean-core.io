@@ -60,7 +60,11 @@ export function namedFileIndex(files: GeneratedFile[], errorText: string): numbe
   let bestLen = -1;
   files.forEach((f, i) => {
     const base = f.path.split('/').pop() || f.path;
-    if ((errorText.includes(f.path) || errorText.includes(base)) && f.path.length > bestLen) {
+    // `test.ts` is also the name the sandbox gives the suite (SUITE_ENTRY), so a
+    // package file of that name is matched by its full path only — by name
+    // alone it took the suite's error (carried QA finding d87fb0856761).
+    const byName = base !== 'test.ts' && errorText.includes(base);
+    if ((errorText.includes(f.path) || byName) && f.path.length > bestLen) {
       best = i;
       bestLen = f.path.length;
     }
