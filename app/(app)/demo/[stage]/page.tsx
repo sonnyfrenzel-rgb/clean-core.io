@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import DemoWorkspace from '@/components/demo/DemoWorkspace';
 import { buildDemoProject } from '@/lib/demo-project';
+import { buildDemoDesign } from '@/lib/demo-design';
 import { PHASES, type PhaseKey } from '@/lib/workflow-steps';
 import { DEMO_PROJECT_TITLE, DEMO_STRIP_NOTICE } from '@/lib/demo-marks';
 
@@ -39,5 +40,8 @@ export default async function DemoStagePage({ params }: { params: Promise<{ stag
   const phase = PHASES.find((p) => p.key === stage);
   if (!phase) notFound();
 
-  return <DemoWorkspace demo={buildDemoProject()} stage={phase.key as PhaseKey} />;
+  const demo = buildDemoProject();
+  // The contract and the findings only where they are drawn.
+  const design = phase.key === 'design' ? buildDemoDesign(demo) : null;
+  return <DemoWorkspace demo={demo} stage={phase.key as PhaseKey} design={design} />;
 }

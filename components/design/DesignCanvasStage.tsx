@@ -82,6 +82,13 @@ export interface DesignCanvasStageProps {
   /** The router's own rationale, beside the alternatives. */
   routingRationale: React.ReactNode | null;
   view: 'canvas' | 'list';
+  /**
+   * What the sign-off is, where it is not a real project's. Unset, it is the
+   * self-declaration of the signed-in account, bound to the run; the demo's is
+   * a switch in the browser, attributed to nobody and bound to no run, and it
+   * says so in these three places instead.
+   */
+  signOffWording?: { open: string; confirmed: string; dialogLead: string };
 }
 
 /**
@@ -228,6 +235,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     documentNotice,
     routingRationale,
     view,
+    signOffWording,
   } = props;
 
   const storedContract = evidence.state === 'ready' ? evidence.contract : null;
@@ -358,7 +366,8 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     : stale
       ? 'Not confirmed. The design or its sign-off belongs to an earlier source, so nothing is confirmed for the code under review.'
       : canSignOff
-        ? 'Not confirmed. Review the design, then confirm or change the target — a self-declaration of your account, not an organisational mandate.'
+        ? signOffWording?.open ??
+          'Not confirmed. Review the design, then confirm or change the target — a self-declaration of your account, not an organisational mandate.'
         : hasDocument
           ? 'Not confirmed. This design document has no sign-off section; regenerate it, then confirm — a self-declaration of your account, not an organisational mandate.'
           : 'Not confirmed. Generate the design document to review and confirm it.';
@@ -395,8 +404,8 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
         {confirmed ? (
           <p className="m-0 mt-2 text-[13px] text-cc-ink">
             Confirmed{confirmed.by ? <> by {confirmed.by}</> : null}
-            {confirmed.at ? <> on <CcDateText value={confirmed.at} format="text" /></> : null}. A self-declaration by the
-            signed-in account, not an organisational mandate.
+            {confirmed.at ? <> on <CcDateText value={confirmed.at} format="text" /></> : null}.{' '}
+            {signOffWording?.confirmed ?? 'A self-declaration by the signed-in account, not an organisational mandate.'}
           </p>
         ) : (
           <p className="m-0 mt-2 text-[13px] text-cc-ink">
@@ -492,7 +501,9 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
           <p className="m-0 text-[13px] text-cc-ink">{signOffText}</p>
         ) : (
           <p className="m-0 text-[13px] text-cc-ink">
-            Confirmed — a self-declaration of your account, not an organisational mandate. Change it with “Change target”.
+            {signOffWording
+              ? `Confirmed — ${signOffWording.confirmed.charAt(0).toLowerCase()}${signOffWording.confirmed.slice(1)} Change it with “Change target”.`
+              : 'Confirmed — a self-declaration of your account, not an organisational mandate. Change it with “Change target”.'}
           </p>
         )}
       </div>
@@ -867,7 +878,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
         open={signOffOpen && Boolean(signOffPanel)}
         onClose={() => setSignOffOpen(false)}
         title={locked ? 'Target architecture sign-off' : 'Confirm the target architecture'}
-        lead="A self-declaration by the signed-in account, bound to the run this page shows — not an organisational mandate."
+        lead={signOffWording?.dialogLead ?? 'A self-declaration by the signed-in account, bound to the run this page shows — not an organisational mandate.'}
         size="wide"
         data-design-signoff-dialog=""
       >
