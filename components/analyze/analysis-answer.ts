@@ -136,6 +136,11 @@ export function analysisAnswer(input: AnswerInput): AnalysisAnswerText {
       high ? `${high} high` : null,
       medium ? `${medium} medium` : null,
       low ? `${low} low` : null,
+      // Info and any other rating are counted in the total, so the spread names
+      // them too and adds up to it (carried QA finding 13f1b0920c43).
+      counts.total - critical - high - medium - low > 0
+        ? `${counts.total - critical - high - medium - low} informational`
+        : null,
     ].filter(Boolean);
     parts.push(
       `The engine ${read} without a model and rated each finding by severity` +

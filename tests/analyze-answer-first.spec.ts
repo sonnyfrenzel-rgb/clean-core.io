@@ -55,6 +55,19 @@ test.describe('the answer, in words', () => {
     expect(`${a.headline} ${a.detail}`).not.toMatch(/%|compliance/i);
   });
 
+  test('a finding rated Info is in the spread, so the spread adds up to the total', () => {
+    // Carried QA finding 13f1b0920c43: "25 findings … 1 critical, 3 high, 16
+    // medium, 4 low" — 24, with the informational one never named.
+    const groups = groupEvidenceFindings([
+      finding({ kind: 'bdc', title: 'BDC to ME21N', severity: 'High', objectName: 'ME21N', lineStart: 631 }),
+      finding({ kind: 'standard-table-read', title: 'Read EBAN', severity: 'Info', lineStart: 12 }),
+    ]);
+    const counts = countFindings(groups);
+    expect(counts.total).toBe(2);
+    const a = analysisAnswer({ counts, lines: 40, route: null, routeChosenByReader: false, notDetermined: 0 });
+    expect(a.detail).toContain('1 high, 1 informational');
+  });
+
   test('a route the reader switched is said to be theirs', () => {
     const counts = { total: 1, bySeverity: { Critical: 0, High: 0, Medium: 1, Low: 0 } };
     const a = analysisAnswer({ counts, lines: 10, route: 'In-App (ABAP Cloud)', routeChosenByReader: true, notDetermined: 0 });
