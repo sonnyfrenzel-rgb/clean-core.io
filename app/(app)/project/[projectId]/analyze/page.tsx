@@ -12,7 +12,7 @@ import { runProjectCommand } from '@/lib/project-command-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType, getAuth } from '@/lib/firebase';
-import Stepper from '@/components/Stepper';
+import StageProgress from '@/components/StageProgress';
 import { UploadCloud, FileCode2, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Activity, HelpCircle, Info, Layers, Shield, Zap, Cloud } from 'lucide-react';
 import clsx from 'clsx';
 import CcButton from '@/components/cc/Button';
@@ -99,7 +99,6 @@ import { getRunCapabilities } from '@/lib/run-capabilities';
 import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
 import type { AtcReport as AtcReportType } from '@/lib/abap/atc-model';
 
-import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
@@ -1496,11 +1495,10 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
-      <VerificationRail steps={phases} current="analyze" projectId={projectId as string} />
 
-      <Stepper steps={phases} current="analyze" projectId={projectId as string} />
+      <StageProgress steps={phases} current="analyze" projectId={projectId as string} />
 
-      <StageHeader stage="analyze">
+      <StageHeader projectName={project?.name} stage="analyze">
         Extracting business intelligence and technical dependencies from your legacy assets.
       </StageHeader>
 

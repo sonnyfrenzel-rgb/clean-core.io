@@ -11,7 +11,7 @@ import { doc, updateDoc, collection, getDocs, query, where } from 'firebase/fire
 import { getDb, getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
-import Stepper from '@/components/Stepper';
+import StageProgress from '@/components/StageProgress';
 import { PresentationViewer, PresentationData } from '@/components/PresentationViewer';
 import { buildBoardDeck, type RunTrendPoint } from '@/lib/board-deck';
 import { detectFindings } from '@/lib/abap/findings-detector';
@@ -19,7 +19,7 @@ import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel } from '@/lib/abap/class-model';
 import { Download, CheckCircle2, FileCode2, Eye, Presentation, AlertCircle, Briefcase, BookOpen, Gauge, FileText } from 'lucide-react';
 import clsx from 'clsx';
-import NavigationButtons from '@/components/NavigationButtons';
+import StageFooter from '@/components/StageFooter';
 import JSZip from 'jszip';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
 import { isEngineDocumentation } from '@/lib/process-documentation';
@@ -30,7 +30,6 @@ import { saveAs } from '@/lib/fileSaver';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { generateAuditPack } from '@/lib/audit-pack';
 import { APP_VERSION } from '@/lib/version';
-import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, testEvidence, handoverBlockers, PHASES, previousBasis } from '@/lib/workflow-steps';
 import CcButton from '@/components/cc/Button';
@@ -557,18 +556,16 @@ jobs:
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
-      <VerificationRail steps={phases} current="delivery" projectId={projectId as string} />
 
-      <Stepper steps={phases} current="delivery" projectId={projectId as string} />
-      <StageHeader stage="delivery" />
+      <StageProgress steps={phases} current="delivery" projectId={projectId as string} />
+      <StageHeader projectName={project?.name} stage="delivery" />
       <CcSkeleton shape="cards" label="Finalizing delivery package..." count={4} />
     </div>
   );
 
   if (!project) return (
     <div className="max-w-7xl mx-auto px-4 md:px-0">
-      <VerificationRail steps={phases} current="delivery" projectId={projectId as string} />
-      <Stepper steps={phases} current="delivery" projectId={projectId as string} />
+      <StageProgress steps={phases} current="delivery" projectId={projectId as string} />
       <StageHeader stage="delivery" />
       <div data-delivery-load-failed>
         <CcMessageStrip
@@ -587,15 +584,14 @@ jobs:
     <div className="max-w-7xl mx-auto px-4 md:px-0">
       {/* Rendered here as well as in the loading state — it used to exist only
           there, and disappeared as soon as the page had loaded. */}
-      <VerificationRail steps={phases} current="delivery" projectId={projectId as string} />
 
-      <Stepper steps={phases} current="delivery" projectId={projectId as string} />
+      <StageProgress steps={phases} current="delivery" projectId={projectId as string} />
 
       {/* The lead used to read "The transformation lifecycle is complete … ready
           for deployment" on every project, including one with nothing but an
           analysis run behind it. Block D, D.19: the title is the stage's name
           from `PHASES`, left-aligned like every other stage. */}
-      <StageHeader stage="delivery">
+      <StageHeader projectName={project?.name} stage="delivery">
         {/* `proven`, not `done`. The material can all be present while the test
             run behind the verdicts never happened — `testCases[].status` is
             client-writable and used to be read as an execution (QA full review

@@ -6,8 +6,8 @@ import { doc, updateDoc, runTransaction } from 'firebase/firestore';
 import { getAuth, getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
-import Stepper from '@/components/Stepper';
-import NavigationButtons from '@/components/NavigationButtons';
+import StageProgress from '@/components/StageProgress';
+import StageFooter from '@/components/StageFooter';
 import { Download, RefreshCw, FileCode2, Briefcase, Target, Users, Settings, Activity, Layers, Box, Lock, Rocket } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
@@ -32,7 +32,6 @@ import CcStateText from '@/components/cc/StateText';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import { saveAs } from '@/lib/fileSaver';
-import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
@@ -839,10 +838,9 @@ Structure the JSON exactly like this:
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
-      <VerificationRail steps={phases} current="documentation" projectId={projectId as string} />
 
-      <Stepper steps={phases} current="documentation" projectId={projectId as string} />
-      <StageHeader stage="documentation" />
+      <StageProgress steps={phases} current="documentation" projectId={projectId as string} />
+      <StageHeader projectName={project?.name} stage="documentation" />
       <CcSkeleton shape="cards" label="documentation" count={2} />
     </div>
   );
@@ -1259,9 +1257,8 @@ Structure the JSON exactly like this:
     <div className="bg-cc-page min-h-screen p-4 md:p-8">
       {/* Rendered here as well as in the loading state — it used to exist only
           there, and disappeared as soon as the page had loaded. */}
-      <VerificationRail steps={phases} current="documentation" projectId={projectId as string} />
 
-      <Stepper steps={phases} current="documentation" projectId={projectId as string} />
+      <StageProgress steps={phases} current="documentation" projectId={projectId as string} />
 
       <StaleNotice
         title={`Built for ${previousBasis(project)}`}
@@ -1275,7 +1272,7 @@ Structure the JSON exactly like this:
 
       <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6 mb-8 mt-6 md:mt-8">
         <div>
-          <StageHeader stage="documentation">
+          <StageHeader projectName={project?.name} stage="documentation">
             Business Architecture &amp; BPMN Map
           </StageHeader>
 
@@ -1632,7 +1629,7 @@ Structure the JSON exactly like this:
         )}
       </CcDialog>
 
-      <NavigationButtons
+      <StageFooter
         backPath={`/project/${projectId}/transformation`}
         backLabel="Back to Transformation"
         proceedPath={`/project/${projectId}/testing`}

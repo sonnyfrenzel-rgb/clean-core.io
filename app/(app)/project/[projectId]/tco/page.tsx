@@ -6,10 +6,9 @@ import { useParams } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import type { Project } from '@/lib/types';
-import Stepper from '@/components/Stepper';
+import StageProgress from '@/components/StageProgress';
 import StageHeader from '@/components/StageHeader';
-import VerificationRail from '@/components/VerificationRail';
-import NavigationButtons from '@/components/NavigationButtons';
+import StageFooter from '@/components/StageFooter';
 import { workflowSteps, staleness } from '@/lib/workflow-steps';
 import { Calculator, ShieldCheck, Printer, BarChart3, AlertCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -210,10 +209,9 @@ export default function TcoCalculatorPage() {
   if (baselineScore === null || baselineScore >= TCO_TARGET_SCORE || sourceChanged) {
     return (
       <div className="cc min-h-screen bg-cc-page p-4 md:p-8">
-        <VerificationRail steps={phases} current="tco" projectId={projectId as string} />
-        <Stepper steps={phases} current="tco" projectId={projectId as string} />
+        <StageProgress steps={phases} current="tco" projectId={projectId as string} />
         <div className={`max-w-2xl mx-auto mt-10 p-8 ${CARD}`}>
-          <StageHeader title="No baseline to model against" />
+          <StageHeader projectName={project?.name} title="No baseline to model against" />
           <p className="cc-text-body text-cc-ink-muted -mt-4">
             {sourceChanged && baselineScore !== null ? (
               <span data-tco-stale="">
@@ -248,7 +246,7 @@ export default function TcoCalculatorPage() {
           <OptionComparison loc={loc} currency={currency} onCurrencyChange={setCurrency} />
         </div>
         <div className="max-w-2xl mx-auto print:hidden">
-          <NavigationButtons
+          <StageFooter
             backPath={`/project/${projectId}/testing`}
             backLabel="Back to Testing"
             proceedPath={`/project/${projectId}/delivery`}
@@ -268,8 +266,7 @@ export default function TcoCalculatorPage() {
     <div className="cc min-h-screen bg-cc-page p-4 md:p-8 print:p-0">
 
       {/* Navigation, so neither prints. */}
-      <VerificationRail steps={phases} current="tco" projectId={projectId as string} />
-      <Stepper steps={phases} current="tco" projectId={projectId as string} />
+      <StageProgress steps={phases} current="tco" projectId={projectId as string} />
 
       {/* Main Container */}
       <div className="max-w-6xl mx-auto mt-8 space-y-8 w-full">
@@ -277,7 +274,7 @@ export default function TcoCalculatorPage() {
         {/* "Better Practice Mapped" was a badge with nothing mapped behind it.
             The title is the stage's name from `PHASES`; what kind of page this
             is stands beside it as a tag, not as a badge of its own colour. */}
-        <StageHeader
+        <StageHeader projectName={project?.name}
           stage="tco"
           eyebrow={<CcTag>Demonstration model</CcTag>}
           actions={
@@ -592,7 +589,7 @@ export default function TcoCalculatorPage() {
         </div>
 
         <div className="print:hidden">
-          <NavigationButtons
+          <StageFooter
             backPath={`/project/${projectId}/testing`}
             backLabel="Back to Testing"
             proceedPath={`/project/${projectId}/delivery`}

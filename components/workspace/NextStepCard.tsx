@@ -6,6 +6,7 @@ import CcLinkButton from '@/components/cc/LinkButton';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { NEXT_STEP_PROVENANCE, NOTHING_OPEN, type NextOpenPoint } from '@/lib/next-step';
 import type { WorkspaceView } from '@/lib/workspace-model';
+import { useWorkspaceLayer } from '@/hooks/useWorkspaceLayer';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { openStageLabel, wt } from '@/lib/workspace-messages';
 
@@ -65,6 +66,8 @@ export default function NextStepCard({
    */
   level?: 2 | 3;
 }) {
+  // The layer the reader is in travels with the link, so the way back returns to it.
+  const layer = useWorkspaceLayer();
   return (
     <div id={WORKSPACE_RETURN.nextStep} data-next-step="">
       <CcCard title={wt('nextStep.title')} level={level} meta={<CcProvenanceChip value={point?.provenance ?? NEXT_STEP_PROVENANCE} />}>
@@ -92,7 +95,7 @@ export default function NextStepCard({
             </p>
             <div className="mt-3">
               <CcLinkButton
-                href={stageHref({ base: `/project/${projectId}`, path: point.path, view, from: WORKSPACE_RETURN.nextStep })}
+                href={stageHref({ base: `/project/${projectId}`, path: point.path, view, from: WORKSPACE_RETURN.nextStep , layer })}
                 variant="primary"
               >
                 {openStageLabel(point.label)}

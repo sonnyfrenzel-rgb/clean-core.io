@@ -8,7 +8,7 @@ import { doc, updateDoc, deleteField } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
-import Stepper from '@/components/Stepper';
+import StageProgress from '@/components/StageProgress';
 import { FileText, Download, RefreshCw, Eye, LayoutTemplate } from 'lucide-react';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
@@ -30,7 +30,7 @@ import { getSecurityExplanation } from '@/components/design/SecurityHardeningChe
 import { getCloudServiceDetails } from '@/components/design/CloudServiceIntegrations';
 
 import CcSkeleton from '@/components/cc/Skeleton';
-import NavigationButtons from '@/components/NavigationButtons';
+import StageFooter from '@/components/StageFooter';
 import { withoutUnapprovedMoney, withoutUnapprovedMoneyDeep } from '@/lib/money-honesty';
 
 // Extracted Subcomponents
@@ -54,7 +54,6 @@ import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { detectFindings, summarize } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { SourceFile } from '@/lib/abap/findings-detector';
-import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, staleness, previousBasis } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
@@ -709,11 +708,10 @@ ${responseText.substring(0, 4000)}`;
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
-      <VerificationRail steps={phases} current="design" projectId={projectId as string} />
 
-      <Stepper steps={phases} current="design" projectId={projectId as string} />
+      <StageProgress steps={phases} current="design" projectId={projectId as string} />
 
-      <StageHeader stage="design">Review the generated target architecture and technical design.</StageHeader>
+      <StageHeader projectName={project?.name} stage="design">Review the generated target architecture and technical design.</StageHeader>
 
       <div className="overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc">
         <div role="status" className="flex items-center gap-3 border-b border-cc-line bg-cc-surface-muted px-4 py-4 sm:px-8">
@@ -756,13 +754,12 @@ ${responseText.substring(0, 4000)}`;
       {/* The rail used to render only while the page was loading: it sat in the
           early return and nowhere else, so it vanished the moment there was
           something to report on. */}
-      <VerificationRail steps={phases} current="design" projectId={projectId as string} />
 
-      <Stepper steps={phases} current="design" projectId={projectId as string} />
+      <StageProgress steps={phases} current="design" projectId={projectId as string} />
 
       <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
-      <StageHeader
+      <StageHeader projectName={project?.name}
         stage="design"
         actions={design ? (
           <div className="flex flex-wrap gap-2">
@@ -848,7 +845,7 @@ ${responseText.substring(0, 4000)}`;
         </div>
       </div>
 
-      <NavigationButtons 
+      <StageFooter 
         backPath={`/project/${projectId}/analyze`}
         backLabel="Back to Analysis"
         proceedPath={signOffCurrent ? `/project/${projectId}/transformation` : undefined}

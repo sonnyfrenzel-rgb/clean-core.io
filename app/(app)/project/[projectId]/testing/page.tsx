@@ -10,7 +10,7 @@ import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
-import Stepper from '@/components/Stepper';
+import StageProgress from '@/components/StageProgress';
 import type { Project } from '@/lib/types';
 import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
@@ -32,7 +32,7 @@ import nextDynamic from 'next/dynamic';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 import { cn } from '@/lib/utils';
-import NavigationButtons from '@/components/NavigationButtons';
+import StageFooter from '@/components/StageFooter';
 import { motion, AnimatePresence } from 'motion/react';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
@@ -42,7 +42,6 @@ const TestingBarChart = nextDynamic(() => import('@/components/TestingCharts').t
 
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';
-import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
@@ -890,9 +889,8 @@ export default function TestingSandboxPage() {
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
-      <VerificationRail steps={phases} current="testing" projectId={projectId as string} />
 
-      <Stepper steps={phases} current="testing" projectId={projectId as string} />
+      <StageProgress steps={phases} current="testing" projectId={projectId as string} />
 
       <StaleNotice
         title={`Built for ${previousBasis(project)}`}
@@ -904,7 +902,7 @@ export default function TestingSandboxPage() {
         ]}
       />
 
-      <StageHeader stage="testing">
+      <StageHeader projectName={project?.name} stage="testing">
         {isAbapCloud
           ? 'Generate ABAP Unit test class stubs. Nothing is compiled or executed in SAP ADT here: a mock run is simulated, and a tenant is only checked for connectivity.'
           : 'Generate test cases and run them against mocks in a restricted Node.js process.'}
@@ -2182,7 +2180,7 @@ export default function TestingSandboxPage() {
       </CcDialog>
 
 
-      <NavigationButtons
+      <StageFooter
         backPath={`/project/${projectId}/documentation`}
         backLabel="Back to Documentation"
         proceedPath={`/project/${projectId}/tco`}

@@ -86,7 +86,9 @@ test('6f3dc15e6f7b · generation waits for the model switch and respects it', ()
 
 test('c1c94b3caae4 · proceeding without a package is marked as leaving it behind', () => {
   const src = code();
-  const nav = src.slice(src.indexOf('<NavigationButtons'));
+  // The stage's footer passes NavigationButtons' props through unchanged for an
+  // account without the workspace (components/StageFooter.tsx).
+  const nav = src.slice(src.indexOf('<StageFooter'));
   expect(nav).toMatch(/incomplete=\{files\.length === 0\}/);
   expect(nav).toContain('incompleteReason="no transformed code has been generated"');
 });

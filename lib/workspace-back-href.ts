@@ -1,4 +1,4 @@
-import { isWorkspaceView } from '@/lib/workspace-model';
+import { isWorkspaceView, LAYERS, VIEW_LABELS, type LayerKey } from '@/lib/workspace-model';
 
 const LAYER_ID = /^[A-Za-z][\w-]{0,63}$/;
 
@@ -23,8 +23,12 @@ export function workspaceBackHref({
   const params = new URLSearchParams(search);
   const view = params.get('view');
   const from = params.get('from');
+  const layer = layerParam(params.get('layer'));
   const query = isWorkspaceView(view) ? `?view=${view}` : '';
-  const hash = from && LAYER_ID.test(from) ? `#${from}` : '';
+  // A layer the stage was opened from wins over the control it was opened by:
+  // the workspace holds the layer in its fragment (ADR-018), and returning to
+  // the toolbar of another layer would lose the place the reader was reading.
+  const hash = layer ? `#${layer}` : from && LAYER_ID.test(from) ? `#${from}` : '';
   return `/project/${encodeURIComponent(projectId)}${query}${hash}`;
 }
 
@@ -77,16 +81,58 @@ export function stageHref({
   path,
   view,
   from,
+  layer,
 }: {
   /** `/project/<id>`, or `/demo` for the demo's stages. */
   base: string;
   path: string;
   view?: string | null;
   from?: WorkspaceReturnPoint;
+  /** The layer the reader is in (`#need`), so the way back returns to it. */
+  layer?: string | null;
 }): string {
   const target = `${base}/${path}`;
   if (!isWorkspaceView(view)) return target;
   const params = new URLSearchParams({ view });
   if (from) params.set('from', from);
+  const known = layerParam(layer);
+  if (known) params.set('layer', known);
   return `${target}?${params.toString()}`;
+}
+
+/**
+ * The names of the workspace's layers, as the Anchor Bar shows them
+ * (`workspaceLayers` in `lib/workspace-model.ts`). Kept here, beside the rule
+ * that reads them, so the way back can say where it leads without computing a
+ * project's layers; `tests/stage-frame.spec.ts` holds the two lists together.
+ */
+export const LAYER_LABELS: Readonly<Record<LayerKey, string>> = {
+  need: 'Need & process',
+  standard: 'Standard fit',
+  costs: 'Costs & assumptions',
+  architecture: 'Architecture & dependencies',
+  evidence: 'Evidence & controls',
+  changes: 'Changes & commitments',
+};
+
+/** A layer key from an address, or `null` — `#need` and `need` both read as `need`. */
+export function layerParam(value: string | null | undefined): LayerKey | null {
+  if (typeof value !== 'string') return null;
+  const bare = value.replace(/^#/, '');
+  return (LAYERS as readonly string[]).includes(bare) ? (bare as LayerKey) : null;
+}
+
+/**
+ * Where "Back to workspace" leads, in words: `Business, Need & process`. Only
+ * what the address carries and the workspace understands; `null` when it
+ * carries neither, so the link then says nothing it does not know.
+ */
+export function stageBackPlace(search: string): string | null {
+  const params = new URLSearchParams(search);
+  const view = params.get('view');
+  const layer = layerParam(params.get('layer'));
+  const parts = [isWorkspaceView(view) ? VIEW_LABELS[view] : null, layer ? LAYER_LABELS[layer] : null].filter(
+    (p): p is string => Boolean(p),
+  );
+  return parts.length > 0 ? parts.join(', ') : null;
 }
