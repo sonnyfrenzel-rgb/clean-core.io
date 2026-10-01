@@ -165,6 +165,8 @@ export interface DemoProject {
   delivery: {
     /** What a real handover would still be missing here, named rather than ticked. */
     missing: string[];
+    /** The stage each line of `missing` is made in, index for index. */
+    missingAt: PhaseKey[];
   };
 
   rail: DemoRailStep[];
@@ -269,6 +271,9 @@ function planOf(findings: EvidenceFinding[]): { plan: DemoPlanItem[]; unplanned:
  * something a real run produces and this one does not, so the reader can see
  * where the demo stops rather than inferring it from a grey tick.
  */
+/** Where each line of `missingForHandover()` is made, in the same order. */
+const MISSING_AT: PhaseKey[] = ['analyze', 'transformation', 'documentation', 'testing', 'tco', 'delivery'];
+
 function missingForHandover(): string[] {
   return [
     'a signed run — the demo produces none, and every signed artefact derives from one',
@@ -345,7 +350,7 @@ export function buildDemoProject(): DemoProject {
       })),
     },
     economics: { loc: linesOfCode, scoreBefore: route.cleanCoreScore },
-    delivery: { missing: missingForHandover() },
+    delivery: { missing: missingForHandover(), missingAt: MISSING_AT },
   };
 
   const demo: DemoProject = { ...withoutRail, rail: buildRail(withoutRail) };

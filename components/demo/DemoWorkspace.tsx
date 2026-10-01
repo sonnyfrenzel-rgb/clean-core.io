@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { RotateCcw, ArrowRight, CheckCircle2, Circle, FileCode2 } from 'lucide-react';
+import { RotateCcw, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
 import StageHeader from '@/components/StageHeader';
 import Stepper from '@/components/Stepper';
 import CcButton from '@/components/cc/Button';
@@ -12,7 +12,6 @@ import CcField from '@/components/cc/Field';
 import CcIconButton from '@/components/cc/IconButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcTable from '@/components/cc/Table';
-import CcTextarea from '@/components/cc/Textarea';
 import { CcTag } from '@/components/cc/Tag';
 import { CcSeverity } from '@/components/cc/Identifier';
 import { normaliseSeverity } from '@/lib/severity';
@@ -20,6 +19,7 @@ import { formatNumber } from '@/lib/format';
 import { tcoForecast, TCO_TARGET_SCORE } from '@/lib/tco-model';
 import type { PhaseKey } from '@/lib/workflow-steps';
 import type { DemoProject } from '@/lib/demo-project';
+import DemoDelivery from '@/components/delivery/DemoDelivery';
 import { catalogForReader } from '@/lib/messages/demo';
 import {
   DEMO_INVITATION,
@@ -766,57 +766,6 @@ function Delivery({
   state: DemoState;
   patch: (n: Partial<DemoState>) => void;
 }) {
-  return (
-    <>
-      <CcMessageStrip state="information" headline="No pack leaves this screen.">
-        <span data-testid="demo-no-pack">
-          There is no download here, and there is no button that would make one. An audit pack is sealed against a
-          signed run and carries the account that made it; a demo has neither, so a pack out of the demo would be a
-          document that looks like evidence and is not. That is the one failure mode this product cannot afford, so
-          the capability is absent rather than disabled.
-        </span>
-      </CcMessageStrip>
-
-      <CcCard level={2} title="What a real handover would still need" count={demo.delivery.missing.length}>
-        <ul data-testid="demo-missing" className="m-0 list-none space-y-2 p-0">
-          {demo.delivery.missing.map((m) => (
-            <li key={m} className="flex items-start gap-2 cc-text-body text-cc-ink">
-              <FileCode2 size={16} className="mt-1 shrink-0 text-cc-ink-muted" aria-hidden={true} />
-              <span>{m}</span>
-            </li>
-          ))}
-        </ul>
-      </CcCard>
-
-      <CcCard level={2} title="Record a decision">
-        <p className="m-0 cc-text-body text-cc-ink-muted">
-          Try the shape of it. The choice and the note stay in this browser, they are attributed to nobody, and{' '}
-          {DEMO_RESET_LABEL} removes them.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {(['proceed', 'park'] as const).map((d) => (
-            <CcButton
-              key={d}
-              variant={state.decision === d ? 'dark' : 'ghost'}
-              density="cozy"
-              data-testid={`demo-decision-${d}`}
-              aria-pressed={state.decision === d}
-              onClick={() => patch({ decision: state.decision === d ? 'undecided' : d })}
-            >
-              {d === 'proceed' ? 'Proceed with the route' : 'Park it for now'}
-            </CcButton>
-          ))}
-        </div>
-        <div className="mt-4" data-testid="demo-decision-note">
-          <CcTextarea
-            label="Why"
-            rows={3}
-            value={state.decisionNote}
-            onChange={(v) => patch({ decisionNote: v })}
-            placeholder="The reasoning a colleague would need in six months."
-          />
-        </div>
-      </CcCard>
-    </>
-  );
+  // The object page of the real Delivery stage (owner decision 01.10.2026).
+  return <DemoDelivery demo={demo} state={state} patch={patch} />;
 }

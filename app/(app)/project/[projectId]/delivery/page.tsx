@@ -17,7 +17,7 @@ import { buildBoardDeck, type RunTrendPoint } from '@/lib/board-deck';
 import { detectFindings } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel } from '@/lib/abap/class-model';
-import { Download, CheckCircle2, FileCode2, Eye, Presentation, AlertCircle, Briefcase, BookOpen, Gauge, FileText, ListChecks, ChevronRight, ShieldCheck, Workflow, FlaskConical } from 'lucide-react';
+import { Download, CheckCircle2, FileCode2, Eye, Presentation, AlertCircle, Briefcase, BookOpen, Gauge, FileText, Workflow, FlaskConical, Package, ArrowRight } from 'lucide-react';
 import clsx from 'clsx';
 import JSZip from 'jszip';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
@@ -40,10 +40,7 @@ import { STATE_CLASSES } from '@/components/cc/state';
 import StaleNotice from '@/components/StaleNotice';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcDisclosure from '@/components/cc/Disclosure';
-import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcDateText from '@/components/cc/DateText';
-import { CcStateDot } from '@/components/cc/StateText';
-import { provenance, type SemanticState } from '@/lib/provenance';
 import { CONDITION_STATUS_LABEL, conditionsSummary } from '@/lib/decision-card';
 import {
   AUDIT_PACK_FILES,
@@ -52,7 +49,11 @@ import {
   buildHandoverChain,
   chainSummary,
   confirmationsOf,
+  handoverFacets,
+  handoverGroups,
   handoverNextStep,
+  handoverStatusLine,
+  handoverStillNeeded,
   handoverTimeline,
   packEvidenceChain,
   signedOffTarget,
@@ -60,7 +61,20 @@ import {
   storedDecisionOf,
   type HandoverLink,
   type HandoverProject,
+  type StillNeeded,
 } from '@/lib/handover';
+import {
+  DeliveryAnchorBar,
+  DeliveryArtefactCard,
+  DeliveryChainBoxes,
+  DeliveryFacets,
+  DeliveryKeyValues,
+  DeliveryMetaline,
+  DeliveryNextStep,
+  DeliverySection,
+  DeliveryStatusLine,
+  DeliveryStillNeeded,
+} from '@/components/delivery/DeliveryObjectPage';
 
 /** The documentation stage's name, as the stepper spells it (UX-169). */
 const DOCUMENTATION_LABEL = PHASES.find((p) => p.key === 'documentation')?.label ?? 'Documentation';
@@ -626,7 +640,6 @@ jobs:
   const hp = project as HandoverProject;
   const chain = buildHandoverChain(hp, phases);
   const summary = chainSummary(chain);
-  const openLinks = chain.filter((l) => l.state === 'open');
   const testsLink = chain.find((l) => l.key === 'tests')!;
   const decision = storedDecisionOf(hp);
   const target = signedOffTarget(hp);
@@ -635,14 +648,32 @@ jobs:
   const packChain = packEvidenceChain(hp);
   const nextStep = handoverNextStep(hp, phases, blockers, chain, projectId as string);
   const exportedAt = project.auditMetadata?.auditPackExportedAt ?? null;
+  const handoverState = { blockers, exportedAt: exportedAt ? String(exportedAt) : null };
+  const groups = handoverGroups(hp, chain, handoverState);
+  const stillNeeded = handoverStillNeeded(hp, chain, handoverState);
+  const facets = handoverFacets(hp, phases, chain, handoverState);
+  const statusLine = handoverStatusLine(hp, chain);
+  const packFacet = facets.find((f) => f.key === 'audit-pack')!;
   const signedFiles = AUDIT_PACK_FILES.filter((f) => f.kind === 'signed').length;
   const attestedFiles = AUDIT_PACK_FILES.filter((f) => f.kind === 'attested').length;
+  const fingerprint = project.auditMetadata?.inputFingerprint;
+  const modelCard = project.auditMetadata?.modelCard;
+  const catalog = typeof hp.sapApiCatalogVersion === 'string' && hp.sapApiCatalogVersion ? hp.sapApiCatalogVersion : null;
+  const engineVersion = (typeof hp.analyzerVersion === 'string' && hp.analyzerVersion) || modelCard?.engineVersion || null;
+  const artefactCount = 6;
+
+  /** Where each still-needed line is made, as a link a reader can follow. */
+  const neededHref = (stage: StillNeeded['stage']) =>
+    stage === 'management'
+      ? `/project/${projectId}?view=management`
+      : stage === 'delivery'
+        ? '#audit-pack'
+        : `/project/${projectId}/${stage}`;
+  const neededWhere = (stage: StillNeeded['stage']) =>
+    stage === 'management' ? 'Management view' : PHASES.find((p) => p.key === stage)?.label ?? stage;
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-0">
-      {/* Rendered here as well as in the loading state — it used to exist only
-          there, and disappeared as soon as the page had loaded. */}
-
       <StageProgress steps={phases} current="delivery" projectId={projectId as string} />
 
       {/* The lead used to read "The transformation lifecycle is complete … ready
@@ -660,391 +691,255 @@ jobs:
           : handoverBlocked
             ? 'What is on record for handover, and what is not yet.'
             : `What is on record for handover, and what is not yet. ${deliveryPhase.detail}`}
+        <DeliveryMetaline
+          items={[
+            { key: 'file', value: fingerprint?.fileName || null },
+            { key: 'lines', value: typeof fingerprint?.lineCount === 'number' ? `${fingerprint.lineCount} lines` : null },
+            { key: 'catalog', label: 'catalog', value: catalog },
+            { key: 'engine', label: 'engine', value: engineVersion },
+          ]}
+        />
       </StageHeader>
+
+      {/* Object-page header (proposal A): four facets and the status line. */}
+      <div className="-mt-4">
+        <DeliveryFacets facets={facets} />
+        <DeliveryStatusLine items={statusLine} />
+      </div>
 
       <StaleNotice
         title={`Handover blocked — built for ${previousBasis(project)}`}
         reasons={blockers.map((b) => `${b.charAt(0).toUpperCase()}${b.slice(1)} — regenerate it for the current ${previousBasis(project) === 'a previous target profile' ? 'target profile' : 'source'} before handing over.`)}
       />
 
-      {/* Next step — mockup s6: one rule-based card with the page's primary
-          action. Read off the same contract as the stepper (`lib/handover.ts`). */}
-      <section
-        aria-labelledby="handover-next-title"
-        data-handover-next={nextStep.kind}
-        className="mb-6 flex flex-col gap-4 rounded-cc-card border border-cc-line border-l-4 border-l-cc-ink bg-cc-surface p-4 shadow-cc md:flex-row md:items-center"
-      >
-        <ListChecks size={20} aria-hidden="true" className="hidden shrink-0 text-cc-ink md:block" />
-        <div className="min-w-0 flex-1">
-          <p className="cc-text-label text-cc-ink-muted">Next step · rule-based</p>
-          <h2 id="handover-next-title" className="cc-text-h2 mt-1 text-cc-ink">{nextStep.headline}</h2>
-          <p className="cc-text-cell mt-1 text-cc-ink-muted">{nextStep.reason}</p>
-        </div>
-        <div className="flex flex-col gap-2 md:items-end">
-          {nextStep.kind === 'open' ? (
-            <CcLinkButton href={nextStep.href} variant="primary">{nextStep.action}</CcLinkButton>
-          ) : nextStep.kind === 'none' ? (
-            <>
-              <span className="cc-text-meta text-cc-ink-muted">
-                ZIP, {AUDIT_PACK_FILES.length} files · No model call
-              </span>
-              <CcButton
-                variant="primary"
-                onClick={downloadAuditPack}
-                busy={auditPackBusy}
-                icon={<Download size={16} aria-hidden="true" />}
-              >
-                Download signed audit pack
-              </CcButton>
-            </>
-          ) : null}
-        </div>
-      </section>
+      <DeliveryAnchorBar
+        items={[
+          { id: 'evidence-chain', label: 'Evidence chain' },
+          { id: 'still-needed', label: 'Still needed', count: stillNeeded.length },
+          { id: 'artefacts', label: 'Artefacts', count: artefactCount },
+        ]}
+      />
 
-      <div className="mb-12 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex min-w-0 flex-col gap-6">
-          {/* The evidence chain — every link always present, with its state,
-              where it comes from, and what is missing. */}
-          <section
-            aria-labelledby="evidence-chain-title"
-            data-evidence-chain=""
-            className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc"
-          >
-            <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <h2 id="evidence-chain-title" className="cc-text-h3 text-cc-ink">Evidence chain</h2>
-              <span className="cc-text-meta text-cc-ink-muted" data-chain-summary="">
-                {summary.onRecord} of {summary.of} links on record · {summary.proven} proven
-                {summary.open > 0 ? ` · ${summary.open} open` : ''}
-                {summary.stale > 0 ? ` · ${summary.stale} stale` : ''}
-              </span>
-            </div>
-            <p className="cc-text-cell mb-4 text-cc-ink-muted">
-              From the code to the decision. Each link says what is on record, where it comes from, and what it does not cover.
-            </p>
-
-            {/* The chain at a glance: one mark per link, in order. */}
-            <ol aria-label="Chain at a glance" className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-2">
-              {chain.map((l, i) => (
-                <li key={l.key} className="flex items-center gap-2">
-                  <a href={`#chain-${l.key}`} className="inline-flex items-center gap-1 rounded-cc-row cc-text-meta text-cc-ink hover:underline">
-                    <CcStateDot state={linkTone(l)} hollow={l.state === 'open'} />
-                    {l.label}
-                  </a>
-                  {i < chain.length - 1 ? <ChevronRight size={12} aria-hidden="true" className="text-cc-ink-muted" /> : null}
-                </li>
-              ))}
-            </ol>
-
-            <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {chain.map((l, i) => (
-                <ChainLinkBox key={l.key} link={l} n={i + 1} projectId={projectId as string}>
-                  {l.key === 'transformation' ? (
-                    <IntegrityLine
-                      icon={
-                        // Roadmap 0.2 (UX-027): existence is not verification.
-                        // Generated code is neutral, never the green of a
-                        // passed check; nothing there is the warning colour.
-                        hasGeneratedCode && !codeStale ? (
-                          <FileCode2 size={18} aria-hidden="true" data-integrity-icon="present" className="text-cc-ink-muted mt-0.5 shrink-0" />
-                        ) : (
-                          <AlertCircle size={18} aria-hidden="true" data-integrity-icon="missing" className="text-cc-warning mt-0.5 shrink-0" />
-                        )
-                      }
-                      title={
-                        <span data-stage-output={hasGeneratedCode ? 'generatedCode' : undefined}>
-                          {!hasGeneratedCode
-                            ? 'No transformed code generated'
-                            : isAbapCloud ? 'abapGit repository layout' : 'Transformed CAP structure'}
-                        </span>
-                      }
-                      detail={
-                        !hasGeneratedCode
-                          ? 'Run stage 3 to produce the code this line reports on'
-                          : codeStale
-                            ? `Generated from ${previousBasis(project)} — regenerate in stage 3`
-                            : isAbapCloud
-                              ? 'ABAP Cloud packages generated — not compiled or tested'
-                              : 'TypeScript package generated — not compiled or tested'
-                      }
-                    />
-                  ) : l.key === 'documentation' ? (
-                    <IntegrityLine
-                      icon={
-                        hasDocumentation && !docsStale ? (
-                          <FileText size={18} aria-hidden="true" data-integrity-icon="blueprint" className="text-cc-ink-muted mt-0.5 shrink-0" />
-                        ) : (
-                          <AlertCircle size={18} aria-hidden="true" data-integrity-icon="missing" className="text-cc-warning mt-0.5 shrink-0" />
-                        )
-                      }
-                      title={
-                        <span data-stage-output={hasDocumentation ? 'documentation' : undefined}>
-                          {!hasDocumentation
-                            ? 'No blueprint generated'
-                            : documentationFromCode
-                              ? 'Process documentation, read from the code'
-                              : 'Process blueprint, earlier form'}
-                        </span>
-                      }
-                      detail={
-                        !hasDocumentation
-                          ? 'Run stage 4 to produce the documentation this line reports on'
-                          : docsStale
-                            ? `Written for ${previousBasis(project)} — regenerate in stage 4`
-                            : documentationFromCode
-                              ? 'Every statement with its lines'
-                              : 'Written by a language model from 1,000-character slices'
-                      }
-                    />
-                  ) : l.key === 'tests' ? (
-                    <>
-                      <IntegrityLine
-                        icon={
-                          // Green only when an execution is on record — `proven`
-                          // on this page as on the stepper and the rail. A row of
-                          // `Passed` strings is client-writable and is not one.
-                          testingPhase.proven ? (
-                            <CheckCircle2 size={18} aria-hidden="true" className="text-cc-success mt-0.5 shrink-0" />
-                          ) : (
-                            <AlertCircle size={18} aria-hidden="true" className="text-cc-warning mt-0.5 shrink-0" />
-                          )
-                        }
-                        title={
-                          <span data-delivery-testing data-stage-output={testCaseCount > 0 ? 'testCases' : undefined}>
-                            {testCaseCount === 0
-                              ? 'No test suite generated'
-                              : testsPassed + testsFailed === 0
-                                ? `Test draft: ${testCaseCount} ${isAbapCloud ? 'ABAP Unit' : 'Sandbox'} tests, no run on record`
-                                : `${testsPassed} of ${testCaseCount} ${isAbapCloud ? 'ABAP Unit' : 'Sandbox'} tests passed`}
-                          </span>
-                        }
-                        detail={
-                          testCaseCount === 0
-                            ? 'Nothing to verify'
-                            : testingPhase.state === 'stale'
-                              ? `Written for ${previousBasis(project)} — regenerate in stage 5`
-                              : testsPassed === testCaseCount
-                                ? (!testingPhase.proven
-                                    ? 'Marked as passed — no test run is on record behind these verdicts. Run the suite in stage 5.'
-                                    : isAbapCloud
-                                      ? 'ADT: every generated test returned a pass'
-                                      : 'Sandbox: every generated test returned a pass')
-                                : [
-                                    testsFailed > 0 ? `${testsFailed} failed` : null,
-                                    testsSimulated > 0 ? `${testsSimulated} simulated only` : null,
-                                    testsConnectivity > 0 ? `${testsConnectivity} connectivity checks — not tests of the code` : null,
-                                    testsWithoutVerdict > 0 ? `${testsWithoutVerdict} without a result` : null,
-                                  ].filter(Boolean).join(' · ') || 'Not run yet'
-                        }
-                      />
-                      <IntegrityLine
-                        icon={
-                          // Neutral: the figure is the generator's estimate, and
-                          // a green check beside "not measured" read as a
-                          // measurement (UX review of b88c77b, fc15ffd1018a).
-                          coveragePercentage !== undefined && testingPhase.state !== 'stale' ? (
-                            <Gauge size={18} aria-hidden="true" data-integrity-icon="estimate" className="text-cc-ink-muted mt-0.5 shrink-0" />
-                          ) : (
-                            <AlertCircle size={18} aria-hidden="true" data-integrity-icon="missing" className="text-cc-warning mt-0.5 shrink-0" />
-                          )
-                        }
-                        title={
-                          <span data-stage-output={coveragePercentage !== undefined ? 'coverageEstimate' : undefined}>
-                            {coveragePercentage !== undefined ? `${coveragePercentage}% estimated coverage` : 'Coverage not estimated'}
-                          </span>
-                        }
-                        detail={
-                          coveragePercentage !== undefined && testingPhase.state === 'stale' ? (
-                            <span data-coverage-stale>Estimated for a previous source — regenerate in stage 5</span>
-                          ) : coveragePercentage !== undefined ? (
-                            <span data-coverage-provenance className="flex flex-wrap items-center gap-2">
-                              <CcProvenanceChip value="proposed" />
-                              <span>Estimated by the test generator — not measured</span>
-                            </span>
-                          ) : (
-                            'No estimate was produced with the test suite'
-                          )
-                        }
-                      />
-                    </>
-                  ) : null}
-                </ChainLinkBox>
-              ))}
-            </ol>
-
-            {/* What a signature on the package will and will not stand behind. */}
-            <div className="mt-4 flex flex-col gap-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 sm:flex-row sm:items-start">
-              <ShieldCheck size={16} aria-hidden="true" className="mt-0.5 hidden shrink-0 text-cc-ink-muted sm:block" />
-              <p className="cc-text-cell text-cc-ink">
-                <span className="mr-2"><CcProvenanceChip value="proven" note="signed when downloaded" /></span>
-                The server signs the audit pack with HMAC-SHA256, and with Ed25519 where it holds a signing key; the manifest names the
-                key. The signature covers the run’s findings, the input fingerprint, the engine’s recommendation, the model card and the
-                chain below the pack. The narrative text, the level grade and everything a model generated are not signed.
-                {exportedAt ? (
-                  <span className="block mt-1 text-cc-ink-muted">
-                    Last sealed <CcDateText value={exportedAt} format="iso" />.
+      <div className="mt-5 mb-12 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex min-w-0 flex-col gap-5">
+          {/* Next step — one rule-based card with the page's primary action.
+              Read off the same contract as the stepper (`lib/handover.ts`). */}
+          <DeliveryNextStep
+            kind={nextStep.kind}
+            headline={nextStep.headline}
+            reason={nextStep.reason}
+            action={
+              nextStep.kind === 'open' ? (
+                <CcLinkButton href={nextStep.href} variant="primary" icon={<ArrowRight size={14} aria-hidden="true" />}>
+                  {nextStep.action}
+                </CcLinkButton>
+              ) : nextStep.kind === 'none' ? (
+                <>
+                  <span className="cc-text-meta text-cc-ink-muted">
+                    ZIP, {AUDIT_PACK_FILES.length} files · No model call
                   </span>
-                ) : null}
-              </p>
-            </div>
-          </section>
-
-          {/* The handover package — what can leave, in what state. */}
-          <section
-            aria-labelledby="handover-package-title"
-            data-handover-package=""
-            className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc"
-          >
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <h2 id="handover-package-title" className="cc-text-h3 text-cc-ink">Handover package</h2>
-              {/* "Ready for Deployment" used to be unconditional. The state comes
-                  from the delivery phase of the shared contract. */}
-              {exportedAt && !handoverBlocked ? (
-                <CcObjectStatus value="handed-over" />
-              ) : deliveryPhase.done ? (
-                <span className={clsx('cc-text-meta flex items-center gap-1', STATE_CLASSES.information.text)}>
-                  <CcStateDot state="information" /> Ready to hand over
-                </span>
-              ) : (
-                <span className={clsx('cc-text-meta flex items-center gap-1', STATE_CLASSES.warning.text)}>
-                  <CcStateDot state="warning" /> Incomplete
-                </span>
-              )}
-            </div>
-
-            <dl className="mb-4 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-[120px_minmax(0,1fr)]">
-              <dt className="cc-text-label text-cc-ink-muted sm:pt-1">Route</dt>
-              <dd className="cc-text-cell text-cc-ink">
-                {target
-                  ? <>{target} <span className="text-cc-ink-muted">— confirmed{project.approvedBy ? ` by ${project.approvedBy}` : ''}</span> <CcProvenanceChip value="confirmed" note="self-declaration" /></>
-                  : <>{project.extensibilityRoute || 'Not determined'} <span className="text-cc-ink-muted">— the engine’s recommendation; no target is confirmed</span></>}
-              </dd>
-              <dt className="cc-text-label text-cc-ink-muted sm:pt-1">Contents</dt>
-              <dd className="cc-text-cell text-cc-ink">
-                Signed audit pack ({AUDIT_PACK_FILES.length} files) · delivery bundle (code, tests, documentation) · process as BPMN 2.0 XML · business documentation · developer guide · stakeholder slides
-              </dd>
-              <dt className="cc-text-label text-cc-ink-muted sm:pt-1">Handed over</dt>
-              <dd className="cc-text-cell text-cc-ink">
-                {exportedAt
-                  ? <>Audit pack last sealed <CcDateText value={exportedAt} format="iso" /> by the owner of this project</>
-                  : 'No audit pack has been downloaded yet.'}
-              </dd>
-              <dt className="cc-text-label text-cc-ink-muted sm:pt-1">Acceptance</dt>
-              <dd className="cc-text-cell text-cc-ink">
-                Not recorded here. Acceptance by operations happens outside this product, and delivery is not acceptance.
-              </dd>
-              <dt className="cc-text-label text-cc-ink-muted sm:pt-1">Open</dt>
-              <dd className="cc-text-cell text-cc-ink" data-handover-open="">
-                {openLinks.length === 0
-                  ? 'Nothing — every link of the chain has a record.'
-                  : `${openLinks.map((l) => l.label).join(', ')} — named in the package as not determined, not left out.`}
-              </dd>
-            </dl>
-
-            <ul className="flex flex-col gap-3">
-              <PackageRow
-                icon={<ShieldCheck size={16} aria-hidden="true" />}
-                title="Signed audit pack"
-                chip={<CcProvenanceChip value="proven" note="signed by the server" />}
-                detail={`ZIP with ${AUDIT_PACK_FILES.length} files: ${signedFiles} signed, ${attestedFiles} with your own statements sealed, and the manifest. No model is called.`}
-                action={
                   <CcButton
-                    variant="secondary"
-                    density="compact"
-                    disabled={handoverBlocked}
-                    busy={auditPackBusy}
-                    data-handover-audit-pack
+                    variant="primary"
                     onClick={downloadAuditPack}
+                    busy={auditPackBusy}
                     icon={<Download size={16} aria-hidden="true" />}
                   >
-                    {handoverBlocked ? 'Audit pack blocked' : 'Download audit pack'}
+                    Download signed audit pack
                   </CcButton>
-                }
-              >
-                {auditPackError && (
-                  <CcMessageStrip
-                    state="error"
-                    headline="The audit pack could not be generated."
-                    announce
-                    actions={<CcButton onClick={downloadAuditPack}>Try again</CcButton>}
-                  >
-                    {auditPackError}
-                  </CcMessageStrip>
-                )}
-                <CollapsibleAccordion
-                  title="Audit pack contents"
-                  badge={handoverBlocked ? 'Blocked' : project.auditMetadata?.inputFingerprint ? 'Available' : 'Partial'}
-                  badgeSeverity={handoverBlocked || !project.auditMetadata?.inputFingerprint ? 'warning' : 'neutral'}
-                >
-                  <div className="space-y-4">
-                    <ul className="flex flex-col gap-1" data-pack-files="">
-                      {AUDIT_PACK_FILES.map((f) => (
-                        <li key={f.path} className="grid grid-cols-1 gap-x-3 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)_auto] sm:items-center">
-                          <code className="cc-text-meta font-cc-mono break-all text-cc-ink">{f.path}</code>
-                          <span className="cc-text-cell text-cc-ink-muted">{f.what}</span>
-                          <span className="cc-text-meta text-cc-ink-muted">
-                            {f.kind === 'signed' ? 'signed' : f.kind === 'attested' ? 'sealed, your word' : 'carries the signature'}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      <div className={AUDIT_FACT}>
-                        <span className="cc-text-label text-cc-ink-muted block mb-1">Input fingerprint</span>
-                        {project.auditMetadata?.inputFingerprint ? (
-                          <>
-                            <span data-stage-output="auditMetadata" className="cc-text-identifier font-cc-mono text-cc-ink block truncate" title={project.auditMetadata.inputFingerprint.sha256}>
-                              SHA-256: {project.auditMetadata.inputFingerprint.sha256.substring(0, 16)}…
-                            </span>
-                            <span className="cc-text-meta font-medium text-cc-ink-muted">
-                              {project.auditMetadata.inputFingerprint.lineCount} lines · {project.auditMetadata.inputFingerprint.objectType} · {project.auditMetadata.inputFingerprint.fileName}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="cc-text-meta font-medium text-cc-ink-muted">Not recorded — run the analysis again to record one</span>
-                        )}
-                      </div>
-                      <div className={AUDIT_FACT}>
-                        <span className="cc-text-label text-cc-ink-muted block mb-1">Architecture</span>
-                        <span className="cc-text-identifier text-cc-ink block">
-                          {project.targetArchitecture
-                            ? { rap: 'In-App RAP', cap: 'Side-by-Side CAP', integration: 'Integration Suite', event: 'Event Mesh', retire: 'Retire' }[project.targetArchitecture] || project.targetArchitecture
-                            : project.extensibilityRoute || 'Not determined'}
-                        </span>
-                        <span className="cc-text-meta font-medium text-cc-ink-muted">
-                          {project.approvedByArchitect
-                            ? `Confirmed${project.approvedBy ? ` by ${project.approvedBy}` : ''} — in the pack as your statement`
-                            : 'Not confirmed'}
-                        </span>
-                      </div>
-                      <div className={AUDIT_FACT}>
-                        <span className="cc-text-label text-cc-ink-muted block mb-1">Engine and model</span>
-                        <span className="cc-text-identifier text-cc-ink block">
-                          {project.auditMetadata?.modelCard?.engineVersion || APP_VERSION}
-                        </span>
-                        {/* Roadmap 1.2 — no default model id where the card names none. */}
-                        <span className="cc-text-meta font-medium text-cc-ink-muted">
-                          {project.auditMetadata?.modelCard?.model
-                            ? `${project.auditMetadata.modelCard.model} · ${project.auditMetadata.modelCard.byokUsed ? 'own key' : 'platform key'}`
-                            : project.auditMetadata?.modelCard?.modelParticipation === 'none'
-                              ? 'No model — deterministic evidence only'
-                              : project.auditMetadata?.modelCard?.modelParticipation === 'narrative'
-                                ? 'Narrative origin not established'
-                                : 'Model not recorded'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </CollapsibleAccordion>
-              </PackageRow>
+                </>
+              ) : undefined
+            }
+          />
 
-              <PackageRow
-                icon={<FileCode2 size={16} aria-hidden="true" />}
+          {/* The evidence chain — the pack's four steps, each read from the
+              links behind it; every one of the nine links one level deeper. */}
+          <DeliverySection
+            id="evidence-chain"
+            title="Evidence chain"
+            meta="requirement → decision → receipt → artefact"
+            data-evidence-chain=""
+          >
+            <DeliveryChainBoxes
+              boxes={groups.map((g) => ({
+                key: g.key,
+                label: g.label,
+                title: g.title,
+                sub: g.sub,
+                provenance: g.provenance,
+                provenanceNote: g.provenanceNote,
+                footer:
+                  g.key === 'delivery'
+                    ? `${g.links[0].label}: ${g.links[0].state === 'open' ? 'none' : g.links[0].state === 'stale' ? 'stale' : 'on record'}`
+                    : `${g.onRecord} of ${g.links.length} ${g.links.length === 1 ? 'link' : 'links'} on record`,
+              }))}
+            />
+
+            <div className="mt-4 border-t border-cc-line pt-3" data-chain-detail="">
+              <CcDisclosure title="Link by link" count={summary.of}>
+                <p className="cc-text-meta mb-3 text-cc-ink-muted" data-chain-summary="">
+                  {summary.onRecord} of {summary.of} links on record · {summary.proven} proven
+                  {summary.open > 0 ? ` · ${summary.open} open` : ''}
+                  {summary.stale > 0 ? ` · ${summary.stale} stale` : ''}. Each link says what is on record, where it comes
+                  from, and what it does not cover.
+                </p>
+                <ol className="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3">
+                  {chain.map((l, i) => (
+                    <ChainLinkBox key={l.key} link={l} n={i + 1} projectId={projectId as string}>
+                      {l.key === 'transformation' ? (
+                        <IntegrityLine
+                          icon={
+                            // Roadmap 0.2 (UX-027): existence is not verification.
+                            // Generated code is neutral, never the green of a
+                            // passed check; nothing there is the warning colour.
+                            hasGeneratedCode && !codeStale ? (
+                              <FileCode2 size={18} aria-hidden="true" data-integrity-icon="present" className="text-cc-ink-muted mt-0.5 shrink-0" />
+                            ) : (
+                              <AlertCircle size={18} aria-hidden="true" data-integrity-icon="missing" className="text-cc-warning mt-0.5 shrink-0" />
+                            )
+                          }
+                          title={
+                            <span data-stage-output={hasGeneratedCode ? 'generatedCode' : undefined}>
+                              {!hasGeneratedCode
+                                ? 'No transformed code generated'
+                                : isAbapCloud ? 'abapGit repository layout' : 'Transformed CAP structure'}
+                            </span>
+                          }
+                          detail={
+                            !hasGeneratedCode
+                              ? 'Run stage 3 to produce the code this line reports on'
+                              : codeStale
+                                ? `Generated from ${previousBasis(project)} — regenerate in stage 3`
+                                : isAbapCloud
+                                  ? 'ABAP Cloud packages generated — not compiled or tested'
+                                  : 'TypeScript package generated — not compiled or tested'
+                          }
+                        />
+                      ) : l.key === 'documentation' ? (
+                        <IntegrityLine
+                          icon={
+                            hasDocumentation && !docsStale ? (
+                              <FileText size={18} aria-hidden="true" data-integrity-icon="blueprint" className="text-cc-ink-muted mt-0.5 shrink-0" />
+                            ) : (
+                              <AlertCircle size={18} aria-hidden="true" data-integrity-icon="missing" className="text-cc-warning mt-0.5 shrink-0" />
+                            )
+                          }
+                          title={
+                            <span data-stage-output={hasDocumentation ? 'documentation' : undefined}>
+                              {!hasDocumentation
+                                ? 'No blueprint generated'
+                                : documentationFromCode
+                                  ? 'Process documentation, read from the code'
+                                  : 'Process blueprint, earlier form'}
+                            </span>
+                          }
+                          detail={
+                            !hasDocumentation
+                              ? 'Run stage 4 to produce the documentation this line reports on'
+                              : docsStale
+                                ? `Written for ${previousBasis(project)} — regenerate in stage 4`
+                                : documentationFromCode
+                                  ? 'Every statement with its lines'
+                                  : 'Written by a language model from 1,000-character slices'
+                          }
+                        />
+                      ) : l.key === 'tests' ? (
+                        <>
+                          <IntegrityLine
+                            icon={
+                              // Green only when an execution is on record — `proven`
+                              // on this page as on the stepper and the rail. A row of
+                              // `Passed` strings is client-writable and is not one.
+                              testingPhase.proven ? (
+                                <CheckCircle2 size={18} aria-hidden="true" className="text-cc-success mt-0.5 shrink-0" />
+                              ) : (
+                                <AlertCircle size={18} aria-hidden="true" className="text-cc-warning mt-0.5 shrink-0" />
+                              )
+                            }
+                            title={
+                              <span data-delivery-testing data-stage-output={testCaseCount > 0 ? 'testCases' : undefined}>
+                                {testCaseCount === 0
+                                  ? 'No test suite generated'
+                                  : testsPassed + testsFailed === 0
+                                    ? `Test draft: ${testCaseCount} ${isAbapCloud ? 'ABAP Unit' : 'Sandbox'} tests, no run on record`
+                                    : `${testsPassed} of ${testCaseCount} ${isAbapCloud ? 'ABAP Unit' : 'Sandbox'} tests passed`}
+                              </span>
+                            }
+                            detail={
+                              testCaseCount === 0
+                                ? 'Nothing to verify'
+                                : testingPhase.state === 'stale'
+                                  ? `Written for ${previousBasis(project)} — regenerate in stage 5`
+                                  : testsPassed === testCaseCount
+                                    ? (!testingPhase.proven
+                                        ? 'Marked as passed — no test run is on record behind these verdicts. Run the suite in stage 5.'
+                                        : isAbapCloud
+                                          ? 'ADT: every generated test returned a pass'
+                                          : 'Sandbox: every generated test returned a pass')
+                                    : [
+                                        testsFailed > 0 ? `${testsFailed} failed` : null,
+                                        testsSimulated > 0 ? `${testsSimulated} simulated only` : null,
+                                        testsConnectivity > 0 ? `${testsConnectivity} connectivity checks — not tests of the code` : null,
+                                        testsWithoutVerdict > 0 ? `${testsWithoutVerdict} without a result` : null,
+                                      ].filter(Boolean).join(' · ') || 'Not run yet'
+                            }
+                          />
+                          <IntegrityLine
+                            icon={
+                              // Neutral: the figure is the generator's estimate, and
+                              // a green check beside "not measured" read as a
+                              // measurement (UX review of b88c77b, fc15ffd1018a).
+                              coveragePercentage !== undefined && testingPhase.state !== 'stale' ? (
+                                <Gauge size={18} aria-hidden="true" data-integrity-icon="estimate" className="text-cc-ink-muted mt-0.5 shrink-0" />
+                              ) : (
+                                <AlertCircle size={18} aria-hidden="true" data-integrity-icon="missing" className="text-cc-warning mt-0.5 shrink-0" />
+                              )
+                            }
+                            title={
+                              <span data-stage-output={coveragePercentage !== undefined ? 'coverageEstimate' : undefined}>
+                                {coveragePercentage !== undefined ? `${coveragePercentage}% estimated coverage` : 'Coverage not estimated'}
+                              </span>
+                            }
+                            detail={
+                              coveragePercentage !== undefined && testingPhase.state === 'stale' ? (
+                                <span data-coverage-stale>Estimated for a previous source — regenerate in stage 5</span>
+                              ) : coveragePercentage !== undefined ? (
+                                <span data-coverage-provenance className="flex flex-wrap items-center gap-2">
+                                  <CcProvenanceChip value="proposed" />
+                                  <span>Estimated by the test generator — not measured</span>
+                                </span>
+                              ) : (
+                                'No estimate was produced with the test suite'
+                              )
+                            }
+                          />
+                        </>
+                      ) : null}
+                    </ChainLinkBox>
+                  ))}
+                </ol>
+              </CcDisclosure>
+            </div>
+          </DeliverySection>
+
+          {/* What a real handover still needs — each line jumps to its tool. */}
+          <DeliverySection id="still-needed" title="What a real handover still needs" meta={String(stillNeeded.length)} data-handover-open="">
+            <DeliveryStillNeeded
+              empty="Nothing — every link of the chain has a record, and the audit pack is sealed."
+              items={stillNeeded.map((n) => ({ key: n.key, text: n.text, where: neededWhere(n.stage), href: neededHref(n.stage) }))}
+            />
+          </DeliverySection>
+
+          {/* The artefacts that leave with the package — built in the browser, not signed. */}
+          <DeliverySection id="artefacts" title="Artefacts" meta="review material — not signed" data-handover-package="">
+            <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-2">
+              <DeliveryArtefactCard
+                icon={<Package size={18} aria-hidden="true" />}
                 title="Delivery bundle"
                 chip={hasGeneratedCode ? <CcProvenanceChip value="proposed" /> : <CcProvenanceChip value="not-determined" />}
-                detail="ZIP with the generated code, the test suite, the documentation and the developer guide. Built in your browser and not signed."
+                detail="The generated code, the test suite, the documentation and the developer guide as one ZIP. Built in your browser and not signed."
                 action={
                   <CcButton
-                    variant="secondary"
+                    variant="ghost"
                     density="compact"
                     onClick={downloadZip}
                     disabled={handoverBlocked}
@@ -1089,46 +984,50 @@ jobs:
                     </CcMessageStrip>
                   </div>
                 )}
-              </PackageRow>
+              </DeliveryArtefactCard>
 
-              <PackageRow
-                icon={<Workflow size={16} aria-hidden="true" />}
-                title="Process as BPMN 2.0 XML"
-                chip={<CcProvenanceChip value={signedSource ? 'reconstructed' : 'not-determined'} />}
+              <DeliveryArtefactCard
+                icon={<Eye size={18} aria-hidden="true" />}
+                title="Stakeholder briefing"
+                chip={<CcProvenanceChip value={deck && !analysisStale ? 'reconstructed' : 'not-determined'} />}
                 detail={
-                  signedSource
-                    ? 'Reconstructed from the code the signed run read, every element with its lines. Opens in SAP Signavio and any BPMN modeller. Not signed.'
-                    : 'Not available: the source on this project no longer matches the one the signed run read, so the line anchors would point at other lines.'
+                  analysisStale ? (
+                    <span data-delivery-deck-blocked>Not available — the analysis is from a previous source. Re-run it in stage 1.</span>
+                  ) : deck ? (
+                    'Seven slides from the signed run and the engine’s findings. No model wrote them, and they carry no savings figure.'
+                  ) : (
+                    'No slides available'
+                  )
                 }
                 action={
-                  signedSource ? (
+                  deck && !analysisStale ? (
                     <CcButton
-                      variant="secondary"
+                      variant="ghost"
                       density="compact"
-                      onClick={downloadBpmn}
-                      disabled={handoverBlocked}
-                      data-handover-bpmn
-                      icon={<Download size={16} aria-hidden="true" />}
+                      onClick={() => {
+                        document.getElementById('presentation-preview')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      icon={<Presentation size={16} aria-hidden="true" />}
                     >
-                      Download .bpmn
+                      View slides
                     </CcButton>
-                  ) : null
+                  ) : undefined
                 }
               />
 
-              <PackageRow
-                icon={<Briefcase size={16} aria-hidden="true" />}
+              <DeliveryArtefactCard
+                icon={<Briefcase size={18} aria-hidden="true" />}
                 title="Business documentation"
                 chip={project.businessDocumentation ? <CcProvenanceChip value="proposed" /> : <CcProvenanceChip value="not-determined" />}
                 detail={
                   project.businessDocumentation
                     ? 'Operating procedures, roles and controls, as Markdown. Written by the language model on the Documentation stage.'
-                    : <>Not generated yet. Go to the <Link href={`/project/${projectId}/documentation`} className={TEXT_LINK}>{DOCUMENTATION_LABEL} stage</Link> to write it.</>
+                    : `Not generated — written on the ${DOCUMENTATION_LABEL} stage.`
                 }
                 action={
                   project.businessDocumentation ? (
                     <CcButton
-                      variant="secondary"
+                      variant="ghost"
                       density="compact"
                       // Blocked with the bundle that carries the same file: this
                       // documentation is not tracked by digest of its own.
@@ -1144,28 +1043,19 @@ jobs:
                     >
                       {handoverBlocked ? 'Blocked — see above' : 'Export Markdown'}
                     </CcButton>
-                  ) : null
+                  ) : (
+                    <CcLinkButton href={`/project/${projectId}/documentation`}>Go to {DOCUMENTATION_LABEL}</CcLinkButton>
+                  )
                 }
               />
 
-              <PackageRow
-                icon={<FlaskConical size={16} aria-hidden="true" />}
-                title="Test scenarios"
-                chip={<CcProvenanceChip value={testsLink.provenance} />}
-                detail={
-                  testCaseCount === 0
-                    ? 'No test suite generated, so none travels with the package.'
-                    : `${testCaseCount} scenario${testCaseCount === 1 ? '' : 's'} in the delivery bundle. ${testsLink.missing ?? ''}`
-                }
-              />
-
-              <PackageRow
-                icon={<BookOpen size={16} aria-hidden="true" />}
+              <DeliveryArtefactCard
+                icon={<BookOpen size={18} aria-hidden="true" />}
                 title="Developer guide"
                 detail="General rules for the chosen route — a fixed template, not read from this code."
                 action={
                   <CcButton
-                    variant="secondary"
+                    variant="ghost"
                     density="compact"
                     onClick={() => {
                       const blob = new Blob([generateDeveloperGuidelines(project)], { type: "text/markdown;charset=utf-8" });
@@ -1179,38 +1069,46 @@ jobs:
                 }
               />
 
-              <PackageRow
-                icon={<Presentation size={16} aria-hidden="true" />}
-                title="Stakeholder slides"
+              <DeliveryArtefactCard
+                icon={<Workflow size={18} aria-hidden="true" />}
+                title="Process as BPMN 2.0 XML"
+                chip={<CcProvenanceChip value={signedSource ? 'reconstructed' : 'not-determined'} />}
                 detail={
-                  analysisStale ? (
-                    <span data-delivery-deck-blocked>Not available — the analysis is from a previous source. Re-run it in stage 1.</span>
-                  ) : deck ? (
-                    'Seven slides built from the signed run and the engine’s findings. No model wrote them, and they carry no savings figure.'
-                  ) : (
-                    'No slides available'
-                  )
+                  signedSource
+                    ? 'Reconstructed from the code the signed run read, every element with its lines. Opens in SAP Signavio and any BPMN modeller. Not signed.'
+                    : 'Not available: the source on this project no longer matches the one the signed run read, so the line anchors would point at other lines.'
                 }
                 action={
-                  deck && !analysisStale ? (
+                  signedSource ? (
                     <CcButton
                       variant="ghost"
                       density="compact"
-                      onClick={() => {
-                        document.getElementById('presentation-preview')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      icon={<Eye size={16} aria-hidden="true" />}
+                      onClick={downloadBpmn}
+                      disabled={handoverBlocked}
+                      data-handover-bpmn
+                      icon={<Download size={16} aria-hidden="true" />}
                     >
-                      View slides
+                      Download .bpmn
                     </CcButton>
-                  ) : null
+                  ) : undefined
+                }
+              />
+
+              <DeliveryArtefactCard
+                icon={<FlaskConical size={18} aria-hidden="true" />}
+                title="Test scenarios"
+                chip={<CcProvenanceChip value={testsLink.provenance} />}
+                detail={
+                  testCaseCount === 0
+                    ? 'No test suite generated, so none travels with the package.'
+                    : `${testCaseCount} scenario${testCaseCount === 1 ? '' : 's'} in the delivery bundle. ${testsLink.missing ?? ''}`
                 }
               />
             </ul>
-          </section>
+          </DeliverySection>
 
           {/* Conditions — collapsed, as in the mockup. */}
-          <section className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc" data-handover-conditions="">
+          <section className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3 shadow-cc sm:px-5" data-handover-conditions="">
             <CcDisclosure title="Conditions" count={decision?.conditions.length ?? 0} level={2}>
               {!decision ? (
                 <p className="cc-text-cell text-cc-ink-muted">
@@ -1239,23 +1137,131 @@ jobs:
           </section>
         </div>
 
-        <aside className="flex min-w-0 flex-col gap-6" aria-label="Signature, confirmations and timeline">
-          <section aria-labelledby="signature-covers-title" className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc" data-signature-covers="">
-            <h2 id="signature-covers-title" className="cc-text-h3 mb-3 text-cc-ink">What the signature covers</h2>
-            <p className="cc-text-label text-cc-ink-muted">Signed · {signedFiles} files</p>
+        <aside className="flex min-w-0 flex-col gap-4" aria-label="Audit pack, signature, confirmations and timeline">
+          {/* The signed audit pack — the one artefact the server signs. */}
+          <DeliverySection
+            id="audit-pack"
+            title="Audit pack"
+            meta={
+              <span
+                data-audit-pack-state={packFacet.value}
+                className={clsx(
+                  'inline-flex items-center rounded-full border px-2 py-px text-[11px] font-semibold leading-4',
+                  packFacet.value === 'Available'
+                    ? clsx(STATE_CLASSES.neutral.bg, STATE_CLASSES.neutral.border, STATE_CLASSES.neutral.text)
+                    : clsx(STATE_CLASSES.warning.bg, STATE_CLASSES.warning.border, STATE_CLASSES.warning.text),
+                )}
+              >
+                {packFacet.value}
+              </span>
+            }
+          >
+            <DeliveryKeyValues
+              rows={[
+                {
+                  k: 'Input fingerprint',
+                  v: fingerprint ? (
+                    <span data-stage-output="auditMetadata" className="block">
+                      <span className="block truncate font-cc-mono text-[12px]" title={fingerprint.sha256}>
+                        SHA-256 {fingerprint.sha256.substring(0, 16)}…
+                      </span>
+                      <span className="cc-text-meta font-medium text-cc-ink-muted">
+                        {fingerprint.lineCount} lines · {fingerprint.objectType} · {fingerprint.fileName}
+                      </span>
+                    </span>
+                  ) : (
+                    'Not recorded — run the analysis again'
+                  ),
+                },
+                {
+                  k: 'Decision',
+                  v: target
+                    ? `${target} — confirmed${project.approvedBy ? ` by ${project.approvedBy}` : ''}, in the pack as your statement`
+                    : 'Pending sign-off',
+                },
+                { k: 'Engine', v: modelCard?.engineVersion || APP_VERSION },
+                {
+                  // Roadmap 1.2 — no default model id where the card names none.
+                  k: 'Model',
+                  v: modelCard?.model
+                    ? `${modelCard.model} · ${modelCard.byokUsed ? 'own key' : 'platform key'}`
+                    : modelCard?.modelParticipation === 'none'
+                      ? 'No model — deterministic evidence only'
+                      : modelCard?.modelParticipation === 'narrative'
+                        ? 'Narrative origin not established'
+                        : 'Not recorded',
+                },
+                { k: 'Last sealed', v: exportedAt ? <CcDateText value={exportedAt} format="iso" /> : 'Never' },
+              ]}
+            />
+            <div className="mt-4">
+              <CcButton
+                variant="ghost"
+                density="compact"
+                disabled={handoverBlocked}
+                busy={auditPackBusy}
+                data-handover-audit-pack
+                onClick={downloadAuditPack}
+                icon={<Download size={16} aria-hidden="true" />}
+              >
+                {handoverBlocked ? 'Audit pack blocked' : 'Download audit pack'}
+              </CcButton>
+            </div>
+            {auditPackError && (
+              <div className="mt-3">
+                <CcMessageStrip
+                  state="error"
+                  headline="The audit pack could not be generated."
+                  announce
+                  actions={<CcButton onClick={downloadAuditPack}>Try again</CcButton>}
+                >
+                  {auditPackError}
+                </CcMessageStrip>
+              </div>
+            )}
+            <p className="m-0 mt-3 cc-text-meta">
+              <Link href="/verify-pack" className="text-cc-ink underline underline-offset-2 hover:text-cc-brand-deep">
+                Verify an existing audit pack →
+              </Link>
+            </p>
+            <div className="mt-3">
+              <CollapsibleAccordion
+                title="Audit pack contents"
+                badge={handoverBlocked ? 'Blocked' : project.auditMetadata?.inputFingerprint ? 'Available' : 'Partial'}
+                badgeSeverity={handoverBlocked || !project.auditMetadata?.inputFingerprint ? 'warning' : 'neutral'}
+              >
+                <p className="cc-text-meta mb-2 text-cc-ink-muted">
+                  ZIP with {AUDIT_PACK_FILES.length} files: {signedFiles} signed, {attestedFiles} with your own statements sealed, and the manifest. No model is called.
+                </p>
+                <ul className="m-0 flex list-none flex-col gap-2 p-0" data-pack-files="">
+                  {AUDIT_PACK_FILES.map((f) => (
+                    <li key={f.path} className="flex flex-col">
+                      <code className="cc-text-meta font-cc-mono break-all text-cc-ink">{f.path}</code>
+                      <span className="cc-text-meta font-medium text-cc-ink-muted">
+                        {f.what} · {f.kind === 'signed' ? 'signed' : f.kind === 'attested' ? 'sealed, your word' : 'carries the signature'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </CollapsibleAccordion>
+            </div>
+          </DeliverySection>
+
+          <DeliverySection id="signature-covers" title="What a signature covers" data-signature-covers="">
+            <p className="m-0 cc-text-label text-cc-ink-muted">Signed · {signedFiles} files</p>
             <ul className="cc-text-cell mt-1 list-disc pl-4 text-cc-ink">
               {SIGNED_COVERS.map((s) => <li key={s}>{s}</li>)}
             </ul>
-            <p className="cc-text-label mt-4 text-cc-ink-muted">Sealed, not vouched for</p>
-            <p className="cc-text-cell mt-1 text-cc-ink">
+            <p className="m-0 mt-3 cc-text-label text-cc-ink-muted">Sealed, not vouched for</p>
+            <p className="m-0 mt-1 cc-text-cell text-cc-ink">
               Your own statements — the file cannot be changed unnoticed, but nobody vouches for what it says.
             </p>
-            <p className="cc-text-label mt-4 text-cc-ink-muted">Not signed</p>
+            <p className="m-0 mt-3 cc-text-label text-cc-ink-muted">Not signed</p>
             <ul className="cc-text-cell mt-1 list-disc pl-4 text-cc-ink">
               {NOT_SIGNED.map((s) => <li key={s}>{s}</li>)}
             </ul>
-            <p className="cc-text-label mt-4 text-cc-ink-muted">The pack’s own chain</p>
-            <ul className="mt-1 flex flex-col gap-1" data-pack-chain="">
+            <p className="m-0 mt-3 cc-text-label text-cc-ink-muted">The pack’s own chain</p>
+            <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0" data-pack-chain="">
               {packChain.steps.map((s) => (
                 <li key={s.id} className="flex flex-wrap items-center justify-between gap-2">
                   <span className="cc-text-cell text-cc-ink">{s.label}</span>
@@ -1269,18 +1275,17 @@ jobs:
                 </li>
               ))}
             </ul>
-            <p className="cc-text-cell mt-4 text-cc-ink-muted">
-              Anyone can check a pack with the offline verifier — no account needed.{' '}
-              <Link href="/verify-pack" className={TEXT_LINK}>Verify a pack</Link>
+            <p className="m-0 mt-3 cc-text-meta text-cc-ink-muted">
+              The server signs with HMAC-SHA256, and with Ed25519 where it holds a signing key; the manifest names the key.
+              Anyone can check a pack with the offline verifier — no account needed.
             </p>
-          </section>
+          </DeliverySection>
 
-          <section aria-labelledby="confirmed-by-title" className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc" data-confirmations="">
-            <h2 id="confirmed-by-title" className="cc-text-h3 mb-3 text-cc-ink">Who confirmed what</h2>
+          <DeliverySection id="confirmed-by" title="Who confirmed what" data-confirmations="">
             {confirmations.length === 0 ? (
-              <p className="cc-text-cell text-cc-ink-muted">Nobody has confirmed anything on this project yet.</p>
+              <p className="m-0 cc-text-cell text-cc-ink-muted">Nobody has confirmed anything on this project yet.</p>
             ) : (
-              <ul className="flex flex-col gap-3">
+              <ul className="m-0 flex list-none flex-col gap-3 p-0">
                 {confirmations.map((c, i) => (
                   <li key={`${c.what}-${i}`} className="flex flex-col gap-1">
                     <span className="cc-text-cell text-cc-ink">{c.what}</span>
@@ -1293,12 +1298,12 @@ jobs:
                 ))}
               </ul>
             )}
-            <p className="cc-text-meta mt-3 text-cc-ink-muted">
+            <p className="m-0 mt-3 cc-text-meta text-cc-ink-muted">
               A confirmation is the signed-in account’s self-declaration, not an organisational mandate.
             </p>
-          </section>
+          </DeliverySection>
 
-          <section className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc" data-handover-timeline="">
+          <section className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3 shadow-cc" data-handover-timeline="">
             <CcDisclosure title="Timeline" count={timeline.length} level={2}>
               {timeline.length === 0 ? (
                 <p className="cc-text-cell text-cc-ink-muted">No dated event is on record.</p>
@@ -1322,7 +1327,7 @@ jobs:
 
       {/* Stakeholder slides — the board deck, at its own type scale (D.30). */}
       {deck && (
-        <section id="presentation-preview" aria-labelledby="board-presentation-title" className="mb-12">
+        <section id="presentation-preview" aria-labelledby="board-presentation-title" className="mb-12 scroll-mt-32">
           <div className="mb-4">
             <h2 id="board-presentation-title" className="cc-text-h2 text-cc-ink">Stakeholder slides</h2>
             <p className="cc-text-cell text-cc-ink-muted mt-1">
@@ -1356,16 +1361,6 @@ jobs:
   );
 }
 
-/** A fact of the audit pack: a quiet tile on the muted surface. */
-const AUDIT_FACT = 'rounded-cc-row border border-cc-line bg-cc-surface-muted p-3';
-
-/** The colour of a link's mark: green only for a proof, never for a draft. */
-function linkTone(l: HandoverLink): SemanticState {
-  if (l.state === 'stale') return 'warning';
-  if (l.state === 'open') return 'neutral';
-  return provenance(l.provenance).state;
-}
-
 /**
  * One link of the evidence chain: its place, its name, what is on record, where
  * it comes from and who or what stands behind it, and what it does not cover.
@@ -1392,7 +1387,7 @@ function ChainLinkBox({
       data-chain-state={link.state}
       className={clsx(
         'flex min-w-0 flex-col gap-2 rounded-cc-row border bg-cc-surface p-3',
-        link.state === 'open' ? 'border-dashed border-cc-neutral-border' : 'border-cc-field-border',
+        link.state === 'open' ? 'border-dashed border-cc-neutral-border' : 'border-cc-line',
       )}
     >
       <div className="flex items-center justify-between gap-2">
@@ -1436,44 +1431,5 @@ function IntegrityLine({ icon, title, detail }: { icon: ReactNode; title: ReactN
         <span className="cc-text-meta font-medium text-cc-ink-muted block mt-1">{detail}</span>
       </div>
     </div>
-  );
-}
-
-/**
- * One artefact of the handover package: what it is, where it comes from, and
- * its action. Stacks on a phone, a row from `sm` up.
- */
-function PackageRow({
-  icon,
-  title,
-  chip,
-  detail,
-  action,
-  children,
-}: {
-  icon: ReactNode;
-  title: string;
-  chip?: ReactNode;
-  detail: ReactNode;
-  action?: ReactNode;
-  children?: ReactNode;
-}) {
-  return (
-    <li className="flex flex-col gap-3 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3" data-package-row={title}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <span className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-cc-row border border-cc-line bg-cc-surface text-cc-ink-muted sm:flex">
-          {icon}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="cc-text-identifier text-cc-ink">{title}</h3>
-            {chip}
-          </div>
-          <p className="cc-text-cell mt-1 text-cc-ink-muted">{detail}</p>
-        </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
-      </div>
-      {children}
-    </li>
   );
 }

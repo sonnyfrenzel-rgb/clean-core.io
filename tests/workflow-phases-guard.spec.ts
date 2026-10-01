@@ -198,7 +198,12 @@ test.describe('every view reads the contract', () => {
     const src = read(stage('delivery'));
     expect(src).not.toContain('The transformation lifecycle is complete');
     expect(src).not.toContain('All artefacts present');
-    expect(src).toContain('deliveryPhase.done');
+    // Readiness comes from the phase contract: the page hands the phases to
+    // the handover facets (proposal A), and those read the delivery phase.
+    expect(src).toContain('handoverFacets(hp, phases, chain, handoverState)');
+    const handover = read('lib/handover.ts');
+    expect(handover).toContain("const delivery = phase('delivery');");
+    expect(handover).toContain('delivery.done');
   });
 });
 
@@ -288,6 +293,8 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
 
     // Delivery
     await page.goto(`/project/${PROJECT_ID}/delivery`, { waitUntil: 'domcontentloaded' });
+    // The nine links sit one level deeper, behind "Link by link" (proposal A).
+    await page.locator('[data-chain-detail] [data-cc-disclosure-trigger]').click({ timeout: 30000 });
     const deliveryTesting = page.locator('[data-delivery-testing]');
     await deliveryTesting.waitFor({ timeout: 30000 });
     await expect(deliveryTesting).toContainText('Test draft');
