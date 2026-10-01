@@ -244,9 +244,10 @@ export default function ProcessMap({
 
   const problems = useMemo(() => {
     const out = new Map<string | null, PlaneProblems>();
-    for (const id of nav.planes.keys()) out.set(id, planeProblems(model, nav, id, rules.byNode));
+    const rulesState = !rules.ready ? 'loading' : rules.failed ? 'failed' : 'ready';
+    for (const id of nav.planes.keys()) out.set(id, planeProblems(model, nav, id, rules.byNode, rulesState));
     return out;
-  }, [model, nav, rules.byNode]);
+  }, [model, nav, rules.byNode, rules.ready, rules.failed]);
 
   /**
    * Overlays come from two places and the rest of this file may not care which.

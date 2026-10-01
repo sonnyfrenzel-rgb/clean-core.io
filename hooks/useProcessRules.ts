@@ -26,6 +26,8 @@ export interface ProcessRules {
   /** How many rules the source has in total, rules with no element included. */
   total: number;
   ready: boolean;
+  /** The rule reader failed: `byNode` is empty because nothing was read, not because nothing decides. */
+  failed?: boolean;
 }
 
 const EMPTY: ProcessRules = { byNode: new Map(), total: 0, ready: false };
@@ -61,7 +63,7 @@ export function useProcessRules(source: string | null, nodeIds: readonly string[
     // A source the rule reader cannot get through is not a reason to lose the
     // map: the overlay is then empty and says so, like any other count of zero.
     build().catch(() => {
-      if (!cancelled) setHeld({ key, value: { byNode: new Map(), total: 0, ready: true } });
+      if (!cancelled) setHeld({ key, value: { byNode: new Map(), total: 0, ready: true, failed: true } });
     });
 
     return () => {

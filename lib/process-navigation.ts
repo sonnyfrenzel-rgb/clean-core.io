@@ -500,6 +500,12 @@ export function planeProblems(
   nav: ProcessNavigation,
   plane: string | null,
   rulesByNode: ReadonlyMap<string, readonly string[]>,
+  /**
+   * Whether `rulesByNode` is an answer. While the rules are read, or when they
+   * could not be read, an empty map is not "nothing is hard-coded", and the
+   * line must not say so (QA review of a88149856dcc).
+   */
+  rulesState: 'ready' | 'loading' | 'failed' = 'ready',
 ): PlaneProblems {
   const ids = nav.planes.get(plane) ?? [];
   const byId = new Map(model.elements.map((element) => [element.id, element]));
@@ -539,9 +545,13 @@ export function planeProblems(
     : `${unanchored.length} of ${plural(elements.length, 'element', 'elements')} carry no line anchor${
       reasons.length ? ` — ${reasons.join(' ')}` : '.'
     }`;
-  const second = hardCoded.length === 0
-    ? 'No hard-coded value decides here.'
-    : `${plural(hardCoded.length, 'hard-coded value decides', 'hard-coded values decide')} here (${hardCoded.join(', ')}).`;
+  const second = rulesState === 'loading' && hardCoded.length === 0
+    ? 'Whether a hard-coded value decides here is still being read.'
+    : rulesState === 'failed'
+      ? 'Whether a hard-coded value decides here could not be read.'
+      : hardCoded.length === 0
+        ? 'No hard-coded value decides here.'
+        : `${plural(hardCoded.length, 'hard-coded value decides', 'hard-coded values decide')} here (${hardCoded.join(', ')}).`;
 
   return {
     plane,
