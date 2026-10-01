@@ -48,6 +48,7 @@ export default function FindingsFocus({
   onShow,
   levelOf,
   source,
+  onOpenLine,
 }: {
   picks: readonly FocusPick[];
   /** All findings (rows) — "3 of 25". */
@@ -56,6 +57,8 @@ export default function FindingsFocus({
   /** The finding's clean core level, null when it names no object or the lookup has not answered. */
   levelOf?: (pick: FocusPick) => CloudReadinessGrade | null;
   source?: string;
+  /** Opens the source panel at a line; without it the anchors are plain text. */
+  onOpenLine?: (line: number) => void;
 }) {
   if (picks.length === 0) {
     return (
@@ -92,7 +95,10 @@ export default function FindingsFocus({
               <div className="flex flex-wrap items-center gap-2">
                 {sev ? <CcSeverity value={sev} /> : null}
                 {level ? <CcCleanCoreLevel value={level} /> : null}
-                <CcAnchor label={`Source line ${row.lines[0] ?? ef.lineStart}`}>{`L${row.lines[0] ?? ef.lineStart}`}</CcAnchor>
+                <CcAnchor
+                  label={`Source line ${row.lines[0] ?? ef.lineStart}${onOpenLine ? ', open the source' : ''}`}
+                  onOpen={onOpenLine ? () => onOpenLine(row.lines[0] ?? ef.lineStart) : undefined}
+                >{`L${row.lines[0] ?? ef.lineStart}`}</CcAnchor>
                 <span className="font-cc-mono cc-text-meta font-medium text-cc-ink-muted">{ef.id}</span>
               </div>
               <h3 className="m-0 cc-text-h3 text-cc-ink">
@@ -128,7 +134,7 @@ export default function FindingsFocus({
                   <p className="m-0 flex flex-wrap items-center gap-1 cc-text-meta text-cc-ink-muted">
                     also{' '}
                     {more.slice(0, 4).map((l) => (
-                      <CcAnchor key={l} label={`Source line ${l}`}>{`L${l}`}</CcAnchor>
+                      <CcAnchor key={l} label={`Source line ${l}${onOpenLine ? ', open the source' : ''}`} onOpen={onOpenLine ? () => onOpenLine(l) : undefined}>{`L${l}`}</CcAnchor>
                     ))}
                     {more.length > 4 ? ` +${more.length - 4}` : ''}
                   </p>

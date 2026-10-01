@@ -36,6 +36,7 @@
 
 import { howToSteps } from './how-to-content';
 import { LIVE_TEST_EXECUTION } from './locked-paths';
+import { SCORE_BANDS_SOURCE, scoreBandsProse, scoreDeductionsProse } from './clean-core-score';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // KNOWLEDGE HUB CONTENT
@@ -367,6 +368,8 @@ export const SCORE_NAMING_AND_SAP_FIGURES = `
 ## THE CLEAN CORE SCORE AND SAP'S OWN FIGURES (never conflate these)
 
 **Our figure.** The **Clean Core Score** is published by Clean-Core.io, runs 0–100, and **higher is better**. It measures how far the analysed custom ABAP is decoupled from the SAP standard core, computed deterministically before any AI runs. It is a measure of code structure — no cost, saving or ROI figure is derived from it anywhere in the product.
+
+**What a score means** (${SCORE_BANDS_SOURCE}; a grade, not a compliance percentage, and not an SAP measure): ${scoreBandsProse()} How it is computed: ${scoreDeductionsProse()}
 
 **SAP publishes no Clean Core Score.** SAP has no metric of that name. If a user says SAP gave them a Clean Core Score, they are most likely looking at one of SAP's three figures below. Ask which.
 

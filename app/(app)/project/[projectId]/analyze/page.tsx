@@ -107,7 +107,7 @@ import CcAnchor from '@/components/cc/Anchor';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import { accessUseOfKind, findingRows, processStepBands, SEVERITY_ORDER } from '@/lib/findings-view';
-import { SCORE_BANDS, scoreBreakdown } from '@/lib/clean-core-score';
+import { SCORE_BANDS, SCORE_BANDS_SOURCE, SCORE_NATURE, scoreBreakdown } from '@/lib/clean-core-score';
 import { readProcess } from '@/lib/first-look';
 import { catalogForReader } from '@/lib/messages/demo';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
@@ -1155,8 +1155,9 @@ export default function AnalyzePage() {
             steps={processSteps}
             notAssessed={notAssessedItems}
             scoreSection={scoreSection}
+            fileName={project?.auditMetadata?.inputFingerprint?.fileName || (uploadedFileName !== 'manual-input.abap' ? uploadedFileName : 'source')}
             sideTop={
-              <ObjectSection side title="Route" right={<CcProvenanceChip value="reconstructed" note="fixed rules" />}>
+              <ObjectSection side title="Extensibility route" right={<CcProvenanceChip value="reconstructed" note="fixed rules" />}>
                 <div className="flex items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3">
                   <span aria-hidden={true} className="grid h-10 w-10 shrink-0 place-items-center rounded-cc-card border border-cc-line bg-cc-surface text-cc-ink">
                     <Cloud size={20} aria-hidden="true" />
@@ -1230,10 +1231,10 @@ export default function AnalyzePage() {
       // to render this object would have shipped them.
       const bizFallback = {
         legacyAssetScore: analysisData.businessValueAnalysis?.legacyAssetScore ?? null,
-        technicalDebtLevel: analysisData.businessValueAnalysis?.technicalDebtLevel ??
-          (typeof analysisData.cleanCoreScore === 'number'
-            ? (analysisData.cleanCoreScore < 50 ? 'High' : analysisData.cleanCoreScore < 75 ? 'Medium' : 'Low')
-            : null),
+        // The model's own level, or none. A level read off the score with
+        // thresholds of its own (< 50 high, < 75 medium) was a second reading
+        // of the score beside Clean-Core.io's bands (lib/clean-core-score.ts).
+        technicalDebtLevel: analysisData.businessValueAnalysis?.technicalDebtLevel ?? null,
         valueDrivers: analysisData.businessValueAnalysis?.valueDrivers ?? null,
         plainEnglishActionPlan: modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) ?? [
           "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
@@ -1331,12 +1332,13 @@ export default function AnalyzePage() {
             steps={processSteps}
             notAssessed={notAssessedItems}
             scoreSection={scoreSection}
+            fileName={project?.auditMetadata?.inputFingerprint?.fileName || (uploadedFileName !== 'manual-input.abap' ? uploadedFileName : 'source')}
             sideBottom={renderNotDeterminedSide(openItems.length)}
             sideTop={
               /* The route, as the rules recommended it or as the reader chose it. */
               <ObjectSection
                 side
-                title="Route"
+                title="Extensibility route"
                 right={routeIsOverridden ? <CcProvenanceChip value="confirmed" note="your choice" /> : <CcProvenanceChip value="reconstructed" note="fixed rules" />}
               >
                 <div className="flex items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3">
@@ -2045,7 +2047,7 @@ export default function AnalyzePage() {
       >
         <div className="space-y-3">
           {/* The bands are read off the score's own deduction table
-              (lib/clean-core-score.ts) — guidance, not a standard. The four
+              (lib/clean-core-score.ts) — Clean-Core.io's official bands. The four
               "architecture tiers" that stood here (100 / 90 / 85 / 0) were
               archetypes no rule produced: the floor is 5, and a modification
               costs at most 40. */}
@@ -2063,7 +2065,7 @@ export default function AnalyzePage() {
             </div>
           ))}
           <p className="cc-text-meta font-medium text-cc-ink-muted">
-            The bands are guidance read off the score&apos;s own rules; neither SAP nor this product sets a pass mark.
+            {SCORE_BANDS_SOURCE}. {SCORE_NATURE}.
           </p>
         </div>
       </CcDialog>

@@ -1,12 +1,24 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
-import { Activity, ShieldCheck, Check, Code2, KeyRound, ArrowLeftRight } from 'lucide-react';
+import { Activity, Check, ArrowLeftRight } from 'lucide-react';
 import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
 import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
 import { publicButton } from '@/components/landing/public-button';
 import CcTable from '@/components/cc/Table';
+import {
+  SCORE_BANDS,
+  SCORE_BANDS_SOURCE,
+  SCORE_DEDUCTIONS,
+  SCORE_FLOOR,
+  SCORE_NATURE,
+  UNASSESSED_POINTS_CAP,
+  UNASSESSED_POINTS_PER_KIND,
+  bandRange,
+  scoreBandsProse,
+  scoreDeductionsProse,
+} from '@/lib/clean-core-score';
 
 /**
  * The Clean Core Score, explained — and told apart from SAP's own figures.
@@ -69,8 +81,12 @@ export const metadata: Metadata = withTwitterCard({
  */
 const faqs = [
   {
-    question: "What does a Clean Core Score of 100% mean?",
-    answer: "A score of 100% means that no construct the analysis assessed produced a scored finding against SAP's published Clean Core guidelines. It says nothing about the constructs the analysis lists as not assessed, so a 100 is alignment only for the assessed part of the code — read the list of unassessed constructs before relying on it. On these criteria the assessed code is well-positioned for upgrades — subject to your own testing and validation."
+    question: "What is a good Clean Core Score?",
+    answer: `${SCORE_BANDS_SOURCE}: ${scoreBandsProse()} Higher is better. ${SCORE_NATURE}.`,
+  },
+  {
+    question: "What does a Clean Core Score of 100 mean?",
+    answer: "A score of 100 means that no construct the analysis assessed produced a scored finding against SAP's published Clean Core guidelines. It says nothing about the constructs the analysis lists as not assessed, so a 100 is alignment only for the assessed part of the code — read the list of unassessed constructs before relying on it. On these criteria the assessed code is well-positioned for upgrades — subject to your own testing and validation."
   },
   {
     question: "Is the Clean Core Score the same as SAP's Technical Debt Score?",
@@ -86,7 +102,7 @@ const faqs = [
   },
   {
     question: "How is the Clean Core Score calculated?",
-    answer: "By deterministic static analysis, before any AI is involved. The engine parses the ABAP, resolves its data dependencies, and checks each SAP object it touches against SAP's published Cloudification Repository. Released interfaces, key-user extension points and modern ABAP Cloud syntax raise the score; direct database modifications and calls to objects SAP has not released lower it. The same input gives the same score every time."
+    answer: `By deterministic static analysis, before any AI is involved. The engine parses the ABAP, resolves its data dependencies and checks each SAP object it touches against SAP's published Cloudification Repository. ${scoreDeductionsProse()} The same input gives the same score every time.`
   }
 ];
 
@@ -275,8 +291,8 @@ export default function CleanCoreScorePage() {
             </h2>
             <p className={BODY}>
               The <strong>Clean Core Score</strong> is a single figure for how far customer-specific
-              ABAP has been decoupled from the SAP standard. It runs from 0% (a fully modified legacy
-              system) to 100% (standard ERP without modifications). <strong>Higher is better.</strong>
+              ABAP has been decoupled from the SAP standard. It runs from {SCORE_FLOOR} (the floor, however much was
+              found) to 100 (nothing in the assessed code cost a point). <strong>Higher is better.</strong>
             </p>
             <p className={BODY}>
               It is a property of code, not of a company. It is computed from the uploaded source and
@@ -356,45 +372,53 @@ export default function CleanCoreScorePage() {
             </p>
           </section>
 
-          <section className="space-y-4">
-            <h2 className={H2}>
-              The Calculation Basis of the KPI
-            </h2>
+          <section className="space-y-4" data-score-bands-section="">
+            <h2 className={H2}>What a good score is — and a bad one</h2>
             <p className={BODY}>
-              Our analysis algorithm evaluates uploaded custom code projects based on four key pillars:
+              {SCORE_BANDS_SOURCE}. Each band&rsquo;s meaning is something the deductions below guarantee
+              for every score in it. {SCORE_NATURE}.
             </p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className={PILLAR}>
-                <ShieldCheck className="text-cc-brand-strong" size={24} aria-hidden="true" />
-                <h3 className="text-base font-bold text-cc-ink">API &amp; Interface Release</h3>
-                <p className={PILLAR_TEXT}>
-                  Checks whether the SAP APIs and Data Dictionary objects used are officially released by SAP for cloud extensions.
-                </p>
-              </div>
+            <ol className="grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2">
+              {[...SCORE_BANDS].reverse().map((band) => (
+                <li key={band.key} data-score-band={band.key} className={PILLAR}>
+                  <p className="m-0 font-cc-mono text-sm font-bold text-cc-ink">{bandRange(band)}</p>
+                  <h3 className="m-0 text-base font-bold text-cc-ink">{band.label}</h3>
+                  <p className={PILLAR_TEXT}>{band.meaning}</p>
+                  <p className="m-0 text-xs font-medium leading-relaxed text-cc-ink-muted">{band.because}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
 
-              <div className={PILLAR}>
-                <Activity className="text-cc-brand-strong" size={24} aria-hidden="true" />
-                <h3 className="text-base font-bold text-cc-ink">Degree of Coupling</h3>
-                <p className={PILLAR_TEXT}>
-                  Measures how strongly custom tables and business processes are interwoven with SAP ERP modules.
-                </p>
-              </div>
-
-              <div className={PILLAR}>
-                <Code2 className="text-cc-brand-strong" size={24} aria-hidden="true" />
-                <h3 className="text-base font-bold text-cc-ink">Modern ABAP Cloud</h3>
-                <p className={PILLAR_TEXT}>
-                  Validates the usage of modern ABAP Cloud syntax (RAP Model) instead of outdated legacy ABAP reports.
-                </p>
-              </div>
-
-              <div className={PILLAR}>
-                <KeyRound className="text-cc-brand-strong" size={24} aria-hidden="true" />
-                <h3 className="text-base font-bold text-cc-ink">Key-User Extensibility</h3>
-                <p className={PILLAR_TEXT}>
-                  Checks whether in-app changes go through released key-user extension points rather than modifying SAP objects.
-                </p>
-              </div>
+          <section className="space-y-4">
+            <h2 className={H2}>How the score is computed</h2>
+            <p className={BODY}>
+              The score starts at 100 and takes points off for each kind of construct found in the code. The
+              first finding of a kind costs most, each further one less, and every kind has a cap — so the
+              score says how many kinds of problem there are more than how often each occurs. It never goes
+              below {SCORE_FLOOR}. Each kind of construct the engine could not assess takes{' '}
+              {UNASSESSED_POINTS_PER_KIND} more points (at most {UNASSESSED_POINTS_CAP}), because what was not
+              read cannot count as clean.
+            </p>
+            <div className="rounded-2xl border border-cc-line bg-cc-surface px-2 pt-3">
+              <CcTable
+                caption="Points taken off the Clean Core Score per kind of construct"
+                columns={[
+                  { key: 'kind', label: 'Kind of construct' },
+                  { key: 'first', label: 'First finding', numeric: true },
+                  { key: 'more', label: 'Each further', numeric: true },
+                  { key: 'cap', label: 'At most', numeric: true },
+                ]}
+                rows={SCORE_DEDUCTIONS.map((rule) => ({
+                  key: rule.kind,
+                  cells: {
+                    kind: <span className="font-semibold text-cc-ink">{rule.label}</span>,
+                    first: `−${rule.first}`,
+                    more: `−${rule.additional}`,
+                    cap: `−${rule.cap}`,
+                  },
+                }))}
+              />
             </div>
           </section>
 

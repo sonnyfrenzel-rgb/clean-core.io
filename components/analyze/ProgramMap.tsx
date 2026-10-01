@@ -14,9 +14,9 @@ import type { ProcessStepBand, ProgramMapRow, SourcePosition } from '@/lib/findi
  * off the same skeleton the Business view draws); under the axis, a triangle
  * where a construct the engine could not assess begins.
  *
- * A dot is a button: it narrows the list below to its line. There is no source
- * view on this page to jump into, so the list is where it goes — the same thing
- * the source strip did before. Every figure is also text (§1.8): each dot names
+ * A dot is a button: it opens the source at its line, the finding marked
+ * (`SourcePanel`, owner decision 01.10.2026); from there "Show in the list"
+ * narrows the list below to that line. Every figure is also text (§1.8): each dot names
  * its line, kind and severity, and the rows carry their counts.
  */
 const DOT: Record<string, string> = {
@@ -116,7 +116,7 @@ export default function ProgramMap({
                 const sev = normaliseSeverity(d.severity);
                 const serious = d.severity === 'Critical' || d.severity === 'High';
                 const selected = selectedLine === d.line;
-                const label = `Line ${d.line}: ${d.title}, ${d.severity.toLowerCase()}`;
+                const label = `Line ${d.line}: ${d.title}, ${d.severity.toLowerCase()} — open the source`;
                 return (
                   <React.Fragment key={`${d.line}-${d.dy}`}>
                     {serious ? (

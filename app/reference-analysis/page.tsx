@@ -9,6 +9,7 @@ import { categoricalChartColor } from '@/lib/chart-colors';
 import type { SeverityValue } from '@/lib/severity';
 import { CcSeverity } from '@/components/cc/Identifier';
 import { publicButton } from '@/components/landing/public-button';
+import { scoreBand } from '@/lib/clean-core-score';
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 
@@ -94,7 +95,7 @@ export default function ReferenceAnalysisPage() {
           // every load. Reported as an order of magnitude, which is the honest
           // form of the claim it was making.
           { k: 'Analysis time', v: r.durationMs < 1000 ? 'under 1 s' : `${Math.round(r.durationMs / 1000)} s` },
-          { k: 'Clean Core Score', v: String(r.cleanCoreScore) },
+          { k: `Clean Core Score · ${scoreBand(r.cleanCoreScore).label.toLowerCase()}`, v: String(r.cleanCoreScore) },
         ].map((x) => (
           <div key={x.k} className="rounded-2xl border border-cc-line bg-cc-surface p-5">
             <div className="text-2xl sm:text-3xl font-extrabold tabular-nums text-cc-ink">{x.v}</div>

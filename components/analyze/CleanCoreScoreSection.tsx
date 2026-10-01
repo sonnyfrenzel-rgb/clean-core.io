@@ -8,7 +8,7 @@ import CcIconButton from '@/components/cc/IconButton';
 import { STATE_CLASSES } from '@/components/cc/state';
 import { stateChartColor } from '@/lib/chart-colors';
 import type { SemanticState } from '@/lib/provenance';
-import { SCORE_BANDS, scoreBand, type ScoreBand, type ScoreBandKey, type ScoreBreakdown } from '@/lib/clean-core-score';
+import { SCORE_BANDS, SCORE_BANDS_SOURCE, SCORE_NATURE, scoreBand, type ScoreBand, type ScoreBandKey, type ScoreBreakdown } from '@/lib/clean-core-score';
 import ObjectSection from './ObjectSection';
 
 /**
@@ -21,8 +21,9 @@ import ObjectSection from './ObjectSection';
  * what moved this score — every deduction of the score's own table, with the
  * kinds of finding that caused it; and when the figure matters.
  *
- * The bands are guidance derived from the deduction table (`lib/clean-core-
- * score.ts`, where each sentence is justified), and the section says so. The
+ * The bands are Clean-Core.io's official reading of a score, derived from the
+ * deduction table (`lib/clean-core-score.ts`, where each sentence is
+ * justified), and the section says so. The
  * score itself is the signed run's; the breakdown is recomputed from the
  * findings on this page with the same table and is shown only beside a score
  * it adds up to.
@@ -145,7 +146,7 @@ export default function CleanCoreScoreSection({
             <div className="min-w-0 pb-1">
               <ScoreScale score={score} />
               <div className="relative mt-1 h-5 font-cc-mono cc-text-meta font-medium text-cc-ink-muted tabular-nums">
-                {[0, 60, 81, 91, 100].map((t, i, all) => (
+                {[0, ...SCORE_BANDS.slice(1).map((b) => b.from), 100].map((t, i, all) => (
                   <span
                     key={t}
                     className={cn('absolute top-0', i > 0 && i < all.length - 1 && 'hidden sm:inline')}
@@ -206,8 +207,7 @@ export default function CleanCoreScoreSection({
 
           <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">
             When it matters: before an upgrade or a move to the cloud — and after a change, when a new run of the same code
-            shows whether it moved. The bands are guidance read off the score&apos;s own rules; neither SAP nor this
-            product sets a pass mark.{' '}
+            shows whether it moved. {SCORE_BANDS_SOURCE}. {SCORE_NATURE}.{' '}
             <Link href="/clean-core-score" className="font-semibold text-cc-ink underline underline-offset-2">
               How the score is computed
             </Link>

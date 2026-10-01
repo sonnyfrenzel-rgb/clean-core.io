@@ -26,6 +26,7 @@
  * Pure: no React, no Firestore.
  */
 
+import { scoreWithBand } from './clean-core-score';
 import type { Project } from './types';
 import type { ProvenanceValue } from './provenance';
 import type { PhaseKey, RailStep } from './workflow-steps';
@@ -225,7 +226,7 @@ export function buildHandoverChain(project: HandoverProject, phases: RailStep[])
         provenance: analyze.state === 'stale' ? 'stale' : 'proven',
         provenanceNote: null,
         value: [
-          score !== null ? `Clean Core Score ${score}` : 'Score not recorded',
+          score !== null ? `Clean Core Score ${scoreWithBand(score)}` : 'Score not recorded',
           worklist !== null ? plural(worklist, 'work item') : null,
         ].filter(Boolean).join(' · '),
         by: 'The deterministic engine',
