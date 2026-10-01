@@ -6,6 +6,8 @@ import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import './process-map.css';
 import { fitWithPadding, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
+import { LABEL_FONT, TASK_PADDING } from '@/lib/bpmn/layout';
+import { wrapText } from '@/lib/bpmn/text-metrics';
 
 /**
  * The diagram half of the process map — roadmap 2.5, reading only.
@@ -48,6 +50,8 @@ export interface BpmnCanvasNode {
   earlyLabel?: string | null;
   /** `L182` / `L60–75` — drawn under the element's name; null without one. */
   anchor?: string | null;
+  /** A phase's counted fact, drawn above its anchor ("2 decisions · 1 error end"). */
+  fact?: string | null;
 }
 
 export interface BpmnCanvasProps {
@@ -109,6 +113,7 @@ interface Shape {
   width?: number;
   height?: number;
   label?: Shape;
+  businessObject?: { name?: string };
 }
 
 interface ElementRegistryService {
@@ -265,14 +270,26 @@ export default function BpmnCanvas({
           const tag = document.createElement('span');
           tag.className = 'cc-map-anchor';
           tag.setAttribute('aria-hidden', 'true');
-          tag.textContent = node.anchor;
+          if (node.fact && !shape.label) {
+            const fact = document.createElement('span');
+            fact.className = 'cc-map-fact';
+            fact.textContent = node.fact;
+            tag.appendChild(fact);
+          }
+          tag.appendChild(document.createTextNode(node.anchor));
           const label = shape.label;
           if (label && label.width && label.height) {
             tag.style.width = `${label.width}px`;
             overlays.add(label.id, 'cc-anchor', { position: { top: label.height, left: 0 }, scale: true, html: tag });
           } else if (shape.width > 60) {
+            // Right under the name, which bpmn-js centres in the box.
+            const lines = wrapText(shape.businessObject?.name ?? '', shape.width - 2 * TASK_PADDING, LABEL_FONT, true).length;
             tag.style.width = `${shape.width}px`;
-            overlays.add(id, 'cc-anchor', { position: { top: shape.height - 22, left: 0 }, scale: true, html: tag });
+            overlays.add(id, 'cc-anchor', {
+              position: { top: Math.round(shape.height / 2 + (lines * LABEL_FONT * 1.2) / 2 + 1), left: 0 },
+              scale: true,
+              html: tag,
+            });
           }
         }
       }

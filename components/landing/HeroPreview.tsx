@@ -1,5 +1,5 @@
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import BpmnPlaneSvg, { anchorText } from '@/components/landing/BpmnPlaneSvg';
+import BpmnPlaneSvg from '@/components/landing/BpmnPlaneSvg';
 import type { LandingHero } from '@/lib/landing-process';
 import type { CodeToken } from '@/lib/process-map';
 
@@ -46,7 +46,6 @@ export default function HeroPreview({ hero, title }: { hero: LandingHero; title:
     .join('');
   const first = code[0]?.number ?? 0;
   const last = code[code.length - 1]?.number ?? 0;
-  const calledAt = plane.anchor ? anchorText(plane.anchor) : null;
 
   return (
     <figure className="m-0" data-hero-preview="">
@@ -122,25 +121,8 @@ export default function HeroPreview({ hero, title }: { hero: LandingHero; title:
             </div>
           </div>
 
-          <div className="rounded-2xl border border-cc-line">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-cc-line px-4 py-3">
-              <p className="text-sm font-bold text-cc-ink">Process — reconstructed from code</p>
-              <p className="font-cc-mono text-xs text-cc-ink-muted">
-                {hero.process.program} <span aria-hidden="true">›</span> {plane.label}
-                {calledAt ? ` · called at ${calledAt}` : ''}
-              </p>
-            </div>
-            <div className="overflow-x-auto p-2">
-              <BpmnPlaneSvg
-                plane={plane}
-                idPrefix="hero"
-                scale={1.05}
-                title={`The routine ${plane.label} of ${hero.process.program} as BPMN, reconstructed from the code. Every element carries its line anchor.`}
-              />
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-2xl bg-cc-code-bg">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+          <div className="flex min-w-0 flex-col overflow-hidden rounded-2xl bg-cc-code-bg">
             <p className="flex flex-wrap items-center justify-between gap-2 border-b border-cc-on-dark/15 px-4 py-3 text-sm font-semibold text-cc-on-dark">
               <span>
                 {hero.process.program} <span className="font-cc-mono text-xs font-medium text-cc-code-muted">L{first}–{last}</span>
@@ -165,6 +147,26 @@ export default function HeroPreview({ hero, title }: { hero: LandingHero; title:
                 </li>
               ))}
             </ol>
+            {hero.caption ? (
+              <p data-hero-caption className="mt-auto border-t border-cc-on-dark/15 px-4 py-3 text-sm font-medium text-cc-on-dark">{hero.caption}</p>
+            ) : null}
+          </div>
+          <div className="min-w-0 rounded-2xl border border-cc-line">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-cc-line px-4 py-3">
+              <p className="text-sm font-bold text-cc-ink">Process — reconstructed from code</p>
+              <CcProvenanceChip value="reconstructed" />
+              <p className="ml-auto text-xs font-medium text-cc-ink-muted">{plane.label}</p>
+            </div>
+            <div className="overflow-x-auto p-2">
+              <BpmnPlaneSvg
+                plane={plane}
+                idPrefix="hero"
+                scale={0.9}
+                title={`The first steps of ${hero.process.program} as BPMN, reconstructed from the code: each step with the decisions in it that end the process. Every element carries its line anchor.`}
+              />
+            </div>
+          </div>
+
           </div>
         </div>
       </div>

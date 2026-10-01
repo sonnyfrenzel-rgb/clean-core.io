@@ -6,6 +6,8 @@ import type {
   SkeletonRegion,
 } from '../abap/process-skeleton';
 import { ncName } from './xml';
+import type { PlainLabels } from '../abap/plain-language';
+import { TABLE_TERMS_EN } from '../abap/plain-glossary';
 
 /**
  * Skeleton → BPMN elements — roadmap 2.6, the half that decides *what* is drawn.
@@ -84,7 +86,13 @@ export type BpmnTag =
   | 'boundaryEvent'
   | 'intermediateCatchEvent'
   /** Roadmap 2.17 (a). Carries no condition, ever — it is a fork or a join. */
-  | 'parallelGateway';
+  | 'parallelGateway'
+  /**
+   * A milestone between two report events in the business reading of the top
+   * plane (`chainEntries`): where one event block ends and the next begins, when
+   * more than one way leads out of the one and into the other.
+   */
+  | 'intermediateThrowEvent';
 
 export const ACTIVITY_TAGS: ReadonlySet<BpmnTag> = new Set<BpmnTag>([
   'task', 'serviceTask', 'sendTask', 'userTask', 'businessRuleTask', 'callActivity', 'subProcess',
@@ -98,7 +106,10 @@ export type ExportFallback = 'recursion' | 'expansion-limit' | 'unattached-handl
 export interface ExportNode {
   id: string;
   tag: BpmnTag;
+  /** What the element is called on the map: the plain label, or the technical name without one. */
   name: string;
+  /** The token the skeleton read out of the source — always kept, for the Technical names view and the trace. */
+  technicalName: string;
   source: SkeletonNode;
   /** Carries an `errorEventDefinition`. */
   error: boolean;
@@ -115,6 +126,18 @@ export interface ExportNode {
   writes: string[];
   /** Index of the band (entry) this node is drawn in, inside its container. */
   band: number;
+  /**
+   * The anchor shown when the element stands for more than one place in the
+   * code — `L79, L232`, or a routine's range `L60–75` (`lib/bpmn/excerpt.ts`).
+   * Undefined: the source node's own line range.
+   */
+  anchorLabel?: string;
+  /**
+   * One fact about a collapsed phase, counted on its plane — "2 decisions ·
+   * 1 error end", "reads EBAN". Set in the plain reading only; it is drawn under
+   * the phase's name so the overview says what each phase does without opening it.
+   */
+  fact?: string;
 }
 
 export interface ExportFlow {
@@ -137,6 +160,8 @@ export interface ExportFlow {
    * the label, as the file has always written it.
    */
   label?: string;
+  /** Set on a flow `chainEntries` drew between two report events: runtime order, not a statement. */
+  runtimeOrder?: boolean;
 }
 
 export interface ExportBand {
@@ -322,8 +347,33 @@ class IdRegistry {
   }
 }
 
-export function buildExportModel(skeleton: ProcessSkeleton): ExportModel {
-  return new ModelBuilder(skeleton).build();
+export interface ExportModelOptions {
+  /**
+   * Plain-language labels (`lib/abap/plain-language.ts`). With them every
+   * element is named for a business reader and every branch says where it
+   * goes (Yes / No / a value); without them the names are the source's tokens.
+   * Either way the technical name, the condition and the anchor stay.
+   */
+  labels?: PlainLabels;
+  /**
+   * Draw the report events of the top plane as **one** flow in their fixed
+   * runtime order (INITIALIZATION, AT SELECTION-SCREEN, START-OF-SELECTION,
+   * END-OF-SELECTION) instead of one band each — the business reading
+   * (owner, 01.10.2026). A block that draws nothing is folded away. Applies only
+   * when every entry is a report event; a dialog program keeps its bands.
+   * Default: on exactly when `labels` are given.
+   */
+  chainEntries?: boolean;
+}
+
+export function buildExportModel(skeleton: ProcessSkeleton, options: ExportModelOptions = {}): ExportModel {
+  return new ModelBuilder(skeleton, options.labels ?? null, options.chainEntries ?? !!options.labels).build();
+}
+
+/** A table with its business name when the glossary knows it: "Purchase requisition (EBAN)". */
+export function storeDisplayName(table: string): string {
+  const term = TABLE_TERMS_EN[table.toLowerCase()];
+  return term ? `${term.singular} (${table})` : table;
 }
 
 class ModelBuilder {
@@ -340,7 +390,7 @@ class ModelBuilder {
   private storeIds = new IdRegistry('ds-');
   private poolIds = new IdRegistry('pool-');
 
-  constructor(private skeleton: ProcessSkeleton) {}
+  constructor(private skeleton: ProcessSkeleton, private labels: PlainLabels | null, private chain = false) {}
 
   build(): ExportModel {
     for (const region of this.skeleton.regions) this.regionByKey.set(region.key, region);
@@ -364,6 +414,8 @@ class ModelBuilder {
       this.instantiated.add(key);
       this.instantiate(region, root, '', [key]);
     }
+    if (this.chain) this.chainEntries(root);
+    if (this.labels) for (const c of this.containers) for (const n of c.nodes) if (n.inner) n.fact = factOf(n.inner);
 
     const stores = this.attachDataStores();
     const { pools, messages } = this.readForeignSystems(root);
@@ -463,10 +515,13 @@ class ModelBuilder {
     for (const source of this.nodesByRegion.get(region.key) ?? []) {
       const id = `${prefix}${source.id}`;
       const { reads, writes } = this.tablesOf(source);
+      const technicalName = nameOf(source);
+      const plain = this.labels ? this.labels.nodes.get(source.id) : undefined;
       const node: ExportNode = {
         id,
         tag: tagOf(source),
-        name: nameOf(source),
+        name: plain !== undefined && (plain || tagOf(source) === 'parallelGateway') ? plain : technicalName,
+        technicalName,
         source,
         error: source.kind === 'end-error' || source.kind === 'error-boundary',
         incoming: [],
@@ -530,6 +585,7 @@ class ModelBuilder {
         condition: edge.condition,
         edge,
         back: edge.kind === 'loop-back',
+        label: this.labels ? this.labels.flow(edge) : undefined,
       };
       into.flows.push(flow);
       from.outgoing.push(flow.id);
@@ -632,6 +688,7 @@ class ModelBuilder {
           back: out.back,
           bypassOf: node.id,
         };
+        if (this.labels) flow.label = this.labels.flow(flow.edge);
         container.flows.push(flow);
         from.outgoing.push(flow.id);
         to.incoming.push(flow.id);
@@ -654,6 +711,93 @@ class ModelBuilder {
     return undefined;
   }
 
+  /**
+   * The report events of the top plane as one flow — `ExportModelOptions.chainEntries`.
+   *
+   * ABAP runs the events of an executable report in a fixed order, so drawing
+   * them one after the other says nothing the language does not. What it adds
+   * is a sequence flow from one block into the next; it carries
+   * `reason="runtime-order"` in its trace, so a reader of the file can tell it
+   * from a flow a statement writes. Where exactly one way leads out of a block
+   * and exactly one unconditional way into the next, the two events between
+   * them go and the flow joins the steps directly; otherwise the end of the
+   * first and the start of the second become one milestone event. Every step
+   * keeps its anchor; only the event keywords' own lines leave the picture, and
+   * they stay in the Technical names view.
+   */
+  private chainEntries(root: ExportContainer): void {
+    if (root.bands.length < 2) return;
+    const byId = new Map(root.nodes.map((n) => [n.id, n]));
+    const isReportEvent = (band: ExportBand) => {
+      const start = band.entryId ? byId.get(band.entryId) : undefined;
+      return !!start && start.source.detail?.origin === 'event' && typeof start.source.detail?.runtimeRank === 'number';
+    };
+    if (!root.bands.every(isReportEvent)) return;
+
+    const drop = (id: string) => {
+      root.nodes = root.nodes.filter((n) => n.id !== id);
+      byId.delete(id);
+    };
+    const dropFlow = (id: string) => {
+      root.flows = root.flows.filter((f) => f.id !== id);
+      for (const n of root.nodes) {
+        n.incoming = n.incoming.filter((x) => x !== id);
+        n.outgoing = n.outgoing.filter((x) => x !== id);
+      }
+    };
+    // Blocks that draw nothing: start → end, and nothing else.
+    let bands = root.bands.filter((band) => {
+      const own = band.nodeIds.filter((id) => byId.has(id));
+      if (own.length > 2 || root.bands.length < 2) return true;
+      for (const f of root.flows.filter((f) => own.includes(f.sourceId))) dropFlow(f.id);
+      own.forEach(drop);
+      return false;
+    });
+    if (!bands.length) bands = root.bands.slice(0, 1);
+
+    const merged: ExportBand = {
+      key: bands.map((b) => b.key).join('+'),
+      anchorId: bands[0].anchorId,
+      nodeIds: [],
+      entryId: bands[0].entryId,
+      endId: bands[bands.length - 1].endId,
+    };
+    bands.forEach((band, i) => {
+      merged.nodeIds.push(...band.nodeIds.filter((id) => byId.has(id)));
+      const next = bands[i + 1];
+      if (!next || !band.endId || !next.entryId) return;
+      const end = byId.get(band.endId);
+      const start = byId.get(next.entryId);
+      if (!end || !start) return;
+      const into = root.flows.filter((f) => f.targetId === end.id);
+      const outOf = root.flows.filter((f) => f.sourceId === start.id);
+      if (into.length === 1 && outOf.length === 1 && !outOf[0].condition) {
+        // Join directly: the flow into the end now leads to the first step of the next block.
+        const flow = into[0];
+        const target = byId.get(outOf[0].targetId) as ExportNode;
+        end.incoming = end.incoming.filter((x) => x !== flow.id);
+        flow.targetId = target.id;
+        flow.edge = { ...flow.edge, to: target.source.id, reason: flow.edge.reason ?? undefined };
+        target.incoming.push(flow.id);
+        dropFlow(outOf[0].id);
+        drop(end.id);
+        drop(start.id);
+        flow.runtimeOrder = true;
+      } else {
+        // One milestone where the two blocks meet.
+        start.tag = 'intermediateThrowEvent';
+        for (const flow of into) {
+          flow.targetId = start.id;
+          start.incoming.push(flow.id);
+        }
+        drop(end.id);
+      }
+    });
+    merged.nodeIds = merged.nodeIds.filter((id) => byId.has(id));
+    for (const n of root.nodes) n.band = 0;
+    root.bands = [merged];
+  }
+
   /** Decision 4: one data store per table, one reference to it per band. */
   private attachDataStores(): ExportStore[] {
     const stores = new Map<string, ExportStore>();
@@ -670,6 +814,7 @@ class ModelBuilder {
           storeId,
           table,
           band,
+          name: this.labels ? storeDisplayName(table) : undefined,
         };
         refs.set(key, ref);
         container.storeRefs.push(ref);
@@ -739,4 +884,23 @@ class ModelBuilder {
       }
     }
   }
+}
+
+/** "2 decisions · 1 error end": the two first things a phase's plane holds, counted. */
+export function factOf(inner: ExportContainer): string | undefined {
+  const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+  const nodes = inner.nodes;
+  const decisions = nodes.filter((n) => n.tag === 'exclusiveGateway' && n.source.kind === 'gateway').length;
+  const errors = nodes.filter((n) => n.tag === 'endEvent' && n.error).length;
+  const reads = [...new Set(nodes.flatMap((n) => n.reads))];
+  const writes = [...new Set(nodes.flatMap((n) => n.writes))];
+  const calls = nodes.filter((n) => n.tag === 'serviceTask' || n.tag === 'sendTask' || n.tag === 'callActivity').length;
+  const parts = [
+    decisions ? count(decisions, 'decision', 'decisions') : '',
+    errors ? count(errors, 'error end', 'error ends') : '',
+    reads.length === 1 ? `reads ${reads[0]}` : reads.length ? count(reads.length, 'table read', 'table reads') : '',
+    writes.length === 1 ? `writes ${writes[0]}` : writes.length ? count(writes.length, 'table written', 'tables written') : '',
+    calls ? count(calls, 'call', 'calls') : '',
+  ].filter(Boolean);
+  return parts.length ? parts.slice(0, 2).join(' · ') : undefined;
 }

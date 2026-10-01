@@ -73,6 +73,8 @@ export interface InsideText {
   lines: string[];
   fontSize: number;
   anchor: string | null;
+  /** One fact about a phase, read from its plane ("2 decisions · 1 error end"); null when none. */
+  fact: string | null;
 }
 
 export interface PlaneLayout {
@@ -94,6 +96,12 @@ export interface DiagramLayout {
 
 export interface LayoutOptions {
   direction?: Direction;
+  /**
+   * Most columns in one row of a band. A longer band continues on a row block
+   * below, the line running round to its start like a line of text — a wide
+   * level reads without scrolling sideways (owner, 01.10.2026). Off by default.
+   */
+  wrap?: number;
 }
 
 /* ------------------------------------------------------------------ *
@@ -115,6 +123,8 @@ const TASK_H = 80;
 const TASK_WIDTHS = [100, 120, 140, 160, 180, 200];
 const TASK_TB_MIN = 170;
 const MAX_TASK_LINES = 3;
+/** Extra height of an activity that carries a boundary event. */
+export const BOUNDARY_ROOM = 26;
 const NOTE_W = 560;
 const POOL_H = 60;
 const POOL_GAP = 40;
@@ -139,6 +149,11 @@ export function anchorText(a: { lineStart: number; lineEnd: number } | null | un
   return a.lineStart === a.lineEnd ? `L${a.lineStart}` : `L${a.lineStart}–${a.lineEnd}`;
 }
 
+/** The anchor a node shows: its own label when it stands for several places, else its line range. */
+export function nodeAnchor(n: ExportNode): string | null {
+  return n.anchorLabel ?? anchorText(n.source.anchor);
+}
+
 export function anchorWidth(text: string): number {
   // The mono face: every glyph 0.62 em, with the same margin as the sans.
   return Math.ceil(text.length * 0.62 * ANCHOR_FONT * 1.06);
@@ -149,13 +164,14 @@ const isGateway = (tag: BpmnTag) => tag.endsWith('Gateway');
 const kindOf = (tag: BpmnTag): ShapeKind => (isEvent(tag) ? 'event' : isGateway(tag) ? 'gateway' : 'task');
 
 /** The wrapped name of an activity and the box it needs. */
-export function taskText(name: string, anchor: string | null, direction: Direction): { lines: string[]; width: number; height: number } {
+export function taskText(name: string, anchor: string | null, direction: Direction, fact?: string): { lines: string[]; width: number; height: number } {
   const lh = lineHeight(LABEL_FONT);
-  const reserve = anchor ? lineHeight(ANCHOR_FONT) : 0;
+  const reserve = (anchor ? lineHeight(ANCHOR_FONT) : 0) + (fact ? lineHeight(ANCHOR_FONT) : 0);
+  const factFits = (width: number) => !fact || textWidth(fact, ANCHOR_FONT) <= width - 2 * TASK_PADDING;
   if (direction === 'TB') {
     for (const width of [TASK_TB_MIN, 200, 230, 260]) {
       const lines = wrapText(name, width - 2 * TASK_PADDING - 8, LABEL_FONT, true);
-      if (lines.length <= 2 || width === 260) {
+      if ((lines.length <= 2 && factFits(width)) || width === 260) {
         const w = Math.max(width, (anchor ? anchorWidth(anchor) : 0) + 2 * TASK_PADDING + 8);
         return { lines, width: w, height: 2 * TASK_PADDING + lines.length * lh + reserve };
       }
@@ -163,9 +179,11 @@ export function taskText(name: string, anchor: string | null, direction: Directi
   }
   for (const width of TASK_WIDTHS) {
     const lines = wrapText(name, width - 2 * TASK_PADDING, LABEL_FONT, true);
-    const fits = lines.length <= MAX_TASK_LINES;
+    const fits = lines.length <= MAX_TASK_LINES && factFits(width);
     if (fits || width === TASK_WIDTHS[TASK_WIDTHS.length - 1]) {
-      const height = Math.max(TASK_H, 2 * TASK_PADDING + lines.length * lh + reserve + 4);
+      // bpmn-js centres the name in the whole box and the anchor hangs under it:
+      // the box is that much taller than the block.
+      const height = Math.max(TASK_H, 2 * TASK_PADDING + lines.length * lh + 2 * reserve);
       return { lines, width, height };
     }
   }
@@ -193,7 +211,7 @@ function labelBlock(text: string, anchor: string | null, maxWidth: number): { li
 export function layoutModel(model: ExportModel, options: LayoutOptions = {}): DiagramLayout {
   const direction = options.direction ?? 'LR';
   const planes = new Map<string, PlaneLayout>();
-  for (const container of model.containers) planes.set(container.id, layoutContainer(container, direction));
+  for (const container of model.containers) planes.set(container.id, layoutContainer(container, direction, options.wrap));
 
   if (!model.pools.length) return { planes, direction };
 
@@ -433,6 +451,22 @@ function gridOfBand(container: ExportContainer, bandIndex: number, sizeOf: (n: E
   return { items: all, cols, rows, back };
 }
 
+/** A band longer than `wrap` columns, continued on row blocks below. */
+function wrapGrid(grid: BandGrid, wrap?: number): BandGrid {
+  if (!wrap || grid.cols <= wrap) return grid;
+  const segments = Math.ceil(grid.cols / wrap);
+  const offset: number[] = [];
+  let next = 0;
+  for (let k = 0; k < segments; k += 1) {
+    offset.push(next);
+    const rows = grid.items.filter((it) => Math.floor(it.col / wrap) === k).map((it) => it.row);
+    // One empty row between two blocks: the way round runs there.
+    next += (rows.length ? Math.max(...rows) + 1 : 1) + 1;
+  }
+  const items = grid.items.map((it) => ({ ...it, col: it.col % wrap, row: it.row + offset[Math.floor(it.col / wrap)] }));
+  return { ...grid, items, cols: wrap, rows: Math.max(...items.map((it) => it.row)) + 1 };
+}
+
 /* ------------------------------------------------------------------ *
  * One plane
  * ------------------------------------------------------------------ */
@@ -444,18 +478,22 @@ interface Gaps {
   lead: number[];
 }
 
-function layoutContainer(container: ExportContainer, direction: Direction): PlaneLayout {
+function layoutContainer(container: ExportContainer, direction: Direction, wrap?: number): PlaneLayout {
   const byId = new Map(container.nodes.map((n) => [n.id, n]));
-  const anchorOf = (n: ExportNode) => anchorText(n.source.anchor);
+  const anchorOf = (n: ExportNode) => nodeAnchor(n);
   const taskSize = new Map<string, { lines: string[]; width: number; height: number }>();
+  // An activity with an error boundary on its foot grows by the circle's upper
+  // half, so its name and anchor stay clear of the event.
+  const hosts = new Set(container.nodes.filter((n) => n.tag === 'boundaryEvent' && n.attachedTo).map((n) => n.attachedTo as string));
   const sizeOf = (n: ExportNode): [number, number] => {
     if (isEvent(n.tag)) return [EVENT, EVENT];
     if (isGateway(n.tag)) return direction === 'TB' ? [GATEWAY_TB, GATEWAY_TB] : [GATEWAY_LR, GATEWAY_LR];
-    const t = taskText(n.name, anchorOf(n), direction);
+    const t = taskText(n.name, anchorOf(n), direction, n.fact);
+    if (hosts.has(n.id)) t.height += BOUNDARY_ROOM;
     taskSize.set(n.id, t);
     return [t.width, t.height];
   };
-  const grids = container.bands.map((_, i) => gridOfBand(container, i, sizeOf));
+  const grids = container.bands.map((_, i) => wrapGrid(gridOfBand(container, i, sizeOf), wrap));
 
   const gaps: Gaps = {
     col: grids.map((g) => new Array(g.cols).fill(COL_GAP)),
@@ -494,6 +532,14 @@ function layoutContainer(container: ExportContainer, direction: Direction): Plan
       else gaps.row[it.band][it.row - 1] = Math.max(gaps.row[it.band][it.row - 1], side + 20);
       if (it.kind === 'event') gaps.col[it.band][it.col] = Math.max(gaps.col[it.band][it.col], block.height + 20);
     }
+  }
+
+  for (const n of container.nodes) {
+    if (n.tag !== 'boundaryEvent' || !n.attachedTo) continue;
+    const host = itemOf.get(n.attachedTo);
+    if (!host) continue;
+    const block = labelBlock(n.name, anchorOf(n), EVENT_LABEL_W);
+    gaps.row[host.band][host.row] = Math.max(gaps.row[host.band][host.row], block.height + 40);
   }
 
   let best: PlaneLayout | null = null;
@@ -634,15 +680,13 @@ function attemptPlane(
     if (!host) continue;
     const k = onHost.get(n.attachedTo) ?? 0;
     onHost.set(n.attachedTo, k + 1);
-    plane.shapes.set(n.id, LR
-      ? { x: host.x + host.width - 48 - k * 40, y: host.y + host.height - 18, width: EVENT, height: EVENT }
-      : { x: host.x + host.width - 18, y: host.y + host.height - 30 - k * 40 - EVENT / 2, width: EVENT, height: EVENT });
+    plane.shapes.set(n.id, { x: host.x + host.width - 48 - k * 40, y: host.y + host.height - 18, width: EVENT, height: EVENT });
   }
 
   // ---- text inside activities ----
   for (const n of container.nodes) {
     const t = taskSize.get(n.id);
-    if (t && plane.shapes.has(n.id)) plane.inside.set(n.id, { lines: t.lines, fontSize: LABEL_FONT, anchor: anchorText(n.source.anchor) });
+    if (t && plane.shapes.has(n.id)) plane.inside.set(n.id, { lines: t.lines, fontSize: LABEL_FONT, anchor: nodeAnchor(n), fact: n.fact ?? null });
   }
 
   // ---- notes on one element: below the band, under their element ----
@@ -687,11 +731,28 @@ function attemptPlane(
   };
   for (const n of container.nodes) {
     const s = plane.shapes.get(n.id);
-    if (!s || n.tag === 'boundaryEvent') continue;
+    if (!s) continue;
     const cx = s.x + s.width / 2;
     const cy = s.y + s.height / 2;
+    if (n.tag === 'boundaryEvent' && n.attachedTo) {
+      // Beside the line that leaves it downwards, below the host's edge.
+      labelFor(n.id, n.name, nodeAnchor(n), EVENT_LABEL_W, (w, h) => LR
+        ? [
+          { x: s.x + s.width + 4, y: s.y + s.height - 2 },
+          { x: s.x - 4 - w, y: s.y + s.height - 2 },
+          { x: s.x + s.width + 4, y: s.y + s.height + 16 },
+          { x: s.x - 4 - w, y: s.y + s.height + 16 },
+          { x: cx - w / 2, y: s.y + s.height + 30 },
+        ]
+        : [
+          { x: s.x + s.width + 4, y: s.y + s.height - 2 },
+          { x: s.x + s.width + 4, y: s.y - 2 - h },
+          { x: s.x + s.width + 20, y: cy - h / 2 },
+        ]);
+      continue;
+    }
     if (isGateway(n.tag)) {
-      labelFor(n.id, n.name, anchorText(n.source.anchor), GATEWAY_LABEL_W, (w, h) => LR
+      labelFor(n.id, n.name, nodeAnchor(n), GATEWAY_LABEL_W, (w, h) => LR
         ? [
           { x: cx - 8 - w, y: s.y + 2 - h },
           { x: cx - w / 2, y: s.y - 6 - h },
@@ -707,7 +768,7 @@ function attemptPlane(
           { x: s.x + s.width + 8, y: cy - h / 2 },
         ]);
     } else if (isEvent(n.tag)) {
-      labelFor(n.id, n.name, anchorText(n.source.anchor), EVENT_LABEL_W, (w, h) => LR
+      labelFor(n.id, n.name, nodeAnchor(n), EVENT_LABEL_W, (w, h) => LR
         ? [
           { x: cx - w / 2, y: s.y + s.height + 5 },
           { x: cx - w / 2, y: s.y - 5 - h },
@@ -1172,7 +1233,7 @@ export function planeDrawing(container: ExportContainer, plane: PlaneLayout, poo
         fontSize: inside.fontSize,
         bold: true,
         padding: TASK_PADDING,
-        reserve: inside.anchor ? lineHeight(ANCHOR_FONT) : 0,
+        reserve: (inside.anchor ? lineHeight(ANCHOR_FONT) : 0) + (inside.fact ? lineHeight(ANCHOR_FONT) : 0),
       };
     }
     drawing.shapes.push(shape);

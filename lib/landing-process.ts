@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { buildProcessSkeleton, type ProcessSkeleton } from '@/lib/abap/process-skeleton';
+import { plainLabels } from '@/lib/abap/plain-language';
+import { READING_WRAP } from '@/lib/bpmn/export';
+import { businessExcerpt } from '@/lib/bpmn/excerpt';
 import { buildExportModel, isEarlyEnd, isMultiInstanceLoop, type BpmnTag, type ExportContainer, type ExportModel } from '@/lib/bpmn/model';
 import { layoutModel, type Bounds, type DiagramLayout, type Direction, type PlacedLabel, type Point } from '@/lib/bpmn/layout';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
@@ -44,10 +47,16 @@ export interface LandingNode {
   label: PlacedLabel | null;
   /** The wrapped name inside an activity. */
   inside: string[] | null;
+  /** The anchor text when the element stands for several places (`L79, L83`) or a range. */
+  anchorLabel: string | null;
+  /** A phase's counted fact ("2 decisions · 1 error end"), drawn under its name. */
+  fact: string | null;
 }
 
 export interface LandingFlow {
   id: string;
+  from: string;
+  to: string;
   points: Point[];
   /** The condition as the code writes it; empty for an unconditional flow. */
   condition: string;
@@ -112,6 +121,11 @@ function readExample(fileName: string): string {
   return fs.readFileSync(path.join(EXAMPLES, fileName), 'utf8').replace(/\r\n/g, '\n');
 }
 
+function anchorLabelOf(a: { lineStart: number; lineEnd: number } | null): string {
+  if (!a) return 'no anchor';
+  return a.lineStart === a.lineEnd ? `L${a.lineStart}` : `L${a.lineStart}–${a.lineEnd}`;
+}
+
 function anchorOf(a: { lineStart: number; lineEnd: number } | null | undefined) {
   return a ? { lineStart: a.lineStart, lineEnd: a.lineEnd } : null;
 }
@@ -142,12 +156,14 @@ function planeOf(
       opens: n.inner?.id ?? null,
       label: plane.labels.get(n.id) ?? null,
       inside: plane.inside.get(n.id)?.lines ?? null,
+      anchorLabel: n.anchorLabel ?? null,
+      fact: plane.inside.get(n.id)?.fact ?? null,
     }];
   });
   const flows: LandingFlow[] = container.flows.flatMap((f) => {
     const points = plane.edges.get(f.id);
     if (!points) return [];
-    return [{ id: f.id, points, condition: f.condition, label: plane.labels.get(f.id) ?? null, back: f.back }];
+    return [{ id: f.id, from: f.sourceId, to: f.targetId, points, condition: f.condition, label: plane.labels.get(f.id) ?? null, back: f.back }];
   });
   const stores: LandingStore[] = container.storeRefs.flatMap((r) => {
     const box = plane.shapes.get(r.id);
@@ -195,11 +211,19 @@ function planeOf(
   return { id: container.id, label, anchor, frame, nodes, flows, stores, associations, pools, messages, parent };
 }
 
-function buildProcess(fileName: string, program: string, direction: Direction = 'LR'): { process: LandingProcess; skeleton: ProcessSkeleton; source: string } {
+function buildProcess(
+  fileName: string,
+  program: string,
+  direction: Direction = 'LR',
+  names: 'plain' | 'technical' = 'plain',
+): { process: LandingProcess; skeleton: ProcessSkeleton; source: string } {
   const source = readExample(fileName);
   const skeleton = buildProcessSkeleton(source);
-  const model = buildExportModel(skeleton);
-  const layout = layoutModel(model, { direction });
+  // Plain names by default (lib/abap/plain-language.ts, deterministic, no model):
+  // the page's reader is a business reader. The technical names are the same
+  // process, one switch away.
+  const model = buildExportModel(skeleton, names === 'plain' ? { labels: plainLabels(skeleton, source) } : {});
+  const layout = layoutModel(model, { direction, wrap: direction === 'LR' ? READING_WRAP : undefined });
 
   const planes: LandingPlane[] = [planeOf(model.root, model, layout, program, null, null)];
   const walk = (container: ExportContainer) => {
@@ -246,8 +270,13 @@ export interface LandingCodeLine {
 
 export interface LandingHero {
   process: LandingProcess;
-  /** The plane the hero draws: the routine that holds the plant rule. */
+  /**
+   * The picture the hero draws: the first steps of the process as one business
+   * flow, top to bottom (`lib/bpmn/excerpt.ts`), every element anchored.
+   */
   plane: LandingPlane;
+  /** A sentence under the source: the decisions of the shown routine and where their exits lead. */
+  caption: string;
   /** The routine's own lines, for the source column. */
   code: LandingCodeLine[];
   rules: { total: number; shown: Array<{ id: string; label: string; line: number }> };
@@ -260,9 +289,16 @@ const HERO_ROUTINE = 'CHECK_REQUISITION';
 
 export function landingHero(fileName: string, program: string): LandingHero {
   const { process: proc, source, skeleton } = buildProcess(fileName, program);
-  const plane = proc.planes.find((p) => p.label === HERO_ROUTINE) ?? proc.planes[0];
+  const routine = proc.planes.find((p) => p.label.toUpperCase().replace(/ /g, '_') === HERO_ROUTINE) ?? proc.planes[0];
+  const technicalRoutine = buildProcess(fileName, program, 'LR', 'technical').process.planes.find((p) => p.label === HERO_ROUTINE);
 
-  const anchored = plane.nodes.flatMap((n) => (n.anchor ? [n.anchor.lineStart, n.anchor.lineEnd] : []));
+  // The excerpt: the main line's first steps and the decisions in them that exit.
+  const model = buildExportModel(skeleton, { labels: plainLabels(skeleton, source) });
+  const excerpt = businessExcerpt(model, { steps: 5 });
+  const excerptLayout = layoutModel(excerpt, { direction: 'TB' });
+  const plane = { ...planeOf(excerpt.root, excerpt, excerptLayout, 'Excerpt · first steps', null, null), id: 'excerpt' };
+  const codeRange = (technicalRoutine ?? routine).nodes;
+  const anchored = codeRange.flatMap((n) => (n.anchor ? [n.anchor.lineStart, n.anchor.lineEnd] : []));
   const first = Math.min(...anchored);
   const last = Math.max(...anchored);
   const lines = source.split('\n');
@@ -283,9 +319,26 @@ export function landingHero(fileName: string, program: string): LandingHero {
   const groups = new Map<string, string[]>();
   for (const item of nd.items) groups.set(item.label, [...(groups.get(item.label) ?? []), item.anchor]);
 
+  // The decisions of the shown routine, as the excerpt draws them.
+  const inRoutine = (line: number | undefined) => line !== undefined && line >= first && line <= last;
+  const decisions = plane.nodes.filter((n) => n.tag === 'exclusiveGateway' && inRoutine(n.anchor?.lineStart));
+  const name = (id: string) => plane.nodes.find((n) => n.id === id);
+  const where = (n: LandingNode) => n.anchorLabel ?? anchorLabelOf(n.anchor);
+  const caption = decisions.map((g) => {
+    // The exit: the branch whose target ends the process, directly or after one step.
+    const endsHere = (id: string) => name(id)?.tag === 'endEvent' || plane.flows.some((x) => x.from === id && name(x.to)?.tag === 'endEvent');
+    const exit = plane.flows.find((f) => f.from === g.id && endsHere(f.to));
+    const step = exit ? name(exit.to) : undefined;
+    const word = exit?.label?.lines.join(' ') ?? '';
+    return step
+      ? `${g.name} (${where(g)}) — ${word}: ${step.name} (${where(step)}).`
+      : `${g.name} (${where(g)}).`;
+  }).join(' ');
+
   return {
     process: proc,
     plane,
+    caption,
     code,
     rules: { total: ruleSet.rules.length, shown },
     notDetermined: { total: nd.count, groups: [...groups].map(([label, anchors]) => ({ label, anchors })) },
@@ -294,6 +347,6 @@ export function landingHero(fileName: string, program: string): LandingHero {
 }
 
 /** The whole map of an example, every plane — for the process section. */
-export function landingProcess(fileName: string, program: string): LandingProcess {
-  return buildProcess(fileName, program).process;
+export function landingProcess(fileName: string, program: string, names: 'plain' | 'technical' = 'plain'): LandingProcess {
+  return buildProcess(fileName, program, 'LR', names).process;
 }

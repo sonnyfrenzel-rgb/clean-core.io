@@ -45,7 +45,7 @@ export function rendererColors(host: HTMLElement) {
 }
 
 const MARGIN = 24;
-const MIN_SCALE = 0.6;
+const MIN_SCALE = 0.8;
 
 /** Fit the level into the canvas with a margin; never above 100 %, never below a readable floor. */
 export function fitWithPadding(canvas: ViewboxCanvas): void {

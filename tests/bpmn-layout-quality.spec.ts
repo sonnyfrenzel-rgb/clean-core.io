@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { buildExportModel, type ExportModel } from '../lib/bpmn/model';
+import { plainLabels } from '../lib/abap/plain-language';
 import { layoutModel, planeDrawing, type Direction } from '../lib/bpmn/layout';
 import { measureDrawing, segmentHitsBox, ZERO_METRICS } from '../lib/bpmn/layout-quality';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
@@ -26,15 +27,16 @@ import { textWidth, wrapText } from '../lib/bpmn/text-metrics';
 const EXAMPLES = path.join(__dirname, '..', 'public', 'starter-examples');
 const files = fs.readdirSync(EXAMPLES).filter((f) => /\.(abap|txt)$/.test(f)).sort();
 
-function modelOf(file: string): ExportModel {
+function modelOf(file: string, names: 'plain' | 'technical' = 'technical'): ExportModel {
   const source = fs.readFileSync(path.join(EXAMPLES, file), 'utf8').replace(/\r\n/g, '\n');
-  return buildExportModel(buildProcessSkeleton(source));
+  const skeleton = buildProcessSkeleton(source);
+  return buildExportModel(skeleton, names === 'plain' ? { labels: plainLabels(skeleton, source) } : {});
 }
 
-for (const direction of ['LR', 'TB'] as Direction[]) {
+for (const names of ['plain', 'technical'] as const) for (const direction of ['LR', 'TB'] as Direction[]) {
   for (const file of files) {
-    test(`${file} (${direction}): every level is free of overlaps, crossings through shapes and misplaced labels`, () => {
-      const model = modelOf(file);
+    test(`${file} (${direction}, ${names} names): every level is free of overlaps, crossings through shapes and misplaced labels`, () => {
+      const model = modelOf(file, names);
       const layout = layoutModel(model, { direction });
       const failures: string[] = [];
       for (const container of model.containers) {
@@ -54,6 +56,41 @@ for (const direction of ['LR', 'TB'] as Direction[]) {
     });
   }
 }
+
+for (const file of files) {
+  test(`${file} (reading surface: plain names, wrapped rows): every level is clean`, () => {
+    const model = modelOf(file, 'plain');
+    const layout = layoutModel(model, { wrap: 7 });
+    const failures: string[] = [];
+    for (const container of model.containers) {
+      const plane = layout.planes.get(container.id)!;
+      const report = measureDrawing(planeDrawing(container, plane, container === model.root ? model.pools : []));
+      for (const key of ZERO_METRICS) if (report[key] !== 0) failures.push(`${container.id} ${key}=${report[key]}`);
+      for (const f of container.flows) if (!plane.edges.has(f.id)) failures.push(`${container.id}: flow ${f.id} not drawn`);
+      // A wrapped level is never wider than seven columns of the widest step.
+      const xs = [...plane.shapes.values()].map((b) => b.x + b.width);
+      expect(Math.max(...xs) - Math.min(...[...plane.shapes.values()].map((b) => b.x))).toBeLessThan(7 * 260 + 200);
+    }
+    expect(failures, failures.join('\n')).toEqual([]);
+  });
+}
+
+test('the business reading draws the report events as one flow, and the technical one keeps their bands', () => {
+  const plain = modelOf('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap', 'plain');
+  const technical = modelOf('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap', 'technical');
+  expect(technical.root.bands.length).toBeGreaterThan(1);
+  expect(plain.root.bands.length).toBe(1);
+  // One start, one normal end on the top plane; every step of the technical top plane is still there.
+  expect(plain.root.nodes.filter((n) => n.tag === 'startEvent')).toHaveLength(1);
+  const steps = (m: ExportModel) => m.root.nodes.filter((n) => !n.tag.endsWith('Event')).map((n) => n.id).sort();
+  expect(steps(plain)).toEqual(steps(technical));
+  // Every flow joins two elements that exist.
+  const ids = new Set(plain.root.nodes.map((n) => n.id));
+  for (const f of plain.root.flows) {
+    expect(ids.has(f.sourceId), f.id).toBe(true);
+    expect(ids.has(f.targetId), f.id).toBe(true);
+  }
+});
 
 test('the layout is deterministic: same model, same coordinates', () => {
   const a = layoutModel(modelOf('Z_MM_PO_APPROVAL.abap'));

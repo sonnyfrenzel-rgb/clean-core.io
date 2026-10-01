@@ -216,6 +216,7 @@ export default function Home() {
   const lines = (n: number) => n.toLocaleString('en-US');
   const hero = landingHero(DEMO_SOURCE_FILE, DEMO_OBJECT_NAME);
   const referenceProcess = landingProcess(reference.fileName, reference.fileName.replace(/(_\d+LOC)?\.abap$/i, ''));
+  const referenceTechnical = landingProcess(reference.fileName, referenceProcess.program, 'technical');
 
   const ladder = (['A', 'B', 'C', 'D'] as const).map((level) => ({
     level,
@@ -773,7 +774,7 @@ export default function Home() {
                 </span>
                 <CcProvenanceChip value="reconstructed" />
               </p>
-              <ProcessMapPanel process={referenceProcess} />
+              <ProcessMapPanel process={referenceProcess} technical={referenceTechnical} />
               <ul className="m-0 flex list-none flex-col border-t border-cc-line p-0 text-sm font-medium text-cc-ink-muted">
                 {referenceProcess.notDrawn.unreached > 0 && (
                   <li className="flex flex-wrap items-center gap-2 px-4 py-3">

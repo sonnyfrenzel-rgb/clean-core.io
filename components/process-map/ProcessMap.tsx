@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { List, Map as MapIcon, Pencil } from 'lucide-react';
+import { Code2, List, Map as MapIcon, Pencil } from 'lucide-react';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcButton from '@/components/cc/Button';
@@ -9,7 +9,7 @@ import { useProcessRules } from '@/hooks/useProcessRules';
 import { useProcessOverlays } from '@/hooks/useProcessOverlays';
 import type { UsageReport } from '@/lib/abap/usage-model';
 import { UNANCHORED } from '@/lib/process-naming';
-import { EARLY_END_WORD, elementsOfPlane, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
+import { EARLY_END_WORD, elementsOfPlane, technicalView, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
 import {
   buildNavigation,
   buildOverlays,
@@ -154,7 +154,7 @@ export interface ProcessMapProps {
 }
 
 export default function ProcessMap({
-  model,
+  model: modelProp,
   source,
   selected: selectedProp,
   onSelectedChange,
@@ -175,6 +175,14 @@ export default function ProcessMap({
   const [treeFocusToken, setTreeFocusToken] = useState(0);
   /** Which branch of a decision the arrow keys last stepped to. */
   const branch = useRef<{ id: string; index: number }>({ id: '', index: -1 });
+
+  /**
+   * Plain names by default — the map's first reader is a business reader; the
+   * developer's names are one switch away, in every view at once (map, steps,
+   * outline, search), so the two never show different processes.
+   */
+  const [technical, setTechnical] = useState(false);
+  const model = useMemo(() => (technical ? technicalView(modelProp) : modelProp), [modelProp, technical]);
 
   const view = viewProp ?? viewLocal;
   const selected = selectedProp !== undefined ? selectedProp : selectedLocal;
@@ -355,8 +363,11 @@ export default function ProcessMap({
       accessibleName: e.accessibleName,
       unanchored: e.anchor === null,
       unanchoredLabel: UNANCHORED,
-      earlyLabel: e.early ? EARLY_END_WORD : null,
+      // ADR-054's word over an early end — needed where the end is named by
+      // its routine; a plain outcome name ("Rejected: no material") says it.
+      earlyLabel: e.early && !e.plainName ? EARLY_END_WORD : null,
       anchor: anchorText(e.anchor),
+      fact: e.fact,
     }])),
     [model],
   );
@@ -545,6 +556,16 @@ export default function ProcessMap({
           {/* Roadmap 3.1. Editing is a mode, not a view: *Map* and *Steps* are
               two renderings of the same thing, and a modeller is a third state
               of the first one. The reading view stays reachable at all times. */}
+          {modelProp.technicalXml ? (
+            <CcButton
+              data-process-technical-toggle=""
+              aria-pressed={technical}
+              icon={<Code2 size={16} aria-hidden={true} />}
+              onClick={() => setTechnical((was) => !was)}
+            >
+              {wt('map.technicalNames')}
+            </CcButton>
+          ) : null}
           <CcButton
             data-process-edit-toggle=""
             aria-pressed={editing}
@@ -564,6 +585,12 @@ export default function ProcessMap({
         unanchored={model.traceability.unanchored}
         unanchoredLabel={UNANCHORED}
       />
+
+      {modelProp.technicalXml && !technical ? (
+        <p data-process-map-plain-note className="text-[12px] font-medium text-cc-ink-muted">
+          {wt('map.plainNamesNote')}
+        </p>
+      ) : null}
 
       {model.naming.notice ? (
         <CcMessageStrip state="neutral" headline={wt('map.businessNames')}>
@@ -642,7 +669,7 @@ export default function ProcessMap({
               // `openWith` now returns.
               key={`${session}|${source}`}
               openWith={openWith}
-              baseXml={model.xml}
+              baseXml={modelProp.technicalXml ?? modelProp.xml}
               fileName={model.fileName}
               label={`${model.processName}. ${model.overview}`}
               labels={labels}

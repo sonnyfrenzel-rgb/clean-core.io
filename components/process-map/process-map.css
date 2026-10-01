@@ -244,3 +244,9 @@
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* A phase's counted fact, above its anchor, in the page face. */
+.cc-map-fact {
+  display: block;
+  font-family: inherit;
+}

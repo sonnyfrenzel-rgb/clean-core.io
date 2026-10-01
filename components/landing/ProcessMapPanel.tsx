@@ -17,7 +17,7 @@ function kindOf(n: LandingNode): string {
   return kindWord(n.tag);
 }
 
-function StepList({ nodes }: { nodes: LandingNode[] }) {
+function StepList({ nodes, technical = false }: { nodes: LandingNode[]; technical?: boolean }) {
   const ordered = [...nodes]
     .filter((n) => n.tag !== 'boundaryEvent')
     .sort((a, b) => a.box.x - b.box.x || a.box.y - b.box.y);
@@ -31,12 +31,12 @@ function StepList({ nodes }: { nodes: LandingNode[] }) {
               type="button"
               data-opens={n.opens}
               aria-label={`Open ${spokenName(n)}`}
-              className="font-cc-mono font-semibold text-cc-brand-strong underline underline-offset-4"
+              className={`${technical ? 'font-cc-mono' : ''} font-semibold text-cc-brand-strong underline underline-offset-4`}
             >
               {n.name}
             </button>
           ) : (
-            <span className="font-cc-mono font-semibold text-cc-ink">{n.name}</span>
+            <span className={`${technical ? 'font-cc-mono' : ''} font-semibold text-cc-ink`}>{n.name}</span>
           )}
           <span className="font-cc-mono text-xs text-cc-ink-muted">{anchorText(n.anchor)}</span>
         </li>
@@ -45,26 +45,34 @@ function StepList({ nodes }: { nodes: LandingNode[] }) {
   );
 }
 
-export default function ProcessMapPanel({ process }: { process: LandingProcess }) {
-  const planes: ExplorerPlane[] = process.planes.map((p) => ({
-    id: p.id,
-    label: p.label,
-    parent: p.parent,
-    anchor: p.anchor ? anchorText(p.anchor) : null,
-    map: (
-      <BpmnPlaneSvg
-        plane={p}
-        idPrefix={`pm-${p.id}`}
-        interactive
-        scale={p.parent ? 1 : 0.92}
-        title={
-          p.parent
-            ? `The phase ${p.label} of ${process.program} as BPMN, reconstructed from the code.`
-            : `The overview of ${process.program} as BPMN, reconstructed from the code: one row per event block, every phase collapsed.`
-        }
-      />
-    ),
-    steps: <StepList nodes={p.nodes} />,
-  }));
-  return <ProcessExplorer planes={planes} rootId={process.planes[0].id} />;
+export default function ProcessMapPanel({ process, technical }: { process: LandingProcess; technical?: LandingProcess }) {
+  const technicalById = new Map((technical?.planes ?? []).map((p) => [p.id, p]));
+  const map = (p: LandingProcess['planes'][number], names: 'plain' | 'technical') => (
+    <BpmnPlaneSvg
+      plane={p}
+      idPrefix={`pm-${names}-${p.id}`}
+      interactive
+      scale={p.parent ? 1 : 0.92}
+      title={
+        p.parent
+          ? `The phase ${p.label} of ${process.program} as BPMN, reconstructed from the code.`
+          : `The overview of ${process.program} as BPMN, reconstructed from the code: every phase collapsed.`
+      }
+    />
+  );
+  const planes: ExplorerPlane[] = process.planes.map((p) => {
+    const t = technicalById.get(p.id);
+    return {
+      id: p.id,
+      label: p.label,
+      technicalLabel: t?.label ?? p.label,
+      parent: p.parent,
+      anchor: p.anchor ? anchorText(p.anchor) : null,
+      map: map(p, 'plain'),
+      steps: <StepList nodes={p.nodes} />,
+      technicalMap: t ? map(t, 'technical') : undefined,
+      technicalSteps: t ? <StepList nodes={t.nodes} technical /> : undefined,
+    };
+  });
+  return <ProcessExplorer planes={planes} rootId={process.planes[0].id} program={process.program} />;
 }

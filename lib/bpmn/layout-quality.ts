@@ -241,6 +241,27 @@ export function measureDrawing(drawing: Drawing): QualityReport {
     }
   }
 
+  // The name and the anchor inside an activity, centred as both renderers
+  // centre them: a boundary event on the host's foot must not sit on them.
+  for (const s of shapes) {
+    if (!s.inside) continue;
+    const lh = lineHeight(s.inside.fontSize);
+    const blockH = s.inside.lines.length * lh + s.inside.reserve;
+    const blockW = Math.max(...s.inside.lines.map((l) => textWidth(l, s.inside!.fontSize, s.inside!.bold)), 1);
+    const block: Bounds = {
+      x: s.box.x + s.box.width / 2 - blockW / 2,
+      y: s.box.y + s.box.height / 2 - blockH / 2,
+      width: blockW,
+      height: blockH + (s.inside.reserve ? 0 : 0),
+    };
+    for (const b of shapes) {
+      if (b.attachedTo !== s.id) continue;
+      if (overlaps(block, b.box)) {
+        r.textOverflow += 1;
+        details.push(`boundary ${b.id} on the text of ${s.id}`);
+      }
+    }
+  }
   for (const s of shapes) {
     if (!s.inside) continue;
     const { lines, fontSize, bold, padding, reserve } = s.inside;

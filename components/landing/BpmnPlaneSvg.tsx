@@ -118,7 +118,7 @@ function Node({ node, interactive }: { node: LandingNode; interactive: boolean }
   const { x, y, width, height } = node.box;
   const cx = x + width / 2;
   const cy = y + height / 2;
-  const anchor = anchorText(node.anchor);
+  const anchor = node.anchorLabel ?? anchorText(node.anchor);
   const opens = interactive && node.opens;
   const common = {
     'data-bpmn-node': node.id,
@@ -175,7 +175,7 @@ function Node({ node, interactive }: { node: LandingNode; interactive: boolean }
   const glyph = ['serviceTask', 'sendTask', 'userTask', 'businessRuleTask'].includes(node.tag);
   const label = node.inside ?? [node.name];
   // The block of name lines and the anchor line, centred in the box.
-  const block = label.length * LINE_H + (node.anchor ? ANCHOR_H : 0);
+  const block = label.length * LINE_H + (node.fact ? ANCHOR_H : 0) + ANCHOR_H;
   const top = y + (height - block) / 2;
   return (
     <g {...common}>
@@ -195,7 +195,12 @@ function Node({ node, interactive }: { node: LandingNode; interactive: boolean }
           {l}
         </text>
       ))}
-      <text x={cx} y={top + label.length * LINE_H + 10} textAnchor="middle" fontSize={ANCHOR_FONT} className="cc-bpmn-anchor font-cc-mono fill-cc-ink-muted">
+      {node.fact && (
+        <text x={cx} y={top + label.length * LINE_H + 10} textAnchor="middle" fontSize={ANCHOR_FONT} className="fill-cc-ink-muted">
+          {node.fact}
+        </text>
+      )}
+      <text x={cx} y={top + label.length * LINE_H + (node.fact ? ANCHOR_H : 0) + 10} textAnchor="middle" fontSize={ANCHOR_FONT} className="cc-bpmn-anchor font-cc-mono fill-cc-ink-muted">
         {anchor}
       </text>
       {node.tag === 'subProcess' && !node.multiInstance && (
