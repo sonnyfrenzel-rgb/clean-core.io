@@ -96,7 +96,8 @@ test('a route the architect switched is labelled as theirs, with the recommendat
   const body = await page.locator('body').innerText();
   expect(body, 'the card says the route is the reader\'s choice').toContain('Chosen by you');
   expect(body, 'and the recommendation is named as the other one').toContain('You changed this route. The recommendation was');
-  expect(body).toContain('Side-by-Side (SAP BTP)');
+  expect(body).toContain('Side-by-Side (BAIP)');
+  expect(body, 'the stored route value is not shown as it is (roadmap 3.0.15)').not.toContain('Side-by-Side (SAP BTP)');
   expect(body).toContain('88% confidence');
   // The confidence badge no longer stands beside the chosen route as if it were about it.
   expect(body, 'the badge is not confidence for a route nothing assessed').not.toContain('88% Conf.');

@@ -56,7 +56,7 @@ const RICH_ANALYSIS = JSON.stringify({
     potential: 'Medium',
     targetStandardProcess: 'SAP S/4HANA Sales — Credit Management (FSCM)',
     rationale:
-      'Most of the custom credit check duplicates Advanced Credit Management. The residual scoring rule has no standard equivalent and belongs side-by-side on BTP.',
+      'Most of the custom credit check duplicates Advanced Credit Management. The residual scoring rule has no standard equivalent and belongs side-by-side on BAIP.',
   },
   gaps: [
     { title: 'Custom credit scoring rule', detail: 'No released equivalent; candidate for a BTP microservice.' },
@@ -168,7 +168,7 @@ export async function seedStageProject(options: SeedOptions): Promise<SeededProj
     legacyCode: 'REPORT z_style.\nSELECT * FROM vbak INTO TABLE @DATA(lt).\n',
     analysis: JSON.stringify({ cleanCoreScore: 62, standardFit: { potential: 'Medium' } }),
     cleanCoreScore: 62,
-    solutionDesign: '# Target architecture\n\nSide-by-side on BTP.\n',
+    solutionDesign: '# Target architecture\n\nSide-by-side on BAIP.\n',
     generatedCode: 'export const ok = true;\n',
     testCases: [{ id: 't1', name: 'Case', category: 'Unit', status: 'Passed' }],
     documentation: '# Blueprint\n\nLevel 1.\n',

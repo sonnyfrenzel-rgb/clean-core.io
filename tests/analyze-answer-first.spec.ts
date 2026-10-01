@@ -50,7 +50,7 @@ test.describe('the answer, in words', () => {
     expect(a.headline).toBe('25 findings to review in this code — 1 critical and 3 high');
     expect(a.detail).toContain('read all 669 lines without a model');
     expect(a.detail).toContain('1 critical, 3 high, 16 medium, 4 low');
-    expect(a.detail).toContain('a side-by-side extension on SAP BTP');
+    expect(a.detail).toContain('a side-by-side extension on SAP Business AI Platform (formerly SAP BTP)');
     expect(a.detail).toContain('5 things this analysis could not determine are listed at the end');
     expect(`${a.headline} ${a.detail}`).not.toMatch(/%|compliance/i);
   });

@@ -173,7 +173,7 @@ test.describe('the handover reads what is on record', () => {
     const who = confirmationsOf(p);
     expect(who.map((c) => c.provenance)).toEqual(['confirmed', 'confirmed']);
     expect(who[0].what).toContain('Confirmed the target architecture');
-    expect(handoverTimeline(p).map((e) => e.sentence)).toContain('Target architecture confirmed: Side-by-Side BTP (CAP)');
+    expect(handoverTimeline(p).map((e) => e.sentence)).toContain('Target architecture confirmed: Side-by-Side BAIP (CAP)');
   });
 
   test('the next step blocks first, then names the first missing phase', () => {
@@ -203,7 +203,7 @@ test.describe('the handover reads what is on record', () => {
     // Every one of the nine links stands behind exactly one step.
     expect(groups.flatMap((g) => g.links.map((l) => l.key)).sort()).toEqual([...HANDOVER_LINKS].sort());
     const decision = groups.find((g) => g.key === 'decision')!;
-    expect(decision.title).toBe('Side-by-Side (SAP BTP)');
+    expect(decision.title).toBe('Side-by-Side (BAIP)');
     expect(decision.sub).toBe('Recommended, not confirmed');
     // Nothing sealed: the package is not determined, never proven.
     expect(groups.find((g) => g.key === 'delivery')!.provenance).toBe('not-determined');
@@ -260,12 +260,12 @@ test.describe('the handover on screen', () => {
     await expect(links).toHaveCount(9, { timeout: 60000 });
     // The pack's four steps lead; the nine links sit one level deeper (proposal A).
     await expect(page.locator('[data-chain-group]')).toHaveCount(4);
-    await expect(page.locator('[data-chain-group="decision"]')).toContainText('Side-by-Side BTP (CAP)');
+    await expect(page.locator('[data-chain-group="decision"]')).toContainText('Side-by-Side BAIP (CAP)');
     await expect(page.locator('[data-delivery-facet]')).toHaveCount(4);
     await expect(page.locator('[data-still-needed-item="economics"]')).toBeVisible();
     await page.locator('[data-chain-detail] [data-cc-disclosure-trigger]').click();
     await expect(page.locator('[data-chain-link="economics"]')).toHaveAttribute('data-chain-state', 'open');
-    await expect(page.locator('[data-chain-link="design"]')).toContainText('Side-by-Side BTP (CAP)');
+    await expect(page.locator('[data-chain-link="design"]')).toContainText('Side-by-Side BAIP (CAP)');
     await expect(page.locator('[data-handover-next]')).toBeVisible();
     await expect(page.locator('[data-signature-covers]')).toContainText('Not signed');
     await expect(page.locator('[data-confirmations]')).toContainText(acct.email);
