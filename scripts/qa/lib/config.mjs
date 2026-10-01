@@ -71,7 +71,7 @@ export const BUDGET = {
    * estimate at roughly $0.22, and `maxBatches` is now the only thing that ends a review. The cap stays where
    * it is as a floor against a pricing change nobody noticed, not as a coverage decision.
    */
-  maxCostUsd: 1.0, // one-time for the 3.0 merge review (Sonny, 01.10.2026); back to 0.5 in the next commit
+  maxCostUsd: 0.5,
   /** Delta context per model call, in characters. */
   maxBatchChars: 200_000,
   /**
