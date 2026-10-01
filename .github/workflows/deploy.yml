@@ -383,7 +383,9 @@ jobs:
             fi
             echo "app_network_flags=--network=${APP_VPC_NETWORK} --subnet=${APP_VPC_SUBNET} --vpc-egress=private-ranges-only" >> "$GITHUB_OUTPUT"
           else
-            echo "app_network_flags=" >> "$GITHUB_OUTPUT"
+            # Unset means no VPC egress — and a deploy without network flags keeps
+            # the previous revision's network, so detach it explicitly (01.10.2026).
+            echo "app_network_flags=--clear-network" >> "$GITHUB_OUTPUT"
           fi
 
       # F-15: Assert no emulator flag leaks into production deploy
