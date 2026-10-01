@@ -10,7 +10,20 @@ import { anchorLabel, readTableAccess, type SourceReading } from '@/lib/first-lo
 import type { NotDetermined } from '@/lib/workspace-model';
 import type { Project } from '@/lib/types';
 import { formatIsoDate } from '@/lib/format';
-import { printHeaderLine, printNotDeterminedTitle, printRulesTitle, wt } from '@/lib/workspace-messages';
+import {
+  printHeaderLine,
+  printNotDeterminedTitle,
+  printObjectsTitle,
+  printRulesTitle,
+  wt,
+  type WorkspaceMessageKey,
+} from '@/lib/workspace-messages';
+import { CcCleanCoreLevel } from '@/components/cc/Identifier';
+import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
+import { catalogLookupTargetOf } from '@/lib/assessment-target';
+import { gradeKey, type ObjectUse } from '@/lib/abap/abcd-classification';
+import { CLEAN_CORE_LEVEL, CLEAN_CORE_LEVEL_VALUES } from '@/lib/clean-core-level';
+import type { TableDependency } from '@/lib/abap/table-dependencies';
 
 /**
  * The workspace on paper — `DESIGN.md` §7.1 and §5.7, mockup s10 ("Druck").
@@ -27,7 +40,15 @@ import { printHeaderLine, printNotDeterminedTitle, printRulesTitle, wt } from '@
  *      legibly at page width (§5.7), and the sheet says so in one line;
  *   4. the business rules as a table with the decision on record and its
  *      basis, as a chip with word and icon (§7.1);
- *   5. everything that was not determined, with its reason and line.
+ *   5. the SAP objects the code names, each with SAP's clean core level A–D
+ *      as the IT view shows it — read under the project's target profile
+ *      (`catalogLookupTargetOf` → `/api/abcd-classify`), with a short legend.
+ *      Owner decision 01.10.2026 ("Clean core level anzeigen ja auf dem
+ *      Druckblatt"). The level is orientation: it is not part of the signed
+ *      run or the audit pack, and the sheet says so. An object without a
+ *      grade prints "not determined", and a lookup that has not answered
+ *      prints that, never a guessed letter;
+ *   6. everything that was not determined, with its reason and line.
  *
  * Hidden on screen. `app/globals.css` (`body:has([data-workspace-print])`)
  * makes it the only thing on paper while the workspace is open — unless the
@@ -39,6 +60,38 @@ import { printHeaderLine, printNotDeterminedTitle, printRulesTitle, wt } from '@
  * `h1` here would stand before the page's own in the DOM — every reader and
  * spec that asks for "the first h1" of the workspace would find this one.
  */
+/** One SAP object the code names, in the way it uses it, with its first line. */
+export interface PrintObject {
+  name: string;
+  use: ObjectUse;
+  line: number;
+}
+
+const USE_KEY: Record<ObjectUse, WorkspaceMessageKey> = {
+  read: 'print.useRead',
+  write: 'print.useWrite',
+  reference: 'print.useReference',
+};
+
+/**
+ * The distinct objects of the table reading, in source order. A name the
+ * source only shows as a possible value of a dynamic target is not the target
+ * (R26) and is left out, as is another program's data object — neither is an
+ * SAP object the level lists grade.
+ */
+export function printObjectsOf(dependencies: readonly TableDependency[]): PrintObject[] {
+  const seen = new Map<string, PrintObject>();
+  for (const dep of dependencies) {
+    if (dep.possibleTargetOf || dep.route === 'program-global') continue;
+    const key = gradeKey(dep.table, dep.access);
+    if (!seen.has(key)) seen.set(key, { name: dep.table, use: dep.access, line: dep.line });
+  }
+  return [...seen.values()];
+}
+
+/** `/api/abcd-classify` refuses more than 500 objects in one call. */
+const MAX_GRADED = 500;
+
 export default function WorkspacePrintSheet({
   project,
   projectId,
@@ -69,6 +122,14 @@ export default function WorkspacePrintSheet({
       window.clearTimeout(timer);
     };
   }, [projectId, source, project?.activeRunId]);
+
+  const objects = useMemo(
+    () => (source.trim() ? printObjectsOf(readTableAccess(source)).slice(0, MAX_GRADED) : []),
+    [source],
+  );
+  // Graded under the project's target profile (owner decision 30.09.2026), the
+  // same lookup the IT view's buckets and the process map's overlay make.
+  const levels = useAbcdCatalogLookup(objects, project ? catalogLookupTargetOf(project) : null);
 
   const steps = useMemo(() => (reading ? processStepList(reading.skeleton, source) : []), [reading, source]);
   const wording = useMemo(() => (reading ? plainWordingFor(source, reading.skeleton) : null), [reading, source]);
@@ -194,6 +255,58 @@ export default function WorkspacePrintSheet({
             })}
           </div>
         )}
+      </section>
+
+      <section data-print-levels="" className="mt-4">
+        <p className="m-0 flex items-center gap-2 text-[15px] font-bold">
+          {printObjectsTitle(objects.length)}
+          <CcProvenanceChip value="imported" />
+        </p>
+        <p className="mt-1 mb-0 text-[12px]">{wt('print.levelsNote')}</p>
+        {objects.length === 0 ? (
+          <p className="mt-1 mb-0 text-[13px]">{wt('print.noObjects')}</p>
+        ) : (
+          <div className="mt-2 rounded-cc-row border border-cc-line">
+            <div className="grid grid-cols-[1fr_120px_260px] gap-2 border-b border-cc-line px-3 py-1 text-[11px] font-semibold tracking-[0.08em] uppercase">
+              <span>{wt('print.colObject')}</span>
+              <span>{wt('print.colUse')}</span>
+              <span>{wt('print.colLevel')}</span>
+            </div>
+            {objects.map((object) => {
+              const graded = levels.status === 'ready' ? levels.grades[gradeKey(object.name, object.use)] : undefined;
+              return (
+                <div
+                  key={gradeKey(object.name, object.use)}
+                  data-print-object={gradeKey(object.name, object.use)}
+                  className="grid grid-cols-[1fr_120px_260px] items-center gap-2 border-b border-cc-line px-3 py-1 text-[13px] break-inside-avoid last:border-b-0"
+                >
+                  <span>
+                    <span className="font-cc-mono text-[12px]">{object.name}</span>
+                    <span className="font-cc-mono text-[11px]"> [{anchorLabel(object.line)}]</span>
+                  </span>
+                  <span>{wt(USE_KEY[object.use])}</span>
+                  <span data-print-level={levels.status === 'ready' ? (graded?.grade ?? 'Unknown') : levels.status}>
+                    {levels.status === 'loading' ? (
+                      wt('print.levelsLoading')
+                    ) : levels.status === 'error' ? (
+                      wt('print.levelsFailed')
+                    ) : (
+                      <CcCleanCoreLevel value={graded?.grade ?? 'Unknown'} withLabel />
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <dl data-print-legend="" className="mt-2 mb-0 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-[12px]">
+          {[...CLEAN_CORE_LEVEL_VALUES, 'Unknown' as const].map((value) => (
+            <React.Fragment key={value}>
+              <dt className="font-cc-mono font-semibold">{CLEAN_CORE_LEVEL[value].code}</dt>
+              <dd className="m-0">{CLEAN_CORE_LEVEL[value].label}</dd>
+            </React.Fragment>
+          ))}
+        </dl>
       </section>
 
       <section className="mt-4">

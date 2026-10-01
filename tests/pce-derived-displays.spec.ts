@@ -171,6 +171,8 @@ test.describe('a PCE project gets the same grade in the core result and each der
       ['hooks/useFitByPlatform.ts', /useAbcdCatalogLookup\(lookupObjects, project \? catalogLookupTargetOf\(project\) : null\)/],
       ['components/workspace/ManagementOverview.tsx', /useFitByPlatform\(findings, project,/],
       ['components/workspace/PublicCloudFitPanel.tsx', /useAbcdCatalogLookup\(lookupObjects, project \? catalogLookupTargetOf\(project\) : null\)/],
+      // The print sheet's level column — owner decision 01.10.2026.
+      ['components/workspace/WorkspacePrintSheet.tsx', /useAbcdCatalogLookup\(objects, project \? catalogLookupTargetOf\(project\) : null\)/],
       ['hooks/useProcessOverlays.ts', /useAbcdCatalogLookup\(objects, catalogTarget\)/],
       ['components/analyze/UsageRiskMatrix.tsx', /useAbcdCatalogLookup\(lookupObjects, target\)/],
       ['app/(app)/project/[projectId]/documentation/page.tsx', /catalogTarget=\{project \? catalogLookupTargetOf\(project\) : null\}/],

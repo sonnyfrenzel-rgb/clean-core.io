@@ -214,6 +214,18 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'print.notConfirmed': 'Not confirmed yet',
   'print.decisionNotRead': 'Not read for this printout',
   'print.notDeterminedNoSource': 'Not determined — nothing was staged to assess',
+  'print.levelsNote':
+    'Clean core level per SAP object, read from SAP’s released-object lists for this project’s target. Orientation only — the level is not part of the signed run.',
+  'print.noObjects': 'This code names no SAP object.',
+  'print.colObject': 'SAP object',
+  'print.colUse': 'Use',
+  'print.colLevel': 'Clean core level',
+  'print.useRead': 'read',
+  'print.useWrite': 'write',
+  'print.useReference': 'type reference',
+  'print.levelsLoading': 'Not read for this printout',
+  'print.levelsFailed': 'Not determined — the level lookup did not answer',
+  'print.legendTitle': 'Levels',
   'print.footer':
     'Printed from the workspace. Line anchors and IDs are printed as text. Reconstructed means read from the code, not confirmed by anyone.',
   // Open invitations — owner decision 01.10.2026
@@ -239,6 +251,11 @@ export function printHeaderLine(input: {
 /** WorkspacePrintSheet — "Business rules · 7". */
 export function printRulesTitle(n: number): string {
   return `Business rules · ${n}`;
+}
+
+/** WorkspacePrintSheet — "SAP objects · 12". */
+export function printObjectsTitle(n: number): string {
+  return `SAP objects · ${n}`;
 }
 
 /** WorkspacePrintSheet — "3 not determined". */
