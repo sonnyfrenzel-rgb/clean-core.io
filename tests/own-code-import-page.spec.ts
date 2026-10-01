@@ -138,6 +138,15 @@ test.describe('own code: choose, check, start', () => {
     await expect(page.locator('[data-own-code-missing]')).toContainText('Z_MM_PO_LOG');
     await expect(page.locator('[data-own-code-missing]')).not.toContainText('Z_MM_PO_NOTIFY');
     await expect(page.locator('[data-own-code-name]')).toHaveValue('Z_MM_PO_APPROVAL');
+
+    // How it is paid is a statement, not a choice the reader does not have
+    // (owner decision 01.10.2026): the account's own words from lib/run-cost.ts.
+    const paid = page.locator('[data-own-code-paid]');
+    await expect(paid).toHaveAttribute('data-own-code-paid', 'free');
+    await expect(paid.locator('input')).toHaveCount(0);
+    await expect(paid.locator('[data-own-code-paid-statement]')).toHaveText('Uses 1 of your 5 free analysis runs (3 left)');
+    await expect(paid.locator('[data-own-code-settings]')).toHaveAttribute('href', '/settings');
+    await expect(page.locator('[data-own-code-same-source]')).toContainText('this source was already analysed');
   });
 
   test('"Start analysis" writes one project with the joined source, and Analyze asks the target', async ({ page }) => {
@@ -186,5 +195,52 @@ test.describe('own code: choose, check, start', () => {
     await expect(page.locator('[data-trust-toggle]')).toHaveAttribute('aria-expanded', 'false');
     await page.click('[data-trust-toggle]');
     await expect(page.locator('#trust-claim-list')).toBeVisible();
+  });
+});
+
+test.describe('own code: after the run, the workspace', () => {
+  const EMAIL = `own-code-ws-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@cleancore-test.io`;
+
+  test.beforeAll(async () => {
+    test.setTimeout(180 * 1000);
+    const cred = await createUserWithEmailAndPassword(clientAuth, EMAIL, PASSWORD);
+    await adminSetCustomClaim(cred.user.uid, { admin: true });
+    await adminSetDoc('users', cred.user.uid, {
+      firstName: 'Own', lastName: 'Workspace', email: EMAIL,
+      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true, activatedAt: new Date(),
+      termsVersionAccepted: TERMS_VERSION, mfaEnabled: false,
+      transformationsUsed: 0, transformationsLimit: 5, createdAt: new Date(),
+      // No model on any machine: the run is the deterministic one, signed.
+      modelStages: { analyze: false, naming: false, statements: false },
+    });
+  });
+
+  test('a signed run from the import page continues in the workspace, like an example', async ({ page }) => {
+    test.setTimeout(360 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1200 });
+    await signInViaLanding(page, EMAIL, PASSWORD);
+    await page.goto('/admin/new-project/upload', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-cc-own-code]')).toBeVisible({ timeout: 60000 });
+    await page.locator('[data-own-code-input]').setInputFiles([
+      buffer('Z_MM_PO_APPROVAL.abap', MAIN),
+      buffer('Z_MM_PO_NOTIFY.abap', NOTIFY),
+    ]);
+    const ack = page.locator('[data-personal-data-hints] input[type="checkbox"]');
+    if (await ack.count()) await ack.check();
+    await expect(page.locator('[data-own-code-start]')).toBeEnabled({ timeout: 30000 });
+    await page.click('[data-own-code-start]');
+
+    await page.waitForURL(/\/project\/[^/]+\/analyze/, { timeout: 90000 });
+    const projectId = /\/project\/([^/?]+)\/analyze/.exec(page.url())![1];
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText('Confirm Target Operating Model', { timeout: 60000 });
+    await dialog.getByRole('radio', { name: /Public Cloud/ }).first().check();
+    await dialog.getByRole('button', { name: /Confirm and start the analysis/ }).click();
+
+    // Only once the run is signed, and then into the workspace with the first look.
+    await page.waitForURL(new RegExp(`/project/${projectId}\\?first=1`), { timeout: 180000 });
+    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    const stored = await adminGetDoc('projects', projectId);
+    expect(typeof stored?.activeRunId, 'the workspace opened before a run was signed').toBe('string');
   });
 });

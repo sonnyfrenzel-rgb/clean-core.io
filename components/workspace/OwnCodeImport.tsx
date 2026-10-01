@@ -48,7 +48,6 @@ import CcIconButton from '@/components/cc/IconButton';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import CcRadioGroup from '@/components/cc/RadioGroup';
 import { STATE_CLASSES } from '@/components/cc/state';
 import { cn } from '@/lib/utils';
 
@@ -461,39 +460,29 @@ export default function OwnCodeImport() {
                 </section>
 
                 <div className="border-t border-cc-line pt-4">
-                  <CcRadioGroup<'free' | 'own-key'>
-                    legend={wt('ownCode.paidLegend')}
-                    required
-                    name="own-code-paid"
-                    value={selfFunded ? 'own-key' : 'free'}
-                    onChange={() => undefined}
-                    valueState={cost.blocked ? 'error' : undefined}
-                    message={cost.blocked ? cost.quota : undefined}
-                    options={[
-                      {
-                        value: 'free',
-                        label: selfFunded ? wt('ownCode.payFreeRuns') : cost.quota,
-                        help: selfFunded ? wt('ownCode.payFreeSelfFunded') : ownCodeFreeHelp(limit),
-                        disabled: selfFunded,
-                      },
-                      {
-                        value: 'own-key',
-                        label: wt('ownCode.payOwnKey'),
-                        help: selfFunded ? (
-                          wt('ownCode.payOwnKeyOn')
-                        ) : (
-                          <>
-                            {wt('ownCode.payOwnKeyOffBefore')}{' '}
-                            <Link href="/settings" className="font-semibold text-cc-brand-strong underline underline-offset-2">
-                              {wt('ownCode.payOwnKeyOffLink')}
-                            </Link>{' '}
-                            {wt('ownCode.payOwnKeyOffAfter')}
-                          </>
-                        ),
-                        disabled: !selfFunded,
-                      },
-                    ]}
-                  />
+                  {/* A statement, not a choice (owner decision 01.10.2026): the
+                      account decides how a run is paid — its own key if one is
+                      set, the free runs otherwise — so offering two radios
+                      would be a choice the reader does not have. */}
+                  <section aria-labelledby="own-code-paid" data-own-code-paid={selfFunded ? 'own-key' : 'free'} className="flex flex-col gap-1">
+                    <h3 id="own-code-paid" className="m-0 text-[13px] font-semibold text-cc-ink">
+                      {wt('ownCode.paidLegend')}
+                    </h3>
+                    <p
+                      data-own-code-paid-statement=""
+                      className={cn('m-0 text-[14px] font-semibold', cost.blocked ? 'text-cc-error' : 'text-cc-ink')}
+                    >
+                      {selfFunded ? wt('ownCode.payOwnKey') : cost.quota}
+                    </p>
+                    <p className="m-0 text-[12px] font-medium leading-snug text-cc-ink-muted">
+                      {selfFunded ? wt('ownCode.payOwnKeyOn') : ownCodeFreeHelp(limit)}{' '}
+                      {selfFunded ? null : wt('ownCode.payOwnKeyOffBefore')}{' '}
+                      <Link href="/settings" data-own-code-settings="" className="font-semibold text-cc-brand-strong underline underline-offset-2">
+                        {wt('ownCode.payOwnKeyOffLink')}
+                      </Link>
+                      {'.'}
+                    </p>
+                  </section>
                   {!selfFunded ? (
                     <p data-own-code-same-source="" className="m-0 mt-2 flex items-start gap-1 text-[12px] font-medium text-cc-information">
                       <Info size={14} aria-hidden={true} className="shrink-0" />
