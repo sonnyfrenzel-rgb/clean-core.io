@@ -502,6 +502,11 @@ test.describe('P2 — formatting moves anchors and nothing else', () => {
         expect(now.lineStart, `${file}: finding ${i} (${was.kind}) left its lines`).toBeGreaterThanOrEqual(m.start(was.lineStart));
         expect(now.lineStart, `${file}: finding ${i} (${was.kind}) left its lines`).toBeLessThanOrEqual(m.end(was.lineStart));
       }
+      // Carried QA finding 9149337c0886: kind and place are not the finding.
+      // Everything but the line column (asserted above) must come back unchanged.
+      const withoutLines = (rows: string[]) => rows.map((row) => row.slice(row.indexOf(' | ') + 3));
+      expect(withoutLines(findingRows(after, STILL)), `${file}: findings under per-line chain expansion`)
+        .toEqual(withoutLines(findingRows(before, STILL)));
     });
   }
 
@@ -714,9 +719,11 @@ test.describe('P4 — concatenation is union', () => {
         // lines. The grade that follows — Read vs Read/Write, the risk level —
         // is a function of the merged counts, and changing when the counts
         // change is the engine being right, not a union being broken.
-        const merged = new Map<string, { reads: number; writes: number; lines: number[] }>();
+        // Carried QA finding 45d1dd57c556: whether a table is custom does not depend
+        // on the counts, so the merge must carry it unchanged.
+        const merged = new Map<string, { reads: number; writes: number; lines: number[]; isCustom: boolean }>();
         for (const e of readA.coupling) {
-          merged.set(e.tableName, { reads: e.readCount ?? 0, writes: e.writeCount ?? 0, lines: [...linesOf(e)] });
+          merged.set(e.tableName, { reads: e.readCount ?? 0, writes: e.writeCount ?? 0, lines: [...linesOf(e)], isCustom: e.isCustom });
         }
         for (const e of readB.coupling) {
           const seen = merged.get(e.tableName);
@@ -726,15 +733,15 @@ test.describe('P4 — concatenation is union', () => {
             seen.writes += e.writeCount ?? 0;
             seen.lines.push(...lines);
           } else {
-            merged.set(e.tableName, { reads: e.readCount ?? 0, writes: e.writeCount ?? 0, lines });
+            merged.set(e.tableName, { reads: e.readCount ?? 0, writes: e.writeCount ?? 0, lines, isCustom: e.isCustom });
           }
         }
         expect(
-          both.coupling.map((e) => `${e.tableName} | ${counted(e.readCount)}r/${counted(e.writeCount)}w | ${linesOf(e).join(',')}`).sort(),
+          both.coupling.map((e) => `${e.tableName} | ${counted(e.readCount)}r/${counted(e.writeCount)}w | ${linesOf(e).join(',')} | custom=${e.isCustom}`).sort(),
           `${label}: data coupling is not the merge of the parts`,
         ).toEqual(
           [...merged]
-            .map(([table, v]) => `${table} | ${v.reads}r/${v.writes}w | ${v.lines.join(',')}`)
+            .map(([table, v]) => `${table} | ${v.reads}r/${v.writes}w | ${v.lines.join(',')} | custom=${v.isCustom}`)
             .sort(),
         );
       }
