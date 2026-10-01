@@ -6,17 +6,17 @@
  *   node scripts/qa/full-review.mjs          CI: one sealed report, a public line that says only that it ran
  *   node scripts/qa/full-review.mjs --dry    maintainer: files, batches and estimated cost of HEAD — no model call
  *
- * Guardrails as the delta review (docs/QA-REVIEW-LOOP.md §2 and §10): reads the repository, calls one pinned model
- * without tools, writes one sealed file. It never writes to the repository, to GitHub or to any other system,
+ * Guardrails as the delta review (docs/QA-REVIEW-LOOP.md §2 and §10): reads the repository, calls OpenRouter's Auto
+ * Router (cost tier ROUTER.full) without tools, writes one sealed file. It never writes to the repository, to GitHub or to any other system,
  * and it never gates a release — its findings are fixed on `dev`.
  */
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { estimateCostUsd, FULL_BUDGET, isPublicByDesign, PRICES, publicByDesignValues, QA_FULL_MODEL, withinBudget } from './lib/config.mjs';
+import { AUTO_MODEL, estimateCostUsd, FULL_BUDGET, isPublicByDesign, publicByDesignValues, ROUTER, withinBudget } from './lib/config.mjs';
 import { seal } from './lib/crypto.mjs';
 import { buildFullUserMessage, filesAt, fullBrief, numbered, projectMap, reviewBatches } from './lib/full.mjs';
 import { commitIdOrNull, git } from './lib/git-delta.mjs';
-import { callReviewer } from './lib/openrouter.mjs';
+import { callReviewer, modelsOf } from './lib/openrouter.mjs';
 import { packBatches } from './lib/pack.mjs';
 import { carriedChars, carriedFor, loadBrief, REVIEW_SCHEMA } from './lib/prompt.mjs';
 import { redactSecrets } from './lib/redact.mjs';
@@ -27,7 +27,8 @@ const DRY = process.argv.includes('--dry');
 const OUT_DIR = process.env.QA_OUT_DIR || join(LOCAL_DIR, 'out');
 const PREV_DIR = process.env.QA_PREV_DIR || join(LOCAL_DIR, 'prev');
 const SCHEMA_CHARS = JSON.stringify(REVIEW_SCHEMA).length;
-const PRICE = PRICES[QA_FULL_MODEL];
+/** Every estimate at the price ceiling the request carries (provider.max_price), so no endpoint can cost more. */
+const PRICE = ROUTER.full.maxPrice;
 
 async function main() {
   const env = DRY ? { ...loadDotEnv(), ...process.env } : process.env;
@@ -63,7 +64,8 @@ async function main() {
       JSON.stringify(
         {
           head,
-          model: QA_FULL_MODEL,
+          model: AUTO_MODEL,
+          router: ROUTER.full,
           files: files.length,
           chars: files.reduce((n, f) => n + f.diff.length, 0),
           register: { open: previousOpen.length, refuted: refuted.length },
@@ -99,7 +101,8 @@ async function main() {
         user,
         schema: REVIEW_SCHEMA,
         effort: FULL_BUDGET.effort,
-        model: QA_FULL_MODEL,
+        costTier: ROUTER.full.costTier,
+        maxPrice: ROUTER.full.maxPrice,
         maxTokens: FULL_BUDGET.maxOutputTokens,
         name: 'qa_full_review',
         title: 'Clean-Core.io QA Full Review',
@@ -109,6 +112,8 @@ async function main() {
   const { results, failedCalls } = run;
   notReviewed.push(...run.notReviewed);
   const modelCalls = results.length;
+  // Before the secret findings join the results: they come from no model.
+  const models = modelsOf(results);
   // A failed call may still have been billed, and its cost is not reported: then the total is unknown, not the sum of the rest.
   const costUsd = failedCalls ? null : actualCost(results.map((r) => r.usage));
 
@@ -135,7 +140,11 @@ async function main() {
     meta: {
       mode: 'full',
       run: { id: env.GITHUB_RUN_ID || null, attempt: env.GITHUB_RUN_ATTEMPT || null },
-      model: QA_FULL_MODEL,
+      // The Auto Router chooses per call (owner decision, 01.10.2026): `model` is what was asked for, `models` who answered.
+      model: AUTO_MODEL,
+      costTier: ROUTER.full.costTier,
+      maxPrice: ROUTER.full.maxPrice,
+      models,
       effort: FULL_BUDGET.effort,
       modelCalls,
       estimatedCostUsd,
@@ -151,9 +160,9 @@ async function main() {
   writeFileSync(join(OUT_DIR, 'qa-full.enc.json'), JSON.stringify(seal(report, secret)));
 
   const summary = publicSummary(report);
-  console.log(`QA full review ${summary.head}: ${summary.status} · ${summary.modelCalls} model call(s) · $${summary.costUsd}`);
+  console.log(`QA full review ${summary.head}: ${summary.status} · ${summary.modelCalls} model call(s) · $${summary.costUsd} · ${summary.models}`);
   if (env.GITHUB_STEP_SUMMARY) {
-    appendFileSync(env.GITHUB_STEP_SUMMARY, `### QA full review\n\n\`${summary.head}\` — ${summary.status} · ${summary.modelCalls} model call(s) · $${summary.costUsd}\n\nThe report is sealed. Read it locally with \`node scripts/qa/await.mjs <sha> --full\`.\n`);
+    appendFileSync(env.GITHUB_STEP_SUMMARY, `### QA full review\n\n\`${summary.head}\` — ${summary.status} · ${summary.modelCalls} model call(s) · $${summary.costUsd} · reviewed by ${summary.models}\n\nThe report is sealed. Read it locally with \`node scripts/qa/await.mjs <sha> --full\`.\n`);
   }
 }
 

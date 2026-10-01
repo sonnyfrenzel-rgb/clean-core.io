@@ -16,7 +16,8 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isPublicByDesign, publicByDesignValues } from '../qa/lib/config.mjs';
-import { callReviewer as openRouterReviewer } from '../qa/lib/openrouter.mjs';
+import { AUTO_MODEL } from '../qa/lib/config.mjs';
+import { callReviewer as openRouterReviewer, modelsOf } from '../qa/lib/openrouter.mjs';
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { AUDIT_PUBLIC_PEM, sealFor } from './lib/envelope.mjs';
 import { askAgainIfTruncated, coerceConsultant, coerceFindings, coerceNarrative, consultantMessage, dedupeCandidates, deepReadCoverage, failureReason, narrativeMessage, notVerifiedEntry, numbered, planBatches, planVerification, reportWithoutNarrative, runConsultants, runVerification, verificationLimitation, verificationMessage, withCountedCoverage } from './lib/pipeline.mjs';
@@ -51,7 +52,8 @@ export const CISO_NARRATIVE_TASK = [
   'in the voice your system prompt describes.',
 ].join(' ');
 
-const estimate = (chars, maxOutputTokens) => (chars / CHARS_PER_TOKEN / 1e6) * AUDIT.price.input + (maxOutputTokens / 1e6) * AUDIT.price.output;
+/** At the price ceiling every request carries (provider.max_price): no endpoint can charge more than this says. */
+const estimate = (chars, maxOutputTokens) => (chars / CHARS_PER_TOKEN / 1e6) * AUDIT.router.maxPrice.input + (maxOutputTokens / 1e6) * AUDIT.router.maxPrice.output;
 
 /**
  * The audit from surface map to sealed payload, with the model call injected.
@@ -110,7 +112,7 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
     fits: (committed, chars) => committed + estimate(chars, consultantTokens) + cisoReserve <= cap,
     worstCase: (chars) => estimate(chars, consultantTokens),
     call: ({ system, user }) =>
-      callReviewer({ apiKey, system, user, schema: CONSULTANT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.consultantEffort, model: AUDIT.model, providers: AUDIT.providers, maxTokens: consultantTokens, name: 'security_consultant', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceConsultant }),
+      callReviewer({ apiKey, system, user, schema: CONSULTANT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.consultantEffort, costTier: AUDIT.router.costTier, maxPrice: AUDIT.router.maxPrice, maxTokens: consultantTokens, name: 'security_consultant', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceConsultant }),
   });
   const { results } = run;
   // Why the calls that failed, failed — a fixed word per reason and a count, never
@@ -198,7 +200,7 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
     worstCase: (chars) => estimate(chars, cisoTokens),
     call: ({ system, user }) =>
       askAgainIfTruncated(
-        () => callReviewer({ apiKey, system, user, schema: FINDINGS_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, providers: AUDIT.providers, maxTokens: cisoTokens, timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: (answer) => ({ findings: coerceFindings(answer), notes: String(answer?.notes || '') }) }),
+        () => callReviewer({ apiKey, system, user, schema: FINDINGS_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, costTier: AUDIT.router.costTier, maxPrice: AUDIT.router.maxPrice, maxTokens: cisoTokens, timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: (answer) => ({ findings: coerceFindings(answer), notes: String(answer?.notes || '') }) }),
         { retries: CISO_TRUNCATED_RETRIES, warn: (n) => console.warn(`CISO verification call ${n} answered with a body that is not JSON — asking once more.`) },
       ),
   });
@@ -236,7 +238,7 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
   let narrative = null;
   try {
     narrative = await askAgainIfTruncated(
-      () => callReviewer({ apiKey, system: clean('outgoing message', brief), user: narrativeUser, schema: NARRATIVE_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, providers: AUDIT.providers, maxTokens: SELF_TEST ? 6_000 : AUDIT.narrativeOutputTokens, timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceNarrative }),
+      () => callReviewer({ apiKey, system: clean('outgoing message', brief), user: narrativeUser, schema: NARRATIVE_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, costTier: AUDIT.router.costTier, maxPrice: AUDIT.router.maxPrice, maxTokens: SELF_TEST ? 6_000 : AUDIT.narrativeOutputTokens, timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceNarrative }),
       { retries: CISO_TRUNCATED_RETRIES, warn: (n) => console.warn(`CISO narrative call ${n} answered with a body that is not JSON — asking once more.`) },
     );
   } catch (err) {
@@ -290,7 +292,10 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
     version: 2,
     head: surface.head,
     createdAt: new Date().toISOString(),
-    model: AUDIT.model,
+    // What was asked for and who answered: the Auto Router picks per call (owner decision, 01.10.2026).
+    model: AUTO_MODEL,
+    costTier: AUDIT.router.costTier,
+    models: modelsOf([...results, ...check.results, narrative]),
     selfTest: SELF_TEST,
     durationMs: Date.now() - started,
     costUsd,
@@ -316,7 +321,7 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
   const sealed = sealFor(payload, publicKeyPem);
 
   // Only metadata reaches the public log: counts and cost, never a finding.
-  const line = `Security audit ${surface.head.slice(0, 12)}: completed, sealed · calls=${payload.calls} failed=${payload.failedCalls} candidates=${candidateCount} verified=${verifiedCount} notVerified=${notVerified.length} cost=$${costUsd ?? 'unknown'}`;
+  const line = `Security audit ${surface.head.slice(0, 12)}: completed, sealed · calls=${payload.calls} failed=${payload.failedCalls} candidates=${candidateCount} verified=${verifiedCount} notVerified=${notVerified.length} cost=$${costUsd ?? 'unknown'} models=${payload.models.join(',') || 'none'}`;
   return { payload, sealed, line };
 }
 

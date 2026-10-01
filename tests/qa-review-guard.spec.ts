@@ -67,11 +67,13 @@ test.describe('nothing security-relevant is exposed', () => {
       range: { head: 'a'.repeat(40) },
       verdict: 'no_go',
       findings: [{ severity: 'critical', title: 'SQL injection in route', file: 'app/api/x/route.ts' }],
-      meta: { modelCalls: 1, costUsd: 0.42 },
+      meta: { modelCalls: 1, costUsd: 0.42, models: ['z-ai/glm-5.3'] },
     });
     const text = JSON.stringify(s);
     for (const leak of ['no_go', 'critical', 'SQL', 'app/api']) expect(text).not.toContain(leak);
-    expect(Object.keys(s).sort()).toEqual(['costUsd', 'head', 'modelCalls', 'status']);
+    // Which model(s) the Auto Router chose is metadata like the cost (owner decision, 01.10.2026), never a finding.
+    expect(Object.keys(s).sort()).toEqual(['costUsd', 'head', 'modelCalls', 'models', 'status']);
+    expect(s.models).toBe('z-ai/glm-5.3');
   });
 
   test('credentials in a delta are redacted before sending, and counted', async () => {
@@ -118,26 +120,67 @@ test.describe('nothing security-relevant is exposed', () => {
 });
 
 test.describe('the reviewer', () => {
-  test('is one pinned model per review, with no tools, no fallbacks and no data collection', async () => {
-    const { QA_MODEL, QA_FULL_MODEL, PRICES } = await lib('config.mjs');
+  test('is the OpenRouter Auto Router at a fixed cost tier and price ceiling, with no tools, no fallbacks and no data collection', async () => {
+    const { AUTO_MODEL, ROUTER, PRICE_PER_MTOK } = await lib('config.mjs');
     const { buildRequest } = await lib('openrouter.mjs');
-    // Sonny, 15.09.2026: Luna reviews every delta on dev, Sol — the flagship of the series — every release on main.
-    // The delta reviewer moved to the GPT-6 tier on 22.09.2026 (Sonny): same 1.05M context, half the price.
-    // `main` deliberately did not move with it — changing both in one step would leave no fixed point to
-    // compare a regression against.
-    expect(QA_MODEL).toBe('openai/gpt-6-luna');
-    expect(QA_FULL_MODEL).toBe('openai/gpt-6-luna-pro');
-    expect(PRICES[QA_MODEL]).toEqual({ input: 0.1, output: 0.5 });
-    expect(PRICES[QA_FULL_MODEL]).toEqual({ input: 0.1, output: 0.5 });
-    expect(buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model: QA_FULL_MODEL }).provider).toEqual({ allow_fallbacks: false, data_collection: 'deny' });
+    // Owner decision, 01.10.2026: no agent pins a model. Every request goes to OpenRouter's Auto Router, which
+    // picks the model per call; the agent decides only the band (cost_tier, the quality floor) and the ceiling
+    // (max_price). Until then: openai/gpt-6-luna on dev, openai/gpt-6-luna-pro on main.
+    expect(AUTO_MODEL).toBe('openrouter/auto');
+    expect(ROUTER.delta.costTier).toBe('high');
+    expect(ROUTER.full.costTier).toBe('xhigh');
+    // Every estimate is made at the ceiling the request carries, so no endpoint can cost more than it says.
+    expect(PRICE_PER_MTOK).toBe(ROUTER.delta.maxPrice);
+    for (const { costTier, maxPrice } of [ROUTER.delta, ROUTER.full]) {
+      const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', costTier, maxPrice });
+      expect(req.model).toBe('openrouter/auto');
+      expect(req.plugins).toEqual([{ id: 'auto-router', cost_tier: costTier }]);
+      // No allowed_models: the point is the router's free choice.
+      expect(JSON.stringify(req.plugins)).not.toContain('allowed_models');
+      expect(req.provider).toEqual({ data_collection: 'deny', require_parameters: true, allow_fallbacks: false, max_price: { prompt: maxPrice.input, completion: maxPrice.output } });
+      expect(req.tools).toBeUndefined();
+      expect(req.response_format.json_schema.strict).toBe(true);
+      expect(req.usage).toEqual({ include: true });
+    }
+    // The defaults are the delta reviewer's, so a caller that names nothing still gets a floor and a ceiling.
     const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'medium' });
-    expect(req.model).toBe(QA_MODEL);
-    expect(req.tools).toBeUndefined();
-    expect(req.provider).toEqual({ allow_fallbacks: false, data_collection: 'deny' });
-    expect(req.response_format.json_schema.strict).toBe(true);
-    // Model ids live in exactly one file.
-    const hits = fs.readdirSync(path.resolve(ROOT, 'scripts/qa'), { recursive: true }).filter((f) => String(f).endsWith('.mjs') && /gpt-\d/.test(read(`scripts/qa/${String(f).replace(/\\/g, '/')}`)));
-    expect(hits.map(String)).toEqual([path.join('lib', 'config.mjs')]);
+    expect(req.plugins[0].cost_tier).toBe(ROUTER.delta.costTier);
+    expect(req.provider.max_price).toEqual({ prompt: ROUTER.delta.maxPrice.input, completion: ROUTER.delta.maxPrice.output });
+    // Without a known tier or a ceiling there is no request at all.
+    expect(() => buildRequest({ system: 's', user: 'u', schema: {}, effort: 'low', costTier: 'cheap' })).toThrow(/unknown cost tier/);
+    expect(() => buildRequest({ system: 's', user: 'u', schema: {}, effort: 'low', maxPrice: { input: 1 } })).toThrow(/no price ceiling/);
+    // Both reviewers pass their own tier and ceiling to the call.
+    expect(read('scripts/qa/review.mjs')).toMatch(/costTier: ROUTER\.delta\.costTier, maxPrice: ROUTER\.delta\.maxPrice \}\);/);
+    expect(read('scripts/qa/full-review.mjs')).toMatch(/costTier: ROUTER\.full\.costTier,\s*maxPrice: ROUTER\.full\.maxPrice,/);
+    // No model id is pinned anywhere in the QA agent any more.
+    const hits = fs.readdirSync(path.resolve(ROOT, 'scripts/qa'), { recursive: true }).filter((f) => String(f).endsWith('.mjs') && /['"`](openai|anthropic|google|meta|deepseek|z-ai|moonshotai)\/[a-z0-9.-]+['"`]/.test(read(`scripts/qa/${String(f).replace(/\\/g, '/')}`)));
+    expect(hits.map(String)).toEqual([]);
+  });
+
+  test('the model that answered is recorded in every report, and only in the shape of a model id', async () => {
+    const { callReviewer, modelIdOf, modelsOf } = await lib('openrouter.mjs');
+    const answer = (model: unknown) => async () => new Response(JSON.stringify({ model, choices: [{ message: { content: '{}' } }], usage: { cost: 0.01 } }), { status: 200 });
+    expect((await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: { type: 'object' }, effort: 'low', fetchImpl: answer('z-ai/glm-5.3') })).model).toBe('z-ai/glm-5.3');
+    // A response that does not name a model, or names something that is not an id, is recorded as unknown — never as the router.
+    expect((await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: { type: 'object' }, effort: 'low', fetchImpl: answer(undefined) })).model).toBeNull();
+    expect(modelIdOf('openrouter/auto')).toBeNull();
+    expect(modelIdOf('<script>alert(1)</script>')).toBeNull();
+    expect(modelIdOf('a'.repeat(200))).toBeNull();
+    expect(modelsOf([{ model: 'z-ai/glm-5.3' }, { model: 'anthropic/claude-sonnet-5.5' }, { model: 'z-ai/glm-5.3' }, { model: null }])).toEqual(['z-ai/glm-5.3', 'anthropic/claude-sonnet-5.5', 'unknown']);
+    // Both QA reports carry who answered, computed before the model-less secret findings join the results.
+    for (const file of ['scripts/qa/review.mjs', 'scripts/qa/full-review.mjs']) {
+      const src = read(file);
+      expect(src).toMatch(/const models = modelsOf\(results\);/);
+      expect(src.indexOf('const models = modelsOf(results);')).toBeLessThan(src.indexOf('if (secretFindings.length) results.push('));
+      expect(src).toMatch(/model: AUTO_MODEL,\s*costTier: ROUTER\.(delta|full)\.costTier,\s*maxPrice: ROUTER\.(delta|full)\.maxPrice,\s*models,/);
+      expect(src).toMatch(/reviewed by \$\{summary\.models\}/);
+    }
+    const { renderHeader, reviewedBy } = await lib('report.mjs');
+    expect(reviewedBy({ meta: { models: ['a/b', 'c/d'] } })).toBe('a/b, c/d');
+    expect(reviewedBy({ meta: { models: [] } })).toBe('no model call');
+    // A report written before 01.10.2026 still names its pinned model.
+    expect(reviewedBy({ meta: { model: 'openai/gpt-6-luna' } })).toBe('openai/gpt-6-luna');
+    expect(renderHeader({ range: { head: 'a'.repeat(40) }, verdict: 'go', findings: [], resolved: [], coverage: { notReviewed: [] }, meta: { models: ['z-ai/glm-5.3'] } })).toContain('reviewed by z-ai/glm-5.3');
   });
 
   test('retries a rate limit, then gives up with the status only', async () => {
@@ -208,21 +251,43 @@ test.describe('the reviewer', () => {
     expect(unused).toEqual([]);
   });
 
-  test('another agent can pin its own model and send screenshots through the same transport', async () => {
-    const { buildRequest, callReviewer } = await lib('openrouter.mjs');
+  test('another agent can set its own tier and ceiling and send screenshots through the same transport', async () => {
+    const { buildRequest, callReviewer, resetModelCatalog } = await lib('openrouter.mjs');
     const parts = [{ type: 'text', text: 'Screenshot 03-analyze-desktop-s1' }, { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,AAAA' } }];
-    const req = buildRequest({ system: 's', user: parts, schema: { type: 'object' }, effort: 'low', model: 'meta/muse-spark-1.3', maxTokens: 8000, name: 'ux_review' });
-    expect(req).toMatchObject({ model: 'meta/muse-spark-1.3', max_tokens: 8000, provider: { allow_fallbacks: false, data_collection: 'deny' } });
+    const req = buildRequest({ system: 's', user: parts, schema: { type: 'object' }, effort: 'low', costTier: 'high', maxPrice: { input: 1.25, output: 5 }, maxTokens: 8000, name: 'ux_review' });
+    expect(req).toMatchObject({ model: 'openrouter/auto', max_tokens: 8000, plugins: [{ id: 'auto-router', cost_tier: 'high' }], provider: { allow_fallbacks: false, data_collection: 'deny', require_parameters: true, max_price: { prompt: 1.25, completion: 5 } } });
     expect(req.messages[1].content).toEqual(parts);
     expect(req.response_format.json_schema.name).toBe('ux_review');
+
+    // A call that sends images is accepted only from a model the public model list says reads images.
+    const catalog = { data: [{ id: 'moonshotai/kimi-k3', architecture: { input_modalities: ['text', 'image'] } }, { id: 'z-ai/glm-5.3', architecture: { input_modalities: ['text'] } }] };
     let headers: Record<string, string> = {};
-    const capture = async (_url: string, init: { headers: Record<string, string> }) => {
+    const routed = (model: string) => async (url: string, init: { headers: Record<string, string> }) => {
+      if (url.endsWith('/models')) return new Response(JSON.stringify(catalog), { status: 200 });
       headers = init.headers;
-      return new Response(JSON.stringify({ choices: [{ message: { content: '{}' } }], usage: { cost: 0.01 } }), { status: 200 });
+      return new Response(JSON.stringify({ model, choices: [{ message: { content: '{}' } }], usage: { cost: 0.02 } }), { status: 200 });
     };
-    const r = await callReviewer({ apiKey: 'k', system: 's', user: parts, schema: { type: 'object' }, effort: 'low', model: 'meta/muse-spark-1.3', title: 'Clean-Core.io UX Review', fetchImpl: capture });
+    resetModelCatalog();
+    const r = await callReviewer({ apiKey: 'k', system: 's', user: parts, schema: { type: 'object' }, effort: 'low', inputs: ['image'], title: 'Clean-Core.io UX Review', fetchImpl: routed('moonshotai/kimi-k3') });
     expect(headers['X-Title']).toBe('Clean-Core.io UX Review');
-    expect(r.model).toBe('meta/muse-spark-1.3');
+    expect(r.model).toBe('moonshotai/kimi-k3');
+    // A text-only model, an unknown model and an unnamed model are all refused — and the billed cost travels with the error.
+    for (const model of ['z-ai/glm-5.3', 'acme/unknown-1', '']) {
+      resetModelCatalog();
+      const err = await callReviewer({ apiKey: 'k', system: 's', user: parts, schema: { type: 'object' }, effort: 'low', inputs: ['image'], fetchImpl: routed(model) }).catch((e: Error & { usage?: unknown }) => e);
+      expect(err).toBeInstanceOf(Error);
+      expect(String((err as Error).message)).toMatch(/cannot read image|cannot be confirmed/);
+      expect((err as Error & { usage?: { cost: number } }).usage).toEqual({ cost: 0.02 });
+    }
+    // Without images nothing is asked of the model list.
+    let listed = 0;
+    const counting = async (url: string) => {
+      if (url.endsWith('/models')) listed++;
+      return new Response(JSON.stringify({ model: 'z-ai/glm-5.3', choices: [{ message: { content: '{}' } }] }), { status: 200 });
+    };
+    await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: { type: 'object' }, effort: 'low', fetchImpl: counting });
+    expect(listed).toBe(0);
+    resetModelCatalog();
   });
 
   test('never retries what may already have been generated and billed', async () => {
@@ -366,7 +431,7 @@ test.describe('spend is capped and only the delta is reviewed', () => {
   });
 
   test('the cost cap is checked before every call against what was actually spent', async () => {
-    const { withinBudget, BUDGET, FULL_BUDGET, estimateCostUsd, PRICES, QA_MODEL, QA_FULL_MODEL } = await lib('config.mjs');
+    const { withinBudget, BUDGET, FULL_BUDGET, estimateCostUsd, ROUTER } = await lib('config.mjs');
     // A first call of normal size fits; the same call after most of the budget is spent does not.
     expect(withinBudget(0, 120_000)).toBe(true);
     expect(withinBudget(BUDGET.maxCostUsd - 0.01, 120_000)).toBe(false);
@@ -375,14 +440,15 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     // pinned as 1.2 and this line went red on the move to GPT-6 Luna (22.09.2026),
     // which is the right kind of red — but it was testing the number twice, not the
     // arithmetic once.
-    expect(estimateCostUsd(0, 1)).toBeCloseTo((BUDGET.maxOutputTokens / 1e6) * PRICES[QA_MODEL].output, 5);
-    const full = { budget: FULL_BUDGET, price: PRICES[QA_FULL_MODEL] };
+    // Since the Auto Router (01.10.2026) the price is the ceiling the request carries as provider.max_price.
+    expect(estimateCostUsd(0, 1)).toBeCloseTo((BUDGET.maxOutputTokens / 1e6) * ROUTER.delta.maxPrice.output, 5);
+    const full = { budget: FULL_BUDGET, price: ROUTER.full.maxPrice };
     const fullCall = estimateCostUsd(400_000, 1, { price: full.price, maxOutputTokens: FULL_BUDGET.maxOutputTokens });
     // Same lesson as the line above, and it went red for the same reason on the
     // move to GPT-6 Luna Pro (23.09.2026): the output rate was written here as
     // `10`, so the test checked the price twice instead of the arithmetic once.
     expect(estimateCostUsd(0, 1, { price: full.price, maxOutputTokens: FULL_BUDGET.maxOutputTokens })).toBeCloseTo(
-      (FULL_BUDGET.maxOutputTokens / 1e6) * PRICES[QA_FULL_MODEL].output,
+      (FULL_BUDGET.maxOutputTokens / 1e6) * ROUTER.full.maxPrice.output,
       5,
     );
     expect(withinBudget(0, 400_000, full)).toBe(true);
@@ -392,10 +458,27 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     // rule would say "the cap is broken" when only the price changed.
     expect(withinBudget(FULL_BUDGET.maxCostUsd - fullCall * 0.5, 400_000, full)).toBe(false);
     expect(withinBudget(FULL_BUDGET.maxCostUsd - fullCall * 1.5, 400_000, full)).toBe(true);
-    // The caps agreed on 15.09.2026: cents per delta, a few dollars per release.
-    expect(BUDGET.maxCostUsd).toBeLessThanOrEqual(0.5);
+    // The caps agreed on 15.09.2026: cents per delta, a few dollars per release. The delta cap went from $0.50 to
+    // $3.80 on 01.10.2026 (owner decision) with the move to the Auto Router at `high`: at the ceiling one full batch
+    // estimates at about $0.30, so $0.50 would have read one or two batches a push. The caps are upper bounds; what
+    // counts against them is the cost OpenRouter reports (usage.cost).
+    expect(BUDGET.maxCostUsd).toBeLessThanOrEqual(3.8);
     expect(FULL_BUDGET.maxCostUsd).toBeLessThanOrEqual(10);
+    // And the first call of a full batch always fits, or the cap would stop every review before it started.
+    expect(withinBudget(0, BUDGET.maxBatchChars)).toBe(true);
+    expect(withinBudget(0, FULL_BUDGET.maxBatchChars, full)).toBe(true);
     expect(read('scripts/qa/review.mjs')).toMatch(/if \(!withinBudget\(spentForCap, outgoingSystem\.length \+ user\.length \+ SCHEMA_CHARS\)\)/);
+  });
+
+  test('every delta batch can be paid for at its worst case, so the budget never sticks the checkpoint', async () => {
+    // Owner decision, 01.10.2026: with the Auto Router at `high` the delta cap is $3.80 so that all `maxBatches`
+    // calls fit at the price ceiling with room. An incomplete review keeps the checkpoint at its base, and the
+    // unread delta comes back with every later push (config.mjs, maxBatches) — a cap that stopped reviews would
+    // turn into that deadlock. Checked from the budget itself, so a price or batch change cannot slip past it.
+    const { BUDGET, ROUTER, estimateCostUsd } = await lib('config.mjs');
+    expect(BUDGET.maxBatches).toBe(10);
+    const worstCase = estimateCostUsd(BUDGET.maxBatches * BUDGET.maxBatchChars, BUDGET.maxBatches, { price: ROUTER.delta.maxPrice, maxOutputTokens: BUDGET.maxOutputTokens });
+    expect(worstCase, 'ten worst-case delta batches no longer fit under 80 % of the cap').toBeLessThan(BUDGET.maxCostUsd * 0.8);
   });
 
   test('an unreported cost is unknown, never zero', async () => {
@@ -1039,7 +1122,7 @@ test.describe('the full review of a release on main', () => {
     expect(numbered('first\r\nsecond')).toBe('1|first\n2|second');
   });
 
-  test('the call count of a release review is a number the cap can pay for', async () => {
+  test('the cap, not the call count, ends a release review — and says what it did not read', async () => {
     // The two limits on a full review pull in opposite directions, and only one
     // of them protects the bill. `maxCostUsd` does; `maxBatches` is there so a
     // runaway plan cannot sit in a queue for hours. On v2.14.0 the call count
@@ -1047,14 +1130,21 @@ test.describe('the full review of a release on main', () => {
     // an approved $10 with 470 files and 5.4 MB reported as NOT REVIEWED, about
     // half the code base and the newest half.
     //
-    // Both halves are checked from the budget itself rather than pinned, so this
-    // keeps meaning something after the next model or price change.
-    const { FULL_BUDGET, PRICES, QA_FULL_MODEL, estimateCostUsd } = await lib('config.mjs');
-    const worstCase = estimateCostUsd(FULL_BUDGET.maxBatches * FULL_BUDGET.maxBatchChars, FULL_BUDGET.maxBatches, {
-      price: PRICES[QA_FULL_MODEL],
-      maxOutputTokens: FULL_BUDGET.maxOutputTokens,
-    });
-    expect(worstCase, 'the call count cannot be paid for out of the cap').toBeLessThanOrEqual(FULL_BUDGET.maxCostUsd);
+    // Until 01.10.2026 this test asserted that every one of `maxBatches` calls
+    // could be paid for at its worst case. With the Auto Router at `xhigh` and a
+    // ceiling of $3/$15 that is no longer true — 28 worst-case calls are about
+    // $30 against the $10 the owner kept on 01.10.2026 — so the cap binds again,
+    // as it should: at the prices the router actually chose (about $0.40 a full
+    // batch) roughly 22 of 28 batches fit. What holds instead is checked here:
+    // many calls fit, and the run stops at the cap with the rest named.
+    const { FULL_BUDGET, ROUTER, estimateCostUsd } = await lib('config.mjs');
+    const worstCall = estimateCostUsd(FULL_BUDGET.maxBatchChars, 1, { price: ROUTER.full.maxPrice, maxOutputTokens: FULL_BUDGET.maxOutputTokens });
+    expect(Math.floor(FULL_BUDGET.maxCostUsd / worstCall), 'even at the ceiling price a release review reads several batches').toBeGreaterThanOrEqual(8);
+    const { reviewBatches } = await lib('full.mjs');
+    const batches = Array.from({ length: 5 }, (_, i) => ({ files: [{ path: `f${i}.ts` }] }));
+    const run = await reviewBatches({ batches, capUsd: 3, messageFor: () => ({ system: 's', user: 'u' }), fits: (spent: number) => spent + 1 <= 3, worstCase: () => 1, call: async () => ({ review: {}, usage: { cost: 1 }, model: 'x/y' }) });
+    expect(run.results).toHaveLength(3);
+    expect(run.notReviewed.map((n: { path: string; reason: string }) => n.reason)).toEqual(['outside the $3 cost cap', 'outside the $3 cost cap']);
 
     // And the count is worth having: one call reads at most `maxBatchChars`, so
     // this many of them has to reach past the whole repository — 10.8 MB when

@@ -24,15 +24,20 @@ const job = (name: string) => {
 };
 
 test.describe('the agent has no tools and a small budget', () => {
-  test('one pinned model over OpenRouter, a capped budget, and no agent runtime at all', async () => {
+  test('the OpenRouter Auto Router at cost tier high, a capped budget, and no agent runtime at all', async () => {
     const { AUDIT } = await lib('team.mjs');
-    // Sonny, 15.09.2026: DeepSeek V4.1 Flash replaces Claude Fable 5.1 in Claude Code.
-    expect(AUDIT.model).toBe('deepseek/deepseek-v4.1-flash');
-    // 0.15/0.60 until 23.09.2026, when the audit stopped routing by price: the
-    // cheapest endpoint was the one answering nothing (AUDIT.providers).
-    expect(AUDIT.price).toEqual({ input: 0.22, output: 0.66 });
-    // Sonny, 24.09.2026 (option A): 3 → 5 USD with the verification in batches.
-    expect(AUDIT.maxCostUsd).toBe(5);
+    // Owner decision, 01.10.2026: no pinned model — OpenRouter's Auto Router picks per call within the band
+    // `high`, under a price ceiling every estimate is made at. Until then deepseek/deepseek-v4.1-flash (since
+    // 15.09.2026), and Claude Fable 5.1 in Claude Code before that.
+    expect(AUDIT.model).toBeUndefined();
+    expect(AUDIT.price).toBeUndefined();
+    expect(AUDIT.router.costTier).toBe('high');
+    expect(AUDIT.router.maxPrice.input).toBeGreaterThan(0);
+    expect(AUDIT.router.maxPrice.output).toBeGreaterThan(0);
+    // Sonny, 24.09.2026 (option A): 3 → 5 USD with the verification in batches. Owner decision, 01.10.2026:
+    // 5 → 20 USD with the Auto Router — the CISO reserve alone is about $5.9 at the ceiling. An upper bound;
+    // what counts against it is the cost OpenRouter reports.
+    expect(AUDIT.maxCostUsd).toBe(20);
     expect(AUDIT.selfTestCostUsd).toBeLessThanOrEqual(0.2);
     // Read, never imported: audit.mjs is an entry point and would start an audit.
     const src = read('scripts/security/audit.mjs');
@@ -56,11 +61,18 @@ test.describe('the agent has no tools and a small budget', () => {
     expect(cisoBlock).toMatch(/their candidates are listed as not verified/);
     expect(cisoBlock).toMatch(/the findings are reported without a synthesis/);
     expect(cisoBlock).toMatch(/every CISO call failed/);
-    // The request the calls build: no tools, no fallback model, no provider that keeps prompts.
+    // The request the calls build: the Auto Router at the audit's tier and ceiling, no tools, no fallback model,
+    // no provider that keeps prompts, only endpoints that honour every parameter.
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
-    const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model: AUDIT.model });
+    const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', costTier: AUDIT.router.costTier, maxPrice: AUDIT.router.maxPrice });
     expect(req.tools).toBeUndefined();
-    expect(req.provider).toEqual({ allow_fallbacks: false, data_collection: 'deny' });
+    expect(req.model).toBe('openrouter/auto');
+    expect(req.plugins).toEqual([{ id: 'auto-router', cost_tier: 'high' }]);
+    expect(req.provider).toEqual({ allow_fallbacks: false, data_collection: 'deny', require_parameters: true, max_price: { prompt: AUDIT.router.maxPrice.input, completion: AUDIT.router.maxPrice.output } });
+    // Every one of the three calls passes the audit's tier and ceiling, and the payload records who answered.
+    expect(src.match(/costTier: AUDIT\.router\.costTier, maxPrice: AUDIT\.router\.maxPrice, maxTokens/g)).toHaveLength(3);
+    expect(src).toMatch(/model: AUTO_MODEL,\s*costTier: AUDIT\.router\.costTier,\s*models: modelsOf\(\[\.\.\.results, \.\.\.check\.results, narrative\]\),/);
+    expect(src).toMatch(/\(chars \/ CHARS_PER_TOKEN \/ 1e6\) \* AUDIT\.router\.maxPrice\.input \+ \(maxOutputTokens \/ 1e6\) \* AUDIT\.router\.maxPrice\.output/);
     expect(fs.existsSync(path.resolve(ROOT, 'scripts/security/lib/cli.mjs'))).toBe(false);
   });
 
@@ -209,8 +221,9 @@ test.describe('nothing the audit finds leaks', () => {
 
   test('the log carries counts and cost only, and a failure only its message', () => {
     const src = read('scripts/security/audit.mjs');
-    // Counts only: calls, failures, and how many candidates were verified — never a candidate.
-    expect(src).toMatch(/const line = `Security audit \$\{surface\.head\.slice\(0, 12\)\}: completed, sealed · calls=\$\{payload\.calls\} failed=\$\{payload\.failedCalls\} candidates=\$\{candidateCount\} verified=\$\{verifiedCount\} notVerified=\$\{notVerified\.length\} cost=\$\$\{costUsd \?\? 'unknown'\}`;/);
+    // Counts only: calls, failures, and how many candidates were verified — never a candidate. Since 01.10.2026 also
+    // which models the Auto Router chose: ids, as metadata (scripts/qa/lib/openrouter.mjs modelIdOf).
+    expect(src).toMatch(/const line = `Security audit \$\{surface\.head\.slice\(0, 12\)\}: completed, sealed · calls=\$\{payload\.calls\} failed=\$\{payload\.failedCalls\} candidates=\$\{candidateCount\} verified=\$\{verifiedCount\} notVerified=\$\{notVerified\.length\} cost=\$\$\{costUsd \?\? 'unknown'\} models=\$\{payload\.models\.join\(','\) \|\| 'none'\}`;/);
     expect(src).toMatch(/console\.error\(`Security audit failed: \$\{String\(err\?\.message \|\| err\)\.split\('\\n'\)\[0\]\}`\)/);
     expect(src.match(/console\.(log|error)\(/g)).toHaveLength(2);
     expect(read('scripts/security/deliver.mjs')).toMatch(/Resend rejected the audit mail: HTTP \$\{res\.status\}`/);
@@ -295,7 +308,9 @@ test.describe('nothing the audit finds leaks', () => {
 test.describe('the report the owner reads', () => {
   const payload = (over: Record<string, unknown> = {}) => ({
     head: 'c1f86075617b9757a45cad10c0ab2d900fa83f7f',
-    model: 'deepseek/deepseek-v4.1-flash',
+    model: 'openrouter/auto',
+    costTier: 'high',
+    models: ['z-ai/glm-5.3', 'anthropic/claude-sonnet-5.5'],
     calls: 17,
     failedCalls: 0,
     durationMs: 60_000,
@@ -322,6 +337,13 @@ test.describe('the report the owner reads', () => {
     expect(m.subject).toBe('Security-Audit v2.9.15 (c1f8607) — Risiko hoch: 0 kritisch · 1 hoch · 0 mittel · 1 niedrig');
     expect(m.findings.map((f: { id: string; severity: string }) => `${f.id} ${f.severity}`)).toEqual(['SEC-c1f8607-01 hoch', 'SEC-c1f8607-02 niedrig']);
     for (const part of ['KURZFAZIT', 'BEFUNDE', 'HÄRTUNG', 'WAS GUT IST', 'UMFANG UND GRENZEN', 'NACHWEIS', 'app/api/x/route.ts:9', 'f'.repeat(64), 'https://github.com/x/actions/runs/1', 'Prüfen vor dem Fix']) expect(m.text).toContain(part);
+    // The mail names every model the Auto Router chose, in text and in HTML (owner decision, 01.10.2026).
+    expect(m.text).toContain('Modell z-ai/glm-5.3, anthropic/claude-sonnet-5.5 (OpenRouter Auto Router, Kostenstufe high)');
+    expect(m.html).toContain('z-ai/glm-5.3, anthropic/claude-sonnet-5.5 (OpenRouter Auto Router, Kostenstufe high)');
+    const { modelLine } = await lib('mail.mjs');
+    // A payload sealed before then names its one pinned model.
+    expect(modelLine({ model: 'deepseek/deepseek-v4.1-flash' })).toBe('deepseek/deepseek-v4.1-flash');
+    expect(modelLine({ models: [] })).toBe('kein Modellaufruf');
   });
 
   test('model output never becomes markup in the mail', async () => {
@@ -702,59 +724,52 @@ test.describe('the audit pipeline', () => {
     // All three model calls wait the same way: the two consultants' and the two
     // halves of the CISO's answer.
     expect(src.match(/retries: AUDIT\.rateLimitRetries, retryDelayMs: AUDIT\.rateLimitDelayMs, coerce: /g)).toHaveLength(3);
-    // Longer waits, not a looser policy: without a named provider list the
-    // request still allows no fallback, and no caller may reach a provider that
-    // keeps prompts — with a list or without one.
+    // Longer waits, not a looser policy: the request allows no fallback, and no
+    // caller may reach a provider that keeps prompts.
     const or = read('scripts/qa/lib/openrouter.mjs');
-    expect(or).toContain("{ allow_fallbacks: false, data_collection: 'deny' }");
-    expect(or.match(/data_collection: 'deny'/g)).toHaveLength(2);
+    expect(or.match(/data_collection: 'deny'/g)).toHaveLength(1);
     expect(or).not.toMatch(/data_collection: '(?!deny)/);
-    // Fallbacks are allowed only inside an explicit allowlist of providers, so
-    // the model itself can still never be substituted.
-    expect(or).toMatch(/allow_fallbacks: true, data_collection: 'deny', only: providers/);
+    expect(or).toMatch(/allow_fallbacks: false,/);
+    expect(or).not.toMatch(/allow_fallbacks: true/);
+    expect(or).toMatch(/require_parameters: true,/);
   });
 
-  test('the audit names the providers that may serve its model, because price alone picked one that answers nothing', async () => {
+  test('the empty-body endpoint failure is still caught without a provider list, and the budget is reserved at the ceiling', async () => {
     /**
      * Run 35842725923 (2170cf35ea5e, 23.09.2026): 51 of 60 consultant calls and
      * both CISO calls came back HTTP 200 with `finish_reason=length`,
      * `completion_tokens` equal to `reasoning_tokens` at about 4,600 — a fraction
-     * of the 24,000 and 40,000 asked for — and no content.
+     * of the 24,000 and 40,000 asked for — and no content. The cause was one fp4
+     * endpoint that price routing chose; from 23.09.2026 the audit named the
+     * endpoints of its one model that were measured to work.
      *
-     * Measured against OpenRouter on 23.09.2026 with the real system prompt and
-     * the real strict schema: OpenInference failed four times out of four, at
-     * 5,000, 20,000 and 100,000 characters of input. The identical request
-     * answered with valid JSON and `finish_reason=stop` on Fireworks (4/4),
-     * CoreWeave (2/2) and Together (1/1). OpenInference is the cheapest of the
-     * twenty-six endpoints and the only fp4 one; OpenRouter sorts by price and
-     * `allow_fallbacks: false` pinned the audit to it.
+     * Owner decision, 01.10.2026: with the Auto Router the model is free, and a
+     * list of one model's endpoints means nothing for another model, so the list
+     * is gone. What still stands against that failure is checked here: only
+     * endpoints that honour every parameter (`require_parameters`), no silent
+     * fallback, a call with no content fails with a fixed reason, and the floor
+     * under coverage fails the audit instead of reporting on a fraction.
      */
     const { AUDIT } = await lib('team.mjs');
-    expect(AUDIT.providers.length).toBeGreaterThan(1);
-    expect(AUDIT.providers).not.toContain('OpenInference');
-    // The price the budget reserves is the first provider's, not the one the
-    // price ranking used to find — otherwise the cap drops the calls at the end
-    // of the run and the coverage floor fails on the arithmetic, not the model.
-    expect(AUDIT.price).toEqual({ input: 0.22, output: 0.66 });
-
-    // Every model call of the audit goes through the list; none of them routes by price.
+    expect(AUDIT.providers).toBeUndefined();
+    expect(AUDIT.minDeepReadRatio).toBeGreaterThanOrEqual(0.85);
     const src = read('scripts/security/audit.mjs');
-    expect(src.match(/providers: AUDIT\.providers,/g), 'all three model calls name the providers').toHaveLength(3);
+    expect(src).not.toMatch(/providers:/);
     expect(src.match(/callReviewer\(\{/g)).toHaveLength(3);
-
-    // And the list reaches the request body as OpenRouter's own field.
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
-    const body = buildRequest({ system: 's', user: 'u', schema: {}, effort: 'medium', model: AUDIT.model, maxTokens: 10, providers: AUDIT.providers });
-    expect(body.provider.only).toEqual(AUDIT.providers);
-    expect(body.provider.data_collection).toBe('deny');
-    expect(body.model).toBe(AUDIT.model);
-    // No list, no change: the QA and UX reviewers keep the request they had.
-    expect(buildRequest({ system: 's', user: 'u', schema: {}, effort: 'medium', model: 'x', maxTokens: 10 }).provider).toEqual({ allow_fallbacks: false, data_collection: 'deny' });
+    const body = buildRequest({ system: 's', user: 'u', schema: {}, effort: 'medium', costTier: AUDIT.router.costTier, maxPrice: AUDIT.router.maxPrice, maxTokens: 10 });
+    expect(body.provider.only).toBeUndefined();
+    expect(body.provider).toMatchObject({ data_collection: 'deny', require_parameters: true, allow_fallbacks: false });
+    const { failureReason } = await lib('pipeline.mjs');
+    expect(failureReason('OpenRouter returned no review content (finish_reason=length, completion_tokens=4600, reasoning_tokens=4600, max_tokens=24000).')).toBe('no-content-cut-at-length');
+    expect(src).toMatch(/if \(planned\.ratio < AUDIT\.minDeepReadRatio\)/);
 
+    // The reserve and every estimate are made at the ceiling the request carries, so no endpoint can cost more.
+    const price = AUDIT.router.maxPrice;
     // The budget still fits after the price rise, or the run ends in the floor instead of a report.
-    const perCall = (AUDIT.batchChars / 3.5 / 1e6) * AUDIT.price.input + (AUDIT.consultantOutputTokens / 1e6) * AUDIT.price.output;
-    const ciso = AUDIT.maxVerificationCalls * ((AUDIT.verificationInputChars / 3.5 / 1e6) * AUDIT.price.input + (AUDIT.cisoOutputTokens / 1e6) * AUDIT.price.output)
-      + (AUDIT.narrativeInputChars / 3.5 / 1e6) * AUDIT.price.input + (AUDIT.narrativeOutputTokens / 1e6) * AUDIT.price.output;
+    const perCall = (AUDIT.batchChars / 3.5 / 1e6) * price.input + (AUDIT.consultantOutputTokens / 1e6) * price.output;
+    const ciso = AUDIT.maxVerificationCalls * ((AUDIT.verificationInputChars / 3.5 / 1e6) * price.input + (AUDIT.cisoOutputTokens / 1e6) * price.output)
+      + (AUDIT.narrativeInputChars / 3.5 / 1e6) * price.input + (AUDIT.narrativeOutputTokens / 1e6) * price.output;
     const worst = perCall * AUDIT.maxConsultantCalls + ciso;
     expect(worst, 'the worst case of a full run no longer fits the cap').toBeLessThan(AUDIT.maxCostUsd);
     // And it fits with room, so a batch that redaction grew does not start dropping calls.
@@ -1148,12 +1163,14 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
   });
 
-  test('the budget: 5 USD, every verification call reserved before the consultants spend, and the worst case fits with room', async () => {
+  test('the budget: 20 USD, every verification call reserved before the consultants spend, and the worst case fits with room', async () => {
     const { AUDIT } = await lib('team.mjs');
-    expect(AUDIT.maxCostUsd).toBe(5);
+    // 5 USD from 24.09.2026; 20 USD since the owner's decision of 01.10.2026, with the Auto Router at `high` and
+    // every estimate at its price ceiling — the worst case below is about $14.9.
+    expect(AUDIT.maxCostUsd).toBe(20);
     expect(AUDIT.verificationBatchSize).toBe(20);
     expect(AUDIT.maxVerificationCalls * AUDIT.verificationBatchSize, 'room for v2.18.0 unmerged').toBeGreaterThanOrEqual(194);
-    const est = (chars: number, out: number) => (chars / 3.5 / 1e6) * AUDIT.price.input + (out / 1e6) * AUDIT.price.output;
+    const est = (chars: number, out: number) => (chars / 3.5 / 1e6) * AUDIT.router.maxPrice.input + (out / 1e6) * AUDIT.router.maxPrice.output;
     const brief = read(AUDIT.briefPath).length;
     const consultants = AUDIT.maxConsultantCalls * est(AUDIT.batchChars + 4_000, AUDIT.consultantOutputTokens);
     const verification = AUDIT.maxVerificationCalls * est(brief + 400 + AUDIT.verificationInputChars, AUDIT.cisoOutputTokens);
@@ -1314,18 +1331,21 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
     test('the budget runs out after one verification batch: the other twenty-five are named as outside the budget', async () => {
       const { AUDIT } = await lib('team.mjs');
       const { CISO_FINDINGS_TASK, CISO_NARRATIVE_TASK } = await import(path.resolve(ROOT, 'scripts/security/audit.mjs'));
-      const est = (chars: number, out: number) => (chars / 3.5 / 1e6) * AUDIT.price.input + (out / 1e6) * AUDIT.price.output;
+      const est = (chars: number, out: number) => (chars / 3.5 / 1e6) * AUDIT.router.maxPrice.input + (out / 1e6) * AUDIT.router.maxPrice.output;
       const brief = read(AUDIT.briefPath).length;
       const narrativeReserve = est(brief + CISO_NARRATIVE_TASK.length + 2 + AUDIT.narrativeInputChars, AUDIT.narrativeOutputTokens);
       const verificationWorst = est(brief + CISO_FINDINGS_TASK.length + 2 + AUDIT.verificationInputChars, AUDIT.cisoOutputTokens);
-      // The consultants leave room for exactly one verification call at its reserved worst case beside the narrative.
-      const fake = reviewer({ consultantCost: AUDIT.maxCostUsd - narrativeReserve - verificationWorst });
+      // The consultants leave room for exactly one verification call at its reserved worst case beside the narrative,
+      // and that call costs its worst case. Until 01.10.2026 it cost 0.02 here: at DeepSeek's price nearly the whole
+      // estimate was the output allowance, so 0.02 used up the room; at the Auto Router's ceiling the input share is
+      // larger, a real verification message is smaller than the reserve, and 0.02 would leave room for a second one.
+      const fake = reviewer({ consultantCost: AUDIT.maxCostUsd - narrativeReserve - verificationWorst, verifyCost: verificationWorst });
       const { payload, mail } = await run(fake);
       expect(fake.seen.verification).toBe(1);
       expect(fake.seen.narrative, 'the narrative was reserved and still runs').toBe(1);
       expect(payload.verification).toMatchObject({ candidates: 45, verified: 20, calls: 1, failedCalls: 0 });
       expect(payload.verification.notVerified).toHaveLength(25);
-      for (const n of payload.verification.notVerified) expect(n.reason).toBe('outside the $5 cost cap');
+      for (const n of payload.verification.notVerified) expect(n.reason).toBe(`outside the $${AUDIT.maxCostUsd} cost cap`);
       expect(payload.verification.notVerified[0].id).toBe('K-021');
       expect(payload.failedCalls).toBe(0);
       expect(mail.subject).toContain('nicht vollständig geprüft: 20 von 45 Kandidaten verifiziert, 25 nicht');

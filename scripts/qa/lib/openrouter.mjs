@@ -1,4 +1,4 @@
-import { BUDGET, OPENROUTER_ENDPOINT, QA_MODEL } from './config.mjs';
+import { AUTO_MODEL, BUDGET, OPENROUTER_ENDPOINT, OPENROUTER_MODELS_ENDPOINT, ROUTER } from './config.mjs';
 import { firstViolation } from './validate.mjs';
 
 /**
@@ -38,13 +38,21 @@ const FINISH_REASONS = new Set(['stop', 'length', 'content_filter', 'tool_calls'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**
- * @param user   the user message: a string, or an array of content parts (text and
- *               image_url) for a reviewer that also looks at screenshots
- * @param model  pinned per agent; defaults to the QA reviewer
+ * @param user      the user message: a string, or an array of content parts (text and
+ *                  image_url) for a reviewer that also looks at screenshots
+ * @param costTier  the Auto Router's cost band (`low` … `max`) — the agent's quality floor
+ * @param maxPrice  { input, output } USD per million tokens — the ceiling no endpoint may exceed,
+ *                  and the price every pre-call estimate of that agent is made at
  */
-export function buildRequest({ system, user, schema, effort, model = QA_MODEL, maxTokens = BUDGET.maxOutputTokens, name = 'qa_review', providers = null }) {
+export function buildRequest({ system, user, schema, effort, costTier = ROUTER.delta.costTier, maxPrice = ROUTER.delta.maxPrice, maxTokens = BUDGET.maxOutputTokens, name = 'qa_review' }) {
+  if (!COST_TIERS.has(costTier)) throw new Error('buildRequest: unknown cost tier — no request without a quality floor.');
+  if (!(maxPrice?.input > 0) || !(maxPrice?.output > 0)) throw new Error('buildRequest: no price ceiling — no request whose cost the caps cannot bound.');
   return {
-    model,
+    // Owner decision, 01.10.2026: no agent pins a model any more. OpenRouter's Auto Router picks one per call;
+    // the agent sets only the band it picks from (cost_tier) and the ceiling it may cost (max_price). Which
+    // model answered is read back from the response and recorded in every report (callReviewer).
+    model: AUTO_MODEL,
+    plugins: [{ id: 'auto-router', cost_tier: costTier }],
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: user },
@@ -54,21 +62,84 @@ export function buildRequest({ system, user, schema, effort, model = QA_MODEL, m
     max_tokens: maxTokens,
     temperature: 0,
     usage: { include: true },
-    // No fallback models: a review from a different model than the one pinned is
-    // not the review that was asked for. No provider that stores or trains on
-    // prompts: the delta is public code, but the reasoning about its weaknesses is not.
-    //
-    // `providers`, when given, is an ordered allowlist of OpenRouter *providers*
-    // for that same pinned model, and fallbacks are then allowed inside it. That
-    // is not the thing the paragraph above forbids: the model is unchanged, only
-    // the machine serving it moves, and it moves only among names this repository
-    // has measured. Without the list OpenRouter picks by price, which is how the
-    // release audit of 2170cf35ea5e ended up on an fp4 endpoint that answered 200
-    // with reasoning and no content (scripts/security/lib/team.mjs providers).
-    provider: providers
-      ? { allow_fallbacks: true, data_collection: 'deny', only: providers }
-      : { allow_fallbacks: false, data_collection: 'deny' },
+    provider: {
+      // No provider that stores or trains on prompts: the code is public, the reasoning about its weaknesses is not.
+      data_collection: 'deny',
+      // Only an endpoint that honours every parameter sent: the strict schema, the reasoning effort, the output
+      // allowance. Without it the router may land on an endpoint that silently drops `response_format`.
+      require_parameters: true,
+      // The router's choice is final for the call: no second model behind the one the response names.
+      allow_fallbacks: false,
+      // The hard bound under every cap. OpenRouter does not publish where a cost tier ends, so the pre-call
+      // estimate is made at this ceiling, and OpenRouter serves no endpoint above it: whatever the router picks,
+      // a call cannot cost more than its estimate (the characters-per-token assumption aside).
+      max_price: { prompt: maxPrice.input, completion: maxPrice.output },
+    },
   };
+}
+
+const COST_TIERS = new Set(['low', 'medium', 'high', 'xhigh', 'max']);
+
+/**
+ * The id of the model that answered, or `null`. It comes from a response body, so it is accepted only in the
+ * shape an OpenRouter model id has: it is written into reports and into the public step summary.
+ */
+export function modelIdOf(value) {
+  return typeof value === 'string' && value !== AUTO_MODEL && /^[a-z0-9][a-z0-9._~:/-]{0,119}$/i.test(value) ? value : null;
+}
+
+/**
+ * The distinct models that answered a run's calls, in order of first use: what a report says reviewed it.
+ * A call whose model was not reported counts as `unknown`, never as nothing.
+ */
+export function modelsOf(results) {
+  return [...new Set(results.filter(Boolean).map((r) => modelIdOf(r.model) || 'unknown'))];
+}
+
+let catalog = null;
+
+/**
+ * OpenRouter's public model list (no key), fetched once per process, to confirm that what the router chose can
+ * read what the call sent.
+ */
+export function modelCatalog({ fetchImpl = fetch } = {}) {
+  if (!catalog) {
+    catalog = (async () => {
+      const res = await fetchImpl(OPENROUTER_MODELS_ENDPOINT, { headers: { 'HTTP-Referer': 'https://clean-core.io' } });
+      if (!res.ok) throw new Error(`The OpenRouter model list answered HTTP ${res.status}.`);
+      let json;
+      try {
+        json = await res.json();
+      } catch {
+        throw new Error('The OpenRouter model list is not JSON.');
+      }
+      if (!Array.isArray(json?.data)) throw new Error('The OpenRouter model list is not in the expected shape.');
+      return json.data;
+    })();
+    // A failed fetch is not cached: the next call asks again.
+    catalog.catch(() => (catalog = null));
+  }
+  return catalog;
+}
+
+/** Test seam: forget the cached model list. */
+export const resetModelCatalog = () => (catalog = null);
+
+/**
+ * Can the model that answered read every input kind the call sent? Asked of the catalog, never assumed: the
+ * Auto Router chose an image-capable model in every probe (01.10.2026), but its documentation does not promise
+ * it, and a UX review from a model that could not see the screenshots would be a review of the source alone
+ * under a name that claims more. A model the catalog does not know cannot be confirmed, so it fails too.
+ */
+export async function confirmInputs({ model, inputs, fetchImpl = fetch }) {
+  const id = modelIdOf(model);
+  if (!id) throw new Error('OpenRouter did not name the model that answered, so its input capabilities cannot be confirmed.');
+  const list = await modelCatalog({ fetchImpl });
+  const entry = list.find((m) => m?.id === id || m?.canonical_slug === id);
+  if (!entry) throw new Error(`The model that answered (${id}) is not in the OpenRouter model list, so its input capabilities cannot be confirmed.`);
+  const can = new Set(entry.architecture?.input_modalities || []);
+  const missing = inputs.filter((i) => !can.has(i));
+  if (missing.length) throw new Error(`The router chose ${id}, which cannot read ${missing.join(', ')}: its review is not accepted.`);
 }
 
 /**
@@ -81,7 +152,7 @@ const STATUS_HINTS = {
   401: 'key rejected',
   402: 'credit limit of the key reached',
   403: 'key or account not permitted for this model — check the model requirements in the OpenRouter settings',
-  404: 'model or endpoint not found — or no provider matches the data policy',
+  404: 'no model or endpoint matches the cost tier, the price ceiling, the data policy and the required parameters',
   413: 'request too large',
 };
 
@@ -91,13 +162,15 @@ const STATUS_HINTS = {
  * @param retryDelayMs (attempt) => ms — the pause before retry `attempt` when the provider names no sane wait. The default
  *                 grows by 5 s per attempt; the security audit waits longer, because its report is lost when the last
  *                 call of a long run meets a rate limit.
+ * @param inputs   input kinds beyond text the call sends (`['image']`). The model that answered must read them
+ *                 all (confirmInputs), or the call fails and its review is not returned.
  * @param coerce   (answer) => answer, applied before validation — for a pipeline whose report must not be lost to a
  *                 severity written in English or a number sent as text. The result is still validated; coercion
  *                 fixes types and empties an absent field, it never writes a statement.
  */
-export async function callReviewer({ apiKey, system, user, schema, effort, model, maxTokens, name, providers = null, title = 'Clean-Core.io QA Review', fetchImpl = fetch, timeoutMs = BUDGET.requestTimeoutMs, retries = BUDGET.retries, retryDelayMs = (attempt) => 5_000 * (attempt + 1), earlyFailureMs = EARLY_FAILURE_MS, coerce = null }) {
+export async function callReviewer({ apiKey, system, user, schema, effort, costTier, maxPrice, maxTokens, name, inputs = null, title = 'Clean-Core.io QA Review', fetchImpl = fetch, timeoutMs = BUDGET.requestTimeoutMs, retries = BUDGET.retries, retryDelayMs = (attempt) => 5_000 * (attempt + 1), earlyFailureMs = EARLY_FAILURE_MS, coerce = null }) {
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set — the review cannot run.');
-  const body = JSON.stringify(buildRequest({ system, user, schema, effort, model, maxTokens, name, providers }));
+  const body = JSON.stringify(buildRequest({ system, user, schema, effort, costTier, maxPrice, maxTokens, name }));
 
   for (let attempt = 0; ; attempt++) {
     const controller = new AbortController();
@@ -178,7 +251,19 @@ export async function callReviewer({ apiKey, system, user, schema, effort, model
       if (coerce) review = coerce(review);
       const violation = firstViolation(schema, review);
       if (violation) throw new Error(`The review did not match the schema at ${violation}.`);
-      return { review, usage: json.usage || null, model: json.model || model || QA_MODEL };
+      // Which model the router chose, recorded in every report; `null` when the response does not say (reports
+      // show it as unknown). A call that sent images must have been answered by a model that reads them.
+      const answered = modelIdOf(json.model);
+      if (inputs?.length) {
+        try {
+          await confirmInputs({ model: answered, inputs, fetchImpl });
+        } catch (err) {
+          // The call was billed: its cost travels with the error, so a cap can count it.
+          err.usage = json.usage || null;
+          throw err;
+        }
+      }
+      return { review, usage: json.usage || null, model: answered };
     } finally {
       clearTimeout(timer);
     }

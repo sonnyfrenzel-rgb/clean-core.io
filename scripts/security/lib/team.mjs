@@ -1,53 +1,32 @@
 /**
- * The security agent: one CISO, five consultants — DeepSeek V4.1 Flash over OpenRouter. Everything the audit is
- * allowed to be and spend is decided here and nowhere else (tests/security-audit-guard.spec.ts).
+ * The security agent: one CISO, five consultants, every one of them a call to OpenRouter's Auto Router. Everything
+ * the audit is allowed to be and spend is decided here and nowhere else (tests/security-audit-guard.spec.ts).
  *
- * Sonny, 15.09.2026: DeepSeek V4.1 Flash replaces Claude Fable 5.1 in Claude Code, on cost. The model has no tools
- * at all. The consultants receive the complete code of their domain, the CISO receives their findings together
- * with the lines they cite, read from the repository — nobody can reach anything the pipeline does not hand over.
+ * The model has no tools at all. The consultants receive the complete code of their domain, the CISO receives their
+ * findings together with the lines they cite, read from the repository — nobody can reach anything the pipeline
+ * does not hand over.
  *
  * Runbook: docs/SECURITY-AUDIT-AGENT.md.
  */
 
 export const AUDIT = {
-  /** Pinned: an alias such as `~deepseek/deepseek-flash-latest` would change the auditor without a commit. */
-  model: 'deepseek/deepseek-v4.1-flash',
   /**
-   * Which of OpenRouter's twenty-six endpoints for that model may serve it.
+   * Owner decision, 01.10.2026: no pinned model. Every call goes to `openrouter/auto` (scripts/qa/lib/openrouter.mjs
+   * buildRequest), which picks the model per call within the cost band `high`; the payload and the mail name every
+   * model that answered. From 15.09.2026 until then the audit was pinned to deepseek/deepseek-v4.1-flash.
    *
-   * The release audit of 2170cf35ea5e (run 35842725923, 23.09.2026) lost 51 of
-   * 60 consultant calls and both CISO calls. Every failure had the same shape:
-   * HTTP 200, `finish_reason=length`, `completion_tokens` exactly equal to
-   * `reasoning_tokens` at about 4,600 — far below the 24,000 and 40,000 asked
-   * for — and no content at all. Reproduced here on 23.09.2026 at 5,000,
-   * 20,000 and 100,000 characters of input: four for four, always the same
-   * endpoint, once with a single character of content and otherwise none.
+   * `maxPrice` (USD per million tokens) is sent as `provider.max_price`, so no endpoint above it serves a call, and
+   * every reserve and estimate below is made at exactly that price. Probed 01.10.2026: `high` chose z-ai/glm-5.3
+   * ($0.22/$4.40) and glm-5.2 ($1.40/$4.40).
    *
-   * It was not the budget and not the model. The *identical* request — same
-   * model, same system prompt, same strict schema, same 100,000 characters —
-   * answered with 6,930 to 10,202 characters of valid JSON and
-   * `finish_reason=stop` on Fireworks (four of four) and on CoreWeave, and with
-   * 19,085 characters on Together. The endpoint that served every failed call
-   * is OpenInference: the cheapest of the twenty-six ($0.10/$0.50 against
-   * Fireworks' $0.22/$0.66) and the only one quantised to fp4. OpenRouter sorts
-   * by price, and `allow_fallbacks: false` then pinned the audit to it — and a
-   * 200 with an empty body is not an error OpenRouter would fall back from, so
-   * nothing could have rescued it.
-   *
-   * Hence a named list instead of a price ranking. The model is unchanged; only
-   * the machine serving it is now one of three this repository has measured, in
-   * the order it measured them. The floor under coverage
-   * (`minDeepReadRatio`) is what catches the next endpoint that goes bad
-   * without being on this list's radar.
+   * What went with the pin: the provider allowlist ['Fireworks', 'CoreWeave', 'Together']. It named the endpoints of
+   * one model — the release audit of 2170cf35ea5e (run 35842725923, 23.09.2026) had lost 51 of 60 calls to an fp4
+   * endpoint that answered 200 with reasoning and no content — and a list of one model's endpoints means nothing
+   * once the model is free. What still stands against that failure: `require_parameters` (only endpoints that
+   * honour the strict schema), `allow_fallbacks: false`, the empty-content and not-JSON checks in callReviewer, and
+   * the floor under coverage (`minDeepReadRatio`), which fails the audit loudly instead of reporting on a fraction.
    */
-  providers: ['Fireworks', 'CoreWeave', 'Together'],
-  /**
-   * OpenRouter list price per million tokens of the first provider above
-   * (Fireworks, 23.09.2026). It was 0.15/0.60 while the audit routed by price;
-   * leaving it there would under-reserve the budget, and the calls the cap then
-   * dropped at the end of the run would be the ones `minDeepReadRatio` fails on.
-   */
-  price: { input: 0.22, output: 0.66 },
+  router: { costTier: 'high', maxPrice: { input: 1.5, output: 4.5 } },
   /**
    * Estimated budget per main release, checked before every call against what was actually spent (as in the QA
    * agent). The whole repository is about 1.2 million input tokens in some fifty calls — under $1 at worst — so the cap catches outliers,
@@ -59,8 +38,15 @@ export const AUDIT = {
    * limit was reached before a single candidate's code fitted, it confirmed
    * nothing, and the mail said "0 findings, risk low". Verification now costs up
    * to `maxVerificationCalls` calls, reserved before any consultant spends.
+   *
+   * Owner decision, 01.10.2026: 5 → 20 USD, with the move to the Auto Router at `high`. At the price ceiling of
+   * $1.5/$4.5 the reserve for the CISO alone — 25 verification calls of up to 40,000 output tokens plus the
+   * narrative — is about $5.9, more than the old cap, so no consultant could have run; a whole run at its worst
+   * case (60 consultant calls at 24,000 output tokens, plus that reserve) is about $14.9, and $20 keeps it under
+   * 80 % of the cap (tests/security-audit-guard.spec.ts). The cap is an upper bound; what is counted against it
+   * is the cost OpenRouter reports for each call.
    */
-  maxCostUsd: 5,
+  maxCostUsd: 20,
   /** The self-test on dev proves the chain, not the judgement: two files, one consultant call, the CISO, the mail. */
   selfTestCostUsd: 0.2,
   selfTestFiles: ['app/api/health/route.ts', 'middleware.ts'],
