@@ -12,6 +12,8 @@ export interface TimelineStage extends LandingStage {
   width: number;
   height: number;
   alt: string;
+  /** Where the picture was taken — `STAGE_SHOT_CAPTION` in `lib/landing-shots.ts`. */
+  caption: string;
 }
 
 /**
@@ -20,7 +22,8 @@ export interface TimelineStage extends LandingStage {
  *
  * - **Desktop (md+):** numbered nodes on one line, a WAI-ARIA tablist (arrow
  *   keys, Home/End, roving tabindex). The panel below holds a real capture of
- *   the stage from the demo project, two sentences and the provenance chips.
+ *   the stage — from the demo project or a real run of the example, as its
+ *   caption says — two sentences and the provenance chips.
  * - **Phone:** the same seven as a list of disclosures, each with the same
  *   picture, text and chips.
  * - **Motion:** the line draws once, 1 → 7, when the section comes into view;
@@ -244,7 +247,7 @@ function StageDetail({ stage, compact = false }: { stage: TimelineStage; compact
           />
         </div>
         <figcaption className="mt-2 text-xs font-medium text-cc-ink-muted">
-          Demo project · fictitious code · captured from the workspace
+          {stage.caption}
         </figcaption>
       </figure>
       <div className={compact ? 'space-y-3' : 'space-y-4 lg:col-span-2'}>

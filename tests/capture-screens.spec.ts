@@ -7,7 +7,8 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { adminMergeDoc, adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import { TOUR_STORAGE_KEY } from '../lib/demo-tour';
-import { LANDING_SHOTS, LANDING_SHOT_DIR, STAGE_SHOTS } from '../lib/landing-shots';
+import { LANDING_SHOTS, LANDING_SHOT_DIR, STAGE_SHOTS, STAGE_SHOT_SOURCE } from '../lib/landing-shots';
+import sharp from 'sharp';
 import { PHASES } from '../lib/workflow-steps';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
@@ -383,6 +384,7 @@ test.describe('capture the landing page views', () => {
     await page.fill('input[type="password"]', PASSWORD);
     await page.click('button[type="submit"]:has-text("Sign In")');
     await page.waitForTimeout(4000);
+    return cred.user.uid;
   };
 
   test('landing: photograph the demo workspace in its three views', async ({ page }) => {
@@ -454,59 +456,115 @@ test.describe('capture the landing page views', () => {
   });
 
   /**
-   * One picture per stage for the timeline in `#workspace-tools`: each stage of
-   * the demo project at `/demo/<stage>`, from the stage title down — the demo
-   * tag stays in the picture, the account bar and the demo strip do not
-   * (Documentation: from its coupled tables, see below).
+   * One picture per stage for the timeline in `#workspace-tools` — the rebuilt
+   * 3.0 tools (owner request 01.10.2026). Each stage is taken where
+   * `STAGE_SHOT_SOURCE` says:
+   *
+   *   - `demo` — `/demo/<stage>`, the engine's reading of the example.
+   *   - `run` — a real run of the shipped example `Z_MM_PO_APPROVAL.abap`: a
+   *     project created with the six fields the example gallery writes
+   *     (`components/StarterExamples.tsx`), Analyze started through its page
+   *     (Private Cloud, the dialog's boxes ticked), then Design (which drafts
+   *     its document on first open) and Delivery opened. This half makes model
+   *     calls, so the server needs `GEMINI_API_KEY`; what the model wrote keeps
+   *     its "Model proposal" mark in the picture, as in the product.
+   *
+   * Every picture: 2× device pixels, from the stage title (with the tags or the
+   * eyebrow above it) down, one aspect (1248 × 900 CSS px; Design's canvas page
+   * is full width, so 1408 wide at the same ratio), scaled to 1600 px wide JPEG.
    * Economics is photographed with figures entered, as a reader would enter
    * them: its empty state is a refusal, not the stage.
    */
-  test('landing: photograph the seven stages of the demo project', async ({ page }) => {
-    test.setTimeout(600 * 1000);
+  test('landing: photograph the seven stages', async ({ browser }) => {
+    test.setTimeout(1200 * 1000);
     const out = path.resolve(__dirname, '..', 'public', LANDING_SHOT_DIR);
     fs.mkdirSync(out, { recursive: true });
-    await signIn(page);
-    await page.setViewportSize({ width: 1440, height: 1000 });
+    const context = await browser.newContext({ viewport: { width: 1440, height: 1800 }, deviceScaleFactor: 2 });
+    const page = await context.newPage();
+    const uid = await signIn(page);
+    await page.setViewportSize({ width: 1440, height: 1800 });
+
+    const projectId = `landing-stages-${Date.now()}`;
+    if (PHASES.some((p) => STAGE_SHOT_SOURCE[p.key] === 'run')) {
+      const source = fs.readFileSync(path.resolve(__dirname, '..', 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8');
+      await adminSetDoc('projects', projectId, {
+        name: 'Z_MM_PO_APPROVAL',
+        status: 'uploaded',
+        legacyCode: source,
+        userId: uid,
+        createdAt: new Date(),
+        fromExample: true,
+      });
+      await page.goto(`/project/${projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+      const startButton = page.getByRole('button', { name: 'Start Analysis' });
+      await startButton.waitFor({ timeout: 120000 });
+      await page.waitForTimeout(2000);
+      await assertNoTermsGate(page, `/project/${projectId}/analyze`);
+      await page.locator('label', { hasText: 'Private Cloud RISE Edition' }).first().click();
+      await startButton.click();
+      const dialog = page.locator('[role=dialog]');
+      await dialog.waitFor({ timeout: 30000 });
+      const boxes = dialog.locator('input[type=checkbox]');
+      for (let i = 0; i < (await boxes.count()); i++) await boxes.nth(i).check();
+      await page.getByRole('button', { name: 'Confirm and start the analysis' }).click();
+      await expect(page.locator('[data-analyze-score]').first()).toBeVisible({ timeout: 600000 });
+    }
 
     for (const phase of PHASES) {
-      await page.goto(`/demo/${phase.key}`, { waitUntil: 'domcontentloaded' });
-      await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });
-      await assertNoTermsGate(page, `/demo/${phase.key}`);
-      await page.addStyleTag({
-        content: 'nextjs-portal,[data-chatbot-toggle]{display:none!important}',
-      });
-      await expect(page.getByTestId(`demo-stage-${phase.key}`)).toBeVisible({ timeout: 60000 });
-      if (phase.key === 'tco') {
+      const fromRun = STAGE_SHOT_SOURCE[phase.key] === 'run';
+      const url = fromRun ? `/project/${projectId}/${phase.key}` : `/demo/${phase.key}`;
+      await page.goto(url, { waitUntil: 'domcontentloaded' });
+      if (!fromRun) {
+        await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });
+        await expect(page.getByTestId(`demo-stage-${phase.key}`)).toBeVisible({ timeout: 60000 });
+      }
+      const title = page.locator('[data-stage-title]').first();
+      await title.waitFor({ timeout: 120000 });
+      await assertNoTermsGate(page, url);
+      await page.addStyleTag({ content: 'nextjs-portal,[data-chatbot-toggle]{display:none!important}' });
+      if (phase.key === 'analyze') {
+        await expect(page.locator('[data-analyze-score]').first()).toBeVisible({ timeout: 120000 });
+        // The level facet reads the catalog after the page stands.
+        await expect(page.getByText('Looking up the catalog')).toHaveCount(0, { timeout: 60000 });
+      }
+      // Design drafts its document on the first open; the canvas stands once the contract is read.
+      if (phase.key === 'design') await expect(page.locator('[data-canvas-box]').first()).toBeVisible({ timeout: 600000 });
+      if (phase.key === 'tco' && !fromRun) {
         // The demo's figures sit under their checklist rows (proposal A, 01.10.2026).
         for (const [testId, value] of [['demo-dev-rate', '800'], ['demo-user-rate', '600'], ['demo-investment', '40000']] as const) {
           await fillEconomics(page, `[data-testid="${testId}"]`, value);
         }
         await expect(page.getByTestId('demo-forecast')).toBeVisible({ timeout: 10000 });
       }
-      await page.waitForTimeout(1500);
+      // No focus ring and no hover state in the picture.
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur?.());
+      await page.mouse.move(0, 0);
+      await page.waitForTimeout(3000);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(800);
       if (process.env.CAPTURE_LANDING_DEBUG) {
         await page.screenshot({ path: path.join(process.env.CAPTURE_LANDING_DEBUG, `full-stage-${phase.key}.jpg`), fullPage: true, type: 'jpeg', quality: 60 });
+        await page.evaluate(() => window.scrollTo(0, 0));
       }
-      // Documentation starts at the coupled tables: the object inventory above
-      // them has no line numbers yet (`extractCodeInventory` returns none), and
-      // a column of dashes under "Lines" is not what the stage is about.
-      const start =
-        phase.key === 'documentation'
-          ? page.locator('[data-cc-card-title]', { hasText: 'Tables this program is coupled to' }).locator('xpath=..')
-          : page.locator('[data-stage-title]').first();
-      await start.evaluate((node) => {
-        (node as HTMLElement).style.scrollMarginTop = '136px';
-        node.scrollIntoView({ block: 'start' });
-      });
-      await page.waitForTimeout(800);
-      // Below the sticky account bar, with the demo tag above the title in the picture.
-      const top = Math.max(0, (await start.boundingBox())!.y - (phase.key === 'documentation' ? 20 : 48));
-      const clip = { x: 96, y: top, width: 1248, height: Math.min(780, 1000 - top) };
-      await page.screenshot({ path: path.join(out, STAGE_SHOTS[phase.key]), type: 'jpeg', quality: 75, clip });
+      const box = (await title.boundingBox())!;
+      const wide = phase.key === 'design';
+      const width = wide ? 1408 : 1248;
+      const clip = {
+        x: wide ? 16 : 96,
+        // The demo's tags, or the real page's eyebrow and back link, above the title.
+        y: Math.max(0, Math.round(box.y - (fromRun ? 60 : 48))),
+        width,
+        height: Math.round((width * 900) / 1248),
+      };
+      const shot = await page.screenshot({ clip });
+      await sharp(shot).resize({ width: 1600 }).jpeg({ quality: 80, mozjpeg: true }).toFile(path.join(out, STAGE_SHOTS[phase.key]));
     }
+    await context.close();
 
     for (const file of Object.values(STAGE_SHOTS)) {
-      expect(fs.statSync(path.join(out, file)).size, file).toBeGreaterThan(20_000);
+      const size = fs.statSync(path.join(out, file)).size;
+      expect(size, file).toBeGreaterThan(20_000);
+      expect(size, file).toBeLessThan(260_000);
     }
   });
 });
