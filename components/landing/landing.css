@@ -511,7 +511,9 @@
 
 /* SectionHeader under the mockup's measure: the title within 860 px, the lead 19 px within 760 px */
 .lp3 [data-section-heading] { max-width: 860px; margin-inline: auto; }
-.lp3 [data-section-heading] + p { font-size: 19px; max-width: 760px; }
+/* `margin-inline` restated: the unlayered `.lp3 p { margin: 0 }` above beats Tailwind's layered `mx-auto`,
+   which left every lead hanging at the left edge under a centred title. */
+.lp3 [data-section-heading] + p { font-size: 19px; max-width: 760px; margin-inline: auto; }
 @media (max-width: 760px) { .lp3 [data-section-heading] + p { font-size: 17px; } }
 .lp3 .stations { list-style: decimal; }
 .lp3 .stations li { padding-left: 4px; }

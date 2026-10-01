@@ -4,6 +4,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
+import { openEconomicsRow } from './helpers/economics';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -87,7 +88,9 @@ test('a score from a previous source is not modelled against the current one (b2
 test('the sliders hold the uploaded size and a year without updates (246b1ea24dbc, 2289f335cbb4)', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openEconomics(page, SCORED);
-  await page.waitForSelector('[data-tco-cost]', { timeout: 30000 });
+  // Attached, not visible: the fields sit closed under their checklist rows
+  // until a row is opened (proposal A, owner decision 01.10.2026).
+  await page.waitForSelector('[data-tco-cost]', { state: 'attached', timeout: 30000 });
 
   // A range input whose minimum is above its value draws — and reports — the
   // minimum. 420 lines used to become 1,000 on the slider.
@@ -99,6 +102,7 @@ test('the sliders hold the uploaded size and a year without updates (246b1ea24db
   const packs = page.getByLabel('Feature pack updates per year');
   await expect(upgrades).toHaveAttribute('min', '0');
   await expect(packs).toHaveAttribute('min', '0');
+  await openEconomicsRow(page, 'upgrades');
   await upgrades.fill('0');
   await expect(upgrades).toHaveValue('0');
   await expect(page.locator('body')).toContainText('0 upgrades');

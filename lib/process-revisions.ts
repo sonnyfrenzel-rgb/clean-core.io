@@ -414,3 +414,14 @@ async function wellFormedBpmn(
   }
   return { ok: true };
 }
+
+/**
+ * The base the next save is written against, after the newest revision was
+ * read: it only ever moves forward. An answer that left before this screen's
+ * own save and lands after it names an older revision, and taking it would
+ * make the next save be refused as `revision-moved` for a revision this
+ * screen wrote itself (QA review of 072f79996d01, 0c2270d51419).
+ */
+export function newerBase(current: number | null, fetched: number): number {
+  return current === null || fetched > current ? fetched : current;
+}

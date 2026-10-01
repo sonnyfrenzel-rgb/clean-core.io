@@ -182,6 +182,8 @@ test.describe('a signed-in account reading its own project', () => {
 
   test('UX-027 · generated code is reported, not celebrated', async ({ page }) => {
     await page.goto(`/project/${BTP}/delivery`, { waitUntil: 'domcontentloaded' });
+    // The nine links sit one level deeper, behind "Link by link" (proposal A).
+    await page.locator('[data-chain-detail] [data-cc-disclosure-trigger]').click({ timeout: 60000 });
     await page.waitForSelector('[data-integrity-icon]', { timeout: 60000 });
     const icon = page.locator('[data-integrity-icon="present"]');
     await expect(icon).toHaveCount(1);

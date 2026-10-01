@@ -264,6 +264,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 2: SOLUTION DESIGN ---
     console.log('Navigating to Stage 2: Solution Design...');
     await page.click('button:has-text("Continue to Design")');
+    // Since the canvas rebuild (proposal B, 01.10.2026) each section of the
+    // model's document opens from its card in the drawer.
+    await page.locator('[data-design-section="blueprint"]').click({ timeout: 45000 });
     await page.waitForSelector('text=Target Project Blueprint', { timeout: 45000 });
     
     // Verify that the files tree explorer renders the modernization directory structures
@@ -273,7 +276,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
 
     // Confirm target architecture sign-off
     console.log('Confirming target architecture sign-off...');
-    const lockBtn = page.locator('button:has-text("Confirm & Lock Architecture")');
+    // The sign-off opens as a dialog from "Confirm target" (owner decision 01.10.2026).
+    await page.locator('[data-design-confirm]').click();
+    const lockBtn = page.locator('[data-design-signoff-dialog] button:has-text("Confirm & Lock Architecture")');
     await lockBtn.scrollIntoViewIfNeeded();
     await page.waitForTimeout(1000); // Allow any animations/renders to settle
     
@@ -284,7 +289,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     
     await lockBtn.click();
     console.log('Lock button clicked, waiting for confirmation...');
-    await page.waitForSelector('text=Target Architecture Set', { timeout: 30000 });
+    // A confirmation closes the dialog; the panel answers with the confirmed target.
+    await page.waitForSelector('[data-design-answer="confirmed"]', { timeout: 30000 });
     console.log('Architecture confirmed.');
 
     // --- STAGE 3: TRANSFORMATION ---
@@ -329,14 +335,16 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // second time on the same screen and is now shown only once a suite exists,
     // as "Regenerate Suite". The selector followed the duplicate; it follows the
     // real one now.
-    await page.waitForSelector('button:has-text("Run Selected"), button:has-text("Generate Test Suite")', { timeout: 60000 });
+    await page.waitForSelector('#testing-verified button:has-text("Run tests against mocks"), button:has-text("Generate Test Suite")', { timeout: 60000 });
     
-    // Check if Run Selected is already visible (preloaded suite), otherwise generate it
-    const runButton = page.locator('button:has-text("Run Selected")');
-    if (!(await runButton.isVisible())) {
+    // Check if the run button is enabled (preloaded suite), otherwise generate it.
+    // Since proposal A it stands in "From written to verified" and is there
+    // before a suite exists, disabled until there is one to run.
+    const runButton = page.locator('#testing-verified button:has-text("Run tests against mocks")');
+    if (!(await runButton.isEnabled())) {
       console.log('Test suite not preloaded. Clicking Generate Test Suite...');
       await page.click('button:has-text("Generate Test Suite")');
-      await expect(runButton).toBeVisible({ timeout: 60000 });
+      await expect(runButton).toBeEnabled({ timeout: 60000 });
     } else {
       console.log('Test suite preloaded. Proceeding directly to execution.');
     }
@@ -348,7 +356,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     });
     await expect(resultCard).toHaveCount(0);
 
-    // Which execution "Run Selected" starts is decided by the project's route,
+    // Which execution the run button starts is decided by the project's route,
     // and the route of this example is decided by the evidence engine, not by a
     // model: Z_INVOICE_EXTRACTOR has no Side-by-Side driver, so it is routed
     // In-App (ABAP Cloud) in either deployment. An ABAP Cloud project gets the
@@ -366,7 +374,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
       if (r.url().includes('/api/run-tests')) runTestsRequests.push(r.method());
     });
 
-    await page.click('button:has-text("Run Selected")');
+    await runButton.click();
 
     // The verdict on that row is the one this execution produced: the seed says
     // `Pending`, and nothing but the simulated run writes `Simulated`. The

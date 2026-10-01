@@ -10,6 +10,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import CcTabs from '@/components/cc/Tabs';
 import CcDateText from '@/components/cc/DateText';
+import CcDialog from '@/components/cc/Dialog';
 import ArchitectureCanvas from '@/components/design/ArchitectureCanvas';
 import { ArchitectureList } from '@/components/design/ArchitectureCanvas';
 import { cn } from '@/lib/utils';
@@ -233,7 +234,16 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
   // more after a regeneration) the first written one.
   const [section, setSection] = useState<string | null>(null);
   const activeSection = sections.find((s) => s.key === section && s.written) ?? sections.find((s) => s.key === firstWritten) ?? null;
-  const signOffRef = useRef<HTMLDivElement>(null);
+  // The sign-off opens as a dialog from "Confirm target" (owner decision
+  // 01.10.2026): the panel stays compact. A successful confirmation closes it —
+  // the panel then answers "Confirmed target"; a withdrawal keeps it open on
+  // the form, where the next decision is made.
+  const [signOffOpen, setSignOffOpen] = useState(false);
+  const [lockedBefore, setLockedBefore] = useState(locked);
+  if (lockedBefore !== locked) {
+    setLockedBefore(locked);
+    if (locked) setSignOffOpen(false);
+  }
   const rootRef = useRef<HTMLDivElement>(null);
   const bleed = useFullBleed(rootRef);
   const hintId = useId();
@@ -429,10 +439,15 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
         </div>
       ) : null}
 
-      <div ref={signOffRef} id="architect-sign-off" className="scroll-mt-24">
+      <div id="architect-sign-off" data-design-signoff={locked ? 'locked' : 'open'} className="scroll-mt-24">
         <p className={cn(LABEL, 'mb-1')}>Sign-off</p>
-        {signOffText ? <p className="m-0 text-[13px] text-cc-ink">{signOffText}</p> : null}
-        {signOffPanel ? <div className="mt-3">{signOffPanel}</div> : null}
+        {signOffText ? (
+          <p className="m-0 text-[13px] text-cc-ink">{signOffText}</p>
+        ) : (
+          <p className="m-0 text-[13px] text-cc-ink">
+            Confirmed — a self-declaration of your account, not an organisational mandate. Change it with “Change target”.
+          </p>
+        )}
       </div>
     </div>
   );
@@ -790,21 +805,27 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
             </CcButton>
             <CcButton
               variant={canSignOff && !locked ? 'primary' : 'ghost'}
-              disabled={!canSignOff || locked}
+              disabled={!canSignOff}
               data-design-confirm=""
-              onClick={() => {
-                setPanelTab('decision');
-                requestAnimationFrame(() => {
-                  signOffRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-                  signOffRef.current?.querySelector<HTMLElement>('input, button, select, textarea')?.focus();
-                });
-              }}
+              aria-haspopup="dialog"
+              onClick={() => setSignOffOpen(true)}
             >
-              {locked ? 'Target confirmed' : 'Confirm target'}
+              {locked ? 'Change target' : 'Confirm target'}
             </CcButton>
           </div>
         </aside>
       </div>
+
+      <CcDialog
+        open={signOffOpen && Boolean(signOffPanel)}
+        onClose={() => setSignOffOpen(false)}
+        title={locked ? 'Target architecture sign-off' : 'Confirm the target architecture'}
+        lead="A self-declaration by the signed-in account, bound to the run this page shows — not an organisational mandate."
+        size="wide"
+        data-design-signoff-dialog=""
+      >
+        {signOffPanel}
+      </CcDialog>
 
       {/* The drawer */}
       <section aria-label="Design document and contract" data-design-drawer="" className="border-t border-cc-line bg-cc-surface px-4 pt-2 pb-6 min-[720px]:px-6">

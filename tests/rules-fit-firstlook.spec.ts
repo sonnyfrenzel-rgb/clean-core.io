@@ -100,6 +100,15 @@ test.describe('s2 — the rule-editing mode', () => {
     expect(draftSummary(rules, draft).missing.sort()).toEqual([b, c].sort());
   });
 
+  test('a Change with a reason but no value source is summarised as a missing source, not a missing reason', () => {
+    const [a] = rules.map((r) => r.id);
+    const draft: RuleDraft = { ...draftFrom(rules, {}), [a]: { state: 'change', note: 'New tolerance from Q3' } };
+    expect(draftProblems(draft)).toEqual([{ ruleId: a, kind: 'source-missing' }]);
+    const summary = draftSummary(rules, draft);
+    expect(summary.missing).toEqual([]);
+    expect(summary.sourceMissing).toEqual([a]);
+  });
+
   test('a save sends only what differs from the record, and a repeated answer sends nothing', () => {
     const [a, b] = rules.map((r) => r.id);
     const held = ruleEntries(viewWith([entry(a, 'keep')]));

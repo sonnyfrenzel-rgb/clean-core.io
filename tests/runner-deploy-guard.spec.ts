@@ -164,3 +164,10 @@ test('the app never joins the runners network for its VPC egress', () => {
   expect(deploy).toMatch(/if \[ "\$APP_VPC_NETWORK" = "runner-net" \]; then\n\s+echo "::error::[^"]*"[^\n]*\n\s+exit 1/);
   expect(deploy).not.toContain('app_network_flags=--network=runner-net');
 });
+
+// A deploy without network flags keeps the previous revision's network; an
+// unset APP_VPC_SUBNET must therefore detach explicitly (01.10.2026).
+test('an unset app subnet detaches the app from any VPC', () => {
+  const deploy = read('.github/workflows/deploy.yml');
+  expect(deploy).toContain('echo "app_network_flags=--clear-network" >> "$GITHUB_OUTPUT"');
+});

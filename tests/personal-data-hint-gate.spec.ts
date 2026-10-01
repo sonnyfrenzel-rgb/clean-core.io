@@ -42,7 +42,14 @@ const PANEL = 'components/PersonalDataHints.tsx';
 const ACK = '[data-personal-data-ack] input[type="checkbox"]';
 const MODULE = 'lib/personal-data-hints.ts';
 const ANALYZE = 'app/(app)/project/[projectId]/analyze/page.tsx';
-const NEW_PROJECT = 'components/workspace/NewProject.tsx';
+/**
+ * The two ways "New project" puts a source into the product. Since the shared
+ * example gallery (85d0ea44) New project writes nothing itself: a shipped
+ * example is written by the gallery, which My workspace shows too, and own
+ * code goes through the import. Three shipped examples carry hint shapes.
+ */
+const STARTER_EXAMPLES = 'components/StarterExamples.tsx';
+const OWN_CODE_IMPORT = 'components/workspace/OwnCodeImport.tsx';
 const USAGE_UPLOAD = 'components/analyze/UsageUpload.tsx';
 
 /* ==================================================================== *
@@ -78,7 +85,7 @@ function prose(rel: string): string {
 }
 
 test.describe('the hint claims no control over uploads that the product does not have', () => {
-  for (const rel of [PANEL, MODULE, ANALYZE, NEW_PROJECT, USAGE_UPLOAD]) {
+  for (const rel of [PANEL, MODULE, ANALYZE, STARTER_EXAMPLES, OWN_CODE_IMPORT, USAGE_UPLOAD]) {
     test(`${rel} says "looks like it may be", never "is"`, () => {
       const text = prose(rel);
       for (const claim of FORBIDDEN) {
@@ -105,7 +112,7 @@ test.describe('the hint claims no control over uploads that the product does not
 });
 
 test.describe('the hint is wired into every path a source takes into the product', () => {
-  for (const rel of [ANALYZE, NEW_PROJECT, USAGE_UPLOAD]) {
+  for (const rel of [ANALYZE, STARTER_EXAMPLES, OWN_CODE_IMPORT, USAGE_UPLOAD]) {
     test(`${rel} asks before it sends`, () => {
       const src = read(rel);
       expect(src, `${rel} does not look at what it is about to upload`).toContain(

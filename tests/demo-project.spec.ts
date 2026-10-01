@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fillEconomics } from './helpers/economics';
 import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
@@ -71,6 +72,10 @@ test.describe('the demo is a real run, not a story about one', () => {
     expect(demo.analyze.coverage.gaps).toEqual(evidence.coverage.gaps);
     expect(demo.economics.scoreBefore).toBe(route.cleanCoreScore);
     expect(demo.linesOfCode).toBe(source.split(/\r?\n/).filter((l) => l.trim() && !/^\s*\*/.test(l)).length);
+    // Economics models on the source's line count, the one every other screen
+    // states - not the code-only count (it said 550 against 669 until 01.10.2026).
+    expect(demo.economics.loc, 'the demo economics models on the whole source').toBe(source.split(/\r?\n/).length);
+    expect(demo.economics.loc).toBe(demo.totalLines);
   });
 
   test('the stages the model would write carry no invented model output', () => {
@@ -239,9 +244,9 @@ test.describe('the demo is operable, and its state never leaves the browser', ()
     await expect(page.getByTestId('demo-forecast-refused')).toContainText('developer day rate');
     await expect(page.getByTestId('demo-forecast')).toHaveCount(0);
 
-    await page.getByTestId('demo-dev-rate').fill('900');
-    await page.getByTestId('demo-user-rate').fill('600');
-    await page.getByTestId('demo-investment').fill('40000');
+    await fillEconomics(page, '[data-testid="demo-dev-rate"]', '900');
+    await fillEconomics(page, '[data-testid="demo-user-rate"]', '600');
+    await fillEconomics(page, '[data-testid="demo-investment"]', '40000');
 
     await expect(page.getByTestId('demo-forecast')).toBeVisible();
     await expect(page.getByTestId('demo-forecast-refused')).toHaveCount(0);

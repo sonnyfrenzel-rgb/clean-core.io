@@ -117,6 +117,24 @@ test.describe('every section heading renders identically', () => {
     expect(eyebrows.length, 'no eyebrows found').toBeGreaterThan(3);
     expect([...new Set(eyebrows)], `eyebrows disagree:\n${eyebrows.join('\n')}`).toHaveLength(1);
   });
+
+  // 01.10.2026: the leads hung at the left edge under centred titles — an unlayered
+  // `.lp3 p { margin: 0 }` beat Tailwind's layered `mx-auto`. Same centre, measured.
+  test('each lead sits centred under its heading', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+
+    const offsets = await page.locator('[data-section-heading] + p').evaluateAll((els) =>
+      els.map((lead) => {
+        const h = lead.previousElementSibling!.getBoundingClientRect();
+        const l = lead.getBoundingClientRect();
+        return { title: lead.previousElementSibling!.textContent?.slice(0, 40), off: Math.round(Math.abs((h.left + h.right) / 2 - (l.left + l.right) / 2)) };
+      }),
+    );
+    expect(offsets.length, 'no leads found').toBeGreaterThan(3);
+    expect(offsets.filter((o) => o.off > 2), 'leads off the heading centre').toEqual([]);
+  });
 });
 
 test.describe('no colour class that emits nothing', () => {

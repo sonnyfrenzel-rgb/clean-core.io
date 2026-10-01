@@ -163,7 +163,10 @@ export function projectProgress(project: Project | null): ProjectProgress {
     stage = 'in-progress';
     sentence = `Analysed · ${stepsDoneLabel(done, total)}.`;
   }
-  if (stale) sentence = `${sentence} Some results no longer match the code.`;
+  // Say what moved. Inputs the signed run cannot be shown to have used (a
+  // target that changed, one it never recorded) are not a change of the code.
+  const codeMoved = s.sourceChanged || (s.unverifiedInputs.length === 0 && s.basis === 'source');
+  if (stale) sentence = `${sentence} Some results no longer match ${codeMoved ? 'the code' : 'their inputs'}.`;
 
   return {
     segments,

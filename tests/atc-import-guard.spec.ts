@@ -277,6 +277,12 @@ test.describe('the comparison panel, once an analysis exists', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
 
+    // Since the answer-first Analyze (01d3d2bb) the imports sit folded with
+    // their count, "Imported usage and ATC results" — one click, not gone.
+    const imports = page.getByRole('button', { name: /Imported usage and ATC results/ });
+    await expect(imports).toBeVisible({ timeout: 30000 });
+    if ((await imports.getAttribute('aria-expanded')) !== 'true') await imports.click();
+
     const panel = page.locator('[data-atc-findings-panel]');
     await expect(panel).toBeVisible({ timeout: 30000 });
 

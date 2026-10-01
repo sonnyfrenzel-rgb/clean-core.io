@@ -102,3 +102,18 @@ export async function loadStarterExample(file: string): Promise<string> {
   if (!res.ok) throw new Error(`Could not load the example (${res.status}).`);
   return res.text();
 }
+
+/** What the "View code" dialog shows; `code` is null while the file loads. */
+export interface ViewedCode {
+  title: string;
+  code: string | null;
+}
+
+/**
+ * Where a finished load goes: only into the dialog still waiting for that
+ * example. A dialog the reader closed (`null`) stays closed, and one they
+ * switched to another example keeps that example.
+ */
+export function landViewedCode(current: ViewedCode | null, title: string, code: string): ViewedCode | null {
+  return current && current.title === title && current.code === null ? { title, code } : current;
+}

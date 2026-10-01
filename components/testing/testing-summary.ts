@@ -62,3 +62,27 @@ export function countsLine(c: RunCounts): string {
 }
 
 export const scenarios = (n: number) => `${n} ${n === 1 ? 'scenario' : 'scenarios'}`;
+
+/**
+ * The headline Delivery gives the test suite — read from the same record as the
+ * Testing stage (`lastRun`), so the two screens cannot disagree.
+ *
+ * Delivery used to count `project.testCases[].status`, a client-writable field
+ * the receipt module says is never a verdict (`lib/test-receipt.ts`). On the
+ * seeded project that made Delivery say "2 of 3 Sandbox tests passed" while
+ * Testing, reading the receipt, said "3 scenarios written, not run yet". Only a
+ * receipt that still covers the code, suite and case list is a run here; a
+ * stored "Passed" without one is a draft.
+ */
+export function deliveryTestingTitle(
+  project: Parameters<typeof coveringTestRunReceipt>[0],
+  isAbapCloud: boolean,
+): string {
+  const list = project?.testCases;
+  const cases = Array.isArray(list) ? list.length : 0;
+  const kind = isAbapCloud ? 'ABAP Unit' : 'Sandbox';
+  if (cases === 0) return 'No test suite generated';
+  const run = lastRun(project, null);
+  if (run.kind !== 'recorded') return `Test draft: ${cases} ${kind} tests, no run on record`;
+  return `${run.counts.passed} of ${cases} ${kind} tests passed`;
+}

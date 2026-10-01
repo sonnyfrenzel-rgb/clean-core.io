@@ -44,7 +44,6 @@ import CloudServiceIntegrations from '@/components/design/CloudServiceIntegratio
 import SecurityHardeningChecklist from '@/components/design/SecurityHardeningChecklist';
 import ModernizationRoadmap from '@/components/design/ModernizationRoadmap';
 import RoutingRationale from '@/components/design/RoutingRationale';
-import TargetArchitectureDiagram from '@/components/design/TargetArchitectureDiagram';
 import NonFunctionalRequirements from '@/components/design/NonFunctionalRequirements';
 import { getRunCapabilities } from '@/lib/run-capabilities';
 import LegacyRunBanner from '@/components/LegacyRunBanner';
@@ -567,7 +566,6 @@ ${responseText.substring(0, 4000)}`;
   const [view, setView] = useState<'canvas' | 'list'>('canvas');
 
   const caps = getRunCapabilities(project);
-  const isAbapCloudDesign = !(project?.extensibilityRoute || parsedDesign?.architectureOverview?.runtimePlatform || 'BTP').includes('BTP');
 
   const phases = workflowSteps(project);
   // E01-F01-US02: a design or a sign-off left over from a previous source.
@@ -638,8 +636,10 @@ ${responseText.substring(0, 4000)}`;
           content: proposed(
             <div className="space-y-8">
               <LegacyRunBanner capabilities={caps} projectId={projectId as string} />
+              {/* No model-drawn diagram any more (owner decision 01.10.2026):
+                  the engine-built canvas above is the one architecture picture;
+                  the model's text stays here as its proposal. */}
               <ArchitectureOverview overview={d.architectureOverview} />
-              <TargetArchitectureDiagram data={d} isAbapCloud={isAbapCloudDesign} />
             </div>,
             'Architecture Overview',
           ),

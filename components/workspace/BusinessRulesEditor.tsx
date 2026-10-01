@@ -674,7 +674,13 @@ export default function BusinessRulesEditor({
                     {summary[state].length === 0
                       ? '—'
                       : summary[state]
-                          .map((id) => (summary.missing.includes(id) ? `${id} · ${wt('rules.reasonMissing')}` : id))
+                          .map((id) =>
+                            summary.missing.includes(id)
+                              ? `${id} · ${wt('rules.reasonMissing')}`
+                              : summary.sourceMissing.includes(id)
+                                ? `${id} · ${wt('rules.valueSourceMissing')}`
+                                : id,
+                          )
                           .join(', ')}
                   </dd>
                 </React.Fragment>

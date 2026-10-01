@@ -600,3 +600,287 @@ export function handoverNextStep(
     reason: travels,
   };
 }
+
+/* ------------------------------------------- the object page (3.0, direction A) */
+
+/*
+ * The Delivery tool as an object page (owner decision 01.10.2026, proposal A):
+ * four facets, a status line, the chain in four steps, and what a handover
+ * still needs. Everything below is read from the nine links above and the
+ * phase contract; nothing here is new trust logic and nothing is signed.
+ */
+
+/** Which of the nine links stand behind each of the pack's four chain steps, in reading order. */
+export const HANDOVER_GROUP_LINKS = Object.freeze({
+  requirement: ['source', 'run', 'analysis', 'documentation'],
+  decision: ['design', 'economics', 'decision'],
+  receipt: ['tests'],
+  delivery: ['transformation'],
+} as const satisfies Record<string, readonly HandoverLinkKey[]>);
+
+export type HandoverGroupKey = keyof typeof HANDOVER_GROUP_LINKS;
+
+/** The pack's own names for its four steps (`CHAIN_STEP_LABELS` in `lib/evidence-chain.ts`). */
+export const HANDOVER_GROUP_LABELS: Readonly<Record<HandoverGroupKey, string>> = Object.freeze({
+  requirement: 'Requirement',
+  decision: 'Decision',
+  receipt: 'Receipt',
+  delivery: 'Delivery artefact',
+});
+
+export interface HandoverGroup {
+  key: HandoverGroupKey;
+  label: string;
+  /** What this step holds, in a few words. */
+  title: string;
+  /** Its state in plain words. */
+  sub: string;
+  provenance: ProvenanceValue;
+  provenanceNote: string | null;
+  /** The links behind it, and how many of them have a record. */
+  links: HandoverLink[];
+  onRecord: number;
+}
+
+export interface HandoverState {
+  /** `handoverBlockers(project)` — artefacts built for a previous source. */
+  blockers: readonly string[];
+  /** When the audit pack was last sealed, or `null`. */
+  exportedAt: string | null;
+}
+
+/** The chain in four steps — requirement, decision, receipt, delivery artefact — each read from its links. */
+export function handoverGroups(
+  project: HandoverProject,
+  chain: readonly HandoverLink[],
+  state: HandoverState,
+): HandoverGroup[] {
+  const by = (k: HandoverLinkKey) => chain.find((l) => l.key === k)!;
+  const members = (g: HandoverGroupKey) => (HANDOVER_GROUP_LINKS[g] as readonly HandoverLinkKey[]).map(by);
+  const group = (
+    key: HandoverGroupKey,
+    facts: Pick<HandoverGroup, 'title' | 'sub' | 'provenance' | 'provenanceNote'>,
+  ): HandoverGroup => {
+    const links = members(key);
+    return { key, label: HANDOVER_GROUP_LABELS[key], links, onRecord: links.filter((l) => l.state === 'on-record').length, ...facts };
+  };
+  const staleOf = (key: HandoverGroupKey) => members(key).find((l) => l.state === 'stale') ?? null;
+
+  // Requirement — what the code is and does, as the signed run and the reading of the code have it.
+  const run = by('run');
+  const analysis = by('analysis');
+  const docs = by('documentation');
+  const reqStale = staleOf('requirement');
+  const requirement = run.state === 'open'
+    ? group('requirement', { title: 'No signed run', sub: 'Every later link stands on one.', provenance: 'not-determined', provenanceNote: 'open' })
+    : reqStale
+      ? group('requirement', { title: reqStale.label, sub: 'Made for a previous source — read the current one again.', provenance: 'stale', provenanceNote: reqStale.provenanceNote })
+      : docs.state === 'on-record'
+        ? group('requirement', { title: docs.value!, sub: analysis.value ?? 'Findings of the signed run', provenance: docs.provenance, provenanceNote: null })
+        : group('requirement', { title: analysis.value ?? 'Findings of the signed run', sub: 'The process is not documented yet.', provenance: analysis.provenance, provenanceNote: null });
+
+  // Decision — the target architecture and the decision record.
+  const design = by('design');
+  const decisionLink = by('decision');
+  const stored = storedDecisionOf(project);
+  const target = signedOffTarget(project);
+  const route = str(project.extensibilityRoute);
+  const decision = design.state === 'stale'
+    ? group('decision', { title: target ?? route ?? 'Target design', sub: 'Made for a previous source.', provenance: 'stale', provenanceNote: design.provenanceNote })
+    : decisionLink.state === 'on-record' && stored
+      ? group('decision', {
+          title: `Decision ${stored.decisionId}`,
+          sub: decisionLink.provenance === 'confirmed' ? `Confirmed by ${decisionLink.by}` : 'Derived by rules, not confirmed',
+          provenance: decisionLink.provenance,
+          provenanceNote: decisionLink.provenanceNote,
+        })
+      : design.state === 'on-record'
+        ? group('decision', {
+            title: target ?? route ?? 'Target design drafted',
+            sub: target
+              ? `Confirmed${str(project.approvedBy) ? ` by ${project.approvedBy}` : ''} — no decision recorded yet`
+              : 'Recommended, not confirmed',
+            provenance: design.provenance,
+            provenanceNote: target ? design.provenanceNote : null,
+          })
+        : group('decision', { title: route ?? 'Target architecture', sub: 'No design drafted, nothing confirmed.', provenance: 'not-determined', provenanceNote: 'open' });
+
+  // Receipt — an execution on record, or the honest absence of one.
+  const tests = by('tests');
+  const receipt = group('receipt', {
+    title: 'Test run',
+    sub: tests.state === 'open'
+      ? 'No test suite generated.'
+      : tests.provenance === 'demonstrated-mock' || tests.state === 'stale'
+        ? tests.value!
+        : `${tests.value}, no run on record`,
+    provenance: tests.provenance,
+    provenanceNote: tests.state === 'open' ? 'none' : tests.provenanceNote,
+  });
+
+  // Delivery artefact — the package that leaves, and whether it was sealed.
+  const blocked = state.blockers.length > 0;
+  const delivery = group('delivery', {
+    title: 'Handover package',
+    sub: blocked
+      ? 'Blocked — built for a previous source.'
+      : state.exportedAt
+        ? 'Audit pack sealed and downloaded.'
+        : 'Audit pack not sealed yet.',
+    provenance: blocked ? 'stale' : state.exportedAt ? 'proven' : 'not-determined',
+    provenanceNote: blocked ? null : state.exportedAt ? 'signed' : 'none',
+  });
+
+  return [requirement, decision, receipt, delivery];
+}
+
+export interface StillNeeded {
+  key: string;
+  /** What a real handover still needs, and why, in one line. */
+  text: string;
+  /** Where it is made: a stage, or the workspace's Management view. */
+  stage: PhaseKey | 'management';
+}
+
+/**
+ * What a real handover still needs — every link that is open or made for a
+ * previous source, the test run nobody recorded, the confirmation nobody gave,
+ * and the audit pack nobody sealed. Each names the tool where it is made.
+ */
+export function handoverStillNeeded(
+  project: HandoverProject,
+  chain: readonly HandoverLink[],
+  state: HandoverState,
+): StillNeeded[] {
+  const by = (k: HandoverLinkKey) => chain.find((l) => l.key === k)!;
+  const out: StillNeeded[] = [];
+  const add = (key: string, text: string, stage: StillNeeded['stage']) => out.push({ key, text, stage });
+
+  const source = by('source');
+  if (source.state === 'open') add('source', 'Source code on the project — nothing is staged', 'analyze');
+  const run = by('run');
+  if (run.state === 'open') add('run', 'A signed run — every signed artefact derives from one', 'analyze');
+  else if (run.state === 'stale' || source.state === 'stale') add('run', 'A signed run of the current source — it changed after the run', 'analyze');
+
+  const design = by('design');
+  if (design.state === 'open') add('design', 'A target design — none drafted yet', 'design');
+  else if (design.state === 'stale') add('design', 'A target design for the current source', 'design');
+  else if (design.provenance !== 'confirmed') add('design', 'A confirmed target architecture — recommended, not confirmed', 'design');
+
+  const code = by('transformation');
+  if (code.state === 'open') add('transformation', 'Transformed code — none generated yet', 'transformation');
+  else if (code.state === 'stale') add('transformation', 'Transformed code for the current source', 'transformation');
+
+  const docs = by('documentation');
+  if (docs.state === 'open') add('documentation', 'A written blueprint from the code reading', 'documentation');
+  else if (docs.state === 'stale') add('documentation', 'Documentation for the current source', 'documentation');
+  else if (docs.provenance === 'proposed') add('documentation', 'Documentation read from the code — this one is the earlier, model-written form', 'documentation');
+
+  const tests = by('tests');
+  if (tests.state === 'open') add('tests', 'An executed test suite — no suite generated yet', 'testing');
+  else if (tests.state === 'stale') add('tests', 'A test suite for the current source', 'testing');
+  else if (tests.provenance !== 'demonstrated-mock') add('tests', `An executed test suite — ${tests.value}, none run`, 'testing');
+
+  // Always open: `buildHandoverChain` never finds a stored simulation.
+  add('economics', 'A cost model — figures entered in Economics are not stored, so none travels with the package', 'tco');
+
+  const decision = by('decision');
+  if (decision.provenance !== 'confirmed') add('decision', 'A confirmed decision — it is confirmed in the Management view', 'management');
+
+  if (!state.exportedAt || state.blockers.length > 0) add('audit-pack', 'An audit pack — sealed against the signed run when it is downloaded', 'delivery');
+  return out;
+}
+
+export interface HandoverFacet {
+  key: 'handover' | 'audit-pack' | 'decision' | 'quality';
+  label: string;
+  value: string;
+  sub: string;
+  /** Where the value comes from, for the facet's "Why?". */
+  provenance: ProvenanceValue;
+  basis: string;
+}
+
+/** The four facets of the object-page header: handover, audit pack, architecture decision, quality. */
+export function handoverFacets(
+  project: HandoverProject,
+  phases: RailStep[],
+  chain: readonly HandoverLink[],
+  state: HandoverState,
+): HandoverFacet[] {
+  const phase = (k: PhaseKey) => phases.find((p) => p.key === k)!;
+  const blocked = state.blockers.length > 0;
+  const needed = handoverStillNeeded(project, chain, state).length;
+  const delivery = phase('delivery');
+
+  const handover: HandoverFacet = blocked
+    ? { key: 'handover', label: 'Handover', value: 'Blocked', sub: `${plural(state.blockers.length, 'artefact')} built for a previous source`, provenance: 'stale', basis: 'Artefacts whose digests no longer match the source under analysis.' }
+    : state.exportedAt
+      ? { key: 'handover', label: 'Handover', value: 'Handed over', sub: 'Audit pack sealed and downloaded', provenance: 'proven', basis: 'The server sealed and handed out an audit pack for this project. Acceptance by operations happens outside this product; delivery is not acceptance.' }
+      : delivery.done
+        ? { key: 'handover', label: 'Handover', value: 'Ready to hand over', sub: `${plural(needed, 'thing')} still open`, provenance: 'reconstructed', basis: 'The delivery phase of the phase contract: code, documentation and tests are on record.' }
+        : { key: 'handover', label: 'Handover', value: 'Not handed over', sub: `${plural(needed, 'thing')} a handover still needs`, provenance: 'reconstructed', basis: 'Counted from the evidence chain below — every open link, unconfirmed decision and unsealed pack.' };
+
+  const hasRun = !!str(project.activeRunId) && !project._runLoadFailed;
+  const pack: HandoverFacet = blocked
+    ? { key: 'audit-pack', label: 'Audit pack', value: 'Blocked', sub: 'Rebuild what was made for a previous source', provenance: 'stale', basis: 'The audit-pack route refuses a pack over artefacts built for another source.' }
+    : !hasRun
+      ? { key: 'audit-pack', label: 'Audit pack', value: 'Not available', sub: 'Sealed only against a signed run', provenance: 'not-determined', basis: 'No readable signed run is on record.' }
+      : project.auditMetadata?.inputFingerprint
+        ? { key: 'audit-pack', label: 'Audit pack', value: 'Available', sub: `${AUDIT_PACK_FILES.length} files, signed by the server when downloaded`, provenance: 'proven', basis: 'The signed run and its input fingerprint are on record.' }
+        : { key: 'audit-pack', label: 'Audit pack', value: 'Partial', sub: 'No input fingerprint — run the analysis again', provenance: 'not-determined', basis: 'The run on record carries no input fingerprint.' };
+
+  const target = signedOffTarget(project);
+  const route = str(project.extensibilityRoute);
+  const designPhase = phase('design');
+  const decisionFacet: HandoverFacet = target
+    ? { key: 'decision', label: 'Architecture decision', value: 'Confirmed', sub: `${target}${str(project.approvedBy) ? ` · by ${project.approvedBy}` : ''}`, provenance: 'confirmed', basis: 'The signed-in account’s sign-off — a self-declaration, not an organisational mandate.' }
+    : designPhase.state === 'empty'
+      ? { key: 'decision', label: 'Architecture decision', value: 'Not drafted', sub: route ? `${route} recommended · no design yet` : 'No design yet', provenance: 'not-determined', basis: 'No solution design is on record.' }
+      : { key: 'decision', label: 'Architecture decision', value: 'Pending', sub: `${route ?? 'Target'} · sign-off not recorded`, provenance: 'proposed', basis: 'A design is drafted; nobody has confirmed the target architecture.' };
+
+  const ev = testEvidence(project);
+  const tests = chain.find((l) => l.key === 'tests')!;
+  const quality: HandoverFacet = ev.total === 0
+    ? { key: 'quality', label: 'Quality', value: 'No tests', sub: 'No test suite generated', provenance: 'not-determined', basis: 'No test cases are on record.' }
+    : tests.state === 'stale'
+      ? { key: 'quality', label: 'Quality', value: 'Stale', sub: 'Written for a previous source', provenance: 'stale', basis: phase('testing').detail }
+      : tests.provenance === 'demonstrated-mock'
+        ? { key: 'quality', label: 'Quality', value: ev.attestedFailures > 0 ? 'Failing' : 'Run on record', sub: `${tests.value} · sandbox, against mocks`, provenance: 'demonstrated-mock', basis: 'A recorded sandbox run against mocks — not an SAP system.' }
+        : { key: 'quality', label: 'Quality', value: 'Incomplete', sub: `${plural(ev.total, 'scenario')} written, none run`, provenance: 'proposed', basis: 'Test cases written by the language model; no recorded run stands behind any verdict.' };
+
+  return [handover, pack, decisionFacet, quality];
+}
+
+export interface HandoverStatusItem {
+  key: 'run' | 'decision' | 'receipts' | 'engine';
+  label: string;
+  value: string;
+  tone: 'neutral' | 'success' | 'information' | 'warning';
+}
+
+/** The status line under the facets: run, decision, receipts, engine. */
+export function handoverStatusLine(project: HandoverProject, chain: readonly HandoverLink[]): HandoverStatusItem[] {
+  const run = chain.find((l) => l.key === 'run')!;
+  const decision = chain.find((l) => l.key === 'decision')!;
+  const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
+  const mc = project.auditMetadata?.modelCard;
+  const engine = str(project.analyzerVersion) ?? mc?.engineVersion ?? null;
+  const model = mc?.model ? mc.model : mc?.modelParticipation === 'none' ? 'no model' : 'model not recorded';
+  return [
+    run.state === 'open'
+      ? { key: 'run', label: 'Run', value: 'not signed', tone: 'neutral' }
+      : run.state === 'stale'
+        ? { key: 'run', label: 'Run', value: 'signed · inputs changed', tone: 'warning' }
+        : { key: 'run', label: 'Run', value: 'signed', tone: 'success' },
+    decision.provenance === 'confirmed'
+      ? { key: 'decision', label: 'Decision', value: 'confirmed', tone: 'information' }
+      : decision.state === 'on-record'
+        ? { key: 'decision', label: 'Decision', value: 'draft, not confirmed', tone: 'neutral' }
+        : { key: 'decision', label: 'Decision', value: 'not confirmed', tone: 'neutral' },
+    receipt
+      ? { key: 'receipts', label: 'Receipts', value: 'sandbox test run', tone: 'information' }
+      : { key: 'receipts', label: 'Receipts', value: 'none', tone: 'neutral' },
+    { key: 'engine', label: 'Engine', value: `${engine ?? 'not recorded'} · ${model}`, tone: 'information' },
+  ];
+}
