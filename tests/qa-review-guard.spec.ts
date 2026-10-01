@@ -462,7 +462,9 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     // $3.80 on 01.10.2026 (owner decision) with the move to the Auto Router at `high`: at the ceiling one full batch
     // estimates at about $0.30, so $0.50 would have read one or two batches a push. The caps are upper bounds; what
     // counts against them is the cost OpenRouter reports (usage.cost).
-    expect(BUDGET.maxCostUsd).toBeLessThanOrEqual(3.8);
+    // $6.50 since 01.10.2026 (owner decision), raised with the delta output allowance to 96,000 tokens.
+    expect(BUDGET.maxCostUsd).toBeLessThanOrEqual(6.5);
+    expect(BUDGET.maxOutputTokens).toBe(96_000);
     expect(FULL_BUDGET.maxCostUsd).toBeLessThanOrEqual(10);
     // And the first call of a full batch always fits, or the cap would stop every review before it started.
     expect(withinBudget(0, BUDGET.maxBatchChars)).toBe(true);

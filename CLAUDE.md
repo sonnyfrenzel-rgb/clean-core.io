@@ -100,7 +100,7 @@ There is **no** Firebase Hosting deploy; `firebase.json` is only rules + emulato
 ## QA agent — always on for `dev` (since 2026-09-15, until Sonny revokes it)
 
 Every push to `dev` triggers `.github/workflows/qa-review.yml`: a sealed delta review by
-the OpenRouter Auto Router (cost tier high, cap $3.80) plus a sealed smoke check of the deployed revision.
+the OpenRouter Auto Router (cost tier high, cap $6.50) plus a sealed smoke check of the deployed revision.
 Every release on `main` also gets a sealed review of the whole code base by the OpenRouter Auto Router (cost tier xhigh, cap $10)
 (`node scripts/qa/await.mjs <sha> --full`); it gates nothing — verify its findings and fix
 confirmed ones on `dev` as a roadmap step. A `medium` finding in the agents' own machinery

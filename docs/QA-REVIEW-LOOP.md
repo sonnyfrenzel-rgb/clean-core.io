@@ -21,7 +21,7 @@ erst gefragt, wenn die Schleife sauber ist.
 >
 > | Review | Cost tier | Price ceiling (`provider.max_price`, USD per M tokens) | Cap |
 > |---|---|---|---|
-> | Delta on `dev` | `high` | $1.50 input / $4.50 output | **$3.80** per push (was $0.50) |
+> | Delta on `dev` | `high` | $1.50 input / $4.50 output | **$6.50** per push (was $3.80; output 96,000 tokens since 01.10.2026) |
 > | Full review on `main` | `xhigh` | $3 input / $15 output | $10 per release (unchanged) |
 >
 > Every request also carries `provider: { data_collection: 'deny', require_parameters: true,

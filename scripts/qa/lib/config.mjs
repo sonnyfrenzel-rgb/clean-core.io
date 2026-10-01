@@ -79,7 +79,11 @@ export const BUDGET = {
    * The cap is an upper bound; what is counted against it is the cost OpenRouter reports (`usage.cost`) — about
    * $0.09 a full batch at the prices the router chose in the probes.
    */
-  maxCostUsd: 3.8,
+  /**
+   * $6.50 since 01.10.2026 (owner decision), raised with maxOutputTokens to 96,000: ten worst-case batches
+   * then come to about $5.18, still under 80 % of the cap.
+   */
+  maxCostUsd: 6.5,
   /** Delta context per model call, in characters. */
   maxBatchChars: 200_000,
   /**
@@ -119,8 +123,11 @@ export const BUDGET = {
    * way, because a cut-off batch fails the review rather than splitting and
    * retrying. That is the real repair and it is a bigger change than a release
    * should carry.
+   *
+   * Raised to 96,000 on 01.10.2026 (owner decision): the delta review of c25437ab3e13 stopped at
+   * completion_tokens=48000 (17,608 of them reasoning) on a large merge push.
    */
-  maxOutputTokens: 48_000,
+  maxOutputTokens: 96_000,
   /** Lines of unchanged code around each hunk — enough to see the enclosing branch, not the whole file. */
   hunkContextLines: 12,
   /** Symbols whose callers are looked up outside the delta (impact analysis). */
