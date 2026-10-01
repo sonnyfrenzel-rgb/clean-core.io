@@ -1224,7 +1224,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                                   <div className="cc-text-cell font-semibold text-cc-ink">
                                     {ef.title}{lines.length > 1 ? ` (${lines.length}×)` : ''}
                                   </div>
-                                  <div className="cc-text-meta font-medium text-cc-ink-muted mt-0.5" title={ef.kind}>{evidenceKindLabel(ef.kind)}</div>
+                                  <div className="cc-text-meta font-medium text-cc-ink-muted mt-1" title={ef.kind}>{evidenceKindLabel(ef.kind)}</div>
                                 </>
                               ),
                               lines: <span className="cc-text-cell font-cc-mono text-cc-ink-muted">{lines.join(', ')}</span>,
