@@ -211,16 +211,19 @@ export interface FindingsFilter {
   query: string;
   /** `All` or one severity. */
   severity: 'All' | ShownSeverity;
+  /** A stretch of the source picked on the "where in the program" strip. */
+  lines?: { from: number; to: number } | null;
 }
 
 export const NO_FILTER: FindingsFilter = { query: '', severity: 'All' };
 
 export function filterActive(f: FindingsFilter): boolean {
-  return f.query.trim() !== '' || f.severity !== 'All';
+  return f.query.trim() !== '' || f.severity !== 'All' || Boolean(f.lines);
 }
 
 function rowMatches(row: FindingRow, f: FindingsFilter): boolean {
   if (f.severity !== 'All' && row.finding.severity !== f.severity) return false;
+  if (f.lines && !row.lines.some((l) => l >= f.lines!.from && l <= f.lines!.to)) return false;
   const q = f.query.trim().toLowerCase();
   if (!q) return true;
   const ef = row.finding;
@@ -304,6 +307,8 @@ export interface FocusPick {
   row: FindingRow;
   /** Why this one, in a few words: "Critical · Writes directly to an SAP standard table". */
   why: string;
+  /** The rule beyond severity that picked it, or null when severity alone did. */
+  reason: string | null;
 }
 
 /**
@@ -337,7 +342,11 @@ export function lookHereFirst(rows: readonly FindingRow[], max = 3): FocusPick[]
     if (seen.has(row.finding.kind)) continue;
     seen.add(row.finding.kind);
     const reason = FOCUS_WHY.get(row.finding.kind);
-    picks.push({ row, why: reason ? `${row.finding.severity} · ${reason}` : row.finding.severity });
+    picks.push({
+      row,
+      why: reason ? `${row.finding.severity} · ${reason}` : row.finding.severity,
+      reason: reason ?? null,
+    });
   }
   return picks;
 }

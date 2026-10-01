@@ -151,6 +151,9 @@ test.describe('groups and progressive disclosure', () => {
     // The calm title and the group name are searchable too.
     expect(shownGroups(groups, { query: 'direct reads', severity: 'All' })[0].kind).toBe('standard-table-read');
     expect(shownGroups(groups, { query: 'nothing like this', severity: 'All' })).toEqual([]);
+    // A stretch picked on the source strip narrows to the rows with a line in it.
+    const stretch = shownGroups(groups, { query: '', severity: 'All', lines: { from: 440, to: 460 } });
+    expect(stretch.flatMap((g) => g.matching.map((r) => r.finding.objectName))).toEqual(['EBAN', 'ZMM_PO_APPR']);
   });
 });
 
@@ -161,6 +164,11 @@ test.describe('look here first', () => {
       ['standard-table-write', 'Critical · Writes directly to an SAP standard table'],
       ['bdc', 'High · Drives an SAP transaction through batch input'],
       ['custom-table-write', 'High'],
+    ]);
+    expect(picks.map((p) => p.reason)).toEqual([
+      'Writes directly to an SAP standard table',
+      'Drives an SAP transaction through batch input',
+      null,
     ]);
   });
 
