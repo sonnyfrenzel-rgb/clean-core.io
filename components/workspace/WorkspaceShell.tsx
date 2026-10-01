@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { ChevronDown } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
+import CcDisclosure from '@/components/cc/Disclosure';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import WorkspaceMetaLine from './MetaLine';
 import WorkspaceStatusLine from './StatusLine';
@@ -22,6 +24,7 @@ import CoachMarkNote from './CoachMarks';
 import WorkspaceAccessList from './AccessList';
 import WorkspaceRevisionStand from './RevisionStand';
 import CommandSearch from './CommandSearch';
+import WorkspaceHeadActions, { ReadAccessLine } from './HeadActions';
 import { useCoachMarks } from '@/hooks/useCoachMarks';
 import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
 import { preAnsweredQuestion, type PreAnswered } from '@/lib/ask-this-case';
@@ -48,20 +51,45 @@ import {
 } from '@/lib/workspace-model';
 import { recordGaps } from '@/lib/legacy-project';
 import { WORKSPACE_RETURN } from '@/lib/workspace-back-href';
+import { workspaceEyebrow } from '@/lib/workspace-head';
 import { pageStatusOnRecord, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 
-type ContentBlock = 'answers' | 'layerBar' | 'nextStep' | 'layerSection' | 'firstLook' | 'ask' | 'notDetermined';
+type ContentBlock =
+  | 'answers'
+  | 'layerBar'
+  | 'nextStep'
+  | 'layerSection'
+  | 'firstLook'
+  | 'ask'
+  | 'notDetermined'
+  | 'statusTools'
+  | 'process';
 
-/** Process and reveal line, *Not determined*, "Next step" — §2.3, §2.9. */
+/**
+ * Business in the order of mockup s1: the answer (process name, sentence,
+ * found in the code beside not determined), "Next step" near the top, the
+ * folded project status with Tools / Export / Invite, the anchor bar, the map
+ * with its source column, the layer's own rows, the pre-answered question —
+ * and the not-determined detail last and folded, because its count and its
+ * groups already stand beside the answer at the top.
+ */
 const BUSINESS_ORDER: readonly ContentBlock[] = [
   'firstLook',
-  'notDetermined',
   'nextStep',
+  'statusTools',
   'layerBar',
+  'process',
   'layerSection',
   'ask',
+  'notDetermined',
 ];
+
+/**
+ * The map and its source column — client only and on demand: it pulls bpmn-js
+ * and the ABAP reader, which IT and Management never draw.
+ */
+const WorkspaceProcess = dynamic(() => import('./WorkspaceProcess'), { ssr: false });
 
 /** "Next step" at the top of the content in IT and Management — §2.3 item 5. */
 const OTHER_ORDER: readonly ContentBlock[] = [
@@ -108,10 +136,10 @@ const MANAGEMENT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'f
  * **"Next step"** (roadmap 6.5) is the one card here with a `primary` button —
  * *"die Hauptaktion der Seite steht in „Next step""* (`DESIGN.md` §1.5) — and
  * it renders `lib/next-step.ts`'s answer without adding an opinion of its own.
- * What is still deliberately **not** here: the process map, the rules, the
- * reveal line. Those are phase 2 of the roadmap. A shell that showed
- * placeholders for them would be the exact failure the *Not determined* area
- * exists to rule out.
+ * The Business view also carries the process map with its linked source
+ * column (`WorkspaceProcess.tsx`, mockup s1), drawn from the source the active
+ * run signed — and where there is no such source, it says which of the reasons
+ * applies rather than showing a placeholder.
  */
 export default function WorkspaceShell({
   project,
@@ -160,6 +188,8 @@ export default function WorkspaceShell({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  /** Bumped after the invitation dialog closes, so the read-access line rereads. */
+  const [accessKey, setAccessKey] = useState(0);
   /** Bumped by the Decision card after each command, so the overview above it rereads the decision. */
   const [decisionRevision, setDecisionRevision] = useState(0);
   const onDecisionChanged = useCallback(() => setDecisionRevision((n) => n + 1), []);
@@ -211,6 +241,7 @@ export default function WorkspaceShell({
   const stand = useWorkspaceRevision(projectId);
 
   const meta = useMemo(() => metaLine(project, projectId), [project, projectId]);
+  const eyebrow = useMemo(() => workspaceEyebrow(project), [project]);
   const statuses = useMemo(() => workspaceStatusLine(project), [project]);
   const layers = useMemo(() => workspaceLayers(project), [project]);
   const tools = useMemo(() => workspaceTools(project), [project]);
@@ -279,8 +310,58 @@ export default function WorkspaceShell({
   // "More" is a place, and saying so is the whole of roadmap 6.2. Without a
   // choice the bar opens on the first layer that has anything in it, and on a
   // project where nothing does, on the first layer, which then says it is empty.
-  const currentLayer = hashLayer ?? layers.find((l) => l.count !== null)?.key ?? LAYERS[0];
+  // Business opens on "Need & process", the layer its map belongs to (mockup
+  // s1) — an empty need layer then says so under the map, rather than the bar
+  // pointing at Costs while the page shows the process.
+  const currentLayer =
+    hashLayer ?? (view === 'business' ? 'need' : layers.find((l) => l.count !== null)?.key ?? LAYERS[0]);
   const currentLayerSection = layers.find((l) => l.key === currentLayer) ?? layers[0];
+
+  /**
+   * The status line and the toolbar with Export and "Invite to view" — in
+   * the header in IT and Management, under "Next step" in Business.
+   */
+  const statusAndTools = (
+    <>
+      {/* The status line — open in IT and Management, one folded row in
+          Business (ADR-026). The fold is a fold: the statuses are one click
+          away, never removed (§2.11). */}
+      <div className="mt-4">
+        {view === 'business' && !statusOpen ? (
+          <div
+            data-workspace-status-fold=""
+            className="flex flex-wrap items-center gap-3 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
+          >
+            <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+              {wt('page.projectStatus')}
+            </span>
+            <span data-workspace-status-summary className="text-[13px] font-medium text-cc-ink">
+              {started === 0 ? wt('page.nothingOnRecord') : pageStatusOnRecord(started, statuses.length)}
+            </span>
+            <span className="cc-no-print ml-auto">
+              <CcButton onClick={() => setStatusOpen(true)} aria-expanded={false}>
+                {wt('page.showProjectStatus')}
+                <ChevronDown size={14} aria-hidden={true} />
+              </CcButton>
+            </span>
+          </div>
+        ) : null}
+        {statusVisible && <WorkspaceStatusLine statuses={statuses} projectId={projectId} view={view} />}
+      </div>
+
+      <div id={WORKSPACE_RETURN.tools} className="cc-no-print mt-4 flex flex-wrap items-start justify-between gap-3">
+        <WorkspaceToolBar tools={tools} projectId={projectId} view={view} open={toolsOpen} />
+        {/* Export and "Invite to view" (mockup s1) — in every view: what
+            leaves the building and who may read it are not perspectives. */}
+        <WorkspaceHeadActions
+          project={project}
+          projectId={projectId}
+          view={view}
+          onInvited={() => setAccessKey((n) => n + 1)}
+        />
+      </div>
+    </>
+  );
 
   /**
    * The content under the header, as named blocks — so the order can follow
@@ -322,7 +403,7 @@ export default function WorkspaceShell({
     // this card. Directly under the `h1` in IT and Management, so its title is
     // an `h2` there, or the outline would skip a level (§2.3, §8).
     nextStep: (
-      <div className="mt-5 max-w-3xl">
+      <div className={view === 'business' ? 'mt-4' : 'mt-5 max-w-3xl'} data-coach-target="next-step">
         <div className="cc-no-print">
           <CoachMarkNote
             mark={currentMark}
@@ -331,13 +412,33 @@ export default function WorkspaceShell({
             onDismissAll={marks.dismissAll}
           />
         </div>
-        <NextStepCard point={nextStep} projectId={projectId} view={view} level={view === 'business' ? 3 : 2} />
+        {/* A bar in Business (mockup s1): one row under the answer, the one
+            primary button of the page on its right. */}
+        <NextStepCard
+          point={nextStep}
+          projectId={projectId}
+          view={view}
+          level={view === 'business' ? 3 : 2}
+          variant={view === 'business' ? 'bar' : 'card'}
+        />
       </div>
     ),
+    // Business only: the folded status and the tools sit under "Next step"
+    // there, as in mockup s1; IT and Management keep them in the header.
+    statusTools: view === 'business' ? <div data-workspace-status-tools="">{statusAndTools}</div> : null,
+    // Business only: the process map and its linked source column (roadmap
+    // 2.5, mockup s1). Shown under "Need & process" — and on arrival, before
+    // the reader has picked a layer — never under a layer they chose instead.
+    process:
+      view === 'business' && (hashLayer === null || currentLayer === 'need') ? (
+        <div className="mt-4" data-workspace-process-block="">
+          <WorkspaceProcess project={project} projectId={projectId} view={view} notDetermined={open} />
+        </div>
+      ) : null,
     // The content of the chosen layer (`DESIGN.md` §2.3 item 5, roadmap 6.2);
     // the anchor bar scrolls the reader here by the section's own `id`.
     layerSection: (
-      <div className="mt-5 max-w-3xl">
+      <div className={view === 'business' ? 'mt-5' : 'mt-5 max-w-3xl'}>
         <WorkspaceLayerSection layer={currentLayerSection} />
       </div>
     ),
@@ -351,7 +452,7 @@ export default function WorkspaceShell({
     // The first ten seconds after it (§5.3): one question already answered,
     // out of the branches of the code and without a model call.
     ask: answer ? (
-      <div className="mt-5 max-w-3xl">
+      <div className={view === 'business' ? 'mt-5' : 'mt-5 max-w-3xl'}>
         <div className="cc-no-print">
           <CoachMarkNote
             mark={currentMark}
@@ -366,7 +467,11 @@ export default function WorkspaceShell({
     // Everything the engine could not work out, with its reason — the reason
     // to trust the rest of the screen (roadmap 1.4).
     notDetermined: (
-      <div id="not-determined" className="mt-5 max-w-3xl">
+      <div
+        id="not-determined"
+        data-coach-target="not-determined"
+        className={view === 'business' ? 'mt-5' : 'mt-5 max-w-3xl'}
+      >
         <div className="cc-no-print">
           <CoachMarkNote
             mark={currentMark}
@@ -375,7 +480,26 @@ export default function WorkspaceShell({
             onDismissAll={marks.dismissAll}
           />
         </div>
-        <NotDeterminedCard data={open} recorded={recorded} />
+        {/* Business folds the detail: its count and groups already stand
+            beside the answer, and each line opens in the source column. One
+            click deeper, never removed (§2.11). */}
+        {view === 'business' ? (
+          <div
+            data-workspace-not-determined-row=""
+            className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-2"
+          >
+            <CcDisclosure
+              title={wt('biz.notDeterminedRow')}
+              count={open.noSource ? undefined : open.count}
+              level={2}
+              defaultOpen={open.noSource}
+            >
+              <NotDeterminedCard data={open} recorded={recorded} />
+            </CcDisclosure>
+          </div>
+        ) : (
+          <NotDeterminedCard data={open} recorded={recorded} />
+        )}
       </div>
     ),
   };
@@ -398,6 +522,14 @@ export default function WorkspaceShell({
           {/* A basis, not only `flex-1`: with a zero basis the title never
               wraps below the view switch and, on a phone, runs under it. */}
           <div className="min-w-0 flex-1 basis-64">
+            {/* The eyebrow of mockup s1 — only what the record holds: the file
+                the signed run read and the declared target (`lib/workspace-head.ts`). */}
+            <p
+              data-workspace-eyebrow=""
+              className="m-0 mb-1 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase"
+            >
+              {[wt('biz.eyebrowProject'), ...eyebrow].join(' · ')}
+            </p>
             <div className="flex flex-wrap items-center gap-2">
               <h1
                 data-workspace-title
@@ -488,38 +620,13 @@ export default function WorkspaceShell({
                 {VIEW_ABOUT[view]}
               </p>
             )}
+            {/* "Read access: only you" and the readers' initials (mockup s1, s9) —
+                the owner's line; nothing for an invited reader. */}
+            <ReadAccessLine projectId={projectId} refreshKey={accessKey} />
           </div>
         </div>
 
-        {/* The status line — open in IT and Management, one folded row in
-            Business (ADR-026). The fold is a fold: the statuses are one click
-            away, never removed (§2.11). */}
-        <div className="mt-4">
-          {view === 'business' && !statusOpen ? (
-            <div
-              data-workspace-status-fold=""
-              className="flex flex-wrap items-center gap-3 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
-            >
-              <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-                {wt('page.projectStatus')}
-              </span>
-              <span data-workspace-status-summary className="text-[13px] font-medium text-cc-ink">
-                {started === 0 ? wt('page.nothingOnRecord') : pageStatusOnRecord(started, statuses.length)}
-              </span>
-              <span className="cc-no-print ml-auto">
-                <CcButton onClick={() => setStatusOpen(true)} aria-expanded={false}>
-                  {wt('page.showProjectStatus')}
-                  <ChevronDown size={14} aria-hidden={true} />
-                </CcButton>
-              </span>
-            </div>
-          ) : null}
-          {statusVisible && <WorkspaceStatusLine statuses={statuses} projectId={projectId} view={view} />}
-        </div>
-
-        <div id={WORKSPACE_RETURN.tools} className="cc-no-print mt-4">
-          <WorkspaceToolBar tools={tools} projectId={projectId} view={view} open={toolsOpen} />
-        </div>
+        {view !== 'business' ? statusAndTools : null}
       </section>
 
       {/* Keyed, so a view switch reorders these blocks instead of remounting
@@ -586,7 +693,7 @@ export default function WorkspaceShell({
           access, since when, and the revocation. Owner only, and not by hiding
           it: the route behind it answers nobody else, so for a reader the
           section is not rendered at all. */}
-      <div className="mt-5 max-w-3xl">
+      <div id="workspace-access" className="mt-5 max-w-3xl">
         {/* The one writing action on this page, so the Stand check of roadmap
             6.9 hangs off it: a revocation made against a screen that has been
             overtaken is stopped before it is sent, and the reader decides. */}
