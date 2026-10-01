@@ -782,7 +782,8 @@ test('FOR ALL ENTRIES over a table nobody checks for content says what an empty 
   const select = '  SELECT kunnr FROM kna1 FOR ALL ENTRIES IN @gt_x WHERE kunnr = @gt_x-kunnr INTO TABLE @DATA(lt_da).';
   const ungeprueft = satzAn(quelle('REPORT z.', 'START-OF-SELECTION.', select), 3).join(' ');
   expect(ungeprueft).toContain('If gt_x is empty, the restriction is dropped and all rows are read.');
-  for (const guard of ['  IF gt_x IS NOT INITIAL.', '  IF lines( gt_x ) > 0.', '  CHECK gt_x[] IS NOT INITIAL.']) {
+  // `>= 1` and `GE 1` are the same guard as `> 0` (QA finding 66d825effb5c).
+  for (const guard of ['  IF gt_x IS NOT INITIAL.', '  IF lines( gt_x ) > 0.', '  IF lines( gt_x ) >= 1.', '  IF lines( gt_x ) GE 1.', '  CHECK gt_x[] IS NOT INITIAL.']) {
     const code = guard.startsWith('  CHECK')
       ? quelle('REPORT z.', 'START-OF-SELECTION.', guard, select)
       : quelle('REPORT z.', 'START-OF-SELECTION.', guard, select, '  ENDIF.');
