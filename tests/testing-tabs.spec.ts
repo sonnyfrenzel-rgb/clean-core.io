@@ -130,7 +130,7 @@ test.describe('the Testing stage in two tabs', () => {
     await expect(mockPanel.getByRole('heading', { name: 'Scenarios' })).toBeVisible();
     await expect(mockPanel.getByRole('heading', { name: 'What a tester checks by hand' })).toBeVisible();
     // No run: the pipeline has no pass or fail figure, only dashes.
-    await expect(mockPanel.locator('[data-test-pipeline="none"] [data-pipeline-step="passed"]')).toContainText('—');
+    await expect(mockPanel.locator('[data-test-pipeline="none"] [data-pipeline-step="pass"]')).toContainText('—');
     await expect(mockPanel.locator('[data-test-pipeline="none"] [data-pipeline-step="failed"]')).toContainText('—');
     // Nor does any scenario row take the stored "Passed" for a verdict.
     await expect(mockPanel.locator('[data-scenario-verdict="not-run"]')).toHaveCount(1);

@@ -1,13 +1,14 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { provenance } from '@/lib/provenance';
 import type { LastRun } from './testing-summary';
 
 /**
  * From written to verified — four steps in one row (proposal A, Testing):
- * Written → Run → Passed → Failed.
+ * Written → Run → Demonstrated · mock → Failed.
  *
  * Each step shows a number only where the record has one. Before a run,
- * "Passed" and "Failed" are a dash and "no run", never a zero that reads as a
+ * the last two steps are a dash and "no run", never a zero that reads as a
  * result and never a rate over nothing. Counts come from `lastRun` — the
  * receipt, or this session's run — so this row and the tile above agree.
  *
@@ -42,8 +43,8 @@ export default function TestPipeline({ written, run }: { written: number; run: L
       on: !!counts && counts.total > 0,
     },
     {
-      key: 'passed',
-      label: 'Passed',
+      key: 'pass',
+      label: provenance('demonstrated-mock').label,
       value: counts ? String(counts.passed) : '—',
       sub: counts ? 'against mocks' : 'no run',
       bar: 'bg-cc-information',
