@@ -1014,7 +1014,7 @@ export default function AnalyzePage() {
             hint="Everything on this page was computed by the evidence engine and is covered by this run's signature. Re-run the analysis once a model is available to add the narrative."
           />
 
-          <EvidenceFindingsTable findings={evidenceFindings} />
+          <EvidenceFindingsTable findings={evidenceFindings} sourceLines={sourceLines} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <CcCard title="Extensibility route" level={2}>
@@ -1172,7 +1172,7 @@ export default function AnalyzePage() {
             onShowNotDetermined={showNotDetermined}
           />
 
-          <EvidenceFindingsTable findings={evidenceFindings} />
+          <EvidenceFindingsTable findings={evidenceFindings} sourceLines={sourceLines} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div className="min-w-0">
