@@ -61,8 +61,19 @@ function addStyleHooks(purify: DOMPurify): void {
   });
   purify.addHook('uponSanitizeAttribute', (_node, data) => {
     if (data.attrName === 'style' && OUTBOUND_CSS.test(data.attrValue || '')) data.keepAttr = false;
+    // SVG presentation attributes take `url(…)` as well — `fill`, `stroke`,
+    // `marker-*`, `filter`, `clip-path`, `mask`. Only a same-document fragment
+    // (`url(#arrowhead)`, which mermaid draws with) is kept (carried QA finding
+    // 176ee12c2d66).
+    if (URL_PRESENTATION_ATTRS.has(data.attrName) && /url\s*\((?!\s*['"]?#)/i.test(data.attrValue || '')) {
+      data.keepAttr = false;
+    }
   });
 }
+
+const URL_PRESENTATION_ATTRS = new Set([
+  'fill', 'stroke', 'marker-start', 'marker-mid', 'marker-end', 'filter', 'clip-path', 'mask', 'cursor',
+]);
 
 const HTML_CONFIG = {
   ALLOWED_TAGS: [
