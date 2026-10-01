@@ -109,6 +109,13 @@ test.describe('one source for the score bands', () => {
     expect(SCORE_BANDS_SOURCE).toBe("Clean-Core.io's bands, derived from the deductions");
   });
 
+  test('the wording is shown as written, the product name with its capital', () => {
+    // QA finding 4b2b0f573aa8: the demo tile lower-cased the first letter, so
+    // the reader saw "clean-Core.io's bands".
+    const hits = FILES.filter((rel) => /SCORE_BANDS_SOURCE\s*\.\s*(?:charAt|slice|toLowerCase|replace)\b/.test(read(rel)));
+    expect(hits, 'SCORE_BANDS_SOURCE is reshaped instead of shown as written').toEqual([]);
+  });
+
   test('every surface that gives a score its meaning reads the module', () => {
     const SURFACES = [
       'app/(app)/project/[projectId]/analyze/page.tsx',

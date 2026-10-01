@@ -425,7 +425,7 @@ export function readinessCard(trend: ScoreTrend): ReadinessCard {
     // The Einordnung stands under the title, never only in a popover (ADR-029).
     lead:
       `A grade, not a compliance percentage. ${SCORE_MEANING}` +
-      (trend.score === null ? '' : ` ${scoreWithBand(trend.score)} — ${SCORE_BANDS_SOURCE.charAt(0).toLowerCase()}${SCORE_BANDS_SOURCE.slice(1)}.`),
+      (trend.score === null ? '' : ` ${scoreWithBand(trend.score)} — ${SCORE_BANDS_SOURCE}.`),
     coverage: trend.coverage.sentence,
     ruleVersion: trend.ruleVersion,
     points,
