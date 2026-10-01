@@ -97,6 +97,14 @@ export interface ItFindingRow {
   classificationView: string | null;
   /** The successor SAP publishes, where one is published. */
   successor: string | null;
+  /**
+   * What kind of object the successor is (`OData API`, `CDS View` …) and how
+   * the catalog named it (`Verified`, `Catalog Match`, `Candidate`), both as
+   * the engine wrote them on `sapReplacement`. Optional: a row built before
+   * they existed reads as "not recorded", never as a guess from the name.
+   */
+  successorType?: string | null;
+  successorConfidence?: string | null;
   /** The extensibility targets the router named for this finding. Possibly empty. */
   targetOptions: string[];
   /** `BR-nnn` of every derived rule whose own anchor covers `lineStart`. */

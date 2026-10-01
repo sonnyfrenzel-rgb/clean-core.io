@@ -9,7 +9,7 @@ import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import StageProgress from '@/components/StageProgress';
-import { FileText, Download, RefreshCw, Eye, LayoutTemplate } from 'lucide-react';
+import { FileText, Download, RefreshCw, Eye, LayoutGrid, List } from 'lucide-react';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
 import type { Project, DesignData } from '@/lib/types';
@@ -19,7 +19,6 @@ import NotGenerated from '@/components/NotGenerated';
 import { saveAs } from '@/lib/fileSaver';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import ArchitectSignOff, { architectureOptionLabel } from '@/components/ArchitectSignOff';
-import type { TargetArchitecture } from '@/components/ArchitectSignOff';
 import { recommendedArchitecture } from '@/lib/project-commands';
 import { runProjectCommand } from '@/lib/project-command-client';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
@@ -31,15 +30,13 @@ import { getCloudServiceDetails } from '@/components/design/CloudServiceIntegrat
 
 import CcSkeleton from '@/components/cc/Skeleton';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import CcLinkButton from '@/components/cc/LinkButton';
-import CcDateText from '@/components/cc/DateText';
+import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import StageFooter from '@/components/StageFooter';
 import { withoutUnapprovedMoney, withoutUnapprovedMoneyDeep } from '@/lib/money-honesty';
 
 // Extracted Subcomponents
 import ArchitectureOverview from '@/components/design/ArchitectureOverview';
 import SyncPatternCard from '@/components/design/SyncPatternCard';
-import InteractiveTopology from '@/components/design/InteractiveTopology';
 import ProjectBlueprintExplorer from '@/components/design/ProjectBlueprintExplorer';
 import ApiEndpointsCatalog from '@/components/design/ApiEndpointsCatalog';
 import ApiBusinessHubMapping from '@/components/design/ApiBusinessHubMapping';
@@ -66,6 +63,9 @@ import { cleanAndParseJSON, checkDesignResponse } from '@/lib/design-response';
 import CcButton from '@/components/cc/Button';
 import { CcEmptyState } from '@/components/cc/EmptyState';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import DesignCanvasStage, { type DesignDocSection } from '@/components/design/DesignCanvasStage';
+import { useDesignEvidence } from '@/hooks/useDesignEvidence';
+import { architectureCanvasModel } from '@/lib/architecture-canvas';
 
 
 /**
@@ -506,180 +506,68 @@ ${responseText.substring(0, 4000)}`;
     }
   };
 
-  const renderDesignContent = () => {
+  /**
+   * The stored design, parsed once. A structured design is the JSON form the
+   * prompt asks for; anything else is the older text form, rendered as
+   * markdown. Bulletproof against malformed or null elements (Codex robust
+   * rendering): every array is filtered, every string defaulted.
+   */
+  const parsedDesign = useMemo<DesignData | null>(() => {
     if (!design) return null;
-
+    const t = design.trim();
+    if (!(t.startsWith('{') || (t.includes('{') && t.includes('}')))) return null;
     let data: DesignData | null = null;
-    const trimmedDesignText = design.trim();
-    if (trimmedDesignText.startsWith('{') || (trimmedDesignText.includes('{') && trimmedDesignText.includes('}'))) {
-      try {
-        data = cleanAndParseJSON(design) as DesignData;
-      } catch (e) {
-        console.error('Failed to parse JSON design, falling back to markdown rendering', e);
-      }
+    try {
+      data = cleanAndParseJSON(design) as DesignData;
+    } catch (e) {
+      console.error('Failed to parse JSON design, falling back to markdown rendering', e);
+      return null;
     }
+    if (!data) return null;
+    return {
+      projectName: data.projectName || project?.name || 'Transformed System',
+      architectureOverview: {
+        approachDescription: data.architectureOverview?.approachDescription || '',
+        nodeFramework: data.architectureOverview?.nodeFramework || '',
+        runtimePlatform: data.architectureOverview?.runtimePlatform || '',
+      },
+      nodeAppBlueprint: {
+        projectStructure: (data.nodeAppBlueprint?.projectStructure || []).filter(Boolean),
+        apiEndpoints: (data.nodeAppBlueprint?.apiEndpoints || []).filter(Boolean),
+      },
+      cloudServices: (data.cloudServices || []).filter(Boolean),
+      dataSync: {
+        patternName: data.dataSync?.patternName || 'Data Sync',
+        description: data.dataSync?.description || '',
+      },
+      sapStandardApiMapping: (data.sapStandardApiMapping || []).filter(Boolean),
+      securityHardening: (data.securityHardening || []).filter(Boolean),
+      roadmap: (data.roadmap || []).filter(Boolean),
+    };
+  }, [design, project?.name]);
 
-    if (data) {
-      // Bulletproof defense against malformed/null/undefined elements in arrays (Codex robust rendering)
-      const sanitizedData: DesignData = {
-        projectName: data.projectName || project?.name || 'Transformed System',
-        architectureOverview: {
-          approachDescription: data.architectureOverview?.approachDescription || '',
-          nodeFramework: data.architectureOverview?.nodeFramework || '',
-          runtimePlatform: data.architectureOverview?.runtimePlatform || '',
-        },
-        nodeAppBlueprint: {
-          projectStructure: (data.nodeAppBlueprint?.projectStructure || []).filter(Boolean),
-          apiEndpoints: (data.nodeAppBlueprint?.apiEndpoints || []).filter(Boolean),
-        },
-        cloudServices: (data.cloudServices || []).filter(Boolean),
-        dataSync: {
-          patternName: data.dataSync?.patternName || 'Data Sync',
-          description: data.dataSync?.description || '',
-        },
-        sapStandardApiMapping: (data.sapStandardApiMapping || []).filter(Boolean),
-        securityHardening: (data.securityHardening || []).filter(Boolean),
-        roadmap: (data.roadmap || []).filter(Boolean),
-      };
+  // The contract and the findings the canvas is drawn from (server routes; the
+  // catalog never reaches the browser). Re-read after a sign-off, which can
+  // move the contract's chosen route.
+  const [evidenceVersion, setEvidenceVersion] = useState(0);
+  const designEvidence = useDesignEvidence(projectId as string, Boolean(project), evidenceVersion);
+  const deploymentModel: 'public' | 'private' | null =
+    project?.s4Deployment === 'public' ? 'public' : project?.s4Deployment === 'private' ? 'private' : null;
+  const canvasModel = useMemo(
+    () =>
+      designEvidence.state === 'ready' && designEvidence.contract
+        ? architectureCanvasModel({
+            contract: designEvidence.contract,
+            findings: designEvidence.findings,
+            deployment: deploymentModel,
+          })
+        : null,
+    [designEvidence, deploymentModel],
+  );
+  const [view, setView] = useState<'canvas' | 'list'>('canvas');
 
-      const isAbapCloud = !(project?.extensibilityRoute || sanitizedData.architectureOverview?.runtimePlatform || 'BTP').includes('BTP');
-
-      // Structural fix: determine run capabilities once (shape-based, not version-based)
-      const caps = getRunCapabilities(project);
-      
-      return (
-        <div className="space-y-12">
-          {/* Legacy run banner — visible, honest state instead of silent section gaps */}
-          <LegacyRunBanner capabilities={caps} projectId={projectId as string} />
-
-          {/* Routing Rationale — Design ↔ Analyze evidence binding */}
-          <SectionBoundary name="Routing Rationale">
-            {caps.hasRoutingEvidence && (
-              <RoutingRationale
-                extensibilityRoute={project?.extensibilityRoute}
-                cleanCoreScore={project?.cleanCoreScore}
-                s4Deployment={project?.s4Deployment}
-                findings={findings}
-              />
-            )}
-          </SectionBoundary>
-
-          {/* Target Architecture Overview */}
-          <SectionBoundary name="Architecture Overview">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-              <ArchitectureOverview overview={sanitizedData.architectureOverview} />
-              <SyncPatternCard dataSync={sanitizedData.dataSync} />
-            </div>
-          </SectionBoundary>
-
-          {/* Decoupling topology diagram */}
-          <SectionBoundary name="Interactive Topology">
-            <InteractiveTopology isAbapCloud={isAbapCloud} />
-          </SectionBoundary>
-
-          {/* Auto-generated Mermaid architecture diagram */}
-          <SectionBoundary name="Target Architecture">
-            <TargetArchitectureDiagram data={sanitizedData} isAbapCloud={isAbapCloud} />
-          </SectionBoundary>
-
-          {/* Project blueprint and API catalog */}
-          <SectionBoundary name="Project Blueprint">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-              <ProjectBlueprintExplorer projectStructure={sanitizedData.nodeAppBlueprint?.projectStructure} />
-              <ApiEndpointsCatalog apiEndpoints={sanitizedData.nodeAppBlueprint?.apiEndpoints} />
-            </div>
-          </SectionBoundary>
-
-          {/* Standard API Hub Reference mappings */}
-          <SectionBoundary name="Business Accelerator Hub Mapping">
-            <ApiBusinessHubMapping sapStandardApiMapping={sanitizedData.sapStandardApiMapping} />
-          </SectionBoundary>
-
-          {/* Cloud Service bindings grid & drawer */}
-          <SectionBoundary name="Cloud Service Integrations">
-            <CloudServiceIntegrations cloudServices={sanitizedData.cloudServices} />
-          </SectionBoundary>
-
-          {/* Security Hardening checklist — full width */}
-          <SectionBoundary name="Security Hardening">
-            <SecurityHardeningChecklist securityHardening={sanitizedData.securityHardening} findings={findings} />
-          </SectionBoundary>
-
-          {/* Phased Modernization Roadmap timeline */}
-          <SectionBoundary name="Modernization Roadmap">
-            <ModernizationRoadmap roadmap={sanitizedData.roadmap} />
-          </SectionBoundary>
-
-          {/* Non-Functional Requirements — Enterprise Readiness */}
-          <SectionBoundary name="Non-Functional Requirements">
-            <NonFunctionalRequirements nfr={nfrData} />
-          </SectionBoundary>
-
-          {/* Architect sign-off / decision — always last. The panel is its own
-              card; this wrapper only names the region. */}
-          <section aria-label="Architect sign-off" id="architect-sign-off" className="scroll-mt-24">
-              <ArchitectSignOff
-                // The two shapes `originalRecommendation` arrives in — the five
-                // architecture codes and the router's own route names — are
-                // translated in one place, which the server validates against.
-                recommendation={recommendedArchitecture({
-                  originalRecommendation: project?.originalRecommendation,
-                  extensibilityRoute: project?.extensibilityRoute,
-                }) || 'rap'}
-                confidenceScore={project?.recommendationConfidence}
-                justificationText={project?.recommendationJustification || `Based on the code analysis, the ${project?.extensibilityRoute?.includes('BTP') ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`}
-                isLocked={project?.approvedByArchitect === true}
-                currentArchitecture={project?.targetArchitecture}
-                currentJustification={project?.architectJustifiedOverride}
-                lockedByEmail={project?.approvedBy}
-                lockedAt={project?.architectSignOffAt ? String(project.architectSignOffAt) : undefined}
-                canUnlock={true}
-                // Roadmap 0.7: the five release fields are no longer writable
-                // from here. The server records them and answers with what it
-                // stored — including the address it read off the ID token and
-                // the timestamp off its own clock, neither of which this page
-                // is entitled to invent.
-                onLock={async (architecture, justification) => {
-                  const stored = await runProjectCommand(projectId as string, {
-                    command: 'approve-architecture',
-                    targetArchitecture: architecture,
-                    justification: justification || '',
-                    // Roadmap 8.8 — which run this page rendered, and what it
-                    // said. `loadProjectAndHydrate` spreads the run over the
-                    // project (`lib/project-loader.ts:14-22`), so every fact
-                    // `evidenceDigest` reads here is the run's own; the three
-                    // keys the project keeps on merge are deliberately not
-                    // among them. If the server's active run has moved since,
-                    // the command comes back 409 with the diff instead of
-                    // silently binding the sign-off to a run nobody read.
-                    expectedRunId: String(project?.activeRunId || ''),
-                    expectedEvidenceDigest: evidenceDigest(project as unknown as Record<string, unknown>),
-                  });
-                  setProject((prev: Project | null) => prev ? { ...prev, ...stored } as Project : null);
-                }}
-                onUnlock={async () => {
-                  const stored = await runProjectCommand(projectId as string, { command: 'revoke-architecture' });
-                  setProject((prev: Project | null) => prev ? {
-                    ...prev,
-                    ...stored,
-                    targetArchitecture: undefined,
-                    architectSignOffAt: undefined,
-                  } as Project : null);
-                }}
-              />
-          </section>
-        </div>
-      );
-    }
-
-    // Fallback to legacy markdown rendering
-    return (
-      <div 
-        className="cc-prose"
-        dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(design) }}
-      />
-    );
-  };
+  const caps = getRunCapabilities(project);
+  const isAbapCloudDesign = !(project?.extensibilityRoute || parsedDesign?.architectureOverview?.runtimePlatform || 'BTP').includes('BTP');
 
   const phases = workflowSteps(project);
   // E01-F01-US02: a design or a sign-off left over from a previous source.
@@ -731,6 +619,118 @@ ${responseText.substring(0, 4000)}`;
     </div>
   );
 
+  // Built after the loading return: the markdown renderer needs a DOM, and
+  // the server render never has a design to show.
+  /** The nine sections a structured design carries, in the order the document reads. */
+  const docSections: DesignDocSection[] = (() => {
+    const proposed = (body: React.ReactNode, name: string) => <SectionBoundary name={name}>{body}</SectionBoundary>;
+    if (parsedDesign) {
+      const d = parsedDesign;
+      const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+      const nfrTopics = nfrData ? Object.values(nfrData).filter((v) => typeof v === 'string' && v.trim()).length : 0;
+      return [
+        {
+          key: 'overview',
+          title: 'Architecture overview',
+          written: Boolean(d.architectureOverview.approachDescription),
+          excerpt: d.architectureOverview.approachDescription,
+          meta: d.architectureOverview.runtimePlatform || undefined,
+          content: proposed(
+            <div className="space-y-8">
+              <LegacyRunBanner capabilities={caps} projectId={projectId as string} />
+              <ArchitectureOverview overview={d.architectureOverview} />
+              <TargetArchitectureDiagram data={d} isAbapCloud={isAbapCloudDesign} />
+            </div>,
+            'Architecture Overview',
+          ),
+        },
+        {
+          key: 'blueprint',
+          title: 'Project blueprint',
+          written: d.nodeAppBlueprint.projectStructure.length > 0,
+          meta: count(d.nodeAppBlueprint.projectStructure.length, 'file', 'files'),
+          content: proposed(<ProjectBlueprintExplorer projectStructure={d.nodeAppBlueprint.projectStructure} />, 'Project Blueprint'),
+        },
+        {
+          key: 'endpoints',
+          title: 'API endpoints',
+          written: d.nodeAppBlueprint.apiEndpoints.length > 0,
+          meta: count(d.nodeAppBlueprint.apiEndpoints.length, 'endpoint', 'endpoints'),
+          content: proposed(<ApiEndpointsCatalog apiEndpoints={d.nodeAppBlueprint.apiEndpoints} />, 'API Endpoints'),
+        },
+        {
+          key: 'mapping',
+          title: 'SAP standard API mapping',
+          written: (d.sapStandardApiMapping || []).length > 0,
+          meta: count((d.sapStandardApiMapping || []).length, 'mapping', 'mappings'),
+          content: proposed(<ApiBusinessHubMapping sapStandardApiMapping={d.sapStandardApiMapping} />, 'Business Accelerator Hub Mapping'),
+        },
+        {
+          key: 'cloud',
+          title: 'Cloud services',
+          written: d.cloudServices.length > 0,
+          meta: count(d.cloudServices.length, 'service', 'services'),
+          content: proposed(<CloudServiceIntegrations cloudServices={d.cloudServices} />, 'Cloud Service Integrations'),
+        },
+        {
+          key: 'sync',
+          title: 'Data sync pattern',
+          written: Boolean(d.dataSync.description),
+          excerpt: d.dataSync.patternName,
+          content: proposed(<SyncPatternCard dataSync={d.dataSync} />, 'Data Sync'),
+        },
+        {
+          key: 'security',
+          title: 'Security hardening',
+          written: d.securityHardening.length > 0,
+          meta: count(d.securityHardening.length, 'requirement', 'requirements'),
+          content: proposed(<SecurityHardeningChecklist securityHardening={d.securityHardening} findings={findings} />, 'Security Hardening'),
+        },
+        {
+          key: 'roadmap',
+          title: 'Roadmap',
+          written: d.roadmap.length > 0,
+          meta: count(d.roadmap.length, 'phase', 'phases'),
+          content: proposed(<ModernizationRoadmap roadmap={d.roadmap} />, 'Modernization Roadmap'),
+        },
+        {
+          key: 'nfr',
+          title: 'Non-functional requirements',
+          written: nfrTopics > 0,
+          meta: nfrTopics ? count(nfrTopics, 'topic', 'topics') : undefined,
+          content: proposed(<NonFunctionalRequirements nfr={nfrData} />, 'Non-Functional Requirements'),
+        },
+      ];
+    }
+    // The older text form: one document, read as the overview. The rest is
+    // honestly not written.
+    const firstLine = design
+      .split(/\r?\n/)
+      .map((l) => l.replace(/^#+\s*/, '').trim())
+      .filter(Boolean)
+      .find((l, i, all) => i > 0 || all.length === 1);
+    return [
+      {
+        key: 'overview',
+        title: 'Architecture overview',
+        written: Boolean(design),
+        excerpt: firstLine ? `“${firstLine}”` : undefined,
+        meta: 'older text form',
+        content: <div className="cc-prose" dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(design) }} />,
+      },
+      ...[
+        ['blueprint', 'Project blueprint'],
+        ['endpoints', 'API endpoints'],
+        ['mapping', 'SAP standard API mapping'],
+        ['cloud', 'Cloud services'],
+        ['sync', 'Data sync pattern'],
+        ['security', 'Security hardening'],
+        ['roadmap', 'Roadmap'],
+        ['nfr', 'Non-functional requirements'],
+      ].map(([key, title]) => ({ key, title, written: false })),
+    ];
+  })();
+
   // A failed generation, worded for the reader, with the one action that
   // could change it. It used to be drawn only on the empty stage, so a failed
   // *re*generation left the old design on screen and said nothing.
@@ -752,6 +752,119 @@ ${responseText.substring(0, 4000)}`;
     </CcMessageStrip>
   ) : null;
 
+  // The document region when there is no document yet: the stage's reason, or
+  // the one action that makes one.
+  const documentFallback = design ? null : !modelAvailability.enabled('design') ? (
+    /* Roadmap 1.2 / V25-A12 — a button that can only fail is worse than
+       no button. The stage says which of the two reasons applies and
+       what would change it, instead of offering a generation that the
+       server will refuse. */
+    <NotGenerated
+      what="Solution design blueprint"
+      absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
+      stage="design"
+      hint={
+        modelAvailability.keyAvailable
+          ? 'Turn the design stage back on in Settings to generate it.'
+          : 'Add your own Gemini API key in Settings to generate it. The signed analysis evidence needs no key and is unaffected.'
+      }
+    />
+  ) : (
+    <div className="space-y-4">
+      {designErrorStrip}
+      <CcEmptyState
+        illustration={<FileText size={32} aria-hidden={true} className="text-cc-ink-muted" />}
+        title="No Solution Design Found"
+        action={
+          <CcButton variant="primary" density="cozy" icon={<RefreshCw size={16} aria-hidden={true} />} busy={loading} onClick={regenerate}>
+            {designError ? 'Retry Generation' : 'Generate Solution Design'}
+          </CcButton>
+        }
+      >
+        The target architecture design is empty or was not generated automatically. Generate it from the signed analysis.
+      </CcEmptyState>
+    </div>
+  );
+
+  const recommendation =
+    recommendedArchitecture({
+      originalRecommendation: project?.originalRecommendation,
+      extensibilityRoute: project?.extensibilityRoute,
+    }) || 'rap';
+  const recommendedLabel = architectureOptionLabel(
+    recommendedArchitecture({
+      originalRecommendation: project?.originalRecommendation,
+      extensibilityRoute: project?.extensibilityRoute,
+    }),
+  );
+  const canSignOff = Boolean(design) && designIsStructured(design);
+
+  // The sign-off, unchanged: the same panel, the same commands, the same
+  // run binding (roadmap 0.7, 8.8). It sits in the Decision tab now.
+  const signOffPanel = canSignOff ? (
+    <ArchitectSignOff
+      // The two shapes `originalRecommendation` arrives in — the five
+      // architecture codes and the router's own route names — are
+      // translated in one place, which the server validates against.
+      recommendation={recommendation}
+      confidenceScore={project?.recommendationConfidence}
+      justificationText={project?.recommendationJustification || `Based on the code analysis, the ${project?.extensibilityRoute?.includes('BTP') ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`}
+      isLocked={project?.approvedByArchitect === true}
+      currentArchitecture={project?.targetArchitecture}
+      currentJustification={project?.architectJustifiedOverride}
+      lockedByEmail={project?.approvedBy}
+      lockedAt={project?.architectSignOffAt ? String(project.architectSignOffAt) : undefined}
+      canUnlock={true}
+      // Roadmap 0.7: the five release fields are no longer writable
+      // from here. The server records them and answers with what it
+      // stored — including the address it read off the ID token and
+      // the timestamp off its own clock, neither of which this page
+      // is entitled to invent.
+      onLock={async (architecture, justification) => {
+        const stored = await runProjectCommand(projectId as string, {
+          command: 'approve-architecture',
+          targetArchitecture: architecture,
+          justification: justification || '',
+          // Roadmap 8.8 — which run this page rendered, and what it
+          // said. `loadProjectAndHydrate` spreads the run over the
+          // project (`lib/project-loader.ts:14-22`), so every fact
+          // `evidenceDigest` reads here is the run's own; the three
+          // keys the project keeps on merge are deliberately not
+          // among them. If the server's active run has moved since,
+          // the command comes back 409 with the diff instead of
+          // silently binding the sign-off to a run nobody read.
+          expectedRunId: String(project?.activeRunId || ''),
+          expectedEvidenceDigest: evidenceDigest(project as unknown as Record<string, unknown>),
+        });
+        setProject((prev: Project | null) => prev ? { ...prev, ...stored } as Project : null);
+        setEvidenceVersion((v) => v + 1);
+      }}
+      onUnlock={async () => {
+        const stored = await runProjectCommand(projectId as string, { command: 'revoke-architecture' });
+        setProject((prev: Project | null) => prev ? {
+          ...prev,
+          ...stored,
+          targetArchitecture: undefined,
+          architectSignOffAt: undefined,
+        } as Project : null);
+        setEvidenceVersion((v) => v + 1);
+      }}
+    />
+  ) : null;
+
+  // The target context, as the contract states it — bound by the run, or not.
+  const contractNow = designEvidence.state === 'ready' ? designEvidence.contract : null;
+  const targetBound = Boolean(contractNow?.fields.find((f) => f.key === 'target-context')?.statement);
+  const editionWord = deploymentModel === 'private' ? 'Private' : deploymentModel === 'public' ? 'Public' : null;
+  const targetKpi = targetBound && editionWord
+    ? { value: `${editionWord} Edition`, sub: 'bound by the run' }
+    : { value: 'Not determined', sub: editionWord ? `${editionWord} Edition assumed` : null };
+  const targetLine = targetBound && editionWord
+    ? `${editionWord} Cloud Edition · bound by the run`
+    : editionWord
+      ? `${editionWord} Cloud Edition assumed · target not bound by the run`
+      : 'Edition not determined · target not bound by the run';
+
   return (
     <div className="min-h-screen">
       {/* The rail used to render only while the page was loading: it sat in the
@@ -764,108 +877,97 @@ ${responseText.substring(0, 4000)}`;
 
       <StageHeader projectName={project?.name}
         stage="design"
-        actions={design ? (
-          <div className="flex flex-wrap gap-2">
-            {/* Regenerate only where it can succeed and would describe the code
-                under review: not with the stage off or keyless (QA
-                6c4734f60aa8), and not from an analysis of a previous source
-                (QA f9aea437967e). A design merely older than the analysis is
-                what Regenerate is for. Exports stay closed on a stale design. */}
-            <CcButton
-              variant="secondary"
-              icon={<RefreshCw size={16} aria-hidden={true} />}
-              busy={loading}
-              disabled={!designAvailable || stale.sourceChanged}
-              data-design-regenerate=""
-              onClick={regenerate}
-            >
-              Regenerate
-            </CcButton>
-            <CcButton variant="ghost" icon={<Eye size={16} aria-hidden={true} />} disabled={designStale} data-design-export="view" onClick={() => exportToConfluence(true)}>
-              View HTML
-            </CcButton>
-            <CcButton variant="ghost" icon={<Download size={16} aria-hidden={true} />} disabled={designStale} data-design-export="save" onClick={() => exportToConfluence(false)}>
-              Export HTML
-            </CcButton>
+        eyebrow={design ? <CcProvenanceChip value="proposed" note="document" /> : null}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="max-[719px]:hidden">
+              <CcSegmentedControl
+                label="View"
+                value={view}
+                onChange={setView}
+                segments={[
+                  { value: 'canvas', label: 'Canvas', icon: <LayoutGrid size={14} aria-hidden={true} /> },
+                  { value: 'list', label: 'List', icon: <List size={14} aria-hidden={true} /> },
+                ]}
+              />
+            </span>
+            {design ? (
+              <>
+                {/* Regenerate only where it can succeed and would describe the code
+                    under review: not with the stage off or keyless (QA
+                    6c4734f60aa8), and not from an analysis of a previous source
+                    (QA f9aea437967e). A design merely older than the analysis is
+                    what Regenerate is for. Exports stay closed on a stale design. */}
+                <CcButton
+                  variant="ghost"
+                  icon={<RefreshCw size={16} aria-hidden={true} />}
+                  busy={loading}
+                  disabled={!designAvailable || stale.sourceChanged}
+                  data-design-regenerate=""
+                  onClick={regenerate}
+                >
+                  Regenerate
+                </CcButton>
+                <CcButton variant="ghost" icon={<Eye size={16} aria-hidden={true} />} disabled={designStale} data-design-export="view" onClick={() => exportToConfluence(true)}>
+                  View HTML
+                </CcButton>
+                <CcButton variant="ghost" icon={<Download size={16} aria-hidden={true} />} disabled={designStale} data-design-export="save" onClick={() => exportToConfluence(false)}>
+                  Export HTML
+                </CcButton>
+              </>
+            ) : null}
           </div>
-        ) : null}
+        }
       >
         Where this code should run after the change, and the design that gets it there.
       </StageHeader>
 
-      <DesignAnswer
-        recommended={architectureOptionLabel(
-          recommendedArchitecture({
-            originalRecommendation: project?.originalRecommendation,
-            extensibilityRoute: project?.extensibilityRoute,
-          }),
-        )}
-        confirmed={signOffCurrent ? architectureOptionLabel(project?.targetArchitecture) : null}
-        confirmedBy={signOffCurrent ? project?.approvedBy ?? null : null}
-        confirmedAt={signOffCurrent && project?.architectSignOffAt ? String(project.architectSignOffAt) : null}
-        hasDocument={Boolean(design)}
-        canSignOff={Boolean(design) && designIsStructured(design)}
-        stale={designStale || stale.signOff}
-      />
-
-      <div
-        id="design-report"
-        data-stage-output={design ? 'solutionDesign' : undefined}
-        className="mb-12 overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc"
-      >
-        <div className="flex items-center justify-between border-b border-cc-line bg-cc-surface-muted px-4 py-4 sm:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <LayoutTemplate size={20} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
-            <div className="min-w-0">
-              <h2 className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
-                Design document {design ? <CcProvenanceChip value="proposed" /> : null}
-              </h2>
-              <p className="m-0 truncate cc-text-cell text-cc-ink-muted">Project: {project?.name || 'Loading...'}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-cc-surface p-6 md:p-12">
-          {design ? (
-            <>
-              {designErrorStrip && <div className="mb-8">{designErrorStrip}</div>}
-              {renderDesignContent()}
-            </>
-          ) : !modelAvailability.enabled('design') ? (
-            /* Roadmap 1.2 / V25-A12 — a button that can only fail is worse than
-               no button. The stage says which of the two reasons applies and
-               what would change it, instead of offering a generation that the
-               server will refuse. */
-            <NotGenerated
-              what="Solution design blueprint"
-              absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
-              stage="design"
-              hint={
-                modelAvailability.keyAvailable
-                  ? 'Turn the design stage back on in Settings to generate it.'
-                  : 'Add your own Gemini API key in Settings to generate it. The signed analysis evidence needs no key and is unaffected.'
-              }
-            />
-          ) : (
-            <div className="space-y-4">
-              {designErrorStrip}
-              <CcEmptyState
-                illustration={<FileText size={32} aria-hidden={true} className="text-cc-ink-muted" />}
-                title="No Solution Design Found"
-                action={
-                  <CcButton variant="primary" density="cozy" icon={<RefreshCw size={16} aria-hidden={true} />} busy={loading} onClick={regenerate}>
-                    {designError ? 'Retry Generation' : 'Generate Solution Design'}
-                  </CcButton>
+      <div className="mb-12">
+        <DesignCanvasStage
+          evidence={designEvidence}
+          model={canvasModel}
+          targetLine={targetLine}
+          targetKpi={targetKpi}
+          confidence={typeof project?.recommendationConfidence === 'number' ? project.recommendationConfidence : null}
+          recommendedLabel={recommendedLabel}
+          confirmed={
+            signOffCurrent
+              ? {
+                  label: architectureOptionLabel(project?.targetArchitecture) ?? String(project?.targetArchitecture ?? ''),
+                  by: project?.approvedBy ?? null,
+                  at: project?.architectSignOffAt ? String(project.architectSignOffAt) : null,
                 }
-              >
-                The target architecture design is empty or was not generated automatically. Generate it from the signed analysis.
-              </CcEmptyState>
-            </div>
-          )}
-        </div>
+              : null
+          }
+          stale={designStale || stale.signOff}
+          hasDocument={Boolean(design)}
+          canSignOff={canSignOff}
+          signOffPanel={signOffPanel}
+          locked={project?.approvedByArchitect === true}
+          onRegenerate={regenerate}
+          regenerateDisabled={!designAvailable || stale.sourceChanged}
+          regenerating={loading}
+          legacyCode={project?.legacyCode || ''}
+          sections={docSections}
+          documentFallback={documentFallback}
+          documentNotice={designErrorStrip}
+          routingRationale={
+            caps.hasRoutingEvidence ? (
+              <SectionBoundary name="Routing Rationale">
+                <RoutingRationale
+                  extensibilityRoute={project?.extensibilityRoute}
+                  cleanCoreScore={project?.cleanCoreScore}
+                  s4Deployment={project?.s4Deployment}
+                  findings={findings}
+                />
+              </SectionBoundary>
+            ) : null
+          }
+          view={view}
+        />
       </div>
 
-      <StageFooter 
+      <StageFooter
         backPath={`/project/${projectId}/analyze`}
         backLabel="Back to Analysis"
         proceedPath={signOffCurrent ? `/project/${projectId}/transformation` : undefined}
@@ -877,11 +979,6 @@ ${responseText.substring(0, 4000)}`;
               : 'Confirm architecture to proceed'
         }
       />
-
-
-
-
-
     </div>
   );
 }
@@ -896,82 +993,4 @@ function designIsStructured(design: string | null | undefined): boolean {
   } catch {
     return false;
   }
-}
-
-/**
- * The stage's answer, before the document (ADR-050: each stage leads with its
- * answer). Where should this code run, who said so, and is it confirmed — in
- * one card, from what is on record: the analysis's recommendation and the
- * account's own sign-off. Nothing here is new: both stood at the very end of
- * a long document, under ten sections of generated design.
- */
-function DesignAnswer({
-  recommended,
-  confirmed,
-  confirmedBy,
-  confirmedAt,
-  hasDocument,
-  canSignOff,
-  stale,
-}: {
-  recommended: string | null;
-  confirmed: string | null;
-  confirmedBy: string | null;
-  confirmedAt: string | null;
-  hasDocument: boolean;
-  canSignOff: boolean;
-  stale: boolean;
-}) {
-  return (
-    <section
-      data-design-answer={confirmed ? 'confirmed' : recommended ? 'recommended' : 'none'}
-      aria-labelledby="design-answer"
-      className="mb-6 rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc md:p-6"
-    >
-      {confirmed ? (
-        <>
-          <h2 id="design-answer" className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
-            Target: {confirmed} <CcProvenanceChip value="confirmed" />
-          </h2>
-          <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
-            Confirmed{confirmedBy ? <> by {confirmedBy}</> : null}
-            {confirmedAt ? <> on <CcDateText value={confirmedAt} format="text" /></> : null}. A self-declaration by the
-            signed-in account, not an organisational mandate.
-          </p>
-        </>
-      ) : recommended ? (
-        <>
-          <h2 id="design-answer" className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
-            Recommended target: {recommended} <CcProvenanceChip value="reconstructed" />
-          </h2>
-          <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
-            {stale
-              ? 'The design or its sign-off belongs to an earlier source, so nothing is confirmed for the code under review.'
-              : 'Recommended from the analysis of the code. Not confirmed yet.'}{' '}
-            {canSignOff
-              ? 'Review the design and confirm or change the target at the end of it.'
-              : hasDocument
-                ? 'This design document has no sign-off section; regenerate it to confirm a target.'
-                : 'Generate the design document to review and confirm it.'}
-          </p>
-          {canSignOff ? (
-            <div className="mt-3">
-              <CcLinkButton href="#architect-sign-off" variant="secondary">
-                Go to the sign-off
-              </CcLinkButton>
-            </div>
-          ) : null}
-        </>
-      ) : (
-        <>
-          <h2 id="design-answer" className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
-            Target not determined <CcProvenanceChip value="not-determined" />
-          </h2>
-          <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
-            The analysis on record recommends no target architecture. Run the analysis, then generate the design.
-          </p>
-        </>
-      )}
-    </section>
-  );
 }

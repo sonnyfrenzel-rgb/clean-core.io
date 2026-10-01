@@ -69,6 +69,8 @@ function rowOf(
     releaseView: graded?.cloudView ? CLOUD_VIEW_META[graded.cloudView].label : null,
     classificationView: graded?.classicView ? CLASSIC_VIEW_META[graded.classicView].label : null,
     successor: finding.sapReplacement?.objectName ?? null,
+    successorType: finding.sapReplacement?.objectType ?? null,
+    successorConfidence: finding.sapReplacement?.confidence ?? null,
     targetOptions: [...(finding.targetOptions ?? [])],
     rulesCoveringLine,
     rulesInRoutine,
