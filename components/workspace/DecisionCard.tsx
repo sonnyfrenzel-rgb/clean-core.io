@@ -311,10 +311,10 @@ export default function DecisionCard({
                   <li
                     key={c.id}
                     data-decision-condition={c.id}
+                    title={c.id}
                     className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2"
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <code className="text-[12px] font-semibold text-cc-ink">{c.id}</code>
                       <span data-decision-condition-status={c.status} className="text-[12px] font-semibold text-cc-ink">
                         {CONDITION_STATUS_LABEL[c.status]}
                       </span>
@@ -442,7 +442,7 @@ function Binding({ binding }: { binding: CardBinding }) {
         {binding.value === null ? (
           <span className="font-semibold text-cc-ink-muted">{wt('decision.notDetermined')}</span>
         ) : (
-          <code className="font-semibold text-cc-ink">{binding.value}</code>
+          <span className="font-semibold text-cc-ink" title={binding.value}>{binding.shown}</span>
         )}
         <CcProvenanceChip value={binding.provenance} />
       </span>

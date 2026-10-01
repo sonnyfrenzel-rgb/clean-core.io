@@ -9,7 +9,7 @@ import { evidenceDigest } from '../lib/run-evidence-digest';
 import { SELF_DECLARATION, normaliseProjectDecision } from '../lib/project-decision';
 import { validateProjectCommand, type ProjectCommandState } from '../lib/project-commands';
 import { deriveDecisionDraft, readStoredDecision, type DecisionDraftFacts } from '../lib/decision-draft';
-import { conditionsSummary, decisionCardView } from '../lib/decision-card';
+import { bindingShown, conditionsSummary, decisionCardView } from '../lib/decision-card';
 import { deriveProjectDecision } from '../lib/decision-facts';
 import { PROCESS_STATE_COLLECTION } from '../lib/process-states';
 import { PROCESS_REVISION_COLLECTION } from '../lib/process-revisions';
@@ -126,6 +126,8 @@ test.describe('8.4 card — what the draft binds on this project', () => {
     const view = decisionCardView(draft);
     expect(view.bindings.find((b) => b.key === 'option')!.value).toBe('rap · In-App ABAP Cloud (RAP)');
     expect(view.bindings.find((b) => b.key === 'need')!.value).toBe('need/r4');
+    // The key stays for the tooltip; the reader is told what it means.
+    expect(view.bindings.find((b) => b.key === 'need')!.shown).toBe('revision 4');
     expect(draft.reversibility.answer).toBe('reversible');
     expect(view.reversible.answer).toMatch(/^Yes, inside this product/);
     expect(view.coverage.state).toBe('qualified');
@@ -420,5 +422,27 @@ test.describe('8.4 card — source guards', () => {
   test('the card is mounted in the Management view of the workspace only', () => {
     const shell = fs.readFileSync(path.join(ROOT, 'components/workspace/WorkspaceShell.tsx'), 'utf8');
     expect(shell).toMatch(/view === 'management' && \(\s*<div[^>]*>\s*<DecisionCard/);
+  });
+});
+
+test.describe('a bound revision, as the reader is told it', () => {
+  test('a contract key says which contract, on which route, in what state — without the key', () => {
+    // What the 3.0 gap audit read on the decision card.
+    const shown = bindingShown('contract', 'blocked:qualified:AC-1/side-by-side-cap+592e7a6c667f');
+    expect(shown).toBe('AC-1, Side-by-side on SAP BTP — CAP — blocked by a limit');
+    expect(bindingShown('contract', 'AC-2/in-app-rap+deviation+0123456789ab')).toContain('deviating from the route');
+    expect(bindingShown('contract', 'qualified:AC-3/in-app-rap+0123456789ab')).toContain('draft with open limits');
+  });
+
+  test('a cost key says currency, horizon, cadence and options — and that not all of it is confirmed', () => {
+    expect(bindingShown('cost', 'unconfirmed:no-currency@no-horizony/no-cadence#3opt+7bb12ca381e8')).toBe(
+      'no currency, no time horizon, no release cadence, 3 options — not all assumptions confirmed',
+    );
+    expect(bindingShown('cost', 'EUR@5y/4/y#2opt+0123456789ab')).toBe('EUR, over 5 years, 4 releases a year, 2 options');
+  });
+
+  test('a key of a shape it does not know is shown as it is, not guessed at', () => {
+    expect(bindingShown('cost', 'something-else')).toBe('something-else');
+    expect(bindingShown('option', 'rap · In-App ABAP Cloud (RAP)')).toBe('rap · In-App ABAP Cloud (RAP)');
   });
 });

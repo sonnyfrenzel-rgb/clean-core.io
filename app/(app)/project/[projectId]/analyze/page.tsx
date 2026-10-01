@@ -7,6 +7,8 @@ import { scanCodeContent } from '@/lib/staged-code-scan';
 import { pinRunOwnedFields } from '@/lib/model-owned-fields';
 import { personalDataHintKey, scanForPersonalDataHints } from '@/lib/personal-data-hints';
 import { looksLikeAbap } from '@/lib/abap-input-check';
+import { evidenceKindLabel } from '@/lib/abap/extensibility-router';
+import { catalogForReader } from '@/lib/messages/demo';
 import { routeWasOverridden } from '@/lib/route-override';
 import { runProjectCommand } from '@/lib/project-command-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -958,10 +960,12 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                     </svg>
                     <div className="absolute flex flex-col items-center">
                       <span className="cc-text-title text-cc-ink">
-                        {signedCleanCoreScore !== null ? `${signedCleanCoreScore}%` : '—'}
+                        {signedCleanCoreScore !== null ? signedCleanCoreScore : '—'}
                       </span>
+                      {/* A grade out of 100, not a compliance percentage (DESIGN.md §3):
+                          "62% Compliance" read as 62 % of something being compliant. */}
                       <span className="cc-text-meta text-cc-ink-muted">
-                        {signedCleanCoreScore !== null ? 'Compliance' : 'Not yet computed'}
+                        {signedCleanCoreScore !== null ? 'of 100 · a grade' : 'Not yet computed'}
                       </span>
                     </div>
                   </div>
@@ -1220,7 +1224,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                                   <div className="cc-text-cell font-semibold text-cc-ink">
                                     {ef.title}{lines.length > 1 ? ` (${lines.length}×)` : ''}
                                   </div>
-                                  <div className="cc-text-meta font-medium text-cc-ink-muted mt-0.5 font-cc-mono">{ef.kind}</div>
+                                  <div className="cc-text-meta font-medium text-cc-ink-muted mt-0.5" title={ef.kind}>{evidenceKindLabel(ef.kind)}</div>
                                 </>
                               ),
                               lines: <span className="cc-text-cell font-cc-mono text-cc-ink-muted">{lines.join(', ')}</span>,
@@ -1248,7 +1252,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                                   <div className="cc-text-cell font-medium text-cc-ink">{ef.sapReplacement.objectName}</div>
                                   <span className={clsx('cc-text-meta', STATE_CLASSES[replacementState(ef.sapReplacement.confidence)].text)}>
                                     {ef.sapReplacement.confidence}
-                                    {ef.sapReplacement.catalogVersion && <span className="text-cc-ink-muted ml-1">(v{ef.sapReplacement.catalogVersion})</span>}
+                                    {ef.sapReplacement.catalogVersion && <span className="text-cc-ink-muted ml-1" title={ef.sapReplacement.catalogVersion}>(catalog {catalogForReader(ef.sapReplacement.catalogVersion)})</span>}
                                   </span>
                                 </div>
                               ) : (

@@ -76,6 +76,16 @@ const KIND_LABELS: Record<string, string> = {
 const labelFor = (kind: string) => KIND_LABELS[kind] ?? kind;
 
 /**
+ * The plain name of an evidence kind for a screen — "Direct writes to SAP
+ * standard tables", not `standard-table-write`. A kind without a label is
+ * spelled out word by word rather than shown as its key.
+ */
+export function evidenceKindLabel(kind: string): string {
+  const label = KIND_LABELS[kind] ?? kind.replace(/[-_]+/g, ' ');
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/**
  * One construct that drove the route off the stack, with its evidence.
  *
  * Roadmap 8.2 needs the *reason an alternative was rejected*, at the line it

@@ -146,7 +146,7 @@ function requirementStep(src: EvidenceChainSource): ChainStep {
     value: null,
     reason:
       'No business requirement is recorded in a signed run. The business rules the IT view shows are derived ' +
-      'when that view is opened and are not part of the run, and roadmap 8.1 measured that no derived rule ' +
+      'when that view is opened and are not part of the run, and a measurement found that no derived rule ' +
       `covers the line of any finding on the product's own example (0 of 42, 23.09.2026). What is bound instead: ${boundSource} — ` +
       'which is the artefact a requirement would be about, not the requirement.',
     scope:
@@ -199,7 +199,7 @@ function receiptStep(src: EvidenceChainSource): ChainStep {
       : src.modelParticipation === 'narrative'
         ? 'A narrative was recorded and no receipt established where it came from, so nothing outside the account ' +
           'vouches for its origin.'
-        : 'This run predates the model-participation record (roadmap 1.2), so it cannot be said whether a receipt existed.';
+        : 'This run predates the model-participation record, so it cannot be said whether a receipt existed.';
   return {
     id: 'receipt',
     label: CHAIN_STEP_LABELS.receipt,
@@ -209,7 +209,7 @@ function receiptStep(src: EvidenceChainSource): ChainStep {
     value: null,
     reason:
       `${why} A test-run receipt would be the other candidate, and it sits on the project document where the browser ` +
-      'can write it, so it is outside the signed half of every pack until the isolated runner of roadmap 8.9 issues one.',
+      'can write it, so it is outside the signed half of every pack until the isolated test runner issues one.',
     scope:
       'A receipt is `proven` only where something outside the account checked it. Nothing in this pack claims that here.',
   };
@@ -226,7 +226,7 @@ function deliveryStep(): ChainStep {
     reason:
       'This pack carries no delivery artefact. The generated code and the transformation output live on the project ' +
       'document, which the owner writes from the browser, so they are not in the signed half of any pack and are not ' +
-      'copied into one. Since roadmap 8.7 a repair draft is recorded server-side, immutable, with its parent revision ' +
+      'copied into one. A repair draft is recorded server-side, immutable, with its parent revision ' +
       'and a code hash, and the test receipt names the draft that ran; but the adopted code still lands on the ' +
       'browser-writable project document, and this pack binds neither the draft nor the adopted stand.',
     scope:
