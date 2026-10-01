@@ -124,6 +124,8 @@ test.describe('structure, so the next edit cannot reintroduce the problem', () =
     for (const required of ['/dashboard', 'Your First Run', 'Trust &amp; Transparency', 'europe-west1', 'AES-256-GCM', 'HMAC-signed', 'TOTP', 'GDPR']) {
       expect(html, `the welcome mail lost ${required}`).toContain(required);
     }
-    expect(html).not.toMatch(/under review|being reviewed|approval|approved/i);
+    // No account-approval wording. Word boundaries, because the recommended
+    // example is the ABAP object Z_MM_PO_APPROVAL — a program name, not a gate.
+    expect(html).not.toMatch(/under review|being reviewed|approval|approved/i);
   });
 });

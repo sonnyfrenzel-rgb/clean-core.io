@@ -295,7 +295,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           }
         ],
         "note": "The bundle is made only in the Delivery tool; the workspace downloads nothing."
@@ -348,7 +348,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           }
         ],
         "note": "The workspace generates nothing; opening the Design tool still generates by itself."
@@ -602,7 +602,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -614,7 +614,7 @@
           },
           {
             "module": "lib/workspace-model.ts",
-            "evidence": "label: 'Clean Core score the estimate starts from'"
+            "evidence": "label: 'Clean Core score the cost model starts from'"
           },
           {
             "module": "lib/workspace-model.ts",
@@ -821,7 +821,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -963,7 +963,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1106,7 +1106,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1307,7 +1307,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1408,7 +1408,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1592,7 +1592,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
