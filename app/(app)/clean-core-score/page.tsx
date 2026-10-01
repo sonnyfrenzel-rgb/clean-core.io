@@ -38,7 +38,6 @@ import CcTable from '@/components/cc/Table';
  */
 
 const CANONICAL = 'https://clean-core.io/clean-core-score';
-const OG_IMAGE = 'https://clean-core.io/og-image.png';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Score: what it measures | Clean-Core.io',
@@ -55,7 +54,6 @@ export const metadata: Metadata = withTwitterCard({
       "Our 0–100 measure of how far custom ABAP is decoupled from the SAP standard core. Higher is better — and it is not SAP's Technical Debt Score, which points the other way.",
     url: CANONICAL,
     type: 'article',
-    images: [OG_IMAGE],
   }
 });
 

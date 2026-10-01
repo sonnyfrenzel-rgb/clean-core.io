@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import MotionPreference from '@/components/MotionPreference';
+import { SOCIAL_CARD } from '@/lib/page-metadata';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -10,9 +11,22 @@ const inter = Inter({
 
 export const revalidate = 300;
 
+/**
+ * The site-wide defaults. A page that declares its own `openGraph` replaces this
+ * block wholesale, which is why the picture lives in `lib/page-metadata.ts` and
+ * every public page passes through `withTwitterCard`.
+ *
+ * Title and description say the approved one-sentence USP (roadmap 3.0.6), so a
+ * route without metadata of its own still introduces the product correctly.
+ */
+const SITE_DESCRIPTION =
+  'From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can check. Free for the SAP community; independent of SAP SE.';
+
 export const metadata: Metadata = {
-  title: 'Clean-Core.io — Free SAP Clean Core Accelerator',
-  description: 'Free community tool that reads custom SAP ABAP and turns it into an evidence-backed Clean Core decision: the process reconstructed from the code with line anchors, Level A–D per SAP object, and a signed run for every completed analysis. Complementary to SAP tooling.',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io'),
+  title: 'Clean-Core.io — Free SAP Clean Core Accelerator for Custom ABAP',
+  description: SITE_DESCRIPTION,
+  applicationName: 'Clean-Core.io',
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },
@@ -21,25 +35,19 @@ export const metadata: Metadata = {
     apple: '/logo.png',
   },
   openGraph: {
-    title: 'Clean-Core.io — Free SAP Clean Core Accelerator',
-    description: 'Free community web app that reads custom SAP ABAP and turns it into an evidence-backed Clean Core decision. Every element of the process points to the line it came from; complementary to your SAP tooling.',
+    title: 'Clean-Core.io — Free SAP Clean Core Accelerator for Custom ABAP',
+    description: SITE_DESCRIPTION,
     url: 'https://clean-core.io',
     type: 'website',
     siteName: 'Clean-Core.io',
-    images: [
-      {
-        url: 'https://clean-core.io/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Clean-Core.io — Free SAP Clean Core Modernization',
-      },
-    ],
+    locale: 'en_US',
+    images: [SOCIAL_CARD],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Clean-Core.io — Free SAP Clean Core Accelerator',
-    description: 'Free community web app that reads custom SAP ABAP and turns it into an evidence-backed Clean Core decision. Every element of the process points to the line it came from; complementary to your SAP tooling.',
-    images: ['https://clean-core.io/og-image.png'],
+    title: 'Clean-Core.io — Free SAP Clean Core Accelerator for Custom ABAP',
+    description: SITE_DESCRIPTION,
+    images: [SOCIAL_CARD],
   },
 };
 
