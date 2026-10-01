@@ -1,0 +1,23 @@
+/*
+ * The Documentation stage's canvas — proposal B (owner decision 01.10.2026).
+ *
+ * A dot grid under the map, drawn from the line token so it follows the theme.
+ * It lives here rather than in a class list because it is a background image,
+ * not a surface: the board on top of it is an ordinary card.
+ */
+.cc-doc-canvas {
+  background-color: var(--cc-surface-muted);
+  background-image: radial-gradient(var(--cc-line) 1px, transparent 1.2px);
+  background-size: 18px 18px;
+}
+
+@media (max-width: 720px) {
+  .cc-doc-canvas {
+    background-size: 14px 14px;
+  }
+}
+
+/* A row of chapter cards scrolls sideways inside itself, never the page. */
+.cc-doc-chapters {
+  scrollbar-width: thin;
+}

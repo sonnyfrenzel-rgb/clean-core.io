@@ -23,6 +23,7 @@ import type { DemoProject } from '@/lib/demo-project';
 import { catalogForReader } from '@/lib/messages/demo';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
 import { trackOfRoute } from '@/lib/transformation-view';
+import DemoDocumentation from './DemoDocumentation';
 import {
   DEMO_INVITATION,
   DEMO_QUOTA_NOTICE,
@@ -487,6 +488,11 @@ function Transformation({ demo }: { demo: DemoProject }) {
 function Documentation({ demo }: { demo: DemoProject }) {
   return (
     <>
+      {/* Owner decision 01.10.2026 — the stage a real project shows: the
+          process map as the canvas, a handbook chapter beside it, the
+          chapters below. The inventory and the coupled tables follow. */}
+      <DemoDocumentation process={demo.documentation.process} />
+
       <CcCard level={2} title="Object inventory" count={demo.documentation.inventory.length}>
         <p className={lead}>
           {demo.documentation.inventory.length} objects parsed out of the source, each with the lines it occupies
@@ -533,7 +539,7 @@ function Documentation({ demo }: { demo: DemoProject }) {
         </ul>
       </CcCard>
 
-      <ModelHalfNotice what="The written blueprint, and the process drawing on top of it," />
+      <ModelHalfNotice what="The business SOP and RACI layer on top of this handbook" />
     </>
   );
 }

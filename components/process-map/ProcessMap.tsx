@@ -174,6 +174,15 @@ export interface ProcessMapProps {
    * written against — so a revision saved on another screen opens here.
    */
   openLatest?: () => Promise<OpenedRevision | null>;
+  /**
+   * `stage` — the Documentation stage's canvas-first layout (owner decision
+   * 01.10.2026): the canvas takes the full width, the search, mini map and
+   * outline follow under it, and the selection is shown by the caller in its
+   * own side panel (it renders `ProcessCodeCard` there), so the code card is
+   * not drawn here. Everything else — the props, the address, the keys, the
+   * editor — is the same map.
+   */
+  layout?: 'workspace' | 'stage';
 }
 
 export default function ProcessMap({
@@ -191,7 +200,9 @@ export default function ProcessMap({
   catalogTarget,
   save,
   openLatest,
+  layout = 'workspace',
 }: ProcessMapProps) {
+  const stage = layout === 'stage';
   /** A phone shows the map and the steps; modelling by touch is not offered (`DESIGN.md` §5.7). */
   const isPhone = useBreakpointS();
   const [viewLocal, setViewLocal] = useState<ProcessMapView>(defaultView);
@@ -560,21 +571,33 @@ export default function ProcessMap({
 
   const openProblem = problems.get(plane);
 
+  /**
+   * In the `stage` layout the parts are reordered, not removed: the toolbar,
+   * the way up and the canvas first, the filters, legend and notes after it.
+   * Elsewhere the wrapper is `display: contents` and the map is what it was.
+   */
+  const slot = (order: string) => (stage ? order : 'contents');
+  const traceability = (
+    <p data-process-map-traceability className={`${stage ? 'text-[12px]' : 'mt-1 text-[13px]'} font-medium text-cc-ink-muted`}>
+      {model.traceability.sentence}
+      {measuredAt ? ` ${mapMeasuredOn(measuredAt.slice(0, 10))}` : ''}
+    </p>
+  );
+
   return (
     <section data-process-map="" aria-label={wt('map.sectionLabel')} className="flex flex-col gap-3">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="min-w-0">
-          <h3 data-process-map-title className="text-[15px] font-bold text-cc-ink">
-            {wt('map.title')}
-          </h3>
-          <p data-process-map-overview className="mt-1 text-[13px] font-medium text-cc-ink-muted">
-            {model.overview}
-          </p>
-          <p data-process-map-traceability className="mt-1 text-[13px] font-medium text-cc-ink-muted">
-            {model.traceability.sentence}
-            {measuredAt ? ` ${mapMeasuredOn(measuredAt.slice(0, 10))}` : ''}
-          </p>
-        </div>
+      <div className={stage ? 'order-1 flex flex-wrap items-center justify-end gap-2' : 'flex flex-col gap-3 md:flex-row md:items-start md:justify-between'}>
+        {stage ? null : (
+          <div className="min-w-0">
+            <h3 data-process-map-title className="text-[15px] font-bold text-cc-ink">
+              {wt('map.title')}
+            </h3>
+            <p data-process-map-overview className="mt-1 text-[13px] font-medium text-cc-ink-muted">
+              {model.overview}
+            </p>
+            {traceability}
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-2">
           <CcSegmentedControl<ProcessMapView>
             label={wt('map.viewLabel')}
@@ -612,6 +635,8 @@ export default function ProcessMap({
         </div>
       </div>
 
+      <div className={slot('order-5 flex flex-col gap-2')}>
+      {stage ? traceability : null}
       <ProcessMapLegend
         entries={model.legend}
         unanchored={model.traceability.unanchored}
@@ -635,6 +660,9 @@ export default function ProcessMap({
           {mapLanesProposed(model.lanes.map((lane) => lane.name))} {model.lanes[0].statement}
         </p>
       ) : null}
+      </div>
+
+      <div className={slot('order-2 flex flex-col gap-2')}>
 
       {editing ? null : <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
 
@@ -647,7 +675,9 @@ export default function ProcessMap({
           {openProblem.counters}. {openProblem.text}
         </p>
       ) : null}
+      </div>
 
+      <div className={slot('order-3 flex flex-col gap-3')}>
       {editing && isPhone ? (
         <CcMessageStrip state="information" headline={wt('editor.phoneTitle')}>
           <span data-process-editor-phone="">{wt('editor.phoneBody')}</span>
@@ -685,6 +715,7 @@ export default function ProcessMap({
         )
       ) : (
         <>
+      <div className={slot('order-4')}>
       <ProcessFilters
         highlight={highlight}
         onHighlightChange={setHighlight}
@@ -699,9 +730,18 @@ export default function ProcessMap({
         onVariantOpenChange={setVariantOpen}
         variant={variant}
       />
+      </div>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.5fr)_minmax(0,1fr)]">
-        <div className="flex min-w-0 flex-col gap-2">
+      <div
+        className={stage
+          ? 'grid gap-3'
+          : 'grid gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.5fr)_minmax(0,1fr)]'}
+      >
+        <div
+          className={stage
+            ? 'order-2 grid min-w-0 gap-2 lg:max-h-[440px] lg:overflow-y-auto lg:pr-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:grid-rows-[auto_1fr] lg:items-start [&>*:last-child]:lg:col-start-2 [&>*:last-child]:lg:row-span-2 [&>*:last-child]:lg:row-start-1'
+            : 'flex min-w-0 flex-col gap-2'}
+        >
           <ProcessSearch model={model} nav={nav} onJump={onJump} />
           <ProcessMiniMap
             rows={rows}
@@ -729,7 +769,7 @@ export default function ProcessMap({
           />
         </div>
 
-        <div className="min-w-0">
+        <div className={stage ? 'order-1 min-w-0' : 'min-w-0'}>
           {view === 'map' ? (
             <BpmnCanvas
               xml={model.xml}
@@ -759,7 +799,7 @@ export default function ProcessMap({
           )}
         </div>
 
-        {selectedElement ? (
+        {stage ? null : selectedElement ? (
           <ProcessCodeCard
             element={selectedElement}
             source={source}
@@ -780,6 +820,7 @@ export default function ProcessMap({
       </div>
         </>
       )}
+      </div>
     </section>
   );
 }

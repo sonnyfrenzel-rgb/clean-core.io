@@ -8,7 +8,7 @@ import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import StageProgress from '@/components/StageProgress';
 import StageFooter from '@/components/StageFooter';
-import { Download, RefreshCw, FileCode2, Briefcase, Target, Users, Settings, Activity, Layers, Box, Lock, Rocket } from 'lucide-react';
+import { Download, RefreshCw, FileCode2, Briefcase, Target, Users, Settings, Activity, Layers, Box, Lock, Rocket, Printer, ExternalLink } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import NotGenerated from '@/components/NotGenerated';
@@ -31,6 +31,10 @@ import {
 import CcStateText from '@/components/cc/StateText';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
+import HandbookStage from '@/components/documentation/HandbookStage';
+import HandbookDrawer from '@/components/documentation/HandbookDrawer';
+import { useProcessHandbook } from '@/hooks/useProcessHandbook';
+import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { saveAs } from '@/lib/fileSaver';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
@@ -468,6 +472,10 @@ Structure the JSON exactly like this:
    * the workspace preview until 3.0. Read on opening, asked for only by the
    * button in the documentation; the owner asks, an invited reader reads.
    */
+  /** Owner decision 01.10.2026 — the handbook beside the map, read from the same source. */
+  const handbook = useProcessHandbook(signedSource?.source ?? null, processMap.model);
+  const isPhone = useBreakpointS();
+
   const projectIdStr = (Array.isArray(projectId) ? projectId[0] : projectId) ?? null;
   const statementProposal = useStatementProposal(
     projectIdStr,
@@ -1276,9 +1284,6 @@ Structure the JSON exactly like this:
 
   return (
     <div className="min-h-screen">
-      {/* Rendered here as well as in the loading state — it used to exist only
-          there, and disappeared as soon as the page had loaded. */}
-
       <StageProgress steps={phases} current="documentation" projectId={projectId as string} />
 
       <StaleNotice
@@ -1291,185 +1296,82 @@ Structure the JSON exactly like this:
         ]}
       />
 
-      <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6 mb-8 mt-6 md:mt-8">
-        <div>
-          <StageHeader stage="documentation" projectName={project?.name}>
-            The process as the code runs it, drawn as a map you can export as BPMN 2.0, and the documentation
-            written from it.
-          </StageHeader>
-
-          {/* Roadmap 0.2 (UX-029). Two badges used to stand here —
-              "BPMN-Compatible" and "SAP Build-Compatible" — and the only thing
-              that qualified either of them was a hover tooltip, which a phone
-              or a tablet never shows. "Compatible" is a claim about a target
-              system nobody has run this file through.
-
-              What is true is what the button beside it does: it writes BPMN 2.0
-              XML. That is stated plainly now, and the part that is not
-              established — whether the file lands in Signavio or SAP Build,
-              which nobody here has tried — is stated in the same breath rather
-              than on hover. The SAP Build badge is gone
-              rather than reworded: there is no SAP Build export on this page,
-              so there was nothing for a second badge to describe. Step 4.3
-              proves the round trip; this line changes when it does.
-
-              Block D, D.16a: the format is a tag (§4.1) — a property of the
-              file, not a state — instead of a green badge. */}
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className={LABEL}>Export format:</span>
-            <CcTag>BPMN 2.0 XML</CcTag>
-            <span data-export-caveat className="cc-text-meta text-cc-ink-muted">
-              Import into SAP Signavio or SAP Build has not been verified yet.
-            </span>
-          </div>
-
-          {/* Roadmap 4.4. What the second download holds, said before it is
-              asked for: a summary carries no signature, and a reader who takes
-              it for one has been misled by the button rather than by the file. */}
-          <p data-brief-caveat className="mt-2 cc-text-meta text-cc-ink-muted max-w-xl">
-            The brief is a PDF and the BPMN file in one archive. Every statement in it names the lines it was
-            read from, or says that it is not determined. It is a summary, not a signed audit pack.
-          </p>
-          {briefError && (
-            <div className="mt-2 max-w-xl">
-              <CcMessageStrip state="error">
-                <span data-brief-error>{briefError}</span>
-              </CcMessageStrip>
-            </div>
-          )}
-        </div>
-        {/* Nothing to export, and nothing to regenerate, until a blueprint exists.
-            The two exports and a green "Regenerate" used to sit above the words
-            "No enterprise specifications yet" — two outputs of nothing, and a
-            "re"-generate for something that had never been generated once. The
-            empty state below carries the single action instead.
-
-            The condition is `parsedDoc`, not `documentation`, and that is the
-            whole point: the page below shows its empty state when the blueprint
-            does not parse, while this bar was asking only whether some text had
-            been stored. A stored document that yields no blueprint put both on
-            the screen at once — the words "No enterprise specifications yet"
-            with two exports above them (UX review of 52f171091948, 5bf7552894e5;
-            visible in screenshot 07-documentation-desktop-s1). Two conditions
-            for one question is how a screen ends up contradicting itself. */}
-        <div className="flex flex-wrap gap-2">
-          {/* Roadmap 2.6 — the one export here that does not wait for the
-              blueprint. It is drawn from the skeleton of the signed run, so it
-              exists as soon as the run does, and it says nothing the code does
-              not: every task and gateway carries its line range. Without an
-              active run, or after the source moved on from the one the run
-              signed, there is nothing true to export and no button. */}
-          {signedSource && (
+      {/* Owner decision 01.10.2026 — proposal B, "canvas first": a slim title
+          with the two exports a reader takes away, the process map as the
+          stage, one chapter of the handbook beside it, the chapters in a drawer
+          below. The frame (progress, header, back link) is shared and unstyled
+          here; everything under it is this stage's. */}
+      <StageHeader
+        stage="documentation"
+        projectName={project?.name}
+        eyebrow={
+          <CcProvenanceChip
+            value={documentationStale ? 'stale' : 'reconstructed'}
+            note={documentationStale ? 'regenerate first' : hasDocument ? 'current' : 'code reading'}
+          />
+        }
+        actions={signedSource ? (
+          <>
+            {/* Roadmap 4.4 — the brief: a PDF and the BPMN in one archive.
+                Offered once the map is read, because before that there is no
+                process to describe. */}
+            {processMap.model ? (
+              <CcButton
+                density="cozy"
+                onClick={downloadBrief}
+                busy={isBuildingBrief}
+                data-export-brief
+                aria-label="PDF brief — export the PDF and the BPMN file in one archive"
+                icon={<Printer size={16} aria-hidden={true} />}
+              >
+                PDF
+              </CcButton>
+            ) : null}
+            {/* Roadmap 2.6 — drawn from the skeleton of the signed run, so it
+                exists as soon as the run does and says nothing the code does
+                not. Without a signed source there is nothing true to export. */}
             <CcButton
+              variant="secondary"
               density="cozy"
               onClick={downloadBPMN}
               data-export-bpmn
-              icon={<FileCode2 size={16} aria-hidden={true} />}
+              aria-label="Export BPMN 2.0"
+              icon={<Download size={16} aria-hidden={true} />}
             >
-              Export BPMN
+              BPMN 2.0
             </CcButton>
-          )}
+          </>
+        ) : undefined}
+      />
 
-          {/* Roadmap 4.4 — the brief. Offered on the same condition as the BPMN
-              and one more: the map has to be read before there is a process to
-              describe. It waits for no blueprint either, because everything in
-              it comes from the code and from what accounts confirmed. */}
-          {signedSource && processMap.model && (
-            <CcButton
-              density="cozy"
-              onClick={downloadBrief}
-              busy={isBuildingBrief}
-              data-export-brief
-              icon={<Briefcase size={16} aria-hidden={true} />}
-            >
-              Export brief
-            </CcButton>
-          )}
-
-          {hasDocument && (
-            <>
-              <span className="inline-flex flex-col items-start gap-1">
-                <CcButton
-                  density="cozy"
-                  onClick={downloadConfluenceHTML}
-                  disabled={isGeneratingDoc}
-                  data-export-confluence={documentationStale ? 'stale' : 'current'}
-                  aria-describedby={documentationStale ? 'confluence-export-stale' : undefined}
-                  icon={<Download size={16} aria-hidden={true} />}
-                >
-                  Export Confluence
-                </CcButton>
-                {/* The file opens with the same note (`STALE_EXPORT_NOTE`). */}
-                {documentationStale && (
-                  <span id="confluence-export-stale" data-confluence-stale-note="">
-                    <CcStateText state="warning">Stale — regenerate first</CcStateText>
-                  </span>
-                )}
-              </span>
-
-              <CcButton
-                variant="primary"
-                density="cozy"
-                onClick={generateDocumentation}
-                disabled={isGeneratingBusinessDoc || !signedSource || !processMap.model}
-                busy={isGeneratingDoc}
-                data-regenerate-documentation
-                icon={<RefreshCw size={16} aria-hidden={true} />}
-              >
-                {engineDoc ? 'Read again from the code' : 'Replace with the code reading'}
-              </CcButton>
-            </>
-          )}
+      {briefError && (
+        <div className="mb-4 max-w-xl">
+          <CcMessageStrip state="error">
+            <span data-brief-error>{briefError}</span>
+          </CcMessageStrip>
         </div>
-      </div>
+      )}
 
-      {/* Roadmap 2.5 — the process as the engine read it, above everything a
-          model wrote. It exists as soon as the run does: no blueprint, no key
-          and no naming are needed for it, because it is the code. The
-          documentation below it is written from the same reading (3.0.5); a
-          blueprint stored before that is a model's account and is marked as
-          one. Putting the evidence first is the order `DESIGN.md` §5 asks for. */}
-      {/* The stage's answer, before the map (ADR-050). */}
-      <section
-        data-documentation-answer={processMap.model ? 'process' : 'none'}
-        aria-labelledby="documentation-answer"
-        className={clsx(SECTION, 'mb-6 p-4 md:p-6')}
-      >
-        {processMap.model ? (
-          <>
-            <h2 id="documentation-answer" className="m-0 flex flex-wrap items-center gap-2 cc-text-h2 text-cc-ink">
-              {processMap.model.overview} <CcProvenanceChip value="reconstructed" />
-            </h2>
-            <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
-              Read from the code of {processMap.model.fileName}. {processMap.model.traceability.sentence}
-            </p>
-          </>
-        ) : (
-          <>
-            <h2 id="documentation-answer" className="m-0 cc-text-h2 text-cc-ink">
-              {signedSource && processMap.status === 'loading' ? 'Reading the process from the code…' : 'No process map yet'}
-            </h2>
-            <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
-              {signedSource
-                ? processMap.reason ?? 'The map is drawn from the signed analysis as soon as it has been read.'
-                : 'The map is drawn from a signed analysis of the code. Run the analysis first.'}
-            </p>
-          </>
-        )}
-      </section>
-
-      {signedSource && (
-        <div data-process-map-section className={clsx(SECTION, 'mb-8')}>
-          {processMap.model ? (
+      <HandbookStage
+        handbook={handbook.handbook}
+        reading={handbook.status === 'loading' || processMap.status === 'loading'}
+        model={processMap.model}
+        selected={resolved.node}
+        onSelect={selectElement}
+        source={signedSource?.source ?? null}
+        freshness={documentationStale ? 'stale' : hasDocument ? 'current' : 'not-saved'}
+        map={signedSource && processMap.model ? (
+          <div data-process-map-section="">
             <ProcessMap
+              layout="stage"
+              /* `DESIGN.md` §5.7 — the steps on a phone, the map elsewhere. */
+              defaultView={isPhone ? 'steps' : 'map'}
               model={processMap.model}
               source={signedSource.source}
               measuredAt={processMap.measuredAt}
               /* Roadmap 6.3 — the Usage overlay, and only when there is an
-                 import. `usageReport` is a server-written field (roadmap 0.7,
-                 `lib/project-commands.ts`); this reads it and never writes it,
-                 and an absent import means the overlay is not offered rather
-                 than offered empty. */
+                 import. `usageReport` is a server-written field (roadmap 0.7);
+                 this reads it and never writes it. */
               usage={project?.usageReport ?? null}
               catalogTarget={project ? catalogLookupTargetOf(project) : null}
               plane={resolved.plane}
@@ -1479,36 +1381,113 @@ Structure the JSON exactly like this:
               save={saveProcessModel}
               openLatest={openLatestRevision}
             />
-          ) : (
-            <p className="cc-text-cell text-cc-ink-muted">
-              {processMap.status === 'failed'
-                ? processMap.reason
-                : 'Reading the process out of the source…'}
-            </p>
-          )}
-
-          {/* Roadmap 3.2 — what was kept, and what changed between two of them.
-              Under the map rather than beside it: the process is the subject and
-              its history is the account of it. It reads only; the effect above
-              is what reconstructs revision 1, and `refreshKey` is what brings
-              this list back after that and after every save. */}
-          <div data-process-revisions-section className="mt-6 border-t border-cc-line pt-6">
-            <h2 className="mb-3 cc-text-h2 text-cc-ink">Revisions of this process</h2>
-            <RevisionCompare
-              projectId={(Array.isArray(projectId) ? projectId[0] : projectId) ?? ''}
-              refreshKey={revisionsKey}
-            />
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="rounded-cc-card border border-dashed border-cc-field-border bg-cc-surface-muted p-4">
+            <p className="m-0 cc-text-h3 text-cc-ink">
+              {signedSource && processMap.status !== 'failed' ? 'Reading the process from the code…' : 'No process map yet'}
+            </p>
+            <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+              {signedSource
+                ? processMap.reason ?? 'The map is drawn from the signed analysis as soon as it has been read.'
+                : 'The map is drawn from a signed analysis of the code. Run the analysis first.'}
+            </p>
+          </div>
+        )}
+      />
+
+      <HandbookDrawer
+        handbook={handbook.handbook}
+        reading={handbook.status === 'loading'}
+        selectedChapter={resolved.node ? (handbook.handbook?.chapterOf.get(resolved.node) ?? null) : null}
+        onSelect={selectElement}
+        exportActions={
+          <>
+            {signedSource && processMap.model ? (
+              <CcButton onClick={downloadBrief} busy={isBuildingBrief} icon={<Printer size={14} aria-hidden={true} />}>
+                PDF
+              </CcButton>
+            ) : null}
+            {/* The Confluence page waits for a stored documentation — there is
+                nothing to export before one exists. A stale one stays
+                exportable, and neither the button nor the file hides that it
+                is stale (owner decision 30.09.2026, QA c8ae21453b3b). */}
+            {hasDocument ? (
+              <span className="inline-flex flex-col items-start gap-1">
+                <CcButton
+                  onClick={downloadConfluenceHTML}
+                  disabled={isGeneratingDoc}
+                  data-export-confluence={documentationStale ? 'stale' : 'current'}
+                  aria-describedby={documentationStale ? 'confluence-export-stale' : undefined}
+                  aria-label="Export Confluence"
+                  icon={<ExternalLink size={14} aria-hidden={true} />}
+                >
+                  Confluence
+                </CcButton>
+                {/* The file opens with the same note (`STALE_EXPORT_NOTE`). */}
+                {documentationStale && (
+                  <span id="confluence-export-stale" data-confluence-stale-note="">
+                    <CcStateText state="warning">Stale — regenerate first</CcStateText>
+                  </span>
+                )}
+              </span>
+            ) : null}
+            {signedSource ? (
+              <CcButton variant="secondary" onClick={downloadBPMN} icon={<Download size={14} aria-hidden={true} />}>
+                BPMN 2.0
+              </CcButton>
+            ) : null}
+          </>
+        }
+        exportNotes={
+          <>
+            {/* Roadmap 0.2 (UX-029): what the BPMN file is, and the part that is
+                not established — whether it lands in Signavio or SAP Build — in
+                the same breath, never on hover. */}
+            <p className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted">
+              <CcTag>BPMN 2.0 XML</CcTag>
+              <span data-export-caveat>Import into SAP Signavio or SAP Build has not been verified yet.</span>
+            </p>
+            {/* Roadmap 4.4 — what the brief holds, said before it is asked for. */}
+            <p data-brief-caveat className="m-0 cc-text-meta text-cc-ink-muted">
+              The PDF brief is a PDF and the BPMN file in one archive. Every statement in it names the lines it was
+              read from, or says that it is not determined. It is a summary, not a signed audit pack.
+            </p>
+          </>
+        }
+        exportPanel={
+          <dl className="m-0 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-cc-row border border-cc-line p-4">
+              <dt className="cc-text-h3 text-cc-ink">PDF brief</dt>
+              <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+                The process picture, the rules and the open questions, each with its lines, and the BPMN file beside it
+                in one archive. A summary, not a signed audit pack.
+              </dd>
+            </div>
+            <div className="rounded-cc-row border border-cc-line p-4">
+              <dt className="cc-text-h3 text-cc-ink">Confluence page</dt>
+              <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+                {hasDocument
+                  ? 'The stored documentation as an HTML page to paste into Confluence. A stale one says so at the top.'
+                  : 'Available once the documentation has been saved from the code below.'}
+              </dd>
+            </div>
+            <div className="rounded-cc-row border border-cc-line p-4">
+              <dt className="cc-text-h3 text-cc-ink">BPMN 2.0</dt>
+              <dd className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+                The process as the code runs it, every task and decision with its line range, for SAP Signavio or
+                another modeller. Import has not been verified yet.
+              </dd>
+            </div>
+          </dl>
+        }
+      />
 
       {/* Two different things used to share one heading. A blocked start is a
-          refusal before the model is called; a refused answer is a generation
-          that happened and produced something this stage cannot display.
-          Calling the second one "blocked" told the reader the opposite of what
-          occurred, and neither told him he could simply try again. */}
+          refusal before anything is read; a refused answer is a reading that
+          happened and produced something this stage cannot display. */}
       {docError && (
-        <div data-doc-error={docRejected ? 'rejected' : 'blocked'} className="mb-8">
+        <div data-doc-error={docRejected ? 'rejected' : 'blocked'} className="mt-6">
           <CcMessageStrip
             state="error"
             headline={docRejected ? 'Generation failed' : 'Generation blocked'}
@@ -1523,75 +1502,110 @@ Structure the JSON exactly like this:
         </div>
       )}
 
-      {isGeneratingDoc ? (
-        <section className={clsx(SECTION, 'mb-8')} aria-busy="true">
-          <h2 className={H2}>Reading the process</h2>
-          <p className="cc-text-cell text-cc-ink-muted mt-1 mb-4">Putting the documentation together from the whole source…</p>
-          <CcSkeleton shape="text" label="the process documentation" count={4} />
-        </section>
-      ) : hasDocument ? (
-        <div id="documentation-report" data-stage-output="documentation" className="mb-8">
-          <CcTabs
-            label="Documentation"
-            value={activeTab}
-            onChange={setActiveTab}
-            density="cozy"
-            tabs={[
-              {
-                value: 'technical',
-                label: engineDoc ? 'Process documentation' : 'Technical Blueprint',
-                content: technicalPanel,
-              },
-              {
-                value: 'business',
-                // The amber dot that stood here said "not generated yet" in
-                // colour alone (§2.4); it is said in words now.
-                label: parsedBusinessDoc ? 'Business SOP & Compliance' : 'Business SOP & Compliance · not generated',
-                content: businessPanel,
-              },
-            ]}
+      {/* One level deeper: the documentation as it is stored and exported —
+          the engine's document element by element, and the business layer a
+          model may propose on top of it. */}
+      <section aria-labelledby="documentation-stored" className="mt-8 mb-8">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 id="documentation-stored" className="m-0 cc-text-h2 text-cc-ink">The documentation as stored</h2>
+            <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+              What the Confluence page and the handover carry, element by element, with the business layer beside it.
+            </p>
+          </div>
+          {hasDocument ? (
+            <CcButton
+              variant="primary"
+              density="cozy"
+              onClick={generateDocumentation}
+              disabled={isGeneratingBusinessDoc || !signedSource || !processMap.model}
+              busy={isGeneratingDoc}
+              data-regenerate-documentation
+              icon={<RefreshCw size={16} aria-hidden={true} />}
+            >
+              {engineDoc ? 'Read again from the code' : 'Replace with the code reading'}
+            </CcButton>
+          ) : null}
+        </div>
+
+        {isGeneratingDoc ? (
+          <div className={SECTION} aria-busy="true">
+            <h3 className={H2}>Reading the process</h3>
+            <p className="cc-text-cell text-cc-ink-muted mt-1 mb-4">Putting the documentation together from the whole source…</p>
+            <CcSkeleton shape="text" label="the process documentation" count={4} />
+          </div>
+        ) : hasDocument ? (
+          <div id="documentation-report" data-stage-output="documentation">
+            <CcTabs
+              label="Documentation"
+              value={activeTab}
+              onChange={setActiveTab}
+              density="cozy"
+              tabs={[
+                {
+                  value: 'technical',
+                  label: engineDoc ? 'Process documentation' : 'Technical Blueprint',
+                  content: technicalPanel,
+                },
+                {
+                  value: 'business',
+                  // Said in words, not an amber dot (§2.4).
+                  label: parsedBusinessDoc ? 'Business SOP & Compliance' : 'Business SOP & Compliance · not generated',
+                  content: businessPanel,
+                },
+              ]}
+            />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Said before either branch, because it is true in both. */}
+            {storedBlueprintRejected && (
+              <CcMessageStrip state="warning">
+                <span data-stored-blueprint-rejected>{STORED_BLUEPRINT_REJECTED}</span>
+              </CcMessageStrip>
+            )}
+            {/* Roadmap 3.0.5 — no model is called for this document. What can
+                stand in its way: the source no longer being the one the run
+                signed, or the map not being read yet. Both are said. */}
+            <CcEmptyState
+              title={storedBlueprintRejected ? 'Replace the stored blueprint' : 'No process documentation saved yet.'}
+              action={
+                <CcButton
+                  variant="primary"
+                  density="cozy"
+                  onClick={generateDocumentation}
+                  disabled={!signedSource || !processMap.model}
+                  busy={isGeneratingDoc}
+                  data-generate-blueprint
+                >
+                  {storedBlueprintRejected ? 'Replace with the code reading' : 'Read the documentation from the code'}
+                </CcButton>
+              }
+              cost={
+                signedSource ? t('run.noModelCall') : (
+                  <span data-documentation-needs-run>
+                    There is no source here that the active run signed. Run the analysis in stage 1 first.
+                  </span>
+                )
+              }
+            >
+              It is read out of the whole source the active run signed: the process element by element, what each part
+              does, the update task and the lanes the code proves, every statement with its lines. No language model is
+              involved. Saving it is what the Confluence page and the handover export.
+            </CcEmptyState>
+          </div>
+        )}
+      </section>
+
+      {/* Roadmap 3.2 — what was kept, and what changed between two of them. */}
+      {signedSource && (
+        <section data-process-revisions-section className={clsx(SECTION, 'mb-8')}>
+          <h2 className="mb-3 cc-text-h2 text-cc-ink">Revisions of this process</h2>
+          <RevisionCompare
+            projectId={(Array.isArray(projectId) ? projectId[0] : projectId) ?? ''}
+            refreshKey={revisionsKey}
           />
-        </div>
-      ) : (
-        <div className="mb-8 space-y-4">
-          {/* Said before either branch, because it is true in both: a stored
-              blueprint that cannot be drawn is a fact about this project, not
-              about whether a model can be called right now. */}
-          {storedBlueprintRejected && (
-            <CcMessageStrip state="warning">
-              <span data-stored-blueprint-rejected>{STORED_BLUEPRINT_REJECTED}</span>
-            </CcMessageStrip>
-          )}
-          {/* Roadmap 3.0.5 — no model is called for this document, so neither
-              a missing key nor a switched-off stage stands in its way. What
-              can: the source no longer being the one the run signed, or the
-              map not being read yet. Both are said, and the button waits. */}
-          <CcEmptyState
-            title={storedBlueprintRejected ? 'Replace the stored blueprint' : 'No process documentation yet.'}
-            action={
-              <CcButton
-                variant="primary"
-                density="cozy"
-                onClick={generateDocumentation}
-                disabled={!signedSource || !processMap.model}
-                busy={isGeneratingDoc}
-                data-generate-blueprint
-              >
-                {storedBlueprintRejected ? 'Replace with the code reading' : 'Read the documentation from the code'}
-              </CcButton>
-            }
-            cost={
-              signedSource ? t('run.noModelCall') : (
-                <span data-documentation-needs-run>
-                  There is no source here that the active run signed. Run the analysis in stage 1 first.
-                </span>
-              )
-            }
-          >
-            It is read out of the whole source the active run signed: the process element by element, what each part does,
-            the update task and the lanes the code proves, every statement with its lines. No language model is involved.
-          </CcEmptyState>
-        </div>
+        </section>
       )}
 
       {/* Level 4 task specification — a dialog (§2.6). Focus in, Tab kept
