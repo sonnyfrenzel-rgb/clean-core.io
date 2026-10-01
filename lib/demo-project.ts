@@ -11,11 +11,16 @@ import {
 } from '@/lib/abap/code-assessment';
 import { coverageCaveat, type CoverageReport } from '@/lib/abap/coverage';
 import { readCallGraph } from '@/lib/abap/call-graph';
-import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
+import { getMergedCatalogVersion, gradeSapObjectUse } from '@/lib/abap/catalog-service';
+import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
+import { scoreBreakdown, type ScoreBreakdown } from '@/lib/clean-core-score';
+import { accessUseOfKind, findingRows, processStepBands, type ProcessStepBand } from '@/lib/findings-view';
+import { readProcess } from '@/lib/first-look';
+import { findingsWorklist } from '@/lib/findings-worklist';
 import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { PHASES, type PhaseKey, type PhaseState } from '@/lib/workflow-steps';
 import { findingTarget, trackOfRoute, type ProjectTrack, type TargetKind } from '@/lib/transformation-view';
-import type { CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
+import type { CodeInventoryItem, DataCouplingEntry, WorklistItem } from '@/lib/types';
 import { buildReadingExports } from '@/lib/bpmn/export';
 import { applyNaming, namingContextOf } from '@/lib/process-naming';
 import { buildProcessMapModel, type ProcessMapModel } from '@/lib/process-map';
@@ -157,7 +162,47 @@ export interface DemoProject {
     coverage: CoverageReport;
     /** The engine's own sentence about what it did not check, or null. */
     caveat: string | null;
+    /**
+     * The router's score — `routeExtensibility` computes it with
+     * `lib/clean-core-score.ts`, as `/api/runs/create` does for a signed run.
+     */
     cleanCoreScore: number;
+    /**
+     * The score's deductions, by the same call the Analyze page makes
+     * (`scoreBreakdown` over the findings and the kinds not assessed).
+     * `buildDemoProject` refuses a breakdown that does not arrive at
+     * `cleanCoreScore`, so the section can never explain another number.
+     */
+    scoreBreakdown: ScoreBreakdown;
+    /**
+     * Findings as the Analyze stage lists and counts them: one per pattern and
+     * object, its lines gathered (`findingRows`). `findings.length` counts
+     * occurrences — one per line a pattern was found on — and the two differ
+     * whenever a pattern repeats on the same object (EBAN written at L246 and
+     * L455 is one finding, two places). A signed run's worklist, the workspace
+     * row and the Analyze head all count this way.
+     */
+    distinctFindings: number;
+    /**
+     * The source, LF, for the Analyze stage's program map and source panel —
+     * the same bytes the demo workspace's code column shows.
+     */
+    source: string;
+    /**
+     * The clean core level of each finding that names an object, keyed by
+     * `gradeKey(name, use)` — what `/api/abcd-classify` answers a real project
+     * for the same target profile (the snapshot in `catalogSnapshot`). Looked
+     * up here because the demo calls no route; not part of anything signed.
+     */
+    levels: Record<string, CloudReadinessGrade>;
+    /** The routines the entry block calls, in call order — the program map's process steps. */
+    processSteps: ProcessStepBand[];
+    /**
+     * The worklist a run of the example without a narrative stores — one item
+     * per finding, all open (`findingsWorklist`). What the reader does with it
+     * lives in the browser, like every other demo state.
+     */
+    worklist: WorklistItem[];
     complexityScore: number;
     criticalityScore: number;
   };
@@ -229,13 +274,16 @@ function railStep(
  * did neither, which is the fabrication this step is not allowed to commit.
  */
 function buildRail(demo: Omit<DemoProject, 'rail'>): DemoRailStep[] {
-  const f = demo.analyze.findings.length;
+  // Counted as the Analyze stage counts them — one per pattern and object —
+  // with the places in the code beside it, so the rail and the page agree.
+  const f = demo.analyze.distinctFindings;
+  const places = demo.analyze.findings.length;
   return [
     railStep(
       'analyze',
       'partial',
       'Demo run · unsigned',
-      `${f} findings from the engine that ships with this release — and no signed run, because a demo may not produce one.`,
+      `${f} findings${places !== f ? ` at ${places} places in the code` : ''}, from the engine that ships with this release — and no signed run, because a demo may not produce one.`,
     ),
     railStep(
       'design',
@@ -369,6 +417,44 @@ function demoProcess(source: string): DemoProject['documentation']['process'] {
   }
 }
 
+/**
+ * What the Analyze object page needs on top of the evidence, derived exactly as
+ * the real page derives it (`app/(app)/project/[projectId]/analyze/page.tsx`):
+ * the score breakdown, the rows it counts, the levels it looks up, the process
+ * steps behind its program map — on the server, because the demo calls no route.
+ */
+function analyzeViewOf(
+  rawSource: string,
+  evidence: ReturnType<typeof buildAbapEvidence>,
+  snapshot: string,
+): Pick<DemoProject['analyze'], 'scoreBreakdown' | 'distinctFindings' | 'source' | 'levels' | 'processSteps' | 'worklist'> {
+  const source = rawSource.replace(/\r\n/g, '\n');
+  const rows = findingRows(evidence.findings);
+  const levels: Record<string, CloudReadinessGrade> = {};
+  for (const r of rows) {
+    if (!r.finding.objectName) continue;
+    const name = r.finding.objectName.trim().toUpperCase();
+    const use = accessUseOfKind(r.finding.kind);
+    const key = gradeKey(name, use);
+    if (!levels[key]) levels[key] = gradeSapObjectUse(name, use, snapshot).grade;
+  }
+  let processSteps: ProcessStepBand[] = [];
+  try {
+    processSteps = processStepBands(readProcess(source).skeleton, source);
+  } catch {
+    processSteps = [];
+  }
+  const coverage = evidence.coverage;
+  return {
+    scoreBreakdown: scoreBreakdown(evidence.findings, coverage && !coverage.complete ? coverage.gaps.length : 0),
+    distinctFindings: rows.length,
+    source,
+    levels,
+    processSteps,
+    worklist: findingsWorklist(evidence.findings, DEMO_SOURCE_FILE) as unknown as WorklistItem[],
+  };
+}
+
 export function buildDemoProject(): DemoProject {
   const source = fs.readFileSync(DEMO_PATH, 'utf8');
   const lines = source.split(/\r?\n/);
@@ -380,6 +466,16 @@ export function buildDemoProject(): DemoProject {
   const evidence = buildAbapEvidence(source, DEMO_SOURCE_FILE, DEMO_DEPLOYMENT, catalogSnapshot);
   const route = routeExtensibility(evidence, DEMO_DEPLOYMENT);
   const { plan, unplanned } = planOf(evidence.findings, trackOfRoute(route.recommendedRoute));
+  const analyzeView = analyzeViewOf(source, evidence, catalogSnapshot);
+  // The score the page explains is the score the router computed — by the same
+  // table (`lib/clean-core-score.ts`). Should the two ever part, the demo would
+  // explain a number it does not show; it is refused instead.
+  if (analyzeView.scoreBreakdown.score !== route.cleanCoreScore) {
+    throw new Error(
+      `The demo's score breakdown arrives at ${analyzeView.scoreBreakdown.score}, the router computed ${route.cleanCoreScore}. ` +
+        'Both read lib/clean-core-score.ts; one of them no longer reads the same findings.',
+    );
+  }
 
   const withoutRail: Omit<DemoProject, 'rail'> = {
     isDemo: true,
@@ -399,6 +495,7 @@ export function buildDemoProject(): DemoProject {
       coverage: evidence.coverage,
       caveat: coverageCaveat(evidence.coverage),
       cleanCoreScore: route.cleanCoreScore,
+      ...analyzeView,
       complexityScore: computeComplexityScore(source),
       criticalityScore: computeCriticalityScore(source),
     },

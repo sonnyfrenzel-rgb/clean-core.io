@@ -365,10 +365,14 @@ test('the prompt is built from the inputs the token covers, not from what the pa
 test('the store compares the token, then writes all four fields in the transaction', () => {
   const route = readFileSync('app/api/projects/[projectId]/contract/route.ts', 'utf8');
   const get = route.slice(route.indexOf('export async function GET'), route.indexOf('export async function POST'));
-  expect(get).toContain('generationRevision(data, built.contract.fingerprint)');
-  expect(get).toContain('generationInputsOf(data)');
+  // The state is the project with its run's narrative (`generationStateOf`):
+  // the analysis lives in the run, and the project document alone handed the
+  // generation an empty one (tests/generation-reads-run-analysis.spec.ts).
+  expect(get).toContain('const state = generationStateOf(data, run);');
+  expect(get).toContain('generationRevision(state, built.contract.fingerprint)');
+  expect(get).toContain('generationInputsOf(state)');
   const post = route.slice(route.indexOf('export async function POST'));
-  const token = post.indexOf('generationRevision(data, built.contract.fingerprint) !== generationToken');
+  const token = post.indexOf('generationRevision(generationStateOf(data, run), built.contract.fingerprint) !== generationToken');
   expect(token, 'the POST does not compare the token').toBeGreaterThan(-1);
   expect(post).toContain("code: 'generation-stale'");
   expect(post).toContain("code: 'no-generation-token'");

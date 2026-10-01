@@ -1,26 +1,23 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { RotateCcw, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
+import { RotateCcw, ArrowRight } from 'lucide-react';
 import StageHeader from '@/components/StageHeader';
 import DemoTesting from '@/components/demo/DemoTesting';
+import DemoAnalyze from '@/components/demo/DemoAnalyze';
 import Stepper from '@/components/Stepper';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcAnchor from '@/components/cc/Anchor';
-import CcIconButton from '@/components/cc/IconButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcTable from '@/components/cc/Table';
 import { CcTag } from '@/components/cc/Tag';
-import { CcSeverity } from '@/components/cc/Identifier';
-import { normaliseSeverity } from '@/lib/severity';
-import { formatNumber } from '@/lib/format';
 import DemoEconomics from '@/components/tco/DemoEconomics';
 import type { PhaseKey } from '@/lib/workflow-steps';
 import type { DemoProject } from '@/lib/demo-project';
+import type { WorklistItem } from '@/lib/types';
 import DemoDelivery from '@/components/delivery/DemoDelivery';
-import { catalogForReader } from '@/lib/messages/demo';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
 import { trackOfRoute } from '@/lib/transformation-view';
 import DemoDocumentation from './DemoDocumentation';
@@ -35,7 +32,6 @@ import {
   DEMO_TAG,
   DEMO_UNSIGNED_NOTICE,
 } from '@/lib/demo-marks';
-import { SCORE_BANDS_SOURCE, bandRange, scoreBand } from '@/lib/clean-core-score';
 
 /**
  * The demo project's seven stages — roadmap step 0.10, `DESIGN.md` §6.1.2.
@@ -58,9 +54,8 @@ import { SCORE_BANDS_SOURCE, bandRange, scoreBand } from '@/lib/clean-core-score
  */
 
 interface DemoState {
-  /** Findings the reader ticked off. */
-  reviewed: string[];
-  severityFilter: 'all' | 'Critical' | 'High' | 'Medium' | 'Low' | 'Info';
+  /** The Analyze worklist as the reader moved it; null until they move an item. */
+  worklist: WorklistItem[] | null;
   targetConfirmed: boolean;
   /** Assumptions for the Economics stage. Null means nobody entered one. */
   devRate: number | null;
@@ -73,8 +68,7 @@ interface DemoState {
 }
 
 const EMPTY_STATE: DemoState = {
-  reviewed: [],
-  severityFilter: 'all',
+  worklist: null,
   targetConfirmed: false,
   devRate: null,
   userRate: null,
@@ -90,17 +84,13 @@ function readState(): DemoState {
     const raw = window.localStorage.getItem(DEMO_STORAGE_KEY);
     if (!raw) return EMPTY_STATE;
     const parsed = JSON.parse(raw) as Partial<DemoState>;
-    return { ...EMPTY_STATE, ...parsed, reviewed: Array.isArray(parsed.reviewed) ? parsed.reviewed : [] };
+    return { ...EMPTY_STATE, ...parsed };
   } catch {
     return EMPTY_STATE;
   }
 }
 
-/** The key-figure tile of a real stage (analyze's evidence-only report). */
-const tile = 'rounded-cc-card border border-cc-line bg-cc-surface shadow-cc px-4 py-4';
-const label = 'cc-text-label text-cc-ink-muted';
 const lead = 'm-0 mb-3 cc-text-cell text-cc-ink-muted';
-const num = (n: number) => formatNumber(n) ?? String(n);
 
 export default function DemoWorkspace({
   demo,
@@ -146,7 +136,9 @@ export default function DemoWorkspace({
     // `data-demo-ready` flips once the browser has taken over: the demo is
     // server-rendered and every control on it is inert until then, so a test
     // that clicks earlier is testing the wrong thing.
-    <div className="cc max-w-6xl mx-auto px-4 sm:px-6 pb-24" data-demo-ready={hydrated ? 'true' : 'false'}>
+    // The width of a real stage: the shell's own column, no narrower one of
+    // the demo's (the stages are compared side by side with a project's).
+    <div className="cc w-full pb-24" data-demo-ready={hydrated ? 'true' : 'false'}>
       <DemoStrip onReset={reset} />
 
       {/* No cast: `DemoRailStep` has to stay assignable to the product's own
@@ -170,7 +162,9 @@ export default function DemoWorkspace({
       </StageHeader>
 
       <div data-testid={`demo-stage-${stage}`} className="space-y-6">
-        {stage === 'analyze' && <Analyze demo={demo} state={state} patch={patch} />}
+        {stage === 'analyze' && (
+          <DemoAnalyze demo={demo} worklist={state.worklist} onWorklist={(worklist) => patch({ worklist })} />
+        )}
         {stage === 'design' && <Design demo={demo} data={design} state={state} patch={patch} />}
         {stage === 'transformation' && <Transformation demo={demo} />}
         {stage === 'documentation' && <Documentation demo={demo} />}
@@ -235,157 +229,6 @@ function ModelHalfNotice({ what }: { what: string }) {
       none here — and writing a convincing one by hand is the one thing this product may never do. What you see
       above is what the deterministic engine produced, which is the half that carries the line numbers.
     </CcMessageStrip>
-  );
-}
-
-/** A source line, as the anchor every statement in the product hangs on. */
-function Line({ n }: { n: number }) {
-  return <CcAnchor label={`Source line ${n}`}>{`L${n}`}</CcAnchor>;
-}
-
-function Analyze({
-  demo,
-  state,
-  patch,
-}: {
-  demo: DemoProject;
-  state: DemoState;
-  patch: (n: Partial<DemoState>) => void;
-}) {
-  const filtered = useMemo(
-    () =>
-      state.severityFilter === 'all'
-        ? demo.analyze.findings
-        : demo.analyze.findings.filter((f) => f.severity === state.severityFilter),
-    [demo.analyze.findings, state.severityFilter],
-  );
-  const reviewed = new Set(state.reviewed);
-
-  const toggle = (id: string) => {
-    const next = new Set(reviewed);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    patch({ reviewed: [...next] });
-  };
-
-  const counts: Array<[string, number]> = [
-    ['Critical', demo.analyze.summary.criticalCount],
-    ['High', demo.analyze.summary.highCount],
-    ['Medium', demo.analyze.summary.mediumCount],
-    ['Low', demo.analyze.summary.lowCount],
-    ['Info', demo.analyze.summary.infoCount],
-  ];
-
-  return (
-    <>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className={tile}>
-          <span className={label}>Clean Core Score</span>
-          <p data-testid="demo-score" className="m-0 mt-2 cc-text-title text-cc-ink">
-            {demo.analyze.cleanCoreScore}
-          </p>
-          <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-            {scoreBand(demo.analyze.cleanCoreScore).label} ({bandRange(scoreBand(demo.analyze.cleanCoreScore))}, {SCORE_BANDS_SOURCE}).
-            Computed by the engine in this release from {demo.analyze.findings.length} findings. Not signed — see
-            the strip above.
-          </p>
-        </div>
-        <div className={tile}>
-          <span className={label}>Source</span>
-          <p className="m-0 mt-2 cc-text-identifier font-cc-mono text-cc-ink break-all">{demo.sourceFile}</p>
-          <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-            {num(demo.totalLines)} lines, {num(demo.linesOfCode)} of them code. {demo.subject}. Catalog{' '}
-            <span title={demo.catalogVersion}>{catalogForReader(demo.catalogVersion)}</span>.
-          </p>
-        </div>
-        <div className={tile}>
-          <span className={label}>Complexity / criticality</span>
-          <p className="m-0 mt-2 cc-text-h2 text-cc-ink">
-            {demo.analyze.complexityScore} / {demo.analyze.criticalityScore}
-          </p>
-          <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-            Both on the engine&apos;s own ten-point scale, over the same source.
-          </p>
-        </div>
-      </div>
-
-      <CcCard level={2} title="What the engine did not judge">
-        <p data-testid="demo-caveat" className="m-0 cc-text-body text-cc-ink">
-          {demo.analyze.caveat ??
-            'Nothing in this source falls outside what the detectors judge — which is rare enough to be worth saying.'}
-        </p>
-        <ul className="m-0 mt-3 list-none space-y-1 p-0">
-          {demo.analyze.coverage.gaps.map((g) => (
-            <li key={g.gap} className="cc-text-cell text-cc-ink-muted">
-              <span className="font-semibold text-cc-ink">{g.count} ×</span> {g.label} — first at line{' '}
-              <Line n={g.firstLine} />
-            </li>
-          ))}
-        </ul>
-      </CcCard>
-
-      <CcCard level={2}
-        title="Findings"
-        count={demo.analyze.findings.length}
-        actions={
-          <div className="flex flex-wrap gap-1" role="group" aria-label="Filter findings by severity">
-            {(['all', ...counts.map((c) => c[0])] as DemoState['severityFilter'][]).map((s) => (
-              <CcButton
-                key={s}
-                variant={state.severityFilter === s ? 'dark' : 'ghost'}
-                data-testid={`demo-filter-${s}`}
-                aria-pressed={state.severityFilter === s}
-                onClick={() => patch({ severityFilter: s })}
-              >
-                {s === 'all' ? `All ${demo.analyze.findings.length}` : `${s} ${counts.find((c) => c[0] === s)?.[1] ?? 0}`}
-              </CcButton>
-            ))}
-          </div>
-        }
-      >
-        <p className={lead}>
-          {reviewed.size} of {demo.analyze.findings.length} marked reviewed in this browser.
-        </p>
-
-        <ul data-testid="demo-findings" className="m-0 list-none divide-y divide-cc-line p-0">
-          {filtered.map((f) => {
-            const sev = normaliseSeverity(f.severity);
-            const done = reviewed.has(f.id);
-            return (
-              <li key={f.id} className="flex items-start gap-3 py-3">
-                <CcIconButton
-                  label={`Mark ${f.id} reviewed`}
-                  aria-pressed={done}
-                  data-testid={`demo-review-${f.id}`}
-                  onClick={() => toggle(f.id)}
-                >
-                  {done ? (
-                    <CheckCircle2 size={18} className="text-cc-ink" aria-hidden={true} />
-                  ) : (
-                    <Circle size={18} aria-hidden={true} />
-                  )}
-                </CcIconButton>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="cc-text-meta font-cc-mono text-cc-ink-muted">{f.id}</span>
-                    <span className="cc-text-h3 text-cc-ink">{f.title}</span>
-                    {sev ? <CcSeverity value={sev} /> : <CcTag>{f.severity}</CcTag>}
-                    <Line n={f.lineStart} />
-                  </div>
-                  <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{f.recommendation}</p>
-                  {f.sapReplacement && (
-                    <p className="m-0 mt-1 cc-text-meta text-cc-ink-muted">
-                      <span className="text-cc-ink">Successor: </span>
-                      {f.sapReplacement.objectName} ({f.sapReplacement.confidence})
-                    </p>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </CcCard>
-    </>
   );
 }
 

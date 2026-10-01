@@ -52,6 +52,35 @@ export interface GenerationInputs {
   analysis: string;
 }
 
+/**
+ * The state a generation is computed from: the project document with the
+ * narrative of its active run.
+ *
+ * `analysis` does not live on the project. `/api/runs/create` stores it in the
+ * run and deletes it from the project document, and the stages read it through
+ * `loadProjectAndHydrate`, where the run wins on every shared key. Reading the
+ * project document alone handed the generation an empty analysis for every
+ * project analysed since signed runs exist, and the Transformation stage
+ * answered a complete Analyze and Design with "the source, the analysis or the
+ * solution design is no longer on this project". The same rule as the browser's
+ * hydration: the run's `analysis` when the run carries the key, the project's
+ * otherwise (a project analysed before runs existed). The source and the design
+ * are the project's — the run holds neither as text.
+ */
+export function generationStateOf(
+  project: Record<string, unknown>,
+  run: Record<string, unknown> | null,
+): GenerationRevisionState {
+  const analysis = run && Object.prototype.hasOwnProperty.call(run, 'analysis') ? run.analysis : project.analysis;
+  return {
+    legacyCode: project.legacyCode,
+    solutionDesign: project.solutionDesign,
+    analysis,
+    generatedCode: project.generatedCode,
+    generationBinding: project.generationBinding,
+  };
+}
+
 const text = (v: unknown): string => (typeof v === 'string' ? v : '');
 const digestOf = (v: unknown): string => (typeof v === 'string' && v.length > 0 ? sha256Hex(v) : 'none');
 

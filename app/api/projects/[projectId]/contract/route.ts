@@ -8,7 +8,7 @@ import { contractOfProject } from '@/lib/contract-build';
 import { generationDirection, generationBinding, offTrackRefusal } from '@/lib/generation-direction';
 import type { InputManifest } from '@/lib/input-manifest';
 import { sha256Hex } from '@/lib/artefact-digest';
-import { checkGeneratedPackage, generationInputsOf, generationRevision } from '@/lib/generation-revision';
+import { checkGeneratedPackage, generationInputsOf, generationRevision, generationStateOf } from '@/lib/generation-revision';
 import type { DocumentReference, Timestamp, Transaction } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
@@ -162,12 +162,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
       return NextResponse.json({ contract: null, decision: offTrackRefusal(built.decided || 'that decision') });
     }
     const decision = generationDirection(built.contract);
+    // The project with its run's narrative — the analysis lives in the run
+    // (`generationStateOf`), and the POST compares against the same state.
+    const state = generationStateOf(data, run);
     return NextResponse.json({
       contract: built.contract,
       decision,
       // Roadmap 3.0.11: only a generation that may run gets a token.
       generation: decision.ok
-        ? { token: generationRevision(data, built.contract.fingerprint), inputs: generationInputsOf(data) }
+        ? { token: generationRevision(state, built.contract.fingerprint), inputs: generationInputsOf(state) }
         : null,
     });
   } catch (err: unknown) {
@@ -316,7 +319,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     // The contract can stand still while the design, the analysis or the stored
     // stand moves: the design is not part of it, and a second tab that stored
     // first changes only the stand. The token covers all of them.
-    if (generationRevision(data, built.contract.fingerprint) !== generationToken) {
+    if (generationRevision(generationStateOf(data, run), built.contract.fingerprint) !== generationToken) {
       return NextResponse.json(
         {
           error:
