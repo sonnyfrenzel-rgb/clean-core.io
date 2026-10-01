@@ -182,6 +182,13 @@ test.describe('the gcloud responses are read, not scraped', () => {
     expect(readLogBucketFact({ name: 'projects/p/locations/global/buckets/_Required', retentionDays: 400 }).retentionDays).toBe(400);
   });
 
+  test('an omitted retentionDays is the default of that bucket, not 30 for every one', () => {
+    // Carried QA finding 877ffe725921: `_Required` without the field read as 30
+    // days, so the comparison failed a correct document or passed a wrong one.
+    expect(readLogBucketFact({ name: 'projects/p/locations/global/buckets/_Required' }).retentionDays).toBe(400);
+    expect(Number.isNaN(readLogBucketFact({ name: 'projects/p/locations/global/buckets/other' }).retentionDays)).toBe(true);
+  });
+
   test('the database answers for recovery, region and whether schedules run at all', () => {
     expect(readDatabaseFact(RAW_DATABASE)).toEqual({
       locationId: 'europe-west1',
