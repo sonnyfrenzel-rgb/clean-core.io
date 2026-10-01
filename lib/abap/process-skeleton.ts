@@ -959,7 +959,14 @@ class SkeletonBuilder {
   private performedFrom = new Map<string, string[]>();
   /** `FUNCTION name.` … `ENDFUNCTION.` — roadmap 2.14. Not a block: ABAP closes it, `block-structure.ts` does not open it. */
   private functionBlocks: Array<{ name: string; openIndex: number; closeIndex: number }> = [];
-  /** Method names a class **definition** in this source declares callable from outside, upper-cased. */
+  /**
+   * Methods a class **definition** in this source declares callable from outside,
+   * keyed `CLASS=>METHOD` (an interface prefix as `CLASS=>ZIF~`; an interface's
+   * own methods as `ZIF~METHOD`, which no implementation is looked up by — it
+   * writes `zif~method` in a class). Keyed by name alone, a public
+   * `execute` of one class made a private `execute` of another an entry
+   * (carried QA finding 0fdb072d50a8).
+   */
   private externallyCallableMethods = new Map<string, string>();
   /** Region keys of the entries built, so `unreached()` does not also list them as not reached. */
   private entryOfBlock = new Set<number>();
@@ -2044,6 +2051,9 @@ class SkeletonBuilder {
     for (const block of this.structure.blocks) {
       if (block.kind !== 'class' && block.kind !== 'interface') continue;
       const opener = this.statements[block.openIndex];
+      const owner = /^(?:CLASS|INTERFACE)\s+([\w/]+)/i.exec(opener.text)?.[1]?.toUpperCase() ?? '';
+      // A class's methods are its own; an interface's are reached as `zif~name`.
+      const keyOf = (method: string) => (block.kind === 'interface' ? `${owner}~${method}` : `${owner}=>${method}`);
       this.readRedefinitions(block);
       // **Local is not public.** `PUBLIC SECTION` in a `CLASS lcl_x DEFINITION`
       // means public *within this program*; only `DEFINITION PUBLIC` — a global
@@ -2073,7 +2083,7 @@ class SkeletonBuilder {
           // Every method of the interface is reachable as `zif~name`, and the
           // prefix is what the implementation writes, so the prefix is recorded.
           const name = /^INTERFACES\s+([\w/]+)/i.exec(statement.text);
-          if (visible && name) this.externallyCallableMethods.set(`${name[1].toUpperCase()}~`, 'interface');
+          if (visible && name) this.externallyCallableMethods.set(`${owner}=>${name[1].toUpperCase()}~`, 'interface');
           continue;
         }
         if (statement.keyword !== 'METHODS' && statement.keyword !== 'CLASS-METHODS') continue;
@@ -2081,10 +2091,10 @@ class SkeletonBuilder {
         if (!name) continue;
         const handler = RAP_HANDLER.exec(statement.text);
         if (handler) {
-          this.externallyCallableMethods.set(name[1].toUpperCase(), `RAP ${handler[1].toUpperCase()}`);
+          this.externallyCallableMethods.set(keyOf(name[1].toUpperCase()), `RAP ${handler[1].toUpperCase()}`);
           continue;
         }
-        if (visible) this.externallyCallableMethods.set(name[1].toUpperCase(), 'public');
+        if (visible) this.externallyCallableMethods.set(keyOf(name[1].toUpperCase()), 'public');
       }
     }
   }
@@ -2098,13 +2108,14 @@ class SkeletonBuilder {
    */
   private readRapHandlers(block: Block): void {
     if (!/\bDEFINITION\b/i.test(this.statements[block.openIndex].text)) return;
+    const owner = /^CLASS\s+([\w/]+)/i.exec(this.statements[block.openIndex].text)?.[1]?.toUpperCase() ?? '';
     for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
       const statement = this.statements[i];
       if (statement.keyword !== 'METHODS' && statement.keyword !== 'CLASS-METHODS') continue;
       const name = /^(?:CLASS-)?METHODS\s+([\w/~]+)/i.exec(statement.text);
       const handler = RAP_HANDLER.exec(statement.text);
       if (name && handler) {
-        this.externallyCallableMethods.set(name[1].toUpperCase(), `RAP ${handler[1].toUpperCase()}`);
+        this.externallyCallableMethods.set(`${owner}=>${name[1].toUpperCase()}`, `RAP ${handler[1].toUpperCase()}`);
       }
     }
   }
@@ -2150,13 +2161,14 @@ class SkeletonBuilder {
   }
 
   /** Is this implemented method one the source declares callable from outside? */
-  private methodTrigger(name: string): string | null {
+  private methodTrigger(cls: string | null, name: string): string | null {
     const upper = name.toUpperCase();
-    const direct = this.externallyCallableMethods.get(upper);
+    const direct = this.externallyCallableMethods.get(`${cls ?? ''}=>${upper}`);
     if (direct) return direct;
     const tilde = upper.indexOf('~');
     if (tilde < 0) return null;
-    return this.externallyCallableMethods.get(upper.slice(0, tilde + 1)) ?? null;
+    // `zif~name`: an interface this class declares in its public section.
+    return this.externallyCallableMethods.get(`${cls ?? ''}=>${upper.slice(0, tilde + 1)}`) ?? null;
   }
 
   /**
@@ -2200,7 +2212,7 @@ class SkeletonBuilder {
       if (!name) continue;
       const cls = this.classOf(block.openIndex);
       const key = `${cls ?? ''}=>${name[1].toUpperCase()}`;
-      const trigger = this.methodTrigger(name[1]) ?? this.implementedInterfaceMethod(name[1], block.openIndex)
+      const trigger = this.methodTrigger(cls, name[1]) ?? this.implementedInterfaceMethod(name[1], block.openIndex)
         ?? this.redefinitionTrigger(key);
       if (orphans) {
         // The last resort: no trigger, no definition, nothing else answered.
