@@ -473,7 +473,7 @@ export default function BpmnEditor({
   const [newer, setNewer] = useState<OpenedRevision | null>(null);
   /** Elements an imported file brought that the reconstruction does not know. */
   const [importedOutside, setImportedOutside] = useState<ReadonlySet<string>>(new Set());
-  const [importing, setImporting] = useState<{ fileName: string; outcome: ImportOutcome | null; saved: string | null } | null>(null);
+  const [importing, setImporting] = useState<{ fileName: string; outcome: ImportOutcome | null; saved: string | null; refused?: string | null } | null>(null);
   const [importSaving, setImportSaving] = useState(false);
   /** Incremented on every change to the draft — see `draft-save.ts`. */
   const changeCountRef = useRef(0);
@@ -976,13 +976,14 @@ export default function BpmnEditor({
     try {
       const keep = save ?? NO_PLACE_TO_KEEP_IT;
       const result = await keep({ xml: outcome.xml, baseXml, fileName });
-      setImporting((was) => (was ? { ...was, saved: result.message } : was));
+      // Only a kept save closes the choice; a refusal leaves Save there to retry.
+      setImporting((was) => (was ? (result.ok ? { ...was, saved: result.message, refused: null } : { ...was, refused: result.message }) : was));
       if (result.ok) {
         await load(outcome.xml, false);
         setImportedOutside(outsideOf(outcome.xml));
       }
     } catch {
-      setImporting((was) => (was ? { ...was, saved: wt('mapEditor.saveFailed') } : was));
+      setImporting((was) => (was ? { ...was, refused: wt('mapEditor.saveFailed') } : was));
     } finally {
       setImportSaving(false);
     }
@@ -1147,6 +1148,7 @@ export default function BpmnEditor({
           }
         >
           <span data-editor-newer={newer.revision}>{editorNewerRevision(newer.line)}</span>
+          {dirty ? <span data-editor-newer-replaces=""> {wt('editor.newerReplacesUnsaved')}</span> : null}
         </CcMessageStrip>
       ) : startedFrom ? (
         <p data-editor-started={startedFrom.revision} className="m-0 text-[12px] font-medium text-cc-ink-muted">
@@ -1355,6 +1357,8 @@ export default function BpmnEditor({
           outcome={importing.outcome}
           saving={importSaving}
           saved={importing.saved}
+          refused={importing.refused ?? null}
+          replacesUnsaved={dirty}
           onClose={() => setImporting(null)}
           onOpenInEditor={() => void openImported()}
           onSave={() => void saveImported()}

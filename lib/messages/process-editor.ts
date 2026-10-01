@@ -114,6 +114,10 @@ export const PROCESS_EDITOR_MESSAGES = {
   'editor.importClaims': 'Line anchors or statuses written in the file itself were not taken over.',
   'editor.importCleaned': 'Some names contained invisible control characters; they were removed.',
   'editor.importFileTooLarge': 'The file is larger than a process revision can hold. Export a smaller part of the model.',
+  'editor.importReplacesUnsaved':
+    'Opening or saving this file replaces your unsaved changes in the editor. Save them first if you want to keep them.',
+  'editor.importRefusedSave': 'Not saved',
+  'editor.newerReplacesUnsaved': 'Opening it replaces your unsaved changes.',
   'editor.importLoaded': 'The imported model is on the canvas. Nothing is saved until you press Save.',
 
   // Export
