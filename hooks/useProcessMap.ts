@@ -61,7 +61,7 @@ async function authHeader(): Promise<Record<string, string>> {
  * file, the quote is a record about it, and a reader who cannot write one still
  * gets the sentence computed from the same `stats`.
  */
-async function ensureQuote(projectId: string, sourceSha256: string): Promise<string | null> {
+async function ensureQuote(projectId: string, sourceSha256: string, measure = true): Promise<string | null> {
   const path = `/api/projects/${encodeURIComponent(projectId)}/process-map`;
   try {
     const headers = await authHeader();
@@ -70,6 +70,7 @@ async function ensureQuote(projectId: string, sourceSha256: string): Promise<str
       const body = (await read.json()) as { record?: ProcessMapRecord | null };
       if (body.record && body.record.sourceSha256 === sourceSha256) return body.record.measuredAt;
     }
+    if (!measure) return null;
     const written = await fetch(path, { method: 'POST', headers });
     if (!written.ok) return null;
     const body = (await written.json()) as { record?: ProcessMapRecord | null };
@@ -88,7 +89,14 @@ export function useProcessMap(
   signed: SignedSource | null,
   processName: string,
   availability: NamingAvailability | null,
+  /**
+   * `measure: false` — read a stored quote, never ask the server to store one.
+   * For a page that promises that opening a project writes nothing to it (the
+   * workspace, roadmap 3.0.2); the Documentation stage keeps measuring.
+   */
+  options?: { measure?: boolean },
 ): ProcessMapState {
+  const measure = options?.measure !== false;
   const [held, setHeld] = useState<Held>({ key: '', model: null, measuredAt: null, failed: false });
 
   const source = signed?.source ?? null;
@@ -135,7 +143,7 @@ export function useProcessMap(
 
       setHeld({ key, model, measuredAt: null, failed: false });
 
-      const measuredAt = await ensureQuote(projectId, sha256Hex(source));
+      const measuredAt = await ensureQuote(projectId, sha256Hex(source), measure);
       if (cancelled || !measuredAt) return;
       setHeld((previous) => (previous.key === key ? { ...previous, measuredAt } : previous));
     };
@@ -148,7 +156,7 @@ export function useProcessMap(
     return () => {
       cancelled = true;
     };
-  }, [projectId, source, fileName, processName, availabilityKnown, keyAvailable, namingStageOn, key]);
+  }, [projectId, source, fileName, processName, availabilityKnown, keyAvailable, namingStageOn, key, measure]);
 
   if (!key) return { status: 'idle', model: null, measuredAt: null, reason: NO_SIGNED_SOURCE };
   if (held.key !== key) return { status: 'loading', model: null, measuredAt: null, reason: null };
