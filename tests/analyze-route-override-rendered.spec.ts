@@ -102,7 +102,7 @@ test('a route the architect switched is labelled as theirs, with the recommendat
   expect(body, 'the badge is not confidence for a route nothing assessed').not.toContain('88% Conf.');
   // The recommended route's artefact is not the target of the route chosen
   // instead (QA full review of fc787674705f, 08fd882e60b3).
-  const target = page.locator('h3', { hasText: 'Target:' });
+  const target = page.locator('[data-route-target]', { hasText: 'Target:' });
   await expect(target).toContainText('RAP Business Object');
   await expect(target).not.toContainText('SAP BTP Node.js App (CAP)');
 });

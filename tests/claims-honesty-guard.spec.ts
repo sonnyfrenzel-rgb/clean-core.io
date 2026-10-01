@@ -270,8 +270,12 @@ test.describe('a signed-in account reading its own project', () => {
 
     // One for the checkpoints, one for the track comparison: the panel says twice
     // that it has nothing, where it used to say twice that it had everything.
-    await expect(page.locator('[data-not-determined]').first()).toBeVisible({ timeout: 30000 });
-    await expect(page.locator('[data-not-determined]')).toHaveCount(2);
+    // Panels, not chart segments: the object page's charts mark their own
+    // "not determined" segments the same way (lib/chart-colors.ts), and those
+    // are not this panel's statements.
+    const panels = page.locator('[data-not-determined]:not([data-chart-segment])');
+    await expect(panels.first()).toBeVisible({ timeout: 30000 });
+    await expect(panels).toHaveCount(2);
 
     const text = await page.locator('body').innerText();
     for (const invented of [

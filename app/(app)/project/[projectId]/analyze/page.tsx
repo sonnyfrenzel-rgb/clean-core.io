@@ -20,7 +20,6 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import { CcTag } from '@/components/cc/Tag';
 import CcDialog from '@/components/cc/Dialog';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import CcCard from '@/components/cc/Card';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcField from '@/components/cc/Field';
 import CcCheckbox from '@/components/cc/Checkbox';
@@ -101,7 +100,17 @@ import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { coverageCaveat } from '@/lib/abap/coverage';
 import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
 import EvidenceFindingsTable from '@/components/analyze/EvidenceFindingsTable';
-import { analysisAnswer, countFindings, groupEvidenceFindings, shortRoute } from '@/components/analyze/analysis-answer';
+import { analysisAnswer, countFindings, groupEvidenceFindings, plainRoute } from '@/components/analyze/analysis-answer';
+import CleanCoreScoreSection from '@/components/analyze/CleanCoreScoreSection';
+import ObjectSection from '@/components/analyze/ObjectSection';
+import CcAnchor from '@/components/cc/Anchor';
+import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
+import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
+import { accessUseOfKind, findingRows, processStepBands, SEVERITY_ORDER } from '@/lib/findings-view';
+import { SCORE_BANDS, scoreBreakdown } from '@/lib/clean-core-score';
+import { readProcess } from '@/lib/first-look';
+import { catalogForReader } from '@/lib/messages/demo';
+import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { takeOwnCodeHandoff } from '@/lib/own-code-handoff';
@@ -712,6 +721,66 @@ export default function AnalyzePage() {
 
   const evidenceFindings = useMemo(() => evidenceReport?.findings ?? [], [evidenceReport]);
 
+  // ── The object page's figures (proposal A, owner decision 01.10.2026) ──
+  //
+  // The clean core level of each finding, looked up through the same route the
+  // A–D panel asks (`/api/abcd-classify`), for the use the finding's kind names
+  // — a read of VBAK is C, a write D. Not part of the signed run; the screen
+  // says so where it draws them.
+  const evidenceRows = useMemo(() => findingRows(evidenceFindings), [evidenceFindings]);
+  const levelObjects = useMemo(
+    () =>
+      evidenceRows
+        .filter((r) => r.finding.objectName)
+        .map((r) => ({ name: r.finding.objectName!.trim().toUpperCase(), use: accessUseOfKind(r.finding.kind) })),
+    [evidenceRows],
+  );
+  const levelLookup = useAbcdCatalogLookup(levelObjects, project ? catalogLookupTargetOf(project) : null);
+  const levelOf = useMemo(
+    () => (f: EvidenceFinding): CloudReadinessGrade | null => {
+      if (!f.objectName || levelLookup.status !== 'ready') return null;
+      return levelLookup.grades[gradeKey(f.objectName.trim().toUpperCase(), accessUseOfKind(f.kind))]?.grade ?? 'Unknown';
+    },
+    [levelLookup],
+  );
+  const levelFacet = useMemo(() => {
+    const dist: Record<CloudReadinessGrade, number> = { A: 0, B: 0, C: 0, D: 0, Unknown: 0 };
+    let noObject = 0;
+    for (const r of evidenceRows) {
+      if (!r.finding.objectName) {
+        noObject++;
+        continue;
+      }
+      const g = levelOf(r.finding);
+      if (g) dist[g]++;
+    }
+    return { status: levelLookup.status, dist, noObject };
+  }, [evidenceRows, levelOf, levelLookup.status]);
+
+  // The process steps behind the program map: the routines the entry block
+  // calls, read off the skeleton the Business view draws.
+  const processSteps = useMemo(() => {
+    if (!legacyCode) return [];
+    try {
+      return processStepBands(readProcess(legacyCode).skeleton, legacyCode);
+    } catch {
+      return [];
+    }
+  }, [legacyCode]);
+
+  // What the engine did not assess, by kind, with the line each kind begins at.
+  const notAssessedItems = useMemo(
+    () => (evidenceReport?.coverage?.gaps ?? []).map((g) => ({ label: g.label, count: g.count, firstLine: g.firstLine })),
+    [evidenceReport],
+  );
+
+  // The score's deductions, recomputed from the findings on this page with the
+  // router's own table; shown only beside a score they add up to.
+  const scoreParts = useMemo(
+    () => (evidenceReport ? scoreBreakdown(evidenceReport.findings, evidenceReport.coverage && !evidenceReport.coverage.complete ? evidenceReport.coverage.gaps.length : 0) : null),
+    [evidenceReport],
+  );
+
   // ── The Clean Core Score, as signed ──
   //
   // This used to be a second, different number. `liveCleanCoreScore` recomputed
@@ -851,6 +920,70 @@ export default function AnalyzePage() {
         </CcDisclosure>
       </section>
     );
+
+  /** The head's facets and status line, the same in both kinds of report. */
+  const answerFacts = (route: string | null | undefined) => {
+    const catalogRaw = project?.auditMetadata?.modelCard?.catalogVersion;
+    const catalog = catalogRaw ? catalogForReader(catalogRaw) : null;
+    const withSuccessor = evidenceRows.filter((r) => r.finding.sapReplacement?.objectName).length;
+    return {
+      severities: SEVERITY_ORDER.map((key) => ({ key, count: evidenceRows.filter((r) => r.finding.severity === key).length })),
+      levels: levelFacet,
+      notAssessed: {
+        kinds: notAssessedItems.length,
+        constructs: notAssessedItems.reduce((n, g) => n + g.count, 0),
+        items: notAssessedItems,
+      },
+      meta: {
+        fileName: project?.auditMetadata?.inputFingerprint?.fileName ?? null,
+        lines: sourceLines || null,
+        // A catalog version the reader form cannot shorten keeps its base name only — never a hash on screen.
+        catalog: catalog && catalog.includes('@') ? catalog.split(' + ')[0] : catalog,
+        engine: project?.auditMetadata?.modelCard?.engineVersion ?? null,
+      },
+      status: [
+        { key: 'evidence', label: 'Evidence', value: project?.analysis ? 'engine, with a model narrative' : 'engine, no model', dot: 'bg-cc-information' },
+        { key: 'route', label: 'Route', value: plainRoute(route) ?? 'not determined', dot: 'bg-cc-chart-2' },
+        { key: 'run', label: 'Run', value: project?.activeRunId ? 'signed' : 'no signed run', dot: 'bg-cc-neutral' },
+        { key: 'successors', label: 'Successors', value: `${withSuccessor} of ${evidenceRows.length} named`, dot: 'bg-cc-warning-mark' },
+      ],
+    };
+  };
+
+  /** The Clean Core Score section, first in the main column. */
+  const scoreSection = (
+    <CleanCoreScoreSection score={signedCleanCoreScore} breakdown={scoreParts} onExplain={() => setShowScoreModal(true)} />
+  );
+
+  /** "Not determined" in the side column: the constructs not assessed, and the way to the full list. */
+  const renderNotDeterminedSide = (openCount: number) => (
+    <ObjectSection side title="Not determined" right={<span className="cc-text-meta text-cc-ink-muted">{openCount}</span>}>
+      {notAssessedItems.length ? (
+        <ul className="m-0 grid list-none gap-2 p-0">
+          {notAssessedItems.map((g) => (
+            <li key={g.label} className="flex items-start gap-2 cc-text-cell text-cc-ink">
+              <span aria-hidden={true} className="mt-1 h-3 w-3 shrink-0 rounded-full border border-dashed border-cc-ink-muted" />
+              <span>
+                {g.count} × {g.label.toLowerCase()} — from <CcAnchor label={`Source line ${g.firstLine}`}>{`L${g.firstLine}`}</CcAnchor>
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="m-0 cc-text-cell text-cc-ink-muted">Every construct read was within the engine’s checks.</p>
+      )}
+      <p className="m-0 mt-3 cc-text-meta font-medium text-cc-ink-muted">
+        A result covers what the engine checks, which is not the whole program.
+      </p>
+      {openCount > 0 ? (
+        <div className="mt-2">
+          <CcButton variant="ghost" density="compact" onClick={showNotDetermined}>
+            All {openCount} with their reasons
+          </CcButton>
+        </div>
+      ) : null}
+    </ObjectSection>
+  );
 
   /** What the engine could not settle in the source itself — the same three in both kinds of report. */
   const sourceOpenItems = (): OpenItem[] => {
@@ -1000,11 +1133,11 @@ export default function AnalyzePage() {
             })}
             counts={findingCounts}
             score={signedCleanCoreScore}
-            routeLabel={shortRoute(evidenceRoute)}
             routeChosenByReader={false}
             notDetermined={openItems.length}
             onExplainScore={() => setShowScoreModal(true)}
             onShowNotDetermined={showNotDetermined}
+            {...answerFacts(evidenceRoute)}
           />
 
           <NotGenerated
@@ -1014,16 +1147,34 @@ export default function AnalyzePage() {
             hint="Everything on this page was computed by the evidence engine and is covered by this run's signature. Re-run the analysis once a model is available to add the narrative."
           />
 
-          <EvidenceFindingsTable findings={evidenceFindings} sourceLines={sourceLines} />
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <CcCard title="Extensibility route" level={2}>
-              <p className="m-0 cc-text-h3 text-cc-ink">{project.extensibilityRoute || 'Not determined'}</p>
-              {project.recommendationJustification && (
-                <p className="mt-2 cc-text-cell text-cc-ink-muted">{project.recommendationJustification}</p>
-              )}
-            </CcCard>
-          </div>
+          <EvidenceFindingsTable
+            findings={evidenceFindings}
+            sourceLines={sourceLines}
+            source={legacyCode}
+            levels={{ status: levelLookup.status, of: levelOf }}
+            steps={processSteps}
+            notAssessed={notAssessedItems}
+            scoreSection={scoreSection}
+            sideTop={
+              <ObjectSection side title="Route" right={<CcProvenanceChip value="reconstructed" note="fixed rules" />}>
+                <div className="flex items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3">
+                  <span aria-hidden={true} className="grid h-10 w-10 shrink-0 place-items-center rounded-cc-card border border-cc-line bg-cc-surface text-cc-ink">
+                    <Cloud size={20} aria-hidden="true" />
+                  </span>
+                  <p className="m-0 cc-text-h3 text-cc-ink">{project.extensibilityRoute || 'Not determined'}</p>
+                </div>
+                {project.recommendationJustification && (
+                  <p className="m-0 mt-3 cc-text-cell text-cc-ink">{project.recommendationJustification}</p>
+                )}
+                <div className="mt-3">
+                  <CcButton variant="secondary" density="compact" onClick={() => router.push(`/project/${projectId}/design`)}>
+                    Open Design
+                  </CcButton>
+                </div>
+              </ObjectSection>
+            }
+            sideBottom={renderNotDeterminedSide(openItems.length)}
+          />
 
           <GapsWorklist
             projectId={projectId as string}
@@ -1165,19 +1316,34 @@ export default function AnalyzePage() {
             answer={answer}
             counts={findingCounts}
             score={signedCleanCoreScore}
-            routeLabel={shortRoute(shownRoute)}
             routeChosenByReader={routeIsOverridden}
             notDetermined={openItems.length}
             onExplainScore={() => setShowScoreModal(true)}
             onShowNotDetermined={showNotDetermined}
+            {...answerFacts(shownRoute)}
           />
 
-          <EvidenceFindingsTable findings={evidenceFindings} sourceLines={sourceLines} />
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <div className="min-w-0">
-              {/* The route, as the rules recommended it or as the reader chose it. */}
-              <CcCard title="Extensibility route" level={2}>
+          <EvidenceFindingsTable
+            findings={evidenceFindings}
+            sourceLines={sourceLines}
+            source={legacyCode}
+            levels={{ status: levelLookup.status, of: levelOf }}
+            steps={processSteps}
+            notAssessed={notAssessedItems}
+            scoreSection={scoreSection}
+            sideBottom={renderNotDeterminedSide(openItems.length)}
+            sideTop={
+              /* The route, as the rules recommended it or as the reader chose it. */
+              <ObjectSection
+                side
+                title="Route"
+                right={routeIsOverridden ? <CcProvenanceChip value="confirmed" note="your choice" /> : <CcProvenanceChip value="reconstructed" note="fixed rules" />}
+              >
+                <div className="flex items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3">
+                  <span aria-hidden={true} className="grid h-10 w-10 shrink-0 place-items-center rounded-cc-card border border-cc-line bg-cc-surface text-cc-ink">
+                    <Cloud size={20} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   {/* The preservation register names this element as where
                       `extensibilityRoute` becomes visible; see
@@ -1195,13 +1361,15 @@ export default function AnalyzePage() {
                         : 'Confidence not computed'}
                   </span>
                 </div>
-                <h3 className="m-0 mt-3 cc-text-identifier text-cc-ink">
+                <p data-route-target="" className="m-0 mt-1 cc-text-meta text-cc-ink-muted">
                   {/* After a switch, the recommended route's artefact is not the target
                       (QA full review of fc787674705f, 08fd882e60b3). */}
                   Target: {(!routeIsOverridden && analysisData.extensibilityRouting?.targetArtifact) || (isBtp
                     ? <GlossaryTerm termKey="CAP" className="border-b-0 text-cc-ink">SAP BTP Node.js App (CAP)</GlossaryTerm>
                     : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">RAP Business Object</GlossaryTerm>)}
-                </h3>
+                </p>
+                  </div>
+                </div>
                 {routeIsOverridden ? (
                   // The confidence and the reasoning belong to the route
                   // that was recommended. Printed beside a route the user
@@ -1253,10 +1421,14 @@ export default function AnalyzePage() {
                 )}
 
                 {/* Interactive override: the reader's choice, marked as theirs above. */}
-                <div className="border-t border-cc-line pt-3 mt-4 flex flex-wrap items-center justify-between gap-2">
-                  <span className="cc-text-meta text-cc-ink-muted">Not the route you want?</span>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <CcButton variant="secondary" density="compact" onClick={() => router.push(`/project/${projectId}/design`)}>
+                    Open Design
+                  </CcButton>
                   <CcButton
                     variant="ghost"
+                    density="compact"
+                    title="Not the route you want? Choose the other one; it is then marked as your choice."
                     icon={<RefreshCw size={16} aria-hidden="true" />}
                     onClick={async () => {
                       const currentRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)';
@@ -1270,13 +1442,13 @@ export default function AnalyzePage() {
                     {isBtp ? 'Switch to ABAP Cloud' : 'Switch to BTP'}
                   </CcButton>
                 </div>
-              </CcCard>
-            </div>
+              </ObjectSection>
+            }
+          />
 
-            <div className="min-w-0">
-              {/* What the model wrote about this code — outside the signature by
-                  design, so marked as a proposal. */}
-              <CcCard title="Summary" level={2} meta={<CcProvenanceChip value="proposed" />}>
+          {/* What the model wrote about this code — outside the signature by
+              design, so marked as a proposal. */}
+          <ObjectSection id="analyze-summary" title={<>Summary <CcProvenanceChip value="proposed" /></>}>
                 <div className="min-w-0">
                   {/*
                     The summary is the one narrative field a reader treats as
@@ -1309,9 +1481,7 @@ export default function AnalyzePage() {
                     </div>
                   </dl>
                 </div>
-              </CcCard>
-            </div>
-          </div>
+          </ObjectSection>
 
           {/* The worklist: every finding and every gap as a task. */}
           <SectionBoundary name="Gaps Backlog">
@@ -1874,16 +2044,27 @@ export default function AnalyzePage() {
         onClose={() => setShowScoreModal(false)}
       >
         <div className="space-y-3">
-          <p className="cc-text-label text-cc-ink-muted">Architecture Guide</p>
-          {SCORE_TIERS.map((tier) => (
-            <div key={tier.score} className="flex gap-4 p-3 rounded-cc-row bg-cc-surface-muted border border-cc-line">
-              <span className="w-12 h-10 rounded-cc-row border border-cc-field-border bg-cc-surface text-cc-ink font-cc-mono cc-text-identifier flex items-center justify-center shrink-0">{tier.score}</span>
+          {/* The bands are read off the score's own deduction table
+              (lib/clean-core-score.ts) — guidance, not a standard. The four
+              "architecture tiers" that stood here (100 / 90 / 85 / 0) were
+              archetypes no rule produced: the floor is 5, and a modification
+              costs at most 40. */}
+          <p className="cc-text-label text-cc-ink-muted">What a score means</p>
+          {[...SCORE_BANDS].reverse().map((band) => (
+            <div key={band.key} data-score-dialog-band={band.key} className="flex gap-4 p-3 rounded-cc-row bg-cc-surface-muted border border-cc-line">
+              <span className="w-16 h-10 rounded-cc-row border border-cc-field-border bg-cc-surface text-cc-ink font-cc-mono cc-text-meta flex items-center justify-center shrink-0">
+                {band.from}–{band.to}
+              </span>
               <div className="space-y-1">
-                <h3 className="cc-text-h3 text-cc-ink">{tier.title}</h3>
-                <p className="cc-text-cell text-cc-ink-muted">{tier.text}</p>
+                <h3 className="cc-text-h3 text-cc-ink">{band.label}</h3>
+                <p className="cc-text-cell text-cc-ink-muted">{band.meaning}</p>
+                <p className="cc-text-meta font-medium text-cc-ink-muted">{band.because}</p>
               </div>
             </div>
           ))}
+          <p className="cc-text-meta font-medium text-cc-ink-muted">
+            The bands are guidance read off the score&apos;s own rules; neither SAP nor this product sets a pass mark.
+          </p>
         </div>
       </CcDialog>
 
@@ -2088,12 +2269,6 @@ function DeploymentChoice({
 }
 
 /** The four tiers the score explanation lists — the same words as before, in one place. */
-const SCORE_TIERS = [
-  { score: '100', title: 'Zero Customization / Standard Fit', text: 'Leverages native SAP standard best practices. Absolutely zero custom code or maintenance overhead.' },
-  { score: '90', title: 'Transformed Extensibility (Side-by-Side)', text: 'Custom logic completely transformed via public APIs (e.g. running on Node.js/TypeScript). Easy to maintain and upgrade.' },
-  { score: '85', title: 'Key-User / In-App Extensibility', text: 'High-level custom elements built inside SAP using standard extension points, without modifying database core tables.' },
-  { score: '0', title: 'Direct Core Modification', text: 'Direct alteration of standard SAP core objects, leading to major regression risks and upgrade blocks.' },
-] as const;
 
 /**
  * A score's state. Only the end that needs attention is coloured; the good end
