@@ -90,8 +90,19 @@ const ROUTE_SOURCES = {
   '/sap-cloudification': ['app/(app)/sap-cloudification/page.tsx', 'lib/facts.ts', 'lib/abap/catalog-service.ts'],
   '/how-it-works': ['app/(app)/how-it-works/page.tsx', 'lib/facts.ts', 'lib/abap/catalog-service.ts', 'lib/abap/support-matrix.ts'],
   '/about': ['app/(app)/about/page.tsx'],
-  // Every figure and every construct row in the whitepaper is read from these two.
-  '/whitepaper': ['app/whitepaper/page.tsx', 'lib/reference-analysis.ts', 'lib/abap/support-matrix.ts'],
+  // The page renders the whitepaper document; its words are lib/whitepaper.ts and
+  // the landing modules it shares (the FAQ module is the landing's own route source), its figures the reference run, the support
+  // matrix and the facts service.
+  '/whitepaper': [
+    'app/whitepaper/page.tsx',
+    'components/whitepaper/WhitepaperDocument.tsx',
+    'lib/whitepaper.ts',
+    'lib/landing-stages.ts',
+    'lib/trust-claims.ts',
+    'lib/reference-analysis.ts',
+    'lib/abap/support-matrix.ts',
+    'lib/facts.ts',
+  ],
   '/reference-analysis': ['app/reference-analysis/page.tsx', 'lib/reference-analysis.ts'],
   '/tenant-security': ['app/(app)/tenant-security/page.tsx'],
   '/trust': ['app/(app)/trust/page.tsx'],

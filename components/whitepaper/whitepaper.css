@@ -1,0 +1,150 @@
+/*
+ * The whitepaper's additions to the landing's stylesheet
+ * (`components/landing/landing.css`, scope `.lp3`). The document wears the
+ * landing's classes — `.sec`, `.pcard`, `.chain5`, `.feat`, `.tools`, `.acc` —
+ * so this file holds only what a document has and a landing page does not: the
+ * contents, a meta line, a few grids, and the paper edition (`.wp3.print`,
+ * rendered to the PDF by `scripts/generate-whitepaper-pdf.ts`). Tokens only —
+ * no colour literal, as in landing.css.
+ */
+
+.wp3 .hero-copy { max-width: 1000px; }
+.wp3 .wp-usp { max-width: 880px; font-size: 18px; }
+.wp3 .wp-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 20px; margin-top: 20px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--cc-ink-muted); }
+.wp3 .wp-cover-link { margin-top: 18px; font-size: 15px; font-weight: 500; color: var(--cc-ink-muted); }
+.wp3 .wp-cover-link a { color: var(--cc-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.wp3 .wp-url { font-weight: 500; color: var(--cc-ink-muted); text-decoration: none; }
+
+/* contents */
+.wp3 .wp-toc { max-width: 1040px; margin: 48px auto 0; text-align: left; }
+.wp3 .wp-toc-k { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--cc-ink-muted); margin: 0; }
+.wp3 .wp-toc ol { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
+.wp3 .wp-toc a { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--cc-line); font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--cc-ink); text-decoration: none; }
+.wp3 .wp-toc a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.wp3 .wp-toc a:focus-visible { outline: 2px solid var(--cc-focus); outline-offset: 2px; }
+.wp3 .wp-toc .n { font: 600 13px var(--cc-font-mono); color: var(--cc-ink-muted); }
+
+/* grids and text inside cards */
+.wp3 .wp-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.wp3 .wp-gap { margin-top: 24px; }
+.wp3 .wp-diff { margin-top: 24px; }
+.wp3 .wp-h3 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; line-height: 1.35; margin-top: 4px; }
+.wp3 .wp-p { font-size: 15px; line-height: 1.6; color: var(--cc-ink); font-weight: 500; margin-top: 8px; }
+.wp3 .wp-p.m { color: var(--cc-ink-muted); }
+.wp3 .wp-feats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; margin-top: 36px; }
+
+/* the process figure */
+.wp3 .wp-figure { margin: 0 0 8px; }
+.wp3 .wp-figure h3 { font-size: 20px; }
+.wp3 .wp-canvas { margin-top: 16px; }
+
+/* the four levels, as a list rather than the landing's picker */
+.wp3 .wp-ladder { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.wp3 .wp-ladder li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; align-items: start; padding: 10px 12px; border: 1px solid var(--cc-line); border-radius: 12px; background: var(--cc-surface); }
+.wp3 .wp-ladder li > :first-child { justify-self: start; margin-top: 1px; }
+.wp3 .wp-ladder-t { font-size: 15px; font-weight: 600; line-height: 1.45; }
+.wp3 .wp-ladder-t::first-letter { text-transform: uppercase; }
+.wp3 .wp-ladder-d { font-size: 14px; line-height: 1.55; color: var(--cc-ink-muted); font-weight: 500; margin-top: 2px; }
+.wp3 .wp-ladder-d [data-provenance] { vertical-align: middle; margin-inline: 2px 4px; }
+.wp3 .wp-ladder-d code { font-size: 13px; font-weight: 700; color: var(--cc-ink); }
+.wp3 .wp-ladder-d a { color: var(--cc-ink); text-decoration: underline; text-underline-offset: 2px; }
+
+/* score bands */
+.wp3 .wp-bands { list-style: none; margin: 14px 0 0; padding: 0; }
+.wp3 .wp-bands li { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-top: 1px solid var(--cc-line); }
+.wp3 .wp-bands .r { font: 700 15px var(--cc-font-mono); color: var(--cc-ink); }
+.wp3 .wp-bands b { display: block; font-size: 15px; font-weight: 700; }
+.wp3 .wp-bands p { font-size: 14px; line-height: 1.55; color: var(--cc-ink-muted); font-weight: 500; }
+
+/* where the evidence comes from — the landing's stepper, every station open */
+.wp3 .wp-stations { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.wp3 .wp-stations li { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--cc-line); border-top: 2px solid var(--cc-ink); border-radius: 12px; padding: 14px; background: var(--cc-page); min-width: 0; }
+.wp3 .wp-stations .no, .wp3 .wp-tools7 .no { width: 28px; height: 28px; border-radius: 999px; border: 1px solid var(--cc-line); display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--cc-ink); background: var(--cc-surface); flex: none; }
+.wp3 .wp-stations .top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.wp3 .wp-stations b { font-size: 15px; }
+.wp3 .wp-stations p { font-size: 14px; line-height: 1.55; color: var(--cc-ink-muted); font-weight: 500; }
+.wp3 .wp-stations .top { color: var(--cc-ink); }
+
+/* the seven tools */
+.wp3 .wp-tools7 { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.wp3 .wp-tools7 li { display: flex; flex-direction: column; padding: 22px; }
+.wp3 .wp-tools7 .top { display: flex; align-items: center; gap: 10px; }
+.wp3 .wp-tools7 .top b { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+.wp3 .wp-tools7 .wp-p { font-size: 14px; }
+.wp3 .wp-tools7 .mark { margin-top: auto; padding-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* what it does not do */
+.wp3 .wp-xlist { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 28px; }
+.wp3 .wp-xlist li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding: 8px 0; border-top: 1px solid var(--cc-line); font-size: 15px; line-height: 1.55; font-weight: 500; color: var(--cc-ink); }
+.wp3 .wp-xlist .i { margin-top: 4px; color: var(--cc-ink-muted); }
+
+/* start */
+.wp3 .wp-links { flex-direction: column; gap: 6px; }
+.wp3 .wp-cta { justify-content: flex-start; margin-top: 24px; }
+.wp3 .wp-author { display: flex; align-items: center; gap: 14px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--cc-line); }
+.wp3 .wp-author .mark { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--cc-brand-surface); color: var(--cc-brand-strong); font-size: 17px; font-weight: 800; flex: none; }
+.wp3 .wp-author b { font-size: 15px; }
+.wp3 .wp-author p { font-size: 14px; color: var(--cc-ink-muted); font-weight: 500; }
+
+/* the FAQ without the landing's chevron button: every answer is a disclosure the browser draws */
+.wp3 .acc-item > summary h3 { flex: 1; }
+.wp3 .acc-item > summary::after { content: '+'; flex: none; width: 32px; height: 32px; border-radius: 999px; border: 1px solid var(--cc-field-border); display: grid; place-items: center; font-size: 17px; font-weight: 600; color: var(--cc-ink-muted); }
+.wp3 .acc-item[open] > summary::after { content: '–'; }
+.wp3 .acc-item > summary:focus-visible { outline: 2px solid var(--cc-focus); outline-offset: 2px; }
+
+@media (max-width: 1100px) {
+  .wp3 .wp-stations { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .wp3 .wp-usp { font-size: 16px; }
+  .wp3 .wp-toc { margin-top: 32px; }
+  .wp3 .wp-toc ol { grid-template-columns: minmax(0, 1fr); }
+  .wp3 .wp-grid3 { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .wp3 .wp-stations { grid-template-columns: minmax(0, 1fr); }
+  .wp3 .wp-xlist { grid-template-columns: minmax(0, 1fr); }
+  .wp3 .wp-feats { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .wp3 .wp-bands li { grid-template-columns: 60px minmax(0, 1fr); }
+  .wp3 .wp-cta { flex-direction: column; align-items: stretch; }
+}
+
+/* ======================================================================
+   Paper — the print edition, and the web page sent to a printer.
+   DESIGN.md §7.1: ink on white, cards with a 1 px rule instead of a shadow,
+   nothing split inside a card or a row. The cover keeps the landing's mesh —
+   it is the one page that introduces the look.
+   ====================================================================== */
+@page { size: A4; margin: 14mm 14mm 16mm; }
+
+.wp3.print { background: var(--cc-surface); }
+.wp3.print .sec { padding-block: 0; break-before: page; }
+.wp3.print .sec.alt { background: transparent; border: 0; }
+.wp3.print .wrap { padding-inline: 0; max-width: none; }
+.wp3.print .wp-cover { padding-block: 40px 0; break-after: page; }
+.wp3.print .wp-toc { margin-top: 36px; }
+.wp3.print [data-section-heading] { font-size: 38px; margin-bottom: 14px; }
+.wp3.print [data-section-heading] + p { font-size: 17px; }
+.wp3.print .wp-sec .wrap > div:first-child { margin-bottom: 28px; }
+.wp3.print .acc-item > summary::after, .wp3.print .acc-item[open] > summary::after { content: none; }
+.wp3.print .acc-item > summary { min-height: 0; padding-block: 12px 6px; }
+.wp3.print .foot { break-before: page; border-top: 0; padding-block: 0; background: transparent; }
+.wp3.print .foot .foot-top { padding-top: 0; }
+
+@media print {
+  .wp3 { background: var(--cc-surface); }
+  .wp3 .wp-noprint, .wp3 .cta-row { display: none; }
+  .wp3 .pcard, .wp3 .dcard, .wp3 .chain, .wp3 .stagecard, .wp3 .vlist li, .wp3 .tools, .wp3 .verify3 li,
+  .wp3 .chain5 li, .wp3 .wp-stations li, .wp3 .wp-ladder li, .wp3 .kicker { box-shadow: none; }
+  /* Small units stay whole; a card taller than what is left of a page may break
+     — an unbreakable tall card leaves the page before it half empty. */
+  .wp3 .dcard, .wp3 .chain5 li, .wp3 .vlist li, .wp3 .verify3 li, .wp3 .tools-row, .wp3 .rm3 > div,
+  .wp3 .wp-stations li, .wp3 .wp-ladder li, .wp3 .wp-tools7 li, .wp3 .bucket, .wp3 .tline, .wp3 .pvrow, .wp3 .acc-item,
+  .wp3 .feat, .wp3 .steps3 li, .wp3 .wp-xlist li, .wp3 .wp-bands li, .wp3 .honest, .wp3 .wp-canvas { break-inside: avoid; }
+  .wp3 [data-section-heading], .wp3 h3, .wp3 h4, .wp3 .chain .sub2, .wp3 .pcard > .sub2 { break-after: avoid; }
+  .wp3 .acc-item > summary::after { content: none; }
+  .wp3 .acc-a { padding-right: 4px; }
+}
+
+/* On paper a link carries its address after it: one link per line, wrapping as text. */
+.wp3.print .linkrow { display: block; }
+.wp3.print .linkrow > * { display: block; margin-top: 4px; }
+.wp3.print .textlink { display: inline; }

@@ -498,7 +498,7 @@ test.describe('the public pages claim only what the product does', () => {
   test('ce41dce9ccd5 · the whitepaper does not promise a compiled package', async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto('/whitepaper', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('#benefits-evidence')).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('#tools')).toBeVisible({ timeout: 60_000 });
     const text = await page.locator('body').innerText();
     expect(text, 'there is no ABAP compiler in this product').not.toContain('compiled package');
     expect(text).toContain('to compile, activate and test in your own system');

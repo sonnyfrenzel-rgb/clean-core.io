@@ -162,7 +162,7 @@ test('no text claims that a model estimates costs', () => {
     }
   };
   for (const dir of ['app', 'components', 'lib', 'hooks']) walk(dir);
-  for (const f of ['README.md', 'public/linkedin-whitepaper-template.html']) for (const re of CLAIMS) if (re.test(read(f))) offenders.push(`${f} ${re}`);
+  for (const f of ['README.md']) for (const re of CLAIMS) if (re.test(read(f))) offenders.push(`${f} ${re}`);
   expect(offenders).toEqual([]);
 });
 
@@ -318,7 +318,7 @@ test('no page promises an outcome nobody measured', () => {
     }
   };
   for (const dir of ['app', 'components', 'lib', 'hooks']) walk(dir);
-  for (const f of ['README.md', 'public/linkedin-whitepaper-template.html']) inspect(f, read(f));
+  for (const f of ['README.md']) inspect(f, read(f));
 
   expect(offenders).toEqual([]);
 });

@@ -108,7 +108,7 @@ Apache-2.0. Normalized and enriched by Clean-Core.io.
 - [How it works](${baseUrl}/how-it-works): the evidence engine, the language model, and the boundary between them.
 - [ABAP custom code analysis](${baseUrl}/abap-custom-code-analysis): free browser-based first-pass static analysis.
 - [SAP cloudification explained](${baseUrl}/sap-cloudification): what "cloudify" means for custom ABAP.
-- [Whitepaper](${baseUrl}/whitepaper): the long-form methodology.
+- [Whitepaper](${baseUrl}/whitepaper): the whole story for the people who decide what happens to custom ABAP — the chain of evidence, the process as BPMN, levels A–D, the seven tools and their limits. Also as PDF: ${baseUrl}/Clean-Core_S4HANA_Modernization_Whitepaper.pdf.
 - [Clean core explained](${baseUrl}/clean-core-explained): SAP clean core from first principles, without the jargon.
 - [Your first run](${baseUrl}/first-run): what one analysis shows, step by step.
 - [Reference analysis](${baseUrl}/reference-analysis): one published, reproducible run on real legacy ABAP.

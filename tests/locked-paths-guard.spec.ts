@@ -209,7 +209,7 @@ test.describe('no text offers the locked path', () => {
       return /\.(tsx?|mjs|js|md|html)$/.test(e.name) ? [rel] : [];
     });
   // lib/locked-paths.ts is the definition of the closed path and has to name it; the spec above checks it word for word.
-  const SURFACES = [...['app', 'components', 'hooks', 'lib'].flatMap(walk), 'public/linkedin-whitepaper-template.html', 'README.md'].filter((f) => f !== 'lib/locked-paths.ts');
+  const SURFACES = [...['app', 'components', 'hooks', 'lib'].flatMap(walk), 'README.md'].filter((f) => f !== 'lib/locked-paths.ts');
 
   /** Comments are for maintainers and may quote a removed claim; `://` in a URL is not a comment. */
   const visibleText = (file: string) =>
