@@ -90,8 +90,11 @@ export interface SubmitCall extends CallSite {
   /** The report name, when it is a literal or a bare name — ABAP reads no constant after a bare `SUBMIT`. */
   program?: string;
   programExpression: string;
-  /** `name` is the bare report name ABAP takes literally after `SUBMIT`. */
-  resolvedFrom?: 'literal' | 'constant' | 'name';
+  /**
+   * `name` is the bare report name ABAP takes literally after `SUBMIT`. Never
+   * `constant`: a bare operand is not a data object here (QA finding 43a0a7a59521).
+   */
+  resolvedFrom?: 'literal' | 'name';
   dynamic: boolean;
   andReturn: boolean;
   viaJob: boolean;
