@@ -186,7 +186,7 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'myWorkspace.deleteTitle': 'Delete project',
   'myWorkspace.deleteFailed': 'The project could not be deleted.',
   'myWorkspace.duplicateFailed': 'The project could not be duplicated.',
-  'myWorkspace.yourTurnIntro': 'What is waiting for you, taken from each project — no model call.',
+  'myWorkspace.yourTurnIntro': 'The next step of each, taken from the project itself — no model call.',
   'myWorkspace.yourTurnNothing':
     'Nothing is waiting for you: every project of yours is either finished as far as this product goes, or has nothing staged yet.',
   'myWorkspace.exampleHeadline': 'Example project — fictitious code.',

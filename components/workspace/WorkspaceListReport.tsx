@@ -120,12 +120,12 @@ const FIRST_ROWS = 5;
 
 const COLUMNS: readonly CcTableColumn[] = [
   { key: 'project', label: t('workspace.colProject') },
-  { key: 'lines', label: t('workspace.colLines'), numeric: true, width: '84px' },
-  { key: 'findings', label: t('workspace.colFindings'), numeric: true, width: '96px' },
-  { key: 'levels', label: wt('myWorkspace.colLevels'), width: '200px' },
-  { key: 'rules', label: wt('myWorkspace.colRules'), numeric: true, width: '136px' },
-  { key: 'status', label: t('workspace.colStatus'), width: '220px' },
-  { key: 'lastChange', label: t('workspace.colLastChange'), numeric: true, width: '120px' },
+  { key: 'lines', label: t('workspace.colLines'), numeric: true, width: '76px' },
+  { key: 'findings', label: t('workspace.colFindings'), numeric: true, width: '88px' },
+  { key: 'levels', label: wt('myWorkspace.colLevels'), width: '172px' },
+  { key: 'rules', label: wt('myWorkspace.colRules'), numeric: true, width: '120px' },
+  { key: 'status', label: t('workspace.colStatus'), width: '210px' },
+  { key: 'lastChange', label: t('workspace.colLastChange'), numeric: true, width: '112px' },
   { key: 'actions', label: t('workspace.colActions'), action: true, width: '96px' },
 ];
 
