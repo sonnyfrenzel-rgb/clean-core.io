@@ -26,7 +26,7 @@ export function GET() {
 
 Clean-Core.io is a free community tool for SAP custom code. A deterministic ABAP static
 code analysis reads the program before any language model does, reconstructs its
-business process as BPMN with a line anchor on every element, lists the business rules
+business process as BPMN with a line anchor on each element, or the reason it has none, lists the business rules
 hard-coded in the program, grades each SAP object it uses Level A–D from SAP's published
 Cloudification Repository, and names what it could not determine. From that evidence it
 drafts the target design, the transformed code, documentation and tests for a person to

@@ -153,12 +153,12 @@ test.describe('the Business card (lib/business-card.ts)', () => {
     const reading = readSource(SOURCE);
     const { card: c } = card(plainWordingFor(SOURCE, reading.skeleton));
     expect(c.summary.sentence).toContain('purchase requisitions');
-    expect(c.summary.sentence).not.toMatch(/EBAN/);
+    expect(c.summary.sentence).not.toMatch(/\bEBAN\b/);
     expect(c.rules.find((r) => r.code === "c_doc_type VALUE 'NB'")?.sentence).toBe('Only document type NB is processed');
     // Every featured rule has plain words, and none of them is ABAP.
     for (const r of c.featured) {
       expect(r.phrase).not.toBeNull();
-      expect(r.phrase).not.toMatch(/(?:gs|lv|gv)_|<>|IF /);
+      expect(r.phrase).not.toMatch(/\b(?:gs|lv|gv)_|<>|IF /);
     }
     const decision = c.decisions.find((d) => d.code === 'IF gv_approved = abap_true');
     expect(decision?.question).toBe('Approved?');

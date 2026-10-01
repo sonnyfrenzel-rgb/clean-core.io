@@ -59,6 +59,20 @@ test.describe('the reference run is read, not typed', () => {
       expect(card).toContain(String(b.count));
       expect(card).toContain(b.label);
     }
+    // QA 7063f946eb4c: the total and the quoted business decision are claims
+    // the section makes too, so they are checked as rendered, not as field names.
+    const norm = (s: string) => s.replace(/\s+/g, ' ').trim();
+    expect(norm(card), 'the rendered total is not the run’s').toMatch(new RegExp(`(^|\\D)${r.totalFindings} ?findings`));
+    const quote = browser.locator('.pcard:has([data-landing-rollcall]) p.honest');
+    const first = r.businessDecisions[0];
+    if (!first) {
+      await expect(quote).toHaveCount(0);
+    } else {
+      const text = norm(await quote.innerText());
+      expect(text).toContain(norm(first.title));
+      expect(text).toContain(`(L${first.lineStart})`);
+      expect(text, 'the recommendation is not quoted unedited').toContain(`“${norm(first.recommendation)}”`);
+    }
   });
 });
 

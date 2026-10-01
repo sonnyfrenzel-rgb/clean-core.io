@@ -94,7 +94,7 @@ export const revalidate = 300;
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Accelerator — Free ABAP Code Analysis | Clean-Core.io',
   description:
-    'Free community tool for SAP custom code: a deterministic ABAP static code analysis, the business process reconstructed from the code with a line anchor on every element, the SAP clean core Level A–D of each SAP object from the Cloudification Repository, and a signed run for every completed analysis.',
+    'Free community tool for SAP custom code: a deterministic ABAP static code analysis, the business process reconstructed from the code with a line anchor on each element or the reason it has none, the SAP clean core Level A–D of each SAP object from the Cloudification Repository, and a signed run for every completed analysis.',
   alternates: {
     canonical: 'https://clean-core.io',
   },
@@ -327,7 +327,7 @@ export default function Home() {
     },
     {
       q: 'What does Clean-Core.io do with my ABAP?',
-      a: 'A deterministic engine reads the program before any language model does. It reconstructs the business process with a line anchor on every element, lists the business rules hard-coded in the program, shows the clean core level of each SAP object the code uses, and names what it could not determine. Every completed analysis is sealed as a signed run. Generated code is a draft you review.',
+      a: 'A deterministic engine reads the program before any language model does. It reconstructs the business process with a line anchor on each element, or the reason it has none, lists the business rules hard-coded in the program, shows the clean core level of each SAP object the code uses, and names what it could not determine. Every completed analysis is sealed as a signed run. Generated code is a draft you review.',
       more: { href: '/how-it-works', label: 'How it works, and its limits' },
     },
     {
@@ -744,7 +744,7 @@ export default function Home() {
         <section className="sec alt" id="process" aria-labelledby="process-title">
           <div className="wrap">
             <SectionHeader eyebrow="From code to process" title="How is the process reconstructed from ABAP?" titleId="process-title">
-              Clean-Core.io draws the process as BPMN from what the ABAP code does, puts a line anchor on every element,
+              Clean-Core.io draws the process as BPMN from what the ABAP code does, puts a line anchor on each element, or the reason it has none,
               and names what the code cannot show instead of drawing it.
             </SectionHeader>
             <div className="lp-intro">

@@ -2,6 +2,7 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { stateChartColor } from '@/lib/chart-colors';
+import { provenance } from '@/lib/provenance';
 
 /**
  * The two charts of the QA dashboard — DESIGN.md §1.8, colours from
@@ -110,7 +111,7 @@ export function TestingBarChart({ stats }: { stats: TestingChartStats }) {
             cursor={{ fill: 'transparent' }}
             contentStyle={{ borderRadius: 'var(--cc-radius-row)', border: '1px solid var(--cc-line)', boxShadow: 'var(--cc-shadow)', fontSize: 12 }}
           />
-          <Bar dataKey="passed" name="Proven" stackId="a" fill={stateChartColor('information').value} barSize={20} isAnimationActive={false} />
+          <Bar dataKey="passed" name={provenance('demonstrated-mock').label} stackId="a" fill={stateChartColor('information').value} barSize={20} isAnimationActive={false} />
           <Bar dataKey="failed" name="Failed" stackId="a" fill={stateChartColor('error').value} barSize={20} isAnimationActive={false} />
           {/* Tests without a verdict were counted and then not drawn, so a
               category of nothing but skipped tests showed as an empty row. */}
