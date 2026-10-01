@@ -1456,11 +1456,9 @@ export default function TestingSandboxPage() {
                     {/* The figure the third marketing tile used to carry, with its
                         reasoning: a model's estimate, said to be one. */}
                     <CcCard title="Coverage estimate" level={2} meta={project?.coverageEstimate && !storedSuiteRejected ? <CcProvenanceChip value="proposed" /> : undefined}>
-                      <p className="cc-text-title text-cc-ink mb-2">
-                        {typeof project?.coverageEstimate?.percentage === 'number' && !storedSuiteRejected
-                          ? <span data-stage-output="coverageEstimate">{`${project.coverageEstimate.percentage}%`}</span>
-                          : <span className="cc-text-cell text-cc-ink-muted">Not estimated yet — the estimate is written with the scenarios.</span>}
-                      </p>
+                      {typeof project?.coverageEstimate?.percentage === 'number' && !storedSuiteRejected
+                        ? <p className="cc-text-title text-cc-ink mb-2"><span data-stage-output="coverageEstimate">{`${project.coverageEstimate.percentage}%`}</span></p>
+                        : <p className="cc-text-cell text-cc-ink-muted">Not estimated yet — the estimate is written with the scenarios.</p>}
                       {project?.coverageEstimate && !storedSuiteRejected ? (
                         <div className="space-y-3">
                           <p className="cc-text-meta text-cc-ink-muted">The testing model{"'"}s estimate of how much of the logic the scenarios reach — not a measured coverage.</p>
