@@ -62,10 +62,20 @@ export default function WorkspaceProcess({
   projectId,
   view,
   notDetermined,
+  beforeWrite,
+  onWritten,
 }: {
   project: Project | null;
   projectId: string;
   view: WorkspaceView;
+  /**
+   * The Stand check of roadmap 6.9 (CR-15). Saving the map writes a process
+   * revision — the very thing the Stand counts — so a save from a screen that
+   * has been overtaken stops before it is sent and the notice says why.
+   */
+  beforeWrite?: () => Promise<boolean>;
+  /** A revision this screen wrote, so the Stand holds it and never reports it as somebody else's. */
+  onWritten?: (revision: number) => void;
   /**
    * The engine's own list — the second tab of the source column, where each
    * line opens in the first. The full card, with what the record does not
@@ -160,19 +170,22 @@ export default function WorkspaceProcess({
   const save = useCallback(
     async ({ xml }: SaveProcessModelInput): Promise<SaveProcessModelResult> => {
       if (!projectId) return { ok: false, message: wt('biz.saveNoProject') };
+      if (beforeWrite && !(await beforeWrite())) return { ok: false, message: wt('biz.saveOvertaken') };
       if (baseRevision.current === null) {
         const baseline = await ensureProcessBaseline(projectId);
         if (!baseline.ok) return { ok: false, message: revisionOutcomeSentence(baseline) };
+        if (baseline.created) onWritten?.(baseline.record.revision);
         baseRevision.current = baseline.record.revision;
       }
       const outcome = await saveProcessRevision(projectId, xml, baseRevision.current);
       if (outcome.ok) {
         baseRevision.current = outcome.record.revision;
+        onWritten?.(outcome.record.revision);
         return { ok: true, message: revisionOutcomeSentence(outcome), revisionId: String(outcome.record.revision) };
       }
       return { ok: false, message: revisionOutcomeSentence(outcome) };
     },
-    [projectId],
+    [projectId, beforeWrite, onWritten],
   );
 
   const analyzeHref = stageHref({ base: `/project/${projectId}`, path: 'analyze', view, from: WORKSPACE_RETURN.tools });

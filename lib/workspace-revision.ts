@@ -100,13 +100,15 @@ export function createStandProbe(
   read: () => Promise<RevisionStand | null>,
   now: () => number = Date.now,
   cooldownMs: number = STAND_COOLDOWN_MS,
-): () => Promise<RevisionStand | null> {
+): StandProbe {
   let claimedAt = Number.NEGATIVE_INFINITY;
   let stand: RevisionStand | null = null;
   let open = false;
+  /** Bumped by `adopt`, so a read that was already in flight cannot put back the Stand before it. */
+  let generation = 0;
   const share = singleFlight<RevisionStand | null>();
 
-  return () => {
+  const probe = () => {
     // `open` is why the window is asked about second. A caller arriving while a
     // read is in flight must join *that* read rather than be answered from the
     // verdict it is about to replace — otherwise claiming the window early,
@@ -119,12 +121,28 @@ export function createStandProbe(
       // still passes any test that only counts sequential calls.
       claimedAt = now();
       open = true;
+      const asked = generation;
       try {
-        stand = await read();
+        const answer = await read();
+        if (asked === generation) stand = answer;
       } finally {
         open = false;
       }
       return stand;
     });
   };
+  return Object.assign(probe, {
+    adopt(own: RevisionStand) {
+      generation += 1;
+      stand = own;
+    },
+  });
 }
+
+/**
+ * The probe, and the one thing a screen tells it: a revision this screen wrote
+ * itself (QA review of 247b20c16e38). Without it the reader's own save would
+ * come back from the next check as "written somewhere else" and stop their
+ * second save behind a notice about somebody who does not exist.
+ */
+export type StandProbe = (() => Promise<RevisionStand | null>) & { adopt(own: RevisionStand): void };

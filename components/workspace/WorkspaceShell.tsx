@@ -434,7 +434,14 @@ export default function WorkspaceShell({
     process:
       view === 'business' && (hashLayer === null || currentLayer === 'need') ? (
         <div className="mt-4" data-workspace-process-block="">
-          <WorkspaceProcess project={project} projectId={projectId} view={view} notDetermined={open} />
+          <WorkspaceProcess
+            project={project}
+            projectId={projectId}
+            view={view}
+            notDetermined={open}
+            beforeWrite={stand.checkBeforeWrite}
+            onWritten={stand.adopt}
+          />
         </div>
       ) : null,
     // The content of the chosen layer (`DESIGN.md` §2.3 item 5, roadmap 6.2);
