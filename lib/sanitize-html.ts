@@ -120,9 +120,10 @@ export function sanitizeHtml(html: string): string {
  * rather than about the spelling.
  *
  * This is the third layer, not the only one: `components/MermaidDiagram.tsx`
- * initialises mermaid with `securityLevel: 'strict'`, and
- * `TargetArchitectureDiagram` strips its node labels before they ever become
- * mermaid source.
+ * initialises mermaid with `securityLevel: 'strict'`, and any component that
+ * builds mermaid source from model text has to strip its node labels first
+ * (the model-drawn `TargetArchitectureDiagram` that did so was removed on
+ * 01.10.2026).
  */
 const MERMAID_SVG_CONFIG = {
   USE_PROFILES: { svg: true, svgFilters: true, html: true },

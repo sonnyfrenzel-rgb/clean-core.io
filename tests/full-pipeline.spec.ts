@@ -264,6 +264,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 2: SOLUTION DESIGN ---
     console.log('Navigating to Stage 2: Solution Design...');
     await page.click('button:has-text("Continue to Design")');
+    // Since the canvas rebuild (proposal B, 01.10.2026) each section of the
+    // model's document opens from its card in the drawer.
+    await page.locator('[data-design-section="blueprint"]').click({ timeout: 45000 });
     await page.waitForSelector('text=Target Project Blueprint', { timeout: 45000 });
     
     // Verify that the files tree explorer renders the modernization directory structures
@@ -273,7 +276,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
 
     // Confirm target architecture sign-off
     console.log('Confirming target architecture sign-off...');
-    const lockBtn = page.locator('button:has-text("Confirm & Lock Architecture")');
+    // The sign-off opens as a dialog from "Confirm target" (owner decision 01.10.2026).
+    await page.locator('[data-design-confirm]').click();
+    const lockBtn = page.locator('[data-design-signoff-dialog] button:has-text("Confirm & Lock Architecture")');
     await lockBtn.scrollIntoViewIfNeeded();
     await page.waitForTimeout(1000); // Allow any animations/renders to settle
     
@@ -284,7 +289,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     
     await lockBtn.click();
     console.log('Lock button clicked, waiting for confirmation...');
-    await page.waitForSelector('text=Target Architecture Set', { timeout: 30000 });
+    // A confirmation closes the dialog; the panel answers with the confirmed target.
+    await page.waitForSelector('[data-design-answer="confirmed"]', { timeout: 30000 });
     console.log('Architecture confirmed.');
 
     // --- STAGE 3: TRANSFORMATION ---
