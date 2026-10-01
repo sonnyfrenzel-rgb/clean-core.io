@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { fillEconomics } from './helpers/economics';
 import { pathToFileURL } from 'url';
 import fs from 'fs';
 import path from 'path';
@@ -476,9 +477,10 @@ test.describe('capture the landing page views', () => {
       });
       await expect(page.getByTestId(`demo-stage-${phase.key}`)).toBeVisible({ timeout: 60000 });
       if (phase.key === 'tco') {
-        await page.fill('#demo-dev-rate', '800');
-        await page.fill('#demo-user-rate', '600');
-        await page.fill('#demo-investment', '40000');
+        // The demo's figures sit under their checklist rows (proposal A, 01.10.2026).
+        for (const [testId, value] of [['demo-dev-rate', '800'], ['demo-user-rate', '600'], ['demo-investment', '40000']] as const) {
+          await fillEconomics(page, `[data-testid="${testId}"]`, value);
+        }
         await expect(page.getByTestId('demo-forecast')).toBeVisible({ timeout: 10000 });
       }
       await page.waitForTimeout(1500);

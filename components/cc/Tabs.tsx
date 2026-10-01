@@ -32,6 +32,8 @@ export interface CcTab<T extends string> {
   label: string;
   /** "(3)" beside the label — how much the panel holds. */
   count?: number;
+  /** A 14 px icon before the label (`appearance="pill"`, the Testing tool). */
+  icon?: React.ReactNode;
   content: React.ReactNode;
 }
 
@@ -45,6 +47,13 @@ export interface CcTabsProps<T extends string> {
   /** Uncontrolled first selection. Defaults to the first tab. */
   defaultValue?: T;
   density?: CcDensity;
+  /**
+   * `line` — ink underline under the chosen tab (default). `pill` — the tabs
+   * sit in a muted track and the chosen one is a raised surface: proposal A's
+   * tab pair inside a tool's content, under an anchor bar that already draws
+   * the underline (owner decision 01.10.2026). Same pattern, same keyboard.
+   */
+  appearance?: 'line' | 'pill';
 }
 
 const HEIGHT: Record<CcDensity, string> = {
@@ -59,7 +68,9 @@ export default function CcTabs<T extends string>({
   onChange,
   defaultValue,
   density = 'compact',
+  appearance = 'line',
 }: CcTabsProps<T>) {
+  const pill = appearance === 'pill';
   const id = useId();
   const [valueState, setValueState] = useState<T | undefined>(defaultValue ?? tabs[0]?.value);
   const value = valueProp ?? valueState;
@@ -93,7 +104,11 @@ export default function CcTabs<T extends string>({
         aria-label={label}
         aria-orientation="horizontal"
         onKeyDown={onKeyDown}
-        className="flex flex-wrap gap-4 border-b border-cc-line"
+        className={
+          pill
+            ? 'inline-flex max-w-full flex-wrap gap-1 self-start rounded-cc-row border border-cc-line bg-cc-surface-muted p-1'
+            : 'flex flex-wrap gap-4 border-b border-cc-line'
+        }
       >
         {tabs.map((tab) => {
           const selected = tab.value === value;
@@ -113,15 +128,41 @@ export default function CcTabs<T extends string>({
               data-cc-tab={selected ? 'on' : 'off'}
               onClick={() => select(tab.value, false)}
               className={cn(
-                '-mb-px inline-flex items-center gap-1 border-b-2 text-[13px] whitespace-nowrap pointer-coarse:min-h-11',
-                HEIGHT[density],
-                selected
-                  ? 'border-cc-ink font-semibold text-cc-ink'
-                  : 'border-transparent font-medium text-cc-ink-muted hover:text-cc-ink',
+                pill
+                  ? 'inline-flex min-w-0 items-stretch rounded-cc-row text-left text-[13px] font-semibold pointer-coarse:min-h-11'
+                  : '-mb-px inline-flex items-center gap-1 border-b-2 text-[13px] whitespace-nowrap pointer-coarse:min-h-11',
+                pill ? 'min-h-8' : HEIGHT[density],
+                pill
+                  ? selected
+                    ? 'text-cc-ink'
+                    : 'text-cc-ink-muted hover:text-cc-ink'
+                  : selected
+                    ? 'border-cc-ink font-semibold text-cc-ink'
+                    : 'border-transparent font-medium text-cc-ink-muted hover:text-cc-ink',
               )}
             >
-              {tab.label}
-              {tab.count !== undefined ? <span className="font-medium text-cc-ink-muted">({tab.count})</span> : null}
+              {pill ? (
+                // The raised surface of the chosen pill sits on an inner span: the
+                // button stays one of the library's, without a surface of its own.
+                <span
+                  data-cc-tab-pill=""
+                  className={cn(
+                    'inline-flex w-full items-center gap-2 rounded-cc-row px-3 py-1',
+                    selected ? 'bg-cc-surface shadow-cc' : null,
+                  )}
+                >
+                  {tab.icon}
+                  <span className="min-w-0">
+                    {tab.label}
+                    {tab.count !== undefined ? <span className="font-medium text-cc-ink-muted"> ({tab.count})</span> : null}
+                  </span>
+                </span>
+              ) : (
+                <>
+                  {tab.label}
+                  {tab.count !== undefined ? <span className="font-medium text-cc-ink-muted">({tab.count})</span> : null}
+                </>
+              )}
             </button>
           );
         })}
@@ -136,7 +177,7 @@ export default function CcTabs<T extends string>({
             aria-labelledby={tabId(tab.value)}
             tabIndex={0}
             data-cc-tab-panel={selected ? 'on' : 'off'}
-            className={cn('pt-3', !selected && 'hidden print:block')}
+            className={cn(pill ? 'pt-5' : 'pt-3', !selected && 'hidden print:block')}
           >
             {tab.content}
           </div>

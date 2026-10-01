@@ -832,6 +832,7 @@ ist, wie Signavio mit fremden `extensionElements` umgeht** — genau das klärt 
 | **Kandidaten (Feedback 15.09.2026)** | Code-Anonymisierung vor dem Modellaufruf · CLI/API, die Pull Requests gegen Clean-Core-Regeln prüft (Shift-Left) · Aufwandsschätzung aus Metriken, erst mit Kalibrierung aus der Bench |
 | **after 3.0, review** | QA 8cb85af1fee3 — grouped business rules whose occurrences mix controlling and continuing behaviour (`lib/abap/business-rule-set.ts`): review the type-per-group rule after 3.0; no code change before (owner decision 30.09.2026) |
 | — | **After 3.0 · Engine: block-list checks as business rules** (decision Sonny, 01.10.2026): a table read of a block/exclusion list followed by a reject (e.g. ZMM_VEND_BLOCK at L228–232 in the demo) becomes a business rule candidate, so "vendor block list" can appear in the Business card and the landing hero. Changes engine output — bundled with the other engine findings of the QA slice review and a new benchmark measurement | M |
+| — | **After 3.0 · Transformation: recorded finding → code mapping** (decision Sonny, 01.10.2026): the generation records which generated file and lines answer each finding, replacing today's clearly labelled text search on the Transformation page | M |
 | ohne Version | Bench veröffentlichen, fairer Vergleich, Teamabnahme — brauchen Termine mit Dritten, keine Entwicklungszeit · Runner-Isolation: seit 19.09.2026 vor 3.0 als 8.9 (CR-09)|
 
 ---

@@ -76,6 +76,7 @@ import {
   DeliveryStatusLine,
   DeliveryStillNeeded,
 } from '@/components/delivery/DeliveryObjectPage';
+import { deliveryTestingTitle, lastRun, countsLine } from '@/components/testing/testing-summary';
 
 /** The documentation stage's name, as the stepper spells it (UX-169). */
 const DOCUMENTATION_LABEL = PHASES.find((p) => p.key === 'documentation')?.label ?? 'Documentation';
@@ -157,6 +158,8 @@ export default function DeliveryPage() {
     connectivity: testsConnectivity,
     withoutVerdict: testsWithoutVerdict,
   } = testEvidence(project);
+  /** The run the Testing stage reports — a covering receipt, or none. */
+  const recordedTestRun = lastRun(project, null);
   const phases = workflowSteps(project);
   const testingPhase = phases.find((p) => p.key === 'testing')!;
   const deliveryPhase = phases.find((p) => p.key === 'delivery')!;
@@ -652,7 +655,12 @@ jobs:
   const handoverState = { blockers, exportedAt: exportedAt ? String(exportedAt) : null };
   const groups = handoverGroups(hp, chain, handoverState);
   const stillNeeded = handoverStillNeeded(hp, chain, handoverState);
-  const facets = handoverFacets(hp, phases, chain, handoverState);
+  // The Quality tile's line comes from the Testing stage's own record
+  // (`deliveryTestingTitle` reads the run receipt, never `testCases[].status`),
+  // so the tile, the chain and the Testing stage say the same thing.
+  const facets = handoverFacets(hp, phases, chain, handoverState).map((f) =>
+    f.key === 'quality' && f.value !== 'Stale' ? { ...f, sub: deliveryTestingTitle(project, isAbapCloud) } : f,
+  );
   const statusLine = handoverStatusLine(hp, chain);
   const packFacet = facets.find((f) => f.key === 'audit-pack')!;
   const signedFiles = AUDIT_PACK_FILES.filter((f) => f.kind === 'signed').length;
@@ -859,11 +867,8 @@ jobs:
                             }
                             title={
                               <span data-delivery-testing data-stage-output={testCaseCount > 0 ? 'testCases' : undefined}>
-                                {testCaseCount === 0
-                                  ? 'No test suite generated'
-                                  : testsPassed + testsFailed === 0
-                                    ? `Test draft: ${testCaseCount} ${isAbapCloud ? 'ABAP Unit' : 'Sandbox'} tests, no run on record`
-                                    : `${testsPassed} of ${testCaseCount} ${isAbapCloud ? 'ABAP Unit' : 'Sandbox'} tests passed`}
+                                {/* The Testing stage's own record (`lastRun`), so the two screens say the same. */}
+                                {deliveryTestingTitle(project, isAbapCloud)}
                               </span>
                             }
                             detail={
@@ -871,14 +876,14 @@ jobs:
                                 ? 'Nothing to verify'
                                 : testingPhase.state === 'stale'
                                   ? `Written for ${previousBasis(project)} — regenerate in stage 5`
-                                  : testsPassed === testCaseCount
-                                    ? (!testingPhase.proven
-                                        ? 'Marked as passed — no test run is on record behind these verdicts. Run the suite in stage 5.'
-                                        : isAbapCloud
-                                          ? 'ADT: every generated test returned a pass'
-                                          : 'Sandbox: every generated test returned a pass')
-                                    : [
-                                        testsFailed > 0 ? `${testsFailed} failed` : null,
+                                  : recordedTestRun.kind === 'recorded'
+                                    ? (recordedTestRun.counts.passed === testCaseCount
+                                        ? (isAbapCloud ? 'ADT: every generated test returned a pass' : 'Sandbox: every generated test returned a pass')
+                                        : countsLine(recordedTestRun.counts))
+                                    : testsPassed > 0
+                                      ? `${testsPassed} marked as passed — no test run is on record behind these verdicts. Run the suite in stage 5.`
+                                      : [
+                                        testsFailed > 0 ? `${testsFailed} marked as failed` : null,
                                         testsSimulated > 0 ? `${testsSimulated} simulated only` : null,
                                         testsConnectivity > 0 ? `${testsConnectivity} connectivity checks — not tests of the code` : null,
                                         testsWithoutVerdict > 0 ? `${testsWithoutVerdict} without a result` : null,

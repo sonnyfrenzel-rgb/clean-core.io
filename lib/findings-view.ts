@@ -475,3 +475,134 @@ export function sourceBins(positions: readonly SourcePosition[], totalLines: num
   }
   return out;
 }
+
+/* ------------------------------------------------- 5. the object page (A) */
+
+/**
+ * The use behind a finding's kind, where the kind names one — the same reading
+ * `lib/it-findings-build.ts` makes server-side, so a level looked up here for a
+ * read of VBAK is the C the IT view shows, never the D of a write.
+ */
+export function accessUseOfKind(kind: string): 'read' | 'write' | null {
+  if (kind.endsWith('-read')) return 'read';
+  if (kind.endsWith('-write')) return 'write';
+  return null;
+}
+
+/** Other ways of grouping the list besides by kind. */
+export type GroupingKey = 'kind' | 'severity' | 'line';
+
+/**
+ * The rows grouped as the reader picked: by kind (the default), by severity
+ * (Critical → Low, then Info), or in source order as one group. Same shape as
+ * `groupByKind`, so `shownGroups` filters any of them.
+ */
+export function groupRows(rows: readonly FindingRow[], by: GroupingKey): KindGroup[] {
+  if (by === 'kind') return groupByKind(rows);
+  if (by === 'line') {
+    if (rows.length === 0) return [];
+    const sorted = [...rows].sort((a, b) => (a.lines[0] ?? 0) - (b.lines[0] ?? 0) || rank(a.finding.severity) - rank(b.finding.severity));
+    const worst = [...rows].sort(compareRows)[0].finding.severity;
+    return [{ kind: 'by-line', label: 'In the order of the source', rows: sorted, worst, openByDefault: true }];
+  }
+  const out: KindGroup[] = [];
+  for (const sev of SEVERITY_ORDER) {
+    const list = rows.filter((r) => r.finding.severity === sev).sort(compareRows);
+    if (list.length === 0) continue;
+    out.push({ kind: `severity-${sev}`, label: sev, rows: list, worst: sev, openByDefault: sev === 'Critical' || sev === 'High' });
+  }
+  return out;
+}
+
+/**
+ * The line under a group's name: the objects it touches, as the code names
+ * them, the first three and how many more. A group without objects says
+ * nothing rather than something made up.
+ */
+export function groupHint(group: KindGroup): string {
+  const names: string[] = [];
+  for (const r of group.rows) {
+    const n = r.finding.objectName?.trim();
+    if (n && !names.includes(n)) names.push(n);
+  }
+  if (names.length === 0) return '';
+  const shown = names.slice(0, 3).join(', ');
+  return names.length > 3 ? `${shown} and ${names.length - 3} more` : shown;
+}
+
+/** Rows of a group that name a released SAP successor. */
+export function withSuccessor(rows: readonly FindingRow[]): number {
+  return rows.filter((r) => Boolean(r.finding.sapReplacement?.objectName)).length;
+}
+
+/** One row of the program map: a kind, and every place it occurs. */
+export interface ProgramMapRow {
+  kind: string;
+  label: string;
+  /** Distinct findings (rows) of this kind. */
+  count: number;
+  dots: SourcePosition[];
+}
+
+/**
+ * The program map of proposal B — one row per kind, each occurrence at its
+ * line. Kinds in the order of the list (`groupByKind`), so the map and the
+ * list below it read the same way.
+ */
+export function programMap(rows: readonly FindingRow[], totalLines: number): ProgramMapRow[] {
+  return groupByKind(rows).map((g) => ({
+    kind: g.kind,
+    label: g.label,
+    count: g.rows.length,
+    dots: sourcePositions(g.rows, totalLines),
+  }));
+}
+
+/** A process step as a stretch of the source — the column behind the map. */
+export interface ProcessStepBand {
+  /** 1-based, in the order the program calls the steps. */
+  n: number;
+  /** The routine, as the source names it. */
+  label: string;
+  from: number;
+  to: number;
+}
+
+/** The parts of a process skeleton this needs — kept structural so the module stays import-free. */
+export interface StepSkeleton {
+  nodes: ReadonlyArray<{ region: string; expandsTo?: string }>;
+  regions: ReadonlyArray<{ key: string; kind: string; label: string; anchor: { lineStart: number } | null }>;
+  entries: readonly string[];
+}
+
+/**
+ * The steps the program runs, as stretches of its source: every routine an
+ * entry block calls, from its `FORM` (or `METHOD`, `FUNCTION`, `MODULE`) line
+ * to the matching `END…` line. Read off the skeleton the Business view draws
+ * and the source text; a routine whose end cannot be found is left out rather
+ * than given a guessed length.
+ */
+export function processStepBands(skeleton: StepSkeleton, source: string): ProcessStepBand[] {
+  const lines = source.split(/\r?\n/);
+  const regions = new Map(skeleton.regions.map((r) => [r.key, r]));
+  const entries = new Set(skeleton.entries);
+  const seen = new Set<string>();
+  const out: ProcessStepBand[] = [];
+  for (const node of skeleton.nodes) {
+    if (!entries.has(node.region) || !node.expandsTo || seen.has(node.expandsTo)) continue;
+    seen.add(node.expandsTo);
+    const region = regions.get(node.expandsTo);
+    if (!region || region.kind !== 'sub-process' || !region.anchor) continue;
+    const from = region.anchor.lineStart;
+    let to = 0;
+    for (let i = from; i < lines.length; i++) {
+      if (/^\s*END(?:FORM|METHOD|FUNCTION|MODULE)\b/i.test(lines[i])) {
+        to = i + 1;
+        break;
+      }
+    }
+    if (to < from) continue;
+    out.push({ n: out.length + 1, label: region.label, from, to });
+  }
+  return out;
+}

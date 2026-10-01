@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { RotateCcw, ArrowRight, CheckCircle2, Circle } from 'lucide-react';
 import StageHeader from '@/components/StageHeader';
+import DemoTesting from '@/components/demo/DemoTesting';
 import Stepper from '@/components/Stepper';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcAnchor from '@/components/cc/Anchor';
-import CcField from '@/components/cc/Field';
 import CcIconButton from '@/components/cc/IconButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcTable from '@/components/cc/Table';
@@ -16,11 +16,13 @@ import { CcTag } from '@/components/cc/Tag';
 import { CcSeverity } from '@/components/cc/Identifier';
 import { normaliseSeverity } from '@/lib/severity';
 import { formatNumber } from '@/lib/format';
-import { tcoForecast, TCO_TARGET_SCORE } from '@/lib/tco-model';
+import DemoEconomics from '@/components/tco/DemoEconomics';
 import type { PhaseKey } from '@/lib/workflow-steps';
 import type { DemoProject } from '@/lib/demo-project';
 import DemoDelivery from '@/components/delivery/DemoDelivery';
 import { catalogForReader } from '@/lib/messages/demo';
+import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
+import { trackOfRoute } from '@/lib/transformation-view';
 import {
   DEMO_INVITATION,
   DEMO_QUOTA_NOTICE,
@@ -159,8 +161,15 @@ export default function DemoWorkspace({ demo, stage }: { demo: DemoProject; stag
         {stage === 'design' && <Design demo={demo} state={state} patch={patch} />}
         {stage === 'transformation' && <Transformation demo={demo} />}
         {stage === 'documentation' && <Documentation demo={demo} />}
-        {stage === 'testing' && <Testing demo={demo} />}
-        {stage === 'tco' && <Economics demo={demo} state={state} patch={patch} />}
+        {stage === 'testing' && <DemoTesting demo={demo} />}
+        {stage === 'tco' && (
+          <DemoEconomics
+            loc={demo.economics.loc}
+            scoreBefore={demo.economics.scoreBefore}
+            values={state}
+            onChange={patch}
+          />
+        )}
         {stage === 'delivery' && <Delivery demo={demo} state={state} patch={patch} />}
       </div>
     </div>
@@ -450,45 +459,28 @@ function Design({
   );
 }
 
+/**
+ * The Transformation tool of the demo — the same Object Page as a real
+ * project (proposal A, owner decision 01.10.2026), from the same engine run.
+ * `files={null}`: a demo makes no model call, so the package and every
+ * "generated change" say where the demo stops instead of showing a file.
+ * The route of each finding is its own (`findingTarget`), not the first
+ * option of its kind — that column used to read "Developer Extensibility /
+ * RAP" on every row of a side-by-side demo.
+ */
 function Transformation({ demo }: { demo: DemoProject }) {
+  const track = trackOfRoute(demo.design.recommendedRoute);
   return (
-    <>
-      <CcCard level={2} title="The plan the engine can write on its own">
-        <p className={lead}>
-          One line per finding: where it is, what the route is, and the released successor when the catalog names
-          one.{' '}
-          {demo.transformation.unplanned > 0
-            ? `${demo.transformation.unplanned} findings carry no target option and are left out rather than guessed at.`
-            : 'Every finding carries at least one target option.'}
-        </p>
-        <div data-testid="demo-plan">
-          <CcTable
-            caption="Transformation plan written by the engine"
-            columns={[
-              { key: 'line', label: 'Line', width: '5rem' },
-              { key: 'finding', label: 'Finding' },
-              { key: 'route', label: 'Route' },
-              { key: 'successor', label: 'Successor' },
-            ]}
-            rows={demo.transformation.plan.map((p) => ({
-              key: p.findingId,
-              cells: {
-                line: <Line n={p.lineStart} />,
-                finding: (
-                  <>
-                    <span className="font-semibold text-cc-ink">{p.title}</span>
-                    <span className="mt-1 block text-cc-ink-muted">{p.recommendation}</span>
-                  </>
-                ),
-                route: p.target,
-                successor: p.successor ? `${p.successor} (${p.successorProvenance})` : 'none in the catalog',
-              },
-            }))}
-          />
-        </div>
-      </CcCard>
-      <ModelHalfNotice what="The transformed code" />
-    </>
+    <div data-testid="demo-plan">
+      <TransformationObjectPage
+        findings={demo.analyze.findings}
+        coverage={demo.analyze.coverage}
+        track={track}
+        codeKind={track === 'side-by-side' ? 'Node.js (TypeScript)' : 'ABAP Cloud (RAP)'}
+        files={null}
+        openSignOffs={null}
+      />
+    </div>
   );
 }
 
@@ -543,217 +535,6 @@ function Documentation({ demo }: { demo: DemoProject }) {
 
       <ModelHalfNotice what="The written blueprint, and the process drawing on top of it," />
     </>
-  );
-}
-
-function Testing({ demo }: { demo: DemoProject }) {
-  return (
-    <>
-      <CcCard level={2} title="Nothing here has run">
-        <p className="m-0 cc-text-body text-cc-ink-muted">
-          {demo.testing.verdicts.total} tests generated, {demo.testing.verdicts.passed} passed,{' '}
-          {demo.testing.verdicts.failed} failed. There is no pass rate, because a rate over nothing is not a
-          number. A real run generates a suite from the transformed code and executes it in a restricted runner;
-          the demo has neither.
-        </p>
-      </CcCard>
-
-      <CcCard level={2} title="What a tester would have to check by hand" count={demo.testing.manualAreas.length}>
-        <p className={lead}>
-          Straight out of the engine&apos;s coverage report: every construct it says it did not judge is a place
-          where no generated test can stand in for a person.
-        </p>
-        <ul data-testid="demo-manual-areas" className="m-0 list-none space-y-3 p-0">
-          {demo.testing.manualAreas.map((a) => (
-            <li key={`${a.label}-${a.line}`} className="border-l-2 border-cc-warning-line pl-3">
-              <p className="m-0 flex flex-wrap items-center gap-2 cc-text-h3 text-cc-ink">
-                {a.label} <Line n={a.line} />
-              </p>
-              <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{a.why}</p>
-            </li>
-          ))}
-        </ul>
-      </CcCard>
-    </>
-  );
-}
-
-/**
- * Economics — a scenario, and only ever a scenario.
- *
- * The inputs start empty on purpose (roadmap 0.4): no day rate, no investment,
- * so no output. The forecast itself is `lib/tco-model.ts`, the same function the
- * Economics stage of a real project calls, so the demo cannot show arithmetic
- * the product does not do.
- *
- * It reports the model's day counts and ratios rather than amounts. Amounts
- * belong on one screen in this product and this is not it — a demo is the last
- * place a figure with a currency on it should be able to be screenshotted.
- */
-function Economics({
-  demo,
-  state,
-  patch,
-}: {
-  demo: DemoProject;
-  state: DemoState;
-  patch: (n: Partial<DemoState>) => void;
-}) {
-  const forecast = useMemo(
-    () =>
-      tcoForecast({
-        loc: demo.economics.loc,
-        devRate: state.devRate,
-        userRate: state.userRate,
-        upgradeFreq: state.upgradeFreq,
-        fpFreq: state.fpFreq,
-        oneTimeCost: state.oneTimeCost,
-        scoreBefore: demo.economics.scoreBefore,
-      }),
-    [demo.economics.loc, demo.economics.scoreBefore, state],
-  );
-
-  const missing = [
-    state.devRate === null && 'developer day rate',
-    state.userRate === null && 'business tester day rate',
-    state.oneTimeCost === null && 'modernisation investment',
-  ].filter(Boolean) as string[];
-
-  const parse = (v: string): number | null => {
-    const n = Number(v);
-    return v.trim() === '' || !Number.isFinite(n) ? null : n;
-  };
-
-  return (
-    <>
-      <CcCard level={2} title="Your assumptions">
-        <p className={lead}>
-          Nothing is filled in for you. The model refuses to produce a figure until the numbers behind it are
-          yours, and it says which ones are still missing.
-        </p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <NumberField
-            id="demo-dev-rate"
-            title="Developer day rate"
-            hint="in euro, per day"
-            value={state.devRate}
-            onChange={(v) => patch({ devRate: parse(v) })}
-          />
-          <NumberField
-            id="demo-user-rate"
-            title="Business tester day rate"
-            hint="in euro, per day"
-            value={state.userRate}
-            onChange={(v) => patch({ userRate: parse(v) })}
-          />
-          <NumberField
-            id="demo-investment"
-            title="One-time modernisation investment"
-            hint="in euro"
-            value={state.oneTimeCost}
-            onChange={(v) => patch({ oneTimeCost: parse(v) })}
-          />
-          <NumberField
-            id="demo-upgrades"
-            title="Major upgrades per year"
-            hint="whole number"
-            value={state.upgradeFreq}
-            onChange={(v) => patch({ upgradeFreq: parse(v) ?? 0 })}
-          />
-          <NumberField
-            id="demo-feature-packs"
-            title="Feature packs per year"
-            hint="whole number"
-            value={state.fpFreq}
-            onChange={(v) => patch({ fpFreq: parse(v) ?? 0 })}
-          />
-          <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2">
-            <span className={label}>Measured, not assumed</span>
-            <p className="m-0 mt-1 cc-text-cell text-cc-ink">
-              {num(demo.economics.loc)} lines of code, Clean Core Score {demo.economics.scoreBefore}, target{' '}
-              {TCO_TARGET_SCORE} — the target is the model&apos;s assumption, the other two come from the run.
-            </p>
-          </div>
-        </div>
-      </CcCard>
-
-      <CcCard level={2} title="Maintenance effort · scenario">
-        {forecast === null ? (
-          <p data-testid="demo-forecast-refused" className="m-0 cc-text-body text-cc-ink-muted">
-            No forecast yet
-            {missing.length > 0 ? `: still missing the ${missing.join(', the ')}.` : ' — the model declines these inputs.'}{' '}
-            An output built on a number nobody entered is not a scenario, it is an invention.
-          </p>
-        ) : (
-          <div data-testid="demo-forecast" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Metric title="Legacy effort" value={`${days(forecast.legacyDevDaysTotal + forecast.legacyTestDaysTotal)} days per year`} />
-            <Metric title="After modernisation" value={`${days(forecast.modernDevDaysTotal + forecast.modernTestDaysTotal)} days per year`} />
-            <Metric title="Overhead reduction" value={`${forecast.overheadReductionPct}%`} />
-            <Metric
-              title="Payback"
-              value={forecast.paybackMonths === null ? 'not reached' : `${forecast.paybackMonths} months`}
-            />
-          </div>
-        )}
-        <p className="m-0 mt-4 cc-text-cell text-cc-ink-muted">
-          A scenario, not a quotation: the day counts come from your assumptions and the score the run measured,
-          and the target score of {TCO_TARGET_SCORE} is an assumption of the model itself. The amounts behind
-          these days appear on the Economics stage of your own project.
-        </p>
-      </CcCard>
-    </>
-  );
-}
-
-/** A number the reader enters, in the field of §2.7. The test id stays on the input. */
-function NumberField({
-  id,
-  title,
-  hint,
-  value,
-  onChange,
-}: {
-  id: string;
-  title: string;
-  hint: string;
-  value: number | null;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <CcField label={title} help={hint}>
-      {(control) => (
-        <input
-          id={control.id}
-          data-testid={id}
-          type="number"
-          min={0}
-          inputMode="numeric"
-          value={value === null ? '' : value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="—"
-          aria-describedby={control.describedBy}
-          className={control.className}
-        />
-      )}
-    </CcField>
-  );
-}
-
-/**
- * A day count as a reader writes it. The sum of two floating-point totals
- * printed raw read "3.9050000000000002 days" — a precision the model does not
- * have. One decimal, like the payback months.
- */
-function days(n: number): string {
-  return n.toLocaleString('en-US', { maximumFractionDigits: 1 });
-}
-
-function Metric({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="rounded-cc-row border border-cc-line px-3 py-2">
-      <span className={label}>{title}</span>
-      <p className="m-0 mt-1 cc-text-h2 text-cc-ink">{value}</p>
-    </div>
   );
 }
 

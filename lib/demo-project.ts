@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { sourceLineCount } from '@/lib/source-lines';
 import { buildAbapEvidence, type EvidenceFinding } from '@/lib/abap/evidence-model';
 import { routeExtensibility, type ExtensibilityRouteReport } from '@/lib/abap/extensibility-router';
 import {
@@ -9,9 +10,11 @@ import {
   computeCriticalityScore,
 } from '@/lib/abap/code-assessment';
 import { coverageCaveat, type CoverageReport } from '@/lib/abap/coverage';
+import { readCallGraph } from '@/lib/abap/call-graph';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
 import { PHASES, type PhaseKey, type PhaseState } from '@/lib/workflow-steps';
+import { findingTarget, trackOfRoute, type ProjectTrack, type TargetKind } from '@/lib/transformation-view';
 import type { CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import {
   DEMO_OBJECT_NAME,
@@ -85,8 +88,20 @@ export interface DemoPlanItem {
   title: string;
   lineStart: number;
   severity: EvidenceFinding['severity'];
-  /** The route the engine offers first for this finding. */
+  /**
+   * This finding's target, against the demo's route: the released successor
+   * where the catalog names one, the custom table where the code writes its
+   * own, and only for a construct without an object the option on the
+   * project's route (`findingTarget`). It used to be the finding's first
+   * `targetOptions` entry, which is the in-app option for almost every kind —
+   * so a side-by-side demo printed "Developer Extensibility / RAP" on every row.
+   */
   target: string;
+  targetKind: TargetKind;
+  /** Whether the project's route is among the finding's options; null when the finding names an object. */
+  routeFit: 'matches' | 'differs' | null;
+  /** The engine's options for this kind of finding, all of them, in its order. */
+  targetOptions: string[];
   recommendation: string;
   successor: string | null;
   successorProvenance: string | null;
@@ -154,6 +169,8 @@ export interface DemoProject {
     /** All zero, and said out loud: no test in this demo has run. */
     verdicts: { total: number; passed: number; failed: number; withoutVerdict: number };
     manualAreas: DemoManualArea[];
+    /** The program's routines (`FORM … ENDFORM`), for the Testing tool's program strip. */
+    routines: Array<{ name: string; lineStart: number; lineEnd: number }>;
   };
 
   economics: {
@@ -241,21 +258,24 @@ function buildRail(demo: Omit<DemoProject, 'rail'>): DemoRailStep[] {
   ];
 }
 
-function planOf(findings: EvidenceFinding[]): { plan: DemoPlanItem[]; unplanned: number } {
+function planOf(findings: EvidenceFinding[], track: ProjectTrack): { plan: DemoPlanItem[]; unplanned: number } {
   const plan: DemoPlanItem[] = [];
   let unplanned = 0;
   for (const finding of findings) {
-    const target = finding.targetOptions?.[0];
-    if (!target) {
+    if (!finding.targetOptions?.length) {
       unplanned += 1;
       continue;
     }
+    const target = findingTarget(finding, track);
     plan.push({
       findingId: finding.id,
       title: finding.title,
       lineStart: finding.lineStart,
       severity: finding.severity,
-      target,
+      target: target.label,
+      targetKind: target.kind,
+      routeFit: target.routeFit,
+      targetOptions: [...finding.targetOptions],
       recommendation: finding.recommendation,
       successor: finding.sapReplacement?.objectName ?? null,
       successorProvenance: finding.sapReplacement?.confidence ?? null,
@@ -312,7 +332,7 @@ export function buildDemoProject(): DemoProject {
   const catalogSnapshot = catalogSnapshotKeyForProject({ s4Deployment: DEMO_DEPLOYMENT });
   const evidence = buildAbapEvidence(source, DEMO_SOURCE_FILE, DEMO_DEPLOYMENT, catalogSnapshot);
   const route = routeExtensibility(evidence, DEMO_DEPLOYMENT);
-  const { plan, unplanned } = planOf(evidence.findings);
+  const { plan, unplanned } = planOf(evidence.findings, trackOfRoute(route.recommendedRoute));
 
   const withoutRail: Omit<DemoProject, 'rail'> = {
     isDemo: true,
@@ -322,7 +342,7 @@ export function buildDemoProject(): DemoProject {
     subject: DEMO_SUBJECT,
     sourceFile: DEMO_SOURCE_FILE,
     deployment: DEMO_DEPLOYMENT,
-    totalLines: lines.length,
+    totalLines: sourceLineCount(source),
     linesOfCode,
     catalogVersion: getMergedCatalogVersion(),
     catalogSnapshot,
@@ -348,8 +368,12 @@ export function buildDemoProject(): DemoProject {
         why: u.why,
         line: u.line,
       })),
+      routines: readCallGraph(source).forms.map((f) => ({ name: f.name, lineStart: f.lineStart, lineEnd: f.lineEnd })),
     },
-    economics: { loc: linesOfCode, scoreBefore: route.cleanCoreScore },
+    // The same line count the Economics stage of a real project models on -
+    // not the code-only count above, which made the demo say 550 where every
+    // other screen says 669 (lib/source-lines.ts).
+    economics: { loc: sourceLineCount(source), scoreBefore: route.cleanCoreScore },
     delivery: { missing: missingForHandover(), missingAt: MISSING_AT },
   };
 

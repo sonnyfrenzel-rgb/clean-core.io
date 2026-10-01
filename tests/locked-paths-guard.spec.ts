@@ -179,7 +179,8 @@ test.describe('the lock holds when used', () => {
     // can be tried: on the tenant tab the run is not offered — the suite sits in the other tab's panel, the button
     // there is disabled by the tab, the rail says where the suite runs, and a click reaches nothing.
     await expect(page.locator('[data-live-test-hint]')).toContainText('against mocks', { timeout: 30000 });
-    const run = page.locator('button', { hasText: 'Run Selected' });
+    // The run button of the mock tab (proposal A: "Run tests against mocks" in its "From written to verified" section).
+    const run = page.locator('[data-testing-panel="mock"] #testing-verified button', { hasText: 'Run tests against mocks' });
     await expect(run).toBeHidden();
     await expect(run).toBeDisabled();
     await run.dispatchEvent('click');
