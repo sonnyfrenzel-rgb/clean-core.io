@@ -68,7 +68,7 @@ export const TOUR_STATIONS: readonly TourStation[] = Object.freeze([
     place: 'reveal',
     view: 'business',
     title: 'What this code decides',
-    body: 'Each rule is a condition the program checks, quoted the way the code writes it, with the lines it stands on.',
+    body: 'Each rule is a condition the program checks, said in plain words, with the lines it stands on and the code behind it one click away.',
   },
   {
     place: 'not-determined',
