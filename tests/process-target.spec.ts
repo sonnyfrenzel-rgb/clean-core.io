@@ -203,6 +203,10 @@ test.describe('the target model, out of the Ist and the states', () => {
     expect(rowOf(comparison.rows, changed).verdict).toBe('changes');
     // What the change is, is not invented.
     expect(rowOf(comparison.rows, changed).sentence).toContain('nobody has written down');
+    // Keep is about the business need, not the ABAP (carried QA finding
+    // ee0ba98c3cea): the sentence must not read as "the code is preserved".
+    expect(rowOf(comparison.rows, kept).sentence).not.toMatch(/as the code has it/);
+    expect(rowOf(comparison.rows, kept).sentence).toContain('preserves no ABAP');
   });
 });
 
