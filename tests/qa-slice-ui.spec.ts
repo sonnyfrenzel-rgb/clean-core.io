@@ -53,6 +53,9 @@ test('2b1101d8e13e — a new place clears the draft and the busy state, and drop
   // busy state alike.
   const send = src.slice(src.indexOf('const handleSend = async'), src.indexOf('const floatingOffOnDesktop'));
   expect(send).toContain('const asked = conversationRef.current;');
+  // 5ee5ab25f097: both refs follow the render in a layout effect, so no event can see the old values.
+  expect(src).toMatch(/const conversationRef = useRef\(conversation\);\s*useLayoutEffect\(/);
+  expect(src).toMatch(/const currentProjectRef = useRef<string \| null>\(projectId\);\s*useLayoutEffect\(/);
   expect(send).toContain('await answerInProject(projectId, text, asked);');
   expect(send.match(/if \(!superseded\(\)\) setLoading\(false\);/g), 'a finally clears the next question\'s busy state').toHaveLength(2);
   expect(send, 'an unconditional setLoading(false) is back').not.toMatch(/^\s*setLoading\(false\);/m);

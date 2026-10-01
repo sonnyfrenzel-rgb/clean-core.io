@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { MessageSquare, X, Send, PenLine, ShieldCheck } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcIconButton from '@/components/cc/IconButton';
@@ -217,8 +217,12 @@ export default function GlossaryChatbot() {
     setLoading(false);
     setConversation((n) => n + 1);
   }
+  // A layout effect, not a passive one: it runs before the browser can hand
+  // the reader an event, so a question asked right after a navigation is
+  // stamped with the new conversation and never with the one just left
+  // (QA review of 09ae0c6ee268, 5ee5ab25f097).
   const conversationRef = useRef(conversation);
-  useEffect(() => {
+  useLayoutEffect(() => {
     conversationRef.current = conversation;
   }, [conversation]);
 
@@ -243,7 +247,7 @@ export default function GlossaryChatbot() {
    * under B's heading (QA full review of v2.20.0).
    */
   const currentProjectRef = useRef<string | null>(projectId);
-  useEffect(() => {
+  useLayoutEffect(() => {
     currentProjectRef.current = projectId;
   }, [projectId]);
 
