@@ -28,6 +28,7 @@ import { WORKSPACE_ANSWER_MESSAGES } from './messages/workspace-answers';
 import { WORKSPACE_SHELL_MESSAGES } from './messages/workspace-shell';
 import { PROCESS_MAP_MESSAGES } from './messages/process-map';
 import { DEMO_WORKSPACE_MESSAGES } from './messages/demo';
+import { WORKSPACE_BUSINESS_MESSAGES } from './messages/workspace-business';
 
 /** The parts, by surface — read by the guard to prove that no two share a key. */
 export const WORKSPACE_MESSAGE_PARTS = {
@@ -36,6 +37,7 @@ export const WORKSPACE_MESSAGE_PARTS = {
   shell: WORKSPACE_SHELL_MESSAGES,
   processMap: PROCESS_MAP_MESSAGES,
   demo: DEMO_WORKSPACE_MESSAGES,
+  business: WORKSPACE_BUSINESS_MESSAGES,
 } as const;
 
 export const WORKSPACE_MESSAGES = {
@@ -44,6 +46,7 @@ export const WORKSPACE_MESSAGES = {
   ...WORKSPACE_SHELL_MESSAGES,
   ...PROCESS_MAP_MESSAGES,
   ...DEMO_WORKSPACE_MESSAGES,
+  ...WORKSPACE_BUSINESS_MESSAGES,
 } as const;
 
 export type WorkspaceMessageKey = keyof typeof WORKSPACE_MESSAGES;
@@ -62,3 +65,4 @@ export * from './messages/workspace-answers';
 export * from './messages/workspace-shell';
 export * from './messages/process-map';
 export * from './messages/demo';
+export * from './messages/workspace-business';
