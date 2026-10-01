@@ -1,10 +1,22 @@
 # Clean-Core.io
 
-Clean-Core.io is a free community web app that reads custom SAP ABAP and takes it from
-"not understood" to an evidence-backed decision, aligned with SAP's Clean Core
-extensibility model. It is complementary to SAP's own tooling (ABAP Test Cockpit, ABAP
-Development Tools, SAP Cloud ALM), not a replacement, and it is not affiliated with or
-endorsed by SAP SE.
+**From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of
+evidence you can check.**
+
+For the person who has to decide what happens to a custom ABAP program, Clean-Core.io is
+the free workspace that reads the code before any model does, draws the business process
+as BPMN with a line anchor on every element, or the reason it has none, shows SAP's clean core level for every SAP
+object it touches — and then carries the same evidence through the whole way: a target
+design, a transformed code draft and test scenarios, run in an isolated runner, all
+traceable to the lines they came from and sealed as signed runs. Other tools explain
+code, or rewrite it. Clean-Core.io does both on one chain of evidence — and says what it
+could not determine.
+
+The code is a draft for review, not a finished product, and the tests check it against
+test scenarios, not that it runs in a real SAP S/4HANA system. Clean-Core.io is
+complementary to SAP's own tooling (ABAP Test Cockpit, ABAP Development Tools, Joule for
+Developers and the Custom Code Migration Agent, SAP Cloud ALM), not a replacement, and it
+is not affiliated with or endorsed by SAP SE.
 
 [clean-core.io](https://clean-core.io) · source: [github.com/sonnyfrenzel-rgb/clean-core.io](https://github.com/sonnyfrenzel-rgb/clean-core.io) ·
 Apache License 2.0 · release notes: [`CHANGELOG.md`](CHANGELOG.md)
@@ -45,6 +57,11 @@ Model proposal.
   values: Proven, Confirmed, Reconstructed, Imported, Model proposal, Simulation,
   Demonstrated · mock, Stale, Not determined. *Confirmed* means the signed-in account
   confirmed it: a self-declaration, not a mandate.
+- **One chain of evidence.** Process → design → code draft → tests → handover. The
+  process carries line anchors; the design and the code draft are model proposals built
+  on the signed run, and the code's plan names every finding at its line; the test
+  scenarios run against the generated code in an isolated runner, against mocks, and the
+  server records what ran on which code; the handover pack is signed over the run.
 - **Signed runs.** Every completed analysis is stored as an immutable run, signed with
   HMAC and Ed25519, and a signed export can be verified against it.
 - **BPMN 2.0 XML export.** The process model leaves as a BPMN 2.0 XML file. There is no

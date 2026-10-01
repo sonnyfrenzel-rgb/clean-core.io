@@ -21,17 +21,27 @@ export function GET() {
 
   const body = `# Clean-Core.io
 
-> A free tool that reads your custom ABAP, draws its business process and drafts the
-> clean core rebuild — every step traced to a line of code.
+> From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of
+> evidence you can check.
 
-Clean-Core.io is a free community tool for SAP custom code. A deterministic ABAP static
-code analysis reads the program before any language model does, reconstructs its
-business process as BPMN with a line anchor on each element, or the reason it has none, lists the business rules
+For the person who has to decide what happens to a custom ABAP program, Clean-Core.io
+is the free workspace that reads the code before any model does, draws the business
+process as BPMN with a line anchor on every element, or the reason it has none, shows SAP's clean core level for
+every SAP object it touches — and then carries the same evidence through the whole way:
+a target design, a transformed code draft and test scenarios, run in an isolated runner,
+all traceable to the lines they came from and sealed as signed runs. Other tools explain
+code, or rewrite it. Clean-Core.io does both on one chain of evidence — and says what it
+could not determine.
+
+In detail: a deterministic ABAP static code analysis reads the program, reconstructs its
+business process as BPMN with a line anchor on every element, or the reason it has none, lists the business rules
 hard-coded in the program, grades each SAP object it uses Level A–D from SAP's published
 Cloudification Repository, and names what it could not determine. From that evidence it
-drafts the target design, the transformed code, documentation and tests for a person to
-review, and estimates the economics from the user's own figures. Every completed
-analysis is sealed as an immutable, signed run.
+drafts the target design, the transformed code, documentation and test scenarios for a
+person to review; the test scenarios run against the generated code in an isolated
+runner, against mocks — they do not show that the code runs in a real SAP S/4HANA
+system. Economics calculates on the user's own figures. Every completed analysis is
+sealed as an immutable, signed run, and the handover pack is signed over it.
 
 One workspace, three views of the same facts: the Business view ("Do I still need this,
 and what changes for me?"), the IT view ("What exactly, where to, and is it right?") and
@@ -43,7 +53,10 @@ code is a draft for a person to review.
 
 Clean-Core.io is not affiliated with, endorsed by, or certified by SAP SE. It is
 complementary to SAP's own tooling (SAP ADT, SAP ABAP Test Cockpit, SAP Cloud ALM),
-which remain the authoritative in-system checks.
+which remain the authoritative in-system checks. SAP's AI agents for developers (Joule
+for Developers, the Custom Code Migration Agent) tell developers what to fix inside their
+system; Clean-Core.io shows the business what the code does and carries that evidence
+through draft and test to a decision. ATC stays the authority.
 
 Version: ${facts.engineVersion} (${facts.engineReleaseDate})
 
@@ -97,7 +110,10 @@ product. It is a measure of code structure, not of money.
 
 ## What this tool does not do
 
-- It does not replace SAP ABAP Test Cockpit (ATC) or SAP ABAP Development Tools (ADT).
+- It does not replace SAP ABAP Test Cockpit (ATC), SAP ABAP Development Tools (ADT),
+  Joule for Developers or SAP's Custom Code Migration Agent.
+- Its tests check the generated code against test scenarios in an isolated runner; they
+  do not show that the code runs in a real SAP S/4HANA system.
 - It does not claim SAP certification, endorsement, or affiliation.
 - Its Level A–D is a derived orientation, not an authoritative SAP ATC classification,
   and is deliberately excluded from the signed audit pack.
