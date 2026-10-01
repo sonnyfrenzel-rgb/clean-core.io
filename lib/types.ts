@@ -298,7 +298,7 @@ export interface AnalysisData {
   };
   strategicNextSteps: string[];
   extensibilityRouting?: {
-    recommendedRoute: 'Side-by-Side (SAP BTP)' | 'In-App (ABAP Cloud)';
+    recommendedRoute: typeof import('./sap-naming').SIDE_BY_SIDE_ROUTE | typeof import('./sap-naming').IN_APP_ROUTE;
     confidenceScore: number;
     rationale: string;
     targetArtifact: string;

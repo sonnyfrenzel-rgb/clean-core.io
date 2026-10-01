@@ -8,6 +8,7 @@
 import type { CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import { readTableDependencies, type DependencyRoute } from './table-dependencies';
 import { maskComments, maskNonCode } from './statement-reader';
+import { isSideBySideRoute } from '../sap-naming';
 
 // Well-known SAP standard tables and their recommended API/CDS replacements
 const STANDARD_TABLE_MAP: Record<string, string> = {
@@ -544,7 +545,7 @@ export function recommendArchitecture(
   const loc = code.split(/\r?\n/).filter((l) => l.trim().length > 0).length;
 
   // If the existing route already suggests BTP or In-App, use it as a tiebreaker
-  const existingRouteIsBTP = extensibilityRoute?.includes('BTP');
+  const existingRouteIsBTP = isSideBySideRoute(extensibilityRoute);
 
   // Decision logic
   if (customTableWrites > 0) {

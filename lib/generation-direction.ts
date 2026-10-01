@@ -72,11 +72,12 @@ import {
 } from './architecture-contract';
 import type { ManifestInput } from './input-manifest';
 import type { ProvenanceValue } from './provenance';
+import { BAIP } from './sap-naming';
 
 /** The two tracks the Transformation stage can generate, in the words it uses. */
 export const TRACK_LABELS: Readonly<Record<TargetRoute, string>> = Object.freeze({
   'in-app-rap': 'In-App ABAP Cloud (RAP)',
-  'side-by-side-cap': 'Side-by-Side SAP BTP (CAP)',
+  'side-by-side-cap': `Side-by-Side ${BAIP} (CAP)`,
 });
 
 /** What a generated stand says about the contract it was computed against. */
@@ -196,7 +197,7 @@ export function offTrackRefusal(decided: string): GenerationRefusal {
   return {
     ok: false,
     code: 'decision-off-track',
-    sentence: `This project is signed off for \`${decided}\`, which is neither of the two targets this stage generates (ABAP Cloud/RAP, BTP/CAP). Nothing was generated.`,
+    sentence: `This project is signed off for \`${decided}\`, which is neither of the two targets this stage generates (ABAP Cloud/RAP, ${BAIP}/CAP). Nothing was generated.`,
     remedy:
       'Either the decision names one of the two tracks, or this stage produces nothing for it — the later stages read the decision, not a package generated past it.',
   };
