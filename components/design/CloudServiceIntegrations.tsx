@@ -32,7 +32,7 @@ export const cloudServiceDetails: Record<string, {
 }> = {
   xsuaa: {
     title: 'XSUAA Identity Federation',
-    details: 'XSUAA acts as the OAuth 2.0 authorization server on SAP BTP. It handles authentications, validates incoming JSON Web Tokens (JWTs), and resolves user roles/scopes. This keeps identity federation and access management separate from application logic.',
+    details: 'XSUAA acts as the OAuth 2.0 authorization server on BAIP. It handles authentications, validates incoming JSON Web Tokens (JWTs), and resolves user roles/scopes. This keeps identity federation and access management separate from application logic.',
     whyCritical: 'Ensures secure, audited cloud access that adheres strictly to clean-core guidelines. User identities are resolved dynamically via federated identity providers (like SAP IAS or Azure AD) rather than database-level hardcoding in legacy layers.',
     npmPackages: ['@sap/xssec', 'passport'],
     codeSnippet: `const express = require('express');
@@ -63,7 +63,7 @@ app.get('/api/extension/orders',
   },
   destination: {
     title: 'Destination & Connectivity Service',
-    details: 'The SAP BTP Destination Service serves as a secure, centralized vault for configuring outbound target connection profiles (URLs, protocols, and authentication settings). Combined with BTP Connectivity and Cloud Connector, it establishes secure tunnels to on-premises ERP systems and cloud-based REST/OData APIs.',
+    details: 'The SAP Destination service serves as a secure, centralized vault for configuring outbound target connection profiles (URLs, protocols, and authentication settings). Combined with the SAP Connectivity service and Cloud Connector, it establishes secure tunnels to on-premises ERP systems and cloud-based REST/OData APIs.',
     whyCritical: 'Completely separates environment-specific endpoints and credentials from source code. Connections, protocols, or routing can be modified dynamically at runtime without altering or redeploying the Node.js application.',
     npmPackages: ['@sap-cloud-sdk/connectivity'],
     codeSnippet: `const axios = require('axios');
@@ -76,7 +76,7 @@ async function fetchLegacyData(orderId, userJwt) {
     jwt: userJwt // Auto-propagates user context
   });
 
-  // Execute authenticated outbound call using BTP proxy
+  // Execute authenticated outbound call through the destination proxy
   const response = await axios({
     url: \`\${destination.url}/sap/opu/odata/sap/ZELEMENTS_SRV/Orders('\${orderId}')\`,
     headers: {
@@ -121,7 +121,7 @@ async function startListening() {
   },
   postgresql: {
     title: 'PostgreSQL Relational Database',
-    details: 'PostgreSQL on SAP BTP or AWS is an enterprise-grade relational database. It is utilized to store extension-specific application states, customer metadata, and transactional caches, fully isolating side-by-side data from the ERP legacy schema.',
+    details: 'PostgreSQL on BAIP or AWS is an enterprise-grade relational database. It is utilized to store extension-specific application states, customer metadata, and transactional caches, fully isolating side-by-side data from the ERP legacy schema.',
     whyCritical: 'Guarantees zero database-level pollution. Custom tables are kept out of the core S/4HANA database, avoiding schema upgrade lockouts and keeping the ERP core pristine and easily upgradeable.',
     npmPackages: ['pg', '@sap/xsenv'],
     codeSnippet: `const { Pool } = require('pg');
@@ -155,7 +155,7 @@ async function queryExtensionData(userId) {
   },
   hanaCloud: {
     title: 'SAP HANA Cloud Database',
-    details: 'SAP HANA Cloud is the managed database behind an HDI container on SAP BTP. A side-by-side extension binds to its own container, so the extension schema is separate from the S/4HANA core schema while still sitting on the same database technology. Node.js reaches it through the SAP HANA client, not through a PostgreSQL driver.',
+    details: 'SAP HANA Cloud is the managed database behind an HDI container on BAIP. A side-by-side extension binds to its own container, so the extension schema is separate from the S/4HANA core schema while still sitting on the same database technology. Node.js reaches it through the SAP HANA client, not through a PostgreSQL driver.',
     whyCritical: 'Extension tables belong in the extension’s own HDI container, never in the S/4HANA core schema — that is what keeps an upgrade from colliding with custom data. The binding is injected by the platform, so nothing about the host, schema or certificate is written into the application.',
     npmPackages: ['@sap/hana-client', '@sap/xsenv'],
     codeSnippet: `const hana = require('@sap/hana-client');
@@ -203,7 +203,7 @@ SELECT SINGLE CustomerID, CustomerName, CityName
   iamRoles: {
     title: 'SAP IAM Business Role Mapping',
     details: 'SAP Identity and Access Management (IAM) in S/4HANA Cloud provides a role-based authorization framework. IAM Business Roles map business users to SAP Fiori apps and OData services via Business Catalogs. In the RAP context, IAM apps are bound to Service Bindings, controlling who can access which RAP business objects and operations.',
-    whyCritical: 'Legacy authorization checks (AUTHORITY-CHECK on custom objects like Z_AUTH_*) are not portable to cloud. IAM Business Roles provide a standardized, auditable authorization model that integrates with SAP BTP Identity Authentication Service (IAS) and supports federation with corporate identity providers.',
+    whyCritical: 'Legacy authorization checks (AUTHORITY-CHECK on custom objects like Z_AUTH_*) are not portable to cloud. IAM Business Roles provide a standardized, auditable authorization model that integrates with SAP Cloud Identity Services, Identity Authentication (IAS) and supports federation with corporate identity providers.',
     npmPackages: [],
     codeSnippet: `" IAM App Registration (ADT metadata):
 " 1. Create IAM App in ADT → links to Service Binding

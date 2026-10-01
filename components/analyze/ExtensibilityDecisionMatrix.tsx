@@ -5,6 +5,7 @@ import { Check, Code2, Layers, X } from 'lucide-react';
 import clsx from 'clsx';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
+import { BAIP, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
 
 interface Checkpoint {
   checkpointName: string;
@@ -96,7 +97,7 @@ function Track({
           </span>
         </div>
 
-        <p className="cc-text-cell text-cc-ink-muted mb-6">{track.fitDetails}</p>
+        <p className="cc-text-cell text-cc-ink-muted mb-6">{sapNamesForDisplay(track.fitDetails)}</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -116,7 +117,7 @@ function Track({
               {track.cons.map((con, cIdx) => (
                 <li key={cIdx} className="flex items-start gap-2">
                   <X size={14} aria-hidden="true" className="text-cc-ink-muted shrink-0 mt-0.5" />
-                  <span>{con}</span>
+                  <span>{sapNamesForDisplay(con)}</span>
                 </li>
               ))}
             </ul>
@@ -141,9 +142,14 @@ export default function ExtensibilityDecisionMatrix({
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(0);
   const detailPanelRef = useRef<HTMLDivElement>(null);
 
-  const isBtp = extensibilityRoute.includes('BTP');
+  const isBtp = isSideBySideRoute(extensibilityRoute);
 
-  const checkpoints: Checkpoint[] = decisionTreeCheckpoints ?? [];
+  // A run stored before roadmap 3.0.15 carries the engine's former wording.
+  const checkpoints: Checkpoint[] = (decisionTreeCheckpoints ?? []).map((cp) => ({
+    ...cp,
+    checkpointName: sapNamesForDisplay(cp.checkpointName),
+    evaluation: sapNamesForDisplay(cp.evaluation),
+  }));
   const comparative: ComparativeAnalysis | null = comparativeAnalysis ?? null;
   // A stored answer can shrink between renders; an index past the end would read
   // `undefined` and take the panel down with it.
@@ -260,11 +266,11 @@ export default function ExtensibilityDecisionMatrix({
             target="Target: Released CDS Views & RAP Business Objects"
           />
           <Track
-            title="Side-by-Side SAP BTP (CAP)"
+            title={`Side-by-Side ${BAIP} (CAP)`}
             icon={<Layers size={16} aria-hidden="true" />}
             track={comparative.sideBySideBTP}
             chosen={isBtp}
-            target="Target: CAP OData APIs & Decoupled BTP Microservices"
+            target={`Target: CAP OData APIs & Decoupled ${BAIP} Microservices`}
           />
         </div>
         )}

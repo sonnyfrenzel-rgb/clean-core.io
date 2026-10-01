@@ -61,7 +61,8 @@ export function findGlossaryTerm(query: string): GlossaryMatch | null {
   const entries = Object.entries(GLOSSARY_ITEMS);
 
   const exact = entries.find(
-    ([, item]) => normalize(item.shortName) === q || normalize(item.term) === q,
+    ([, item]) =>
+      normalize(item.shortName) === q || normalize(item.term) === q || (item.aliases ?? []).some((a) => normalize(a) === q),
   );
   if (exact) return { key: exact[0], item: exact[1] };
 
@@ -72,6 +73,10 @@ export function findGlossaryTerm(query: string): GlossaryMatch | null {
     let best = 0;
     if (q.includes(short)) best = Math.max(best, short.length);
     if (q.includes(full)) best = Math.max(best, full.length);
+    for (const alias of item.aliases ?? []) {
+      const a = normalize(alias);
+      if (q.includes(a)) best = Math.max(best, a.length);
+    }
     return best;
   };
 

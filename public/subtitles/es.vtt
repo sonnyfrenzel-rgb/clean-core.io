@@ -4,7 +4,7 @@ WEBVTT
 Las modificaciones del núcleo de ERP son el mayor obstáculo para las actualizaciones de S/4HANA.
 
 00:07.500 --> 00:16.000
-Bienvenido a Clean-Core.io, la herramienta automatizada para desacoplar el código ABAP heredado en modernos servicios en la nube en SAP BTP.
+Bienvenido a Clean-Core.io, la herramienta automatizada para desacoplar el código ABAP heredado en modernos servicios en la nube en SAP Business AI Platform (BAIP).
 
 00:16.000 --> 00:25.000
 Nuestra plataforma permite a los arquitectos de TI mantener limpio el núcleo digital de SAP y acelerar la transformación en la nube.
@@ -25,7 +25,7 @@ Luego, nuestro motor de puntuación separa el código obsoleto de los requisitos
 Las funciones estándar de SAP se mapean de forma nativa para evitar desarrollos redundantes.
 
 01:15.000 --> 01:25.000
-Solo los requisitos personalizados restantes se encapsulan para el desacoplamiento side-by-side en SAP BTP.
+Solo los requisitos personalizados restantes se encapsulan para el desacoplamiento side-by-side en BAIP.
 
 01:25.000 --> 01:35.000
 Ahora navegamos al Target Architecture Blueprint. Aquí diseñamos el esquema nativo de la nube de destino.
@@ -34,7 +34,7 @@ Ahora navegamos al Target Architecture Blueprint. Aquí diseñamos el esquema na
 Mediante proxies seguros y sin estado de la API de Gemini, las estructuras de código heredadas se refactorizan en Node.js.
 
 01:47.000 --> 02:00.000
-La consola visual muestra esquemas cds, controladores de TypeScript, Dockerfiles y enlaces al BTP Destination Manager.
+La consola visual muestra esquemas cds, controladores de TypeScript, Dockerfiles y enlaces al SAP Destination service.
 
 02:00.000 --> 02:10.000
 En el espacio de Transformación de Código, puede revisar los detalles de la conversión side-by-side.
@@ -43,7 +43,7 @@ En el espacio de Transformación de Código, puede revisar los detalles de la co
 La vista sincronizada de comparación mapea sentencias ABAP heredadas con sus equivalentes modernas en TypeScript.
 
 02:20.000 --> 02:30.000
-Los arquitectos pueden auditar el código generado para garantizar consultas de base de datos seguras y convenciones del SDK de BTP.
+Los arquitectos pueden auditar el código generado para garantizar consultas de base de datos seguras y convenciones del SAP Cloud SDK.
 
 02:30.000 --> 02:42.000
 Para la verificación, la plataforma monta automáticamente el código de TypeScript en un entorno de pruebas aislado (sandbox).

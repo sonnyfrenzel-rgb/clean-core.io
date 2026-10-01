@@ -60,7 +60,7 @@ export const ABCD_META: Record<CloudReadinessGrade, GradeMeta> = {
     grade: 'A',
     label: 'Released SAP APIs & extension points',
     short: 'Cloud-ready',
-    description: 'Released SAP APIs (local & remote) and extension points — ABAP Cloud on-stack, or side-by-side on SAP BTP. Fully supported and upgrade-stable.',
+    description: 'Released SAP APIs (local & remote) and extension points — ABAP Cloud on-stack, or side-by-side on BAIP (SAP Business AI Platform). Fully supported and upgrade-stable.',
     atcReading: 'No message',
     badge: 'bg-cc-information-bg text-cc-information border-cc-information-border',
   },

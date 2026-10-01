@@ -119,7 +119,7 @@ function parseBtpDestination(jsonString: string): {
   try {
     parsed = JSON.parse(jsonString);
   } catch {
-    throw new Error('Invalid JSON format in BTP Destination config.');
+    throw new Error('Invalid JSON format in the destination config (SAP Destination service).');
   }
 
   const url = parsed.URL || parsed.url || parsed.Url;

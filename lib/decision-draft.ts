@@ -36,6 +36,7 @@
 import type { ArchitectureContract } from './architecture-contract';
 import type { OptionKind } from './cost-assumptions';
 import { buildProjectDecision } from './project-decision-build';
+import { FINGERPRINTED_FORMER_SHORT as FORMER_SHORT } from './sap-naming';
 import {
   normaliseProjectDecision,
   type DecisionConfirmation,
@@ -46,7 +47,9 @@ import {
 /** The architecture codes `approve-architecture` accepts, with the words a reader sees. */
 export const ARCHITECTURE_OPTION: Readonly<Record<string, { label: string; kind: OptionKind }>> = Object.freeze({
   rap: { label: 'In-App ABAP Cloud (RAP)', kind: 'rebuild' },
-  cap: { label: 'Side-by-Side BTP (CAP)', kind: 'rebuild' },
+  // Fingerprinted bytes (roadmap 3.0.15): the label enters the decision's
+  // summary and option binding, which are hashed. Shown through `sapNamesForDisplay()`.
+  cap: { label: `Side-by-Side ${FORMER_SHORT} (CAP)`, kind: 'rebuild' },
   integration: { label: 'SAP Integration Suite', kind: 'rebuild' },
   event: { label: 'SAP Event Mesh', kind: 'rebuild' },
   retire: { label: 'Retire / Decommission', kind: 'retire' },

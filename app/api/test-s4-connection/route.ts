@@ -114,7 +114,7 @@ function parseBtpDestination(jsonString: string): BtpDestinationConfig {
   try {
     parsed = JSON.parse(jsonString);
   } catch {
-    throw new Error('Invalid JSON format. Please paste a valid SAP BTP Destination Service JSON export.');
+    throw new Error('Invalid JSON format. Please paste a valid SAP Destination service JSON export.');
   }
 
   // Standard BTP Destination Service fields:
@@ -341,7 +341,7 @@ export async function POST(req: NextRequest) {
     if (authType === 'btp_destination') {
       if (!btpDestinationJson) {
         return NextResponse.json(
-          { status: 'failed', message: 'BTP Destination JSON configuration is required.' },
+          { status: 'failed', message: 'Destination JSON configuration is required.' },
           { status: 400 }
         );
       }
@@ -351,7 +351,7 @@ export async function POST(req: NextRequest) {
         config = parseBtpDestination(btpDestinationJson);
       } catch (parseErr: any) {
         return NextResponse.json(
-          { status: 'failed', message: `BTP Destination parsing failed: ${parseErr.message}` },
+          { status: 'failed', message: `Destination parsing failed: ${parseErr.message}` },
           { status: 400 }
         );
       }
@@ -367,7 +367,7 @@ export async function POST(req: NextRequest) {
 
       const headers: Record<string, string> = {
         'Accept': 'application/json',
-        'User-Agent': 'CleanCore-Pilot/1.0 (BTP-Destination-Test)',
+        'User-Agent': 'CleanCore-Pilot/1.0 (Destination-Test)',
       };
 
       // Resolve authentication from parsed destination config
@@ -386,7 +386,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json(
             {
               status: 'failed',
-              message: `BTP OAuth2 token exchange failed: ${tokenErr.message}`,
+              message: `OAuth2 token exchange for the destination failed: ${tokenErr.message}`,
               details: { tokenUrl: config.tokenUrl },
             },
             { status: 401 }

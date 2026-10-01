@@ -126,7 +126,7 @@ async function buildAuthHeaders(body: any): Promise<{ headers: Record<string, st
 
   if (body.authType === 'btp_destination' && body.btpDestinationJson) {
     let parsed: any;
-    try { parsed = JSON.parse(body.btpDestinationJson); } catch { throw new Error('Invalid BTP Destination JSON.'); }
+    try { parsed = JSON.parse(body.btpDestinationJson); } catch { throw new Error('Invalid destination JSON (SAP Destination service).'); }
     targetUrl = parsed.URL || parsed.url || parsed.Url;
     if (!targetUrl) throw new Error('Destination JSON missing URL field.');
 

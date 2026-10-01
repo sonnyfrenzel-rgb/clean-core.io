@@ -49,6 +49,7 @@ import {
   emptyProjectDecision,
   normaliseProjectDecision,
 } from '@/lib/project-decision';
+import { isSideBySideRoute } from '@/lib/sap-naming';
 
 /* ------------------------------------------------------------------ fields */
 
@@ -103,7 +104,7 @@ export function recommendedArchitecture(source: {
   const fromRoute = (value: unknown): TargetArchitectureCode | null => {
     if (typeof value !== 'string') return null;
     if (isTargetArchitecture(value)) return value;
-    if (value.includes('BTP') || value.includes('Side-by-Side')) return 'cap';
+    if (isSideBySideRoute(value) || value.includes('Side-by-Side')) return 'cap';
     if (value.includes('ABAP Cloud') || value.includes('In-App')) return 'rap';
     return null;
   };

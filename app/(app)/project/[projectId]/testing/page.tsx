@@ -156,7 +156,7 @@ const AUTH_TYPE_OPTIONS = [
   { value: 'basic', label: 'Basic Authentication (Username + Password)' },
   { value: 'oauth2', label: 'OAuth 2.0 Client Credentials (Client ID + Secret)' },
   { value: 'sap_hub', label: 'SAP Business Accelerator Hub Sandbox (API Key only)' },
-  { value: 'btp_destination', label: 'SAP BTP Destination Service (Paste JSON)' },
+  { value: 'btp_destination', label: 'SAP Destination service (paste JSON)' },
 ] as const;
 
 /** The plain name of a stored authentication type — the option label without its parenthesis. */
@@ -405,7 +405,7 @@ export default function TestingSandboxPage() {
     const authLabel = s4AuthType === 'basic' ? 'Basic Auth' 
       : s4AuthType === 'oauth2' ? 'OAuth 2.0 Client Credentials' 
       : s4AuthType === 'sap_hub' ? 'SAP API Hub Sandbox Key'
-      : 'BTP Destination Service';
+      : 'SAP Destination service';
 
     // The test uses the saved connection, so it cannot run before there is one,
     // and it must not claim to be testing something the form has since changed.
@@ -2059,7 +2059,7 @@ export default function TestingSandboxPage() {
                         s4AuthType === 'sap_hub'
                           ? 'Use the SAP Business Accelerator Hub sandbox base URL. Find it at api.sap.com on any S/4HANA Cloud API page.'
                           : s4AuthType === 'btp_destination'
-                          ? 'Auto-filled from your BTP Destination JSON. You can also enter it manually.'
+                          ? 'Auto-filled from your destination JSON. You can also enter it manually.'
                           : 'Your S/4HANA Cloud API host. Format: https://myXXXXXX-api.s4hana.cloud.sap — found in your S/4HANA Launchpad under Communication Arrangements.'
                       }
                     >
@@ -2088,7 +2088,7 @@ export default function TestingSandboxPage() {
                         s4AuthType === 'basic' ? 'Best for direct S/4HANA Cloud sandbox connections using a Communication User.'
                           : s4AuthType === 'oauth2' ? 'Use when your Communication Arrangement provides OAuth 2.0 token endpoints.'
                           : s4AuthType === 'sap_hub' ? 'No S/4HANA system needed — uses SAP\'s free public sandbox APIs for testing.'
-                          : 'For enterprise setups routing through SAP BTP with Cloud Connector or direct proxy.'
+                          : 'For enterprise setups routing through BAIP with Cloud Connector or direct proxy.'
                       }
                     />
 
@@ -2096,9 +2096,9 @@ export default function TestingSandboxPage() {
                     {s4AuthType === 'btp_destination' && (
                       <div className="col-span-1 md:col-span-2">
                         <CcField
-                          label="SAP BTP Destination JSON Configuration"
+                          label="SAP Destination service JSON configuration"
                           required
-                          help="Paste the JSON from SAP BTP Cockpit → Connectivity → Destinations. The Name, URL, Authentication, and ProxyType fields are auto-extracted."
+                          help="Paste the JSON from the SAP BTP cockpit → Connectivity → Destinations. The Name, URL, Authentication, and ProxyType fields are auto-extracted."
                         >
                           {(control) => (
                             <textarea
@@ -2267,8 +2267,8 @@ export default function TestingSandboxPage() {
                               <span className="text-cc-ink-muted">Free sandbox API key. No own tenant needed — perfect for testing with SAP{"'"}s public demo APIs.</span>
                             </div>
                             <div className={authOption(s4AuthType === 'btp_destination')}>
-                              <span className="font-bold text-cc-ink block mb-1">BTP Destination Service (JSON)</span>
-                              <span className="text-cc-ink-muted">Paste your BTP destination JSON config. For enterprises routing via SAP BTP with Cloud Connector or Internet proxy.</span>
+                              <span className="font-bold text-cc-ink block mb-1">SAP Destination service (JSON)</span>
+                              <span className="text-cc-ink-muted">Paste your destination JSON config. For enterprises routing via BAIP with Cloud Connector or Internet proxy.</span>
                             </div>
                           </div>
                         </div>
@@ -2304,9 +2304,9 @@ export default function TestingSandboxPage() {
                           )}
                           {s4AuthType === 'btp_destination' && (
                             <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
-                              <p>→ Paste the full JSON from your BTP Destination into the text area below</p>
+                              <p>→ Paste the full JSON of your destination into the text area below</p>
                               <p>→ The system automatically extracts <strong>Name</strong>, <strong>URL</strong>, <strong>Authentication</strong>, and <strong>ProxyType</strong></p>
-                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: SAP BTP Cockpit → Connectivity → Destinations → Select your destination → Export as JSON (or copy the config)</p>
+                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: SAP BTP cockpit → Connectivity → Destinations → Select your destination → Export as JSON (or copy the config)</p>
                             </div>
                           )}
                         </div>

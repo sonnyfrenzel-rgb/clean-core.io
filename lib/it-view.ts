@@ -311,7 +311,7 @@ const EDITION_WORDS: Record<string, string> = {
 export function catalogSnapshotWords(key: string): string | null {
   if (key === 'latest') return 'SAP’s release list for the Public Edition (moving list)';
   if (key === 'pce-latest') return 'SAP’s release list for the Private Edition (moving list)';
-  if (key === 'btp-latest') return 'SAP’s release list for the BTP ABAP environment (moving list)';
+  if (key === 'btp-latest') return 'SAP’s release list for the SAP BTP ABAP environment (moving list)';
   const pinned = /^pce-(20\d{2})-(\d{1,2})$/.exec(key);
   if (pinned) {
     return `SAP’s release list for the Private Edition ${pinned[1]} FPS${pinned[2].padStart(2, '0')} (release-pinned)`;

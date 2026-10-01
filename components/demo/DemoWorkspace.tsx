@@ -23,6 +23,7 @@ import DemoDelivery from '@/components/delivery/DemoDelivery';
 import { catalogForReader } from '@/lib/messages/demo';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
 import { trackOfRoute } from '@/lib/transformation-view';
+import { routeLabel } from '@/lib/sap-naming';
 import DemoDocumentation from './DemoDocumentation';
 import {
   DEMO_INVITATION,
@@ -393,7 +394,7 @@ function Design({
       <div className={tile}>
         <span className={label}>Proposed route</span>
         <p data-testid="demo-route" className="m-0 mt-2 cc-text-title text-cc-ink">
-          {r.recommendedRoute}
+          {routeLabel(r.recommendedRoute)}
         </p>
         <p className="m-0 mt-2 cc-text-body text-cc-ink-muted">{r.rationale}</p>
         <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted">
@@ -454,7 +455,7 @@ function Design({
               )
             }
           >
-            {state.targetConfirmed ? 'Confirmed in this browser' : `Confirm ${r.recommendedRoute}`}
+            {state.targetConfirmed ? 'Confirmed in this browser' : `Confirm ${routeLabel(r.recommendedRoute)}`}
           </CcButton>
         </div>
       </CcCard>

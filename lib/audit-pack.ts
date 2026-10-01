@@ -32,6 +32,7 @@ import { escapeHtml } from '@/lib/export-safety';
 // the hashes in its manifest, not by being generated again, so every pack
 // issued before this change still verifies.
 import { EXPORT_WORD_CSS } from '@/lib/export-style';
+import { BAIP, BAIP_FIRST, routeLabel } from '@/lib/sap-naming';
 
 interface ManifestFile {
   path: string;
@@ -89,7 +90,7 @@ export interface AuditPackManifest {
 
 const ARCH_LABELS: Record<string, string> = {
   rap: 'In-App ABAP Cloud (RAP)',
-  cap: 'Side-by-Side BTP (CAP)',
+  cap: `Side-by-Side ${BAIP} (CAP)`,
   integration: 'SAP Integration Suite',
   event: 'SAP Event Mesh',
   retire: 'Retire / Decommission',
@@ -343,9 +344,9 @@ export function generateExecutiveSummary(project: Project): string {
 | Clean Core Score | ${project.cleanCoreScore ?? '—'}/100 |
 | Complexity Score | ${project.complexityScore ?? '—'}/100 |
 | Criticality Score | ${project.criticalityScore ?? '—'}/100 |
-| Engine Recommendation | ${mdCell(project.extensibilityRoute ? ARCH_LABELS[project.extensibilityRoute] || project.extensibilityRoute : '—')} |
+| Engine Recommendation | ${mdCell(project.extensibilityRoute ? ARCH_LABELS[project.extensibilityRoute] || routeLabel(project.extensibilityRoute) : '—')} |
 | Target Architecture & Sign-Off | ${SEE_ATTESTED} |
-| Extensibility Route | ${mdCell(project.extensibilityRoute || '—')} |
+| Extensibility Route | ${mdCell(project.extensibilityRoute ? routeLabel(project.extensibilityRoute) : '—')} |
 
 ## Input Summary
 
@@ -426,9 +427,9 @@ export function generateExecutiveSummaryDoc(project: Project): string {
       <tr><td>Clean Core Score</td><td>${score}/100</td></tr>
       <tr><td>Complexity Score</td><td>${complexity}/100</td></tr>
       <tr><td>Criticality Score</td><td>${criticality}/100</td></tr>
-      <tr><td>Engine Recommendation</td><td>${escapeHtml(project.extensibilityRoute ? ARCH_LABELS[project.extensibilityRoute] || project.extensibilityRoute : '—')}</td></tr>
+      <tr><td>Engine Recommendation</td><td>${escapeHtml(project.extensibilityRoute ? ARCH_LABELS[project.extensibilityRoute] || routeLabel(project.extensibilityRoute) : '—')}</td></tr>
       <tr><td>Target Architecture &amp; Sign-Off</td><td>${escapeHtml(SEE_ATTESTED)}</td></tr>
-      <tr><td>Extensibility Route</td><td>${escapeHtml(project.extensibilityRoute || '—')}</td></tr>
+      <tr><td>Extensibility Route</td><td>${escapeHtml(project.extensibilityRoute ? routeLabel(project.extensibilityRoute) : '—')}</td></tr>
     </tbody>
   </table>
 
@@ -560,7 +561,7 @@ ${mdCell(project.recommendationJustification || 'Derived from the deterministic 
 ## Considered options
 
 - **In-App ABAP Cloud (RAP)** — extend within the S/4HANA boundary on released APIs.
-- **Side-by-Side on SAP BTP (CAP)** — decoupled Node.js/TypeScript services, upgrade-safe.
+- **Side-by-Side on ${BAIP_FIRST} (CAP)** — decoupled Node.js/TypeScript services, upgrade-safe.
 - **Integration Suite / Event Mesh / Retire** — for middleware, asynchronous, or deprecation cases.
 
 ## Scope & consequences
@@ -576,7 +577,7 @@ ${list(oos)}
 
 ## Evidence
 
-- Extensibility route: ${mdCell(project.extensibilityRoute || original)}
+- Extensibility route: ${mdCell(project.extensibilityRoute ? routeLabel(project.extensibilityRoute) : original)}
 - Engine: ${mdCell(mc?.engineVersion || APP_VERSION)} · SAP catalog: ${mdCell(catalogVersionOf(project))}
 - Bound to the immutable, HMAC-signed analysis run — the findings behind this decision are reproducible.
 

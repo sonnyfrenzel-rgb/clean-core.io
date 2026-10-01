@@ -14,6 +14,7 @@ import { absenceFromError, type ModelAbsence, type ModelParticipation } from '@/
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { readModelGaps, gapsUnreadableSentence } from '@/lib/model-gaps';
 import { pinRunOwnedFields } from '@/lib/model-owned-fields';
+import { SIDE_BY_SIDE_ROUTE } from '@/lib/sap-naming';
 
 /**
  * One analysis run, startable from more than one screen.
@@ -298,7 +299,7 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
         codeInventory: extractCodeInventory(legacyCode),
         dataCoupling: extractDataCoupling(legacyCode),
         evidenceReport: JSON.parse(JSON.stringify(evidenceReport)),
-        originalRecommendation: routeReport.recommendedRoute === 'Side-by-Side (SAP BTP)' ? 'cap' : 'rap',
+        originalRecommendation: routeReport.recommendedRoute === SIDE_BY_SIDE_ROUTE ? 'cap' : 'rap',
         recommendationConfidence: routeReport.confidenceScore,
         recommendationJustification: routeReport.rationale,
         uploadedFileName: fileName,

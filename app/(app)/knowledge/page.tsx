@@ -6,6 +6,7 @@ import KnowledgeClient from '@/components/KnowledgeClient';
 import BackLink from '@/components/BackLink';
 import QuickAnswer from '@/components/QuickAnswer';
 import CcTable from '@/components/cc/Table';
+import { BAIP, BAIP_FIRST } from '@/lib/sap-naming';
 
 // Server-side Metadata configuration for SEO & GEO Crawlers
 export const metadata: Metadata = withTwitterCard({
@@ -26,15 +27,15 @@ export const metadata: Metadata = withTwitterCard({
 const faqs = [
   {
     question: "What is the SAP S/4HANA Clean Core strategy?",
-    answer: "The Clean Core strategy is an architectural design principle that keeps the SAP standard ERP core software free of custom modifications. Custom extensions are developed either \"in-app\" using key-user extensibility or \"side-by-side\" on the SAP Business Technology Platform (BTP). This decoupling lowers upgrade risk and technical debt: extensions built on released interfaces are far less likely to break on an upgrade, though each upgrade still needs its compatibility and regression testing."
+    answer: `The Clean Core strategy is an architectural design principle that keeps the SAP standard ERP core software free of custom modifications. Custom extensions are developed either \"in-app\" using key-user extensibility or \"side-by-side\" on the ${BAIP_FIRST}. This decoupling lowers upgrade risk and technical debt: extensions built on released interfaces are far less likely to break on an upgrade, though each upgrade still needs its compatibility and regression testing.`
   },
   {
     question: "What is the difference between In-App RAP and Side-by-Side CAP extensions?",
-    answer: "In-App RAP (ABAP RESTful Application Programming Model) runs directly within the S/4HANA tenant. It is ideal for extending standard SAP business objects and UI layers using native ABAP in a cloud-compliant way. Side-by-Side CAP (Cloud Application Programming Model) runs externally on SAP BTP, typically using Node.js or Java. It is designed for standalone cloud-native applications, multi-tenant SaaS products, and integration with non-SAP systems, fully decoupling execution from the ERP core."
+    answer: `In-App RAP (ABAP RESTful Application Programming Model) runs directly within the S/4HANA tenant. It is ideal for extending standard SAP business objects and UI layers using native ABAP in a cloud-compliant way. Side-by-Side CAP (Cloud Application Programming Model) runs externally on ${BAIP}, typically using Node.js or Java. It is designed for standalone cloud-native applications, multi-tenant SaaS products, and integration with non-SAP systems, fully decoupling execution from the ERP core.`
   },
   {
-    question: "How does Clean-Core.io secure Side-by-Side BTP integration?",
-    answer: "Clean-Core.io does not configure anything in your BTP or S/4HANA tenant. The usual security pattern for a side-by-side extension is JSON Web Tokens (JWT) validated by the SAP XSUAA (Extended Services for User Account and Authentication) service for stateless API calls with role-based access control (RBAC), and SAP BTP Connectivity and Destination services routing RFC and OData traffic via SAP Cloud Connector without exposing internal endpoints. Setting that up in your tenant is your team's work; the app provides analysis, design drafts and a read-only connection check, not the deployment."
+    question: `How does Clean-Core.io secure a side-by-side integration on ${BAIP}?`,
+    answer: "Clean-Core.io does not configure anything in your BAIP subaccount or S/4HANA tenant. The usual security pattern for a side-by-side extension is JSON Web Tokens (JWT) validated by the SAP XSUAA (Extended Services for User Account and Authentication) service for stateless API calls with role-based access control (RBAC), and the SAP Connectivity and Destination services routing RFC and OData traffic via SAP Cloud Connector without exposing internal endpoints. Setting that up in your tenant is your team's work; the app provides analysis, design drafts and a read-only connection check, not the deployment."
   },
   {
     question: "What is the BYOT (Bring Your Own Tenant) connectivity model?",
@@ -57,11 +58,11 @@ const faqs = [
 const COMPARISON_COLUMNS = [
   { key: 'criterion', label: 'Feature / Criteria' },
   { key: 'rap', label: 'In-App RAP (ABAP RESTful)' },
-  { key: 'cap', label: 'Side-by-Side CAP (SAP BTP)' },
+  { key: 'cap', label: `Side-by-Side CAP (${BAIP})` },
 ] as const;
 
 const COMPARISON_ROWS = [
-  { criterion: 'Runtime Environment', rap: 'Directly inside SAP S/4HANA (ABAP stack)', cap: 'SAP BTP (Node.js, Java, Cloud Foundry/Kyma)' },
+  { criterion: 'Runtime Environment', rap: 'Directly inside SAP S/4HANA (ABAP stack)', cap: `${BAIP} (Node.js, Java, Cloud Foundry/Kyma)` },
   { criterion: 'Primary Use Case', rap: 'Modifying/enhancing standard SAP business logic', cap: 'Standalone apps, partner SaaS, multi-system integration' },
   { criterion: 'Development Languages', rap: 'Modern ABAP (Cloud-enabled subset)', cap: 'JavaScript, TypeScript, Java' },
   { criterion: 'Database Access', rap: 'Native SQL on HANA via CDS views', cap: 'OData, REST, or database targets (HANA, PG, SQLite)' },
@@ -104,18 +105,18 @@ export default function KnowledgePage() {
             <BookOpen size={14} aria-hidden="true" /> Knowledge Hub
           </div>
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-none text-cc-ink">
-            Clean Core & BTP <span className="text-cc-brand-strong">Reference Hub</span>
+            Clean Core & Extensibility <span className="text-cc-brand-strong">Reference Hub</span>
           </h1>
           <p className="text-lg text-cc-ink-muted leading-relaxed max-w-2xl font-medium">
             Discover the technical architectures, security guidelines, and extensibility patterns aligned with SAP's published Clean Core guidelines for S/4HANA.
           </p>
           <p className="text-sm text-cc-ink-muted leading-relaxed max-w-2xl font-medium border-l-2 border-cc-brand pl-4">
-            Naming note: since SAP Sapphire 2026, SAP BTP sits under the{' '}
-            <strong className="text-cc-ink">SAP Business AI Platform (BAIP)</strong> umbrella together with
-            SAP Business Data Cloud and SAP Business AI. This is a portfolio consolidation, not a retirement of
-            SAP BTP &mdash; the services keep their names, and SAP shipped releases under the name &ldquo;SAP BTP
-            ABAP environment&rdquo; as recently as August 2026. We use SAP BTP for the concrete services and
-            SAP BAIP for the portfolio around them.
+            Naming note: since SAP Sapphire 2026, the platform for side-by-side extensions is the{' '}
+            <strong className="text-cc-ink">{BAIP_FIRST}</strong>, together with SAP Business Data Cloud and
+            SAP Business AI. This is a portfolio consolidation, not a retirement &mdash; the services keep their
+            names, and SAP shipped releases under the name &ldquo;SAP BTP ABAP environment&rdquo; as
+            recently as August 2026. We use SAP&apos;s own names for the concrete services and {BAIP} for the
+            platform around them.
           </p>
         </div>
       </div>
@@ -136,7 +137,7 @@ export default function KnowledgePage() {
             <Layers className="text-cc-brand-strong" aria-hidden="true" /> Extensibility Paradigm Comparison
           </h2>
           <p className="text-xs text-cc-ink-muted font-bold uppercase tracking-wider">
-            Decision framework comparing SAP RAP and BTP CAP extension routes
+            Decision framework comparing the RAP route on SAP S/4HANA and the CAP route on {BAIP}
           </p>
         </div>
 

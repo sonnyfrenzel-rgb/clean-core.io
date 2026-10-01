@@ -24,6 +24,7 @@
 import type { CoverageReport } from './abap/coverage';
 import type { EvidenceFinding } from './abap/evidence-model';
 import { calmTitle, kindLabel } from './findings-view';
+import { BAIP } from './sap-naming';
 
 /* ---------------------------------------------------------------- routes */
 
@@ -39,7 +40,7 @@ const TRACK_OPTIONS: Record<ProjectTrack, readonly TargetOption[]> = {
 };
 
 export const TRACK_LABEL: Record<ProjectTrack, string> = {
-  'side-by-side': 'Side-by-side on SAP BTP',
+  'side-by-side': `Side-by-side on ${BAIP}`,
   'in-app': 'In-app ABAP Cloud',
 };
 

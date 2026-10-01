@@ -17,11 +17,13 @@
  * producer asked.
  */
 
+import { SIDE_BY_SIDE_ROUTE, isSideBySideRoute } from './sap-naming';
+
 /** What the generator assumes when a project carries no route at all. */
-export const DEFAULT_EXTENSIBILITY_ROUTE = 'Side-by-Side (SAP BTP)';
+export const DEFAULT_EXTENSIBILITY_ROUTE = SIDE_BY_SIDE_ROUTE;
 
 export function isAbapCloudTrack(route?: string | null): boolean {
-  return !(route || DEFAULT_EXTENSIBILITY_ROUTE).includes('BTP');
+  return !isSideBySideRoute(route || DEFAULT_EXTENSIBILITY_ROUTE);
 }
 
 export interface TrackCopy {

@@ -65,6 +65,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import DesignCanvasStage, { type DesignDocSection } from '@/components/design/DesignCanvasStage';
 import { useDesignEvidence } from '@/hooks/useDesignEvidence';
 import { architectureCanvasModel } from '@/lib/architecture-canvas';
+import { BAIP, BAIP_FIRST, SIDE_BY_SIDE_ROUTE, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
 
 
 /**
@@ -199,8 +200,8 @@ export default function DesignPage() {
     try {
       const db = getDb();
       const projData = await loadProjectAndHydrate(projectId as string);
-      const route = projData?.extensibilityRoute || 'Side-by-Side (SAP BTP)';
-      const isAbapCloud = !route.includes('BTP');
+      const route = projData?.extensibilityRoute || SIDE_BY_SIDE_ROUTE;
+      const isAbapCloud = !isSideBySideRoute(route);
 
       const prompt = isAbapCloud 
         ? `Act as a Senior SAP Enterprise Architect. Analyze the legacy business analysis results and design a modern, clean SAP RAP (RESTful Application Programming Model) Developer Extensibility target architecture.
@@ -240,7 +241,7 @@ interface DesignData {
 
 Analysis Context:
 ${prepareAnalysisContext(analysis)}`
-        : `Act as a Senior SAP Cloud Solutions Architect. Analyze the legacy business analysis results and design a modern, highly professional modular SAP CAP (Cloud Application Programming) side-by-side transformed cloud architecture.
+        : `Act as a Senior SAP Cloud Solutions Architect. Analyze the legacy business analysis results and design a modern, highly professional modular SAP CAP (Cloud Application Programming) side-by-side transformed cloud architecture. Name the platform "${BAIP_FIRST}" at its first mention and "${BAIP}" after that; keep the names of SAP services exactly as SAP names them.
 You must return your output strictly in JSON format. Do not include any markdown formatting, HTML, or explanations outside the JSON object. The JSON must exactly match this TypeScript schema:
 
 interface DesignData {
@@ -248,19 +249,19 @@ interface DesignData {
   architectureOverview: {
     approachDescription: string; // A concise 2-3 sentence overview of the transformed architectural approach. Focus on loose coupling, exposing legacy core through standard versioned APIs, and deploying side-by-side.
     nodeFramework: string; // Value MUST be: "SAP CAP (Cloud Application Programming model)" with a brief justification
-    runtimePlatform: string; // Value MUST be: "SAP BTP (Business Technology Platform)"
+    runtimePlatform: string; // Value MUST be: "${BAIP_FIRST}"
   };
   nodeAppBlueprint: {
     projectStructure: Array<{ path: string; purpose: string }>; // Recommended modular CAP layout: db/schema.cds (CDS schema), srv/service.cds (service definitions), srv/service.ts (business handlers), package.json, Dockerfile.
     apiEndpoints: Array<{ path: string; method: 'GET' | 'POST' | 'PUT' | 'DELETE'; description: string }>; // REST or OData service endpoints designed to handle the legacy business capability
   };
   cloudServices: Array<{
-    serviceName: string; // Name of the cloud BTP service (e.g. XSUAA Identity Provider, Destination service, Event Mesh, BTP PostgreSQL)
-    purpose: string; // Concrete usage in this BTP extension
+    serviceName: string; // Name of the cloud service on ${BAIP} (e.g. XSUAA Identity Provider, Destination service, Event Mesh, PostgreSQL on ${BAIP})
+    purpose: string; // Concrete usage in this ${BAIP} extension
     npmPackages: string[]; // Actual npm packages used in CAP/Node.js to integrate with it (e.g. ['@sap/xssec', '@sap/cds'], ['@sap-cloud-sdk/connectivity'], ['pg'], ['@sap/cds-dk'])
   }>;
   dataSync: {
-    patternName: string; // E.g. "Event-Driven via BTP Event Mesh", "Transactional BTP Destination Routing"
+    patternName: string; // E.g. "Event-Driven via SAP Event Mesh", "Transactional SAP Destination service routing"
     description: string; // Technical description of how data stays consistent between the CAP service and the legacy core.
   };
   sapStandardApiMapping?: Array<{
@@ -272,12 +273,12 @@ interface DesignData {
   }>;
   securityHardening: Array<{
     category: string; // e.g. Authentication, Network, Coding, Audit
-    requirement: string; // Node.js / CAP / BTP security rule ONLY. MUST use only BTP-native and Node.js concepts. NEVER reference ABAP, AUTHORITY-CHECK, or any ABAP-native constructs. Example: 'XSUAA JWT Validation via @sap/xssec'
-    packageOrConfig: string; // Node.js/BTP implementation ONLY. Examples: 'app.use(passport.authenticate("JWT", { session: false }))', 'app.use(helmet())', 'npm audit --audit-level=high', '@sap/xssec'. NEVER use ABAP code or syntax.
+    requirement: string; // Node.js / CAP / ${BAIP} security rule ONLY. MUST use only ${BAIP}-native and Node.js concepts. NEVER reference ABAP, AUTHORITY-CHECK, or any ABAP-native constructs. Example: 'XSUAA JWT Validation via @sap/xssec'
+    packageOrConfig: string; // Node.js/${BAIP} implementation ONLY. Examples: 'app.use(passport.authenticate("JWT", { session: false }))', 'app.use(helmet())', 'npm audit --audit-level=high', '@sap/xssec'. NEVER use ABAP code or syntax.
   }>;
   roadmap: Array<{
     phase: string; // Phase index (e.g. Phase 0, Phase 1, Phase 2, Phase 3)
-    title: string; // Title of the phase (e.g. Foundation, CAP Service exposure, BTP Event Integration, Production Hardening)
+    title: string; // Title of the phase (e.g. Foundation, CAP Service exposure, ${BAIP} Event Integration, Production Hardening)
     deliverables: string[]; // 3-4 concrete, down-to-earth engineering deliverables for this phase
   }>;
 }
@@ -808,7 +809,7 @@ ${responseText.substring(0, 4000)}`;
       // translated in one place, which the server validates against.
       recommendation={recommendation}
       confidenceScore={project?.recommendationConfidence}
-      justificationText={project?.recommendationJustification || `Based on the code analysis, the ${project?.extensibilityRoute?.includes('BTP') ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`}
+      justificationText={project?.recommendationJustification ? sapNamesForDisplay(project.recommendationJustification) : `Based on the code analysis, the ${isSideBySideRoute(project?.extensibilityRoute) ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`}
       isLocked={project?.approvedByArchitect === true}
       currentArchitecture={project?.targetArchitecture}
       currentJustification={project?.architectJustifiedOverride}

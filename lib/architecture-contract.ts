@@ -103,6 +103,12 @@ import { referenceDigest, type InputManifest, type ManifestInput, INPUT_IDS } fr
 import type { ProvenanceValue } from './provenance';
 import type { AbapEvidenceReport, EvidenceFinding } from './abap/evidence-model';
 import { routeDrivers, type ExtensibilityRouteReport, type RouteDriver } from './abap/extensibility-router';
+import {
+  FINGERPRINTED_FORMER_NAME as FORMER_NAME,
+  FINGERPRINTED_FORMER_SHORT as FORMER_SHORT,
+  SIDE_BY_SIDE_ROUTE,
+  sapNamesForDisplay,
+} from './sap-naming';
 
 /** Format of the contract record. Bumped only when the canonical form changes. */
 export const CONTRACT_VERSION = 1;
@@ -111,7 +117,7 @@ export const CONTRACT_VERSION = 1;
 export type TargetRoute = 'in-app-rap' | 'side-by-side-cap';
 
 export function targetRouteOf(report: Pick<ExtensibilityRouteReport, 'recommendedRoute'>): TargetRoute {
-  return report.recommendedRoute === 'Side-by-Side (SAP BTP)' ? 'side-by-side-cap' : 'in-app-rap';
+  return report.recommendedRoute === SIDE_BY_SIDE_ROUTE ? 'side-by-side-cap' : 'in-app-rap';
 }
 
 /** The seven fields of the document, in the order it reads (mockup: "Details (7 fields)"). */
@@ -244,7 +250,9 @@ export const ALTERNATIVE_LABELS: Readonly<Record<AlternativeId, string>> = Objec
   standard: 'Cover the requirement with SAP standard — build nothing',
   'key-user': 'Key user extensibility (tier 3)',
   'in-app-rap': 'In-app developer extensibility — ABAP Cloud / RAP on the stack',
-  'side-by-side-cap': 'Side-by-side on SAP BTP — CAP',
+  // Fingerprinted bytes (roadmap 3.0.15): a rejected alternative's label enters a
+  // field statement. Shown through `contractForDisplay()`.
+  'side-by-side-cap': `Side-by-side on ${FORMER_NAME} — CAP`,
 });
 
 export interface ContractAlternative {
@@ -412,6 +420,34 @@ export function contractFingerprint(contract: ArchitectureContract): string {
   return sha256Hex(canonicalArchitectureContract(contract));
 }
 
+/**
+ * The contract as a screen shows it (roadmap 3.0.15): the platform's former
+ * name in the summary, the statements, the alternatives' labels and reasons
+ * reads as BAIP. Display only — the fingerprint stays the one of the stored
+ * bytes, so nothing that binds the contract may be handed this copy.
+ */
+export function contractForDisplay(contract: ArchitectureContract): ArchitectureContract {
+  return {
+    ...contract,
+    summary: sapNamesForDisplay(contract.summary),
+    fields: contract.fields.map((f) => ({
+      ...f,
+      statement: f.statement === null ? null : sapNamesForDisplay(f.statement),
+    })),
+    alternatives: contract.alternatives.map((a) => ({
+      ...a,
+      label: sapNamesForDisplay(a.label),
+      reason: sapNamesForDisplay(a.reason),
+    })),
+  };
+}
+
+/** An alternative's label as a screen shows it (`contractForDisplay`). */
+export function alternativeLabelForDisplay(id: string): string | undefined {
+  const label = (ALTERNATIVE_LABELS as Record<string, string>)[id];
+  return label === undefined ? undefined : sapNamesForDisplay(label);
+}
+
 /* ---------- the seam into the signed input manifest ---------- */
 
 /** The input id a contract occupies in a downstream run's manifest. */
@@ -470,14 +506,14 @@ export function contractManifestInput(contract: ArchitectureContract): ManifestI
 
 const ROUTE_LABELS: Readonly<Record<TargetRoute, string>> = Object.freeze({
   'in-app-rap': 'On-stack ABAP Cloud with RAP',
-  'side-by-side-cap': 'Side-by-side on SAP BTP with CAP',
+  'side-by-side-cap': `Side-by-side on ${FORMER_NAME} with CAP`,
 });
 
 const RUNTIME_SENTENCES: Readonly<Record<TargetRoute, string>> = Object.freeze({
   'in-app-rap':
     'ABAP Cloud on the S/4HANA application server: RAP behaviour and service definitions in the customer namespace, released APIs only.',
   'side-by-side-cap':
-    'A decoupled runtime on SAP BTP: a CAP service (Node.js or Java) with its own lifecycle, reaching S/4HANA through released APIs and events.',
+    `A decoupled runtime on ${FORMER_NAME}: a CAP service (Node.js or Java) with its own lifecycle, reaching S/4HANA through released APIs and events.`,
 });
 
 /**
@@ -855,7 +891,7 @@ export function buildArchitectureContract(args: {
         label: ALTERNATIVE_LABELS[id],
         verdict: 'rejected',
         reason:
-          'Rejected as a setting, not on evidence: no construct of this run requires a decoupled runtime, and a separate BTP runtime adds a lifecycle, a network hop and a licence for work the stack already carries. Nothing in the code rules it out.',
+          `Rejected as a setting, not on evidence: no construct of this run requires a decoupled runtime, and a separate ${FORMER_SHORT} runtime adds a lifecycle, a network hop and a licence for work the stack already carries. Nothing in the code rules it out.`,
         basis: 'stipulation',
         citations: [{ kind: 'router', ref: 'comparativeAnalysis.sideBySideBTP.fitDetails' }],
       });

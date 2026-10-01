@@ -10,6 +10,7 @@ import type { SeverityValue } from '@/lib/severity';
 import { CcSeverity } from '@/components/cc/Identifier';
 import { publicButton } from '@/components/landing/public-button';
 import { scoreBand } from '@/lib/clean-core-score';
+import { routeLabelFirst } from '@/lib/sap-naming';
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 
@@ -163,7 +164,7 @@ export default function ReferenceAnalysisPage() {
         </div>
         <p className="text-sm text-cc-ink-muted leading-relaxed">
           The engine also recommends a target route for this program:{' '}
-          <strong className="text-cc-ink">{r.recommendedRoute}</strong>. That recommendation is
+          <strong className="text-cc-ink">{routeLabelFirst(r.recommendedRoute)}</strong>. That recommendation is
           derived from the findings, not from the AI layer — you can see the reasoning in the product.
         </p>
       </section>

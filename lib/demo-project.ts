@@ -25,6 +25,7 @@ import { readTableDependencies } from '@/lib/abap/table-dependencies';
 import { objectSites, sitesByElement } from '@/lib/process-overlays';
 import { buildProcessDocumentation } from '@/lib/process-documentation-build';
 import { buildProcessHandbook, handbookToData, type ProcessHandbookData } from '@/lib/process-handbook';
+import { routeLabel } from '@/lib/sap-naming';
 import {
   DEMO_OBJECT_NAME,
   DEMO_PROJECT_TITLE,
@@ -240,7 +241,7 @@ function buildRail(demo: Omit<DemoProject, 'rail'>): DemoRailStep[] {
       'design',
       'partial',
       'Route proposed',
-      `${demo.design.recommendedRoute} proposed from the evidence. Confirming it here changes this browser and nothing else.`,
+      `${routeLabel(demo.design.recommendedRoute)} proposed from the evidence. Confirming it here changes this browser and nothing else.`,
     ),
     railStep(
       'transformation',

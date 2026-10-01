@@ -102,6 +102,7 @@ import { coverageCaveat } from '@/lib/abap/coverage';
 import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
 import EvidenceFindingsTable from '@/components/analyze/EvidenceFindingsTable';
 import { analysisAnswer, countFindings, groupEvidenceFindings, plainRoute } from '@/components/analyze/analysis-answer';
+import { BAIP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE, isSideBySideRoute, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
 import CleanCoreScoreSection from '@/components/analyze/CleanCoreScoreSection';
 import ObjectSection from '@/components/analyze/ObjectSection';
 import CcAnchor from '@/components/cc/Anchor';
@@ -552,7 +553,7 @@ export default function AnalyzePage() {
             codeInventory: inventory,
             dataCoupling: coupling,
             evidenceReport: JSON.parse(JSON.stringify(evidenceReport)),
-            originalRecommendation: recommendedRoute === 'Side-by-Side (SAP BTP)' ? 'cap' : 'rap',
+            originalRecommendation: recommendedRoute === SIDE_BY_SIDE_ROUTE ? 'cap' : 'rap',
             recommendationConfidence: computedRouteReport.confidenceScore,
             recommendationJustification: computedRouteReport.rationale,
             uploadedFileName,
@@ -591,7 +592,7 @@ export default function AnalyzePage() {
                 dataCoupling: coupling,
                 complexityScore,
                 criticalityScore,
-                originalRecommendation: recommendedRoute === 'Side-by-Side (SAP BTP)' ? 'cap' : 'rap',
+                originalRecommendation: recommendedRoute === SIDE_BY_SIDE_ROUTE ? 'cap' : 'rap',
                 recommendationConfidence: computedRouteReport.confidenceScore,
                 recommendationJustification: computedRouteReport.rationale,
                 evidenceReport,
@@ -1175,10 +1176,10 @@ export default function AnalyzePage() {
                   <span aria-hidden={true} className="grid h-10 w-10 shrink-0 place-items-center rounded-cc-card border border-cc-line bg-cc-surface text-cc-ink">
                     <Cloud size={20} aria-hidden="true" />
                   </span>
-                  <p className="m-0 cc-text-h3 text-cc-ink">{project.extensibilityRoute || 'Not determined'}</p>
+                  <p className="m-0 cc-text-h3 text-cc-ink">{project.extensibilityRoute ? routeLabel(project.extensibilityRoute) : 'Not determined'}</p>
                 </div>
                 {project.recommendationJustification && (
-                  <p className="m-0 mt-3 cc-text-cell text-cc-ink">{project.recommendationJustification}</p>
+                  <p className="m-0 mt-3 cc-text-cell text-cc-ink">{sapNamesForDisplay(project.recommendationJustification)}</p>
                 )}
                 <div className="mt-3">
                   <CcButton variant="secondary" density="compact" onClick={() => router.push(`/project/${projectId}/design`)}>
@@ -1252,15 +1253,16 @@ export default function AnalyzePage() {
         plainEnglishActionPlan: modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) ?? [
           "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
           "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",
-          `3. Decouple unique, high-value custom intellectual property into a modern, upgrade-stable ${analysisData.extensibilityRouting?.recommendedRoute || 'decoupled'} architecture.`
+          `3. Decouple unique, high-value custom intellectual property into a modern, upgrade-stable ${routeLabel(analysisData.extensibilityRouting?.recommendedRoute || 'decoupled')} architecture.`
         ]
       };
       const checkpoints = analysisData.extensibilityRouting?.decisionTreeCheckpoints;
       const comparative = analysisData.extensibilityRouting?.comparativeAnalysis;
       const shownRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || null;
-      const routeForCards = shownRoute || 'Side-by-Side (SAP BTP)';
-      const isBtp = routeForCards.includes('BTP');
-      const rationale = analysisData.extensibilityRouting?.rationale;
+      const routeForCards = shownRoute || SIDE_BY_SIDE_ROUTE;
+      const isBtp = isSideBySideRoute(routeForCards);
+      const storedRationale = analysisData.extensibilityRouting?.rationale;
+      const rationale = storedRationale ? sapNamesForDisplay(storedRationale) : storedRationale;
       const planIsModel = modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) !== null;
 
       // The action plan, with the line that says whose it is (D.10b, from
@@ -1280,7 +1282,7 @@ export default function AnalyzePage() {
           </div>
           <PlainEnglishGuide
             plainEnglishActionPlan={bizFallback.plainEnglishActionPlan}
-            extensibilityRoute={project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Decoupled Extension'}
+            extensibilityRoute={routeLabel(project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Decoupled Extension')}
           />
         </div>
       );
@@ -1367,7 +1369,7 @@ export default function AnalyzePage() {
                       docs/registers/preservation-register.json. */}
                   <span data-stage-output="extensibilityRoute" className={ROUTE_TAG_CLASS}>
                     {isBtp
-                      ? <GlossaryTerm termKey="BTP" className="border-b-0 text-cc-ink">BTP Side-by-Side</GlossaryTerm>
+                      ? <GlossaryTerm termKey="BAIP" className="border-b-0 text-cc-ink">{`${BAIP} Side-by-Side`}</GlossaryTerm>
                       : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">ABAP Cloud (RAP)</GlossaryTerm>}
                   </span>
                   <span className="cc-text-meta text-cc-ink-muted">
@@ -1382,7 +1384,7 @@ export default function AnalyzePage() {
                   {/* After a switch, the recommended route's artefact is not the target
                       (QA full review of fc787674705f, 08fd882e60b3). */}
                   Target: {(!routeIsOverridden && analysisData.extensibilityRouting?.targetArtifact) || (isBtp
-                    ? <GlossaryTerm termKey="CAP" className="border-b-0 text-cc-ink">SAP BTP Node.js App (CAP)</GlossaryTerm>
+                    ? <GlossaryTerm termKey="CAP" className="border-b-0 text-cc-ink">{`${BAIP} Node.js App (CAP)`}</GlossaryTerm>
                     : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">RAP Business Object</GlossaryTerm>)}
                 </p>
                   </div>
@@ -1394,7 +1396,7 @@ export default function AnalyzePage() {
                   // decision (QA review of 33471220d6e9, 210bafeb4c8b).
                   <p className="mt-1 cc-text-cell text-cc-ink-muted">
                     You changed this route. The recommendation was{' '}
-                    <span className="font-semibold text-cc-ink">{analysisData.extensibilityRouting?.recommendedRoute}</span>
+                    <span className="font-semibold text-cc-ink">{routeLabel(analysisData.extensibilityRouting?.recommendedRoute ?? '')}</span>
                     {signedRouteConfidence !== null
                       ? ` at ${signedRouteConfidence}% confidence`
                       : ''}
@@ -1451,8 +1453,8 @@ export default function AnalyzePage() {
                     data-route-switch
                     onClick={async () => {
                       if (routeSwitch.busy) return;
-                      const currentRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)';
-                      const nextRoute = currentRoute.includes('BTP') ? 'In-App (ABAP Cloud)' : 'Side-by-Side (SAP BTP)';
+                      const currentRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || SIDE_BY_SIDE_ROUTE;
+                      const nextRoute = isSideBySideRoute(currentRoute) ? IN_APP_ROUTE : SIDE_BY_SIDE_ROUTE;
 
                       setRouteSwitch({ busy: true, error: '' });
                       try {
@@ -1465,7 +1467,7 @@ export default function AnalyzePage() {
                       }
                     }}
                   >
-                    {isBtp ? 'Switch to ABAP Cloud' : 'Switch to BTP'}
+                    {isBtp ? 'Switch to ABAP Cloud' : `Switch to ${BAIP}`}
                   </CcButton>
                 </div>
                 {routeSwitch.error && (
@@ -1648,7 +1650,7 @@ export default function AnalyzePage() {
             <div className="flex items-center gap-3">
               {/* Route */}
               <span className={ROUTE_TAG_CLASS}>
-                {(project.extensibilityRoute || '').includes('BTP') ? 'BTP Side-by-Side' : 'ABAP Cloud (RAP)'}
+                {isSideBySideRoute(project.extensibilityRoute) ? `${BAIP} Side-by-Side` : 'ABAP Cloud (RAP)'}
               </span>
 
               {/* Score */}
@@ -2173,7 +2175,7 @@ export default function AnalyzePage() {
                       </p>
                       <ul className="list-disc pl-4 space-y-1">
                         <li><strong>Unreleased APIs Forbidden:</strong> Any legacy unreleased SAP tables/functions used by your custom logic are unreachable.</li>
-                        <li><strong>Strict Clean Core Compliance:</strong> The analysis will prioritize <strong>BTP Side-by-Side (CAP)</strong> or <strong>In-App RAP</strong> using strictly released APIs. You must plan to decommission or completely rewrite outdated custom logic.</li>
+                        <li><strong>Strict Clean Core Compliance:</strong> The analysis will prioritize <strong>{`${BAIP} Side-by-Side (CAP)`}</strong> or <strong>In-App RAP</strong> using strictly released APIs. You must plan to decommission or completely rewrite outdated custom logic.</li>
                       </ul>
                     </>
                   ) : (

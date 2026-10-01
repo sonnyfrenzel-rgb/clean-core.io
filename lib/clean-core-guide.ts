@@ -13,6 +13,8 @@
  * likelihood of confusion would be squarely in the same field.
  */
 
+import { BAIP, BAIP_FIRST, BAIP_FORMERLY, BAIP_NAME } from './sap-naming';
+
 export type NoteKind = 'remember' | 'tip' | 'warning' | 'advanced' | 'jargon';
 
 export interface Note {
@@ -165,9 +167,9 @@ export const GUIDE_PARTS: Part[] = [
               'Your code runs outside the SAP system, on a separate platform, and talks to SAP over published interfaces. More freedom, more moving parts.',
           },
           {
-            term: 'SAP BTP',
+            term: `${BAIP_NAME} (${BAIP})`,
             definition:
-              'Business Technology Platform — SAP\'s cloud platform where side-by-side extensions live. Think of it as the sanctioned place to put things that no longer belong inside the ERP.',
+              `SAP's cloud platform where side-by-side extensions live, ${BAIP_FORMERLY} (Business Technology Platform). Think of it as the sanctioned place to put things that no longer belong inside the ERP.`,
           },
           {
             term: 'ABAP Cloud',
@@ -182,7 +184,7 @@ export const GUIDE_PARTS: Part[] = [
           {
             term: 'CAP',
             definition:
-              'Cloud Application Programming Model — SAP\'s framework for building services on BTP, typically in Node.js or Java. Used for side-by-side extensions.',
+              `Cloud Application Programming Model — SAP's framework for building services on ${BAIP}, typically in Node.js or Java. Used for side-by-side extensions.`,
           },
           {
             term: 'Modification',
@@ -268,9 +270,9 @@ export const GUIDE_PARTS: Part[] = [
         lede:
           'Data gravity and transactional coupling pull in-app; independent lifecycle and non-SAP concerns push side-by-side.',
         paragraphs: [
-          'The choice is not a matter of taste, and it is not "cloud is modern so everything goes to BTP". It follows from what the object does.',
+          `The choice is not a matter of taste, and it is not "cloud is modern so everything goes to ${BAIP}". It follows from what the object does.`,
           'Logic that reads and writes SAP business data in the same transaction — a validation on a sales order, a derivation during posting — belongs in-app, as RAP. Moving it outside means network round trips inside a transaction boundary, which is both slow and fragile.',
-          'Logic that serves a different audience, changes on a different schedule, or needs libraries the ABAP stack does not have — a partner portal, a machine-learning scoring service, a mobile back end — belongs side-by-side, as CAP on BTP.',
+          `Logic that serves a different audience, changes on a different schedule, or needs libraries the ABAP stack does not have — a partner portal, a machine-learning scoring service, a mobile back end — belongs side-by-side, as CAP on ${BAIP}.`,
           'Between those poles sits a large grey zone, and this is where honest architecture happens. The tie-breaker worth applying: if the extension must be deployed in lockstep with the ERP to remain correct, it is in-app. If it can be released on its own cadence, it is side-by-side.',
         ],
         table: {
@@ -414,7 +416,7 @@ export const GUIDE_FAQ: { question: string; answer: string }[] = [
   {
     question: 'What is the difference between in-app and side-by-side extensibility?',
     answer:
-      'In-app extensions run inside the SAP system using ABAP Cloud and RAP, and suit logic that is transactionally coupled to SAP data. Side-by-side extensions run on SAP BTP, typically as CAP services, and suit logic with its own release cycle or a non-SAP audience.',
+      `In-app extensions run inside the SAP system using ABAP Cloud and RAP, and suit logic that is transactionally coupled to SAP data. Side-by-side extensions run on ${BAIP_FIRST}, typically as CAP services, and suit logic with its own release cycle or a non-SAP audience.`,
   },
   {
     question: 'Do I have to rewrite all my custom code?',

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Cloud, Target, Link2, User, Plus, Minus, Maximize2, X, CircleDashed, RefreshCw } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
@@ -14,7 +14,7 @@ import CcDialog from '@/components/cc/Dialog';
 import ArchitectureCanvas from '@/components/design/ArchitectureCanvas';
 import { ArchitectureList } from '@/components/design/ArchitectureCanvas';
 import { cn } from '@/lib/utils';
-import type { ArchitectureContract, ContractAlternative, ContractField } from '@/lib/architecture-contract';
+import { contractForDisplay, type ArchitectureContract, type ContractAlternative, type ContractField } from '@/lib/architecture-contract';
 import type { ArchitectureCanvasModel } from '@/lib/architecture-canvas';
 import { findingIdsOfKey, titleOfKey } from '@/lib/architecture-canvas';
 import type { DesignEvidence } from '@/hooks/useDesignEvidence';
@@ -224,7 +224,11 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     view,
   } = props;
 
-  const contract: ArchitectureContract | null = evidence.state === 'ready' ? evidence.contract : null;
+  const storedContract = evidence.state === 'ready' ? evidence.contract : null;
+  const contract: ArchitectureContract | null = useMemo(
+    () => (storedContract ? contractForDisplay(storedContract) : null),
+    [storedContract],
+  );
   const deviation = Boolean(contract?.route.deviation);
   const [panelTab, setPanelTab] = useState<'decision' | 'contract' | 'alternatives' | 'evidence'>('decision');
   const [selected, setSelected] = useState<string | null>(null);
