@@ -43,6 +43,7 @@ export const WORKSPACE_RULES_MESSAGES = {
   'rules.notSaved': 'not saved',
   'rules.untouched': 'Untouched',
   'rules.reasonMissing': 'reason missing',
+  'rules.valueSourceMissing': 'value source missing',
   'rules.savingTitle': 'What saving does',
   'rules.savingConfirmedA': 'Each kept, changed or dropped rule shows',
   'rules.savingConfirmedB': 'with your name — a self-declaration, not an organisational mandate.',
