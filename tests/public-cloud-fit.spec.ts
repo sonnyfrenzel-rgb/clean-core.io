@@ -326,6 +326,23 @@ test.describe('rule 2 — No catalogued path: a question, not a verdict (CR-18)'
     expect(PUBLIC_CLOUD_FIT_BUCKET_MEANINGS['no-catalogued-path']).toMatch(/question someone has to answer/);
     expect(PUBLIC_CLOUD_FIT_BUCKET_MEANINGS['no-catalogued-path']).toMatch(/not a fault in this code/);
   });
+
+  test('each meaning holds for every rule that assigns its bucket', () => {
+    // Carried QA finding 2b07dd27e44c: "SAP publishes no released API" stood
+    // over an object the repository does not list at all, and "SAP names a
+    // successor" over a modification, where SAP names nothing.
+    const notListed = assignPublicCloudFit(
+      baseInput({ level: 'D', levelProvenance: 'catalog-residual', catalog: { pathEvidence: 'not-in-release-file' } }),
+      'public',
+    );
+    expect(notListed.rule).toBe('no-catalogued-path-not-listed');
+    expect(PUBLIC_CLOUD_FIT_BUCKET_MEANINGS['no-catalogued-path']).toMatch(/or does not list them at all/);
+    expect(PUBLIC_CLOUD_FIT_BUCKET_MEANINGS['no-catalogued-path']).not.toMatch(/SAP publishes no released API/);
+
+    const modified = assignPublicCloudFit(baseInput({ level: 'D', hasModification: true }), 'public');
+    expect(modified.rule).toBe('rebuild-own-work');
+    expect(PUBLIC_CLOUD_FIT_BUCKET_MEANINGS.rebuild).toMatch(/project's own work/);
+  });
 });
 
 test.describe('rule 3 — Rebuild: the work is known and sits here', () => {
