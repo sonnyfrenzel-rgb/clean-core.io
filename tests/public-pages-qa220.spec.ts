@@ -88,22 +88,23 @@ test.describe('the landing page and the whitepaper', () => {
     expect(code('app/page.tsx')).not.toMatch(/without any platform limits/);
   });
 
+  // Since 3.0.6 the landing states its trust lines from lib/trust-claims.ts,
+  // each with its source in the privacy policy; the old disclaimer block is gone.
   test('erasure copy does not promise to purge everything (341a9ce7a451)', () => {
-    const src = code('app/page.tsx');
-    expect(src).not.toMatch(/purge all your uploads and data/);
-    expect(src).toMatch(/backup copies age out within 30 days/);
+    expect(code('app/page.tsx')).not.toMatch(/purge all your uploads and data/);
+    expect(code('lib/trust-claims.ts')).toMatch(/backup copies age out within 30 days/);
   });
 
   test('the disclaimer does not attribute the deterministic score to the model (9d98a3ea6701)', () => {
     const src = code('app/page.tsx');
     expect(src).not.toMatch(/compliance scores, modular code transformations/);
-    expect(src).toMatch(/Clean Core Score come from a deterministic engine/);
+    expect(src).toMatch(/A deterministic engine reads the program before any language model does/);
   });
 
   test('the no-training line carries the free-tier caveat (cc161722d461)', () => {
-    const src = code('app/page.tsx');
-    expect(src).not.toMatch(/\(not used by Google to train its models, per the Gemini API terms\)/);
-    expect(src).toMatch(/not used by Google to train its models[^<]*free-tier terms differ/);
+    expect(code('app/page.tsx')).not.toMatch(/\(not used by Google to train its models, per the Gemini API terms\)/);
+    const claims = code('lib/trust-claims.ts');
+    expect(claims).toMatch(/With our community key, Google does not use your code to train its models — the paid Gemini API terms apply\. With your own key, your Google account's terms apply\./);
   });
 
   test('the whitepaper describes the route and the table access it really has (55f3dd4a7152, e6f754593747)', () => {
@@ -124,8 +125,10 @@ test.describe('the legal pages', () => {
   test('the German privacy policy declares its language (89a6cbdb1464)', () => {
     const src = code('app/datenschutz/de/page.tsx');
     const ret = src.slice(src.indexOf('return ('));
-    // The first element the page renders carries lang="de", so everything inside it is German.
-    expect(ret).toMatch(/^return \(\s*<div lang="de"/);
+    // Since D.25 the page renders a fragment (the public header is the layout's),
+    // so both elements it renders carry lang="de": the language switch and the text.
+    expect(ret).toMatch(/^return \(\s*<>\s*<nav lang="de"/);
+    expect(ret).toMatch(/<main lang="de"/);
   });
 
   test('the legal notice cites § 5 DDG everywhere, the social card included (d850ec1847d3)', () => {
