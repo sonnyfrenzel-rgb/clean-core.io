@@ -480,7 +480,11 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) {
+      // 404 is what a repeated delete hears once the first one went through and
+      // its answer was lost: the project is gone, as asked. The list is a live
+      // query, so a project still there stays on it (carried QA finding
+      // ac74ebf5a627).
+      if (!res.ok && res.status !== 404) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(body?.error || wt('myWorkspace.deleteFailed'));
       }
