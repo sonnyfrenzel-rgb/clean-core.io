@@ -260,7 +260,7 @@ function tokenize(text: string): Token[] {
     /** True when `ch` belongs to a literal — its delimiters included. */
     consume: (ch: string) => !outside(ch),
     /** True while a literal is still open, asked without consuming anything. */
-    inLiteral: () => !outside(' '),
+    inLiteral: () => !outside('\u0000'),
   };
   let start = -1;
   let buffer = '';

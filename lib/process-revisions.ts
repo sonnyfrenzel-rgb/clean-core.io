@@ -269,7 +269,7 @@ function labelOf(element: Element): string {
  */
 function outgoing(id: string, flows: Flow[], byId: Map<string, Element>): { key: string; text: string } {
   const mine = flows.filter((f) => f.sourceRef === id);
-  const key = mine.map((f) => `${f.condition} ${f.targetRef}`).join('');
+  const key = mine.map((f) => `${f.condition}\u0000${f.targetRef}`).join('\u0001');
   const text = mine.length === 0
     ? 'none'
     : mine
