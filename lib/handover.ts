@@ -425,6 +425,17 @@ export const AUDIT_PACK_FILES: readonly PackFile[] = Object.freeze([
   { path: 'manifest.json', kind: 'manifest', what: 'Digests of every file and the signature' },
 ]);
 
+/** What the signed files carry, in a reader's words — one line per subject, not per file. */
+export const SIGNED_COVERS: readonly string[] = Object.freeze([
+  'The findings of the signed run',
+  'The fingerprint of the source it read, and what else it was computed from',
+  'The engine’s recommendation — not a decision',
+  'Whether and how a language model took part',
+  'What the engine cannot see',
+  'The executive summary',
+  'The pack’s own evidence chain',
+]);
+
 /** What the pack's signature does not stand behind — the honest other half of "signed". */
 export const NOT_SIGNED: readonly string[] = Object.freeze([
   'Your sign-off and target choice — the file is sealed, its content is your word',
@@ -547,9 +558,16 @@ export function handoverNextStep(
   const order: PhaseKey[] = ['design', 'transformation', 'documentation', 'testing'];
   const missing = order.map(phase).find((p) => !p.done);
   if (missing) {
+    // What has to happen, in words; the button names where.
+    const WHAT: Partial<Record<PhaseKey, string>> = {
+      design: missing.state === 'empty' ? 'Draft the target design' : 'Confirm the target architecture',
+      transformation: 'Generate the target code',
+      documentation: 'Document the process',
+      testing: missing.state === 'empty' ? 'Generate the test suite' : 'Run the test suite',
+    };
     return {
       kind: 'open',
-      headline: `Open ${missing.label}`,
+      headline: missing.state === 'stale' ? `Rebuild ${missing.label.toLowerCase()} for the current source` : WHAT[missing.key] ?? `Open ${missing.label}`,
       reason: `${missing.detail} ${travels}`,
       href: `/project/${projectId}/${missing.path}`,
       action: `Open ${missing.label}`,

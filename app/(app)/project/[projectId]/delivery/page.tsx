@@ -49,6 +49,7 @@ import { CONDITION_STATUS_LABEL, conditionsSummary } from '@/lib/decision-card';
 import {
   AUDIT_PACK_FILES,
   NOT_SIGNED,
+  SIGNED_COVERS,
   buildHandoverChain,
   chainSummary,
   confirmationsOf,
@@ -977,7 +978,6 @@ jobs:
                   title="Audit pack contents"
                   badge={handoverBlocked ? 'Blocked' : project.auditMetadata?.inputFingerprint ? 'Available' : 'Partial'}
                   badgeSeverity={handoverBlocked || !project.auditMetadata?.inputFingerprint ? 'warning' : 'neutral'}
-                  tooltip="The files of the signed audit pack, and which of them its signature covers."
                 >
                   <div className="space-y-4">
                     <ul className="flex flex-col gap-1" data-pack-files="">
@@ -1247,9 +1247,9 @@ jobs:
           <section aria-labelledby="signature-covers-title" className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc" data-signature-covers="">
             <h2 id="signature-covers-title" className="cc-text-h3 mb-3 text-cc-ink">What the signature covers</h2>
             <p className="cc-text-label text-cc-ink-muted">Signed · {signedFiles} files</p>
-            <p className="cc-text-cell mt-1 text-cc-ink">
-              {AUDIT_PACK_FILES.filter((f) => f.kind === 'signed').map((f) => f.what.split(' — ')[0]).join(' · ')}
-            </p>
+            <ul className="cc-text-cell mt-1 list-disc pl-4 text-cc-ink">
+              {SIGNED_COVERS.map((s) => <li key={s}>{s}</li>)}
+            </ul>
             <p className="cc-text-label mt-4 text-cc-ink-muted">Sealed, not vouched for</p>
             <p className="cc-text-cell mt-1 text-cc-ink">
               Your own statements — the file cannot be changed unnoticed, but nobody vouches for what it says.
