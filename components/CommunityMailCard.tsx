@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Mail } from 'lucide-react';
+import CcCard from '@/components/cc/Card';
 import CcSwitch from '@/components/cc/Switch';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcDateText from '@/components/cc/DateText';
@@ -67,20 +67,9 @@ export default function CommunityMailCard({ consent }: { consent?: CommunityMail
   const since = on ? consent?.consentedAt : consent?.withdrawnAt;
 
   return (
-    <div data-community-mail-card className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span
-            aria-hidden={true}
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-cc-row border border-cc-line bg-cc-surface-muted text-cc-ink-muted"
-          >
-            <Mail size={20} />
-          </span>
-          <h2 className="m-0 cc-text-h2 text-cc-ink">Community mail</h2>
-        </div>
-      </div>
-
-      <p className="mb-6 cc-text-body text-cc-ink-muted">
+    <div data-community-mail-card="">
+      <CcCard level={2} title="Community mail">
+      <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
         Surveys about what to build next and the occasional community update. We send them only if you switch
         this on, and you can switch it off here or with the unsubscribe link in any of those mails. Mails about
         your own account — confirmations, invitations you send, security notices — are not affected. Details in
@@ -92,7 +81,7 @@ export default function CommunityMailCard({ consent }: { consent?: CommunityMail
       </p>
 
       {error && (
-        <div className="mb-6">
+        <div className="mb-4">
           <CcMessageStrip state="error" headline="The setting was not saved." announce>
             {error}
           </CcMessageStrip>
@@ -118,6 +107,7 @@ export default function CommunityMailCard({ consent }: { consent?: CommunityMail
           message={saving ? 'Saving…' : saved ? `Saved — ${on ? 'on' : 'off'}` : undefined}
         />
       </div>
+      </CcCard>
     </div>
   );
 }
