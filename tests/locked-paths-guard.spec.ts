@@ -162,10 +162,12 @@ test.describe('the lock holds when used', () => {
     // stands exactly once on this screen — with the way to open the connection
     // itself, so the reader is turned away from one thing rather than from all
     // of them.
-    // A segment of the environment switch since D.17b (a radio in a radio
-    // group, DESIGN.md §1.5), not a free button — same name, same place.
-    const tab = page.getByRole('radio', { name: /^Check tenant connection$/ });
+    // A tab of the stage since the mockup s8 rebuild (a `role="tab"` in a tab
+    // list, DESIGN.md §2), no longer a segment of an environment switch — same
+    // name, same place, same `s4Environment` underneath.
+    const tab = page.getByRole('tab', { name: /^Check tenant connection$/ });
     await expect(tab).toBeVisible();
+    await expect(tab).toHaveAttribute('aria-selected', 'true');
     await expect(tab).not.toContainText('Check only');
     const notice = page.locator('[data-live-test-lock]');
     await expect(notice).toHaveCount(1);
@@ -174,18 +176,21 @@ test.describe('the lock holds when used', () => {
     await expect(notice).toContainText('an administrator reviews it by hand');
 
     // The saved suite is listed after a reload (it was not until the QA review of a0c108513165), so the run itself
-    // can be tried: on the tenant tab the button is disabled, it says where the suite can run, and a click reaches nothing.
-    await expect(page.getByText('Switch to the Mock Environment to run this suite in the sandbox.')).toBeVisible({ timeout: 30000 });
-    // A saved suite opens selected, as a generated one does — so the button is disabled by the tab, not by an empty selection.
-    await expect(page.getByRole('checkbox').first()).toBeChecked();
-    const run = page.getByRole('button', { name: /Run Selected/ });
+    // can be tried: on the tenant tab the run is not offered — the suite sits in the other tab's panel, the button
+    // there is disabled by the tab, the rail says where the suite runs, and a click reaches nothing.
+    await expect(page.locator('[data-live-test-hint]')).toContainText('against mocks', { timeout: 30000 });
+    const run = page.locator('button', { hasText: 'Run Selected' });
+    await expect(run).toBeHidden();
     await expect(run).toBeDisabled();
     await run.dispatchEvent('click');
     await page.waitForTimeout(1500);
     expect(runRequests, 'the tenant tab must not reach the runner').toEqual([]);
 
-    // The same selection on the mock tab can run.
-    await page.getByRole('radio', { name: /^Mock Environment$/ }).click();
+    // The same selection on the mock tab can run — reached from the rail's own button.
+    await page.locator('aside').getByRole('button', { name: 'Run tests against mocks' }).click();
+    await expect(page.getByRole('tab', { name: /^Run tests against mocks/ })).toHaveAttribute('aria-selected', 'true');
+    // A saved suite opens selected, as a generated one does — so the button was disabled by the tab, not by an empty selection.
+    await expect(page.getByRole('checkbox').first()).toBeChecked();
     await expect(run).toBeEnabled({ timeout: 10000 });
   });
 });

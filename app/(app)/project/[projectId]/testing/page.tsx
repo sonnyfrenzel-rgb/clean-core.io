@@ -12,13 +12,17 @@ import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import StageProgress from '@/components/StageProgress';
 import type { Project } from '@/lib/types';
-import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, Activity, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft } from 'lucide-react';
+import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft, Check, Circle, Plug } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
-import CcSegmentedControl from '@/components/cc/SegmentedControl';
+import CcTabs from '@/components/cc/Tabs';
+import CcCard from '@/components/cc/Card';
+import CcDateText from '@/components/cc/DateText';
+import CcStateText from '@/components/cc/StateText';
+import CcMessageBox from '@/components/cc/MessageBox';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcDialog from '@/components/cc/Dialog';
 import CcTable from '@/components/cc/Table';
@@ -33,7 +37,7 @@ import Link from 'next/link';
 import { clsx } from 'clsx';
 import { cn } from '@/lib/utils';
 import StageFooter from '@/components/StageFooter';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 const TestingPieChart = nextDynamic(() => import('@/components/TestingCharts').then(mod => mod.TestingPieChart), { ssr: false });
@@ -49,6 +53,10 @@ import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import StaleNotice from '@/components/StaleNotice';
 import { STORED_TEST_SUITE_REJECTED } from './test-suite-schema';
+import TestingStatus from '@/components/testing/TestingStatus';
+import LastRunRow from '@/components/testing/LastRunRow';
+import TabExplainer from '@/components/testing/TabExplainer';
+import { lastRun, scenarios } from '@/components/testing/testing-summary';
 
 const renderSafeValue = (val: any): string => {
   if (val === null || val === undefined) return '';
@@ -123,10 +131,14 @@ const testRunBlocked = (project: Project | null): boolean =>
   generationBlockers(project, 'testing').length > 0 ||
   workflowSteps(project).find((p) => p.key === 'testing')?.state === 'stale';
 
+/** The two tabs of the stage, named after what each one does (mockup s8, ADR-004). */
 const ENV_SEGMENTS = [
-  { value: 'mock', label: 'Mock Environment' },
+  { value: 'mock', label: 'Run tests against mocks' },
   { value: 'live', label: 'Check tenant connection' },
 ] as const;
+
+/** Main column and right rail, as in mockup s8; one column on a phone. */
+const RAIL_GRID = 'grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-4 items-start';
 
 const AUTH_TYPE_OPTIONS = [
   { value: 'basic', label: 'Basic Authentication (Username + Password)' },
@@ -134,6 +146,10 @@ const AUTH_TYPE_OPTIONS = [
   { value: 'sap_hub', label: 'SAP Business Accelerator Hub Sandbox (API Key only)' },
   { value: 'btp_destination', label: 'SAP BTP Destination Service (Paste JSON)' },
 ] as const;
+
+/** The plain name of a stored authentication type — the option label without its parenthesis. */
+const authLabelOf = (authType: string): string =>
+  (AUTH_TYPE_OPTIONS.find((o) => o.value === authType)?.label || authType).replace(/\s*\(.*\)$/, '');
 
 const ODATA_PROPERTY_COLUMNS = [
   { key: 'name', label: 'Property' },
@@ -158,7 +174,7 @@ export default function TestingSandboxPage() {
    * different statement as soon as the form had been edited since it was saved
    * (QA review of 33471220d6e9, 40e1db9fd37a).
    */
-  const [savedS4, setSavedS4] = useState<{ url: string; username: string; authType: string; btpDestinationJson: string } | null>(null);
+  const [savedS4, setSavedS4] = useState<{ url: string; username: string; authType: string; btpDestinationJson: string; legacy?: boolean } | null>(null);
   /** "You have not saved this yet" is not a failed connection — see the test handler. */
   const [unsavedNotice, setUnsavedNotice] = useState('');
   /** An export that fails has to say so on the page; see `exportTestCasesToExcel`. */
@@ -183,6 +199,22 @@ export default function TestingSandboxPage() {
   const [connectionMessage, setConnectionMessage] = useState('');
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [showSetupGuide, setShowSetupGuide] = useState(true);
+  /**
+   * The log of the tenant checks of this session — the connection check, the
+   * metadata read and the read-only call. Its own state, not the run console's:
+   * the two tabs are two different jobs, and a mock run must not overwrite the
+   * record of the last check (or the other way round).
+   */
+  const [tenantLog, setTenantLog] = useState('');
+  /** When the last connection check of this session answered, and whether it got through. Nothing is stored. */
+  const [lastCheck, setLastCheck] = useState<{ at: Date; ok: boolean } | null>(null);
+  const [showLastCheck, setShowLastCheck] = useState(false);
+  /** The saved connection is shown as a summary; the form opens to change it. */
+  const [editingConnection, setEditingConnection] = useState(false);
+  const [showMoreChecks, setShowMoreChecks] = useState(false);
+  const [confirmDeleteConnection, setConfirmDeleteConnection] = useState(false);
+  const [deletingConnection, setDeletingConnection] = useState(false);
+  const [deleteConnectionError, setDeleteConnectionError] = useState('');
 
   // OData Metadata Fetch states
   const [odataMode, setOdataMode] = useState<'idle' | 'loading' | 'catalog' | 'metadata' | 'error'>('idle');
@@ -203,8 +235,10 @@ export default function TestingSandboxPage() {
   const { isGenerating, testCases, generateTestCases, storedSuiteRejected } = useTestGeneration(projectId as string, project, setProject);
   /** Why the last generation attempt produced nothing. Empty when none has failed. */
   const [genError, setGenError] = useState('');
-  const { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases, stubbedPackages } = useTestExecution(projectId as string, project, setProject);
+  const { isRunning, testResults, sandboxOutput, aiExplanation, runTestCases, stubbedPackages } = useTestExecution(projectId as string, project, setProject);
   const [showTestCode, setShowTestCode] = useState(false);
+  /** The run console is folded until a run (or the reader) opens it. */
+  const [showConsole, setShowConsole] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -248,7 +282,7 @@ export default function TestingSandboxPage() {
         if (project.s4Meta.url) setShowSetupGuide(false);
       } else if (project.s4Config) {
         // Legacy fallback
-        setSavedS4({ url: project.s4Config.url || '', username: project.s4Config.username || '', authType: project.s4Config.authType || 'basic', btpDestinationJson: project.s4Config.btpDestinationJson || '' });
+        setSavedS4({ url: project.s4Config.url || '', username: project.s4Config.username || '', authType: project.s4Config.authType || 'basic', btpDestinationJson: project.s4Config.btpDestinationJson || '', legacy: true });
         setS4Url(project.s4Config.url || '');
         setS4Username(project.s4Config.username || '');
         setS4Password('');
@@ -264,7 +298,7 @@ export default function TestingSandboxPage() {
         if (profile.s4Meta.url) setShowSetupGuide(false);
       } else if (profile?.s4Config) {
         // Legacy fallback
-        setSavedS4({ url: profile.s4Config.url || '', username: profile.s4Config.username || '', authType: profile.s4Config.authType || 'basic', btpDestinationJson: profile.s4Config.btpDestinationJson || '' });
+        setSavedS4({ url: profile.s4Config.url || '', username: profile.s4Config.username || '', authType: profile.s4Config.authType || 'basic', btpDestinationJson: profile.s4Config.btpDestinationJson || '', legacy: true });
         setS4Url(profile.s4Config.url || '');
         setS4Username(profile.s4Config.username || '');
         setS4Password('');
@@ -328,6 +362,9 @@ export default function TestingSandboxPage() {
       // saved connection as a failed save, with the password still in the box
       // (QA full review of fc787674705f, 983d23ce4dad).
       setS4Password(''); // Clear from client state
+      setEditingConnection(false);
+      // A check of the previous connection says nothing about this one.
+      setConnectionStatus('disconnected');
       setConnectionMessage("Configuration saved securely (encrypted).");
       setTimeout(() => setConnectionMessage(""), 3000);
 
@@ -366,7 +403,7 @@ export default function TestingSandboxPage() {
       // (UX review of 52f171091948, 1b84676d685d).
       setConnectionStatus('disconnected');
       setUnsavedNotice('Save the connection first — the test runs against the saved credentials, which never leave the server.');
-      setSandboxOutput('');
+      setTenantLog('');
       setTestingConnection(false);
       return;
     }
@@ -382,12 +419,12 @@ export default function TestingSandboxPage() {
     if (formChanged) {
       setConnectionStatus('disconnected');
       setUnsavedNotice(`Unsaved changes — the test would run against the saved connection (${savedS4.url}), not what is in the form. Save first, then test.`);
-      setSandboxOutput('');
+      setTenantLog('');
       setTestingConnection(false);
       return;
     }
 
-    setSandboxOutput(
+    setTenantLog(
       `[sandbox-runtime] Initiating live connectivity test...\n` +
       `[sandbox-runtime] Target tenant URL (saved): ${savedS4.url}\n` +
       `[sandbox-runtime] Authentication method: ${authLabel}\n` +
@@ -409,10 +446,11 @@ export default function TestingSandboxPage() {
 
       const result = await response.json();
 
+      setLastCheck({ at: new Date(), ok: result.status === 'connected' });
       if (result.status === 'connected') {
         setConnectionStatus('connected');
         setConnectionMessage(result.message);
-        setSandboxOutput(prev => prev +
+        setTenantLog(prev => prev +
           `[sandbox-runtime] [SUCCESS] ${result.message}\n` +
           (result.httpStatus ? `[sandbox-runtime] HTTP Status: ${result.httpStatus}\n` : '') +
           `[sandbox-runtime] Connection check complete.`
@@ -420,17 +458,18 @@ export default function TestingSandboxPage() {
       } else {
         setConnectionStatus('failed');
         setConnectionMessage(result.message);
-        setSandboxOutput(prev => prev +
+        setTenantLog(prev => prev +
           `[sandbox-runtime] [ERROR] ${result.message}\n` +
           (result.httpStatus ? `[sandbox-runtime] HTTP Status: ${result.httpStatus}\n` : '') +
           `[sandbox-runtime] Connection check failed.`
         );
       }
     } catch (err) {
+      setLastCheck({ at: new Date(), ok: false });
       setConnectionStatus('failed');
       const msg = err instanceof Error ? err.message : 'Network error — the test proxy may be unavailable.';
       setConnectionMessage(`Connection test failed: ${msg}`);
-      setSandboxOutput(prev => prev +
+      setTenantLog(prev => prev +
         `[sandbox-runtime] [ERROR] ${msg}\n` +
         `[sandbox-runtime] Connection check failed.`
       );
@@ -445,7 +484,7 @@ export default function TestingSandboxPage() {
     setOdataMessage('');
     setOdataEntityTypes([]);
     setOdataSelectedService('');
-    setSandboxOutput(prev => prev + `\n[odata-explorer] Querying OData service catalog from ${savedS4?.url || 'the saved connection'} (saved connection)...\n`);
+    setTenantLog(prev => prev + `\n[odata-explorer] Querying OData service catalog from ${savedS4?.url || 'the saved connection'} (saved connection)...\n`);
 
     try {
       const token = await getAuth().currentUser?.getIdToken();
@@ -466,23 +505,23 @@ export default function TestingSandboxPage() {
         setOdataCatalog(result.services || []);
         setOdataTotalServices(result.totalServices || 0);
         setOdataMode('catalog');
-        setSandboxOutput(prev => prev + `[odata-explorer] [SUCCESS] Discovered ${result.totalServices} OData services on tenant.\n`);
+        setTenantLog(prev => prev + `[odata-explorer] [SUCCESS] Discovered ${result.totalServices} OData services on tenant.\n`);
       } else if (result.status === 'partial') {
         setOdataCatalog([]);
         setOdataSuggestedServices(result.suggestedServices || []);
         setOdataMessage(result.message || '');
         setOdataMode('catalog');
-        setSandboxOutput(prev => prev + `[odata-explorer] [INFO] ${result.message}\n`);
+        setTenantLog(prev => prev + `[odata-explorer] [INFO] ${result.message}\n`);
       } else {
         setOdataMode('error');
         setOdataMessage(result.message || 'Failed to fetch catalog.');
-        setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${result.message}\n`);
+        setTenantLog(prev => prev + `[odata-explorer] [ERROR] ${result.message}\n`);
       }
     } catch (err) {
       setOdataMode('error');
       const msg = err instanceof Error ? err.message : 'Network error';
       setOdataMessage(`Failed to fetch OData catalog: ${msg}`);
-      setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${msg}\n`);
+      setTenantLog(prev => prev + `[odata-explorer] [ERROR] ${msg}\n`);
     }
   };
 
@@ -490,7 +529,7 @@ export default function TestingSandboxPage() {
     setOdataMode('loading');
     setOdataSelectedService(path);
     setOdataMessage('');
-    setSandboxOutput(prev => prev + `\n[odata-explorer] Fetching $metadata for ${path}...\n`);
+    setTenantLog(prev => prev + `\n[odata-explorer] Fetching $metadata for ${path}...\n`);
 
     try {
       const token = await getAuth().currentUser?.getIdToken();
@@ -512,20 +551,20 @@ export default function TestingSandboxPage() {
         setOdataEntityTypes(result.entityTypes || []);
         setOdataMode('metadata');
         setOdataExpandedEntity(null);
-        setSandboxOutput(prev => prev +
+        setTenantLog(prev => prev +
           `[odata-explorer] [SUCCESS] ${path}: ${result.totalEntityTypes} EntityTypes discovered.\n` +
           result.entityTypes.slice(0, 5).map((et: any) => `  → ${et.name} (${et.properties.length} properties)\n`).join('')
         );
       } else {
         setOdataMode('error');
         setOdataMessage(result.message || `Failed to fetch metadata for ${path}.`);
-        setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${result.message}\n`);
+        setTenantLog(prev => prev + `[odata-explorer] [ERROR] ${result.message}\n`);
       }
     } catch (err) {
       setOdataMode('error');
       const msg = err instanceof Error ? err.message : 'Network error';
       setOdataMessage(`Metadata fetch failed: ${msg}`);
-      setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${msg}\n`);
+      setTenantLog(prev => prev + `[odata-explorer] [ERROR] ${msg}\n`);
     }
   };
 
@@ -547,7 +586,7 @@ export default function TestingSandboxPage() {
    */
   const handleReadEntitySet = async (entitySet: string) => {
     setOdataReadState(prev => ({ ...prev, [entitySet]: { status: 'reading', message: '' } }));
-    setSandboxOutput(prev => prev +
+    setTenantLog(prev => prev +
       `
 [odata-explorer] Reading records from ${entitySet} via ${odataSelectedService || 'the selected service'}...
 `);
@@ -573,7 +612,7 @@ export default function TestingSandboxPage() {
           ...prev,
           [entitySet]: { status: 'done', message: result.message || '', recordCount: result.recordCount },
         }));
-        setSandboxOutput(prev => prev +
+        setTenantLog(prev => prev +
           `[odata-explorer] [SUCCESS] ${result.recordCount ?? 0} record(s) returned from ${entitySet}.
 ` +
           (result.sampleFields?.length
@@ -587,13 +626,13 @@ export default function TestingSandboxPage() {
           ...prev,
           [entitySet]: { status: 'failed', message: result.message || 'Read failed.' },
         }));
-        setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${result.message || 'Read failed.'}
+        setTenantLog(prev => prev + `[odata-explorer] [ERROR] ${result.message || 'Read failed.'}
 `);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Network error';
       setOdataReadState(prev => ({ ...prev, [entitySet]: { status: 'failed', message: msg } }));
-      setSandboxOutput(prev => prev + `[odata-explorer] [ERROR] ${msg}
+      setTenantLog(prev => prev + `[odata-explorer] [ERROR] ${msg}
 `);
     }
   };
@@ -654,6 +693,42 @@ export default function TestingSandboxPage() {
     }
   };
 
+  /**
+   * Removes the saved connection from the account — the vault entry and the
+   * profile metadata that describes it (`DELETE /api/s4-credentials`, the same
+   * erasure the route has always offered). Asked for in a Message Box first; a
+   * refusal is said beside the card, and nothing is cleared until the server
+   * has confirmed both deletes.
+   */
+  const handleDeleteConnection = async () => {
+    setConfirmDeleteConnection(false);
+    setDeletingConnection(true);
+    setDeleteConnectionError('');
+    try {
+      const token = await getAuth().currentUser?.getIdToken();
+      const res = await fetch('/api/s4-credentials', {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'The connection could not be deleted.');
+      setSavedS4(null);
+      setS4Url('');
+      setS4Username('');
+      setS4Password('');
+      setBtpDestinationJson('');
+      setConnectionStatus('disconnected');
+      setConnectionMessage('');
+      setUnsavedNotice('');
+      setOdataMode('idle');
+      setEditingConnection(false);
+      setShowSetupGuide(true);
+    } catch (err) {
+      setDeleteConnectionError(err instanceof Error && err.message ? err.message : 'The connection could not be deleted.');
+    } finally {
+      setDeletingConnection(false);
+    }
+  };
+
   // A saved suite opens fully selected, as a freshly generated one does. Once the suite showed after a reload,
   // an empty selection left "Run Selected" disabled with nothing saying a tick was needed. Only the
   // first time the suite appears: a selection the reader changes afterwards stays theirs.
@@ -695,6 +770,7 @@ export default function TestingSandboxPage() {
     // fc787674705f, a4439fbfd760).
     if (testRunBlocked(project)) return;
     const selected = testCases.filter((_, i) => selectedTestCases.includes(i));
+    setShowConsole(true);
     try {
       await runTestCases(selected);
     } catch (error) {
@@ -854,6 +930,23 @@ export default function TestingSandboxPage() {
   const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
 
   const phases = workflowSteps(project);
+  /** The last run, from the receipt on the project or this session — never assumed. */
+  const run = lastRun(project, testResults);
+  /**
+   * The BYOT way as steps, each read from what the account and the vault hold.
+   * An administrator has the connection without asking, so the request step is
+   * not shown as a missing step for one.
+   */
+  const accessAllowed = !!profile?.s4TenantAccessAllowed;
+  const byotSteps = [
+    ...(profile?.isAdmin && !accessAllowed && !profile?.s4TenantAccessRequested
+      ? []
+      : [{ label: 'Access requested', done: !!profile?.s4TenantAccessRequested || accessAllowed }]),
+    accessAllowed || !profile?.isAdmin
+      ? { label: 'Reviewed by an admin', done: accessAllowed }
+      : { label: 'Open to administrators', done: true },
+    { label: 'Connection saved', done: !!savedS4?.url },
+  ];
 
 
   // Block D (D.17a): one vocabulary of surfaces and type for the whole stage —
@@ -869,7 +962,6 @@ export default function TestingSandboxPage() {
       selected ? 'bg-cc-surface border-cc-ink ring-1 ring-cc-ink' : 'bg-cc-surface border-cc-line',
     );
   const STEP = 'bg-cc-ink text-cc-on-dark cc-text-meta w-6 h-6 rounded-cc-row flex items-center justify-center shrink-0';
-  const connectionState = connectionStatus === 'connected' ? 'success' : connectionStatus === 'failed' ? 'error' : 'neutral';
 
   if (loading) return <div className="p-8 cc-text-body text-cc-ink-muted">Loading...</div>;
   if (loadError) return (
@@ -885,7 +977,7 @@ export default function TestingSandboxPage() {
   );
 
   return (
-    <div className="bg-cc-page min-h-screen p-4 md:p-8">
+    <div className="min-h-screen">
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
@@ -908,458 +1000,635 @@ export default function TestingSandboxPage() {
           : 'Generate test cases and run them against mocks in a restricted Node.js process.'}
       </StageHeader>
 
-      {/* Explanation Boxes — h2 under the stage title (h1), set in the h3
-          style: sections of the page, not subsections of anything. */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        <div className={clsx(CARD, 'p-4 md:p-5 flex gap-4')}>
-          <ShieldCheck className="w-6 h-6 text-cc-ink-muted flex-shrink-0" aria-hidden="true" />
-          <div>
-            <h2 className="cc-text-h3 text-cc-ink mb-1">
-              {isAbapCloud ? 'ABAP Unit Stubs' : 'Real Execution, Against Mocks'}
-            </h2>
-            <p className="cc-text-cell text-cc-ink-muted">
-              {isAbapCloud
-                ? 'Generates ABAP Unit local test class stubs for the RAP behaviour. They are not compiled or run here — an ABAP Unit run in your own system is what would give them a verdict.'
-                : 'The generated Node.js code really runs — in a restricted child process, against mocks. Real results for the code, not for a tenant.'
-              }
-            </p>
-          </div>
-        </div>
-        <div className={clsx(CARD, 'p-4 md:p-5 flex gap-4')}>
-          <Activity className="w-6 h-6 text-cc-ink-muted flex-shrink-0" aria-hidden="true" />
-          <div>
-            <h2 className="cc-text-h3 text-cc-ink mb-1">
-              {isAbapCloud ? 'SQL Test Double Mock' : 'SAP Mock Library'}
-            </h2>
-            <p className="cc-text-cell text-cc-ink-muted">
-              {isAbapCloud
-                ? 'Realistic SQL Double DB schemas are mocked to test transactional behavior logic without core pollution.'
-                : 'Realistic SAP response patterns are injected to ensure business logic parity.'
-              }
-            </p>
-          </div>
-        </div>
-        <div className={clsx(CARD, 'p-4 md:p-5 flex gap-4')}>
-          <BarChart3 className="w-6 h-6 text-cc-ink-muted flex-shrink-0" aria-hidden="true" />
-          <div>
-            <h2 className="cc-text-h3 text-cc-ink mb-1">Estimated Coverage</h2>
-            <p className="cc-text-meta text-cc-ink">
-              {project?.coverageEstimate && !storedSuiteRejected
-                ? <span data-stage-output="coverageEstimate">{`${project.coverageEstimate.percentage}% Coverage`}</span>
-                : 'Generate tests to see estimate'}
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* The answer first (mockup s8): where testing stands, in one sentence,
+          from the case list, the receipt and this session — before any tab. */}
+      <TestingStatus
+        caseCount={testCases.length}
+        run={run}
+        rejected={!!storedSuiteRejected}
+        blocked={testRunBlocked(project)}
+        canGenerate={modelAvailability.enabled('testing')}
+        isAbapCloud={isAbapCloud}
+      />
 
-      {/* Environment Selection Toggle */}
-      <div className={clsx(CARD, 'p-4 md:p-5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4')}>
-        <div>
-          <h2 className="cc-text-h2 text-cc-ink flex items-center gap-2">
-            <Globe className="w-5 h-5 text-cc-ink-muted" aria-hidden="true" />
-            Validation Environment
-          </h2>
-          {/* Two tabs, named after what each one does. The lock is not repeated
-              here: it stands once, inside the tenant tab it applies to (roadmap
-              1.7, ADR-004). */}
-          <p className="cc-text-cell text-cc-ink-muted mt-1">Mock runs the generated suite in the sandbox. The tenant tab checks a connection and reads its OData metadata.</p>
-        </div>
-        {/* A state of the stage, not two parts of it: the environment decides
-            what "Run Selected" may do and whether the tenant panel is shown, so
-            it is a segmented control (§1.5), one radio group, and not tabs.
-            ADR-004 (15.09.2026): the tenant segment stays visible and is named
-            after what it does. It carried "Connected S/4HANA Tenant" and a
-            "Check only" pill, which was the lock notice a third time on one
-            screen and told the reader what the tab is *not*. */}
-        <div className="self-start sm:self-auto">
-          <CcSegmentedControl
-            label="Validation environment"
-            segments={ENV_SEGMENTS}
-            value={activeEnvTab}
-            onChange={(env) => handleEnvChange(env)}
-          />
-        </div>
-      </div>
+      {/* Two parts of the stage, so two tabs (DESIGN.md §2, mockup s8) — they
+          replace the "Validation Environment" switch. The choice is still the
+          project's `s4Environment` and still goes through `handleEnvChange`:
+          what "Run Selected" may do has not changed, only where it stands. The
+          lock is not on a tab: it stands once, inside the tenant tab it applies
+          to (ADR-004). */}
+      <div data-testing-tabs className="mb-8">
+        <CcTabs
+          label="Testing"
+          density="cozy"
+          value={activeEnvTab}
+          onChange={(env) => handleEnvChange(env)}
+          tabs={[
+            {
+              value: ENV_SEGMENTS[0].value,
+              label: testCases.length > 0 ? `${ENV_SEGMENTS[0].label} (${scenarios(testCases.length)})` : ENV_SEGMENTS[0].label,
+              content: (
+                <div data-testing-panel="mock" className={RAIL_GRID}>
+                  <div className="flex min-w-0 flex-col gap-4">
+                    {/* ── Scenarios ── */}
+                    <section data-testing-scenarios aria-labelledby="testing-scenarios-title" className={clsx(CARD, 'overflow-hidden flex flex-col')}>
+                      <div className="bg-cc-surface-muted border-b border-cc-line px-4 md:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <ListChecks className="w-5 h-5 text-cc-ink-muted shrink-0" aria-hidden="true" />
+                          <h2 id="testing-scenarios-title" className="cc-text-h2 text-cc-ink">Scenarios</h2>
+                          {testCases.length > 0 && (
+                            <span className="cc-text-meta text-cc-ink-muted">{scenarios(testCases.length)}</span>
+                          )}
+                        </div>
+                        {/* Only once the suite exists. Before that this button and the one in
+                            the empty state below were the same action, offered twice on one
+                            screen — "Generate Suite" here, "Generate Test Suite" in the
+                            middle of the card. */}
+                        {testCases.length > 0 && (
+                          <CcButton
+                            onClick={handleGenerate}
+                            disabled={isGenerating || !modelAvailability.enabled('testing')}
+                            icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
+                          >
+                            {isGenerating ? 'Generating...' : 'Regenerate Suite'}
+                          </CcButton>
+                        )}
+                      </div>
 
-      {/* S/4HANA Tenant Integration Panel */}
-      <AnimatePresence>
-        {activeEnvTab === 'live' && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-            animate={{ opacity: 1, height: 'auto', marginBottom: 24 }}
-            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-            className="overflow-hidden"
-          >
-            {LIVE_TEST_EXECUTION.locked && (
-              // The documented lock (lib/locked-paths.ts, G0:R0), said once, where
-              // the path would otherwise be offered — and with the way out named,
-              // so it is a boundary and not a dead end (roadmap 1.7, ADR-004).
-              // It stood in three places on this one screen before: here, as a
-              // pill on the tab, and beside the run button. Three copies of a
-              // refusal read as three different refusals.
-              <div data-live-test-lock className="mb-4">
-                <CcMessageStrip state="warning" headline="Tests against a tenant are locked">
-                  <span className="block">{LIVE_TEST_EXECUTION.userNotice}</span>
-                  <span className="block mt-2">
-                    {profile?.s4TenantAccessAllowed || profile?.isAdmin
-                      ? 'Bring your own tenant (BYOT) is granted for this account, so the connection check, the OData metadata read and the read-only call below are open to you. That approval does not lift this lock: it is lifted when the isolated live runner has passed its proof on the deployed service and its review, not by a permission.'
-                      : profile?.s4TenantAccessRequested
-                        ? 'Bring your own tenant (BYOT) is what opens the connection check, the OData metadata read and the read-only call — your request for it is with an administrator. That approval does not lift this lock: it is lifted when the isolated live runner has passed its proof on the deployed service and its review, not by a permission.'
-                        : 'Bring your own tenant (BYOT) is what opens the connection check, the OData metadata read and the read-only call: ask for it with the form below and an administrator reviews it by hand. That approval does not lift this lock: it is lifted when the isolated live runner has passed its proof on the deployed service and its review, not by a permission.'}
-                  </span>
-                </CcMessageStrip>
+                      <div className="p-4 md:p-6 max-h-[640px] overflow-auto">
+                        {testCases.length === 0 && !modelAvailability.enabled('testing') ? (
+              /* Roadmap 1.2 / V25-A12 — "Generate Your Test Suite" over a button
+                 the server refuses tells the reader nothing about why. */
+              <div className="h-full flex items-center justify-center px-4 py-8">
+                <NotGenerated
+                  what="Test suite"
+                  absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
+                  stage="testing"
+                  hint={
+                    modelAvailability.keyAvailable
+                      ? 'Turn the testing stage back on in Settings to generate it.'
+                      : 'Add your own Gemini API key in Settings to generate it.'
+                  }
+                />
+              </div>
+            ) : testCases.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8 bg-cc-surface-muted rounded-cc-card border border-dashed border-cc-field-border max-w-md mx-auto my-auto min-h-[300px]">
+                <ListChecks className="w-10 h-10 text-cc-ink-muted mb-4" aria-hidden="true" />
+                <h3 className="cc-text-h2 text-cc-ink">Generate the scenarios</h3>
+                {/* A stored suite that cannot be drawn is a fact about this
+                    project, not the same thing as never having generated one.
+                    Without this line the reader is told to start something he
+                    already did, and the reason his last suite vanished is
+                    nowhere on the screen. */}
+                {storedSuiteRejected ? (
+                  <p data-stored-test-suite-rejected className="cc-text-cell text-cc-ink-muted mt-2 max-w-xs leading-relaxed">
+                    {STORED_TEST_SUITE_REJECTED}
+                  </p>
+                ) : (
+                  <p className="cc-text-cell text-cc-ink-muted mt-2 max-w-xs leading-relaxed">
+                    The testing model writes the scenarios from the target code. Generate them first, then run them here against mocks.
+                  </p>
+                )}
+
+                {genError && (
+                  <p data-test-generation-error role="alert" className="mt-4 max-w-xs cc-text-cell font-semibold leading-relaxed text-cc-error">
+                    {genError}
+                  </p>
+                )}
+
+                {/* `animate-bounce` removed. It made the only action on an empty
+                    step bounce for ever — an attention-grab aimed at something the
+                    reader is already looking at, and the loudest element on a page
+                    whose other primaries sit still. It also made the button
+                    impossible to click under test: Playwright waits for an element
+                    to stop moving, and this one never did. */}
+                <div className="mt-6">
+                  <CcButton
+                    variant="primary"
+                    density="cozy"
+                    onClick={handleGenerate}
+                    disabled={isGenerating}
+                    icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
+                  >
+                    {isGenerating ? 'Generating Suite...' : 'Generate Test Suite'}
+                  </CcButton>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* The same message as in the empty state, because "Regenerate
+                    Suite" can be refused too — and there the previous suite is
+                    still on the screen, so without this the button simply
+                    appears to do nothing. */}
+                {genError && (
+                  <div data-test-generation-error>
+                    <CcMessageStrip state="error">{genError}</CcMessageStrip>
+                  </div>
+                )}
+
+                {/* Why "Regenerate Suite" is disabled — the same way out the
+                    empty state names. */}
+                {!modelAvailability.enabled('testing') && (
+                  <div data-regenerate-unavailable>
+                    <CcMessageStrip state="neutral">
+                      {modelAvailability.keyAvailable
+                        ? 'Regenerating is off: turn the testing stage back on in Settings.'
+                        : 'Regenerating needs a model key: add your own Gemini API key in Settings.'}
+                    </CcMessageStrip>
+                  </div>
+                )}
+
+                {/* The reason itself is in the notice at the top of the page. */}
+                {testRunBlocked(project) && (
+                  <div data-stale-run-hint>
+                    <CcMessageStrip state="neutral">Running is off until the suite is regenerated for the current source — the notice at the top says which stage comes first.</CcMessageStrip>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <span data-stage-output="testCases" className={LABEL}>{selectedTestCases.length} of {testCases.length} selected</span>
+                    <CcButton
+                      variant="ghost"
+                      onClick={exportTestCasesToExcel}
+                      icon={<Download size={14} aria-hidden="true" />}
+                    >
+                      Export Excel
+                    </CcButton>
+                    {exportError && (
+                      <span data-export-error role="alert" className="flex items-center gap-2 cc-text-meta text-cc-error">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        {exportError}
+                      </span>
+                    )}
+                  </div>
+                  <CcButton
+                    variant="primary"
+                    onClick={handleRun}
+                    disabled={isRunning || selectedTestCases.length === 0 || (activeEnvTab === 'live' && !s4Url) || (activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION.locked) || testRunBlocked(project)}
+                    icon={isRunning ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Play className="w-4 h-4" />}
+                  >
+                    {isRunning ? 'Running...' : 'Run Selected'}
+                  </CcButton>
+                </div>
+                {/* The whole row is the checkbox's label, so a click anywhere on
+                    it ticks the box and the box is what the keyboard reaches —
+                    a clickable row alone was out of reach of Tab and Space. The
+                    label's text (id, category, description) is the box's name. */}
+                {testCases.map((tc, i) => (
+                  <label
+                    key={i}
+                    className={clsx(
+                      "flex items-start gap-3 p-3 md:p-4 rounded-cc-row border transition-colors cursor-pointer",
+                      selectedTestCases.includes(i) ? "border-cc-ink bg-cc-surface" : "border-cc-line hover:border-cc-field-border hover:bg-cc-surface-muted"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedTestCases.includes(i)}
+                      onChange={() => toggleTestCase(i)}
+                      className="mt-1 w-4 h-4 shrink-0 cursor-pointer rounded border-cc-field-border accent-cc-ink"
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-cc-mono text-[12px] font-semibold text-cc-ink">{renderSafeValue(tc.id)}</span>
+                        {tc.category && (
+                          <CcTag>{renderSafeValue(tc.category)}</CcTag>
+                        )}
+                      </div>
+                      {/* The scenario's name first — what it checks, in words — and
+                          its description under it where the model wrote one. */}
+                      <p className="cc-text-cell font-semibold text-cc-ink truncate sm:whitespace-normal">{renderSafeValue(tc.name) || renderSafeValue(tc.description)}</p>
+                      {tc.name && tc.description ? (
+                        <p className="cc-text-meta text-cc-ink-muted truncate sm:whitespace-normal">{renderSafeValue(tc.description)}</p>
+                      ) : null}
+                    </div>
+                  </label>
+                ))}
               </div>
             )}
-            {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
-              // Unlocked Active Connection Card
-              <div className={clsx(CARD, 'p-4 md:p-6')}>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-cc-line pb-4 mb-4">
-                  <div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <h3 className="cc-text-h2 text-cc-ink flex items-center gap-2">
-                        <Globe className="w-5 h-5 text-cc-ink-muted" aria-hidden="true" />
-                        S/4HANA Live Tenant Bridge
-                      </h3>
-                      <Link
-                        href="/settings"
-                        className="text-[13px] font-semibold text-cc-information hover:underline flex items-center gap-1 shrink-0"
-                      >
-                        Profile Settings ↗
-                      </Link>
+                      </div>
+                    </section>
+
+                    {/* ── Results ── */}
+                    <section data-testing-results aria-labelledby="testing-results-title" className={clsx(CARD, 'p-4 md:p-6')}>
+                      <h2 id="testing-results-title" className="cc-text-h2 text-cc-ink mb-1">Results</h2>
+                      {!testResults && !aiExplanation ? (
+                        <p className="cc-text-cell text-cc-ink-muted">
+                          {testCases.length === 0
+                            ? 'Nothing has run yet — there are no scenarios to run.'
+                            : 'Nothing has run in this session. Select scenarios and run them; each result appears here. The last recorded run is under On record.'}
+                        </p>
+                      ) : (
+                        <p className="cc-text-cell text-cc-ink-muted mb-4">
+                          {isAbapCloud
+                            ? 'This run was simulated against mocks — it is not an ABAP Unit run, and no scenario has a verdict from it.'
+                            : 'Results of the run in this session, against mocks — real results for the code, not for a tenant.'}
+                        </p>
+                      )}
+
+                      {/* CR-14: the runner replaces every npm package the generated code
+          imports with an empty proxy so the module can load. A pass against it
+          says the logic ran — not that it works with those libraries — and until
+          now nothing on this page said which ones had been replaced. */}
+      {testResults && stubbedPackages.length > 0 && (
+        <div className="mb-4" data-stubbed-packages>
+          <CcMessageStrip state="warning" headline={`Ran against stubs for: ${stubbedPackages.join(', ')}.`}>
+            These packages were replaced by an empty proxy so the code could load. A pass here shows the
+            business logic ran — not that it works with them.
+          </CcMessageStrip>
+        </div>
+      )}
+
+      {testResults && (
+        <div className="grid grid-cols-1 gap-4 mb-4">
+          {project?.manualTestingRequirements && project.manualTestingRequirements.length > 0 && (
+            <div className={clsx(CARD, 'p-4 md:p-6')}>
+              <h3 className="cc-text-h2 text-cc-ink mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-cc-warning" aria-hidden="true" />
+                Human-in-the-Loop Verification
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                {project.manualTestingRequirements.map((req: any, i: number) => (
+                  <div key={i} className="bg-cc-surface-muted p-4 rounded-cc-row border border-cc-line">
+                    <h4 className="cc-text-h3 text-cc-ink mb-1">{req.area}</h4>
+                    <p className="cc-text-cell text-cc-ink-muted mb-3 leading-relaxed">{req.reason}</p>
+                    <div className="text-[12px] text-cc-ink font-cc-mono bg-cc-surface p-2 rounded-cc-row border border-cc-line">
+                      <strong>VERIFY:</strong> {req.verificationSteps}
                     </div>
-                    <p className="cc-text-cell text-cc-ink-muted mt-1">Configure your non-productive S/4HANA Public Cloud endpoint to check the connection and read OData metadata.</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {/* Text with a state dot — the word carries the state, the
-                        dot repeats it, and nothing pulses (§1.7). */}
-                    <span className={clsx('inline-flex items-center gap-2 cc-text-meta', STATE_CLASSES[connectionState].text)}>
-                      <span aria-hidden="true" className={clsx('w-2 h-2 rounded-full', STATE_CLASSES[connectionState].mark)}></span>
-                      {connectionStatus === 'connected' ? 'Connected' : connectionStatus === 'failed' ? 'Connection Failed' : 'Disconnected'}
-                    </span>
-                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {aiExplanation && (
+        <div className="mb-4 bg-cc-error-bg border border-cc-error-border rounded-cc-card p-4 md:p-6 flex flex-col sm:flex-row gap-4 items-start">
+          <AlertTriangle className="w-6 h-6 text-cc-error shrink-0" aria-hidden="true" />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h3 className="cc-text-h2 text-cc-ink">AI Test Analysis</h3>
+              <CcProvenanceChip value="proposed" />
+            </div>
+            <div className="cc-prose">
+              <ReactMarkdown>{aiExplanation}</ReactMarkdown>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {testResults && stats && (
+        <div id="qa-report-dashboard" className="mt-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+            <div>
+              <h3 className="cc-text-h3 text-cc-ink">Run report</h3>
+              <p className="cc-text-cell text-cc-ink-muted">Automation report for {project?.name}</p>
+            </div>
+            <div className={clsx(CARD, 'px-4 py-2 flex items-center gap-4')}>
+              <div className="flex items-center gap-2">
+                <span data-chart-swatch aria-hidden="true" className={clsx('w-2 h-2 rounded-full', stateChartColor('information').bg)}></span>
+                <span className="cc-text-meta text-cc-ink">{stats.passed} Proven</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span data-chart-swatch aria-hidden="true" className={clsx('w-2 h-2 rounded-full', stateChartColor('error').bg)}></span>
+                <span className="cc-text-meta text-cc-ink">{stats.failed} Failed</span>
+              </div>
+              {stats.inconclusive > 0 && (
+                <div className="flex items-center gap-2">
+                  <span data-chart-swatch data-not-determined aria-hidden="true" className={clsx('w-2 h-2 rounded-full', NOT_DETERMINED_CHART.bg)}></span>
+                  <span className="cc-text-meta text-cc-ink">
+                    {stats.inconclusive} Not determined
+                  </span>
                 </div>
+              )}
+            </div>
+          </div>
 
-                {/* ─────── Comprehensive Setup Guide (collapsible) ─────── */}
-                {/* Folded, never removed (§2.11): the guide stays in the page
-                    while it is closed, and it opens by itself for a connection
-                    that has not been saved yet (see the effect above). */}
-                <div className="mb-6 bg-cc-surface-muted border border-cc-line px-4 py-3 rounded-cc-card">
-                  <CcDisclosure
-                    title="Quick Start Guide — How to Connect Your S/4HANA Tenant"
-                    level={4}
-                    open={showSetupGuide}
-                    onOpenChange={setShowSetupGuide}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 mb-4">
+            {/* Pass Rate Card */}
+            <div className={clsx(CARD, 'xl:col-span-4 p-6 flex flex-col items-center justify-center text-center')}>
+              {mounted && <TestingPieChart pieData={pieData} stats={stats} />}
+              <div className="mt-4 flex justify-center gap-8">
+                <div className="text-center">
+                  <p className="cc-text-title text-cc-ink">{stats.passed}</p>
+                  <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>Proven</p>
+                </div>
+                <div className="text-center">
+                  <p className="cc-text-title text-cc-ink">{stats.failed}</p>
+                  <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>Failed</p>
+                </div>
+                {stats.inconclusive > 0 && (
+                  <div className="text-center">
+                    <p className="cc-text-title text-cc-ink">{stats.inconclusive}</p>
+                    <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>Not determined</p>
+                  </div>
+                )}
+              </div>
+              {stats.inconclusive > 0 && (
+                <p className="mt-4 cc-text-meta font-medium leading-relaxed text-cc-ink-muted max-w-[22rem]">
+                  {stats.inconclusive} of {stats.total} produced no result — skipped, or the runner
+                  never reported on them. The rate above is of the {stats.verdicts} that did.
+                </p>
+              )}
+            </div>
+
+            {/* Category Performance */}
+            <div className={clsx(CARD, 'xl:col-span-8 p-4 md:p-6 overflow-hidden')}>
+              <h4 className="cc-text-h3 text-cc-ink mb-4 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-cc-ink-muted" aria-hidden="true" />
+                Results by category
+              </h4>
+              <div className="h-[250px] md:h-[300px]">
+                {mounted && <TestingBarChart stats={stats} />}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {testResults.map((res: any, i: number) => {
+              const tone = verdictTone(res.status);
+              const state = STATE_CLASSES[VERDICT_STATE[tone]];
+              return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                data-verdict-tone={tone}
+                className={clsx(
+                  "group relative p-4 rounded-cc-card border transition-colors bg-cc-surface shadow-cc hover:border-cc-field-border",
+                  tone === 'fail' ? 'border-cc-error-border' : tone === 'none' ? 'border-dashed border-cc-field-border' : 'border-cc-line'
+                )}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <span className={state.text}>
+                    {tone === 'pass' ? <ShieldCheck size={20} aria-hidden="true" />
+                      : tone === 'fail' ? <AlertTriangle size={20} aria-hidden="true" />
+                      : <HelpCircle size={20} aria-hidden="true" />}
+                  </span>
+                  <span className="font-cc-mono text-[12px] text-cc-ink-muted">{renderSafeValue(res.id)}</span>
+                </div>
+                {/* The name is the button, stretched over the card: the whole
+                    card still opens the report on click, and the keyboard now
+                    reaches it too — the report dialog hands the focus back
+                    here when it closes. */}
+                <h4 className="cc-text-h3 text-cc-ink mb-2 line-clamp-2 leading-tight">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedResult(res)}
+                    className="text-left cursor-pointer after:absolute after:inset-0 after:rounded-cc-card"
                   >
-                    <div className="space-y-4 pt-1">
-                      <p className="cc-text-meta font-medium text-cc-ink-muted flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
-                        Step-by-step instructions for every authentication method.
-                      </p>
+                    {renderSafeValue(res.name)}
+                  </button>
+                </h4>
+                <div className="flex items-center gap-2 pt-2">
+                  <CcTag>{renderSafeValue(res.category)}</CcTag>
+                  <span className={clsx("cc-text-meta ml-auto", state.text)}>
+                    {renderSafeValue(res.status)}
+                  </span>
+                </div>
+              </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-                      {/* Step 1 — Always visible */}
-                      <div className="flex gap-3 items-start">
-                        <span className={STEP}>1</span>
-                        <div>
-                          <p className="cc-text-h3 text-cc-ink">Choose your Authentication Type</p>
-                          <p className="cc-text-cell text-cc-ink-muted leading-relaxed">
-                            Select the method that matches your SAP system setup from the dropdown below. Not sure which to use? Here is a quick overview:
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                            <div className={authOption(s4AuthType === 'basic')}>
-                              <span className="font-bold text-cc-ink block mb-1">Basic Authentication</span>
-                              <span className="text-cc-ink-muted">Username + Password. Use for S/4HANA Cloud test tenants with Communication Arrangements (API users).</span>
-                            </div>
-                            <div className={authOption(s4AuthType === 'oauth2')}>
-                              <span className="font-bold text-cc-ink block mb-1">OAuth 2.0 Client Credentials</span>
-                              <span className="text-cc-ink-muted">Client ID + Secret. Use when your S/4HANA tenant provides OAuth token endpoints via Communication Arrangements.</span>
-                            </div>
-                            <div className={authOption(s4AuthType === 'sap_hub')}>
-                              <span className="font-bold text-cc-ink block mb-1">SAP Business Accelerator Hub Sandbox</span>
-                              <span className="text-cc-ink-muted">Free sandbox API key. No own tenant needed — perfect for testing with SAP{"'"}s public demo APIs.</span>
-                            </div>
-                            <div className={authOption(s4AuthType === 'btp_destination')}>
-                              <span className="font-bold text-cc-ink block mb-1">BTP Destination Service (JSON)</span>
-                              <span className="text-cc-ink-muted">Paste your BTP destination JSON config. For enterprises routing via SAP BTP with Cloud Connector or Internet proxy.</span>
-                            </div>
+
+                    </section>
+
+                    {/* ── Run output: the console, one level deeper ── */}
+                    {/* Folded until there is something to read: a run opens it
+                        (see handleRun), and the module code is one click inside. */}
+                    <section data-testing-console className={clsx(CARD, 'px-4 py-3')}>
+                      <CcDisclosure title="Run output and module code" level={2} open={showConsole} onOpenChange={setShowConsole}>
+                      {/* The terminal is code, and code is one of the two dark surfaces
+            DESIGN.md §1.1 allows. */}
+        <div className="bg-cc-code-bg rounded-cc-card border border-cc-line overflow-hidden flex flex-col h-80">
+          <div className="bg-cc-code-bg border-b border-cc-code-muted/30 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1 shrink-0" aria-hidden="true">
+                <div className="w-2 h-2 rounded-full bg-cc-code-muted"></div>
+                <div className="w-2 h-2 rounded-full bg-cc-code-muted"></div>
+                <div className="w-2 h-2 rounded-full bg-cc-code-muted"></div>
+              </div>
+              <div className="flex items-center gap-2 text-cc-code-muted ml-1 md:ml-2 min-w-0">
+                <TerminalIcon className="w-4 h-4 shrink-0" />
+                <span className="text-[12px] font-cc-mono truncate">
+                  {isAbapCloud ? 'abap-unit-stubs ~ simulated run' : 'sandbox-runtime ~ node app.js'}
+                </span>
+              </div>
+            </div>
+            <CcButton variant="ghost" onClick={() => setShowTestCode(!showTestCode)}>
+              {isAbapCloud
+                ? (showTestCode ? 'View Simulated Output' : 'View ABAP Unit Class')
+                : (showTestCode ? 'View Output' : 'View Module Code')
+              }
+            </CcButton>
+          </div>
+          <div className="p-4 md:p-6 font-cc-mono text-[12px] md:text-[13px] bg-cc-code-bg text-cc-code-ink flex-grow overflow-auto custom-scrollbar">
+            {showTestCode ? (
+              <pre
+                data-stage-output={project?.testSuite?.code ? 'testSuite' : undefined}
+                className="whitespace-pre-wrap leading-relaxed text-cc-code-name"
+              >
+                {(!storedSuiteRejected && project?.testSuite?.code) || (isAbapCloud ? 'No test suite generated yet. Generate a suite to inspect local ABAP stubs.' : 'No test code generated yet.')}
+              </pre>
+            ) : (
+              <pre className="whitespace-pre-wrap leading-relaxed">{sandboxOutput || '// Waiting for execution...'}</pre>
+            )}
+          </div>
+        </div>
+                      </CcDisclosure>
+                      {!showConsole && (
+                        <p className="cc-text-meta text-cc-ink-muted">The runner{"'"}s console and the generated test code — the technical detail behind the results.</p>
+                      )}
+                    </section>
+                  </div>
+
+                  <aside aria-label="About running tests against mocks" className="flex min-w-0 flex-col gap-4">
+                    <CcCard title="On record" level={2}>
+                      <LastRunRow run={run} />
+                    </CcCard>
+
+                    {/* The figure the third marketing tile used to carry, with its
+                        reasoning: a model's estimate, said to be one. */}
+                    <CcCard title="Coverage estimate" level={2} meta={project?.coverageEstimate && !storedSuiteRejected ? <CcProvenanceChip value="proposed" /> : undefined}>
+                      <p className="cc-text-title text-cc-ink mb-2">
+                        {typeof project?.coverageEstimate?.percentage === 'number' && !storedSuiteRejected
+                          ? <span data-stage-output="coverageEstimate">{`${project.coverageEstimate.percentage}%`}</span>
+                          : <span className="cc-text-cell text-cc-ink-muted">Not estimated yet — the estimate is written with the scenarios.</span>}
+                      </p>
+                      {project?.coverageEstimate && !storedSuiteRejected ? (
+                        <div className="space-y-3">
+                          <p className="cc-text-meta text-cc-ink-muted">The testing model{"'"}s estimate of how much of the logic the scenarios reach — not a measured coverage.</p>
+                          <div>
+                            <h3 className={clsx(LABEL, 'mb-1')}>How it was estimated</h3>
+                            <p className="cc-text-cell text-cc-ink leading-relaxed">{project.coverageEstimate.explanation || 'No explanation available.'}</p>
+                          </div>
+                          <div>
+                            <h3 className={clsx(LABEL, 'mb-1')}>Gaps it names</h3>
+                            <p className="cc-text-cell text-cc-ink">{project.coverageEstimate.missingCoverage || 'No missing coverage information.'}</p>
                           </div>
                         </div>
-                      </div>
+                      ) : null}
+                    </CcCard>
 
-                      {/* Step 2 — Dynamic based on auth type */}
-                      <div className="flex gap-3 items-start">
-                        <span className={STEP}>2</span>
-                        <div>
-                          <p className="cc-text-h3 text-cc-ink">Enter Your Connection Details</p>
-                          {s4AuthType === 'basic' && (
-                            <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
-                              <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className={CODE}>https://my300120-api.s4hana.cloud.sap</code></p>
-                              <p>→ <strong>Username:</strong> The Communication User name from your Communication Arrangement (e.g. <code className={CODE}>CC_INTEGRATOR</code>)</p>
-                              <p>→ <strong>Password:</strong> The password assigned to that Communication User</p>
-                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: S/4HANA Cloud → Communication Management → Communication Arrangements → Your arrangement → Inbound Communication → User Name</p>
-                            </div>
-                          )}
-                          {s4AuthType === 'oauth2' && (
-                            <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
-                              <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className={CODE}>https://my300120-api.s4hana.cloud.sap</code></p>
-                              <p>→ <strong>Client ID:</strong> The OAuth client ID from your Communication Arrangement (starts with <code className={CODE}>sb-clone-...</code>)</p>
-                              <p>→ <strong>Client Secret:</strong> The OAuth client secret generated alongside the Client ID</p>
-                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: S/4HANA Cloud → Communication Arrangements → OAuth 2.0 Details → Client ID / Client Secret</p>
-                            </div>
-                          )}
-                          {s4AuthType === 'sap_hub' && (
-                            <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
-                              <p>→ <strong>Tenant URL:</strong> Use SAP{"'"}s sandbox URL: <code className={CODE}>https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/</code></p>
-                              <p>→ No username or password needed — only your API key is required</p>
-                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: <a href="https://api.sap.com" target="_blank" rel="noopener noreferrer" className="underline">api.sap.com</a> → Log in → Show API Key (top-right on any API page)</p>
-                            </div>
-                          )}
-                          {s4AuthType === 'btp_destination' && (
-                            <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
-                              <p>→ Paste the full JSON from your BTP Destination into the text area below</p>
-                              <p>→ The system automatically extracts <strong>Name</strong>, <strong>URL</strong>, <strong>Authentication</strong>, and <strong>ProxyType</strong></p>
-                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: SAP BTP Cockpit → Connectivity → Destinations → Select your destination → Export as JSON (or copy the config)</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Step 3 + 4 — Always visible. Save comes first: the test
-                          runs against the saved connection and refuses an unsaved
-                          form (QA full review of fc787674705f, 229511ee85db). */}
-                      <div className="flex gap-3 items-start">
-                        <span className={STEP}>3</span>
-                        <div>
-                          <p className="cc-text-h3 text-cc-ink">Save the Connection</p>
-                          <p className="cc-text-cell text-cc-ink-muted">Click <strong>"Save Connection"</strong> to store the config, encrypted on the server. The Mock Environment tab is where the generated suite runs.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-3 items-start">
-                        <span className={STEP}>4</span>
-                        <div>
-                          <p className="cc-text-h3 text-cc-ink">Test the Connection</p>
-                          <p className="cc-text-cell text-cc-ink-muted">Click <strong>"Test Connection"</strong> to verify the handshake with the saved connection. The sandbox terminal below will show the live connection log.</p>
-                        </div>
-                      </div>
-
-                      {/* Security Notice */}
-                      <CcMessageStrip state="information" headline="Security:">
-                        Credentials travel over HTTPS and are encrypted at rest on the server (AES-256-GCM). Production domains (<code className={CODE}>*-api.s4hana.ondemand.com</code>) are automatically blocked. Only non-productive sandbox/test systems are allowed.
-                      </CcMessageStrip>
-
-                      {/* Quick links */}
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        <CcLinkButton href="/knowledge" icon={<ExternalLink className="w-4 h-4" aria-hidden="true" />}>
-                          Knowledge Hub
-                        </CcLinkButton>
-                        {/* This button is inside a project, so the one
-                            assistant it opens is the case-bound one: it
-                            answers from this project's evidence with
-                            anchors, and from nothing else. It cannot
-                            help with the S/4 connection this block is
-                            about — the Knowledge Hub link next to it
-                            can. Named for what opens, not for what one
-                            would wish for here; see the report on this
-                            step. */}
-                        <CcButton
-                          onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
-                          icon={<HelpCircle className="w-4 h-4" aria-hidden="true" />}
-                        >
-                          Ask this case
-                        </CcButton>
-                        <CcLinkButton href="/settings" icon={<ExternalLink className="w-4 h-4" aria-hidden="true" />}>
-                          Manage in Profile Settings
-                        </CcLinkButton>
-                      </div>
-                    </div>
-                  </CcDisclosure>
-                </div>
-
-                {/* ─────── Connection Form with Contextual Helpers ─────── */}
-                <form onSubmit={saveS4Config} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Label above, hint under the label, asterisk and
-                        `aria-required` on every field the form cannot be saved
-                        without (§2.7). The native `required` stays on each
-                        control, so the browser still refuses an incomplete
-                        form exactly as before. */}
-                    <CcField
-                      label="Tenant HTTPS URL"
-                      required
-                      help={
-                        s4AuthType === 'sap_hub'
-                          ? 'Use the SAP Business Accelerator Hub sandbox base URL. Find it at api.sap.com on any S/4HANA Cloud API page.'
-                          : s4AuthType === 'btp_destination'
-                          ? 'Auto-filled from your BTP Destination JSON. You can also enter it manually.'
-                          : 'Your S/4HANA Cloud API host. Format: https://myXXXXXX-api.s4hana.cloud.sap — found in your S/4HANA Launchpad under Communication Arrangements.'
-                      }
-                    >
-                      {(control) => (
-                        <input
-                          id={control.id}
-                          type="url"
-                          required={control.required}
-                          aria-required={control.ariaRequired}
-                          aria-describedby={control.describedBy}
-                          value={s4Url}
-                          onChange={e => setS4Url(e.target.value)}
-                          placeholder={s4AuthType === 'sap_hub' ? 'https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/' : 'https://my300120-api.s4hana.cloud.sap'}
-                          className={cn(control.className, CC_CONTROL_HEIGHT.cozy)}
-                        />
-                      )}
-                    </CcField>
-
-                    <CcSelect
-                      label="Authentication Type"
-                      density="cozy"
-                      options={AUTH_TYPE_OPTIONS}
-                      value={s4AuthType}
-                      onChange={setS4AuthType}
-                      help={
-                        s4AuthType === 'basic' ? 'Best for direct S/4HANA Cloud sandbox connections using a Communication User.'
-                          : s4AuthType === 'oauth2' ? 'Use when your Communication Arrangement provides OAuth 2.0 token endpoints.'
-                          : s4AuthType === 'sap_hub' ? 'No S/4HANA system needed — uses SAP\'s free public sandbox APIs for testing.'
-                          : 'For enterprise setups routing through SAP BTP with Cloud Connector or direct proxy.'
-                      }
+                    <TabExplainer
+                      items={isAbapCloud ? [
+                        { text: 'Writes ABAP Unit local test class stubs for the RAP behaviour' },
+                        { text: 'Stands in for database access with SQL test doubles' },
+                        { text: 'Does not compile or run the stubs — a run here is simulated', not: true },
+                        { text: 'Does not run anything on a tenant', not: true },
+                      ] : [
+                        { text: 'Runs the generated code for real, in a restricted child process on the server' },
+                        { text: 'Answers SAP calls from a library of mocked SAP responses' },
+                        { text: 'Names every package it had to replace with an empty stand-in' },
+                        { text: 'Does not run anything on a tenant', not: true },
+                      ]}
+                      note={isAbapCloud
+                        ? 'An ABAP Unit run in your own system is what gives the stubs a verdict.'
+                        : 'Real results for the code, not for a tenant. No model call to run; a failed run may ask the testing model to explain or repair it.'}
                     />
-
-                    {/* BTP Destination JSON */}
-                    {s4AuthType === 'btp_destination' && (
-                      <div className="col-span-1 md:col-span-2">
-                        <CcField
-                          label="SAP BTP Destination JSON Configuration"
-                          required
-                          help="Paste the JSON from SAP BTP Cockpit → Connectivity → Destinations. The Name, URL, Authentication, and ProxyType fields are auto-extracted."
-                        >
-                          {(control) => (
-                            <textarea
-                              id={control.id}
-                              required={control.required}
-                              aria-required={control.ariaRequired}
-                              aria-describedby={control.describedBy}
-                              rows={7}
-                              value={btpDestinationJson}
-                              onChange={e => handleBtpJsonChange(e.target.value)}
-                              placeholder={'{\n  "Name": "S4_CLOUDSANDBOX",\n  "Type": "HTTP",\n  "URL": "https://my300120-api.s4hana.cloud.sap",\n  "Authentication": "PrincipalPropagation",\n  "ProxyType": "OnPremise",\n  "tokenServiceURL": "https://tenant.authentication.eu10.hana.ondemand.com/oauth/token"\n}'}
-                              className={cn(control.className, 'py-2 font-cc-mono resize-y leading-normal')}
-                            />
-                          )}
-                        </CcField>
+                  </aside>
+                </div>
+              ),
+            },
+            {
+              value: ENV_SEGMENTS[1].value,
+              label: ENV_SEGMENTS[1].label,
+              content: (
+                <div data-testing-panel="live" className={RAIL_GRID}>
+                  <div className="flex min-w-0 flex-col gap-4">
+                    {LIVE_TEST_EXECUTION.locked && (
+                      // The documented lock (lib/locked-paths.ts, G0:R0), said once, where
+                      // the path would otherwise be offered — and with the way out named,
+                      // so it is a boundary and not a dead end (roadmap 1.7, ADR-004).
+                      // It stood in three places on this one screen before: here, as a
+                      // pill on the tab, and beside the run button. Three copies of a
+                      // refusal read as three different refusals.
+                      <div data-live-test-lock>
+                        <CcMessageStrip state="warning" headline="Tests against a tenant are locked">
+                          <span className="block">{LIVE_TEST_EXECUTION.userNotice}</span>
+                          <span className="block mt-2 font-semibold">
+                            {profile?.s4TenantAccessAllowed || profile?.isAdmin
+                              ? 'Bring your own tenant (BYOT) is granted for this account, so the connection check, the OData metadata read and the read-only call below are open to you.'
+                              : profile?.s4TenantAccessRequested
+                                ? 'Bring your own tenant (BYOT) is what opens the connection check, the OData metadata read and the read-only call — your request for it is with an administrator.'
+                                : 'Bring your own tenant (BYOT) is what opens the connection check, the OData metadata read and the read-only call: ask for it with the form below and an administrator reviews it by hand.'}
+                          </span>
+                          <span className="block mt-1">That approval does not lift this lock: it is lifted when the isolated live runner has passed its proof on the deployed service and its review, not by a permission.</span>
+                          {/* The way, as steps, each from what the account and the
+                              vault hold. No dates: none of these steps is stored with
+                              one, so none is shown. */}
+                          <span data-byot-steps className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                            {byotSteps.map((step) => (
+                              <span key={step.label} data-byot-step={step.done ? 'done' : 'open'} className="inline-flex items-center gap-2 cc-text-meta">
+                                {step.done
+                                  ? <Check className="w-4 h-4 shrink-0" aria-hidden="true" />
+                                  : <Circle className="w-4 h-4 shrink-0" aria-hidden="true" />}
+                                {step.label}
+                                {!step.done && <span className="text-cc-ink-muted">— not yet</span>}
+                              </span>
+                            ))}
+                          </span>
+                        </CcMessageStrip>
                       </div>
                     )}
 
-                    {/* Username / Client ID + Password / Secret fields */}
-                    {s4AuthType !== 'sap_hub' && s4AuthType !== 'btp_destination' && (
+                    {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
                       <>
-                        <CcField
-                          label={s4AuthType === 'oauth2' ? 'Client ID' : 'Username'}
-                          required
-                          help={
-                            s4AuthType === 'oauth2'
-                              ? 'Found in Communication Arrangements → OAuth 2.0 Details → Client ID. Starts with "sb-clone-".'
-                              : 'The Communication User name from your Communication Arrangement. Example: CC_INTEGRATOR or INTEGRATION_USER.'
-                          }
-                        >
-                          {(control) => (
-                            <input
-                              id={control.id}
-                              type="text"
-                              required={control.required}
-                              aria-required={control.ariaRequired}
-                              aria-describedby={control.describedBy}
-                              value={s4Username}
-                              onChange={e => setS4Username(e.target.value)}
-                              placeholder={s4AuthType === 'oauth2' ? 'sb-clone-xxxx...' : 'CC_INTEGRATOR'}
-                              className={cn(control.className, CC_CONTROL_HEIGHT.cozy)}
-                            />
-                          )}
-                        </CcField>
+                        {savedS4?.url && !editingConnection ? (
+                          // ── The saved connection, as a summary (s8) ──
+                          <CcCard
+                            title="Saved connection"
+                            level={2}
+                            meta={
+                              connectionStatus === 'connected' && lastCheck?.ok ? (
+                                <span className="inline-flex flex-wrap items-center gap-2">
+                                  <CcProvenanceChip value="proven" />
+                                  <span className="cc-text-meta text-cc-ink-muted">check passed <CcDateText value={lastCheck.at} format="datetime" /></span>
+                                </span>
+                              ) : connectionStatus === 'failed' ? (
+                                <CcStateText state="error">Check failed</CcStateText>
+                              ) : (
+                                <CcStateText state="neutral" hollow>Not checked in this session</CcStateText>
+                              )
+                            }
+                            actions={
+                              <>
+                                <CcButton variant="ghost" onClick={() => setEditingConnection(true)}>Edit</CcButton>
+                                <CcButton
+                                  variant="ghost"
+                                  tone="danger"
+                                  onClick={() => setConfirmDeleteConnection(true)}
+                                  disabled={deletingConnection}
+                                >
+                                  {deletingConnection ? 'Deleting...' : 'Delete connection'}
+                                </CcButton>
+                              </>
+                            }
+                          >
+                            <dl data-saved-connection className="m-0 grid grid-cols-1 sm:grid-cols-[160px_minmax(0,1fr)] gap-x-4 gap-y-2">
+                              <dt className={LABEL}>Tenant URL</dt>
+                              <dd className="m-0 min-w-0"><code className="font-cc-mono text-[12px] text-cc-ink break-all">{savedS4.url}</code></dd>
+                              <dt className={LABEL}>Authentication</dt>
+                              <dd className="m-0 min-w-0 cc-text-cell text-cc-ink">
+                                {authLabelOf(savedS4.authType)}
+                                {savedS4.username ? (
+                                  <> · {savedS4.authType === 'oauth2' ? 'client ID' : 'user'} <code className="font-cc-mono text-[12px] break-all">{savedS4.username}</code></>
+                                ) : null}
+                              </dd>
+                              <dt className={LABEL}>Secret</dt>
+                              <dd className="m-0 min-w-0 cc-text-cell text-cc-ink">
+                                {savedS4.legacy
+                                  ? 'Saved by an earlier version, not in the encrypted store — save the connection again to move it there.'
+                                  : 'Stored encrypted (AES-256-GCM) on the server · never shown again'}
+                              </dd>
+                              <dt className={LABEL}>What it may do</dt>
+                              <dd className="m-0 min-w-0 cc-text-cell text-cc-ink">Connection check · read OData metadata · one read-only OData call — nothing that writes</dd>
+                            </dl>
 
-                        <CcField
-                          label={s4AuthType === 'oauth2' ? 'Client Secret' : 'Password'}
-                          required
-                          help={
-                            s4AuthType === 'oauth2'
-                              ? 'The Client Secret generated together with your Client ID. Only shown once when creating the Communication Arrangement.'
-                              : 'The password set for the Communication User. If forgotten, reset it in the Communication Arrangement settings.'
-                          }
-                        >
-                          {(control) => (
-                            <div className="relative">
-                              <input
-                                id={control.id}
-                                type={showS4Password ? "text" : "password"}
-                                required={control.required}
-                                aria-required={control.ariaRequired}
-                                aria-describedby={control.describedBy}
-                                value={s4Password}
-                                onChange={e => setS4Password(e.target.value)}
-                                placeholder="••••••••••••••••"
-                                className={cn(control.className, CC_CONTROL_HEIGHT.cozy, 'pr-10')}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowS4Password(!showS4Password)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-cc-ink-muted hover:text-cc-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
-                                aria-label="Show password"
-                                aria-pressed={showS4Password}
-                              >
-                                {showS4Password ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
-                              </button>
+                            <div className="mt-4 space-y-3">
+                              {unsavedNotice && (
+                                <CcMessageStrip state="warning">{unsavedNotice}</CcMessageStrip>
+                              )}
+                              {connectionMessage && (
+                                <CcMessageStrip
+                                  state={connectionStatus === 'connected' ? 'success' : connectionStatus === 'failed' ? 'error' : 'information'}
+                                >
+                                  {connectionMessage}
+                                </CcMessageStrip>
+                              )}
                             </div>
-                          )}
-                        </CcField>
-                      </>
-                    )}
-                  </div>
 
-                  {/* Nothing was tested, so nothing failed: an unsaved form is
-                      its own state, in amber, not a red "connection failed"
-                      that reads as a broken tenant (UX review of 52f171091948,
-                      1b84676d685d). */}
-                  {unsavedNotice && (
-                    <CcMessageStrip state="warning">{unsavedNotice}</CcMessageStrip>
-                  )}
+                            <div className="mt-4 flex flex-wrap items-center gap-3">
+                              <CcButton
+                                variant="primary"
+                                density="cozy"
+                                onClick={handleTestConnection}
+                                disabled={testingConnection || !s4Url}
+                                icon={testingConnection ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Plug className="w-4 h-4" />}
+                              >
+                                {testingConnection ? 'Checking...' : 'Check connection'}
+                              </CcButton>
+                              <span className="cc-text-meta text-cc-ink-muted">No model call</span>
+                            </div>
 
-                  {connectionMessage && (
-                    <CcMessageStrip
-                      state={connectionStatus === 'connected' ? 'success' : connectionStatus === 'failed' ? 'error' : 'information'}
-                    >
-                      {connectionMessage}
-                    </CcMessageStrip>
-                  )}
-
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-cc-line">
-                    <CcButton
-                      variant="secondary"
-                      density="cozy"
-                      onClick={handleTestConnection}
-                      disabled={testingConnection || !s4Url}
-                      icon={testingConnection ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Globe className="w-4 h-4" />}
-                    >
-                      {testingConnection ? 'Verifying Connection...' : 'Test Connection'}
-                    </CcButton>
-                    <CcButton
-                      type="submit"
-                      variant="primary"
-                      density="cozy"
-                      disabled={isSavingConfig}
-                      icon={isSavingConfig ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                    >
-                      {isSavingConfig ? 'Saving...' : 'Save Connection'}
-                    </CcButton>
-                  </div>
-                </form>
-
-                {/* ─────── OData Service Explorer (appears after connection) ─────── */}
-                <AnimatePresence>
-                  {connectionStatus === 'connected' && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-6 border border-cc-line bg-cc-surface-muted rounded-cc-card p-4 md:p-6">
+                            {/* The metadata read and the read-only call, folded until
+                                asked for (s8 "More checks"). They use the same saved
+                                connection, so they open once the check has passed. */}
+                            <div data-more-checks className="mt-4 border-t border-cc-line pt-3">
+                              <CcDisclosure
+                                title="More checks — OData metadata and one read-only call"
+                                level={3}
+                                open={showMoreChecks}
+                                onOpenChange={setShowMoreChecks}
+                              >
+                                {connectionStatus === 'connected' ? (
+                                  <div className="mt-3 border border-cc-line bg-cc-surface-muted rounded-cc-card p-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                           <div className="flex items-center gap-3">
                             <Database className="w-5 h-5 text-cc-ink-muted shrink-0" aria-hidden="true" />
@@ -1567,27 +1836,384 @@ export default function TestingSandboxPage() {
                           </div>
                         )}
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : (
-              // Locked Teaser Card / Guide & Access Request
+                                ) : (
+                                  <p className="cc-text-cell text-cc-ink-muted pt-1">
+                                    These open once the connection check has passed in this session — they use the same saved connection.
+                                  </p>
+                                )}
+                              </CcDisclosure>
+                            </div>
+                          </CcCard>
+                        ) : (
+                          // ── The connection form: no connection yet, or Edit ──
+                          <CcCard
+                            title={savedS4?.url ? 'Change the saved connection' : 'Connect a test system'}
+                            level={2}
+                            actions={editingConnection ? (
+                              <CcButton variant="ghost" onClick={() => { setEditingConnection(false); setUnsavedNotice(''); }}>Cancel</CcButton>
+                            ) : undefined}
+                          >
+                            <p className="cc-text-cell text-cc-ink-muted mb-4">
+                              A non-productive S/4HANA Public Cloud endpoint, to check the connection and read OData metadata. Credentials are encrypted on the server and never shown again. Also in{' '}
+                              <Link href="/settings" className="font-semibold text-cc-information hover:underline">Settings</Link>.
+                            </p>
+                            <form onSubmit={saveS4Config} className="space-y-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Label above, hint under the label, asterisk and
+                        `aria-required` on every field the form cannot be saved
+                        without (§2.7). The native `required` stays on each
+                        control, so the browser still refuses an incomplete
+                        form exactly as before. */}
+                    <CcField
+                      label="Tenant HTTPS URL"
+                      required
+                      help={
+                        s4AuthType === 'sap_hub'
+                          ? 'Use the SAP Business Accelerator Hub sandbox base URL. Find it at api.sap.com on any S/4HANA Cloud API page.'
+                          : s4AuthType === 'btp_destination'
+                          ? 'Auto-filled from your BTP Destination JSON. You can also enter it manually.'
+                          : 'Your S/4HANA Cloud API host. Format: https://myXXXXXX-api.s4hana.cloud.sap — found in your S/4HANA Launchpad under Communication Arrangements.'
+                      }
+                    >
+                      {(control) => (
+                        <input
+                          id={control.id}
+                          type="url"
+                          required={control.required}
+                          aria-required={control.ariaRequired}
+                          aria-describedby={control.describedBy}
+                          value={s4Url}
+                          onChange={e => setS4Url(e.target.value)}
+                          placeholder={s4AuthType === 'sap_hub' ? 'https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/' : 'https://my300120-api.s4hana.cloud.sap'}
+                          className={cn(control.className, CC_CONTROL_HEIGHT.cozy)}
+                        />
+                      )}
+                    </CcField>
+
+                    <CcSelect
+                      label="Authentication Type"
+                      density="cozy"
+                      options={AUTH_TYPE_OPTIONS}
+                      value={s4AuthType}
+                      onChange={setS4AuthType}
+                      help={
+                        s4AuthType === 'basic' ? 'Best for direct S/4HANA Cloud sandbox connections using a Communication User.'
+                          : s4AuthType === 'oauth2' ? 'Use when your Communication Arrangement provides OAuth 2.0 token endpoints.'
+                          : s4AuthType === 'sap_hub' ? 'No S/4HANA system needed — uses SAP\'s free public sandbox APIs for testing.'
+                          : 'For enterprise setups routing through SAP BTP with Cloud Connector or direct proxy.'
+                      }
+                    />
+
+                    {/* BTP Destination JSON */}
+                    {s4AuthType === 'btp_destination' && (
+                      <div className="col-span-1 md:col-span-2">
+                        <CcField
+                          label="SAP BTP Destination JSON Configuration"
+                          required
+                          help="Paste the JSON from SAP BTP Cockpit → Connectivity → Destinations. The Name, URL, Authentication, and ProxyType fields are auto-extracted."
+                        >
+                          {(control) => (
+                            <textarea
+                              id={control.id}
+                              required={control.required}
+                              aria-required={control.ariaRequired}
+                              aria-describedby={control.describedBy}
+                              rows={7}
+                              value={btpDestinationJson}
+                              onChange={e => handleBtpJsonChange(e.target.value)}
+                              placeholder={'{\n  "Name": "S4_CLOUDSANDBOX",\n  "Type": "HTTP",\n  "URL": "https://my300120-api.s4hana.cloud.sap",\n  "Authentication": "PrincipalPropagation",\n  "ProxyType": "OnPremise",\n  "tokenServiceURL": "https://tenant.authentication.eu10.hana.ondemand.com/oauth/token"\n}'}
+                              className={cn(control.className, 'py-2 font-cc-mono resize-y leading-normal')}
+                            />
+                          )}
+                        </CcField>
+                      </div>
+                    )}
+
+                    {/* Username / Client ID + Password / Secret fields */}
+                    {s4AuthType !== 'sap_hub' && s4AuthType !== 'btp_destination' && (
+                      <>
+                        <CcField
+                          label={s4AuthType === 'oauth2' ? 'Client ID' : 'Username'}
+                          required
+                          help={
+                            s4AuthType === 'oauth2'
+                              ? 'Found in Communication Arrangements → OAuth 2.0 Details → Client ID. Starts with "sb-clone-".'
+                              : 'The Communication User name from your Communication Arrangement. Example: CC_INTEGRATOR or INTEGRATION_USER.'
+                          }
+                        >
+                          {(control) => (
+                            <input
+                              id={control.id}
+                              type="text"
+                              required={control.required}
+                              aria-required={control.ariaRequired}
+                              aria-describedby={control.describedBy}
+                              value={s4Username}
+                              onChange={e => setS4Username(e.target.value)}
+                              placeholder={s4AuthType === 'oauth2' ? 'sb-clone-xxxx...' : 'CC_INTEGRATOR'}
+                              className={cn(control.className, CC_CONTROL_HEIGHT.cozy)}
+                            />
+                          )}
+                        </CcField>
+
+                        <CcField
+                          label={s4AuthType === 'oauth2' ? 'Client Secret' : 'Password'}
+                          required
+                          help={
+                            s4AuthType === 'oauth2'
+                              ? 'The Client Secret generated together with your Client ID. Only shown once when creating the Communication Arrangement.'
+                              : 'The password set for the Communication User. If forgotten, reset it in the Communication Arrangement settings.'
+                          }
+                        >
+                          {(control) => (
+                            <div className="relative">
+                              <input
+                                id={control.id}
+                                type={showS4Password ? "text" : "password"}
+                                required={control.required}
+                                aria-required={control.ariaRequired}
+                                aria-describedby={control.describedBy}
+                                value={s4Password}
+                                onChange={e => setS4Password(e.target.value)}
+                                placeholder="••••••••••••••••"
+                                className={cn(control.className, CC_CONTROL_HEIGHT.cozy, 'pr-10')}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowS4Password(!showS4Password)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-cc-ink-muted hover:text-cc-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+                                aria-label="Show password"
+                                aria-pressed={showS4Password}
+                              >
+                                {showS4Password ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
+                              </button>
+                            </div>
+                          )}
+                        </CcField>
+                      </>
+                    )}
+                  </div>
+
+                              {/* Nothing was tested, so nothing failed: an unsaved form is
+                                  its own state, in amber, not a red "connection failed"
+                                  that reads as a broken tenant (UX review of 52f171091948,
+                                  1b84676d685d). */}
+                              {unsavedNotice && (
+                                <CcMessageStrip state="warning">{unsavedNotice}</CcMessageStrip>
+                              )}
+
+                              {connectionMessage && (
+                                <CcMessageStrip
+                                  state={connectionStatus === 'connected' ? 'success' : connectionStatus === 'failed' ? 'error' : 'information'}
+                                >
+                                  {connectionMessage}
+                                </CcMessageStrip>
+                              )}
+
+                              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-cc-line">
+                                <CcButton
+                                  type="submit"
+                                  variant="primary"
+                                  density="cozy"
+                                  disabled={isSavingConfig}
+                                  icon={isSavingConfig ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                                >
+                                  {isSavingConfig ? 'Saving...' : 'Save connection'}
+                                </CcButton>
+                                <CcButton
+                                  variant="secondary"
+                                  density="cozy"
+                                  onClick={handleTestConnection}
+                                  disabled={testingConnection || !s4Url}
+                                  icon={testingConnection ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Plug className="w-4 h-4" />}
+                                >
+                                  {testingConnection ? 'Checking...' : 'Check connection'}
+                                </CcButton>
+                              </div>
+                            </form>
+                          </CcCard>
+                        )}
+
+                        {deleteConnectionError && (
+                          <div data-delete-connection-error role="alert">
+                            <CcMessageStrip state="error">{deleteConnectionError}</CcMessageStrip>
+                          </div>
+                        )}
+
+                        {/* ─────── Setup guide (collapsible) ─────── */}
+                        {/* Folded, never removed (§2.11): the guide stays in the page
+                            while it is closed, and it opens by itself for a connection
+                            that has not been saved yet (see the effect above). */}
+                        <section data-setup-guide className={clsx(CARD, 'px-4 py-3')}>
+                          <CcDisclosure
+                            title="Setup guide — connect an S/4HANA test system"
+                            level={2}
+                            open={showSetupGuide}
+                            onOpenChange={setShowSetupGuide}
+                          >
+                                                <div className="space-y-4 pt-1">
+                      <p className="cc-text-meta font-medium text-cc-ink-muted flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
+                        Step-by-step instructions for every authentication method.
+                      </p>
+
+                      {/* Step 1 — Always visible */}
+                      <div className="flex gap-3 items-start">
+                        <span className={STEP}>1</span>
+                        <div>
+                          <p className="cc-text-h3 text-cc-ink">Choose your Authentication Type</p>
+                          <p className="cc-text-cell text-cc-ink-muted leading-relaxed">
+                            Select the method that matches your SAP system setup from the dropdown below. Not sure which to use? Here is a quick overview:
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                            <div className={authOption(s4AuthType === 'basic')}>
+                              <span className="font-bold text-cc-ink block mb-1">Basic Authentication</span>
+                              <span className="text-cc-ink-muted">Username + Password. Use for S/4HANA Cloud test tenants with Communication Arrangements (API users).</span>
+                            </div>
+                            <div className={authOption(s4AuthType === 'oauth2')}>
+                              <span className="font-bold text-cc-ink block mb-1">OAuth 2.0 Client Credentials</span>
+                              <span className="text-cc-ink-muted">Client ID + Secret. Use when your S/4HANA tenant provides OAuth token endpoints via Communication Arrangements.</span>
+                            </div>
+                            <div className={authOption(s4AuthType === 'sap_hub')}>
+                              <span className="font-bold text-cc-ink block mb-1">SAP Business Accelerator Hub Sandbox</span>
+                              <span className="text-cc-ink-muted">Free sandbox API key. No own tenant needed — perfect for testing with SAP{"'"}s public demo APIs.</span>
+                            </div>
+                            <div className={authOption(s4AuthType === 'btp_destination')}>
+                              <span className="font-bold text-cc-ink block mb-1">BTP Destination Service (JSON)</span>
+                              <span className="text-cc-ink-muted">Paste your BTP destination JSON config. For enterprises routing via SAP BTP with Cloud Connector or Internet proxy.</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Step 2 — Dynamic based on auth type */}
+                      <div className="flex gap-3 items-start">
+                        <span className={STEP}>2</span>
+                        <div>
+                          <p className="cc-text-h3 text-cc-ink">Enter Your Connection Details</p>
+                          {s4AuthType === 'basic' && (
+                            <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
+                              <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className={CODE}>https://my300120-api.s4hana.cloud.sap</code></p>
+                              <p>→ <strong>Username:</strong> The Communication User name from your Communication Arrangement (e.g. <code className={CODE}>CC_INTEGRATOR</code>)</p>
+                              <p>→ <strong>Password:</strong> The password assigned to that Communication User</p>
+                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: S/4HANA Cloud → Communication Management → Communication Arrangements → Your arrangement → Inbound Communication → User Name</p>
+                            </div>
+                          )}
+                          {s4AuthType === 'oauth2' && (
+                            <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
+                              <p>→ <strong>Tenant URL:</strong> Your API endpoint, e.g. <code className={CODE}>https://my300120-api.s4hana.cloud.sap</code></p>
+                              <p>→ <strong>Client ID:</strong> The OAuth client ID from your Communication Arrangement (starts with <code className={CODE}>sb-clone-...</code>)</p>
+                              <p>→ <strong>Client Secret:</strong> The OAuth client secret generated alongside the Client ID</p>
+                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: S/4HANA Cloud → Communication Arrangements → OAuth 2.0 Details → Client ID / Client Secret</p>
+                            </div>
+                          )}
+                          {s4AuthType === 'sap_hub' && (
+                            <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
+                              <p>→ <strong>Tenant URL:</strong> Use SAP{"'"}s sandbox URL: <code className={CODE}>https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/</code></p>
+                              <p>→ No username or password needed — only your API key is required</p>
+                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: <a href="https://api.sap.com" target="_blank" rel="noopener noreferrer" className="underline">api.sap.com</a> → Log in → Show API Key (top-right on any API page)</p>
+                            </div>
+                          )}
+                          {s4AuthType === 'btp_destination' && (
+                            <div className="cc-text-cell text-cc-ink-muted leading-relaxed space-y-1 mt-1">
+                              <p>→ Paste the full JSON from your BTP Destination into the text area below</p>
+                              <p>→ The system automatically extracts <strong>Name</strong>, <strong>URL</strong>, <strong>Authentication</strong>, and <strong>ProxyType</strong></p>
+                              <p className="cc-text-meta font-medium text-cc-ink mt-1"><MapPin className="inline w-3 h-3 mr-1" aria-hidden="true" />Where to find: SAP BTP Cockpit → Connectivity → Destinations → Select your destination → Export as JSON (or copy the config)</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Step 3 + 4 — Always visible. Save comes first: the test
+                          runs against the saved connection and refuses an unsaved
+                          form (QA full review of fc787674705f, 229511ee85db). */}
+                      <div className="flex gap-3 items-start">
+                        <span className={STEP}>3</span>
+                        <div>
+                          <p className="cc-text-h3 text-cc-ink">Save the Connection</p>
+                          <p className="cc-text-cell text-cc-ink-muted">Click <strong>Save connection</strong> to store the config, encrypted on the server. The <strong>Run tests against mocks</strong> tab is where the generated suite runs.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 items-start">
+                        <span className={STEP}>4</span>
+                        <div>
+                          <p className="cc-text-h3 text-cc-ink">Test the Connection</p>
+                          <p className="cc-text-cell text-cc-ink-muted">Click <strong>Check connection</strong> to verify the handshake with the saved connection. The last check below keeps its log.</p>
+                        </div>
+                      </div>
+
+                      {/* Security Notice */}
+                      <CcMessageStrip state="information" headline="Security:">
+                        Credentials travel over HTTPS and are encrypted at rest on the server (AES-256-GCM). Production domains (<code className={CODE}>*-api.s4hana.ondemand.com</code>) are automatically blocked. Only non-productive sandbox/test systems are allowed.
+                      </CcMessageStrip>
+
+                      {/* Quick links */}
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <CcLinkButton href="/knowledge" icon={<ExternalLink className="w-4 h-4" aria-hidden="true" />}>
+                          Knowledge Hub
+                        </CcLinkButton>
+                        {/* This button is inside a project, so the one
+                            assistant it opens is the case-bound one: it
+                            answers from this project's evidence with
+                            anchors, and from nothing else. It cannot
+                            help with the S/4 connection this block is
+                            about — the Knowledge Hub link next to it
+                            can. Named for what opens, not for what one
+                            would wish for here; see the report on this
+                            step. */}
+                        <CcButton
+                          onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
+                          icon={<HelpCircle className="w-4 h-4" aria-hidden="true" />}
+                        >
+                          Ask this case
+                        </CcButton>
+                        <CcLinkButton href="/settings" icon={<ExternalLink className="w-4 h-4" aria-hidden="true" />}>
+                          Manage in Profile Settings
+                        </CcLinkButton>
+                      </div>
+                    </div>
+                          </CcDisclosure>
+                          {!showSetupGuide && (
+                            <p className="cc-text-meta text-cc-ink-muted">
+                              {savedS4?.url ? 'Collapsed because a connection is saved. ' : ''}Four authentication methods, and where to find each value.
+                            </p>
+                          )}
+                        </section>
+
+                        {/* ─────── Last check: the log of this session ─────── */}
+                        <section data-last-check className={clsx(CARD, 'px-4 py-3')}>
+                          <CcDisclosure title="Last check" level={2} open={showLastCheck} onOpenChange={setShowLastCheck}>
+                            <pre className="whitespace-pre-wrap break-words rounded-cc-row bg-cc-code-bg p-4 font-cc-mono text-[12px] leading-relaxed text-cc-code-ink">
+                              {tenantLog || 'No check in this session yet.'}
+                            </pre>
+                          </CcDisclosure>
+                          <p className="cc-text-meta text-cc-ink-muted">
+                            {lastCheck ? (
+                              <>
+                                <CcDateText value={lastCheck.at} format="datetime" />
+                                {` · ${tenantLog.split('\n').filter(Boolean).length} lines · ${lastCheck.ok ? 'the tenant answered' : 'the check did not get through'}`}
+                              </>
+                            ) : 'No check in this session yet — checks are not stored.'}
+                          </p>
+                        </section>
+                      </>
+                    ) : (
+                      // Locked Teaser Card / Guide & Access Request
               <div className={clsx(CARD, 'p-4 md:p-6')}>
                 <div className="flex items-center gap-3 mb-6">
                   <Globe className="w-5 h-5 text-cc-ink-muted shrink-0" aria-hidden="true" />
-                  <h3 className="cc-text-h2 text-cc-ink">
-                    Live S/4HANA Integration Bridge
-                  </h3>
+                  <h2 className="cc-text-h2 text-cc-ink">
+                    Connect your own test system
+                  </h2>
                 </div>
 
                 <div className="space-y-4 max-w-4xl">
                   {/* Instructions */}
                   <div className="bg-cc-surface-muted border border-cc-line p-4 rounded-cc-card">
-                    <h4 className="cc-text-h3 text-cc-ink mb-3 flex items-center gap-2">
+                    <h3 className="cc-text-h3 text-cc-ink mb-3 flex items-center gap-2">
                       <ListChecks className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" />
                       Instructions (Setup Guide)
-                    </h4>
+                    </h3>
                     <ol className="list-decimal pl-4 cc-text-cell text-cc-ink space-y-2">
                       <li><strong>Request access:</strong> Use the form below to request access for your organization.</li>
                       <li><strong>Provide HTTPS endpoint:</strong> Set up a secure HTTPS connection to your S/4HANA sandbox or test system.</li>
@@ -1598,10 +2224,10 @@ export default function TestingSandboxPage() {
 
                   {/* Security Measures */}
                   <div className="bg-cc-surface-muted border border-cc-line p-4 rounded-cc-card">
-                    <h4 className="cc-text-h3 text-cc-ink mb-3 flex items-center gap-2">
+                    <h3 className="cc-text-h3 text-cc-ink mb-3 flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" />
                       Security Measures & Explanations
-                    </h4>
+                    </h3>
                     <ul className="list-disc pl-4 cc-text-cell text-cc-ink space-y-2">
                       <li><strong>Encrypted at rest:</strong> Passwords and tokens travel over HTTPS to the server, which encrypts them with AES-256-GCM in a server-only store. They are never returned to the browser.</li>
                       <li><strong>Production Block:</strong> Access to production interfaces (<code className={CODE}>*-api.s4hana.ondemand.com</code>) is blocked by the system.</li>
@@ -1619,7 +2245,7 @@ export default function TestingSandboxPage() {
                     <div className="bg-cc-surface border border-cc-line p-4 rounded-cc-card flex items-start gap-3">
                       <Clock className="w-5 h-5 text-cc-ink-muted shrink-0" aria-hidden="true" />
                       <div>
-                        <h4 className="cc-text-h3 text-cc-ink mb-1">Request in Review</h4>
+                        <h3 className="cc-text-h3 text-cc-ink mb-1">Request in Review</h3>
                         <p className="cc-text-cell text-cc-ink-muted leading-relaxed">
                           Your request for live S/4HANA access is currently being reviewed by our system administrators. Approvals are usually processed within 24 hours.
                         </p>
@@ -1657,432 +2283,42 @@ export default function TestingSandboxPage() {
                   )}
                 </div>
               </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Test Suite UI */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
-        <div className={clsx(CARD, 'overflow-hidden flex flex-col h-[500px] md:h-[600px]')}>
-          <div className="bg-cc-surface-muted border-b border-cc-line px-4 md:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <ListChecks className="w-5 h-5 text-cc-ink-muted" aria-hidden="true" />
-              <h2 className="cc-text-h2 text-cc-ink">Test Suite</h2>
-            </div>
-            {/* Only once the suite exists. Before that this button and the one in
-                the empty state below were the same action, offered twice on one
-                screen — "Generate Suite" here, "Generate Test Suite" in the
-                middle of the card. */}
-            {testCases.length > 0 && (
-              <CcButton
-                onClick={handleGenerate}
-                disabled={isGenerating || !modelAvailability.enabled('testing')}
-                icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
-              >
-                {isGenerating ? 'Generating...' : 'Regenerate Suite'}
-              </CcButton>
-            )}
-          </div>
-
-          <div className="p-4 md:p-6 flex-grow overflow-auto">
-            {testCases.length === 0 && !modelAvailability.enabled('testing') ? (
-              /* Roadmap 1.2 / V25-A12 — "Generate Your Test Suite" over a button
-                 the server refuses tells the reader nothing about why. */
-              <div className="h-full flex items-center justify-center px-4 py-8">
-                <NotGenerated
-                  what="Test suite"
-                  absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
-                  stage="testing"
-                  hint={
-                    modelAvailability.keyAvailable
-                      ? 'Turn the testing stage back on in Settings to generate it.'
-                      : 'Add your own Gemini API key in Settings to generate it.'
-                  }
-                />
-              </div>
-            ) : testCases.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8 bg-cc-surface-muted rounded-cc-card border border-dashed border-cc-field-border max-w-md mx-auto my-auto min-h-[300px]">
-                <ListChecks className="w-10 h-10 text-cc-ink-muted mb-4" aria-hidden="true" />
-                <h3 className="cc-text-h2 text-cc-ink">Generate Your Test Suite</h3>
-                {/* A stored suite that cannot be drawn is a fact about this
-                    project, not the same thing as never having generated one.
-                    Without this line the reader is told to start something he
-                    already did, and the reason his last suite vanished is
-                    nowhere on the screen. */}
-                {storedSuiteRejected ? (
-                  <p data-stored-test-suite-rejected className="cc-text-cell text-cc-ink-muted mt-2 max-w-xs leading-relaxed">
-                    {STORED_TEST_SUITE_REJECTED}
-                  </p>
-                ) : (
-                  <p className="cc-text-cell text-cc-ink-muted mt-2 max-w-xs leading-relaxed">
-                    To begin sandboxed verification, you must first generate the test cases based on your modernization blueprint.
-                  </p>
-                )}
-
-                {genError && (
-                  <p data-test-generation-error role="alert" className="mt-4 max-w-xs cc-text-cell font-semibold leading-relaxed text-cc-error">
-                    {genError}
-                  </p>
-                )}
-
-                {/* `animate-bounce` removed. It made the only action on an empty
-                    step bounce for ever — an attention-grab aimed at something the
-                    reader is already looking at, and the loudest element on a page
-                    whose other primaries sit still. It also made the button
-                    impossible to click under test: Playwright waits for an element
-                    to stop moving, and this one never did. */}
-                <div className="mt-6">
-                  <CcButton
-                    variant="primary"
-                    density="cozy"
-                    onClick={handleGenerate}
-                    disabled={isGenerating}
-                    icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
-                  >
-                    {isGenerating ? 'Generating Suite...' : 'Generate Test Suite'}
-                  </CcButton>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {/* The same message as in the empty state, because "Regenerate
-                    Suite" can be refused too — and there the previous suite is
-                    still on the screen, so without this the button simply
-                    appears to do nothing. */}
-                {genError && (
-                  <div data-test-generation-error>
-                    <CcMessageStrip state="error">{genError}</CcMessageStrip>
-                  </div>
-                )}
-
-                {/* Why "Regenerate Suite" is disabled — the same way out the
-                    empty state names. */}
-                {!modelAvailability.enabled('testing') && (
-                  <div data-regenerate-unavailable>
-                    <CcMessageStrip state="neutral">
-                      {modelAvailability.keyAvailable
-                        ? 'Regenerating is off: turn the testing stage back on in Settings.'
-                        : 'Regenerating needs a model key: add your own Gemini API key in Settings.'}
-                    </CcMessageStrip>
-                  </div>
-                )}
-
-                {/* The reason itself is in the notice at the top of the page. */}
-                {testRunBlocked(project) && (
-                  <div data-stale-run-hint>
-                    <CcMessageStrip state="neutral">Running is off until the suite is regenerated for the current source — the notice at the top says which stage comes first.</CcMessageStrip>
-                  </div>
-                )}
-
-                {/* Not a second lock notice — the one above this panel is the
-                    only one on this screen (roadmap 1.7). What belongs beside a
-                    disabled button is the way forward, so that is all this says. */}
-                {activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION.locked && (
-                  <div data-live-test-hint>
-                    <CcMessageStrip state="neutral">Switch to the Mock Environment to run this suite in the sandbox.</CcMessageStrip>
-                  </div>
-                )}
-
-                {activeEnvTab === 'live' && !s4Url && (
-                  <CcMessageStrip state="error">Please configure the S/4HANA connection (URL & credentials) to run the connection checks.</CcMessageStrip>
-                )}
-
-                {activeEnvTab === 'live' && s4Url && connectionStatus !== 'connected' && (
-                  <CcMessageStrip state="warning">Tip: Please run a successful connection test above to avoid connectivity issues.</CcMessageStrip>
-                )}
-
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <span data-stage-output="testCases" className={LABEL}>{selectedTestCases.length} of {testCases.length} selected</span>
-                    <CcButton
-                      variant="ghost"
-                      onClick={exportTestCasesToExcel}
-                      icon={<Download size={14} aria-hidden="true" />}
-                    >
-                      Export Excel
-                    </CcButton>
-                    {exportError && (
-                      <span data-export-error role="alert" className="flex items-center gap-2 cc-text-meta text-cc-error">
-                        <AlertTriangle className="w-4 h-4 shrink-0" />
-                        {exportError}
-                      </span>
                     )}
                   </div>
-                  <CcButton
-                    variant="primary"
-                    onClick={handleRun}
-                    disabled={isRunning || selectedTestCases.length === 0 || (activeEnvTab === 'live' && !s4Url) || (activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION.locked) || testRunBlocked(project)}
-                    icon={isRunning ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <Play className="w-4 h-4" />}
-                  >
-                    {isRunning ? 'Running...' : 'Run Selected'}
-                  </CcButton>
-                </div>
-                {/* The whole row is the checkbox's label, so a click anywhere on
-                    it ticks the box and the box is what the keyboard reaches —
-                    a clickable row alone was out of reach of Tab and Space. The
-                    label's text (id, category, description) is the box's name. */}
-                {testCases.map((tc, i) => (
-                  <label
-                    key={i}
-                    className={clsx(
-                      "flex items-start gap-3 p-3 md:p-4 rounded-cc-row border transition-colors cursor-pointer",
-                      selectedTestCases.includes(i) ? "border-cc-ink bg-cc-surface" : "border-cc-line hover:border-cc-field-border hover:bg-cc-surface-muted"
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedTestCases.includes(i)}
-                      onChange={() => toggleTestCase(i)}
-                      className="mt-1 w-4 h-4 shrink-0 cursor-pointer rounded border-cc-field-border accent-cc-ink"
-                    />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-cc-mono text-[12px] font-semibold text-cc-ink">{renderSafeValue(tc.id)}</span>
-                        {tc.category && (
-                          <CcTag>{renderSafeValue(tc.category)}</CcTag>
-                        )}
+
+                  <aside aria-label="About checking the tenant connection" className="flex min-w-0 flex-col gap-4">
+                    {/* Where the suite does run. Not a second lock notice — the one
+                        on the left is the only one on this screen (roadmap 1.7). */}
+                    <CcCard title="Run tests against mocks" level={2}>
+                      <p data-live-test-hint className="cc-text-cell text-cc-ink mb-3">
+                        {testCases.length > 0
+                          ? `The other tab runs the ${scenarios(testCases.length)} in the restricted test runner, against mocks — never on this tenant.`
+                          : 'Scenarios are written and run on the other tab, against mocks — never on this tenant.'}
+                      </p>
+                      <LastRunRow run={run} />
+                      <div className="mt-3">
+                        <CcButton variant="secondary" onClick={() => handleEnvChange('mock')}>
+                          Run tests against mocks
+                        </CcButton>
                       </div>
-                      <p className="cc-text-cell text-cc-ink truncate sm:whitespace-normal">{renderSafeValue(tc.description)}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+                    </CcCard>
 
-        {/* The terminal is code, and code is one of the two dark surfaces
-            DESIGN.md §1.1 allows. */}
-        <div className="bg-cc-code-bg rounded-cc-card border border-cc-line overflow-hidden flex flex-col h-[500px] md:h-[600px]">
-          <div className="bg-cc-code-bg border-b border-cc-code-muted/30 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex gap-1 shrink-0" aria-hidden="true">
-                <div className="w-2 h-2 rounded-full bg-cc-code-muted"></div>
-                <div className="w-2 h-2 rounded-full bg-cc-code-muted"></div>
-                <div className="w-2 h-2 rounded-full bg-cc-code-muted"></div>
-              </div>
-              <div className="flex items-center gap-2 text-cc-code-muted ml-1 md:ml-2 min-w-0">
-                <TerminalIcon className="w-4 h-4 shrink-0" />
-                <span className="text-[12px] font-cc-mono truncate">
-                  {isAbapCloud ? 'abap-unit-stubs ~ simulated run' : 'sandbox-runtime ~ node app.js'}
-                </span>
-              </div>
-            </div>
-            <CcButton variant="ghost" onClick={() => setShowTestCode(!showTestCode)}>
-              {isAbapCloud
-                ? (showTestCode ? 'View Simulated Output' : 'View ABAP Unit Class')
-                : (showTestCode ? 'View Output' : 'View Module Code')
-              }
-            </CcButton>
-          </div>
-          <div className="p-4 md:p-6 font-cc-mono text-[12px] md:text-[13px] bg-cc-code-bg text-cc-code-ink flex-grow overflow-auto custom-scrollbar">
-            {showTestCode ? (
-              <pre
-                data-stage-output={project?.testSuite?.code ? 'testSuite' : undefined}
-                className="whitespace-pre-wrap leading-relaxed text-cc-code-name"
-              >
-                {(!storedSuiteRejected && project?.testSuite?.code) || (isAbapCloud ? 'No test suite generated yet. Generate a suite to inspect local ABAP stubs.' : 'No test code generated yet.')}
-              </pre>
-            ) : (
-              <pre className="whitespace-pre-wrap leading-relaxed">{sandboxOutput || '// Waiting for execution...'}</pre>
-            )}
-          </div>
-        </div>
+                    <TabExplainer
+                      items={[
+                        { text: 'Checks that the tenant answers' },
+                        { text: 'Reads OData metadata' },
+                        { text: 'Makes one read-only OData call' },
+                        { text: 'Does not run generated tests on the tenant', not: true },
+                      ]}
+                      note="Use a non-productive tenant. Credentials are encrypted at rest and used only for these reads; production hosts are blocked."
+                    />
+                  </aside>
+                </div>
+              ),
+            },
+          ]}
+        />
       </div>
-
-      {/* CR-14: the runner replaces every npm package the generated code
-          imports with an empty proxy so the module can load. A pass against it
-          says the logic ran — not that it works with those libraries — and until
-          now nothing on this page said which ones had been replaced. */}
-      {testResults && stubbedPackages.length > 0 && (
-        <div className="mb-6" data-stubbed-packages>
-          <CcMessageStrip state="warning" headline={`Ran against stubs for: ${stubbedPackages.join(', ')}.`}>
-            These packages were replaced by an empty proxy so the code could load. A pass here shows the
-            business logic ran — not that it works with them.
-          </CcMessageStrip>
-        </div>
-      )}
-
-      {testResults && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {project?.manualTestingRequirements && project.manualTestingRequirements.length > 0 && (
-            <div className={clsx(CARD, 'p-4 md:p-6')}>
-              <h3 className="cc-text-h2 text-cc-ink mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-cc-warning" aria-hidden="true" />
-                Human-in-the-Loop Verification
-              </h3>
-              <div className="grid grid-cols-1 gap-4">
-                {project.manualTestingRequirements.map((req: any, i: number) => (
-                  <div key={i} className="bg-cc-surface-muted p-4 rounded-cc-row border border-cc-line">
-                    <h4 className="cc-text-h3 text-cc-ink mb-1">{req.area}</h4>
-                    <p className="cc-text-cell text-cc-ink-muted mb-3 leading-relaxed">{req.reason}</p>
-                    <div className="text-[12px] text-cc-ink font-cc-mono bg-cc-surface p-2 rounded-cc-row border border-cc-line">
-                      <strong>VERIFY:</strong> {req.verificationSteps}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className={clsx(CARD, 'p-4 md:p-6 flex flex-col md:flex-row gap-6')}>
-            <BarChart3 className="w-8 h-8 text-cc-ink-muted shrink-0" aria-hidden="true" />
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h3 className="cc-text-h2 text-cc-ink">AI-Estimated Coverage</h3>
-                <CcProvenanceChip value="proposed" />
-              </div>
-              <p className="cc-text-title text-cc-ink mb-4">
-                {typeof project?.coverageEstimate?.percentage === 'number' ? `${project.coverageEstimate.percentage}%` : 'N/A'}
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <h4 className={clsx(LABEL, 'mb-1')}>Logic Analysis</h4>
-                  <p className="cc-text-cell text-cc-ink leading-relaxed">{project?.coverageEstimate?.explanation || 'No explanation available.'}</p>
-                </div>
-                <div>
-                  <h4 className={clsx(LABEL, 'mb-1')}>Gaps Identified</h4>
-                  <p className="cc-text-cell text-cc-ink">{project?.coverageEstimate?.missingCoverage || 'No missing coverage information.'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {aiExplanation && (
-        <div className="mb-8 bg-cc-error-bg border border-cc-error-border rounded-cc-card p-4 md:p-6 flex flex-col sm:flex-row gap-4 items-start">
-          <AlertTriangle className="w-6 h-6 text-cc-error shrink-0" aria-hidden="true" />
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <h3 className="cc-text-h2 text-cc-ink">AI Test Analysis</h3>
-              <CcProvenanceChip value="proposed" />
-            </div>
-            <div className="cc-prose">
-              <ReactMarkdown>{aiExplanation}</ReactMarkdown>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {testResults && stats && (
-        <div id="qa-report-dashboard" className="mt-12">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-            <div>
-              <h2 className="cc-text-title text-cc-ink">QA Dashboard</h2>
-              <p className="cc-text-cell text-cc-ink-muted">Automation report for {project?.name}</p>
-            </div>
-            <div className={clsx(CARD, 'px-4 py-2 flex items-center gap-4')}>
-              <div className="flex items-center gap-2">
-                <span data-chart-swatch aria-hidden="true" className={clsx('w-2 h-2 rounded-full', stateChartColor('information').bg)}></span>
-                <span className="cc-text-meta text-cc-ink">{stats.passed} Proven</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span data-chart-swatch aria-hidden="true" className={clsx('w-2 h-2 rounded-full', stateChartColor('error').bg)}></span>
-                <span className="cc-text-meta text-cc-ink">{stats.failed} Failed</span>
-              </div>
-              {stats.inconclusive > 0 && (
-                <div className="flex items-center gap-2">
-                  <span data-chart-swatch data-not-determined aria-hidden="true" className={clsx('w-2 h-2 rounded-full', NOT_DETERMINED_CHART.bg)}></span>
-                  <span className="cc-text-meta text-cc-ink">
-                    {stats.inconclusive} Not determined
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-            {/* Pass Rate Card */}
-            <div className={clsx(CARD, 'lg:col-span-4 p-6 flex flex-col items-center justify-center text-center')}>
-              {mounted && <TestingPieChart pieData={pieData} stats={stats} />}
-              <div className="mt-4 flex justify-center gap-8">
-                <div className="text-center">
-                  <p className="cc-text-title text-cc-ink">{stats.passed}</p>
-                  <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>Proven</p>
-                </div>
-                <div className="text-center">
-                  <p className="cc-text-title text-cc-ink">{stats.failed}</p>
-                  <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>Failed</p>
-                </div>
-                {stats.inconclusive > 0 && (
-                  <div className="text-center">
-                    <p className="cc-text-title text-cc-ink">{stats.inconclusive}</p>
-                    <p className={clsx(LABEL, 'border-t border-cc-line pt-1')}>Not determined</p>
-                  </div>
-                )}
-              </div>
-              {stats.inconclusive > 0 && (
-                <p className="mt-4 cc-text-meta font-medium leading-relaxed text-cc-ink-muted max-w-[22rem]">
-                  {stats.inconclusive} of {stats.total} produced no result — skipped, or the runner
-                  never reported on them. The rate above is of the {stats.verdicts} that did.
-                </p>
-              )}
-            </div>
-
-            {/* Category Performance */}
-            <div className={clsx(CARD, 'lg:col-span-8 p-4 md:p-6 overflow-hidden')}>
-              <h3 className="cc-text-h2 text-cc-ink mb-6 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-cc-ink-muted" aria-hidden="true" />
-                Capability Coverage
-              </h3>
-              <div className="h-[250px] md:h-[300px]">
-                {mounted && <TestingBarChart stats={stats} />}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {testResults.map((res: any, i: number) => {
-              const tone = verdictTone(res.status);
-              const state = STATE_CLASSES[VERDICT_STATE[tone]];
-              return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                data-verdict-tone={tone}
-                className={clsx(
-                  "group relative p-4 rounded-cc-card border transition-colors bg-cc-surface shadow-cc hover:border-cc-field-border",
-                  tone === 'fail' ? 'border-cc-error-border' : tone === 'none' ? 'border-dashed border-cc-field-border' : 'border-cc-line'
-                )}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <span className={state.text}>
-                    {tone === 'pass' ? <ShieldCheck size={20} aria-hidden="true" />
-                      : tone === 'fail' ? <AlertTriangle size={20} aria-hidden="true" />
-                      : <HelpCircle size={20} aria-hidden="true" />}
-                  </span>
-                  <span className="font-cc-mono text-[12px] text-cc-ink-muted">{renderSafeValue(res.id)}</span>
-                </div>
-                {/* The name is the button, stretched over the card: the whole
-                    card still opens the report on click, and the keyboard now
-                    reaches it too — the report dialog hands the focus back
-                    here when it closes. */}
-                <h4 className="cc-text-h3 text-cc-ink mb-2 line-clamp-2 leading-tight">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedResult(res)}
-                    className="text-left cursor-pointer after:absolute after:inset-0 after:rounded-cc-card"
-                  >
-                    {renderSafeValue(res.name)}
-                  </button>
-                </h4>
-                <div className="flex items-center gap-2 pt-2">
-                  <CcTag>{renderSafeValue(res.category)}</CcTag>
-                  <span className={clsx("cc-text-meta ml-auto", state.text)}>
-                    {renderSafeValue(res.status)}
-                  </span>
-                </div>
-              </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* The report of one test case: the library's dialog (§2.6) — the page
           behind is inert, Escape and the close button leave, and the focus
@@ -2179,6 +2415,18 @@ export default function TestingSandboxPage() {
         )}
       </CcDialog>
 
+
+      {/* Removing the saved connection is asked for first; the box takes the
+          first focus, so a stray Enter deletes nothing. */}
+      <CcMessageBox
+        open={confirmDeleteConnection}
+        title="Delete the saved connection?"
+        confirmLabel="Delete connection"
+        onConfirm={handleDeleteConnection}
+        onCancel={() => setConfirmDeleteConnection(false)}
+      >
+        The tenant URL, the user and the encrypted secret are removed from your account — for every project, not only this one. Checks need a new connection afterwards.
+      </CcMessageBox>
 
       <StageFooter
         backPath={`/project/${projectId}/documentation`}
