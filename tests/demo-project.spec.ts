@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fillEconomics } from './helpers/economics';
 import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
@@ -239,9 +240,9 @@ test.describe('the demo is operable, and its state never leaves the browser', ()
     await expect(page.getByTestId('demo-forecast-refused')).toContainText('developer day rate');
     await expect(page.getByTestId('demo-forecast')).toHaveCount(0);
 
-    await page.getByTestId('demo-dev-rate').fill('900');
-    await page.getByTestId('demo-user-rate').fill('600');
-    await page.getByTestId('demo-investment').fill('40000');
+    await fillEconomics(page, '[data-testid="demo-dev-rate"]', '900');
+    await fillEconomics(page, '[data-testid="demo-user-rate"]', '600');
+    await fillEconomics(page, '[data-testid="demo-investment"]', '40000');
 
     await expect(page.getByTestId('demo-forecast')).toBeVisible();
     await expect(page.getByTestId('demo-forecast-refused')).toHaveCount(0);

@@ -1,19 +1,19 @@
 'use client';
 
-import React, { useState, type ReactNode } from 'react';
-import { ArrowDown } from 'lucide-react';
+import React, { useId, useState, type ReactNode } from 'react';
+import { ArrowDown, ChevronDown } from 'lucide-react';
 import CcField from '@/components/cc/Field';
 import CcCheckbox from '@/components/cc/Checkbox';
-import CcStateText from '@/components/cc/StateText';
+import CcStateText, { CcStateDot } from '@/components/cc/StateText';
 import type { ChecklistRow, ChecklistStatus } from '@/lib/economics-checklist';
 
 /**
  * Economics as one checklist of inputs (mockup v2.8 s5, "What the comparison
  * still needs"; audit 01.10.2026 row 7).
  *
- * Each row is one figure the stage needs from the reader, its field beside it
- * and its state after it, so "what is missing" and "where do I enter it" are
- * the same line. The rows and their states come from `lib/economics-checklist.ts`,
+ * Each row is one figure the stage needs from the reader and its state, and
+ * the field opens under the row (owner decision 01.10.2026, proposal A), so
+ * "what is missing" and "where do I enter it" are the same line. The rows and their states come from `lib/economics-checklist.ts`,
  * which reads the comparison's own gaps — the list cannot claim a figure is
  * there that the comparison counts as missing, or the other way round.
  *
@@ -29,45 +29,109 @@ const STATUS_WORD: Record<ChecklistStatus, string> = {
   assumed: 'assumed',
 };
 
+/** The colour a status is drawn in — the word on the right and the dot on the left. */
+function statusState(status: ChecklistStatus): 'information' | 'neutral' | 'warning' {
+  if (status === 'done') return 'information';
+  if (status === 'open') return 'neutral';
+  return 'warning';
+}
+
 export function ChecklistStatusText({ status }: { status: ChecklistStatus }) {
   if (status === 'done') return <CcStateText state="information">{STATUS_WORD.done}</CcStateText>;
   if (status === 'open') return <CcStateText state="neutral" hollow>{STATUS_WORD.open}</CcStateText>;
   return <CcStateText state="warning">{STATUS_WORD[status]}</CcStateText>;
 }
 
-/** One row: what, the field (or where it is entered), and how far it is. */
+const WORD_CLASS: Record<'information' | 'neutral' | 'warning', string> = {
+  information: 'text-cc-information',
+  neutral: 'text-cc-ink-muted',
+  warning: 'text-cc-warning',
+};
+
+/**
+ * One row of the checklist (proposal A, "What the comparison still needs"): a
+ * state dot, what the figure is — with the reader's value once there is one —
+ * and how far it is, in a word. The field opens under the row on a click, so
+ * the list reads as a status list first and a form second; the field stays in
+ * the page while closed, so nothing it holds is lost and the print footer and
+ * the forecast read the same state either way.
+ *
+ * A row without a field of its own (entered per option) links to the options.
+ */
 export function ChecklistLine({
   row,
+  summary,
+  target,
   children,
 }: {
   row: ChecklistRow;
-  /** The control; omitted for rows entered per option below. */
+  /** The reader's value in a few words — "800 CHF / day", "669 LoC from your source". */
+  summary?: ReactNode;
+  /** For rows entered per option: the section that holds their fields. */
+  target?: string;
+  /** The control; omitted for rows entered per option. */
   children?: ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+  const state = statusState(row.status);
+  const line = (
+    <>
+      <CcStateDot state={state} hollow={row.status === 'open'} />
+      <span className="min-w-0">
+        <span className="block cc-text-cell text-cc-ink">
+          {row.label}
+          {row.note ? ` — ${row.note}` : null}
+          {summary ? <span className="text-cc-ink"> · {summary}</span> : null}
+        </span>
+        {row.detail && row.detail !== 'from your source' && row.detail !== 'stated' ? (
+          <span className="block cc-text-meta font-medium text-cc-ink-muted">{row.detail}</span>
+        ) : null}
+      </span>
+      <span data-economics-row-word="" className={`cc-text-meta ${WORD_CLASS[state]}`}>
+        {STATUS_WORD[row.status]}
+      </span>
+    </>
+  );
+  const grid = 'grid w-full grid-cols-[12px_minmax(0,1fr)_auto_16px] items-center gap-3 py-2 min-h-10 text-left';
   return (
     <li
       data-economics-row={row.key}
       data-economics-status={row.status}
-      className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1 border-b border-cc-line py-3"
+      className="border-t border-cc-line first:border-t-0"
     >
-      <div className="min-w-0">{children}</div>
-      <div className="flex flex-col items-end gap-1 pt-1 text-right">
-        <ChecklistStatusText status={row.status} />
-        {row.detail ? <span className="cc-text-meta text-cc-ink-muted max-w-[12rem]">{row.detail}</span> : null}
-      </div>
+      {children ? (
+        <>
+          <button
+            type="button"
+            data-economics-row-toggle=""
+            aria-expanded={open}
+            aria-controls={panelId}
+            onClick={() => setOpen((o) => !o)}
+            className={`${grid} cursor-pointer rounded-cc-row`}
+          >
+            {line}
+            <ChevronDown
+              size={16}
+              aria-hidden={true}
+              className={`text-cc-ink-muted transition-transform ${open ? 'rotate-180' : ''}`}
+            />
+          </button>
+          <div id={panelId} hidden={!open} data-economics-row-panel="" className="pb-4 pl-6">
+            {children}
+          </div>
+        </>
+      ) : (
+        <a
+          href={`#${target ?? ''}`}
+          data-economics-row-link=""
+          className={`${grid} text-cc-ink no-underline`}
+        >
+          {line}
+          <ArrowDown size={16} aria-hidden={true} className="text-cc-ink-muted" />
+        </a>
+      )}
     </li>
-  );
-}
-
-/** A row whose figures are entered per option, in the cards below. */
-export function OptionRowLabel({ row, target }: { row: ChecklistRow; target: string }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[13px] font-semibold text-cc-ink">{row.label}</span>
-      <a href={`#${target}`} className="inline-flex items-center gap-1 cc-text-meta text-cc-ink-muted hover:text-cc-ink">
-        <ArrowDown size={14} aria-hidden="true" /> Entered per option, below
-      </a>
-    </div>
   );
 }
 

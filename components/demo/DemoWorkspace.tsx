@@ -17,7 +17,7 @@ import { CcTag } from '@/components/cc/Tag';
 import { CcSeverity } from '@/components/cc/Identifier';
 import { normaliseSeverity } from '@/lib/severity';
 import { formatNumber } from '@/lib/format';
-import { tcoForecast, TCO_TARGET_SCORE } from '@/lib/tco-model';
+import DemoEconomics from '@/components/tco/DemoEconomics';
 import type { PhaseKey } from '@/lib/workflow-steps';
 import type { DemoProject } from '@/lib/demo-project';
 import { catalogForReader } from '@/lib/messages/demo';
@@ -160,7 +160,14 @@ export default function DemoWorkspace({ demo, stage }: { demo: DemoProject; stag
         {stage === 'transformation' && <Transformation demo={demo} />}
         {stage === 'documentation' && <Documentation demo={demo} />}
         {stage === 'testing' && <Testing demo={demo} />}
-        {stage === 'tco' && <Economics demo={demo} state={state} patch={patch} />}
+        {stage === 'tco' && (
+          <DemoEconomics
+            loc={demo.economics.loc}
+            scoreBefore={demo.economics.scoreBefore}
+            values={state}
+            onChange={patch}
+          />
+        )}
         {stage === 'delivery' && <Delivery demo={demo} state={state} patch={patch} />}
       </div>
     </div>
@@ -575,185 +582,6 @@ function Testing({ demo }: { demo: DemoProject }) {
         </ul>
       </CcCard>
     </>
-  );
-}
-
-/**
- * Economics — a scenario, and only ever a scenario.
- *
- * The inputs start empty on purpose (roadmap 0.4): no day rate, no investment,
- * so no output. The forecast itself is `lib/tco-model.ts`, the same function the
- * Economics stage of a real project calls, so the demo cannot show arithmetic
- * the product does not do.
- *
- * It reports the model's day counts and ratios rather than amounts. Amounts
- * belong on one screen in this product and this is not it — a demo is the last
- * place a figure with a currency on it should be able to be screenshotted.
- */
-function Economics({
-  demo,
-  state,
-  patch,
-}: {
-  demo: DemoProject;
-  state: DemoState;
-  patch: (n: Partial<DemoState>) => void;
-}) {
-  const forecast = useMemo(
-    () =>
-      tcoForecast({
-        loc: demo.economics.loc,
-        devRate: state.devRate,
-        userRate: state.userRate,
-        upgradeFreq: state.upgradeFreq,
-        fpFreq: state.fpFreq,
-        oneTimeCost: state.oneTimeCost,
-        scoreBefore: demo.economics.scoreBefore,
-      }),
-    [demo.economics.loc, demo.economics.scoreBefore, state],
-  );
-
-  const missing = [
-    state.devRate === null && 'developer day rate',
-    state.userRate === null && 'business tester day rate',
-    state.oneTimeCost === null && 'modernisation investment',
-  ].filter(Boolean) as string[];
-
-  const parse = (v: string): number | null => {
-    const n = Number(v);
-    return v.trim() === '' || !Number.isFinite(n) ? null : n;
-  };
-
-  return (
-    <>
-      <CcCard level={2} title="Your assumptions">
-        <p className={lead}>
-          Nothing is filled in for you. The model refuses to produce a figure until the numbers behind it are
-          yours, and it says which ones are still missing.
-        </p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <NumberField
-            id="demo-dev-rate"
-            title="Developer day rate"
-            hint="in euro, per day"
-            value={state.devRate}
-            onChange={(v) => patch({ devRate: parse(v) })}
-          />
-          <NumberField
-            id="demo-user-rate"
-            title="Business tester day rate"
-            hint="in euro, per day"
-            value={state.userRate}
-            onChange={(v) => patch({ userRate: parse(v) })}
-          />
-          <NumberField
-            id="demo-investment"
-            title="One-time modernisation investment"
-            hint="in euro"
-            value={state.oneTimeCost}
-            onChange={(v) => patch({ oneTimeCost: parse(v) })}
-          />
-          <NumberField
-            id="demo-upgrades"
-            title="Major upgrades per year"
-            hint="whole number"
-            value={state.upgradeFreq}
-            onChange={(v) => patch({ upgradeFreq: parse(v) ?? 0 })}
-          />
-          <NumberField
-            id="demo-feature-packs"
-            title="Feature packs per year"
-            hint="whole number"
-            value={state.fpFreq}
-            onChange={(v) => patch({ fpFreq: parse(v) ?? 0 })}
-          />
-          <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2">
-            <span className={label}>Measured, not assumed</span>
-            <p className="m-0 mt-1 cc-text-cell text-cc-ink">
-              {num(demo.economics.loc)} lines of code, Clean Core Score {demo.economics.scoreBefore}, target{' '}
-              {TCO_TARGET_SCORE} — the target is the model&apos;s assumption, the other two come from the run.
-            </p>
-          </div>
-        </div>
-      </CcCard>
-
-      <CcCard level={2} title="Maintenance effort · scenario">
-        {forecast === null ? (
-          <p data-testid="demo-forecast-refused" className="m-0 cc-text-body text-cc-ink-muted">
-            No forecast yet
-            {missing.length > 0 ? `: still missing the ${missing.join(', the ')}.` : ' — the model declines these inputs.'}{' '}
-            An output built on a number nobody entered is not a scenario, it is an invention.
-          </p>
-        ) : (
-          <div data-testid="demo-forecast" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Metric title="Legacy effort" value={`${days(forecast.legacyDevDaysTotal + forecast.legacyTestDaysTotal)} days per year`} />
-            <Metric title="After modernisation" value={`${days(forecast.modernDevDaysTotal + forecast.modernTestDaysTotal)} days per year`} />
-            <Metric title="Overhead reduction" value={`${forecast.overheadReductionPct}%`} />
-            <Metric
-              title="Payback"
-              value={forecast.paybackMonths === null ? 'not reached' : `${forecast.paybackMonths} months`}
-            />
-          </div>
-        )}
-        <p className="m-0 mt-4 cc-text-cell text-cc-ink-muted">
-          A scenario, not a quotation: the day counts come from your assumptions and the score the run measured,
-          and the target score of {TCO_TARGET_SCORE} is an assumption of the model itself. The amounts behind
-          these days appear on the Economics stage of your own project.
-        </p>
-      </CcCard>
-    </>
-  );
-}
-
-/** A number the reader enters, in the field of §2.7. The test id stays on the input. */
-function NumberField({
-  id,
-  title,
-  hint,
-  value,
-  onChange,
-}: {
-  id: string;
-  title: string;
-  hint: string;
-  value: number | null;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <CcField label={title} help={hint}>
-      {(control) => (
-        <input
-          id={control.id}
-          data-testid={id}
-          type="number"
-          min={0}
-          inputMode="numeric"
-          value={value === null ? '' : value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="—"
-          aria-describedby={control.describedBy}
-          className={control.className}
-        />
-      )}
-    </CcField>
-  );
-}
-
-/**
- * A day count as a reader writes it. The sum of two floating-point totals
- * printed raw read "3.9050000000000002 days" — a precision the model does not
- * have. One decimal, like the payback months.
- */
-function days(n: number): string {
-  return n.toLocaleString('en-US', { maximumFractionDigits: 1 });
-}
-
-function Metric({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="rounded-cc-row border border-cc-line px-3 py-2">
-      <span className={label}>{title}</span>
-      <p className="m-0 mt-1 cc-text-h2 text-cc-ink">{value}</p>
-    </div>
   );
 }
 

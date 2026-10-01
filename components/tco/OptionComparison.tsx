@@ -36,13 +36,12 @@ import {
   type EffortDays,
   type EffortProposal,
 } from '@/lib/cost-assumptions';
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert, CircleDashed } from 'lucide-react';
+import { GroupMeter } from '@/components/tco/EconomicsObjectPage';
 import CcButton from '@/components/cc/Button';
 import CcField from '@/components/cc/Field';
-import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import { CcTag } from '@/components/cc/Tag';
 
 /**
  * The options the panel offers, by name only. A label is not a figure: every
@@ -127,12 +126,6 @@ function withOneOffCorner(
 }
 
 /**
- * The card of this stage (DESIGN.md §1.4), with the print rule of §7.1 that
- * `cc-card` carries: outlined, never torn across a page.
- */
-const CARD = 'cc-card rounded-cc-card border bg-cc-surface shadow-cc';
-
-/**
  * A figure the reader states. Every field on this panel is mandatory (ADR-035),
  * so every one carries the asterisk and `aria-required`. An empty field says
  * so once the reader has left it (§2.7: on blur, not on the first keystroke).
@@ -202,7 +195,7 @@ function EffortFields({
   const shown = (key: keyof EffortDays) =>
     value && Number.isFinite(value[key]) ? (value[key] as number) : null;
   return (
-    <fieldset className="space-y-2">
+    <fieldset className="min-w-0 space-y-2">
       <legend className="cc-text-label text-cc-ink-muted">{label}</legend>
       <div className="grid grid-cols-2 gap-3">
         <NumField id={`${idPrefix}-dev`} label="Dev days" value={shown('devDays')} onChange={(v) => set('devDays', v)} />
@@ -212,15 +205,66 @@ function EffortFields({
   );
 }
 
-/** The gaps that belong to this option alone — the shared ones stand in the checklist, once. */
-function ownGaps(cost: CostComparison['costs'][number] | undefined, option: CostOption): string[] {
-  if (!cost) return [];
+/**
+ * The mandatory groups of one option, each with whether it still keeps the
+ * option from a price — read from the option's own gaps in the comparison's
+ * coverage, so the card cannot say a group is in that the comparison counts as
+ * missing. The shared figures (currency, day rates, horizon, cadence) stand in
+ * the checklist, once.
+ */
+interface OptionGroup {
+  key: 'baseline' | 'one-off' | 'per-release' | 'deferral';
+  label: string;
+  open: boolean;
+}
+
+function optionGroups(cost: CostComparison['costs'][number] | undefined, option: CostOption): OptionGroup[] {
   const name = `"${option.label || option.id}"`;
-  return cost.coverage.gaps.filter((g) => g.sentence.includes(name)).map((g) => g.sentence);
+  const gaps = (cost?.coverage.gaps ?? []).filter((g) => (g.subject ?? '').includes(name));
+  const has = (code: string, subjectStart?: string) =>
+    gaps.some((g) => g.code === code && (!subjectStart || (g.subject ?? '').startsWith(subjectStart)));
+  const groups: OptionGroup[] = [];
+  if (BASELINE_KINDS.has(option.kind)) {
+    const invalid = has('amount-invalid', 'The maintenance baseline');
+    groups.push({
+      key: 'baseline',
+      label: invalid ? 'maintenance baseline (not a figure)' : 'maintenance baseline',
+      open: has('option-baseline-missing') || invalid,
+    });
+  } else if (has('option-baseline-unexpected')) {
+    groups.push({ key: 'baseline', label: 'a maintenance baseline it does not carry', open: true });
+  }
+  const oneOffInvalid = has('amount-invalid', 'The one-off effort');
+  groups.push({
+    key: 'one-off',
+    label: has('option-range-inverted')
+      ? 'one-off effort range (low above high)'
+      : has('option-effort-unconfirmed')
+        ? 'one-off effort range (proposal not confirmed)'
+        : oneOffInvalid
+          ? 'one-off effort range (not a figure)'
+          : 'one-off effort range',
+    open:
+      has('option-one-off-missing') || has('option-range-inverted') || has('option-effort-unconfirmed') || oneOffInvalid,
+  });
+  const perReleaseInvalid = has('amount-invalid', 'The effort per release');
+  groups.push({
+    key: 'per-release',
+    label: perReleaseInvalid ? 'effort per release (not a figure)' : 'effort per release',
+    open: has('option-per-release-missing') || perReleaseInvalid,
+  });
+  if (option.kind === COMPARISON_KIND) {
+    groups.push({
+      key: 'deferral',
+      label: 'upgrade deferral',
+      open: has('upgrade-delay-unstated') || has('amount-invalid', 'The upgrade deferral'),
+    });
+  }
+  return groups;
 }
 
 /** The refusal in a few words; the whole sentence stays one click deeper. */
-function refusalHeadline(comparison: CostComparison, options: CostOption[]): string {
+export function refusalHeadline(comparison: CostComparison, options: CostOption[]): string {
   const incomplete = comparison.costs.filter((c) => !c.total).map((c) => c.label);
   switch (comparison.refusal?.code) {
     case 'assumptions-incomplete':
@@ -237,21 +281,31 @@ function refusalHeadline(comparison: CostComparison, options: CostOption[]): str
 }
 
 /**
- * The options, each with its own effort and what it costs, and the verdict —
- * or the refusal, which is the point of roadmap 7.4.
+ * The options, each a card with what it still lacks (or what it costs), its
+ * fields behind "Fill in", and the verdict under them — or the refusal, which
+ * is the point of roadmap 7.4.
  */
 export default function OptionComparison({
   assumptions,
   comparison,
-  proposal,
   currency,
+  proposal,
   onPatchOption,
+  editing,
+  onToggleEdit,
 }: {
   assumptions: CostAssumptions;
   comparison: CostComparison;
   proposal: EffortProposal | null;
   currency: string;
   onPatchOption: (id: string, patch: Partial<CostOption>) => void;
+  /**
+   * Which option cards show their fields — closed by default, so a card reads
+   * as what the option still lacks first and as a form on "Fill in". Held by
+   * the page, because "Take over per option" opens all of them.
+   */
+  editing: ReadonlySet<string>;
+  onToggleEdit: (id: string) => void;
 }) {
   const patchOption = onPatchOption;
   const winnerLabel = comparison.winner
@@ -261,48 +315,53 @@ export default function OptionComparison({
   // Open by itself once there is a lead to overturn, until the reader decides otherwise.
   const [tippingChoice, setTippingChoice] = useState<boolean | null>(null);
   const tippingOpen = tippingChoice ?? comparison.tippingPoints.length > 0;
-
   return (
-    <section className="space-y-4" data-cost-comparison aria-labelledby="cost-comparison-title">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="cost-comparison-title" className="cc-text-h2 text-cc-ink">
-          Options ({assumptions.options.length}) · effort as ranges
-        </h2>
-        <span className="cc-text-meta text-cc-ink-muted">Every field is yours to fill; none has a default.</span>
-      </div>
-
-      {proposal ? (
-        <div className="print:hidden" data-cost-proposal>
-          <CcMessageStrip state="warning" headline="A proposal, not a figure of yours.">
-            {proposal.sentence} Take it over per option with the button in its card; nothing applies it for you.
-          </CcMessageStrip>
-        </div>
-      ) : null}
-
-      {/* One card per option: what it costs (or what it still lacks), then its fields. */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div className="space-y-4" data-cost-comparison="">
+      {/* One card per option: what it still lacks or what it costs, then its fields. */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         {assumptions.options.map((option) => {
           const cost = comparison.costs.find((c) => c.optionId === option.id);
           const isComparison = option.kind === COMPARISON_KIND;
           const needsBaseline = BASELINE_KINDS.has(option.kind);
-          const missing = ownGaps(cost, option);
+          const groups = optionGroups(cost, option);
+          const openGroups = groups.filter((g) => g.open);
+          const priced = Boolean(cost && cost.total);
+          const isEditing = editing.has(option.id);
+          const panelId = `cost-option-fields-${option.id}`;
           return (
-            <div
+            <article
               key={option.id}
               data-cost-option={option.id}
+              aria-labelledby={`cost-option-title-${option.id}`}
               // The lowest-cost option is outlined in ink, not green: lowest
               // cost is a priced comparison, not a proof (§1.1), and the
               // verdict below names it in words.
-              className={`p-4 md:p-6 ${CARD} ${
+              className={`cc-card flex min-w-0 flex-col gap-3 rounded-cc-card border bg-cc-surface p-4 ${
                 comparison.winner === option.id ? 'border-cc-ink' : 'border-cc-line'
               }`}
             >
-              <div className="flex items-baseline justify-between gap-2">
-                <h3 className="cc-text-h3 text-cc-ink">{option.label}</h3>
-                {isComparison ? <CcTag>Comparison option</CcTag> : null}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 id={`cost-option-title-${option.id}`} className="cc-text-h3 text-cc-ink">
+                  {option.label}
+                </h3>
+                {priced ? (
+                  <CcProvenanceChip value="simulation" />
+                ) : (
+                  // No figure is not a warning: it is the absence of a verdict,
+                  // and it stands neutral (§1.1).
+                  <span data-cost-option-not-determined={option.id}>
+                    <CcProvenanceChip value="not-determined" />
+                  </span>
+                )}
               </div>
 
-              <div className="mt-3 border-b border-cc-line pb-4" data-cost-option-result={option.id}>
+              <GroupMeter
+                filled={groups.length - openGroups.length}
+                total={groups.length}
+                label={`${option.label}: mandatory groups stated`}
+              />
+
+              <div data-cost-option-result={option.id}>
                 {cost && cost.total ? (
                   <>
                     <span className="flex flex-wrap items-center gap-2 cc-text-label text-cc-ink-muted">
@@ -339,28 +398,39 @@ export default function OptionComparison({
                   </>
                 ) : (
                   <>
-                    {/* No figure is not a warning: it is the absence of a
-                        verdict, and it stands neutral (§1.1). */}
-                    <p className="cc-text-h3 text-cc-ink" data-cost-option-not-determined={option.id}>
-                      Not determined
+                    <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">
+                      {openGroups.length === 0
+                        ? 'Its own figures are in; it waits for the open rows of the checklist.'
+                        : `${openGroups.length} mandatory group${openGroups.length === 1 ? '' : 's'} open`}
                     </p>
-                    {missing.length > 0 ? (
-                      <ul className="mt-1 list-disc space-y-1 pl-5 cc-text-cell text-cc-ink-muted">
-                        {missing.map((m) => (
-                          <li key={m}>{m}</li>
+                    {openGroups.length > 0 ? (
+                      <ul className="m-0 mt-2 list-none space-y-1 p-0" data-cost-option-gaps={option.id}>
+                        {openGroups.map((g) => (
+                          <li key={g.key} className="flex items-center gap-2 cc-text-cell text-cc-ink">
+                            <CircleDashed size={14} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
+                            <span>{g.label}</span>
+                          </li>
                         ))}
                       </ul>
-                    ) : (
-                      <p className="mt-1 cc-text-cell text-cc-ink-muted">
-                        Its own figures are in; it waits for the open figures in the checklist above.
-                      </p>
-                    )}
+                    ) : null}
                   </>
                 )}
               </div>
 
-              <div className="mt-4 space-y-4 print:hidden">
-                <fieldset className="space-y-2">
+              <div className="cc-no-print">
+                <CcButton
+                  data-cost-option-edit={option.id}
+                  aria-expanded={isEditing}
+                  aria-controls={panelId}
+                  onClick={() => onToggleEdit(option.id)}
+                >
+                  {isEditing ? 'Close' : priced ? 'Change' : 'Fill in'}
+                </CcButton>
+              </div>
+
+              <div id={panelId} hidden={!isEditing} data-cost-option-fields={option.id}>
+              <div className="space-y-4 border-t border-cc-line pt-4 print:hidden">
+                <fieldset className="min-w-0 space-y-2">
                   <legend className="cc-text-label text-cc-ink-muted">One-off effort (range)</legend>
                   <div className="grid grid-cols-2 gap-3">
                     {([
@@ -413,7 +483,7 @@ export default function OptionComparison({
                 ) : null}
 
                 {isComparison ? (
-                  <fieldset className="space-y-2">
+                  <fieldset className="min-w-0 space-y-2">
                     <legend className="cc-text-label text-cc-ink-muted">Upgrade deferral</legend>
                     <NumField
                       id={`${option.id}-upgrade-delay`}
@@ -446,13 +516,14 @@ export default function OptionComparison({
                   </fieldset>
                 ) : null}
               </div>
-            </div>
+              </div>
+            </article>
           );
         })}
       </div>
 
       {/* The verdict — or the refusal in a few words, with the whole reason one click deeper. */}
-      <div className={`p-4 md:p-6 border-cc-line ${CARD}`}>
+      <div className="border-t border-cc-line pt-4" data-cost-verdict="">
         {comparison.winner ? (
           <div data-cost-winner={comparison.winner}>
             <span className="flex flex-wrap items-center gap-2 cc-text-label text-cc-ink-muted">
@@ -527,6 +598,6 @@ export default function OptionComparison({
           </CcDisclosure>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

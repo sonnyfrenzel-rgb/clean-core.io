@@ -5,6 +5,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
+import { fillEconomics } from './helpers/economics';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
 
@@ -113,32 +114,32 @@ test.describe('rendered', () => {
     await expect(page.locator('[data-tco-model-notice]')).toBeVisible();
 
     // Two of three is still not enough.
-    await page.locator('[data-tco-cost="dev-rate"]').fill('1000');
-    await page.locator('[data-tco-cost="user-rate"]').fill('700');
+    await fillEconomics(page, '[data-tco-cost="dev-rate"]', '1000');
+    await fillEconomics(page, '[data-tco-cost="user-rate"]', '700');
     await expect(noForecast).toContainText('modernisation investment');
     await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
 
-    await page.locator('[data-tco-cost="investment"]').fill('20000');
+    await fillEconomics(page, '[data-tco-cost="investment"]', '20000');
     // Three of three and still nothing: the stage has no currency of its own
     // either (roadmap 7.11). It used to print a fixed euro sign at six places
     // with no field to state one.
     await expect(noForecast).toContainText('currency');
     await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
 
-    await page.locator('[data-cost-field="currency"]').fill('CHF');
+    await fillEconomics(page, '[data-cost-field="currency"]', 'CHF');
     await expect(noForecast).toHaveCount(0);
     await expect(page.getByText('Annual Net Savings · Scenario')).toBeVisible();
 
     // Clearing a figure takes the forecast away again.
-    await page.locator('[data-tco-cost="user-rate"]').fill('');
+    await fillEconomics(page, '[data-tco-cost="user-rate"]', '');
     await expect(page.locator('[data-tco-no-forecast]')).toBeVisible();
     await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
 
     // And so does clearing the currency, for the same reason: an amount whose
     // unit nobody stated is not an amount.
-    await page.locator('[data-tco-cost="user-rate"]').fill('700');
+    await fillEconomics(page, '[data-tco-cost="user-rate"]', '700');
     await expect(page.locator('[data-tco-no-forecast]')).toHaveCount(0);
-    await page.locator('[data-cost-field="currency"]').fill('');
+    await fillEconomics(page, '[data-cost-field="currency"]', '');
     await expect(page.locator('[data-tco-no-forecast]')).toBeVisible();
     await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
   });
