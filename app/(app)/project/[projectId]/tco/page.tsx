@@ -42,6 +42,7 @@ import {
 } from '@/lib/cost-assumptions';
 import { comparisonChecklist, forecastChecklist, openRows, type ChecklistRow } from '@/lib/economics-checklist';
 import { formatNumber } from '@/lib/format';
+import { sourceLineCount } from '@/lib/source-lines';
 import { SEQUENTIAL_CHART_COLORS } from '@/lib/chart-colors';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -183,7 +184,7 @@ export default function TcoCalculatorPage() {
           // uploaded file is rarely the whole estate, but the number to model
           // on is the reader's to supply; the field starts from something true.
           if (data.legacyCode) {
-            const lines = data.legacyCode.split('\n').length;
+            const lines = sourceLineCount(data.legacyCode);
             setLoc(lines);
             setSourceLoc(lines);
           }
