@@ -77,7 +77,7 @@ export default function WorkspaceToolBar({
   const links = tools.map((tool) => (
     <CcLinkButton
       key={tool.key}
-      href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools , layer })}
+      href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}
     >
       {tool.label}
     </CcLinkButton>

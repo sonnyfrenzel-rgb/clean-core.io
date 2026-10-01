@@ -140,6 +140,7 @@ export default function FindingsFocus({
                     className="self-start cc-text-meta font-semibold text-cc-ink underline-offset-2 hover:underline"
                   >
                     Show in the list
+                    <span className="sr-only">: {calmTitle(ef.title)}</span>
                   </button>
                 ) : null}
               </div>

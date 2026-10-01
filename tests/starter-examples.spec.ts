@@ -102,6 +102,33 @@ test.describe('Dashboard — starter examples', () => {
     await page.screenshot({ path: 'test-results/starter-example-loaded.png', fullPage: false });
   });
 
+  test('an example whose source carries personal-data shapes asks before it is written', async ({ page }) => {
+    // Z_EMPLOYEE_EXPENSE_VAL reads a personnel number. The gallery writes the
+    // source to Firestore on Start, so the hint stands in front of that write —
+    // the gate New project had before it showed this gallery (85d0ea44).
+    test.setTimeout(120 * 1000);
+    await signInViaLanding(page, EMAIL, PASSWORD, { pauseMs: 3000, alsoGermanLabel: true });
+    await page.evaluate(() => window.stop());
+    await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 }).catch(async () => {
+      await page.waitForTimeout(1000);
+      await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 });
+    });
+
+    const panel = page.getByTestId('starter-examples');
+    await expect(panel.getByRole('heading', { name: /Try it with an example/i })).toBeVisible({ timeout: 30000 });
+    await panel.locator('[data-examples-more] button').first().click();
+    const card = panel.locator('[data-example-card="Z_EMPLOYEE_EXPENSE_VAL"]');
+    await card.locator('[data-example-start="Z_EMPLOYEE_EXPENSE_VAL"]').click();
+
+    const ack = card.locator('[data-personal-data-ack] input[type="checkbox"]');
+    await expect(ack, 'the gallery wrote the source without showing the hint').toBeVisible({ timeout: 30000 });
+    await expect(page).toHaveURL(/\/dashboard/);
+
+    await ack.check();
+    await card.locator('[data-example-start="Z_EMPLOYEE_EXPENSE_VAL"]').click();
+    await page.waitForURL(/\/project\/[^/]+/, { timeout: 45000 });
+  });
+
   test('the first-run guide is publicly readable and points at the examples', async ({ page }) => {
     // Linked straight from the community mail, so it must render without a session.
     await page.goto('/first-run');

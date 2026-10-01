@@ -206,16 +206,21 @@ export interface DraftSummary {
   untouched: string[];
   /** Rules whose answer needs a reason and has none. */
   missing: string[];
+  /** Changes that have a reason but do not say where the new value comes from. */
+  sourceMissing: string[];
 }
 
 export function draftSummary(rules: readonly EditorRule[], draft: RuleDraft): DraftSummary {
-  const summary: DraftSummary = { keep: [], change: [], drop: [], clarify: [], untouched: [], missing: [] };
-  const missing = new Set(draftProblems(draft).filter((p) => p.kind !== 'too-long').map((p) => p.ruleId));
+  const summary: DraftSummary = { keep: [], change: [], drop: [], clarify: [], untouched: [], missing: [], sourceMissing: [] };
+  const problems = draftProblems(draft);
+  const missing = new Set(problems.filter((p) => p.kind === 'missing').map((p) => p.ruleId));
+  const sourceMissing = new Set(problems.filter((p) => p.kind === 'source-missing').map((p) => p.ruleId));
   for (const rule of rules) {
     const state = draft[rule.id]?.state ?? null;
     if (!state) summary.untouched.push(rule.id);
     else summary[state].push(rule.id);
     if (missing.has(rule.id)) summary.missing.push(rule.id);
+    if (sourceMissing.has(rule.id)) summary.sourceMissing.push(rule.id);
   }
   return summary;
 }

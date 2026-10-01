@@ -336,6 +336,29 @@ const CASES: RouteCase[] = [
     readerAdmitted: false,
   },
   {
+    key: 'app/api/projects/[projectId]/invitations/route.ts#GET',
+    what: 'the invitations still waiting — addresses of people who have not answered',
+    method: 'GET',
+    path: (p) => `/api/projects/${p}/invitations`,
+    refusal: 404,
+    owner: [200],
+    // The owner's only (lib/invitation-owner-gate.ts): a reader sees no other
+    // invitee's address.
+    readerAdmitted: false,
+  },
+  {
+    key: 'app/api/projects/[projectId]/invitations/[invitationId]/route.ts#DELETE',
+    what: 'withdrawing an invitation',
+    method: 'DELETE',
+    // The reader's own invitation, accepted in section 2: the owner is told
+    // to end the read access instead (409), which proves the gate let them
+    // through and withdraws nothing.
+    path: (p) => `/api/projects/${p}/invitations/${INVITATION.reader}`,
+    refusal: 404,
+    owner: [409],
+    readerAdmitted: false,
+  },
+  {
     key: 'app/api/projects/[projectId]/invitations/[invitationId]/accept/route.ts#POST',
     what: 'opening an invitation that never existed — the forwarded link (C23-A14)',
     method: 'POST',
@@ -647,6 +670,8 @@ test('403-vs-404: what a refusal tells a stranger about a project they cannot se
       'app/api/projects/[projectId]/readers/route.ts#DELETE → 404 vs 404',
       'app/api/projects/[projectId]/commands/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/invitations/route.ts#POST → 404 vs 404',
+      'app/api/projects/[projectId]/invitations/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/invitations/[invitationId]/route.ts#DELETE → 404 vs 404',
       'app/api/projects/[projectId]/process-map/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/process-map/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/process-naming/route.ts#GET → 404 vs 404',

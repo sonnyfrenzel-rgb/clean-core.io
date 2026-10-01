@@ -51,7 +51,7 @@ import {
   revisionOutcomeSentence,
   saveProcessRevision,
 } from '@/lib/process-revisions-client';
-import { revisionLine } from '@/lib/process-revisions';
+import { newerBase, revisionLine } from '@/lib/process-revisions';
 import type {
   OpenedRevision,
   SaveProcessModelInput,
@@ -744,7 +744,7 @@ Structure the JSON exactly like this:
     if (!idStr) return null;
     const record = await fetchLatestRevision(idStr);
     if (!record) return null;
-    baseRevision.current = record.revision;
+    baseRevision.current = newerBase(baseRevision.current, record.revision);
     return { revision: record.revision, xml: record.xml, line: revisionLine(record), origin: record.origin };
   }, [projectId]);
 
@@ -1380,6 +1380,7 @@ Structure the JSON exactly like this:
               onSelectedChange={selectElement}
               save={saveProcessModel}
               openLatest={openLatestRevision}
+              projectId={typeof projectId === 'string' ? projectId : null}
             />
           </div>
         ) : (

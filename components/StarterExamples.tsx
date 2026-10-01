@@ -4,7 +4,9 @@ import { useId, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
-import { loadStarterExample, type StarterExample } from '@/lib/starter-examples';
+import { landViewedCode, loadStarterExample, type StarterExample, type ViewedCode } from '@/lib/starter-examples';
+import { personalDataHintKey, scanForPersonalDataHints, type PersonalDataHint } from '@/lib/personal-data-hints';
+import PersonalDataHints from '@/components/PersonalDataHints';
 import {
   COMMUNITY_QUOTA_FALLBACK,
   quotaExhausted,
@@ -74,7 +76,17 @@ export default function StarterExamples({
   const [confirming, setConfirming] = useState<string | null>(null);
   const [limitHit, setLimitHit] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
-  const [viewing, setViewing] = useState<{ title: string; code: string | null } | null>(null);
+  const [viewing, setViewing] = useState<ViewedCode | null>(null);
+  /**
+   * What the last look at an example's source found, and which card it was
+   * about. Three shipped examples carry shapes that often indicate personal
+   * data (a mail address field, a person's name, a personnel number); the
+   * reader is shown them before the source is written, the same panel and the
+   * same words as every other path a source takes into the product.
+   */
+  const [scanned, setScanned] = useState<{ key: string; hints: PersonalDataHint[] } | null>(null);
+  /** The hint set the reader said they had checked — see `personalDataHintKey`. */
+  const [personalDataAckFor, setPersonalDataAckFor] = useState('');
   const [costOpen, setCostOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -104,6 +116,14 @@ export default function StarterExamples({
     try {
       const isExample = item.kind === 'example';
       const legacyCode = isExample ? await loadStarterExample(item.example.file) : item.snippet.code;
+      // The last moment the source is only in the browser. Nothing is blocked:
+      // the next Start goes through once the box is ticked for these lines.
+      const found = scanForPersonalDataHints(legacyCode);
+      if (found.length > 0 && personalDataAckFor !== personalDataHintKey(found)) {
+        setScanned({ key: item.key, hints: found });
+        setBusy(null);
+        return;
+      }
       const docRef = await addDoc(collection(getDb(), 'projects'), {
         name: isExample ? item.example.name : objectName(item.snippet),
         status: 'uploaded',
@@ -144,9 +164,9 @@ export default function StarterExamples({
     setViewing({ title: item.example.name, code: null });
     try {
       const code = await loadStarterExample(item.example.file);
-      setViewing({ title: item.example.name, code });
+      setViewing((current) => landViewedCode(current, item.example.name, code));
     } catch {
-      setViewing({ title: item.example.name, code: '' });
+      setViewing((current) => landViewedCode(current, item.example.name, ''));
     }
   };
 
@@ -265,6 +285,14 @@ export default function StarterExamples({
               {repeatWarning}
             </CcMessageStrip>
           </div>
+        ) : null}
+        {scanned?.key === item.key ? (
+          <PersonalDataHints
+            id={`starter-example-personal-data-${item.key.replace(/[^A-Za-z0-9_-]/g, '-')}`}
+            hints={scanned.hints}
+            acknowledged={personalDataAckFor !== '' && personalDataAckFor === personalDataHintKey(scanned.hints)}
+            onAcknowledge={(next) => setPersonalDataAckFor(next ? personalDataHintKey(scanned.hints) : '')}
+          />
         ) : null}
       </li>
     );

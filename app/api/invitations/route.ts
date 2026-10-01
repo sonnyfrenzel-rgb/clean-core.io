@@ -26,7 +26,12 @@ import { openInvitationsOf, type OpenInvitation } from '@/lib/open-invitations';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/** The most projects one answer looks into. An owner with more sees the newest. */
+/**
+ * The most projects one answer looks into. The query has no order (ordering by
+ * creation would need a composite index this project does not deploy), so an
+ * owner with more than this sees the invitations of 100 of them, in document
+ * order — not necessarily the newest.
+ */
 const MAX_PROJECTS = 100;
 
 interface DocLike {

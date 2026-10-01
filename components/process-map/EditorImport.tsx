@@ -21,8 +21,12 @@ export interface EditorImportProps {
   /** Null while the file is being read. */
   outcome: ImportOutcome | null;
   saving: boolean;
-  /** The answer of the store after "Save as revision", when there is one. */
+  /** The answer of the store after "Save as revision" kept it, when there is one. */
   saved: string | null;
+  /** Why the store refused "Save as revision" — Save stays to try again. */
+  refused?: string | null;
+  /** The editor holds unsaved changes that opening or saving this file would replace. */
+  replacesUnsaved?: boolean;
   onClose: () => void;
   onOpenInEditor: () => void;
   onSave: () => void;
@@ -52,7 +56,18 @@ function Names({ heading, items, marker }: { heading: string; items: RevisionEle
   );
 }
 
-export default function EditorImport({ open, fileName, outcome, saving, saved, onClose, onOpenInEditor, onSave }: EditorImportProps) {
+export default function EditorImport({
+  open,
+  fileName,
+  outcome,
+  saving,
+  saved,
+  refused = null,
+  replacesUnsaved = false,
+  onClose,
+  onOpenInEditor,
+  onSave,
+}: EditorImportProps) {
   const ok = outcome?.ok === true ? outcome : null;
   return (
     <CcDialog
@@ -92,6 +107,11 @@ export default function EditorImport({ open, fileName, outcome, saving, saved, o
         </CcMessageStrip>
       ) : (
         <div data-editor-import-summary="" className="flex flex-col gap-3">
+          {replacesUnsaved && !saved ? (
+            <CcMessageStrip state="warning">
+              <span data-editor-import-replaces="">{wt('editor.importReplacesUnsaved')}</span>
+            </CcMessageStrip>
+          ) : null}
           <p className="m-0 text-[14px] font-semibold text-cc-ink">{editorImportRead(outcome.summary.flowNodes, fileName)}</p>
           <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[13px] font-medium text-cc-ink">
             <li data-import-anchored={outcome.summary.anchored}>
@@ -122,6 +142,10 @@ export default function EditorImport({ open, fileName, outcome, saving, saved, o
           ) : null}
           {saved ? (
             <p data-editor-import-saved="" className="m-0 text-[13px] font-semibold text-cc-ink">{saved}</p>
+          ) : refused ? (
+            <CcMessageStrip state="error" headline={wt('editor.importRefusedSave')} announce>
+              <span data-editor-import-refused="">{refused}</span>
+            </CcMessageStrip>
           ) : null}
         </div>
       )}

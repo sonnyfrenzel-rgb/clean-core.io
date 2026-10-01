@@ -295,7 +295,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           }
         ],
         "note": "The bundle is made only in the Delivery tool; the workspace downloads nothing."
@@ -348,7 +348,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           }
         ],
         "note": "The workspace generates nothing; opening the Design tool still generates by itself."
@@ -578,8 +578,7 @@
           {
             "field": "worklist",
             "locator": "[data-stage-output=\"worklist\"]",
-            "opensWith": "Gaps Backlog",
-            "why": "the backlog panel behind the Gaps Backlog tab; its counts come from findings and analysis gaps as well as this field, so only its presence is asserted"
+            "why": "the backlog panel, shown on the page since the answer-first Analyze (the Gaps Backlog tab is gone); its counts come from findings and analysis gaps as well as this field, so only its presence is asserted"
           }
         ],
         "onlyAfterARun": [
@@ -602,7 +601,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -614,7 +613,7 @@
           },
           {
             "module": "lib/workspace-model.ts",
-            "evidence": "label: 'Clean Core score the estimate starts from'"
+            "evidence": "label: 'Clean Core score the cost model starts from'"
           },
           {
             "module": "lib/workspace-model.ts",
@@ -821,7 +820,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -963,7 +962,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1106,7 +1105,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1273,14 +1272,14 @@
           {
             "field": "testSuite",
             "locator": "[data-stage-output=\"testSuite\"]",
-            "opensWith": "View Module Code",
-            "why": "the generated suite, behind the terminal toggle"
+            "opensWith": ["Run output and module code", "View Module Code"],
+            "why": "the generated suite, behind the terminal toggle inside the folded run output (testing rebuilt as two tabs, mockup s8)"
           },
           {
             "field": "coverageEstimate",
             "locator": "[data-stage-output=\"coverageEstimate\"]",
-            "text": "{project.coverageEstimate.percentage}% Coverage",
-            "why": "the Estimated Coverage card, which is on screen without a run"
+            "text": "{project.coverageEstimate.percentage}%",
+            "why": "the Coverage estimate card (its title says what the figure is; the figure itself carries no suffix since the two-tab rebuild), which is on screen without a run"
           }
         ],
         "onlyAfterARun": [
@@ -1307,7 +1306,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1408,7 +1407,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",
@@ -1592,7 +1591,7 @@
         "where": [
           {
             "module": "components/workspace/ToolBar.tsx",
-            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools })}"
+            "evidence": "href={stageHref({ base: `/project/${projectId}`, path: tool.path, view, from: WORKSPACE_RETURN.tools, layer })}"
           },
           {
             "module": "components/workspace/StatusLine.tsx",

@@ -83,6 +83,10 @@ export default function WorkspacePrintSheet({
   }, [states]);
 
   const runId = typeof project?.activeRunId === 'string' && project.activeRunId ? project.activeRunId : null;
+  // With a signed run, a rule may have been confirmed; until the read above has
+  // landed (or when it failed) paper does not know, and says so instead of
+  // printing "Not confirmed" under a "reconstructed" basis (QA 137f7c2ef0e4).
+  const unread = runId !== null && decided === null;
   const today = formatIsoDate(new Date()) ?? '';
   const rules = reading?.ruleSet.rules ?? [];
   // The headline of the Business card, on paper — the same three rules the
@@ -181,9 +185,9 @@ export default function WorkspacePrintSheet({
                       <span className="font-cc-mono text-[11px]"> [{anchorLabel(first.lineStart, first.lineEnd)}]</span>
                     ) : null}
                   </span>
-                  <span>{entry ? STATE_LABELS[entry.state] : wt('print.notConfirmed')}</span>
+                  <span>{entry ? STATE_LABELS[entry.state] : unread ? wt('print.decisionNotRead') : wt('print.notConfirmed')}</span>
                   <span>
-                    <CcProvenanceChip value={entry ? 'confirmed' : 'reconstructed'} />
+                    {unread ? null : <CcProvenanceChip value={entry ? 'confirmed' : 'reconstructed'} />}
                   </span>
                 </div>
               );

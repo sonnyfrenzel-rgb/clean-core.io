@@ -99,26 +99,30 @@ function* tags(xml: string): Generator<string> {
 
 const ATTRIBUTE = /([A-Za-z_:][-A-Za-z0-9_:.]*)\s*=\s*"([^"]*)"/g;
 
-/** The five entities `escapeAttribute` writes, plus the three character references. `&amp;` last. */
+const NAMED_ENTITY: Record<string, string> = { quot: '"', apos: "'", lt: '<', gt: '>', amp: '&' };
+
+/**
+ * The five entities `escapeAttribute` writes and every character reference —
+ * bpmn-moddle, and so bpmn-js and the import, writes `<` in an attribute as
+ * `&#60;`; unread, a saved condition compared unequal to the same condition in
+ * the export.
+ *
+ * One pass, the way an XML parser reads it: each reference is decoded exactly
+ * once, so `&#38;amp;` is the text `&amp;` and not `&` (QA review of
+ * 072f79996d01, cc53c3550d3f).
+ */
 function unescape(value: string): string {
-  return value
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&#10;/g, '\n')
-    .replace(/&#13;/g, '\r')
-    .replace(/&#9;/g, '\t')
-    // Any other character reference — bpmn-moddle, and so bpmn-js and the
-    // import, writes `<` in an attribute as `&#60;`. Unread, a saved condition
-    // compared unequal to the same condition in the export.
-    .replace(/&#x([0-9a-fA-F]{1,6});/g, (_, hex: string) => safeChar(parseInt(hex, 16)))
-    .replace(/&#([0-9]{1,7});/g, (_, dec: string) => safeChar(Number(dec)))
-    .replace(/&amp;/g, '&');
+  return value.replace(/&(quot|apos|lt|gt|amp|#x[0-9a-fA-F]{1,6}|#[0-9]{1,7});/g, (_, ref: string) => {
+    if (ref[0] !== '#') return NAMED_ENTITY[ref];
+    return safeChar(ref[1] === 'x' ? parseInt(ref.slice(2), 16) : Number(ref.slice(1)));
+  });
 }
 
+/** A Unicode scalar value, or nothing: no NUL, no lone surrogate, nothing past U+10FFFF. */
 function safeChar(code: number): string {
-  return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '';
+  return Number.isFinite(code) && code > 0 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff)
+    ? String.fromCodePoint(code)
+    : '';
 }
 
 function attributes(tag: string): Record<string, string> {

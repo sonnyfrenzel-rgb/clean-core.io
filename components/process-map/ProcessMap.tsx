@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { draftFor, type HeldDraft } from '@/lib/process-map-draft';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Code2, List, Map as MapIcon, Pencil } from 'lucide-react';
@@ -116,7 +117,7 @@ const BpmnEditor = dynamic(() => import('./BpmnEditor'), { ssr: false });
  *
  * ## Roadmap 3.2 — `save`, and why it is only handed through
  *
- * This component takes a model and a source. It has no `projectId`, it makes no
+ * This component takes a model and a source. Its `projectId` only keys the unsaved draft; it makes no
  * request, and it is not going to get one: the moment a view knows how to reach
  * a store, every caller has to think about which store. So `save` is a function
  * the caller supplies and this file passes to `BpmnEditor` unread. The page that
@@ -183,6 +184,11 @@ export interface ProcessMapProps {
    * editor — is the same map.
    */
   layout?: 'workspace' | 'stage';
+  /**
+   * The project this map belongs to. Part of an unsaved drawing's identity, so
+   * a project with the same source (a duplicate) never opens another's draft.
+   */
+  projectId?: string | null;
 }
 
 export default function ProcessMap({
@@ -201,6 +207,7 @@ export default function ProcessMap({
   save,
   openLatest,
   layout = 'workspace',
+  projectId = null,
 }: ProcessMapProps) {
   const stage = layout === 'stage';
   /** A phone shows the map and the steps; modelling by touch is not offered (`DESIGN.md` §5.7). */
@@ -316,7 +323,7 @@ export default function ProcessMap({
    * drawing inside it. `model` is untouched either way — the Ist revision after
    * editing is the Ist revision before it.
    */
-  const draftRef = useRef<{ source: string; xml: string } | null>(null);
+  const draftRef = useRef<HeldDraft | null>(null);
 
   /**
    * What the tree has open: what the reader opened, plus the way down to the
@@ -429,12 +436,12 @@ export default function ProcessMap({
    * here — it is somebody else's process, and it is dropped by not matching.
    */
   const openWith = useCallback(
-    () => (draftRef.current?.source === source ? draftRef.current.xml : modelProp.xml),
-    [modelProp, source],
+    () => draftFor(draftRef.current, projectId, source) ?? modelProp.xml,
+    [modelProp, projectId, source],
   );
   const keepDraft = useCallback((xml: string) => {
-    draftRef.current = { source, xml };
-  }, [source]);
+    draftRef.current = { projectId, source, xml };
+  }, [projectId, source]);
   const discardDraft = useCallback(() => {
     draftRef.current = null;
     setSession((token) => token + 1);
@@ -694,7 +701,7 @@ export default function ProcessMap({
             // process changes. Either one has to build a new modeller: keeping
             // the old instance would keep the old drawing inside it, whatever
             // `openWith` now returns.
-            key={`${session}|${source}`}
+            key={`${session}|${projectId ?? ''}|${source}`}
             openWith={openWith}
             baseXml={modelProp.technicalXml ?? modelProp.xml}
             istXml={modelProp.xml}

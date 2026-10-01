@@ -80,8 +80,12 @@ interface InputEntry {
 interface ShowsEntry {
   field: string;
   locator: string;
-  /** Accessible name of a control that has to be clicked first. */
-  opensWith?: string;
+  /**
+   * Accessible name of a control that has to be clicked first — or several,
+   * clicked in order, when the output sits one fold deeper (the testing
+   * stage's module code: the console fold, then its toggle).
+   */
+  opensWith?: string | string[];
   /** Text the seeded value must produce on screen; absent means presence only. */
   text?: string;
   why: string;
@@ -1093,10 +1097,10 @@ test.describe('the reference cases, seeded and opened', () => {
           ).toHaveCount(0);
           continue;
         }
-        if (entry.opensWith) {
+        for (const name of [entry.opensWith ?? []].flat()) {
           // A report section is an ARIA tab since D.10b (CcTabs); the other
           // stages open their part with a button. Either role, the same name.
-          const opener = new RegExp(entry.opensWith.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+          const opener = new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
           await page
             .getByRole('tab', { name: opener })
             .or(page.getByRole('button', { name: opener }))

@@ -14,11 +14,11 @@ import MyWorkspaceSwitch from '@/components/MyWorkspaceSwitch';
  *
  * A layout and not a change to the page, because the list's demo row is
  * computed by the engine on the server (`lib/demo-list-row.ts`) and the page
- * is a client component. ISR for the same reason `/demo/workspace` uses it:
- * the engine run is deterministic, so a cached copy is only ever as old as the
- * deploy that changed the engine.
+ * is a client component. The route is rendered per request (the page is
+ * `force-dynamic`), so there is no ISR here; the engine runs once per server
+ * process instead — `demoListRow` holds its answer, which cannot change
+ * before the next deploy (QA review of 072f79996d01, 6794b045c131).
  */
-export const revalidate = 300;
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return <MyWorkspaceSwitch demo={demoListRow()}>{children}</MyWorkspaceSwitch>;

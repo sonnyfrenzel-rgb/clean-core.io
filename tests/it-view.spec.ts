@@ -247,7 +247,7 @@ test.describe('the IT view on a real project', () => {
     // And above the first block of IT_TAIL, the layer bar — the order the source
     // guard above reads, measured on the page (QA review of 247b20c16e38).
     const layerBar = await page.locator('[data-workspace-layers]').first().boundingBox();
-    expect(answerTop && layerBar && answerTop.y < layerBar.y, 'the layer bar stands above the IT answer').toBe(true);
+    expect(answerTop && layerBar && answerTop.y < layerBar.y, 'the IT answer does not stand above the layer bar').toBe(true);
     await expect(page.locator('[data-it-headline]')).toContainText(/\d+ findings · /);
 
     // Four facet tiles, each with its coverage.
