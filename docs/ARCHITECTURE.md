@@ -6,7 +6,7 @@ Deep reference for the platform. For the quick orientation read `CLAUDE.md`; for
 
 ## 1. System overview
 
-Clean-Core.io modernizes SAP ABAP legacy code to TypeScript/Node.js aligned with SAP's Clean Core paradigm. The pipeline is **deterministic-first, AI-second**: a static ABAP evidence engine (`lib/abap/`) produces the auditable facts, and Gemini only *narrates/transforms* on top of them. Every analysis is frozen into an immutable, HMAC-signed **Run**, which is the root of the trust/audit chain.
+Clean-Core.io takes custom SAP ABAP from "nobody understands it" to a reviewed, tested rebuild on one chain of evidence (process → design → code draft → tests → handover), aligned with SAP's Clean Core paradigm. The pipeline is **deterministic-first, AI-second**: a static ABAP evidence engine (`lib/abap/`) produces the auditable facts, and Gemini only *narrates/transforms* on top of them. Every analysis is frozen into an immutable, HMAC-signed **Run**, which is the root of the trust/audit chain.
 
 ```
 Upload ABAP ─▶ Deterministic Evidence Engine (lib/abap) ─▶ Run (immutable, signed)

@@ -435,6 +435,8 @@ test.describe('the panel a reader actually meets', () => {
     await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3500 });
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
+    // One action deeper since the stage leads with its answer (§2.11): folded, not removed.
+    await page.getByRole('button', { name: /Code inventory, data access and clean core levels/ }).click({ timeout: 60000 });
 
     const panel = page.locator('[data-compliance-hints]');
     await expect(panel, 'three analysed tables produced no compliance hint at all').toBeVisible({

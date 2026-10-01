@@ -3,6 +3,7 @@ import path from 'path';
 import { notDetermined } from '@/lib/workspace-model';
 import { kindWord, tokenizeAbapLine, EARLY_END_WORD, type CodeToken } from '@/lib/process-map';
 import type { LandingHero } from '@/lib/landing-process';
+import type { BusinessRule } from '@/lib/abap/business-rule-set';
 
 /**
  * What the hero's source card can show — landing mockup, section `hero`.
@@ -39,6 +40,69 @@ export interface HeroSnippets {
 
 const CONTEXT = 3;
 
+/* ------------------------------------------------------------------ *
+ * Which rules the hero names
+ * ------------------------------------------------------------------ */
+
+/**
+ * A rule as a phrase in the hero's sentence. A tolerance on a percentage
+ * (`lv_dev_pct > 5`) reads as what it is for a business reader — "tolerance
+ * 5 %"; everything else is the plain-language phrase it was given.
+ */
+export function heroRulePhrase(rule: Pick<BusinessRule, 'classes' | 'parameters'>, phrase: string): string {
+  const p = rule.parameters;
+  if (rule.classes.includes('toleranz') && p.length === 1 && /(pct|percent|prozent)/i.test(p[0].subject ?? '')
+    && /^(>|GT|>=|GE)$/i.test(p[0].operator) && /^'?\d+(\.\d+)?'?$/.test(p[0].literal)) {
+    return `tolerance ${p[0].literal.replace(/'/g, '')} %`;
+  }
+  return phrase;
+}
+
+/** How much a rule says about the outcome of the process, for the hero's sentence. */
+export function ruleImpact(rule: Pick<BusinessRule, 'typeBasis' | 'classes' | 'processElements'>): number {
+  // 1. It changes the outcome: the flow ends, is rejected or held where it holds.
+  const decides = rule.typeBasis.some((b) => b.basis === 'ends-flow' || b.basis === 'else-ends-flow' || b.basis === 'check-leaves');
+  // 2. What kind of value it is: a tolerance or money threshold, an organisational
+  //    unit (plant, company code, purchasing organisation), a list of exceptions or blocks.
+  const kind = rule.classes.includes('toleranz') || rule.classes.includes('organisationseinheit')
+    ? 3
+    : rule.classes.includes('ausnahmeliste') ? 2 : 0;
+  // 3. A reader can find it on the map.
+  const drawn = rule.processElements.length > 0 ? 2 : 0;
+  return (decides ? 4 : 0) + kind + drawn;
+}
+
+/**
+ * The rules the hero's "found in the code" sentence names — by business
+ * impact, not by how short their text is (landing mockup s0/s1: "tolerance
+ * 5 %, plant 1000, vendor block list").
+ *
+ * Deterministic order:
+ *   1. only rules with a place on the map (the sentence's anchors open a step);
+ *   2. higher `ruleImpact` first;
+ *   3. among equals, one of each kind of value before a second of the same
+ *      kind (a tolerance, an organisational unit, a list) — three different
+ *      facts read better than two thresholds;
+ *   4. then the engine's own order (rule id).
+ */
+export function pickHeroRules<R extends Pick<BusinessRule, 'id' | 'typeBasis' | 'classes' | 'processElements'>>(rules: R[], count = 3): R[] {
+  const order = new Map(rules.map((r, i) => [r.id, i]));
+  const ranked = rules
+    .filter((r) => r.processElements.length > 0)
+    .sort((a, b) => ruleImpact(b) - ruleImpact(a) || (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  const kindOf = (r: R) => r.classes[0] ?? 'other';
+  const picked: R[] = [];
+  const kinds = new Set<string>();
+  for (const r of ranked) {
+    if (picked.length >= count) break;
+    if (kinds.has(kindOf(r)) && ranked.some((o) => !picked.includes(o) && o !== r && !kinds.has(kindOf(o)) && ruleImpact(o) === ruleImpact(r))) continue;
+    picked.push(r);
+    kinds.add(kindOf(r));
+  }
+  for (const r of ranked) if (picked.length < count && !picked.includes(r)) picked.push(r);
+  return picked;
+}
+
 export function heroSnippets(hero: LandingHero, fileName: string): HeroSnippets {
   const source = fs
     .readFileSync(path.join(process.cwd(), 'public', 'starter-examples', fileName), 'utf8')
@@ -53,10 +117,13 @@ export function heroSnippets(hero: LandingHero, fileName: string): HeroSnippets 
   };
   const snippets: Record<string, HeroSnippet> = {};
 
-  // The steps of the drawn routine: the whole routine, the step's line lit.
+  // The steps of the drawn excerpt. A step inside the shown routine opens the
+  // whole routine with its line lit; a step elsewhere (a phase with its range,
+  // an exit with several places) opens its own lines.
   const routine = hero.code;
   const rFrom = routine[0]?.number ?? 1;
   const rTo = routine[routine.length - 1]?.number ?? rFrom;
+  const MAX_SPAN = 24;
   for (const node of hero.plane.nodes) {
     if (!node.anchor || node.tag === 'boundaryEvent') continue;
     const key = String(node.anchor.lineStart);
@@ -64,12 +131,19 @@ export function heroSnippets(hero: LandingHero, fileName: string): HeroSnippets 
     const kind = node.early ? EARLY_END_WORD : kindWord(node.tag);
     const span = [];
     for (let n = node.anchor.lineStart + 1; n <= node.anchor.lineEnd; n += 1) span.push(n);
+    const inside = node.anchor.lineStart >= rFrom && node.anchor.lineEnd <= rTo;
+    // A phase stands for its routine: its range is in `anchorLabel` (`L60–75`).
+    const range = /^L(\d+)–(\d+)$/.exec(node.anchorLabel ?? '');
+    const from = inside ? rFrom : range ? Number(range[1]) : node.anchor.lineStart - CONTEXT;
+    const to = inside ? rTo : range ? Math.min(Number(range[2]), Number(range[1]) + MAX_SPAN) : node.anchor.lineEnd + CONTEXT;
     snippets[key] = {
-      from: rFrom,
-      to: rTo,
-      lines: cut(rFrom, rTo, node.anchor.lineStart, span),
+      from: Math.max(1, from),
+      to,
+      lines: cut(from, to, node.anchor.lineStart, span),
       title: `${kind}: ${node.name}`,
-      text: `line ${node.anchor.lineStart} of the routine ${hero.plane.label}, where the map draws it.`,
+      text: node.anchorLabel
+        ? `${node.anchorLabel} in the program — the lines this step was read from.`
+        : `line ${node.anchor.lineStart} of the program, where the map draws it.`,
     };
   }
 
@@ -77,15 +151,15 @@ export function heroSnippets(hero: LandingHero, fileName: string): HeroSnippets 
   for (const rule of hero.rules.shown) {
     const key = String(rule.line);
     if (snippets[key]) {
-      snippets[key] = { ...snippets[key], title: `${rule.id} · hard-coded`, text: `the condition ${rule.label} stands in the program at line ${rule.line}.` };
+      snippets[key] = { ...snippets[key], title: `${rule.plain} · ${rule.id}, hard-coded`, text: `the code writes it as ${rule.label} at line ${rule.line}.` };
       continue;
     }
     snippets[key] = {
       from: Math.max(1, rule.line - CONTEXT),
       to: rule.line + CONTEXT,
       lines: cut(rule.line - CONTEXT, rule.line + CONTEXT, rule.line),
-      title: `${rule.id} · hard-coded`,
-      text: `the condition ${rule.label} stands in the program at line ${rule.line}.`,
+      title: `${rule.plain} · ${rule.id}, hard-coded`,
+      text: `the code writes it as ${rule.label} at line ${rule.line}.`,
     };
   }
 
@@ -120,7 +194,9 @@ export function heroSnippets(hero: LandingHero, fileName: string): HeroSnippets 
 
   // The rule on the drawn routine opens the card, as in the mockup.
   const onPlane = hero.rules.shown.find((r) => hero.plane.nodes.some((n) => n.anchor?.lineStart === r.line));
-  const initial = String(onPlane?.line ?? hero.plane.nodes.find((n) => n.anchor)?.anchor?.lineStart ?? rFrom);
+  // Otherwise the first decision of the shown routine — as the mockup opens on one.
+  const decision = hero.plane.nodes.find((n) => n.tag === 'exclusiveGateway' && n.anchor && n.anchor.lineStart >= rFrom && n.anchor.lineStart <= rTo);
+  const initial = String(onPlane?.line ?? decision?.anchor?.lineStart ?? hero.plane.nodes.find((n) => n.anchor)?.anchor?.lineStart ?? rFrom);
 
   return {
     snippets,

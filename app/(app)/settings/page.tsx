@@ -1745,7 +1745,10 @@ export default function SettingsPage() {
           that does not exist; the policy itself says what is offered. */}
       <CcCard level={2} title="Legal and privacy">
         <p className="m-0 cc-text-cell text-cc-ink-muted">
-          Clean-Core.io is a free community edition, provided without warranty. Results produced with the AI model can be wrong; have generated code reviewed by a qualified person before you use it.
+          Clean-Core.io is a free community edition, provided without warranty.
+        </p>
+        <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">
+          The findings, the route and the Clean Core Score come from a deterministic engine that reads your code; no model is involved in them. A language model (Google Gemini) writes only drafts on top of that evidence: the analysis narrative, business names for the process, the solution design, the code proposal, the documentation and the test suite. A draft can be wrong — code that does not compile, a statement the code does not support — so review a draft before you rely on it.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <CcLinkButton href="/impressum" variant="ghost">Legal notice</CcLinkButton>

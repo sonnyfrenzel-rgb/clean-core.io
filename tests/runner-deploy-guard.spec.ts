@@ -152,3 +152,15 @@ test.describe('the runner image', () => {
     expect(Object.keys(JSON.parse(read('runner/package-lock.json')).packages[''].dependencies)).toEqual(['esbuild']);
   });
 });
+
+// 01.10.2026: the app was put on runner-net and every sign-in check failed —
+// runner-net's private googleapis.com zone knows only private.googleapis.com,
+// so www.googleapis.com (the token certificates) no longer resolved. The app
+// gets its own network; the deploy names it and refuses the runners' one.
+test('the app never joins the runners network for its VPC egress', () => {
+  const deploy = read('.github/workflows/deploy.yml');
+  expect(deploy).toContain('APP_VPC_NETWORK: ${{ vars.APP_VPC_NETWORK }}');
+  expect(deploy).toContain('app_network_flags=--network=${APP_VPC_NETWORK} --subnet=${APP_VPC_SUBNET} --vpc-egress=private-ranges-only');
+  expect(deploy).toMatch(/if \[ "\$APP_VPC_NETWORK" = "runner-net" \]; then\n\s+echo "::error::[^"]*"[^\n]*\n\s+exit 1/);
+  expect(deploy).not.toContain('app_network_flags=--network=runner-net');
+});

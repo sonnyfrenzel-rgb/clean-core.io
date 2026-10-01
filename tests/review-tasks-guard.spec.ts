@@ -756,6 +756,9 @@ test.describe('the panel a reader actually meets', () => {
     await signInViaLanding(page, RENDER_EMAIL, RENDER_SIGN_IN, { pauseMs: 3500 });
     await page.goto(`/project/${RENDER_PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
+    // Open tasks are listed with everything else this analysis could not
+    // determine — one folded section, one action deeper (§2.11).
+    await page.getByRole('button', { name: /could not determine/ }).click({ timeout: 60000 });
 
     const panel = page.locator('[data-review-tasks]');
     await expect(panel, 'the analyze stage does not show the check tasks').toBeVisible({ timeout: 30000 });

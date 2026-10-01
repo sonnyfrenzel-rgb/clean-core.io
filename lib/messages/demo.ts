@@ -21,6 +21,8 @@ export const DEMO_WORKSPACE_MESSAGES = {
 
   // DemoWorkspaceShell — Business
   'demo.processMap': 'Process map',
+  'demo.notDeterminedPoints': 'What the engine could not determine',
+  'demo.needLayerMap': 'process map',
   'demo.levels': 'Levels of this process',
   'demo.rules': 'Rules in this code',
   'demo.readingRules': 'Reading the rules out of the source…',
@@ -73,9 +75,28 @@ export const DEMO_WORKSPACE_MESSAGES = {
 type DemoKey = keyof typeof DEMO_WORKSPACE_MESSAGES;
 const m = (key: DemoKey): string => DEMO_WORKSPACE_MESSAGES[key];
 
-/** The line under the demo's title: subject · file · 1000 lines · catalog 2026-09. */
+/**
+ * The catalogue a reader is told about: "2024.FPS02, SAP release list of
+ * 2026-09-15 (25,467 entries)". The traceability string the engine records —
+ * "2024.FPS02 + CR:latest@407843e4 (25467 entries, fetched 2026-09-15)" — is a
+ * revision key with a hash in it; it stays in the run and in a tooltip, and the
+ * screen says what it means. A string of another shape is shown as it is.
+ */
+export function catalogForReader(catalogVersion: string): string {
+  const parts = /^(\S+) \+ CR:[^@\s]+@[0-9a-f]+ \((\d+) entries, fetched (\d{4}-\d{2}-\d{2})\)$/.exec(catalogVersion.trim());
+  if (!parts) return catalogVersion;
+  const [, base, entries, day] = parts;
+  return `${base}, SAP release list of ${day} (${Number(entries).toLocaleString('en-US')} entries)`;
+}
+
+/** The line under the demo's title: subject · file · 1000 lines · catalog 2024.FPS02, SAP release list of … */
 export function demoSubtitle(subject: string, sourceFile: string, totalLines: number, catalogVersion: string): string {
-  return `${subject} · ${sourceFile} · ${totalLines} ${m('demo.lines')} · ${m('demo.catalog')} ${catalogVersion}`;
+  return `${subject} · ${sourceFile} · ${totalLines} ${m('demo.lines')} · ${m('demo.catalog')} ${catalogForReader(catalogVersion)}`;
+}
+
+/** The count on the Need & process layer of the demo: "11 rules". */
+export function demoRuleCount(n: number): string {
+  return `${n} ${n === 1 ? 'rule' : 'rules'}`;
 }
 
 /** The accessible name of a line anchor: "Source line 42". */

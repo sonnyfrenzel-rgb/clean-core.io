@@ -190,8 +190,9 @@ test('the Analyze stage says "not generated" and shows the evidence instead of a
   expect(text.length, 'the evidence-only report is a caption over nothing').toBeGreaterThan(400);
   expect(text).toMatch(/Clean Core Score/i);
   expect(text).toMatch(/Extensibility route/i);
-  // The signed figures are on the screen as figures, not as a placeholder.
-  expect(text, 'the score is a percentage, not a dash').toMatch(/Clean Core Score\s*\n\s*\d+%/i);
+  // The signed figures are on the screen as figures, not as a placeholder —
+  // and as a grade out of 100, not a compliance percentage (DESIGN.md §6.1).
+  expect(text, 'the score is a grade, not a dash').toMatch(/Clean Core Score\s*\n\s*\d+ of 100/i);
   // A dash or a zero where a score belongs is exactly what V25-A12 forbids.
   expect(text).not.toMatch(/Clean Core Score\s*\n\s*[—–-]\s*\n/i);
 

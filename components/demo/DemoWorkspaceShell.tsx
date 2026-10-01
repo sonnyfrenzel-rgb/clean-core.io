@@ -27,13 +27,11 @@ import { managementExecutive, type ExecutiveTarget } from '@/lib/management-exec
 import { managementOverview, type Loaded } from '@/lib/management-overview';
 import type { ItFindingsSource } from '@/lib/it-findings';
 import { stageHref } from '@/lib/workspace-back-href';
-import { workflowSteps } from '@/lib/workflow-steps';
 import DemoTourStop from '@/components/demo/DemoTourStop';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDemoTour } from '@/hooks/useDemoTour';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import {
-  LAYERS,
   VIEW_LABELS,
   VIEW_QUESTIONS,
   WORKSPACE_VIEWS,
@@ -73,6 +71,7 @@ import {
   demoEvidence,
   demoFigure,
   demoFirstFiveOf,
+  demoRuleCount,
   demoSourceLineLabel,
   demoStartingPoint,
   demoSubtitle,
@@ -194,10 +193,16 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
     window.location.hash = next;
     setHashLayer(next);
   }, []);
-  const layers = useMemo(() => workspaceLayers(project), [project]);
-  const currentLayer = hashLayer ?? layers.find((l) => l.count !== null)?.key ?? LAYERS[0];
-  const currentLayerSection = layers.find((l) => l.key === currentLayer) ?? layers[0];
-  const statuses = useMemo(() => workspaceStatusLine(project), [project]);
+  const layersOfModel = useMemo(() => workspaceLayers(project), [project]);
+  // The demo opens on Need & process, with the map (mockup 2.8 s15). The first
+  // layer with a count would be Architecture & dependencies — a list of FORM
+  // routines — because the demo has no usage import to count under Need, while
+  // its process map is the one thing it shows best.
+  const currentLayer: LayerKey = hashLayer ?? 'need';
+  // The demo's own rail, not `workflowSteps` over a project-shaped object: the
+  // demo has no run, no code and no tests on record by construction, and its
+  // rail says what it does have on each stage (`lib/demo-project.ts`).
+  const statuses = useMemo(() => workspaceStatusLine(project, demo.rail), [project, demo.rail]);
   const open = useMemo(() => notDetermined(project), [project]);
   const management = useMemo(() => managementAnswers(project, [], open), [project, open]);
 
@@ -216,13 +221,13 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
       mode: 'demo',
       hasSource: true,
       hasRun: false,
-      steps: workflowSteps(project),
+      steps: demo.rail,
       overview,
       fit,
       costs: { state: 'not-entered', reason: wt('demo.costsNotEntered') },
       proposal: demo.design.recommendedRoute,
     });
-  }, [management, fit, findingsRead, project, demo.design.recommendedRoute]);
+  }, [management, fit, findingsRead, demo.rail, demo.design.recommendedRoute]);
   const executiveHref = useCallback(
     (target: ExecutiveTarget): string =>
       target.kind === 'stage'
@@ -253,6 +258,18 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   const [reading, setReading] = useState<SourceReading | null>(null);
   const onReading = useCallback((next: SourceReading) => setReading(next), []);
   const rules = useMemo(() => (reading ? revealedRules(reading.ruleSet) : []), [reading]);
+  // Need & process holds the map and the rules here; the layer model counts
+  // usage imports under it, which a demo has none of, and would mark it "empty".
+  const layers = useMemo(
+    () =>
+      layersOfModel.map((l) =>
+        l.key === 'need'
+          ? { ...l, count: reading ? demoRuleCount(rules.length) : wt('demo.needLayerMap'), provenance: 'reconstructed' as const }
+          : l,
+      ),
+    [layersOfModel, reading, rules.length],
+  );
+  const currentLayerSection = layers.find((l) => l.key === currentLayer) ?? layers[0];
   const [plane, setPlane] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -297,16 +314,34 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
   const standard = demo.transformation.plan.filter((p) => p.successor);
 
-  const layerBlock = (
-    <>
-      <div className="mt-5">
-        <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} />
-      </div>
+  /* The process map is what Need & process holds in the demo. The layer
+     model's own Need section speaks of usage imports and would say the process
+     "is not here yet" beside a map of it, so under Need the demo shows the map
+     instead; any other layer shows its section, and Business keeps the map below. */
+  const mapCard = (
+    <CcCard title={wt('demo.processMap')} meta={<CcProvenanceChip value="reconstructed" />}>
+      <ProcessMap
+        model={processMap}
+        source={source}
+        catalogTarget={catalogLookupTargetOf(project)}
+        plane={plane}
+        onPlaneChange={setPlane}
+        selected={selected}
+        onSelectedChange={setSelected}
+      />
+    </CcCard>
+  );
+  const layerBar = (
+    <div className="mt-5">
+      <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} />
+    </div>
+  );
+  const layerSection =
+    currentLayer === 'need' ? null : (
       <div className="mt-5 max-w-3xl">
         <WorkspaceLayerSection layer={currentLayerSection} />
       </div>
-    </>
-  );
+    );
 
   return (
     <div className="cc" data-demo-workspace={view} data-demo-ready={hydrated ? 'true' : 'false'}>
@@ -345,7 +380,9 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
       <section className="mt-3">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-          <div className="min-w-0 flex-1">
+          {/* A basis, so the view switch wraps under the title on a phone instead
+              of squeezing it to one word a line and drawing over it. */}
+          <div className="min-w-0 grow basis-80">
             <div className="flex flex-wrap items-center gap-2">
               <h1 data-workspace-title className="m-0 text-[22px] leading-tight font-extrabold tracking-[-0.02em] text-cc-ink">
                 {demo.title}
@@ -354,7 +391,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
                 {DEMO_TAG}
               </span>
             </div>
-            <p className="mt-1 text-[12px] font-medium text-cc-ink-muted">
+            <p className="mt-1 text-[12px] font-medium text-cc-ink-muted" title={demo.catalogVersion}>
               {demoSubtitle(demo.subject, demo.sourceFile, demo.totalLines, demo.catalogVersion)}
             </p>
           </div>
@@ -412,8 +449,6 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         </nav>
       </section>
 
-      {/* The layers — after Management's own answer in that view, as in the workspace. */}
-      {view !== 'management' ? layerBlock : null}
 
       {/* ------------------------------------------------------ Business */}
       {view === 'business' ? (
@@ -431,24 +466,23 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
           <Place place="not-determined">
             {stop('not-determined')}
-            <NotDeterminedCard data={open} />
+            {/* Folded, with its count: nine reasons in full pushed the map two
+                screens down. Simple on top, complete one click deeper. */}
+            <CcDisclosure title={wt('demo.notDeterminedPoints')} count={open.count} level={3}>
+              <NotDeterminedCard data={open} />
+            </CcDisclosure>
           </Place>
 
-          <Place place="process-map" className="mt-5">
-            <div className="max-w-3xl">{stop('process-map')}</div>
-            <CcCard title={wt('demo.processMap')} meta={<CcProvenanceChip value="reconstructed" />}>
-              <p className="m-0 mb-3 text-[12px] font-medium text-cc-ink-muted">{processMap.traceability.sentence}</p>
-              <ProcessMap
-                model={processMap}
-                source={source}
-                catalogTarget={catalogLookupTargetOf(project)}
-                plane={plane}
-                onPlaneChange={setPlane}
-                selected={selected}
-                onSelectedChange={setSelected}
-              />
-            </CcCard>
-          </Place>
+          {layerBar}
+          {layerSection}
+
+          {/* Under Need & process the map is the layer's content, and says so. */}
+          <div data-workspace-layer-section={currentLayer === 'need' ? 'need' : undefined}>
+            <Place place="process-map" className="mt-5">
+              <div className="max-w-3xl">{stop('process-map')}</div>
+              {mapCard}
+            </Place>
+          </div>
 
           <Place place="process-levels">
             {stop('process-levels')}
@@ -545,8 +579,15 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         <>
           <Place place="it-chain" className="mt-5">
             <div className="max-w-3xl">{stop('it-chain')}</div>
-            <ItAnswers projectId="demo" findings={itFindings} />
+            <ItAnswers projectId="demo" findings={itFindings} project={project} />
           </Place>
+          {/* The IT answer first, then the layers, as in Management. */}
+          {layerBar}
+          {layerSection ?? (
+            <div className="mt-5" data-workspace-layer-section="need">
+              {mapCard}
+            </div>
+          )}
           <div className="mt-5 max-w-3xl">
             <NotDeterminedCard data={open} />
           </div>
@@ -635,7 +676,12 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               </div>
             </CcCard>
           </Place>
-          {layerBlock}
+          {layerBar}
+          {layerSection ?? (
+            <div className="mt-5" data-workspace-layer-section="need">
+              {mapCard}
+            </div>
+          )}
         </>
       ) : null}
     </div>

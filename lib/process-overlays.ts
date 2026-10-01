@@ -51,14 +51,12 @@ import type { OverlayDefinition, ProcessNavigation } from '@/lib/process-navigat
  *
  * ## Why the level overlay says which snapshot answered
  *
- * `lib/abap/catalog-service.ts` has no notion of `deployment` or `edition` —
- * measured 23.09.2026, zero occurrences — and the one snapshot this product
- * ships is SAP's `abap-atc-cr-cv-s4hc`, the released-object list of the
- * **Public** Edition. A private-edition project is graded against that list
- * today. Making the snapshot a parameter is roadmap 7.10 and is not done here;
- * what *is* done here is refusing to let the overlay imply an answer that
- * depends on an operating model it never asked about. The note below says
- * which list answered, and that there is only one.
+ * A level depends on the operating model: the Public and the Private Edition
+ * have different release lists. Until roadmap 7.10 only the Public list
+ * shipped and the note said so; since 30.09.2026 the lookup reads the list of
+ * the project's target (`lib/abap/catalog-snapshots.ts`). The overlay still
+ * refuses to imply an answer without saying which list gave it — the note
+ * below names the rule by which the list is chosen.
  */
 
 /* ------------------------------------------------------------------ *
@@ -217,17 +215,21 @@ export function lookupObjects(sites: readonly ObjectSite[]): { name: string; use
  * ------------------------------------------------------------------ */
 
 /**
- * The one snapshot this product ships, named in the overlay itself.
+ * Which release list answers, named in the overlay itself.
  *
- * Not a decoration: the level the overlay prints is the Public Edition answer,
- * whatever edition the project runs on, because `catalog-service.ts` has no
- * edition to ask about (roadmap 7.10). Saying so is cheaper than being wrong
- * quietly.
+ * Since roadmap 7.10 (30.09.2026) the build ships the Private Edition lists as
+ * well (`lib/abap/catalog-snapshots.ts`), and the lookup is asked with the
+ * project's target (`catalogLookupTargetOf`): the Public list for a Public
+ * Edition project, the Private list — pinned to the named release where SAP
+ * publishes one — for a Private Edition project, and the Public list when the
+ * project names no edition. The note used to say there was only one list; it
+ * says what the lookup does now.
  */
 export const LEVEL_OVERLAY_NOTE =
-  'Levels come from the one released-object snapshot this product ships: SAP’s abap-atc-cr-cv-s4hc, '
-  + 'release "latest" — the list for S/4HANA Cloud Public Edition. There is no second snapshot here, '
-  + 'so a private-edition project is read against this one too.';
+  'Levels come from SAP’s released-object lists (abap-atc-cr-cv-s4hc), read for this project’s target: '
+  + 'the S/4HANA Cloud Public Edition list for a Public Edition project, the Private Edition list — pinned to '
+  + 'the named release where SAP publishes one — for a Private Edition project, and the Public Edition list '
+  + 'when the project names no edition.';
 
 /** `NAME` or `NAME@use`, the shape `/api/abcd-classify` answers with. */
 function keyOf(site: ObjectSite): string {

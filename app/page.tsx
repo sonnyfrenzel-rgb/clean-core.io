@@ -94,14 +94,14 @@ export const revalidate = 300;
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Accelerator — Free ABAP Code Analysis | Clean-Core.io',
   description:
-    'Free community tool for SAP custom code: a deterministic ABAP static code analysis, the business process reconstructed from the code with a line anchor on every element, the SAP clean core Level A–D of each SAP object from the Cloudification Repository, and a signed run for every completed analysis.',
+    'Free community tool for SAP custom code: a deterministic ABAP static code analysis, the business process as BPMN with a line anchor on every element, or the reason it has none, the SAP clean core Level A–D of each SAP object, then a target design, a code draft and tests on one chain of evidence, sealed as signed runs.',
   alternates: {
     canonical: 'https://clean-core.io',
   },
   openGraph: {
     title: 'SAP Clean Core Accelerator | Clean-Core.io',
     description:
-      'Understand a piece of custom ABAP and decide what happens to it. Every statement is tied to a line of your code; what could not be determined is said, not guessed. Free for the SAP community.',
+      'From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can check. Every element of the process points to the line it came from; what a model suggested is marked; what could not be determined is said. Free for the SAP community.',
     url: 'https://clean-core.io',
     type: 'website',
     siteName: 'Clean-Core.io',
@@ -110,7 +110,7 @@ export const metadata: Metadata = withTwitterCard({
     card: 'summary_large_image',
     title: 'SAP Clean Core Accelerator | Clean-Core.io',
     description:
-      'Understand a piece of custom ABAP and decide what happens to it. Every statement is tied to a line of your code; what could not be determined is said, not guessed. Free for the SAP community.',
+      'From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can check. Every element of the process points to the line it came from; what a model suggested is marked; what could not be determined is said. Free for the SAP community.',
   },
 });
 
@@ -193,6 +193,12 @@ export default function Home() {
   const heroData = heroSnippets(hero, DEMO_SOURCE_FILE);
   const referenceProcess = landingProcess(reference.fileName, reference.fileName.replace(/(_\d+LOC)?\.abap$/i, ''));
   const catalogHref = (name: string) => (withPage.has(name) ? `/catalog/${objectToSlug(name)}` : '/sap-clean-core-object-classification');
+  const referenceTechnical = landingProcess(reference.fileName, referenceProcess.program, 'technical');
+  // A phone reads the same levels top to bottom rather than scrolling sideways.
+  const referenceVertical = {
+    plain: landingProcess(reference.fileName, referenceProcess.program, 'plain', 'TB'),
+    technical: landingProcess(reference.fileName, referenceProcess.program, 'technical', 'TB'),
+  };
 
   /* The A–D ladder: each level with a real object the catalog puts there today. */
   const ladder = (['A', 'B', 'C', 'D'] as const).map((level) => {
@@ -316,6 +322,19 @@ export default function Home() {
   const examples = [...STARTER_EXAMPLES].sort((a, b) => (a.name === DEMO_OBJECT_NAME ? -1 : b.name === DEMO_OBJECT_NAME ? 1 : b.lines - a.lines));
 
   /**
+   * The chain of evidence: process → design → code draft → tests → handover,
+   * each with the provenance it really carries. Nothing here claims more than
+   * `lib/landing-stages.ts` and `lib/evidence-chain.ts` say of the same stage.
+   */
+  const chainSteps: Array<{ key: string; t: string; d: string; pv: ProvenanceValue; mark: string }> = [
+    { key: 'process', t: 'Process', d: `The business process as BPMN, read from the code. Every element points to its line, or says why it has none — the plant 1000 rule of the demo to L${plantRule.line}.`, pv: 'reconstructed', mark: 'line anchor' },
+    { key: 'design', t: 'Design', d: 'A target design for the route the evidence points to, built on the run the server signed — a proposal until you record the target you accept.', pv: 'proposed', mark: 'run reference' },
+    { key: 'code', t: 'Code draft', d: 'The transformed code, generated from the source, the analysis and the design; its plan names every finding at its line. A draft you review, not a finished product.', pv: 'proposed', mark: 'line anchor' },
+    { key: 'tests', t: 'Tests', d: 'Test scenarios for the generated code, run in an isolated runner against mocks. The server records what ran, on which code.', pv: 'demonstrated-mock', mark: 'test receipt' },
+    { key: 'handover', t: 'Handover', d: 'An audit pack the server signs over the run, with HMAC and Ed25519, that anyone can verify offline.', pv: 'proven', mark: 'signature' },
+  ];
+
+  /**
    * The FAQ, once. The visible accordion and the JSON-LD `FAQPage` read this
    * list, so the two cannot say different things (roadmap 3.0.6).
    */
@@ -327,7 +346,7 @@ export default function Home() {
     },
     {
       q: 'What does Clean-Core.io do with my ABAP?',
-      a: 'A deterministic engine reads the program before any language model does. It reconstructs the business process with a line anchor on every element, lists the business rules hard-coded in the program, shows the clean core level of each SAP object the code uses, and names what it could not determine. Every completed analysis is sealed as a signed run. Generated code is a draft you review.',
+      a: 'A deterministic engine reads the program before any language model does. It reconstructs the business process with a line anchor on every element, or the reason it has none, lists the business rules hard-coded in the program, shows the clean core level of each SAP object the code uses, and names what it could not determine. The same evidence then carries a target design, a transformed code draft and test scenarios, run in an isolated runner, and every completed analysis is sealed as a signed run. The code is a draft you review, and the tests check it against test scenarios, not in your S/4HANA system.',
       more: { href: '/how-it-works', label: 'How it works, and its limits' },
     },
     {
@@ -342,6 +361,10 @@ export default function Home() {
     {
       q: 'Does it replace ABAP Test Cockpit?',
       a: 'No. ABAP Test Cockpit stays the check to rely on. The level Clean-Core.io shows is its reading of SAP’s published data — an orientation, never part of a signed audit pack. Confirm with ABAP Test Cockpit, and import your ATC results to compare them with the engine.',
+    },
+    {
+      q: 'Does it replace Joule for Developers or SAP’s Custom Code Migration Agent?',
+      a: 'No. SAP’s agents work inside your system and tell developers what to fix. Clean-Core.io shows the business what the code does, then carries the same evidence through a design, a code draft and tests to a decision — including whether the program is still needed at all. What stays goes to the developers and their tools, and ABAP Test Cockpit stays the authority.',
     },
     {
       q: 'Does it work with SAP Signavio?',
@@ -390,6 +413,11 @@ export default function Home() {
       tool: 'ABAP Development Tools (ADT)',
       purpose: 'Where ABAP is developed, compiled and unit-tested; ABAP Unit and the CDS Test Double Framework are on board.',
       relation: 'Generated drafts arrive as an abapGit package that you import, compile and test there.',
+    },
+    {
+      tool: 'Joule for Developers and the Custom Code Migration Agent',
+      purpose: 'SAP’s AI for ABAP developers, inside your system: it explains code and fixes what ATC finds, under SAP’s licence.',
+      relation: 'They tell developers what to fix. Clean-Core.io shows the business what the code does and carries the same evidence through a design, a code draft and tests to a decision; what stays goes to them. ATC stays the authority.',
     },
     {
       tool: 'SAP Signavio',
@@ -483,8 +511,8 @@ export default function Home() {
                 <span className="h1m">Understand a piece of custom ABAP and decide what happens to it.</span>
               </h1>
               <p className="hero-lead">
-                Every statement is tied to a line of your code. Clean-Core.io reads the program before any model does,
-                reconstructs the process it runs, and tells you what it could not determine.
+                Clean-Core.io reads the program before any model does and draws the process it runs. Every element
+                points to the line it came from; what a model suggested is marked; what could not be determined is said.
               </p>
               <div className="cta-row">
                 <AuthLink to={DEMO_ROUTE} testId="hero-demo">
@@ -515,15 +543,30 @@ export default function Home() {
                 notDetermined={heroData.notDetermined}
                 snippets={heroData.snippets}
                 initial={heroData.initial}
-                mapTitle={`The routine ${hero.plane.label} of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code`}
-                mapNote={`${hero.plane.label} · called at L${hero.plane.anchor?.lineStart ?? ''}`}
+                mapTitle={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code`}
+                mapNote="Excerpt · first steps"
                 anchoredSentence={`${hero.process.anchored} of ${hero.process.flowNodes} elements of the whole program carry a line anchor.`}
                 diagram={
-                  <BpmnPlaneSvg
-                    plane={hero.plane}
-                    idPrefix="hero"
-                    title={`The routine ${hero.plane.label} of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code. Every element carries its line anchor.`}
-                  />
+                  <>
+                    <div className="flow-wide">
+                      <BpmnPlaneSvg
+                        plane={hero.plane}
+                        idPrefix="hero"
+                        fit
+                        maxHeight={520}
+                        title={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code: each step with the decisions in it that end the process. Every element carries its line anchor.`}
+                      />
+                    </div>
+                    {/* A phone gets the same excerpt drawn narrow, at its own width, never scrolled sideways. */}
+                    <div className="flow-narrow">
+                      <BpmnPlaneSvg
+                        plane={hero.planeNarrow}
+                        idPrefix="hero-n"
+                        fit
+                        title={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code. Every element carries its line anchor.`}
+                      />
+                    </div>
+                  </>
                 }
               />
             </figure>
@@ -534,8 +577,8 @@ export default function Home() {
         <section className="sec alt" id="what" aria-labelledby="what-title">
           <div className="wrap">
             <SectionHeader eyebrow="In one sentence" title="What is Clean-Core.io?" titleId="what-title">
-              A free tool that reads your custom ABAP, draws its business process and drafts the clean core rebuild —
-              every step traced to a line of code.
+              From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can
+              check.
             </SectionHeader>
             <div className="diff">
               {[
@@ -580,6 +623,35 @@ export default function Home() {
                   </p>
                 </div>
               ))}
+            </div>
+            {/* The chain of evidence (owner's USP decision, 01.10.2026): one band, five steps, each
+                with the mark that says where it stands — words from `lib/provenance.ts`. */}
+            <div className="chain" data-landing-chain="">
+              <h3>One chain of evidence</h3>
+              <p className="sub2">
+                Other tools explain code, or rewrite it. Clean-Core.io does both on one chain of evidence — and says
+                what it could not determine.
+              </p>
+              <ol className="chain5">
+                {chainSteps.map((c, i) => (
+                  <li key={c.key} data-chain-step={c.key}>
+                    <span className="no" aria-hidden="true">
+                      {i + 1}
+                    </span>
+                    <h4>{c.t}</h4>
+                    <p>{c.d}</p>
+                    <p className="mark">
+                      <CcProvenanceChip value={c.pv} />
+                      <span className="tag">{c.mark}</span>
+                    </p>
+                  </li>
+                ))}
+              </ol>
+              <p className="honest">
+                The code is a draft for review, not a finished product. The tests check the generated code against test
+                scenarios, not that it runs in your S/4HANA system. A signature proves where a run came from and that it
+                is unchanged — not that it is right.
+              </p>
             </div>
           </div>
         </section>
@@ -744,7 +816,7 @@ export default function Home() {
         <section className="sec alt" id="process" aria-labelledby="process-title">
           <div className="wrap">
             <SectionHeader eyebrow="From code to process" title="How is the process reconstructed from ABAP?" titleId="process-title">
-              Clean-Core.io draws the process as BPMN from what the ABAP code does, puts a line anchor on every element,
+              Clean-Core.io draws the process as BPMN from what the ABAP code does, puts a line anchor on every element, or the reason it has none,
               and names what the code cannot show instead of drawing it.
             </SectionHeader>
             <div className="lp-intro">
@@ -755,7 +827,7 @@ export default function Home() {
                 example — with the mouse, the keyboard, or as a list of steps.
               </p>
             </div>
-            <ProcessMapPanel process={referenceProcess} title={referenceProcess.program} />
+            <ProcessMapPanel process={referenceProcess} technical={referenceTechnical} vertical={referenceVertical} title={referenceProcess.program} />
             <div className="feat4">
               {[
                 { t: 'Every element points to its lines', d: 'Start and end events, tasks, decisions and sub-processes each carry a line anchor. Decisions keep their condition from the code; proposed lanes are marked as proposals, never as your organisation.' },
@@ -919,8 +991,8 @@ export default function Home() {
         <section className="sec" id="toolchain" aria-labelledby="tools-title">
           <div className="wrap">
             <SectionHeader eyebrow="Next to your SAP tools" title="Does it replace SAP's own tools?" titleId="tools-title">
-              No. ABAP Test Cockpit stays the authoritative check and ADT stays where code is built and tested;
-              Clean-Core.io prepares the evidence and the decision around them.
+              No. ABAP Test Cockpit stays the authoritative check, ADT stays where code is built and tested, and SAP&apos;s
+              agents fix code inside your system; Clean-Core.io prepares the evidence and the decision around them.
             </SectionHeader>
             <div className="tools" role="table" aria-label="SAP tools and how Clean-Core.io relates to them" data-landing-tools="">
               <div className="tools-row head" role="row">
@@ -949,8 +1021,8 @@ export default function Home() {
         <section className="sec alt" id="demo" aria-labelledby="demo-title">
           <div className="wrap">
             <SectionHeader eyebrow="Demo project" title="Can I try it before I upload my own code?" titleId="demo-title">
-              Yes. Every account has the same fully worked demo project, built from a real run of the example{' '}
-              {DEMO_OBJECT_NAME} — fictitious code, a guided tour, and nothing you do there is saved or counted.
+              Yes. Every account has the same demo project: the engine&apos;s reading of the example{' '}
+              {DEMO_OBJECT_NAME} on every stage — fictitious code, a guided tour, and nothing you do there is saved or counted.
             </SectionHeader>
             <div className="demo">
               <figure className="win" aria-label={`Preview: the demo project with the guided tour at station ${tourPositionLabel(tourIndex)}`}>

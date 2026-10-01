@@ -70,6 +70,11 @@ const architectureOptions: ArchitectureOption[] = [
   },
 ];
 
+/** The words a reader sees for an architecture code — the same as the sign-off's own choices. */
+export function architectureOptionLabel(value: string | null | undefined): string | null {
+  return architectureOptions.find((o) => o.value === value)?.label ?? null;
+}
+
 interface ArchitectSignOffProps {
   /** AI-recommended target architecture */
   recommendation: TargetArchitecture;

@@ -28,6 +28,7 @@ export default function DatenschutzPage() {
         <Link
           href="/datenschutz/de"
           hrefLang="de"
+          lang="de"
           data-privacy-language-switch="de"
           className="cc-text-label text-cc-ink-muted underline-offset-4 hover:text-cc-brand-strong hover:underline"
         >

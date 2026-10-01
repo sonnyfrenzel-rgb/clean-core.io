@@ -53,7 +53,7 @@ test.describe('one section header, defined once', () => {
     // 900 flattens the hierarchy; with 3.0 the public pages follow the product
     // scale. Checked in the page and in the header component it owns.
     for (const rel of ['app/page.tsx', 'components/SectionHeader.tsx', 'components/HeaderAuthButton.tsx', 'components/landing/ViewsStage.tsx']) {
-      expect(read(rel), `${rel} uses font-black`).not.toMatch(/font-black/);
+      expect(read(rel), `${rel} uses font-black`).not.toMatch(/\bfont-black\b/);
     }
   });
 });

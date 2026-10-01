@@ -1224,7 +1224,7 @@ class SkeletonBuilder {
       }
       if (statement.keyword === 'COMMIT' || statement.keyword === 'ROLLBACK') {
         this.note('commit-boundary', statement,
-          'A commit boundary is IT knowledge and belongs in the Technical overlay (DESIGN.md §5.8), not in the flow. What it does to an update registration — dispatched or discarded — is a state of the model, in `luw` (roadmap 2.12).');
+          'A commit boundary is IT knowledge and belongs in the Technical overlay, not in the flow. What it does to an update registration — dispatched or discarded — is recorded as a state of the process model.');
       }
     }
     for (const branch of this.control.notHandled) {

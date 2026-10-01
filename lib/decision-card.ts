@@ -21,6 +21,7 @@ import {
   type ProjectDecision,
 } from './project-decision';
 import type { ProvenanceValue } from './provenance';
+import { ALTERNATIVE_LABELS } from './architecture-contract';
 
 /** The four bindings the "Binds" line names, in the mockup's order. The run has its own line. */
 export const CARD_BINDINGS: readonly DecisionBindingKey[] = DECISION_BINDINGS.filter((k) => k !== 'run');
@@ -29,8 +30,10 @@ export interface CardBinding {
   key: DecisionBindingKey;
   /** "need revision", "option", "cost revision", "contract", "analysis run". */
   label: string;
-  /** What is bound, or `null` — then `reason` says why nothing is. */
+  /** What is bound, or `null` — then `reason` says why nothing is. The revision key, for a tooltip. */
   value: string | null;
+  /** `value` as a reader is told it: what the revision key means, without the key. */
+  shown: string | null;
   reason: string | null;
   /** What qualifies a binding that did hold. */
   note: string | null;
@@ -80,6 +83,7 @@ function binding(decision: ProjectDecision, key: DecisionBindingKey): CardBindin
       key,
       label: SHORT_LABEL[key],
       value: null,
+      shown: null,
       reason: 'This record carries no such binding.',
       note: null,
       provenance: 'not-determined',
@@ -89,10 +93,55 @@ function binding(decision: ProjectDecision, key: DecisionBindingKey): CardBindin
     key,
     label: SHORT_LABEL[key],
     value: b.revision,
+    shown: b.revision === null ? null : bindingShown(key, b.revision),
     reason: b.notDeterminedReason,
     note: b.note,
     provenance: b.provenance,
   };
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/**
+ * A bound revision as a sentence fragment a reader can use.
+ *
+ * The revision keys are exact and stable, which is what a manifest needs and a
+ * person cannot read: `blocked:qualified:AC-1/side-by-side-cap+592e7a6c667f`,
+ * `unconfirmed:EUR@5y/4/y?#3opt+7bb12ca381e8`, `need/r2`. Each is taken apart
+ * here into what it says — which contract on which route and in what state, which
+ * currency over how many years — and the key itself stays in the tooltip. A key
+ * of a shape this does not know is shown as it is rather than guessed at.
+ */
+export function bindingShown(key: DecisionBindingKey, revision: string): string {
+  if (key === 'need') {
+    const need = /^need\/r(\d+)$/.exec(revision);
+    return need ? `revision ${need[1]}` : revision;
+  }
+  if (key === 'contract') {
+    const c = /^(blocked:)?(qualified:)?([^/]+)\/([a-z-]+?)(\+deviation)?\+[0-9a-f]+$/.exec(revision);
+    if (!c) return revision;
+    const [, blocked, qualified, id, route, deviation] = c;
+    const routeLabel = (ALTERNATIVE_LABELS as Record<string, string>)[route] ?? route.replace(/-/g, ' ');
+    const state = blocked ? 'blocked by a limit' : qualified ? 'draft with open limits' : 'complete';
+    return `${id}, ${routeLabel}${deviation ? ', deviating from the route the engine named' : ''} — ${state}`;
+  }
+  if (key === 'cost') {
+    const c = /^(unconfirmed:)?([^@]+)@([^/]+)\/(.+)#(\d+)opt\+[0-9a-f]+$/.exec(revision);
+    if (!c) return revision;
+    const [, unconfirmed, currency, horizon, cadence, options] = c;
+    const years = /^(\d+)y$/.exec(horizon);
+    const perYear = /^(\d+)\/y(\?)?$/.exec(cadence);
+    const parts = [
+      currency === 'no-currency' ? 'no currency' : currency,
+      years ? `over ${plural(Number(years[1]), 'year', 'years')}` : 'no time horizon',
+      perYear
+        ? `${plural(Number(perYear[1]), 'release', 'releases')} a year${perYear[2] ? ' (not confirmed)' : ''}`
+        : 'no release cadence',
+      plural(Number(options), 'option', 'options'),
+    ];
+    return `${parts.join(', ')}${unconfirmed ? ' — not all assumptions confirmed' : ''}`;
+  }
+  return revision;
 }
 
 /** "1 open · 2 met" — never a count for a status nobody holds, and never a zero standing for "none". */

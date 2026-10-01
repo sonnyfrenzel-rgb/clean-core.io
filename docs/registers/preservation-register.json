@@ -1563,7 +1563,7 @@
           {
             "field": "auditMetadata",
             "locator": "[data-stage-output=\"auditMetadata\"]",
-            "opensWith": "Compliance Audit Pack",
+            "opensWith": "Audit pack contents",
             "why": "the input fingerprint inside the audit-pack accordion"
           },
           {

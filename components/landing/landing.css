@@ -78,7 +78,7 @@
 .lp3 .reveal .v code { font-size: 15px; font-weight: 700; }
 .lp3 .nd-t { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
 .lp3 .nd-d { font-size: 13px; font-weight: 500; color: var(--cc-ink); line-height: 1.85; margin-top: 2px; }
-.lp3 .split { display: grid; grid-template-columns: 500px minmax(0, 1fr); gap: 16px; margin-top: 14px; align-items: stretch; }
+.lp3 .split { display: grid; grid-template-columns: 500px minmax(0, 1fr); gap: 16px; margin-top: 14px; align-items: start; }
 
 /* line anchor — the mockup's `.anc`, pressable where it opens a snippet */
 .lp3 .anc { display: inline-flex; align-items: center; justify-content: center; min-height: 24px; min-width: 24px; font: 600 12px/1 var(--cc-font-mono); color: var(--cc-ink); background: var(--cc-surface-muted); border: 1px solid var(--cc-line); border-radius: 4px; padding: 0 6px; white-space: nowrap; vertical-align: middle; margin-left: 4px; text-decoration: none; }
@@ -101,7 +101,8 @@
 .lp3 .cc-head .i { color: var(--cc-code-ink); }
 .lp3 .darktag { display: inline-flex; align-items: center; font: 600 12px/20px var(--cc-font-mono); border: 1px solid color-mix(in srgb, var(--cc-code-ink) 30%, transparent); color: var(--cc-code-ink); border-radius: 4px; padding: 0 6px; }
 .lp3 .cc-head .r { margin-left: auto; font-weight: 500; color: var(--cc-code-ink); font-size: 12px; }
-.lp3 .code { margin: 0; padding: 10px 0; font: 12px/22px var(--cc-font-mono); white-space: pre; overflow-x: auto; color: var(--cc-code-ink); flex: 1; }
+/* sized to its lines, never taller than the process card beside it */
+.lp3 .code { margin: 0; padding: 10px 0; font: 12px/22px var(--cc-font-mono); white-space: pre; overflow: auto; color: var(--cc-code-ink); max-height: 460px; }
 .lp3 .code:focus-visible { outline: 2px solid var(--cc-code-hl-bar); outline-offset: -2px; }
 .lp3 .code .l { display: block; padding-right: 14px; min-width: max-content; }
 .lp3 .code .ln { display: inline-block; width: 44px; text-align: right; margin-right: 14px; color: var(--cc-code-muted); }
@@ -402,6 +403,16 @@
 .lp3 .shape.gw { width: 11px; height: 11px; transform: rotate(45deg); border-radius: 2px; margin-left: 2px; }
 .lp3 .shape.end { width: 13px; height: 13px; border-radius: 999px; background: var(--cc-surface); border: 2px solid var(--cc-information); }
 
+/* orientation in the map: level, phases with "you are here", legend, more → */
+.lp3 .flow-bar .lvl { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--cc-ink-muted); }
+.lp3 .phase-row { display: flex; align-items: center; gap: 8px; overflow-x: auto; margin: 0 0 10px; padding-bottom: 2px; }
+.lp3 .phase-row .k { font-size: 12px; font-weight: 600; color: var(--cc-ink-muted); flex: none; }
+.lp3 .phase-row .wbtn { flex: none; }
+.lp3 .flow-help .mk { display: inline-grid; place-items: center; width: 16px; height: 16px; border: 1px solid var(--cc-field-border); border-radius: 3px; font-size: 12px; font-weight: 700; line-height: 1; color: var(--cc-ink); vertical-align: -3px; }
+.lp3 .flow-wrap { position: relative; }
+.lp3 .flow-narrow { display: none; }
+.lp3 .flow-more { position: absolute; top: 1px; bottom: 1px; right: 1px; display: flex; align-items: center; padding: 0 12px 0 32px; border-radius: 0 12px 12px 0; background: linear-gradient(to left, var(--cc-surface) 60%, transparent); font-size: 12px; font-weight: 600; color: var(--cc-ink-muted); pointer-events: none; }
+
 /* the hero's diagram: the step kept and the step hovered */
 .lp3 .mc-slot [data-l] { cursor: pointer; }
 .lp3 .mc-slot [data-l].is-sel .cc-bpmn-shape { stroke: var(--cc-ink); stroke-width: 2.5px; fill: var(--cc-information-bg); }
@@ -426,59 +437,63 @@
   .lp3 .wlogo span:last-child, .lp3 .wbar .views { display: none; }
   .lp3 .wbody { padding: 14px; }
   .lp3 .w-title .tt { font-size: 18px; }
-  .lp3 .revrow { grid-template-columns: 1fr; }
+  .lp3 .revrow { grid-template-columns: minmax(0, 1fr); }
   .lp3 .reveal { font-size: 15px; line-height: 2; }
   .lp3 .reveal .v { white-space: normal; }
-  .lp3 .split { grid-template-columns: 1fr; }
-  .lp3 .mapcard { display: none; }
-  .lp3 .diff { grid-template-columns: 1fr; gap: 14px; }
+  .lp3 .split { grid-template-columns: minmax(0, 1fr); }
+  /* The process card shows on a phone too: first, then the code it was read from. */
+  .lp3 .mapcard { order: -1; padding: 12px 8px; }
+  .lp3 .mapcard .mc-head { padding-inline: 4px; }
+  .lp3 .diff { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .lp3 .dcard { padding: 22px; }
   .lp3 .dcard p { font-size: 18px; }
-  .lp3 .three { grid-template-columns: 1fr; gap: 20px; }
+  .lp3 .three { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .lp3 .stagecard { padding: 16px; }
   .lp3 .panel3 { height: auto; padding: 14px; }
   .lp3 .fact3 { position: static; }
   .lp3 .view3 { position: static; display: none; opacity: 1; visibility: visible; margin-top: 10px; }
   .lp3 .view3.on { display: block; }
   .lp3 .view3 .s { font-size: 17px; }
-  .lp3 .rm3 { grid-template-columns: 1fr; }
-  .lp3 .cc2 { grid-template-columns: 1fr; gap: 16px; }
+  .lp3 .rm3 { grid-template-columns: minmax(0, 1fr); }
+  .lp3 .cc2 { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .lp3 .schema.l { display: none; }
   .lp3 .schema.s { display: block; }
   .lp3 .pcard { padding: 20px; }
-  .lp3 .steps5 { grid-template-columns: 1fr; gap: 8px; }
+  .lp3 .steps5 { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .lp3 .st5 { min-height: 0; padding: 12px 12px 12px 40px; flex-direction: row; align-items: center; gap: 10px; }
   .lp3 .st5::before { top: 50%; margin-top: -7px; }
   .lp3 .st5::after { display: none; }
-  .lp3 .lk-hit { grid-template-columns: 1fr 1fr; }
+  .lp3 .lk-hit { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lp3 .lk-hit .go { grid-column: 1 / -1; }
-  .lp3 .feat4 { grid-template-columns: 1fr; gap: 22px; margin-top: 32px; }
+  .lp3 .feat4 { grid-template-columns: minmax(0, 1fr); gap: 22px; margin-top: 32px; }
   .lp3 .flow-bar .r { margin-left: 0; }
+  .lp3 .flow-wide { display: none; }
+  .lp3 .flow-narrow { display: block; }
   .lp3 .ph-btn { grid-template-columns: 22px minmax(0, 1fr); }
   .lp3 .ph-btn .rg { grid-column: 2; }
-  .lp3 .refgrid { grid-template-columns: 1fr; gap: 16px; }
+  .lp3 .refgrid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .lp3 .bignum b { font-size: 32px; }
-  .lp3 .verify3 { grid-template-columns: 1fr; }
-  .lp3 .hon { grid-template-columns: 1fr; gap: 16px; }
-  .lp3 .pvrow { grid-template-columns: 1fr; gap: 4px; }
-  .lp3 .tools-row { grid-template-columns: 1fr; border-bottom: 1px solid var(--cc-line); }
+  .lp3 .verify3 { grid-template-columns: minmax(0, 1fr); }
+  .lp3 .hon { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .lp3 .pvrow { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .lp3 .tools-row { grid-template-columns: minmax(0, 1fr); border-bottom: 1px solid var(--cc-line); }
   .lp3 .tools-row:last-child { border-bottom: 0; }
   .lp3 .tools-row.head { display: none; }
   .lp3 .tools-row > * { border: 0; padding: 6px 16px; }
   .lp3 .tools-row > :first-child { padding-top: 14px; }
   .lp3 .tools-row > :last-child { padding-bottom: 14px; }
   .lp3 .tools-row .h { display: block; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--cc-ink-muted); }
-  .lp3 .demo { grid-template-columns: 1fr; gap: 28px; }
+  .lp3 .demo { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .lp3 .coachzone { padding-bottom: 0; }
   .lp3 .coach { position: relative; left: auto; top: auto; width: auto; margin-top: 16px; }
   .lp3 .coach::after { display: none; }
   .lp3 .stations { columns: 1; }
   .lp3 .dcta > a { width: 100%; }
-  .lp3 .steps3 { grid-template-columns: 1fr; gap: 18px; margin-bottom: 28px; }
-  .lp3 .start3 { grid-template-columns: 1fr; gap: 16px; }
-  .lp3 .picker { grid-template-columns: 1fr; }
+  .lp3 .steps3 { grid-template-columns: minmax(0, 1fr); gap: 18px; margin-bottom: 28px; }
+  .lp3 .start3 { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .lp3 .picker { grid-template-columns: minmax(0, 1fr); }
   .lp3 .pk-detail .go > a { width: 100%; }
-  .lp3 .trust { grid-template-columns: 1fr; gap: 16px; }
+  .lp3 .trust { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .lp3 .acc-item > summary h3 { font-size: 16px; }
   .lp3 .acc-a { padding-right: 4px; font-size: 15px; }
   .lp3 .foot-top { flex-direction: column; align-items: stretch; }
@@ -516,7 +531,7 @@
 .lp3 .brand .sub { display: block; font-size: 12px; font-weight: 600; color: var(--cc-ink-muted); line-height: 1.3; }
 .lp3 #workspace-tools { border-top: 1px solid var(--cc-line); }
 @media (max-width: 760px) {
-  .lp3 .foot-grid4 { grid-template-columns: 1fr 1fr; gap: 20px; }
+  .lp3 .foot-grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
   .lp3 .foot-grid4 > div:first-child { grid-column: 1 / -1; }
 }
 .lp3 .lk-input::placeholder { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
@@ -525,3 +540,22 @@
 .lp3 .fact3 code, .lp3 .rm3 .d code { white-space: nowrap; }
 
 .lp3 .sub2 code, .lp3 .flow-bar .sub code { overflow-wrap: anywhere; }
+
+/* ---------- the chain of evidence (USP band, 01.10.2026) ---------- */
+.lp3 .chain { margin-top: 40px; background: var(--cc-surface); border: 1px solid var(--cc-line); border-radius: var(--lp-r-pub); padding: 28px; box-shadow: var(--lp-sh); min-width: 0; }
+.lp3 .chain h3 { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+.lp3 .chain5 { list-style: none; margin: 20px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.lp3 .chain5 li { position: relative; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--cc-line); border-top: 2px solid var(--cc-ink); border-radius: 12px; padding: 14px; background: var(--cc-page); min-width: 0; }
+.lp3 .chain5 li + li::before { content: '→'; position: absolute; left: -12px; top: 18px; width: 12px; text-align: center; font-size: 14px; font-weight: 700; color: var(--cc-ink-muted); }
+.lp3 .chain5 .no { width: 28px; height: 28px; border-radius: 999px; border: 1px solid var(--cc-line); display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--cc-ink); background: var(--cc-surface); }
+.lp3 .chain5 h4 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+.lp3 .chain5 p { font-size: 14px; line-height: 1.55; color: var(--cc-ink-muted); font-weight: 500; }
+.lp3 .chain5 p.mark { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+@media (max-width: 1100px) {
+  .lp3 .chain5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lp3 .chain5 li + li::before { content: none; }
+}
+@media (max-width: 760px) {
+  .lp3 .chain { padding: 20px; margin-top: 28px; }
+  .lp3 .chain5 { grid-template-columns: minmax(0, 1fr); }
+}

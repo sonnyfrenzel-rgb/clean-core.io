@@ -320,6 +320,32 @@ test.describe('(f) where the decision stands', () => {
     expect(card.coverage).toContain('0 of 5 bindings');
   });
 
+  test('an open condition is counted in the headline and said in its sentence, never by its id', () => {
+    // The 3.0 gap audit read "It waits for … condition contract:coverage-incomplete:6 × local
+    // function-module call (from line 121)" as the Management answer.
+    const draft = {
+      ...emptyProjectDecision(),
+      conditions: [
+        {
+          id: 'contract:coverage-incomplete:6 × local function-module call (from line 121)',
+          text: 'Six local function-module calls are not covered by the contract yet.',
+          source: 'contract-limit' as const,
+          status: 'open' as const,
+          statusBasis: 'derived' as const,
+          evidence: 'coverage-incomplete',
+          attestation: null,
+          provenance: 'reconstructed' as const,
+        },
+      ],
+    };
+    const card = decisionOverviewCard(ready({ draft, stored: null }));
+    if (card.state !== 'ready') throw new Error('not ready');
+    expect(card.title).toContain('1 open condition');
+    expect(card.title).not.toContain('contract:');
+    expect(card.waitsFor).toContain('Six local function-module calls are not covered by the contract yet.');
+    expect(card.waitsFor.join(' ')).not.toContain('contract:');
+  });
+
   test('a confirmed record is shown instead of the draft, as a self-declaration', () => {
     const stored = { ...emptyProjectDecision(), status: 'confirmed' as const, revision: 3 };
     const card = decisionOverviewCard(ready({ draft: emptyProjectDecision(), stored }));

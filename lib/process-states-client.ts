@@ -53,6 +53,50 @@ export async function fetchProcessStates(projectId: string): Promise<ProcessStat
   }
 }
 
+/**
+ * Why the confirmations could not be read — the codes `GET` answers with, so a
+ * screen can say *why* there is nothing to confirm instead of showing an empty
+ * list (`no-baseline`: the process has not been reconstructed from a signed run
+ * yet; `source-moved`: the source changed since).
+ */
+export type StatesReadRefusal =
+  | 'no-baseline'
+  | 'no-source'
+  | 'source-moved'
+  | 'source-too-large'
+  | 'format-version'
+  | 'not-found'
+  | 'unreachable';
+
+const READ_REFUSALS: readonly StatesReadRefusal[] = [
+  'no-baseline',
+  'no-source',
+  'source-moved',
+  'source-too-large',
+  'format-version',
+];
+
+export type StatesReadOutcome =
+  | { ok: true; view: ProcessStateView }
+  | { ok: false; code: StatesReadRefusal; status: number };
+
+/** The same read as `fetchProcessStates`, with the reason when there is no view. */
+export async function readProcessStatesOutcome(projectId: string): Promise<StatesReadOutcome> {
+  try {
+    const res = await fetch(processStatesPath(projectId), { headers: await authHeader() });
+    const body = (await res.json().catch(() => ({}))) as { view?: unknown; code?: unknown };
+    if (res.ok && isView(body.view)) return { ok: true, view: body.view };
+    const code = (READ_REFUSALS as readonly unknown[]).includes(body.code)
+      ? (body.code as StatesReadRefusal)
+      : res.status === 404
+        ? 'not-found'
+        : 'unreachable';
+    return { ok: false, code, status: res.status };
+  } catch {
+    return { ok: false, code: 'unreachable', status: 0 };
+  }
+}
+
 /** Why a confirmation produced no revision. */
 export type ConfirmRefusal =
   | 'bad-request'
@@ -60,6 +104,8 @@ export type ConfirmRefusal =
   | 'note-required'
   | 'note-too-long'
   | 'too-many'
+  | 'source-required'
+  | 'source-invalid'
   | 'revision-moved'
   | 'no-baseline'
   | 'no-source'
@@ -90,6 +136,8 @@ export const CONFIRM_REFUSALS: readonly ConfirmRefusal[] = Object.freeze([
   'note-required',
   'note-too-long',
   'too-many',
+  'source-required',
+  'source-invalid',
   'revision-moved',
   'no-baseline',
   'no-source',
@@ -160,7 +208,7 @@ export async function confirmProcessStates(
 export function confirmOutcomeSentence(outcome: ConfirmOutcome): string {
   if (outcome.ok) {
     return outcome.created
-      ? `Confirmed as revision ${outcome.view.revision}. Revision 1 of the process is unchanged.`
+      ? `Saved as need revision ${outcome.view.revision}. The reconstructed process and the signed run are unchanged.`
       : 'These answers are already on record, so no new revision was written.';
   }
   switch (outcome.code) {
@@ -173,6 +221,10 @@ export function confirmOutcomeSentence(outcome: ConfirmOutcome): string {
     case 'note-too-long':
       return outcome.error;
     case 'too-many':
+      return outcome.error;
+    case 'source-required':
+      return outcome.error;
+    case 'source-invalid':
       return outcome.error;
     case 'revision-moved':
       return typeof outcome.latest === 'number'

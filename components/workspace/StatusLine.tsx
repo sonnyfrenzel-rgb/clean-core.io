@@ -7,6 +7,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcWhyPopover from '@/components/cc/WhyPopover';
 import { objectStatus } from '@/lib/object-status';
 import type { WorkspaceStatus, WorkspaceView } from '@/lib/workspace-model';
+import { useWorkspaceLayer } from '@/hooks/useWorkspaceLayer';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { openStageLabel, wt } from '@/lib/workspace-messages';
 
@@ -64,6 +65,8 @@ export default function WorkspaceStatusLine({
    */
   toolBase?: string;
 }) {
+  // The layer the reader is in travels with the link, so the way back returns to it.
+  const layer = useWorkspaceLayer();
   const base = toolBase ?? `/project/${projectId ?? ''}`;
   return (
     <ul
@@ -108,7 +111,7 @@ export default function WorkspaceStatusLine({
                   {entry.restsOn.map((phase) => (
                     <Link
                       key={phase.key}
-                      href={stageHref({ base, path: phase.path, view, from: WORKSPACE_RETURN.status })}
+                      href={stageHref({ base, path: phase.path, view, from: WORKSPACE_RETURN.status , layer })}
                       data-workspace-status-tool={phase.key}
                       className="font-semibold text-cc-ink underline underline-offset-2"
                     >

@@ -43,7 +43,11 @@ diese Datei** — das betrifft vor allem Konto, Rollen, Teilen und die Reihenfol
    eine E-Mail-Adresse: Die eingeladene Person meldet sich wie gewohnt an,
    akzeptiert die Terms und bekommt Einsicht.
 
-**USP:** Vom unverstandenen Z-Programm zur belegten Entscheidung — frei,
+**USP (von Sonny freigegeben am 01.10.2026, wörtlich zu verwenden):** „From custom ABAP
+nobody understands to a reviewed, tested rebuild — on one chain of evidence you can
+check." Langfassung und die Grenzen, die mit ihr reisen (der Code ist ein Entwurf zur
+Prüfung; die Tests prüfen gegen Testszenarien, nicht im echten S/4-System), stehen im
+`README.md`. Zuvor: Vom unverstandenen Z-Programm zur belegten Entscheidung — frei,
 verifizierbar, ohne SAP-Lizenz.
 
 ---
@@ -826,6 +830,7 @@ ist, wie Signavio mit fremden `extensionElements` umgeht** — genau das klärt 
 | **3.5** | Beobachtete Wirkung gegen die eingefrorene Kostenrevision (Screen 5 rechts) · Multi-Provider-BYOK |
 | **Kandidaten (Feedback 15.09.2026)** | Code-Anonymisierung vor dem Modellaufruf · CLI/API, die Pull Requests gegen Clean-Core-Regeln prüft (Shift-Left) · Aufwandsschätzung aus Metriken, erst mit Kalibrierung aus der Bench |
 | **after 3.0, review** | QA 8cb85af1fee3 — grouped business rules whose occurrences mix controlling and continuing behaviour (`lib/abap/business-rule-set.ts`): review the type-per-group rule after 3.0; no code change before (owner decision 30.09.2026) |
+| — | **After 3.0 · Engine: block-list checks as business rules** (decision Sonny, 01.10.2026): a table read of a block/exclusion list followed by a reject (e.g. ZMM_VEND_BLOCK at L228–232 in the demo) becomes a business rule candidate, so "vendor block list" can appear in the Business card and the landing hero. Changes engine output — bundled with the other engine findings of the QA slice review and a new benchmark measurement | M |
 | ohne Version | Bench veröffentlichen, fairer Vergleich, Teamabnahme — brauchen Termine mit Dritten, keine Entwicklungszeit · Runner-Isolation: seit 19.09.2026 vor 3.0 als 8.9 (CR-09)|
 
 ---

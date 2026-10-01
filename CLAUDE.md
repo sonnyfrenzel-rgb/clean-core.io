@@ -100,8 +100,8 @@ There is **no** Firebase Hosting deploy; `firebase.json` is only rules + emulato
 ## QA agent — always on for `dev` (since 2026-09-15, until Sonny revokes it)
 
 Every push to `dev` triggers `.github/workflows/qa-review.yml`: a sealed delta review by
-`openai/gpt-6-luna` (OpenRouter) plus a sealed smoke check of the deployed revision.
-Every release on `main` also gets a sealed review of the whole code base by `openai/gpt-5.6-sol`
+the OpenRouter Auto Router (cost tier high, cap $3.80) plus a sealed smoke check of the deployed revision.
+Every release on `main` also gets a sealed review of the whole code base by the OpenRouter Auto Router (cost tier xhigh, cap $10)
 (`node scripts/qa/await.mjs <sha> --full`); it gates nothing — verify its findings and fix
 confirmed ones on `dev` as a roadmap step. A `medium` finding in the agents' own machinery
 (`AGENT_INFRASTRUCTURE` in `scripts/qa/lib/config.mjs`) is reported but does not keep the loop open.
@@ -116,8 +116,8 @@ Revoke: `gh variable set QA_REVIEW_ENABLED --body false`.
 
 ## Security agent — full audit of every release on `main` (since 2026-09-15)
 
-`.github/workflows/security-audit.yml`: a CISO and five consultants (`deepseek/deepseek-v4.1-flash`
-over OpenRouter, a pipeline of model calls without tools, budget 3 USD) audit the whole codebase; the
+`.github/workflows/security-audit.yml`: a CISO and five consultants (OpenRouter Auto Router, cost tier high,
+a pipeline of model calls without tools, budget 20 USD) audit the whole codebase; the
 German report is mailed to Sonny, sealed with `docs/security/audit-public-key.pem`. After a
 push to `main`, or when the session start reports untriaged findings, use the
 `security-audit-intake` skill: `node scripts/security/inbox.mjs <sha>`, verify each finding,
@@ -127,7 +127,7 @@ Runbook: `docs/SECURITY-AUDIT-AGENT.md`. Revoke: `gh variable set SECURITY_AUDIT
 
 ## UX agent — UX review of every release on `main` (since 2026-09-15)
 
-`.github/workflows/ux-review.yml`: `meta/muse-spark-1.3` (OpenRouter, multimodal) reviews
+`.github/workflows/ux-review.yml`: the OpenRouter Auto Router (cost tier high, image-capable models only) reviews
 what a release changed for users — source, a deterministic design scan of the whole
 product, and screenshots from `tests/capture-screens.spec.ts` (seeded demo project,
 desktop/phone/dark, plus the 3.0 mockups). Until a complete full review exists, every automatic run reviews the whole product,

@@ -651,7 +651,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                   6.6 checks first (`handleSend`), so the sentence names it. */}
               <p className="m-0 font-medium" data-chatbot-scope="">
                 {projectId
-                  ? 'Inside a project this assistant answers only from the evidence of this project, and names the line each statement rests on. The one exception is a glossary term, which is answered from its glossary entry and marked as such.'
+                  ? 'Inside a project this assistant answers only from the evidence of this project. An answer is shown only when it cites at least one source line of this project, and it lists the lines it cites — that does not prove every sentence in it. The one exception is a glossary term, which is answered from its glossary entry and marked as such.'
                   : 'Context-restricted assistant. Focused exclusively on SAP S/4HANA Clean Core architectures.'}
               </p>
             </div>

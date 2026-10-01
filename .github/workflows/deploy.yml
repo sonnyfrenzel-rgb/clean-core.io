@@ -294,6 +294,7 @@ jobs:
           S4_PROXY_BASE_URL_MAIN: ${{ vars.S4_PROXY_BASE_URL_MAIN }}
           S4_PROXY_BASE_URL_DEV: ${{ vars.S4_PROXY_BASE_URL_DEV }}
           APP_VPC_SUBNET: ${{ vars.APP_VPC_SUBNET }}
+          APP_VPC_NETWORK: ${{ vars.APP_VPC_NETWORK }}
           RUNNER_SA: ${{ vars.RUNNER_SERVICE_ACCOUNT }}
         run: |
           case "$REF_NAME" in
@@ -357,15 +358,30 @@ jobs:
           echo "runner_sa=${RUNNER_SA}" >> "$GITHUB_OUTPUT"
 
           # An internal-ingress runner answers only requests that come out of
-          # the VPC. When the owner has given the app a subnet for that, the
-          # app's private-range egress goes there; its public egress (Gemini,
-          # mail, tenants) is unchanged. Unset, the app keeps no VPC egress.
+          # a VPC of this project. When the owner has given the app a network
+          # and subnet for that, the app's private-range egress goes there; its
+          # public egress (Gemini, mail, tenants) is unchanged. Unset, the app
+          # keeps no VPC egress.
+          #
+          # Never the runners' own network: runner-net carries a private
+          # googleapis.com zone that knows only private.googleapis.com, so the
+          # app could not resolve www.googleapis.com and every sign-in check
+          # failed (01.10.2026). The app gets its own network with a private
+          # run.app zone only.
           if [ -n "$APP_VPC_SUBNET" ]; then
             if ! printf '%s' "$APP_VPC_SUBNET" | grep -Eq '^[a-z][a-z0-9-]{0,62}$'; then
               echo "::error::APP_VPC_SUBNET must be a subnet name." >&2
               exit 1
             fi
-            echo "app_network_flags=--network=runner-net --subnet=${APP_VPC_SUBNET} --vpc-egress=private-ranges-only" >> "$GITHUB_OUTPUT"
+            if ! printf '%s' "$APP_VPC_NETWORK" | grep -Eq '^[a-z][a-z0-9-]{0,62}$'; then
+              echo "::error::APP_VPC_NETWORK must name the app's own network when APP_VPC_SUBNET is set." >&2
+              exit 1
+            fi
+            if [ "$APP_VPC_NETWORK" = "runner-net" ]; then
+              echo "::error::The app must not use runner-net: its private googleapis.com zone breaks sign-in checks." >&2
+              exit 1
+            fi
+            echo "app_network_flags=--network=${APP_VPC_NETWORK} --subnet=${APP_VPC_SUBNET} --vpc-egress=private-ranges-only" >> "$GITHUB_OUTPUT"
           else
             echo "app_network_flags=" >> "$GITHUB_OUTPUT"
           fi

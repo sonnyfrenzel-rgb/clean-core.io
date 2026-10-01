@@ -111,6 +111,9 @@ export const GATED_ROUTES: GatedRoute[] = [
   // Roadmap 8.1 — the IT view's findings, derived on the server from the
   // project's source. A read of the customer's code by another name.
   { file: 'app/api/projects/[projectId]/findings/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/findings` },
+  // Roadmap 7.2, mockup s3 — the standard-fit table, derived on the server from
+  // the project's source and SAP's catalogue. A read of the customer's code.
+  { file: 'app/api/projects/[projectId]/standard-fit/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/standard-fit` },
   // Roadmap 8.3 — the architecture contract the generation follows (GET), and
   // the record of which contract a generated stand was computed against (POST).
   { file: 'app/api/projects/[projectId]/contract/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/contract` },

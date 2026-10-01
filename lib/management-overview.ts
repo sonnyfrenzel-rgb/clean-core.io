@@ -528,11 +528,18 @@ export function decisionOverviewCard(decision: Loaded<DecisionRead>): DecisionOv
   const blocking = cov.gaps
     .filter((g) => g.severity === 'blocks')
     .sort((a, b) => WAIT_ORDER.indexOf(a.code) - WAIT_ORDER.indexOf(b.code));
-  const waitsFor = [
-    ...blocking.map((g) => (WAITS_FOR[g.code] ? WAITS_FOR[g.code]!(g) : g.sentence)),
-    ...d.conditions
-      .filter((c) => c.status === 'open' || c.status === 'not-determined')
-      .map((c) => `condition ${c.id}`),
+  const blockingPhrases = blocking.map((g) => (WAITS_FOR[g.code] ? WAITS_FOR[g.code]!(g) : g.sentence));
+  const openConditions = d.conditions.filter((c) => c.status === 'open' || c.status === 'not-determined');
+  // A condition is listed by what has to hold, never by its id: the id
+  // ("contract:coverage-incomplete:6 × local function-module call") is the
+  // decision's own key and means nothing to the person asked to decide. The
+  // headline counts them; the list under it says each one in its sentence.
+  const waitsFor = [...blockingPhrases, ...openConditions.map((c) => c.text)];
+  const headlineWaits = [
+    ...blockingPhrases,
+    ...(openConditions.length > 0
+      ? [plural(openConditions.length, 'open condition', 'open conditions')]
+      : []),
   ];
   const qualifiers = cov.gaps
     .filter((g) => g.severity === 'qualifies' && g.code !== 'condition-open')
@@ -554,9 +561,9 @@ export function decisionOverviewCard(decision: Loaded<DecisionRead>): DecisionOv
         (waitsFor.length > 0 ? ` — ${plural(waitsFor.length, 'point stays', 'points stay')} open` : '')
       : d.status === 'draft'
         ? blocking.length > 0
-          ? `One decision open (${d.decisionId}). It waits for ${list(waitsFor)}`
+          ? `One decision open (${d.decisionId}). It waits for ${list(headlineWaits)}`
           : waitsFor.length > 0
-            ? `One decision open (${d.decisionId}). Nothing blocks confirming it; ${list(waitsFor)} stay open`
+            ? `One decision open (${d.decisionId}). Nothing blocks confirming it; ${list(headlineWaits)} stay open`
             : `One decision open (${d.decisionId}). Nothing blocks confirming it`
         : `Decision ${d.decisionId} is ${d.status}; no decision is open`;
 

@@ -255,6 +255,19 @@ export function withdrawSentence(email: string): string {
   return `The link sent to ${email} stops working at once. If they have not opened it yet, they never will; you can invite them again later.`;
 }
 
+/** My workspace on a phone — the facts line of a project card. */
+export function rowLinesLabel(n: string): string {
+  return `${n} lines`;
+}
+
+export function rowFindingsLabel(n: string): string {
+  return `${n} findings`;
+}
+
+export function rowRulesLabel(confirmed: number, total: number): string {
+  return `${confirmed} of ${total} rules confirmed`;
+}
+
 /** My workspace — "Showing 5 of 24" under the table. */
 export function showingRowsLabel(shown: number, total: number): string {
   return `Showing ${shown} of ${total}`;

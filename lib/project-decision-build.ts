@@ -184,8 +184,8 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
       ? notDetermined(
           'need',
           args.need.undecided === null
-            ? 'No confirmed need revision: the process of this project has not been reconstructed against its current source, so no need could be stated (roadmap 3.5). The decision is made without one and says so.'
-            : `No confirmed need revision: ${args.need.undecided} element(s) of the process carry no state yet (roadmap 3.5). The decision is made without one and says so.`,
+            ? 'No confirmed need revision: the process of this project has not been reconstructed against its current source, so no need could be stated. The decision is made without one and says so.'
+            : `No confirmed need revision: ${args.need.undecided} element(s) of the process carry no state yet. The decision is made without one and says so.`,
         )
       : bound('need', `need/r${args.need.revision}`, 'confirmed'),
   );
@@ -206,7 +206,7 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
         'cost',
         costCoverage
           ? costCoverage.sentence
-          : 'No cost assumptions were stated, so no option comparison was priced (roadmap 7.4).',
+          : 'No cost assumptions were stated, so no option comparison was priced.',
       ),
     );
   } else {
@@ -226,7 +226,7 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
   }
 
   if (!args.contract) {
-    bindings.push(notDetermined('contract', 'No architecture contract has been derived for this run (roadmap 8.2).'));
+    bindings.push(notDetermined('contract', 'No architecture contract has been derived for this run.'));
   } else {
     const coverage = contractCoverage(args.contract);
     const revision =

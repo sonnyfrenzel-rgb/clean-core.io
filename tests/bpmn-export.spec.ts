@@ -9,6 +9,7 @@ import {
   CC_NAMESPACE,
 } from '../lib/bpmn/export';
 import { buildExportModel, MAX_NODES } from '../lib/bpmn/model';
+import { shortCondition } from '../lib/bpmn/layout';
 import { escapeAttribute, escapeText, ncName } from '../lib/bpmn/xml';
 import { cleanCoreHints, countHints, GATEWAY_WITHOUT_CONDITION } from '../lib/process-hints';
 import { parseBpmn } from '../lib/process-map';
@@ -277,10 +278,15 @@ test.describe('CR-21 — umlauts, ampersands and quotes give valid XML', () => {
     const conditions = elements
       .filter((e) => e.$type === 'bpmn:SequenceFlow' && e.conditionExpression)
       .map((e) => [e.name, (e.conditionExpression as { body: string }).body]);
+    // The expression keeps the condition exactly; the name is what the map
+    // shows on the flow — the condition, cut at a word when it is long (the
+    // whole of it is in the expression, the trace and the tooltip).
+    const long = `p_text = 'Größe & "Menge" <Grenze> ''x'''`;
     expect(conditions).toEqual([
-      [`p_text = 'Größe & "Menge" <Grenze> ''x'''`, `p_text = 'Größe & "Menge" <Grenze> ''x'''`],
+      [shortCondition(long), long],
       [`'Ä&Ö'`, `'Ä&Ö'`],
     ]);
+    expect(shortCondition(long)).toMatch(/^p_text = 'Größe & "Menge"/);
     expect(traceOf(gateway as ModdleElement)?.file).toBe('z_prüfung&co.abap');
   });
 
@@ -296,7 +302,7 @@ test.describe('CR-21 — umlauts, ampersands and quotes give valid XML', () => {
     expect(parsed.warnings.map((w) => w.message)).toEqual([]);
     const flow = countOf(parsed.rootElement).elements.find((e) => (e.conditionExpression as { body?: string } | undefined)?.body?.startsWith("p_text = 'a'"));
     const expected = `p_text = 'a'\n  AND\tp_flag = 'b'\r�`;
-    expect(flow?.name).toBe(expected);
+    expect(flow?.name).toBe(shortCondition(expected));
     expect((flow?.conditionExpression as { body: string }).body).toBe(expected);
     expect(countOf(parsed.rootElement).process.name).toBe('x�y');
   });

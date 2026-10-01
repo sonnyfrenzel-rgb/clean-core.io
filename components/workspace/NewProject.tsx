@@ -3,33 +3,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import {
-  CircleHelp,
-  FileCode,
-  Layers,
-  Loader2,
-  ShieldAlert,
-} from 'lucide-react';
-import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
+import { CircleHelp, FileCode, Layers, ShieldAlert } from 'lucide-react';
+import { getAuth } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { workspaceShellEnabled } from '@/lib/workspace-shell';
-import { STARTER_EXAMPLES, loadStarterExample, type StarterExample } from '@/lib/starter-examples';
-import {
-  describeRunCost,
-  describeStarterExampleCost,
-  starterExampleFootnote,
-} from '@/lib/run-cost';
+import { describeRunCost } from '@/lib/run-cost';
 import { quotaExhausted } from '@/lib/run-quota-rule';
-import {
-  personalDataHintKey,
-  scanForPersonalDataHints,
-  type PersonalDataHint,
-} from '@/lib/personal-data-hints';
 import {
   CLEAN_CORE_LEVEL_CAVEAT,
   CLEAN_CORE_MEANING,
-  CLEAN_CORE_SCHEMA,
   NEW_PROJECT_CORE,
   NEW_PROJECT_DIFFERENCES,
   START_CHOICES,
@@ -40,21 +21,19 @@ import {
 } from '@/lib/new-project-content';
 import type { TravellingFact } from '@/lib/three-views-stage';
 import ThreeViewsStage from './ThreeViewsStage';
-import PersonalDataHints from '@/components/PersonalDataHints';
+import CleanCoreDiagram from './CleanCoreDiagram';
+import StarterExamples from '@/components/StarterExamples';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
-import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import { CcRunCost } from '@/components/cc/RunIndicator';
-import { wt, newProjectCatalogLine, newProjectExampleSize } from '@/lib/workspace-messages';
+import { wt, newProjectCatalogLine } from '@/lib/workspace-messages';
 
-/** A choice card and an example row: chosen is an ink outline, never green (§1.1). */
+/** A choice card: chosen is an ink outline, never green (§1.1). */
 const CHOICE_CARD = 'block cursor-pointer rounded-cc-card border p-3 text-left';
-const EXAMPLE_ROW = 'flex w-full cursor-pointer flex-wrap items-center gap-2 rounded-cc-row border px-3 py-2 text-left';
 const CHOICE_ON = 'border-cc-ink bg-cc-surface-muted ring-1 ring-cc-ink';
 const CHOICE_OFF = 'border-cc-field-border bg-cc-surface hover:border-cc-ink-muted';
-const EXAMPLE_OFF = 'border-cc-line bg-cc-surface hover:border-cc-field-border';
 
 /**
  * "New project" — first understand, then start. `DESIGN.md` §6.1.1, roadmap 2.7.
@@ -129,20 +108,6 @@ export default function NewProject({
   const [user, setUser] = useState<User | null>(null);
   const [introOpen, setIntroOpen] = useState<boolean | null>(null);
   const [choice, setChoice] = useState<StartChoice>('example');
-  const [example, setExample] = useState<StarterExample>(STARTER_EXAMPLES[0]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  /**
-   * What the last look at the source found, and which selection it was about.
-   *
-   * Carrying the selection along is what makes an effect unnecessary: pick a
-   * different example and `scannedToken` below no longer matches, so the old
-   * findings simply stop being the current ones. Nothing has to clear them, and
-   * there is no render in which a stale list stands beside a new choice.
-   */
-  const [scanned, setScanned] = useState<{ token: string; hints: PersonalDataHint[] } | null>(null);
-  /** The hint set the reader said they had checked — see `personalDataHintKey`. */
-  const [personalDataAckFor, setPersonalDataAckFor] = useState('');
 
   useEffect(() => onAuthStateChanged(getAuth(), setUser), []);
 
@@ -152,7 +117,6 @@ export default function NewProject({
   const stations = useMemo(() => evidenceStations(catalogArtifacts), [catalogArtifacts]);
   const ladder = useMemo(() => cleanCoreLadder(), []);
 
-  const exampleCost = describeStarterExampleCost(profile, example.name);
   const ownCodeCost = describeRunCost({
     profile,
     metered: true,
@@ -165,64 +129,16 @@ export default function NewProject({
     markIntroSeen();
   }, []);
 
-  /** What the findings below are about. Changing it makes them stale by itself. */
-  const scannedToken = choice === 'example' ? `example:${example.file}` : 'own-code';
-  const personalDataHints = scanned && scanned.token === scannedToken ? scanned.hints : [];
-  const personalDataKey = personalDataHintKey(personalDataHints);
-  const personalDataAcknowledged =
-    personalDataKey !== '' && personalDataAckFor === personalDataKey;
-  /** Something to look at, and nobody has said they looked. */
-  const personalDataPending = personalDataHints.length > 0 && !personalDataAcknowledged;
-
-  const start = useCallback(async () => {
-    if (busy || !user) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const db = getDb();
-      const source = choice === 'example' ? await loadStarterExample(example.file) : '';
-
-      /**
-       * The source is written to Firestore two lines below, so this is the last
-       * moment it is only in the browser. Shapes that often indicate personal
-       * data are put in front of the reader here rather than a screen earlier:
-       * with nothing found there is nothing to say, and asking about an upload
-       * that never happens would be noise. Nothing is blocked — the second
-       * click goes through once the box is ticked.
-       */
-      const found = source ? scanForPersonalDataHints(source) : [];
-      if (found.length > 0 && personalDataAckFor !== personalDataHintKey(found)) {
-        setScanned({ token: scannedToken, hints: found });
-        setBusy(false);
-        return;
-      }
-
-      const docRef = await addDoc(collection(db, 'projects'), {
-        name: choice === 'example' ? example.name : 'Untitled project',
-        status: 'uploaded',
-        ...(source ? { legacyCode: source } : {}),
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-        ...(choice === 'example' ? { fromExample: true } : {}),
-      });
-
-      // An example opens the workspace with the build-up of §5.2; own code has
-      // no source yet, so it goes where the source is asked for. The workspace
-      // is still behind roadmap 1.4's switch, and an address that 404s is worse
-      // than the screen this account already knows.
-      if (choice === 'example' && workspaceShellEnabled(profile)) {
-        router.push(`/project/${docRef.id}?first=1`);
-      } else {
-        router.push(`/project/${docRef.id}/analyze`);
-      }
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'projects');
-      setError(
-        err instanceof Error ? err.message : wt('newProject.createFailed'),
-      );
-      setBusy(false);
-    }
-  }, [busy, user, choice, example, profile, router, personalDataAckFor, scannedToken]);
+  /**
+   * Own code only: nothing is created here. The upload page reads and checks
+   * the files and writes the project when the analysis is started (s11). An
+   * example starts from its own card (`components/StarterExamples.tsx`), the
+   * same gallery "My workspace" shows.
+   */
+  const continueToUpload = useCallback(() => {
+    if (!user) return;
+    router.push('/admin/new-project/upload');
+  }, [user, router]);
 
   if (profileLoading || introOpen === null) {
     return (
@@ -248,23 +164,37 @@ export default function NewProject({
     );
   }
 
-  const blocked = choice === 'own-code' ? quotaExhausted(profile) : !exampleCost.free && quotaExhausted(profile);
+  const blocked = quotaExhausted(profile);
 
   return (
     <div className="cc min-h-screen bg-cc-page px-4 py-6 sm:px-6" data-cc-new-project="">
       <div className="mx-auto flex max-w-[1280px] flex-col gap-4">
-        <div>
-          <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">
-            {wt('newProject.title')}
-          </h1>
-          <p data-new-project-core="" className="mt-1 max-w-3xl text-[13px] font-medium text-cc-ink-muted">
-            {NEW_PROJECT_CORE}
-          </p>
+        <div className="flex flex-wrap items-start gap-4">
+          <div className="min-w-0">
+            <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">
+              {wt('newProject.title')}
+            </h1>
+            <p data-new-project-core="" className="mt-1 max-w-3xl text-[13px] font-medium text-cc-ink-muted">
+              {NEW_PROJECT_CORE}
+            </p>
+          </div>
+          {/* "Skip intro" at the top right, always (s14): it folds part 1
+              away and turns into "Show intro". */}
+          <span className="ml-auto">
+            <CcButton
+              data-new-project-skip=""
+              aria-expanded={introOpen}
+              aria-controls="new-project-intro"
+              onClick={introOpen ? closeIntro : () => setIntroOpen(true)}
+            >
+              {introOpen ? wt('newProject.skipIntro') : wt('newProject.showIntro')}
+            </CcButton>
+          </span>
         </div>
 
         {/* ---------------------------------------------- part 1: what it is */}
         {introOpen ? (
-          <div data-new-project-intro="open" className="flex flex-col gap-4">
+          <div id="new-project-intro" data-new-project-intro="open" className="flex flex-col gap-4">
             <CcCard title={wt('newProject.different')} level={2}>
               <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 lg:grid-cols-3">
                 {NEW_PROJECT_DIFFERENCES.map((line) => {
@@ -295,26 +225,7 @@ export default function NewProject({
                 <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
                   {CLEAN_CORE_MEANING}
                 </p>
-                <ul className="m-0 mt-3 list-none space-y-2 p-0">
-                  {CLEAN_CORE_SCHEMA.map((part) => (
-                    <li
-                      key={part.key}
-                      data-core-schema={part.place}
-                      className={
-                        part.place === 'breach'
-                          ? 'rounded-cc-row border border-dashed border-cc-error-border bg-cc-surface px-3 py-2'
-                          : part.place === 'core'
-                            ? 'rounded-cc-row border border-cc-field-border bg-cc-surface-muted px-3 py-2'
-                            : 'rounded-cc-row border border-cc-field-border bg-cc-surface px-3 py-2'
-                      }
-                    >
-                      <b className="text-[12px] font-semibold text-cc-ink">{part.label}</b>
-                      <span className="block text-[12px] leading-snug font-medium text-cc-ink-muted">
-                        {part.note}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <CleanCoreDiagram />
               </CcCard>
 
               <CcCard title={wt('newProject.fourLevels')}>
@@ -387,19 +298,21 @@ export default function NewProject({
                 the only thing on this page that moves (§1.7). It sits after the
                 three glances because it is the pay-off: the vocabulary above is
                 what the three panels below are speaking. */}
-            <ThreeViewsStage fact={stageFact} onSkip={closeIntro} />
-
-            <div>
-              <CcButton onClick={closeIntro} data-new-project-intro-hide="">
-                {wt('newProject.hideThis')}
-              </CcButton>
-            </div>
+            <ThreeViewsStage fact={stageFact} />
           </div>
         ) : (
-          <div data-new-project-intro="folded" className="flex flex-wrap items-center gap-2">
-            <span className="text-[13px] font-medium text-cc-ink-muted">
+          <div
+            id="new-project-intro"
+            data-new-project-intro="folded"
+            className="flex flex-wrap items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3"
+          >
+            <span className="text-[13px] font-semibold text-cc-ink">
               {wt('newProject.whatIs')}
             </span>
+            <span className="text-[13px] font-medium text-cc-ink-muted">
+              {wt('newProject.whatIsNote')}
+            </span>
+            <span className="ml-auto" />
             <CcButton onClick={() => setIntroOpen(true)} data-new-project-intro-show="">
               {wt('newProject.show')}
             </CcButton>
@@ -444,64 +357,8 @@ export default function NewProject({
           </div>
 
           {choice === 'example' ? (
-            <div className="mt-3">
-              <ul
-                data-new-project-examples=""
-                role="radiogroup"
-                aria-label={START_CHOICES.example.title}
-                className="m-0 list-none space-y-2 p-0"
-              >
-                {STARTER_EXAMPLES.map((item) => {
-                  const cost = describeStarterExampleCost(profile, item.name);
-                  const selected = item.file === example.file;
-                  return (
-                    <li key={item.file} role="none">
-                      <label
-                        data-example={item.name}
-                        data-selected={selected ? 'true' : 'false'}
-                        className={selected ? `${EXAMPLE_ROW} ${CHOICE_ON}` : `${EXAMPLE_ROW} ${EXAMPLE_OFF}`}
-                      >
-                        <input
-                          type="radio"
-                          name="new-project-example"
-                          value={item.file}
-                          checked={selected}
-                          onChange={() => setExample(item)}
-                          className="size-4 shrink-0 cursor-pointer accent-cc-ink"
-                        />
-                        <span className="font-cc-mono text-[12px] font-bold text-cc-ink">
-                          {item.name}
-                        </span>
-                        <span className="text-[11px] font-medium text-cc-ink-muted">
-                          {newProjectExampleSize(item.lines.toLocaleString('en'), item.size)}
-                        </span>
-                        <span
-                          data-example-quota={cost.free ? 'free' : 'costs'}
-                          className="text-[11px] font-semibold text-cc-ink-muted"
-                        >
-                          {cost.badge}
-                        </span>
-                        <span className="w-full text-[12px] leading-snug font-medium text-cc-ink-muted">
-                          {item.summary}
-                        </span>
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
-              <p
-                data-new-project-quota="example"
-                className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink-muted"
-              >
-                {starterExampleFootnote(profile)}
-              </p>
-              {exampleCost.rerunWarning ? (
-                <div className="mt-2">
-                  <CcMessageStrip state="warning" headline={wt('newProject.ranBefore')}>
-                    {exampleCost.rerunWarning}
-                  </CcMessageStrip>
-                </div>
-              ) : null}
+            <div className="mt-4" data-new-project-examples="">
+              {user ? <StarterExamples userId={user.uid} account={profile} heading={false} /> : null}
             </div>
           ) : (
             <div className="mt-3">
@@ -517,52 +374,24 @@ export default function NewProject({
             </div>
           )}
 
-          {/* The same panel and the same words as the Analyze stage, on
-              purpose: one wording for one rule, wherever a source enters. */}
-          {personalDataHints.length > 0 ? (
-            <div className="mt-3">
-              <PersonalDataHints
-                id="new-project-personal-data"
-                hints={personalDataHints}
-                acknowledged={personalDataAcknowledged}
-                onAcknowledge={(next) => setPersonalDataAckFor(next ? personalDataKey : '')}
-              />
-            </div>
-          ) : null}
-
-          {error ? (
-            <div className="mt-3">
-              <CcMessageStrip state="error" headline={wt('newProject.nothingCreated')} announce>
-                {error}
-              </CcMessageStrip>
-            </div>
-          ) : null}
-
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <CcButton
-              variant="primary"
-              density="cozy"
-              onClick={() => void start()}
-              disabled={busy || blocked || !user || personalDataPending}
-              icon={busy ? <Loader2 size={16} aria-hidden={true} /> : undefined}
-              data-new-project-start={choice}
-            >
-              {START_CHOICES[choice].action}
-            </CcButton>
-            {blocked ? (
-              <span data-new-project-blocked="" className="text-[12px] font-medium text-cc-ink-muted">
-                {ownCodeCost.quota}
-              </span>
-            ) : null}
-            {personalDataPending ? (
-              <span
-                data-new-project-personal-data-pending=""
-                className="text-[12px] font-medium text-cc-ink-muted"
+          {choice === 'own-code' ? (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <CcButton
+                variant="primary"
+                density="cozy"
+                onClick={continueToUpload}
+                disabled={blocked || !user}
+                data-new-project-start="own-code"
               >
-                {wt('newProject.personalDataPending')}
-              </span>
-            ) : null}
-          </div>
+                {START_CHOICES['own-code'].action}
+              </CcButton>
+              {blocked ? (
+                <span data-new-project-blocked="" className="text-[12px] font-medium text-cc-ink-muted">
+                  {ownCodeCost.quota}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </CcCard>
       </div>
     </div>

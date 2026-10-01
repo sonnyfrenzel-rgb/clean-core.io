@@ -149,9 +149,10 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
     expect(by.evidence.rows.find((r) => r.key === 'run')!.value).toBe('run-4b8c');
     expect(by.evidence.rows.find((r) => r.key === 'fingerprint')!.value).toContain('Z_MM_PO_APPROVAL.abap');
 
-    // Costs is a model estimate and says so in the vocabulary, not in prose:
-    // there is no observed cost anywhere in this product.
-    expect(by.costs.count).toBe('model estimate');
+    // A signed run gives the cost model its basis, not a price: nothing is
+    // estimated until the reader enters their own figures, and the label says so.
+    // There is no observed cost anywhere in this product.
+    expect(by.costs.count).toBe('not priced yet');
     expect(by.costs.provenance).toBe('simulation');
     expect(by.costs.rows.find((r) => r.key === 'basis')!.value).toMatch(/not observed costs/);
   });

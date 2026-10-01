@@ -34,6 +34,10 @@ import { printHeaderLine, printNotDeterminedTitle, printRulesTitle, wt } from '@
  * steering one-pager is, which then prints instead, as before. Anchors and IDs
  * print as text. Nothing here calls a model; the one request it makes is the
  * read of what has been confirmed, the same the rules panel makes.
+ *
+ * No heading elements: the sheet is hidden on screen and `aria-hidden`, and an
+ * `h1` here would stand before the page's own in the DOM — every reader and
+ * spec that asks for "the first h1" of the workspace would find this one.
  */
 export default function WorkspacePrintSheet({
   project,
@@ -106,7 +110,7 @@ export default function WorkspacePrintSheet({
         </span>
       </header>
 
-      <h1 className="mt-4 mb-0 text-[22px] leading-tight font-extrabold">{project?.name || projectId}</h1>
+      <p data-print-title="" className="mt-4 mb-0 text-[22px] leading-tight font-extrabold">{project?.name || projectId}</p>
       {sentence ? <p className="mt-1 mb-0 text-[13px] leading-snug">{sentence}</p> : null}
       {reading ? (
         <p data-print-headline="" className="mt-3 mb-0 text-[15px] leading-snug font-bold">
@@ -123,10 +127,10 @@ export default function WorkspacePrintSheet({
       ) : null}
 
       <section className="mt-4">
-        <h2 className="m-0 flex items-center gap-2 text-[15px] font-bold">
+        <p className="m-0 flex items-center gap-2 text-[15px] font-bold">
           {wt('print.processTitle')}
           <CcProvenanceChip value="reconstructed" />
-        </h2>
+        </p>
         {steps.length === 0 ? (
           <p className="mt-1 mb-0 text-[13px]">{wt('print.noSteps')}</p>
         ) : (
@@ -151,7 +155,7 @@ export default function WorkspacePrintSheet({
       </section>
 
       <section className="mt-4">
-        <h2 className="m-0 text-[15px] font-bold">{printRulesTitle(rules.length)}</h2>
+        <p className="m-0 text-[15px] font-bold">{printRulesTitle(rules.length)}</p>
         {rules.length === 0 ? (
           <p className="mt-1 mb-0 text-[13px]">{wt('print.noRules')}</p>
         ) : (
@@ -189,10 +193,10 @@ export default function WorkspacePrintSheet({
       </section>
 
       <section className="mt-4">
-        <h2 className="m-0 flex items-center gap-2 text-[15px] font-bold">
+        <p className="m-0 flex items-center gap-2 text-[15px] font-bold">
           {open.noSource ? wt('print.notDeterminedNoSource') : printNotDeterminedTitle(open.count)}
           <CcProvenanceChip value="not-determined" />
-        </h2>
+        </p>
         {open.items.length > 0 ? (
           <ul className="mt-2 mb-0 list-disc space-y-1 pl-6 text-[13px] leading-snug">
             {open.items.map((item, i) => (

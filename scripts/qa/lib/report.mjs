@@ -152,7 +152,19 @@ export function publicSummary(report) {
     status: 'completed, sealed',
     modelCalls: report.meta?.modelCalls ?? 0,
     costUsd: report.meta?.costUsd ?? 'unknown',
+    // Which model(s) the Auto Router chose: metadata, like the cost, and never a finding.
+    models: reviewedBy(report),
   };
+}
+
+/**
+ * The model(s) that answered, as one line. Since 01.10.2026 the Auto Router picks per call (meta.models); a report
+ * written before then names its one pinned model in meta.model.
+ */
+export function reviewedBy(report) {
+  const models = report?.meta?.models;
+  if (Array.isArray(models)) return models.length ? models.join(', ') : 'no model call';
+  return report?.meta?.model || 'unknown';
 }
 
 /** The sum of what OpenRouter reported, or null when any call did not report its cost — an unknown is never a zero. */
@@ -181,7 +193,7 @@ export function renderHeader(report) {
   const lines = [];
   const counts = severityCounts(report);
   lines.push(
-    `QA review ${report.range.head.slice(0, 12)} — verdict ${report.verdict} — ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(', ')} — resolved ${report.resolved.length} — cost $${report.meta?.costUsd ?? 'unknown'} (${report.meta?.modelCalls ?? 0} calls, effort ${report.meta?.effort ?? '—'})`,
+    `QA review ${report.range.head.slice(0, 12)} — verdict ${report.verdict} — ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(', ')} — resolved ${report.resolved.length} — cost $${report.meta?.costUsd ?? 'unknown'} (${report.meta?.modelCalls ?? 0} calls, effort ${report.meta?.effort ?? '—'}) — reviewed by ${reviewedBy(report)}`,
   );
   if (readNothing(report)) lines.push(`NO REVIEW — the model read none of the code this run was to review. Nothing below is a judgement of it: the findings are carried unchanged from earlier reports.`);
   if (report.meta?.skipped) lines.push(`No model call: ${report.meta.skipped}`);

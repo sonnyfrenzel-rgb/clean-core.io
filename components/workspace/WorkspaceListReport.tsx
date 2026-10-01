@@ -21,10 +21,14 @@ import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/fireb
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { useWorkspaceRowFacts } from '@/hooks/useWorkspaceRowFacts';
+import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { t, showAllLabel, showFirstLabel } from '@/lib/cc-messages';
 import {
   deleteProjectSentence,
   rulesConfirmedLabel,
+  rowFindingsLabel,
+  rowLinesLabel,
+  rowRulesLabel,
   showingRowsLabel,
   wt,
 } from '@/lib/workspace-messages';
@@ -62,6 +66,7 @@ import CcTable, { type CcTableColumn, type CcTableRowSpec } from '@/components/c
 import CcTag from '@/components/cc/Tag';
 import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
 import InviteReaderDialog from '@/components/InviteReaderDialog';
+import StarterExamples from '@/components/StarterExamples';
 import LevelCounts from './LevelCounts';
 import OpenInvitations from './OpenInvitations';
 import WorkspaceRowActions from './WorkspaceRowActions';
@@ -158,6 +163,7 @@ const DEMO_ID = 'demo';
 
 export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }) {
   const router = useRouter();
+  const isS = useBreakpointS();
   const { profile, loading: profileLoading } = useUserProfile();
   const modelAvailability = useModelAvailability();
   const [user, setUser] = useState<User | null>(null);
@@ -498,6 +504,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
 
   const runnable = (row: WorkspaceRow) => !row.isDemo && row.access === 'own' && row.hasSource;
 
+  const phoneCards: React.ReactNode[] = [];
   const tableRows: CcTableRowSpec[] = visibleRows.map((row) => {
     const cell = runs[row.id];
     const rowFacts = factsOf(row);
@@ -637,6 +644,81 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
       );
     }
 
+    // Breakpoint S (§2.9, mockup s10): the same row as one compact card — name,
+    // the status sentence with its step bar and one "Next:" link, the row menu,
+    // and the facts as one muted line. No per-column labels.
+    const facts: React.ReactNode[] = [];
+    if (row.lines !== null) facts.push(<span key="l">{rowLinesLabel(number(row.lines))}</span>);
+    if (row.findings !== null) facts.push(<span key="f">{rowFindingsLabel(number(row.findings))}</span>);
+    if (analysed && rowFacts?.levels.state === 'ready') facts.push(<LevelCounts key="v" levels={rowFacts.levels.value} />);
+    if (analysed && rowFacts?.rules.state === 'ready') {
+      facts.push(<span key="r">{rowRulesLabel(rowFacts.rules.value.confirmed, rowFacts.rules.value.total)}</span>);
+    }
+    phoneCards.push(
+      <li
+        key={row.id}
+        data-workspace-card={row.id}
+        className="flex flex-col gap-2 rounded-cc-row border border-cc-line bg-cc-surface p-3"
+      >
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <Link
+              href={row.href}
+              data-workspace-open={row.id}
+              data-workspace-access={row.isDemo ? 'demo' : row.access}
+              className="block text-[15px] leading-snug font-bold text-cc-ink"
+            >
+              {row.name}
+            </Link>
+            {ownerLine ? <div className="mt-1">{ownerLine}</div> : null}
+          </div>
+          {cell?.phase === 'running' ? null : (
+            <WorkspaceRowActions
+              id={row.id}
+              name={row.name}
+              href={row.href}
+              owner={!row.isDemo && row.access === 'own'}
+              handlers={{
+                onInvite: () => setInviting({ id: row.id, name: row.name }),
+                onDuplicate: () => void duplicate(row),
+                onExport: () => void exportJson(row),
+                onDelete: () => setDeleting({ id: row.id, name: row.name }),
+              }}
+            />
+          )}
+        </div>
+        {cell?.phase === 'running' ? (
+          base.span
+        ) : row.isDemo ? (
+          <span className="text-[13px] leading-snug font-semibold text-cc-ink" data-project-sentence="">
+            {wt('myWorkspace.demoSentence')}
+          </span>
+        ) : (
+          <ProjectProgressCell
+            progress={projectProgress(projectById.get(row.id) ?? null)}
+            projectHref={`/project/${row.id}`}
+            id={row.id}
+          />
+        )}
+        {row.stale ? <CcProvenanceChip value="stale" note={row.stale.note} /> : null}
+        {/* Nothing measured yet: the sentence above already says so. */}
+        {facts.length > 0 ? (
+          <p
+            data-workspace-card-facts=""
+            className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-medium text-cc-ink-muted"
+          >
+            {facts.map((f, i) => (
+              <React.Fragment key={i}>
+                {i > 0 ? <span aria-hidden={true}>·</span> : null}
+                {f}
+              </React.Fragment>
+            ))}
+          </p>
+        ) : null}
+        {base.note ? <div>{base.note}</div> : null}
+      </li>,
+    );
+
     return base;
   });
 
@@ -661,6 +743,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           onNewProject={() => router.push('/admin/new-project')}
         />
 
+        <div data-workspace-projects="">
         <CcCard
           title={t('workspace.projects')}
           level={2}
@@ -749,7 +832,13 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
               <div className="mb-2">
                 <ProgressLegend />
               </div>
-              <CcTable caption={t('workspace.projects')} columns={COLUMNS} rows={tableRows} />
+              {isS ? (
+                <ul aria-label={t('workspace.projects')} className="m-0 flex list-none flex-col gap-2 p-0" data-workspace-cards="">
+                  {phoneCards}
+                </ul>
+              ) : (
+                <CcTable caption={t('workspace.projects')} columns={COLUMNS} rows={tableRows} />
+              )}
             </>
           )}
 
@@ -776,6 +865,12 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
 
           <p className="mt-3 mb-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{t('workspace.demoNote')}</p>
         </CcCard>
+        </div>
+
+        {/* Examples — the same gallery the old page and "New project" show
+            (owner feedback 01.10.2026): one recommended start, three next, the
+            rest behind "More examples". */}
+        {user ? <StarterExamples userId={user.uid} account={profile} /> : null}
 
         {/* Sharing — read access by invitation to one confirmed address, and
             nothing else (roadmap phase 5). What others shared with you, and

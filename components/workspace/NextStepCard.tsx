@@ -6,6 +6,7 @@ import CcLinkButton from '@/components/cc/LinkButton';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { NEXT_STEP_PROVENANCE, NOTHING_OPEN, type NextOpenPoint } from '@/lib/next-step';
 import type { WorkspaceView } from '@/lib/workspace-model';
+import { useWorkspaceLayer } from '@/hooks/useWorkspaceLayer';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { openStageLabel, wt } from '@/lib/workspace-messages';
 
@@ -49,6 +50,7 @@ export default function NextStepCard({
   projectId,
   view,
   level = 3,
+  variant = 'card',
 }: {
   point: NextOpenPoint | null;
   projectId: string;
@@ -64,7 +66,60 @@ export default function NextStepCard({
    * `h1` with no section around it, and an `h3` there skips a level.
    */
   level?: 2 | 3;
+  /**
+   * `bar` — the Business view's form (mockup s1): one row near the top of the
+   * content, the step on the left, the chip and the one primary button on the
+   * right. Same content, same data attributes, same single primary action; it
+   * only stops the card from standing as tall as the answer above it.
+   */
+  variant?: 'card' | 'bar';
 }) {
+  // The layer the reader is in travels with the link, so the way back returns to it.
+  const layer = useWorkspaceLayer();
+  if (variant === 'bar') {
+    const Heading = level === 2 ? 'h2' : 'h3';
+    return (
+      <div
+        id={WORKSPACE_RETURN.nextStep}
+        data-next-step=""
+        data-next-step-variant="bar"
+        className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-cc-card border border-l-4 border-cc-line border-l-cc-ink bg-cc-surface px-4 py-3 shadow-cc"
+      >
+        <div className="min-w-0 flex-1 basis-72">
+          <Heading className="m-0 text-[12px] font-semibold tracking-[0.04em] text-cc-ink-muted uppercase">
+            {wt('nextStep.title')}
+          </Heading>
+          {point === null ? (
+            <p data-next-step-state="none" className="m-0 mt-1 text-[15px] leading-snug font-bold text-cc-ink">
+              {NOTHING_OPEN}
+            </p>
+          ) : (
+            <div data-next-step-state="open" data-next-step-key={point.key}>
+              <p className="m-0 mt-1 text-[15px] leading-snug font-bold text-cc-ink">{point.label}</p>
+              <p data-next-step-reason="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                {point.reason}
+              </p>
+              <p data-next-step-selection="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                {point.selection}
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <CcProvenanceChip value={point?.provenance ?? NEXT_STEP_PROVENANCE} />
+          {point !== null ? (
+            <CcLinkButton
+              href={stageHref({ base: `/project/${projectId}`, path: point.path, view, from: WORKSPACE_RETURN.nextStep, layer })}
+              variant="primary"
+            >
+              {openStageLabel(point.label)}
+            </CcLinkButton>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div id={WORKSPACE_RETURN.nextStep} data-next-step="">
       <CcCard title={wt('nextStep.title')} level={level} meta={<CcProvenanceChip value={point?.provenance ?? NEXT_STEP_PROVENANCE} />}>
@@ -92,7 +147,7 @@ export default function NextStepCard({
             </p>
             <div className="mt-3">
               <CcLinkButton
-                href={stageHref({ base: `/project/${projectId}`, path: point.path, view, from: WORKSPACE_RETURN.nextStep })}
+                href={stageHref({ base: `/project/${projectId}`, path: point.path, view, from: WORKSPACE_RETURN.nextStep, layer })}
                 variant="primary"
               >
                 {openStageLabel(point.label)}

@@ -1,8 +1,8 @@
 name: Security Audit
 
 # The security agent (docs/SECURITY-AUDIT-AGENT.md): every new release on `main`
-# gets a full audit by a CISO and five consultants — DeepSeek V4.1 Flash over
-# OpenRouter, a pipeline of model calls without tools — and the report arrives in
+# gets a full audit by a CISO and five consultants — OpenRouter's Auto Router at cost
+# tier high, a pipeline of model calls without tools — and the report arrives in
 # the owner's inbox, in German. Only `main`: the self-test that used to run on
 # `dev` whenever the agent changed is gone (Sonny, 16.09.2026) — security is
 # tested thoroughly on releases, not sampled on pushes. The self-test mode stays

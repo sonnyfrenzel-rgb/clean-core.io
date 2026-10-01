@@ -30,7 +30,7 @@ import { RUNNER_NETWORK_PROBES } from './test-sandbox/protocol';
 /** Names of the probes, in the order the suite runs them. */
 export const SELFTEST_PROBES = [
   'no secret-named environment variables',
-  'no file outside the sandbox directory is readable',
+  'none of four fixed system files (/etc/hostname, /proc/self/environ, /proc/1/environ, /proc/1/cmdline) is readable',
   'no connection to www.google.com:443 or 8.8.8.8:53',
   'no connection to 169.254.169.254:80 from the sandbox',
   'no connection to 10.10.0.1:443',

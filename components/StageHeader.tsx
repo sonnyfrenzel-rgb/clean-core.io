@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { PHASES, type PhaseKey } from '@/lib/workflow-steps';
-import { stageBackLink } from '@/lib/workspace-back-href';
+import { stageBackLink, stageBackPlace } from '@/lib/workspace-back-href';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
 
@@ -62,6 +62,7 @@ const serverSearch = () => '';
 
 export default function StageHeader({
   stage,
+  projectName,
   title,
   eyebrow,
   icon,
@@ -71,6 +72,13 @@ export default function StageHeader({
 }: {
   /** The stage this header belongs to; its name comes from `PHASES`. */
   stage?: PhaseKey;
+  /**
+   * The project the tool works on. In the workspace a stage is a tool of that
+   * project (ADR-008), and the eyebrow says so — "Tool · Emergency purchase
+   * approval" (mockup s8) — so a reader who arrived by a link knows whose
+   * figures these are without the old seven-step bar above the title.
+   */
+  projectName?: string | null;
   /** A title of the stage's own, for the few headers that are not the stage's name (an empty state). */
   title?: React.ReactNode;
   /** Badges or labels that sit above the title, where a stage has them. */
@@ -103,6 +111,10 @@ export default function StageHeader({
   // dashboard (QA review of 472315d93455, f8d5367e0a00). The place is kept, so
   // nothing below moves when the link appears.
   const back = stageBackLink({ projectId, profileLoading, shell, search });
+  // Where the link leads, in words — the view and the layer the stage was
+  // opened from (mockup s8). Only for the workspace: the dashboard has neither.
+  const place = back.kind === 'link' && back.to === 'workspace' ? stageBackPlace(search) : null;
+  const toolEyebrow = shell && projectName ? projectName : null;
 
   return (
     <header
@@ -121,6 +133,12 @@ export default function StageHeader({
           className={`${BACK_LINK_CLASS} cc-no-print mb-3`}
         >
           <ArrowLeft size={16} aria-hidden="true" /> Back to workspace
+          {place ? (
+            <span data-stage-back-place="" className="font-medium">
+              {' · '}
+              {place}
+            </span>
+          ) : null}
         </Link>
       )}
 
@@ -130,6 +148,14 @@ export default function StageHeader({
         }
       >
         <div className="min-w-0">
+          {toolEyebrow && (
+            <p
+              data-stage-tool=""
+              className={`m-0 mb-1 cc-text-label text-cc-ink-muted break-words ${centred ? 'text-center' : ''}`}
+            >
+              Tool · {toolEyebrow}
+            </p>
+          )}
           {eyebrow && (
             <div className={`mb-2 flex flex-wrap items-center gap-2 ${centred ? 'justify-center' : ''}`}>
               {eyebrow}

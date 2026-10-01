@@ -7,7 +7,6 @@ import { adminSetDoc } from './helpers/admin-seed';
 import { CC_MESSAGES } from '../lib/cc-messages';
 import { WORKSPACE_MESSAGES } from '../lib/workspace-messages';
 import { DEMO_PROJECT_TITLE, DEMO_TAG } from '../lib/demo-marks';
-import { OBJECT_STATUS } from '../lib/object-status';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -184,7 +183,9 @@ test.describe('before the first project', () => {
     expect(await page.locator('[data-cc-empty-state="no-matches"]').count()).toBe(0);
     await expect(page.locator('[data-workspace-your-turn]')).toBeVisible();
     expect(
-      await page.locator('[data-cc-filter-bar]').count(),
+      // Scoped to the project list: the examples gallery below it has a
+      // filter bar of its own, over a list that is never empty.
+      await page.locator('[data-workspace-projects] [data-cc-filter-bar]').count(),
       'a filter bar over a table with nothing to filter',
     ).toBe(0);
   });
@@ -287,6 +288,24 @@ test.describe('with projects', () => {
     await expect(dialog.locator(`[data-open-invitation="${INVITE_ID}"]`)).toHaveCount(0, { timeout: 60000 });
   });
 
+  test('on a phone each project is one compact card, with no per-column labels', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, ADMIN_EMAIL);
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    const card = page.locator(`[data-workspace-card="${STAGED_ID}"]`);
+    await expect(card).toBeVisible({ timeout: 60000 });
+    // The table and its column labels are not rendered at all on S.
+    expect(await page.locator('[data-cc-workspace] [data-cc-table]').count()).toBe(0);
+    await expect(card.locator('[data-project-sentence]')).toContainText('Not analysed yet');
+    await expect(card.locator('[data-progress-bar]')).toBeVisible();
+    await expect(card.locator('[data-project-next]')).toHaveCount(1);
+    await expect(card.locator(`[data-workspace-more="${STAGED_ID}"]`)).toBeVisible();
+    // No sideways scroll.
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
   test('every column of a project that has done nothing says so', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await openWorkspace(page);
@@ -350,10 +369,10 @@ test.describe('with projects', () => {
     expect(before.length, 'the table rendered no rows at all').toBeGreaterThanOrEqual(3);
 
     // With projects of the reader's own there is something to filter.
-    const filter = page.locator('[data-cc-filter-bar]');
+    const filter = page.locator('[data-workspace-projects] [data-cc-filter-bar]');
     await expect(filter).toBeVisible();
 
-    await page.fill('input[type="search"]', 'zzz-nothing-matches-this-zzz');
+    await page.fill('[data-workspace-projects] input[type="search"]', 'zzz-nothing-matches-this-zzz');
     await expect(page.locator('[data-cc-empty-state="no-matches"]')).toBeVisible();
 
     // The distinction this test exists for: the no-match state never wears the
@@ -365,14 +384,14 @@ test.describe('with projects', () => {
     const noMatchTitle = await page.locator('[data-cc-no-match-title]').innerText();
     expect(noMatchTitle).toBe(CC_MESSAGES['workspace.noMatch']);
     expect(noMatchTitle).not.toBe(CC_MESSAGES['workspace.emptyTitle']);
-    await expect(page.locator('[data-cc-clear-filters]')).toBeVisible();
+    await expect(page.locator('[data-workspace-projects] [data-cc-clear-filters]')).toBeVisible();
 
     // And the count says how many of how many, in a live region.
-    await expect(page.locator('[data-cc-filter-count]')).toContainText(
+    await expect(page.locator('[data-workspace-projects] [data-cc-filter-count]')).toContainText(
       `0 ${CC_MESSAGES['filter.of']} ${before.length} ${CC_MESSAGES['workspace.noun']}`,
     );
 
-    await page.click('[data-cc-clear-filters]');
+    await page.click('[data-workspace-projects] [data-cc-clear-filters]');
     await expect(page.locator('[data-cc-empty-state="no-matches"]')).toHaveCount(0);
     await expect(page.locator('[data-cc-table] [data-cc-object-identifier-title]')).toHaveCount(
       before.length,
