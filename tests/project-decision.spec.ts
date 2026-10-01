@@ -640,6 +640,31 @@ test.describe('8.4 — the confirmation is the account\'s, and it is bound to th
     const withdrawn = { decision: { ...d, status: 'withdrawn', confirmation } };
     expect(validateProjectCommand({ command: 'record-decision-draft', decision: { ...d, fingerprint: undefined } }, withdrawn, actor).ok).toBe(true);
   });
+
+  test('a draft cannot bring its own confirmation, or a time that is not a time, into the timeline', () => {
+    // Carried QA finding 5724ea86c33b: a timeline row was read with any
+    // non-empty `at` and any known kind, so a browser could store a draft
+    // saying it had been confirmed, "tomorrow".
+    const d = decisionFixture();
+    const claimed = { at: '2026-09-24T08:00:00.000Z', kind: 'decision-confirmed', sentence: 'Decision confirmed.', account: 'owner@example.com' };
+    const confirmedInDraft = validateProjectCommand(
+      { command: 'record-decision-draft', decision: { ...d, fingerprint: undefined, timeline: [...d.timeline, claimed] } },
+      {},
+      actor,
+    );
+    expect(confirmedInDraft.ok).toBe(false);
+    if (!confirmedInDraft.ok) expect(confirmedInDraft.code).toBe('malformed-decision');
+
+    const notATime = validateProjectCommand(
+      { command: 'record-decision-draft', decision: { ...d, fingerprint: undefined, timeline: [{ ...d.timeline[0], at: 'tomorrow' }] } },
+      {},
+      actor,
+    );
+    expect(notATime.ok).toBe(false);
+
+    // The draft the server derives still passes.
+    expect(validateProjectCommand({ command: 'record-decision-draft', decision: { ...d, fingerprint: undefined } }, {}, actor).ok).toBe(true);
+  });
 });
 
 /* ========================================== the sentence, and where it lives */

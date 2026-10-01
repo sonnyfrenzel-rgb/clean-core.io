@@ -48,6 +48,7 @@ import {
   decisionCoverage,
   emptyProjectDecision,
   normaliseProjectDecision,
+  SERVER_LIFECYCLE_KINDS,
 } from '@/lib/project-decision';
 
 /* ------------------------------------------------------------------ fields */
@@ -675,6 +676,16 @@ export function validateProjectCommand(
     // needs, a fingerprint recomputed rather than believed.
     const draft = normaliseProjectDecision(body.decision);
     if (!draft.ok) return refuse(400, 'malformed-decision', draft.error);
+    // A draft does not carry its own confirmation or withdrawal: those entries
+    // are written by the commands below, and one that arrives over the wire is
+    // a claim the browser chose (carried QA finding 5724ea86c33b).
+    if (draft.decision.timeline.some((e) => SERVER_LIFECYCLE_KINDS.includes(e.kind))) {
+      return refuse(
+        400,
+        'malformed-decision',
+        'A decision draft cannot carry a confirmation or a withdrawal in its timeline. Nothing was written.',
+      );
+    }
     // A confirmed decision is not redrafted in place. Overwriting it would drop
     // the confirmation — who confirmed and when — without a withdrawal on the
     // record, and "a later change is a new revision, not an edit" (mockup
