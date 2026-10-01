@@ -66,10 +66,11 @@ test.describe('own code: choose, check, start', () => {
     await page.goto('/admin/new-project', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-cc-new-project]')).toBeVisible({ timeout: 60000 });
 
-    const first = page.locator('[data-example]').first();
-    await expect(first).toHaveAttribute('data-example', 'Z_MM_PO_APPROVAL');
-    await expect(first).toHaveAttribute('data-selected', 'true');
-    await expect(first.locator('[data-example-note]')).toHaveText('basis of the demo project');
+    // One recommended start, the demo object (mockup s14, owner feedback 01.10.2026).
+    const startHere = page.locator('[data-examples-tier="start-here"] [data-example-card]');
+    await expect(startHere).toHaveCount(1);
+    await expect(startHere).toHaveAttribute('data-example-card', 'Z_MM_PO_APPROVAL');
+    await expect(startHere.locator('[data-start-here-why]')).toBeVisible();
 
     await expect(page.locator('[data-new-project-skip]')).toHaveText('Skip intro');
     await expect(page.locator('[data-clean-core-diagram]')).toBeVisible();

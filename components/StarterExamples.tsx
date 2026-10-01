@@ -1,229 +1,289 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
-import { STARTER_EXAMPLES, loadStarterExample, type StarterExample } from '@/lib/starter-examples';
+import { loadStarterExample, type StarterExample } from '@/lib/starter-examples';
 import {
   COMMUNITY_QUOTA_FALLBACK,
   quotaExhausted,
+  runsAreSelfFunded,
   starterExampleIsFree,
   type QuotaSubject,
 } from '@/lib/run-quota-rule';
 import { describeStarterExampleCost, starterExampleFootnote } from '@/lib/run-cost';
+import { workspaceShellEnabled, type WorkspaceShellSubject } from '@/lib/workspace-shell';
+import { describeSnippet, exampleTiers, START_HERE_WHY, type ExampleSnippet } from '@/lib/example-catalog';
+import { EXAMPLE_SNIPPETS } from '@/lib/example-snippets';
 import { formatNumber } from '@/lib/format';
-import { Eye, FileCode2, HelpCircle, LoaderCircle, Play } from 'lucide-react';
+import { Eye, FileCode2, Info, Play } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
+import CcDisclosure from '@/components/cc/Disclosure';
 import CcFilterBar from '@/components/cc/FilterBar';
-import CcIconButton from '@/components/cc/IconButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcSelect from '@/components/cc/Select';
 import CcTag from '@/components/cc/Tag';
 import { CcNoMatches } from '@/components/cc/EmptyState';
 
 /**
- * "Try it with an example" — the one example gallery of "My workspace".
+ * "Try it with an example" — the one example gallery, on every page that
+ * offers examples ("My workspace" and "New project").
  *
- * Block D, D.22a (UX-063, UX 2cf6bb463ace): the dashboard used to carry two
- * example libraries that competed with each other — this panel, and a second
- * "ABAP / Legacy Code Database (Safe Examples)" further down with six short
- * snippets, its own category chips, its own search and its own start dialog.
- * They are one gallery now, with one filter bar, and nothing either of them
- * could do is gone: the shipped examples still start in one click, the short
- * snippets still open their full code and still start a named project.
+ * Owner feedback of 01.10.2026: fourteen cards at once, two card styles and a
+ * filter bar before the reader knows anything was too much for a first visit.
+ * So the gallery has three tiers (`lib/example-catalog.ts`): one recommended
+ * start, three next examples by what they show, and everything else — shipped
+ * examples and short snippets in the same card — behind "More examples", where
+ * the search and the filter live. Every card has one action pattern: primary
+ * "Start", secondary "View code". Nothing that could be started before is gone.
  *
  * Roadmap 0.9 / ADR-039: each *shipped* example costs nothing the first time an
- * account runs it — reaching a first result must not eat one of the five runs
- * somebody needs for their own code. Running the same example again is an
- * ordinary analysis, and this screen says so before the click rather than
- * after it. What is free and what is not is read from the account's
- * server-written record through `lib/run-quota-rule`; the decision itself is
- * re-taken on the server from the fingerprint of the source, so nothing said
- * here grants anything. A short snippet is not one of those examples: it is an
- * ordinary analysis from the first run, and its tag says so.
+ * account runs it, and the screen says before the click what a repeat costs. A
+ * short snippet is an ordinary analysis from the first run, and its tag says
+ * so. Both decisions are re-taken on the server from the source's fingerprint;
+ * nothing said here grants anything.
  */
 
-/** A short code snippet shipped with the dashboard. Starts as a named project. */
-export interface ExampleSnippet {
-  id: string;
-  name: string;
-  code: string;
-}
+type Account = (QuotaSubject & WorkspaceShellSubject) | null | undefined;
 
-type CategoryId = 'reports' | 'rfc-apis' | 'db-operations' | 'oo-abap' | 'uncategorized';
-
-const CATEGORIES: readonly { id: CategoryId; label: string; description: string }[] = [
-  { id: 'reports', label: 'Reports & Output', description: 'Classic reporting logic, output grids, and list formatting.' },
-  { id: 'rfc-apis', label: 'Function Modules & RFC APIs', description: 'Remote-enabled interfaces, RFC connections, and BAPI mappings.' },
-  { id: 'db-operations', label: 'Database Access & CRUD Operations', description: 'Open SQL statements, internal tables manipulation, and database operations.' },
-  { id: 'oo-abap', label: 'OO-ABAP & Class Methods', description: 'Object-oriented classes, interfaces, and local methods implementations.' },
-  { id: 'uncategorized', label: 'General Legacy Code', description: 'Miscellaneous custom uploads and generic legacy modules.' },
-];
-
-/** The same keyword sort the snippet database used, now over both kinds. */
-function categoryOf(name: string, text: string): CategoryId {
-  const n = name.toLowerCase();
-  const c = text.toLowerCase();
-  if (n.includes('rfc') || n.includes('bapi') || n.includes('function') || c.includes('call function') || c.includes('bapi')) return 'rfc-apis';
-  if (n.includes('report') || n.includes('alv') || n.includes('write') || c.includes('write:') || c.includes('alv')) return 'reports';
-  if (n.includes('select') || n.includes('db') || n.includes('table') || c.includes('select ') || c.includes('insert ') || c.includes('update ')) return 'db-operations';
-  if (n.includes('class') || n.includes('method') || c.includes('class ') || c.includes('method ')) return 'oo-abap';
-  return 'uncategorized';
-}
-
-type Kind = '' | 'example' | 'snippet';
+type Item =
+  | { kind: 'example'; key: string; example: StarterExample; goal?: string }
+  | { kind: 'snippet'; key: string; snippet: ExampleSnippet };
 
 const lines = (n: number) => `${formatNumber(n) ?? n} lines`;
 
+function objectName(snippet: ExampleSnippet): string {
+  return snippet.name.replace(/\.(abap|txt)$/i, '');
+}
+
 export default function StarterExamples({
   userId,
-  quota,
-  snippets = [],
-  onStartSnippet,
-  onViewCode,
+  account,
+  heading = true,
 }: {
   userId: string;
-  quota: QuotaSubject | null | undefined;
-  /** Short snippets that start as a named project (the page owns that dialog). */
-  snippets?: readonly ExampleSnippet[];
-  onStartSnippet?: (snippet: ExampleSnippet) => void;
-  onViewCode?: (title: string, code: string) => void;
+  account: Account;
+  /** `false` where the page around it already says what this is ("New project"). */
+  heading?: boolean;
 }) {
+  const router = useRouter();
+  const tiers = useMemo(() => exampleTiers(), []);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [limitHit, setLimitHit] = useState(false);
-  const [aboutOpen, setAboutOpen] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<{ title: string; code: string | null } | null>(null);
+  const [costOpen, setCostOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<CategoryId | ''>('');
-  const [kind, setKind] = useState<Kind>('');
-  const router = useRouter();
-  const db = getDb();
+  const [kind, setKind] = useState<'' | 'example' | 'snippet'>('');
+  const costId = useId();
 
-  const limit = quota?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK;
-  const atLimit = quotaExhausted(quota);
+  const limit = account?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK;
+  const atLimit = quotaExhausted(account);
 
-  const start = async (example: StarterExample) => {
-    if (busy) return;
+  const moreItems: Item[] = useMemo(
+    () => [
+      ...tiers.more.map((example) => ({ kind: 'example' as const, key: example.file, example })),
+      ...EXAMPLE_SNIPPETS.map((snippet) => ({ kind: 'snippet' as const, key: snippet.id, snippet })),
+    ],
+    [tiers.more],
+  );
+
+  /** Free for a shipped example's first run; everything else uses one run. */
+  const selfFunded = runsAreSelfFunded(account);
+  const free = (item: Item) =>
+    selfFunded || (item.kind === 'example' && starterExampleIsFree(account, item.example.name));
+
+  const create = async (item: Item) => {
+    setBusy(item.key);
     setConfirming(null);
-
-    // Only a repeat costs anything, so only a repeat can be stopped by the limit.
-    if (!starterExampleIsFree(quota, example.name) && atLimit) {
-      setLimitHit(true);
-      return;
-    }
-
-    setBusy(example.file);
+    setFailed(null);
     try {
-      const legacyCode = await loadStarterExample(example.file);
-      const docRef = await addDoc(collection(db, 'projects'), {
-        name: example.name,
+      const isExample = item.kind === 'example';
+      const legacyCode = isExample ? await loadStarterExample(item.example.file) : item.snippet.code;
+      const docRef = await addDoc(collection(getDb(), 'projects'), {
+        name: isExample ? item.example.name : objectName(item.snippet),
         status: 'uploaded',
         legacyCode,
         userId,
         createdAt: serverTimestamp(),
+        fromExample: true,
       });
-      router.push(`/project/${docRef.id}/analyze`);
+      // The same door "New project" uses: the workspace with its first look
+      // where the new interface is on, the Analyze stage everywhere else.
+      router.push(workspaceShellEnabled(account) ? `/project/${docRef.id}?first=1` : `/project/${docRef.id}/analyze`);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'projects');
+      setFailed('The project could not be created. Nothing was saved — try again.');
       setBusy(null);
     }
   };
 
-  /** A first run goes straight through; a repeat has to be told what it costs. */
-  const pick = (example: StarterExample) => {
+  /** A free first run goes straight through; anything that uses a run is told so first. */
+  const start = (item: Item) => {
     if (busy) return;
-    if (starterExampleIsFree(quota, example.name)) {
-      void start(example);
+    if (free(item)) {
+      void create(item);
       return;
     }
-    setConfirming(confirming === example.name ? null : example.name);
+    if (atLimit) {
+      setLimitHit(true);
+      return;
+    }
+    setConfirming(confirming === item.key ? null : item.key);
+  };
+
+  const view = async (item: Item) => {
+    if (item.kind === 'snippet') {
+      setViewing({ title: item.snippet.name, code: item.snippet.code });
+      return;
+    }
+    setViewing({ title: item.example.name, code: null });
+    try {
+      const code = await loadStarterExample(item.example.file);
+      setViewing({ title: item.example.name, code });
+    } catch {
+      setViewing({ title: item.example.name, code: '' });
+    }
   };
 
   const needle = search.trim().toLowerCase();
-  const matches = useCallback(
-    (name: string, text: string, itemKind: Exclude<Kind, ''>) => {
-      if (kind && kind !== itemKind) return false;
-      if (category && categoryOf(name, text) !== category) return false;
-      return !needle || `${name} ${text}`.toLowerCase().includes(needle);
-    },
-    [kind, category, needle],
-  );
-
-  const shownExamples = useMemo(
-    () => STARTER_EXAMPLES.filter((e) => matches(e.name, `${e.summary} ${e.demonstrates}`, 'example')),
-    [matches],
-  );
-  const shownSnippets = useMemo(
-    () => snippets.filter((s) => matches(s.name, s.code, 'snippet')),
-    [snippets, matches],
-  );
-  const total = STARTER_EXAMPLES.length + snippets.length;
-  const shown = shownExamples.length + shownSnippets.length;
-  const active = needle.length > 0 || category !== '' || kind !== '';
+  const shownMore = moreItems.filter((item) => {
+    if (kind && kind !== item.kind) return false;
+    if (!needle) return true;
+    const text =
+      item.kind === 'example'
+        ? `${item.example.name} ${item.example.summary} ${item.example.demonstrates}`
+        : `${item.snippet.name} ${item.snippet.code}`;
+    return text.toLowerCase().includes(needle);
+  });
   const clear = () => {
     setSearch('');
-    setCategory('');
     setKind('');
   };
 
-  const presentCategories = CATEGORIES.filter(
-    (cat) =>
-      STARTER_EXAMPLES.some((e) => categoryOf(e.name, `${e.summary} ${e.demonstrates}`) === cat.id) ||
-      snippets.some((s) => categoryOf(s.name, s.code) === cat.id),
-  );
+  const renderCard = (item: Item, primary = false) => {
+    const isBusy = busy === item.key;
+    const name = item.kind === 'example' ? item.example.name : objectName(item.snippet);
+    const described = item.kind === 'snippet' ? describeSnippet(item.snippet.code) : null;
+    const cost = item.kind === 'example' ? describeStarterExampleCost(account, item.example.name) : null;
+    const repeatWarning =
+      item.kind === 'example'
+        ? cost?.rerunWarning
+        : `A short snippet is an ordinary analysis: starting it uses 1 of your ${limit} free analysis runs once the analysis completes.`;
+    return (
+      <li
+        key={item.key}
+        data-example-kind={item.kind}
+        data-example-card={name}
+        className={
+          'flex min-w-0 flex-col gap-2 rounded-cc-card border p-4 ' +
+          (primary ? 'border-cc-ink bg-cc-surface' : 'border-cc-line bg-cc-surface')
+        }
+      >
+        {item.kind === 'example' && item.goal ? (
+          <span data-example-goal="" className="cc-text-label text-cc-ink">
+            {item.goal}
+          </span>
+        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <FileCode2 size={16} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
+          <span data-testid="starter-example-name" className="min-w-0 truncate font-cc-mono cc-text-identifier text-cc-ink">
+            {name}
+          </span>
+          <CcTag>{lines(item.kind === 'example' ? item.example.lines : (described?.lines ?? 0))}</CcTag>
+          {item.kind === 'example' ? (
+            <span data-testid={cost?.free ? 'starter-example-free' : 'starter-example-ran-before'}>
+              <CcTag>{cost?.badge}</CcTag>
+            </span>
+          ) : (
+            <CcTag>{selfFunded ? 'Short snippet' : 'Short snippet · uses a run'}</CcTag>
+          )}
+        </div>
+        <p className="m-0 cc-text-cell text-cc-ink">
+          {item.kind === 'example' ? item.example.summary : (described?.title ?? `${described?.kind} ${name}`)}
+        </p>
+        <p className="m-0 cc-text-meta text-cc-ink-muted">
+          <span className="text-cc-ink">Shows: </span>
+          {item.kind === 'example'
+            ? item.example.demonstrates
+            : // Without a header comment the kind already heads the card; it is not said twice.
+              [described?.title ? described.kind : null, ...(described?.shows ?? [])].filter(Boolean).join(' · ')}
+        </p>
+        {primary ? (
+          <p data-start-here-why="" className="m-0 cc-text-meta text-cc-ink">
+            {START_HERE_WHY}
+          </p>
+        ) : null}
+        <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
+          <CcButton
+            variant={primary ? 'primary' : 'secondary'}
+            density={primary ? 'cozy' : 'compact'}
+            busy={isBusy}
+            disabled={!!busy && !isBusy}
+            icon={<Play size={16} aria-hidden={true} />}
+            onClick={() => start(item)}
+            aria-expanded={confirming === item.key || undefined}
+            aria-label={`Start ${name}`}
+            data-example-start={name}
+          >
+            Start
+          </CcButton>
+          <CcButton
+            variant="ghost"
+            density={primary ? 'cozy' : 'compact'}
+            icon={<Eye size={16} aria-hidden={true} />}
+            onClick={() => void view(item)}
+            aria-label={`View the code of ${name}`}
+            data-example-view={name}
+          >
+            View code
+          </CcButton>
+        </div>
+        {confirming === item.key && repeatWarning ? (
+          <div data-testid="starter-example-rerun-warning">
+            <CcMessageStrip
+              state="warning"
+              actions={
+                <>
+                  <CcButton variant="ghost" onClick={() => setConfirming(null)}>
+                    Cancel
+                  </CcButton>
+                  <CcButton variant="secondary" onClick={() => void create(item)}>
+                    {item.kind === 'example' ? 'Run again' : 'Start anyway'}
+                  </CcButton>
+                </>
+              }
+            >
+              {repeatWarning}
+            </CcMessageStrip>
+          </div>
+        ) : null}
+      </li>
+    );
+  };
+
+  const startHere: Item = { kind: 'example', key: tiers.startHere.file, example: tiers.startHere };
 
   return (
     <section
       data-testid="starter-examples"
-      aria-labelledby="starter-examples-title"
-      className="w-full rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc sm:p-6"
+      aria-labelledby={heading ? 'starter-examples-title' : undefined}
+      aria-label={heading ? undefined : 'Examples'}
+      className={heading ? 'w-full rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc sm:p-6' : 'w-full'}
     >
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
+      {heading ? (
+        <div className="mb-4">
           <h2 id="starter-examples-title" className="m-0 cc-text-h2 text-cc-ink">
             Try it with an example
           </h2>
-          <p className="mt-1 max-w-2xl cc-text-cell text-cc-ink-muted">
-            No need to fetch code out of your own system first. The examples are realistic, fictional legacy
-            reports — the same ones the analysis engine is regression-tested against. Pick one and you are in
-            the analysis in seconds. The short snippets start a project you name yourself.
+          <p className="mt-1 mb-0 max-w-2xl cc-text-cell text-cc-ink-muted">
+            Fictional, realistic legacy ABAP — no code of your own needed. One click and you are in the analysis.
           </p>
         </div>
-        <CcIconButton label="What are these examples for?" title="What are these examples for?" onClick={() => setAboutOpen(true)}>
-          <HelpCircle size={16} aria-hidden={true} />
-        </CcIconButton>
-      </div>
-
-      <div className="mb-4">
-        <CcFilterBar
-          noun="examples"
-          shown={shown}
-          total={total}
-          search={search}
-          onSearch={setSearch}
-          active={active}
-          onClear={clear}
-        >
-          <CcSelect<CategoryId | 'all'>
-            label="Module type"
-            value={category || 'all'}
-            onChange={(v) => setCategory(v === 'all' ? '' : v)}
-            options={[{ value: 'all', label: 'All module types' }, ...presentCategories.map((c) => ({ value: c.id, label: c.label }))]}
-          />
-          <CcSelect<'all' | 'example' | 'snippet'>
-            label="Kind"
-            value={kind || 'all'}
-            onChange={(v) => setKind(v === 'all' ? '' : v)}
-            options={[
-              { value: 'all', label: 'Examples and snippets' },
-              { value: 'example', label: 'Examples' },
-              { value: 'snippet', label: 'Short snippets' },
-            ]}
-          />
-        </CcFilterBar>
-      </div>
+      ) : null}
 
       {limitHit ? (
         <div className="mb-4">
@@ -237,191 +297,120 @@ export default function StarterExamples({
               </CcButton>
             }
           >
-            {`You've used all ${limit} free transformations. Add your own Gemini API key in settings for unlimited runs — Clean-Core.io stays free.`}
+            {`You've used all ${limit} free analysis runs. Add your own Gemini API key in Settings for unlimited runs — Clean-Core.io stays free.`}
+          </CcMessageStrip>
+        </div>
+      ) : null}
+      {failed ? (
+        <div className="mb-4">
+          <CcMessageStrip state="error" announce>
+            {failed}
           </CcMessageStrip>
         </div>
       ) : null}
 
-      {shown === 0 ? (
-        <CcNoMatches
-          title="No examples match these filters"
-          reason="Every example is still here — the filters are hiding them."
-          onClear={clear}
-        />
-      ) : (
-        <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 lg:grid-cols-2">
-          {shownExamples.map((example) => {
-            // One source for the two badge wordings and the re-run sentence
-            // (`lib/run-cost.ts`), so that "New project" cannot grow a third
-            // spelling of the same rule.
-            const cost = describeStarterExampleCost(quota, example.name);
-            const isBusy = busy === example.file;
-            return (
-              <li key={example.file} data-example-kind="example" className="flex flex-col gap-2">
-                <div
-                  className={
-                    'rounded-cc-row border p-3 ' +
-                    (isBusy ? 'border-cc-ink bg-cc-surface-muted' : 'border-cc-line bg-cc-surface hover:bg-cc-surface-muted')
-                  }
-                >
-                  <button
-                    type="button"
-                    onClick={() => pick(example)}
-                    disabled={!!busy}
-                    aria-expanded={confirming === example.name}
-                    aria-busy={isBusy || undefined}
-                    className="flex w-full cursor-pointer items-start gap-3 text-left disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <span className="mt-1 shrink-0 text-cc-ink-muted">
-                      {isBusy ? (
-                        <LoaderCircle size={16} aria-hidden={true} className="motion-safe:animate-spin" />
-                      ) : (
-                        <FileCode2 size={16} aria-hidden={true} />
-                      )}
-                    </span>
-                    <span className="flex min-w-0 flex-1 flex-col gap-1">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span
-                          data-testid="starter-example-name"
-                          className="truncate font-cc-mono cc-text-identifier text-cc-ink"
-                        >
-                          {example.name}
-                        </span>
-                        <CcTag>{lines(example.lines)}</CcTag>
-                        {cost.free ? (
-                          // UX-116: the badge says the whole rule — first run free,
-                          // every later one uses one of the five runs.
-                          <span data-testid="starter-example-free">
-                            <CcTag>{cost.badge}</CcTag>
-                          </span>
-                        ) : (
-                          <span data-testid="starter-example-ran-before">
-                            <CcTag>{cost.badge}</CcTag>
-                          </span>
-                        )}
-                      </span>
-                      <span className="cc-text-cell text-cc-ink">{example.summary}</span>
-                      <span className="cc-text-meta text-cc-ink-muted">
-                        <span className="text-cc-ink">Shows: </span>
-                        {example.demonstrates}
-                      </span>
-                    </span>
-                    <Play size={16} aria-hidden={true} className="mt-1 shrink-0 text-cc-ink-muted" />
-                  </button>
-                </div>
+      <div className="flex flex-col gap-4">
+        <div data-examples-tier="start-here" className="flex flex-col gap-2">
+          <h3 className="m-0 cc-text-label text-cc-ink-muted">Start here</h3>
+          <ul className="m-0 list-none p-0">
+            {renderCard(startHere, true)}
+          </ul>
+        </div>
 
-                {confirming === example.name && cost.rerunWarning ? (
-                  <div data-testid="starter-example-rerun-warning">
-                    <CcMessageStrip
-                      state="warning"
-                      actions={
-                        <>
-                          <CcButton variant="ghost" onClick={() => setConfirming(null)}>
-                            Cancel
-                          </CcButton>
-                          <CcButton variant="secondary" onClick={() => void start(example)}>
-                            Run again
-                          </CcButton>
-                        </>
-                      }
-                    >
-                      {cost.rerunWarning}
-                    </CcMessageStrip>
-                  </div>
-                ) : null}
-              </li>
-            );
-          })}
+        <div data-examples-tier="next" className="flex flex-col gap-2">
+          <h3 className="m-0 cc-text-label text-cc-ink-muted">Next, by what you want to see</h3>
+          <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-3">
+            {tiers.next.map(({ example, goal }) => (
+              renderCard({ kind: 'example', key: example.file, example, goal })
+            ))}
+          </ul>
+        </div>
 
-          {shownSnippets.map((snippet) => {
-            const lineCount = snippet.code.split('\n').length;
-            const cat = CATEGORIES.find((c) => c.id === categoryOf(snippet.name, snippet.code)) ?? CATEGORIES[4];
-            return (
-              <li
-                key={snippet.id}
-                data-example-kind="snippet"
-                className="flex flex-col gap-2 rounded-cc-row border border-cc-line bg-cc-surface p-3"
+        <div data-examples-more="">
+          <CcDisclosure title="More examples" count={moreItems.length} level={3}>
+            <div className="flex flex-col gap-3 pt-2">
+              <CcFilterBar
+                noun="examples"
+                shown={shownMore.length}
+                total={moreItems.length}
+                search={search}
+                onSearch={setSearch}
+                active={needle.length > 0 || kind !== ''}
+                onClear={clear}
               >
-                <div className="flex items-start gap-3">
-                  <span className="mt-1 shrink-0 text-cc-ink-muted">
-                    <FileCode2 size={16} aria-hidden={true} />
-                  </span>
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate font-cc-mono cc-text-identifier text-cc-ink" title={snippet.name}>
-                        {snippet.name}
-                      </span>
-                      <CcTag>{lines(lineCount)}</CcTag>
-                      <CcTag>Short snippet · uses a run</CcTag>
-                    </div>
-                    <span className="cc-text-cell text-cc-ink">{cat.label}</span>
-                    <span className="cc-text-meta text-cc-ink-muted">{cat.description}</span>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  {onViewCode ? (
-                    <CcButton
-                      variant="ghost"
-                      icon={<Eye size={16} aria-hidden={true} />}
-                      onClick={() => onViewCode(snippet.name, snippet.code)}
-                      aria-label={`View the full code of ${snippet.name}`}
-                    >
-                      View code
-                    </CcButton>
-                  ) : null}
-                  {onStartSnippet ? (
-                    <CcButton
-                      variant="secondary"
-                      icon={<Play size={16} aria-hidden={true} />}
-                      onClick={() => onStartSnippet(snippet)}
-                      aria-label={`Start a project from ${snippet.name}`}
-                    >
-                      Start project
-                    </CcButton>
-                  ) : null}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                <CcSelect<'all' | 'example' | 'snippet'>
+                  label="Kind"
+                  value={kind || 'all'}
+                  onChange={(v) => setKind(v === 'all' ? '' : v)}
+                  options={[
+                    { value: 'all', label: 'Examples and snippets' },
+                    { value: 'example', label: 'Examples' },
+                    { value: 'snippet', label: 'Short snippets' },
+                  ]}
+                />
+              </CcFilterBar>
+              {shownMore.length === 0 ? (
+                <CcNoMatches
+                  title="No examples match these filters"
+                  reason="Every example is still here — the filters are hiding them."
+                  onClear={clear}
+                />
+              ) : (
+                <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-2">
+                  {shownMore.map((item) => (
+                    renderCard(item)
+                  ))}
+                </ul>
+              )}
+            </div>
+          </CcDisclosure>
+        </div>
+      </div>
 
-      <p className="mt-4 mb-0 cc-text-meta text-cc-ink-muted">{starterExampleFootnote(quota)}</p>
+      {/* The cost rule in one line; the full rule one click away. */}
+      <div data-examples-cost="" className="relative mt-4 flex flex-wrap items-center gap-2">
+        <p className="m-0 cc-text-meta text-cc-ink-muted">
+          Free the first time for each example; a snippet or a repeat uses a run.
+        </p>
+        <button
+          type="button"
+          aria-expanded={costOpen}
+          aria-controls={costId}
+          onClick={() => setCostOpen((v) => !v)}
+          className="inline-flex items-center gap-1 rounded-cc-row cc-text-meta font-semibold text-cc-brand-strong underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+        >
+          <Info size={14} aria-hidden={true} />
+          How runs are counted
+        </button>
+        {costOpen ? (
+          <p id={costId} role="note" className="m-0 w-full max-w-3xl rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 cc-text-meta text-cc-ink">
+            {starterExampleFootnote(account)}
+          </p>
+        ) : null}
+      </div>
 
       <CcDialog
-        open={aboutOpen}
-        onClose={() => setAboutOpen(false)}
-        title="What are these examples for?"
-        lead="Try Clean-Core.io without uploading your own SAP source code first."
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        title={viewing?.title ?? ''}
+        size="wide"
         actions={
-          <CcButton variant="primary" onClick={() => setAboutOpen(false)}>
-            Got it
+          <CcButton variant="primary" onClick={() => setViewing(null)}>
+            Close
           </CcButton>
         }
       >
-        <div className="flex flex-col gap-3">
-          <p className="m-0">
-            Concerns about uploading your own sensitive ABAP directly are natural. These examples exist to remove
-            that entry barrier: explore the platform with fictional code first.
+        {viewing?.code === null ? (
+          <p className="m-0 cc-text-cell text-cc-ink-muted" role="status">
+            Loading the code…
           </p>
-          <p className="m-0 font-semibold">What you can try with them:</p>
-          <ul className="m-0 flex list-disc flex-col gap-2 pl-4">
-            <li>
-              <strong>Run the pipeline:</strong> start a project and follow the analysis stage by stage.
-            </li>
-            <li>
-              <strong>Understand the target architecture:</strong> see how legacy ABAP is structured into a modern
-              service, complete with CDS schemas and BTP bindings.
-            </li>
-            <li>
-              <strong>Try sandbox testing:</strong> run the generated tests in a restricted runner with live logs.
-            </li>
-          </ul>
-          <p className="m-0 border-t border-cc-line pt-3 cc-text-meta text-cc-ink-muted">
-            On data privacy: uploads are processed by the server and stored in your private workspace; nothing is
-            shared with other accounts.
-          </p>
-        </div>
+        ) : viewing?.code === '' ? (
+          <p className="m-0 cc-text-cell text-cc-ink-muted">The code could not be loaded.</p>
+        ) : (
+          <pre data-example-code="" className="m-0 max-h-[60vh] overflow-auto rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 font-cc-mono text-[12px] text-cc-ink">
+            {viewing?.code}
+          </pre>
+        )}
       </CcDialog>
     </section>
   );

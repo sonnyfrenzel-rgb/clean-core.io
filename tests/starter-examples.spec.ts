@@ -74,8 +74,10 @@ test.describe('Dashboard — starter examples', () => {
     const panel = page.getByTestId('starter-examples');
     await expect(panel.getByRole('heading', { name: /Try it with an example/i })).toBeVisible({ timeout: 30000 });
 
-    // Every shipped example is offered, including the large one.
-    const names = panel.getByTestId('starter-example-name');
+    // Every shipped example is offered, including the large one — the first
+    // four up front, the rest one click away under "More examples".
+    await panel.locator('[data-examples-more] button').first().click();
+    const names = panel.locator('[data-example-kind="example"]').getByTestId('starter-example-name');
     await expect(names).toHaveCount(8);
     expect(STARTER_EXAMPLES).toHaveLength(8);
     await expect(names.filter({ hasText: /^Z_MATERIAL_STOCK_CALC$/ })).toBeVisible();
@@ -90,7 +92,7 @@ test.describe('Dashboard — starter examples', () => {
     await expect(panel.getByText('1,000 lines').first()).toBeVisible();
 
     // One click must create the project AND carry the source into the analyze stage.
-    await names.filter({ hasText: /^Z_MATERIAL_STOCK_CALC$/ }).click();
+    await panel.locator('[data-example-start="Z_MATERIAL_STOCK_CALC"]').click();
     await page.waitForURL(/\/project\/[^/]+\/analyze/, { timeout: 45000 });
 
     // The code has to be there — a project that lands empty is the failure mode
