@@ -87,6 +87,21 @@ export function severityChartColor(value: SeverityValue): ChartColor {
 }
 
 /**
+ * The classes of one severity mark in a chart — a bar segment, a donut arc, a
+ * legend swatch, a dot. Critical and High share the error colour (ADR-049), so
+ * High is drawn lighter to keep the two apart; the word beside the mark is
+ * still the carrier. A value the engine did not name is neutral.
+ *
+ * Here and not at the call site: a component that spells a severity word next
+ * to a colour class is painting a severity freehand (DESIGN.md §4.1).
+ */
+export function severityChartMark(value: SeverityValue | null | undefined, part: 'bg' | 'fill' | 'stroke'): string {
+  if (!value) return STATE_CHART_COLORS.neutral[part];
+  const mark = severityChartColor(value)[part];
+  return value === 'High' ? `${mark} opacity-70` : mark;
+}
+
+/**
  * The colour of a clean-core level in a chart — read from
  * `lib/clean-core-level.ts`. `Unknown` is not a level; a chart shows it as
  * `NOT_DETERMINED_CHART`, not as a fifth colour.

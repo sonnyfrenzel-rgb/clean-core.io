@@ -497,7 +497,14 @@ export default function TcoCalculatorPage() {
                   </ChecklistLine>
                   <ChecklistLine
                     row={row('loc')}
-                    summary={`${formatNumber(loc)} LoC${row('loc').detail === 'from your source' ? ' from your source' : ''}`}
+                    summary={
+                      <>
+                        {/* The line count on the row itself, visible without opening it — the
+                            only form the source takes on this page (preservation register). */}
+                        <span data-stage-output="legacyCode">{formatNumber(loc)} LoC</span>
+                        {row('loc').detail === 'from your source' ? ' from your source' : ''}
+                      </>
+                    }
                   >
                     <RangeField
                       label="Lines of custom code"
@@ -507,7 +514,7 @@ export default function TcoCalculatorPage() {
                       step={500}
                       value={loc}
                       onChange={setLoc}
-                      readout={<span data-stage-output="legacyCode">{formatNumber(loc)} LoC</span>}
+                      readout={<span>{formatNumber(loc)} LoC</span>}
                       valueText={`${formatNumber(loc)} LoC`}
                     />
                   </ChecklistLine>

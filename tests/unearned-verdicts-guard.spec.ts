@@ -91,7 +91,15 @@ test.describe('delivery reports artefacts rather than assuming them', () => {
   test('"Ready for Deployment" is not asserted unconditionally', () => {
     const jsx = rendered(REL);
     expect(jsx).not.toContain('Ready for Deployment');
-    expect(jsx).toContain('Incomplete');
+    // Since the object page (2d4c1755) the handover state is the first facet
+    // of the header, computed in `lib/handover.ts` rather than spelled in the
+    // page; the old "Incomplete" branch is that facet's "Not handed over".
+    // Readiness still has to be earned: only `delivery.done` may say it, and
+    // every other path says the handover has not happened.
+    expect(jsx).toContain('handoverFacets(');
+    const facets = rendered('lib/handover.ts');
+    expect(facets).not.toContain('Ready for Deployment');
+    expect(facets).toMatch(/:\s*delivery\.done\s*\?\s*\{[\s\S]{0,400}?'Ready to hand over'[\s\S]{0,400}?\}\s*:\s*\{[\s\S]{0,100}?value: 'Not handed over'/);
   });
 
   test('the integrity report checks the artefacts it reports on', () => {

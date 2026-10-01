@@ -236,15 +236,19 @@ function WideCanvas({ model, targetLine, selected, onSelect, description }: Arch
         const y = bTop + 64 + Math.floor(i / 2) * 56;
         const fill = s.tag === 'odata' ? C.odataBg : s.tag === 'cds' ? C.cdsBg : C.surface;
         const line = s.tag === 'odata' ? C.odataLine : s.tag === 'cds' ? C.cdsLine : C.line;
-        const tagFill = s.tag === 'odata' ? C.odata : s.tag === 'cds' ? C.cds : C.muted;
+        // The tag is ink on a tint with the API's colour as its edge: white on
+        // the solid chart colour fell below the contrast floor for CDS (teal)
+        // and is read by the rendered guard against the page, not the pill.
+        const tagFill = s.tag === 'odata' ? mix('--cc-chart-2', 16) : s.tag === 'cds' ? mix('--cc-chart-3', 16) : C.page;
+        const tagEdge = s.tag === 'odata' ? C.odata : s.tag === 'cds' ? C.cds : C.line;
         const tag = tagLabel(s);
         const tagW = tag.length * 7 + 12;
         const note = s.confidence && s.confidence !== 'Verified' ? ` · ${s.confidence.toLowerCase()}` : '';
         return (
           <Pick key={s.key} k={s.key} label={`${s.name}, replaces ${s.replaces.join(', ')}`} selected={selected} onSelect={onSelect}>
             <rect x={x} y={y} width={286} height={46} rx={8} fill={fill} stroke={sel(s.key) ? C.focus : line} strokeWidth={sel(s.key) ? 2 : 1} />
-            <rect x={x + 8} y={y + 8} width={tagW} height={16} rx={4} fill={tagFill} />
-            <text x={x + 8 + tagW / 2} y={y + 20} fontFamily={SANS} fontSize={11} fontWeight={700} fill={C.surface} textAnchor="middle">
+            <rect x={x + 8} y={y + 8} width={tagW} height={16} rx={4} fill={tagFill} stroke={tagEdge} />
+            <text x={x + 8 + tagW / 2} y={y + 20} fontFamily={SANS} fontSize={11} fontWeight={700} fill={C.ink} textAnchor="middle">
               {tag}
             </text>
             <text x={x + 16 + tagW} y={y + 20} fontFamily={MONO} fontSize={11} fontWeight={700} fill={C.ink}>

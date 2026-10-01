@@ -6,7 +6,7 @@ import { ChevronRight } from 'lucide-react';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import { normaliseSeverity } from '@/lib/severity';
-import { severityChartColor } from '@/lib/chart-colors';
+import { severityChartMark } from '@/lib/chart-colors';
 import CcButton from '@/components/cc/Button';
 import CcTable from '@/components/cc/Table';
 import CcFilterBar from '@/components/cc/FilterBar';
@@ -127,7 +127,7 @@ function SeverityMix({ rows }: { rows: readonly FindingRow[] }) {
           <span
             key={p.s}
             data-chart-segment=""
-            className={clsx('h-full', sev ? severityChartColor(sev).bg : 'bg-cc-neutral', p.s === 'High' && 'opacity-70')}
+            className={clsx('h-full', severityChartMark(sev, 'bg'))}
             style={{ flex: `${p.n} 0 0` }}
           />
         );
@@ -175,7 +175,7 @@ function SeverityDonut({ rows }: { rows: readonly FindingRow[] }) {
                     strokeDasharray={`${Math.max(0, len - 1.5)} ${c}`}
                     strokeDashoffset={-off}
                     transform={`rotate(-90 ${size / 2} ${size / 2})`}
-                    className={clsx(sev ? severityChartColor(sev).stroke : 'stroke-cc-neutral', p.s === 'High' && 'opacity-70')}
+                    className={severityChartMark(sev, 'stroke')}
                   />
                 );
                 off += len;
@@ -194,7 +194,7 @@ function SeverityDonut({ rows }: { rows: readonly FindingRow[] }) {
           const sev = normaliseSeverity(p.s);
           return (
             <li key={p.s} className="grid grid-cols-[0.5rem_4.5rem_auto] items-center gap-2 cc-text-cell">
-              <span aria-hidden={true} className={clsx('h-2 w-2 rounded-full', sev ? severityChartColor(sev).bg : 'bg-cc-neutral', p.s === 'High' && 'opacity-70')} />
+              <span aria-hidden={true} className={clsx('h-2 w-2 rounded-full', severityChartMark(sev, 'bg'))} />
               <span className="text-cc-ink">{p.s}</span>
               <span className="font-semibold tabular-nums text-cc-ink">{p.n}</span>
             </li>
@@ -393,7 +393,7 @@ export default function EvidenceFindingsTable({
                 <ul className="m-0 flex list-none flex-wrap items-center gap-x-4 gap-y-1 p-0 cc-text-meta font-medium text-cc-ink-muted">
                   {(['Critical', 'High', 'Medium', 'Low'] as const).map((s) => (
                     <li key={s} className="inline-flex items-center gap-1">
-                      <span aria-hidden={true} className={clsx('h-2 w-2 rounded-full', severityChartColor(s).bg, s === 'High' && 'opacity-70')} />
+                      <span aria-hidden={true} className={clsx('h-2 w-2 rounded-full', severityChartMark(s, 'bg'))} />
                       {s} {counts[s]}
                     </li>
                   ))}

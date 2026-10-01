@@ -118,8 +118,8 @@ export default function DemoDocumentation({
           <p className="m-0 cc-text-cell text-cc-ink-muted">
             A real project offers three downloads here: the PDF brief (the process, the rules and the open questions
             with their lines, and the BPMN file beside it), the Confluence page of the stored documentation, and the
-            BPMN 2.0 file for SAP Signavio or another modeller. Import into SAP Signavio or SAP Build has not been
-            verified yet.
+            BPMN 2.0 file for SAP Signavio or another modeller.
+            Import into SAP Signavio or SAP Build has not been verified yet.
           </p>
         }
       />

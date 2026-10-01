@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { severityChartColor } from '@/lib/chart-colors';
+import { severityChartMark } from '@/lib/chart-colors';
 import { normaliseSeverity } from '@/lib/severity';
 import type { ProcessStepBand, ProgramMapRow, SourcePosition } from '@/lib/findings-view';
 
@@ -144,8 +144,7 @@ export default function ProgramMap({
                         className={cn(
                           'block rounded-full ring-2',
                           DOT[d.severity] ?? 'h-2 w-2',
-                          sev ? severityChartColor(sev).bg : 'bg-cc-neutral',
-                          d.severity === 'High' && 'opacity-70',
+                          severityChartMark(sev, 'bg'),
                           selected ? 'ring-cc-ink' : 'ring-cc-surface',
                         )}
                       />

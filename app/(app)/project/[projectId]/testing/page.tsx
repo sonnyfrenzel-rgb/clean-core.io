@@ -1100,7 +1100,7 @@ export default function TestingSandboxPage() {
             : { label: 'Suite', value: 'not written yet', tone: 'plain' },
           {
             label: 'Runner',
-            value: isAbapCloud ? 'simulated, ABAP Unit stubs' : 'restricted Node.js process, mocks',
+            value: isAbapCloud ? 'mocks, not an ABAP Unit run' : 'restricted Node.js process, mocks',
             tone: 'plain',
           },
           { label: 'Tenant', value: 'connection check only', tone: 'plain' },

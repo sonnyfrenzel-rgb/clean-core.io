@@ -1389,7 +1389,7 @@
             "field": "legacyCode",
             "locator": "[data-stage-output=\"legacyCode\"]",
             "text": "{lines:project.legacyCode} LoC",
-            "why": "the line count beside the LoC slider — the only form the source takes on this page"
+            "why": "the line count on the lines-of-custom-code row of the inputs checklist, visible without opening it — the only form the source takes on this page"
           }
         ],
         "onlyAfterARun": [],
@@ -1545,18 +1545,21 @@
           {
             "field": "generatedCode",
             "locator": "[data-stage-output=\"generatedCode\"]",
+            "opensWith": "Link by link",
             "why": "the first line of the integrity report; its wording depends on the route, so only its presence is asserted"
           },
           {
             "field": "testCases",
             "locator": "[data-stage-output=\"testCases\"]",
             "text": "Test draft: {count:project.testCases}",
+            "opensWith": "Link by link",
             "why": "the testing line of the integrity report"
           },
           {
             "field": "documentation",
             "locator": "[data-stage-output=\"documentation\"]",
             "text": "Process blueprint, earlier form",
+            "opensWith": "Link by link",
             "why": "the blueprint line of the integrity report. The reference case seeds a blueprint of the L1-L4 form the old generator wrote; since roadmap 3.0.5 the delivery report names that form as earlier and a document read from the code as 'Process documentation, read from the code'"
           },
           {
@@ -1568,6 +1571,7 @@
           {
             "field": "coverageEstimate",
             "locator": "[data-stage-output=\"coverageEstimate\"]",
+            "opensWith": "Link by link",
             "why": "the coverage line of the integrity report; the reference case has no estimate, so what is asserted is that the line does not claim one"
           },
           {
