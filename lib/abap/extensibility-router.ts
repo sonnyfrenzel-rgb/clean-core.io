@@ -1,4 +1,5 @@
 import { AbapEvidenceReport, EvidenceKind } from './evidence-model';
+import { scoreFromFindings, scoreWithUnassessed } from '../clean-core-score';
 
 export interface DecisionCheckpoint {
   checkpointName: string;
@@ -181,9 +182,7 @@ export function routeExtensibility(
   const bdcCalls = findings.filter(f => f.kind === 'bdc');
   const rfcCalls = findings.filter(f => f.kind === 'rfc-call');
   const nativeSql = findings.filter(f => f.kind === 'native-sql');
-  const updateTasks = findings.filter(f => f.kind === 'update-task');
   const fileAccess = findings.filter(f => f.kind === 'gui-download');
-  const dynproUi = findings.filter(f => f.kind === 'dynpro');
   // Enhancement technologies decide the clean core LEVEL, not just the score.
   // Modifications are level D outright; enhancement implementations and points
   // are not-recommended technologies; BAdIs are the level-B case and must not
@@ -193,25 +192,12 @@ export function routeExtensibility(
     f => f.kind === 'enhancement' && f.objectType !== 'BAdI',
   );
 
-  // Category-based deductions (capped per category, diminishing returns)
-  // First occurrence of a category costs more; additional occurrences add less
-  const deduct = (count: number, first: number, additional: number, cap: number) =>
-    count === 0 ? 0 : Math.min(cap, first + (count - 1) * additional);
-
-  score -= deduct(modifications.length,   30, 5, 40);    // Core modifications — the hardest blocker
-  score -= deduct(enhancements.length,    12, 3, 20);   // Enhancement implementations / points
-  score -= deduct(standardWrites.length, 20, 3, 25);   // Direct writes to standard tables
-  score -= deduct(customWrites.length,   12, 2, 18);    // Custom table writes (still transformable)
-  score -= deduct(bdcCalls.length,        10, 3, 15);   // BDC screen automation
-  score -= deduct(nativeSql.length,       10, 3, 15);   // Native SQL bypass
-  score -= deduct(rfcCalls.length,         8, 2, 12);   // RFC remote calls
-  score -= deduct(updateTasks.length,      5, 2, 10);   // Update task patterns
-  score -= deduct(fileAccess.length,       5, 2, 10);   // GUI file operations
-  score -= deduct(dynproUi.length,         5, 1,  8);   // Dynpro/Screen Painter
-  score -= deduct(standardReads.length,    2, 1,  5);   // Standard reads (low penalty)
-
-  // Floor: even the worst legacy code retains some reusable structure (5%)
-  score = Math.max(5, score);
+  // Category-based deductions (capped per category, diminishing returns).
+  // The table lives in lib/clean-core-score.ts, where the screen that explains
+  // the score reads it too: one table, so the explanation cannot drift from the
+  // number it explains. The floor of 5 is applied there as well — even the
+  // worst legacy code retains some reusable structure.
+  score = scoreFromFindings(findings);
 
   // 2. Determine target route
   //
@@ -504,7 +490,7 @@ export function routeExtensibility(
     // that raises the number is not a penalty (QA review of b88c77b,
     // b2b85826caf3 / f65525eb6d7c).
     cleanCoreScore: coverageIncomplete
-      ? Math.max(5, score - Math.min(30, (coverage?.gaps.length || 0) * 5))
+      ? scoreWithUnassessed(score, coverage?.gaps.length || 0)
       : score,
     checkpoints,
     comparativeAnalysis: {
