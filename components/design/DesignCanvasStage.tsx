@@ -19,6 +19,8 @@ import type { ArchitectureCanvasModel } from '@/lib/architecture-canvas';
 import { findingIdsOfKey, titleOfKey } from '@/lib/architecture-canvas';
 import type { DesignEvidence } from '@/hooks/useDesignEvidence';
 import type { ProvenanceValue } from '@/lib/provenance';
+import { architectureOptionLabel } from '@/components/ArchitectSignOff';
+import { designAnswer, type StoredRoute } from '@/lib/design-recommendation';
 
 /**
  * The Design tool, proposal B "Canvas first" (owner decision 01.10.2026,
@@ -53,8 +55,12 @@ export interface DesignCanvasStageProps {
   targetLine: string;
   targetKpi: { value: string; sub: string | null };
   confidence: number | null;
-  /** The recommendation in the sign-off's words. */
-  recommendedLabel: string | null;
+  /**
+   * The route stored on the project — the run's recommendation, or the route
+   * switch. Never the card's answer while there is a contract
+   * (`lib/design-recommendation.ts`): only named, as what it is, when it differs.
+   */
+  storedRoute: StoredRoute | null;
   confirmed: { label: string; by: string | null; at: string | null } | null;
   /** The stored design or sign-off belongs to an earlier source. */
   stale: boolean;
@@ -206,7 +212,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     targetLine,
     targetKpi,
     confidence,
-    recommendedLabel,
+    storedRoute,
     confirmed,
     stale,
     hasDocument,
@@ -258,6 +264,31 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
   };
 
   const chosenAlt = contract?.alternatives.find((a) => a.verdict === 'chosen') ?? null;
+  // One story: the card names what the contract — and so the canvas, the route
+  // figure and the alternatives — says. A stored value that disagrees is named
+  // below it as what it is.
+  const answer = designAnswer({
+    evidence: evidence.state,
+    route: contract
+      ? { recommended: contract.route.recommended, chosen: contract.route.chosen, deviation: Boolean(contract.route.deviation) }
+      : null,
+    stored: storedRoute,
+  });
+  const answerLabel = answer.code ? architectureOptionLabel(answer.code) ?? answer.code : null;
+  const answerHeading = confirmed
+    ? 'Confirmed target'
+    : answer.kind === 'chosen'
+      ? 'Chosen'
+      : answer.kind === 'stored'
+        ? storedRoute?.source === 'run'
+          ? 'Recorded with the analysis'
+          : 'Your route setting'
+        : 'Recommended';
+  const storedNote = !confirmed && answer.storedDiffers
+    ? answer.storedDiffers.source === 'setting'
+      ? `Your route setting is ${architectureOptionLabel(answer.storedDiffers.code) ?? answer.storedDiffers.code}. The analysis of this code recommends the route above.`
+      : `The analysis run on record recommended ${architectureOptionLabel(answer.storedDiffers.code) ?? answer.storedDiffers.code}. The code analysed now leads to the route above; run the analysis again to bring the record up to date.`
+    : null;
   const routeKpi = model?.route === 'in-app-rap' ? 'In-app · RAP' : model?.route === 'side-by-side-cap' ? 'Side-by-side · CAP' : 'Not determined';
   const fieldOf = (k: string) => contract?.fields.find((f) => f.key === k) ?? null;
   const prov = (k: string, fallback: ProvenanceValue): ProvenanceValue => fieldOf(k)?.provenance ?? fallback;
@@ -335,7 +366,8 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
   const decisionTab = (
     <div className="flex flex-col gap-4">
       <section
-        data-design-answer={confirmed ? 'confirmed' : recommendedLabel ? 'recommended' : 'none'}
+        data-design-answer={confirmed ? 'confirmed' : answer.kind}
+        data-design-answer-code={confirmed ? undefined : answer.code ?? undefined}
         aria-labelledby="design-answer"
         className="rounded-cc-card border p-3"
         style={{
@@ -351,12 +383,14 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className={LABEL} style={{ color: model?.route === 'in-app-rap' ? 'var(--cc-brand-deep)' : 'var(--cc-chart-4)' }}>
-            {confirmed ? 'Confirmed target' : deviation ? 'Chosen' : 'Recommended'}
+            {answerHeading}
           </p>
-          <CcProvenanceChip value={confirmed ? 'confirmed' : 'reconstructed'} />
+          {answer.kind === 'loading' && !confirmed ? null : (
+            <CcProvenanceChip value={confirmed ? 'confirmed' : answer.kind === 'stored' ? 'not-determined' : 'reconstructed'} />
+          )}
         </div>
         <h2 id="design-answer" className="m-0 mt-1 text-[22px] leading-tight font-extrabold tracking-[-0.01em] text-cc-ink">
-          {confirmed ? confirmed.label : recommendedLabel ?? 'Target not determined'}
+          {confirmed ? confirmed.label : answer.kind === 'loading' ? 'Reading the route…' : answerLabel ?? 'Target not determined'}
         </h2>
         {confirmed ? (
           <p className="m-0 mt-2 text-[13px] text-cc-ink">
@@ -367,11 +401,20 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
         ) : (
           <p className="m-0 mt-2 text-[13px] text-cc-ink">
             {chosenAlt?.reason ??
-              (recommendedLabel
-                ? 'Recommended from the analysis of the code. Not confirmed yet.'
-                : 'The analysis on record recommends no target architecture. Run the analysis, then generate the design.')}
+              (answer.kind === 'loading'
+                ? 'The route is derived from the code on the server.'
+                : answer.kind === 'stored'
+                  ? 'There is no architecture contract for this code, so this is the value stored on the project, not a recommendation derived from the code. Not confirmed yet.'
+                  : answerLabel
+                    ? 'Recommended from the analysis of the code. Not confirmed yet.'
+                    : 'The analysis on record recommends no target architecture. Run the analysis, then generate the design.')}
           </p>
         )}
+        {storedNote ? (
+          <p data-design-stored-route={answer.storedDiffers?.source} className="m-0 mt-2 text-[12px] text-cc-ink-muted">
+            {storedNote}
+          </p>
+        ) : null}
         {chosenAlt && !confirmed ? (
           <div className="mt-2">
             <Anchors lines={linesOf(chosenAlt.citations)} />

@@ -80,7 +80,7 @@ DATA: ls_order TYPE vbak,
 SELECT SINGLE * FROM vbak INTO ls_order WHERE vbeln = p_vbeln.
 SELECT * FROM vbap INTO TABLE lt_items WHERE vbeln = p_vbeln.
 
-CALL FUNCTION 'CREDIT_LIMIT_CHECK'
+CALL FUNCTION 'CREDIT_LIMIT_CHECK' DESTINATION 'CRM_CREDIT'
   EXPORTING kunnr = ls_order-kunnr.
 
 WRITE: / 'Credit check complete.'.
