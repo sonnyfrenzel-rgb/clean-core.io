@@ -50,7 +50,7 @@ export default function WorkspaceRowActions({
   const [open, setOpen] = useState(false);
   // The table scrolls sideways (`overflow-x-auto`), which clips anything that
   // hangs out of a cell — so the panel is placed against the viewport, under
-  // the button, and closes when the page scrolls rather than drifting off it.
+  // the button, and moves with it when the page scrolls.
   const [at, setAt] = useState<{ top: number; right: number } | null>(null);
   const wrap = useRef<HTMLSpanElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -66,7 +66,12 @@ export default function WorkspaceRowActions({
     const onDown = (event: MouseEvent) => {
       if (wrap.current && !wrap.current.contains(event.target as Node)) setOpen(false);
     };
-    const onScroll = () => setOpen(false);
+    // Follow the button when the page scrolls or resizes, rather than closing
+    // on the first scroll event — focus moves and smooth scrolling fire them.
+    const onScroll = () => {
+      const box = toggleRef.current?.getBoundingClientRect();
+      if (box) setAt({ top: box.bottom + 4, right: Math.max(8, window.innerWidth - box.right) });
+    };
     document.addEventListener('keydown', onKey);
     document.addEventListener('mousedown', onDown);
     window.addEventListener('scroll', onScroll, true);

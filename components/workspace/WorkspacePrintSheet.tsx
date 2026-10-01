@@ -5,7 +5,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { fetchProcessStates } from '@/lib/process-states-client';
 import { readProcessStates, STATE_LABELS, subjectIdsOf, type ProcessStateView } from '@/lib/process-states';
 import { processStepList } from '@/lib/process-step-list';
-import { plainWordingFor, summaryOf } from '@/lib/business-card';
+import { headlineLead, plainWordingFor, summaryOf } from '@/lib/business-card';
 import { anchorLabel, readTableAccess, type SourceReading } from '@/lib/first-look';
 import type { NotDetermined } from '@/lib/workspace-model';
 import type { Project } from '@/lib/types';
@@ -81,6 +81,16 @@ export default function WorkspacePrintSheet({
   const runId = typeof project?.activeRunId === 'string' && project.activeRunId ? project.activeRunId : null;
   const today = formatIsoDate(new Date()) ?? '';
   const rules = reading?.ruleSet.rules ?? [];
+  // The headline of the Business card, on paper: how many rules stand in the
+  // code and the first three that have a plain phrase, each with its anchor.
+  const featured = rules
+    .map((rule) => {
+      const phrase = wording?.rulePhrase(rule) ?? null;
+      const first = rule.sentences.flatMap((x) => x.anchors)[0];
+      return phrase ? { id: rule.id, phrase, anchor: first ? anchorLabel(first.lineStart, first.lineEnd) : null } : null;
+    })
+    .filter((r): r is { id: string; phrase: string; anchor: string | null } => r !== null)
+    .slice(0, 3);
 
   return (
     <div data-workspace-print="" aria-hidden={true} className="hidden print:block">
@@ -93,6 +103,19 @@ export default function WorkspacePrintSheet({
 
       <h1 className="mt-4 mb-0 text-[22px] leading-tight font-extrabold">{project?.name || projectId}</h1>
       {sentence ? <p className="mt-1 mb-0 text-[13px] leading-snug">{sentence}</p> : null}
+      {reading ? (
+        <p data-print-headline="" className="mt-3 mb-0 text-[15px] leading-snug font-bold">
+          {headlineLead(rules.length)}
+          {featured.length > 0 ? ' — ' : null}
+          {featured.map((r, i) => (
+            <React.Fragment key={r.id}>
+              {i > 0 ? ', ' : null}
+              {r.phrase}
+              {r.anchor ? <span className="font-cc-mono text-[11px] font-medium"> [{r.anchor}]</span> : null}
+            </React.Fragment>
+          ))}
+        </p>
+      ) : null}
 
       <section className="mt-4">
         <h2 className="m-0 flex items-center gap-2 text-[15px] font-bold">
