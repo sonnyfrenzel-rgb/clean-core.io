@@ -4,12 +4,14 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useCallback, useRef } from 'react';
 import { verifyAuditPack, signatureStateOf, verdictHeadline, type VerifyResult, type FileVerifyResult } from '@/lib/audit-pack-verify';
-import { ShieldCheck, ShieldAlert, ShieldX, Upload, CheckCircle2, XCircle, AlertCircle, FileText, Hash } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, ShieldX, Upload, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import BackLink from '@/components/BackLink';
-import { motion, AnimatePresence } from 'motion/react';
-import { STATE_CLASSES } from '@/components/cc/state';
+import CcButton from '@/components/cc/Button';
+import CcCard from '@/components/cc/Card';
+import CcMessageStrip from '@/components/cc/MessageStrip';
 import { formatDateTime } from '@/lib/format';
 import type { SemanticState } from '@/lib/provenance';
+import { cn } from '@/lib/utils';
 
 /** The verdict's state (DESIGN.md §1.1): the verifier decides the status, this only names its colour. */
 const VERDICT_STATE: Record<VerifyResult['status'], SemanticState> = {
@@ -18,6 +20,15 @@ const VERDICT_STATE: Record<VerifyResult['status'], SemanticState> = {
   failed: 'error',
 };
 
+/**
+ * Audit pack verification — a tool page of the workspace (gap audit 3.0, §18).
+ *
+ * The head is the tool-page head (22/800, one line of lead) rather than the
+ * 36 px title it had; the drop zone, the verdict and the checks are cc blocks.
+ * What the page says about a pack is unchanged: the headline comes from
+ * `verdictHeadline`, the signature line from `signatureStateOf`, both in
+ * `lib/audit-pack-verify.ts` (tests/verify-pack-verdict-qa220.spec.ts).
+ */
 export default function VerifyPackPage() {
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState<VerifyResult | null>(null);
@@ -52,262 +63,212 @@ export default function VerifyPackPage() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
+    if (verifying) return;
     const file = e.dataTransfer.files?.[0];
     if (file && (file.name.endsWith('.zip') || file.type === 'application/zip')) {
       handleFile(file);
     }
-  }, [handleFile]);
+  }, [handleFile, verifying]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
+    // The same file can be chosen again after a change to it.
+    e.target.value = '';
   }, [handleFile]);
 
   const signatureBadge = (state: ReturnType<typeof signatureStateOf>) => {
     if (state === 'valid') return (
       <div className="flex items-center gap-2 text-cc-success">
-        <ShieldCheck size={20} className="shrink-0" aria-hidden="true" />
-        <span className="font-bold text-sm">Authenticity Confirmed</span>
+        <ShieldCheck size={16} className="shrink-0" aria-hidden="true" />
+        <span className="text-[13px] font-semibold">Authenticity Confirmed</span>
       </div>
     );
     if (state === 'invalid') return (
       <div className="flex items-center gap-2 text-cc-error">
-        <ShieldX size={20} className="shrink-0" aria-hidden="true" />
-        <span className="font-bold text-sm">Signature Invalid</span>
+        <ShieldX size={16} className="shrink-0" aria-hidden="true" />
+        <span className="text-[13px] font-semibold">Signature Invalid</span>
       </div>
     );
     return (
       <div className="flex items-center gap-2 text-cc-warning">
-        <ShieldAlert size={20} className="shrink-0" aria-hidden="true" />
-        <span className="font-bold text-sm">{state === 'unchecked' ? 'Signed / Not Checked' : 'Unsigned / Unverified'}</span>
+        <ShieldAlert size={16} className="shrink-0" aria-hidden="true" />
+        <span className="text-[13px] font-semibold">{state === 'unchecked' ? 'Signed / Not Checked' : 'Unsigned / Unverified'}</span>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="mb-10">
-          {/* UX-015/UX-104: a pack can be verified without an account, so the way
-              back cannot be a hard link to /dashboard. */}
-          <div className="mb-6">
-            <BackLink />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-cc-ink tracking-tight">
-            Audit Pack Verification
-          </h1>
-          <p className="text-cc-ink-muted text-sm mt-2 max-w-xl leading-relaxed">
-            Upload an exported Audit Pack ZIP to verify its integrity and cryptographic authenticity.
-            All verification is performed locally in your browser — only the signature check contacts the server.
-          </p>
-        </div>
+    <div className="mx-auto flex max-w-[880px] flex-col gap-4 px-4 py-6 pb-20 sm:px-6">
+      {/* UX-015/UX-104: a pack can be verified without an account, so the way
+          back cannot be a hard link to /dashboard. */}
+      <div>
+        <BackLink />
+      </div>
 
-        {/* Drop Zone */}
-        {/* A clickable div is not a control: this page is the one a reviewer
-            opens to check a pack someone sent them, and it could not be reached
-            by keyboard at all — no role, no focus, and the file input hidden
-            without a label (UX review of 52f171091948, 07882b7eb23f). It is a
-            button now, with the state announced rather than only coloured. */}
-        <div
-          role="button"
-          tabIndex={verifying ? -1 : 0}
-          aria-label="Upload an Audit Pack ZIP to verify"
-          aria-busy={verifying}
-          onDrop={handleDrop}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
+      <div>
+        <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">Verify an audit pack</h1>
+        <p className="mt-1 text-[13px] font-medium text-cc-ink-muted">
+          Check that an exported audit pack is complete, unchanged and signed by Clean-Core.io. The files are checked in your browser; only the signature check asks our server.
+        </p>
+      </div>
+
+      {/* The drop zone. It is a drop target and nothing else; the way in by
+          keyboard and by pointer is the one real button inside it, so there
+          is no clickable `div` pretending to be a control (UX review of
+          52f171091948, 07882b7eb23f). */}
+      <div
+        data-verify-drop-zone=""
+        onDrop={handleDrop}
+        onDragOver={(e) => { e.preventDefault(); if (!verifying) setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        className={cn(
+          'rounded-cc-card border border-dashed px-4 py-8 text-center',
+          dragOver ? 'border-cc-brand-strong bg-cc-brand-surface' : 'border-cc-field-border bg-cc-surface',
+        )}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".zip"
+          aria-label="Audit Pack ZIP file"
+          onChange={handleInputChange}
+          className="hidden"
+        />
+        <div className="mb-2 flex justify-center">
+          <Upload size={20} aria-hidden="true" className={dragOver ? 'text-cc-brand-strong' : 'text-cc-ink-muted'} />
+        </div>
+        <p className="m-0 text-[14px] font-bold text-cc-ink">Drop the audit pack ZIP here</p>
+        <p className="mx-auto mt-1 mb-4 max-w-md text-[13px] font-medium text-cc-ink-muted">
+          The .zip file exported from the Delivery stage of a Clean-Core.io project.
+        </p>
+        <CcButton
+          variant="secondary"
           onClick={() => inputRef.current?.click()}
-          onKeyDown={(e) => {
-            if (verifying) return;
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              inputRef.current?.click();
-            }
-          }}
-          className={`
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cc-focus focus-visible:ring-offset-2
-            relative cursor-pointer rounded-2xl border-2 border-dashed p-12 text-center transition-colors duration-300
-            ${dragOver
-              ? 'border-cc-brand-strong bg-cc-brand-surface'
-              : 'border-cc-field-border bg-cc-surface hover:border-cc-brand-strong hover:bg-cc-brand-surface'
-            }
-            ${verifying ? 'pointer-events-none opacity-60' : ''}
-          `}
+          busy={verifying}
+          icon={<Upload size={16} aria-hidden={true} />}
         >
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".zip"
-            aria-label="Audit Pack ZIP file"
-            onChange={handleInputChange}
-            className="hidden"
-          />
-          <Upload size={40} aria-hidden="true" className={`mx-auto mb-4 ${dragOver ? 'text-cc-brand-strong' : 'text-cc-ink-muted'}`} />
-          <p className="text-cc-ink font-semibold text-sm" aria-live="polite">
-            {verifying ? 'Verifying...' : 'Drop your Audit Pack ZIP here, or press Enter to browse'}
-          </p>
-          <p className="text-cc-ink-muted text-xs mt-1">Accepts .zip files exported from Clean-Core.io</p>
-        </div>
+          {verifying ? 'Verifying...' : 'Choose a ZIP file'}
+        </CcButton>
+        <p className="sr-only" aria-live="polite">
+          {verifying ? `Verifying ${fileName}` : ''}
+        </p>
+      </div>
 
-        {/* Results */}
-        <AnimatePresence mode="wait">
-          {result && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.4 }}
-              className="mt-8 space-y-6"
-            >
-              {/* Overall Status */}
-              <div className={`rounded-2xl p-6 border ${STATE_CLASSES[VERDICT_STATE[result.status]].bg} ${STATE_CLASSES[VERDICT_STATE[result.status]].border}`}>
-                <div className="flex items-start gap-4">
-                  {result.status === 'authentic' ? (
-                    <CheckCircle2 size={32} className="text-cc-success shrink-0 mt-0.5" aria-hidden="true" />
-                  ) : result.status === 'integrity-only' ? (
-                    <AlertCircle size={32} className="text-cc-warning shrink-0 mt-0.5" aria-hidden="true" />
-                  ) : (
-                    <XCircle size={32} className="text-cc-error shrink-0 mt-0.5" aria-hidden="true" />
-                  )}
-                  <div>
-                    <h2 className="text-xl font-extrabold text-cc-ink">
-                      {verdictHeadline(result)}
-                    </h2>
-                    <p className={`text-sm mt-1 font-semibold ${STATE_CLASSES[VERDICT_STATE[result.status]].text}`}>
-                      {fileName}
-                    </p>
-                  </div>
-                </div>
-              </div>
+      {result && (
+        <>
+          {/* The verdict first, in words with its state colour (§2.6); it
+              takes the focus once, as the answer to the reader's action. */}
+          <CcMessageStrip state={VERDICT_STATE[result.status]} headline={verdictHeadline(result)} announce>
+            <span className="break-all font-cc-mono text-[12px]">{fileName}</span>
+          </CcMessageStrip>
 
-              {/* Checks Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* File Integrity */}
-                <div className="rounded-xl bg-cc-surface border border-cc-line p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <FileText size={16} className="text-cc-ink-muted" aria-hidden="true" />
-                    <span className="cc-text-label text-cc-ink-muted">File Integrity</span>
-                  </div>
-                  {result.fileIntegrity.length > 0 ? (
-                    <div className="space-y-2">
-                      {result.fileIntegrity.map((f: FileVerifyResult) => (
-                        <div key={f.path} className="flex items-center gap-2 text-xs">
-                          {f.signed === false && f.valid ? (
-                            <AlertCircle size={14} className="text-cc-warning shrink-0" aria-hidden="true" />
-                          ) : f.valid ? (
-                            <CheckCircle2 size={14} className="text-cc-success shrink-0" aria-hidden="true" />
-                          ) : (
-                            <XCircle size={14} className="text-cc-error shrink-0" aria-hidden="true" />
-                          )}
-                          <span className={`truncate font-cc-mono ${f.valid ? 'text-cc-ink-muted' : 'text-cc-error font-semibold'}`}>
-                            {f.path}
+          <CcCard level={2} title="Checks">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="min-w-0">
+                <h3 className="m-0 mb-2 cc-text-label text-cc-ink-muted">File integrity</h3>
+                {result.fileIntegrity.length > 0 ? (
+                  <ul className="m-0 list-none space-y-2 p-0">
+                    {result.fileIntegrity.map((f: FileVerifyResult) => (
+                      <li key={f.path} className="flex flex-wrap items-center gap-2 text-[12px]">
+                        {f.signed === false && f.valid ? (
+                          <AlertCircle size={14} className="shrink-0 text-cc-warning" aria-hidden="true" />
+                        ) : f.valid ? (
+                          <CheckCircle2 size={14} className="shrink-0 text-cc-success" aria-hidden="true" />
+                        ) : (
+                          <XCircle size={14} className="shrink-0 text-cc-error" aria-hidden="true" />
+                        )}
+                        <span className={cn('min-w-0 truncate font-cc-mono', f.valid ? 'text-cc-ink-muted' : 'font-semibold text-cc-error')}>
+                          {f.path}
+                        </span>
+                        {!f.valid && <span className="sr-only">(does not match)</span>}
+                        {f.signed === false && f.valid && (
+                          // A pack sealed from manifest version 3 binds the
+                          // bytes of an attested file, so the row can say the
+                          // statement was not rewritten. One sealed before
+                          // that carries no digest, and the label has to keep
+                          // saying so rather than borrow the stronger claim.
+                          <span className="cc-text-label text-cc-warning">
+                            {f.expectedHash
+                              ? 'user-attested · sealed, not confirmed'
+                              : 'user-attested · not covered by the signature'}
                           </span>
-                          {f.signed === false && f.valid && (
-                            // A pack sealed from manifest version 3 binds the
-                            // bytes of an attested file, so the row can say the
-                            // statement was not rewritten. One sealed before
-                            // that carries no digest, and the label has to keep
-                            // saying so rather than borrow the stronger claim.
-                            <span className="shrink-0 cc-text-label text-cc-warning">
-                              {f.expectedHash
-                                ? 'user-attested · sealed, not confirmed'
-                                : 'user-attested · not covered by the signature'}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-cc-ink-muted">No files to verify</p>
-                  )}
-                </div>
-
-                {/* Manifest Hash */}
-                <div className="rounded-xl bg-cc-surface border border-cc-line p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Hash size={16} className="text-cc-ink-muted" aria-hidden="true" />
-                    <span className="cc-text-label text-cc-ink-muted">Manifest Hash</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {result.manifestHashValid ? (
-                      <CheckCircle2 size={18} className="text-cc-success" aria-hidden="true" />
-                    ) : (
-                      <XCircle size={18} className="text-cc-error" aria-hidden="true" />
-                    )}
-                    <span className={`text-sm font-semibold ${result.manifestHashValid ? 'text-cc-success' : 'text-cc-error'}`}>
-                      {result.manifestHashValid ? 'Valid' : 'Invalid'}
-                    </span>
-                  </div>
-                  {result.manifest?.manifestHash && (
-                    <p className="text-xs text-cc-ink-muted font-cc-mono mt-2 break-all">
-                      {result.manifest.manifestHash}
-                    </p>
-                  )}
-                </div>
-
-                {/* Signature */}
-                <div className="rounded-xl bg-cc-surface border border-cc-line p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <ShieldCheck size={16} className="text-cc-ink-muted" aria-hidden="true" />
-                    <span className="cc-text-label text-cc-ink-muted">Signature</span>
-                  </div>
-                  {signatureBadge(signatureStateOf(result))}
-                  {result.manifest?.signature && (
-                    <p className="text-xs text-cc-ink-muted font-cc-mono mt-2 break-all">
-                      {result.manifest.signature.substring(0, 32)}...
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Metadata */}
-              {result.manifest && (
-                <div className="rounded-xl bg-cc-surface border border-cc-line p-5">
-                  <h3 className="cc-text-label text-cc-ink-muted mb-3">Export Metadata</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                    <div>
-                      <span className="text-cc-ink-muted block">Engine Version</span>
-                      <span className="text-cc-ink font-bold">{result.manifest.engineVersion}</span>
-                    </div>
-                    <div>
-                      <span className="text-cc-ink-muted block">SAP Catalog</span>
-                      <span className="text-cc-ink font-bold">{result.manifest.sapApiCatalogVersion}</span>
-                    </div>
-                    <div>
-                      <span className="text-cc-ink-muted block">Generated</span>
-                      <span className="text-cc-ink font-bold">
-                        {formatDateTime(result.manifest.generatedAt) ?? result.manifest.generatedAt}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-cc-ink-muted block">Run ID</span>
-                      <span className="text-cc-ink font-cc-mono break-all">{result.manifest.runId || '—'}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Errors */}
-              {result.errors.length > 0 && (
-                <div className="rounded-xl bg-cc-warning-bg border border-cc-warning-border p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <AlertCircle size={16} className="text-cc-warning" aria-hidden="true" />
-                    <span className="cc-text-label text-cc-warning">
-                      {result.success ? 'Notices' : 'Errors'}
-                    </span>
-                  </div>
-                  <ul className="space-y-1">
-                    {result.errors.map((err, i) => (
-                      <li key={i} className="text-xs text-cc-ink leading-relaxed">• {err}</li>
+                        )}
+                      </li>
                     ))}
                   </ul>
+                ) : (
+                  <p className="m-0 text-[13px] text-cc-ink-muted">No files to verify</p>
+                )}
+              </div>
+
+              <div className="min-w-0">
+                <h3 className="m-0 mb-2 cc-text-label text-cc-ink-muted">Manifest hash</h3>
+                <div className={cn('flex items-center gap-2', result.manifestHashValid ? 'text-cc-success' : 'text-cc-error')}>
+                  {result.manifestHashValid ? (
+                    <CheckCircle2 size={16} className="shrink-0" aria-hidden="true" />
+                  ) : (
+                    <XCircle size={16} className="shrink-0" aria-hidden="true" />
+                  )}
+                  <span className="text-[13px] font-semibold">
+                    {result.manifestHashValid ? 'Valid' : 'Invalid'}
+                  </span>
                 </div>
-              )}
-            </motion.div>
+                {result.manifest?.manifestHash && (
+                  <p className="m-0 mt-2 break-all font-cc-mono text-[12px] text-cc-ink-muted">
+                    {result.manifest.manifestHash}
+                  </p>
+                )}
+              </div>
+
+              <div className="min-w-0">
+                <h3 className="m-0 mb-2 cc-text-label text-cc-ink-muted">Signature</h3>
+                {signatureBadge(signatureStateOf(result))}
+                {result.manifest?.signature && (
+                  <p className="m-0 mt-2 break-all font-cc-mono text-[12px] text-cc-ink-muted">
+                    {result.manifest.signature.substring(0, 32)}...
+                  </p>
+                )}
+              </div>
+            </div>
+          </CcCard>
+
+          {result.manifest && (
+            <CcCard level={2} title="Export details">
+              <dl className="m-0 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+                <div className="min-w-0">
+                  <dt className="cc-text-label text-cc-ink-muted">Engine version</dt>
+                  <dd className="m-0 mt-1 text-[13px] font-semibold text-cc-ink">{result.manifest.engineVersion}</dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="cc-text-label text-cc-ink-muted">SAP catalog</dt>
+                  <dd className="m-0 mt-1 text-[13px] font-semibold text-cc-ink">{result.manifest.sapApiCatalogVersion}</dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="cc-text-label text-cc-ink-muted">Generated</dt>
+                  <dd className="m-0 mt-1 text-[13px] font-semibold text-cc-ink">
+                    {formatDateTime(result.manifest.generatedAt) ?? result.manifest.generatedAt}
+                  </dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="cc-text-label text-cc-ink-muted">Run ID</dt>
+                  <dd className="m-0 mt-1 break-all font-cc-mono text-[12px] text-cc-ink">{result.manifest.runId || '—'}</dd>
+                </div>
+              </dl>
+            </CcCard>
           )}
-        </AnimatePresence>
-      </div>
+
+          {result.errors.length > 0 && (
+            <CcMessageStrip state={result.success ? 'warning' : 'error'} headline={result.success ? 'Notices' : 'Errors'}>
+              <ul className="m-0 mt-1 list-disc space-y-1 pl-4">
+                {result.errors.map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </CcMessageStrip>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -47,6 +47,12 @@ export interface CcSegmentedControlProps<T extends string> {
   segments: readonly CcSegment<T>[];
   value: T;
   onChange: (value: T) => void;
+  /**
+   * Fill the row on breakpoint S (≤ 600 px), segments sharing it equally — the
+   * view switch of the workspace on a phone (mockup s10). Off by default; at
+   * 601 px and up nothing changes.
+   */
+  stretch?: boolean;
 }
 
 export default function CcSegmentedControl<T extends string>({
@@ -54,6 +60,7 @@ export default function CcSegmentedControl<T extends string>({
   segments,
   value,
   onChange,
+  stretch = false,
 }: CcSegmentedControlProps<T>) {
   const groupId = useId();
 
@@ -68,7 +75,8 @@ export default function CcSegmentedControl<T extends string>({
       role="radiogroup"
       aria-label={label}
       data-cc-segmented=""
-      className={CC_SEGMENTED_GROUP}
+      data-cc-segmented-stretch={stretch ? '' : undefined}
+      className={cn(CC_SEGMENTED_GROUP, stretch && 'max-[600px]:flex max-[600px]:w-full')}
       onKeyDown={(event) => {
         if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
           event.preventDefault();
@@ -91,7 +99,7 @@ export default function CcSegmentedControl<T extends string>({
             tabIndex={selected ? 0 : -1}
             data-cc-segment={selected ? 'on' : 'off'}
             onClick={() => onChange(segment.value)}
-            className={ccSegmentClass(selected)}
+            className={cn(ccSegmentClass(selected), stretch && 'max-[600px]:flex-1 max-[600px]:justify-center')}
           >
             {segment.icon}
             {segment.label}

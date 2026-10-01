@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import CcCard from '@/components/cc/Card';
 import CcSwitch from '@/components/cc/Switch';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import { CcTag } from '@/components/cc/Tag';
@@ -71,29 +71,21 @@ export default function ModelStagesCard({ showPreviewStages = false }: { showPre
   };
 
   return (
-    <div data-model-stages-card className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc">
-      {/* The head of every settings card (`CardHead` on /settings): a quiet
-          mark, the title, and what belongs beside it. The mark used to be a
-          chip — §3.1 keeps model work out of the iconography — so it is the
-          sliders a setting is. */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span
-            aria-hidden={true}
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-cc-row border border-cc-line bg-cc-surface-muted text-cc-ink-muted"
-          >
-            <SlidersHorizontal size={20} />
-          </span>
-          <h2 className="m-0 cc-text-h2 text-cc-ink">Where the model is used</h2>
-        </div>
-        {model.known && !model.keyAvailable && (
-          <span data-no-model-key>
-            <CcTag>No key available</CcTag>
-          </span>
-        )}
-      </div>
-
-      <p className="mb-6 cc-text-body text-cc-ink-muted">
+    <div data-model-stages-card="">
+      {/* One section of /settings: a `CcCard` with an `h2` title, like every
+          other section of the page since the 3.0 rebuild. */}
+      <CcCard
+        level={2}
+        title="Where the AI model is used"
+        meta={
+          model.known && !model.keyAvailable ? (
+            <span data-no-model-key>
+              <CcTag>No key available</CcTag>
+            </span>
+          ) : undefined
+        }
+      >
+      <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
         {COUNT_WORDS[stages.length] ?? stages.length} stages send a prompt to Google Gemini. Switch any of them off and that stage says
         &ldquo;not generated&rdquo; instead of asking for a key. The Analyze stage&rsquo;s evidence — the findings, the
         extensibility route and the Clean Core Score — is computed without a model, and the analysis run is signed
@@ -101,7 +93,7 @@ export default function ModelStagesCard({ showPreviewStages = false }: { showPre
       </p>
 
       {error && (
-        <div className="mb-6">
+        <div className="mb-4">
           <CcMessageStrip state="error" headline="The setting was not saved." announce>
             {error}
           </CcMessageStrip>
@@ -133,6 +125,7 @@ export default function ModelStagesCard({ showPreviewStages = false }: { showPre
           );
         })}
       </ul>
+      </CcCard>
     </div>
   );
 }

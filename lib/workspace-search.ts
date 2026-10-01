@@ -31,6 +31,8 @@ import type { SkeletonNode } from './abap/process-skeleton';
 import type { BusinessRule } from './abap/business-rule-set';
 import { GLOSSARY_ITEMS, glossarySourceText, type GlossarySourceOrigin } from './glossary';
 import { glossaryAnswerText } from './glossary-lookup';
+import { plainLabels } from './abap/plain-language';
+import { plainWordingFor } from './business-card';
 
 export type SearchResultKind = 'element' | 'rule' | 'finding' | 'source-line' | 'glossary';
 
@@ -43,10 +45,67 @@ export const SEARCH_KIND_LABEL: Record<SearchResultKind, string> = {
   glossary: 'Glossary',
 };
 
+/**
+ * How the dialog groups hits — `DESIGN.md` §2.10 ("Treffer gruppiert nach
+ * Art") and mockup s9: in the words a business reader uses, not the engine's.
+ * A gateway is an element to the engine and a *decision* to the reader, so it
+ * is grouped as one; everything else follows its kind.
+ */
+export type SearchGroup = 'process' | 'decision' | 'rule' | 'finding' | 'code' | 'glossary';
+
+export const SEARCH_GROUP_ORDER: readonly SearchGroup[] = ['process', 'decision', 'rule', 'finding', 'code', 'glossary'];
+
+export const SEARCH_GROUP_LABEL: Record<SearchGroup, string> = {
+  process: 'Process steps',
+  decision: 'Decisions',
+  rule: 'Business rules',
+  finding: 'Findings',
+  code: 'Code lines',
+  glossary: 'Glossary',
+};
+
+/** Skeleton kinds a reader calls a decision. */
+const DECISION_KINDS = new Set(['gateway']);
+
+export function searchGroupOf(result: Pick<SearchResult, 'kind' | 'detail'>): SearchGroup {
+  switch (result.kind) {
+    case 'element':
+      return DECISION_KINDS.has(result.detail.split(' · ')[0]) ? 'decision' : 'process';
+    case 'rule':
+      return 'rule';
+    case 'finding':
+      return 'finding';
+    case 'source-line':
+      return 'code';
+    default:
+      return 'glossary';
+  }
+}
+
+/**
+ * Hits in their groups, in the fixed order above, each group keeping the
+ * ranking `searchWorkspace` gave it. Empty groups are left out.
+ */
+export function groupSearchResults(results: readonly SearchResult[]): Array<{ group: SearchGroup; results: SearchResult[] }> {
+  const by = new Map<SearchGroup, SearchResult[]>();
+  for (const result of results) {
+    const group = searchGroupOf(result);
+    by.set(group, [...(by.get(group) ?? []), result]);
+  }
+  return SEARCH_GROUP_ORDER.filter((g) => by.has(g)).map((group) => ({ group, results: by.get(group)! }));
+}
+
 export interface SearchResult {
   id: string;
   kind: SearchResultKind;
+  /** What the reader sees: the plain name where the engine has one, else the code's own. */
   title: string;
+  /**
+   * The code's own name for it — `IF lv_amount > 1000`, `BR-005` — when the
+   * title is a plain rendering. Matched by the search and shown one level
+   * deeper, never instead of the plain name. `null` when the title already is it.
+   */
+  technical?: string | null;
   detail: string;
   /** A line anchor (`L231`, `L380-412`), or `null` when the item carries none. */
   anchor: string | null;
@@ -76,17 +135,25 @@ export interface WorkspaceSearchIndexInput {
 /** Boilerplate flow markers, not things a reader would ever search for. */
 const SKIPPED_NODE_KINDS = new Set(['start', 'end']);
 
-function elementResults(projectId: string, nodes: readonly SkeletonNode[]): SearchResult[] {
+function elementResults(
+  projectId: string,
+  nodes: readonly SkeletonNode[],
+  plain: (node: SkeletonNode) => string | null,
+): SearchResult[] {
   return nodes
     .filter((node) => !SKIPPED_NODE_KINDS.has(node.kind) && node.label.trim().length > 0)
-    .map((node) => ({
+    .map((node) => {
+      const name = plain(node);
+      return {
       id: `element:${node.id}`,
       kind: 'element' as const,
-      title: node.label,
+      title: name ?? node.label,
+      technical: name && name !== node.label ? node.label : null,
       detail: `${node.kind} · ${node.region}`,
       anchor: node.anchor ? anchorLabel(node.anchor.lineStart, node.anchor.lineEnd) : null,
       href: `/project/${projectId}/documentation`,
-    }));
+      };
+    });
 }
 
 function firstAnchorOf(rule: BusinessRule): string | null {
@@ -97,11 +164,16 @@ function firstAnchorOf(rule: BusinessRule): string | null {
   return null;
 }
 
-function ruleResults(projectId: string, rules: readonly BusinessRule[]): SearchResult[] {
+function ruleResults(
+  projectId: string,
+  rules: readonly BusinessRule[],
+  plain: (rule: BusinessRule) => string | null,
+): SearchResult[] {
   return rules.map((rule) => ({
     id: `rule:${rule.id}`,
     kind: 'rule' as const,
-    title: `${rule.id} · ${rule.text}`,
+    title: plain(rule) ?? rule.text,
+    technical: `${rule.id} · ${rule.label}`,
     detail: rule.type,
     anchor: firstAnchorOf(rule),
     href: `/project/${projectId}/documentation`,
@@ -147,8 +219,18 @@ function glossaryResults(): SearchResult[] {
  * entries at most, never the tens of thousands a debounce would be for.
  */
 export function buildWorkspaceSearchIndex({ projectId, project, reading }: WorkspaceSearchIndexInput): SearchResult[] {
-  const elements = reading ? elementResults(projectId, reading.skeleton.nodes) : [];
-  const rules = reading ? ruleResults(projectId, reading.ruleSet.rules) : [];
+  // Plain names from `lib/abap/plain-language.ts`, the same wording the
+  // Business card and the map use — deterministic, no model. Where it has
+  // nothing better than "Condition met?", the code's own name stays the title.
+  const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
+  const labels = reading ? plainLabels(reading.skeleton, source) : null;
+  const wording = reading ? plainWordingFor(source, reading.skeleton) : null;
+  const plainNode = (node: SkeletonNode): string | null => {
+    const label = labels?.nodes.get(node.id)?.trim() ?? '';
+    return label.length >= 3 && !/^condition met\??$/i.test(label) ? label : null;
+  };
+  const elements = reading ? elementResults(projectId, reading.skeleton.nodes, plainNode) : [];
+  const rules = reading ? ruleResults(projectId, reading.ruleSet.rules, (rule) => wording?.ruleSentence(rule) ?? null) : [];
   const findings = Array.isArray(project?.worklist) ? findingResults(projectId, project.worklist) : [];
   return [...elements, ...rules, ...findings, ...glossaryResults()];
 }
@@ -253,6 +335,7 @@ export function searchWorkspace(
     (result) =>
       result.title.toLowerCase().includes(q) ||
       result.detail.toLowerCase().includes(q) ||
+      (result.technical?.toLowerCase().includes(q) ?? false) ||
       (result.anchor?.toLowerCase().includes(q) ?? false),
   );
   const lines = context.legacyCode ? sourceLineResults(context.projectId, context.legacyCode, raw) : [];

@@ -26,6 +26,7 @@ import {
   type Invitation,
 } from '@/lib/invitations';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { openInvitationsAsOwner, openInvitationsOf } from '@/lib/invitation-owner-gate';
 
 /**
  * Inviting one person to read one project — roadmap 5.2.
@@ -326,5 +327,53 @@ export async function POST(
       error: errMessage(err),
     });
     return NextResponse.json({ error: 'Could not create this invitation.' }, { status: 500 });
+  }
+}
+
+/**
+ * GET → the invitations of this project that are still waiting: address, sent,
+ * expires. The owner's only (owner decision 01.10.2026: an unanswered
+ * invitation stays visible to the person who sent it, with its expiry and a
+ * way to withdraw it — `DELETE …/invitations/{invitationId}`).
+ *
+ * It answers nothing else. Accepted invitations are the readers list
+ * (`/readers`), and revoked or expired ones grant nothing. Its own rate budget,
+ * so looking at the list never uses up what sending or withdrawing needs.
+ */
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ projectId: string }> },
+) {
+  try {
+    const decodedToken = await verifyRequestAuth(req);
+    if (!decodedToken) {
+      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+    // The addresses of people who have not answered yet are personal data; a
+    // token from before the second factor reads none of them.
+    try {
+      await assertMfaSatisfied(req, decodedToken);
+    } catch (mfaErr: unknown) {
+      const q = mfaErr as { message?: string; status?: number };
+      return NextResponse.json(
+        { error: q?.message || 'Multi-factor authentication required.' },
+        { status: q?.status || 403 },
+      );
+    }
+    const { projectId } = await params;
+    const gate = await openInvitationsAsOwner(decodedToken.uid, projectId, 'invitations-list');
+    if (!gate.ok) return gate.response;
+
+    const snap = await gate.db
+      .collection('projects').doc(gate.projectId)
+      .collection(INVITATION_COLLECTION)
+      .get();
+    return NextResponse.json({ open: openInvitationsOf(snap.docs, gate.projectId) });
+  } catch (err: unknown) {
+    logger.error('open invitations could not be read', {
+      route: 'api/projects/invitations',
+      error: errMessage(err),
+    });
+    return NextResponse.json({ error: 'Could not read the invitations of this project.' }, { status: 500 });
   }
 }

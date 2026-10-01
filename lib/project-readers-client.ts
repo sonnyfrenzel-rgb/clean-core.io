@@ -48,3 +48,65 @@ export async function revokeProjectAccess(projectId: string, uid: string): Promi
   const json = (await res.json().catch(() => null)) as { error?: string } | null;
   if (!res.ok) throw new Error(json?.error || `The server refused the revocation (${res.status}).`);
 }
+
+/* ------------------------------------------------------------------ *
+ * Invitations still waiting — owner decision 01.10.2026.
+ * ------------------------------------------------------------------ */
+
+/** One invitation nobody has answered yet, as its sender is shown it. */
+export interface OpenInvitationEntry {
+  id: string;
+  email: string;
+  invitedAt: string;
+  expiresAt: string;
+  /** Set on the account-wide list (`/api/invitations`), absent on a project's own. */
+  projectId?: string;
+  projectName?: string;
+}
+
+async function bearer(): Promise<Record<string, string> | null> {
+  const token = await getAuth().currentUser?.getIdToken();
+  return token ? { Authorization: `Bearer ${token}` } : null;
+}
+
+function asOpenList(json: unknown): OpenInvitationEntry[] | null {
+  const open = (json as { open?: unknown } | null)?.open;
+  if (!Array.isArray(open)) return null;
+  return open.filter(
+    (e): e is OpenInvitationEntry =>
+      typeof e === 'object' && e !== null &&
+      typeof (e as OpenInvitationEntry).id === 'string' &&
+      typeof (e as OpenInvitationEntry).email === 'string' &&
+      typeof (e as OpenInvitationEntry).expiresAt === 'string',
+  );
+}
+
+/** The invitations of one project still waiting. `null` when the caller is not the owner or the read failed. */
+export async function loadOpenInvitations(projectId: string): Promise<OpenInvitationEntry[] | null> {
+  const headers = await bearer();
+  if (!headers) return null;
+  const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/invitations`, { headers }).catch(() => null);
+  if (!res || !res.ok) return null;
+  return asOpenList(await res.json().catch(() => null));
+}
+
+/** Every invitation still waiting on a project this account owns. `null` when the read failed. */
+export async function loadAccountOpenInvitations(): Promise<OpenInvitationEntry[] | null> {
+  const headers = await bearer();
+  if (!headers) return null;
+  const res = await fetch('/api/invitations', { headers }).catch(() => null);
+  if (!res || !res.ok) return null;
+  return asOpenList(await res.json().catch(() => null));
+}
+
+/** Withdraw one open invitation. Its link stops working when this returns. */
+export async function withdrawInvitation(projectId: string, invitationId: string): Promise<void> {
+  const headers = await bearer();
+  if (!headers) throw new Error('You are signed out. Sign in again and retry.');
+  const res = await fetch(
+    `/api/projects/${encodeURIComponent(projectId)}/invitations/${encodeURIComponent(invitationId)}`,
+    { method: 'DELETE', headers },
+  );
+  const json = (await res.json().catch(() => null)) as { error?: string } | null;
+  if (!res.ok) throw new Error(json?.error || `The server refused the withdrawal (${res.status}).`);
+}

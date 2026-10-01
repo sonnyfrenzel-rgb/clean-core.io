@@ -26,8 +26,9 @@ export const WORKSPACE_SHELL_MESSAGES = {
   // Search ⌘K — components/workspace/CommandSearch.tsx, roadmap 6.6.
   'search.title': 'Search this project',
   'search.close': 'Close search',
-  'search.fieldName': 'Find an element, a rule, a finding, a source line or a glossary term',
-  'search.placeholder': 'Find an element, a rule, a finding, L231, or a glossary term',
+  'search.fieldName': 'Find a process step, a decision, a business rule, a finding, a code line or a glossary term',
+  'search.placeholder': 'A step, a rule, a term — or a line like L231',
+  'search.footer': 'This project only · Enter jumps to the result · No model call',
   'search.found': 'found',
   'search.nothingMatches': 'Nothing in this project matches',
   'search.results': 'Search results',

@@ -133,6 +133,14 @@ export const GATED_ROUTES: GatedRoute[] = [
   // spec would be sending real invitations.
   { file: 'app/api/projects/[projectId]/invitations/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/invitations`, body: { email: 'reader@example.invalid' } },
   { file: 'app/api/projects/[projectId]/readers/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/readers` },
+  // Owner decision 01.10.2026: the owner sees the invitations still waiting
+  // (addresses of people who have not answered) and can withdraw one. Both are
+  // the owner's personal-data view of sharing, behind the same factor.
+  { file: 'app/api/projects/[projectId]/invitations/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/invitations` },
+  { file: 'app/api/projects/[projectId]/invitations/[invitationId]/route.ts', method: 'DELETE', path: (p) => `/api/projects/${p}/invitations/not-an-invitation` },
+  { file: 'app/api/invitations/route.ts', method: 'GET', path: () => '/api/invitations' },
+  // My workspace — which projects were shared with this account (ids only).
+  { file: 'app/api/shared-projects/route.ts', method: 'GET', path: () => '/api/shared-projects' },
   { file: 'app/api/projects/[projectId]/readers/route.ts', method: 'DELETE', path: (p) => `/api/projects/${p}/readers`, body: { uid: 'not-a-reader' } },
 ];
 

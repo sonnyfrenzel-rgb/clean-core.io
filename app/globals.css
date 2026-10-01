@@ -740,6 +740,20 @@
     break-inside: avoid;
   }
 
+  /* The workspace prints its own short sheet (WorkspacePrintSheet, §7.1 and
+     §5.7, mockup s10): header with the IDs, the step list instead of the map,
+     the rules table and what was not determined — never the screen with its
+     folds and cards. Same mechanism as the one-pager above, and it gives way
+     to it: with the steering one-pager open, that one prints. */
+  body:has([data-workspace-print]):not(:has([data-steering-print]))
+    *:not([data-workspace-print]):not([data-workspace-print] *):not(:has([data-workspace-print])) {
+    display: none !important;
+  }
+
+  [data-workspace-print] section {
+    break-inside: auto;
+  }
+
   /* Roadmap 3.0.10: a chart that only works on screen is not finished. The
      bars keep their fill on paper — every figure is also in the table beside
      them, so a printer that drops colour still loses no number. */

@@ -2,6 +2,7 @@ import type { Project } from '@/lib/types';
 import { formatIsoDate } from '@/lib/format';
 import type { ObjectStatusValue } from '@/lib/object-status';
 import { staleness, workflowSteps, workflowSummary } from '@/lib/workflow-steps';
+import { projectProgress, type ProjectStage } from '@/lib/project-progress';
 
 /**
  * One row of "My workspace" — `DESIGN.md` §2.2, §2.4, mockup s7.
@@ -57,6 +58,22 @@ export interface WorkspaceRow {
   hasSource: boolean;
   /** Where the row opens. */
   href: string;
+  /**
+   * Whose it is. `shared` is a project another account invited this one to
+   * read (roadmap 5.4) — read access only, so the row offers nothing that
+   * writes: no run, no invitation, no duplicate, no delete.
+   */
+  access: 'own' | 'shared';
+  /** A signed run is on record — the figures a row derives from the engine need one. */
+  hasRun: boolean;
+  /** Started from one of the shipped examples: fictitious code, real engine output. */
+  fromExample: boolean;
+  /**
+   * Where the project stands in plain words (`lib/project-progress.ts`) — what
+   * the Status filter offers. `null` for the demo, which is not a project of
+   * anybody's and has no steps of its own.
+   */
+  stage: ProjectStage | null;
 }
 
 /**
@@ -117,7 +134,10 @@ export function isoDate(value: unknown): string | null {
   return formatIsoDate(value);
 }
 
-export function toWorkspaceRow(project: Project & { id: string }): WorkspaceRow {
+export function toWorkspaceRow(
+  project: Project & { id: string },
+  access: 'own' | 'shared' = 'own',
+): WorkspaceRow {
   const source = typeof project.legacyCode === 'string' ? project.legacyCode : '';
   const hasSource = source.trim().length > 0;
   const hasRun = typeof project.activeRunId === 'string' && project.activeRunId.trim().length > 0;
@@ -151,11 +171,23 @@ export function toWorkspaceRow(project: Project & { id: string }): WorkspaceRow 
     stale: projectStale(project),
     lastChange: isoDate(project.updatedAt) ?? isoDate(project.createdAt),
     hasSource,
-    href: `/project/${project.id}/analyze`,
+    // The workspace of the project (roadmap 3.0): it opens on the Business
+    // view, and every stage is one step from there.
+    href: `/project/${project.id}`,
+    access,
+    hasRun,
+    fromExample: project.fromExample === true,
+    stage: projectProgress(project).stage,
   };
 }
 
 /** The status filter's options — "Any status" is the screen's, not this list's. */
+/** The stages the rows are in, in the order a project moves — what the Status filter offers. */
+export function stagesPresent(rows: readonly WorkspaceRow[]): ProjectStage[] {
+  const order: ProjectStage[] = ['not-started', 'not-analysed', 'in-progress', 'all-done', 'handed-over'];
+  return order.filter((stage) => rows.some((row) => row.stage === stage));
+}
+
 export function statusesPresent(rows: readonly WorkspaceRow[]): ObjectStatusValue[] {
   const seen: ObjectStatusValue[] = [];
   for (const row of rows) if (!seen.includes(row.status)) seen.push(row.status);
@@ -164,27 +196,59 @@ export function statusesPresent(rows: readonly WorkspaceRow[]): ObjectStatusValu
 
 export interface WorkspaceFilter {
   search: string;
-  /** An object status, or '' for any. */
+  /** A project stage (`ProjectStage`), or '' for any. */
   status: string;
+  /** A clean core level the project has findings at — 'A' … 'D' — or '' for any. */
+  level: string;
+  /** Mine, shared with me, or both (''). */
+  access: '' | 'own' | 'shared';
 }
 
-export const EMPTY_FILTER: WorkspaceFilter = { search: '', status: '' };
+export const EMPTY_FILTER: WorkspaceFilter = { search: '', status: '', level: '', access: '' };
 
 export function filterIsActive(filter: WorkspaceFilter): boolean {
-  return filter.search.trim().length > 0 || filter.status.length > 0;
+  return (
+    filter.search.trim().length > 0 ||
+    filter.status.length > 0 ||
+    filter.level.length > 0 ||
+    filter.access.length > 0
+  );
+}
+
+/** How the table is ordered. The demo stays first either way — it is not one of the reader's projects. */
+export type WorkspaceSort = 'last-change' | 'name';
+
+export function sortWorkspaceRows(rows: readonly WorkspaceRow[], sort: WorkspaceSort): WorkspaceRow[] {
+  const demo = rows.filter((r) => r.isDemo);
+  const rest = rows.filter((r) => !r.isDemo);
+  const sorted =
+    sort === 'name'
+      ? [...rest].sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }))
+      : // Newest first; a project with no date at all goes last rather than first.
+        [...rest].sort((a, b) => (b.lastChange ?? '').localeCompare(a.lastChange ?? ''));
+  return [...demo, ...sorted];
 }
 
 /**
  * Live filtering, §2.5. Case-insensitive over the two things a reader has in
  * their head — what they called it and what it is called in the system.
  */
+/**
+ * @param hasLevel whether a row has findings at a level — `null` while that is
+ *   not known yet. Only asked when a level filter is set; a row that is still
+ *   being read is kept rather than hidden, so a filter never makes a project
+ *   disappear because a request was slow.
+ */
 export function applyWorkspaceFilter(
   rows: readonly WorkspaceRow[],
   filter: WorkspaceFilter,
+  hasLevel: (row: WorkspaceRow, level: string) => boolean | null = () => null,
 ): WorkspaceRow[] {
   const needle = filter.search.trim().toLowerCase();
   return rows.filter((row) => {
-    if (filter.status && row.status !== filter.status) return false;
+    if (filter.status && row.stage !== filter.status) return false;
+    if (filter.access && (row.isDemo || row.access !== filter.access)) return false;
+    if (filter.level && hasLevel(row, filter.level) === false) return false;
     if (!needle) return true;
     return `${row.name} ${row.identifier}`.toLowerCase().includes(needle);
   });

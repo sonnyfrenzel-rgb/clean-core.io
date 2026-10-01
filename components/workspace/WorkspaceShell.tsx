@@ -24,6 +24,7 @@ import CoachMarkNote from './CoachMarks';
 import WorkspaceAccessList from './AccessList';
 import WorkspaceRevisionStand from './RevisionStand';
 import CommandSearch from './CommandSearch';
+import WorkspacePrintSheet from './WorkspacePrintSheet';
 import WorkspaceHeadActions, { ReadAccessLine } from './HeadActions';
 import { useCoachMarks } from '@/hooks/useCoachMarks';
 import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
@@ -527,6 +528,8 @@ export default function WorkspaceShell({
           gone. Its own component so the index (elements, rules, findings,
           source lines, glossary) and the dialog stay out of this file. */}
       <CommandSearch projectId={projectId} project={project} reading={reading} />
+      {/* Paper gets its own sheet, not this screen (§7.1, mockup s10). */}
+      <WorkspacePrintSheet project={project} projectId={projectId} reading={reading} open={open} />
 
       <section data-workspace-header="">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
@@ -578,8 +581,9 @@ export default function WorkspaceShell({
             )}
           </div>
 
-          <div className="cc-no-print flex shrink-0 flex-col items-start gap-2">
+          <div className="cc-no-print flex shrink-0 flex-col items-start gap-2 max-[600px]:w-full max-[600px]:items-stretch">
             <CcSegmentedControl
+              stretch
               label={wt('page.view')}
               value={view}
               onChange={onViewChange}
