@@ -71,7 +71,7 @@ export const BUDGET = {
    * estimate at roughly $0.22, and `maxBatches` is now the only thing that ends a review. The cap stays where
    * it is as a floor against a pricing change nobody noticed, not as a coverage decision.
    */
-  maxCostUsd: 0.5,
+  maxCostUsd: 1.0, // one-time for the 3.0 merge review (Sonny, 01.10.2026); back to 0.5 in the next commit
   /** Delta context per model call, in characters. */
   maxBatchChars: 200_000,
   /**
@@ -91,7 +91,7 @@ export const BUDGET = {
    * at ten deliberately rather than by inertia: a review that reads more than ten batches is reading a
    * backlog, and the answer to a backlog is a push, not a bigger budget.
    */
-  maxBatches: 10,
+  maxBatches: 20, // one-time for the 3.0 merge review (Sonny, 01.10.2026); back to 10 in the next commit
   /**
    * Includes reasoning tokens. The first live run (15.09.2026) spent a 12,000
    * allowance entirely on reasoning at effort `high` and returned no review.
