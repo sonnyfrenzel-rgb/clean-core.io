@@ -123,7 +123,7 @@ test.describe('one source for the score bands', () => {
       'lib/management-overview.ts',
       'components/demo/DemoWorkspace.tsx',
       'app/facts/page.tsx',
-      'app/whitepaper/page.tsx',
+      'components/whitepaper/WhitepaperDocument.tsx',
       'app/reference-analysis/page.tsx',
       'app/llms.txt/route.ts',
       'lib/chatbot-knowledge.ts',

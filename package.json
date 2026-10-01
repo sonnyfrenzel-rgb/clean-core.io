@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit -p .",
     "clean": "next clean",
     "build:guide-pdf": "tsx scripts/generate-guide-pdf.ts",
+    "build:whitepaper-pdf": "tsx scripts/generate-whitepaper-pdf.ts",
     "sync:catalog": "tsx scripts/sync-cloudification-repo.ts latest",
     "sync:catalog:all": "tsx scripts/sync-cloudification-repo.ts all",
     "demo:regenerate": "tsx scripts/regenerate-demo.ts",
