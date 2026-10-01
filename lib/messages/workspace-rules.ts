@@ -90,6 +90,7 @@ export const WORKSPACE_RULES_MESSAGES = {
   'buildUp.names': 'names',
   'buildUp.plainNames': 'plain names',
   'buildUp.codeLabel': 'The source, as it is being read',
+  'buildUp.processLabel': 'The process, growing out of the lines that were read',
   'buildUp.legendNode': 'process node',
   'buildUp.legendData': 'table read or written',
   // FirstLook — the end state of s0 (moment 4)
@@ -200,9 +201,9 @@ export function fitNotDeterminedShort(reason: 'no-evidence' | 'pointer-only' | n
 export function fitNextShort(level: 'E0' | 'E1' | 'E2' | 'E3' | 'E4'): string {
   switch (level) {
     case 'E0':
-      return 'Name the standard process to compare with';
+      return 'Name a standard process to compare';
     case 'E1':
-      return 'Follow the catalog pointer and record what SAP documents';
+      return 'Follow the catalog pointer';
     case 'E2':
       return 'Run a counter-check scenario';
     case 'E3':

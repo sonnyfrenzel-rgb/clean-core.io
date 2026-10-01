@@ -94,6 +94,9 @@ import {
 
 const HAS_WINDOW = typeof window !== 'undefined';
 
+/** Stage 3 without a stored naming — the technical names stay. */
+const NO_NAMING: { record: ProcessNamingRecord | null } = { record: null };
+
 function useReducedMotion(): boolean {
   // Read in an effect, never during render: the server has no `matchMedia`, and
   // a component that guesses produces a hydration mismatch on exactly the
@@ -298,9 +301,17 @@ export default function FirstLook({
     return afterPaint(() => setRules(readRules(source, process)));
   }, [source, hasSource, process]);
 
+  /**
+   * "Das Modell hält nicht auf" (mockup s0, DESIGN.md §5.2): the stored naming
+   * is one network read, and once the build-up's budget is spent — or the reader
+   * skipped — the end state does not wait for it. The process stands with the
+   * names it has; a naming that arrives later changes them once.
+   */
+  const [elapsed, setElapsed] = useState(0);
+  const namingNow = naming ?? (skipped || elapsed >= BUILD_UP_BUDGET.endAt ? NO_NAMING : null);
   const named = useMemo(
-    () => (process && naming ? applyNaming(process.context, naming.record) : null),
-    [process, naming],
+    () => (process && namingNow ? applyNaming(process.context, namingNow.record) : null),
+    [process, namingNow],
   );
 
   const stages = useMemo<(FirstLookStage | null)[]>(() => {
@@ -370,7 +381,6 @@ export default function FirstLook({
    * soon as the engine is done if that is later — never a wait of its own.
    */
   const animate = buildUp && !reduced && !skipped && hasSource;
-  const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     if (!animate || !HAS_WINDOW || typeof window.requestAnimationFrame !== 'function') return;
     let handle = 0;
@@ -408,7 +418,13 @@ export default function FirstLook({
       .map((n) => ({ number: n, tokens: tokenizeAbapLine(all[n - 1] ?? ''), highlighted: true }));
   }, [result, source]);
   const { outcome: states } = useProcessStates(projectId, hasSource);
-  const confirmed = useMemo(() => rulesConfirmed(states?.ok ? states.view : null), [states]);
+  // No reconstructed baseline yet means nobody has confirmed anything: 0 of n,
+  // which is a fact. Only a read that failed leaves the figure not determined.
+  const confirmed = useMemo(() => {
+    if (states?.ok) return rulesConfirmed(states.view);
+    if (states && states.code === 'no-baseline' && rules) return { confirmed: 0, total: rules.rules.length };
+    return null;
+  }, [states, rules]);
 
   const reached = stages.filter(Boolean).length + (finalStage ? 1 : 0);
 
@@ -425,7 +441,21 @@ export default function FirstLook({
    * region that is inserted together with its text is not reliably read at all.
    * It now stands once, after the card, for the whole life of this component.
    */
-  const latest = [...shown].reverse().find((s): s is FirstLookStage => s !== null) ?? null;
+  // While the build-up plays, the stage on the screen is the one announced —
+  // the engine is usually done long before the picture is, and announcing its
+  // fourth stage while the first is painted would read the screen out of order.
+  const playingIndex = !playing
+    ? null
+    : elapsed < BUILD_UP_BUDGET.processFrom
+      ? 0
+      : elapsed < BUILD_UP_BUDGET.namesFrom
+        ? 1
+        : 2;
+  const latest =
+    (playingIndex !== null ? shown.slice(0, playingIndex + 1) : shown)
+      .slice()
+      .reverse()
+      .find((s): s is FirstLookStage => s !== null) ?? null;
   const announcement = latest ? `${latest.label}: ${latest.result}` : '';
   const live = (
     <span aria-live="polite" data-first-look-live="" className="sr-only">

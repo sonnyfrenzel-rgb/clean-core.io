@@ -166,3 +166,55 @@ export function codeWindow(total: number, line: number, before = 7, after = 4): 
   from = Math.max(1, to - before - after);
   return { from, to };
 }
+
+/** A frame driven by the growing excerpt: which of its nodes stand, and the line being read. */
+export interface ExcerptFrame extends BuildUpFrame {
+  /** How many excerpt nodes have grown. */
+  grown: number;
+  /** True for the first 200 ms after the newest node grew — its line is lit strongest, then fades. */
+  fresh: boolean;
+}
+
+/**
+ * The build-up when there is an excerpt to grow (moment 2 of `s0`): its nodes
+ * appear one by one over the budget in the order the excerpt walks them, the
+ * code shows the line each one grew out of, and the counters count every lit
+ * line of the source up to the furthest line read so far — so they never fall
+ * when the main line jumps back into a routine, and only rise with a line.
+ */
+export function excerptFrame(
+  events: readonly BuildUpEvent[],
+  nodeLines: readonly (number | null)[],
+  elapsed: number,
+  totalLines: number,
+): ExcerptFrame {
+  const t = Math.max(0, elapsed);
+  const stage: BuildUpStage =
+    t < BUILD_UP_BUDGET.processFrom ? 'code-read' : t < BUILD_UP_BUDGET.namesFrom ? 'process-recognised' : 'business-language';
+  const n = nodeLines.length;
+  const progress = Math.min(1, t / BUILD_UP_BUDGET.namesFrom);
+  const grown = n === 0 ? 0 : Math.max(1, Math.ceil(progress * n));
+  let reached = 0;
+  for (let i = 0; i < grown; i += 1) reached = Math.max(reached, nodeLines[i] ?? 0);
+  if (progress >= 1) reached = totalLines;
+  const lit = events.filter((e) => e.line <= reached);
+  const tables = new Set(lit.filter((e) => e.kind === 'data').map((e) => e.table));
+  const nodes = lit.filter((e) => e.kind === 'node');
+  const currentLine = nodeLines[grown - 1] ?? reached;
+  const current = events.find((e) => e.line === currentLine) ?? lit[lit.length - 1] ?? null;
+  const grewAt = n === 0 ? 0 : ((grown - 1) / n) * BUILD_UP_BUDGET.namesFrom;
+  return {
+    stage,
+    shown: lit.length,
+    current,
+    counters: {
+      line: Math.min(reached, totalLines),
+      tables: tables.size,
+      nodes: nodes.length,
+      decisions: nodes.filter((e) => e.nodeKind === 'gateway').length,
+    },
+    named: stage === 'business-language',
+    grown,
+    fresh: progress < 1 && t - grewAt < 200,
+  };
+}
