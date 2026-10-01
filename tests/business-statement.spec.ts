@@ -778,6 +778,20 @@ test('17.9 — die Sätze sagen nicht, was der Code an ihrem Anker nicht trägt'
   expect(satzAn(code, 14).join(' ')).toContain('for the entries from gt_schluessel');
 });
 
+test('FOR ALL ENTRIES over a table nobody checks for content says what an empty table does (carried QA finding 657629d1daa0)', () => {
+  const select = '  SELECT kunnr FROM kna1 FOR ALL ENTRIES IN @gt_x WHERE kunnr = @gt_x-kunnr INTO TABLE @DATA(lt_da).';
+  const ungeprueft = satzAn(quelle('REPORT z.', 'START-OF-SELECTION.', select), 3).join(' ');
+  expect(ungeprueft).toContain('If gt_x is empty, the restriction is dropped and all rows are read.');
+  for (const guard of ['  IF gt_x IS NOT INITIAL.', '  IF lines( gt_x ) > 0.', '  CHECK gt_x[] IS NOT INITIAL.']) {
+    const code = guard.startsWith('  CHECK')
+      ? quelle('REPORT z.', 'START-OF-SELECTION.', guard, select)
+      : quelle('REPORT z.', 'START-OF-SELECTION.', guard, select, '  ENDIF.');
+    const geprueft = satzAn(code, 4).join(' ');
+    expect(geprueft, guard).toContain('for the entries from gt_x');
+    expect(geprueft, guard).not.toContain('is empty, the restriction is dropped');
+  }
+});
+
 test('weitere Aussagen, die der Code nicht trägt: Auflösung, LOOP … WHERE, ASSIGN, TRANSLATE, SUBMIT VIA JOB', () => {
   const code = quelle(
     'REPORT z_weitere.',
