@@ -91,7 +91,7 @@ export const BUDGET = {
    * at ten deliberately rather than by inertia: a review that reads more than ten batches is reading a
    * backlog, and the answer to a backlog is a push, not a bigger budget.
    */
-  maxBatches: 20, // one-time for the 3.0 merge review (Sonny, 01.10.2026); back to 10 in the next commit
+  maxBatches: 10,
   /**
    * Includes reasoning tokens. The first live run (15.09.2026) spent a 12,000
    * allowance entirely on reasoning at effort `high` and returned no review.
