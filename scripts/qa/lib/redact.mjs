@@ -57,8 +57,28 @@ const PATTERNS = [
  *   digits, a base64 key is one long mixed run, and both fail this test and are
  *   still reported.
  */
-const isInterpolatedTemplate = (value) => value.includes('${');
-const isUrl = (value) => /^https?:\/\//i.test(value);
+/*
+ * The first two exemptions used to pass the whole value on its shape alone: a
+ * template counted as code even when its literal half was a key, and a URL as a
+ * location even when it carried a password or a token (QA review of
+ * a88149856dcc). They now pass only what is code or location — the literal
+ * text around the interpolations, a URL without user info — and only when none
+ * of it carries key material. The same test bounds the `_PATH`/`_FILE`/`_URL`
+ * name exemption in redactSecrets.
+ *
+ * Key material: a run of 20 or more key characters that mixes letters and
+ * digits and is not a plain word-and-number name like `release-2026-10`.
+ */
+const carriesKeyMaterial = (value) =>
+  (value.match(/[A-Za-z0-9+_=-]{20,}/g) ?? []).some(
+    (run) =>
+      /[A-Za-z]/.test(run) &&
+      /[0-9]/.test(run) &&
+      !run.split(/[_-]/).every((segment) => /^[A-Za-z]*$/.test(segment) || /^[0-9]*$/.test(segment)),
+  );
+const hasUserInfo = (value) => /^[a-z][a-z0-9+.-]*:\/\/[^/?#]*@/i.test(value);
+const isInterpolatedTemplate = (value) => value.includes('${') && !carriesKeyMaterial(value.replace(/\$\{[^}]*\}/g, ' '));
+const isUrl = (value) => /^https?:\/\//i.test(value) && !hasUserInfo(value) && !carriesKeyMaterial(value);
 const isIdentifierLike = (value) =>
   /^[A-Za-z][A-Za-z0-9]*(?:[._/-][A-Za-z0-9]+){2,}$/.test(value) &&
   value.split(/[._/-]/).every((segment) => segment.length <= 20 && (/^[A-Za-z]+$/.test(segment) || /^[0-9]+$/.test(segment)));
@@ -83,7 +103,8 @@ export function redactSecrets(text, publicValues = new Set()) {
       // A name that says it holds a path or a file name holds a location, not a secret: `AUDIT_PUBLIC_KEY_PATH`
       // was redacted and reported as a committed credential (Sonny, 15.09.2026). A real key assigned to such a
       // name is still caught by the provider patterns above, which do not look at names.
-      if (kind === 'secret-named literal' && /_(?:PATH|FILE|URL)$/i.test(name)) return match;
+      // Only when the value holds no key material and no user info: the name alone does not decide it.
+      if (kind === 'secret-named literal' && /_(?:PATH|FILE|URL)$/i.test(name) && !carriesKeyMaterial(value) && !hasUserInfo(value)) return match;
       if (kind === 'secret-named literal' && namesSomethingRatherThanHoldingIt(value)) return match;
       if (publicValues.has(match)) return `[REDACTED:${kind}]`;
       count++;
