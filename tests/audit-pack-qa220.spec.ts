@@ -96,3 +96,12 @@ test('a run without a recorded catalog revision says so, and a recorded one is s
   expect(generateModelCard(project({ catalogOnRun: 'REV-FROM-RUN', catalogOnCard: 'REV-FROM-CARD' }))).toContain('| SAP API Catalog | REV-FROM-RUN |');
   expect(generateModelCard(project({ catalogOnCard: 'REV-FROM-CARD' }))).toContain('| SAP API Catalog | REV-FROM-CARD |');
 });
+
+test('a run that recorded no model participation does not credit a model in the usage context (QA review of a88149856dcc)', () => {
+  const legacy = generateModelCard(project({}));
+  expect(legacy).toContain('| Narrative origin | Not recorded |');
+  expect(legacy).not.toContain('The model was used for written text');
+  expect(legacy).toContain('was not\nrecorded for this run');
+  // An attested run still says what the model did.
+  expect(generateModelCard(project({ participation: 'narrative-attested' }))).toContain('The model was used for written text');
+});

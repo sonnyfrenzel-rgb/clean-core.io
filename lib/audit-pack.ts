@@ -289,6 +289,20 @@ function usageContextOf(mc: ModelCard | undefined): string {
       ...closing,
     ].join('\n');
   }
+  if (mc?.modelParticipation !== 'narrative-attested') {
+    // A run from before model participation was recorded: the model card's
+    // "Narrative origin" says Not recorded, and this paragraph must not credit
+    // a model the record does not name (QA review of a88149856dcc).
+    return [
+      'The deterministic engine produced the evidence report, the Clean Core score and',
+      'the extensibility route; these are recomputed on the server and covered by the',
+      'signature.',
+      '',
+      'Whether a model wrote the narrative or later stages of this project was not',
+      'recorded for this run, so this pack does not say that one did.',
+      ...closing,
+    ].join('\n');
+  }
   return [
     'The deterministic engine produced the evidence report, the Clean Core score and',
     'the extensibility route; these are recomputed on the server and covered by the',
