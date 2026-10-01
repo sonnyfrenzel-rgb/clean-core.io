@@ -580,7 +580,7 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     // "Skip intro" is the one thing on this page that *is* remembered in the
     // browser, so it is pressed here: it gives the check below something real
     // to look at instead of an empty store that would pass by default.
-    await page.locator('[data-three-views-skip]').click();
+    await page.locator('[data-new-project-skip]').click();
     await expect(page.locator('[data-new-project-intro]')).toHaveAttribute(
       'data-new-project-intro',
       'folded',

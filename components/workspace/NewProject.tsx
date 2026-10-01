@@ -29,7 +29,6 @@ import {
 import {
   CLEAN_CORE_LEVEL_CAVEAT,
   CLEAN_CORE_MEANING,
-  CLEAN_CORE_SCHEMA,
   NEW_PROJECT_CORE,
   NEW_PROJECT_DIFFERENCES,
   START_CHOICES,
@@ -38,8 +37,9 @@ import {
   type CatalogArtifactFigures,
   type StartChoice,
 } from '@/lib/new-project-content';
-import type { TravellingFact } from '@/lib/three-views-stage';
+import { STAGE_EXAMPLE_FILE, type TravellingFact } from '@/lib/three-views-stage';
 import ThreeViewsStage from './ThreeViewsStage';
+import CleanCoreDiagram from './CleanCoreDiagram';
 import PersonalDataHints from '@/components/PersonalDataHints';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -47,6 +47,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import { CcRunCost } from '@/components/cc/RunIndicator';
+import type { WorkspaceMessageKey } from '@/lib/workspace-messages';
 import { wt, newProjectCatalogLine, newProjectExampleSize } from '@/lib/workspace-messages';
 
 /** A choice card and an example row: chosen is an ink outline, never green (§1.1). */
@@ -88,11 +89,33 @@ const EXAMPLE_OFF = 'border-cc-line bg-cc-surface hover:border-cc-field-border';
 
 const PART1_STORAGE_KEY = 'cc.newProject.introSeen';
 
+/**
+ * The examples in the order of mockup 2.8 s14: the demo project's own source
+ * first and chosen, because it is the case the three views above are made of -
+ * picking it shows the reader the program they have just watched. The rest
+ * keep their order. Only this page reorders; the list itself is shared.
+ */
+const ORDERED_EXAMPLES: readonly StarterExample[] = [
+  ...STARTER_EXAMPLES.filter((e) => e.file === STAGE_EXAMPLE_FILE),
+  ...STARTER_EXAMPLES.filter((e) => e.file !== STAGE_EXAMPLE_FILE),
+];
+
+/** The one line the mockup puts under two examples' size - what each is for. */
+const EXAMPLE_NOTES: Partial<Record<string, WorkspaceMessageKey>> = {
+  [STAGE_EXAMPLE_FILE]: 'newProject.demoBasis',
+  'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': 'newProject.bigProcess',
+};
+
 const DIFFERENCE_ICONS: Record<string, React.ComponentType<{ size?: number; 'aria-hidden'?: boolean }>> = {
   'file-code': FileCode,
   'circle-help': CircleHelp,
   layers: Layers,
 };
+
+/** "Business rules buried..." reads on after "Shows" as "business rules buried...". */
+function lowerFirst(text: string): string {
+  return /^[A-Z][a-z]/.test(text) ? text.charAt(0).toLowerCase() + text.slice(1) : text;
+}
 
 function readIntroSeen(): boolean {
   try {
@@ -129,7 +152,7 @@ export default function NewProject({
   const [user, setUser] = useState<User | null>(null);
   const [introOpen, setIntroOpen] = useState<boolean | null>(null);
   const [choice, setChoice] = useState<StartChoice>('example');
-  const [example, setExample] = useState<StarterExample>(STARTER_EXAMPLES[0]);
+  const [example, setExample] = useState<StarterExample>(ORDERED_EXAMPLES[0]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /**
@@ -176,11 +199,17 @@ export default function NewProject({
 
   const start = useCallback(async () => {
     if (busy || !user) return;
+    // Own code: nothing is created here. The upload page reads and checks the
+    // files and writes the project only when the analysis is started (s11).
+    if (choice === 'own-code') {
+      router.push('/admin/new-project/upload');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       const db = getDb();
-      const source = choice === 'example' ? await loadStarterExample(example.file) : '';
+      const source = await loadStarterExample(example.file);
 
       /**
        * The source is written to Firestore two lines below, so this is the last
@@ -198,19 +227,18 @@ export default function NewProject({
       }
 
       const docRef = await addDoc(collection(db, 'projects'), {
-        name: choice === 'example' ? example.name : 'Untitled project',
+        name: example.name,
         status: 'uploaded',
         ...(source ? { legacyCode: source } : {}),
         userId: user.uid,
         createdAt: serverTimestamp(),
-        ...(choice === 'example' ? { fromExample: true } : {}),
+        fromExample: true,
       });
 
-      // An example opens the workspace with the build-up of §5.2; own code has
-      // no source yet, so it goes where the source is asked for. The workspace
+      // An example opens the workspace with the build-up of §5.2. The workspace
       // is still behind roadmap 1.4's switch, and an address that 404s is worse
       // than the screen this account already knows.
-      if (choice === 'example' && workspaceShellEnabled(profile)) {
+      if (workspaceShellEnabled(profile)) {
         router.push(`/project/${docRef.id}?first=1`);
       } else {
         router.push(`/project/${docRef.id}/analyze`);
@@ -253,18 +281,32 @@ export default function NewProject({
   return (
     <div className="cc min-h-screen bg-cc-page px-4 py-6 sm:px-6" data-cc-new-project="">
       <div className="mx-auto flex max-w-[1280px] flex-col gap-4">
-        <div>
-          <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">
-            {wt('newProject.title')}
-          </h1>
-          <p data-new-project-core="" className="mt-1 max-w-3xl text-[13px] font-medium text-cc-ink-muted">
-            {NEW_PROJECT_CORE}
-          </p>
+        <div className="flex flex-wrap items-start gap-4">
+          <div className="min-w-0">
+            <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">
+              {wt('newProject.title')}
+            </h1>
+            <p data-new-project-core="" className="mt-1 max-w-3xl text-[13px] font-medium text-cc-ink-muted">
+              {NEW_PROJECT_CORE}
+            </p>
+          </div>
+          {/* "Skip intro" at the top right, always (s14): it folds part 1
+              away and turns into "Show intro". */}
+          <span className="ml-auto">
+            <CcButton
+              data-new-project-skip=""
+              aria-expanded={introOpen}
+              aria-controls="new-project-intro"
+              onClick={introOpen ? closeIntro : () => setIntroOpen(true)}
+            >
+              {introOpen ? wt('newProject.skipIntro') : wt('newProject.showIntro')}
+            </CcButton>
+          </span>
         </div>
 
         {/* ---------------------------------------------- part 1: what it is */}
         {introOpen ? (
-          <div data-new-project-intro="open" className="flex flex-col gap-4">
+          <div id="new-project-intro" data-new-project-intro="open" className="flex flex-col gap-4">
             <CcCard title={wt('newProject.different')} level={2}>
               <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 lg:grid-cols-3">
                 {NEW_PROJECT_DIFFERENCES.map((line) => {
@@ -295,26 +337,7 @@ export default function NewProject({
                 <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
                   {CLEAN_CORE_MEANING}
                 </p>
-                <ul className="m-0 mt-3 list-none space-y-2 p-0">
-                  {CLEAN_CORE_SCHEMA.map((part) => (
-                    <li
-                      key={part.key}
-                      data-core-schema={part.place}
-                      className={
-                        part.place === 'breach'
-                          ? 'rounded-cc-row border border-dashed border-cc-error-border bg-cc-surface px-3 py-2'
-                          : part.place === 'core'
-                            ? 'rounded-cc-row border border-cc-field-border bg-cc-surface-muted px-3 py-2'
-                            : 'rounded-cc-row border border-cc-field-border bg-cc-surface px-3 py-2'
-                      }
-                    >
-                      <b className="text-[12px] font-semibold text-cc-ink">{part.label}</b>
-                      <span className="block text-[12px] leading-snug font-medium text-cc-ink-muted">
-                        {part.note}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <CleanCoreDiagram />
               </CcCard>
 
               <CcCard title={wt('newProject.fourLevels')}>
@@ -387,19 +410,21 @@ export default function NewProject({
                 the only thing on this page that moves (§1.7). It sits after the
                 three glances because it is the pay-off: the vocabulary above is
                 what the three panels below are speaking. */}
-            <ThreeViewsStage fact={stageFact} onSkip={closeIntro} />
-
-            <div>
-              <CcButton onClick={closeIntro} data-new-project-intro-hide="">
-                {wt('newProject.hideThis')}
-              </CcButton>
-            </div>
+            <ThreeViewsStage fact={stageFact} />
           </div>
         ) : (
-          <div data-new-project-intro="folded" className="flex flex-wrap items-center gap-2">
-            <span className="text-[13px] font-medium text-cc-ink-muted">
+          <div
+            id="new-project-intro"
+            data-new-project-intro="folded"
+            className="flex flex-wrap items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3"
+          >
+            <span className="text-[13px] font-semibold text-cc-ink">
               {wt('newProject.whatIs')}
             </span>
+            <span className="text-[13px] font-medium text-cc-ink-muted">
+              {wt('newProject.whatIsNote')}
+            </span>
+            <span className="ml-auto" />
             <CcButton onClick={() => setIntroOpen(true)} data-new-project-intro-show="">
               {wt('newProject.show')}
             </CcButton>
@@ -451,7 +476,7 @@ export default function NewProject({
                 aria-label={START_CHOICES.example.title}
                 className="m-0 list-none space-y-2 p-0"
               >
-                {STARTER_EXAMPLES.map((item) => {
+                {ORDERED_EXAMPLES.map((item) => {
                   const cost = describeStarterExampleCost(profile, item.name);
                   const selected = item.file === example.file;
                   return (
@@ -481,8 +506,13 @@ export default function NewProject({
                         >
                           {cost.badge}
                         </span>
+                        {EXAMPLE_NOTES[item.file] ? (
+                          <span data-example-note="" className="text-[11px] font-medium text-cc-ink">
+                            {wt(EXAMPLE_NOTES[item.file] as WorkspaceMessageKey)}
+                          </span>
+                        ) : null}
                         <span className="w-full text-[12px] leading-snug font-medium text-cc-ink-muted">
-                          {item.summary}
+                          {item.summary} {wt('newProject.shows')} {lowerFirst(item.demonstrates)}
                         </span>
                       </label>
                     </li>

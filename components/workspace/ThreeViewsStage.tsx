@@ -51,8 +51,12 @@ export default function ThreeViewsStage({
 }: {
   /** Derived from the example's own source. `null` renders nothing at all. */
   fact: TravellingFact | null;
-  /** *„Skip intro" ist immer sichtbar* — folds part 1 away, as "Hide this" does. */
-  onSkip: () => void;
+  /**
+   * *„Skip intro" ist immer sichtbar* — folds part 1 away. "New project" now
+   * carries it at the top right of the page, where mockup 2.8 s14 puts it, so
+   * it passes nothing and the stage draws no second one.
+   */
+  onSkip?: () => void;
 }) {
   const [view, setView] = useState<WorkspaceView>('business');
   const [auto, setAuto] = useState(true);
@@ -200,9 +204,11 @@ export default function ThreeViewsStage({
                 {wt('threeViews.replay')}
               </CcButton>
             ) : null}
-            <CcButton data-three-views-skip="" onClick={onSkip}>
-              {wt('threeViews.skipIntro')}
-            </CcButton>
+            {onSkip ? (
+              <CcButton data-three-views-skip="" onClick={onSkip}>
+                {wt('threeViews.skipIntro')}
+              </CcButton>
+            ) : null}
           </span>
         </div>
 

@@ -42,7 +42,9 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   const pathname = usePathname();
   const router = useRouter();
   const { profile } = useUserProfile();
-  const isProjectStep = pathname.includes('/project/');
+  // "New project" is the first step of a project (mockup 2.8 s11, s14) and
+  // gets the same one-line footer as the stages after it.
+  const isProjectStep = pathname.includes('/project/') || pathname.startsWith('/admin/new-project');
 
   // Scroll to top on every page navigation
   useEffect(() => {
@@ -155,6 +157,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
     const stage = /^\/project\/[^/]+\/([^/?#]+)/.exec(pathname ?? '')?.[1];
     if (stage) return PHASES.find((p) => p.key === stage)?.label ?? null;
     if (pathname?.startsWith('/settings')) return 'Settings & Profile';
+    if (pathname?.startsWith('/admin/new-project')) return 'New project';
     if (pathname?.startsWith('/admin')) return 'Admin Console';
     return null;
   })();
