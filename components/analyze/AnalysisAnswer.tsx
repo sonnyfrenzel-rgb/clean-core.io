@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import CcIconButton from '@/components/cc/IconButton';
 import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
-import { severityChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
+import { severityChartMark, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
 import { scoreBand } from '@/lib/clean-core-score';
 import { STATE_CLASSES } from '@/components/cc/state';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
@@ -274,7 +274,7 @@ function StackBar({ parts }: { parts: readonly SeverityPart[] }) {
               <span
                 key={p.key}
                 data-chart-segment=""
-                className={cn('h-full', severityChartColor(p.key).bg, p.key === 'High' && 'opacity-70')}
+                className={cn('h-full', severityChartMark(p.key, 'bg'))}
                 style={{ flex: `${p.count} 0 0` }}
               />
             ))
