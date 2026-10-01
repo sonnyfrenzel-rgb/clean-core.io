@@ -72,6 +72,10 @@ test.describe('the demo is a real run, not a story about one', () => {
     expect(demo.analyze.coverage.gaps).toEqual(evidence.coverage.gaps);
     expect(demo.economics.scoreBefore).toBe(route.cleanCoreScore);
     expect(demo.linesOfCode).toBe(source.split(/\r?\n/).filter((l) => l.trim() && !/^\s*\*/.test(l)).length);
+    // Economics models on the source's line count, the one every other screen
+    // states - not the code-only count (it said 550 against 669 until 01.10.2026).
+    expect(demo.economics.loc, 'the demo economics models on the whole source').toBe(source.split(/\r?\n/).length);
+    expect(demo.economics.loc).toBe(demo.totalLines);
   });
 
   test('the stages the model would write carry no invented model output', () => {
