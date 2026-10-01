@@ -24,32 +24,41 @@ import {
   mgmtTrendLabel,
   wt,
 } from '@/lib/workspace-messages';
-import { gradeKey, type ObjectUse } from '@/lib/abap/abcd-classification';
-import type { EvidenceFinding } from '@/lib/abap/evidence-model';
-import { publicCloudFitLookupObjects, resolvePublicCloudFit, type PublicCloudFitFinding } from '@/lib/abap/public-cloud-fit-resolver';
-import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
+import CcDisclosure from '@/components/cc/Disclosure';
+import { useFitByPlatform } from '@/hooks/useFitByPlatform';
+import ManagementExecutive, { StackedBar, Swatch } from './ManagementExecutive';
+import {
+  costsFromDecision,
+  executiveSubject,
+  managementExecutive,
+  type ExecutiveTarget,
+} from '@/lib/management-executive';
+import { stageHref } from '@/lib/workspace-back-href';
+import { workflowSteps } from '@/lib/workflow-steps';
 import type { ItFindingsSource } from '@/lib/it-findings';
 import type { ManagementView } from '@/lib/management-answers';
 import {
-  chartLabel,
   managementOverview,
-  type ChartSegment,
   type DecisionRead,
-  type FitByPlatform,
   type Loaded,
   type OverviewCardState,
   type SegmentTone,
   type TrendChartPoint,
 } from '@/lib/management-overview';
 import type { DecisionStatus } from '@/lib/project-decision';
-import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import type { ObjectStatusValue } from '@/lib/object-status';
 import type { Project } from '@/lib/types';
 
 /**
  * The Management overview — roadmap 3.0.10.
  *
- * One answer sentence, and under it five cards, each opening with its own
+ * **First the decision panel** (`ManagementExecutive.tsx`, built by
+ * `lib/management-executive.ts` from the cards below): the question, where the
+ * decision stands, what is in its way, the next step, four figures, where the
+ * objects stand and the evidence per phase. The cards themselves fold under it,
+ * with their count, one action deeper (§2.11) — nothing they say is removed.
+ *
+ * Under it five cards, each opening with its own
  * answer as its title (ADR-029). Every sentence and every number comes out of
  * `lib/management-overview.ts`, which reads only models that already exist;
  * this component adds layout, and the three reads that feed the model:
@@ -72,63 +81,6 @@ import type { Project } from '@/lib/types';
  *
  * **Nothing is written.** The three reads are GETs; the view is a view.
  */
-
-/* ------------------------------------------------------------ tones */
-
-const TONE_CLASS: Record<SegmentTone, string> = {
-  'chart-1': 'bg-cc-chart-1',
-  'chart-2': 'bg-cc-chart-2',
-  'chart-3': 'bg-cc-chart-3',
-  'chart-4': 'bg-cc-chart-4',
-  // §1.8: A information, B neutral, C warning, D error — the solid marks of
-  // `components/cc/state.ts`, never green: a level is imported, not proven.
-  'level-A': 'bg-cc-information',
-  'level-B': 'bg-cc-neutral',
-  'level-C': 'bg-cc-warning-mark',
-  'level-D': 'bg-cc-error',
-  // The one area that is not a category: no fill colour, a dashed outline —
-  // a form rather than a hue, so it survives a printer without colour and a
-  // contrast theme (`app/globals.css` keeps the dashes under forced-colors).
-  // No hatching gradient: §1.4 keeps gradients out of the workspace (D.32).
-  'not-determined': 'bg-cc-surface-muted border border-dashed border-cc-field-border',
-};
-
-function Swatch({ tone }: { tone: SegmentTone }) {
-  return (
-    <span
-      aria-hidden="true"
-      data-chart-swatch=""
-      data-not-determined={tone === 'not-determined' ? '' : undefined}
-      className={cn('inline-block h-3 w-3 shrink-0 rounded-[2px] align-middle', TONE_CLASS[tone])}
-    />
-  );
-}
-
-/** One horizontal bar. The numbers are in its label and in the table the caller puts under it. */
-function StackedBar({ label, segments, chart }: { label: string; segments: readonly ChartSegment[]; chart: string }) {
-  const total = segments.reduce((n, s) => n + s.count, 0);
-  if (total === 0) return null;
-  return (
-    <div
-      role="img"
-      aria-label={chartLabel(label, segments)}
-      data-overview-bar={chart}
-      className="flex h-4 w-full gap-[2px] overflow-hidden rounded-cc-row"
-    >
-      {segments
-        .filter((s) => s.count > 0)
-        .map((s) => (
-          <span
-            key={s.key}
-            data-chart-segment={s.key}
-            data-not-determined={s.notDetermined ? '' : undefined}
-            style={{ flexGrow: s.count, flexBasis: 0 }}
-            className={cn('block h-full min-w-[4px]', TONE_CLASS[s.tone])}
-          />
-        ))}
-    </div>
-  );
-}
 
 /**
  * The legend and the numbers in one — a real table (`CcTable`, §2.4), so a
@@ -216,6 +168,9 @@ function Pending<T>({ id, card }: { id: string; card: OverviewCardState<T> }) {
 }
 
 const FIRST_ROWS = 5;
+
+/** The answer cards under the panel — decision, blockers, score, buckets, levels. */
+const OVERVIEW_CARDS = 5;
 
 function useShowAll(): [boolean, () => void] {
   const [all, setAll] = useState(false);
@@ -386,66 +341,56 @@ export default function ManagementOverview({
     };
   }, [projectId, decisionRevision]);
 
-  // The rows carry `objectName` and `kind` — all the resolver reads.
-  const fitFindings = useMemo<PublicCloudFitFinding[] | null>(
-    () =>
-      findings.state === 'ready'
-        ? findings.value.rows.map((r) => ({ objectName: r.objectName ?? '', kind: r.kind as EvidenceFinding['kind'] }))
-        : null,
-    [findings],
-  );
-  const lookupObjects = useMemo(() => (fitFindings ? publicCloudFitLookupObjects(fitFindings) : []), [fitFindings]);
-  // Graded under the project's target profile, as its run and the IT rows
-  // above are (owner decision 30.09.2026).
-  const lookup = useAbcdCatalogLookup(lookupObjects, project ? catalogLookupTargetOf(project) : null);
-
-  const fit = useMemo<Loaded<FitByPlatform>>(() => {
-    if (findings.state === 'loading') return { state: 'loading' };
-    if (findings.state === 'absent') return { state: 'absent', reason: findings.reason };
-    if (!fitFindings || !project) return { state: 'loading' };
-    if (lookupObjects.length > 0 && lookup.status === 'loading') return { state: 'loading' };
-    if (lookupObjects.length > 0 && lookup.status === 'error') {
-      return {
-        state: 'absent',
-        reason: wt('mgmt.lookupFailed'),
-      };
-    }
-    const deps = {
-      gradeObjectUse: (name: string, use: ObjectUse | null) =>
-        lookup.grades[gradeKey(name, use)] ?? { grade: 'Unknown' as const, provenance: 'heuristic' as const },
-      hasNoPath: (name: string) => lookup.noPath[name] ?? false,
-    };
-    const base = { findings: fitFindings, usageReport: project.usageReport ?? null, catalogBasis: null };
-    return {
-      state: 'ready',
-      value: {
-        target: project.s4Deployment ?? null,
-        private: resolvePublicCloudFit({ ...base, targetPlatform: 'private' }, deps),
-        public: resolvePublicCloudFit({ ...base, targetPlatform: 'public' }, deps),
-      },
-    };
-  }, [findings, fitFindings, project, lookupObjects.length, lookup.status, lookup.grades, lookup.noPath]);
+  // The four buckets for both editions — one derivation, shared with the demo.
+  const fit = useFitByPlatform(findings, project, wt('mgmt.lookupFailed'));
 
   const overview = useMemo(
     () => managementOverview({ view, fit, findings, decision }, { hasSource, hasRun }),
     [view, fit, findings, decision, hasSource, hasRun],
   );
 
+  const executive = useMemo(
+    () =>
+      managementExecutive({
+        subject: executiveSubject(project?.legacyCode, project?.name?.trim() || wt('exec.thisProgram')),
+        mode: 'project',
+        hasSource,
+        hasRun,
+        steps: workflowSteps(project),
+        overview,
+        fit,
+        costs: costsFromDecision(decision),
+      }),
+    [project, hasSource, hasRun, overview, fit, decision],
+  );
+  const hrefFor = (target: ExecutiveTarget): string =>
+    target.kind === 'stage'
+      ? stageHref({ base: `/project/${projectId}`, path: target.path, view: 'management' })
+      : target.kind === 'anchor'
+        ? `#${target.id}`
+        : '/admin/new-project';
+
   const [allBlockers, toggleBlockers] = useShowAll();
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [cardsOpen, setCardsOpen] = useState(false);
 
   const { buckets, readiness, levels, blockers, decision: dec } = overview;
 
   return (
     <div data-management-overview="">
-      <h2
-        id="management-answers-heading"
-        data-management-headline=""
-        className="m-0 cc-text-h2 text-cc-ink"
-      >
-        {overview.headline}
-      </h2>
-      <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+      <ManagementExecutive summary={executive} hrefFor={hrefFor} headingId="management-answers-heading" />
+
+      {/* The five answer cards stand one action deeper (§2.11): every figure
+          above comes out of them, and every number they hold stays here. */}
+      <div className="mt-4">
+        <CcDisclosure
+          title={wt('exec.evidenceBehind')}
+          count={OVERVIEW_CARDS}
+          level={3}
+          open={cardsOpen}
+          onOpenChange={setCardsOpen}
+        >
+      <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
         {overview.question} {wt('mgmt.questionSuffix')}
       </p>
 
@@ -705,6 +650,8 @@ export default function ManagementOverview({
         ) : (
           <Pending id="levels" card={levels} />
         )}
+      </div>
+        </CcDisclosure>
       </div>
 
       {children ? (

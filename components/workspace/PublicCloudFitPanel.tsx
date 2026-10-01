@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { cn } from '@/lib/utils';
 import CcCard from '@/components/cc/Card';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import CcButton from '@/components/cc/Button';
+import CcTable from '@/components/cc/Table';
+import { CcTag } from '@/components/cc/Tag';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { resolvePublicCloudFit, publicCloudFitLookupObjects } from '@/lib/abap/public-cloud-fit-resolver';
 import { gradeKey } from '@/lib/abap/abcd-classification';
@@ -16,11 +20,13 @@ import {
   type CatalogSnapshot,
   type PublicCloudFitAssignment,
   type PublicCloudFitBucket,
+  type PublicCloudFitReasonCode,
+  type PublicCloudFitRule,
 } from '@/lib/abap/public-cloud-fit';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import type { Project } from '@/lib/types';
-import { wt, cloudFitNotAssigned, cloudFitTargetPlatform } from '@/lib/workspace-messages';
+import { wt, cloudFitDetailLabel, cloudFitNotAssigned, cloudFitTargetPlatform, type WorkspaceMessageKey } from '@/lib/workspace-messages';
 
 /**
  * Public-Cloud-Fit and the four buckets — `DESIGN.md` §5.6 (ADR-033), roadmap
@@ -141,7 +147,7 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
 
   if (!project?.legacyCode?.trim() || !findings) {
     return (
-      <div className="cc" data-public-cloud-fit-panel="empty">
+      <div className="cc" id="public-cloud-fit" data-public-cloud-fit-panel="empty">
         <CcCard title={wt('cloudFit.title')} meta={<CcProvenanceChip value="not-determined" />}>
           <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
             {wt('cloudFit.noSource')}
@@ -155,7 +161,7 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
   // nothing to render below but a placeholder, never a matrix of guesses.
   if (lookup.status === 'loading') {
     return (
-      <div className="cc" data-public-cloud-fit-panel="loading">
+      <div className="cc" id="public-cloud-fit" data-public-cloud-fit-panel="loading">
         <CcCard title={wt('cloudFit.title')} meta={<CcProvenanceChip value="not-determined" />}>
           <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
             {wt('cloudFit.loading')}
@@ -168,7 +174,7 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
   // Visible "the lookup failed" state — never silently defaulted to "has a path".
   if (lookup.status === 'error' || !result) {
     return (
-      <div className="cc" data-public-cloud-fit-panel="error">
+      <div className="cc" id="public-cloud-fit" data-public-cloud-fit-panel="error">
         <CcCard title={wt('cloudFit.title')} meta={<CcProvenanceChip value="not-determined" />}>
           <CcMessageStrip state="error">
             {wt('cloudFit.lookupFailed')}
@@ -182,7 +188,7 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
   const notAssigned = assignments.filter((a) => a.bucket === null);
 
   return (
-    <div className="cc" data-public-cloud-fit-panel="ready">
+    <div className="cc" id="public-cloud-fit" data-public-cloud-fit-panel="ready">
       <CcCard title={wt('cloudFit.title')} count={assignments.length}>
         <p data-public-cloud-fit-headline className="m-0 text-[14px] leading-snug font-semibold text-cc-ink">
           {publicCloudFitHeadline(summary)}
@@ -223,20 +229,7 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
             {notAssigned.length === 0 ? (
               <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">{wt('cloudFit.allAssigned')}</p>
             ) : (
-              <ul className="m-0 mt-2 list-none space-y-2 p-0">
-                {notAssigned.map((a) => (
-                  <li
-                    key={a.objectName}
-                    data-public-cloud-fit-object={a.objectName}
-                    className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2"
-                  >
-                    <div className="text-[12px] font-semibold text-cc-ink">{a.objectName}</div>
-                    <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                      {a.reason?.detail}
-                    </p>
-                  </li>
-                ))}
-              </ul>
+              <ObjectTable rows={notAssigned} />
             )}
           </section>
         </div>
@@ -279,29 +272,7 @@ function BucketSection({
       {rows.length === 0 ? (
         <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">{wt('cloudFit.emptyBucket')}</p>
       ) : (
-        <ul className="m-0 mt-2 list-none space-y-2 p-0">
-          {rows.map((a) => (
-            <li
-              key={a.objectName}
-              data-public-cloud-fit-object={a.objectName}
-              className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2"
-            >
-              <div className="text-[12px] font-semibold text-cc-ink">{a.objectName}</div>
-              <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">{a.evidence}</p>
-              {a.reviewTask && (
-                <p
-                  data-public-cloud-fit-review-task
-                  className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink"
-                >
-                  <span className="font-bold tracking-[0.04em] uppercase">{wt('cloudFit.toFindOut')}</span> {a.reviewTask}
-                </p>
-              )}
-              {a.usageNote && (
-                <p className="m-0 mt-1 text-[11px] leading-snug font-medium text-cc-ink-muted">{a.usageNote}</p>
-              )}
-            </li>
-          ))}
-        </ul>
+        <ObjectTable rows={rows} />
       )}
       {footnote && (
         <p data-public-cloud-fit-basis className="m-0 mt-1 text-[11px] leading-snug font-medium text-cc-ink-muted">
@@ -309,5 +280,108 @@ function BucketSection({
         </p>
       )}
     </section>
+  );
+}
+
+/** The plain one-line status of each rule and reason — the long sentence sits behind the row's detail. */
+const RULE_LINE: Record<PublicCloudFitRule, WorkspaceMessageKey> = {
+  'retire-drop': 'cloudFit.ruleRetireDrop',
+  'retire-candidate-zero-usage': 'cloudFit.ruleRetireCandidateZeroUsage',
+  'no-catalogued-path-none-named': 'cloudFit.ruleNoCataloguedPathNoneNamed',
+  'no-catalogued-path-not-listed': 'cloudFit.ruleNoCataloguedPathNotListed',
+  'rebuild-own-work': 'cloudFit.ruleRebuildOwnWork',
+  'rebuild-path': 'cloudFit.ruleRebuildPath',
+  'keep-platform-level': 'cloudFit.ruleKeepPlatformLevel',
+};
+
+const REASON_LINE: Record<PublicCloudFitReasonCode, WorkspaceMessageKey> = {
+  'level-not-determined': 'cloudFit.reasonLevelNotDetermined',
+  'target-platform-not-set': 'cloudFit.reasonTargetPlatformNotSet',
+  'catalog-evidence-missing': 'cloudFit.reasonCatalogEvidenceMissing',
+};
+
+function statusLine(a: PublicCloudFitAssignment): string {
+  if (a.rule) return wt(RULE_LINE[a.rule]);
+  if (a.reason) return wt(REASON_LINE[a.reason.code]);
+  return '';
+}
+
+const OBJECT_COLUMNS = [
+  { key: 'object', label: wt('cloudFit.colObject'), width: '30%' },
+  { key: 'status', label: wt('cloudFit.colStatus') },
+  { key: 'detail', label: wt('cloudFit.colDetail'), action: true },
+] as const;
+
+/**
+ * The objects of one bucket — one row each: the object, what is known in one
+ * plain line, and "To find out" as a tag where something is still open. The
+ * evidence sentence, the task and the usage note sit in the row's detail, one
+ * action deeper (§2.11), and on paper always (§7.1). Nothing is shortened in
+ * the detail: it is the sentence the resolver wrote.
+ */
+function ObjectTable({ rows }: { rows: PublicCloudFitAssignment[] }) {
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const toggle = (name: string) => setOpen((o) => ({ ...o, [name]: !o[name] }));
+  return (
+    <div className="mt-2">
+      <CcTable
+        caption={wt('cloudFit.tableCaption')}
+        columns={OBJECT_COLUMNS}
+        limit={5}
+        rows={rows.map((a) => {
+          const isOpen = Boolean(open[a.objectName]);
+          const detail = a.evidence ?? a.reason?.detail ?? null;
+          const detailId = `public-cloud-fit-detail-${a.objectName.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+          const detailBlock = (
+              <div
+                id={detailId}
+                data-public-cloud-fit-detail={a.objectName}
+                className={cn('mt-1 w-full space-y-1', !isOpen && 'hidden print:block')}
+              >
+                {detail ? (
+                  <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{detail}</p>
+                ) : null}
+                {a.reviewTask && (
+                  <p data-public-cloud-fit-review-task className="m-0 text-[12px] leading-snug font-medium text-cc-ink">
+                    <span className="font-bold tracking-[0.04em] uppercase">{wt('cloudFit.toFindOut')}</span> {a.reviewTask}
+                  </p>
+                )}
+                {a.usageNote && (
+                  <p className="m-0 text-[11px] leading-snug font-medium text-cc-ink-muted">{a.usageNote}</p>
+                )}
+              </div>
+          );
+          return {
+            key: a.objectName,
+            cells: {
+              object: (
+                <span data-public-cloud-fit-object={a.objectName} className="font-cc-mono text-[12px] font-semibold">
+                  {a.objectName}
+                </span>
+              ),
+              status: (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span data-public-cloud-fit-status="">{statusLine(a)}</span>
+                  {a.reviewTask ? <CcTag>{wt('cloudFit.toFindOutTag')}</CcTag> : null}
+                  {detailBlock}
+                </div>
+              ),
+              detail: (
+                <CcButton
+                  variant="ghost"
+                  density="compact"
+                  aria-expanded={isOpen}
+                  aria-controls={detailId}
+                  aria-label={cloudFitDetailLabel(isOpen, a.objectName)}
+                  onClick={() => toggle(a.objectName)}
+                >
+                  {isOpen ? wt('cloudFit.hide') : wt('cloudFit.details')}
+                </CcButton>
+              ),
+            },
+          };
+        })}
+      />
+    </div>
   );
 }

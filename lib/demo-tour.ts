@@ -110,7 +110,7 @@ export const TOUR_STATIONS: readonly TourStation[] = Object.freeze([
     place: 'management',
     view: 'management',
     title: 'The Management view',
-    body: 'It starts with its answer. In the demo that answer is that nothing is signed, so a decision would bind nothing.',
+    body: 'It starts with the decision: where it stands, what is in its way and the one next step. In the demo nothing is signed, so the first thing in the way is a signed run.',
   },
   {
     place: 'four-buckets',
