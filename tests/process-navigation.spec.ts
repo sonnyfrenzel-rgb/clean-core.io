@@ -327,6 +327,16 @@ test.describe('the parts of the navigation say what the file says', () => {
     }
   });
 
+  test('an indented PARAMETERS keeps its switches, and a checkbox with no DEFAULT starts off (QA review of a88149856dcc)', () => {
+    // Pretty-printed inside a SELECTION-SCREEN block, and p_upd without DEFAULT —
+    // the initial value of a checkbox is blank, which is off.
+    const source = exampleSource().replace("PARAMETERS: p_upd    AS CHECKBOX DEFAULT ' ',", '  PARAMETERS: p_upd    AS CHECKBOX,');
+    expect(source).toContain('  PARAMETERS: p_upd    AS CHECKBOX,');
+    const switches = readRunSwitches(source, exampleModel(source));
+    expect(switches.map((entry) => entry.name).sort()).toEqual(['p_alv', 'p_bdc', 'p_down', 'p_mail', 'p_rfc', 'p_upd']);
+    expect(switches.find((entry) => entry.name === 'p_upd')!.defaultOn).toBe(false);
+  });
+
   test('the problem line of a level says what is not determined, and nothing else', () => {
     const source = exampleSource();
     const model = exampleModel(source);

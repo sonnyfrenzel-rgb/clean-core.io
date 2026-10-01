@@ -576,7 +576,11 @@ export interface RunSwitch {
   name: string;
   declaredAs: 'parameter' | 'select-option';
   checkbox: boolean;
-  /** `DEFAULT 'X'` → on, `DEFAULT ' '` → off, nothing stated → null. */
+  /**
+   * `DEFAULT 'X'` → on, `DEFAULT ' '` → off. Nothing stated → off for a
+   * checkbox, whose initial value is blank (QA review of a88149856dcc), and
+   * null otherwise.
+   */
   defaultOn: boolean | null;
   lineStart: number;
   /** How many sequence flows in the drawn process name this switch literally. */
@@ -625,7 +629,11 @@ export function readRunSwitches(source: string, model: ProcessMapModel): RunSwit
 
     // The keyword stands on the first line only, so a newline in `body` is a
     // newline of the statement and the two index the same way.
-    const body = text.replace(SELECTION_KEYWORD, '').replace(/^\s*:/, '').replace(/\.\s*$/, '');
+    // The keyword is matched after the line's indentation: a pretty-printed
+    // `  PARAMETERS` inside a SELECTION-SCREEN block left the keyword in the
+    // body, read it as the first name and lost that switch (QA review of
+    // a88149856dcc).
+    const body = text.replace(/^\s*(?:PARAMETERS|SELECT-OPTIONS)\b/i, '').replace(/^\s*:/, '').replace(/\.\s*$/, '');
     for (const part of splitTop(body)) {
       const named = /^(\s*)([\w/]+)/.exec(part.text);
       if (!named) continue;
@@ -639,11 +647,12 @@ export function readRunSwitches(source: string, model: ProcessMapModel): RunSwit
         startLines.length - 1,
       )];
       const defaultLiteral = /\bDEFAULT\s+('(?:[^']|'')*'|[\w-]+)/i.exec(part.text)?.[1] ?? null;
+      const checkbox = /\bAS\s+CHECKBOX\b/i.test(part.text);
       found.push({
         name: named[2].toLowerCase(),
         declaredAs,
-        checkbox: /\bAS\s+CHECKBOX\b/i.test(part.text),
-        defaultOn: defaultLiteral === null ? null : isOn(defaultLiteral),
+        checkbox,
+        defaultOn: defaultLiteral === null ? (checkbox ? false : null) : isOn(defaultLiteral),
         lineStart: line,
         flows: 0,
       });
