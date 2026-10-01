@@ -118,6 +118,16 @@ test.describe('every section heading renders identically', () => {
     expect([...new Set(eyebrows)], `eyebrows disagree:\n${eyebrows.join('\n')}`).toHaveLength(1);
   });
 
+  // Owner, 01.10.2026: the public product is 100 % English. A German FAQ entry sat on the
+  // landing page until then; this reads what a visitor sees, address line excepted.
+  test('the landing page reads in English only', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+    const text = (await page.locator('body').innerText()).replace(/Hellerstraße/g, '');
+    const german = text.match(/[^\n]*(?:[äöüÄÖÜß]|\b(?:und|nicht|wird|eine|oder|Prozess|das|die|der|Wie)\b)[^\n]*/g) ?? [];
+    expect(german, 'German on the English landing page').toEqual([]);
+  });
+
   // 01.10.2026: the leads hung at the left edge under centred titles — an unlayered
   // `.lp3 p { margin: 0 }` beat Tailwind's layered `mx-auto`. Same centre, measured.
   test('each lead sits centred under its heading', async ({ page }) => {
