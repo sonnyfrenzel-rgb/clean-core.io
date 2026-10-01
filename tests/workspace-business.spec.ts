@@ -126,11 +126,16 @@ test.describe('the Business view of a real project (mockup s1)', () => {
 
     // The map is the anchor of the view under every layer, on the screen and
     // not only in the source guard below (carried QA finding caa77476a0d2).
+    // Unconditional: without another layer to switch to, the check would pass
+    // without checking anything (QA finding dfec287c8150).
     const other = page.locator('nav[data-workspace-layers] button[data-workspace-layer][data-layer-state="off"]').first();
-    if (await other.count()) {
-      await other.click();
-      await expect(page.locator('[data-workspace-process] [data-process-map]')).toBeVisible();
-    }
+    await expect(other, 'no other layer to switch to — the check below would be vacuous').toBeVisible();
+    const layerKey = await other.getAttribute('data-workspace-layer');
+    await other.click();
+    await expect(
+      page.locator(`nav[data-workspace-layers] button[data-workspace-layer="${layerKey}"]`).first(),
+    ).toHaveAttribute('data-layer-state', 'on');
+    await expect(page.locator('[data-workspace-process] [data-process-map]')).toBeVisible();
 
     // The order of s1: answer → Next step → map → layer → folded Not determined.
     const tops = await page.evaluate(() =>
