@@ -158,6 +158,26 @@ test.describe('8.2 — the target context comes out of the signed input manifest
     expect(() => contractManifestInput(c)).toThrow(/must not become a signed input/);
   });
 
+  test('an unbound target leaves the on-stack option open without inventing a deviation', () => {
+    // Found while building the Design canvas (01.10.2026): with no target
+    // bound, the contract has no route drivers, the router still recommends
+    // side-by-side, and the in-app alternative said "See the declared
+    // deviation" although nothing was declared.
+    const c = contractFor(SOURCE_OFF_STACK, null);
+    expect(c.route.deviation).toBeNull();
+    expect(c.route.chosen).toBe('side-by-side-cap');
+    const inApp = alt(c, 'in-app-rap');
+    expect(inApp.verdict).toBe('not-determined');
+    expect(inApp.reason).not.toMatch(/deviation|other than the recommended/i);
+    expect(inApp.reason).toContain('bound no target deployment');
+
+    // With a declared deviation the pointer to it stays.
+    const deviated = contractFor(SOURCE_ON_STACK, 'public', {
+      deviation: { chosen: 'side-by-side-cap', reason: 'The team runs everything on BTP.' },
+    });
+    expect(alt(deviated, 'in-app-rap').reason).toContain('See the declared deviation');
+  });
+
   test('the bound target is cited by its manifest id and revision', () => {
     for (const deployment of ['public', 'private'] as const) {
       const c = contractFor(SOURCE_OFF_STACK, deployment);
