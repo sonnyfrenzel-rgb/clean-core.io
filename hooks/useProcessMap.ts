@@ -80,6 +80,13 @@ async function ensureQuote(projectId: string, sourceSha256: string, measure = tr
   }
 }
 
+/** Byte-equal models. The model is plain data (strings, numbers, arrays), so its JSON is its content. */
+function sameModel(a: ProcessMapModel, b: ProcessMapModel): boolean {
+  if (a === b) return true;
+  if (a.xml !== b.xml || a.technicalXml !== b.technicalXml) return false;
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
 const NO_SIGNED_SOURCE =
   'The map is drawn from the source the active run signed. There is none for this project yet.';
 const UNREADABLE = 'The process could not be read back from this source.';
@@ -88,7 +95,11 @@ export function useProcessMap(
   projectId: string | null,
   signed: SignedSource | null,
   processName: string,
-  availability: NamingAvailability | null,
+  /**
+   * `loading` (as `useModelAvailability` returns it): while it is true the map
+   * is not built yet. See `availabilitySettled` below.
+   */
+  availability: (NamingAvailability & { loading?: boolean }) | null,
   /**
    * `measure: false` — read a stored quote, never ask the server to store one.
    * For a page that promises that opening a project writes nothing to it (the
@@ -107,11 +118,30 @@ export function useProcessMap(
   const availabilityKnown = availability?.known === true;
   const keyAvailable = availability?.keyAvailable === true;
   const namingStageOn = availability?.stages?.naming !== false;
+  /**
+   * The map is built once the availability answer is in, not before and again
+   * after it.
+   *
+   * It used to be built on first paint with the availability unknown and then
+   * a second time when `/api/model-stages` answered, some 0.3–1 s later: a new
+   * model object, handed down to `BpmnCanvas`, whose viewer is rebuilt for a
+   * new model — every node button replaced. A reader who had tabbed into the
+   * map lost the focus (fixed in the canvas, CI c25437ab), and a click on
+   * *Edit model* that arrived in that window was not reliably an edit
+   * (`process-revisions-seam.spec.ts:122`, CI 36909060803, 36882571606). The
+   * availability only words the naming notice of a process that has no names,
+   * but it is part of the model, so the model waits for it. Measured on the
+   * production build, the answer arrived ~0.3 s after the first map: the map
+   * now appears that much later, once, instead of twice. A failed or refused
+   * request settles too (`loading` goes false), so the map is never held back
+   * by it.
+   */
+  const availabilitySettled = availability?.loading !== true;
 
   const key = projectId && source && fileName ? `${projectId}|${sha256Hex(source)}|${fileName}` : '';
 
   useEffect(() => {
-    if (!projectId || !source || !fileName || !key) return;
+    if (!projectId || !source || !fileName || !key || !availabilitySettled) return;
 
     let cancelled = false;
 
@@ -141,7 +171,13 @@ export function useProcessMap(
       const model = mapper.buildProcessMapModel({ bpmn, technical, named, fileName });
       if (cancelled) return;
 
-      setHeld({ key, model, measuredAt: null, failed: false });
+      // An equal model keeps its identity: every consumer of it — the canvas
+      // above all — treats a new object as a new process.
+      setHeld((previous) =>
+        previous.key === key && previous.model && sameModel(previous.model, model)
+          ? previous
+          : { key, model, measuredAt: previous.key === key ? previous.measuredAt : null, failed: false },
+      );
 
       const measuredAt = await ensureQuote(projectId, sha256Hex(source), measure);
       if (cancelled || !measuredAt) return;
@@ -156,7 +192,7 @@ export function useProcessMap(
     return () => {
       cancelled = true;
     };
-  }, [projectId, source, fileName, processName, availabilityKnown, keyAvailable, namingStageOn, key, measure]);
+  }, [projectId, source, fileName, processName, availabilityKnown, keyAvailable, namingStageOn, availabilitySettled, key, measure]);
 
   if (!key) return { status: 'idle', model: null, measuredAt: null, reason: NO_SIGNED_SOURCE };
   if (held.key !== key) return { status: 'loading', model: null, measuredAt: null, reason: null };

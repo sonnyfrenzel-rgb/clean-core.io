@@ -596,6 +596,14 @@ export default function BpmnEditor({
         /* a modeller that never finished importing has nothing to tear down */
       }
       modelerRef.current = null;
+      // A destroyed modeller must not stay in state: the minimap, the
+      // properties and the selection read its canvas while rendering, and a
+      // destroyed canvas throws (`getRootElement` → "reading 'length'"). That
+      // took the whole Documentation stage down when a new model arrived while
+      // the editor was open (`process-revisions-seam.spec.ts:122`, CI
+      // 36909060803). Until the next one is built there is no modeller.
+      const gone = built;
+      if (gone) setModeler((held) => (held === gone ? null : held));
     };
   }, [openWith, istXml]);
 
