@@ -172,7 +172,7 @@ export interface ItChain {
 export const TARGET_DRAFT_NOTE =
   'A target draft is what the engine derived — the extensibility route it named, and the successor SAP ' +
   'publishes where there is one. It is not an architecture contract: the contract, with the alternatives ' +
-  'it rejected, is recorded from roadmap 8.2 onward, and nothing here stands in for it.';
+  'it rejected, is a separate record, and nothing here stands in for it.';
 
 function anchorOf(row: ItFindingRow): string {
   return row.lineEnd && row.lineEnd > row.lineStart

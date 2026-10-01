@@ -217,6 +217,7 @@ test.describe('the level distribution names what it did not count', () => {
     expect(levelDistribution([row()]).note).toBe(LEVEL_OVERLAY_NOTE);
     expect(LEVEL_OVERLAY_NOTE).toContain('abap-atc-cr-cv-s4hc');
     expect(LEVEL_OVERLAY_NOTE).toContain('Public Edition');
+    expect(LEVEL_OVERLAY_NOTE).toContain('Private Edition list');
   });
 });
 

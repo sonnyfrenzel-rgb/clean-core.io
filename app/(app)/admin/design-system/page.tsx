@@ -633,7 +633,7 @@ export default function DesignSystemGallery() {
                   project: (
                     <CcObjectIdentifier
                       title="Demo · Z_MM_PO_APPROVAL"
-                      identifier="Fully worked example · fictitious code"
+                      identifier="Engine reading on every stage · fictitious code"
                       meta={<CcTag>Demo</CcTag>}
                     />
                   ),

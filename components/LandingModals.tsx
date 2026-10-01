@@ -1057,7 +1057,7 @@ export default function LandingModals() {
       <LegalOverlay isOpen={legalParam === 'impressum'} onClose={() => updateQueryParams('legal', null)} title="Legal Notice (Impressum)">
         <div className="space-y-6 text-cc-ink">
           <div>
-            <h3 className={LEGAL_H3}>Information according to § 5 TMG</h3>
+            <h3 className={LEGAL_H3}>Information according to § 5 DDG (Digitale-Dienste-Gesetz)</h3>
             <p className="text-sm leading-relaxed">
               Felix Frenzel<br />
               Hellerstraße 9<br />
@@ -1088,7 +1088,7 @@ export default function LandingModals() {
           <div className="border-t border-cc-line pt-4">
             <h3 className={LEGAL_H3}>Disclaimer</h3>
             <p className="mb-3 text-xs leading-normal text-cc-ink-muted">
-              <strong>Liability for Content:</strong> The contents of our pages were created with the greatest care. Since this is a free community application using generative AI (Free Community Edition), we cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
+              <strong>Liability for Content:</strong> The contents of our pages were created with the greatest care. This is a free community application (Free Community Edition): a deterministic analysis engine reads the code, and a language model writes only drafts on top of it — such as the code proposal, the documentation and the test suite. We therefore cannot assume any guarantee for the accuracy, completeness, error-free code transformation, or continuous availability of the provided modernization results.
             </p>
             <p className="text-xs leading-normal text-cc-ink-muted">
               <strong>Copyright:</strong> The content and works created by the site operator on these pages are subject to German copyright law. Contributions from third parties are marked as such. Reproduction, editing, and distribution require written consent.
@@ -1144,7 +1144,7 @@ export default function LandingModals() {
               The ABAP source files you upload and the generated modernization artifacts (such as solution designs, TypeScript code, and test cases) are stored in our secure Google Firebase cloud environment in Europe.
             </p>
             <p className="text-xs text-cc-ink-muted mt-2">
-              <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Under Google's applicable API data-use terms, this content is not used to train Google's foundational AI models. When you use your own key (BYOK), the terms of your own Google account additionally apply.
+              <strong>Important Security Notice:</strong> We do not sell, rent, or use your uploaded source code for commercial purposes. For AI-driven modernization, source code is transmitted via secure, authenticated channels to the <strong>Google Gemini API</strong> using stateless API requests. Which of Google&apos;s data-use terms apply depends on the key that makes the request. The shared community key is a paid Gemini API key, so the paid Gemini API terms govern every request made with it: Google does not use your code to train its models. When you use your own key (BYOK), the terms of your own Google account apply — a key on Google&apos;s free tier is governed by Google&apos;s free-tier data-use terms, which differ.
             </p>
           </div>
 
@@ -1158,7 +1158,7 @@ export default function LandingModals() {
                 <strong>Google Cloud Platform & Firebase:</strong> Hosting (Cloud Run) and database (Firestore) on European servers in the <strong>Belgium (europe-west1)</strong> region — data residency in the EU, operated in line with GDPR requirements. The sign-in, Firebase Authentication, is a Google service not tied to a region and is covered by the international-transfer safeguards in the full privacy policy.
               </li>
               <li>
-                <strong>Google Gemini API:</strong> Generative AI models used exclusively for code transformation, utilizing secure stateless proxy layers.
+                <strong>Google Gemini API:</strong> Generative AI models for the model-written parts of the service — the analysis narrative, business names and sentences for the process reconstructed from the code, the solution design, the code proposal, the documentation and the test suite — via secure stateless proxy layers. The findings, the route and the Clean Core Score are computed without a model.
               </li>
             </ul>
           </div>

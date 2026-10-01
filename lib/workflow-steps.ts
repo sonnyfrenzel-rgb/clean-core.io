@@ -510,7 +510,10 @@ export function workflowSteps(project: Project | null): RailStep[] {
   const documentation = !hasDocs
     ? phase('documentation', { state: 'empty', badge: 'Not started', detail: 'No blueprint generated.' })
     : isEngineDocumentation(project?.documentation)
-      ? phase('documentation', { state: 'done', badge: 'Read from code', detail: 'Process documentation read from the code — every statement with its lines.' })
+      ? // The marker that makes a document "the engine's" sits on the project
+        // document, which the browser can write, so the badge cannot say the
+        // engine wrote it — only that a document in the engine's form is on record.
+        phase('documentation', { state: 'done', badge: 'On record', detail: 'Process documentation in the engine’s form is on record. It is stored where the browser can write it, so this does not prove the engine wrote it — read it again from the code to be sure.' })
       : phase('documentation', { state: 'done', badge: 'Generated', detail: 'Earlier model-written blueprint on record — read it again from the code.' });
 
   // Generated is not tested. The acceptance for E01-F01-US01 names exactly this

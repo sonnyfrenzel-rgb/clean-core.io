@@ -495,7 +495,11 @@ export function traceabilityOf(named: NamedProcess): Traceability {
     sentence:
       named.counts.nodes === 0
         ? 'No elements — nothing has been read.'
-        : `${named.counts.anchored} of ${named.counts.nodes} elements carry a line anchor.`,
+        : // Counted on the process as read from the code — every start, end, step and
+          // decision the engine reconstructed. The map draws fewer shapes than this
+          // (a small routine becomes one shape), and says so in its own sentence
+          // (`lib/process-map.ts`), so the two figures are never the same count.
+          `${named.counts.anchored} of ${named.counts.nodes} process elements read from the code carry a line anchor.`,
   };
 }
 

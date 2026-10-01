@@ -1,7 +1,7 @@
 /**
  * How the demo is marked, and what it may never carry.
  *
- * Roadmap step 0.10 (`DESIGN.md` §6.1.2) puts one fully worked project in front
+ * Roadmap step 0.10 (`DESIGN.md` §6.1.2) puts one worked example project in front
  * of every account so that the first click costs nothing. That project is not a
  * measurement of anybody's system: it is one starter example, analysed by the
  * engine that ships with this release. Which makes it the one artefact in the
@@ -51,11 +51,18 @@ export const DEMO_PROJECT_TITLE = `${DEMO_TITLE_PREFIX}${DEMO_OBJECT_NAME}`;
 
 /** The tag on the list row. */
 export const DEMO_TAG = 'Demo';
-export const DEMO_LIST_TAGLINE = 'Fully worked example · fictitious code';
+/**
+ * What the demo contains, said as it is. It used to read "fully worked" while
+ * every phase of the demo said "not started" and Management said there was no
+ * signed run (3.0 gap audit, 01.10.2026): the demo carries the engine's half of
+ * every stage and, by construction, none of a model's drafts, no test run and no
+ * signed run (`lib/demo-project.ts`).
+ */
+export const DEMO_LIST_TAGLINE = 'Engine reading on every stage · fictitious code';
 
 /** The message strip at the top of every demo screen. */
 export const DEMO_STRIP_NOTICE =
-  'Demo project — fully worked, fictitious code. Nothing you do here is saved.';
+  'Demo project — fictitious code, with the engine’s reading on every stage and no model drafts or test runs. Nothing you do here is saved.';
 
 /** The recurring invitation. At most one per screen, never a dialog. */
 export const DEMO_INVITATION = 'Try an example or your own code';

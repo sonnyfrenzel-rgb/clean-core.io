@@ -321,8 +321,12 @@ function staleChip(step: RailStep): ProvenanceValue | null {
  * Open in IT and Management; in Business they are folded into the single
  * "Project status" row of ADR-026 and reached from there.
  */
-export function workspaceStatusLine(project: Project | null): WorkspaceStatus[] {
-  const steps = workflowSteps(project);
+export function workspaceStatusLine(project: Project | null, phaseSteps?: readonly RailStep[]): WorkspaceStatus[] {
+  // `phaseSteps` is for the demo, which has no stored project for
+  // `workflowSteps` to read and carries its own, truthful rail instead
+  // (`lib/demo-project.ts`, `buildRail`): read through `workflowSteps`, every
+  // phase of it said "not started" beside a strip that described the demo.
+  const steps = phaseSteps ? [...phaseSteps] : workflowSteps(project);
   const by = Object.fromEntries(steps.map((s) => [s.key, s])) as Record<PhaseKey, RailStep>;
 
   const usage = project?.usageReport ?? null;
@@ -663,7 +667,7 @@ export function workspaceLayers(
           ? [
               {
                 key: 'score',
-                label: 'Clean Core score the estimate starts from',
+                label: 'Clean Core score the cost model starts from',
                 value: String(project.cleanCoreScore),
                 anchor: null,
               },
@@ -737,7 +741,11 @@ export function workspaceLayers(
       key: 'costs',
       label: 'Costs & assumptions',
       hash: '#costs',
-      count: costsRows.length > 0 ? 'model estimate' : null,
+      // A signed run is what Economics models from, not a priced figure: nothing is
+      // estimated until someone enters their own day rates and effort, and nothing
+      // here stores those. So the layer says what is true of a lone run — the model
+      // has its basis and no price yet — instead of "model estimate".
+      count: costsRows.length > 0 ? 'not priced yet' : null,
       missing: runUnreadable
         ? 'Economics models costs from a signed run, and the one on record could not be read.'
         : 'Economics models costs from a signed run; there is none.',

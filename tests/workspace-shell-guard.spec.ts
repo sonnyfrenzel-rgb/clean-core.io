@@ -393,7 +393,7 @@ test.describe('the layer bar', () => {
   test('a signed run fills the evidence layer and the costs layer', () => {
     const layers = Object.fromEntries(workspaceLayers(populated()).map((l) => [l.key, l.count]));
     expect(layers.evidence).toBe('1 signed run');
-    expect(layers.costs).toBe('model estimate');
+    expect(layers.costs).toBe('not priced yet');
   });
 });
 

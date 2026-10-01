@@ -727,7 +727,7 @@ function targetProfileSection(project: Project): Record<string, unknown> {
     return {
       recorded: false,
       note:
-        'This run was signed before runs recorded the target profile they were assessed against (roadmap 7.10). ' +
+        'This run was signed before runs recorded the target profile they were assessed against. ' +
         'Its deployment target is in the inputs above where the run recorded one; release, language versions ' +
         'and catalog snapshot are not determined.',
     };
@@ -776,7 +776,7 @@ export function generateInputManifestFile(project: Project): string {
     : {
         recorded: false,
         note:
-          'This run was signed before the input manifest existed (roadmap 0.5). ' +
+          'This run was signed before the input manifest existed. ' +
           'Its inputs can only be read from the individual fields of the run: the source fingerprint ' +
           'in 01-input-fingerprint.json, the engine and catalog versions in 04-model-card.md.',
       };

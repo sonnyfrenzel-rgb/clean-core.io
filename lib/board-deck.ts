@@ -171,11 +171,16 @@ export function buildBoardDeck(input: {
           'No capability can be stated: the static analysis returned no findings, which is what a trivial program and a failed detector have in common.',
           'Establish coverage — analyse the complete source, check the delivery page for a detector error — before this slide is used.',
         ]
-      : fullyByConstruct.length > 0
-        // The constructs this source contains, not a generic list of what the
-        // product can do in general.
-        ? fullyByConstruct.map(([title, n]) => `${title} — ${n} occurrence${n === 1 ? '' : 's'}.`)
-        : [`None of the ${findings.length} finding(s) has a fully automatic path.`],
+      : [
+          // The constructs this source contains with a fully automatic path, then
+          // this project's own counts for the rest. It used to be four fixed claims
+          // ("Static CALL FUNCTION replaced with equivalent Cloud SDK actions" among
+          // them) printed for every project; nothing here says anything was replaced.
+          ...(fullyByConstruct.length > 0
+            ? fullyByConstruct.map(([title, n]) => `${title} — ${n} occurrence${n === 1 ? '' : 's'}.`)
+            : [`None of the ${findings.length} finding(s) has a fully automatic path.`]),
+          `${counts.partial} finding(s) match only in part and need an architect's decision; ${counts.notSupported} match no rule.`,
+        ],
     speakerNotes: nothingEstablished
       ? 'Nothing to present here: no findings, no coverage, no capability statement.'
       : 'These constructs have an automatic mapping in the support matrix. The generated code is still not compiled or tested — a mapping is not a delivery.'

@@ -393,33 +393,36 @@ const GAP_SENTENCES: Record<DecisionGapCode, (subject: string | null) => string>
     'This decision names no analysis run. There is nothing for it to be a decision about, and nothing a confirmation could be bound to.',
   'contract-not-bound': () =>
     'No architecture contract is bound. What is built, against which target and on which inputs would then be decided by whoever generates next, not here.',
-  'contract-blocked': (s) =>
-    `The architecture contract cannot be bound: ${s ?? 'it carries a blocking limit.'} A decision that binds it anyway would sign a contract the contract itself refuses.`,
+  // The subject of the contract and cost gaps is a revision key
+  // ("blocked:qualified:AC-1/side-by-side-cap+592e7a6c667f"). It stays on the gap
+  // for ordering and for the technical detail; the sentence a reader is given says
+  // what the key means instead of quoting it.
+  'contract-blocked': () =>
+    'The architecture contract cannot be bound: it carries a blocking limit. A decision that binds it anyway would sign a contract the contract itself refuses.',
   'option-not-chosen': () =>
     'No option is chosen. A decision that picks nothing is a note, and this record will not present one as a decision.',
-  'contract-draft': (s) =>
-    `The architecture contract ${s ?? ''} is still a draft. The decision binds it as it stands and says so; it does not promote it.`.replace(
-      '  ',
-      ' ',
-    ),
+  'contract-draft': () =>
+    'The architecture contract is still a draft. The decision binds it as it stands and says so; it does not promote it.',
   'need-not-confirmed': () =>
-    'No confirmed need revision stands behind this decision (roadmap 3.5). It decides what to build without a record of what has to hold, so it is carried as qualified rather than as substantiated.',
+    'No confirmed need revision stands behind this decision. It decides what to build without a record of what has to hold, so it is carried as qualified rather than as substantiated.',
   'cost-not-bound': (s) =>
     `No cost revision is bound: ${s ?? 'the assumptions carry no amount.'} The decision is made without a priced comparison, and says so instead of implying one.`,
-  'cost-unconfirmed': (s) =>
-    `The cost revision is unconfirmed: ${s ?? 'part of the assumptions was never confirmed.'} Every amount it carries is a simulation on unconfirmed input.`,
+  'cost-unconfirmed': () =>
+    'The cost revision is unconfirmed: part of the assumptions was never confirmed. Every amount it carries is a simulation on unconfirmed input.',
   'cost-no-winner': (s) =>
     `The comparison names no cheapest option: ${s ?? ''} The decision may still be made — it just may not be presented as the cheapest one.`.replace(
       '  ',
       ' ',
     ),
-  'condition-open': (s) => `Condition ${s} is open and is carried with the decision rather than resolved by it.`,
+  'condition-open': (s) =>
+    s ? `An open condition is carried with the decision rather than resolved by it: ${s}` : 'A condition is open and is carried with the decision rather than resolved by it.',
   'reversibility-not-determined': (s) =>
     `Whether this decision can be reversed is not determined: ${s ?? 'the reason is recorded with the answer.'}`,
 };
 
-function gap(code: DecisionGapCode, severity: DecisionGapSeverity, subject: string | null): DecisionGap {
-  return { code, severity, subject, sentence: GAP_SENTENCES[code](subject) };
+/** `wording` is what the sentence says when the subject is a key a reader should not be shown (a condition's id). */
+function gap(code: DecisionGapCode, severity: DecisionGapSeverity, subject: string | null, wording: string | null = subject): DecisionGap {
+  return { code, severity, subject, sentence: GAP_SENTENCES[code](wording) };
 }
 
 export type DecisionState = 'clear' | 'qualified' | 'blocked';
@@ -490,7 +493,7 @@ export function decisionCoverage(decision: ProjectDecision | null | undefined): 
 
   for (const condition of decision.conditions) {
     if (condition.status === 'open' || condition.status === 'not-determined') {
-      gaps.push(gap('condition-open', 'qualifies', condition.id));
+      gaps.push(gap('condition-open', 'qualifies', condition.id, condition.text));
     }
   }
 

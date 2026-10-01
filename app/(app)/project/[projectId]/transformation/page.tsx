@@ -1329,7 +1329,7 @@ CMD ["node", "srv/service.js"]`
                   : currentScore >= 90 ? 'Source largely supported' : currentScore >= 70 ? 'Source needs verification' : 'Source has high-risk gaps'}
               </p>
               <p className="cc-text-meta text-cc-ink-muted mt-1" data-score-scope>
-                Scores the legacy source, not the generated code — nothing has compiled or tested the code on the right.
+                Scores the legacy source, not the generated code — it says nothing about whether the code on the right compiles or passes a test. The Testing stage is where that code runs.
               </p>
               {/* The boxes below are component state: no reviewer, no time, no
                   reason, gone on reload, and no Run is signed when they change.

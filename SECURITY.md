@@ -249,7 +249,7 @@ that definition say different things.
 
 **Open.** Running generated tests against mocks in the isolated test runner (its own Cloud Run service; a deployed app without it runs no tests); checking a tenant connection, reading its OData metadata and one read-only OData call (/api/test-s4-connection, /api/fetch-s4-metadata, /api/test-s4-odata-read) — none of these executes generated code.
 
-**Why.** Generated test code is untrusted. Since roadmap 8.9 it runs in a separate runner service without roles, secrets or open network egress, and a live run reaches the tenant only through a proxy that holds the credentials itself; the guards inside the runner process (Node permission model, preloaded module and network guards) remain defense in depth, not an isolation boundary. What is not done yet is the proof on the deployed profile and the documented review of the runner (review findings CR-09, CR-15).
+**Why.** Generated test code is untrusted. It runs in a separate runner service without roles, secrets or open network egress, and a live run reaches the tenant only through a proxy that holds the credentials itself; the guards inside the runner process (Node permission model, preloaded module and network guards) remain defense in depth, not an isolation boundary. What is not done yet is the proof on the deployed profile and the documented review of the runner (review findings CR-09, CR-15).
 
 **What changed with 8.9.** The path behind the lock is built: a live run executes in the isolated live
 runner, which never receives a credential; the app's credential proxy adds the credentials per request, for
@@ -260,7 +260,7 @@ lifted, the route refuses a live run unless the live runner and the proxy are co
 
 **Reopens only when all of these hold:**
 - The isolated live runner and the credential proxy are deployed and configured (RUNNER_LIVE_URL, RUNNER_SERVICE_ACCOUNT, S4_PROXY_BASE_URL); without them the route refuses a live run even with this lock lifted.
-- Required, not yet met: a run of the authorized negative test (tests/runner-isolation.spec.ts) against the deployed runners, with both runners configured, in which every probe holds — no secret-named variable, no file outside the sandbox directory, none of the fixed destinations it probes reachable (SECURITY.md §7.2) — plus a gcloud check that the runner service account holds no role, since the metadata server stays reachable by design.
+- Required, not yet met: a run of the authorized negative test (tests/runner-isolation.spec.ts) against the deployed runners, with both runners configured, in which every probe holds — no secret-named variable, none of the four fixed system files it reads readable, none of the fixed destinations it probes reachable (SECURITY.md §7.2) — plus a gcloud check that the runner service account holds no role, since the metadata server stays reachable by design.
 - Required, not yet met: a documented review of the runner, the credential proxy and their routes — the full QA review and the security audit of a release on main read these files completely (not INCOMPLETE for them), and every finding on them is fixed or refuted with evidence (decision Sonny, 24.09.2026: no external review).
 - Sonny decides to reopen, and this entry, SECURITY.md §7.1 and the guard spec change in the same release.
 
@@ -285,7 +285,7 @@ reopening conditions in §7.1. The runners accept traffic only from the app, so 
 generated code travels: `POST /api/admin/runner-selftest` (administrators, fresh step-up) makes the app send
 a fixed probe suite (`lib/runner-selftest.ts`) to the mock runner's sandbox and ask both runners for a fixed
 network probe from their server process. Every probe passes only when the access fails: no secret-named
-environment variable, no file outside the sandbox directory, and none of the fixed destinations reachable —
+environment variable, none of four fixed system files readable, and none of the fixed destinations reachable —
 `www.google.com:443`, `8.8.8.8:53` and `10.10.0.1:443` (plus `169.254.169.254:80` from inside the sandbox).
 The app accepts a runner's network answer only when it names exactly the expected targets
 (`RUNNER_NETWORK_PROBES`, `lib/test-sandbox/protocol.ts`). Without `RUNNER_LIVE_URL` the result is

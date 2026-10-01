@@ -668,7 +668,7 @@ function carrierFutureField(
   anyCapabilityInSource: boolean,
   objectsInScope: number,
 ): UserChangeField {
-  const source = "SAP's cloudification catalogue, through the capabilities of roadmap 7.2";
+  const source = "SAP's cloudification catalogue and the capabilities it lists";
 
   if (!catalogConsulted) {
     return notDetermined(

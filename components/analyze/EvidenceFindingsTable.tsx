@@ -14,6 +14,8 @@ import { CcNoMatches } from '@/components/cc/EmptyState';
 import { CcTag } from '@/components/cc/Tag';
 import { CcSeverity } from '@/components/cc/Identifier';
 import { STATE_CLASSES } from '@/components/cc/state';
+import { evidenceKindLabel } from '@/lib/abap/extensibility-router';
+import { catalogForReader } from '@/lib/messages/demo';
 import { countFindings, findingTitle, groupEvidenceFindings, type SeverityKey } from './analysis-answer';
 
 /**
@@ -143,7 +145,7 @@ export default function EvidenceFindingsTable({ findings }: { findings: readonly
                         <span className={clsx('cc-text-meta', STATE_CLASSES[replacementState(ef.sapReplacement.confidence)].text)}>
                           {ef.sapReplacement.confidence}
                           {ef.sapReplacement.catalogVersion && (
-                            <span className="text-cc-ink-muted ml-1">(v{ef.sapReplacement.catalogVersion})</span>
+                            <span className="text-cc-ink-muted ml-1" title={ef.sapReplacement.catalogVersion}>(catalog {catalogForReader(ef.sapReplacement.catalogVersion)})</span>
                           )}
                         </span>
                       </div>
@@ -167,7 +169,7 @@ export default function EvidenceFindingsTable({ findings }: { findings: readonly
                             <span className="cc-text-meta text-cc-ink-muted">+{snippets.length - 2} more</span>
                           )}
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="cc-text-meta font-cc-mono text-cc-ink-muted">{ef.kind}</span>
+                            <span className="cc-text-meta text-cc-ink-muted" title={ef.kind}>{evidenceKindLabel(ef.kind)}</span>
                             {/* Which part of the engine produced the row — a plain label, not a proof mark. */}
                             <CcTag>{sourceLabel(ef.source)}</CcTag>
                           </div>
