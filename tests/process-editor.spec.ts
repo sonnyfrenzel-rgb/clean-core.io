@@ -557,6 +557,9 @@ test.describe('the editor of roadmap 3.1', () => {
     await openMap(page);
 
     const model = readingModel();
+    // The stored quote ("Measured and kept … on <date>") arrives after the map:
+    // read the line once it has settled, or the comparison below races it.
+    await expect(page.locator('[data-process-map-traceability]')).toContainText('Measured and kept', { timeout: 60000 });
     const traceability = await page.locator('[data-process-map-traceability]').innerText();
     const rowsBefore = await page.locator('[data-tree-node]').count();
     expect(traceability).toContain(model.traceability.sentence);
