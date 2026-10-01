@@ -5,7 +5,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { fetchProcessStates } from '@/lib/process-states-client';
 import { readProcessStates, STATE_LABELS, subjectIdsOf, type ProcessStateView } from '@/lib/process-states';
 import { processStepList } from '@/lib/process-step-list';
-import { headlineLead, plainWordingFor, summaryOf } from '@/lib/business-card';
+import { buildBusinessCard, headlineLead, plainWordingFor, summaryOf } from '@/lib/business-card';
 import { anchorLabel, readTableAccess, type SourceReading } from '@/lib/first-look';
 import type { NotDetermined } from '@/lib/workspace-model';
 import type { Project } from '@/lib/types';
@@ -81,16 +81,21 @@ export default function WorkspacePrintSheet({
   const runId = typeof project?.activeRunId === 'string' && project.activeRunId ? project.activeRunId : null;
   const today = formatIsoDate(new Date()) ?? '';
   const rules = reading?.ruleSet.rules ?? [];
-  // The headline of the Business card, on paper: how many rules stand in the
-  // code and the first three that have a plain phrase, each with its anchor.
-  const featured = rules
-    .map((rule) => {
-      const phrase = wording?.rulePhrase(rule) ?? null;
-      const first = rule.sentences.flatMap((x) => x.anchors)[0];
-      return phrase ? { id: rule.id, phrase, anchor: first ? anchorLabel(first.lineStart, first.lineEnd) : null } : null;
-    })
-    .filter((r): r is { id: string; phrase: string; anchor: string | null } => r !== null)
-    .slice(0, 3);
+  // The headline of the Business card, on paper — the same three rules the
+  // card features (`featuredRules`), each with its anchor. Only `featured` is
+  // read from the card here; its figures are the screen's business.
+  const featured = useMemo(() => {
+    if (!reading || !wording) return [];
+    const card = buildBusinessCard({
+      skeleton: reading.skeleton,
+      ruleSet: reading.ruleSet,
+      dependencies: [],
+      traceability: { anchored: 0, nodes: 0, sentence: '' },
+      open,
+      wording,
+    });
+    return card.featured.map((r) => ({ id: r.id, phrase: r.phrase ?? r.code, anchor: r.anchors[0] ?? null }));
+  }, [reading, wording, open]);
 
   return (
     <div data-workspace-print="" aria-hidden={true} className="hidden print:block">
