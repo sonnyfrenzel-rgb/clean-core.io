@@ -18,7 +18,7 @@ import { useProcessMap } from '@/hooks/useProcessMap';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { codeCardLabel, codeCardLines, tokenizeAbapLine, type ProcessMapElement } from '@/lib/process-map';
 import { ensureProcessBaseline, fetchLatestRevision, revisionOutcomeSentence, saveProcessRevision } from '@/lib/process-revisions-client';
-import { revisionLine } from '@/lib/process-revisions';
+import { newerBase, revisionLine } from '@/lib/process-revisions';
 import type { OpenedRevision } from '@/components/process-map/BpmnEditor';
 import { signedSourceAbsence, signedSourceOf } from '@/lib/signed-source';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
@@ -199,7 +199,7 @@ export default function WorkspaceProcess({
     if (!projectId) return null;
     const record = await fetchLatestRevision(projectId);
     if (!record) return null;
-    baseRevision.current = record.revision;
+    baseRevision.current = newerBase(baseRevision.current, record.revision);
     return { revision: record.revision, xml: record.xml, line: revisionLine(record), origin: record.origin };
   }, [projectId]);
 
