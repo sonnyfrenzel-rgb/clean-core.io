@@ -4,7 +4,7 @@ import { APP_VERSION } from '../version';
 import { anchorText, flowText, layoutModel, type Bounds, type Direction, type PlaneLayout, type Point } from './layout';
 
 /** Columns per row on a reading surface (workspace, landing, download): wide levels wrap. */
-export const READING_WRAP = 7;
+export const READING_WRAP = 6;
 import { plainLabels } from '../abap/plain-language';
 import {
   buildExportModel,

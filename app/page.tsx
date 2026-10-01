@@ -217,6 +217,11 @@ export default function Home() {
   const hero = landingHero(DEMO_SOURCE_FILE, DEMO_OBJECT_NAME);
   const referenceProcess = landingProcess(reference.fileName, reference.fileName.replace(/(_\d+LOC)?\.abap$/i, ''));
   const referenceTechnical = landingProcess(reference.fileName, referenceProcess.program, 'technical');
+  // A phone reads the same levels top to bottom rather than scrolling sideways.
+  const referenceVertical = {
+    plain: landingProcess(reference.fileName, referenceProcess.program, 'plain', 'TB'),
+    technical: landingProcess(reference.fileName, referenceProcess.program, 'technical', 'TB'),
+  };
 
   const ladder = (['A', 'B', 'C', 'D'] as const).map((level) => ({
     level,
@@ -774,7 +779,7 @@ export default function Home() {
                 </span>
                 <CcProvenanceChip value="reconstructed" />
               </p>
-              <ProcessMapPanel process={referenceProcess} technical={referenceTechnical} />
+              <ProcessMapPanel process={referenceProcess} technical={referenceTechnical} vertical={referenceVertical} />
               <ul className="m-0 flex list-none flex-col border-t border-cc-line p-0 text-sm font-medium text-cc-ink-muted">
                 {referenceProcess.notDrawn.unreached > 0 && (
                   <li className="flex flex-wrap items-center gap-2 px-4 py-3">

@@ -237,7 +237,6 @@
 .cc-map-anchor {
   display: block;
   text-align: center;
-  font-family: var(--font-cc-mono);
   font-size: 11px;
   line-height: 13px;
   color: var(--cc-ink-muted);
@@ -245,8 +244,12 @@
   pointer-events: none;
 }
 
-/* A phase's counted fact, above its anchor, in the page face. */
+/* A phase's counted fact, above its anchor, in the page face; the anchor in mono. */
 .cc-map-fact {
   display: block;
-  font-family: inherit;
+}
+
+.cc-map-anchor-code {
+  display: block;
+  font-family: var(--font-cc-mono);
 }

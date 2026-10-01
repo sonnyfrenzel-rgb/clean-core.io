@@ -276,7 +276,10 @@ export default function BpmnCanvas({
             fact.textContent = node.fact;
             tag.appendChild(fact);
           }
-          tag.appendChild(document.createTextNode(node.anchor));
+          const code = document.createElement('span');
+          code.className = 'cc-map-anchor-code';
+          code.textContent = node.anchor;
+          tag.appendChild(code);
           const label = shape.label;
           if (label && label.width && label.height) {
             tag.style.width = `${label.width}px`;

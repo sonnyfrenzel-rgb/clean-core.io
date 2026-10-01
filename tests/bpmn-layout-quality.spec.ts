@@ -4,6 +4,7 @@ import path from 'path';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { buildExportModel, type ExportModel } from '../lib/bpmn/model';
 import { plainLabels } from '../lib/abap/plain-language';
+import { businessExcerpt } from '../lib/bpmn/excerpt';
 import { layoutModel, planeDrawing, type Direction } from '../lib/bpmn/layout';
 import { measureDrawing, segmentHitsBox, ZERO_METRICS } from '../lib/bpmn/layout-quality';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
@@ -91,6 +92,18 @@ test('the business reading draws the report events as one flow, and the technica
     expect(ids.has(f.targetId), f.id).toBe(true);
   }
 });
+
+for (const file of files) {
+  test(`${file}: the business excerpt (top to bottom) is clean, and every element in it is anchored`, () => {
+    const model = businessExcerpt(modelOf(file, 'plain'), { steps: 5 });
+    const layout = layoutModel(model, { direction: 'TB' });
+    const plane = layout.planes.get(model.root.id)!;
+    const report = measureDrawing(planeDrawing(model.root, plane));
+    const bad = ZERO_METRICS.filter((k) => report[k] !== 0).map((k) => `${k}=${report[k]}: ${report.details.slice(0, 3).join(' | ')}`);
+    expect(bad, bad.join(' / ')).toEqual([]);
+    for (const n of model.root.nodes) expect(n.anchorLabel ?? n.source.anchor, `${n.name} has no anchor`).toBeTruthy();
+  });
+}
 
 test('the layout is deterministic: same model, same coordinates', () => {
   const a = layoutModel(modelOf('Z_MM_PO_APPROVAL.abap'));

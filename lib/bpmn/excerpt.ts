@@ -71,16 +71,24 @@ export function businessExcerpt(model: ExportModel, options: ExcerptOptions = {}
     to.incoming.push(id);
   };
   /** One element per name on the exits; every place it stands for in its anchor. */
-  const shared = (n: ExportNode, leadsTo = ''): ExportNode => {
-    // A step is shared only with a step that leads to the same outcome: one
-    // "Reject" box with two different ends would not say which one follows.
-    const key = `${n.tag}|${n.name}|${leadsTo}`;
+  /**
+   * Outcomes of one kind are one end: "Rejected: no material" and "Rejected:
+   * release indicator set" become "Rejected" with both anchors — the decisions
+   * before it say why, each with its own line. An end with no kind word before
+   * a colon stays as it is.
+   */
+  const outcomeKind = (name: string) => (name.includes(':') ? name.slice(0, name.indexOf(':')).trim() : name);
+  const shared = (n: ExportNode, leadsTo?: string): ExportNode => {
+    const isEndNode = n.tag === 'endEvent';
+    // A step is shared only with a step that leads to the same kind of outcome.
+    const key = isEndNode ? `end|${outcomeKind(n.name)}|${n.error}` : `${n.tag}|${n.name}|${outcomeKind(leadsTo ?? '')}`;
     const anchor = anchorText(n.source.anchor);
     const known = merged.get(key);
     if (known) {
       const list = anchors.get(key) as string[];
       if (anchor && !list.includes(anchor)) list.push(anchor);
       known.anchorLabel = list.join(', ');
+      if (isEndNode && known.name !== n.name) known.name = outcomeKind(n.name);
       return known;
     }
     const c = copy(n, { id: `ex-${n.id}` });
@@ -162,7 +170,9 @@ export function businessExcerpt(model: ExportModel, options: ExcerptOptions = {}
   const container: ExportContainer = {
     id: 'excerpt',
     tag: 'process',
-    bands: [{ key: 'excerpt', anchorId: 'excerpt', nodeIds: nodes.map((n) => n.id), entryId: nodes[0]?.id ?? null, endId: null }],
+    // The main line ends at its last step: the layout keeps that line straight
+    // and sends every exit to the side.
+    bands: [{ key: 'excerpt', anchorId: 'excerpt', nodeIds: nodes.map((n) => n.id), entryId: nodes[0]?.id ?? null, endId: last.id }],
     nodes,
     flows,
     storeRefs: [],

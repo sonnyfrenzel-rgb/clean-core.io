@@ -45,12 +45,24 @@ function StepList({ nodes, technical = false }: { nodes: LandingNode[]; technica
   );
 }
 
-export default function ProcessMapPanel({ process, technical }: { process: LandingProcess; technical?: LandingProcess }) {
-  const technicalById = new Map((technical?.planes ?? []).map((p) => [p.id, p]));
-  const map = (p: LandingProcess['planes'][number], names: 'plain' | 'technical') => (
+export default function ProcessMapPanel({
+  process,
+  technical,
+  vertical,
+}: {
+  process: LandingProcess;
+  technical?: LandingProcess;
+  /** The same levels laid out top to bottom, shown instead on a narrow screen. */
+  vertical?: { plain: LandingProcess; technical: LandingProcess };
+}) {
+  const byId = (p?: LandingProcess) => new Map((p?.planes ?? []).map((x) => [x.id, x]));
+  const technicalById = byId(technical);
+  const verticalById = byId(vertical?.plain);
+  const verticalTechnicalById = byId(vertical?.technical);
+  const svg = (p: LandingProcess['planes'][number], key: string) => (
     <BpmnPlaneSvg
       plane={p}
-      idPrefix={`pm-${names}-${p.id}`}
+      idPrefix={`pm-${key}-${p.id}`}
       interactive
       scale={p.parent ? 1 : 0.92}
       title={
@@ -60,6 +72,13 @@ export default function ProcessMapPanel({ process, technical }: { process: Landi
       }
     />
   );
+  /** Wide screens get the left-to-right map, narrow ones the top-to-bottom one. */
+  const map = (wide: LandingProcess['planes'][number], narrow: LandingProcess['planes'][number] | undefined, key: string) => (narrow ? (
+    <>
+      <div className="hidden md:block">{svg(wide, key)}</div>
+      <div className="md:hidden">{svg(narrow, `${key}-v`)}</div>
+    </>
+  ) : svg(wide, key));
   const planes: ExplorerPlane[] = process.planes.map((p) => {
     const t = technicalById.get(p.id);
     return {
@@ -68,9 +87,9 @@ export default function ProcessMapPanel({ process, technical }: { process: Landi
       technicalLabel: t?.label ?? p.label,
       parent: p.parent,
       anchor: p.anchor ? anchorText(p.anchor) : null,
-      map: map(p, 'plain'),
+      map: map(p, verticalById.get(p.id), 'plain'),
       steps: <StepList nodes={p.nodes} />,
-      technicalMap: t ? map(t, 'technical') : undefined,
+      technicalMap: t ? map(t, verticalTechnicalById.get(p.id), 'technical') : undefined,
       technicalSteps: t ? <StepList nodes={t.nodes} technical /> : undefined,
     };
   });

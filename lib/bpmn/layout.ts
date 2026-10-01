@@ -125,6 +125,8 @@ const TASK_TB_MIN = 170;
 const MAX_TASK_LINES = 3;
 /** Extra height of an activity that carries a boundary event. */
 export const BOUNDARY_ROOM = 26;
+/** Extra height of a collapsed sub-process: its marker sits under the anchor. */
+export const MARKER_ROOM = 30;
 const NOTE_W = 560;
 const POOL_H = 60;
 const POOL_GAP = 40;
@@ -490,6 +492,8 @@ function layoutContainer(container: ExportContainer, direction: Direction, wrap?
     if (isGateway(n.tag)) return direction === 'TB' ? [GATEWAY_TB, GATEWAY_TB] : [GATEWAY_LR, GATEWAY_LR];
     const t = taskText(n.name, anchorOf(n), direction, n.fact);
     if (hosts.has(n.id)) t.height += BOUNDARY_ROOM;
+    // The collapsed-phase marker (or the loop marker) sits on the foot of the box.
+    if (n.tag === 'subProcess' || n.source.detail?.multiInstance === true) t.height += MARKER_ROOM;
     taskSize.set(n.id, t);
     return [t.width, t.height];
   };

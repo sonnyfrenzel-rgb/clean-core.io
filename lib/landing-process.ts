@@ -347,6 +347,11 @@ export function landingHero(fileName: string, program: string): LandingHero {
 }
 
 /** The whole map of an example, every plane — for the process section. */
-export function landingProcess(fileName: string, program: string, names: 'plain' | 'technical' = 'plain'): LandingProcess {
-  return buildProcess(fileName, program, 'LR', names).process;
+export function landingProcess(
+  fileName: string,
+  program: string,
+  names: 'plain' | 'technical' = 'plain',
+  direction: Direction = 'LR',
+): LandingProcess {
+  return buildProcess(fileName, program, direction, names).process;
 }

@@ -132,7 +132,7 @@ function Node({ node, interactive }: { node: LandingNode; interactive: boolean }
   // which SVG uses as the accessible name, rather than a second copy in aria-label.
   const name = opens ? `Open ${spokenName(node)}` : spokenName(node);
 
-  if (node.tag === 'startEvent' || node.tag === 'endEvent' || node.tag === 'boundaryEvent' || node.tag === 'intermediateCatchEvent') {
+  if (node.tag === 'startEvent' || node.tag === 'endEvent' || node.tag === 'boundaryEvent' || node.tag === 'intermediateCatchEvent' || node.tag === 'intermediateThrowEvent') {
     const end = node.tag === 'endEvent';
     return (
       <g {...common}>
@@ -144,6 +144,7 @@ function Node({ node, interactive }: { node: LandingNode; interactive: boolean }
           className={`cc-bpmn-shape fill-cc-surface ${node.error ? 'stroke-cc-error' : 'stroke-cc-information'}`}
           strokeWidth={end ? 3.5 : 1.8}
         />
+        {node.tag === 'intermediateThrowEvent' && <circle cx={cx} cy={cy} r={width / 2 - 3.5} className="fill-none stroke-cc-information" strokeWidth={1.2} />}
         {node.tag === 'boundaryEvent' && <circle cx={cx} cy={cy} r={width / 2 - 3.5} className="fill-none stroke-cc-error" strokeWidth={1.2} />}
         {node.error && <ErrorMark cx={cx} cy={cy} />}
         {node.label && <LabelText label={node.label} />}
