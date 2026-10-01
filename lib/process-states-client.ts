@@ -104,6 +104,8 @@ export type ConfirmRefusal =
   | 'note-required'
   | 'note-too-long'
   | 'too-many'
+  | 'source-required'
+  | 'source-invalid'
   | 'revision-moved'
   | 'no-baseline'
   | 'no-source'
@@ -134,6 +136,8 @@ export const CONFIRM_REFUSALS: readonly ConfirmRefusal[] = Object.freeze([
   'note-required',
   'note-too-long',
   'too-many',
+  'source-required',
+  'source-invalid',
   'revision-moved',
   'no-baseline',
   'no-source',
@@ -204,7 +208,7 @@ export async function confirmProcessStates(
 export function confirmOutcomeSentence(outcome: ConfirmOutcome): string {
   if (outcome.ok) {
     return outcome.created
-      ? `Confirmed as revision ${outcome.view.revision}. Revision 1 of the process is unchanged.`
+      ? `Saved as need revision ${outcome.view.revision}. The reconstructed process and the signed run are unchanged.`
       : 'These answers are already on record, so no new revision was written.';
   }
   switch (outcome.code) {
@@ -217,6 +221,10 @@ export function confirmOutcomeSentence(outcome: ConfirmOutcome): string {
     case 'note-too-long':
       return outcome.error;
     case 'too-many':
+      return outcome.error;
+    case 'source-required':
+      return outcome.error;
+    case 'source-invalid':
       return outcome.error;
     case 'revision-moved':
       return typeof outcome.latest === 'number'

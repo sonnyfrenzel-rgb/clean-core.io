@@ -12,6 +12,9 @@ import CcTextarea from '@/components/cc/Textarea';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcDateText from '@/components/cc/DateText';
 import CcLinkButton from '@/components/cc/LinkButton';
+import CcSelect from '@/components/cc/Select';
+import CcCheckbox from '@/components/cc/Checkbox';
+import CcField from '@/components/cc/Field';
 import { CcRulePropertyTag } from '@/components/cc/Tag';
 import { CC_SEGMENTED_GROUP, ccSegmentClass } from '@/components/cc/SegmentedControl';
 import { getAuth } from '@/lib/firebase';
@@ -20,7 +23,12 @@ import type { SourceReading } from '@/lib/first-look';
 import {
   ELEMENT_STATES,
   MAX_STATE_NOTE,
+  MAX_VALUE_SOURCE_NOTE,
+  VALUE_SOURCE_KINDS,
   noteRequired,
+  valueSourceAllowed,
+  valueSourceRequired,
+  type ValueSourceKind,
   type ElementState,
   type StateEntry,
 } from '@/lib/process-states';
@@ -53,6 +61,9 @@ import {
   rulesReadRefusal,
   rulesUnchangedLine,
   rulesUnsaved,
+  rulesValueSourceLabel,
+  rulesValueSourceLine,
+  rulesAppliesToLine,
 } from '@/lib/workspace-messages';
 
 /**
@@ -168,7 +179,94 @@ function RuleRecord({ entry }: { entry: StateEntry | undefined }) {
         </span>
       </span>
       {entry.note ? <span className="text-[12px] leading-snug font-medium text-cc-ink">{entry.note}</span> : null}
+      {entry.valueSource ? (
+        <span data-rule-record-source={entry.valueSource.kind} className="text-[12px] leading-snug font-medium text-cc-ink-muted">
+          {rulesValueSourceLine(entry.valueSource.kind, entry.valueSource.note)}
+        </span>
+      ) : null}
+      {entry.appliesTo && entry.appliesTo.length > 0 ? (
+        <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">
+          {rulesAppliesToLine(entry.appliesTo)}
+        </span>
+      ) : null}
     </span>
+  );
+}
+
+/**
+ * Where the value comes from, and the other rules of the same subject the
+ * answer also applies to — mockup `s2` ("Where the tolerance comes from",
+ * "Limit source", "Also applies to"). Keep and Change only. The source is the
+ * account's statement about where the business keeps the value, not a reading
+ * of the code, so nothing here is pre-filled from the engine.
+ */
+function ValueSourceFields({
+  rule,
+  rules,
+  entry,
+  state,
+  error,
+  onChange,
+}: {
+  rule: EditorRule;
+  rules: readonly EditorRule[];
+  entry: RuleDraft[string];
+  state: ElementState;
+  error: boolean;
+  onChange: (patch: Partial<RuleDraft[string]>) => void;
+}) {
+  const required = valueSourceRequired(state);
+  const siblings = rule.siblings
+    .map((id) => rules.find((r) => r.id === id))
+    .filter((r): r is EditorRule => !!r);
+  const applies = entry.appliesTo ?? [];
+  return (
+    <div data-rule-value-source={rule.id} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="flex min-w-0 flex-col gap-2">
+        <CcSelect<ValueSourceKind>
+          label={state === 'change' ? wt('rules.sourceNew') : wt('rules.source')}
+          required={required}
+          placeholder={wt('rules.sourcePlaceholder')}
+          value={entry.sourceKind ?? ''}
+          onChange={(sourceKind) => onChange({ sourceKind })}
+          options={VALUE_SOURCE_KINDS.map((kind) => ({ value: kind, label: rulesValueSourceLabel(kind) }))}
+          valueState={error ? 'error' : entry.sourceKind === 'unknown' ? 'information' : undefined}
+          message={error ? wt('rules.sourceMissing') : entry.sourceKind === 'unknown' ? wt('rules.sourceUnknown') : undefined}
+        />
+        {entry.sourceKind ? (
+          <CcField label={wt('rules.sourceNote')} help={wt('rules.sourceNoteHelp')}>
+            {(control) => (
+              <input
+                id={control.id}
+                aria-describedby={control.describedBy}
+                maxLength={MAX_VALUE_SOURCE_NOTE}
+                value={entry.sourceNote ?? ''}
+                onChange={(event) => onChange({ sourceNote: event.target.value })}
+                data-rule-source-note={rule.id}
+                className={control.className}
+              />
+            )}
+          </CcField>
+        ) : null}
+      </div>
+      {siblings.length > 0 ? (
+        <fieldset className="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
+          <legend className="mb-1 p-0 text-[13px] font-semibold text-cc-ink">{wt('rules.appliesTo')}</legend>
+          {siblings.map((s) => (
+            <CcCheckbox
+              key={s.id}
+              label={`${s.title} · ${s.id}`}
+              checked={applies.includes(s.id)}
+              data-rule-applies-to={s.id}
+              onChange={(checked) =>
+                onChange({ appliesTo: checked ? [...applies, s.id] : applies.filter((id) => id !== s.id) })
+              }
+            />
+          ))}
+          <span className="text-[12px] font-medium text-cc-ink-muted">{wt('rules.appliesToHelp')}</span>
+        </fieldset>
+      ) : null}
+    </div>
   );
 }
 
@@ -319,7 +417,7 @@ export default function BusinessRulesEditor({
   const setEntry = (id: string, patch: Partial<RuleDraft[string]>) =>
     setDraft((d) => {
       const base = d ?? draftFrom(rules, entries);
-      return { ...base, [id]: { state: base[id]?.state ?? null, note: base[id]?.note ?? '', ...patch } };
+      return { ...base, [id]: { ...base[id], state: base[id]?.state ?? null, note: base[id]?.note ?? '', ...patch } };
     });
 
   const focusField = (ruleId: string) => {
@@ -480,7 +578,8 @@ export default function BusinessRulesEditor({
               const entry = draft[rule.id] ?? { state: null, note: '' };
               const problem = problems.find((p) => p.ruleId === rule.id) ?? null;
               const needsNote = entry.state ? noteRequired(entry.state) : false;
-              const fieldError = attempted && problem !== null;
+              const fieldError = attempted && problem !== null && problem.kind !== 'source-missing';
+              const sourceError = attempted && problem?.kind === 'source-missing';
               return (
                 <li
                   key={rule.id}
@@ -533,6 +632,16 @@ export default function BusinessRulesEditor({
                                 ? wt('rules.clarifyInfo')
                                 : undefined
                         }
+                      />
+                    ) : null}
+                    {entry.state && valueSourceAllowed(entry.state) ? (
+                      <ValueSourceFields
+                        rule={rule}
+                        rules={rules}
+                        entry={entry}
+                        state={entry.state}
+                        error={sourceError}
+                        onChange={(patch) => setEntry(rule.id, patch)}
                       />
                     ) : null}
                   </div>

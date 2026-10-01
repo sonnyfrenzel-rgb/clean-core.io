@@ -584,6 +584,14 @@ Konfetti, dekorative Verläufe, Typewriter-Effekte, pulsierende Punkte, Ladeanim
 thinking…"*, künstliche Mindestdauern (wie heute die sechs Sekunden des Evidence Scanners). Alles, was Zeit kostet und
 nichts zeigt, senkt die Glaubwürdigkeit, die der Moment braucht.
 
+**The one deliberate exception (owner decision, 01.10.2026):** the first look's build-up runs on a fixed budget of
+about 2.4 s (code read to 0.5 s, process recognised to 1.8 s, names to 2.4 s), even when the engine is done in a few
+frames. The four moments of mockup `s0` are only worth anything if a reader can see them: lines lighting up, the
+process growing out of them, the names changing once. Every frame shows real content — lit source lines and the
+engine's own nodes with their anchors, counters that only rise with a lit line — so it is not a wait without content.
+The limits stay: "Skip" is always visible, `prefers-reduced-motion` and Skip go straight to the end state, a second
+visit has no build-up, and the end state never waits for a model (`lib/first-look-buildup.ts`).
+
 ### 5.5 Was danach steht
 
 - **Inhalt, oben:** die Karte „Next step" — „Confirm the 7 rules — about 10 minutes", ein Klick zur ersten Regel.

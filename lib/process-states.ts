@@ -45,6 +45,54 @@ export const MAX_STATE_CHOICES = 200;
 
 export type ElementState = 'keep' | 'change' | 'drop' | 'clarify';
 
+/**
+ * Where a rule's value comes from — mockup `s2`, "Where the tolerance comes
+ * from" / "Limit source". A self-declaration of the account, like the state:
+ * it says where the business keeps (or wants to keep) the value, not where the
+ * code reads it. `unknown` is an answer, and a different one from no answer.
+ */
+export type ValueSourceKind = 'customizing' | 'business-requirement' | 'legal-regulatory' | 'unknown';
+
+export const VALUE_SOURCE_KINDS: readonly ValueSourceKind[] = Object.freeze([
+  'customizing',
+  'business-requirement',
+  'legal-regulatory',
+  'unknown',
+] as ValueSourceKind[]);
+
+export const VALUE_SOURCE_LABELS: Record<ValueSourceKind, string> = Object.freeze({
+  customizing: 'Customizing table',
+  'business-requirement': 'Business requirement',
+  'legal-regulatory': 'Legal or regulatory',
+  unknown: 'Unknown',
+});
+
+/** The longest note beside a value source, in characters. */
+export const MAX_VALUE_SOURCE_NOTE = 500;
+
+/** The most other rules one answer may also apply to. */
+export const MAX_APPLIES_TO = 50;
+
+export interface ValueSource {
+  kind: ValueSourceKind;
+  /** What the account wrote beside it — the table, the regulation — or null. */
+  note: string | null;
+}
+
+export function isValueSourceKind(value: unknown): value is ValueSourceKind {
+  return typeof value === 'string' && (VALUE_SOURCE_KINDS as readonly string[]).includes(value);
+}
+
+/** Which states carry a value source: the value is kept, or changed deliberately. */
+export function valueSourceAllowed(state: ElementState): boolean {
+  return state === 'keep' || state === 'change';
+}
+
+/** A change says where the new value is to come from; a kept rule may. */
+export function valueSourceRequired(state: ElementState): boolean {
+  return state === 'change';
+}
+
 export interface StateEntry {
   /** Eine stabile BPMN-Element-Id (aus 2.6) oder eine Regel-Id `BR-nnn` (3.4). */
   subject: string;
@@ -58,6 +106,10 @@ export interface StateEntry {
   confirmedAt: string;
   /** Die Revision, die diese Bestätigung angelegt hat. */
   revision: number;
+  /** Where the value comes from (Keep, Change), or absent. Rules only. */
+  valueSource?: ValueSource | null;
+  /** Other rules, by id, the same answer applies to. Rules only; absent or empty when none. */
+  appliesTo?: string[];
 }
 
 export interface ProcessStates {
@@ -146,6 +198,10 @@ export function isStateEntry(value: unknown): value is StateEntry {
     && e.confirmedAt !== ''
     && Number.isInteger(e.revision)
     && e.revision >= 1
+    && (e.valueSource === undefined || e.valueSource === null
+      || (isValueSourceKind(e.valueSource.kind)
+        && (e.valueSource.note === null || typeof e.valueSource.note === 'string')))
+    && (e.appliesTo === undefined || (Array.isArray(e.appliesTo) && e.appliesTo.every((x) => typeof x === 'string')))
   );
 }
 
@@ -348,6 +404,10 @@ export interface StateChoiceInput {
   kind: StateEntry['kind'];
   state: ElementState;
   note?: string | null;
+  /** Keep and Change of a rule only. */
+  valueSource?: ValueSource | null;
+  /** Other rules the same answer applies to. Rules only. */
+  appliesTo?: string[];
 }
 
 export type ChoiceRefusal =
@@ -355,7 +415,9 @@ export type ChoiceRefusal =
   | 'unknown-subject'
   | 'note-required'
   | 'note-too-long'
-  | 'too-many';
+  | 'too-many'
+  | 'source-required'
+  | 'source-invalid';
 
 export type ChoiceCheck =
   | { ok: true; choices: StateChoiceInput[] }
@@ -426,8 +488,56 @@ export function checkStateChoices(
         error: `${choice.subject} is confirmed twice in the same request, and the two answers disagree about which is the newer.`,
       };
     }
+    // The value source and "also applies to" — rules only, Keep and Change only.
+    const rawSource = (choice.valueSource ?? null) as Partial<ValueSource> | null;
+    let valueSource: ValueSource | null = null;
+    if (rawSource !== null) {
+      if (choice.kind !== 'rule' || !valueSourceAllowed(choice.state) || typeof rawSource !== 'object'
+        || !isValueSourceKind(rawSource.kind)) {
+        return {
+          ok: false,
+          code: 'source-invalid',
+          error: `The value source for ${choice.subject} is not one of the four answers, or this answer takes none.`,
+        };
+      }
+      const sourceNote = typeof rawSource.note === 'string' ? rawSource.note.trim() : '';
+      if (sourceNote.length > MAX_VALUE_SOURCE_NOTE) {
+        return {
+          ok: false,
+          code: 'note-too-long',
+          error: `A value-source note holds at most ${MAX_VALUE_SOURCE_NOTE} characters; the one for ${choice.subject} has ${sourceNote.length}.`,
+        };
+      }
+      valueSource = { kind: rawSource.kind, note: sourceNote === '' ? null : sourceNote };
+    }
+    if (choice.kind === 'rule' && valueSourceRequired(choice.state) && valueSource === null) {
+      return {
+        ok: false,
+        code: 'source-required',
+        error: `${STATE_LABELS[choice.state]} needs to say where the value comes from, for ${choice.subject}.`,
+      };
+    }
+    let appliesTo: string[] = [];
+    if (choice.appliesTo !== undefined && choice.appliesTo !== null) {
+      const list = choice.appliesTo as unknown;
+      if (choice.kind !== 'rule' || !Array.isArray(list) || list.length > MAX_APPLIES_TO
+        || !list.every((id) => typeof id === 'string' && id !== choice.subject && kindOf.get(id) === 'rule')) {
+        return {
+          ok: false,
+          code: 'source-invalid',
+          error: `"Also applies to" for ${choice.subject} names something that is not another rule of this process.`,
+        };
+      }
+      appliesTo = [...new Set(list as string[])].sort();
+    }
     seen.add(choice.subject);
-    choices.push({ subject: choice.subject, kind: choice.kind, state: choice.state, note: note === '' ? null : note });
+    choices.push({
+      subject: choice.subject,
+      kind: choice.kind,
+      state: choice.state,
+      note: note === '' ? null : note,
+      ...(choice.kind === 'rule' ? { valueSource, appliesTo } : {}),
+    });
   }
   return { ok: true, choices };
 }
@@ -459,6 +569,7 @@ export function applyStateChoices(
       account: made.account,
       confirmedAt: made.confirmedAt,
       revision: made.revision,
+      ...(choice.kind === 'rule' ? { valueSource: choice.valueSource ?? null, appliesTo: choice.appliesTo ?? [] } : {}),
     });
   }
   return [...next.values()].sort((a, b) => (a.subject < b.subject ? -1 : a.subject > b.subject ? 1 : 0));
@@ -471,4 +582,15 @@ export function statesSentence(states: ProcessStates): string {
   if (total === 0) return 'This process has no elements and no rules to confirm.';
   return `${c.keep} kept, ${c.change} to change, ${c.drop} dropped, ${c.clarify} to clarify,`
     + ` ${c.undecided} of ${total} not yet confirmed.`;
+}
+
+/** True when a choice says the same as the entry on record — state, note, value source, "also applies to". */
+export function sameAnswer(entry: StateEntry | undefined, choice: StateChoiceInput): boolean {
+  if (!entry) return false;
+  const src = (v: ValueSource | null | undefined) => (v ? `${v.kind}|${v.note ?? ''}` : '');
+  const list = (v: string[] | undefined) => [...(v ?? [])].sort().join(',');
+  return entry.state === choice.state
+    && (entry.note ?? null) === (choice.note ?? null)
+    && src(entry.valueSource) === src(choice.valueSource)
+    && list(entry.appliesTo) === list(choice.appliesTo);
 }

@@ -24,7 +24,7 @@ import { deriveUserChangeFrom } from '../lib/abap/user-change';
 import { readTableDependencies } from '../lib/abap/table-dependencies';
 import { complianceReviewHints, examinedTablesFromDependencies } from '../lib/compliance-review-hints';
 import { workspaceLayers } from '../lib/workspace-model';
-import type { ProcessStateView, StateEntry } from '../lib/process-states';
+import { applyStateChoices, checkStateChoices, sameAnswer, type ProcessStateView, type StateEntry } from '../lib/process-states';
 import type { Project } from '../lib/types';
 
 /**
@@ -92,7 +92,7 @@ test.describe('s2 — the rule-editing mode', () => {
     const draft: RuleDraft = {
       ...draftFrom(rules, {}),
       [a]: { state: 'keep', note: '' },
-      [b]: { state: 'change', note: '' },
+      [b]: { state: 'change', note: '', sourceKind: 'customizing' },
       [c]: { state: 'drop', note: '   ' },
       [d]: { state: 'clarify', note: '' },
     };
@@ -104,7 +104,7 @@ test.describe('s2 — the rule-editing mode', () => {
     const [a, b] = rules.map((r) => r.id);
     const held = ruleEntries(viewWith([entry(a, 'keep')]));
     const draft = { ...draftFrom(rules, held), [b]: { state: 'drop' as const, note: 'Plant closed' } };
-    expect(draftChoices(draft, held)).toEqual([{ subject: b, kind: 'rule', state: 'drop', note: 'Plant closed' }]);
+    expect(draftChoices(draft, held)).toEqual([{ subject: b, kind: 'rule', state: 'drop', note: 'Plant closed', valueSource: null, appliesTo: [] }]);
   });
 
   test('the checks are hints that name a real element, and Keep raises none', () => {
@@ -114,7 +114,7 @@ test.describe('s2 — the rule-editing mode', () => {
     const draft: RuleDraft = {
       ...draftFrom(rules, {}),
       [a]: { state: 'keep', note: '' },
-      [b]: { state: 'change', note: 'Tolerance per material group' },
+      [b]: { state: 'change', note: 'Tolerance per material group', sourceKind: 'customizing' },
       [c]: { state: 'clarify', note: '' },
     };
     const checks = draftChecks(rules, draft, view.links, name);
@@ -232,5 +232,69 @@ test.describe('the anchor bar counts what the editor and the table show', () => 
     expect(standard.count).toMatch(/^\d+ capabilit(y|ies)$/);
     // The invariant of the bar: a count exactly when there are rows.
     for (const layer of layers) expect(layer.count === null).toBe(layer.rows.length === 0);
+  });
+});
+
+test.describe('s2 — where the value comes from (owner decision 01.10.2026)', () => {
+  const ids = { elements: [], rules: rules.map((r) => r.id) };
+
+  test('a change needs a value source; a drop may not carry one; Keep may', () => {
+    const [a, b] = rules.map((r) => r.id);
+    const missing = checkStateChoices([{ subject: a, kind: 'rule', state: 'change', note: 'x' }], ids);
+    expect(missing.ok ? null : missing.code).toBe('source-required');
+    const onDrop = checkStateChoices(
+      [{ subject: a, kind: 'rule', state: 'drop', note: 'x', valueSource: { kind: 'unknown', note: null } }],
+      ids,
+    );
+    expect(onDrop.ok ? null : onDrop.code).toBe('source-invalid');
+    const keep = checkStateChoices(
+      [{ subject: b, kind: 'rule', state: 'keep', valueSource: { kind: 'legal-regulatory', note: '  §14 UStG  ' } }],
+      ids,
+    );
+    expect(keep.ok).toBe(true);
+    if (keep.ok) expect(keep.choices[0].valueSource).toEqual({ kind: 'legal-regulatory', note: '§14 UStG' });
+  });
+
+  test('"Also applies to" names only other rules of the process', () => {
+    const [a, b] = rules.map((r) => r.id);
+    const self = checkStateChoices([{ subject: a, kind: 'rule', state: 'keep', appliesTo: [a] }], ids);
+    expect(self.ok).toBe(false);
+    const stranger = checkStateChoices([{ subject: a, kind: 'rule', state: 'keep', appliesTo: ['Task_9'] }], ids);
+    expect(stranger.ok).toBe(false);
+    const fine = checkStateChoices([{ subject: a, kind: 'rule', state: 'keep', appliesTo: [b, b] }], ids);
+    expect(fine.ok && fine.choices[0].appliesTo).toEqual([b]);
+  });
+
+  test('the source is stored with the answer, and a changed source alone is a new answer', () => {
+    const [a] = rules.map((r) => r.id);
+    const checked = checkStateChoices(
+      [{ subject: a, kind: 'rule', state: 'keep', valueSource: { kind: 'customizing', note: 'T16FS' } }],
+      ids,
+    );
+    if (!checked.ok) throw new Error(checked.error);
+    const [stored] = applyStateChoices([], checked.choices, {
+      account: { uid: 'u', name: 'Mara Weber' },
+      confirmedAt: '2026-10-01T00:00:00.000Z',
+      revision: 1,
+    });
+    expect(stored.valueSource).toEqual({ kind: 'customizing', note: 'T16FS' });
+    expect(sameAnswer(stored, checked.choices[0])).toBe(true);
+    expect(sameAnswer(stored, { ...checked.choices[0], valueSource: { kind: 'unknown', note: null } })).toBe(false);
+  });
+
+  test('the draft blocks a change without a source and sends the source it holds', () => {
+    const [a] = rules.map((r) => r.id);
+    const draft: RuleDraft = { ...draftFrom(rules, {}), [a]: { state: 'change', note: 'New text' } };
+    expect(draftProblems(draft)).toEqual([{ ruleId: a, kind: 'source-missing' }]);
+    const fixed: RuleDraft = { ...draft, [a]: { ...draft[a], sourceKind: 'business-requirement', sourceNote: 'Policy 7' } };
+    expect(draftProblems(fixed)).toEqual([]);
+    expect(draftChoices(fixed, {})[0].valueSource).toEqual({ kind: 'business-requirement', note: 'Policy 7' });
+  });
+
+  test('siblings are the other rules of the same subject, never the rule itself', () => {
+    for (const rule of rules) {
+      expect(rule.siblings).not.toContain(rule.id);
+      for (const id of rule.siblings) expect(rules.find((r) => r.id === id)?.siblings).toContain(rule.id);
+    }
   });
 });
