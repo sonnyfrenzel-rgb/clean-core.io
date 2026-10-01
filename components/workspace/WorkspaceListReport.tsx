@@ -50,6 +50,7 @@ import { ROW_LEVELS, rowHasLevel, type RowFacts, type RowLevels } from '@/lib/wo
 import { projectProgress, PROJECT_STAGE_LABEL } from '@/lib/project-progress';
 import ProjectProgressCell, { ProgressLegend } from '@/components/ProjectProgress';
 import { AnalysisRunCancelled, runAnalysis, runScope, type AnalysisRunStage } from '@/lib/analysis-run';
+import { sourceFileName } from '@/lib/source-file-name';
 import { declaredTargetOf } from '@/lib/assessment-target';
 import type { Project } from '@/lib/types';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
@@ -392,7 +393,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
         await runAnalysis({
           projectId: row.id,
           legacyCode: project.legacyCode,
-          fileName: project.auditMetadata?.inputFingerprint?.fileName || 'main.abap',
+          fileName: sourceFileName(project) || 'main.abap',
           deployment: project.s4Deployment === 'public' ? 'public' : 'private',
           // Roadmap 7.10 - the declaration the project's last run was made under.
           targetProfile: declaredTargetOf(project),

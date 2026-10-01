@@ -42,7 +42,7 @@ test.describe('Analyze page - QA full review of v2.20.0', () => {
     const text = src();
     const reject = bodyOf(text, 'const rejectFile = (message: string) => {');
     expect(reject).toContain("setLegacyCode('')");
-    expect(reject).toContain("setUploadedFileName('manual-input.abap')");
+    expect(reject).toContain('setUploadedFileName(PASTED_SOURCE_NAME)');
     const handleFile = bodyOf(text, 'const handleFile = (file: File) => {');
     // Type, size, payload scan, not-ABAP: four refusals, all through rejectFile.
     expect(handleFile.match(/rejectFile\(/g)?.length).toBe(4);

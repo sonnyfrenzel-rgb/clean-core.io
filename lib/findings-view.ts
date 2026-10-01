@@ -558,6 +558,19 @@ export function programMap(rows: readonly FindingRow[], totalLines: number): Pro
   }));
 }
 
+/**
+ * What a map row says under its label. A row counts findings the way the list
+ * does — one per pattern and object — and draws one dot per place in the code.
+ * The two write statements on EBAN in the shipped example (L246, L455) are one
+ * finding at two places; the row said "1 finding" over two dots, which read as
+ * a miscount. So when the dots outnumber the findings, the row says both.
+ */
+export function programMapRowCount(row: Pick<ProgramMapRow, 'count' | 'dots'>): string {
+  const findings = `${row.count} ${row.count === 1 ? 'finding' : 'findings'}`;
+  const places = new Set(row.dots.map((d) => d.line)).size;
+  return places > row.count ? `${findings} · ${places} places in the code` : findings;
+}
+
 /** A process step as a stretch of the source — the column behind the map. */
 export interface ProcessStepBand {
   /** 1-based, in the order the program calls the steps. */
@@ -605,4 +618,28 @@ export function processStepBands(skeleton: StepSkeleton, source: string): Proces
     out.push({ n: out.length + 1, label: region.label, from, to });
   }
   return out;
+}
+
+/** A step as a column of the program map: numbered by where it stands in the code. */
+export interface StepColumn extends ProcessStepBand {
+  /** 1-based, left to right — the order the routines are written in. */
+  column: number;
+}
+
+/**
+ * The map's x-axis is the source line, so its columns stand in the order the
+ * routines are written, not the order the program calls them. Numbered by run
+ * order they read "2 3 1 4 5" left to right (the example writes
+ * READ_REQUISITION before CHECK_AUTHORITY but calls it second). So the columns
+ * are numbered left to right, and `runOrder` — the column numbers in the order
+ * the program runs them — is set only when that order differs, for the caption
+ * to say.
+ */
+export function stepColumns(steps: readonly ProcessStepBand[]): { columns: StepColumn[]; runOrder: number[] | null } {
+  const columns = [...steps]
+    .sort((a, b) => a.from - b.from || a.n - b.n)
+    .map((s, i) => ({ ...s, column: i + 1 }));
+  const byRun = [...columns].sort((a, b) => a.n - b.n).map((c) => c.column);
+  const inOrder = byRun.every((c, i) => c === i + 1);
+  return { columns, runOrder: inOrder ? null : byRun };
 }
