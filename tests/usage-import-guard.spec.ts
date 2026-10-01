@@ -275,7 +275,9 @@ test.describe('the analyze page stores nothing before confirmation, and then the
     expect(await storedUsage()).toBeUndefined();
 
     await page.locator('[data-usage-confirm]').click();
-    await expect(page.locator('[data-usage-imported]')).toContainText('2026-02-01 – 2026-04-30, 89 days');
+    // Shown once the server has stored it (0817087d54b5), so this waits for the
+    // command's answer — a cold compile of the route on a dev server, not 5 s.
+    await expect(page.locator('[data-usage-imported]')).toContainText('2026-02-01 – 2026-04-30, 89 days', { timeout: 30000 });
 
     await expect.poll(async () => (await storedUsage()) !== undefined, { timeout: 15000 }).toBe(true);
     const stored = (await storedUsage())!;
@@ -284,5 +286,54 @@ test.describe('the analyze page stores nothing before confirmation, and then the
     const orders = stored.records.find((r) => r.objectName === 'ZSD_ORDERS');
     expect(orders).toMatchObject({ lastUsed: '2026-04-05', callCount: 1234 });
     expect(stored.quarantined).toEqual([{ row: 4, objectName: 'ZMM_BAD', reason: 'negative call count (-3)' }]);
+  });
+});
+
+test.describe('a save the server refused is not shown as imported', () => {
+  // Carried QA finding 0817087d54b5, the usage half: the page set the report
+  // before the command answered, and a refused save only reached the console.
+  const EMAIL = `usagerefused-${Date.now()}@cleancore-test.io`;
+  const PASSWORD = 'UsageRefused123!';
+  const PROJECT_ID = `usagerefused-${Date.now()}`;
+
+  test.beforeAll(async () => {
+    const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    try {
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+    } catch { /* already connected */ }
+    const uid = (await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD)).user.uid;
+    await adminSetDoc('users', uid, {
+      firstName: 'Usage', lastName: 'Refused', email: EMAIL, tier: 'pilot', status: 'approved',
+      transformationsUsed: 0, transformationsLimit: 5, termsVersionAccepted: TERMS_VERSION, createdAt: new Date(),
+    });
+    await adminSetDoc('projects', PROJECT_ID, {
+      name: 'Usage refused fixture', userId: uid, createdAt: new Date(), status: 'uploaded',
+      legacyCode: 'REPORT z_usage.\nSELECT * FROM vbak INTO TABLE @DATA(lt).\n',
+    });
+  });
+
+  test('the preview stays, the refusal is said, and nothing reads as imported', async ({ page }) => {
+    test.setTimeout(120 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await signInViaLanding(page, EMAIL, PASSWORD);
+    await page.route('**/api/projects/*/commands', (route) =>
+      route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: 'Refused for the test.' }) }),
+    );
+    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+
+    await page.locator('[data-usage-window-from]').fill('2026-02-01');
+    await page.locator('[data-usage-window-to]').fill('2026-04-30');
+    await page.locator('[data-usage-file]').setInputFiles({
+      name: 'scmon.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from('OBJECT_NAME;CALLS;LAST_USED\nZSD_ORDERS;12;2026-04-05\n'),
+    });
+    await expect(page.locator('[data-usage-preview]')).toBeVisible({ timeout: 30000 });
+    await page.locator('[data-usage-confirm]').click();
+
+    await expect(page.locator('[data-usage-save-error]')).toContainText('did not confirm the save');
+    await expect(page.locator('[data-usage-preview]'), 'the preview went away with the refused save').toBeVisible();
+    await expect(page.locator('[data-usage-imported]')).toHaveCount(0);
   });
 });

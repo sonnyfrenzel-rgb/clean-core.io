@@ -1877,20 +1877,18 @@ export default function AnalyzePage() {
                 </div>
                 <UsageUpload
                   onImport={async (report) => {
-                    setUsageReport(report);
                     // Roadmap 0.7: `usageReport` left the client-writable
                     // allowlist. The server holds it to the key set of
                     // lib/abap/usage-model.ts and to a row ceiling — the rules
                     // could only ever say `is map` — and stores what it kept.
-                    try {
-                      const stored = await runProjectCommand(projectId as string, {
-                        command: 'record-usage-report',
-                        usageReport: report,
-                      });
-                      setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
-                    } catch (err) {
-                      console.error('Failed to persist usage report:', err);
-                    }
+                    // A refusal throws into UsageUpload, which keeps the
+                    // preview and says it was not saved.
+                    const stored = await runProjectCommand(projectId as string, {
+                      command: 'record-usage-report',
+                      usageReport: report,
+                    });
+                    setUsageReport(report);
+                    setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
                   }}
                   existingReport={usageReport}
                 />
@@ -1907,19 +1905,16 @@ export default function AnalyzePage() {
                 </div>
                 <AtcUpload
                   onImport={async (report) => {
-                    setAtcReport(report);
                     // Same boundary as `usageReport` above and for the same
                     // reason: server-only, held to the model's key set and a
-                    // row ceiling — see lib/project-commands.ts.
-                    try {
-                      const stored = await runProjectCommand(projectId as string, {
-                        command: 'record-atc-report',
-                        atcReport: report,
-                      });
-                      setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
-                    } catch (err) {
-                      console.error('Failed to persist ATC report:', err);
-                    }
+                    // row ceiling — see lib/project-commands.ts. Shown as
+                    // imported only once stored (carried QA finding 0817087d54b5).
+                    const stored = await runProjectCommand(projectId as string, {
+                      command: 'record-atc-report',
+                      atcReport: report,
+                    });
+                    setAtcReport(report);
+                    setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
                   }}
                   existingReport={atcReport}
                 />

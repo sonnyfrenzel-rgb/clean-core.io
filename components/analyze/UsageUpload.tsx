@@ -18,7 +18,8 @@ import {
 import PersonalDataHints from '@/components/PersonalDataHints';
 
 interface UsageUploadProps {
-  onImport: (report: UsageReport) => void;
+  /** Resolves once the server has stored the report; rejects when it did not. */
+  onImport: (report: UsageReport) => Promise<void>;
   existingReport?: UsageReport | null;
 }
 
@@ -79,6 +80,10 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<UsageReport | null>(null);
   const [imported, setImported] = useState<UsageReport | null>(existingReport || null);
+  // The save is the server's: "imported" is shown once it answered yes, and a
+  // refusal keeps the preview, so the reader can retry (carried QA finding 0817087d54b5).
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // A later read supersedes an earlier one still in flight.
   const readSeq = useRef(0);
@@ -183,13 +188,22 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
     if (chosen) choose(chosen);
   };
 
-  const confirm = () => {
+  const confirm = async () => {
     // The import is what sends the file's contents on. Nothing is refused here
     // — the tick is what is asked for, and the button below says so.
-    if (!preview || hintPending) return;
+    if (!preview || hintPending || saving) return;
     readSeq.current++; // nothing still in flight may replace what was confirmed
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onImport(preview);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'The server did not store the usage data.');
+      return;
+    } finally {
+      setSaving(false);
+    }
     setImported(preview);
-    onImport(preview);
     setPreview(null);
     setFile(null);
     setHintScan(null);
@@ -199,6 +213,7 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
   const startOver = () => {
     readSeq.current++;
     hintSeq.current++;
+    setSaveError(null);
     setImported(null);
     setPreview(null);
     setFile(null);
@@ -418,10 +433,19 @@ export default function UsageUpload({ onImport, existingReport }: UsageUploadPro
             </div>
           )}
 
+          {saveError && (
+            <div data-usage-save-error="">
+              <CcMessageStrip state="error" headline="Not imported — the server did not confirm the save of the usage data." announce>
+                {saveError}
+              </CcMessageStrip>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-3">
             <CcButton
               variant="primary"
-              onClick={confirm}
+              onClick={() => void confirm()}
+              busy={saving}
               disabled={preview.records.length === 0 || hintPending}
               data-usage-confirm
             >

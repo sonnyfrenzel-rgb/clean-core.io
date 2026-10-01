@@ -201,7 +201,9 @@ test.describe('the analyze page stores nothing before confirmation, and then the
     expect(await storedAtc()).toBeUndefined();
 
     await page.locator('[data-atc-confirm]').click();
-    await expect(page.locator('[data-atc-imported]')).toContainText('2 findings');
+    // Shown once the server has stored it (0817087d54b5), so this waits for the
+    // command's answer — a cold compile of the route on a dev server, not 5 s.
+    await expect(page.locator('[data-atc-imported]')).toContainText('2 findings', { timeout: 30000 });
 
     await expect.poll(async () => (await storedAtc()) !== undefined, { timeout: 15000 }).toBe(true);
     const stored = (await storedAtc())!;
@@ -213,6 +215,54 @@ test.describe('the analyze page stores nothing before confirmation, and then the
     // that depends on one existing — the same gate `UsageRiskMatrixFor` sits
     // behind. That is a fact about the page's layout, not about the import;
     // the next test seeds a completed analysis and checks the panel itself.
+  });
+});
+
+test.describe('a save the server refused is not shown as imported', () => {
+  // Carried QA finding 0817087d54b5: the page set the report and the component
+  // said "ATC results imported" before the command answered, and a refused
+  // save only reached the console.
+  const EMAIL = `atcrefused-${Date.now()}@cleancore-test.io`;
+  const PASSWORD = 'AtcRefused123!';
+  const PROJECT_ID = `atcrefused-${Date.now()}`;
+
+  test.beforeAll(async () => {
+    const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    try {
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+    } catch { /* already connected */ }
+    const uid = (await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD)).user.uid;
+    await adminSetDoc('users', uid, {
+      firstName: 'Atc', lastName: 'Refused', email: EMAIL, tier: 'pilot', status: 'approved',
+      transformationsUsed: 0, transformationsLimit: 5, termsVersionAccepted: TERMS_VERSION, createdAt: new Date(),
+    });
+    await adminSetDoc('projects', PROJECT_ID, {
+      name: 'ATC refused fixture', userId: uid, createdAt: new Date(), status: 'uploaded',
+      legacyCode: 'REPORT z_atc.\nSELECT * FROM vbak INTO TABLE @DATA(lt).\n',
+    });
+  });
+
+  test('the preview stays, the refusal is said, and nothing reads as imported', async ({ page }) => {
+    test.setTimeout(120 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await signInViaLanding(page, EMAIL, PASSWORD);
+    await page.route('**/api/projects/*/commands', (route) =>
+      route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: 'Refused for the test.' }) }),
+    );
+    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+
+    await page.locator('[data-atc-file]').setInputFiles({
+      name: 'atc.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from('OBJECT_NAME;MESSAGE;PRIORITY\nZFI_ORDERS;Direct write to standard table;1\n'),
+    });
+    await expect(page.locator('[data-atc-preview]')).toBeVisible({ timeout: 30000 });
+    await page.locator('[data-atc-confirm]').click();
+
+    await expect(page.locator('[data-atc-save-error]')).toContainText('did not confirm the save');
+    await expect(page.locator('[data-atc-preview]'), 'the preview went away with the refused save').toBeVisible();
+    await expect(page.locator('[data-atc-imported]')).toHaveCount(0);
   });
 });
 
