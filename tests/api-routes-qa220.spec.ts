@@ -203,6 +203,15 @@ test('the workspace switch does not report a landed write as failed', () => {
   expect(post).toMatch(/answerFor\(uid\)\.catch\(/);
 });
 
+test('the workspace switch reads its body through ?. so a JSON null is the 400, not a 500', () => {
+  // Carried QA finding 8c778be1d34d. The POST is admin-only, which the emulator
+  // suite cannot sign in as; the behaviour itself is covered for the same
+  // shape on /api/model-stages (tests/process-naming-route.spec.ts).
+  const post = code('app/api/workspace-shell/route.ts');
+  expect(post).toContain('(body as { enabled?: unknown } | null)?.enabled');
+  expect(post).not.toContain('(body as { enabled?: unknown }).enabled');
+});
+
 test('the mock purchase-order route is never served in production and says it is a simulation', () => {
   const src = code('app/api/v1/purchase-orders/mass-create/route.ts');
   expect(src).not.toContain('ENABLE_MOCK_PO_ROUTE');

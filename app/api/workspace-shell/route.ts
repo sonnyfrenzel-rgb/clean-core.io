@@ -129,7 +129,9 @@ export async function POST(req: NextRequest) {
     await assertRateLimit(`workspace_shell:${uid}:${getClientIp(req)}`, 60, 60 * 60 * 1000);
 
     const body = await req.json().catch(() => ({}));
-    const enabled = (body as { enabled?: unknown }).enabled;
+    // `null` is valid JSON: read through `?.`, so it is the 400 below rather than
+    // a TypeError answered as 500 (carried QA finding 8c778be1d34d).
+    const enabled = (body as { enabled?: unknown } | null)?.enabled;
     if (typeof enabled !== 'boolean') {
       return NextResponse.json(
         { error: 'Missing required field: enabled. Expected true or false.' },

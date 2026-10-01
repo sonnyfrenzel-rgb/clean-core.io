@@ -124,7 +124,9 @@ export async function POST(req: NextRequest) {
     await assertRateLimit(`model_stages:${uid}:${getClientIp(req)}`, 60, 60 * 60 * 1000);
 
     const body = await req.json().catch(() => ({}));
-    const requested = (body as { stages?: unknown }).stages;
+    // `null` is valid JSON and has no properties: read through `?.`, so it is the
+    // 400 below and not a TypeError answered as 500 (carried QA finding 649f8b778f8e).
+    const requested = (body as { stages?: unknown } | null)?.stages;
     if (!requested || typeof requested !== 'object' || Array.isArray(requested)) {
       return NextResponse.json(
         { error: `Missing required field: stages. Expected an object keyed by ${MODEL_STAGES.join(', ')}.` },
