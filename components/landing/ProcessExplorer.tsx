@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
-import CcSegmentedControl from '@/components/cc/SegmentedControl';
-import { publicButton } from '@/components/landing/public-button';
+import { ChevronRight } from 'lucide-react';
 
 /**
  * The process map of the landing page, made navigable — roadmap 3.0.6,
@@ -24,11 +23,16 @@ export interface ExplorerPlane {
   steps: ReactNode;
 }
 
-export default function ProcessExplorer({ planes, rootId }: { planes: ExplorerPlane[]; rootId: string }) {
+export default function ProcessExplorer({ planes, rootId, program, sub }: { planes: ExplorerPlane[]; rootId: string; program: string; sub: ReactNode }) {
   const [current, setCurrent] = useState(rootId);
   const [view, setView] = useState<'map' | 'steps'>('map');
   const byId = new Map(planes.map((p) => [p.id, p]));
   const hostRef = useRef<HTMLDivElement>(null);
+
+  // On a phone the same content opens as the list of steps (landing mockup, phone).
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 760px)').matches) setView('steps');
+  }, []);
   const moved = useRef(false);
 
   // The element that opened a level is hidden with the level it sat on; the
@@ -71,57 +75,53 @@ export default function ProcessExplorer({ planes, rootId }: { planes: ExplorerPl
 
   return (
     <div ref={hostRef} data-process-explorer="" role="group" aria-label="Process map" onClick={onClick} onKeyDown={onKeyDown}>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-cc-line px-4 py-3">
-        <nav aria-label="Level of the process" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+      <div className="flow-bar">
+        <nav className="crumb" aria-label="Map level">
           {trail.map((p, i) => (
-            <span key={p.id} className="flex items-center gap-2">
-              {i > 0 && <span aria-hidden="true" className="text-cc-ink-muted">›</span>}
+            <span key={p.id} className="crumb-step">
+              {i > 0 && <ChevronRight className="i" aria-hidden="true" />}
               {i < trail.length - 1 ? (
-                <button type="button" onClick={() => go(p.id)} className="font-cc-mono font-semibold text-cc-brand-strong underline underline-offset-4">
-                  {i === 0 ? 'Overview' : p.label}
+                <button type="button" onClick={() => go(p.id)} className="crumb-link">
+                  {i === 0 ? program : p.label}
                 </button>
+              ) : i === 0 ? (
+                <>
+                  <b>{program}</b>
+                  <ChevronRight className="i" aria-hidden="true" />
+                  <span aria-current="location">Overview</span>
+                </>
               ) : (
-                <span aria-current="location" className="font-cc-mono font-semibold text-cc-ink">
-                  {i === 0 ? 'Overview' : p.label}
-                </span>
+                <b aria-current="location">{p.label}</b>
               )}
             </span>
           ))}
-          {here.anchor && <span className="font-cc-mono text-xs text-cc-ink-muted">called at {here.anchor}</span>}
+          {here.anchor && <span className="sub">called at {here.anchor}</span>}
         </nav>
-        <div className="flex items-center gap-2">
-          {here.parent && (
-            <button type="button" onClick={() => go(here.parent as string)} className={publicButton('ghost', 'sm')}>
-              One level up
+        {here.parent && (
+          <button type="button" onClick={() => go(here.parent as string)} className="wbtn">
+            Close
+          </button>
+        )}
+        <span className="sub">{sub}</span>
+        <span className="r">
+          <span className="segb" role="group" aria-label="Show as">
+            <button type="button" aria-pressed={view === 'map'} onClick={() => setView('map')}>
+              Map
             </button>
-          )}
-          <CcSegmentedControl
-            label="Show the process as"
-            value={view}
-            onChange={setView}
-            segments={[
-              { value: 'map' as const, label: 'Map' },
-              { value: 'steps' as const, label: 'Steps' },
-            ]}
-          />
-        </div>
+            <button type="button" aria-pressed={view === 'steps'} onClick={() => setView('steps')}>
+              Steps
+            </button>
+          </span>
+        </span>
       </div>
-      <p className="px-4 pt-3 text-sm font-medium text-cc-ink-muted">
+      <p className="kbdhint flow-help">
         {view === 'map'
-          ? 'A step with a plus is a phase: click it, or Tab to it and press Enter, to open it here. Escape goes one level up. Wide levels scroll sideways.'
-          : 'The same level as a list, in the order the map draws it.'}
+          ? 'Tab into the map · Enter or click opens a phase in place · Escape closes it · Steps shows the same content as a list · wide levels scroll sideways'
+          : 'The same level as a list, in the order the map draws it. A phase opens in place.'}
       </p>
       {planes.map((p) => (
-        <div key={p.id} hidden={p.id !== here.id} data-plane-host={p.id} tabIndex={-1} role="group" aria-label={p.id === rootId ? 'Overview' : p.label} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus">
-          {view === 'map' ? (
-            <div className="overflow-x-auto p-2">
-              {p.map}
-            </div>
-          ) : (
-            <div className="p-4">
-              {p.steps}
-            </div>
-          )}
+        <div key={p.id} hidden={p.id !== here.id} data-plane-host={p.id} tabIndex={-1} role="group" aria-label={p.id === rootId ? 'Overview' : p.label} className="plane-host">
+          {view === 'map' ? <div className="flow-canvas">{p.map}</div> : <div className="flow-steps">{p.steps}</div>}
         </div>
       ))}
     </div>
