@@ -80,18 +80,26 @@ async function main() {
   }
 
   if (factors.length) await auth.updateUser(user.uid, { multiFactor: { enrolledFactors: null } });
-  await db.collection('users').doc(user.uid).set(
+
+  // The Firestore half in one batch with its audit record: the profile, the two
+  // legacy documents and the record commit together or not at all. Written as
+  // separate calls, a failed last write left a reset without a record (carried
+  // QA finding 90ef26f96c2b). A failed commit leaves the factor gone and
+  // `mfaEnabled` still true — running the script again finishes it.
+  //
+  // The record has the shape `logAuditEvent` writes for approval, revocation
+  // and deletion, with the actor stated rather than derived. `audit_events` is
+  // server-only in `firestore.rules` (`allow read, write: if false`), so this
+  // needs the Admin SDK and cannot be written or removed from a browser.
+  const batch = db.batch();
+  batch.set(
+    db.collection('users').doc(user.uid),
     { mfaEnabled: false, mfaFactor: FieldValue.delete(), mfaSecret: FieldValue.delete(), mfaBackupCodes: FieldValue.delete(), mfaResetAt: FieldValue.serverTimestamp() },
     { merge: true },
   );
-  await Promise.all([db.collection('mfa_secrets').doc(user.uid).delete(), db.collection('mfa_pending').doc(user.uid).delete()]);
-
-  // Written last, so a record only exists for a reset that actually happened —
-  // the same shape `logAuditEvent` writes for approval, revocation and
-  // deletion, with the actor stated rather than derived. `audit_events` is
-  // server-only in `firestore.rules` (`allow read, write: if false`), so this
-  // needs the Admin SDK and cannot be written or removed from a browser.
-  await db.collection('audit_events').add({
+  batch.delete(db.collection('mfa_secrets').doc(user.uid));
+  batch.delete(db.collection('mfa_pending').doc(user.uid));
+  batch.set(db.collection('audit_events').doc(), {
     actorUid: 'script:mfa-reset',
     actorEmail: OPERATOR,
     action: 'mfa.reset',
@@ -101,6 +109,7 @@ async function main() {
     ...(REASON ? { reason: REASON } : {}),
     timestamp: new Date(),
   });
+  await batch.commit();
 
   console.log(`Recorded in audit_events: mfa.reset on ${user.email || email} by ${OPERATOR}.`);
   console.log('Done. The account signs in with its first factor alone now and can enrol again in Settings.');
