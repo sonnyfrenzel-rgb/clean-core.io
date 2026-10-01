@@ -1,3 +1,4 @@
+import { SCORE_BANDS_SOURCE, scoreBand, scoreBandsLine, scoreWithBand } from './clean-core-score';
 import type { ProvenanceValue } from './provenance';
 import type { NotDetermined } from './workspace-model';
 import type { Project } from './types';
@@ -758,6 +759,15 @@ function scoreAnswer(project: Project | null, trend: ScoreTrend): ManagementAnsw
     figures,
     items: [
       { key: 'meaning', label: 'What this number is', detail: SCORE_MEANING, provenance: 'reconstructed' },
+      {
+        key: 'band',
+        label: 'What this score means',
+        detail:
+          trend.score === null
+            ? `No score, so no band. ${SCORE_BANDS_SOURCE}: ${scoreBandsLine()}.`
+            : `${scoreWithBand(trend.score)} — ${scoreBand(trend.score).meaning} ${SCORE_BANDS_SOURCE}.`,
+        provenance: 'reconstructed',
+      },
       { key: 'history', label: 'The history rule', detail: trend.sentence, provenance: 'reconstructed' },
     ],
   };

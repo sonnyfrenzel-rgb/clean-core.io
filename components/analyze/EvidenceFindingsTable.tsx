@@ -37,6 +37,7 @@ import {
 import FindingsFocus from './FindingsFocus';
 import ProgramMap from './ProgramMap';
 import ObjectSection from './ObjectSection';
+import SourcePanel from './SourcePanel';
 
 /**
  * The body of the Analyze object page — proposal A (owner decision
@@ -74,13 +75,16 @@ export interface LevelLookup {
 
 const NO_LEVELS: LevelLookup = { status: 'error', of: () => null };
 
-function rowCells(r: FindingRow, level: CloudReadinessGrade | null, lookup: LevelLookup['status']) {
+function rowCells(r: FindingRow, level: CloudReadinessGrade | null, lookup: LevelLookup['status'], openSource?: (line: number) => void) {
   const ef = r.finding;
   const sev = normaliseSeverity(ef.severity);
   return {
     line: (
       <span className="inline-flex flex-wrap gap-1">
-        <CcAnchor label={`Source line ${r.lines[0] ?? ef.lineStart}`}>{`L${r.lines[0] ?? ef.lineStart}`}</CcAnchor>
+        <CcAnchor
+          label={`Source line ${r.lines[0] ?? ef.lineStart}${openSource ? ', open the source' : ''}`}
+          onOpen={openSource ? () => openSource(r.lines[0] ?? ef.lineStart) : undefined}
+        >{`L${r.lines[0] ?? ef.lineStart}`}</CcAnchor>
         {r.lines.length > 1 ? <span className="cc-text-meta text-cc-ink-muted">+{r.lines.length - 1}</span> : null}
       </span>
     ),
@@ -263,6 +267,7 @@ export default function EvidenceFindingsTable({
   scoreSection,
   sideTop,
   sideBottom,
+  fileName = 'source',
 }: {
   findings: readonly EvidenceFinding[];
   /** Lines of the source the findings point into; 0 when it is not on the page. */
@@ -280,6 +285,8 @@ export default function EvidenceFindingsTable({
   sideTop?: React.ReactNode;
   /** What was not determined, the last of the side column. */
   sideBottom?: React.ReactNode;
+  /** The source's file name, for the source panel's label. */
+  fileName?: string;
 }) {
   const [query, setQuery] = useState('');
   const [severity, setSeverity] = useState<SeverityFilter>('All');
@@ -287,6 +294,10 @@ export default function EvidenceFindingsTable({
   const [grouping, setGrouping] = useState<GroupingKey>('kind');
   const [openState, setOpenState] = useState<Record<string, boolean>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  /** The line the source panel shows, opened from a dot or a line anchor. */
+  const [sourceAt, setSourceAt] = useState<number | null>(null);
+  /** What opened the panel — it gets the focus back when the panel closes. */
+  const [opener, setOpener] = useState<HTMLElement | null>(null);
 
   const rows = useMemo(() => findingRows(findings), [findings]);
   const groups = useMemo(() => groupRows(rows, grouping), [rows, grouping]);
@@ -317,11 +328,30 @@ export default function EvidenceFindingsTable({
     scrollToList(`findings-group-${kind}`);
   };
 
-  // A dot on the program map: the list narrowed to its line.
-  const pickLine = (line: number | null) => {
-    setLines(line === null ? null : { from: line, to: line });
-    if (line !== null) scrollToList('analyze-kinds');
+  // A dot on the program map, or a line anchor: the source at that line, the
+  // finding marked (owner decision 01.10.2026). The list filter is the panel's
+  // secondary action.
+  const canShowSource = Boolean(source) && sourceLines > 0 && map.length > 0;
+  const openSource = (line: number | null) => {
+    if (line === null) {
+      closeSource();
+      return;
+    }
+    setOpener(document.activeElement instanceof HTMLElement ? document.activeElement : null);
+    setSourceAt(line);
+    requestAnimationFrame(() => document.querySelector('[data-analyze-source-panel]')?.scrollIntoView({ block: 'nearest' }));
   };
+  const closeSource = () => {
+    setSourceAt(null);
+    const back = opener;
+    setOpener(null);
+    if (back && back.isConnected) requestAnimationFrame(() => back.focus());
+  };
+  const showLineInList = (line: number) => {
+    setLines({ from: line, to: line });
+    scrollToList('analyze-kinds');
+  };
+  const rowsAtSource = sourceAt === null ? [] : rows.filter((r) => r.lines.includes(sourceAt));
 
   return (
     <div data-analysis-findings="" className="min-w-0">
@@ -351,6 +381,7 @@ export default function EvidenceFindingsTable({
               onShow={showKind}
               levelOf={(p) => levels.of(p.row.finding)}
               source={source}
+              onOpenLine={canShowSource ? openSource : undefined}
             />
           </ObjectSection>
 
@@ -374,16 +405,27 @@ export default function EvidenceFindingsTable({
                   ) : null}
                 </ul>
               }
-              lead="Every finding at its source line, one row per kind; a bigger dot is a more severe finding. Pick a dot to see its finding in the list."
+              lead="Every finding at its source line, one row per kind; a bigger dot is a more severe finding. Pick a dot to open the source at that line."
             >
               <ProgramMap
                 rows={map}
                 steps={steps}
                 totalLines={sourceLines}
                 notAssessed={notAssessed}
-                selectedLine={lines && lines.from === lines.to ? lines.from : null}
-                onPick={pickLine}
+                selectedLine={sourceAt}
+                onPick={openSource}
               />
+              {sourceAt !== null && source ? (
+                <SourcePanel
+                  line={sourceAt}
+                  rows={rowsAtSource}
+                  source={source}
+                  fileName={fileName}
+                  levelOf={(f) => levels.of(f)}
+                  onClose={closeSource}
+                  onShowInList={() => showLineInList(sourceAt)}
+                />
+              ) : null}
             </ObjectSection>
           ) : null}
 
@@ -513,7 +555,7 @@ export default function EvidenceFindingsTable({
                               columns={COLUMNS}
                               rows={page.shown.map((r, idx) => ({
                                 key: `${r.finding.kind}-${r.finding.objectName ?? r.finding.title}-${idx}`,
-                                cells: rowCells(r, levels.of(r.finding), levels.status),
+                                cells: rowCells(r, levels.of(r.finding), levels.status, canShowSource ? openSource : undefined),
                               }))}
                             />
                             {page.more > 0 ? (

@@ -1,3 +1,4 @@
+import { SCORE_BANDS_SOURCE, scoreWithBand } from './clean-core-score';
 import { coverage, SCORE_MEANING, type ManagementView, type ScoreTrend } from './management-answers';
 import { levelDistribution, type ItFindingsSource } from './it-findings';
 import { LEVEL_OVERLAY_NOTE } from './process-overlays';
@@ -421,7 +422,9 @@ export function readinessCard(trend: ScoreTrend): ReadinessCard {
     state: 'ready',
     title,
     // The Einordnung stands under the title, never only in a popover (ADR-029).
-    lead: `A grade, not a compliance percentage. ${SCORE_MEANING}`,
+    lead:
+      `A grade, not a compliance percentage. ${SCORE_MEANING}` +
+      (trend.score === null ? '' : ` ${scoreWithBand(trend.score)} — ${SCORE_BANDS_SOURCE.charAt(0).toLowerCase()}${SCORE_BANDS_SOURCE.slice(1)}.`),
     coverage: trend.coverage.sentence,
     ruleVersion: trend.ruleVersion,
     points,

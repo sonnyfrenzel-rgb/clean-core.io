@@ -2,6 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
+import { SCORE_BANDS_SOURCE, bandRange, scoreBand } from '@/lib/clean-core-score';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
@@ -1331,10 +1332,10 @@ CMD ["node", "srv/service.js"]`
               <p className="cc-text-h2 text-cc-ink mt-1">
                 {currentScore === undefined
                   ? 'Not scored yet'
-                  : currentScore >= 90 ? 'Source largely supported' : currentScore >= 70 ? 'Source needs verification' : 'Source has high-risk gaps'}
+                  : `${scoreBand(currentScore).label} (${bandRange(scoreBand(currentScore))})`}
               </p>
               <p className="cc-text-meta text-cc-ink-muted mt-1" data-score-scope>
-                Scores the legacy source, not the generated code — it says nothing about whether the code on the right compiles or passes a test. The Testing stage is where that code runs.
+                {SCORE_BANDS_SOURCE}. Scores the legacy source, not the generated code — it says nothing about whether the code on the right compiles or passes a test. The Testing stage is where that code runs.
               </p>
               {/* The boxes below are component state: no reviewer, no time, no
                   reason, gone on reload, and no Run is signed when they change.

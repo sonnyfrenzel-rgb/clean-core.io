@@ -10,11 +10,14 @@
  * that the router and the screen that explains the score read the same numbers
  * — a second copy on the screen would be a second score.
  *
- * **The bands are guidance, not a standard.** Neither the product, DESIGN.md
- * nor SAP defines a "good" or "bad" Clean Core Score; SAP publishes no such
- * score at all (`app/(app)/clean-core-score`). The four bands below are read off
- * the deduction table itself, and every sentence they carry is something the
- * table guarantees for a score in that band:
+ * **The bands are Clean-Core.io's official reading of a score** (owner
+ * decision 01.10.2026) — the one definition of a good or a bad score, used on
+ * Analyze, on the Clean Core Score page, in the exports and wherever else a
+ * score is shown with a meaning. Nothing else in the product may name a band or
+ * a threshold of its own (`tests/score-bands-guard.spec.ts`). They are not an
+ * SAP measure — SAP publishes no Clean Core Score at all. They are read off the
+ * deduction table itself, and every sentence they carry is something the table
+ * guarantees for a score in that band:
  *
  *   - 91–100: each of the heavy kinds (modification, enhancement, direct write
  *     to an SAP standard table, write to a custom table, batch input, native
@@ -166,8 +169,8 @@ export interface ScoreBand {
 }
 
 /**
- * Guidance derived from the deduction table — see the header. Lowest first, so
- * a scale draws them left to right.
+ * Clean-Core.io's bands, derived from the deductions — see the header. Lowest
+ * first, so a scale draws them left to right.
  */
 export const SCORE_BANDS: readonly ScoreBand[] = Object.freeze([
   {
@@ -206,4 +209,56 @@ export const SCORE_BANDS: readonly ScoreBand[] = Object.freeze([
 
 export function scoreBand(score: number): ScoreBand {
   return SCORE_BANDS.find((b) => score >= b.from && score <= b.to) ?? (score > 100 ? SCORE_BANDS[3] : SCORE_BANDS[0]);
+}
+
+/* ------------------------------------------------------------ the words */
+
+/** Where the bands come from, as every surface that shows them says it. */
+export const SCORE_BANDS_SOURCE = "Clean-Core.io's bands, derived from the deductions";
+
+/** What the score is and is not, in one line — the same everywhere. */
+export const SCORE_NATURE = 'A grade, not a compliance percentage — and not an SAP measure';
+
+/** "91–100" */
+export function bandRange(band: ScoreBand): string {
+  return `${band.from}–${band.to}`;
+}
+
+/** "28 of 100 · far from clean core (5–59)" — a score with its band, for a line of text. */
+export function scoreWithBand(score: number): string {
+  const band = scoreBand(score);
+  return `${score} of 100 · ${band.label.toLowerCase()} (${bandRange(band)})`;
+}
+
+/** The four bands in one line, highest first — for an export, a prompt or llms.txt. */
+export function scoreBandsLine(): string {
+  return [...SCORE_BANDS]
+    .reverse()
+    .map((b) => `${bandRange(b)} ${b.label.toLowerCase()}`)
+    .join(' · ');
+}
+
+/** The rule in prose, highest first, each band with its meaning — for a text that explains the score. */
+export function scoreBandsProse(): string {
+  return [...SCORE_BANDS]
+    .reverse()
+    .map((b) => `${bandRange(b)}, ${b.label.toLowerCase()}: ${b.meaning}`)
+    .join(' ');
+}
+
+/** The deduction table in prose — for a text that explains how the score is computed. */
+export function scoreDeductionsProse(): string {
+  const kinds = SCORE_DEDUCTIONS.map((r) => `${r.label.toLowerCase()} ${r.first} (at most ${r.cap})`).join(', ');
+  return (
+    `The score starts at 100 and takes points off per kind of construct found — the first finding of a kind costs most, each further one less, every kind is capped: ${kinds}. ` +
+    `It never goes below ${SCORE_FLOOR}, and each kind of construct the engine could not assess takes ${UNASSESSED_POINTS_PER_KIND} more (at most ${UNASSESSED_POINTS_CAP}).`
+  );
+}
+
+/** The four bands as a Markdown list, highest first — for llms.txt and other plain-text explanations. */
+export function scoreBandsBullets(): string {
+  return [...SCORE_BANDS]
+    .reverse()
+    .map((b) => `- ${bandRange(b)}, ${b.label.toLowerCase()}: ${b.meaning}`)
+    .join('\n');
 }

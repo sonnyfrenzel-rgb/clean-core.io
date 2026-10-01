@@ -57,7 +57,7 @@ test.describe('one table for the score and its explanation', () => {
   });
 });
 
-test.describe('the bands are guidance the table guarantees', () => {
+test.describe('the bands say only what the table guarantees', () => {
   test('they cover 5–100 without a gap or an overlap, lowest first', () => {
     expect(SCORE_BANDS[0].from).toBe(SCORE_FLOOR);
     expect(SCORE_BANDS[SCORE_BANDS.length - 1].to).toBe(100);

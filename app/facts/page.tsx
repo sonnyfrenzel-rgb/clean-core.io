@@ -5,6 +5,7 @@ import { ArrowLeft, FileJson } from 'lucide-react';
 import { getFacts } from '@/lib/facts';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import { jsonLdHtml } from '@/lib/json-ld';
+import { bandRange, scoreBand } from '@/lib/clean-core-score';
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 
@@ -165,7 +166,8 @@ export default function FactsPage() {
           findings, split {facts.referenceRun.resolvedCount} settled ·{' '}
           {facts.referenceRun.decisionCount} needing a decision ·{' '}
           {facts.referenceRun.handedBackCount} handed back, Clean Core Score{' '}
-          {facts.referenceRun.cleanCoreScore}. Full breakdown and the file to reproduce it:{' '}
+          {facts.referenceRun.cleanCoreScore} ({scoreBand(facts.referenceRun.cleanCoreScore).label.toLowerCase()},{' '}
+          {bandRange(scoreBand(facts.referenceRun.cleanCoreScore))} in Clean-Core.io&apos;s bands). Full breakdown and the file to reproduce it:{' '}
           <Link href="/reference-analysis" className={LINK}>
             /reference-analysis
           </Link>

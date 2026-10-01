@@ -1,3 +1,4 @@
+import { SCORE_BANDS_SOURCE, bandRange, scoreBand } from '@/lib/clean-core-score';
 import type { Project } from '@/lib/types';
 import type { SupportFinding } from '@/lib/abap/class-model';
 import { rollupLevel, LEVEL_LABEL, type SupportLevel } from '@/lib/abap/support-matrix';
@@ -128,7 +129,7 @@ export function buildBoardDeck(input: {
     title: 'Clean-Core Transformation Briefing',
     type: 'split',
     subtitle: `Recommendation: ${recommendation}`,
-    leftContent: `**What the findings say:**\n\n• **Recommended route**: ${project.extensibilityRoute || 'not determined'} — the engine's recommendation, not a decision.\n• **Clean Core Score**: **${measured(project.cleanCoreScore, (v) => `${v}/100`)}** — a grade from the signed run, not a compliance percentage.\n• **Findings verdict**: **${verdict}** (${overallLevel ? `worst level: ${LEVEL_LABEL[overallLevel]}` : 'no findings to roll up'}).\n• **Required actions**: ${requiredActions}`,
+    leftContent: `**What the findings say:**\n\n• **Recommended route**: ${project.extensibilityRoute || 'not determined'} — the engine's recommendation, not a decision.\n• **Clean Core Score**: **${measured(project.cleanCoreScore, (v) => `${v}/100`)}** — a grade from the signed run, not a compliance percentage${typeof project.cleanCoreScore === 'number' ? `; ${scoreBand(project.cleanCoreScore).label.toLowerCase()} (${bandRange(scoreBand(project.cleanCoreScore))}, ${SCORE_BANDS_SOURCE.charAt(0).toLowerCase()}${SCORE_BANDS_SOURCE.slice(1)})` : ''}.\n• **Findings verdict**: **${verdict}** (${overallLevel ? `worst level: ${LEVEL_LABEL[overallLevel]}` : 'no findings to roll up'}).\n• **Required actions**: ${requiredActions}`,
     rightContent: `**What stands behind this:**\n\n• **Findings verdict**: ${verdict}\n• **Architect Sign-Off**: ${signOff}\n• **Source**: the signed run and the deterministic evidence engine — no model wrote these slides\n• **Source fingerprint**: ${project.auditMetadata?.inputFingerprint?.sha256?.substring(0, 12) || 'not recorded'}\n• **Engine**: ${project.auditMetadata?.modelCard?.engineVersion || APP_VERSION}${project.auditMetadata?.modelCard?.model ? ` · model ${project.auditMetadata.modelCard.model} for the narrative` : project.auditMetadata?.modelCard?.modelParticipation === 'none' ? ' · no model took part' : ' · model not recorded'}`,
     speakerNotes: overallLevel
       ? `Decision-first briefing. Findings verdict: ${verdict}, from the worst support level (${LEVEL_LABEL[overallLevel]}) across ${findings.length} finding(s). The engine recommends ${project.extensibilityRoute || 'no route'}. Architect sign-off ${signOff}.`
@@ -163,7 +164,7 @@ export function buildBoardDeck(input: {
       // taken by the evidence engine over the whole source — it stays, labelled
       // as what it is, and never as a statement about these findings.
       { label: 'Coverage Estimate', value: nothingEstablished ? 'not determined' : measured(project.coverageEstimate?.percentage, (v) => `${v}%`), sub: nothingEstablished ? 'no findings — nothing to map' : 'Fully mapped constructs' },
-      { label: 'Clean Core Score', value: measured(project.cleanCoreScore, (v) => `${v}/100`), sub: nothingEstablished ? "the signed run's score — independent of these findings" : 'Out of 100 maximum' },
+      { label: 'Clean Core Score', value: measured(project.cleanCoreScore, (v) => `${v}/100`), sub: nothingEstablished ? "the signed run's score — independent of these findings" : typeof project.cleanCoreScore === 'number' ? `${scoreBand(project.cleanCoreScore).label} (${bandRange(scoreBand(project.cleanCoreScore))})` : 'Out of 100 maximum' },
       { label: 'Findings by Level', value: findings.length ? `${counts.fully} · ${counts.partial} · ${counts.notSupported}` : 'none detected', sub: findings.length ? 'fully · partial · not supported' : 'coverage not established' }
     ],
     content: nothingEstablished

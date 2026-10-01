@@ -140,10 +140,12 @@ export default function AnalysisAnswer({
         >
           <dd className="m-0 mt-2 flex flex-wrap items-baseline gap-x-1">
             {score !== null ? (
-              <>
+              // One inline run, so the figure reads "28 of 100" as text too —
+              // two flex items would put a line break between them.
+              <span>
                 <span className="cc-text-figure text-cc-ink">{score}</span>
                 <span className="cc-text-cell text-cc-ink-muted"> of 100</span>
-              </>
+              </span>
             ) : (
               <span className="cc-text-h3 text-cc-ink">Not yet computed</span>
             )}

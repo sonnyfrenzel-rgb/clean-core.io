@@ -1,4 +1,5 @@
 import { getFacts } from '@/lib/facts';
+import { SCORE_BANDS_SOURCE, scoreBandsBullets, scoreDeductionsProse } from '@/lib/clean-core-score';
 
 /**
  * /llms.txt — a compact, machine-readable orientation file for LLM crawlers and
@@ -104,6 +105,11 @@ SAP's own figures in this field, and which way each points:
 - Clean Core Level A–D (SAP, Cloudification Repository, per object): A is best, D is
   worst. Clean-Core.io reproduces this one, derived from SAP's published files; the
   rule and its version are at ${baseUrl}/method/levels.
+
+What a score means — ${SCORE_BANDS_SOURCE}, not an SAP measure:
+${scoreBandsBullets()}
+
+How it is computed: ${scoreDeductionsProse()}
 
 No cost, saving or ROI figure is derived from the Clean Core Score anywhere in the
 product. It is a measure of code structure, not of money.

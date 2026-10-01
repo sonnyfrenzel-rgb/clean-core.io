@@ -9,6 +9,7 @@ import { publicButton } from '@/components/landing/public-button';
 import { APP_VERSION } from '@/lib/version';
 import { getReferenceAnalysis } from '@/lib/reference-analysis';
 import { SUPPORT_MATRIX } from '@/lib/abap/support-matrix';
+import { scoreBand } from '@/lib/clean-core-score';
 
 // Search demand for this page is the generic term — "clean core whitepaper",
 // "sap clean core whitepaper", "sap clean core pdf" — not the product name. The
@@ -313,7 +314,7 @@ export default function WhitepaperPage() {
             {[
               { k: 'Lines of ABAP', v: reference.linesOfCode.toLocaleString('en-US') },
               { k: 'Findings', v: String(reference.totalFindings) },
-              { k: 'Clean Core Score', v: String(reference.cleanCoreScore) },
+              { k: `Clean Core Score · ${scoreBand(reference.cleanCoreScore).label.toLowerCase()}`, v: String(reference.cleanCoreScore) },
               { k: 'Construct classes tracked', v: String(constructCount) },
             ].map((x) => (
               <div key={x.k} className={`${CARD} p-4`}>
