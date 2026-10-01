@@ -329,7 +329,7 @@ export default function WorkspaceShell({
           Business (ADR-026). The fold is a fold: the statuses are one click
           away, never removed (§2.11). */}
       <div className="mt-4">
-        {view === 'business' && !statusOpen ? (
+        {view === 'business' ? (
           <div
             data-workspace-status-fold=""
             className="flex flex-wrap items-center gap-3 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
@@ -341,9 +341,10 @@ export default function WorkspaceShell({
               {started === 0 ? wt('page.nothingOnRecord') : pageStatusOnRecord(started, statuses.length)}
             </span>
             <span className="cc-no-print ml-auto">
-              <CcButton onClick={() => setStatusOpen(true)} aria-expanded={false}>
-                {wt('page.showProjectStatus')}
-                <ChevronDown size={14} aria-hidden={true} />
+              {/* A fold folds back (QA review of 247b20c16e38). */}
+              <CcButton onClick={() => setStatusOpen((v) => !v)} aria-expanded={statusOpen}>
+                {statusOpen ? wt('page.hideProjectStatus') : wt('page.showProjectStatus')}
+                <ChevronDown size={14} aria-hidden={true} className={statusOpen ? 'rotate-180' : undefined} />
               </CcButton>
             </span>
           </div>
