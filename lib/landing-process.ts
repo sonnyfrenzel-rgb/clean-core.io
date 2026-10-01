@@ -96,6 +96,9 @@ export interface LandingProcess {
     lastLine: number | null;
     helpers: string[];
     clones: number;
+    /** The same two lists with their lines, for the rows under the map. */
+    unreachedList: Array<{ name: string; lineStart: number; lineEnd: number }>;
+    helperList: Array<{ name: string; lineStart: number; lineEnd: number; callSites: number }>;
   };
 }
 
@@ -231,6 +234,8 @@ function buildProcess(fileName: string, program: string): { process: LandingProc
         lastLine: unreached.length ? Math.max(...unreached.map((u) => u.lineEnd)) : null,
         helpers: skeleton.notDrawn.technicalHelpers.map((h) => h.name),
         clones: skeleton.notDrawn.clones.length,
+        unreachedList: unreached.map((u) => ({ name: u.name, lineStart: u.lineStart, lineEnd: u.lineEnd })),
+        helperList: skeleton.notDrawn.technicalHelpers.map((h) => ({ name: h.name, lineStart: h.lineStart, lineEnd: h.lineEnd, callSites: h.callSites })),
       },
     },
   };
@@ -276,7 +281,7 @@ export function landingHero(fileName: string, program: string): LandingHero {
     const el = r.processElements[0];
     return el ? [{ id: r.id, label: r.label, line: el.lineStart, here: onPlane.has(el.nodeId) }] : [];
   });
-  const shown = [...withLine.filter((r) => r.here), ...withLine.filter((r) => !r.here)].slice(0, 3).map(({ id, label, line }) => ({ id, label, line }));
+  const shown = [...withLine.filter((r) => r.here), ...withLine.filter((r) => !r.here).sort((a, b) => a.label.length - b.label.length)].slice(0, 3).map(({ id, label, line }) => ({ id, label, line }));
 
   const nd = notDetermined({ legacyCode: source } as Parameters<typeof notDetermined>[0]);
   const groups = new Map<string, string[]>();

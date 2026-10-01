@@ -19,7 +19,8 @@ import SapTrademarkNotice from '@/components/SapTrademarkNotice';
  * green hover (ADR-007: green means "backed by evidence", not "you are
  * pointing here"). The links and their order are unchanged.
  */
-const COLUMNS: { heading: string; links: { href: string; label: string }[] }[] = [
+/** The link map, also read by the landing page's footer (roadmap 3.0.6), so the two cannot differ. */
+export const SITE_FOOTER_COLUMNS: { heading: string; links: { href: string; label: string }[] }[] = [
   {
     heading: 'Product',
     links: [
@@ -81,7 +82,7 @@ export default function SiteFooter({ dark = false }: { dark?: boolean }) {
       </div>
 
       <nav aria-label="Footer" className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-8 text-left max-w-3xl mx-auto">
-        {COLUMNS.map((col) => (
+        {SITE_FOOTER_COLUMNS.map((col) => (
           <div key={col.heading}>
             <h3 className={clsx(MICRO_LABEL, 'mb-3', muted)}>{col.heading}</h3>
             <ul className="space-y-2">
