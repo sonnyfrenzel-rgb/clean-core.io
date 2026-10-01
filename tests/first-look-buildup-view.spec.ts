@@ -76,3 +76,12 @@ test('the stage of the build-up is a live region, and it says the stage that is 
   // would talk over the reader if they were live as well.
   expect(start).not.toMatch(/data-first-look-counters=""[^>]*aria-live/);
 });
+
+test('the first look is marked seen only once the workspace is ready and showing it', () => {
+  // Carried QA finding bd900406a5fb: it was marked when it was asked for, before
+  // the project loaded, so a failed load cost the reader their first look.
+  const page = fs.readFileSync(path.join(ROOT, 'app', '(app)', 'project', '[projectId]', 'page.tsx'), 'utf8');
+  const calls = page.match(/markFirstLookSeen\(/g) ?? [];
+  expect(calls).toHaveLength(1);
+  expect(page).toContain("if (state === 'ready' && buildUp === true && projectId) markFirstLookSeen(projectId);");
+});

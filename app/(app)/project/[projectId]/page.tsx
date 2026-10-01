@@ -88,10 +88,16 @@ export default function ProjectWorkspacePage() {
       setBuildUp(false);
       return;
     }
-    const seen = firstLookSeen(projectId);
-    setBuildUp(!seen);
-    if (!seen) markFirstLookSeen(projectId);
+    setBuildUp(!firstLookSeen(projectId));
   }, [enabled, projectId, asked]);
+
+  // Marked as seen once the workspace is ready and the build-up is on screen —
+  // not when it was merely asked for: a load that fails, or a tab closed before
+  // the project arrived, used to cost the reader their first look (carried QA
+  // finding bd900406a5fb).
+  useEffect(() => {
+    if (state === 'ready' && buildUp === true && projectId) markFirstLookSeen(projectId);
+  }, [state, buildUp, projectId]);
 
   const setView = useCallback(
     (next: WorkspaceView) => {
