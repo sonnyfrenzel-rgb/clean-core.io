@@ -18,7 +18,7 @@ import {
   type HandoverProject,
 } from '../lib/handover';
 import { buildAuditPackContents } from '../lib/audit-pack-build';
-import { workflowSteps, handoverBlockers } from '../lib/workflow-steps';
+import { workflowSteps, handoverBlockers, testEvidence } from '../lib/workflow-steps';
 import { buildProjectDecision } from '../lib/project-decision-build';
 import { SELF_DECLARATION } from '../lib/project-decision';
 import { sha256Hex } from '../lib/artefact-digest';
@@ -118,6 +118,40 @@ test.describe('the handover reads what is on record', () => {
     expect(tests.provenance).toBe('demonstrated-mock');
     expect(tests.missing).toContain('not against an SAP system');
     expect(confirmationsOf(p).map((c) => c.what)).toContain('Ran the test suite in the sandbox');
+  });
+
+  test('a recorded run with no pass or fail is not called "no run on record" (QA review of a88149856dcc)', () => {
+    const base = project({
+      generatedCode: 'export const ok = 1;\n',
+      testSuite: { code: "test('t1', () => {});" },
+      testCases: [{ id: 't1', name: 'Case', category: 'Unit', status: 'Not run' }],
+    });
+    const p = { ...base, testRunReceipt: receiptFor(base, [{ id: 't1', status: 'Error' }]) } as HandoverProject;
+    const chain = buildHandoverChain(p, workflowSteps(p));
+    const state = { blockers: [] as string[], exportedAt: null };
+    // The status line on the same screen reads the receipt as a run…
+    expect(handoverStatusLine(p, chain).find((s) => s.key === 'receipts')!.value).toBe('sandbox test run');
+    // …so the receipt step does not deny it.
+    const sub = handoverGroups(p, chain, state).find((g) => g.key === 'receipt')!.sub;
+    expect(sub).not.toContain('no run on record');
+    expect(sub).toContain('the recorded run returned no pass or fail');
+    // Without a receipt the absence is still said.
+    const none = project({ generatedCode: base.generatedCode, testSuite: base.testSuite, testCases: base.testCases });
+    expect(handoverGroups(none, buildHandoverChain(none, workflowSteps(none)), state).find((g) => g.key === 'receipt')!.sub).toContain('no run on record');
+  });
+
+  test('a test suite written for a previous source says so on the receipt step, like the other steps (QA review of a88149856dcc)', () => {
+    const changed = project({
+      legacyCode: `${SOURCE}WRITE 'changed'.\n`,
+      generatedCode: 'export const ok = 1;\n',
+      testSuite: { code: "test('t1', () => {});" },
+      testCases: [{ id: 't1', name: 'Case', category: 'Unit', status: 'Not run' }],
+    });
+    const phases = workflowSteps(changed);
+    expect(phases.find((p) => p.key === 'testing')!.state).toBe('stale');
+    const receipt = handoverGroups(changed, buildHandoverChain(changed, phases), { blockers: [], exportedAt: null }).find((g) => g.key === 'receipt')!;
+    expect(receipt.provenance).toBe('stale');
+    expect(receipt.sub).toContain('made for a previous source');
   });
 
   test('a confirmed decision names the account and stays a self-declaration', () => {
@@ -243,4 +277,22 @@ test.describe('the handover on screen', () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, 'the page scrolls sideways at 390 px').toBeLessThanOrEqual(0);
   });
+});
+
+test('one verdict under a duplicated case id is counted once (QA review of a88149856dcc)', () => {
+  const base = {
+    activeRunId: 'run-0001',
+    legacyCode: SOURCE,
+    generatedCode: 'export const ok = 1;\n',
+    testSuite: { code: "test('t1', () => {});" },
+    testCases: [
+      { id: 't1', name: 'Case', category: 'Unit', status: 'Passed' },
+      { id: 't1', name: 'Same id', category: 'Unit', status: 'Passed' },
+    ],
+  };
+  const p = { ...base, testRunReceipt: receiptFor(base, [{ id: 't1', status: 'Passed' }]) } as unknown as Parameters<typeof testEvidence>[0];
+  const evidence = testEvidence(p);
+  expect(evidence.total).toBe(2);
+  // One run verdict cannot make two cases verified.
+  expect(evidence.attestedPasses).toBe(1);
 });

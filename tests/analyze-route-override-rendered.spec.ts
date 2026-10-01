@@ -122,3 +122,24 @@ test('an analysis without a recommendation claims no override', async ({ page })
   expect(body).not.toContain('You changed this route');
   expect(body, 'and the missing confidence says so').toContain('Confidence not computed');
 });
+
+test('a route switch the database refuses says so next to the button and changes nothing', async ({ page }) => {
+  test.setTimeout(180 * 1000);
+  // A document the rules refuse every browser update of: `exports` must be a
+  // map (firestore.rules, isValidProject), and the update rule validates the
+  // whole document the write would leave behind. The switch used to await the
+  // write with no handler, so the refusal vanished and the button said nothing
+  // (QA review of a88149856dcc).
+  await adminMergeDoc('projects', PROJECT_ID, {
+    analysis: ANALYSIS,
+    extensibilityRoute: 'Side-by-Side (SAP BTP)',
+    exports: 'not a map',
+  });
+  await adminMergeDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, { recommendationConfidence: 88 });
+  await openAnalyze(page);
+
+  await page.locator('[data-route-switch]').click();
+  await expect(page.locator('[data-route-switch-error]')).toContainText('The route could not be changed. Nothing was saved');
+  await expect(page.locator('[data-route-switch]')).toHaveText(/Switch to ABAP Cloud/);
+  await expect(page.locator('body')).not.toContainText('Chosen by you');
+});

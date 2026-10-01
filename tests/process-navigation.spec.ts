@@ -310,6 +310,33 @@ test.describe('the parts of the navigation say what the file says', () => {
     expect(lit).not.toContain('7.7');
   });
 
+  test('rules that are still read, or could not be read, are not "no hard-coded value" (QA review of a88149856dcc)', () => {
+    const source = exampleSource();
+    const model = exampleModel(source);
+    const nav = buildNavigation(model);
+    const none = new Map<string, string[]>();
+    for (const plane of nav.planes.keys()) {
+      const loading = planeProblems(model, nav, plane, none, 'loading');
+      expect(loading.text).not.toContain('No hard-coded value decides here.');
+      expect(loading.text).toContain('is still being read');
+      const failed = planeProblems(model, nav, plane, none, 'failed');
+      expect(failed.text).not.toContain('No hard-coded value decides here.');
+      expect(failed.text).toContain('could not be read');
+      // An answer that is empty still says so plainly.
+      expect(planeProblems(model, nav, plane, none).text).toContain('No hard-coded value decides here.');
+    }
+  });
+
+  test('an indented PARAMETERS keeps its switches, and a checkbox with no DEFAULT starts off (QA review of a88149856dcc)', () => {
+    // Pretty-printed inside a SELECTION-SCREEN block, and p_upd without DEFAULT —
+    // the initial value of a checkbox is blank, which is off.
+    const source = exampleSource().replace("PARAMETERS: p_upd    AS CHECKBOX DEFAULT ' ',", '  PARAMETERS: p_upd    AS CHECKBOX,');
+    expect(source).toContain('  PARAMETERS: p_upd    AS CHECKBOX,');
+    const switches = readRunSwitches(source, exampleModel(source));
+    expect(switches.map((entry) => entry.name).sort()).toEqual(['p_alv', 'p_bdc', 'p_down', 'p_mail', 'p_rfc', 'p_upd']);
+    expect(switches.find((entry) => entry.name === 'p_upd')!.defaultOn).toBe(false);
+  });
+
   test('the problem line of a level says what is not determined, and nothing else', () => {
     const source = exampleSource();
     const model = exampleModel(source);

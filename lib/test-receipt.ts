@@ -289,9 +289,12 @@ export function coveringTestRunReceipt(project: {
  * mentioned is not a pass — that is the same absence `TestCase['status']`
  * records as `Not run`, and reading it as a pass is how a whole file failing to
  * load once reported ten verified tests.
+ *
+ * Each id counts once: two cases under one id share a single verdict, and
+ * counting it twice let one pass stand for two (QA review of a88149856dcc).
  */
 export function executedPasses(receipt: TestRunReceipt | null, ids: string[]): number {
   if (!receipt) return 0;
   const passed = new Set(receipt.verdicts.filter((v) => v.status === 'Passed').map((v) => v.id));
-  return ids.filter((id) => passed.has(id)).length;
+  return [...new Set(ids)].filter((id) => passed.has(id)).length;
 }

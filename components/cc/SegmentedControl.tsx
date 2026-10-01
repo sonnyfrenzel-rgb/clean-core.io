@@ -67,7 +67,11 @@ export default function CcSegmentedControl<T extends string>({
   const move = (delta: number) => {
     const index = segments.findIndex((s) => s.value === value);
     const next = segments[(index + delta + segments.length) % segments.length];
-    if (next) onChange(next.value);
+    if (!next) return;
+    onChange(next.value);
+    // The radio pattern moves the focus with the selection; otherwise it stays
+    // on a segment that just became tabIndex -1 (QA review of a88149856dcc).
+    document.getElementById(`${groupId}-${next.value}`)?.focus();
   };
 
   return (

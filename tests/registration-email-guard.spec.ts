@@ -126,6 +126,6 @@ test.describe('structure, so the next edit cannot reintroduce the problem', () =
     }
     // No account-approval wording. Word boundaries, because the recommended
     // example is the ABAP object Z_MM_PO_APPROVAL — a program name, not a gate.
-    expect(html).not.toMatch(/under review|being reviewed|approval|approved/i);
+    expect(html).not.toMatch(/under review|being reviewed|\bapproval\b|\bapproved\b/i);
   });
 });

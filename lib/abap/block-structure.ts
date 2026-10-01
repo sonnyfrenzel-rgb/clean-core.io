@@ -125,10 +125,20 @@ function openerKind(statement: AbapStatement): BlockKind | null {
     case 'CLASS': return /\b(?:DEFERRED|LOAD)\s*$/i.test(statement.text) ? null : 'class';
     case 'INTERFACE': return /\bDEFERRED\s*$/i.test(statement.text) ? null : 'interface';
     case 'DEFINE': return 'define';
-    case 'SELECT': return 'select';
+    // Only a SELECT that can be a loop opens a candidate. A SELECT SINGLE or a
+    // SELECT INTO TABLE inside a SELECT … ENDSELECT used to take the outer
+    // loop's ENDSELECT, and the real loop was dropped as never closed (QA
+    // review of a88149856dcc). INTO TABLE with PACKAGE SIZE is a loop.
+    case 'SELECT': return selectCanLoop(statement.text) ? 'select' : null;
     case 'AT': return AT_BLOCK.test(statement.text) ? 'at' : null;
     default: return null;
   }
+}
+
+function selectCanLoop(text: string): boolean {
+  if (/^SELECT\s+SINGLE\b/i.test(text)) return false;
+  const intoTable = /\b(?:INTO|APPENDING)\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?TABLE\b/i.test(text);
+  return !intoTable || /\bPACKAGE\s+SIZE\b/i.test(text);
 }
 
 /** True for the openers that may turn out not to be blocks at all. */

@@ -884,6 +884,10 @@ export default function AnalyzePage() {
   // never removed. All that "could not be determined" is gathered in one place
   // with its reason, instead of a paragraph wherever it happened to arise.
   const [notDeterminedOpen, setNotDeterminedOpen] = useState(false);
+  // The route switch writes the project; a refused or lost write is said next to
+  // the button instead of leaving the route silently unchanged (QA review of
+  // a88149856dcc).
+  const [routeSwitch, setRouteSwitch] = useState<{ busy: boolean; error: string }>({ busy: false, error: '' });
   const showNotDetermined = () => {
     setNotDeterminedOpen(true);
     window.requestAnimationFrame(() =>
@@ -1432,18 +1436,34 @@ export default function AnalyzePage() {
                     density="compact"
                     title="Not the route you want? Choose the other one; it is then marked as your choice."
                     icon={<RefreshCw size={16} aria-hidden="true" />}
+                    busy={routeSwitch.busy}
+                    data-route-switch
                     onClick={async () => {
+                      if (routeSwitch.busy) return;
                       const currentRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Side-by-Side (SAP BTP)';
                       const nextRoute = currentRoute.includes('BTP') ? 'In-App (ABAP Cloud)' : 'Side-by-Side (SAP BTP)';
 
-                      const docRef = doc(getDb(), 'projects', projectId as string);
-                      await updateDoc(docRef, { extensibilityRoute: nextRoute });
-                      setProject((prev: any) => prev ? { ...prev, extensibilityRoute: nextRoute } : prev);
+                      setRouteSwitch({ busy: true, error: '' });
+                      try {
+                        const docRef = doc(getDb(), 'projects', projectId as string);
+                        await updateDoc(docRef, { extensibilityRoute: nextRoute });
+                        setProject((prev: any) => prev ? { ...prev, extensibilityRoute: nextRoute } : prev);
+                        setRouteSwitch({ busy: false, error: '' });
+                      } catch {
+                        setRouteSwitch({ busy: false, error: 'The route could not be changed. Nothing was saved; check your connection and try again.' });
+                      }
                     }}
                   >
                     {isBtp ? 'Switch to ABAP Cloud' : 'Switch to BTP'}
                   </CcButton>
                 </div>
+                {routeSwitch.error && (
+                  <div className="mt-2" data-route-switch-error>
+                    <CcMessageStrip state="error" announce>
+                      {routeSwitch.error}
+                    </CcMessageStrip>
+                  </div>
+                )}
               </ObjectSection>
             }
           />

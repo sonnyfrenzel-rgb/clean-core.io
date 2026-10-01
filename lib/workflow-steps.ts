@@ -189,7 +189,7 @@ export function testEvidence(project: Project | null): TestEvidence {
     connectivity,
     withoutVerdict: cases.length - passed - failed - simulated - connectivity,
     attestedPasses: executedPasses(receipt, ids),
-    attestedFailures: ids.filter((id) => failedInReceipt.has(id)).length,
+    attestedFailures: [...new Set(ids)].filter((id) => failedInReceipt.has(id)).length,
   };
 }
 

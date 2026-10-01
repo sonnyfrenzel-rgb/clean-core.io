@@ -1027,6 +1027,24 @@ test.describe('fewer rounds for the same quality (Sonny, 15.09.2026)', () => {
     expect(redactSecrets(`const SIGNING_KEY = '${value}';`).text).not.toContain(value);
   });
 
+  test('a template, a URL or a location name does not carry key material past the redaction', async () => {
+    const { redactSecrets } = await lib('redact.mjs');
+    // Built at run time, for the reason the storage-key test below gives.
+    const key = require('crypto').randomBytes(24).toString('hex');
+    const leaking = [
+      `const SIGNING_KEY = \`${key}\${suffix}\`;`,
+      `const SESSION_TOKEN_URL = 'https://api.example.com/v1?token=${key}';`,
+      `const DB_PASSWORD_URL = 'https://admin:${'p'.repeat(8)}@db.example.com/x';`,
+      `const REVIEW_KEY_PATH = '${key}';`,
+      `const API_KEY = 'https://api.example.com/${key}';`,
+    ];
+    for (const line of leaking) {
+      const { hits, text } = redactSecrets(line);
+      expect(hits.length, `went through unredacted: ${line.slice(0, 24)}…`).toBeGreaterThan(0);
+      expect(text).not.toContain(key);
+    }
+  });
+
   test('a storage key named …_KEY is a name, not a credential — and the files that raised five criticals are clean', async () => {
     const { redactSecrets } = await lib('redact.mjs');
 

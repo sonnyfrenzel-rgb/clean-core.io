@@ -193,7 +193,7 @@ export default function TestingHeader({
           }}
           sub={
             scenarios.rejected ? (
-              'The saved scenarios could not be read back — generate them again'
+              `The saved scenarios could not be read back. ${scenarios.emptyReason}`
             ) : count > 0 ? (
               <CcProvenanceChip value="proposed" />
             ) : (
