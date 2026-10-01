@@ -109,7 +109,7 @@ for (const [previous, tag] of [
 
     // It says what changed in 3.0's version, and — for the v2.0.0 account — in
     // v2.1.0 as well, which that account was never required to accept.
-    await expect(gate.locator('[data-terms-gate-change="2026-10-15"]').first()).toBeVisible();
+    await expect(gate.locator('[data-terms-gate-change="2026-10-06"]').first()).toBeVisible();
     if (previous === '2026-07-07') {
       await expect(gate.locator('[data-terms-gate-change="2026-09-18"]').first()).toBeVisible();
     } else {

@@ -87,7 +87,7 @@ function readDeclined(): boolean {
  */
 const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray<{ lead: string; text: string }> }> = [
   {
-    version: '2026-10-15',
+    version: '2026-10-06',
     items: [
       {
         lead: 'What is computed, and what a model writes.',

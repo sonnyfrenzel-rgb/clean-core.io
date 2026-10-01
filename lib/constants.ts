@@ -56,7 +56,7 @@ export const COMMUNITY_QUOTA = 5;
  * (`termsVersionAccepted`) so a later Terms change can request re-consent and
  * the accepted version is provable. Kept in sync with the effective date on /terms.
  */
-export const TERMS_VERSION = '2026-10-15';
+export const TERMS_VERSION = '2026-10-06';
 
 /**
  * The versions under which the platform may still be used.
@@ -78,7 +78,7 @@ export const TERMS_VERSION = '2026-10-15';
 export const TERMS_VERSIONS_IN_FORCE: readonly string[] = [
   // v2.2.0, the version 3.0 ships with: section 4.1 separates the deterministic
   // results from the model-generated output (QA 6b83ef361e80).
-  '2026-10-15',
+  '2026-10-06',
   // v2.1.0 (2026-09-18) and v2.0.0 (2026-07-07) are no longer in force from 3.0
   // on — Sonny, 30.09.2026: "no mails, no census — consent to the new version
   // is simply required at login with 3.0". An account holding either meets the
