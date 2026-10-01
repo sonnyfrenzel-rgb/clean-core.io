@@ -121,7 +121,7 @@ export function TestingBarChart({ stats }: { stats: TestingChartStats }) {
       <ul className="sr-only">
         {stats.categoryStats.map((c) => (
           <li key={c.name}>
-            {c.name}: {c.passed} proven, {c.failed} failed, {c.inconclusive} not determined, of {c.total}
+            {c.name}: {c.passed} demonstrated with mocks, {c.failed} failed, {c.inconclusive} not determined, of {c.total}
           </li>
         ))}
       </ul>

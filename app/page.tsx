@@ -327,8 +327,8 @@ export default function Home() {
    * `lib/landing-stages.ts` and `lib/evidence-chain.ts` say of the same stage.
    */
   const chainSteps: Array<{ key: string; t: string; d: string; pv: ProvenanceValue; mark: string }> = [
-    { key: 'process', t: 'Process', d: `The business process as BPMN, read from the code. Every element points to its line — the plant 1000 rule of the demo to L${plantRule.line}.`, pv: 'reconstructed', mark: 'line anchor' },
-    { key: 'design', t: 'Design', d: 'A target design for the route the evidence points to, built on the signed run — a proposal until you record the target you accept.', pv: 'proposed', mark: 'signed run' },
+    { key: 'process', t: 'Process', d: `The business process as BPMN, read from the code. Every element points to its line, or says why it has none — the plant 1000 rule of the demo to L${plantRule.line}.`, pv: 'reconstructed', mark: 'line anchor' },
+    { key: 'design', t: 'Design', d: 'A target design for the route the evidence points to, built on the run the server signed — a proposal until you record the target you accept.', pv: 'proposed', mark: 'run reference' },
     { key: 'code', t: 'Code draft', d: 'The transformed code, generated from the source, the analysis and the design; its plan names every finding at its line. A draft you review, not a finished product.', pv: 'proposed', mark: 'line anchor' },
     { key: 'tests', t: 'Tests', d: 'Test scenarios for the generated code, run in an isolated runner against mocks. The server records what ran, on which code.', pv: 'demonstrated-mock', mark: 'test receipt' },
     { key: 'handover', t: 'Handover', d: 'An audit pack the server signs over the run, with HMAC and Ed25519, that anyone can verify offline.', pv: 'proven', mark: 'signature' },
