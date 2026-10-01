@@ -174,6 +174,31 @@ function isOurs(value: ModdleElement): boolean {
   return value.$type.startsWith('cc:') || (value as { $descriptor?: { ns?: { uri?: string } } }).$descriptor?.ns?.uri === CC_NAMESPACE;
 }
 
+interface IstElement {
+  type: string;
+  name: string;
+  trace: ModdleElement | null;
+  /** The sub-process the element sits in, or null on the top level. */
+  parent: string | null;
+  /** A flow's ends. */
+  source: string | null;
+  target: string | null;
+}
+
+function idOf(value: unknown): string | null {
+  return isElement(value) && typeof value.id === 'string' ? value.id : null;
+}
+
+/** The nearest enclosing sub-process. */
+function subProcessOf(element: ModdleElement): ModdleElement | null {
+  let walkUp = element.$parent as ModdleElement | undefined;
+  while (walkUp) {
+    if (walkUp.$type === 'bpmn:SubProcess') return walkUp;
+    walkUp = walkUp.$parent as ModdleElement | undefined;
+  }
+  return null;
+}
+
 function refuse(code: ImportRefusal, message: string): ImportOutcome {
   return { ok: false, code, message };
 }
@@ -310,12 +335,19 @@ export async function importBpmn(text: string, ist: { xml: string; revision: num
 
   // ---- the Ist, element by element, with its own traces ----
   const istParsed = await moddle.fromXML(ist.xml, 'bpmn:Definitions');
-  const istById = new Map<string, { type: string; name: string; trace: ModdleElement | null }>();
+  const istById = new Map<string, IstElement>();
   for (const root of (istParsed.rootElement.rootElements as ModdleElement[] | undefined) ?? []) {
     walk(root, (element) => {
       if (!element.id) return;
       const trace = extensionValues(element).find((v) => v.$type === 'cc:trace') ?? null;
-      istById.set(element.id, { type: element.$type, name: element.name ?? '', trace });
+      istById.set(element.id, {
+        type: element.$type,
+        name: element.name ?? '',
+        trace,
+        parent: subProcessOf(element)?.id ?? null,
+        source: idOf(element.sourceRef),
+        target: idOf(element.targetRef),
+      });
     });
   }
 
@@ -344,27 +376,64 @@ export async function importBpmn(text: string, ist: { xml: string; revision: num
     if (twin.trace) restore(element, twin.trace);
   }
 
-  // By name: one Ist element of the same type with exactly this name, unclaimed.
-  const byName = new Map<string, string[]>();
-  for (const [id, twin] of istById) {
-    if (!FLOW_NODE_TYPES.has(twin.type) || !twin.name.trim()) continue;
-    const key = `${twin.type}|${twin.name.trim()}`;
-    byName.set(key, [...(byName.get(key) ?? []), id]);
-  }
+  /**
+   * By name: one Ist element of the same type with exactly this name, unclaimed
+   * — first across the whole model, then inside a sub-process that was itself
+   * recognised (every level has its own "Start" and "Done"), level by level.
+   * The element takes the Ist id back, and with it the Ist's trace.
+   */
   let matchedByName = 0;
-  for (const element of flowNodes) {
-    if (!element.id || claimed.has(element.id) || !element.name?.trim()) continue;
-    const candidates = (byName.get(`${element.$type}|${element.name.trim()}`) ?? []).filter((id) => !claimed.has(id));
-    if (candidates.length !== 1) continue;
-    const istId = candidates[0];
-    if (usedIds.has(istId)) continue;
-    usedIds.delete(element.id);
+  const take = (element: ModdleElement, istId: string) => {
+    usedIds.delete(element.id as string);
     element.id = istId;
     usedIds.add(istId);
     claimed.add(istId);
-    matchedByName += 1;
     const twin = istById.get(istId);
     if (twin?.trace) restore(element, twin.trace);
+  };
+  const namePass = (scoped: boolean): number => {
+    const index = new Map<string, string[]>();
+    for (const [id, twin] of istById) {
+      if (claimed.has(id) || !FLOW_NODE_TYPES.has(twin.type) || !twin.name.trim()) continue;
+      const key = `${twin.type}|${twin.name.trim()}|${scoped ? twin.parent ?? '' : ''}`;
+      index.set(key, [...(index.get(key) ?? []), id]);
+    }
+    const wanted = new Map<string, ModdleElement[]>();
+    for (const element of flowNodes) {
+      if (!element.id || claimed.has(element.id) || !element.name?.trim()) continue;
+      const parent = subProcessOf(element)?.id ?? null;
+      if (scoped && parent !== null && !claimed.has(parent)) continue;
+      const key = `${element.$type}|${element.name.trim()}|${scoped ? parent ?? '' : ''}`;
+      wanted.set(key, [...(wanted.get(key) ?? []), element]);
+    }
+    let found = 0;
+    for (const [key, elements] of wanted) {
+      const candidates = index.get(key) ?? [];
+      // Unique on both sides, or it is a guess.
+      if (candidates.length !== 1 || elements.length !== 1 || usedIds.has(candidates[0])) continue;
+      take(elements[0], candidates[0]);
+      found += 1;
+    }
+    return found;
+  };
+  matchedByName += namePass(false);
+  for (let round = 0; round < 50; round += 1) {
+    const found = namePass(true);
+    matchedByName += found;
+    if (found === 0) break;
+  }
+
+  // Sequence flows between two recognised elements take the Ist flow back, and
+  // with it the condition the code wrote on it.
+  for (const element of all) {
+    if (element.$type !== 'bpmn:SequenceFlow' || !element.id || claimed.has(element.id)) continue;
+    const from = idOf(element.sourceRef);
+    const to = idOf(element.targetRef);
+    const twins = [...istById.entries()].filter(([id, twin]) => (
+      twin.type === 'bpmn:SequenceFlow' && !claimed.has(id) && twin.source === from && twin.target === to
+    ));
+    if (twins.length !== 1 || usedIds.has(twins[0][0])) continue;
+    take(element, twins[0][0]);
   }
 
   let xml: string;

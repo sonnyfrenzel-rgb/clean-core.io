@@ -63,9 +63,11 @@ test.describe('BPMN 2.0 import', () => {
     expect(result.ok, result.ok ? '' : result.message).toBe(true);
     if (!result.ok) return;
     expect(result.summary.matchedById).toBe(0);
-    // Not every element has a unique name of its kind ("Start", "Done" repeat
-    // on every level); those stay without an anchor rather than guessing.
-    expect(result.summary.matchedByName).toBeGreaterThan(30);
+    // "Start" and "Done" repeat on every level: they are recognised inside a
+    // sub-process that was itself recognised. What stays ambiguous even there
+    // is left without an anchor rather than guessed — measured: 78 of 82.
+    expect(result.summary.matchedByName).toBeGreaterThanOrEqual(75);
+    expect(result.summary.outside).toBeLessThanOrEqual(6);
     expect(result.summary.anchored).toBe(result.summary.matchedByName);
     expect(result.summary.outside).toBe(result.summary.flowNodes - result.summary.matchedByName);
     // What the reader of the product sees: an anchored element is one of the Ist's, at the Ist's lines.
