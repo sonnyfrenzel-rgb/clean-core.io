@@ -8,6 +8,7 @@ import { layoutModel, type Bounds, type DiagramLayout, type Direction, type Plac
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
 import { notDetermined } from '@/lib/workspace-model';
 import { tokenizeAbapLine, type CodeToken } from '@/lib/process-map';
+import { heroRulePhrase, pickHeroRules } from '@/lib/landing-hero';
 
 /**
  * The process pictures of the public landing page — roadmap 3.0.6.
@@ -291,6 +292,8 @@ export interface LandingHero {
    * flow, top to bottom (`lib/bpmn/excerpt.ts`), every element anchored.
    */
   plane: LandingPlane;
+  /** The same excerpt drawn for a phone (`narrow`): labels right of and under the main line. */
+  planeNarrow: LandingPlane;
   /** A sentence under the source: the decisions of the shown routine and where their exits lead. */
   caption: string;
   /** The routine's own lines, for the source column. */
@@ -320,6 +323,8 @@ export function landingHero(fileName: string, program: string): LandingHero {
   const excerpt = businessExcerpt(model, { steps: 5, mainElements: 7 });
   const excerptLayout = layoutModel(excerpt, { direction: 'TB', compact: true });
   const plane = { ...planeOf(excerpt.root, excerpt, excerptLayout, 'Excerpt · first steps', null, null), id: 'excerpt' };
+  const narrowLayout = layoutModel(excerpt, { direction: 'TB', compact: true, narrow: true });
+  const planeNarrow = { ...planeOf(excerpt.root, excerpt, narrowLayout, 'Excerpt · first steps', null, null), id: 'excerpt-narrow' };
   const codeRange = (technicalRoutine ?? routine).nodes;
   const anchored = codeRange.flatMap((n) => (n.anchor ? [n.anchor.lineStart, n.anchor.lineEnd] : []));
   const first = Math.min(...anchored);
@@ -330,14 +335,12 @@ export function landingHero(fileName: string, program: string): LandingHero {
 
   const ruleSet = deriveBusinessRules(source);
   const ctx = plainContext(source);
-  const onPlane = new Set(plane.nodes.map((n) => n.id));
-  // The rules a reader can find on the map: the one on the drawn plane first,
-  // then the others that sit on a decision, in the engine's own order.
-  const withLine = ruleSet.rules.flatMap((r) => {
-    const el = r.processElements[0];
-    return el ? [{ id: r.id, label: r.label, line: el.lineStart, here: onPlane.has(el.nodeId) }] : [];
+  // The three rules with the most business impact (`pickHeroRules`), each at
+  // the first place the map draws it.
+  const shown = pickHeroRules(ruleSet.rules).map((r) => {
+    const line = r.processElements[0].lineStart;
+    return { id: r.id, label: r.label, line, plain: heroRulePhrase(r, plainRule(r.label, ctx, line)) };
   });
-  const shown = [...withLine.filter((r) => r.here), ...withLine.filter((r) => !r.here).sort((a, b) => a.label.length - b.label.length)].slice(0, 3).map(({ id, label, line }) => ({ id, label, line, plain: plainRule(label, ctx, line) }));
 
   const nd = notDetermined({ legacyCode: source } as Parameters<typeof notDetermined>[0]);
   const groups = new Map<string, string[]>();
@@ -362,6 +365,7 @@ export function landingHero(fileName: string, program: string): LandingHero {
   return {
     process: proc,
     plane,
+    planeNarrow,
     caption,
     code,
     rules: { total: ruleSet.rules.length, shown },

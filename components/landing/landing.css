@@ -441,7 +441,9 @@
   .lp3 .reveal { font-size: 15px; line-height: 2; }
   .lp3 .reveal .v { white-space: normal; }
   .lp3 .split { grid-template-columns: minmax(0, 1fr); }
-  .lp3 .mapcard { display: none; }
+  /* The process card shows on a phone too: first, then the code it was read from. */
+  .lp3 .mapcard { order: -1; padding: 12px 8px; }
+  .lp3 .mapcard .mc-head { padding-inline: 4px; }
   .lp3 .diff { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .lp3 .dcard { padding: 22px; }
   .lp3 .dcard p { font-size: 18px; }
