@@ -1668,6 +1668,15 @@ export default function TestingSandboxPage() {
                           : null}
                         <div className="space-y-3">
                           <p className="cc-text-meta text-cc-ink-muted">The testing model{"'"}s estimate of how much of the logic the scenarios reach — not a measured coverage.</p>
+                          {/* A suite made for a previous source carries its
+                              estimate with it; said here, beside the figure,
+                              not only in the notice at the top (carried QA
+                              finding 763f13273cb3). */}
+                          {workflowSteps(project).find((p) => p.key === 'testing')?.state === 'stale' ? (
+                            <p className="cc-text-meta text-cc-warning" data-coverage-stale="">
+                              Estimated for a previous source — it does not describe the code as it stands.
+                            </p>
+                          ) : null}
                           <div>
                             <h3 className={clsx(LABEL, 'mb-1')}>How it was estimated</h3>
                             <p className="cc-text-cell text-cc-ink leading-relaxed">{project.coverageEstimate.explanation || 'No explanation available.'}</p>

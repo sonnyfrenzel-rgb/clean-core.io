@@ -111,6 +111,13 @@ test.describe('testing page — QA full review of fc787674705f', () => {
     expect(r, 'truthiness turns 0 into N/A').not.toMatch(/coverageEstimate\?\.percentage \?/);
     expect(r).toContain("typeof project?.coverageEstimate?.percentage === 'number'");
   });
+
+  test('a stale suite\'s coverage estimate says it was made for a previous source (763f13273cb3)', () => {
+    const r = rendered();
+    const card = r.slice(r.indexOf('<CcCard title="Coverage estimate"'), r.indexOf('How it was estimated'));
+    expect(card).toContain("workflowSteps(project).find((p) => p.key === 'testing')?.state === 'stale'");
+    expect(card).toContain('data-coverage-stale');
+  });
 });
 
 test.describe('testing error boundary — stale chunk recovery (1ef3f93640d4)', () => {
