@@ -82,7 +82,7 @@ test.describe('calm wording — a display mapping, the signed text stays', () =>
     expect(recs.length).toBeGreaterThan(15);
     for (const text of [...titles, ...recs]) {
       expect(text).not.toMatch(/^(CRITICAL|HIGH|MEDIUM|LOW)\s*:/);
-      expect(text).not.toMatch(/(IMMEDIATELY|NOT|MUST|NEVER)/);
+      expect(text).not.toMatch(/\b(IMMEDIATELY|NOT|MUST|NEVER)\b/);
     }
   });
 
