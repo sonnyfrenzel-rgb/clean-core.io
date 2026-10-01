@@ -424,7 +424,8 @@ export function traceabilityOf(stats: { flowNodes: number; anchored: number; una
   const percent = percentOf(stats.anchored, stats.flowNodes);
   const sentence = stats.flowNodes === 0
     ? 'No element was drawn from this source, so there is nothing to trace.'
-    : `${stats.anchored} of ${stats.flowNodes} elements carry a line anchor — ${percent?.toFixed(1)} % traceability.`
+    : `${stats.anchored} of ${stats.flowNodes} shapes on this map carry a line anchor — ${percent?.toFixed(1)} % traceability. `
+      + 'The map draws a small routine as one shape, so this count can differ from the number of process elements read from the code.'
       + (stats.unanchored > 0
         ? ` ${stats.unanchored} ${stats.unanchored === 1 ? 'is' : 'are'} ${UNANCHORED.toLowerCase()}.`
         : '');

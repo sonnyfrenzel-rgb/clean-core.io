@@ -88,7 +88,7 @@ export default function DemoTourStop({
       <span aria-hidden={true} className="mt-0.5 shrink-0 text-cc-information">
         <Compass size={16} />
       </span>
-      <span className="min-w-0 flex-1">
+      <span className="min-w-0 grow basis-56">
         <span data-demo-tour-position="" className="block text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
           {tourPosition(tourPositionLabel(index, total))}
         </span>

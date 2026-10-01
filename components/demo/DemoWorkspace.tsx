@@ -20,6 +20,7 @@ import { formatNumber } from '@/lib/format';
 import { tcoForecast, TCO_TARGET_SCORE } from '@/lib/tco-model';
 import type { PhaseKey } from '@/lib/workflow-steps';
 import type { DemoProject } from '@/lib/demo-project';
+import { catalogForReader } from '@/lib/messages/demo';
 import {
   DEMO_INVITATION,
   DEMO_QUOTA_NOTICE,
@@ -271,7 +272,7 @@ function Analyze({
           <p className="m-0 mt-2 cc-text-identifier font-cc-mono text-cc-ink break-all">{demo.sourceFile}</p>
           <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
             {num(demo.totalLines)} lines, {num(demo.linesOfCode)} of them code. {demo.subject}. Catalog{' '}
-            {demo.catalogVersion}.
+            <span title={demo.catalogVersion}>{catalogForReader(demo.catalogVersion)}</span>.
           </p>
         </div>
         <div className={tile}>

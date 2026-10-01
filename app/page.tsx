@@ -949,8 +949,8 @@ export default function Home() {
         <section className="sec alt" id="demo" aria-labelledby="demo-title">
           <div className="wrap">
             <SectionHeader eyebrow="Demo project" title="Can I try it before I upload my own code?" titleId="demo-title">
-              Yes. Every account has the same fully worked demo project, built from a real run of the example{' '}
-              {DEMO_OBJECT_NAME} — fictitious code, a guided tour, and nothing you do there is saved or counted.
+              Yes. Every account has the same demo project: the engine&apos;s reading of the example{' '}
+              {DEMO_OBJECT_NAME} on every stage — fictitious code, a guided tour, and nothing you do there is saved or counted.
             </SectionHeader>
             <div className="demo">
               <figure className="win" aria-label={`Preview: the demo project with the guided tour at station ${tourPositionLabel(tourIndex)}`}>
