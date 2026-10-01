@@ -557,9 +557,11 @@ async function openMap(page: Page) {
   await page.locator('[data-process-outline-tree]').waitFor({ timeout: 90000 });
   // The outline is built from the model; the rules that feed the problem lines
   // arrive one dynamic import later.
+  // Every row of the overview the page builds (the plain reading draws the
+  // report events as one flow, so the overview has its own count).
   await expect
     .poll(async () => page.locator('[data-tree-node]').count(), { timeout: 60000 })
-    .toBeGreaterThan(20);
+    .toBe(buildNavigation(readingModel()).roots.length);
 }
 
 /**
@@ -754,7 +756,11 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     /* ---- the measurement, stated ---- */
     // ADR-054: steps and events apart — the events are measured, never counted as steps.
     const isEvent = (id: string) => model.elements.find((element) => element.id === id)?.event === true;
-    expect(counts.length, 'not every element of the example was measured').toBe(87);
+    // Every element the page draws (82: the plain reading draws the four report
+    // events as one flow, so five event elements are only in Technical names),
+    // and still all 50 steps.
+    expect(counts.length, 'not every element of the example was measured').toBe(model.elements.length);
+    expect(model.elements.length).toBe(82);
     expect(counts.filter((count) => !isEvent(count.id)), 'the steps of the example').toHaveLength(50);
     const worstMouse = Math.max(...counts.map((count) => count.mouse));
     const worstKeyboard = Math.max(...counts.map((count) => count.keyboard));
