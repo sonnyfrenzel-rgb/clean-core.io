@@ -59,6 +59,10 @@ export function namedFileIndex(files: GeneratedFile[], errorText: string): numbe
   let best = -1;
   let bestLen = -1;
   files.forEach((f, i) => {
+    // A package file at the root named `test.ts` is written where the suite is
+    // written next and overwritten by it (`lib/test-sandbox/core.ts`), so an
+    // error naming that path is always the suite's (QA finding 2df28c419550).
+    if (f.path.replace(/^\.\//, '') === 'test.ts') return;
     const base = f.path.split('/').pop() || f.path;
     // `test.ts` is also the name the sandbox gives the suite (SUITE_ENTRY), so a
     // package file of that name is matched by its full path only — by name
