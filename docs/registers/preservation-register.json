@@ -1278,8 +1278,8 @@
           {
             "field": "coverageEstimate",
             "locator": "[data-stage-output=\"coverageEstimate\"]",
-            "text": "{project.coverageEstimate.percentage}% Coverage",
-            "why": "the Estimated Coverage card, which is on screen without a run"
+            "text": "{project.coverageEstimate.percentage}%",
+            "why": "the Coverage estimate card (its title says what the figure is; the figure itself carries no suffix since the two-tab rebuild), which is on screen without a run"
           }
         ],
         "onlyAfterARun": [
