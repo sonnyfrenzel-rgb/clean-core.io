@@ -152,10 +152,13 @@ export interface LiteralScanner {
 }
 
 export function createLiteralScanner(): LiteralScanner {
-  let quote = false;
-  let tick = false;
-  let template = false;
-  let embedded = 0;
+  // What the scanner is inside, innermost last: a quoted literal, a backtick
+  // literal, a template's text, or an expression embedded in a template. An
+  // embedded expression is ABAP again, so it can hold literals and templates of
+  // its own — a `}` in `'}'` there is text, not the end of the expression, and
+  // the bars of a nested template are not the outer template's (carried QA
+  // finding 2bf6a3e76857). Counting braces alone could not tell those apart.
+  const stack: Array<'quote' | 'tick' | 'template' | 'expr'> = [];
   let escaped = false;
   const scan = ((ch: string): boolean => {
     // A template escapes its own delimiters with a backslash — `\|`, `\{`, `\}`,
@@ -170,20 +173,33 @@ export function createLiteralScanner(): LiteralScanner {
       if (!/\s/.test(ch)) escaped = false;
       return false;
     }
-    if (template && !embedded && ch === '\\') { escaped = true; return false; }
-    if (ch === "'" && !tick && !template) { quote = !quote; return false; }
-    if (ch === '`' && !quote && !template) { tick = !tick; return false; }
-    if (ch === '|' && !quote && !tick) {
-      // Inside `{ … }` a bar opens or closes a *nested* template and the outer
-      // one is still open, so it changes nothing here (QA review of ca2464aba930).
-      if (!embedded) template = !template;
-      return false;
+    const top = stack[stack.length - 1];
+    switch (top) {
+      case 'quote':
+        if (ch === "'") stack.pop();
+        return false;
+      case 'tick':
+        if (ch === '`') stack.pop();
+        return false;
+      case 'template':
+        if (ch === '\\') escaped = true;
+        else if (ch === '|') stack.pop();
+        else if (ch === '{') stack.push('expr');
+        return false;
+      default: {
+        // Code: at the top level, or inside a template's `{ … }`.
+        if (ch === "'") { stack.push('quote'); return false; }
+        if (ch === '`') { stack.push('tick'); return false; }
+        if (ch === '|') { stack.push('template'); return false; }
+        if (top === 'expr') {
+          if (ch === '}') stack.pop();
+          return false;
+        }
+        return true;
+      }
     }
-    if (template && ch === '{') { embedded += 1; return false; }
-    if (template && ch === '}') { embedded = Math.max(0, embedded - 1); return false; }
-    return !quote && !tick && !template;
   }) as LiteralScanner;
-  scan.embedded = () => template && embedded > 0;
+  scan.embedded = () => stack.includes('expr');
   return scan;
 }
 
