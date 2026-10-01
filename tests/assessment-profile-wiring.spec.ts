@@ -547,9 +547,15 @@ test.describe('7.10 — the routes', () => {
 
   test('the lookup names its snapshot, refuses one it does not ship and a target it cannot answer for', async ({ request }) => {
     const post = (data: Record<string, unknown>) => request.post('/api/abcd-classify', { headers: auth(), data });
-    const plain = await post({ objects: [{ name: 'KNA1', use: 'read' }] });
+    const plain = await post({ objects: [{ name: 'KNA1', use: 'read' }, { name: 'KNA1', use: 'write' }] });
     expect(plain.status()).toBe(200);
-    expect((await plain.json()).snapshot).toEqual(getCatalogSnapshotRef());
+    const plainBody = await plain.json();
+    expect(plainBody.snapshot).toEqual(getCatalogSnapshotRef());
+    // The grade the route answers, per use — not only that it answered
+    // (carried QA finding 55cfaf3d71ea; the same values the rule gives in
+    // tests/abcd-classification.spec.ts, 'real objects, graded for their use').
+    expect(plainBody.grades['KNA1@read']).toMatchObject({ grade: 'C', state: 'notToBeReleased' });
+    expect(plainBody.grades['KNA1@write']).toMatchObject({ grade: 'D', state: 'notToBeReleased' });
 
     const unshipped = await post({ objects: ['KNA1'], snapshot: 'btp-latest' });
     expect(unshipped.status()).toBe(422);
