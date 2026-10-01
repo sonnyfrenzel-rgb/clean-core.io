@@ -10,19 +10,17 @@ import {
   Briefcase,
   Check,
   ChevronDown,
-  CircleHelp,
   Code2,
   EyeOff,
   FileCheck,
-  FileCode2,
   Hammer,
   Info,
   Key,
   Layers,
+  Link2,
   ListChecks,
   Lock,
   MapPin,
-  PanelsTopLeft,
   RefreshCw,
   Server,
   Trash2,
@@ -326,12 +324,12 @@ export default function Home() {
    * each with the provenance it really carries. Nothing here claims more than
    * `lib/landing-stages.ts` and `lib/evidence-chain.ts` say of the same stage.
    */
-  const chainSteps: Array<{ key: string; t: string; d: string; pv: ProvenanceValue; mark: string }> = [
-    { key: 'process', t: 'Process', d: `The business process as BPMN, read from the code. Every element points to its line, or says why it has none — the plant 1000 rule of the demo to L${plantRule.line}.`, pv: 'reconstructed', mark: 'line anchor' },
-    { key: 'design', t: 'Design', d: 'A target design for the route the evidence points to, built on the run the server signed — a proposal until you record the target you accept.', pv: 'proposed', mark: 'run reference' },
-    { key: 'code', t: 'Code draft', d: 'The transformed code, generated from the source, the analysis and the design; its plan names every finding at its line. A draft you review, not a finished product.', pv: 'proposed', mark: 'line anchor' },
-    { key: 'tests', t: 'Tests', d: 'Test scenarios for the generated code, run in an isolated runner against mocks. The server records what ran, on which code.', pv: 'demonstrated-mock', mark: 'test receipt' },
-    { key: 'handover', t: 'Handover', d: 'An audit pack the server signs over the run, with HMAC and Ed25519, that anyone can verify offline.', pv: 'proven', mark: 'signature' },
+  const chainSteps: Array<{ key: string; t: string; d: string; pv: ProvenanceValue; mark: string; href: string }> = [
+    { key: 'process', t: 'Process', d: `The business process as BPMN, read from the code. Every element points to its line, or says why it has none — the plant 1000 rule of the demo to L${plantRule.line}.`, pv: 'reconstructed', mark: 'line anchor', href: '#process' },
+    { key: 'design', t: 'Design', d: 'A target design for the route the evidence points to, built on the run the server signed — a proposal until you record the target you accept.', pv: 'proposed', mark: 'run reference', href: '#stage-design' },
+    { key: 'code', t: 'Code draft', d: 'The transformed code, generated from the source, the analysis and the design; its plan names every finding at its line. A draft you review, not a finished product.', pv: 'proposed', mark: 'line anchor', href: '#stage-transformation' },
+    { key: 'tests', t: 'Tests', d: 'Test scenarios for the generated code, run in an isolated runner against mocks. The server records what ran, on which code.', pv: 'demonstrated-mock', mark: 'test receipt', href: '#stage-testing' },
+    { key: 'handover', t: 'Handover', d: 'An audit pack the server signs over the run, with HMAC and Ed25519, that anyone can verify offline.', pv: 'proven', mark: 'signature', href: '#stage-delivery' },
   ];
 
   /**
@@ -508,20 +506,47 @@ export default function Home() {
               </p>
               <h1 id="hero-title">
                 <span className="h1k">SAP Clean Core Accelerator</span>
-                <span className="h1m">Understand a piece of custom ABAP and decide what happens to it.</span>
+                <span className="h1m">From custom ABAP nobody understands to a reviewed, tested rebuild.</span>
               </h1>
               <p className="hero-lead">
-                Clean-Core.io reads the program before any model does and draws the process it runs. Every element
+                Clean-Core.io reads the program before any model does, draws the process it runs — and carries the same
+                evidence on to a target design, a transformed code draft and tests in an isolated runner. Every step
                 points to the line it came from; what a model suggested is marked; what could not be determined is said.
               </p>
               <div className="cta-row">
                 <AuthLink to={DEMO_ROUTE} testId="hero-demo">
-                  Explore the demo <ArrowRight size={18} aria-hidden="true" />
+                  See the whole chain in the demo <ArrowRight size={18} aria-hidden="true" />
                 </AuthLink>
                 <Link href="#start" className={publicButton('secondary')}>
                   Start with your own code
                 </Link>
               </div>
+              {/* The chain of evidence, compact (owner's USP decision, 01.10.2026): five real links,
+                  each to the place on this page that shows its step. The explanation stays in #what. */}
+              <div className="hchain" data-hero-chain="">
+                <p className="hchain-k" id="hchain-title">
+                  One chain of evidence
+                </p>
+                <ol aria-labelledby="hchain-title">
+                  {chainSteps.map((c, i) => (
+                    <li key={c.key}>
+                      <a href={c.href} data-hero-chain-step={c.key}>
+                        <span className="no" aria-hidden="true">
+                          {i + 1}
+                        </span>
+                        <span className="tx">
+                          <span className="t">{c.t}</span>
+                          <span className="m">{c.mark}</span>
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              <p className="hlimits" data-hero-limits="">
+                The code is a draft for review. Tests run in an isolated runner against mocks, not in your S/4HANA
+                system. A signature proves where a run came from and that it is unchanged — not that it is right.
+              </p>
               <p className="cta-note">
                 Free for the SAP community. The demo project is waiting in your workspace after you sign in — nothing you do there is saved.
               </p>
@@ -577,60 +602,48 @@ export default function Home() {
         <section className="sec alt" id="what" aria-labelledby="what-title">
           <div className="wrap">
             <SectionHeader eyebrow="In one sentence" title="What is Clean-Core.io?" titleId="what-title">
-              From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can
-              check.
+              Other tools explain code, or rewrite it. Clean-Core.io does both — on one chain of evidence.
             </SectionHeader>
-            <div className="diff">
+            {/* The contrast (owner's USP decision, 01.10.2026): categories only — what each kind of tool
+                does, no names, nothing claimed about anyone else. */}
+            <ul className="diff" data-landing-contrast="">
               {[
                 {
-                  icon: <FileCode2 className="i" aria-hidden="true" />,
-                  title: 'Code first',
-                  text: 'Reads your code before any model does. Every finding points to a line.',
-                  links: [
-                    { href: '/abap-custom-code-analysis', label: 'ABAP code analysis' },
-                    { href: '/features/extensibility-routing', label: 'Extensibility routing' },
-                  ],
+                  icon: <BookOpen className="i" aria-hidden="true" />,
+                  title: 'Tools that explain code',
+                  text: 'Explain what a program does — in words, a summary or a diagram.',
                 },
                 {
-                  icon: <CircleHelp className="i" aria-hidden="true" />,
-                  title: 'Honest about limits',
-                  text: 'Says what it could not determine — and never passes an assumption off as a fact.',
-                  links: [
-                    { href: '/features/audit-evidence', label: 'Audit evidence' },
-                    { href: '/features/modernization-assessment', label: 'Modernization assessment' },
-                  ],
-                },
-                {
-                  icon: <PanelsTopLeft className="i" aria-hidden="true" />,
-                  title: 'Three views',
-                  text: 'One case, three views: Business, IT and Management see the same facts, each answering its own question.',
-                  links: [
-                    { href: '/how-it-works', label: 'How it works' },
-                    { href: '/how-to', label: 'How-to guide' },
-                  ],
+                  icon: <RefreshCw className="i" aria-hidden="true" />,
+                  title: 'Tools that rewrite code',
+                  text: 'Produce new code from the old program.',
                 },
               ].map((d) => (
-                <div key={d.title} className="dcard">
+                <li key={d.title} className="dcard">
                   <span className="ic">{d.icon}</span>
                   <h3>{d.title}</h3>
                   <p>{d.text}</p>
-                  <p className="linkrow">
-                    {d.links.map((l) => (
-                      <TextLink key={l.href} href={l.href}>
-                        {l.label}
-                      </TextLink>
-                    ))}
-                  </p>
-                </div>
+                </li>
               ))}
-            </div>
-            {/* The chain of evidence (owner's USP decision, 01.10.2026): one band, five steps, each
-                with the mark that says where it stands — words from `lib/provenance.ts`. */}
+              <li className="dcard us">
+                <span className="ic">
+                  <Link2 className="i" aria-hidden="true" />
+                </span>
+                <h3>Clean-Core.io</h3>
+                <p>Explains, rebuilds, tests — one chain of evidence.</p>
+                <p className="more">
+                  Reads your code before any model does, so every finding points to a line. Says what it could not
+                  determine, and never passes an assumption off as a fact.
+                </p>
+              </li>
+            </ul>
+            {/* The chain of evidence: one band, five steps, each with the mark that says where it
+                stands — words from `lib/provenance.ts`. The hero carries the compact version. */}
             <div className="chain" data-landing-chain="">
               <h3>One chain of evidence</h3>
               <p className="sub2">
-                Other tools explain code, or rewrite it. Clean-Core.io does both on one chain of evidence — and says
-                what it could not determine.
+                Five steps on the same evidence. Each one says where it stands, and each points back to the line of
+                code it came from.
               </p>
               <ol className="chain5">
                 {chainSteps.map((c, i) => (
@@ -648,11 +661,18 @@ export default function Home() {
                 ))}
               </ol>
               <p className="honest">
-                The code is a draft for review, not a finished product. The tests check the generated code against test
-                scenarios, not that it runs in your S/4HANA system. A signature proves where a run came from and that it
-                is unchanged — not that it is right.
+                The code is a draft for review, not a finished product. The tests run in an isolated runner against
+                mocks: they check the generated code against test scenarios, not that it runs in your S/4HANA system. A
+                signature proves where a run came from and that it is unchanged — not that it is right.
               </p>
             </div>
+            <p className="deep">
+              Deep dives: <Link href="/abap-custom-code-analysis">ABAP code analysis</Link>
+              <Link href="/features/extensibility-routing">Extensibility routing</Link>
+              <Link href="/features/audit-evidence">Audit evidence</Link>
+              <Link href="/features/modernization-assessment">Modernization assessment</Link>
+              <Link href="/how-to">How-to guide</Link>
+            </p>
           </div>
         </section>
 
