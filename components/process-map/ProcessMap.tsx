@@ -261,8 +261,8 @@ export default function ProcessMap({
    * zero that would read as "none".
    */
   const modelOverlays = useMemo(
-    () => buildOverlays(model, nav, rules.byNode),
-    [model, nav, rules.byNode],
+    () => buildOverlays(model, nav, rules.byNode, !rules.ready ? 'loading' : rules.failed ? 'failed' : 'ready'),
+    [model, nav, rules.byNode, rules.ready, rules.failed],
   );
   const evidenceOverlays = useProcessOverlays(source, model, nav, usage, catalogTarget);
   const overlays = useMemo(
