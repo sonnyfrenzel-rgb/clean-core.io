@@ -20,6 +20,7 @@ import {
   INVITATION_TOO_MANY_CODE,
   invitationExpiry,
   invitationLinkPath,
+  invitationNotSentMessage,
   invitationTooManyMessage,
   isOpen,
   normaliseInvitedEmail,
@@ -302,18 +303,22 @@ export async function POST(
       // Property 3: an invitation nobody was told about is a grant with no
       // reader. It is withdrawn in the same request rather than left behind, and
       // the owner is told that nothing went out instead of that it did.
-      await ref
+      const withdrawn = await ref
         .set({ status: 'revoked', revokedAt: new Date().toISOString() }, { merge: true })
-        .catch((err: unknown) =>
-          logger.error('invitation could not be withdrawn after a failed send', {
-            route: 'api/projects/invitations',
-            projectId: gate.projectId,
-            error: errMessage(err),
-          }),
+        .then(
+          () => true,
+          (err: unknown) => {
+            logger.error('invitation could not be withdrawn after a failed send', {
+              route: 'api/projects/invitations',
+              projectId: gate.projectId,
+              error: errMessage(err),
+            });
+            return false;
+          },
         );
       return NextResponse.json(
         {
-          error: `${outcome.detail} Nothing was sent, and the invitation was withdrawn.`,
+          error: invitationNotSentMessage(outcome.detail, withdrawn),
           code: outcome.reason,
         },
         { status: outcome.reason === 'not-configured' ? 503 : 502 },
