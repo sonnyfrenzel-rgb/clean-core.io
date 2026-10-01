@@ -474,15 +474,16 @@ test.describe('das Fachsatzmaß ist offengelegt und begründet', () => {
   });
 
   test('das Maß ist nachrechenbar und hat keine versteckte Klugheit', () => {
-    expect(statementSimilarity('Der Kunde wird gelesen.', 'Der Kunde wird gelesen.')).toBe(1);
-    expect(statementSimilarity('Der Kunde wird gelesen.', '')).toBe(0);
+    // English since 01.10.2026 — the statements and the stop list are English.
+    expect(statementSimilarity('The customer is read.', 'The customer is read.')).toBe(1);
+    expect(statementSimilarity('The customer is read.', '')).toBe(0);
     expect(statementSimilarity('', '')).toBe(0);
     // Funktionswörter allein sind kein Inhalt.
-    expect(statementSimilarity('Der die das und oder', 'Der die das und oder')).toBe(0);
-    // Dice von Hand: {kunde, gelesen} gegen {kunde, geschrieben} = 2·1/4 = 0,5.
-    expect(statementSimilarity('Der Kunde wird gelesen.', 'Der Kunde wird geschrieben.')).toBeCloseTo(0.5, 6);
+    expect(statementSimilarity('The and but with from', 'The and but with from')).toBe(0);
+    // Dice von Hand: {customer, read} gegen {customer, written} = 2·1/4 = 0,5.
+    expect(statementSimilarity('The customer is read.', 'The customer is written.')).toBeCloseTo(0.5, 6);
     // Der ABAP-Bezeichner unterscheidet, der Unterstrich bleibt deshalb stehen.
-    expect(statementTokens('lv_count wird überschrieben').has('lv_count')).toBe(true);
+    expect(statementTokens('lv_count is overwritten').has('lv_count')).toBe(true);
   });
 
   test('der Vergleich fragt wirklich einen Erzeuger — und heute gibt es keinen', () => {

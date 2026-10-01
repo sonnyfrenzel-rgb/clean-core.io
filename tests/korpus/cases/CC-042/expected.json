@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-042-B01",
-      "text": "Die Zahl aller Sätze in KNA1 wird ohne Einschränkung ermittelt und ausgegeben."
+      "text": "The number of all records in KNA1 is determined without restriction and output."
     },
     {
       "anchors": [
@@ -54,7 +54,7 @@
         }
       ],
       "id": "CC-042-B02",
-      "text": "Danach wird die Zahl aller Sätze in KNB1 ohne Einschränkung ermittelt und ausgegeben; lv_count wird dabei überschrieben."
+      "text": "Then the number of all records in KNB1 is determined without restriction and output; lv_count is overwritten in the process."
     }
   ],
   "classes": [
@@ -113,11 +113,11 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:4 — Kein Lesebefund an der Definitionszeile. &1 ist kein Tabellenname; ein Befund „Lesen von &1“ oder „Tabelle unbekannt“ ist falsch.",
-    "source.abap:4 — Kein R26-Befund „dynamisches FROM“. Der Platzhalter wird bei der Übersetzung ersetzt; es gibt keinen Laufzeitwert.",
-    "source.abap:3–5 — Nicht als Kommentar oder Literal (R13a) verwerfen. Die Definition ist Code; ihre Wirkung liegt an Zeile 7 und 9.",
-    "source.abap:7, source.abap:9 — Nicht als opaker Aufruf modellieren. Das Makro ist im Slice definiert und expandierbar; der Knoten ist ein read.",
-    "Kein dritter Lesebefund. Zwei Aufrufe, zwei Befunde, zwei Objekte."
+    "source.abap:4 — No read finding at the definition line. &1 is not a table name; a finding \"reading of &1\" or \"table unknown\" is wrong.",
+    "source.abap:4 — No R26 finding \"dynamic FROM\". The placeholder is replaced at compile time; there is no runtime value.",
+    "source.abap:3–5 — Do not discard it as a comment or literal (R13a). The definition is code; its effect lies at lines 7 and 9.",
+    "source.abap:7, source.abap:9 — Do not model it as an opaque call. The macro is defined in the slice and expandable; the node is a read.",
+    "No third read finding. Two calls, two findings, two objects."
   ],
   "id": "CC-042",
   "independence": [

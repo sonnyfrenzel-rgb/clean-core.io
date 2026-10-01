@@ -13,7 +13,7 @@
         }
       ],
       "id": "CC-004-B01",
-      "text": "Der Wrapper ruft die URL-Escaping-Methode von CL_HTTP_UTILITY auf."
+      "text": "The wrapper calls the URL escaping method of CL_HTTP_UTILITY."
     },
     {
       "anchors": [
@@ -33,7 +33,7 @@
         }
       ],
       "id": "CC-004-B02",
-      "text": "Der Eingabetext wird dem lokalen Wrapper übergeben; der gelieferte Quelltext enthält keinen expliziten HTTP-Request."
+      "text": "The input text is passed to the local wrapper; the supplied source code contains no explicit HTTP request."
     }
   ],
   "classes": [
@@ -71,7 +71,7 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:10 — Nicht wegen notToBeReleased allein zu D machen."
+    "source.abap:10 — Do not make it D because of notToBeReleased alone."
   ],
   "id": "CC-004",
   "independence": [],

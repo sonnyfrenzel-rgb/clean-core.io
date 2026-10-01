@@ -13,7 +13,7 @@
         }
       ],
       "id": "CC-010-B01",
-      "text": "Zu Beginn des Host-Ausschnitts wird die Review-Markierung N gesetzt."
+      "text": "At the start of the host excerpt the review flag N is set."
     },
     {
       "anchors": [
@@ -33,7 +33,7 @@
         }
       ],
       "id": "CC-010-B02",
-      "text": "Ein Betrag größer als 20000 setzt die Review-Markierung auf Y; Gleichheit nicht."
+      "text": "An amount greater than 20000 sets the review flag to Y; equality does not."
     }
   ],
   "classes": [

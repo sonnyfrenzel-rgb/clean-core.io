@@ -34,7 +34,7 @@
         }
       ],
       "id": "CC-030-B01",
-      "text": "Für jeden offenen Fall wird die Route auf den eingegebenen Wert gesetzt und sofort committet — eine LUW je Zeile."
+      "text": "For each open case the route is set to the entered value and committed immediately — one LUW per row."
     },
     {
       "anchors": [
@@ -61,7 +61,7 @@
         }
       ],
       "id": "CC-030-B02",
-      "text": "Gibt es mehr als eine offene Zeile, bricht der Report nach dem ersten Commit beim Weiterlesen vom geschlossenen Cursor mit einem Laufzeitfehler ab; die bis dahin committeten Änderungen bleiben. DONE wird nicht erreicht."
+      "text": "If there is more than one open row, the report aborts with a runtime error after the first commit when reading further from the closed cursor; the changes committed up to then remain. DONE is not reached."
     },
     {
       "anchors": [
@@ -81,7 +81,7 @@
         }
       ],
       "id": "CC-030-B03",
-      "text": "Bei höchstens einer offenen Zeile wird die Schleife regulär beendet und DONE ausgegeben. Der Fehler ist datenabhängig, nicht codeabhängig sichtbar."
+      "text": "With at most one open row the loop ends regularly and DONE is output. The error is data-dependent, not visible from the code."
     }
   ],
   "classes": [

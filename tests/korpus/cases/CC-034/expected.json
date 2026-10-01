@@ -31,7 +31,7 @@
         }
       ],
       "id": "CC-034-B01",
-      "text": "Bei initialem p_kunnr wird NO_KEY ausgegeben und vor dem SQL-Aufbau zurückgekehrt; es wird kein SQL gebaut und nichts geschrieben."
+      "text": "If p_kunnr is initial, NO_KEY is output and the program returns before the SQL is built; no SQL is built and nothing is written."
     },
     {
       "anchors": [
@@ -72,7 +72,7 @@
         }
       ],
       "id": "CC-034-B02",
-      "text": "Nach dem Guard (Zeile 7) wird ein UPDATE-Text gebaut, der NAME1 in KNA1 für den eingegebenen Kunden im aktuellen Mandanten ändern soll (beabsichtigter Filter MANDT = sy-mandt AND KUNNR = p_kunnr; der Mandant steht explizit im Text, weil Native SQL keinen automatischen Mandantenfilter hat, S11), und in Zeile 15 ausgeführt. Drei Bedingungen: (1) der Schlüsselguard wurde passiert; (2) die Operation ist ein Versuch — ein Treffer ist nicht garantiert (Nulltreffer landet in B04; bei numerischem Schlüssel ohne Nullauffüllung kein Treffer, vgl. CC-023-F03); (3) der tatsächlich betroffene Zeilenscope ist eingabeabhängig: weil p_name und p_kunnr ungeprüft in den interpretierten Text eingesetzt werden (F03), garantiert der Code die Begrenzung auf diesen Kunden und diesen Mandanten nicht — eine Eingabe innerhalb der 35 Zeichen von p_name kann den WHERE-Filter aufheben. Bei nicht manipulierten, im internen Format passenden Werten wird versucht, genau die passende Zeile zu ändern."
+      "text": "After the guard (line 7) an UPDATE text is built that is meant to change NAME1 in KNA1 for the entered customer in the current client (intended filter MANDT = sy-mandt AND KUNNR = p_kunnr; the client is stated explicitly in the text because Native SQL has no automatic client filter, S11), and it is executed in line 15. Three conditions: (1) the key guard was passed; (2) the operation is an attempt — a match is not guaranteed (zero matches end up in B04; with a numeric key without zero padding there is no match, cf. CC-023-F03); (3) the row scope actually affected depends on the input: because p_name and p_kunnr are inserted unchecked into the interpreted text (F03), the code does not guarantee the restriction to this customer and this client — an input within the 35 characters of p_name can cancel the WHERE filter. With unmanipulated values that match in the internal format, an attempt is made to change exactly the matching row."
     },
     {
       "anchors": [
@@ -106,7 +106,7 @@
         }
       ],
       "id": "CC-034-B03",
-      "text": "Wirft die Datenbank eine SQL-Ausnahme, wird ROLLBACK WORK ausgeführt, DB_ERROR ausgegeben und abgebrochen. Zurückgerollt wird die aktuelle Datenbank-LUW der Standardverbindung; aus dieser LUW ist nichts persistiert. Über frühere, bereits abgeschlossene LUWs sagt das nichts."
+      "text": "If the database raises an SQL exception, ROLLBACK WORK is executed, DB_ERROR is output and processing is aborted. What is rolled back is the current database LUW of the default connection; nothing from this LUW is persisted. This says nothing about earlier LUWs that were already completed."
     },
     {
       "anchors": [
@@ -140,7 +140,7 @@
         }
       ],
       "id": "CC-034-B04",
-      "text": "Sind null Zeilen betroffen (lv_rows = 0), folgt ROLLBACK WORK und NO_UPDATE; sonst wird mit COMMIT WORK (Zeile 26) die Datenbank-LUW abgeschlossen und UPDATE_COMMITTED ausgegeben. Der Code prüft nicht auf genau eine betroffene Zeile (lv_rows <> 0, nicht = 1) und belegt keine Einhaltung des beabsichtigten Kunden-/Mandantenscopes (B02). Dass COMMIT WORK den ADBC-Update auf der Standardverbindung einschließt, ist mit S08/S10 belegt, nicht nativ ausgeführt."
+      "text": "If zero rows are affected (lv_rows = 0), ROLLBACK WORK and NO_UPDATE follow; otherwise the database LUW is completed with COMMIT WORK (line 26) and UPDATE_COMMITTED is output. The code does not check for exactly one affected row (lv_rows <> 0, not = 1) and does not evidence compliance with the intended customer/client scope (B02). That COMMIT WORK includes the ADBC update on the default connection is evidenced by S08/S10, not executed natively."
     }
   ],
   "classes": [
@@ -261,12 +261,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:11 — Nicht „Stringliteral ist kein UPDATE\" (CC-016-Lesart). R13a gilt nur für Literale ohne Konsument; hier ist der Konsument Zeile 15.",
-    "source.abap:11 — Nicht „Template führt Code aus\" im Sinne von CE-01/CC-061: die eingebetteten Ausdrücke sind Datenobjekte (F01).",
-    "source.abap:14 — Nicht B, weil „eigene Klasse/ADBC-Wrapper\". Die Wirkung ist ein KNA1-Update.",
-    "source.abap:15 — Nicht Unknown. Tabelle, Operation und Feld stehen statisch im Template; unbekannt ist nur der effektive Zeilenscope (B02).",
-    "source.abap:11 — Kein Fachsatz, der die Änderung auf genau den eingegebenen Kunden im aktuellen Mandanten garantiert (REV2-04).",
-    "gesamte Scheibe — Kein Befund „Berechtigungsprüfung fehlt\" als bewiesene Schwachstelle: im Slice ist keine sichtbar, Start-/Systemberechtigungen liegen außerhalb. Der Injektionsbefund F03 ist davon unabhängig."
+    "source.abap:11 — Not \"a string literal is not an UPDATE\" (CC-016 reading). R13a applies only to literals without a consumer; here the consumer is line 15.",
+    "source.abap:11 — Not \"the template executes code\" in the sense of CE-01/CC-061: the embedded expressions are data objects (F01).",
+    "source.abap:14 — Not B because of \"own class/ADBC wrapper\". The effect is a KNA1 update.",
+    "source.abap:15 — Not Unknown. Table, operation and field are stated statically in the template; only the effective row scope is unknown (B02).",
+    "source.abap:11 — No business statement that guarantees the change is limited to exactly the entered customer in the current client (REV2-04).",
+    "whole slice — No finding \"authorization check missing\" as a proven vulnerability: none is visible in the slice, start/system authorizations lie outside. The injection finding F03 is independent of this."
   ],
   "id": "CC-034",
   "independence": [

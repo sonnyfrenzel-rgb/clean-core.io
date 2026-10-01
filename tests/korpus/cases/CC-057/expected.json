@@ -34,7 +34,7 @@
         }
       ],
       "id": "CC-057-B01",
-      "text": "Die Methode versucht, für den exakt übergebenen Schlüssel den Länderschlüssel aus KNA1 zu lesen; nur bei Treffer (sy-subrc = 0) wird der gefundene Wert übernommen."
+      "text": "The method attempts to read the country key from KNA1 for the exactly passed key; only on a match (sy-subrc = 0) is the value found taken over."
     },
     {
       "anchors": [
@@ -54,7 +54,7 @@
         }
       ],
       "id": "CC-057-B02",
-      "text": "Ohne Treffer bleibt der Rückgabewert initial; der sichtbare Code erzeugt keine Fehlermeldung und keinen Abbruch. Nicht abgefangene Datenbank-/Laufzeitfehler sind davon zu unterscheiden (nicht modelliert)."
+      "text": "Without a match the return value remains initial; the visible code produces no error message and no termination. Uncaught database/runtime errors are to be distinguished from this (not modeled)."
     }
   ],
   "classes": [
@@ -274,11 +274,11 @@
     }
   ],
   "forbiddenConclusions": [
-    "Profil 2, source.abap:10+4 — kein Level C melden; kein „C mit Nachfolger I_CUSTOMER\" als Klassifikation. Der Nachfolger ist ein Hinweis, das Level ist n/a.",
-    "Profil 2, source.abap:1 — kein Unknown: die Antwort ist entscheidbar (nicht aktivierbar), nicht unentscheidbar. Unknown ist epistemisch etwas anderes als „nicht anwendbar\" (Fallbogen §7).",
-    "Profil 2 — kein leeres Skelett und kein process = not_applicable für das Source-Modell (REV2-12).",
-    "Profil 1, source.abap:1 — kein B „weil es eine Klasse und kein Report ist\"; der Artefakttyp ändert R01 nicht.",
-    "beide Profile — kein Sicherheitsbefund aus diesem Slice; ein Wechsel zu CDS kann Berechtigungs-/Filtersemantik verändern, was aus dem Nachfolgernamen nicht ableitbar ist (Fallbogen §6)."
+    "Profile 2, source.abap:10+4 — do not report level C; no \"C with successor I_CUSTOMER\" as a classification. The successor is a hint, the level is n/a.",
+    "Profile 2, source.abap:1 — no Unknown: the answer is decidable (cannot be activated), not undecidable. Unknown is epistemically something different from \"not applicable\" (case sheet §7).",
+    "Profile 2 — no empty skeleton and no process = not_applicable for the source model (REV2-12).",
+    "Profile 1, source.abap:1 — no B \"because it is a class and not a report\"; the artifact type does not change R01.",
+    "both profiles — no security finding from this slice; a switch to CDS can change authorization/filter semantics, which cannot be derived from the successor name (case sheet §6)."
   ],
   "id": "CC-057",
   "independence": [

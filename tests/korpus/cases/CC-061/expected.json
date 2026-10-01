@@ -22,7 +22,7 @@
         }
       ],
       "id": "CC-061-B01",
-      "text": "Beim Auswerten des Templates wird tick genau einmal aufgerufen; der Zähler steigt von 0 auf 1; der gelieferte Text „tick\" wird nicht weiterverwendet."
+      "text": "When the template is evaluated, tick is called exactly once; the counter rises from 0 to 1; the returned text \"tick\" is not used further."
     },
     {
       "anchors": [
@@ -35,7 +35,7 @@
         }
       ],
       "id": "CC-061-B02",
-      "text": "Der Zählerstand wird ausgegeben; Sollwert 1."
+      "text": "The counter value is output; expected value 1."
     }
   ],
   "classes": [
@@ -73,12 +73,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:14 — Nicht „Stringtemplate ohne Konsument ist kein Statement\" (R13a@2.0.0; CC-016-Lesart „Stringtemplate enthält keinen ausgeführten Aufruf\"). CC-016 bleibt richtig: dort ist der eingebettete Ausdruck ein Variablenlesen ({ lv_text }) und der Rest Text. Hier ist der eingebettete Ausdruck ein Aufruf.",
-    "source.abap:14 — Kein R13b-Befund: es gibt keinen interpretierenden Konsumenten (kein ADBC, kein GENERATE, kein dynamisches SQL). Der Aufruf ist gewöhnliches ABAP innerhalb des Ausdrucks, kein „Literal wird Code\".",
-    "source.abap:14 — Nicht als toten Code oder entfernbare Zuweisung werten, weil unused_text unbenutzt ist: die rechte Seite hat einen Seiteneffekt.",
-    "source.abap:14 — Kein R06/R07-Befund „dynamischer Aufruf\": Klasse und Methode stehen statisch.",
-    "source.abap:10, source.abap:14 — Kein Phantomobjekt aus dem Text tick.",
-    "source.abap:15 — Kein Fachsatz „es wird 0 ausgegeben\"; das wäre die Folge der v2-Lesart, die den Aufruf verliert."
+    "source.abap:14 — Not \"a string template without a consumer is not a statement\" (R13a@2.0.0; CC-016 reading \"string template contains no executed call\"). CC-016 remains correct: there the embedded expression is a variable read ({ lv_text }) and the rest is text. Here the embedded expression is a call.",
+    "source.abap:14 — No R13b finding: there is no interpreting consumer (no ADBC, no GENERATE, no dynamic SQL). The call is ordinary ABAP within the expression, not \"a literal becomes code\".",
+    "source.abap:14 — Do not assess it as dead code or a removable assignment because unused_text is unused: the right-hand side has a side effect.",
+    "source.abap:14 — No R06/R07 finding \"dynamic call\": class and method are stated statically.",
+    "source.abap:10, source.abap:14 — No phantom object from the text tick.",
+    "source.abap:15 — No business statement \"0 is output\"; that would be the consequence of the v2 reading, which loses the call."
   ],
   "id": "CC-061",
   "independence": [

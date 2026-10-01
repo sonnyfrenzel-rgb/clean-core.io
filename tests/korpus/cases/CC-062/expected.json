@@ -22,7 +22,7 @@
         }
       ],
       "id": "CC-062-B01",
-      "text": "Es wird die Zahl der KNA1-Sätze im Anmeldemandanten gezählt, die das zur Laufzeit eingegebene Prädikat erfüllen; welche Sätze das sind, entscheidet die Eingabe. Ein Fachsatz „Kunden in DE\" ist nicht tragbar."
+      "text": "The number of KNA1 records in the logon client that satisfy the predicate entered at runtime is counted; which records these are is decided by the input. A business statement \"customers in DE\" cannot be supported."
     },
     {
       "anchors": [
@@ -42,7 +42,7 @@
         }
       ],
       "id": "CC-062-B02",
-      "text": "Die Zahl wird ausgegeben; bei null Treffern die 0. Bei leerer Eingabe (nur Leerzeichen) gilt nach Autorenerinnerung keine Bedingung, und alle Sätze des Mandanten werden gezählt (Beleggrad erinnert, Prüferfrage 3)."
+      "text": "The number is output; with zero matches, 0. With empty input (only spaces), according to the author's recollection no condition applies and all records of the client are counted (evidence grade: recalled, reviewer question 3)."
     }
   ],
   "classes": [
@@ -123,12 +123,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:5 — Nicht Zielmenge Unknown und nicht Level Unknown wegen des dynamischen WHERE (R26@2.0.0: „Dynamisches FROM, WHERE, DML-Ziel: Zielmenge Unknown, known_worst_level D\"; CC-037/CC-038-Muster). Das FROM ist statisch; ein unbekanntes Prädikat macht FROM kna1 nicht zu einem unbekannten Objekt.",
-    "source.abap:5 — Nicht known_worst_level D. Kein DML, kein dynamisches FROM; ein nur vermuteter Worst Case heißt nicht „known\".",
-    "source.abap:2 — Kein Fachsatz „Kunden in Deutschland werden gezählt\" aus dem DEFAULT; Vorbelegung ist keine Zielmenge.",
-    "source.abap:5 — Nicht „Injektion wie CC-034\" im Sinne beliebigen SQL: Open SQL interpretiert eine WHERE-Bedingung, nicht einen freien Statementtext. Die Wirkung ist Prädikatmanipulation.",
-    "source.abap:5 — Den Sicherheitsbefund nicht in das Level rechnen (kein „C, eigentlich D wegen Security\").",
-    "source.abap:5 — Nicht „kein Befund, weil die Tabelle bekannt ist\": Prädikat aus Eingabe bleibt F02 und F03."
+    "source.abap:5 — Not target set Unknown and not level Unknown because of the dynamic WHERE (R26@2.0.0: \"Dynamic FROM, WHERE, DML target: target set Unknown, known_worst_level D\"; CC-037/CC-038 pattern). The FROM is static; an unknown predicate does not turn FROM kna1 into an unknown object.",
+    "source.abap:5 — Not known_worst_level D. No DML, no dynamic FROM; a merely presumed worst case is not \"known\".",
+    "source.abap:2 — No business statement \"customers in Germany are counted\" from the DEFAULT; a preset is not a target set.",
+    "source.abap:5 — Not \"injection as in CC-034\" in the sense of arbitrary SQL: Open SQL interprets a WHERE condition, not a free statement text. The effect is predicate manipulation.",
+    "source.abap:5 — Do not factor the security finding into the level (no \"C, actually D because of security\").",
+    "source.abap:5 — Not \"no finding because the table is known\": a predicate from input remains F02 and F03."
   ],
   "id": "CC-062",
   "independence": [

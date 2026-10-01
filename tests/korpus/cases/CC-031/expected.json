@@ -34,7 +34,7 @@
         }
       ],
       "id": "CC-031-B01",
-      "text": "Die Route des angegebenen Falls wird geändert; fehlt der Fall, wird MISSING_CASE ausgegeben und der Block ohne Commit verlassen — nichts ist geändert."
+      "text": "The route of the specified case is changed; if the case is missing, MISSING_CASE is output and the block is exited without a commit — nothing is changed."
     },
     {
       "anchors": [
@@ -61,7 +61,7 @@
         }
       ],
       "id": "CC-031-B02",
-      "text": "Nach erfolgreicher Änderung wird ein entferntes System über die eingegebene Destination benachrichtigt. Welches System und was dort geschieht, ist aus der Scheibe nicht ableitbar."
+      "text": "After a successful change a remote system is notified via the entered destination. Which system, and what happens there, cannot be derived from the slice."
     },
     {
       "anchors": [
@@ -88,7 +88,7 @@
         }
       ],
       "id": "CC-031-B03",
-      "text": "Schlägt die Benachrichtigung fehl, wird ROLLBACK WORK ausgeführt und NOTIFY_FAILED ausgegeben; die Routenänderung bleibt dennoch gespeichert, weil der RFC-Aufruf sie bereits implizit festgeschrieben hat."
+      "text": "If the notification fails, ROLLBACK WORK is executed and NOTIFY_FAILED is output; the route change nevertheless remains saved, because the RFC call has already committed it implicitly."
     },
     {
       "anchors": [
@@ -115,7 +115,7 @@
         }
       ],
       "id": "CC-031-B04",
-      "text": "Gelingt die Benachrichtigung, folgen COMMIT WORK und RECORDED."
+      "text": "If the notification succeeds, COMMIT WORK and RECORDED follow."
     }
   ],
   "classes": [

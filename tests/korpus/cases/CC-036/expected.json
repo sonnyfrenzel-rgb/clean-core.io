@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-036-B01",
-      "text": "Es werden Kunden mit dem eingegebenen Länderschlüssel selektiert; die Tabelle ist über die Konstante in Zeile 2 festgelegt."
+      "text": "Customers with the entered country key are selected; the table is fixed via the constant in line 2."
     },
     {
       "anchors": [
@@ -54,7 +54,7 @@
         }
       ],
       "id": "CC-036-B02",
-      "text": "Ohne Treffer wird NO_MATCH ausgegeben und der Reportingblock verlassen."
+      "text": "If there is no match, NO_MATCH is output and the reporting block is exited."
     },
     {
       "anchors": [
@@ -67,7 +67,7 @@
         }
       ],
       "id": "CC-036-B03",
-      "text": "Bei Treffern werden Kundennummer und Name als Liste ausgegeben."
+      "text": "If there are matches, customer number and name are output as a list."
     }
   ],
   "classes": [
@@ -128,9 +128,9 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:10 — Nicht Unknown, nicht known_worst_level D: die Zielmenge ist ein Singleton aus vollständigem Datenfluss. Die Bindungsart bleibt syntaktisch dynamisch (R06-Trennung wie CC-011), das ändert die Zielmenge nicht.",
-    "source.abap:2 — Nicht „Literal ohne Wirkung\" (R13a): der Konsument ist Zeile 11.",
-    "source.abap:10 — Kein security_and_authorization-Befund „generischer Tabellenzugriff\": das Ziel ist nicht generisch."
+    "source.abap:10 — Not Unknown, not known_worst_level D: the target set is a singleton from complete data flow. The binding type remains syntactically dynamic (R06 separation as in CC-011); this does not change the target set.",
+    "source.abap:2 — Not \"literal without effect\" (R13a): the consumer is line 11.",
+    "source.abap:10 — No security_and_authorization finding \"generic table access\": the target is not generic."
   ],
   "id": "CC-036",
   "independence": [

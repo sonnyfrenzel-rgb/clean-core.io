@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-011-B01",
-      "text": "Im gelieferten geradlinigen Code wird genau der zuvor zugewiesene Funktionsbaustein aufgerufen."
+      "text": "In the supplied straight-line code, exactly the previously assigned function module is called."
     },
     {
       "anchors": [
@@ -33,7 +33,7 @@
         }
       ],
       "id": "CC-011-B02",
-      "text": "Das vom Funktionsbaustein zurückgegebene Feld wird ausgegeben."
+      "text": "The field returned by the function module is output."
     }
   ],
   "classes": [
@@ -71,7 +71,7 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:7 — Nicht unbekanntes Ziel behaupten; syntaktisch trotzdem nicht CONSTANTS-static."
+    "source.abap:7 — Do not claim an unknown target; syntactically it is nevertheless not CONSTANTS-static."
   ],
   "id": "CC-011",
   "independence": [],

@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-041-B01",
-      "text": "Mit gesetztem Kennzeichen wird nach Name gelesen, sonst nach ID; die Wahl fällt vor dem Aufruf und hängt nur vom Kennzeichen ab."
+      "text": "With the flag set, the read is by name, otherwise by ID; the choice is made before the call and depends only on the flag."
     },
     {
       "anchors": [
@@ -47,7 +47,7 @@
         }
       ],
       "id": "CC-041-B02",
-      "text": "Das Ergebnis der gewählten Methode wird ausgegeben."
+      "text": "The result of the chosen method is output."
     }
   ],
   "classes": [
@@ -88,11 +88,11 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:25 — Nicht Unknown (CC-012-Lesart): keine Eingabe fließt in den Namen, nur in die Auswahl.",
-    "source.abap:25 — Nicht Singleton (CC-011-Lesart): das erste Assignment ist nicht das einzige.",
-    "source.abap:25 — Syntaktisch bleibt der Aufruf dynamisch (R06-Trennung); die Bindungsart wird nicht auf „statisch\" umetikettiert.",
-    "source.abap:25 — Kein R14-Befund: Klasse FINAL, keine Redefinition, kein Interface, statischer Typ gleich dynamischem Typ.",
-    "source.abap:20, source.abap:22 — Die Literale sind über den Konsumenten (Zeile 25) Zielnamen (R13b), keine Texte ohne Wirkung."
+    "source.abap:25 — Not Unknown (CC-012 reading): no input flows into the name, only into the selection.",
+    "source.abap:25 — Not a singleton (CC-011 reading): the first assignment is not the only one.",
+    "source.abap:25 — Syntactically the call remains dynamic (R06 separation); the binding type is not relabeled as \"static\".",
+    "source.abap:25 — No R14 finding: class FINAL, no redefinition, no interface, static type equal to dynamic type.",
+    "source.abap:20, source.abap:22 — Via the consumer (line 25) the literals are target names (R13b), not texts without effect."
   ],
   "id": "CC-041",
   "independence": [

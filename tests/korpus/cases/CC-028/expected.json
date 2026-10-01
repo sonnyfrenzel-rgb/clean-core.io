@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-028-B01",
-      "text": "Ein Verkaufsauftrag mit der eingegebenen Auftragsart und dem Auftraggeber wird zur Anlage übergeben; der BAPI-Aufruf selbst persistiert nichts."
+      "text": "A sales order with the entered order type and sold-to party is passed for creation; the BAPI call itself persists nothing."
     },
     {
       "anchors": [
@@ -54,7 +54,7 @@
         }
       ],
       "id": "CC-028-B02",
-      "text": "Meldet RETURN mindestens eine Zeile vom Typ E, wird ERROR ausgegeben und der Block verlassen; es wird kein Commit ausgeführt. Ein Auftrag ist in diesem Zweig nicht als angelegt belegt."
+      "text": "If RETURN reports at least one row of type E, ERROR is output and the block is exited; no commit is executed. An order is not evidenced as created in this branch."
     },
     {
       "anchors": [
@@ -88,7 +88,7 @@
         }
       ],
       "id": "CC-028-B03",
-      "text": "Ohne E-Zeile wird BAPI_TRANSACTION_COMMIT mit WAIT aufgerufen und danach CREATED mit der Belegnummer ausgegeben. Erst dieser Aufruf macht die Anlage persistent; sein Ergebnis wird im Code nicht geprüft."
+      "text": "Without an E row BAPI_TRANSACTION_COMMIT is called with WAIT and then CREATED is output with the document number. Only this call makes the creation persistent; its result is not checked in the code."
     }
   ],
   "classes": [

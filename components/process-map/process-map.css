@@ -274,7 +274,7 @@
   background: var(--cc-surface);
 }
 
-/* "Compare with Ist": added is information, changed is warning — never green (green is a proof). */
+/* "Compare with the as-is process": added is information, changed is warning — never green (green is a proof). */
 .cc-editor-canvas .cc-diff-added .djs-visual > :first-child {
   stroke: var(--cc-information);
   stroke-width: 3px;

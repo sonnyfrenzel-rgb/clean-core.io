@@ -465,8 +465,8 @@ export default function CleanCoreExplainedPrintPage() {
           <div className="scope">
             <h3>Honest scope</h3>
             <p>
-              The governing principle of this project is <em>belegt, nicht behauptet</em> — proven,
-              not claimed. A capability list without limits is a claim, so here are the limits.
+              The governing principle of this project is <em>proven, not claimed</em>.
+              A capability list without limits is a claim, so here are the limits.
             </p>
             <dl>
               {HONEST_SCOPE.map((s) => (

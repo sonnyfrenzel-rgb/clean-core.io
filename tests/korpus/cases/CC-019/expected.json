@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-019-B01",
-      "text": "Die lokale Struktur enthält AMOUNT und CURRENCY."
+      "text": "The local structure contains AMOUNT and CURRENCY."
     },
     {
       "anchors": [
@@ -40,7 +40,7 @@
         }
       ],
       "id": "CC-019-B02",
-      "text": "Der Code ermittelt Metadaten dieser Struktur; er berechnet keine Beträge und liest keine SAP-Stammdatentabelle."
+      "text": "The code determines metadata of this structure; it calculates no amounts and reads no SAP master data table."
     },
     {
       "anchors": [
@@ -53,7 +53,7 @@
         }
       ],
       "id": "CC-019-B03",
-      "text": "Die Namen der Strukturkomponenten werden ausgegeben."
+      "text": "The names of the structure components are output."
     }
   ],
   "classes": [
@@ -91,7 +91,7 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:9 — RTTI nicht pauschal als unauflösbar oder Cloud-verboten klassifizieren."
+    "source.abap:9 — Do not classify RTTI wholesale as unresolvable or cloud-forbidden."
   ],
   "id": "CC-019",
   "independence": [],

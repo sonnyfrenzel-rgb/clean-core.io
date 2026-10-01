@@ -13,7 +13,7 @@
         }
       ],
       "id": "CC-021-B01",
-      "text": "Der Report benötigt das nicht gelieferte Include zcc_ref_021_rules."
+      "text": "The report requires the include zcc_ref_021_rules, which is not supplied."
     },
     {
       "anchors": [
@@ -26,7 +26,7 @@
         }
       ],
       "id": "CC-021-B02",
-      "text": "Betrag und Ergebnisfeld werden an determine_route übergeben; die eigentliche Regel ist unbekannt."
+      "text": "Amount and result field are passed to determine_route; the actual rule is unknown."
     }
   ],
   "classes": [

@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-017-B01",
-      "text": "Das Objekt hinter der Basisklassenreferenz ist eine Instanz der Kindklasse."
+      "text": "The object behind the base class reference is an instance of the child class."
     },
     {
       "anchors": [
@@ -47,7 +47,7 @@
         }
       ],
       "id": "CC-017-B02",
-      "text": "Die Kindklasse weist negative Beträge zurück, ohne die Basismethode auszuführen."
+      "text": "The child class rejects negative amounts without executing the base method."
     },
     {
       "anchors": [
@@ -67,7 +67,7 @@
         }
       ],
       "id": "CC-017-B03",
-      "text": "Nicht negative Beträge werden durch den expliziten Super-Aufruf nach der Basisregel verarbeitet."
+      "text": "Non-negative amounts are processed according to the base rule via the explicit super call."
     }
   ],
   "classes": [

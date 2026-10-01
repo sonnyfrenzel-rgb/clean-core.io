@@ -86,7 +86,7 @@ export const EVIDENCE_KEPT = 'The sentences reconstructed from the code stand as
 
 export interface StatementProposalContext {
   statementContext: StatementContext;
-  /** `bs1-` + SHA-256 of the source as the prompt reads it, with the prompt's format version. */
+  /** `bs<version>-` + SHA-256 of the source as the prompt reads it, with the prompt's format version. */
   digest: string;
 }
 

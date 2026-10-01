@@ -13,7 +13,7 @@
         }
       ],
       "id": "CC-007-B01",
-      "text": "Es werden nur Kunden des angegebenen Landes berücksichtigt."
+      "text": "Only customers of the specified country are considered."
     },
     {
       "anchors": [
@@ -33,7 +33,7 @@
         }
       ],
       "id": "CC-007-B02",
-      "text": "Ausgegeben werden Kombinationen vorhandener Company- und Sales-Area-Sätze je Kunde; nicht zwingend eine Zeile je Kunde."
+      "text": "The output consists of combinations of existing company and sales area records per customer; not necessarily one row per customer."
     }
   ],
   "classes": [

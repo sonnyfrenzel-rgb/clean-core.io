@@ -89,16 +89,16 @@ test('the skeleton carries the states: model and node, nothing removed', () => {
 
 test('the Fachsatz condenses the states and does not overclaim', () => {
   const b026 = buildBusinessStatements(caseSource('CC-026'));
-  const commit = b026.find((b) => b.anchors.some((a) => a.lineStart === 15) && /^Mit COMMIT WORK/.test(b.core))!;
-  expect(commit.text).toMatch(/angestoßen/);
-  expect(commit.text).not.toMatch(/wird die Änderung persistiert/);
-  const rollback = b026.find((b) => b.anchors.some((a) => a.lineStart === 12) && /^Mit ROLLBACK WORK/.test(b.core))!;
-  expect(rollback.text).toMatch(/verworfen/);
+  const commit = b026.find((b) => b.anchors.some((a) => a.lineStart === 15) && /^COMMIT WORK/.test(b.core))!;
+  expect(commit.text).toMatch(/triggers the update task/);
+  expect(commit.text).not.toMatch(/persists the change/);
+  const rollback = b026.find((b) => b.anchors.some((a) => a.lineStart === 12) && /^ROLLBACK WORK/.test(b.core))!;
+  expect(rollback.text).toMatch(/discards/);
 
   const b027 = buildBusinessStatements(caseSource('CC-027'));
-  const registration = b027.find((b) => /zur Verbuchung registriert/.test(b.core))!;
-  expect(registration.text).toMatch(/nicht angestoßen/);
-  expect(registration.text).not.toMatch(/läuft erst mit dem COMMIT WORK/);
+  const registration = b027.find((b) => /registered for the update task/.test(b.core))!;
+  expect(registration.text).toMatch(/neither triggered nor executed/);
+  expect(registration.text).not.toMatch(/only triggered by the COMMIT WORK|runs only with the COMMIT WORK/);
 });
 
 test('SET UPDATE TASK LOCAL is local only when it precedes the registration in the same LUW', () => {

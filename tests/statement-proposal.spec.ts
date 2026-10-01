@@ -91,7 +91,9 @@ test.describe('the stage', () => {
 
 test.describe('the record', () => {
   test('the digest is the source, normalised, with the prompt version', () => {
-    expect(statementDigestOf(SOURCE)).toMatch(/^bs1-[0-9a-f]{64}$/);
+    // Version 2 since 01.10.2026: the statements are ordered in English, and a
+    // German proposal saved under version 1 no longer matches.
+    expect(statementDigestOf(SOURCE)).toMatch(/^bs2-[0-9a-f]{64}$/);
     expect(statementDigestOf(SOURCE.replace(/\n/g, '\r\n'))).toBe(statementDigestOf(SOURCE));
     expect(statementDigestOf(`${SOURCE}\n  CLEAR gv_dummy.`)).not.toBe(statementDigestOf(SOURCE));
   });

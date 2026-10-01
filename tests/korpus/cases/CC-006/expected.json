@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-006-B01",
-      "text": "Das Aufrufziel ist die unveränderliche Konstante CONVERSION_EXIT_ALPHA_INPUT."
+      "text": "The call target is the immutable constant CONVERSION_EXIT_ALPHA_INPUT."
     },
     {
       "anchors": [
@@ -33,7 +33,7 @@
         }
       ],
       "id": "CC-006-B02",
-      "text": "Das konvertierte Ergebnis wird in lv_result übernommen."
+      "text": "The converted result is placed in lv_result."
     }
   ],
   "classes": [
@@ -71,7 +71,7 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:6 — Nicht als unauflösbares dynamisches Ziel behandeln."
+    "source.abap:6 — Do not treat it as an unresolvable dynamic target."
   ],
   "id": "CC-006",
   "independence": [],

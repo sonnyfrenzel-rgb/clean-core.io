@@ -39,7 +39,7 @@
         }
       ],
       "id": "CC-060-B01",
-      "text": "Liefert get_name einen initialen String — kein Satz in KNA1 gefunden oder ein vorhandener Kunde mit initialem NAME1 —, setzt determine die Route UNKNOWN_CUSTOMER und kehrt zurück; die Betragsregel wird nicht ausgewertet."
+      "text": "If get_name returns an initial string — no record found in KNA1, or an existing customer with an initial NAME1 —, determine sets the route UNKNOWN_CUSTOMER and returns; the amount rule is not evaluated."
     },
     {
       "anchors": [
@@ -59,7 +59,7 @@
         }
       ],
       "id": "CC-060-B02",
-      "text": "Bei nicht initialem zurückgegebenem Namen ist die Route MANAGER_ROUTE, wenn iv_amount größer als 10000 ist (Gleichheit: AUTO_ROUTE), sonst AUTO_ROUTE. Der Code prüft keine Währung (R23), keine tatsächlich erfolgte Freigabe und keinen unabhängigen Existenzindikator; die Route ist ein berechneter Text, keine Genehmigung (R18)."
+      "text": "If the returned name is not initial, the route is MANAGER_ROUTE if iv_amount is greater than 10000 (equality: AUTO_ROUTE), otherwise AUTO_ROUTE. The code checks no currency (R23), no approval actually given and no independent existence indicator; the route is a calculated text, not an approval (R18)."
     },
     {
       "anchors": [
@@ -79,7 +79,7 @@
         }
       ],
       "id": "CC-060-B03",
-      "text": "Die vorliegende Wrapperimplementierung liest NAME1 aus KNA1; der Konsumententext verwendet nur die Wrapper-API und sieht die Herkunft nicht. Das Analysepaket enthält beide Quellen (scope_members) und stellt den transitiven Bezug dar — das ist der Grund, warum extension_level und known_worst_level C sind, während component_level des Konsumenten es nicht ist."
+      "text": "The present wrapper implementation reads NAME1 from KNA1; the consumer text uses only the wrapper API and does not see the origin. The analysis package contains both sources (scope_members) and shows the transitive relationship — this is the reason why extension_level and known_worst_level are C, while the consumer's component_level is not."
     }
   ],
   "classes": [
@@ -386,13 +386,13 @@
     }
   ],
   "forbiddenConclusions": [
-    "Profil 2, zcl_route_service.clas.abap:11 — kein known_worst_level = A oder none, „weil der Wrapper freigegeben ist\" (R30).",
-    "Profil 2, zcl_route_service.clas.abap:1 — kein component_level = C für den Konsumenten, „weil der Wrapper KNA1 liest\" (der Vertrag stoppt das Komponentenlevel).",
-    "Profil 2 — kein „A\" für den Scope extension und kein A-Label ohne Scope-Angabe: eine nackte A-Kachel mit verborgenem C-Unterbau ist irreführend (REV2-08).",
-    "Profil 1, zcl_customer_api.clas.abap:1 — kein B für den Wrapper „weil es ein Z-Objekt ist\" (Grok H-001: die Fassade ändert das Level nicht).",
-    "beide Profile, zcl_customer_api.clas.abap:10 — kein Unknown für den Konsumenten: der Wrapper ist geliefert, completeness ist vollständig (R16-Logik greift nicht).",
-    "beide Profile, zcl_route_service.clas.abap:12 — kein Fachsatz „Kunde existiert nicht\" / „Kunde unbekannt\" aus lv_name IS INITIAL (F04).",
-    "beide Profile — kein „Berechtigung geprüft\" aus C1; kein security_and_authorization-Befund erfunden (keine Beobachtung; die KNA1-Abfrage kann Zugriffskontrollen brauchen, die im Slice nicht nachweisbar sind)."
+    "Profile 2, zcl_route_service.clas.abap:11 — no known_worst_level = A or none \"because the wrapper is released\" (R30).",
+    "Profile 2, zcl_route_service.clas.abap:1 — no component_level = C for the consumer \"because the wrapper reads KNA1\" (the contract stops the component level).",
+    "Profile 2 — no \"A\" for the scope extension and no A label without a scope indication: a bare A tile with a hidden C substructure is misleading (REV2-08).",
+    "Profile 1, zcl_customer_api.clas.abap:1 — no B for the wrapper \"because it is a Z object\" (Grok H-001: the facade does not change the level).",
+    "both profiles, zcl_customer_api.clas.abap:10 — no Unknown for the consumer: the wrapper is supplied, completeness is complete (R16 logic does not apply).",
+    "both profiles, zcl_route_service.clas.abap:12 — no business statement \"customer does not exist\" / \"customer unknown\" from lv_name IS INITIAL (F04).",
+    "both profiles — no \"authorization checked\" from C1; no invented security_and_authorization finding (no observation; the KNA1 query may need access controls that cannot be demonstrated in the slice)."
   ],
   "id": "CC-060",
   "independence": [

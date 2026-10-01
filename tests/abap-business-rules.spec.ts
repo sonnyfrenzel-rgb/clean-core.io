@@ -235,7 +235,7 @@ test.describe('what the code does not say', () => {
 
     expect(approval?.literal).toBe("'50000.00'");
     expect(approval?.values).toEqual(['50000.00']);
-    expect(approval?.caveat).toBe('Betrag, Währung nicht aus dem Code ableitbar');
+    expect(approval?.caveat).toBe('the currency of the amount');
 
     // The program converts to EUR at L69-71 — which is exactly why the number
     // at L422 reads like euros and is not evidence of any. Nothing this reader
@@ -243,7 +243,7 @@ test.describe('what the code does not say', () => {
     const legacy = readBusinessRules(read(LEGACY));
     const amount = legacy.candidates.find((c) => c.lineStart === 695 && c.subject === 'lv_amount');
     expect(amount?.literal).toBe('100000');
-    expect(amount?.caveat).toBe('Betrag, Währung nicht aus dem Code ableitbar');
+    expect(amount?.caveat).toBe('the currency of the amount');
 
     for (const candidate of [...po.candidates, ...legacy.candidates]) {
       expect(candidate.caveat ?? '', `${candidate.id} names a currency`).not.toMatch(/€|EUR|USD/);

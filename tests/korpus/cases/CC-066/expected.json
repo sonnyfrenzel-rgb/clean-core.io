@@ -22,7 +22,7 @@
         }
       ],
       "id": "CC-066-B01",
-      "text": "Es wird zuerst A, dann B je auf einer neuen Zeile ausgegeben."
+      "text": "First A, then B is output, each on a new line."
     }
   ],
   "classes": [
@@ -60,11 +60,11 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:7 — Nicht ein Knoten und nicht ein Anker für zwei Ausgaben (R27@2.0.0-Lesart „Wirkungsort ist die Aufrufstelle\" ohne Ordinal — die Lesart, unter der die beiden Wirkungen zusammenfallen). Zwei Knoten mit Typ output und Quelle source.abap:7 ohne Ordinal sind eine mehrdeutige Signatur (Prüfung F05) und werden abgewiesen.",
-    "source.abap:3, source.abap:4 — Kein Knoten und kein Befund mit Primäranker an der Definition; das bleibt richtig aus CC-042. Die Definition ist Herkunft (Sekundäranker).",
-    "source.abap:7 — Nicht als opaker Aufruf: das Makro ist im Slice definiert und expandierbar.",
-    "source.abap:7 — two_outputs nicht als PERFORM oder Methodenaufruf lesen; 'A' 'B' sind Makroargumente, keine Parameter eines Unterprogramms; kein R13a-„Literal ohne Konsument\" — die Literale werden zu Statementteilen.",
-    "Kein dritter Knoten; die Reihenfolge A vor B ist Teil des Sollvertrags."
+    "source.abap:7 — Not one node and not one anchor for two outputs (R27@2.0.0 reading \"the place of effect is the call site\" without an ordinal — the reading under which the two effects collapse into one). Two nodes with type output and source source.abap:7 without an ordinal are an ambiguous signature (check F05) and are rejected.",
+    "source.abap:3, source.abap:4 — No node and no finding with a primary anchor at the definition; this remains correct from CC-042. The definition is origin (secondary anchor).",
+    "source.abap:7 — Not as an opaque call: the macro is defined in the slice and expandable.",
+    "source.abap:7 — Do not read two_outputs as a PERFORM or method call; 'A' 'B' are macro arguments, not parameters of a subroutine; no R13a \"literal without consumer\" — the literals become parts of statements.",
+    "No third node; the order A before B is part of the expected contract."
   ],
   "id": "CC-066",
   "independence": [

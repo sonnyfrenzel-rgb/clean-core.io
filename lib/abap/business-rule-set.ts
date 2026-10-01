@@ -275,8 +275,8 @@ const LOOP_KINDS = new Set<BlockKind>(['loop', 'do', 'while', 'select', 'provide
 
 const PROGRAM_KEYWORDS = new Set(['REPORT', 'PROGRAM', 'FUNCTION-POOL', 'CLASS-POOL', 'INTERFACE-POOL']);
 
-const CURRENCY_CAVEAT = 'Betrag, Währung nicht aus dem Code ableitbar';
-const UNIT_CAVEAT = 'Menge, Einheit nicht aus dem Code ableitbar';
+const CURRENCY_CAVEAT = 'the currency of the amount';
+const UNIT_CAVEAT = 'the unit of the quantity';
 
 type EndKind = 'return' | 'exit' | 'stop' | 'leave-program' | 'raise' | 'error-message';
 

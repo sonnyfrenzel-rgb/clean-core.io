@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-058-B01",
-      "text": "Es werden Kunden mit dem eingegebenen Länderschlüssel selektiert (Modellscope). Native Gültigkeit der Feldnamen im Zielrelease und die DCL des Lesemodells sind getrennt zu prüfen; die Public Edition 2608 ändert die Herkunft von CustomerName (S21) — nicht auf das 2023-Fixture zu übertragen, aber eine Warnung gegen releaseübergreifende Feldgleichheit."
+      "text": "Customers with the entered country key are selected (model scope). Native validity of the field names in the target release and the DCL of the read model must be checked separately; Public Edition 2608 changes the origin of CustomerName (S21) — not to be transferred to the 2023 fixture, but a warning against assuming field equality across releases."
     },
     {
       "anchors": [
@@ -40,7 +40,7 @@
         }
       ],
       "id": "CC-058-B02",
-      "text": "Ohne Treffer wird NO_MATCH ausgegeben und der Reportingblock verlassen."
+      "text": "If there is no match, NO_MATCH is output and the reporting block is exited."
     },
     {
       "anchors": [
@@ -60,7 +60,7 @@
         }
       ],
       "id": "CC-058-B03",
-      "text": "Bei Treffern werden Kundennummer und Name der gelieferten Ergebnismenge als Liste ausgegeben. Ob das Lesemodell dieselbe Menge liefert wie KNA1 in CC-001 (Berechtigungsfilter, Feldsemantik), ist nicht aus dem Code ablesbar und nicht belegt."
+      "text": "If there are matches, customer number and name of the supplied result set are output as a list. Whether the read model supplies the same set as KNA1 in CC-001 (authorization filter, field semantics) cannot be read from the code and is not evidenced."
     }
   ],
   "classes": [
@@ -288,12 +288,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "Profil 1, source.abap:4+5 — kein R01-Befund (C) für I_CUSTOMER; kein „Nachfolger fehlt\" (das Objekt ist selbst released).",
-    "Profil 1 und 2, source.abap:1 — aus cloud_api_surface = usable kein „Report ist cloud-fähig\" ableiten (CC-019-Heuristik).",
-    "Profil 2, source.abap:4+5 — die SELECT-Zeile nicht als Ursache der Nichtaktivierbarkeit melden.",
-    "Profil 2 — kein leeres Skelett (REV2-12).",
-    "beide Profile, source.abap:4 — kein „Berechtigung geprüft\" oder „DCL wirksam\" aus dem Wort released; kein security_and_authorization-Befund (kein WITH PRIVILEGED ACCESS, keine Beobachtung).",
-    "beide Profile, source.abap:4 — keine Feldgleichheit CustomerName ≙ KNA1-NAME1 über Releases hinweg unterstellen (S21)."
+    "Profile 1, source.abap:4+5 — no R01 finding (C) for I_CUSTOMER; no \"successor missing\" (the object is itself released).",
+    "Profile 1 and 2, source.abap:1 — do not derive \"report is cloud-ready\" from cloud_api_surface = usable (CC-019 heuristic).",
+    "Profile 2, source.abap:4+5 — do not report the SELECT line as the cause of the inability to activate.",
+    "Profile 2 — no empty skeleton (REV2-12).",
+    "both profiles, source.abap:4 — no \"authorization checked\" or \"DCL effective\" from the word released; no security_and_authorization finding (no WITH PRIVILEGED ACCESS, no observation).",
+    "both profiles, source.abap:4 — do not assume field equality CustomerName ≙ KNA1-NAME1 across releases (S21)."
   ],
   "id": "CC-058",
   "independence": [

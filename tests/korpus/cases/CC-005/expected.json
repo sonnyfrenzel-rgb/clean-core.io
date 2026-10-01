@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-005-B01",
-      "text": "Der Code übergibt p_id an CONVERSION_EXIT_ALPHA_INPUT und übernimmt dessen Ausgabe nach lv_internal."
+      "text": "The code passes p_id to CONVERSION_EXIT_ALPHA_INPUT and takes its output into lv_internal."
     },
     {
       "anchors": [
@@ -54,7 +54,7 @@
         }
       ],
       "id": "CC-005-B02",
-      "text": "Danach wird lv_internal an CONVERSION_EXIT_ALPHA_OUTPUT übergeben; dessen Ausgabe landet in lv_external."
+      "text": "Then lv_internal is passed to CONVERSION_EXIT_ALPHA_OUTPUT; its output ends up in lv_external."
     }
   ],
   "classes": [

@@ -13,7 +13,7 @@
         }
       ],
       "id": "CC-018-B01",
-      "text": "Die lokale Kindklasse erbt von einer nicht gelieferten kundeneigenen Klasse."
+      "text": "The local child class inherits from a customer-specific class that is not supplied."
     },
     {
       "anchors": [
@@ -26,7 +26,7 @@
         }
       ],
       "id": "CC-018-B02",
-      "text": "Der Override delegiert an eine unbekannte Basismethode; ihr fachliches Verhalten ist nicht belegt."
+      "text": "The override delegates to an unknown base method; its business behavior is not evidenced."
     }
   ],
   "classes": [

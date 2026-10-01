@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-050-B01",
-      "text": "Es werden Kunden mit dem eingegebenen Länderschlüssel gelesen, unter Umgehung der Zugriffskontrolle der Entität — die Treffermenge ist nicht auf die Berechtigung des Benutzers eingeschränkt."
+      "text": "Customers with the entered country key are read, bypassing the access control of the entity — the result set is not restricted to the user's authorization."
     },
     {
       "anchors": [
@@ -47,7 +47,7 @@
         }
       ],
       "id": "CC-050-B02",
-      "text": "Ohne Treffer wird NO_MATCH ausgegeben und der Reportingblock verlassen."
+      "text": "If there is no match, NO_MATCH is output and the reporting block is exited."
     },
     {
       "anchors": [
@@ -60,7 +60,7 @@
         }
       ],
       "id": "CC-050-B03",
-      "text": "Bei Treffern werden Kundennummer und Name als Liste ausgegeben."
+      "text": "If there are matches, customer number and name are output as a list."
     }
   ],
   "classes": [
@@ -99,9 +99,9 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:5 — Kein R01-C: I_CUSTOMER ist im Profil freigegeben, nicht intern.",
-    "source.abap:5 — Kein D und kein „B mit Abschlag\": das A–D-Level kann „unsicher\" nicht sagen; der Befund steht in der eigenen Aussageklasse.",
-    "source.abap:1 — Kein A: der REPORT mit WRITE-Liste ist klassisches ABAP; usable bezeichnet die API-Oberfläche, nicht die Implementierung."
+    "source.abap:5 — No R01 C: I_CUSTOMER is released in the profile, not internal.",
+    "source.abap:5 — No D and no \"B with a discount\": the A–D level cannot express \"insecure\"; the finding belongs in its own statement class.",
+    "source.abap:1 — No A: the REPORT with a WRITE list is classic ABAP; usable refers to the API surface, not the implementation."
   ],
   "id": "CC-050",
   "independence": [

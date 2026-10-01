@@ -31,7 +31,7 @@
         }
       ],
       "id": "CC-037-B01",
-      "text": "Ohne Tabellennamen wird NO_TABLE ausgegeben und der Block verlassen."
+      "text": "Without a table name NO_TABLE is output and the block is exited."
     },
     {
       "anchors": [
@@ -51,7 +51,7 @@
         }
       ],
       "id": "CC-037-B02",
-      "text": "Nach dem Guard wird die Zeilenzahl der eingegebenen Tabelle gezählt und mit dem Namen ausgegeben. Welche Tabelle das ist, entscheidet die Eingabe zur Laufzeit; ein Fachsatz über „Kunden\" ist hier nicht tragbar."
+      "text": "After the guard the number of rows of the entered table is counted and output with the name. Which table that is, is decided by the input at runtime; a business statement about \"customers\" cannot be supported here."
     }
   ],
   "classes": [
@@ -112,10 +112,10 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:9 — Kein C-Befund auf KNA1 aus dem DEFAULT (default_dynamic_target_not_exhaustive).",
-    "source.abap:9 — Nicht B, weil „kein SAP-Objekt sichtbar\". Unsichtbar ist nicht abwesend.",
-    "source.abap:9 — Nicht D als Level. D ist known_worst_level, das Level ist Unknown.",
-    "source.abap:9 — Den Sicherheitsbefund nicht in das Level hineinrechnen (kein „Unknown, aber eigentlich D wegen Security\")."
+    "source.abap:9 — No C finding on KNA1 from the DEFAULT (default_dynamic_target_not_exhaustive).",
+    "source.abap:9 — Not B because \"no SAP object visible\". Invisible is not absent.",
+    "source.abap:9 — Not D as the level. D is known_worst_level, the level is Unknown.",
+    "source.abap:9 — Do not factor the security finding into the level (no \"Unknown, but actually D because of security\")."
   ],
   "id": "CC-037",
   "independence": [

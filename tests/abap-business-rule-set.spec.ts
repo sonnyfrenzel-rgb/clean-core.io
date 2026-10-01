@@ -363,7 +363,7 @@ test.describe('what the code does not say stays unsaid', () => {
   test(`${PO}:422 — the amount keeps no currency, although the program converts to EUR`, () => {
     const rule = ruleAt(deriveBusinessRules(read(PO)), 422);
     expect(rule?.label).toBe("gv_emergency = abap_true AND gv_amount <= '50000.00'");
-    expect(rule?.parameters.map((p) => p.caveat)).toEqual(['Betrag, Währung nicht aus dem Code ableitbar']);
+    expect(rule?.parameters.map((p) => p.caveat)).toEqual(['the currency of the amount']);
     const caveat = rule?.sentences.find((s) => s.key === 'currency-not-stated');
     expect(caveat?.text).toBe("The code does not state the currency of the amount '50000.00'.");
     expect(caveat?.anchors.map((a) => a.lineStart)).toEqual([422]);

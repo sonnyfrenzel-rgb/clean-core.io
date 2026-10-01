@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-002-B01",
-      "text": "Nur eine nicht leere Kundennummer wird als Selektionsschlüssel aufgenommen."
+      "text": "Only a non-empty customer number is added as a selection key."
     },
     {
       "anchors": [
@@ -40,7 +40,7 @@
         }
       ],
       "id": "CC-002-B02",
-      "text": "Bei leerer Schlüsselliste wird vor der FAE-Abfrage abgebrochen."
+      "text": "If the key list is empty, processing is aborted before the FAE query."
     },
     {
       "anchors": [
@@ -53,7 +53,7 @@
         }
       ],
       "id": "CC-002-B03",
-      "text": "Das Ergebnis enthält Kundennummer, Buchungskreis und Abstimmkonto; nicht jede beliebige Stammdateneigenschaft."
+      "text": "The result contains customer number, company code and reconciliation account; not any arbitrary master data attribute."
     }
   ],
   "classes": [
@@ -91,7 +91,7 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:15 — Kein ungesichertes Leertabellen-FAE melden; Guard und Return sind vorhanden."
+    "source.abap:15 — Do not report an unguarded empty-table FAE; guard and return are present."
   ],
   "id": "CC-002",
   "independence": [],

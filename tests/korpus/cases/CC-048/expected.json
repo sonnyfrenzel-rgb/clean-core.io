@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-048-B01",
-      "text": "Bei negativem Mindestwert wird weder summiert noch eine Summe ausgegeben; die Liste enthält nur END."
+      "text": "If the minimum value is negative, nothing is summed and no sum is output; the list contains only END."
     },
     {
       "anchors": [
@@ -54,7 +54,7 @@
         }
       ],
       "id": "CC-048-B02",
-      "text": "Nur Werte, die mindestens dem Mindestwert entsprechen, gehen in die Summe ein; kleinere werden übersprungen, die Schleife läuft weiter."
+      "text": "Only values that are at least the minimum value are included in the sum; smaller ones are skipped, the loop continues."
     },
     {
       "anchors": [
@@ -88,7 +88,7 @@
         }
       ],
       "id": "CC-048-B03",
-      "text": "Die Summe wird nur ausgegeben, wenn sie größer als 0 ist; sonst wird das Unterprogramm ohne Ausgabe verlassen."
+      "text": "The sum is output only if it is greater than 0; otherwise the subroutine is exited without output."
     },
     {
       "anchors": [
@@ -108,7 +108,7 @@
         }
       ],
       "id": "CC-048-B04",
-      "text": "END wird auf jedem Pfad ausgegeben, auch nach jedem der drei abgebrochenen Kontexte."
+      "text": "END is output on every path, including after each of the three exited contexts."
     }
   ],
   "classes": [
@@ -125,12 +125,12 @@
   "expectedByProfile": null,
   "findings": [],
   "forbiddenConclusions": [
-    "source.abap:7 — Nicht „Programmende“ und nicht „Liste ohne END“. Der falsche CHECK verlässt den Ereignisblock START-OF-SELECTION; END-OF-SELECTION läuft trotzdem.",
-    "source.abap:9 — Nicht „Schleife verlassen“ (das wäre EXIT) und nicht „Block verlassen“. Der falsche CHECK springt zur nächsten Iteration.",
-    "source.abap:16 — Nicht „Programmende“ und nicht „Schleife“. Der falsche CHECK verlässt die FORM; die Verarbeitung geht nach dem PERFORM weiter.",
-    "source.abap:7, 9, 16 — Keine pauschale Übersetzung „Prüfung nicht erfolgreich → Ende des gesamten Prozesses“ für alle drei (Prüfung §8.2).",
-    "source.abap:12 — Nicht als opaker Aufruf. Die FORM steht in Zeile 15–18.",
-    "source.abap:14 — Nicht als bedingte Ausgabe. END erscheint auf jedem Pfad."
+    "source.abap:7 — Not \"end of program\" and not \"list without END\". The false CHECK exits the event block START-OF-SELECTION; END-OF-SELECTION runs nevertheless.",
+    "source.abap:9 — Not \"loop exited\" (that would be EXIT) and not \"block exited\". The false CHECK jumps to the next iteration.",
+    "source.abap:16 — Not \"end of program\" and not \"loop\". The false CHECK exits the FORM; processing continues after the PERFORM.",
+    "source.abap:7, 9, 16 — No blanket translation \"check not successful → end of the entire process\" for all three (check §8.2).",
+    "source.abap:12 — Not as an opaque call. The FORM is in lines 15–18.",
+    "source.abap:14 — Not as a conditional output. END appears on every path."
   ],
   "id": "CC-048",
   "independence": [

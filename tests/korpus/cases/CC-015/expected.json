@@ -27,7 +27,7 @@
         }
       ],
       "id": "CC-015-B01",
-      "text": "Ohne explizit gesetztes p_read wird der Kernelaufruf nicht erreicht."
+      "text": "Without an explicitly set p_read the kernel call is not reached."
     },
     {
       "anchors": [
@@ -54,7 +54,7 @@
         }
       ],
       "id": "CC-015-B02",
-      "text": "Bei gesetztem Schalter wird der Profilparameter rdisp/myname angefragt; der tatsächliche Rückgabewert ist nicht im Quelltext bekannt."
+      "text": "When the switch is set, the profile parameter rdisp/myname is requested; the actual return value is not known from the source code."
     }
   ],
   "classes": [

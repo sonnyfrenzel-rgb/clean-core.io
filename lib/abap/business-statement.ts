@@ -1,6 +1,13 @@
 /**
  * Der Fachsatz — was ein Stück ABAP **fachlich** tut, in einem Satz am Element.
  *
+ * **The sentences are English** (owner decision 01.10.2026, "alles Englisch"):
+ * the business statement is product text, and every product text is English.
+ * The engine reads the same evidence and says the same thing it said in
+ * German — same anchors, same caveats, same determinism; only the language of
+ * the sentence changed. `tests/business-statement-english.spec.ts` holds it.
+ * The comments below are the module's design notes from before the switch.
+ *
  * Roadmap 17.7 (Weg A, entschieden von Sonny am 23.09.2026): die Engine erzeugt
  * ihn, deterministisch aus dem Quelltext, ohne Modellaufruf, ohne Netz und ohne
  * Schlüssel. Der Maßstab ist ein Fachbereichsmensch ohne ABAP-Kenntnis: nicht
@@ -214,14 +221,14 @@ function assignmentReaches(statements: readonly AbapStatement[], from: number, t
  * (gelesen aus einer Pflegetabelle, berechnet) steht einfach erst zur
  * Laufzeit fest.
  */
-function runtimeNote(what: string, variable: string, statements: readonly AbapStatement[], verb = 'ist'): string {
+function runtimeNote(question: string, variable: string, statements: readonly AbapStatement[]): string {
   const name = plain(variable).toLowerCase();
   const declared = statements.some((statement) =>
     new RegExp(`^(?:PARAMETERS|SELECT-OPTIONS)\\s+${escapeForRegExp(name)}\\b`, 'i').test(statement.text),
   );
-  if (fromSelectionScreen(name) || declared) return `${what} das ${verb}, entscheidet die Eingabe zur Laufzeit.`;
-  if (/^(?:iv|im|i|is|it)_/i.test(name)) return `${what} das ${verb}, entscheidet der Aufrufer zur Laufzeit.`;
-  return `${what} das ${verb}, steht erst zur Laufzeit in ${plain(variable)} fest.`;
+  if (fromSelectionScreen(name) || declared) return `At runtime, the input decides ${question}.`;
+  if (/^(?:iv|im|i|is|it)_/i.test(name)) return `At runtime, the caller decides ${question}.`;
+  return `Only at runtime does ${plain(variable)} settle ${question}.`;
 }
 
 /** Ob eine Anweisung die Variable `needle` anders als mit einem Literal füllt. */
@@ -247,14 +254,14 @@ function writesVariable(text: string, needle: string): boolean {
 export function assertStatementNeverReplacedByUncertainty(statement: BusinessStatement): void {
   if (!statement.core.trim()) {
     throw new Error(
-      `Fachsatz ${statement.id} hat keinen Kernsatz. 17.7: „not-determined" darf nicht an die Stelle einer Aussage treten.`,
+      `Business statement ${statement.id} has no core sentence. 17.7: "not-determined" must never take the place of a statement.`,
     );
   }
   if (statement.provenance !== 'reconstructed') {
-    throw new Error(`Fachsatz ${statement.id} trägt eine fremde Herkunft — Engine-Sätze sind „reconstructed".`);
+    throw new Error(`Business statement ${statement.id} carries a foreign provenance — engine sentences are "reconstructed".`);
   }
   if (statement.anchors.length === 0) {
-    throw new Error(`Fachsatz ${statement.id} ist nicht verankert.`);
+    throw new Error(`Business statement ${statement.id} is not anchored.`);
   }
 }
 
@@ -404,33 +411,30 @@ function enclosingUnit(statements: readonly AbapStatement[], stack: readonly Blo
   return { kind: 'unknown', head: null };
 }
 
-/** Die Routine mit ihrem Namen, im verlangten Fall: „das Unterprogramm pruefen". */
-function routineLabel(head: AbapStatement, kasus: 'nom' | 'akk' = 'nom'): string {
+/** The routine with its name: "the subroutine pruefen". */
+function routineLabel(head: AbapStatement): string {
   const match = /^(FORM|METHOD|MODULE|FUNCTION)\s+([A-Za-z0-9_~/]+)/i.exec(head.text);
-  if (!match) return kasus === 'nom' ? 'die Routine' : 'die Routine';
+  if (!match) return 'the routine';
   const name = match[2];
   switch (match[1].toUpperCase()) {
     case 'FORM':
-      return `das Unterprogramm ${name}`;
+      return `the subroutine ${name}`;
     case 'METHOD':
-      return `die Methode ${name}`;
+      return `the method ${name}`;
     case 'MODULE':
-      return `das Dialogmodul ${name}`;
+      return `the dialog module ${name}`;
     default:
-      return `${kasus === 'nom' ? 'der' : 'den'} Funktionsbaustein ${name}`;
+      return `the function module ${name}`;
   }
 }
 
 /** Der Block, den ein CHECK oder RETURN außerhalb jeder Schleife verlässt — mit Namen. */
-function unitLabel(unit: Unit, kasus: 'nom' | 'akk' = 'nom'): string {
-  if (unit.kind === 'routine' && unit.head) return routineLabel(unit.head, kasus);
+function unitLabel(unit: Unit): string {
+  if (unit.kind === 'routine' && unit.head) return routineLabel(unit.head);
   if (unit.kind === 'event' && unit.head) {
-    return `der Ereignisblock ${unit.head.text.trim().replace(/\s+/g, ' ').toUpperCase()}`.replace(
-      /^der/,
-      kasus === 'nom' ? 'der' : 'den',
-    );
+    return `the event block ${unit.head.text.trim().replace(/\s+/g, ' ').toUpperCase()}`;
   }
-  return kasus === 'nom' ? 'der aktuelle Verarbeitungsblock' : 'den aktuellen Verarbeitungsblock';
+  return 'the current processing block';
 }
 
 // ---------------------------------------------------------------------------
@@ -460,12 +464,20 @@ function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/**
+ * A business word at the start of a sentence: capitalised — but an identifier
+ * the glossary did not know stays exactly as the source writes it.
+ */
+function capitalizeWord(word: string): string {
+  return /[_\-~<>/]/.test(word) || /[A-Z]/.test(word) ? word : capitalize(word);
+}
+
 /** Eine Aufzählung, wie man sie spricht: „A, B und C". */
 function enumerate(parts: string[]): string {
   const unique = parts.filter((part, index) => part && parts.indexOf(part) === index);
   if (unique.length === 0) return '';
   if (unique.length === 1) return unique[0];
-  return `${unique.slice(0, -1).join(', ')} und ${unique[unique.length - 1]}`;
+  return `${unique.slice(0, -1).join(', ')} and ${unique[unique.length - 1]}`;
 }
 
 /**
@@ -482,20 +494,21 @@ function conditionSubject(condition: string): { subject: string; term: BusinessT
     const [, left, operator, right] = compare;
     const word = termFor(left);
     const value = literalOf(right) ?? plain(right);
+    const plural = capitalizeWord(word.plural);
     if (operator === '<' && value === '0') return { subject: `Negative ${word.plural}`, term: word, comparison: operator };
-    if (operator === '>=' && value === '0') return { subject: `Nicht negative ${word.plural}`, term: word, comparison: operator };
-    if (operator === '>') return { subject: `${word.plural} größer ${value}`, term: word, comparison: operator };
-    if (operator === '<') return { subject: `${word.plural} kleiner ${value}`, term: word, comparison: operator };
-    if (operator === '<=') return { subject: `${word.plural} bis einschließlich ${value}`, term: word, comparison: operator };
-    if (operator === '>=') return { subject: `${word.plural} ab ${value}`, term: word, comparison: operator };
-    if (operator === '=') return { subject: `${word.plural} mit dem Wert ${value}`, term: word, comparison: operator };
-    if (operator === '<>') return { subject: `${word.plural} ungleich ${value}`, term: word, comparison: operator };
+    if (operator === '>=' && value === '0') return { subject: `Non-negative ${word.plural}`, term: word, comparison: operator };
+    if (operator === '>') return { subject: `${plural} greater than ${value}`, term: word, comparison: operator };
+    if (operator === '<') return { subject: `${plural} less than ${value}`, term: word, comparison: operator };
+    if (operator === '<=') return { subject: `${plural} up to and including ${value}`, term: word, comparison: operator };
+    if (operator === '>=') return { subject: `${plural} of ${value} or more`, term: word, comparison: operator };
+    if (operator === '=') return { subject: `${plural} with the value ${value}`, term: word, comparison: operator };
+    if (operator === '<>') return { subject: `${plural} not equal to ${value}`, term: word, comparison: operator };
   }
   const initial = /^(\S+)\s+IS\s+(NOT\s+)?INITIAL$/i.exec(text);
   if (initial) {
     const word = termFor(initial[1]);
     return {
-      subject: initial[2] ? `Eine nicht leere ${word.singular}` : `Eine leere ${word.singular}`,
+      subject: initial[2] ? `A non-empty ${word.singular}` : `An empty ${word.singular}`,
       term: word,
       comparison: null,
     };
@@ -504,18 +517,18 @@ function conditionSubject(condition: string): { subject: string; term: BusinessT
 }
 
 const OPERATOR_WORDS: Record<string, string> = {
-  '=': 'gleich',
-  EQ: 'gleich',
-  '<>': 'ungleich',
-  NE: 'ungleich',
-  '>': 'größer als',
-  GT: 'größer als',
-  '<': 'kleiner als',
-  LT: 'kleiner als',
-  '>=': 'mindestens',
-  GE: 'mindestens',
-  '<=': 'höchstens',
-  LE: 'höchstens',
+  '=': 'is',
+  EQ: 'is',
+  '<>': 'is not',
+  NE: 'is not',
+  '>': 'is greater than',
+  GT: 'is greater than',
+  '<': 'is less than',
+  LT: 'is less than',
+  '>=': 'is at least',
+  GE: 'is at least',
+  '<=': 'is at most',
+  LE: 'is at most',
 };
 
 const TRUE_VALUES = /^(?:'X'|abap_true|b_true|c_true)$/i;
@@ -541,16 +554,16 @@ function valueText(value: string): string {
  */
 function conditionClause(condition: string, subrc?: (value: string, equal: boolean) => string | null): string {
   const text = condition.replace(/^(IF|ELSEIF|WHILE|CHECK)\s+/i, '').trim();
-  const literally = `die Bedingung „${text}“ erfüllt ist`;
+  const literally = `the condition "${text}" holds`;
   // Eine reine UND- oder reine ODER-Kette ohne Klammern ist eine Aufzählung
   // einfacher Bedingungen; jede Mischung und jede Klammer bleibt wörtlich.
   if (!/[()]/.test(text)) {
-    for (const [connector, word] of [['AND', 'und'], ['OR', 'oder']] as const) {
+    for (const [connector, word] of [['AND', 'and'], ['OR', 'or']] as const) {
       const parts = text.split(connector === 'AND' ? /\s+AND\s+/i : /\s+OR\s+/i);
       const other = connector === 'AND' ? /\sOR\s/i : /\sAND\s/i;
       if (parts.length > 1 && !other.test(text) && !/\bBETWEEN\b/i.test(text)) {
         const clauses = parts.map((part) => conditionClause(part, subrc));
-        if (clauses.every((clause) => !clause.startsWith('die Bedingung'))) {
+        if (clauses.every((clause) => !clause.startsWith('the condition'))) {
           return `${clauses.slice(0, -1).join(', ')} ${word} ${clauses[clauses.length - 1]}`;
         }
         return literally;
@@ -564,20 +577,20 @@ function conditionClause(condition: string, subrc?: (value: string, equal: boole
     if (/^sy-subrc$/i.test(initial[1])) {
       const phrase = subrc?.('0', !initial[2]);
       if (phrase) return phrase;
-      return `der Rückgabewert (sy-subrc) ${initial[2] ? 'ungleich ' : ''}0 ist`;
+      return `the return code (sy-subrc) is ${initial[2] ? 'not ' : ''}0`;
     }
-    return `${nounPhrase(initial[1])} ${initial[2] ? 'nicht ' : ''}leer ist`;
+    return `${nounPhrase(initial[1])} is ${initial[2] ? 'not ' : ''}empty`;
   }
   const bound = /^(\S+)\s+IS\s+(NOT\s+)?(BOUND|ASSIGNED|SUPPLIED|REQUESTED)$/i.exec(text);
   if (bound) {
-    const word = { BOUND: 'gebunden', ASSIGNED: 'zugewiesen', SUPPLIED: 'versorgt', REQUESTED: 'angefordert' }[
+    const word = { BOUND: 'bound', ASSIGNED: 'assigned', SUPPLIED: 'supplied', REQUESTED: 'requested' }[
       bound[3].toUpperCase() as 'BOUND'
     ];
-    return `${nounPhrase(bound[1])} ${bound[2] ? 'nicht ' : ''}${word} ist`;
+    return `${nounPhrase(bound[1])} is ${bound[2] ? 'not ' : ''}${word}`;
   }
   const selection = /^(\S+)\s+(NOT\s+)?IN\s+(\S+)$/i.exec(text);
   if (selection) {
-    return `${nounPhrase(selection[1])} ${selection[2] ? 'nicht ' : ''}in der Selektion ${plain(selection[3])} liegt`;
+    return `${nounPhrase(selection[1])} is ${selection[2] ? 'not ' : ''}in the selection ${plain(selection[3])}`;
   }
   const compare = /^(\S+)\s*(<=|>=|<>|<|>|=|\bEQ\b|\bNE\b|\bLT\b|\bGT\b|\bLE\b|\bGE\b)\s*(\S+)$/i.exec(text);
   if (compare) {
@@ -588,16 +601,16 @@ function conditionClause(condition: string, subrc?: (value: string, equal: boole
     if (/^sy-subrc$/i.test(left) && (equal || unequal)) {
       const phrase = subrc?.(valueText(right), equal);
       if (phrase) return phrase;
-      return `der Rückgabewert (sy-subrc) ${equal ? '' : 'ungleich '}${valueText(right)} ist`;
+      return `the return code (sy-subrc) is ${equal ? '' : 'not '}${valueText(right)}`;
     }
     if ((equal || unequal) && (TRUE_VALUES.test(right) || FALSE_VALUES.test(right))) {
       const set = TRUE_VALUES.test(right) === equal;
-      return `${nounPhrase(left)} ${set ? '' : 'nicht '}gesetzt ist`;
+      return `${nounPhrase(left)} is ${set ? '' : 'not '}set`;
     }
-    return `${nounPhrase(left)} ${OPERATOR_WORDS[operator]} ${valueText(right)} ist`;
+    return `${nounPhrase(left)} ${OPERATOR_WORDS[operator]} ${valueText(right)}`;
   }
   const exists = /^line_exists\(\s*([A-Za-z0-9_\-<>]+)\[/i.exec(text);
-  if (exists) return `in ${plain(exists[1])} eine passende Zeile existiert`;
+  if (exists) return `a matching row exists in ${plain(exists[1])}`;
   return literally;
 }
 
@@ -618,16 +631,16 @@ function pluralSubject(condition: string): string | null {
 
 /** Das Gegenstück zu `conditionSubject` für einen `ELSE`-Zweig. */
 function elseSubject(previous: AbapStatement | undefined): string {
-  if (!previous) return 'Sonst';
+  if (!previous) return 'Otherwise';
   const { subject, term, comparison } = conditionSubject(previous.text);
-  if (!term || !comparison || pluralSubject(previous.text) === null) return 'Sonst';
+  if (!term || !comparison || pluralSubject(previous.text) === null) return 'Otherwise';
   // Das Gegenteil hält die Grenze: nach `< 100` gehört 100 in den ELSE-Zweig,
   // nach `<= 100` nicht (wie `CHECK_COMPLEMENT` für `CHECK`).
-  if (comparison === '<') return `Größere oder gleiche ${term.plural}`;
-  if (comparison === '<=') return `Größere ${term.plural}`;
-  if (comparison === '>') return `Kleinere oder gleiche ${term.plural}`;
-  if (comparison === '>=') return `Kleinere ${term.plural}`;
-  return `Andere ${term.plural}`;
+  if (comparison === '<') return `Equal or greater ${term.plural}`;
+  if (comparison === '<=') return `Greater ${term.plural}`;
+  if (comparison === '>') return `Equal or smaller ${term.plural}`;
+  if (comparison === '>=') return `Smaller ${term.plural}`;
+  return `Other ${term.plural}`;
   void subject;
 }
 
@@ -674,8 +687,8 @@ function build(draft: Draft): BusinessStatement {
 export type ValueOrigin = 'function-return' | 'method-return' | 'none';
 
 const ORIGIN_TERMS: Record<Exclude<ValueOrigin, 'none'>, string> = {
-  'function-return': 'Das vom Funktionsbaustein zurückgegebene Feld',
-  'method-return': 'Der Rückgabewert',
+  'function-return': 'the field returned by the function module',
+  'method-return': 'the return value',
 };
 
 /** Welche Variablen eine Anweisung mit dem Ergebnis eines Aufrufs füllt. */
@@ -781,7 +794,7 @@ function writtenTarget(
   const cut = body.replace(/(?:\+\d+)?\(\d+\)$/, '');
   const origin = origins?.get(`${statement.index}|${plain(cut).toLowerCase()}`);
   if (origin && origin !== 'none') return { label: ORIGIN_TERMS[origin], literal: false };
-  return { label: termFor(cut).singular, literal: false };
+  return { label: isKnownField(cut) ? `the ${termFor(cut).singular}` : termFor(cut).singular, literal: false };
 }
 
 /** Der Satz zu `WRITE x TO y` — Formatierung in ein Feld, keine Ausgabe (F5). */
@@ -790,7 +803,7 @@ function writeToSentence(statement: AbapStatement): string | null {
   if (!match) return null;
   const source = match[1].replace(/^\/\s*/, '');
   const shown = literalOf(source) ?? plain(source);
-  return `Der Wert ${shown} wird aufbereitet in ${plain(match[2])} übernommen; ausgegeben wird dabei nichts.`;
+  return `The value ${shown} is formatted into ${plain(match[2])}; nothing is output.`;
 }
 
 const SELECT_LIST = /^SELECT\s+(?:SINGLE\s+)?(?:DISTINCT\s+)?(.+?)\s+FROM\s+/i;
@@ -804,18 +817,18 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
   const fromMatch = /\bFROM\s+(\([^)]+\)|[A-Za-z0-9_/]+)/i.exec(text);
   const rawFrom = fromMatch ? plain(fromMatch[1]) : null;
   let entity: BusinessTerm | null = rawFrom ? tableTerm(rawFrom) : null;
-  let subject = entity ? entity.plural : rawFrom ? `Sätze aus ${rawFrom}` : 'Sätze';
+  let subject = entity ? entity.plural : rawFrom ? `records from ${rawFrom}` : 'records';
 
   if (fromMatch && /^\(/.test(fromMatch[1])) {
     const resolved = resolveValue(rawFrom ?? '', statements, statement.index);
     if (resolved.value) {
       entity = tableTerm(resolved.value);
-      subject = entity ? entity.plural : `Sätze aus ${resolved.value}`;
+      subject = entity ? entity.plural : `records from ${resolved.value}`;
       notes.push(
-        `Die Tabelle ist über ${resolved.from === 'constant' ? 'die Konstante' : 'die Zuweisung'} in Zeile ${resolved.line} festgelegt.`,
+        `The table is fixed by ${resolved.from === 'constant' ? 'the constant' : 'the assignment'} in line ${resolved.line}.`,
       );
     } else {
-      notes.push(runtimeNote('Welche Tabelle', rawFrom ?? '', statements));
+      notes.push(runtimeNote('which table this is', rawFrom ?? '', statements));
     }
   }
 
@@ -831,8 +844,8 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
         const compare = /^(\S+)\s*=\s*(\S+)$/.exec(part.trim());
         if (!compare) continue;
         const word = termFor(compare[1]);
-        if (fromSelectionScreen(compare[2])) filters.push(`dem eingegebenen ${word.singular}`);
-        else if (/^@?sy-mandt$/i.test(compare[2])) filters.push('dem Anmeldemandanten');
+        if (fromSelectionScreen(compare[2])) filters.push(`the entered ${word.singular}`);
+        else if (/^@?sy-mandt$/i.test(compare[2])) filters.push('the logon client');
       }
     }
   }
@@ -840,28 +853,28 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
   // das gehört in den Satz, sonst klingt er nach „alle Kunden".
   const entries = /\bFOR\s+ALL\s+ENTRIES\s+IN\s+@?([A-Za-z0-9_\-<>]+)/i.exec(text);
   const restriction =
-    (filters.length > 0 ? ` mit ${enumerate(filters)}` : '') + (entries ? ` zu den Einträgen aus ${plain(entries[1])}` : '');
+    (filters.length > 0 ? ` with ${enumerate(filters)}` : '') + (entries ? ` for the entries from ${plain(entries[1])}` : '');
 
   if (/\bCOUNT\s*\(/i.test(text)) {
     if (dynamicPredicate) {
-      notes.push(runtimeNote('Welche Sätze', where ? where[1].trim() : '', statements, 'sind'));
+      notes.push(runtimeNote('which records these are', where ? where[1].trim() : '', statements));
     }
     return {
       anchors,
-      core: `Die Zahl der ${entity ? entity.plural : 'Sätze'}${restriction} wird ermittelt.`,
+      core: `The number of ${entity ? entity.plural : 'records'}${restriction} is determined.`,
       notes,
       tag: 'select',
     };
   }
 
   if (/\bWITH\s+PRIVILEGED\s+ACCESS\b/i.test(text)) {
-    notes.push('Die Zugriffskontrolle der Entität wird dabei umgangen.');
+    notes.push('The access control of the entity is bypassed.');
   }
   if (/\bCLIENT\s+SPECIFIED\b/i.test(text)) {
-    notes.push('Die Mandantenbegrenzung steht ausdrücklich im Prädikat, nicht in der Automatik.');
+    notes.push('The client restriction is stated explicitly in the predicate, not applied automatically.');
   }
   if (dynamicPredicate) {
-    notes.push(runtimeNote('Welche Sätze', where ? where[1].trim() : '', statements, 'sind'));
+    notes.push(runtimeNote('which records these are', where ? where[1].trim() : '', statements));
   }
 
   const list = SELECT_LIST.exec(text);
@@ -878,7 +891,7 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
     if (fields.length === 1 && (literalOf(fields[0].replace(/^@/, '')) != null || /^@?abap_true$/i.test(fields[0]))) {
       return {
         anchors,
-        core: `Es wird geprüft, ob es einen passenden ${entity ? `${entity.singular}-Satz` : `Satz in ${rawFrom ?? 'der Tabelle'}`}${restriction} gibt.`,
+        core: `It is checked whether there is a matching ${entity ? `${entity.singular} record` : `record in ${rawFrom ?? 'the table'}`}${restriction}.`,
         notes,
         tag: 'select',
       };
@@ -888,19 +901,19 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
     if (named.length > 0 && named.length <= 3) {
       // F12: ein unbekanntes Feld bekommt kein erratenes Geschlecht; es heißt
       // „das Feld …", und die Tabelle steht mit Namen da statt „des Satzes".
-      const owner = entity ? genitivePhrase(entity) : `aus ${rawFrom ?? 'der Tabelle'}`;
+      const owner = entity ? genitivePhrase(entity) : `from ${rawFrom ?? 'the table'}`;
       const core = known && entity
-        ? `${named.length === 1 ? capitalize(nounPhrase(fields[0])) : enumerate(named)} ${genitivePhrase(entity)}${restriction} ${named.length > 1 ? 'werden' : 'wird'} gelesen.`
+        ? `${named.length === 1 ? capitalize(nounPhrase(fields[0])) : `The ${enumerate(named)}`} ${genitivePhrase(entity)}${restriction} ${named.length > 1 ? 'are' : 'is'} read.`
         : known && named.length === 1
-          ? `${capitalize(nounPhrase(fields[0]))} ${owner}${restriction} wird gelesen.`
+          ? `${capitalize(nounPhrase(fields[0]))} ${owner}${restriction} is read.`
           : named.length > 1
-          ? `Die Felder ${enumerate(named)} ${owner}${restriction} werden gelesen.`
-          : `Das Feld ${named[0]} ${owner}${restriction} wird gelesen.`;
+          ? `The fields ${enumerate(named)} ${owner}${restriction} are read.`
+          : `The field ${named[0]} ${owner}${restriction} is read.`;
       return { anchors, core, notes, tag: 'select' };
     }
   }
 
-  return { anchors, core: `Es werden ${subject}${restriction} selektiert.`, notes, tag: 'select' };
+  return { anchors, core: `${capitalizeWord(subject)}${restriction} are selected.`, notes, tag: 'select' };
 }
 
 /**
@@ -923,7 +936,7 @@ function resultFieldsSentence(statement: AbapStatement): Draft | null {
   const named = fields.map((field) => (isKnownField(field) ? termFor(field).singular : plain(field).replace(/^\w+~/, '')));
   return {
     anchors: [range(statement)],
-    core: `Das Ergebnis enthält ${enumerate(named)}.`,
+    core: `The result contains ${enumerate(named)}.`,
     tag: 'fields',
   };
 }
@@ -955,12 +968,12 @@ const lead = (text: string, clause = false): Lead => ({ text, clause });
  * dann trägt das Wort „Feld" den Artikel, nicht der Bezeichner.
  */
 function flagLead(identifier: string, set: boolean): Lead {
-  return lead(`Wenn ${nounPhrase(identifier)} ${set ? '' : 'nicht '}gesetzt ist`, true);
+  return lead(`If ${nounPhrase(identifier)} is ${set ? '' : 'not '}set`, true);
 }
 
 /** „Ohne Treffer wird X" oder „Ist die Sperre nicht zu erhalten, wird X". */
 function compose(subject: Lead, rest: string): string {
-  return `${subject.text}${subject.clause ? ',' : ''} wird ${rest}`;
+  return `${subject.text}, ${rest}`;
 }
 
 /** Beide Ausgänge einer `sy-subrc`-Prüfung, als Satzanfang und als Nebensatz. */
@@ -981,10 +994,10 @@ const outcome = (fail: Lead, ok: Lead, failClause: string, okClause: string): Su
 /** Wo die setzende Anweisung nicht eindeutig ist, bleibt es neutral. */
 function neutralOutcome(value = '0'): SubrcOutcome {
   return outcome(
-    lead(`Bei Rückgabewert ungleich ${value}`),
-    lead(`Bei Rückgabewert ${value}`),
-    `der Rückgabewert (sy-subrc) ungleich ${value} ist`,
-    `der Rückgabewert (sy-subrc) ${value} ist`,
+    lead(`With a return code other than ${value}`),
+    lead(`With return code ${value}`),
+    `the return code (sy-subrc) is not ${value}`,
+    `the return code (sy-subrc) is ${value}`,
   );
 }
 
@@ -1092,27 +1105,27 @@ function outcomeOf(setter: AbapStatement | null, statements: readonly AbapStatem
   const text = setter.text;
   const keyword = setter.keyword.toUpperCase();
   const found = () =>
-    outcome(lead('Ohne Treffer'), lead('Bei Treffer'), 'kein Treffer vorliegt', 'ein Treffer vorliegt');
+    outcome(lead('Without a hit'), lead('With a hit'), 'there is no hit', 'there is a hit');
   if (keyword === 'SELECT' || keyword === 'LOOP' || keyword === 'FIND' || keyword === 'SEARCH') return found();
   if (keyword === 'READ' && /^READ\s+TABLE\b/i.test(text)) return found();
   if (keyword === 'READ' && /^READ\s+DATASET\b/i.test(text)) {
     return outcome(
-      lead('Ist das Dateiende erreicht', true),
-      lead('Wurde ein Satz gelesen', true),
-      'das Dateiende erreicht ist',
-      'ein Satz gelesen wurde',
+      lead('If the end of the file is reached', true),
+      lead('If a record was read', true),
+      'the end of the file is reached',
+      'a record was read',
     );
   }
   if (keyword === 'AUTHORITY-CHECK') {
     const object = /OBJECT\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(text);
     const name = object ? (literalOf(object[1]) ?? object[1]) : '';
     const field = /ID\s+'[^']*'\s+FIELD\s+([ps]_\w+)/i.exec(text);
-    const restriction = field ? ` für den eingegebenen ${termFor(field[1]).singular}` : '';
+    const restriction = field ? ` for the entered ${termFor(field[1]).singular}` : '';
     return outcome(
-      lead(`Ohne Berechtigung auf ${name}${restriction}`),
-      lead(`Mit Berechtigung auf ${name}${restriction}`),
-      `die Berechtigung auf ${name} fehlt`,
-      `die Berechtigung auf ${name} vorliegt`,
+      lead(`Without authorization for ${name}${restriction}`),
+      lead(`With authorization for ${name}${restriction}`),
+      `the authorization for ${name} is missing`,
+      `the authorization for ${name} is granted`,
     );
   }
   if (keyword === 'CALL') {
@@ -1121,36 +1134,36 @@ function outcomeOf(setter: AbapStatement | null, statements: readonly AbapStatem
       const name = resolveValue(fn[1], statements, setter.index).value ?? plain(fn[1]);
       if (/^ENQUEUE_/i.test(name)) {
         return outcome(
-          lead(`Ist die Sperre über ${name} nicht zu erhalten`, true),
-          lead(`Ist die Sperre über ${name} gesetzt`, true),
-          `die Sperre über ${name} nicht zu erhalten ist`,
-          `die Sperre über ${name} gesetzt ist`,
+          lead(`If the lock via ${name} cannot be obtained`, true),
+          lead(`If the lock via ${name} is set`, true),
+          `the lock via ${name} cannot be obtained`,
+          `the lock via ${name} is set`,
         );
       }
       return outcome(
-        lead(`Scheitert der Aufruf von ${name}`, true),
-        lead(`Gelingt der Aufruf von ${name}`, true),
-        `der Aufruf von ${name} scheitert`,
-        `der Aufruf von ${name} gelingt`,
+        lead(`If the call of ${name} fails`, true),
+        lead(`If the call of ${name} succeeds`, true),
+        `the call of ${name} fails`,
+        `the call of ${name} succeeds`,
       );
     }
     const transaction = /^CALL\s+TRANSACTION\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(text);
     if (transaction) {
       const name = literalOf(transaction[1]) ?? transaction[1];
       return outcome(
-        lead(`Meldet die Transaktion ${name} einen Fehler`, true),
-        lead(`Läuft die Transaktion ${name} ohne Fehler`, true),
-        `die Transaktion ${name} einen Fehler meldet`,
-        `die Transaktion ${name} ohne Fehler läuft`,
+        lead(`If transaction ${name} reports an error`, true),
+        lead(`If transaction ${name} runs without errors`, true),
+        `transaction ${name} reports an error`,
+        `transaction ${name} runs without errors`,
       );
     }
     const method = /^CALL\s+METHOD\s+\S*?([A-Za-z0-9_]+)\s*(?:\(|$|\s)/i.exec(text);
     if (method && /\bEXCEPTIONS\b/i.test(text)) {
       return outcome(
-        lead(`Scheitert der Aufruf von ${method[1]}`, true),
-        lead(`Gelingt der Aufruf von ${method[1]}`, true),
-        `der Aufruf von ${method[1]} scheitert`,
-        `der Aufruf von ${method[1]} gelingt`,
+        lead(`If the call of ${method[1]} fails`, true),
+        lead(`If the call of ${method[1]} succeeds`, true),
+        `the call of ${method[1]} fails`,
+        `the call of ${method[1]} succeeds`,
       );
     }
     return neutralOutcome(value);
@@ -1159,76 +1172,76 @@ function outcomeOf(setter: AbapStatement | null, statements: readonly AbapStatem
     const method = /(?:->|=>)([A-Za-z0-9_]+)\s*\(/.exec(text);
     if (method) {
       return outcome(
-        lead(`Scheitert der Aufruf von ${method[1]}`, true),
-        lead(`Gelingt der Aufruf von ${method[1]}`, true),
-        `der Aufruf von ${method[1]} scheitert`,
-        `der Aufruf von ${method[1]} gelingt`,
+        lead(`If the call of ${method[1]} fails`, true),
+        lead(`If the call of ${method[1]} succeeds`, true),
+        `the call of ${method[1]} fails`,
+        `the call of ${method[1]} succeeds`,
       );
     }
   }
   if (keyword === 'OPEN' && /^OPEN\s+DATASET\b/i.test(text)) {
     return outcome(
-      lead('Lässt sich die Datei nicht öffnen', true),
-      lead('Ist die Datei geöffnet', true),
-      'die Datei sich nicht öffnen lässt',
-      'die Datei geöffnet ist',
+      lead('If the file cannot be opened', true),
+      lead('If the file is open', true),
+      'the file cannot be opened',
+      'the file is open',
     );
   }
   if (['INSERT', 'UPDATE', 'MODIFY', 'DELETE'].includes(keyword)) {
-    const what = writesInternally(setter, internalTables(statements)) ? 'die Tabellenänderung' : 'die Datenbankänderung';
+    const what = writesInternally(setter, internalTables(statements)) ? 'the table change' : 'the database change';
     return outcome(
-      lead(`Schlägt ${what} fehl`, true),
-      lead(`Gelingt ${what}`, true),
-      `${what} fehlschlägt`,
-      `${what} gelingt`,
+      lead(`If ${what} fails`, true),
+      lead(`If ${what} succeeds`, true),
+      `${what} fails`,
+      `${what} succeeds`,
     );
   }
   if (keyword === 'RECEIVE') {
     return outcome(
-      lead('Scheitert die Rückmeldung der parallelen Task', true),
-      lead('Liegt die Rückmeldung der parallelen Task vor', true),
-      'die Rückmeldung der parallelen Task scheitert',
-      'die Rückmeldung der parallelen Task vorliegt',
+      lead('If the response of the parallel task fails', true),
+      lead('If the response of the parallel task is available', true),
+      'the response of the parallel task fails',
+      'the response of the parallel task is available',
     );
   }
   if (keyword === 'CATCH') {
     return outcome(
-      lead('Ist eine Ausnahme aufgetreten', true),
-      lead('Ist keine Ausnahme aufgetreten', true),
-      'eine Ausnahme aufgetreten ist',
-      'keine Ausnahme aufgetreten ist',
+      lead('If an exception occurred', true),
+      lead('If no exception occurred', true),
+      'an exception occurred',
+      'no exception occurred',
     );
   }
   if (keyword === 'EXEC' || keyword === 'ENDEXEC') {
     return outcome(
-      lead('Scheitert die Native-SQL-Anweisung', true),
-      lead('Gelingt die Native-SQL-Anweisung', true),
-      'die Native-SQL-Anweisung scheitert',
-      'die Native-SQL-Anweisung gelingt',
+      lead('If the Native SQL statement fails', true),
+      lead('If the Native SQL statement succeeds', true),
+      'the Native SQL statement fails',
+      'the Native SQL statement succeeds',
     );
   }
   if (keyword === 'ASSIGN') {
     return outcome(
-      lead('Lässt sich das Feld nicht zuweisen', true),
-      lead('Ist das Feld zugewiesen', true),
-      'das Feld sich nicht zuweisen lässt',
-      'das Feld zugewiesen ist',
+      lead('If the field cannot be assigned', true),
+      lead('If the field is assigned', true),
+      'the field cannot be assigned',
+      'the field is assigned',
     );
   }
   if (keyword === 'GET' && /^GET\s+PARAMETER\b/i.test(text)) {
     return outcome(
-      lead('Ist der Benutzerparameter nicht gesetzt', true),
-      lead('Ist der Benutzerparameter gesetzt', true),
-      'der Benutzerparameter nicht gesetzt ist',
-      'der Benutzerparameter gesetzt ist',
+      lead('If the user parameter is not set', true),
+      lead('If the user parameter is set', true),
+      'the user parameter is not set',
+      'the user parameter is set',
     );
   }
   if (keyword === 'COMMIT' && /\bAND\s+WAIT\b/i.test(text)) {
     return outcome(
-      lead('Scheitert die Verbuchung', true),
-      lead('Gelingt die Verbuchung', true),
-      'die Verbuchung scheitert',
-      'die Verbuchung gelingt',
+      lead('If the update task fails', true),
+      lead('If the update task succeeds', true),
+      'the update task fails',
+      'the update task succeeds',
     );
   }
   return neutralOutcome(value);
@@ -1345,14 +1358,14 @@ function initialLead(name: string, statements: readonly AbapStatement[], index: 
   const needle = plain(name).toLowerCase();
   const filledBySelect = lastWriteIsSelect(statements, index, needle);
   if (INTERNAL_TABLE.test(name) || internalTables(statements).has(needle)) {
-    if (filledBySelect) return lead(negated ? 'Bei Treffern' : 'Ohne Treffer');
-    return lead(negated ? `Enthält die Tabelle ${plain(name)} Zeilen` : `Ist die Tabelle ${plain(name)} leer`, true);
+    if (filledBySelect) return lead(negated ? 'With hits' : 'Without a hit');
+    return lead(negated ? `If table ${plain(name)} contains rows` : `If table ${plain(name)} is empty`, true);
   }
   if (isKnownField(name)) {
     const word = termFor(name).singular;
-    return negated ? lead(`Ist ${nounPhrase(name)} nicht leer`, true) : lead(`Ohne ${word}`);
+    return negated ? lead(`If ${nounPhrase(name)} is not empty`, true) : lead(`Without ${indefinite(word)} ${word}`);
   }
-  return lead(`Ist ${nounPhrase(name)} ${negated ? 'nicht ' : ''}leer`, true);
+  return lead(`If ${nounPhrase(name)} is ${negated ? 'not ' : ''}empty`, true);
 }
 
 /** Die Wächter: `IF … . WRITE 'X'. RETURN.` — Bedingung, Ausgabe und Rücksprung als eine Aussage. */
@@ -1416,7 +1429,7 @@ function guardSentence(
     } else if (value === 'X') {
       subject = flagLead(compare[1], compare[2] === '=');
     } else {
-      subject = lead(`Wenn ${conditionClause(head.text)}`, true);
+      subject = lead(`If ${conditionClause(head.text)}`, true);
     }
   } else return null;
 
@@ -1424,7 +1437,7 @@ function guardSentence(
   const label = write ? writtenTarget(write, origins).label : null;
   const exit = guardExit(statements, index, body, leave, context);
   const core = label
-    ? `${compose(subject, `${label} ausgegeben und ${exit}`)}.`
+    ? `${compose(subject, `${label} is output and ${exit}`)}.`
     : `${compose(subject, exit)}.`;
   return { anchors, core, grain: 'group', tag: 'guard', exit, subject };
 }
@@ -1591,8 +1604,8 @@ function resolveCall(
   return {
     head: null,
     note: namesake
-      ? `Welche Implementierung von ${name} hier läuft, legt der gelieferte Code an dieser Stelle nicht fest.`
-      : 'Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.',
+      ? `Which implementation of ${name} runs here is not settled by the supplied code at this point.`
+      : 'Its business behaviour is not evidenced in the supplied code.',
   };
 }
 
@@ -1620,35 +1633,35 @@ function routineEffects(statements: readonly AbapStatement[], head: AbapStatemen
   for (const statement of body) {
     const text = statement.text;
     const keyword = statement.keyword.toUpperCase();
-    if (keyword === 'COMMIT' && /^COMMIT\s+WORK\b/i.test(text)) commits.push('schreibt mit COMMIT WORK fest');
-    else if (/^CALL\s+FUNCTION\s+'BAPI_TRANSACTION_COMMIT'/i.test(text)) commits.push('schreibt mit BAPI_TRANSACTION_COMMIT fest');
+    if (keyword === 'COMMIT' && /^COMMIT\s+WORK\b/i.test(text)) commits.push('commits with COMMIT WORK');
+    else if (/^CALL\s+FUNCTION\s+'BAPI_TRANSACTION_COMMIT'/i.test(text)) commits.push('commits with BAPI_TRANSACTION_COMMIT');
     else if (/^CALL\s+FUNCTION\s+'([^']+)'/i.test(text)) {
       const fn = /^CALL\s+FUNCTION\s+'([^']+)'/i.exec(text)![1];
-      functions.push(/\bIN\s+UPDATE\s+TASK\b/i.test(text) ? `${fn} (zur Verbuchung)` : fn);
+      functions.push(/\bIN\s+UPDATE\s+TASK\b/i.test(text) ? `${fn} (in the update task)` : fn);
     } else if (/^CALL\s+TRANSACTION\s+'([^']+)'/i.test(text)) {
-      others.push(`ruft die Transaktion ${/^CALL\s+TRANSACTION\s+'([^']+)'/i.exec(text)![1]} auf`);
+      others.push(`calls transaction ${/^CALL\s+TRANSACTION\s+'([^']+)'/i.exec(text)![1]}`);
     } else if (['UPDATE', 'INSERT', 'MODIFY', 'DELETE'].includes(keyword) && isDbWrite(statement, tables)) {
       const target = /^(?:UPDATE|MODIFY|INSERT\s+INTO|INSERT|DELETE\s+FROM|DELETE)\s+([A-Za-z0-9_/]+)/i.exec(text);
       if (target) {
         const verb =
-          keyword === 'UPDATE' ? 'ändert' : keyword === 'INSERT' ? 'legt Sätze an in' : keyword === 'DELETE' ? 'löscht aus' : 'schreibt in';
+          keyword === 'UPDATE' ? 'changes' : keyword === 'INSERT' ? 'creates records in' : keyword === 'DELETE' ? 'deletes from' : 'writes to';
         writes.push(`${verb} ${nameOf(target[1])}`);
       }
     } else if (keyword === 'SELECT') {
       const from = /\bFROM\s+([A-Za-z0-9_/]+)/i.exec(text);
       if (from) reads.push(nameOf(from[1]));
-    } else if (keyword === 'MESSAGE' && !/\bINTO\b/i.test(text)) others.push('gibt eine Meldung aus');
-    else if (isOutputWrite(statement)) others.push('gibt Listenzeilen aus');
+    } else if (keyword === 'MESSAGE' && !/\bINTO\b/i.test(text)) others.push('outputs a message');
+    else if (isOutputWrite(statement)) others.push('outputs list lines');
     else if (keyword === 'RAISE' && /^RAISE\s+EVENT\s+([A-Za-z0-9_]+)/i.test(text)) {
-      others.push(`löst das Ereignis ${/^RAISE\s+EVENT\s+([A-Za-z0-9_]+)/i.exec(text)![1]} aus`);
+      others.push(`raises the event ${/^RAISE\s+EVENT\s+([A-Za-z0-9_]+)/i.exec(text)![1]}`);
     }
   }
   const unique = (items: string[]) => items.filter((item, index) => items.indexOf(item) === index);
   const effects = [
     ...unique(writes),
-    ...(functions.length > 0 ? [`ruft ${enumerate(unique(functions).slice(0, 3))} auf`] : []),
+    ...(functions.length > 0 ? [`calls ${enumerate(unique(functions).slice(0, 3))}`] : []),
     ...unique(commits),
-    ...(reads.length > 0 ? [`liest ${enumerate(unique(reads).slice(0, 3))}`] : []),
+    ...(reads.length > 0 ? [`reads ${enumerate(unique(reads).slice(0, 3))}`] : []),
     ...unique(others),
   ];
   return effects.slice(0, 3);
@@ -1735,11 +1748,11 @@ function guardExit(
   const keyword = leave.keyword.toUpperCase();
   const stack = context.stacks[leave.index];
   const innermost = [...stack].reverse().find((block) => block.kind === 'loop' || block.kind === 'routine');
-  if (keyword === 'EXIT' && innermost?.kind === 'loop') return 'die Schleife verlassen';
-  if (keyword === 'LEAVE') return leavePhrase(leave) ?? 'der Block verlassen';
+  if (keyword === 'EXIT' && innermost?.kind === 'loop') return 'the loop is exited';
+  if (keyword === 'LEAVE') return leavePhrase(leave) ?? 'the block is exited';
   const unit = processingUnit(statements, stack, leave.index);
   const writesLater = statements.slice(leave.index + 1, unit.end).some((next) => isDbWrite(next, context.tables));
-  if (!writesLater) return 'der Block verlassen';
+  if (!writesLater) return 'the block is exited';
   // Ein Sperrbaustein (`ENQUEUE_…`/`DEQUEUE_…`) setzt eine Sperre, er schreibt
   // keine Datenbankzeile.
   const lockOnly = (statement: AbapStatement) =>
@@ -1767,8 +1780,8 @@ function guardExit(
         acts(statement),
     );
   return quiet
-    ? 'vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben'
-    : 'vor der Datenbankoperation zurückgekehrt';
+    ? 'processing returns before the database operation; nothing is written'
+    : 'processing returns before the database operation';
 }
 
 /**
@@ -1781,16 +1794,16 @@ function guardExit(
 function leavePhrase(statement: AbapStatement): string | null {
   const text = statement.text.trim();
   const screen = /^LEAVE\s+TO\s+SCREEN\s+(\S+)$/i.exec(text);
-  if (screen) return screen[1] === '0' ? 'die Screenfolge beendet' : `zu Bild ${plain(screen[1])} gewechselt`;
-  if (/^LEAVE\s+SCREEN$/i.test(text)) return 'das aktuelle Bild verlassen';
-  if (/^LEAVE\s+LIST-PROCESSING$/i.test(text)) return 'die Listenverarbeitung verlassen';
-  if (/^LEAVE\s+TO\s+LIST-PROCESSING\b/i.test(text)) return 'in die Listenverarbeitung gewechselt';
-  if (/^LEAVE\s+PROGRAM$/i.test(text)) return 'das Programm beendet';
+  if (screen) return screen[1] === '0' ? 'the screen sequence is ended' : `processing moves to screen ${plain(screen[1])}`;
+  if (/^LEAVE\s+SCREEN$/i.test(text)) return 'the current screen is exited';
+  if (/^LEAVE\s+LIST-PROCESSING$/i.test(text)) return 'list processing is exited';
+  if (/^LEAVE\s+TO\s+LIST-PROCESSING\b/i.test(text)) return 'processing switches to list processing';
+  if (/^LEAVE\s+PROGRAM$/i.test(text)) return 'the program is ended';
   const transaction = /^LEAVE\s+TO\s+(?:CURRENT\s+)?TRANSACTION\s*('[^']*'|\S+)?/i.exec(text);
   if (transaction) {
     return transaction[1]
-      ? `das Programm verlassen und die Transaktion ${literalOf(transaction[1]) ?? plain(transaction[1])} gestartet`
-      : 'das Programm verlassen und die aktuelle Transaktion neu gestartet';
+      ? `the program is exited and transaction ${literalOf(transaction[1]) ?? plain(transaction[1])} is started`
+      : 'the program is exited and the current transaction is restarted';
   }
   return null;
 }
@@ -1798,29 +1811,29 @@ function leavePhrase(statement: AbapStatement): string | null {
 /** Der ganze Satz zu einem `LEAVE`. */
 function leaveSentence(statement: AbapStatement, statements: readonly AbapStatement[]): string {
   const text = statement.text.trim();
-  if (/^LEAVE\s+TO\s+SCREEN\s+0$/i.test(text)) return 'Die Screenfolge wird beendet.';
+  if (/^LEAVE\s+TO\s+SCREEN\s+0$/i.test(text)) return 'The screen sequence is ended.';
   const screen = /^LEAVE\s+TO\s+SCREEN\s+(\S+)$/i.exec(text);
-  if (screen) return `Es geht weiter mit Bild ${plain(screen[1])}.`;
+  if (screen) return `Processing continues with screen ${plain(screen[1])}.`;
   if (/^LEAVE\s+SCREEN$/i.test(text)) {
     const set = statements
       .slice(Math.max(0, statement.index - 2), statement.index)
       .map((other) => /^SET\s+SCREEN\s+(\S+)$/i.exec(other.text))
       .find(Boolean);
-    if (set && set[1] === '0') return 'Die Screenfolge wird beendet.';
-    return set ? `Es geht weiter mit Bild ${plain(set[1])}.` : 'Das aktuelle Bild wird verlassen; es folgt das eingestellte Folgebild.';
+    if (set && set[1] === '0') return 'The screen sequence is ended.';
+    return set ? `Processing continues with screen ${plain(set[1])}.` : 'The current screen is exited; the configured next screen follows.';
   }
   if (/^LEAVE\s+LIST-PROCESSING$/i.test(text)) {
-    return 'Die Listenverarbeitung wird verlassen; es geht zurück zu dem Bild, von dem sie ausging.';
+    return 'List processing is exited; processing returns to the screen it started from.';
   }
-  if (/^LEAVE\s+TO\s+LIST-PROCESSING\b/i.test(text)) return 'Es wird in die Listenverarbeitung gewechselt.';
-  if (/^LEAVE\s+PROGRAM$/i.test(text)) return 'Das Programm wird beendet.';
+  if (/^LEAVE\s+TO\s+LIST-PROCESSING\b/i.test(text)) return 'Processing switches to list processing.';
+  if (/^LEAVE\s+PROGRAM$/i.test(text)) return 'The program is ended.';
   const transaction = /^LEAVE\s+TO\s+(?:CURRENT\s+)?TRANSACTION\s*('[^']*'|\S+)?/i.exec(text);
   if (transaction) {
     return transaction[1]
-      ? `Das Programm wird verlassen und die Transaktion ${literalOf(transaction[1]) ?? plain(transaction[1])} gestartet.`
-      : 'Das Programm wird verlassen und die aktuelle Transaktion neu gestartet.';
+      ? `The program is exited and transaction ${literalOf(transaction[1]) ?? plain(transaction[1])} is started.`
+      : 'The program is exited and the current transaction is restarted.';
   }
-  return 'Die aktuelle Verarbeitung wird verlassen.';
+  return 'The current processing is exited.';
 }
 
 /** Eine Zuweisung in einem Zweig: „Negative Beträge setzen die Route auf INVALID." */
@@ -1837,20 +1850,20 @@ function branchAssignment(statement: AbapStatement, stack: Block[], statements: 
   // Artikel („das Feld …").
   const plural =
     branch.kind === 'else'
-      ? elseSubject(branch.previous) === 'Sonst' ? null : elseSubject(branch.previous)
+      ? elseSubject(branch.previous) === 'Otherwise' ? null : elseSubject(branch.previous)
       : pluralSubject(branch.head.text);
   // Ein `rv_`/`cv_`/`ev_` ist das Ergebnis der Routine selbst: der Fall
   // *erhält* diesen Wert. Eine gewöhnliche Variable wird dagegen *gesetzt*.
   const returning = /^(rv_|cv_|ev_)/i.test(assign[1].trim());
   let core: string;
   if (plural) {
-    core = returning ? `${plural} erhalten ${value}.` : `${plural} setzen ${nounPhrase(assign[1], 'akk')} auf ${value}.`;
+    core = returning ? `${plural} receive ${value}.` : `${plural} set ${nounPhrase(assign[1])} to ${value}.`;
   } else {
     const subject =
       branch.kind === 'else'
-        ? lead('Sonst')
-        : lead(`Wenn ${conditionClause(branch.head.text, subrcClauseAt(statements, branch.head.index))}`, true);
-    core = `${compose(subject, `${nounPhrase(assign[1])} auf ${value} gesetzt`)}.`;
+        ? lead('Otherwise')
+        : lead(`If ${conditionClause(branch.head.text, subrcClauseAt(statements, branch.head.index))}`, true);
+    core = `${compose(subject, `${nounPhrase(assign[1])} is set to ${value}`)}.`;
   }
   return { anchors: [range(statement), range(branch.head)], core, grain: 'group', tag: 'branch' };
 }
@@ -1872,12 +1885,12 @@ function plainAssignment(statement: AbapStatement, statements: readonly AbapStat
       return declaration !== null && declaration[1].toLowerCase() === methodName.toLowerCase() && declaration[2].toLowerCase() === target;
     });
     if (returning) {
-      return { anchors: [range(statement)], core: `Die Methode ${methodName} gibt den Wert ${value} zurück.`, tag: 'set' };
+      return { anchors: [range(statement)], core: `The method ${methodName} returns the value ${value}.`, tag: 'set' };
     }
   }
   return {
     anchors: [range(statement)],
-    core: `${capitalize(nounPhrase(plain(assign[1])))} wird auf ${value} gesetzt.`,
+    core: `${capitalize(nounPhrase(plain(assign[1])))} is set to ${value}.`,
     tag: 'set',
   };
 }
@@ -1889,20 +1902,20 @@ function plainAssignment(statement: AbapStatement, statements: readonly AbapStat
  */
 function registrationNotes(luw: LuwModel, index: number): string[] {
   const registration = luw.registrations.find((r) => r.statementIndex === index);
-  const notes = ['An der Aufrufstelle wird nichts geändert.'];
+  const notes = ['Nothing is changed at the call site.'];
   if (!registration) return notes;
   const lines = (state: 'dispatched' | 'discarded') =>
-    registration.outcomes.filter((o) => o.state === state).map((o) => o.lineStart).join(' bzw. ');
+    registration.outcomes.filter((o) => o.state === state).map((o) => o.lineStart).join(' or ');
   const dispatched = lines('dispatched');
   const discarded = lines('discarded');
-  if (dispatched) notes.push(`Angestoßen wird er erst mit dem COMMIT WORK in Zeile ${dispatched}.`);
-  if (discarded) notes.push(`Mit dem ROLLBACK WORK in Zeile ${discarded} wird die Registrierung verworfen.`);
+  if (dispatched) notes.push(`It is only triggered by the COMMIT WORK in line ${dispatched}.`);
+  if (discarded) notes.push(`The ROLLBACK WORK in line ${discarded} discards the registration.`);
   if (registration.unresolved?.state === 'orphaned') {
     notes.push(dispatched
-      ? 'Auf dem Weg ohne COMMIT WORK wird er nicht angestoßen und nicht ausgeführt.'
-      : 'Im gelieferten Programm folgt kein COMMIT WORK: er wird nicht angestoßen und nicht ausgeführt.');
+      ? 'On the path without COMMIT WORK, it is neither triggered nor executed.'
+      : 'No COMMIT WORK follows in the supplied program: it is neither triggered nor executed.');
   } else if (registration.unresolved) {
-    notes.push('Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt.');
+    notes.push('Whether a COMMIT WORK triggers it on every path is not determined in the supplied code.');
   }
   return notes;
 }
@@ -1912,12 +1925,12 @@ function registrationNotes(luw: LuwModel, index: number): string[] {
 // ---------------------------------------------------------------------------
 
 const MESSAGE_TYPES: Record<string, { noun: string; article: string }> = {
-  A: { noun: 'Abbruchmeldung', article: 'eine' },
-  E: { noun: 'Fehlermeldung', article: 'eine' },
-  W: { noun: 'Warnung', article: 'eine' },
-  I: { noun: 'Informationsmeldung', article: 'eine' },
-  S: { noun: 'Statusmeldung', article: 'eine' },
-  X: { noun: 'Meldung vom Typ X', article: 'eine' },
+  A: { noun: 'termination message', article: 'a' },
+  E: { noun: 'error message', article: 'an' },
+  W: { noun: 'warning', article: 'a' },
+  I: { noun: 'information message', article: 'an' },
+  S: { noun: 'status message', article: 'a' },
+  X: { noun: 'message of type X', article: 'a' },
 };
 
 interface MessageParts {
@@ -1950,7 +1963,7 @@ function messageParts(text: string): MessageParts {
   } else {
     const first = /^('[^']*'|`[^`]*`|\S+)/.exec(body)?.[1] ?? '';
     const literal = literalOf(first.replace(/\(\w{1,3}\)$/, ''));
-    label = literal != null ? `„${literal}“` : plain(first);
+    label = literal != null ? `"${literal}"` : plain(first);
     if (typeAddition) type = (literalOf(typeAddition[1]) ?? '').toUpperCase() || null;
   }
   const into = /\bINTO\s+(\S+)/i.exec(body);
@@ -1977,44 +1990,44 @@ function messageSentence(text: string): string {
   const parts = messageParts(text);
   const label = parts.label ? ` ${parts.label}` : '';
   if (parts.into) {
-    return `Der Meldungstext${label} wird in ${parts.into} übernommen; angezeigt wird dabei nichts.`;
+    return `The message text${label} is placed in ${parts.into}; nothing is displayed.`;
   }
   const kind = parts.type ? MESSAGE_TYPES[parts.type] : undefined;
   if (parts.raising) {
-    return `Die Ausnahme ${parts.raising} wird ausgelöst; die Meldung${label} erscheint nur, wenn der Aufrufer die Ausnahme nicht behandelt.`;
+    return `The exception ${parts.raising} is raised; the message${label} appears only if the caller does not handle the exception.`;
   }
-  const noun = kind ? kind.noun : 'Meldung';
+  const noun = kind ? kind.noun : 'message';
   const like = parts.displayLike && MESSAGE_TYPES[parts.displayLike] && parts.displayLike !== parts.type
-    ? `, angezeigt wie ${MESSAGE_TYPES[parts.displayLike].article} ${MESSAGE_TYPES[parts.displayLike].noun}`
+    ? `, displayed like ${MESSAGE_TYPES[parts.displayLike].article} ${MESSAGE_TYPES[parts.displayLike].noun}`
     : '';
   const consequence =
     parts.type === 'A'
-      ? '; das Programm wird abgebrochen'
+      ? '; the program is terminated'
       : parts.type === 'X'
-        ? '; das Programm bricht mit einem Laufzeitfehler ab'
+        ? '; the program terminates with a runtime error'
         : '';
-  return `Die ${noun}${label} wird ausgegeben${like}${consequence}.`;
+  return `The ${noun}${label} is output${like}${consequence}.`;
 }
 
 /** Derselbe Inhalt als Satzteil für Zweige und Folgen. */
 function messageFragment(text: string): string {
   const parts = messageParts(text);
-  if (parts.into) return `der Meldungstext in ${parts.into} übernommen`;
-  if (parts.raising) return `die Ausnahme ${parts.raising} ausgelöst`;
+  if (parts.into) return `the message text is placed in ${parts.into}`;
+  if (parts.raising) return `the exception ${parts.raising} is raised`;
   const kind = parts.type ? MESSAGE_TYPES[parts.type] : undefined;
-  return kind ? `${kind.article} ${kind.noun} ausgegeben` : 'eine Meldung ausgegeben';
+  return kind ? `${kind.article} ${kind.noun} is output` : 'a message is output';
 }
 
 /** Was übersprungen wird, wenn ein CHECK mit diesem Vergleich in einer Schleife steht. */
 const CHECK_COMPLEMENT: Record<string, string> = {
-  '>=': 'kleinere',
-  GE: 'kleinere',
-  '>': 'kleinere und gleiche',
-  GT: 'kleinere und gleiche',
-  '<=': 'größere',
-  LE: 'größere',
-  '<': 'größere und gleiche',
-  LT: 'größere und gleiche',
+  '>=': 'smaller ones',
+  GE: 'smaller ones',
+  '>': 'smaller and equal ones',
+  GT: 'smaller and equal ones',
+  '<=': 'greater ones',
+  LE: 'greater ones',
+  '<': 'greater and equal ones',
+  LT: 'greater and equal ones',
 };
 
 /**
@@ -2039,13 +2052,13 @@ function checkSentence(
   if (unit.kind === 'loop' && compare && isKnownField(compare[1])) {
     const { subject } = conditionSubject(`CHECK ${compare[1]} ${normalizeOperator(compare[2])} ${compare[3]}`);
     const complement = CHECK_COMPLEMENT[compare[2].toUpperCase()];
-    return `Nur ${subject} gehen weiter; ${complement} werden übersprungen, die Schleife läuft weiter.`;
+    return `Only ${lowerFirst(subject)} go on; ${complement} are skipped, and the loop continues.`;
   }
   const clause = conditionClause(condition, subrc);
   if (unit.kind === 'loop') {
-    return `Nur wenn ${clause}, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter.`;
+    return `The loop pass continues only if ${clause}; otherwise it is skipped, and the loop continues with the next pass.`;
   }
-  return `Nur wenn ${clause}, geht es weiter; sonst wird ${unitLabel(unit)} an dieser Stelle verlassen.`;
+  return `Processing continues only if ${clause}; otherwise ${unitLabel(unit)} is exited at this point.`;
 }
 
 function normalizeOperator(operator: string): string {
@@ -2071,14 +2084,14 @@ function sentenceFor(
     const resolvedText = literalOf(written) == null ? resolveValue(written, statements, statement.index) : null;
     if (resolvedText && resolvedText.value) {
       // Schritt 1 vor Schritt 2: der Leser sieht den Text, nicht den Variablennamen.
-      return { anchors, core: `Der Text ${resolvedText.value} wird ausgegeben.`, tag: 'write' };
+      return { anchors, core: `The text ${resolvedText.value} is output.`, tag: 'write' };
     }
     const { label, literal } = writtenTarget(statement, origins);
     // Ein ausgegebenes Literal ist **kein** Erfolgsnachweis: es belegt, dass
     // diese Stelle erreicht wurde, und nichts sonst. Das steht als Vorbehalt
     // am Satz, weil es aus dem Code folgt und nicht aus Vorsicht.
-    const notes = literal ? ['Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.'] : [];
-    return { anchors, core: `${label} wird ausgegeben.`, notes, tag: 'write' };
+    const notes = literal ? ['The output only proves that this point in the code was reached.'] : [];
+    return { anchors, core: `${startSentence(label)} is output.`, notes, tag: 'write' };
   }
 
   if (keyword === 'SELECT') return selectSentence(statement, statements);
@@ -2106,12 +2119,12 @@ function sentenceFor(
     const program = statements.some((other) => /^(?:REPORT|PROGRAM)$/i.test(other.keyword));
     const opaque = rest.some((other) => callsOut(other) && !definedInSource(other, statements));
     if (rap && !committed) {
-      notes.push('Angekündigt, nicht persistiert: die Änderung liegt im Transaktionspuffer; im gelieferten Code steht kein COMMIT ENTITIES.');
+      notes.push('Announced, not persisted: the change sits in the transactional buffer; the supplied code contains no COMMIT ENTITIES.');
     } else if (!rap && !committed && program && !opaque) {
-      notes.push('Im gelieferten Code steht kein COMMIT WORK.');
+      notes.push('The supplied code contains no COMMIT WORK.');
     }
     if (!rest.some((other) => /\bsy-subrc\b/i.test(other.text))) {
-      notes.push('sy-subrc wird danach nicht ausgewertet.');
+      notes.push('sy-subrc is not evaluated afterwards.');
     }
     return notes;
   };
@@ -2124,24 +2137,24 @@ function sentenceFor(
     const field = set ? capitalize(nounPhrase(set[1])) : null;
     const keyed = /\bWHERE\s+\S+\s*=\s*@?[ps]_/i.test(text);
     const core = field
-      ? `${field} ${entity ? (keyed ? genitivePhrase(entity).replace(/^(des|der) /, '$1 angegebenen ') : genitivePhrase(entity)) : `in ${raw}`} wird geändert.`
-      : `Eine Zeile ${entity ? `der ${entity.plural}` : `in ${raw}`} wird geändert.`;
+      ? `${field} ${entity ? (keyed ? genitivePhrase(entity).replace(/^of the /, 'of the specified ') : genitivePhrase(entity)) : `in ${raw}`} is changed.`
+      : `A row ${entity ? `of the ${entity.plural}` : `in ${raw}`} is changed.`;
     return {
       anchors,
       core,
-      notes: ['Ob eine Zeile getroffen wird, garantiert der Code nicht.', ...persistenceNotes()],
+      notes: ['The code does not guarantee that a row is hit.', ...persistenceNotes()],
       tag: 'update',
     };
   }
 
   if (keyword === 'MODIFY' && /^MODIFY\s+SCREEN\b/i.test(text)) {
-    return { anchors, core: 'Die geänderten Attribute des Bildelements werden übernommen.', tag: 'modify' };
+    return { anchors, core: 'The changed attributes of the screen element are applied.', tag: 'modify' };
   }
   if (keyword === 'MODIFY' && writesInternally(statement, internalTables(statements))) {
     const target = /^MODIFY\s+(?:TABLE\s+)?([A-Za-z0-9_\-<>~]+)/i.exec(text);
     return {
       anchors,
-      core: `Eine Zeile der internen Tabelle ${target ? plain(target[1]) : ''} wird geändert; in die Datenbank wird dabei nichts geschrieben.`.replace(/\s+;/, ';'),
+      core: `A row of the internal table ${target ? plain(target[1]) : ''} is changed; nothing is written to the database.`.replace(/\s+;/, ';'),
       tag: 'modify',
     };
   }
@@ -2151,7 +2164,7 @@ function sentenceFor(
     const entity = raw ? tableTerm(raw) : null;
     return {
       anchors,
-      core: `Eine Zeile ${entity ? `der ${entity.plural}` : `in ${raw}`} wird eingefügt oder überschrieben.`,
+      core: `A row ${entity ? `of the ${entity.plural}` : `in ${raw}`} is inserted or overwritten.`,
       notes: persistenceNotes(),
       tag: 'modify',
     };
@@ -2164,26 +2177,26 @@ function sentenceFor(
   if (keyword === 'COMMIT') {
     if (event && event.registrations.length > 0) {
       const notes = event.andWait
-        ? (event.subrcRead ? [] : ['Mit AND WAIT wird auf die Verbuchung gewartet; sy-subrc wird danach aber nicht ausgewertet.'])
-        : ['Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt.'];
+        ? (event.subrcRead ? [] : ['With AND WAIT, the code waits for the update task; sy-subrc is not evaluated afterwards, though.'])
+        : ['Without AND WAIT, the code does not wait for the result of the update task; that anything was executed or persisted is therefore not proven.'];
       return {
         anchors,
-        core: 'Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen.',
+        core: 'COMMIT WORK triggers the update task for the previously registered function modules.',
         notes,
         tag: 'commit',
       };
     }
-    return { anchors, core: 'Mit COMMIT WORK wird die Änderung persistiert.', tag: 'commit' };
+    return { anchors, core: 'COMMIT WORK persists the change.', tag: 'commit' };
   }
   if (keyword === 'ROLLBACK') {
     if (event && event.registrations.length > 0) {
       return {
         anchors,
-        core: 'Mit ROLLBACK WORK werden die zuvor registrierten Verbuchungen verworfen; der Baustein wird auf diesem Weg nicht ausgeführt.',
+        core: 'ROLLBACK WORK discards the previously registered updates; the function module is not executed on this path.',
         tag: 'rollback',
       };
     }
-    return { anchors, core: 'Mit ROLLBACK WORK werden die noch nicht festgeschriebenen Änderungen verworfen.', tag: 'rollback' };
+    return { anchors, core: 'ROLLBACK WORK discards the changes not yet committed.', tag: 'rollback' };
   }
 
   if (keyword === 'PERFORM') {
@@ -2195,8 +2208,8 @@ function sentenceFor(
     const effects = head ? routineEffects(statements, head) : [];
     return {
       anchors,
-      core: `Das ${external ? 'externe ' : ''}Unterprogramm ${name ? plain(name[1]) : ''} wird aufgerufen${effects.length > 0 ? `; es ${enumerate(effects)}` : ''}.`.replace(/\s+/g, ' '),
-      notes: head ? [] : ['Seine Wirkung ist im gelieferten Code nicht belegt.'],
+      core: `The ${external ? 'external ' : ''}subroutine ${name ? plain(name[1]) : ''} is called${effects.length > 0 ? `; it ${enumerate(effects)}` : ''}.`.replace(/\s+/g, ' '),
+      notes: head ? [] : ['Its effect is not evidenced in the supplied code.'],
       tag: 'perform',
     };
   }
@@ -2209,15 +2222,15 @@ function sentenceFor(
     if (job) {
       return {
         anchors,
-        core: `Das Programm ${name ? name[1] : ''} wird als Schritt des Hintergrundjobs ${literalOf(job[1]) ?? plain(job[1])} eingeplant.`.replace(/\s+/g, ' '),
-        notes: ['Was das Programm im Job tut, ist nicht Teil dieses Satzes.'],
+        core: `The program ${name ? name[1] : ''} is scheduled as a step of the background job ${literalOf(job[1]) ?? plain(job[1])}.`.replace(/\s+/g, ' '),
+        notes: ['What the program does in the job is not part of this statement.'],
         tag: 'submit',
       };
     }
     return {
       anchors,
-      core: `Das Kindprogramm ${name ? name[1] : ''} wird gestartet.`.replace(/\s+/g, ' '),
-      notes: ['Was das Kind tut, ist nicht Teil dieses Satzes.'],
+      core: `The child program ${name ? name[1] : ''} is started.`.replace(/\s+/g, ' '),
+      notes: ['What the child program does is not part of this statement.'],
       tag: 'submit',
     };
   }
@@ -2226,8 +2239,8 @@ function sentenceFor(
     const name = /^INCLUDE\s+([A-Za-z0-9_/]+)/i.exec(text);
     return {
       anchors,
-      core: `Der Report benötigt das Include ${name ? name[1] : ''}.`.replace(/\s+/g, ' '),
-      notes: ['Es ist im gelieferten Ausschnitt nicht enthalten.'],
+      core: `The report needs the include ${name ? name[1] : ''}.`.replace(/\s+/g, ' '),
+      notes: ['It is not contained in the supplied excerpt.'],
       tag: 'include',
     };
   }
@@ -2250,8 +2263,8 @@ function sentenceFor(
     }
     return {
       anchors,
-      core: `Die Berechtigung auf ${name} wird geprüft.`,
-      notes: evaluated ? [] : ['Das Ergebnis der Prüfung wird nicht ausgewertet; die Verarbeitung läuft unabhängig davon weiter.'],
+      core: `The authorization for ${name} is checked.`,
+      notes: evaluated ? [] : ['The result of the check is not evaluated; processing continues regardless.'],
       tag: 'auth',
     };
   }
@@ -2271,7 +2284,7 @@ function sentenceFor(
   if (keyword === 'ASSERT') {
     return {
       anchors,
-      core: 'Ist die Zusicherung verletzt, bricht der Lauf mit einem Laufzeitfehler ab (ASSERTION_FAILED).',
+      core: 'If the assertion is violated, the run terminates with a runtime error (ASSERTION_FAILED).',
       tag: 'assert',
     };
   }
@@ -2282,34 +2295,34 @@ function sentenceFor(
       const resolved = resolveValue(fn[1], statements, statement.index);
       const name = resolved.value ?? plain(fn[1]);
       const notes: string[] = [];
-      let core = `Der Funktionsbaustein ${name} wird aufgerufen.`;
+      let core = `The function module ${name} is called.`;
       if (resolved.from === 'constant') {
-        core = `Das Aufrufziel ist die unveränderliche Konstante ${name}.`;
+        core = `The call target is the immutable constant ${name}.`;
       } else if (resolved.from === 'assignment') {
-        core = `Es wird genau der zuvor in Zeile ${resolved.line} zugewiesene Funktionsbaustein ${name} aufgerufen.`;
+        core = `Exactly the function module ${name} assigned before in line ${resolved.line} is called.`;
       } else if (resolved.from === 'unresolved') {
-        notes.push(runtimeNote('Welcher Baustein', plain(fn[1]), statements));
+        notes.push(runtimeNote('which function module this is', plain(fn[1]), statements));
       }
       if (/\bIN\s+UPDATE\s+TASK\b/i.test(text)) {
-        core = `Der Baustein ${name} wird zur Verbuchung registriert.`;
+        core = `The function module ${name} is registered for the update task.`;
         notes.push(...registrationNotes(luw, statement.index));
       } else if (/\bSTARTING\s+NEW\s+TASK\b/i.test(text)) {
-        core = `Der Baustein ${name} wird asynchron in einer eigenen Task gestartet.`;
-        notes.push('Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor.');
+        core = `The function module ${name} is started asynchronously in a separate task.`;
+        notes.push('No result is available at this point.');
       } else if (/\bDESTINATION\b/i.test(text)) {
         // F10: „benachrichtigt" und „eingegebene" standen fest im Satz. Was
         // der Code trägt: der Baustein läuft in einem entfernten System, über
         // die Destination, die hier steht.
         const destination = /\bDESTINATION\s+('[^']*'|\S+)/i.exec(text);
         const where = !destination
-          ? 'eine Destination'
+          ? 'a destination'
           : literalOf(destination[1]) != null
-            ? `die Destination ${literalOf(destination[1])}`
+            ? `the destination ${literalOf(destination[1])}`
             : fromSelectionScreen(destination[1])
-              ? 'die eingegebene Destination'
-              : `die Destination aus ${plain(destination[1])}`;
-        core = `${name} wird in einem entfernten System über ${where} aufgerufen.`;
-        notes.push('Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar.');
+              ? 'the entered destination'
+              : `the destination from ${plain(destination[1])}`;
+        core = `${name} is called in a remote system via ${where}.`;
+        notes.push('Which system that is and what happens there cannot be derived from the supplied code.');
       }
       // Was hineingeht und was herauskommt — das ist die fachliche Aussage
       // eines Bausteinaufrufs, nicht sein Name allein.
@@ -2321,7 +2334,7 @@ function sentenceFor(
         importing.length > 0 &&
         !/\bIN\s+UPDATE\s+TASK\b|\bSTARTING\s+NEW\s+TASK\b|\bDESTINATION\b/i.test(text)
       ) {
-        core = `Der Code übergibt ${exporting[0]} an ${name} und übernimmt dessen Ausgabe nach ${importing[0]}.`;
+        core = `The code passes ${exporting[0]} to ${name} and takes its output into ${importing[0]}.`;
       }
       return { anchors, core, notes, tag: 'call' };
     }
@@ -2334,8 +2347,8 @@ function sentenceFor(
         return {
           anchors,
           core: receiving
-            ? `Das Ergebnis der zur Laufzeit gewählten Methode wird in ${plain(receiving[1])} übernommen.`
-            : 'Die zur Laufzeit gewählte Methode wird aufgerufen.',
+            ? `The result of the method chosen at runtime is placed in ${plain(receiving[1])}.`
+            : 'The method chosen at runtime is called.',
           tag: 'call',
         };
       }
@@ -2345,7 +2358,7 @@ function sentenceFor(
       const effects = head ? routineEffects(statements, head) : [];
       return {
         anchors,
-        core: `Die Methode ${called[3]}${owner ? ` von ${owner}` : ''} wird aufgerufen${effects.length > 0 ? `; sie ${enumerate(effects)}` : ''}.`,
+        core: `The method ${called[3]}${owner ? ` of ${owner}` : ''} is called${effects.length > 0 ? `; it ${enumerate(effects)}` : ''}.`,
         notes: note ? [note] : [],
         tag: 'call',
       };
@@ -2361,32 +2374,32 @@ function sentenceFor(
       const update = /\bUPDATE\s+('[^']*'|\S+)/i.exec(text);
       const modeValue = mode ? (literalOf(mode[1]) ?? plain(mode[1])) : null;
       const how = [
-        using ? 'per Batch-Input' : '',
-        modeValue ? (/^[AENP]$/i.test(modeValue) ? `im Modus ${modeValue.toUpperCase()}` : `im Modus aus ${modeValue}`) : '',
+        using ? 'via batch input' : '',
+        modeValue ? (/^[AENP]$/i.test(modeValue) ? `in mode ${modeValue.toUpperCase()}` : `in the mode from ${modeValue}`) : '',
       ].filter(Boolean);
       const updateValue = update ? (literalOf(update[1]) ?? plain(update[1])).toUpperCase() : null;
       const booking =
         updateValue === 'S'
-          ? ' und synchron verbucht'
+          ? ' and updated synchronously'
           : updateValue === 'A'
-            ? ' und asynchron verbucht'
+            ? ' and updated asynchronously'
             : updateValue === 'L'
-              ? ' und lokal verbucht'
+              ? ' and updated locally'
               : '';
       const after: string[] = [];
-      if (/\bAND\s+SKIP\s+FIRST\s+SCREEN\b/i.test(text)) after.push('das Einstiegsbild wird übersprungen');
+      if (/\bAND\s+SKIP\s+FIRST\s+SCREEN\b/i.test(text)) after.push('the initial screen is skipped');
       // Mit Bilddaten stößt der Aufruf die Verarbeitung der Transaktion an;
       // ohne ist es ein Dialogaufruf. Beides sagt nichts über ihren Zweck.
       return {
         anchors,
-        core: `Die Transaktion ${name} wird ${how.length > 0 ? `${how.join(' ')} ` : ''}${using ? 'angestoßen' : 'aufgerufen'}${booking}${after.length > 0 ? `; ${after.join(', ')}` : ''}.`,
-        notes: using ? ['Ob und was persistiert wird, entscheidet die aufgerufene Transaktion.'] : [],
+        core: `Transaction ${name} is ${using ? 'triggered' : 'called'}${how.length > 0 ? ` ${how.join(' ')}` : ''}${booking}${after.length > 0 ? `; ${after.join(', ')}` : ''}.`,
+        notes: using ? ['Whether and what is persisted is decided by the called transaction.'] : [],
         tag: 'call',
       };
     }
     const screen = /^CALL\s+SCREEN\s+(\d+)/i.exec(text);
     if (screen) {
-      return { anchors, core: `Das Programm ruft eine Screenfolge ab ${screen[1]} auf.`, tag: 'call' };
+      return { anchors, core: `The program calls a screen sequence starting at screen ${screen[1]}.`, tag: 'call' };
     }
     const badi = /^CALL\s+BADI\s+(\S+)/i.exec(text);
     if (badi) {
@@ -2399,19 +2412,20 @@ function sentenceFor(
       const taken = [...text.matchAll(/\b(?:IMPORTING|CHANGING|RECEIVING)\s+(.+?)(?=\s+(?:EXPORTING|IMPORTING|CHANGING|RECEIVING|EXCEPTIONS)\b|$)/gi)]
         .flatMap((match) => [...match[1].matchAll(/\w+\s*=\s*(\S+)/g)].map((pair) => pair[1]));
       const capital = (phrase: string) => phrase.charAt(0).toUpperCase() + phrase.slice(1);
-      const back = taken.length > 0 ? enumerate(taken.map((value) => nounPhrase(value, 'akk'))) : null;
+      const back = taken.length > 0 ? enumerate(taken.map((value) => nounPhrase(value))) : null;
+      const takenVerb = taken.length > 1 ? 'are' : 'is';
       const core =
         given.length > 0
-          ? `${capital(enumerate(given.map((value) => nounPhrase(value, 'nom'))))} ${given.length > 1 ? 'werden' : 'wird'} der BAdI-Methode ${name} übergeben${back ? ` und ${back} übernommen` : ''}.`
-          : `Die BAdI-Methode ${name} wird aufgerufen${back ? `; übernommen wird ${back}` : ''}.`;
+          ? `${capital(enumerate(given.map((value) => nounPhrase(value))))} ${given.length > 1 ? 'are' : 'is'} passed to the BAdI method ${name}${back ? `, and ${back} ${takenVerb} taken over` : ''}.`
+          : `The BAdI method ${name} is called${back ? `; ${back} ${takenVerb} taken over` : ''}.`;
       return { anchors, core, tag: 'call' };
     }
     const kernel = /^CALL\s+'([^']+)'/i.exec(text);
     if (kernel) {
       return {
         anchors,
-        core: `Der Kernelaufruf ${kernel[1]} wird ausgeführt.`,
-        notes: ['Der tatsächliche Rückgabewert ist nicht im Quelltext bekannt.'],
+        core: `The kernel call ${kernel[1]} is executed.`,
+        notes: ['The actual return value is not known from the source code.'],
         tag: 'call',
       };
     }
@@ -2419,7 +2433,7 @@ function sentenceFor(
 
   if (keyword === 'GET') {
     if (/^GET\s+BADI\b/i.test(text)) {
-      return { anchors, core: 'Die konfigurierte BAdI-Implementierung wird angefordert.', tag: 'get' };
+      return { anchors, core: 'The configured BAdI implementation is requested.', tag: 'get' };
     }
     // Nur `GET knoten` ist das Ereignis einer logischen Datenbank (F3). Alles
     // andere mit GET liest einen Wert aus der Laufzeitumgebung.
@@ -2427,43 +2441,43 @@ function sentenceFor(
     if (parameter) {
       return {
         anchors,
-        core: `Der Benutzerparameter ${literalOf(parameter[1]) ?? parameter[1]} wird in ${plain(parameter[2])} übernommen.`,
+        core: `The user parameter ${literalOf(parameter[1]) ?? parameter[1]} is placed in ${plain(parameter[2])}.`,
         tag: 'get',
       };
     }
     const stamp = /^GET\s+TIME\s+STAMP\s+FIELD\s+(\S+)/i.exec(text);
-    if (stamp) return { anchors, core: `Der aktuelle Zeitstempel wird in ${plain(stamp[1])} übernommen.`, tag: 'get' };
+    if (stamp) return { anchors, core: `The current time stamp is placed in ${plain(stamp[1])}.`, tag: 'get' };
     if (/^GET\s+TIME\b/i.test(text)) {
       const field = /\bFIELD\s+(\S+)/i.exec(text);
       return {
         anchors,
         core: field
-          ? `Die aktuelle Uhrzeit wird in ${plain(field[1])} übernommen.`
-          : 'Datum und Uhrzeit des Laufs (sy-datum, sy-uzeit) werden aktualisiert.',
+          ? `The current time is placed in ${plain(field[1])}.`
+          : 'The date and time of the run (sy-datum, sy-uzeit) are refreshed.',
         tag: 'get',
       };
     }
     const reference = /^GET\s+REFERENCE\s+OF\s+(\S+)\s+INTO\s+(\S+)/i.exec(text);
     if (reference) {
-      return { anchors, core: `Eine Referenz auf ${plain(reference[1])} wird in ${plain(reference[2])} abgelegt.`, tag: 'get' };
+      return { anchors, core: `A reference to ${plain(reference[1])} is stored in ${plain(reference[2])}.`, tag: 'get' };
     }
     if (/^GET\s+CURSOR\b/i.test(text)) {
-      return { anchors, core: 'Die Cursorposition auf dem Bild oder in der Liste wird gelesen.', tag: 'get' };
+      return { anchors, core: 'The cursor position on the screen or in the list is read.', tag: 'get' };
     }
     if (!isLdbGet(text)) return null;
     const ldb = /^GET\s+([A-Za-z0-9_]+)/i.exec(text);
     const entity = ldb ? tableTerm(ldb[1]) : null;
     return {
       anchors,
-      core: `Jeder von der logischen Datenbank gelieferte ${entity ? entity.singular : (ldb?.[1] ?? '')}-Satz wird verarbeitet.`,
-      notes: ['Welche Sätze das sind, bestimmt die logische Datenbank mit ihrem Selektionsbild, nicht der Report.'],
+      core: `Every ${entity ? entity.singular : (ldb?.[1] ?? '')} record supplied by the logical database is processed.`,
+      notes: ['Which records these are is determined by the logical database with its selection screen, not by the report.'],
       tag: 'get',
     };
   }
 
   if (keyword === 'SET' && /^SET\s+PF-STATUS\b/i.test(text)) {
     const status = /PF-STATUS\s+('[^']*'|\S+)/i.exec(text);
-    return { anchors, core: `Der GUI-Status ${status ? (literalOf(status[1]) ?? status[1]) : ''} wird gesetzt.`, tag: 'status' };
+    return { anchors, core: `The GUI status ${status ? (literalOf(status[1]) ?? status[1]) : ''} is set.`, tag: 'status' };
   }
 
   if (keyword === 'LEAVE') {
@@ -2473,15 +2487,15 @@ function sentenceFor(
   if (keyword === 'CREATE' && /^CREATE\s+DATA\b/i.test(text)) {
     return {
       anchors,
-      core: 'Ein Datenobjekt des zur Laufzeit benannten Typs wird angelegt.',
-      notes: ['Es werden dabei keine Datenbankzeilen geladen.'],
+      core: 'A data object of the type named at runtime is created.',
+      notes: ['No database rows are loaded in the process.'],
       tag: 'create',
     };
   }
 
   if (keyword === 'ASSIGN') {
     if (/\bCOMPONENT\b/i.test(text)) {
-      return { anchors, core: 'Eine Komponente der Struktur wird an das Feldsymbol gebunden.', tag: 'assign' };
+      return { anchors, core: 'A component of the structure is bound to the field symbol.', tag: 'assign' };
     }
     // Nur `ASSIGN ('(PROGRAMM)FELD') …` greift in den Speicher eines anderen
     // Programms. Ein gewöhnliches ASSIGN bindet ein Feld dieses Programms.
@@ -2491,21 +2505,21 @@ function sentenceFor(
     if (dynamic && dynamicValue && /^\(\S+\)/.test(dynamicValue)) {
       return {
         anchors,
-        core: 'Ein Feld aus dem Programmspeicher eines anderen Programms wird gebunden.',
-        notes: ['Ob es dort existiert, entscheidet der Aufrufkontext zur Laufzeit.'],
+        core: 'A field from the memory of another program is bound.',
+        notes: ['Whether it exists there is decided by the calling context at runtime.'],
         tag: 'assign',
       };
     }
     if (dynamic) {
       return {
         anchors,
-        core: `Ein erst zur Laufzeit benanntes Feld wird an ${source ? plain(source[2]) : 'das Feldsymbol'} gebunden.`,
+        core: `A field named only at runtime is bound to ${source ? plain(source[2]) : 'the field symbol'}.`,
         tag: 'assign',
       };
     }
     return {
       anchors,
-      core: source ? `${plain(source[1])} wird an das Feldsymbol ${source[2].replace(/[.,]$/, '')} gebunden.` : 'Ein Feld wird an ein Feldsymbol gebunden.',
+      core: source ? `${plain(source[1])} is bound to the field symbol ${source[2].replace(/[.,]$/, '')}.` : 'A field is bound to a field symbol.',
       tag: 'assign',
     };
   }
@@ -2513,8 +2527,8 @@ function sentenceFor(
   if (keyword === 'EXEC') {
     return {
       anchors,
-      core: 'Ein Native-SQL-Block wird ausgeführt.',
-      notes: ['Native SQL hat keinen automatischen Mandantenfilter.'],
+      core: 'A Native SQL block is executed.',
+      notes: ['Native SQL has no automatic client filter.'],
       tag: 'exec',
     };
   }
@@ -2523,7 +2537,7 @@ function sentenceFor(
     const target = /\bTO\s+(\S+)$/i.exec(text);
     return {
       anchors,
-      core: `Eine Zeile wird ${target ? `in ${plain(target[1])} ` : ''}aufgenommen.`,
+      core: `A row is added${target ? ` to ${plain(target[1])}` : ''}.`,
       tag: 'append',
     };
   }
@@ -2538,8 +2552,8 @@ function sentenceFor(
       : false;
     return {
       anchors,
-      core: `Die lokale Kindklasse erbt von der Klasse ${base ? base[1] : ''}.`.replace(/\s+/g, ' '),
-      notes: known ? [] : ['Diese Basisklasse ist im gelieferten Code nicht enthalten.'],
+      core: `The local child class inherits from the class ${base ? base[1] : ''}.`.replace(/\s+/g, ' '),
+      notes: known ? [] : ['This base class is not contained in the supplied code.'],
       tag: 'class',
     };
   }
@@ -2555,7 +2569,7 @@ function sentenceFor(
       if (field) fields.push(field[1].toUpperCase());
     }
     if (fields.length > 0) {
-      return { anchors, core: `Die lokale Struktur enthält ${enumerate(fields)}.`, tag: 'types' };
+      return { anchors, core: `The local structure contains ${enumerate(fields)}.`, tag: 'types' };
     }
   }
 
@@ -2573,8 +2587,8 @@ function sentenceFor(
     const upper = /\bUPPER\s+CASE\b/i.test(text);
     return {
       anchors,
-      core: `${input ? 'Die Eingabe' : `Der Inhalt von ${plain(field)}`} wird in ${upper ? 'Großbuchstaben' : 'Kleinbuchstaben'} gewandelt.`,
-      notes: input && !rejecting ? ['Eine Ablehnung der Eingabe gibt es nicht.'] : [],
+      core: `${input ? 'The input' : `The content of ${plain(field)}`} is converted to ${upper ? 'upper case' : 'lower case'}.`,
+      notes: input && !rejecting ? ['The input is never rejected.'] : [],
       tag: 'translate',
     };
   }
@@ -2602,8 +2616,8 @@ function sentenceFor(
       : null;
     const effects = head ? routineEffects(statements, head) : [];
     const core = receiver
-      ? `Der Rückgabewert der Methode ${name} von ${owner} wird nach ${plain(receiver)} übernommen.`
-      : `Die Methode ${name} von ${owner} wird aufgerufen${exported ? `; ihr Ergebnis wird in ${plain(exported[1])} übernommen` : ''}${effects.length > 0 ? `; sie ${enumerate(effects)}` : ''}.`;
+      ? `The return value of the method ${name} of ${owner} is placed in ${plain(receiver)}.`
+      : `The method ${name} of ${owner} is called${exported ? `; its result is placed in ${plain(exported[1])}` : ''}${effects.length > 0 ? `; it ${enumerate(effects)}` : ''}.`;
     return {
       anchors,
       core,
@@ -2616,7 +2630,7 @@ function sentenceFor(
     const table = /^READ\s+TABLE\s+(\S+)/i.exec(text);
     return {
       anchors,
-      core: `In der Tabelle ${table ? `${plain(table[1])} ` : ''}wird nach einer passenden Zeile gesucht.`,
+      core: `A matching row is searched for in the table${table ? ` ${plain(table[1])}` : ''}.`,
       tag: 'read',
     };
   }
@@ -2624,7 +2638,7 @@ function sentenceFor(
   if (keyword === 'LOOP') {
     const over = /^LOOP\s+AT\s+(\S+)/i.exec(text);
     if (over && /^SCREEN$/i.test(over[1])) {
-      return { anchors, core: 'Jedes Element des Bildes wird einzeln bearbeitet.', tag: 'loop' };
+      return { anchors, core: 'Each element of the screen is processed one by one.', tag: 'loop' };
     }
     // „Jede Zeile" ist falsch, sobald ein WHERE die Schleife einschränkt —
     // dann läuft sie nur über die passenden Zeilen, und genau das sagt der Satz.
@@ -2632,16 +2646,16 @@ function sentenceFor(
     if (over && where) {
       return {
         anchors,
-        core: `Die Zeilen aus ${plain(over[1])}, bei denen ${conditionClause(where[1])}, werden einzeln verarbeitet.`,
+        core: `The rows from ${plain(over[1])} for which ${conditionClause(where[1])} are processed one by one.`,
         tag: 'loop',
       };
     }
     if (over && /\bGROUP\s+BY\b/i.test(text)) {
-      return { anchors, core: `Die Zeilen aus ${plain(over[1])} werden gruppenweise verarbeitet.`, tag: 'loop' };
+      return { anchors, core: `The rows from ${plain(over[1])} are processed group by group.`, tag: 'loop' };
     }
     return {
       anchors,
-      core: `Jede Zeile ${over ? `aus ${plain(over[1])} ` : ''}wird einzeln verarbeitet.`,
+      core: `Every row${over ? ` from ${plain(over[1])}` : ''} is processed one by one.`,
       tag: 'loop',
     };
   }
@@ -2661,36 +2675,36 @@ function sentenceFor(
 function bodyFragment(statement: AbapStatement, origins: Map<string, ValueOrigin>, stacks?: Block[][]): string | null {
   const text = statement.text;
   const keyword = statement.keyword.toUpperCase();
-  if (keyword === 'COMMIT') return 'COMMIT WORK ausgeführt';
-  if (keyword === 'ROLLBACK') return 'ROLLBACK WORK ausgeführt';
+  if (keyword === 'COMMIT') return 'COMMIT WORK is executed';
+  if (keyword === 'ROLLBACK') return 'ROLLBACK WORK is executed';
   if (keyword === 'WRITE') {
     const formatted = WRITE_TO.exec(text);
-    if (formatted) return `ein Wert aufbereitet in ${plain(formatted[2])} übernommen`;
-    return `${writtenTarget(statement, origins).label} ausgegeben`;
+    if (formatted) return `a value is formatted into ${plain(formatted[2])}`;
+    return `${writtenTarget(statement, origins).label} is output`;
   }
-  if (keyword === 'RETURN') return 'der Block verlassen';
+  if (keyword === 'RETURN') return 'the block is exited';
   if (keyword === 'EXIT') {
     const stack = stacks?.[statement.index] ?? [];
     const innermost = [...stack].reverse().find((block) => block.kind === 'loop' || block.kind === 'routine');
-    return innermost?.kind === 'loop' ? 'die Schleife verlassen' : 'der Block verlassen';
+    return innermost?.kind === 'loop' ? 'the loop is exited' : 'the block is exited';
   }
-  if (keyword === 'CONTINUE') return 'der Schleifendurchlauf übersprungen';
-  if (keyword === 'LEAVE') return leavePhrase(statement) ?? 'die aktuelle Verarbeitung verlassen';
+  if (keyword === 'CONTINUE') return 'the loop pass is skipped';
+  if (keyword === 'LEAVE') return leavePhrase(statement) ?? 'the current processing is exited';
   if (keyword === 'MESSAGE') return messageFragment(text);
-  if (keyword === 'MODIFY') return 'eine Zeile eingefügt oder überschrieben';
-  if (keyword === 'APPEND') return 'eine Zeile aufgenommen';
-  if (keyword === 'UPDATE') return 'eine Zeile geändert';
+  if (keyword === 'MODIFY') return 'a row is inserted or overwritten';
+  if (keyword === 'APPEND') return 'a row is added';
+  if (keyword === 'UPDATE') return 'a row is changed';
   if (keyword === 'PERFORM') {
     const name = /^PERFORM\s+([A-Za-z0-9_]+)/i.exec(text);
-    return name ? `${name[1]} aufgerufen` : null;
+    return name ? `${name[1]} is called` : null;
   }
   if (keyword === 'CALL') {
     const fn = /^CALL\s+FUNCTION\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(text);
-    if (fn) return `${literalOf(fn[1]) ?? fn[1]} aufgerufen`;
+    if (fn) return `${literalOf(fn[1]) ?? fn[1]} is called`;
     return null;
   }
   const assign = /^(\S+)\s*=\s*('[^']*'|`[^`]*`|-?\d+)\s*$/.exec(text);
-  if (assign) return `${nounPhrase(assign[1])} auf ${literalOf(assign[2]) ?? assign[2]} gesetzt`;
+  if (assign) return `${nounPhrase(assign[1])} is set to ${literalOf(assign[2]) ?? assign[2]}`;
   return null;
 }
 
@@ -2742,7 +2756,7 @@ function branchChain(statements: readonly AbapStatement[], index: number, loops:
 function branchSubject(branch: Branch, statements: readonly AbapStatement[], chainHead: number): Lead {
   if (branch.kind === 'else') {
     const subject = elseSubject(branch.previous);
-    return lead(subject === 'Sonst' ? subject : `Für ${lowerFirst(subject)}`);
+    return lead(subject === 'Otherwise' ? subject : `For ${lowerFirst(subject)}`);
   }
   const head = branch.head.text;
   const subrc = /^(?:IF|ELSEIF)\s+sy-subrc\s*(<>|=|NE|EQ)\s*0\s*$/i.exec(head);
@@ -2758,8 +2772,8 @@ function branchSubject(branch: Branch, statements: readonly AbapStatement[], cha
   // Das Fallbuch schreibt an dieser Stelle „Für größere Beträge wird …", und
   // genau diese Form trägt auch einen erzeugten Satz.
   const plural = pluralSubject(head);
-  if (plural) return lead(`Für ${lowerFirst(plural)}`);
-  return lead(`Wenn ${conditionClause(head, subrcClauseAt(statements, chainHead))}`, true);
+  if (plural) return lead(`For ${lowerFirst(plural)}`);
+  return lead(`If ${conditionClause(head, subrcClauseAt(statements, chainHead))}`, true);
 }
 
 /**
@@ -2769,12 +2783,26 @@ function branchSubject(branch: Branch, statements: readonly AbapStatement[], cha
  * 10000" ist richtig, „für beträge" ist es nicht. Klein wird deshalb nur, was
  * hier als Adjektiv aufgeführt ist, und nichts sonst.
  */
-const LEADING_ADJECTIVES = new Set(['Negative', 'Nicht', 'Größere', 'Kleinere', 'Andere']);
-
 function lowerFirst(text: string): string {
   const [first] = text.split(' ');
-  if (!LEADING_ADJECTIVES.has(first)) return text;
+  // English writes nouns and adjectives in lower case mid-sentence; an
+  // identifier or an acronym ("G/L", "lv_x", "IDoc") stays as written.
+  if (!/^[A-Z][a-z-]*$/.test(first)) return text;
   return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
+/** "a" or "an" before a business word. */
+function indefinite(word: string): string {
+  return /^[aeiou]/i.test(word) ? 'an' : 'a';
+}
+
+/**
+ * The first word of a sentence. A phrase that starts with an English article
+ * or word is capitalised; an identifier or a literal from the source ("lv_x",
+ * "RECORDED") stays exactly as written.
+ */
+function startSentence(text: string): string {
+  return /^(?:the|a|an|processing|list|nothing|it)\b/.test(text) ? capitalize(text) : text;
 }
 
 /**
@@ -2828,7 +2856,7 @@ function branchSentences(
         ...parts.flatMap((part) => [range(part.branch.head), ...part.branch.body.map(range)]),
       ],
       core: plainElse
-        ? `${compose(first.subject, first.phrase)}, sonst ${rest[0].phrase}.`
+        ? `${compose(first.subject, first.phrase)}; otherwise ${rest[0].phrase}.`
         : parts.map((part) => `${compose(part.subject, part.phrase)}.`).join(' '),
       grain: 'group',
       tag: `chain${first.branch.head.lineStart}`,
@@ -2839,7 +2867,7 @@ function branchSentences(
   // dasselbe noch einmal. Bei ELSEIF-Ketten ist der Kettensatz nur die
   // Aneinanderreihung der Zweigsätze; dort bleiben die Zweige.
   const chain = drafts.find((draft) => draft.tag?.startsWith('chain'));
-  if (chain && /, sonst /.test(chain.core)) return [chain];
+  if (chain && /; otherwise /.test(chain.core)) return [chain];
   return drafts.filter((draft) => !draft.tag?.startsWith('chain'));
 }
 
@@ -2872,10 +2900,10 @@ function sequenceSentences(
       drafts.push({
         anchors: run.map(range),
         core: performs
-          ? `Die Unterprogramme ${enumerate(names)} werden nacheinander aufgerufen${
-              run.some((statement) => /\b(?:USING|CHANGING|TABLES)\b/i.test(statement.text)) ? '' : ', jedes ohne Parameter'
+          ? `The subroutines ${enumerate(names)} are called one after another${
+              run.some((statement) => /\b(?:USING|CHANGING|TABLES)\b/i.test(statement.text)) ? '' : ', each without parameters'
             }.`
-          : `Es wird ${enumerate(fragments)}.`,
+          : `${startSentence(enumerate(fragments))}.`,
         grain: 'group',
         tag: `seq${run[0].lineStart}`,
       });
@@ -2920,7 +2948,7 @@ function resultSentence(statement: AbapStatement, statements: readonly AbapState
   const name = fn ? (resolveValue(fn[1], statements, statement.index).value ?? plain(fn[1])) : '';
   return {
     anchors: [range(statement)],
-    core: `Das Ergebnis von ${name} wird in ${plain(importing[1])} übernommen.`,
+    core: `The result of ${name} is placed in ${plain(importing[1])}.`,
     tag: 'result',
   };
 }
@@ -2939,17 +2967,20 @@ function listSentence(
   const targets = group.map((statement) => writtenTarget(statement, origins));
   if (targets.every((target) => target.literal)) return null;
   const labels = targets.map((target) => target.label);
+  // One verb for what the list names, counted as `enumerate` counts it: two
+  // columns that both print "the field returned by the function module" are one.
+  const verb = new Set(labels).size > 1 ? 'are' : 'is';
   const anchors = group.map(range);
   if (inLoop) {
     return {
       anchors,
-      core: `Bei Treffern werden ${enumerate(labels)} als Liste ausgegeben.`,
+      core: `With hits, ${enumerate(labels)} ${verb} output as a list.`,
       grain: 'group',
       tag: 'list',
     };
   }
   if (group.length === 1) return null;
-  return { anchors, core: `${enumerate(labels)} werden ausgegeben.`, grain: 'group', tag: 'list' };
+  return { anchors, core: `${startSentence(enumerate(labels))} ${verb} output.`, grain: 'group', tag: 'list' };
 }
 
 /**
@@ -3055,7 +3086,7 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
     if (draft) out.push(build(draft));
     const result = resultSentence(statement, statements);
     // „übergibt … und übernimmt dessen Ausgabe nach y" sagt das Ergebnis schon.
-    if (result && !(draft && /übernimmt dessen Ausgabe nach/.test(draft.core))) out.push(build(result));
+    if (result && !(draft && /takes its output into/.test(draft.core))) out.push(build(result));
     const fields = resultFieldsSentence(statement);
     if (fields) out.push(build(fields));
   }

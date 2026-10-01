@@ -20,7 +20,7 @@
         }
       ],
       "id": "CC-003-B01",
-      "text": "Negative Beträge werden als INVALID eingeordnet."
+      "text": "Negative amounts are classified as INVALID."
     },
     {
       "anchors": [
@@ -40,7 +40,7 @@
         }
       ],
       "id": "CC-003-B02",
-      "text": "Nicht negative Beträge bis einschließlich 10000 erhalten AUTO_ROUTE."
+      "text": "Non-negative amounts up to and including 10000 receive AUTO_ROUTE."
     },
     {
       "anchors": [
@@ -60,7 +60,7 @@
         }
       ],
       "id": "CC-003-B03",
-      "text": "Für größere Beträge wird MANAGER_ROUTE zurückgegeben; der Code führt keine menschliche Genehmigung aus."
+      "text": "For greater amounts MANAGER_ROUTE is returned; the code does not perform any human approval."
     }
   ],
   "classes": [
@@ -77,7 +77,7 @@
   "expectedByProfile": null,
   "findings": [],
   "forbiddenConclusions": [
-    "source.abap:14 — Kein realer Manager-Task, keine Bestellung oder tatsächliche Genehmigung belegt."
+    "source.abap:14 — No real manager task, no purchase order and no actual approval is evidenced."
   ],
   "id": "CC-003",
   "independence": [],

@@ -34,7 +34,7 @@
         }
       ],
       "id": "CC-038-B01",
-      "text": "Ohne Schlüssel wird NO_KEY ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+      "text": "Without a key NO_KEY is output and the program returns before the database operation; nothing is written."
     },
     {
       "anchors": [
@@ -68,7 +68,7 @@
         }
       ],
       "id": "CC-038-B02",
-      "text": "Nach dem Guard wird eine Arbeitsstruktur aus Mandant, Schlüssel und Text gefüllt und versucht, sie per MODIFY (einfügen oder überschreiben) in die eingegebene Tabelle zu schreiben. Welche Tabelle das ist, entscheidet die Eingabe zur Laufzeit; ob der Versuch gelingt und welchen Zeilenscope er hat, hängt davon ab, dass das Ziel existiert und strukturell verträglich ist — sonst nicht modellierte Laufzeitausnahme."
+      "text": "After the guard a work structure is filled from client, key and text, and an attempt is made to write it into the entered table via MODIFY (insert or overwrite). Which table that is, is decided by the input at runtime; whether the attempt succeeds and what row scope it has depends on the target existing and being structurally compatible — otherwise a runtime exception that is not modeled."
     },
     {
       "anchors": [
@@ -102,7 +102,7 @@
         }
       ],
       "id": "CC-038-B03",
-      "text": "Bei normalem MODIFY-Abschluss mit sy-subrc = 0 wird mit COMMIT WORK persistiert und SAVED ausgegeben; sonst ROLLBACK WORK und NOT_SAVED. Nicht abgefangene Ausnahmen (nicht existierende oder strukturell abweichende Zieltabelle) erreichen keinen der beiden Zweige."
+      "text": "If MODIFY completes normally with sy-subrc = 0, the data is persisted with COMMIT WORK and SAVED is output; otherwise ROLLBACK WORK and NOT_SAVED. Uncaught exceptions (non-existent or structurally deviating target table) reach neither of the two branches."
     }
   ],
   "classes": [
@@ -202,12 +202,12 @@
     }
   ],
   "forbiddenConclusions": [
-    "source.abap:14 — Nicht B „kundeneigene Tabelle\" aus dem DEFAULT ZCC_LOG_A (R20/CC-024 gilt nur für ein statisch bekanntes Z-Ziel; R07@1.1.0: Vorbelegung ist keine Singleton-Garantie).",
-    "source.abap:14 — Nicht D als Level und nicht D als known_worst_level; D ist potential_worst_level (REV2-03).",
-    "source.abap:14 — Umgekehrt: diese Unknown-Antwort gilt für ein dynamisches Ziel. Ein dynamisches WHERE bei statischem FROM (CE-02, im Korpus CC-062) lässt die Tabellenidentität bekannt — dort ist die Zielmenge nicht Unknown (predicate_resolution = unknown, R26@2.1.0).",
-    "source.abap:12, :13 — Kein Injektionsbefund für p_key/p_text: sie fließen als gebundene Werte in die Arbeitsstruktur, nicht als Text in interpretiertes SQL (R28@2.1.0). Der Sicherheitsbefund F02 betrifft das Ziel, nicht den Inhalt.",
-    "source.abap:5 — Die Typabhängigkeit auf die kundeneigene Struktur ist kein SAP-Befund und kein Ersatz für die fehlende Zielmenge.",
-    "source.abap:16 — COMMIT WORK macht das Ziel nicht bekannter; Persistenz ist bedingt auf sy-subrc = 0."
+    "source.abap:14 — Not B \"customer-specific table\" from the DEFAULT ZCC_LOG_A (R20/CC-024 applies only to a statically known Z target; R07@1.1.0: a preset is not a singleton guarantee).",
+    "source.abap:14 — Not D as the level and not D as known_worst_level; D is potential_worst_level (REV2-03).",
+    "source.abap:14 — Conversely: this Unknown answer applies to a dynamic target. A dynamic WHERE with a static FROM (CE-02, in the corpus CC-062) leaves the table identity known — there the target set is not Unknown (predicate_resolution = unknown, R26@2.1.0).",
+    "source.abap:12, :13 — No injection finding for p_key/p_text: they flow as bound values into the work structure, not as text into interpreted SQL (R28@2.1.0). The security finding F02 concerns the target, not the content.",
+    "source.abap:5 — The type dependency on the customer-specific structure is not an SAP finding and no substitute for the missing target set.",
+    "source.abap:16 — COMMIT WORK does not make the target any better known; persistence is conditional on sy-subrc = 0."
   ],
   "id": "CC-038",
   "independence": [

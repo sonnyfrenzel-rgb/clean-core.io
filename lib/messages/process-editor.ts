@@ -14,7 +14,7 @@ export const PROCESS_EDITOR_MESSAGES = {
   'editor.zoomOut': 'Zoom out',
   'editor.fit': 'Fit to screen',
   'editor.tidy': 'Tidy layout',
-  'editor.compare': 'Compare with Ist',
+  'editor.compare': 'Compare with the as-is process',
   'editor.minimap': 'Overview map',
   'editor.import': 'Import BPMN',
   'editor.exportBpmn': 'BPMN 2.0',
@@ -77,17 +77,17 @@ export const PROCESS_EDITOR_MESSAGES = {
   'editor.unnamed': 'Unnamed',
 
   // Compare
-  'editor.compareTitle': 'Compared with the reconstructed Ist',
+  'editor.compareTitle': 'Compared with the reconstructed as-is process',
   'editor.compareLegendAdded': 'added',
   'editor.compareLegendChanged': 'changed',
-  'editor.compareRemoved': 'Removed from the Ist',
+  'editor.compareRemoved': 'Removed from the as-is process',
   'editor.compareAdded': 'Added',
   'editor.compareChanged': 'Changed',
-  'editor.compareIdentical': 'Nothing differs from the reconstructed Ist.',
+  'editor.compareIdentical': 'Nothing differs from the reconstructed as-is process.',
 
   // Revisions
   'editor.openRevision': 'Open this revision',
-  'editor.startedFromIst': 'Started from the reconstructed Ist (revision 1). It stays unchanged whatever you save.',
+  'editor.startedFromIst': 'Started from the reconstructed as-is process (revision 1). It stays unchanged whatever you save.',
 
   // Tidy and quality
   'editor.tidyDone': 'Laid out again with the product’s layout. Undo puts every element back where it was.',
@@ -101,7 +101,7 @@ export const PROCESS_EDITOR_MESSAGES = {
   // Import
   'editor.importTitle': 'Import a BPMN 2.0 file',
   'editor.importLead':
-    'The file becomes a proposal for the next revision. The reconstructed Ist (revision 1) is never replaced.',
+    'The file becomes a proposal for the next revision. The reconstructed as-is process (revision 1) is never replaced.',
   'editor.importReading': 'Reading the file…',
   'editor.importRefusedHeadline': 'This file was not imported',
   'editor.importOpen': 'Open in the editor',
