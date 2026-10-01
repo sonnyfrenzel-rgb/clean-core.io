@@ -4,6 +4,7 @@ import type { SupportFinding } from '@/lib/abap/class-model';
 import { rollupLevel, LEVEL_LABEL, type SupportLevel } from '@/lib/abap/support-matrix';
 import { formatIsoDate } from '@/lib/format';
 import { APP_VERSION } from '@/lib/version';
+import { BAIP, routeLabel, routeLabelFirst } from '@/lib/sap-naming';
 import type { PresentationData, SlideData } from '@/components/PresentationViewer';
 
 /** A lightweight, per-run snapshot used to render the run-over-run trend slide. */
@@ -129,10 +130,10 @@ export function buildBoardDeck(input: {
     title: 'Clean-Core Transformation Briefing',
     type: 'split',
     subtitle: `Recommendation: ${recommendation}`,
-    leftContent: `**What the findings say:**\n\n• **Recommended route**: ${project.extensibilityRoute || 'not determined'} — the engine's recommendation, not a decision.\n• **Clean Core Score**: **${measured(project.cleanCoreScore, (v) => `${v}/100`)}** — a grade from the signed run, not a compliance percentage${typeof project.cleanCoreScore === 'number' ? `; ${scoreBand(project.cleanCoreScore).label.toLowerCase()} (${bandRange(scoreBand(project.cleanCoreScore))}, ${SCORE_BANDS_SOURCE.charAt(0).toLowerCase()}${SCORE_BANDS_SOURCE.slice(1)})` : ''}.\n• **Findings verdict**: **${verdict}** (${overallLevel ? `worst level: ${LEVEL_LABEL[overallLevel]}` : 'no findings to roll up'}).\n• **Required actions**: ${requiredActions}`,
+    leftContent: `**What the findings say:**\n\n• **Recommended route**: ${project.extensibilityRoute ? routeLabelFirst(project.extensibilityRoute) : 'not determined'} — the engine's recommendation, not a decision.\n• **Clean Core Score**: **${measured(project.cleanCoreScore, (v) => `${v}/100`)}** — a grade from the signed run, not a compliance percentage${typeof project.cleanCoreScore === 'number' ? `; ${scoreBand(project.cleanCoreScore).label.toLowerCase()} (${bandRange(scoreBand(project.cleanCoreScore))}, ${SCORE_BANDS_SOURCE.charAt(0).toLowerCase()}${SCORE_BANDS_SOURCE.slice(1)})` : ''}.\n• **Findings verdict**: **${verdict}** (${overallLevel ? `worst level: ${LEVEL_LABEL[overallLevel]}` : 'no findings to roll up'}).\n• **Required actions**: ${requiredActions}`,
     rightContent: `**What stands behind this:**\n\n• **Findings verdict**: ${verdict}\n• **Architect Sign-Off**: ${signOff}\n• **Source**: the signed run and the deterministic evidence engine — no model wrote these slides\n• **Source fingerprint**: ${project.auditMetadata?.inputFingerprint?.sha256?.substring(0, 12) || 'not recorded'}\n• **Engine**: ${project.auditMetadata?.modelCard?.engineVersion || APP_VERSION}${project.auditMetadata?.modelCard?.model ? ` · model ${project.auditMetadata.modelCard.model} for the narrative` : project.auditMetadata?.modelCard?.modelParticipation === 'none' ? ' · no model took part' : ' · model not recorded'}`,
     speakerNotes: overallLevel
-      ? `Decision-first briefing. Findings verdict: ${verdict}, from the worst support level (${LEVEL_LABEL[overallLevel]}) across ${findings.length} finding(s). The engine recommends ${project.extensibilityRoute || 'no route'}. Architect sign-off ${signOff}.`
+      ? `Decision-first briefing. Findings verdict: ${verdict}, from the worst support level (${LEVEL_LABEL[overallLevel]}) across ${findings.length} finding(s). The engine recommends ${project.extensibilityRoute ? routeLabel(project.extensibilityRoute) : 'no route'}. Architect sign-off ${signOff}.`
       : 'No verdict: the static analysis returned no findings, which is what a trivial program and a failed detector have in common. Establish coverage before this briefing is used for a decision.'
   };
 
@@ -333,7 +334,7 @@ export function buildBoardDeck(input: {
     riskRows.push({
       col1: 'Database Table Coupling writes',
       col2: 'Architect',
-      col3: 'Migrate custom persistence to BTP PostgreSQL / isolated schema',
+      col3: `Migrate custom persistence to PostgreSQL on ${BAIP} / isolated schema`,
       col4: 'PostgreSQL Schema Verification',
       status: 'danger'
     });
@@ -386,7 +387,7 @@ export function buildBoardDeck(input: {
     riskRows.push({
       col1: 'Transformation Sandbox Deploy',
       col2: 'Release Mgr',
-      col3: 'Execute deployment testing on a mock BTP sandbox tenant',
+      col3: `Execute deployment testing on a mock ${BAIP} sandbox tenant`,
       col4: 'Sandbox Smoke Test Pass',
       status: 'success'
     });

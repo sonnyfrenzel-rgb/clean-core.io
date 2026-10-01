@@ -6,6 +6,7 @@ import {
   readStoredDocumentation,
 } from './process-documentation';
 import { readModelGaps, gapsUnreadableSentence } from './model-gaps';
+import { BAIP, BAIP_FIRST, sapNamesForDisplay } from './sap-naming';
 
 /**
  * Professional Markdown Formatting Engine
@@ -88,7 +89,7 @@ export function formatDesignToMarkdown(rawJson: string): string {
       md += `## Architecture Overview\n`;
       md += `${data.architectureOverview.approachDescription || ''}\n\n`;
       md += `- **Target Node.js Framework:** \`${data.architectureOverview.nodeFramework || 'Express'}\`\n`;
-      md += `- **Recommended Runtime Platform:** \`${data.architectureOverview.runtimePlatform || 'SAP BTP'}\`\n\n`;
+      md += `- **Recommended Runtime Platform:** \`${data.architectureOverview.runtimePlatform ? sapNamesForDisplay(data.architectureOverview.runtimePlatform) : BAIP_FIRST}\`\n\n`;
     }
     
     if (data.nodeAppBlueprint) {
@@ -115,7 +116,7 @@ export function formatDesignToMarkdown(rawJson: string): string {
     }
     
     if (Array.isArray(data.cloudServices) && data.cloudServices.length > 0) {
-      md += `## SAP BTP & Native Cloud Services Integration\n`;
+      md += `## ${BAIP} & Native Cloud Services Integration\n`;
       data.cloudServices.forEach((service: any) => {
         md += `### ${service.serviceName}\n`;
         md += `**Purpose in Project:** ${service.purpose}\n\n`;

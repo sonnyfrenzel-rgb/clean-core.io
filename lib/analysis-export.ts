@@ -31,6 +31,7 @@ import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { SCORE_BANDS_SOURCE, scoreWithBand } from '@/lib/clean-core-score';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
 import { APP_VERSION } from '@/lib/version';
+import { BAIP, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
 import { modelActionPlan } from '@/lib/action-plan';
 import { EXPORT_CSS, severityClass, toneClass } from '@/lib/export-style';
 
@@ -88,7 +89,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
       plainEnglishActionPlan: modelActionPlan(data.businessValueAnalysis?.plainEnglishActionPlan) ?? [
         "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
         "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",
-        `3. Decouple unique, high-value custom intellectual property into a modern, upgrade-stable ${project.extensibilityRoute || data.extensibilityRouting?.recommendedRoute || 'decoupled'} architecture.`
+        `3. Decouple unique, high-value custom intellectual property into a modern, upgrade-stable ${routeLabel(project.extensibilityRoute || data.extensibilityRouting?.recommendedRoute || 'decoupled')} architecture.`
       ]
     };
 
@@ -155,9 +156,9 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
       return `
         <tr>
           <td class="strong">${idx + 1}</td>
-          <td class="strong">${esc(cp.checkpointName)}</td>
+          <td class="strong">${esc(sapNamesForDisplay(cp.checkpointName))}</td>
           <td>${esc(cp.question)}</td>
-          <td>${esc(cp.evaluation)}</td>
+          <td>${esc(sapNamesForDisplay(cp.evaluation))}</td>
           <td><span class="${stateClass}">${esc(state)}</span></td>
         </tr>
       `;
@@ -264,16 +265,16 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
                 </ul>
               </div>
               <div class="card">
-                <div class="card-title">Side-by-Side SAP BTP (CAP) Track</div>
+                <div class="card-title">Side-by-Side ${BAIP} (CAP) Track</div>
                 <p class="meta">Feasibility: ${esc(comparative.sideBySideBTP.technicalFeasibility)}</p>
-                <p>${esc(comparative.sideBySideBTP.fitDetails)}</p>
+                <p>${esc(sapNamesForDisplay(comparative.sideBySideBTP.fitDetails))}</p>
                 <div><strong>Technical Pros:</strong></div>
                 <ul>
                   ${comparative.sideBySideBTP.pros.map(pro => `<li>${esc(pro)}</li>`).join('')}
                 </ul>
                 <div><strong>Limitations (Cons):</strong></div>
                 <ul class="muted">
-                  ${comparative.sideBySideBTP.cons.map(con => `<li>${esc(con)}</li>`).join('')}
+                  ${comparative.sideBySideBTP.cons.map(con => `<li>${esc(sapNamesForDisplay(con))}</li>`).join('')}
                 </ul>
               </div>
             </div>`}
