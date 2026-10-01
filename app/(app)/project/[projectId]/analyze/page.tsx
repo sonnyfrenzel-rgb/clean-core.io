@@ -48,6 +48,7 @@ import { buildAnalysisPrompt } from '@/lib/analysis-prompt';
  * difference nobody would look for.
  */
 import { findingsWorklist } from '@/lib/analysis-run';
+import { PASTED_SOURCE_NAME, sourceFileName } from '@/lib/source-file-name';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
 import AnchoredNarrative from '@/components/analyze/AnchoredNarrative';
 import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
@@ -137,7 +138,7 @@ export default function AnalyzePage() {
   // the example's exemptions to any project (QA full review of a12774cd2b7f).
   const isFromExample = !!project?.fromExample || project?.isExample;
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [uploadedFileName, setUploadedFileName] = useState('manual-input.abap');
+  const [uploadedFileName, setUploadedFileName] = useState(PASTED_SOURCE_NAME);
   const [isSticky, setIsSticky] = useState(false);
   const [routeReport, setRouteReport] = useState<import('@/lib/abap/extensibility-router').ExtensibilityRouteReport | null>(null);
   const [usageReport, setUsageReport] = useState<UsageReportType | null>(null);
@@ -194,6 +195,10 @@ export default function AnalyzePage() {
         if (hydratedProject) {
           setProject(hydratedProject);
           setLegacyCode(hydratedProject.legacyCode || '');
+          // The file the source came from: the name the last run signed, or
+          // the example's own file. Without it a re-run, and every run of an
+          // example, was signed as the placeholder (lib/source-file-name.ts).
+          setUploadedFileName(sourceFileName(hydratedProject) ?? PASTED_SOURCE_NAME);
           if (hydratedProject.s4Deployment) {
             setTargetDeployment(hydratedProject.s4Deployment as 'public' | 'private');
           }
@@ -286,7 +291,7 @@ export default function AnalyzePage() {
   const rejectFile = (message: string) => {
     setError(message);
     setLegacyCode('');
-    setUploadedFileName('manual-input.abap');
+    setUploadedFileName(PASTED_SOURCE_NAME);
   };
 
   const handleFile = (file: File) => {
@@ -939,14 +944,18 @@ export default function AnalyzePage() {
         items: notAssessedItems,
       },
       meta: {
-        fileName: project?.auditMetadata?.inputFingerprint?.fileName ?? null,
+        fileName: sourceFileName(project),
         lines: sourceLines || null,
         // A catalog version the reader form cannot shorten keeps its base name only — never a hash on screen.
         catalog: catalog && catalog.includes('@') ? catalog.split(' + ')[0] : catalog,
         engine: project?.auditMetadata?.modelCard?.engineVersion ?? null,
       },
       status: [
-        { key: 'evidence', label: 'Evidence', value: project?.analysis ? 'engine, with a model narrative' : 'engine, no model', dot: 'bg-cc-information' },
+        // Two entries, not one: one entry naming the engine and a model narrative under a head
+        // that says "without a model" read as a contradiction. The evidence is
+        // the engine's alone; the narrative, when there is one, is a proposal.
+        { key: 'evidence', label: 'Evidence', value: 'engine only, no model', dot: 'bg-cc-information' },
+        { key: 'narrative', label: 'Summary', value: project?.analysis ? 'model proposal, not evidence' : 'none for this run', dot: 'bg-cc-neutral' },
         { key: 'route', label: 'Route', value: plainRoute(route) ?? 'not determined', dot: 'bg-cc-chart-2' },
         { key: 'run', label: 'Run', value: project?.activeRunId ? 'signed' : 'no signed run', dot: 'bg-cc-neutral' },
         { key: 'successors', label: 'Successors', value: `${withSuccessor} of ${evidenceRows.length} named`, dot: 'bg-cc-warning-mark' },
@@ -1159,7 +1168,7 @@ export default function AnalyzePage() {
             steps={processSteps}
             notAssessed={notAssessedItems}
             scoreSection={scoreSection}
-            fileName={project?.auditMetadata?.inputFingerprint?.fileName || (uploadedFileName !== 'manual-input.abap' ? uploadedFileName : 'source')}
+            fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
             sideTop={
               <ObjectSection side title="Extensibility route" right={<CcProvenanceChip value="reconstructed" note="fixed rules" />}>
                 <div className="flex items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3">
@@ -1313,6 +1322,8 @@ export default function AnalyzePage() {
         route: shownRoute,
         routeChosenByReader: routeIsOverridden,
         notDetermined: openItems.length,
+        // This branch draws the model's Summary below, marked "Model proposal".
+        narrative: true,
       });
 
       return (
@@ -1336,7 +1347,7 @@ export default function AnalyzePage() {
             steps={processSteps}
             notAssessed={notAssessedItems}
             scoreSection={scoreSection}
-            fileName={project?.auditMetadata?.inputFingerprint?.fileName || (uploadedFileName !== 'manual-input.abap' ? uploadedFileName : 'source')}
+            fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
             sideBottom={renderNotDeterminedSide(openItems.length)}
             sideTop={
               /* The route, as the rules recommended it or as the reader chose it. */

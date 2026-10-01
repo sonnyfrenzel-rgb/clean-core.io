@@ -4,7 +4,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { severityChartMark } from '@/lib/chart-colors';
 import { normaliseSeverity } from '@/lib/severity';
-import type { ProcessStepBand, ProgramMapRow, SourcePosition } from '@/lib/findings-view';
+import { programMapRowCount, stepColumns, type ProcessStepBand, type ProgramMapRow, type SourcePosition } from '@/lib/findings-view';
 
 /**
  * "Where in the program" — the program map of proposal B, taken into A on the
@@ -83,6 +83,9 @@ export default function ProgramMap({
   const ticks = [1];
   for (let t = step; t < totalLines - step / 2; t += step) ticks.push(t);
   if (totalLines > 1) ticks.push(totalLines);
+  // The x-axis is the source line: columns are numbered left to right, and the
+  // caption says the run order when the program calls them in another one.
+  const { columns, runOrder } = stepColumns(steps);
 
   return (
     <div data-program-map="" data-source-strip="" className="min-w-0">
@@ -90,14 +93,15 @@ export default function ProgramMap({
         {/* Step numbers above the columns. */}
         <div className="hidden sm:block" />
         <Track steps={[]} totalLines={totalLines} className="hidden h-5 sm:block">
-          {steps.map((s) => (
+          {columns.map((s) => (
             <span
               key={s.n}
-              title={`Step ${s.n}: ${s.label}, lines ${s.from}–${s.to}`}
+              data-program-map-column={s.column}
+              title={`Step ${s.column}: ${s.label}, lines ${s.from}–${s.to}`}
               className="absolute bottom-0 font-cc-mono text-[11px] font-semibold text-cc-information"
               style={{ left: pct(x(s.from)) }}
             >
-              {s.n}
+              {s.column}
             </span>
           ))}
         </Track>
@@ -106,11 +110,11 @@ export default function ProgramMap({
           <React.Fragment key={r.kind}>
             <div className="min-w-0 pt-2 sm:py-2 sm:text-right" data-program-map-row={r.kind}>
               <p className="m-0 cc-text-identifier text-cc-ink">{r.label}</p>
-              <p className="m-0 cc-text-meta font-medium text-cc-ink-muted">
-                {r.count} {r.count === 1 ? 'finding' : 'findings'}
+              <p className="m-0 cc-text-meta font-medium text-cc-ink-muted" data-program-map-count="">
+                {programMapRowCount(r)}
               </p>
             </div>
-            <Track steps={steps} totalLines={totalLines} className="min-h-12 rounded-cc-row sm:rounded-none">
+            <Track steps={columns} totalLines={totalLines} className="min-h-12 rounded-cc-row sm:rounded-none">
               <span aria-hidden={true} className="absolute inset-x-0 top-1/2 h-px bg-cc-line" />
               {spread(r.dots).map((d) => {
                 const sev = normaliseSeverity(d.severity);
@@ -183,17 +187,18 @@ export default function ProgramMap({
           ))}
         </Track>
       </div>
-      {steps.length ? (
-        <p className="m-0 mt-2 cc-text-meta font-medium text-cc-ink-muted">
-          Columns are the {steps.length} process steps the program runs:{' '}
-          {steps.map((s, i) => (
+      {columns.length ? (
+        <p className="m-0 mt-2 cc-text-meta font-medium text-cc-ink-muted" data-program-map-caption="">
+          Columns are the {columns.length} process steps the program runs, numbered left to right as they stand in the code:{' '}
+          {columns.map((s, i) => (
             <React.Fragment key={s.n}>
               {i > 0 ? ' · ' : null}
               <span className="whitespace-nowrap">
-                {s.n} <span className="font-cc-mono">{s.label}</span>
+                {s.column} <span className="font-cc-mono">{s.label}</span>
               </span>
             </React.Fragment>
           ))}
+          .{runOrder ? ` The program runs them in this order: ${runOrder.join(' → ')}.` : null}
         </p>
       ) : null}
     </div>

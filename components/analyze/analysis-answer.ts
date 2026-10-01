@@ -99,6 +99,12 @@ export interface AnswerInput {
   routeChosenByReader: boolean;
   /** How many items the "could not determine" section lists. */
   notDetermined: number;
+  /**
+   * A model wrote a narrative for this run. The answer then says where it is
+   * and what it is, so "without a model" above and the narrative below do not
+   * read as a contradiction.
+   */
+  narrative?: boolean;
 }
 
 export interface AnalysisAnswerText {
@@ -109,7 +115,7 @@ export interface AnalysisAnswerText {
 }
 
 export function analysisAnswer(input: AnswerInput): AnalysisAnswerText {
-  const { counts, lines, route, routeChosenByReader, notDetermined } = input;
+  const { counts, lines, route, routeChosenByReader, notDetermined, narrative = false } = input;
   const { Critical: critical, High: high, Medium: medium, Low: low } = counts.bySeverity;
   const routeWords = plainRoute(route);
 
@@ -141,6 +147,10 @@ export function analysisAnswer(input: AnswerInput): AnalysisAnswerText {
       `The engine ${read} without a model and rated each finding by severity` +
         (spread.length ? `: ${spread.join(', ')}.` : '.'),
     );
+  }
+
+  if (narrative) {
+    parts.push('The Summary further down was written by a model: a proposal, marked as such, and not part of this evidence.');
   }
 
   if (!routeWords) {
