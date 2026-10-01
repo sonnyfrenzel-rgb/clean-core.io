@@ -35,11 +35,9 @@ export function stageShot<K extends PhaseKey>(key: K): `stage-${K}` {
 }
 
 export const LANDING_SHOTS = {
-  hero: 'workspace.jpg',
   business: 'view-business.jpg',
   it: 'view-it.jpg',
   management: 'view-management.jpg',
-  process: 'process-map.jpg',
   tour: 'demo-tour.jpg',
   'stage-analyze': STAGE_SHOTS.analyze,
   'stage-design': STAGE_SHOTS.design,
