@@ -224,3 +224,51 @@ test('the summary counts the answers that were not given', () => {
   expect(html).toContain('1 kept, 0 to change, 1 dropped, 0 to clarify, 3 of 5 not yet confirmed.');
   expect(html).toContain('Revision 1 of the process stays as it was reconstructed.');
 });
+
+test('the answer is chosen with the keyboard: arrows, Home and End move the choice and the focus', async ({ page }) => {
+  // Carried QA finding 888a8d39b2c1: only the first option was a tab stop and
+  // the group had no key handler, so Change, Drop and Clarify needed a pointer.
+  // Mounted in a real browser, because keys and focus are what is asserted.
+  const component = path.resolve(ROOT, 'components', 'process-states', 'StateChoice.tsx');
+  const entry = path.join(OUT, 'mount-state-choice.tsx');
+  fs.writeFileSync(
+    entry,
+    [
+      "import React from 'react';",
+      "import { createRoot } from 'react-dom/client';",
+      `import StateChoice from ${JSON.stringify(component)};`,
+      `const subject = ${JSON.stringify(ELEMENT)};`,
+      "createRoot(document.getElementById('root')!).render(",
+      '  React.createElement(StateChoice, { subject, entry: null, onConfirm: () => {} } as never),',
+      ');',
+    ].join(String.fromCharCode(10)),
+  );
+  const bundle = await build({
+    entryPoints: [entry],
+    bundle: true,
+    write: false,
+    format: 'iife',
+    platform: 'browser',
+    jsx: 'automatic',
+    alias: { '@': ROOT },
+    define: { 'process.env.NODE_ENV': '"production"' },
+    logLevel: 'silent',
+  });
+  await page.setContent('<!doctype html><html><body><div id="root"></div></body></html>');
+  await page.addScriptTag({ content: bundle.outputFiles[0].text });
+
+  const option = (state: string) => page.locator(`[data-state-option="${state}"]`);
+  await option('keep').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(option('change')).toHaveAttribute('aria-checked', 'true');
+  await expect(option('change')).toBeFocused();
+  await page.keyboard.press('End');
+  const last = await page.locator('[data-state-option]').last().getAttribute('data-state-option');
+  await expect(option(last!)).toHaveAttribute('aria-checked', 'true');
+  await expect(option(last!)).toBeFocused();
+  await page.keyboard.press('Home');
+  await expect(option('keep')).toHaveAttribute('aria-checked', 'true');
+  await expect(option('keep')).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
+  await expect(option(last!)).toBeFocused();
+});

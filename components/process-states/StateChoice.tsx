@@ -109,7 +109,35 @@ export default function StateChoice({ subject, entry, mark = null, onConfirm, bu
         </p>
       ) : null}
 
-      <span role="radiogroup" aria-label={`Need for ${subject.label}`} className={`${CC_SEGMENTED_GROUP} self-start`}>
+      <span
+        role="radiogroup"
+        aria-label={`Need for ${subject.label}`}
+        className={`${CC_SEGMENTED_GROUP} self-start`}
+        // A radio group is one tab stop, and the arrow keys, Home and End move
+        // the choice and the focus inside it. Without them only the first
+        // option could be reached from the keyboard (carried QA finding
+        // 888a8d39b2c1).
+        onKeyDown={(event) => {
+          if (busy) return;
+          const last = ELEMENT_STATES.length - 1;
+          // From the option that has the focus — with nothing chosen yet that
+          // is the first one, the group's tab stop.
+          const focused = (event.target as HTMLElement).closest('[data-state-option]')?.getAttribute('data-state-option');
+          const from = focused ?? chosen;
+          const at = from === null ? -1 : ELEMENT_STATES.indexOf(from as (typeof ELEMENT_STATES)[number]);
+          const next =
+            event.key === 'ArrowRight' || event.key === 'ArrowDown' ? (at < 0 ? 0 : at === last ? 0 : at + 1)
+            : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? (at <= 0 ? last : at - 1)
+            : event.key === 'Home' ? 0
+            : event.key === 'End' ? last
+            : null;
+          if (next === null) return;
+          event.preventDefault();
+          const state = ELEMENT_STATES[next];
+          setChosen(state);
+          event.currentTarget.querySelector<HTMLButtonElement>(`[data-state-option="${state}"]`)?.focus();
+        }}
+      >
         {ELEMENT_STATES.map((state, index) => {
           const selected = chosen === state;
           return (
