@@ -485,6 +485,13 @@ test.describe('three outcomes, never two', () => {
     expect(compareElement(business, null).display).toBe('not-determined');
   });
 
+  test('a conclusive absence is shown as no standard candidate, not as undetermined (carried QA finding b676336827e1)', () => {
+    const absent = compareElement(business, { matched: false, conclusive: true });
+    expect([absent.outcome, absent.display]).toEqual(['not-covered', 'no-standard-candidate']);
+    const open = compareElement(business, { matched: false, conclusive: false });
+    expect([open.outcome, open.display]).toEqual(['unknown', 'not-determined']);
+  });
+
   test('the outcome is always one of exactly three', () => {
     const outcomes = new Set<string>();
     for (const match of [null, { matched: true, conclusive: true }, { matched: false, conclusive: true }, { matched: false, conclusive: false }]) {

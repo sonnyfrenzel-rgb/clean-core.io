@@ -95,6 +95,9 @@ export type ComparisonOutcome = 'covered' | 'not-covered' | 'unknown';
  */
 export type ComparabilityDisplay =
   | 'standard-candidate'
+  // A reference that can answer this was asked and holds no candidate: an
+  // established absence, not an open question (carried QA finding b676336827e1).
+  | 'no-standard-candidate'
   | 'not-determined'
   | 'not-comparable'
   | 'unknown';
@@ -641,7 +644,7 @@ export function compareElement(
     return {
       comparability: verdict.comparability,
       outcome: 'not-covered',
-      display: 'not-determined',
+      display: 'no-standard-candidate',
       reason: match.reason ?? 'No standard candidate in a reference that can answer this',
     };
   }
