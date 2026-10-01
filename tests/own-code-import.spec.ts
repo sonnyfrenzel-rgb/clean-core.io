@@ -258,5 +258,20 @@ test.describe('own code: the handoff to Analyze', () => {
     const page = read('components/workspace/OwnCodeImport.tsx');
     expect(page.match(/addDoc\(/g)?.length).toBe(1);
     expect(page).toContain('legacyCode: assembly.source');
+    // Paying is a statement, never a radio the reader cannot really choose.
+    expect(page).not.toContain('CcRadioGroup');
+  });
+
+  test('Analyze opens the workspace after the run only for a project the import handed over', () => {
+    const analyze = read('app/(app)/project/[projectId]/analyze/page.tsx');
+    const set = analyze.indexOf('openWorkspaceAfterRunRef.current = true');
+    const take = analyze.indexOf('const handoff = takeOwnCodeHandoff(projectId as string);');
+    expect(set).toBeGreaterThan(take);
+    expect(analyze.slice(take, set)).toContain('if (handoff) {');
+    // After the signed run's id is in hand, behind the workspace switch.
+    const runId = analyze.indexOf('const activeRunId = runResult.runId;');
+    const push = analyze.indexOf("router.push(`/project/${projectId}?first=1`)");
+    expect(push).toBeGreaterThan(runId);
+    expect(analyze.slice(runId, push)).toContain('openWorkspaceAfterRunRef.current && workspaceShellEnabled(profile)');
   });
 });

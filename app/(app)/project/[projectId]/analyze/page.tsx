@@ -104,6 +104,7 @@ import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { takeOwnCodeHandoff } from '@/lib/own-code-handoff';
+import { workspaceShellEnabled } from '@/lib/workspace-shell';
 
 export default function AnalyzePage() {
   const { projectId } = useParams();
@@ -203,6 +204,7 @@ export default function AnalyzePage() {
           // (lib/own-code-handoff.ts): a reload asks as before.
           const handoff = takeOwnCodeHandoff(projectId as string);
           if (handoff) {
+            openWorkspaceAfterRunRef.current = true;
             setAcceptedTerms(true);
             if (handoff.personalDataKey) setPersonalDataAckFor(handoff.personalDataKey);
             if (!hydratedProject.activeRunId && hydratedProject.legacyCode) {
@@ -236,6 +238,13 @@ export default function AnalyzePage() {
   const [sweepCode, setSweepCode] = useState('');
   const geminiResultRef = useRef<{ text: string; evidenceReport: any; computedRouteReport: any; codeToAnalyze: string } | null>(null);
   const sweepCompleteRef = useRef(false);
+  /**
+   * Set when this page was opened by "Start analysis" on the own-code page.
+   * Such a project then continues where an example does: in the workspace,
+   * with the first look (owner decision 01.10.2026). Analyze stays reachable
+   * as a tool from there. Lives as long as the page; a reload ends it.
+   */
+  const openWorkspaceAfterRunRef = useRef(false);
 
   // Prose is not code. The keyword list below was already here and already
   // right; what followed it — `|| code.trim().length > 0` — made it decorative,
@@ -578,6 +587,11 @@ export default function AnalyzePage() {
               } 
             : null
         );
+        // Own code from the import page: on to the workspace, like an example.
+        // Only once the run is signed — a failed run stays here with its error.
+        if (openWorkspaceAfterRunRef.current && workspaceShellEnabled(profile)) {
+          router.push(`/project/${projectId}?first=1`);
+        }
       } catch (error) {
         console.error('Error during analysis persistence:', error);
         throw error;
