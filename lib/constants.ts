@@ -86,9 +86,9 @@ export const TERMS_VERSIONS_IN_FORCE: readonly string[] = [
   // Terms answers 403 until it accepts; its sign-in and its data are unchanged.
   //
   // This is the owner's decision against the rule written above, not an
-  // oversight of it: § 10.3 of v2.0.0/v2.1.0 lets an account that declines
+  // oversight of it: § 10.3 of Terms v2.0.0/v2.1.0 lets an account that declines
   // carry on under the Terms it accepted, and ending that takes 30 days' notice
-  // in text form, which this decision deliberately does without. v2.0.0 was
+  // in text form, which this decision deliberately does without. Terms v2.0.0 was
   // kept in force on 18.09.2026 for exactly that reason (QA 66a392dc1b6b); the
   // entries are removed here on purpose. To go back to "ask, do not shut out",
   // put '2026-09-18' and '2026-07-07' back and nothing else changes.

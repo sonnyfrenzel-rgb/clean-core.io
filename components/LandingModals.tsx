@@ -910,7 +910,7 @@ export default function LandingModals() {
 
               {/* The disclaimer states the fact and drops the label (§3.1 has no
                   "powered by Generative AI" and no symbol for it). The fact is
-                  the one section 4.1 of the Terms states since v2.2.0: findings,
+                  the one section 4.1 of Terms v2.2.0 states: findings,
                   route and score are the deterministic engine's, and only the
                   model steps are written by a language model — which an account
                   can switch off (QA c9ab2c6a6c1c). Kept in step with the Terms

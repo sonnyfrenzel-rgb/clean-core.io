@@ -80,8 +80,8 @@ function readDeclined(): boolean {
  * What each version changed, newest first, keyed by the version id.
  *
  * The gate shows every entry newer than the version the account accepted, not
- * only the latest: an account still on v2.0.0 meeting v2.2.0 has not been told
- * about v2.1.0 either, and a list that showed only the last step would ask it to
+ * only the latest: an account still on Terms v2.0.0 meeting Terms v2.2.0 has not been told
+ * about Terms v2.1.0 either, and a list that showed only the last step would ask it to
  * accept changes it was never shown. An account with no recorded acceptance
  * sees them all.
  */
