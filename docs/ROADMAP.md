@@ -834,6 +834,9 @@ ist, wie Signavio mit fremden `extensionElements` umgeht** — genau das klärt 
 | **after 3.0, review** | QA 8cb85af1fee3 — grouped business rules whose occurrences mix controlling and continuing behaviour (`lib/abap/business-rule-set.ts`): review the type-per-group rule after 3.0; no code change before (owner decision 30.09.2026) |
 | — | **After 3.0 · Engine: block-list checks as business rules** (decision Sonny, 01.10.2026): a table read of a block/exclusion list followed by a reject (e.g. ZMM_VEND_BLOCK at L228–232 in the demo) becomes a business rule candidate, so "vendor block list" can appear in the Business card and the landing hero. Changes engine output — bundled with the other engine findings of the QA slice review and a new benchmark measurement | M |
 | — | **After 3.0 · Transformation: recorded finding → code mapping** (decision Sonny, 01.10.2026): the generation records which generated file and lines answer each finding, replacing today's clearly labelled text search on the Transformation page | M |
+| — | **After 3.0 · Account deletion closes the token window** (decision Sonny, 01.10.2026; QA 483136c43105): a server-written tombstone on deletion that the rules check, so a still-valid token cannot recreate a profile. Needs a manual rules deploy | S |
+| — | **After 3.0 · Key history for the audit signing key** (decision Sonny, 01.10.2026; QA 462335bf7edb): verify against a list of keys, then the deploy checks the key length again (tests/signing-key-guard.spec.ts) | M |
+| — | **Kept as is · Welcome mail to an unverified address** (decision Sonny, 01.10.2026; QA 4359c775bab2, fd3acb754f97): sign-up stays unchanged; address verification at sign-up would be its own product step | — |
 | ohne Version | Bench veröffentlichen, fairer Vergleich, Teamabnahme — brauchen Termine mit Dritten, keine Entwicklungszeit · Runner-Isolation: seit 19.09.2026 vor 3.0 als 8.9 (CR-09)|
 
 ---
