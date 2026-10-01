@@ -148,8 +148,11 @@ test.describe('the one welcome mail does the whole job', () => {
     expect(WELCOME_EMAIL_SUBJECT.toLowerCase()).toContain('welcome');
     const s = html();
     expect(s).toContain('Your workspace is live');
-    // Nothing in it may point back at a review that no longer happens.
-    expect(s).not.toMatch(/under review|being reviewed|pending|approval|approved/i);
+    // Nothing in it may point back at a review that no longer happens. The
+    // recommended example's object name, Z_MM_PO_APPROVAL, is an identifier,
+    // not a sentence about the account, so it alone is taken out first —
+    // every other occurrence of the words still fails.
+    expect(s.replace(/Z_MM_PO_APPROVAL/g, '')).not.toMatch(/under review|being reviewed|pending|approval|approved/i);
   });
 
   test('it carries the first-run guide, not just a link to one', () => {
@@ -158,7 +161,9 @@ test.describe('the one welcome mail does the whole job', () => {
     // person and their first result.
     expect(s).toContain('Your first run');
     expect(s).toContain('Try it with an example');
-    expect(s).toContain('Z_MATERIAL_STOCK_CALC');
+    // The recommended first example, under the name the dashboard gives it.
+    expect(s).toContain('Z_MM_PO_APPROVAL');
+    expect(s).toContain('Start here');
     // Named, not linked: the one link of a user mail is the dashboard (3.0.9).
     expect(s).toContain('Your First Run');
     expect(s).toContain('/dashboard');
