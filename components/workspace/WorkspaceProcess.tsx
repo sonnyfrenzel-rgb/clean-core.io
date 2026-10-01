@@ -17,7 +17,9 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { useProcessMap } from '@/hooks/useProcessMap';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { codeCardLabel, codeCardLines, tokenizeAbapLine, type ProcessMapElement } from '@/lib/process-map';
-import { ensureProcessBaseline, revisionOutcomeSentence, saveProcessRevision } from '@/lib/process-revisions-client';
+import { ensureProcessBaseline, fetchLatestRevision, revisionOutcomeSentence, saveProcessRevision } from '@/lib/process-revisions-client';
+import { revisionLine } from '@/lib/process-revisions';
+import type { OpenedRevision } from '@/components/process-map/BpmnEditor';
 import { signedSourceAbsence, signedSourceOf } from '@/lib/signed-source';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import type { NotDetermined, WorkspaceView } from '@/lib/workspace-model';
@@ -174,6 +176,19 @@ export default function WorkspaceProcess({
     },
     [projectId],
   );
+
+  /**
+   * The newest revision, whichever screen saved it — and from now on the base
+   * the next save is written against, so a save made on the Documentation stage
+   * is continued here rather than refused as "moved".
+   */
+  const openLatest = useCallback(async (): Promise<OpenedRevision | null> => {
+    if (!projectId) return null;
+    const record = await fetchLatestRevision(projectId);
+    if (!record) return null;
+    baseRevision.current = record.revision;
+    return { revision: record.revision, xml: record.xml, line: revisionLine(record), origin: record.origin };
+  }, [projectId]);
 
   const analyzeHref = stageHref({ base: `/project/${projectId}`, path: 'analyze', view, from: WORKSPACE_RETURN.tools });
 
@@ -356,6 +371,7 @@ export default function WorkspaceProcess({
               onSelectedChange={selectStep}
               defaultView={isS ? 'steps' : 'map'}
               save={save}
+              openLatest={openLatest}
             />
           ) : map.status === 'failed' ? (
             <p data-workspace-process-failed="" className="m-0 text-[13px] font-medium text-cc-ink-muted">

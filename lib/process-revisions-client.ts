@@ -64,6 +64,18 @@ export async function fetchProcessRevision(
   }
 }
 
+/**
+ * The newest revision of a project with its BPMN, or null when there is none
+ * or it cannot be read. What an editor opens to continue from the last save,
+ * whichever screen made it.
+ */
+export async function fetchLatestRevision(projectId: string): Promise<ProcessRevisionRecord | null> {
+  const history = await fetchProcessRevisions(projectId);
+  const newest = history[history.length - 1];
+  if (!newest) return null;
+  return fetchProcessRevision(projectId, newest.revision);
+}
+
 /** Why a save produced no new revision. */
 export type SaveRevisionRefusal =
   | 'bad-request'

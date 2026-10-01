@@ -44,10 +44,13 @@ import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { buildNavigation, levelOf, resolveMapAddress } from '@/lib/process-navigation';
 import {
   ensureProcessBaseline,
+  fetchLatestRevision,
   revisionOutcomeSentence,
   saveProcessRevision,
 } from '@/lib/process-revisions-client';
+import { revisionLine } from '@/lib/process-revisions';
 import type {
+  OpenedRevision,
   SaveProcessModelInput,
   SaveProcessModelResult,
 } from '@/components/process-map/BpmnEditor';
@@ -722,6 +725,20 @@ Structure the JSON exactly like this:
     // one more request. The reader is told which revision to open, and the
     // history below has just reloaded so that revision is on the screen.
     return { ok: false, message: revisionOutcomeSentence(outcome) };
+  }, [projectId]);
+
+  /**
+   * The newest revision, whichever screen saved it — the workspace or this
+   * stage — and from now on the base the next save is written against. Asked
+   * by the editor when it opens; the editor offers it, it does not force it.
+   */
+  const openLatestRevision = useCallback(async (): Promise<OpenedRevision | null> => {
+    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
+    if (!idStr) return null;
+    const record = await fetchLatestRevision(idStr);
+    if (!record) return null;
+    baseRevision.current = record.revision;
+    return { revision: record.revision, xml: record.xml, line: revisionLine(record), origin: record.origin };
   }, [projectId]);
 
   const downloadBPMN = async () => {
@@ -1433,6 +1450,7 @@ Structure the JSON exactly like this:
               selected={resolved.node}
               onSelectedChange={selectElement}
               save={saveProcessModel}
+              openLatest={openLatestRevision}
             />
           ) : (
             <p className="cc-text-cell text-cc-ink-muted">
