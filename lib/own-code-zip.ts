@@ -1,8 +1,11 @@
 import JSZip from 'jszip';
 import {
+  OWN_CODE_MAX_FILE_BYTES,
   OWN_CODE_ZIP_LIMITS,
   isSourceName,
+  isZipName,
   readSourceBytes,
+  type OwnCodeFile,
   type OwnCodeIssue,
   type OwnCodeSource,
 } from './own-code-import';
@@ -112,4 +115,35 @@ export async function readZipSources(
   if (skipped.length > 0) issues.push({ kind: 'zip-skipped', names: skipped });
   if (sources.length === 0 && !issues.some((i) => i.kind === 'blocked')) issues.unshift({ kind: 'zip-empty' });
   return { sources, issues };
+}
+
+/** What the page hands over for one dropped or chosen file — a `File` is one. */
+export interface UploadedFileLike {
+  name: string;
+  size: number;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+
+/**
+ * One uploaded file to a row of the list. Every size ceiling is asked of
+ * `size` — the number the browser knows without reading anything — before
+ * `arrayBuffer()` is called, so a file that is too large never enters memory.
+ * For a ZIP that used to happen only after the whole archive was read (QA
+ * review of acd1eb0d73aa, 7f4da1440c2b).
+ */
+export async function readUploadedFile(file: UploadedFileLike, id: string): Promise<OwnCodeFile> {
+  const base = { id, name: file.name, bytes: file.size, zip: isZipName(file.name) };
+  if (base.zip) {
+    if (file.size > OWN_CODE_ZIP_LIMITS.archiveBytes) {
+      return { ...base, sources: [], issues: [{ kind: 'too-large', bytes: file.size, limit: OWN_CODE_ZIP_LIMITS.archiveBytes }] };
+    }
+    const { sources, issues } = await readZipSources(await file.arrayBuffer());
+    return { ...base, sources, issues };
+  }
+  if (!isSourceName(file.name)) return { ...base, sources: [], issues: [{ kind: 'not-source' }] };
+  if (file.size > OWN_CODE_MAX_FILE_BYTES) {
+    return { ...base, sources: [], issues: [{ kind: 'too-large', bytes: file.size, limit: OWN_CODE_MAX_FILE_BYTES }] };
+  }
+  const { source, issues } = readSourceBytes(file.name, new Uint8Array(await file.arrayBuffer()));
+  return { ...base, sources: source ? [source] : [], issues };
 }

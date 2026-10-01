@@ -17,13 +17,10 @@ import {
   assembleOwnCode,
   assemblyReady,
   issueIsError,
-  isSourceName,
-  isZipName,
-  readSourceBytes,
   type OwnCodeFile,
   type OwnCodeRow,
 } from '@/lib/own-code-import';
-import { readZipSources } from '@/lib/own-code-zip';
+import { readUploadedFile } from '@/lib/own-code-zip';
 import { leaveOwnCodeHandoff } from '@/lib/own-code-handoff';
 import {
   wt,
@@ -78,21 +75,8 @@ const ROW_BORDER: Record<OwnCodeRow['state'], string> = {
 
 let fileSeq = 0;
 
-async function readOne(file: File): Promise<OwnCodeFile> {
-  const id = `f${++fileSeq}`;
-  const base = { id, name: file.name, bytes: file.size, zip: isZipName(file.name) };
-  if (base.zip) {
-    const buffer = await file.arrayBuffer();
-    const { sources, issues } = await readZipSources(buffer);
-    return { ...base, sources, issues };
-  }
-  if (!isSourceName(file.name)) return { ...base, sources: [], issues: [{ kind: 'not-source' }] };
-  // The size is asked before the bytes are read: a dump stays out of memory.
-  if (file.size > 1024 * 1024) {
-    return { ...base, sources: [], issues: [{ kind: 'too-large', bytes: file.size, limit: 1024 * 1024 }] };
-  }
-  const { source, issues } = readSourceBytes(file.name, new Uint8Array(await file.arrayBuffer()));
-  return { ...base, sources: source ? [source] : [], issues };
+function readOne(file: File): Promise<OwnCodeFile> {
+  return readUploadedFile(file, `f${++fileSeq}`);
 }
 
 function FileRow({ row, onRemove }: { row: OwnCodeRow; onRemove: () => void }) {
