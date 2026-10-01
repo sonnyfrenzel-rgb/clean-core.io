@@ -4,12 +4,15 @@ import {
   loadGeminiApiKey,
   assertMfaSatisfied,
   assertAccountActive,
+  assertByokAllowed,
   getAdminDb,
   logAuditEvent,
   QuotaError,
 } from '@/lib/firebase-admin';
 import { byokRequiresEnrolment } from '@/lib/mfa-gate';
-import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
+import { logger, providerErrorShape } from '@/lib/logger';
+import { ByokKeyUnreadableError } from '@/lib/byok-key';
+import { assertByokRateLimit } from '@/lib/byok-rate-limit';
 import { GoogleGenAI } from '@google/genai';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
@@ -30,9 +33,17 @@ export async function POST(req: NextRequest) {
     // 1. MFA Step-up Gate
     await assertMfaSatisfied(req, decodedToken, { requireEnrolment: byokRequiresEnrolment });
 
-    // 2. Rate Limiting Gate (5 tests per 15 minutes)
-    const ip = getClientIp(req);
-    await assertRateLimit(`byok_test:${decodedToken.uid}:${ip}`, 5, 900000);
+    // 2. Rate Limiting Gate (5 tests per 15 minutes), per account.
+    //
+    // It was keyed on the account *and* the client address (3.0.13 d). This
+    // route tests any key it is handed, so its limit is what bounds using the
+    // server as a key oracle — and a ceiling per address gave the same account
+    // a fresh allowance from every address it could reach us through. The
+    // account is established by the verified token; it is the thing limited,
+    // exactly as in `/api/gemini`.
+    // The key and the numbers live in `lib/byok-rate-limit.ts`, with save and
+    // delete, so the three cannot drift apart.
+    await assertByokRateLimit('test', decodedToken.uid);
 
     // 3. Account-state gate — hard suspension only, as on the save path. It was
     // absent here, so a suspended account could still have the server load and
@@ -43,12 +54,26 @@ export async function POST(req: NextRequest) {
     // reason.
     await assertAccountActive(decodedToken.uid);
 
+    // 3.0.13 (c): the tier rule, as on the save path. A key this account may
+    // not store is not one the server should send to the provider either.
+    await assertByokAllowed(decodedToken.uid, decodedToken.admin === true);
+
     const body = await req.json().catch(() => ({}));
     let { apiKey } = body as { apiKey?: string };
 
     if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim()) {
       // Fallback: load saved key
-      const savedKey = await loadGeminiApiKey(decodedToken.uid);
+      let savedKey: string | null;
+      try {
+        savedKey = await loadGeminiApiKey(decodedToken.uid);
+      } catch (keyErr: unknown) {
+        // 3.0.13 (g): stored, but not readable here — say so rather than
+        // report the key itself as failing authentication.
+        if (keyErr instanceof ByokKeyUnreadableError) {
+          return NextResponse.json({ error: keyErr.message, code: keyErr.code }, { status: 503 });
+        }
+        throw keyErr;
+      }
       if (!savedKey) {
         return NextResponse.json({ error: 'No custom API key has been saved yet.' }, { status: 400 });
       }
@@ -74,7 +99,9 @@ export async function POST(req: NextRequest) {
     if (err?.message?.includes('MFA verification required')) {
       return NextResponse.json({ error: err.message }, { status: 403 });
     }
-    console.error('Gemini Key connectivity test failed:', err);
+    // A code, never the error (3.0.13 e). What the provider answers to a wrong
+    // key can quote the key back, and the SDK error carries that answer's body.
+    logger.error('byok key test failed', { route: 'api/secrets/gemini/test', error: providerErrorShape(err) });
 
     // Log security failure
     try {

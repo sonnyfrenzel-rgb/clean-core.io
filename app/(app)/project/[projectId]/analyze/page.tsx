@@ -66,6 +66,9 @@ import type { SourceFile } from '@/lib/abap/findings-detector';
 import CodeInventoryTable from '@/components/analyze/CodeInventoryTable';
 import ModuleHeatmap from '@/components/analyze/ModuleHeatmap';
 import AbcdClassificationPanel from '@/components/analyze/AbcdClassificationPanel';
+import AssessmentProfileSummary from '@/components/analyze/AssessmentProfileSummary';
+import AssessmentTargetFields from '@/components/analyze/AssessmentTargetFields';
+import { catalogLookupTargetOf, declaredTargetOf, repositoryObjectsOf, type AssessmentTarget } from '@/lib/assessment-target';
 import DataCouplingTable from '@/components/analyze/DataCouplingTable';
 import ComplianceReviewHints from '@/components/ComplianceReviewHints';
 import ReviewTasks from '@/components/ReviewTasks';
@@ -115,6 +118,8 @@ export default function AnalyzePage() {
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(0);
   const [targetDeployment, setTargetDeployment] = useState<'public' | 'private' | null>(null);
+  // Roadmap 7.10 - what the owner declares about the target, sent with the run.
+  const [assessmentTarget, setAssessmentTarget] = useState<AssessmentTarget>({ release: '', components: [], languageVersions: [] });
   const [showConceptQuestion, setShowConceptQuestion] = useState(false);
   const [modalSelection, setModalSelection] = useState<'public' | 'private' | null>(null);
   // Only the stored project says it is the example; a query parameter granted
@@ -183,6 +188,8 @@ export default function AnalyzePage() {
           if (hydratedProject.s4Deployment) {
             setTargetDeployment(hydratedProject.s4Deployment as 'public' | 'private');
           }
+          // Roadmap 7.10 - the declaration the last run was made under.
+          setAssessmentTarget(declaredTargetOf(hydratedProject));
           if (hydratedProject.fromExample || hydratedProject.isExample) {
             setAcceptedTerms(true);
           }
@@ -231,12 +238,32 @@ export default function AnalyzePage() {
   /** The limit the upload area has always advertised (QA 8d9184e6f94f). */
   const MAX_UPLOAD_BYTES = 1024 * 1024;
 
+  /**
+   * Which file selection is the latest. A slow read of an earlier file used to
+   * finish after a later one and stage itself last, so the run analysed and
+   * signed the file the user had already replaced (QA full review of
+   * fc787674705f, 9be8a33c243e). Only the newest selection may stage.
+   */
+  const fileSelectionRef = useRef(0);
+
+  /**
+   * A rejected replacement leaves nothing staged. Keeping the previous source
+   * after "that file was refused" let Start Analysis sign a file the user had
+   * just tried to replace (QA full review of fc787674705f, 654ca9f3a217).
+   */
+  const rejectFile = (message: string) => {
+    setError(message);
+    setLegacyCode('');
+    setUploadedFileName('manual-input.abap');
+  };
+
   const handleFile = (file: File) => {
     setError('');
+    const selection = ++fileSelectionRef.current;
     
     // Scan file metadata first
     if (!file.name.endsWith('.abap') && !file.name.endsWith('.txt')) {
-        setError('Security Block: Unauthorized file type. Only standard ABAP source (.abap) or plain text (.txt) files are permitted.');
+        rejectFile('Security Block: Unauthorized file type. Only standard ABAP source (.abap) or plain text (.txt) files are permitted.');
         return;
     }
 
@@ -244,24 +271,25 @@ export default function AnalyzePage() {
     // the whole file into memory, rendered it into the textarea and the scanner,
     // and tried to put it in a model request (QA 8d9184e6f94f).
     if (file.size > MAX_UPLOAD_BYTES) {
-        setError(`That file is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 1 MB — analyse one object at a time, or paste the part you want assessed.`);
+        rejectFile(`That file is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 1 MB — analyse one object at a time, or paste the part you want assessed.`);
         return;
     }
 
     const reader = new FileReader();
     reader.onload = (event) => {
+      // A later selection has been made since this read started: it wins.
+      if (selection !== fileSelectionRef.current) return;
       const content = event.target?.result as string;
       
       // Perform automated malicious payload scan
       const scanResult = scanForMaliciousCode(content, file.name);
       if (scanResult) {
-        setError(scanResult);
-        setLegacyCode(''); // Clear staged code
+        rejectFile(scanResult);
         return;
       }
 
       if (!isLegacyCode(content)) {
-          setError('The file does not appear to contain valid legacy code.');
+          rejectFile('The file does not appear to contain valid legacy code.');
           return;
       }
       setLegacyCode(content);
@@ -402,6 +430,14 @@ export default function AnalyzePage() {
           // dropped here, once, before anything is stored, and the routing
           // block carries the router's values (`lib/model-owned-fields.ts`).
           pinRunOwnedFields(obj, computedRouteReport);
+          // The router's checkpoints and track comparison, as
+          // /api/runs/create stores them on the run. Kept from the model, a
+          // partially shaped comparison reached the decision matrix and the
+          // Confluence export of this session and broke them (QA full review
+          // of fc787674705f, 329a0da707f6).
+          const routing = obj.extensibilityRouting as Record<string, unknown>;
+          routing.decisionTreeCheckpoints = computedRouteReport.checkpoints;
+          routing.comparativeAnalysis = computedRouteReport.comparativeAnalysis;
           normalizedAnalysis = JSON.stringify(obj);
           
           // A single object is one gap; any other shape is said on the Gaps
@@ -461,6 +497,9 @@ export default function AnalyzePage() {
             projectId,
             legacyCode: codeToAnalyze,
             s4Deployment: deployment,
+            // Roadmap 7.10 - the declared half of the target profile. The server
+            // adds the catalog snapshot and the rule version and signs the whole.
+            targetProfile: assessmentTarget,
             // The model's text as the proxy returned it, byte for byte. The
             // receipt is issued over exactly that, so anything rewritten here
             // would make an honest run fail the origin check; the route performs
@@ -529,10 +568,12 @@ export default function AnalyzePage() {
     } catch (err: unknown) {
       console.error('Analysis Error:', err);
       const errMessage = err instanceof Error ? err.message : String(err);
-      if (errMessage.includes('{')) {
-        throw err;
-      }
-      setError(`Failed to analyze the code: ${errMessage || 'Unknown error'}. Please try again.`);
+      // Always said on the screen. A message carrying JSON used to be rethrown
+      // from this click handler instead: an unhandled rejection, the spinner
+      // gone and no word about why (QA full review of fc787674705f,
+      // ca61e8967379). The structured detail stays in the console above.
+      const shown = errMessage && !errMessage.includes('{') ? errMessage : 'the service reported an error';
+      setError(`Failed to analyze the code: ${shown}. Please try again.`);
     } finally {
       setSweepActive(false);
       setLoading(false);
@@ -676,6 +717,10 @@ export default function AnalyzePage() {
    * there is nothing of theirs to notice in it and it is left alone — the same
    * condition the Terms checkbox below already uses.
    */
+  // Roadmap 7.10 - the repository objects the staged source defines, the ones a
+  // language version is declared for.
+  const stagedObjects = useMemo(() => repositoryObjectsOf(extractCodeInventory(legacyCode || '')), [legacyCode]);
+
   const personalDataHints = useMemo(
     () => (legacyCode && !isFromExample ? scanForPersonalDataHints(legacyCode) : []),
     [legacyCode, isFromExample],
@@ -779,7 +824,8 @@ export default function AnalyzePage() {
           <CodeInventoryTable codeInventory={project.codeInventory || []} />
           <ModuleHeatmap codeInventory={project.codeInventory || []} />
           <DataCouplingTable dataCoupling={project.dataCoupling || []} />
-          <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} />
+          <AssessmentProfileSummary project={project} />
+          <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} deployment={project.s4Deployment} release={project.assessmentProfile?.release} />
           {/* What those same tables may mean for a compliance review (roadmap
               7.7) — hints out of the table names, never a classification of
               anybody's data, and no model call. */}
@@ -945,7 +991,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                       </span>
                     </div>
                     <h3 className="cc-text-identifier text-cc-ink mb-1">
-                      Target: {analysisData.extensibilityRouting?.targetArtifact || ((project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || '').includes('BTP')
+                      {/* After a switch, the recommended route's artefact is not the target
+                          (QA full review of fc787674705f, 08fd882e60b3). */}
+                      Target: {(!routeIsOverridden && analysisData.extensibilityRouting?.targetArtifact) || ((project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || '').includes('BTP')
                         ? <GlossaryTerm termKey="CAP" className="border-b-0 text-cc-ink">SAP BTP Node.js App (CAP)</GlossaryTerm>
                         : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">RAP Business Object</GlossaryTerm>)}
                     </h3>
@@ -1089,6 +1137,7 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                     usageReport={(usageReport || project!.usageReport)!}
                     findings={evidenceFindings}
                     route={routeReport}
+                    target={project ? catalogLookupTargetOf(project) : null}
                   />
                 </SectionBoundary>
               )}
@@ -1307,7 +1356,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
               <DataCouplingTable dataCoupling={project.dataCoupling || []} />
 
               {/* Cloud Readiness Classification (A–D) */}
-              <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} />
+              <AssessmentProfileSummary project={project} />
+              <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} deployment={project.s4Deployment} release={project.assessmentProfile?.release} />
 
               {/* Compliance review hints (roadmap 7.7) — hints out of the table
                   names, never a classification of anybody's data. */}
@@ -1578,6 +1628,13 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   value={targetDeployment}
                   onChange={setTargetDeployment}
                   options={PAGE_DEPLOYMENT_OPTIONS}
+                />
+
+                <AssessmentTargetFields
+                  deployment={targetDeployment}
+                  objects={stagedObjects}
+                  value={assessmentTarget}
+                  onChange={setAssessmentTarget}
                 />
               </div>
             )}

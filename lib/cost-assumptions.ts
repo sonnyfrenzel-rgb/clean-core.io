@@ -957,6 +957,24 @@ export function costComparison(a: CostAssumptions): CostComparison {
     );
   }
 
+  // An option whose figures are accepted but too large to add up has no total;
+  // leaving it out would crown a winner among the rest (QA slice review of
+  // bd016957d13c, 9cef42e971ec).
+  const unpriced = costs.filter((c) => c.coverage.state !== 'rejected' && c.total === null);
+  if (unpriced.length > 0) {
+    return shell(
+      null,
+      {
+        code: 'option-incomplete',
+        sentence: REFUSAL_SENTENCES['option-incomplete'](
+          unpriced.map((c) => `${c.label} could not be priced: its figures are too large to add up.`).join(' '),
+        ),
+      },
+      [],
+      NO_LEAD_NO_TIPPING_POINT,
+    );
+  }
+
   const priced = costs.filter((c) => c.total !== null);
   if (priced.length < 2) {
     return shell(null, { code: 'too-few-options', sentence: REFUSAL_SENTENCES['too-few-options']('') }, [], NO_LEAD_NO_TIPPING_POINT);

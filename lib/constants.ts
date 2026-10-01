@@ -56,7 +56,7 @@ export const COMMUNITY_QUOTA = 5;
  * (`termsVersionAccepted`) so a later Terms change can request re-consent and
  * the accepted version is provable. Kept in sync with the effective date on /terms.
  */
-export const TERMS_VERSION = '2026-10-15';
+export const TERMS_VERSION = '2026-10-06';
 
 /**
  * The versions under which the platform may still be used.
@@ -78,7 +78,7 @@ export const TERMS_VERSION = '2026-10-15';
 export const TERMS_VERSIONS_IN_FORCE: readonly string[] = [
   // v2.2.0, the version 3.0 ships with: section 4.1 separates the deterministic
   // results from the model-generated output (QA 6b83ef361e80).
-  '2026-10-15',
+  '2026-10-06',
   // v2.1.0 (2026-09-18) and v2.0.0 (2026-07-07) are no longer in force from 3.0
   // on — Sonny, 30.09.2026: "no mails, no census — consent to the new version
   // is simply required at login with 3.0". An account holding either meets the
@@ -86,9 +86,9 @@ export const TERMS_VERSIONS_IN_FORCE: readonly string[] = [
   // Terms answers 403 until it accepts; its sign-in and its data are unchanged.
   //
   // This is the owner's decision against the rule written above, not an
-  // oversight of it: § 10.3 of v2.0.0/v2.1.0 lets an account that declines
+  // oversight of it: § 10.3 of Terms v2.0.0/v2.1.0 lets an account that declines
   // carry on under the Terms it accepted, and ending that takes 30 days' notice
-  // in text form, which this decision deliberately does without. v2.0.0 was
+  // in text form, which this decision deliberately does without. Terms v2.0.0 was
   // kept in force on 18.09.2026 for exactly that reason (QA 66a392dc1b6b); the
   // entries are removed here on purpose. To go back to "ask, do not shut out",
   // put '2026-09-18' and '2026-07-07' back and nothing else changes.

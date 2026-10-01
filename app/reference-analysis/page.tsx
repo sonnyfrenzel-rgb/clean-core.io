@@ -15,7 +15,7 @@ const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 export const metadata: Metadata = withTwitterCard({
   title: 'Reference Analysis — what one run on real legacy ABAP produces | Clean-Core.io',
   description:
-    'A complete, reproducible run: 900+ lines of legacy ABAP, every finding, and the split between what the tool settles, what needs an architect, and what stays hand work. Download the file and check the numbers yourself.',
+    'A complete, reproducible run: 900+ lines of legacy ABAP, its findings counted by severity, and the split between what the tool settles, what needs an architect, and what stays hand work. Download the file and check the numbers yourself.',
   alternates: { canonical: `${BASE}/reference-analysis` },
   openGraph: {
     title: 'Reference Analysis — what one run on real legacy ABAP produces',
@@ -74,8 +74,8 @@ export default function ReferenceAnalysisPage() {
         </h1>
         <p className="text-lg font-medium text-cc-ink-muted leading-relaxed">
           Most claims about tools like this cannot be checked. This one can. Below is a complete run
-          over a legacy ABAP program that ships in our repository — every finding, and the split that
-          tells you how much of the work the tool takes off your desk.
+          over a legacy ABAP program that ships in our repository — its findings counted by severity, and
+          the split that tells you how much of the work the tool takes off your desk.
         </p>
         <p className="text-cc-ink leading-relaxed font-medium">
           Download the file, run it yourself, and you should see the same numbers.

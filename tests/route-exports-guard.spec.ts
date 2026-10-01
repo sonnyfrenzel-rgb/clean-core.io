@@ -38,7 +38,7 @@ test('every route.ts exports only handlers and segment configuration', () => {
   for (const file of files) {
     const src = fs.readFileSync(file, 'utf8');
     const names = [
-      ...src.matchAll(/^export\s+(?:async\s+)?(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/gm),
+      ...src.matchAll(/^export\s+(?:async\s+)?(?:const\s+enum|const|let|var|function|class|enum)\s+([A-Za-z_$][\w$]*)/gm),
     ].map((m) => m[1]);
     for (const m of src.matchAll(/^export\s*\{([^}]*)\}/gm)) {
       for (const part of m[1].split(',')) {
@@ -46,6 +46,11 @@ test('every route.ts exports only handlers and segment configuration', () => {
         if (name) names.push(name);
       }
     }
+    // A star re-export or a default export names nothing the walk above can
+    // check, and next build refuses both from a route file (QA slice review of
+    // 81810c8026e0, 35e76441c8e4).
+    if (/^export\s*\*/m.test(src)) names.push('* (star re-export)');
+    if (/^export\s+default\b/m.test(src)) names.push('default');
     for (const name of names) {
       if (!ALLOWED.has(name)) stray.push(`${path.relative(process.cwd(), file)}: ${name}`);
     }

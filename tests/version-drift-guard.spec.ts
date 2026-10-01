@@ -62,6 +62,9 @@ const ALLOWLISTED_LINE_PATTERNS = [
   /predate\s+v\d/,                     // Historical notes: "may predate v1.10.0"
   /pre-v\d/,                           // Historical notes: "the pre-v2.4.2 shape of a revoked account"
   /effective\s.*\(v\d+\.\d+\.\d+\)/,   // Terms-of-Service document version, e.g. "effective 7 July 2026 (v2.0.0)"
+  // A Terms of Service label named as such ("Terms v2.2.0") is a document
+  // version, like the line above and lib/terms-versions.ts, not the app's.
+  /\bTerms v\d+\.\d+\.\d+/,
   // The Terms archive (18.09.2026) names past *document* versions by their
   // label, in data and in the comment beside it: `label: 'v2.0.0'`, and
   // `'2026-07-07' — v2.0.0` where `TERMS_VERSIONS_IN_FORCE` explains which

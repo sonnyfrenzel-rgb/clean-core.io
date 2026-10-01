@@ -8,7 +8,7 @@
 
 import JSZip from 'jszip';
 import type { AuditPackManifest } from './audit-pack';
-import { canonicalAuditManifest, bindsCoverage } from './audit-pack-canonical';
+import { canonicalAuditManifest, bindsCoverage, bindsIssuanceMetadata } from './audit-pack-canonical';
 import { CHAIN_STEPS, CHAIN_STEP_LABELS, type CoverEntry } from './evidence-chain';
 
 /**
@@ -33,6 +33,71 @@ async function sha256(content: string | Uint8Array): Promise<string> {
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * What a pack may cost the machine that checks it (QA full review of v2.20.0).
+ *
+ * A pack is an archive someone else hands the reviewer, and a few kilobytes of
+ * deflate can expand into gigabytes: without a ceiling the page froze or the
+ * tab died before it said anything. A genuine pack is Markdown and JSON — well
+ * under a megabyte per entry — so these limits sit far above anything an issuer
+ * writes. `scripts/verify-pack.mjs` carries the same numbers.
+ */
+export const PACK_LIMITS = {
+  archiveBytes: 64 * 1024 * 1024,
+  entries: 1000,
+  entryBytes: 32 * 1024 * 1024,
+  totalBytes: 128 * 1024 * 1024,
+} as const;
+
+/**
+ * An entry's bytes, expanded chunk by chunk and abandoned the moment it passes
+ * the per-entry or the whole-pack ceiling. The size the archive declares is not
+ * trusted: it is the attacker's number, so the count is of bytes actually
+ * produced.
+ */
+function readEntryBounded(file: JSZip.JSZipObject, budget: { remaining: number }): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    let settled = false;
+    // `internalStream` is what JSZip's own `async()` accumulates from; its
+    // typings leave it out, so the one method used is named here.
+    const stream = (file as JSZip.JSZipObject & {
+      internalStream(type: 'uint8array'): JSZip.JSZipStreamHelper<Uint8Array>;
+    }).internalStream('uint8array');
+    stream
+      .on('data', (chunk) => {
+        if (settled) return;
+        size += chunk.length;
+        if (size > PACK_LIMITS.entryBytes || size > budget.remaining) {
+          settled = true;
+          stream.pause();
+          reject(new Error(`${file.name} expands beyond the size a pack may have; the archive was not read further.`));
+          return;
+        }
+        chunks.push(chunk);
+      })
+      .on('error', (err) => {
+        if (settled) return;
+        settled = true;
+        reject(err);
+      })
+      .on('end', () => {
+        if (settled) return;
+        settled = true;
+        budget.remaining -= size;
+        const out = new Uint8Array(size);
+        let at = 0;
+        for (const c of chunks) {
+          out.set(c, at);
+          at += c.length;
+        }
+        resolve(out);
+      })
+      .resume();
+  });
 }
 
 
@@ -223,6 +288,26 @@ export interface VerifyResult {
  * 3. Verifies the manifest hash (canonical string)
  * 4. Optionally verifies the HMAC signature via /api/export/verify
  */
+/**
+ * How the verdict is named. A pack whose manifest is signed but whose signature
+ * could not be checked (the verification service did not answer) is not an
+ * unsigned pack: saying "Unsigned" there tells the reader the pack carries no
+ * signature, when all that is known is that authenticity was not established.
+ */
+export function signatureStateOf(result: Pick<VerifyResult, 'signatureValid' | 'manifest'>): 'valid' | 'invalid' | 'unchecked' | 'unsigned' {
+  if (result.signatureValid === true) return 'valid';
+  if (result.signatureValid === false) return 'invalid';
+  return result.manifest?.signed === true ? 'unchecked' : 'unsigned';
+}
+
+export function verdictHeadline(result: Pick<VerifyResult, 'status' | 'signatureValid' | 'manifest'>): string {
+  if (result.status === 'authentic') return 'Authenticity & Integrity Verified';
+  if (result.status === 'failed') return 'Verification Failed';
+  return signatureStateOf(result) === 'unchecked'
+    ? 'Integrity Verified (Signature Not Checked)'
+    : 'Integrity Verified (Unsigned)';
+}
+
 export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Promise<VerifyResult> {
   const errors: string[] = [];
   const fileResults: FileVerifyResult[] = [];
@@ -233,10 +318,24 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
   try {
     // 1. Load ZIP (converting Blobs to ArrayBuffer for Node.js compatibility in tests)
     let inputData: any = zipBlob;
+    // A Blob knows its size before it is read; asking first keeps an oversized
+    // file out of memory (QA slice review of ad155b478e36, 33d5babb43a6).
+    const declaredSize = (zipBlob as { size?: unknown } | null)?.size;
+    if (typeof declaredSize === 'number' && declaredSize > PACK_LIMITS.archiveBytes) {
+      throw new Error(`The archive is larger than ${PACK_LIMITS.archiveBytes / (1024 * 1024)} MB; no pack this service issues comes near that.`);
+    }
     if (zipBlob && typeof (zipBlob as any).arrayBuffer === 'function') {
       inputData = await (zipBlob as any).arrayBuffer();
     }
+    const inputBytes = (inputData as { byteLength?: number } | null)?.byteLength;
+    if (typeof inputBytes === 'number' && inputBytes > PACK_LIMITS.archiveBytes) {
+      throw new Error(`The archive is larger than ${PACK_LIMITS.archiveBytes / (1024 * 1024)} MB; no pack this service issues comes near that.`);
+    }
     const zip = await JSZip.loadAsync(inputData);
+    if (Object.keys(zip.files).length > PACK_LIMITS.entries) {
+      throw new Error(`The archive holds more than ${PACK_LIMITS.entries} entries; no pack this service issues comes near that.`);
+    }
+    const budget = { remaining: PACK_LIMITS.totalBytes };
 
     // 2. Extract manifest.json
     const manifestFile = zip.file('manifest.json');
@@ -253,7 +352,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       };
     }
 
-    const manifestText = await manifestFile.async('text');
+    const manifestText = new TextDecoder('utf-8', { ignoreBOM: true }).decode(await readEntryBounded(manifestFile, budget));
     try {
       manifest = JSON.parse(manifestText) as AuditPackManifest;
     } catch {
@@ -333,7 +432,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
         errors.push(`Attested file not covered by a digest in this pack's manifest version: ${a.path}. Its presence was sealed, its contents were not.`);
         continue;
       }
-      const actualHash = await sha256(await file.async('uint8array'));
+      const actualHash = await sha256(await readEntryBounded(file, budget));
       const valid = actualHash === a.sha256;
       fileResults.push({ path: a.path, expectedHash: a.sha256, actualHash, valid, found: true, signed: false });
       if (!valid) {
@@ -355,7 +454,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
         continue;
       }
 
-      const actualHash = await sha256(await file.async('uint8array'));
+      const actualHash = await sha256(await readEntryBounded(file, budget));
       const valid = actualHash === entry.sha256;
 
       fileResults.push({
@@ -408,6 +507,18 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       if (!manifestHashValid) {
         errors.push(`Manifest hash mismatch: expected ${manifest.manifestHash.substring(0, 16)}..., got ${computedManifestHash.substring(0, 16)}...`);
       }
+    }
+
+    // Before format 3 the issue date is outside the signed string, and the run
+    // fields are signed only as one colon-joined run of text: a colon moved from
+    // one field into its neighbour leaves the signature intact. The page prints
+    // those values, so it says what they are (QA full review of v2.20.0). The
+    // format cannot change for packs already issued; the reading of them can.
+    if (!bindsIssuanceMetadata(manifest.version)) {
+      errors.push(
+        `Manifest version ${String(manifest.version ?? '')} does not bind the issue date, and binds project, run, engine and catalog ` +
+          "only as one colon-joined string: the values shown for them are the pack's own claim.",
+      );
     }
 
     // 5. Verify HMAC signature via server

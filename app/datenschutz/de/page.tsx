@@ -49,7 +49,7 @@ export const metadata: Metadata = withTwitterCard({
 export default function DatenschutzDePage() {
   return (
     <>
-      <nav aria-label="Sprachfassung" className="max-w-3xl mx-auto px-6 pt-8 flex justify-end">
+      <nav lang="de" aria-label="Sprachfassung" className="max-w-3xl mx-auto px-6 pt-8 flex justify-end">
         <Link
           href="/datenschutz"
           hrefLang="en"
@@ -60,7 +60,7 @@ export default function DatenschutzDePage() {
         </Link>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-6 pt-8 pb-16 md:pt-10 md:pb-24">
+      <main lang="de" className="max-w-3xl mx-auto px-6 pt-8 pb-16 md:pt-10 md:pb-24">
         <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-cc-ink mb-4">
           Datenschutzerklärung
         </h1>
@@ -106,7 +106,10 @@ export default function DatenschutzDePage() {
                 <strong className="text-cc-ink">Ihre Motivation (freiwillig):</strong> der Freitext, den Sie bei der Registrierung ergänzen können. Er ist freiwillig, hat keinen Einfluss darauf, ob Sie Zugang erhalten, und eine Zeile an <a href="mailto:info@clean-core.io" className="font-semibold text-cc-brand-strong underline-offset-4 hover:text-cc-brand-deep hover:underline">info@clean-core.io</a> genügt, damit er gelöscht wird — wir fragen nicht nach dem Grund. <em>Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO — Ihre Einwilligung, die Sie jederzeit mit Wirkung für die Zukunft widerrufen können.</em>
               </li>
               <li>
-                <strong className="text-cc-ink">Transaktionale E-Mails (Resend):</strong> Wir versenden die Mails, die der Dienst selbst erfordert — die Bestätigung einer Adresse, eine Einladung, um deren Versand Sie gebeten haben, einen Hinweis zu Ihrem Konto. Einen Newsletter gibt es nicht und Werbemails gibt es nicht. Ihre Adresse geht zur Zustellung an unseren Mailanbieter und sonst nirgendwohin. <em>Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO für die Mails, die Teil der Leistung sind, und Art. 6 Abs. 1 lit. f DSGVO für die, die sie sicher halten.</em>
+                <strong className="text-cc-ink">Transaktionale E-Mails (Resend):</strong> Wir versenden die Mails, die der Dienst selbst erfordert — die Bestätigung einer Adresse, eine Einladung, um deren Versand Sie gebeten haben, einen Hinweis zu Ihrem Konto. Darüber hinaus gibt es keinen Newsletter und keine Werbemails; die einzige weitere Mail ist die im nächsten Punkt beschriebene Community-Mail, und nur, wenn Sie sie einschalten. Ihre Adresse geht zur Zustellung an unseren Mailanbieter und sonst nirgendwohin. <em>Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO für die Mails, die Teil der Leistung sind, und Art. 6 Abs. 1 lit. f DSGVO für die, die sie sicher halten.</em>
+              </li>
+              <li>
+                <strong className="text-cc-ink">Community-Mail (freiwillig):</strong> Umfragen dazu, was wir als Nächstes bauen sollen, und gelegentliche Community-Neuigkeiten. Sie erhalten sie nur, wenn Sie in Ihren Kontoeinstellungen &bdquo;Community mail&ldquo; einschalten; bis dahin ist sie aus. Wir speichern die Einstellung in Ihrem Profil zusammen mit dem Zeitpunkt, zu dem Sie sie zuletzt eingeschaltet, und dem, zu dem Sie sie zuletzt ausgeschaltet haben, damit nachweisbar ist, auf wessen Einwilligung eine Mail beruhte. Sie können jederzeit mit Wirkung für die Zukunft widerrufen — mit demselben Schalter oder über den Abmeldelink in jeder dieser Mails, der die Einstellung ebenfalls ausschaltet. Ihre Adresse kommt dann auf eine Abmeldeliste, damit sie nicht erneut angeschrieben wird; schalten Sie die Einstellung wieder ein, wird sie von der Liste entfernt. <em>Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO — Ihre Einwilligung, die Sie jederzeit mit Wirkung für die Zukunft widerrufen können.</em>
               </li>
               <li>
                 <strong className="text-cc-ink">Nutzerprofile in Firestore:</strong> Wir speichern Metadaten zu Ihrer Nutzung (etwa die Zahl durchgeführter Code-Transformationen, Systemgrenzen sowie Ihren Vor- und Nachnamen) in unserer gesicherten Datenbank. <em>Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO für die Zähler, ohne die das kostenlose Kontingent nicht funktioniert, und Art. 6 Abs. 1 lit. f DSGVO für Betrieb und Sicherheit der Plattform.</em>
@@ -122,7 +125,7 @@ export default function DatenschutzDePage() {
               </li>
             </ul>
             <p className="text-sm text-cc-ink-muted mt-4">
-              <strong>Müssen Sie diese Daten bereitstellen?</strong> Eine gesetzliche Pflicht besteht nicht, und zur Registrierung sind Sie vertraglich nicht verpflichtet. Unsere öffentlichen Seiten, die Dokumentation und der Offline-Prüfer funktionieren ohne Konto. Für die Nutzung der Plattform selbst ist die Anmeldung jedoch technisch erforderlich: ohne E-Mail-Adresse und Namen können wir kein Konto anlegen, Ihre Projekte nicht von denen anderer trennen und das kostenlose Kontingent nicht durchsetzen — ohne diese Angaben ist die Plattform also nicht nutzbar. Alles oben als freiwillig Bezeichnete (Motivation, eigener Schlüssel) können Sie weglassen; die einzige Folge ist, dass die jeweilige Funktion entfällt.
+              <strong>Müssen Sie diese Daten bereitstellen?</strong> Eine gesetzliche Pflicht besteht nicht, und zur Registrierung sind Sie vertraglich nicht verpflichtet. Unsere öffentlichen Seiten, die Dokumentation und der Offline-Prüfer funktionieren ohne Konto. Für die Nutzung der Plattform selbst ist die Anmeldung jedoch technisch erforderlich: ohne E-Mail-Adresse und Namen können wir kein Konto anlegen, Ihre Projekte nicht von denen anderer trennen und das kostenlose Kontingent nicht durchsetzen — ohne diese Angaben ist die Plattform also nicht nutzbar. Alles oben als freiwillig Bezeichnete (Motivation, Community-Mail, eigener Schlüssel) können Sie weglassen; die einzige Folge ist, dass die jeweilige Funktion entfällt.
             </p>
             <p className="text-sm text-cc-ink-muted mt-3">
               <strong>Mindestalter:</strong> Clean-Core.io ist ein Werkzeug für professionelle Softwarearbeit und richtet sich nicht an Kinder und Jugendliche. Für ein Konto müssen Sie mindestens 18 Jahre alt sein; die Nutzungsbedingungen sagen dasselbe. Wir prüfen das Alter nicht — ein Nachweis hieße, mehr personenbezogene Daten zu erheben, nicht weniger —, löschen ein Konto aber auf Hinweis, dass es einer jüngeren Person gehört.
@@ -162,17 +165,20 @@ export default function DatenschutzDePage() {
             </p>
             <ul className="list-disc pl-5 space-y-3 text-sm text-cc-ink-muted">
               <li>
-                <strong className="text-cc-ink">Google Cloud Platform und Firebase:</strong> Hosting, Authentifizierung und Datenbankbetrieb auf europäischen Servern in der Region <strong>Belgien (europe-west1)</strong> — Datenhaltung in der EU, betrieben nach den Anforderungen der DSGVO.
+                <strong className="text-cc-ink">Google Cloud Platform und Firebase:</strong> Hosting der Anwendung (Cloud Run) und der Datenbank (Firestore) auf europäischen Servern in der Region <strong>Belgien (europe-west1)</strong> — Datenhaltung in der EU, betrieben nach den Anforderungen der DSGVO.
               </li>
               <li>
-                <strong className="text-cc-ink">Google-Gemini-API:</strong> generative KI-Modelle, ausschließlich für die Code-Transformation, über gesicherte zustandslose Proxy-Schichten.
+                <strong className="text-cc-ink">Firebase Authentication (Google Identity Platform):</strong> die Anmeldung — Ihre E-Mail-Adresse, Ihr Name, das von Firebase verwaltete Passwort und bei der Google-Anmeldung Ihr Google-Profil. Anders als Hosting und Datenbank ist dieser Google-Dienst an keine Region gebunden; Ihre Anmeldedaten können daher auch außerhalb der EU verarbeitet werden. Das deckt der Absatz zur Drittlandübermittlung unten ab.
               </li>
               <li>
-                <strong className="text-cc-ink">Resend:</strong> Versand transaktionaler E-Mails (etwa Freigabe- und Statusbenachrichtigungen). Ihre E-Mail-Adresse wird verarbeitet, um diese Nachrichten zu versenden.
+                <strong className="text-cc-ink">Google-Gemini-API:</strong> generative KI-Modelle für die modellgeschriebenen Teile des Dienstes — den Analysetext, fachliche Namen und Sätze für den aus dem Code rekonstruierten Prozess, das Lösungsdesign, den Code-Vorschlag, die Dokumentation und die Testsuite — über gesicherte zustandslose Proxy-Schichten. Befunde, Route und Clean Core Score entstehen ohne Modell.
+              </li>
+              <li>
+                <strong className="text-cc-ink">Resend:</strong> Versand transaktionaler E-Mails (etwa Freigabe- und Statusbenachrichtigungen) und, nur wenn Sie sie eingeschaltet haben, der Community-Mail. Ihre E-Mail-Adresse wird verarbeitet, um diese Nachrichten zu versenden.
               </li>
             </ul>
             <p className="text-sm text-cc-ink-muted mt-4">
-              <strong>Drittlandübermittlung:</strong> Google und Resend sind US-amerikanische Anbieter. Beide sind unter dem EU-U.S. Data Privacy Framework zertifiziert; eine Übermittlung an sie stützt sich daher auf den Angemessenheitsbeschluss der Europäischen Kommission vom 10.&nbsp;Juli&nbsp;2023 (Art. 45 DSGVO). Soweit eine Übermittlung davon nicht erfasst ist, ist sie durch die EU-Standardvertragsklauseln (Art. 46 DSGVO) zusammen mit den Auftragsverarbeitungsbedingungen der Anbieter abgesichert. Eine Kopie dieser Garantien können Sie jederzeit anfordern (Art. 13 Abs. 1 lit. f DSGVO) — schreiben Sie an <a href="mailto:info@clean-core.io" className="font-semibold text-cc-brand-strong underline-offset-4 hover:text-cc-brand-deep hover:underline">info@clean-core.io</a>. Hosting und Speicherung Ihrer Projekte verbleiben in der EU (europe-west1).
+              <strong>Drittlandübermittlung:</strong> Google und Resend sind US-amerikanische Anbieter; das gilt für jeden oben genannten Google-Dienst, auch für Firebase Authentication, die an keine EU-Region gebunden ist. Beide sind unter dem EU-U.S. Data Privacy Framework zertifiziert; eine Übermittlung an sie stützt sich daher auf den Angemessenheitsbeschluss der Europäischen Kommission vom 10.&nbsp;Juli&nbsp;2023 (Art. 45 DSGVO). Soweit eine Übermittlung davon nicht erfasst ist, ist sie durch die EU-Standardvertragsklauseln (Art. 46 DSGVO) zusammen mit den Auftragsverarbeitungsbedingungen der Anbieter abgesichert. Eine Kopie dieser Garantien können Sie jederzeit anfordern (Art. 13 Abs. 1 lit. f DSGVO) — schreiben Sie an <a href="mailto:info@clean-core.io" className="font-semibold text-cc-brand-strong underline-offset-4 hover:text-cc-brand-deep hover:underline">info@clean-core.io</a>. Hosting (Cloud Run) und die Datenbank mit Ihrem Profil und Ihren Projekten (Firestore) verbleiben in der EU (europe-west1).
             </p>
           </section>
 
@@ -198,7 +204,7 @@ export default function DatenschutzDePage() {
                 Ihr Widerspruchsrecht (Art. 21 DSGVO)
               </p>
               <p className="text-sm text-cc-warning">
-                Soweit wir Ihre Daten auf Grundlage unseres berechtigten Interesses verarbeiten (Art. 6 Abs. 1 lit. f DSGVO — Betrieb und Sicherheit der Plattform, das Sicherheits-Protokoll und die von Ihnen versandten Einladungen), <strong>haben Sie das Recht, jederzeit aus Gründen, die sich aus Ihrer besonderen Situation ergeben, Widerspruch einzulegen</strong>. Richten Sie den Widerspruch an <a href="mailto:info@clean-core.io" className="underline font-semibold">info@clean-core.io</a>; ein Satz, der die betroffene Verarbeitung benennt, genügt. Wir stellen die Verarbeitung dann ein, es sei denn, wir können zwingende schutzwürdige Gründe nachweisen, die Ihre Interessen, Rechte und Freiheiten überwiegen, oder die Verarbeitung dient der Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen. Direktwerbung betreiben wir nicht; der voraussetzungslose Widerspruch nach Art. 21 Abs. 2 DSGVO kommt hier daher nicht zum Tragen.
+                Soweit wir Ihre Daten auf Grundlage unseres berechtigten Interesses verarbeiten (Art. 6 Abs. 1 lit. f DSGVO — Betrieb und Sicherheit der Plattform, das Sicherheits-Protokoll und die von Ihnen versandten Einladungen), <strong>haben Sie das Recht, jederzeit aus Gründen, die sich aus Ihrer besonderen Situation ergeben, Widerspruch einzulegen</strong>. Richten Sie den Widerspruch an <a href="mailto:info@clean-core.io" className="underline font-semibold">info@clean-core.io</a>; ein Satz, der die betroffene Verarbeitung benennt, genügt. Wir stellen die Verarbeitung dann ein, es sei denn, wir können zwingende schutzwürdige Gründe nachweisen, die Ihre Interessen, Rechte und Freiheiten überwiegen, oder die Verarbeitung dient der Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen. Die Community-Mail (Abschnitt 2) versenden wir nur mit Ihrer Einwilligung, und Sie können sie jederzeit und ohne Angabe von Gründen beenden — durch Widerruf der Einwilligung oder Widerspruch nach Art. 21 Abs. 2 DSGVO, mit dem Schalter in Ihren Einstellungen, dem Abmeldelink in der Mail oder einer Zeile an uns; dann endet sie. Darüber hinaus nutzen wir Ihre Daten nicht für Direktwerbung.
               </p>
             </div>
             <p className="text-sm text-cc-ink-muted mt-4">
@@ -226,6 +232,7 @@ export default function DatenschutzDePage() {
               <li><strong className="text-cc-ink">Server- und Zugriffsprotokolle:</strong> 30 Tage (siehe Abschnitt 9).</li>
               <li><strong className="text-cc-ink">Verschlüsselte Sicherungen:</strong> eine tägliche Kopie 7 Tage lang und eine wöchentliche 28 Tage lang, sodass nichts über 30 Tage hinaus überdauert.</li>
               <li><strong className="text-cc-ink">Sicherheits-Protokoll:</strong> 24 Monate ab der protokollierten Handlung, danach gelöscht. Die Frist deckt zwei Jahresprüfungen ab und hält privilegierte Handlungen lange genug nachvollziehbar, ohne Identitäten von Administratoren unbefristet vorzuhalten.</li>
+              <li><strong className="text-cc-ink">Community-Mail:</strong> die Einstellung und die Zeitpunkte Ihrer letzten Einwilligung und Ihres letzten Widerrufs, solange das Konto besteht; der Eintrag auf der Abmeldeliste, bis Sie die Community-Mail wieder einschalten oder das Konto gelöscht wird.</li>
               <li><strong className="text-cc-ink">Zähler des Ratenlimits:</strong> sie laufen mit ihrem eigenen Zeitfenster ab, Minuten bis Stunden. Der Schlüssel ist ein gesalzener Hash; eine Adresse steht dort in lesbarer Form nicht.</li>
               <li><strong className="text-cc-ink">Ihr eigener Gemini-Schlüssel und Ihr Google-Profilbild:</strong> solange Sie sie behalten — der Schlüssel, bis Sie ihn in den Einstellungen löschen oder das Konto geht, der Verweis auf das Bild, bis das Konto geht.</li>
             </ul>

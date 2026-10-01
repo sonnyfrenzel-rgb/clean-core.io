@@ -242,13 +242,18 @@ const SHAPES: Record<string, DynamicShape> = {
  * 7.5 names calls. It is still recorded as unassessed where it always was.
  */
 function dynamicCallTasks(facts: ProcessFacts, coverage: CoverageReport): Draft[] {
-  const seen = new Set<number>();
+  const seen = new Set<string>();
   const out: Draft[] = [];
 
   const push = (line: number, lineEnd: number, text: string, shape: DynamicShape, caller: string | null) => {
-    if (seen.has(line)) return;
-    seen.add(line);
+    // The line and the expression that holds the target: two readers seeing one
+    // call agree on both, and two calls on one line differ in the second — keyed
+    // by the line alone, `CALL FUNCTION lv_first. CALL FUNCTION lv_second.` lost
+    // its second task (QA full review of v2.20.0, adec5f3c724f).
     const target = computedName(text);
+    const key = `${line}|${(target ?? '').toUpperCase()}`;
+    if (seen.has(key)) return;
+    seen.add(key);
     const anchors: ReviewTaskAnchor[] = [lineAnchor(line, lineEnd)];
     if (target) anchors.push({ kind: 'name', label: target, lineStart: null, lineEnd: null });
 
@@ -319,7 +324,11 @@ function shapeOfStatement(construct: UnassessedConstruct): DynamicShape | null {
 function computedName(text: string): string | null {
   const flat = text.replace(/\s+/g, ' ').trim();
   const patterns: RegExp[] = [
-    // CALL METHOD (class)=>(meth) · CALL METHOD lo_x->(lv_m) · CREATE OBJECT (lv_cls)
+    // CALL METHOD (class)=>(meth) — the method, not the class expression in
+    // front of it, which the next pattern but one would take (QA full review of
+    // v2.20.0, 6b69efcb686e)
+    /^CALL\s+METHOD\s*\(\s*[^)\s]+\s*\)\s*(?:->|=>)\s*\(\s*([^)\s]+)\s*\)/i,
+    // CALL METHOD lo_x->(lv_m) · CALL METHOD zcl_x=>(lv_m) · CREATE OBJECT (lv_cls)
     /^CALL\s+METHOD\s+[\w<>/~-]*(?:->|=>)\s*\(\s*([^)\s]+)\s*\)/i,
     /^CALL\s+METHOD\s*\(\s*([^)\s]+)\s*\)/i,
     /^CREATE\s+OBJECT\s*\(\s*([^)\s]+)\s*\)/i,

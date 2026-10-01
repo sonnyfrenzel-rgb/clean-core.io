@@ -65,6 +65,25 @@ test.describe('server-side MFA coverage', () => {
       for (const impl of implementation) {
         expect(s, `${rel} no longer delegates to ${impl.module}`).toContain(impl.importedAs);
       }
+
+      // Imported is not called. Both gates have to be invoked — the step-up one
+      // awaited — and before the call that does the writes, so that a route
+      // which kept the import and dropped the call cannot pass on the name
+      // alone (QA full review of fc787674705f, c53911ef9ac6).
+      const stepUpAt = s.search(/await\s+assertMfaStepUp\s*\(/);
+      const recentAt = s.search(/assertRecentAuth\s*\(/);
+      expect(stepUpAt, `${rel} does not await assertMfaStepUp(...)`).toBeGreaterThan(-1);
+      expect(recentAt, `${rel} does not call assertRecentAuth(...)`).toBeGreaterThan(-1);
+      for (const impl of implementation) {
+        const escaped = impl.importedAs.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+        const named = new RegExp(`import\\s*\\{([^}]*)\\}\\s*from\\s*['"]${escaped}['"]`).exec(s);
+        const names = (named?.[1] ?? '').split(',').map((n) => n.trim().split(/\s+as\s+/).pop()!).filter(Boolean);
+        const calls = names.map((n) => s.search(new RegExp(`\\b${n}\\s*\\(`))).filter((at) => at > -1);
+        expect(calls.length, `${rel} imports from ${impl.module} but calls nothing it imports`).toBeGreaterThan(0);
+        expect(Math.min(...calls), `${rel} writes before the step-up gate has run`).toBeGreaterThan(
+          Math.max(stepUpAt, recentAt),
+        );
+      }
       const written = [s, ...implementation.map((impl) => read(impl.module))].join('\n');
 
       // The factor itself is removed in Firebase Auth, not in a document of ours.

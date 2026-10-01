@@ -19,7 +19,7 @@ export default function ErrorBoundary({
     const msg = error?.message || '';
     const isChunkError =
       error?.name === 'ChunkLoadError' ||
-      /Loading chunk [\w-]+ failed|ChunkLoadError|error loading dynamically imported module|Importing a module script failed/i.test(msg);
+      /Loading chunk [\w-]+ failed|ChunkLoadError|error loading dynamically imported module|Failed to fetch dynamically imported module|Importing a module script failed/i.test(msg);
     if (isChunkError && typeof window !== 'undefined') {
       const KEY = 'cc_chunk_reload_at';
       const last = Number(sessionStorage.getItem(KEY) || 0);

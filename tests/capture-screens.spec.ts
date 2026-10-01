@@ -440,45 +440,11 @@ test.describe('capture the landing page views', () => {
     };
     for (const view of ['business', 'it', 'management'] as const) {
       await open(`?view=${view}`);
-      if (view === 'business') {
-        // The hero: the window as it opens, title, views and the first answer.
-        await page.setViewportSize({ width: 1440, height: 1000 });
-        await page.evaluate(() => window.scrollTo(0, 0));
-        await page.screenshot({ path: path.join(out, LANDING_SHOTS.hero), type: 'jpeg', quality: 82, clip: await below() });
-      }
       await page.setViewportSize({ width: 1440, height: 1000 });
       const clip = await regionOf(`[data-demo-tour-place="${PLACE[view]}"]`, 820);
       await page.screenshot({ path: path.join(out, LANDING_SHOTS[view]), type: 'jpeg', quality: 82, clip });
       await page.setViewportSize({ width: 1440, height: 900 });
     }
-
-    // The process map, one level down so the reader can read the boxes.
-    await open('?view=business');
-    await page.setViewportSize({ width: 1440, height: 1000 });
-    const map = page.locator('[data-process-map]').first();
-    await map.waitFor({ state: 'visible', timeout: 60000 });
-    const level = map.getByText('READ_REQUISITION', { exact: true }).first();
-    if (await level.count()) {
-      await level.click();
-      await page.waitForTimeout(1500);
-      // Opening a level also opens its code; the picture is about the map.
-      await page.keyboard.press('Escape');
-      await page.waitForTimeout(800);
-    }
-    await page.addStyleTag({ content: '[data-chatbot-toggle]{display:none!important}' });
-    await map.evaluate((node) => {
-      (node as HTMLElement).style.scrollMarginTop = '110px';
-      node.scrollIntoView({ block: 'start' });
-    });
-    await page.waitForTimeout(1500);
-    const mapBox = (await map.boundingBox())!;
-    await page.screenshot({
-      path: path.join(out, LANDING_SHOTS.process),
-      type: 'jpeg',
-      quality: 82,
-      clip: { x: Math.max(0, mapBox.x - 16), y: Math.max(0, mapBox.y - 16), width: Math.min(1440, mapBox.width + 32), height: Math.min(1000 - Math.max(0, mapBox.y - 16), mapBox.height + 32) },
-    });
-    await page.setViewportSize({ width: 1440, height: 900 });
 
     for (const [shot, file] of Object.entries(LANDING_SHOTS)) {
       if (shot.startsWith('stage-')) continue; // the next test takes those

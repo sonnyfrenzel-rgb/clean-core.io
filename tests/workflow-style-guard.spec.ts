@@ -102,7 +102,7 @@ test.describe('every stage renders its title identically', () => {
     // rendered design guard — populated enough that no stage renders an empty
     // state, because an empty state has a different header and the comparison
     // would be vacuous.
-    const seeded = await seedStageProject({ prefix: 'stagestyle' });
+    const seeded = await seedStageProject({ prefix: 'stagestyle', acceptTerms: true });
     EMAIL = seeded.email;
     PASSWORD = seeded.password;
     PROJECT_ID = seeded.projectId;

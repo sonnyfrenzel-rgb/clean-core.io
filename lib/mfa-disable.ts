@@ -57,9 +57,10 @@ export const FACTOR_REMOVAL_FAILED =
  * Removes the factor (when there is one) and then clears the profile flag.
  *
  * Returns rather than throws for the one failure it can absorb — the factor
- * removal, after which nothing has changed. A failure of the second write is
- * deliberately NOT absorbed: it propagates to the route's own handler, because
- * the state it leaves is the over-strict one this call itself recovers.
+ * removal, after which nothing has changed. A failure of the second write, or
+ * of the deletes of the stored MFA material after it, is deliberately NOT
+ * absorbed: it propagates to the route's own handler, because the state it
+ * leaves is one this call itself recovers.
  */
 export async function retireSecondFactor(
   uid: string,
@@ -90,9 +91,13 @@ export async function retireSecondFactor(
     },
     { merge: true },
   );
+  // Not absorbed either (QA full review of v2.20.0): a swallowed failure here
+  // answered "disabled" with the stored MFA material still in place. It now
+  // reaches the route's handler like the flag write above, and the same call
+  // repeats both deletes — deleting a document that is already gone succeeds.
   await Promise.all([
-    db.collection('mfa_secrets').doc(uid).delete().catch(() => {}),
-    db.collection('mfa_pending').doc(uid).delete().catch(() => {}),
+    db.collection('mfa_secrets').doc(uid).delete(),
+    db.collection('mfa_pending').doc(uid).delete(),
   ]);
 
   return { ok: true, removedFactor: hasFactor };

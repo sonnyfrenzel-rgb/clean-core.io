@@ -127,8 +127,7 @@ export async function parseAtc(file: File): Promise<AtcReport> {
 
     let line: number | undefined;
     if (mapping.line) {
-      const parsed = Number(String(row[mapping.line] || '').trim().replace(/[^\d]/g, ''));
-      line = Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+      line = readLineNumber(String(row[mapping.line] || ''));
     }
 
     let exempted: boolean | undefined;
@@ -218,6 +217,20 @@ function resolveColumnMapping(headers: string[]): ColumnMapping {
   }
 
   return mapping;
+}
+
+/**
+ * One line number, as a spreadsheet writes it: `412`, or `1.234` / `1,234` /
+ * `1 234` with a thousands separator. Anything else — a range `12-14`, a
+ * `line 12, column 4` — is not one number, and stripping its non-digits would
+ * glue two numbers into a line ATC never reported (`1214`, `124`). It stays
+ * unset instead.
+ */
+function readLineNumber(raw: string): number | undefined {
+  const text = raw.trim();
+  if (!/^\d+$/.test(text) && !/^\d{1,3}(?:([.,'  ])\d{3})(?:\1\d{3})*$/.test(text)) return undefined;
+  const parsed = Number(text.replace(/\D/g, ''));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function normalizeObjectName(name: string): string {

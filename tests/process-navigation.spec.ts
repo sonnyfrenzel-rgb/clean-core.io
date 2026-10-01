@@ -36,6 +36,7 @@ import {
 } from '../lib/process-overlays';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * Navigating a large process — roadmap 2.9.
@@ -614,7 +615,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
 
     await adminSetDoc('users', uid, {
       firstName: 'Process', lastName: 'Navigation', email: EMAIL,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
 

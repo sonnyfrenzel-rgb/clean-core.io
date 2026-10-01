@@ -10,6 +10,8 @@ import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { itFocusFromParam, viewFromParam, type ItFocus, type WorkspaceView } from '@/lib/workspace-model';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
 import WorkspaceShell from '@/components/workspace/WorkspaceShell';
+import CcButton from '@/components/cc/Button';
+import CcMessageStrip from '@/components/cc/MessageStrip';
 import type { Project } from '@/lib/types';
 
 /**
@@ -71,7 +73,7 @@ export default function ProjectWorkspacePage() {
   const enabled = workspaceShellEnabled(profile);
 
   const [project, setProject] = useState<Project | null>(null);
-  const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading');
+  const [state, setState] = useState<'loading' | 'ready' | 'missing' | 'failed'>('loading');
   // `null` until the browser has been asked. Rendering the build-up and then
   // removing it would be the one thing a second visit is promised not to see.
   const [buildUp, setBuildUp] = useState<boolean | null>(null);
@@ -124,8 +126,14 @@ export default function ProjectWorkspacePage() {
         if (cancelled) return;
         setProject(loaded);
         setState(loaded ? 'ready' : 'missing');
-      } catch {
-        if (!cancelled) setState('missing');
+      } catch (err) {
+        // The rules answer `permission-denied` for a project that does not
+        // exist and for one that is not the reader's alike, and both are a
+        // 404. Anything else — the network, an unavailable backend — is a
+        // read that failed, not a project that is missing (QA baa8990fb123).
+        if (cancelled) return;
+        const code = (err as { code?: unknown } | null)?.code;
+        setState(code === 'permission-denied' ? 'missing' : 'failed');
       }
     })();
     return () => {
@@ -152,6 +160,20 @@ export default function ProjectWorkspacePage() {
 
   if (state === 'missing') {
     notFound();
+  }
+
+  if (state === 'failed') {
+    return (
+      <div data-workspace-gate="failed" className="py-16 max-w-xl">
+        <CcMessageStrip
+          state="error"
+          headline="This project could not be loaded"
+          actions={<CcButton onClick={() => window.location.reload()}>Try again</CcButton>}
+        >
+          The read failed, usually because of the connection. Nothing says the project is gone.
+        </CcMessageStrip>
+      </div>
+    );
   }
 
   if (state === 'loading' || buildUp === null) {

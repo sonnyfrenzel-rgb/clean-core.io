@@ -84,11 +84,12 @@ const SEVERITY_TOKEN = /(['"`>]\s*(Critical|High|Medium|Low|Info)\s*['"`<])|(^|[
 const COLOUR =
   /(?<![\w-])(?:bg|text|border|fill|stroke)-(?:cc-(?:error|warning|information|neutral|success)|(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3})|#[0-9a-fA-F]{3,8}\b/;
 
-function freeSeverityBadges(text: string): { line: number; snippet: string }[] {
-  // Comments go, but their newlines stay, so a hit keeps its line number.
-  const code = text
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
-    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+function freeSeverityBadges(text: string, rel = 'probe.tsx'): { line: number; snippet: string }[] {
+  // Comments go, but their newlines stay, so a hit keeps its line number. The
+  // parser decides what a comment is: a regex took the `//` inside
+  // `title="x//"` for one and blanked the severity word after it (QA slice
+  // review of 953575fcc9bf, fedb1bb4d4fd).
+  const code = stripComments(text, rel);
   const lines = code.split('\n');
   const hits: { line: number; snippet: string }[] = [];
   lines.forEach((line, i) => {
@@ -226,6 +227,7 @@ test.describe('nothing can write a badge of its own', () => {
       `<span className={\`rounded-full text-[10px] \${colors[gap.severity as 'High' | 'Medium' | 'Low'] || 'bg-slate-50 text-slate-700'}\`}>`,
       `const sevBg = g.severity === 'High' ? '#ffebe6' : '#e6fcff';`,
       `<span className="rounded bg-cc-error-bg px-2 text-cc-error">High</span>`,
+      `<span className="bg-red-100 text-red-700" title="x//">High</span>`,
     ];
     for (const sample of painted) {
       expect(freeSeverityBadges(sample).length, `not recognised: ${sample}`).toBeGreaterThan(0);
@@ -253,7 +255,7 @@ test.describe('nothing can write a badge of its own', () => {
   test('no severity is painted freehand anywhere in the app', () => {
     const offenders: string[] = [];
     for (const { rel, text } of ccSources()) {
-      for (const hit of freeSeverityBadges(text)) offenders.push(`${rel}:${hit.line}: ${hit.snippet}`);
+      for (const hit of freeSeverityBadges(text, rel)) offenders.push(`${rel}:${hit.line}: ${hit.snippet}`);
     }
     expect(
       offenders,

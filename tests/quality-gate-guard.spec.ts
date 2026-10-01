@@ -26,6 +26,10 @@ test('the validate job runs it, after the build and before the tests', () => {
   const typecheck = validate.indexOf('run: npm run typecheck');
   const e2e = validate.indexOf('run: npx playwright test');
   expect(typecheck, 'no typecheck step in the validate job').toBeGreaterThan(-1);
+  // A missing build is -1, which is "before" everything (QA full review of
+  // fc787674705f, 4a2e26a0fa4a) — and so is a missing test run.
+  expect(build, 'no build step in the validate job').toBeGreaterThan(-1);
+  expect(e2e, 'no Playwright step in the validate job').toBeGreaterThan(-1);
   expect(build).toBeLessThan(typecheck);
   expect(typecheck).toBeLessThan(e2e);
   // And the deploy still waits for validate.

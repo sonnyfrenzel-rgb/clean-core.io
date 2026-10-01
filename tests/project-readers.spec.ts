@@ -132,7 +132,17 @@ test.describe('the rules keep the shape the emulator test depends on', () => {
     expect(paths, 'one document path in the whole file').toEqual(['/databases/$(database)/documents/users/$(request.auth.uid)']);
     const gets = [...text.matchAll(/\b(get|exists)\((\w+)\(\)\)/g)].map((m) => `${m[1]}(${m[2]})`);
     expect(new Set(gets), 'every get()/exists() reads that one path').toEqual(new Set(['exists(callerProfilePath)', 'get(callerProfilePath)']));
-    expect(text, 'the exists() guard comes first').toContain('!exists(callerProfilePath()) ||');
+    // The guard comes first, and it is a requirement rather than a way out: a
+    // missing profile is an inactive account, as on the server — erasure
+    // deletes the profile while the ID token lives on (QA review of
+    // a7e0ae36c896).
+    const body = text.slice(text.indexOf('function accountActive()'), text.indexOf('function userClientCreateKeys()'));
+    expect(body, 'accountActive() is found').toContain('exists(callerProfilePath())');
+    expect(body, 'a missing profile is not active').not.toContain('!exists(callerProfilePath())');
+    expect(body.indexOf('exists(callerProfilePath()) &&'), 'the exists() guard is a conjunct')
+      .toBeGreaterThan(-1);
+    expect(body.indexOf('exists(callerProfilePath()) &&'), 'the exists() guard comes before every get()')
+      .toBeLessThan(body.indexOf('get(callerProfilePath())'));
   });
 
   test('`readers` is in neither client allowlist — not to write, not to create', () => {
@@ -208,8 +218,11 @@ test.describe('a widened READ rule is recorded before it is shipped', () => {
     // afterwards `deployed` carries it and this line reads ACCOUNT_ACTIVE_READ.
     const liveOrPending = record.pending?.projectDocumentReadRule ?? record.deployed.projectDocumentReadRule;
     expect(liveOrPending, 'and it is the working copy, not a third text').toBe(parseProjectReadRule(rules()));
-    expect([NEW_READ, ACCOUNT_ACTIVE_READ], 'production serves 5.4 or its 3.0.12 narrowing')
-      .toContain(record.deployed.projectDocumentReadRule);
+    // The 3.0.12 narrowing was deployed on 30.09.2026 (rules def53aa1). From
+    // then on a record whose deployed read rule is the wider 5.4 text is a
+    // regression, not a window: a suspended owner with a live ID token could
+    // read the project again (QA slice review of c053fc5909c1, e0dcde0b638f).
+    expect(record.deployed.projectDocumentReadRule, 'production serves the 3.0.12 narrowing').toBe(ACCOUNT_ACTIVE_READ);
 
     // Turned over once more on 18.09.2026, in the evening. The version above
     // this also demanded `record.pending` be absent and the deployed hash be

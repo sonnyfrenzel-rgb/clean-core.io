@@ -23,7 +23,7 @@
  */
 
 import { createHash, createPublicKey, verify as cryptoVerify } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -40,6 +40,72 @@ const c = {
   warn: (s) => `\x1b[33m${s}\x1b[0m`,
   dim: (s) => `\x1b[90m${s}\x1b[0m`,
 };
+
+/**
+ * An untrusted value, made safe to print (QA full review of v2.20.0).
+ *
+ * Everything below comes out of an archive someone else handed the reader, and
+ * most of it is printed before any check has run. A run id carrying a newline
+ * could print a forged "OK" line of its own; one carrying an escape sequence
+ * could rewrite the terminal. Control and bidirectional characters are shown
+ * as escapes and the length is bounded, so what reaches the screen is the
+ * value, never an instruction to the terminal.
+ */
+function shown(value, max = 200) {
+  const s = String(value ?? '').replace(
+    /[\u0000-\u001f\u007f-\u009f\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g,
+    (ch) => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`,
+  );
+  return s.length > max ? `${s.slice(0, max)}… (${s.length - max} more characters)` : s;
+}
+
+/**
+ * What a pack may cost the machine that checks it — the numbers of
+ * `PACK_LIMITS` in lib/audit-pack-verify.ts. A few kilobytes of deflate can
+ * expand into gigabytes; a genuine pack is Markdown and JSON, well under a
+ * megabyte per entry. Exceeding a limit is "could not check" (exit 2), never
+ * a verdict about the signature.
+ */
+const PACK_LIMITS = {
+  archiveBytes: 64 * 1024 * 1024,
+  entries: 1000,
+  entryBytes: 32 * 1024 * 1024,
+  totalBytes: 128 * 1024 * 1024,
+};
+
+/** An entry's bytes, counted as they are produced — the size the archive declares is not trusted. */
+function readEntryBounded(entry, budget) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    let settled = false;
+    const stream = entry.internalStream('nodebuffer');
+    stream
+      .on('data', (chunk) => {
+        if (settled) return;
+        size += chunk.length;
+        if (size > PACK_LIMITS.entryBytes || size > budget.remaining) {
+          settled = true;
+          stream.pause();
+          reject(new Error(`${shown(entry.name)} expands beyond the size a pack may have; the archive was not read further`));
+          return;
+        }
+        chunks.push(chunk);
+      })
+      .on('error', (err) => {
+        if (settled) return;
+        settled = true;
+        reject(err);
+      })
+      .on('end', () => {
+        if (settled) return;
+        settled = true;
+        budget.remaining -= size;
+        resolve(Buffer.concat(chunks, size));
+      })
+      .resume();
+  });
+}
 
 function usage(message) {
   if (message) console.error(c.bad(message) + '\n');
@@ -354,6 +420,12 @@ function canonicalDefect(manifest, attested) {
       const value = manifest[name];
       if (value !== undefined && SECTION_END.test(String(value))) return `${name} contains a field separator: ${JSON.stringify(value)}`;
     }
+    // The version-2 suffix is not escaped: a colon in any field but the last
+    // (the catalog version) would move a boundary. Same rule as the library.
+    for (const name of ['projectId', 'runId', 'runHash', 'engineVersion']) {
+      const value = manifest[name];
+      if (value !== undefined && String(value).includes(':')) return `${name} contains a field separator: ${JSON.stringify(value)}`;
+    }
   }
   if (bound) {
     if (SEPARATOR.test(String(manifest.version))) return `version contains a field separator: ${JSON.stringify(manifest.version)}`;
@@ -377,18 +449,40 @@ async function main() {
     process.exit(CANNOT_CHECK);
   }
 
+  // The size is asked of the file system before the file is read: reading first
+  // would hold the whole archive in memory just to find out it is too large
+  // (QA slice review of ad155b478e36). The length check after the read stays,
+  // for a file that grew in between.
+  const tooLarge = `the archive is larger than ${PACK_LIMITS.archiveBytes / (1024 * 1024)} MB; no genuine pack comes near that`;
+  if ((await stat(packPath)).size > PACK_LIMITS.archiveBytes) throw new Error(tooLarge);
   const packBytes = await readFile(packPath);
+  if (packBytes.length > PACK_LIMITS.archiveBytes) {
+    throw new Error(tooLarge);
+  }
   const zip = await JSZip.loadAsync(packBytes);
+  if (Object.keys(zip.files).length > PACK_LIMITS.entries) {
+    throw new Error(`the archive holds more than ${PACK_LIMITS.entries} entries; no genuine pack comes near that`);
+  }
+  const budget = { remaining: PACK_LIMITS.totalBytes };
   const manifestFile = zip.file('manifest.json');
   if (!manifestFile) {
     console.error(c.bad('No manifest.json in the pack — nothing to verify.'));
     process.exit(CANNOT_CHECK);
   }
-  const manifest = JSON.parse(await manifestFile.async('string'));
+  const manifest = JSON.parse((await readEntryBounded(manifestFile, budget)).toString('utf8'));
 
   console.log(`\nPack      ${packPath}`);
-  console.log(`Run       ${manifest.runId}  ${c.dim(`project ${manifest.projectId}`)}`);
-  console.log(`Issued    ${manifest.generatedAt}  ${c.dim(`engine ${manifest.engineVersion}`)}`);
+  console.log(`Run       ${shown(manifest.runId)}  ${c.dim(`project ${shown(manifest.projectId)}`)}`);
+  console.log(`Issued    ${shown(manifest.generatedAt)}  ${c.dim(`engine ${shown(manifest.engineVersion)}`)}`);
+  // Before format 3 the issue date is outside the signed string altogether, and
+  // the run fields are signed only as one colon-joined run of text, so a colon
+  // moved from one field into its neighbour leaves the signature intact. Those
+  // values are the pack's own claim, and are printed as that (QA full review
+  // of v2.20.0).
+  if (!bindsIssuanceMetadata(manifest.version)) {
+    console.log(c.dim(`          manifest version ${shown(manifest.version)} does not bind the issue date, and binds run, project,
+          engine and catalog only as one colon-joined string: the values above are the pack's claim.`));
+  }
   console.log('');
 
   // 1. Every file in the manifest, hashed again from the ZIP. A signature over a
@@ -397,13 +491,13 @@ async function main() {
   for (const f of manifest.files || []) {
     const entry = zip.file(f.path);
     if (!entry) {
-      console.log(`${c.bad('missing')}   ${f.path}`);
+      console.log(`${c.bad('missing')}   ${shown(f.path)}`);
       contentsOk = false;
       continue;
     }
-    const actual = createHash('sha256').update(await entry.async('nodebuffer')).digest('hex');
+    const actual = createHash('sha256').update(await readEntryBounded(entry, budget)).digest('hex');
     if (actual !== f.sha256) {
-      console.log(`${c.bad('altered')}   ${f.path}`);
+      console.log(`${c.bad('altered')}   ${shown(f.path)}`);
       contentsOk = false;
     }
   }
@@ -419,7 +513,7 @@ async function main() {
     .map((e) => e.name)
     .sort();
   for (const name of unlisted) {
-    console.log(`${c.bad('unlisted')}  ${name}`);
+    console.log(`${c.bad('unlisted')}  ${shown(name)}`);
     contentsOk = false;
   }
   // The same rule, asked of the raw archive rather than of the map JSZip built
@@ -427,14 +521,14 @@ async function main() {
   // account for, and only one of the two can be the file it names.
   const entryNames = duplicateEntryNames(packBytes);
   for (const name of entryNames.duplicates) {
-    console.log(`${c.bad('twice')}     ${name}  ${c.dim('the archive lists this path more than once')}`);
+    console.log(`${c.bad('twice')}     ${shown(name)}  ${c.dim('the archive lists this path more than once')}`);
     contentsOk = false;
   }
   if (!entryNames.counted) {
     // Not "no duplicates" — "not checked". JSZip loads such an archive, folds
     // any duplicate into one map entry, and leaves every hash agreeing, so a
     // silent pass here was a way through (QA review of 9d7721972a67).
-    console.log(`${c.bad('unread')}    ${c.dim(`the archive's entry list could not be read, so duplicate paths were not checked: ${entryNames.why}`)}`);
+    console.log(`${c.bad('unread')}    ${c.dim(`the archive's entry list could not be read, so duplicate paths were not checked: ${shown(entryNames.why)}`)}`);
     contentsOk = false;
   }
   // A user-attested file carries the account holder's own statement. From
@@ -448,16 +542,16 @@ async function main() {
   for (const a of attested) {
     const entry = zip.file(a.path);
     if (!entry) {
-      console.log(`${c.bad('missing')}   ${a.path}  ${c.dim('attested file the manifest names')}`);
+      console.log(`${c.bad('missing')}   ${shown(a.path)}  ${c.dim('attested file the manifest names')}`);
       contentsOk = false;
     } else if (!a.sha256) {
       unboundAttested += 1;
-      console.log(`${c.warn('attested')}  ${a.path}  ${c.dim("user-attested — present; in this pack's format its contents are not covered by the signature")}`);
-    } else if (createHash('sha256').update(await entry.async('nodebuffer')).digest('hex') !== a.sha256) {
-      console.log(`${c.bad('altered')}   ${a.path}  ${c.dim('attested file — its bytes are not the bytes that were sealed')}`);
+      console.log(`${c.warn('attested')}  ${shown(a.path)}  ${c.dim("user-attested — present; in this pack's format its contents are not covered by the signature")}`);
+    } else if (createHash('sha256').update(await readEntryBounded(entry, budget)).digest('hex') !== a.sha256) {
+      console.log(`${c.bad('altered')}   ${shown(a.path)}  ${c.dim('attested file — its bytes are not the bytes that were sealed')}`);
       contentsOk = false;
     } else {
-      console.log(`${c.warn('attested')}  ${a.path}  ${c.dim("user-attested — the sealed bytes, the account holder's own statement")}`);
+      console.log(`${c.warn('attested')}  ${shown(a.path)}  ${c.dim("user-attested — the sealed bytes, the account holder's own statement")}`);
     }
   }
   console.log(
@@ -513,7 +607,7 @@ async function main() {
   console.log(
     hashOk
       ? `${c.ok('OK')}        manifest digest ${manifestHash.slice(0, 16)}…`
-      : c.bad(`FAILED    manifest digest is ${manifestHash.slice(0, 16)}… but the pack claims ${String(manifest.manifestHash).slice(0, 16)}…`),
+      : c.bad(`FAILED    manifest digest is ${manifestHash.slice(0, 16)}… but the pack claims ${shown(String(manifest.manifestHash).slice(0, 16))}…`),
   );
 
   // 2b. The handover chain, once the digest above has established that these
@@ -530,10 +624,10 @@ async function main() {
       const coverage = String((row && row.coverage) ?? 'not-determined');
       const ref = String((row && row.ref) ?? '');
       if (coverage !== 'signed') openLinks += 1;
-      const mark = coverage === 'signed' ? c.ok('signed  ') : c.warn(coverage.padEnd(8));
+      const mark = coverage === 'signed' ? c.ok('signed  ') : c.warn(shown(coverage, 40).padEnd(8));
       console.log(
         `  ${mark}  ${CHAIN_STEP_LABELS[step].padEnd(18)}${
-          ref ? c.dim(ref) : c.dim('no record in this pack - see 09-evidence-chain.json')
+          ref ? c.dim(shown(ref)) : c.dim('no record in this pack - see 09-evidence-chain.json')
         }`,
       );
     }
@@ -558,7 +652,7 @@ async function main() {
   try {
     ({ key, keyId } = await resolveKey(manifest));
   } catch (e) {
-    console.error(c.bad(`\nCould not obtain a public key: ${e.message}`));
+    console.error(c.bad(`\nCould not obtain a public key: ${shown(e.message, 500)}`));
     console.error(c.dim('This is not a statement about the signature.'));
     process.exit(CANNOT_CHECK);
   }
@@ -577,7 +671,7 @@ async function main() {
 
   if (manifest.signingKeyId && keyId && manifest.signingKeyId !== keyId) {
     console.log(
-      c.warn(`WARNING   pack names key ${manifest.signingKeyId}, verified against ${keyId}`),
+      c.warn(`WARNING   pack names key ${shown(manifest.signingKeyId)}, verified against ${shown(keyId)}`),
     );
   }
 
@@ -609,7 +703,7 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(c.bad(`\nCould not complete the check: ${e.message}`));
+  console.error(c.bad(`\nCould not complete the check: ${shown(e.message, 500)}`));
   console.error(c.dim('Exit 2 means the check did not run, not that the pack is bad.'));
   process.exit(CANNOT_CHECK);
 });

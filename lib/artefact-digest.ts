@@ -156,6 +156,14 @@ export interface SourceChangeRecord {
   artefacts: Partial<Record<TrackedArtefact, string>>;
   /** `signOffKey` of the sign-off standing at the change, if there was one. */
   signOff?: string;
+  /**
+   * Roadmap 7.10 — `'profile'` when the source stayed and the target profile
+   * moved (a new subject hash). Absent for a source change, which is what the
+   * record always meant before.
+   */
+  reason?: 'profile';
+  /** The subject hash everything above was built for, where the previous run recorded one. */
+  previousSubject?: string | null;
 }
 
 /** Build the record from the project as it stands just before the new run is written. */

@@ -100,7 +100,10 @@ test.describe('the route refuses to run unconfigured', () => {
     expect(guard).toBeGreaterThan(-1);
     expect(guard).toBeLessThan(s.indexOf('recordEmailEvent'));
     // And the signature is checked against the raw body, not a re-serialised one.
-    expect(s).toContain('await req.text()');
+    // Read under a bound since the QA full review of fc787674705f (81ed8ba6a1db),
+    // still as text — the exact string the signature was computed over.
+    expect(s).toContain('body = await readBoundedBody(');
+    expect(s.indexOf('readBoundedBody(')).toBeLessThan(s.indexOf('verifyResendSignature'));
     expect(s.indexOf('verifyResendSignature')).toBeLessThan(s.indexOf('JSON.parse'));
   });
 

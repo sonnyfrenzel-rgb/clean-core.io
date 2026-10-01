@@ -41,3 +41,24 @@ export function geminiTestStubActive(
   if (!secret || !headerValue) return false;
   return headerValue === secret;
 }
+
+/**
+ * Roadmap 3.0.13 (a): which finish reason the stub reports.
+ *
+ * Read only once the stub is active, so it inherits all three gates above.
+ * Absent, the stub answers as a finished model does (`STOP`). A test that
+ * names another reason gets the answer a provider gives when it stops early —
+ * the first half of the text, and that reason — so the route's completeness
+ * check is proved at the route, not only in the pure module.
+ */
+export const GEMINI_TEST_STUB_FINISH_HEADER = 'x-test-gemini-stub-finish';
+
+export function geminiTestStubAnswer(finishHeader: string | null | undefined): {
+  text: string;
+  finishReason: string;
+} {
+  const finishReason = typeof finishHeader === 'string' && /^[A-Z_]{1,40}$/.test(finishHeader) ? finishHeader : 'STOP';
+  return finishReason === 'STOP'
+    ? { text: GEMINI_TEST_STUB_TEXT, finishReason }
+    : { text: GEMINI_TEST_STUB_TEXT.slice(0, Math.floor(GEMINI_TEST_STUB_TEXT.length / 2)), finishReason };
+}

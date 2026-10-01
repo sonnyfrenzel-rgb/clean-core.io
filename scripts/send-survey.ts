@@ -2,7 +2,8 @@
  * Sends the activation survey invitation.
  *
  * Built on the send outbox in `lib/survey/outbox.ts`, because a bulk send is
- * the one operation here with no undo. Suppressions win, CI
+ * the one operation here with no undo. Only accounts that opted in to
+ * community mail are asked (`lib/community-mail.ts`), suppressions win, CI
  * accounts never receive anything, and a recipient who already has a send record
  * for this campaign is skipped — so a re-run after a crash resumes rather than
  * mails everyone twice.
@@ -22,7 +23,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
 import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore';
-import { isTestAccount } from '../lib/test-accounts';
+import { communityMailBlock, unsubscribeUrls } from '../lib/community-mail';
 import { createUnsubscribeToken, normaliseEmail } from '../lib/unsubscribe-token';
 import { createSurveyToken } from '../lib/survey/token';
 import { SURVEY_CAMPAIGN, SURVEY_OPEN_DAYS, SURVEY_SUBJECT } from '../lib/survey/definition';
@@ -179,16 +180,18 @@ async function loadRecipients(db: Firestore) {
     alreadySent.add(email);
   }
 
-  const skipped = { noEmail: 0, testAccount: 0, suppressed: 0, alreadySent: 0, unresolved: unresolved.length, deleted: 0, notSelected: 0 };
+  const skipped = { noEmail: 0, testAccount: 0, noOptIn: 0, suppressed: 0, alreadySent: 0, unresolved: unresolved.length, deleted: 0, notSelected: 0 };
   const recipients: Recipient[] = [];
 
   for (const doc of users.docs) {
     const u = doc.data();
+    // The consent gate (owner decision 30.09.2026): only an account that
+    // switched community mail on in its settings is mailed, and an address on
+    // the suppression list is not, whatever its flag says. `--only` goes
+    // through the same gate — a test send goes to an account that opted in.
+    const block = communityMailBlock(u, suppressed);
+    if (block) { skipped[block]++; continue; }
     const email = normaliseEmail(u.email || '');
-    if (!email) { skipped.noEmail++; continue; }
-    if (isTestAccount(email)) { skipped.testAccount++; continue; }
-    if (u.status === 'deleted' || u.disabled === true) { skipped.deleted++; continue; }
-    if (suppressed.has(email)) { skipped.suppressed++; continue; }
     if (alreadySent.has(email)) { skipped.alreadySent++; continue; }
     if (ONLY && email !== normaliseEmail(ONLY)) { skipped.notSelected++; continue; }
 
@@ -317,7 +320,10 @@ async function main() {
     if (index > 0) await sleep(PAUSE_MS);
 
     const token = createSurveyToken(SURVEY_CAMPAIGN, r.uid, tokenExpiry);
-    const unsubscribeUrl = `${BASE_URL}/api/unsubscribe?t=${encodeURIComponent(createUnsubscribeToken(r.email))}`;
+    // Two URLs (QA finding 8e25777f1339): the header's one-click target keeps
+    // the token in the query, because providers POST there with no body; the
+    // visible link carries it in the fragment, which never reaches a log.
+    const unsubscribe = unsubscribeUrls(BASE_URL, createUnsubscribeToken(r.email));
 
     // The outbox record, claimed before the provider is asked and under a
     // deterministic id. It used to be added after the provider had accepted
@@ -345,7 +351,7 @@ async function main() {
       recipient: escapeHtml(r.email),
       token,
       closesOn,
-      unsubscribeUrl,
+      unsubscribeUrl: unsubscribe.page,
     };
 
     const result = await sendWithRetry(resendKey, {
@@ -358,7 +364,7 @@ async function main() {
       headers: {
         // RFC 8058. Gmail and Yahoo require both of these from a bulk sender, and
         // `/api/unsubscribe` answers the POST they make.
-        'List-Unsubscribe': `<${unsubscribeUrl}>, <mailto:${REPLY_TO}?subject=Unsubscribe>`,
+        'List-Unsubscribe': `<${unsubscribe.oneClick}>, <mailto:${REPLY_TO}?subject=Unsubscribe>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       },
     }, sendIdempotencyKey(SURVEY_CAMPAIGN, r.email));

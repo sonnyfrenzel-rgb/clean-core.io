@@ -512,7 +512,7 @@ Mockup Screen 2.
 | 7.8 | **Anpassungsoptionen zum Standard, direkt am Element** (Entscheidung Sonny 16.09.2026): in der Business-Sicht zeigt jedes Element mit Standardkandidat unmittelbar, welche Anpassung des Prozesses näher an Fit-to-Standard führt — in der Prozesskarte (Map wie Steps, 2.5), in der Prozesskette bzw. Phasenübersicht (2.9) und in den Standard-Fit-Tabellen (7.2; Screens s1 und s3). **Je Betriebsmodell:** in Public Edition nur, was mit dem Scope Item und Key-User-/Developer-Extensibility ohne Modifikation geht; in Private Edition/RISE zusätzlich die Wege, die dort erlaubt bleiben (klassische Erweiterung, Modifikation als benannte Abweichung mit Upgrade-Folge). Jede Option nennt den Prozessschritt, der sich ändert, das Scope Item als zu prüfende ID, die Evidenzstufe E0–E4 aus 7.2, was sich für Nutzer ändert (7.6) und, sobald 7.4 eine Annahmenrevision hat, ihre Kosten neben „Nichts tun"; ohne Standardkandidat steht *Not determined* mit Grund (7.5), nie ein erfundener Weg. Eine gewählte Option wird Soll-Vorschlag in 3.6 (Ist und Soll) und Entscheidung je Element in 3.5 — nie eine automatische Änderung. Abgestimmt mit den vier Töpfen aus 6.7: „Blocked by SAP" hat keine Anpassungsoption, nur den Verweis auf SAPs Roadmap. Deterministisch aus Katalog, Level und Scope-Item-Zuordnung; das Modell formuliert höchstens die Klarsprache, mit Anker und Herkunft *Model proposal*. **Vergleichsberechtigung je Element, ergänzt 22.09.2026 (§16 V6):** **vor** jeder Standardzuordnung bekommt jedes Element deterministisch eine Vergleichsklasse — *fachlich vergleichbar* (Task, Teilprozess, Aufruf-Aktivität, Business-Rule-Task, Gateway auf einem Geschäftsfeld) · *technisch* (Lese-/Schreibschritt, technisches Gateway aus 2.15, Randereignis, Fehler-Ende, Helfer) · *strukturell* (Start, Ende, Lane, Pool, Datenobjekt, Anmerkung) · *unbekannt* (`call-opaque`, dynamisches Ziel). Nur *fachlich vergleichbar* trägt einen Standardkandidaten oder *Not determined*; *technisch* und *strukturell* tragen **nie** „kein Standardkandidat", sondern „nicht vergleichbar"; *unbekannt* heißt unbekannt. **Drei Ergebnisse, nie zwei:** belegt abgedeckt · belegt nicht abgedeckt · unbekannt. Die Klasse steht am Element, **nie** im signierten Pack — wie das Level. Warum hier und nicht in 7.2: 7.2 arbeitet auf Fähigkeiten aus Regeln, 7.8 bringt den Standardkandidaten erstmals ans Element, und dort entsteht das Risiko. Gemessen: im 1.000-Zeilen-Beispiel sind **15 von 65 Flussknoten (23 %) Endereignisse**, sechs davon mit Fehlerdefinition; über die acht Beispiele 14 `errorEventDefinition`, 5 `boundaryEvent`, 115 Datenelemente. Im Referenzbestand: typisierte Endereignisse 3 von 2.172, Datenobjekte 24 von 19.876 — **aber Abwesenheit im Diagramm ist kein negativer Funktionsnachweis**, der Bestand abstrahiert Implementierungsdetails, und wie vollständig, ist nicht gemessen. Genau deshalb drei Ergebnisse. **Fertig, wenn** über die acht Beispiele kein Endereignis, Gateway, Randereignis und kein Datenspeicher einen Standardkandidaten oder „nicht abgedeckt" trägt, jedes `call-opaque` als unbekannt steht und die Klassenfunktion rein ist (ohne Import aus `lib/bpmn`, wie `abcd-classification.ts`) | M |
 | 7.7 | **Prüfhinweise Compliance:** deterministische Hinweise auf personenbezogene, steuer- oder revisionsrelevante Daten aus den gelesenen Tabellen — sie bestimmen Prüftiefe und Testpflicht, sind aber Hinweise, keine Einstufung (Feedback 15.09.2026) | S |
 | 7.9 | **Zwei Dimensionen je Katalogobjekt** (CR-01): klassischer Freigabestatus und ABAP-Cloud-Verwendbarkeit getrennt sichtbar, Nachfolger benannt (CL_HTTP_UTILITY: klassisch freigegeben · Cloud: nicht freizugeben · Nachfolger CL_WEB_HTTP_UTILITY); der Grad bleibt der Clean-Core-Zielbezug (Entscheidung §9 Nr. 18) und sagt das am Objekt; `deprecated` ohne Nachfolger ist eine Prüfung, kein automatisches D | S |
-| 7.10 | **Modell gebaut 23.09.2026 (14fcac9), Verdrahtung offen.** **Zielprofil als Eingabe** (CR-02): Edition, Sprachversion je Objekt, Release-/Komponentenstand, Katalogsnapshot und Regelversion als versioniertes `AssessmentProfile` durch Analyse, Kataloglookup, Ergebnis, Entscheidung und Receipt; nicht abgedeckte Profile werden sichtbar abgelehnt oder als unbestätigt geführt; ein Profilwechsel ändert den Subject-Hash und entwertet abhängige Freigaben; ein Latest-Eintrag ersetzt keinen älteren Release-Snapshot still | L |
+| 7.10 | **Modell gebaut 23.09.2026 (14fcac9), verdrahtet 30.09.2026, Sonnys Entscheidungen vom 30.09. umgesetzt (PCE ausgeliefert, fehlende Angaben nur als Hinweis).** **Zielprofil als Eingabe** (CR-02): Edition, Sprachversion je Objekt, Release-/Komponentenstand, Katalogsnapshot und Regelversion als versioniertes `AssessmentProfile` durch Analyse, Kataloglookup, Ergebnis, Entscheidung und Receipt; nicht abgedeckte Profile werden sichtbar abgelehnt oder als unbestätigt geführt; ein Profilwechsel ändert den Subject-Hash und entwertet abhängige Freigaben; ein Latest-Eintrag ersetzt keinen älteren Release-Snapshot still | L |
 
 **Entscheidungen zur Economics-Stufe (Sonny, 23.09.2026), nach 7.4:**
 
@@ -545,6 +545,48 @@ ausgeliefert werden (~3 MB).
 2. **Bestandsläufe.** Am Tag, an dem Station 1 gebaut wird, hat kein vorhandener
    Run einen Profileintrag im Manifest; jedes bestehende Projekt stünde auf
    „unbestätigt". Dieselbe Frage wie C23-A02.
+
+**Stand 7.10 (30.09.2026) — verdrahtet.** Neu: `lib/assessment-target.ts` (was der
+Besitzer erklärt — Release, Komponentenstand, Sprachversion je Objekt — und wie daraus mit
+Snapshot und Regelversion das Profil wird). Je Station:
+1. **Analyse** — `/api/runs/create` baut das Profil, bevor die Quote reserviert wird. Eine
+   Edition, für die nichts nachgeschlagen werden kann, ist ein **422** mit dem Satz des Modells;
+   bisher wurde alles außer `public`/`private` still zu `public`. Die Erklärung kommt aus dem
+   Analyse-Schritt (`targetProfile`) oder, wenn der Aufrufer keine schickt, vom Projekt
+   (`assessmentTarget`, nur Admin SDK — **keine Regeländerung**).
+2. **Kataloglookup** — `getCatalogSnapshotRef()` nennt Schlüssel *und* Digest; die Lookups nehmen
+   den Snapshot als Argument und werfen `CatalogSnapshotNotShipped`, statt aus `latest` zu
+   antworten. `/api/abcd-classify` nennt in jeder Antwort den Snapshot, lehnt einen nicht
+   ausgelieferten ab (422) und trägt bei `profile` die Abdeckung.
+3. **Ergebnis** — der Lauf signiert `assessmentProfile`, `profileCoverage` und
+   `assessmentSubject`; das Manifest trägt `profile:assessment` (`source-artefact`). Die
+   Analyse-Seite zeigt das Profil mit Zustand und jedem Grund; das A–D-Panel sagt, welcher
+   Snapshot geantwortet hat.
+4. **Entscheidung** — gleiche Quelle, anderes Profil ist ein neues Subjekt: `runs/create`
+   schreibt den Änderungsdatensatz (`reason: 'profile'`), Freigabe und Artefakte lesen sich
+   veraltet. Freigabe und Entscheidung auf einem Lauf, dessen Profil das Projekt nicht mehr
+   hat, sind ein **409** `profile-changed`; `staleness()` zählt das Profil mit.
+5. **Receipt** — das Paket prüft das Profil vor dem Signieren und trägt es in
+   `08-input-manifest.json` (`targetProfile`: Anspruch, Gründe, Subjekt). Kein Grad.
+
+**Entscheidungen Sonny (30.09.2026), umgesetzt:**
+1. **Kein „unbestätigt" als Normalfall.** Fehlen Release oder Sprachversion, bleibt der Lauf
+   `covered`; die Lücke ist ein Hinweis (Schwere `notes`) mit Weg zur Eingabe. „Unbestätigt"
+   heißt nur noch echte Nicht-Abdeckung: ein Snapshot, der nicht der dieses Ziels ist
+   (`snapshot-substituted`), oder die bewegliche Liste statt der gepinnten (`snapshot-unpinned`).
+2. **PCE ausgeliefert.** `pce-latest`, `pce-2025-1`, `pce-2025-0`, `pce-2023-3` aus
+   github.com/SAP/abap-atc-cr-cv-s4hc, zusammen ~6,3 MB, nur serverseitig geladen
+   (`lib/abap/catalog-snapshots.ts`, nicht im Browser-Bundle); der wöchentliche Sync zieht sie
+   mit. Ein genanntes Release (z. B. „2023 FPS03") liest seine gepinnte Liste und ist bestätigt;
+   ohne Release liest es `pce-latest`; ein Release ohne gepinnte Liste (2022) liest `pce-latest`
+   und ist sichtbar unbestätigt.
+3. **Bestandsläufe** bleiben wie gebaut: gültig, gekennzeichnet `run-before-profile`, nicht
+   unbestätigt, nichts gegen ein Profil geprüft, das sie nie hatten.
+
+Veraltet-Texte sagen nach einem Profilwechsel „a previous target profile" statt „a previous
+source". Offen: die abgeleiteten Anzeigen (Vertrag, IT-Befunde, Demo) lesen Objektzustände
+weiter aus der Standardliste; der signierte Lauf und der A–D-Lookup lesen den Snapshot des Ziels.
+Tests: `tests/assessment-profile-wiring.spec.ts`, `tests/assessment-profile.spec.ts`.
 
 **Fertig, wenn** V25-A02 (beide Katalogsichten mit Vorrangregel und Regelversion),
 V25-A05 (zu kurzes Fenster erzeugt einen Prüfauftrag), V25-A06 und W22-A15/A16
@@ -590,8 +632,9 @@ QA24-A17 (ein Fingerprint ohne Bestätigung ist kein grüner Status).
 | 3.0.10 | **Die Management-Sicht wird lesbar in Sekunden** (Entscheidung Sonny, 18.09.2026 — Teil des Releases 3.0, nicht danach): die Sicht beantwortet ihre Frage *„What do I risk, what do I decide?"* heute in Karten und Tabellen; sie bekommt dafür Diagramme und eine Übersicht, die ein Vorstand in einem Blick liest. **Bindend bleibt `DESIGN.md`, nicht der Geschmack:** ADR-029 gilt unverändert — jede Karte beginnt mit ihrem **Antwortsatz als Titel**, erst darunter Zahl, Diagramm und Tabelle, und eine Einordnung, die leicht falsch gelesen wird („a grade, not a compliance percentage", „Simulation, not a quote"), steht im Antwortsatz, nie nur im Popover. Farben nach **§1.8**: Diagramme, die Zustände zählen (Level A–D, Befunde je Schwere), nehmen die Zustandsfarben mit Buchstabe und beschrifteter Kategorie; **alle anderen** die kategoriale Palette und **nie** eine Zustandsfarbe. Was gebaut wird: **(a)** ein Übersichtsschirm, der die Frage der Sicht in **einem** Satz beantwortet und darunter höchstens sechs Karten trägt, jede mit einer Antwort; **(b)** die **vier Töpfe** (Retire · Keep · Rebuild · Blocked by SAP) als Verteilung mit *not assigned* als eigener, sichtbarer Fläche — plus die Gegenüberstellung „was sich bewegt, wenn die Zielplattform wechselt", denn dieselbe B-Einstufung ist in der Private Edition *Keep* und in der Public Edition *Rebuild*; **(c)** der **Readiness-Verlauf** über Runs **derselben** Regelversion, mit der Regelversion an der Achse — ein Verlauf über zwei Regelversionen wird nicht gezeichnet, sondern als Bruch benannt; **(d)** die **Level-Verteilung A–D** nach §1.8; **(e)** „**was die Entscheidung blockiert**" als kurze, geordnete Liste mit Beleg je Zeile, nicht als Tortendiagramm — ein Objekt ohne Public-Cloud-Weg blockiert die Entscheidung, das ist keine Quote; **(f)** der **Entscheidungsstand**: welche Entscheidung offen ist und worauf sie wartet. **Drei Grenzen, die keine Gestaltung aufweicht:** „**nicht bestimmt**" ist in jedem Diagramm eine eigene, sichtbare Fläche und wird nie weggerundet oder in „sonstige" gefaltet; **jede Zahl nennt ihre Abdeckung** („42 findings in 907 of 907 lines · 2 includes not read") und **jede Zahl im Diagramm ist auch als Text erreichbar** (Tabelle oder `aria-label`, §1.8); **Kosten erscheinen nur als Simulation** mit ihrer Annahmenrevision (0.4) — kein Geldwert ohne sie, auch nicht als Achsenbeschriftung. Sprache nach §3.1: klar und ohne KI-Spuren, keine Superlative, keine Fortschrittsbalken für etwas, das kein Fortschritt ist. Tastatur, Screenreader, `forced-colors` und das Druckbild nach §7.1 gelten wie überall (3.0.4) — ein Diagramm, das nur auf dem Schirm funktioniert, ist nicht fertig. Gehalten von `tests/no-fabricated-figures.spec.ts`, `tests/money-honesty-guard.spec.ts` und einem gerenderten Test je Diagramm | L |
 | 3.0.11 | **Generierung serverseitig mit Compare-and-swap** (Vollprüfung von `81810c8026e0`: `e649177b3894`, `c42de15e9c75`): zwei Tabs oder ein veralteter Stand dürfen eine neuere Generierung nicht überschreiben — der Server schreibt Code, Testsuite, Status und Vertragsbindung in derselben Transaktion wie die Bindung, gegen ein Token, das die Seite **vor** dem Modellaufruf gelesen hat; `solutionDesign` gehört in den Fingerabdruck. Neben 8.7. **Gebaut 24.09.2026 (`feat/3.0.11-generation-cas`, lokal):** `GET /api/projects/{id}/contract` gibt ein Token samt den Eingaben aus, die es deckt; der `POST` schreibt die vier Felder in einer Transaktion gegen Token und `updateTime`, sonst 409. `solutionDesign` steht bewusst im Token (`lib/generation-revision.ts`), nicht im Vertragsfingerabdruck — der ist in gespeicherten Bindungen und im Manifest der Entscheidung gebunden. Keine Rules-Änderung (`tests/generation-store-cas.spec.ts`) | M |
 | 3.0.12 | **Gesperrte Konten verlieren den Firestore-Zugriff sofort** (`2a9864f3b52e`, erneut `f71a57e2d326`): eine Regel liest den Kontostatus auf Projekt-, Run- und Nutzerdokumenten, mit dem `exists`-Schutz für den Emulator; **manueller Rules-Deploy durch Sonny** vor dem App-Release — *Stand 24.09.2026: auf dev, Rules-Deploy durch Sonny offen (`npm run deploy:rules`, danach `npm run rules:verify`)* | S |
-| 3.0.13 | **BYOK-Härtung vor 3.0** (Entscheidung Sonny, 30.09.2026 — die Erweiterung auf OpenAI/Anthropic bleibt bei **3.5**; Untersuchung vom 30.09.2026): **(a)** `/api/gemini` nimmt eine abgeschnittene oder abgebrochene Antwort nicht als Ergebnis — der Abbruchgrund wird geprüft, und ohne vollständige Antwort gibt es kein Model Receipt; **(b)** `provider` wird im Receipt ausdrücklich gesetzt, nicht aus einer Konstante abgeleitet, damit 3.5 nichts an der Kanonisierung ändern muss; **(c)** die Tier-Regel für BYOK gilt serverseitig in `app/api/secrets/*` — heute prüft sie nur der Browser (`settings/page.tsx`); wer BYOK darf, entscheidet Sonny, bis dahin gilt die heutige Liste; **(d)** das Rate-Limit des Key-Tests gilt je Konto, nicht je Konto und IP; **(e)** Fehler werden vor dem Loggen auf Codes abgebildet — kein ganzes Fehlerobjekt aus Test- und Speicherpfad; **(f)** `requireCurrentTerms` lässt `null` nicht als „angenommen“ durch; **(g)** BYOK-Keys bekommen einen eigenen, versionierten Schlüssel statt `S4_ENCRYPTION_KEY` mitzubenutzen, mit Umschlüsselung der gespeicherten Keys. Keine Änderung an Anmeldung und Konto; Negativtest je Punkt | M |
+| 3.0.13 | **BYOK-Härtung vor 3.0** (Entscheidung Sonny, 30.09.2026 — die Erweiterung auf OpenAI/Anthropic bleibt bei **3.5**; Untersuchung vom 30.09.2026): **(a)** `/api/gemini` nimmt eine abgeschnittene oder abgebrochene Antwort nicht als Ergebnis — der Abbruchgrund wird geprüft, und ohne vollständige Antwort gibt es kein Model Receipt; **(b)** `provider` wird im Receipt ausdrücklich gesetzt, nicht aus einer Konstante abgeleitet, damit 3.5 nichts an der Kanonisierung ändern muss; **(c)** die Tier-Regel für BYOK gilt serverseitig in `app/api/secrets/*` — heute prüft sie nur der Browser (`settings/page.tsx`); wer BYOK darf, entscheidet Sonny, bis dahin gilt die heutige Liste; **(d)** das Rate-Limit des Key-Tests gilt je Konto, nicht je Konto und IP; **(e)** Fehler werden vor dem Loggen auf Codes abgebildet — kein ganzes Fehlerobjekt aus Test- und Speicherpfad; **(f)** `requireCurrentTerms` lässt `null` nicht als „angenommen“ durch; **(g)** BYOK-Keys bekommen einen eigenen, versionierten Schlüssel statt `S4_ENCRYPTION_KEY` mitzubenutzen. Keine Änderung an Anmeldung und Konto; Negativtest je Punkt. **Owner decisions 30.09.2026:** (d) saving and removing a key are limited per account as well, not per account and address (`lib/byok-rate-limit.ts`, a 429 that names the limit); (f) no census of and no mail to accounts without a recorded Terms consent — they give it at sign-in with 3.0, through the Terms gate; (g) no re-keying: a dry run against both databases found no stored model key, so the read path for pre-3.0.13 records through `S4_ENCRYPTION_KEY` and the re-key script are gone (the version field stays for later rotation), and the production deploy stops when `BYOK_ENCRYPTION_KEY` is missing or not 32 bytes | M |
 | 3.0.14 | **Everything public in the repository is current and in English — and only English** (decision Sonny, 30.09.2026, a condition for 3.0): README, CHANGELOG, ROADMAP, BACKLOG, ARCHITECTURE, SECURITY, DESIGN, the decision log, runbooks, plans, registers with prose, skills under `.claude/skills/`, `llms.txt`, code comments and test descriptions that are public, every other `.md`/`.txt` outside `docs/archiv/` — brought up to the 3.0 state *and* translated where they are German. Builds on 3.0.8 (inventory in `docs/registers/public-texts.json`). Exceptions, named and nothing else: the German privacy notice `app/datenschutz/de` (a legal text the German version of which prevails, E-7) and archived documents in `docs/archiv/` (history, marked as such). Held by a guard that fails on German prose in public text files outside the exceptions. Done last before the release, after the other steps have stopped changing the documents | M |
+| 3.0.15 | **SAP BTP is now named as the SAP Business AI Platform** (decision Sonny, 30.09.2026, a condition for 3.0): SAP presented the SAP Business AI Platform (BAIP) at Sapphire 2026 as the portfolio that contains SAP BTP, Business Data Cloud and Business Transformation Management. Visible product and public copy names it "SAP Business AI Platform (formerly SAP BTP)" at the first mention on a page and "BAIP" after that; a service SAP itself still names with BTP (e.g. the ABAP environment) keeps SAP's name; catalog and engine data from SAP sources stay unchanged. Held by a guard that fails on a bare "BTP" in visible copy outside the named exceptions. Runs before 3.0.14, after Block D and the landing parity work, so the copy is touched once | S |
 
 **Fertig, wenn** alle Phasenabnahmen auf `main` gelaufen sind, ein Korpusfall den
 ganzen Fluss durchläuft und die Copy-CI grün ist — **und die neue Landingpage mit
@@ -782,6 +825,7 @@ ist, wie Signavio mit fremden `extensionElements` umgeht** — genau das klärt 
 | **3.4** | Musterbibliothek (CC-BY, nur nach Veröffentlichungsreview) |
 | **3.5** | Beobachtete Wirkung gegen die eingefrorene Kostenrevision (Screen 5 rechts) · Multi-Provider-BYOK |
 | **Kandidaten (Feedback 15.09.2026)** | Code-Anonymisierung vor dem Modellaufruf · CLI/API, die Pull Requests gegen Clean-Core-Regeln prüft (Shift-Left) · Aufwandsschätzung aus Metriken, erst mit Kalibrierung aus der Bench |
+| **after 3.0, review** | QA 8cb85af1fee3 — grouped business rules whose occurrences mix controlling and continuing behaviour (`lib/abap/business-rule-set.ts`): review the type-per-group rule after 3.0; no code change before (owner decision 30.09.2026) |
 | ohne Version | Bench veröffentlichen, fairer Vergleich, Teamabnahme — brauchen Termine mit Dritten, keine Entwicklungszeit · Runner-Isolation: seit 19.09.2026 vor 3.0 als 8.9 (CR-09)|
 
 ---
@@ -824,6 +868,20 @@ diese Roadmap das Konto nicht anfasst.
 - **BYOK für OpenAI und Anthropic bleibt bei 3.5.** Die Härtung, die auch Gemini heute nützt, kommt **vor 3.0** als
   3.0.13. Die offenen Fragen der Erweiterung (Anbieter, Zustimmung/Terms-Fassung, Messung je Anbieter, wer BYOK darf)
   werden bei 3.5 entschieden.
+- **Community mail only with consent (QA bef96e7f054f).** Surveys and community updates go only to accounts that
+  switched "Community mail" on in the settings (default off, written server-side by `POST /api/community-mail`,
+  consent and withdrawal timestamped on the profile). Every sender passes the gate in `lib/community-mail.ts`; an
+  unsubscribe also switches the consent off; the privacy policy (EN + DE) names purpose, consent under Art. 6(1)(a)
+  and how to withdraw. Sign-up unchanged.
+- **Firebase Authentication is not regional (QA 69a2e0b89ac9).** The privacy policy names europe-west1 only for
+  Cloud Run hosting and Firestore, and lists Firebase Authentication under the third-country transfer paragraph
+  (DPF/SCC), EN + DE.
+- **The unsubscribe token leaves the logged URL (QA 8e25777f1339).** The visible mail link carries it in the
+  `#fragment` and the page POSTs it; old `?t=` links keep working and are stripped from the address bar. The RFC 8058
+  one-click URL in the header keeps the token in the query by design — accepted residual risk, the token can only
+  unsubscribe.
+- **Welcome mail to an unverified address (QA 7dac795fcb81): accepted risk, no code change** — verifying at sign-up
+  would change sign-up, which stays unchanged. Recorded with `scripts/qa/refute.mjs`.
 
 ### Am 27./28.09.2026 geschlossen (Sonny)
 
@@ -1083,7 +1141,6 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-024 | hoch | P1 | Phase 0 · sofort behoben | behoben |
 | SEC-2026-025 | hoch | P1 | Patch-Schritt sofort, vor jeder Roadmap-Arbeit (nach Prüfung kritisch) | behoben |
 | SEC-2026-026 | hoch | P1 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
-| SEC-2026-027 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
 | SEC-2026-029 | mittel | P2 | eigener Schritt, braucht Sonnys Go | eingeplant |
 | SEC-2026-031 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
 | SEC-2026-033 | mittel | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
@@ -1094,16 +1151,12 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-039 | mittel | P3 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
 | SEC-2026-040 | mittel | P2 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
 | SEC-2026-041 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
-| SEC-2026-042 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
 | SEC-2026-055 | niedrig | P2 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-065 | niedrig | P3 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-067 | niedrig | P3 | Phase 2 · CI-Härtung, GCP-Teil braucht Sonnys Go | eingeplant |
 | SEC-2026-073 | mittel | P2 | eigener Schritt, braucht Sonnys Go | eingeplant |
 | SEC-2026-074 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
-| SEC-2026-075 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
 | SEC-2026-076 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
-| SEC-2026-077 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
-| SEC-2026-078 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | eingeplant |
 | SEC-2026-079 | niedrig | P3 | Phase 2 · Härtung neben verwandter Arbeit | behoben |
 | SEC-2026-080 | hoch | — | — | behoben |
 | SEC-2026-081 | mittel | — | — | behoben |
@@ -1165,7 +1218,7 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-318 | niedrig | P1 | sofort | eingeplant |
 | SEC-2026-319 | niedrig | P2 | sofort | eingeplant |
 | SEC-2026-320 | niedrig | P2 | sofort | eingeplant |
-| SEC-2026-321 | niedrig | P2 | sofort - mit dem naechsten Regel-Deploy | eingeplant |
+| SEC-2026-321 | niedrig | P2 | sofort - mit dem naechsten Regel-Deploy | behoben |
 | SEC-2026-322 | niedrig | P3 | 3.0 | eingeplant |
 | SEC-2026-323 | niedrig | P3 | 3.0 | eingeplant |
 | SEC-2026-324 | niedrig | P2 | sofort | eingeplant |
@@ -1177,7 +1230,7 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-344 | hoch | P3 | eigener Schritt: S/4-Schluesselhygiene mit Migration, braucht Sonnys Go | eingeplant |
 | SEC-2026-418 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
 | SEC-2026-419 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
-| SEC-2026-420 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-420 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-421 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
 | SEC-2026-422 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
 | SEC-2026-423 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
@@ -1233,104 +1286,103 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-473 | niedrig | P2 | behoben in diesem Patch-Schritt | eingeplant |
 | SEC-2026-474 | niedrig | P2 | behoben in diesem Patch-Schritt | eingeplant |
 | SEC-2026-475 | mittel | P2 | behoben in diesem Patch-Schritt | eingeplant |
-| SEC-2026-476 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-476 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-477 | mittel | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-478 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
-| SEC-2026-479 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-479 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-480 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-481 | niedrig | P3 | v2.19-Sicherheitsschritt A - sofort | behoben |
-| SEC-2026-482 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-483 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-484 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-482 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-483 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-484 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-485 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-486 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-487 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
-| SEC-2026-488 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-489 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-488 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-489 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-490 | niedrig | P3 | nur falls die Jira-Integration je aktiviert wird | eingeplant |
 | SEC-2026-491 | niedrig | P3 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
 | SEC-2026-492 | niedrig | P3 | v2.19-Sicherheitsschritt A - sofort | behoben |
 | SEC-2026-493 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-494 | niedrig | P3 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
 | SEC-2026-495 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
-| SEC-2026-496 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-496 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-497 | niedrig | P3 | v2.19-Sicherheitsschritt A - sofort | behoben |
-| SEC-2026-498 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-499 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-500 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-501 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-498 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-499 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-500 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-501 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-502 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-503 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-504 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-505 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-506 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
-| SEC-2026-507 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-507 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-508 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-509 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
-| SEC-2026-510 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | eingeplant |
 | SEC-2026-511 | niedrig | P3 | nur falls die Jira-Integration je aktiviert wird | eingeplant |
 | SEC-2026-512 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-513 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-514 | niedrig | P2 | v2.19-Sicherheitsschritt A - sofort | behoben |
-| SEC-2026-515 | info | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-515 | info | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-516 | info | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-517 | info | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-518 | info | P3 | eigener Schritt: S/4-Schluesselhygiene mit Migration, braucht Sonnys Go | eingeplant |
-| SEC-2026-519 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-520 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-519 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-520 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-521 | info | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
 | SEC-2026-522 | info | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-523 | info | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-524 | mittel | P2 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
 | SEC-2026-525 | mittel | P2 | v2.19-Sicherheitsschritt A - sofort | behoben |
-| SEC-2026-526 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-526 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-527 | mittel | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-528 | mittel | P2 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-529 | mittel | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-557 | mittel | P2 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
 | SEC-2026-558 | mittel | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
-| SEC-2026-559 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-561 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-565 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-559 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-561 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-565 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-566 | mittel | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
-| SEC-2026-568 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-570 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-568 | mittel | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-569 | mittel | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-570 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-571 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-572 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-573 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
-| SEC-2026-576 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
-| SEC-2026-577 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-576 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | behoben |
+| SEC-2026-577 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-578 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-580 | niedrig | P3 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
-| SEC-2026-581 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-581 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-582 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-583 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-585 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-586 | niedrig | P3 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
-| SEC-2026-588 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-588 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-589 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-590 | niedrig | P3 | Phase 2 · Datenschutz-Schritt | behoben |
-| SEC-2026-592 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-592 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-596 | niedrig | P3 | eigener Schritt: S/4-Schluesselhygiene mit Migration, braucht Sonnys Go | eingeplant |
-| SEC-2026-597 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-598 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-599 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-600 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-597 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-598 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-599 | niedrig | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
+| SEC-2026-600 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-601 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-603 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-606 | niedrig | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-607 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
-| SEC-2026-608 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-608 | niedrig | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-609 | niedrig | P2 | Phase 2 · Datenschutz-Schritt | behoben |
 | SEC-2026-610 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-611 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
 | SEC-2026-613 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
 | SEC-2026-616 | niedrig | P3 | v2.19-Sicherheitsschritt C - vor 3.0 | behoben |
-| SEC-2026-620 | info | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
-| SEC-2026-622 | info | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
+| SEC-2026-620 | info | P3 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-624 | info | P3 | v2.19-Sicherheitsschritt F - Haertung neben verwandter Arbeit | behoben |
 | SEC-2026-626 | info | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
-| SEC-2026-627 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | eingeplant |
+| SEC-2026-627 | info | P2 | v2.19-Sicherheitsschritt B - mit dem naechsten Regel-Deploy (Sonnys Go) | behoben |
 | SEC-2026-629 | info | P3 | Phase 2 · Datenschutz-Schritt | behoben |
 
 **Audit von v2.20.0 (`fc78767`), 28.09.2026: 1 hoch, 15 mittel, 50 niedrig, 13 info — alle 188
@@ -1360,7 +1412,8 @@ sind seit dem Audit unverändert (Hash `32e1970bb02e`, so am 24.09. ausgerollt).
 - **Schritt A — sofort:** SEC-2026-514, -525 (P2); -481, -492, -497 (P3). Behoben am 24.09.2026, noch nicht auf `main`.
 - **Schritt B — mit dem nächsten Regel-Deploy, braucht Sonnys Go:** SEC-2026-482, -489, -496,
   -500, -519, -520, -526 (P2); -476, -479, -483, -484, -488, -498, -499, -501, -507, -515 (P3).
-  Gehört mit dem schon eingeplanten SEC-2026-321 in denselben Deploy.
+  Gehört mit dem schon eingeplanten SEC-2026-321 in denselben Deploy. Deployed on 30.09.2026 (rules `def53aa1`) and closed, together with
+  the same step's rows from the v2.20.0 audit and SEC-2026-420.
 - **Schritt C — vor 3.0:** SEC-2026-477, -478, -480, -485, -502, -503, -506, -508, -510, -512,
   -513, -523, -527 (P3), zusammen mit SEC-2026-421 und -422.
 - **Schritt F — neben verwandter Arbeit:** SEC-2026-486, -487, -493, -495, -505, -517, -522, -529 (P3).
@@ -1694,8 +1747,8 @@ Sonny decided all three on 30.09.2026; built on `decide/terms-30` (from `integra
 With it, consent: every existing account must accept v2.2.0 at its next sign-in with 3.0 — no mails, no census
 (Sonny, 30.09.2026). `TERMS_VERSIONS_IN_FORCE` holds the current version alone (`122d9275`); this sets aside
 § 10.1 (six weeks' notice by mail) and § 10.3 (carry on under the accepted Terms; ending that takes 30 days'
-notice) of the Terms those accounts accepted, on the owner's decision. The effective date 15 October 2026 is a
-placeholder for the 3.0 release day.
+notice) of the Terms those accounts accepted, on the owner's decision. The effective date is 6 October 2026,
+the agreed 3.0 release day (it replaced the placeholder 15 October 2026 before anything was published).
 
 ### Vollprüfung von 3131afa (v2.14.0), triagiert am 23.09.2026
 

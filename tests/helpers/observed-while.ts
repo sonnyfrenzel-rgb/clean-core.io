@@ -23,5 +23,9 @@ export async function observedWhile(
   while (running) {
     if (await seen()) return true;
   }
-  return seen();
+  // Not one more look once the work has settled: a state still there
+  // afterwards was not observed *while* it ran, and returning that look made a
+  // test about the in-flight window pass without ever seeing it (QA full review
+  // of fc787674705f, 683a1f9c810b).
+  return false;
 }

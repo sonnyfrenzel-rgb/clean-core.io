@@ -240,6 +240,20 @@ export function canonicalManifestDefect(m: CanonicalManifestParts): string | nul
     ] as const) {
       if (value !== undefined && SECTION_END.test(value)) return `${name} contains a field separator: ${JSON.stringify(value)}`;
     }
+    // The version-2 suffix is not escaped, so a colon in any field but the last
+    // could move a boundary: projectId 'a:b' with runId 'c' and projectId 'a'
+    // with runId 'b:c' would sign the same bytes. Only the catalog version, the
+    // last field, carries a colon in a genuine pack; the four before it are
+    // Firestore ids, a hex hash and the app version. Refusing a colon there
+    // makes the split unique without changing a byte of any pack ever issued.
+    for (const [name, value] of [
+      ['projectId', m.projectId],
+      ['runId', m.runId],
+      ['runHash', m.runHash],
+      ['engineVersion', m.engineVersion],
+    ] as const) {
+      if (value !== undefined && value.includes(':')) return `${name} contains a field separator: ${JSON.stringify(value)}`;
+    }
   }
 
   if (bound) {

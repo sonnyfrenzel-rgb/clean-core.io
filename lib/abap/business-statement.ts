@@ -142,9 +142,12 @@ export function resolveValue(
   const needle = name.trim().toLowerCase().replace(/^[@(]+/, '').replace(/[)]+$/, '');
   if (!needle) return { value: null, from: 'unresolved', line: null };
   let found: ResolvedValue = { value: null, from: 'unresolved', line: null };
+  let foundAt = -1;
+  let usedAt = statements.length;
   const seen = new Set<string>();
-  for (const statement of statements) {
-    if (statement.index >= before) break;
+  for (let position = 0; position < statements.length; position += 1) {
+    const statement = statements[position];
+    if (statement.index >= before) { usedAt = position; break; }
     const text = statement.text;
     const constant = new RegExp(
       `^CONSTANTS\\s+${escapeForRegExp(needle)}\\b[^=]*VALUE\\s+('[^']*'|\`[^\`]*\`)`,
@@ -164,6 +167,7 @@ export function resolveValue(
       if (value != null) {
         seen.add(value);
         found = { value, from: 'assignment', line: statement.lineStart };
+        foundAt = position;
       }
       continue;
     }
@@ -175,7 +179,32 @@ export function resolveValue(
     if (writesVariable(text, needle)) seen.add(`\u0000${statement.index}`);
   }
   if (seen.size > 1) return { value: null, from: 'unresolved', line: null };
+  // Eine einzige Zuweisung ist nur dann *der* Wert, wenn sie auf jedem Weg zur
+  // fragenden Stelle läuft. Steht sie in einem Zweig, einer Schleife oder einer
+  // Routine, die die fragende Stelle nicht mit umschließt, lief sie auf manchen
+  // Wegen nicht — dann steht der Wert erst zur Laufzeit fest.
+  if (foundAt !== -1 && !assignmentReaches(statements, foundAt, usedAt)) {
+    return { value: null, from: 'unresolved', line: null };
+  }
   return found;
+}
+
+const STACKS = new WeakMap<readonly AbapStatement[], Block[][]>();
+
+/**
+ * Ob die Zuweisung an Position `from` die Stelle `to` auf jedem Weg erreicht:
+ * jeder Block um die Zuweisung — jeder Zweig (`IF`, `ELSE`, `WHEN` sind je ein
+ * eigener), jede Schleife, jede Routine — umschließt auch die fragende Stelle.
+ */
+function assignmentReaches(statements: readonly AbapStatement[], from: number, to: number): boolean {
+  let stacks = STACKS.get(statements);
+  if (!stacks) {
+    stacks = blockStacks(statements, selectLoops(statements));
+    STACKS.set(statements, stacks);
+  }
+  const around = stacks[from] ?? [];
+  const atUse = new Set(stacks[to] ?? []);
+  return around.every((block) => atUse.has(block));
 }
 
 /**
@@ -592,8 +621,12 @@ function elseSubject(previous: AbapStatement | undefined): string {
   if (!previous) return 'Sonst';
   const { subject, term, comparison } = conditionSubject(previous.text);
   if (!term || !comparison || pluralSubject(previous.text) === null) return 'Sonst';
-  if (comparison === '<' || comparison === '<=') return `Größere ${term.plural}`;
-  if (comparison === '>' || comparison === '>=') return `Kleinere oder gleiche ${term.plural}`;
+  // Das Gegenteil hält die Grenze: nach `< 100` gehört 100 in den ELSE-Zweig,
+  // nach `<= 100` nicht (wie `CHECK_COMPLEMENT` für `CHECK`).
+  if (comparison === '<') return `Größere oder gleiche ${term.plural}`;
+  if (comparison === '<=') return `Größere ${term.plural}`;
+  if (comparison === '>') return `Kleinere oder gleiche ${term.plural}`;
+  if (comparison === '>=') return `Kleinere ${term.plural}`;
   return `Andere ${term.plural}`;
   void subject;
 }
@@ -645,31 +678,68 @@ const ORIGIN_TERMS: Record<Exclude<ValueOrigin, 'none'>, string> = {
   'method-return': 'Der Rückgabewert',
 };
 
+/** Welche Variablen eine Anweisung mit dem Ergebnis eines Aufrufs füllt. */
+function originsSetBy(text: string): Array<[string, ValueOrigin]> {
+  const out: Array<[string, ValueOrigin]> = [];
+  if (/^CALL\s+FUNCTION\b/i.test(text)) {
+    for (const match of text.matchAll(/\b(?:IMPORTING|CHANGING|RECEIVING)\s+\w+\s*=\s*(\S+)/gi)) {
+      out.push([plain(match[1]).toLowerCase(), 'function-return']);
+    }
+    return out;
+  }
+  if (/^RECEIVE\s+RESULTS\b/i.test(text)) {
+    for (const match of text.matchAll(/\bIMPORTING\s+\w+\s*=\s*(\S+)/gi)) {
+      out.push([plain(match[1]).toLowerCase(), 'function-return']);
+    }
+    return out;
+  }
+  if (/^CALL\s+METHOD\b/i.test(text)) {
+    for (const match of text.matchAll(/\b(?:RECEIVING|IMPORTING|CHANGING)\s+\w+\s*=\s*(\S+)/gi)) {
+      out.push([plain(match[1]).toLowerCase(), 'method-return']);
+    }
+    return out;
+  }
+  // `DATA(lv_x) = cls=>meth( … )` und `lv_x = obj->meth( … )`.
+  const call = /^(?:DATA\()?([A-Za-z0-9_]+)\)?\s*=(?!>)\s*\S+(?:=>|->)\w+\s*\(/.exec(text);
+  if (call) out.push([call[1].toLowerCase(), 'method-return']);
+  return out;
+}
+
+const ROUTINE_EDGES = new Set([
+  'FORM', 'ENDFORM', 'METHOD', 'ENDMETHOD', 'MODULE', 'ENDMODULE', 'FUNCTION', 'ENDFUNCTION',
+]);
+
+/**
+ * Die Herkunft je Ausgabe, nicht je Name: Schlüssel ist `index|variable` des
+ * `WRITE`. Eine Herkunft gilt nur, solange die Variable seit dem Aufruf nicht
+ * anders beschrieben wurde, und nur in der Routine, in der der Aufruf steht —
+ * ein `lv_x` in einer anderen Methode ist eine andere Variable.
+ */
 function originMap(statements: readonly AbapStatement[]): Map<string, ValueOrigin> {
   const origins = new Map<string, ValueOrigin>();
+  const live = new Map<string, ValueOrigin>();
   for (const statement of statements) {
     const text = statement.text;
-    if (/^CALL\s+FUNCTION\b/i.test(text)) {
-      for (const match of text.matchAll(/\b(?:IMPORTING|CHANGING|RECEIVING)\s+\w+\s*=\s*(\S+)/gi)) {
-        origins.set(plain(match[1]).toLowerCase(), 'function-return');
-      }
+    const keyword = statement.keyword.toUpperCase();
+    if (ROUTINE_EDGES.has(keyword)) {
+      live.clear();
       continue;
     }
-    if (/^RECEIVE\s+RESULTS\b/i.test(text)) {
-      for (const match of text.matchAll(/\bIMPORTING\s+\w+\s*=\s*(\S+)/gi)) {
-        origins.set(plain(match[1]).toLowerCase(), 'function-return');
-      }
-      continue;
+    if (keyword === 'WRITE') {
+      for (const [name, origin] of live) origins.set(`${statement.index}|${name}`, origin);
     }
-    if (/^CALL\s+METHOD\b/i.test(text)) {
-      for (const match of text.matchAll(/\b(?:RECEIVING|IMPORTING|CHANGING)\s+\w+\s*=\s*(\S+)/gi)) {
-        origins.set(plain(match[1]).toLowerCase(), 'method-return');
-      }
-      continue;
+    const set = originsSetBy(text);
+    for (const name of [...live.keys()]) {
+      if (set.some(([target]) => target === name)) continue;
+      const escaped = escapeForRegExp(name);
+      const overwritten =
+        writesVariable(text, name) ||
+        new RegExp(`^(?:DATA\\()?${escaped}\\)?\\s*=`, 'i').test(text) ||
+        new RegExp(`^(?:CLEAR|FREE)\\b.*\\b${escaped}\\b(?![\\w-])`, 'i').test(text) ||
+        new RegExp(`^WRITE\\b.*\\bTO\\s+${escaped}\\b(?![\\w-])`, 'i').test(text);
+      if (overwritten) live.delete(name);
     }
-    // `DATA(lv_x) = cls=>meth( … )` und `lv_x = obj->meth( … )`.
-    const call = /^(?:DATA\()?([A-Za-z0-9_]+)\)?\s*=(?!>)\s*\S+(?:=>|->)\w+\s*\(/.exec(text);
-    if (call) origins.set(call[1].toLowerCase(), 'method-return');
+    for (const [name, origin] of set) live.set(name, origin);
   }
   return origins;
 }
@@ -709,7 +779,7 @@ function writtenTarget(
   const literal = literalOf(body.replace(/^('[^']*')\(\w{1,3}\)$/, '$1'));
   if (literal != null) return { label: literal, literal: true };
   const cut = body.replace(/(?:\+\d+)?\(\d+\)$/, '');
-  const origin = origins?.get(plain(cut).toLowerCase());
+  const origin = origins?.get(`${statement.index}|${plain(cut).toLowerCase()}`);
   if (origin && origin !== 'none') return { label: ORIGIN_TERMS[origin], literal: false };
   return { label: termFor(cut).singular, literal: false };
 }
@@ -1250,15 +1320,30 @@ function subrcClauseAt(statements: readonly AbapStatement[], index: number) {
  * Lesens ist — ein `SELECT … INTO TABLE` in genau diese Tabelle. Sonst ist sie
  * einfach leer, und so steht es auch da.
  */
+function lastWriteIsSelect(statements: readonly AbapStatement[], index: number, needle: string): boolean {
+  const name = escapeForRegExp(needle);
+  const selectInto = new RegExp(`\\b(?:INTO|APPENDING)\\s+(?:CORRESPONDING\\s+FIELDS\\s+OF\\s+)?TABLE\\s+@?(?:DATA\\()?${name}\\b`, 'i');
+  // Was die Tabelle sonst füllt oder leert. Ein `CLEAR` nach dem `SELECT`
+  // macht sie leer, ohne dass etwas nicht gefunden wurde.
+  const otherWrite = new RegExp(
+    `^(?:CLEAR|REFRESH|FREE)\\b.*\\b${name}\\b(?![\\w-])` +
+      `|^${name}(?:\\[\\])?\\s*=` +
+      `|^(?:APPEND|INSERT|COLLECT|MOVE)\\b.*\\b(?:TO|INTO)\\s+(?:TABLE\\s+)?${name}\\b(?![\\w-])` +
+      `|^(?:DELETE|MODIFY)\\s+(?:TABLE\\s+)?${name}\\b(?![\\w-])` +
+      `|\\bTABLES\\b.*\\b\\w+\\s*=\\s*${name}\\b(?![\\w-])`,
+    'i',
+  );
+  for (let i = index - 1; i >= 0; i -= 1) {
+    const other = statements[i];
+    if (other.keyword.toUpperCase() === 'SELECT' && selectInto.test(other.text)) return true;
+    if (otherWrite.test(other.text) || writesVariable(other.text, needle)) return false;
+  }
+  return false;
+}
+
 function initialLead(name: string, statements: readonly AbapStatement[], index: number, negated: boolean): Lead {
   const needle = plain(name).toLowerCase();
-  const filledBySelect = statements
-    .slice(0, index)
-    .some(
-      (other) =>
-        other.keyword.toUpperCase() === 'SELECT' &&
-        new RegExp(`\\b(?:INTO|APPENDING)\\s+(?:CORRESPONDING\\s+FIELDS\\s+OF\\s+)?TABLE\\s+@?(?:DATA\\()?${escapeForRegExp(needle)}\\b`, 'i').test(other.text),
-    );
+  const filledBySelect = lastWriteIsSelect(statements, index, needle);
   if (INTERNAL_TABLE.test(name) || internalTables(statements).has(needle)) {
     if (filledBySelect) return lead(negated ? 'Bei Treffern' : 'Ohne Treffer');
     return lead(negated ? `Enthält die Tabelle ${plain(name)} Zeilen` : `Ist die Tabelle ${plain(name)} leer`, true);

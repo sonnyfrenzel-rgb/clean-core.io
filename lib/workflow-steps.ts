@@ -9,6 +9,8 @@ import {
 } from './input-manifest';
 import { coveringTestRunReceipt, executedPasses } from './test-receipt';
 import { isEngineDocumentation } from './process-documentation';
+import { PROFILE_INPUT_ID } from './assessment-profile';
+import { liveProfileDigest, recordedProfileOf } from './assessment-target';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -155,6 +157,13 @@ export interface TestEvidence {
    * which is the conservative direction: no record, no execution.
    */
   attestedPasses: number;
+  /**
+   * The same, for failures: how many cases the covering receipt reports as
+   * failed. `failed` above counts `status` strings the owner can write, so a
+   * `Failures` badge on it alone reported an execution nobody recorded (QA full
+   * review of v2.20.0).
+   */
+  attestedFailures: number;
 }
 
 /**
@@ -169,6 +178,9 @@ export function testEvidence(project: Project | null): TestEvidence {
   const failed = cases.filter((t) => t?.status === 'Failed').length;
   const simulated = cases.filter((t) => t?.status === 'Simulated').length;
   const connectivity = cases.filter((t) => t?.status === 'Connectivity').length;
+  const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
+  const ids = cases.map((t) => String(t?.id ?? ''));
+  const failedInReceipt = new Set((receipt?.verdicts ?? []).filter((v) => v.status === 'Failed').map((v) => v.id));
   return {
     total: cases.length,
     passed,
@@ -176,10 +188,8 @@ export function testEvidence(project: Project | null): TestEvidence {
     simulated,
     connectivity,
     withoutVerdict: cases.length - passed - failed - simulated - connectivity,
-    attestedPasses: executedPasses(
-      coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]),
-      cases.map((t) => String(t?.id ?? '')),
-    ),
+    attestedPasses: executedPasses(receipt, ids),
+    attestedFailures: ids.filter((id) => failedInReceipt.has(id)).length,
   };
 }
 
@@ -194,6 +204,13 @@ export interface Staleness {
   docs: boolean;
   /** The standing architect sign-off was given for a previous source. */
   signOff: boolean;
+  /**
+   * Roadmap 7.10 - what moved: the source, or (same source) the target
+   * profile. `'profile'` when the change record says so (`reason: 'profile'`)
+   * or the project's profile no longer matches the run's. Only the wording
+   * reads it; what is stale is decided above, the same way for both.
+   */
+  basis: 'source' | 'profile';
   /**
    * Inputs of the active run that cannot be shown to still match (roadmap 0.6).
    * Empty on a run signed before the input manifest existed — there is nothing
@@ -223,7 +240,7 @@ export interface Staleness {
  */
 export function staleness(project: Project | null): Staleness {
   const none: Staleness = {
-    sourceChanged: false, design: false, code: false, tests: false, docs: false, signOff: false, unverifiedInputs: [],
+    sourceChanged: false, design: false, code: false, tests: false, docs: false, signOff: false, basis: 'source', unverifiedInputs: [],
   };
   if (!project) return none;
 
@@ -257,15 +274,23 @@ export function staleness(project: Project | null): Staleness {
   // before it signs anything.
   const recorded = project.inputManifest ?? project.auditMetadata?.inputManifest ?? null;
   const deployment = typeof project.s4Deployment === 'string' && project.s4Deployment ? project.s4Deployment : null;
+  // Roadmap 7.10 - the profile, for a run that recorded one: rebuilt from what
+  // the project states now against the run's own catalog snapshot and rule
+  // version (the catalog is the server's to compare). A run signed before 7.10
+  // is not asked about a profile it never recorded.
+  const recordedProfile = recordedProfileOf(project);
   const unverified =
     project.activeRunId && recorded
       ? invalidatingInputs(
           unverifiedInputs(recorded, {
             [INPUT_IDS.source]: source ? sha256Hex(source) : null,
             [INPUT_IDS.deployment]: deployment ? sha256Hex(deployment) : null,
+            ...(recordedProfile ? { [PROFILE_INPUT_ID]: liveProfileDigest({ project, recorded: recordedProfile }) } : {}),
           }),
         )
       : [];
+  // A sign-off given under one target profile is not a sign-off under another.
+  const profileMoved = unverified.some((u) => u.id === PROFILE_INPUT_ID);
 
   return {
     sourceChanged,
@@ -273,9 +298,18 @@ export function staleness(project: Project | null): Staleness {
     code: sourceChanged || unchangedSince('generatedCode'),
     tests: sourceChanged || unchangedSince('testCases'),
     docs: sourceChanged || unchangedSince('documentation'),
-    signOff: (sourceChanged && project.approvedByArchitect === true) || signOffUnchanged,
+    signOff: ((sourceChanged || profileMoved) && project.approvedByArchitect === true) || signOffUnchanged,
+    basis: !sourceChanged && (profileMoved || record?.reason === 'profile') ? 'profile' : 'source',
     unverifiedInputs: unverified,
   };
+}
+
+/**
+ * "a previous source" or "a previous target profile" - the phrase every stale
+ * sentence uses, so a profile change is not described as a source change.
+ */
+export function previousBasis(project: Project | null): string {
+  return staleness(project).basis === 'profile' ? 'a previous target profile' : 'a previous source';
 }
 
 /** "the analysed source and the target deployment" — for a blocker sentence. */
@@ -289,7 +323,7 @@ const present = (project: Project | null) => {
   const has = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
   return {
     design: has(project?.solutionDesign),
-    code: has(project?.generatedCode),
+    code: hasGeneratedPackage(project?.generatedCode),
     tests: Array.isArray(project?.testCases) && project!.testCases!.length > 0,
     docs: has(project?.documentation),
   };
@@ -336,12 +370,39 @@ export function generationBlockers(
       `The signed run's inputs cannot all be shown to still match — ${inputList(s.unverifiedInputs)}. Re-run the analysis in stage 1 first.`,
     ];
   }
-  if (s.design && p.design) out.push('The solution design was generated for a previous source. Regenerate it in stage 2 first.');
-  if (s.signOff) out.push('The architecture sign-off was given for a previous source. Confirm it again in stage 2.');
+  const prev = s.basis === 'profile' ? 'a previous target profile' : 'a previous source';
+  if (s.design && p.design) out.push(`The solution design was generated for ${prev}. Regenerate it in stage 2 first.`);
+  if (s.signOff) out.push(`The architecture sign-off was given for ${prev}. Confirm it again in stage 2.`);
   if (target !== 'transformation' && s.code && p.code) {
-    out.push('The code was generated from a previous source. Regenerate it in stage 3 first.');
+    out.push(`The code was generated from ${prev}. Regenerate it in stage 3 first.`);
   }
   return out;
+}
+
+/**
+ * Whether `generatedCode` holds code. A non-empty string was enough, so a
+ * serialised package with no files — `'[]'` — marked Transformation generated
+ * and let Delivery count code that was not there (QA full review of v2.20.0).
+ * A package counts once it has one file with a path and content; a string that
+ * is not a JSON array is the flat source of a project from before packages,
+ * and counts as it always did.
+ */
+function hasGeneratedPackage(code: unknown): boolean {
+  if (typeof code !== 'string' || code.trim().length === 0) return false;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(code);
+  } catch {
+    return true;
+  }
+  if (!Array.isArray(parsed)) return true;
+  return parsed.some(
+    (f) =>
+      !!f &&
+      typeof f === 'object' &&
+      typeof (f as { path?: unknown }).path === 'string' &&
+      typeof (f as { content?: unknown }).content === 'string',
+  );
 }
 
 export function workflowSteps(project: Project | null): RailStep[] {
@@ -355,7 +416,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
   const score = typeof project?.cleanCoreScore === 'number' ? project.cleanCoreScore : null;
   const hasDesign = has(project?.solutionDesign);
   const signedOff = project?.approvedByArchitect === true;
-  const hasGenerated = has(project?.generatedCode);
+  const hasGenerated = hasGeneratedPackage(project?.generatedCode);
   const hasDocs = has(project?.documentation);
   const tests = testEvidence(project);
   const executed = tests.passed + tests.failed;
@@ -505,10 +566,16 @@ export function workflowSteps(project: Project | null): RailStep[] {
   } else {
     testing = phase('testing', {
       state: 'partial',
-      badge: tests.failed > 0 ? 'Failures' : 'Partly run',
+      // A failure on the case list alone is the owner's label, as a pass is
+      // above: `Failures` is for failures a recorded run reported.
+      badge: tests.attestedFailures > 0 ? 'Failures' : tests.failed > 0 ? 'Self-reported' : 'Partly run',
       detail: [
         `${tests.passed} of ${tests.total} passed`,
-        tests.failed > 0 ? `${tests.failed} failed` : null,
+        tests.failed > 0
+          ? tests.attestedFailures > 0
+            ? `${tests.failed} failed`
+            : `${tests.failed} marked as failed with no test run on record`
+          : null,
         tests.simulated > 0 ? `${tests.simulated} simulated` : null,
         tests.withoutVerdict > 0 ? `${tests.withoutVerdict} not run` : null,
       ]
@@ -530,7 +597,10 @@ export function workflowSteps(project: Project | null): RailStep[] {
     ? phase('tco', {
         state: 'partial',
         badge: 'Model estimate',
-        detail: 'A model estimate from assumed effort coefficients, not observed costs.',
+        // The run is the baseline, not an estimate: the cost figures are
+        // entered on the Economics stage and not stored, so nothing here knows
+        // whether an estimate was ever computed (QA full review of v2.20.0).
+        detail: 'The signed run is the baseline. An estimate needs your cost figures and uses assumed effort coefficients, not observed costs.',
       })
     : phase('tco', {
         state: 'empty',
@@ -581,6 +651,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // review, is not a finished design — it is the thing US02 exists to stop
   // someone approving.
   const s = staleness(project);
+  const prevBasis = s.basis === 'profile' ? 'a previous target profile' : 'a previous source';
   const blockers = handoverBlockers(project);
   const stale = (base: RailStep, detail: string, badge = 'Stale'): RailStep => ({
     ...base,
@@ -602,20 +673,20 @@ export function workflowSteps(project: Project | null): RailStep[] {
           )
         : analyze,
     hasDesign && s.design
-      ? stale(design, 'Designed for a previous source — regenerate it against the current analysis.')
+      ? stale(design, `Designed for ${prevBasis} — regenerate it against the current analysis.`)
       : hasDesign && s.signOff
-        ? { ...design, state: 'partial', done: false, proven: false, badge: 'Re-confirm', detail: 'The sign-off was given for a previous source — confirm the target architecture again.' }
+        ? { ...design, state: 'partial', done: false, proven: false, badge: 'Re-confirm', detail: `The sign-off was given for ${prevBasis} — confirm the target architecture again.` }
         : design,
     hasGenerated && s.code
-      ? stale(transformation, 'Generated from a previous source — regenerate it once the design is current.')
+      ? stale(transformation, `Generated from ${prevBasis} — regenerate it once the design is current.`)
       : transformation,
-    hasDocs && s.docs ? stale(documentation, 'Written for a previous source — regenerate it.') : documentation,
-    tests.total > 0 && s.tests ? stale(testing, 'Test cases written for a previous source — regenerate the suite.') : testing,
+    hasDocs && s.docs ? stale(documentation, `Written for ${prevBasis} — regenerate it.`) : documentation,
+    tests.total > 0 && s.tests ? stale(testing, `Test cases written for ${prevBasis} — regenerate the suite.`) : testing,
     hasRun && (s.sourceChanged || s.unverifiedInputs.length > 0)
       ? stale(economics, 'Modelled on the score of a different source — re-run the analysis.')
       : economics,
     blockers.length > 0
-      ? stale(delivery, `Handover blocked — built for a previous source: ${blockers.join(', ')}.`, 'Blocked')
+      ? stale(delivery, `Handover blocked — built for ${prevBasis}: ${blockers.join(', ')}.`, 'Blocked')
       : delivery,
   ];
 }

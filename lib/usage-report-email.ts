@@ -1,6 +1,8 @@
 import { wrapEmailDocument } from './email-layout';
 import { APP_VERSION } from './version';
-import { escapeHtml } from './utils';
+// From its own module, not './utils': that one loads clsx and tailwind-merge,
+// and the report runs with no package installed (fa0aaea6cc47).
+import { escapeHtml } from './export-safety';
 import type { UsageReport } from './usage-report';
 
 /**

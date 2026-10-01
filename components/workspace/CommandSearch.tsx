@@ -176,6 +176,10 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
             role="combobox"
             aria-expanded={shown.length > 0}
             aria-controls={listId}
+            /* The arrow keys move a cursor the focus never follows, so
+               the field names the option it points at (QA full review
+               of v2.20.0). */
+            aria-activedescendant={shown.length > 0 ? `${listId}-option-${at}` : undefined}
             aria-label={wt('search.fieldName')}
             placeholder={wt('search.placeholder')}
             data-command-search-input=""
@@ -211,6 +215,7 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
             {shown.map((result, i) => (
               <li
                 key={result.id}
+                id={`${listId}-option-${i}`}
                 role="option"
                 aria-selected={i === at}
                 data-command-search-hit={result.kind}

@@ -29,6 +29,8 @@ import {
   type User as FirebaseUser,
 } from 'firebase/auth';
 import ModelStagesCard from '@/components/ModelStagesCard';
+import { byokAllowed } from '@/lib/byok-eligibility';
+import CommunityMailCard from '@/components/CommunityMailCard';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
@@ -179,7 +181,9 @@ function SettingsInput({
 export default function SettingsPage() {
   const router = useRouter();
   const { profile, loading, updateProfile } = useUserProfile();
-  const isPilotTier = !!profile && (profile.isAdmin || ['pilot', 'pilot_byok', 'starter', 'unlimited'].includes(profile.tier));
+  // Who may bring their own key: one list, shared with the routes that store and
+  // test it (lib/byok-eligibility.ts, roadmap 3.0.13 c).
+  const isPilotTier = byokAllowed(profile);
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -255,6 +259,9 @@ export default function SettingsPage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [pwChangeStatus, setPwChangeStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [pwChangeError, setPwChangeError] = useState('');
+  // With a second factor enrolled, Firebase answers the re-authentication with
+  // auth/multi-factor-auth-required; the code resolves it (QA 5f599cbcc567).
+  const [pwChangeMfaCode, setPwChangeMfaCode] = useState('');
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
 
@@ -398,9 +405,8 @@ export default function SettingsPage() {
         throw new Error('No authenticated user.');
       }
 
-      // Re-authenticate user first
-      const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
-      await reauthenticateWithCredential(currentUser, credential);
+      // Re-authenticate user first — through the factor when one is enrolled.
+      await reauthenticateWithFactor(currentUser, currentPassword, pwChangeMfaCode.replace(/\s+/g, ''));
 
       // Update password
       await firebaseUpdatePassword(currentUser, newPassword);
@@ -409,6 +415,7 @@ export default function SettingsPage() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
+      setPwChangeMfaCode('');
       setTimeout(() => setPwChangeStatus('idle'), 4000);
     } catch (error: any) {
       console.error('Password change error:', error);
@@ -419,6 +426,10 @@ export default function SettingsPage() {
         errorMsg = 'The new password is too weak.';
       } else if (error.code === 'auth/requires-recent-login') {
         errorMsg = 'Security timeout. Please sign out, sign back in, and try again.';
+      } else if (error.code === 'auth/invalid-verification-code') {
+        errorMsg = 'The authenticator code is not correct. Enter the current 6-digit code.';
+      } else if (!error.code && typeof error.message === 'string' && error.message.startsWith('Enter the 6-digit code')) {
+        errorMsg = error.message;
       }
       setPwChangeError(errorMsg);
       setPwChangeStatus('error');
@@ -440,6 +451,7 @@ export default function SettingsPage() {
       await user.reload();
       if (!user.emailVerified) {
         setMfaSetupError('Verify your e-mail address first — use the button below, open the link in the mail, then reload this page.');
+        setTotpSecret(null);
         setShowMfaSetup(true);
         setMfaSetupStep(1);
         return;
@@ -460,6 +472,7 @@ export default function SettingsPage() {
       }
       if (code === 'auth/unverified-email') {
         setMfaSetupError('Verify your e-mail address first — use the button below, open the link in the mail, then reload this page.');
+        setTotpSecret(null);
         setShowMfaSetup(true);
         setMfaSetupStep(1);
         return;
@@ -909,10 +922,14 @@ export default function SettingsPage() {
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Save failed');
       setS4Password(''); // Password should never stay in client state
+      // The strip takes its colour from connectionStatus; a save says nothing
+      // about the connection, so it must not inherit a previous test's verdict.
+      setConnectionStatus('disconnected');
       setConnectionMessage("Configuration saved securely (encrypted).");
       setTimeout(() => setConnectionMessage(""), 3000);
     } catch (err: any) {
       console.error("Failed to save S/4 config:", err);
+      setConnectionStatus('failed');
       setConnectionMessage(err.message || "Failed to save configuration.");
     } finally {
       setIsSavingConfig(false);
@@ -1329,6 +1346,20 @@ export default function SettingsPage() {
                       reveal={{ shown: showCurrentPw, onToggle: () => setShowCurrentPw(!showCurrentPw), label: 'Show current password' }}
                     />
 
+                    {enrolledFactorCount !== null && enrolledFactorCount > 0 && (
+                      <SettingsInput
+                        label="Code from your authenticator app"
+                        required
+                        value={pwChangeMfaCode}
+                        onChange={(value) => setPwChangeMfaCode(value.replace(/[^0-9]/g, ''))}
+                        maxLength={6}
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        placeholder="123456"
+                        mono
+                      />
+                    )}
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <SettingsInput
@@ -1510,6 +1541,10 @@ export default function SettingsPage() {
               workspace preview is on — the map it names is not shown
               anywhere else yet. */}
           <ModelStagesCard showPreviewStages={workspaceShellEnabled(profile)} />
+
+          {/* Owner decision 30.09.2026: community mail only with consent,
+              switched on here and written by the server. */}
+          <CommunityMailCard consent={profile?.communityMail} />
 
           {isPilotTier && (
             <div className={CARD}>
@@ -1758,7 +1793,7 @@ export default function SettingsPage() {
             <CardHead icon={<AlertCircle size={20} />} title="Danger Zone" danger />
 
             <p className="mb-6 cc-text-body text-cc-ink-muted">
-              Permanently erase your user account and all associated data in accordance with GDPR Art. 17 (Right to Erasure). This operation is final and cannot be undone. All your uploaded ABAP source files, solution designs, modernized TypeScript source codes, and test cases will be irrevocably deleted.
+              Permanently erase your user account in accordance with GDPR Art. 17 (Right to Erasure). This operation is final and cannot be undone. Your sign-in and the live database entries — uploaded ABAP source files, solution designs, generated code and test cases — are deleted at once. The security audit record of administrative actions is kept for 24 months, and copies in encrypted backups age out within 30 days; the privacy policy lists what deletion does not reach.
             </p>
 
             {isDeletingAccount ? (
@@ -1903,7 +1938,13 @@ export default function SettingsPage() {
             : undefined
         }
         actions={
-          mfaSetupStep === 1 ? (
+          // No secret means the setup never began (an unverified address): there
+          // is nothing to add, so no step forward either (QA 1e50094bc012).
+          mfaSetupStep === 1 && !totpSecret ? (
+            <CcButton variant="ghost" onClick={() => setShowMfaSetup(false)}>
+              Close
+            </CcButton>
+          ) : mfaSetupStep === 1 ? (
             <CcButton variant="primary" onClick={() => setMfaSetupStep(2)} icon={<ArrowRight size={16} aria-hidden={true} />}>
               I have added it
             </CcButton>
@@ -1965,6 +2006,8 @@ export default function SettingsPage() {
                   {mfaSetupError}
                 </CcMessageStrip>
               )}
+              {totpSecret ? (
+              <>
               <p className="m-0 text-cc-ink-muted">
                 Open your authenticator app (Google Authenticator, Authy, 1Password, …). On this
                 device the button below hands it the account directly; otherwise type the setup
@@ -2012,6 +2055,8 @@ export default function SettingsPage() {
                   )}
                 </p>
               </div>
+              </>
+              ) : null}
             </>
           ) : mfaSetupStep === 2 ? (
             <>
@@ -2117,8 +2162,9 @@ export default function SettingsPage() {
       >
         <div className="space-y-4">
           <p className="m-0">
-            GDPR Right to Erasure (Art. 17 GDPR): to permanently and irrevocably erase all your personal data, uploaded
-            source codes, API keys, and transformation projects, please confirm by entering your email address.
+            GDPR Right to Erasure (Art. 17 GDPR): to erase your account, uploaded source codes, API keys and
+            transformation projects from the live systems, please confirm by entering your email address. The security
+            audit record (24 months) and encrypted backups (up to 30 days) outlive the deletion.
           </p>
           <SettingsInput
             label="Your account e-mail address"

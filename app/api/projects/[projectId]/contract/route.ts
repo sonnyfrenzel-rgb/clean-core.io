@@ -11,6 +11,7 @@ import { sha256Hex } from '@/lib/artefact-digest';
 import { checkGeneratedPackage, generationInputsOf, generationRevision } from '@/lib/generation-revision';
 import type { DocumentReference, Timestamp, Transaction } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
 
 /**
  * The architecture contract of one project, and what may be generated against
@@ -54,6 +55,10 @@ const MAX_SOURCE_BYTES = 400_000;
 
 /** The bound `firestore.rules` sets on a browser-written `generatedCode`, kept for the server's write. */
 const MAX_PACKAGE_CHARS = 1_000_000;
+// A package of MAX_PACKAGE_CHARS UTF-16 units is at most three times that in
+// UTF-8, plus the suite beside it; nothing larger is read (QA slice review of
+// bd016957d13c, 44f03f652da7).
+const STORE_BODY_LIMITS = { maxBytes: 8 * 1024 * 1024, timeoutMs: 20_000 };
 
 /** The field the binding is written to. Server-only: never in the rules allowlist. */
 const GENERATION_BINDING_FIELD = 'generationBinding';
@@ -210,7 +215,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       return NextResponse.json({ error: 'No such project.' }, { status: 404 });
     }
 
-    const body = (await req.json().catch(() => ({}))) as {
+    let parsedBody: unknown = {};
+    try {
+      parsedBody = await readBoundedJson(new Response(req.body, { headers: req.headers }), STORE_BODY_LIMITS);
+    } catch (bodyErr) {
+      if (bodyErr instanceof ResponseLimitError) {
+        return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+      }
+    }
+    const body = (parsedBody && typeof parsedBody === 'object' ? parsedBody : {}) as {
       generatedCode?: unknown;
       testSuite?: unknown;
       expectedContractFingerprint?: unknown;
@@ -260,6 +273,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       );
     }
 
+    // The same bound the GET applies before it derives the contract (QA slice
+    // review of bd016957d13c, 44f03f652da7).
+    const storedSource = typeof data.legacyCode === 'string' ? data.legacyCode : '';
+    if (Buffer.byteLength(storedSource, 'utf8') > MAX_SOURCE_BYTES) {
+      return NextResponse.json(
+        {
+          error: `This source is larger than the ${MAX_SOURCE_BYTES} bytes this contract is derived from in one request.`,
+          code: 'too-large',
+        },
+        { status: 413 },
+      );
+    }
     const built = contractOfProject(data, manifestOfRun(run));
     if (!built.ok) {
       return NextResponse.json(

@@ -86,6 +86,46 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'mgmt.showDetail': 'Show the answers in detail',
   'mgmt.signedOutLead': 'You are signed out, so',
   'mgmt.couldNotBeRead': 'could not be read',
+
+  // ManagementExecutive — the decision panel on top of the Management view
+  'exec.questionLabel': 'The decision',
+  'exec.thisProgram': 'this program',
+  'exec.statusFacet': 'Decision',
+  'exec.inTheWay': 'What stands in the way',
+  'exec.nothingInTheWay': 'Nothing stands in the way of confirming it.',
+  'exec.notYetRead': 'Still being read.',
+  'exec.moreLead': 'and',
+  'exec.moreTail': 'more, each with its evidence, under the figures',
+  'exec.nextStep': 'Next step for the decision',
+  'exec.noNextStep': 'Nothing to do for the decision right now.',
+  'exec.bucketsTitle': 'Where the objects stand',
+  'exec.bucketsChart': 'Objects per bucket on',
+  'exec.bucketsListLabel': 'Objects per bucket',
+  'exec.objects': 'objects',
+  'exec.target': '(target platform)',
+  'exec.noTarget': '(no target platform set)',
+  'exec.phasesTitle': 'Evidence per phase',
+  'exec.phasesNote': 'Green only where something other than your account checked the record.',
+  'exec.evidenceBehind': 'The evidence behind these figures',
+  'cloudFit.colObject': 'Object',
+  'cloudFit.colStatus': 'What is known',
+  'cloudFit.colDetail': 'Detail',
+  'cloudFit.tableCaption': 'Objects in this bucket',
+  'cloudFit.showDetail': 'Show detail for',
+  'cloudFit.hideDetail': 'Hide detail for',
+  'cloudFit.details': 'Details',
+  'cloudFit.hide': 'Hide',
+  'cloudFit.toFindOutTag': 'To find out',
+  'cloudFit.ruleRetireDrop': 'Confirmed Drop — the object goes away',
+  'cloudFit.ruleRetireCandidateZeroUsage': 'No executions recorded — a candidate, not a decision',
+  'cloudFit.ruleNoCataloguedPathNoneNamed': 'Listed by SAP, no released successor named',
+  'cloudFit.ruleNoCataloguedPathNotListed': 'Not in SAP’s repository files',
+  'cloudFit.ruleRebuildOwnWork': 'The project’s own work — the way is known',
+  'cloudFit.ruleRebuildPath': 'SAP names a released path',
+  'cloudFit.ruleKeepPlatformLevel': 'Permitted on the target platform as it is',
+  'cloudFit.reasonLevelNotDetermined': 'Level not determined',
+  'cloudFit.reasonTargetPlatformNotSet': 'No target platform set',
+  'cloudFit.reasonCatalogEvidenceMissing': 'Catalogue evidence missing',
 } as const;
 
 const M = WORKSPACE_ANSWER_MESSAGES;
@@ -153,4 +193,18 @@ export function mgmtBucketsChartLabel(platform: string): string {
 
 export function mgmtShowDetailLabel(n: number): string {
   return `${M['mgmt.showDetail']} (${n})`;
+}
+
+/** "and 5 more, each with its evidence, under the figures" */
+export function execMoreBlockersLabel(n: number): string {
+  return `${M['exec.moreLead']} ${n} ${M['exec.moreTail']}`;
+}
+
+/** "Objects per bucket on Private Edition: Retire 0, Keep 6, …" — the chart's text. */
+export function execBucketsChartLabel(platform: string): string {
+  return `${M['exec.bucketsChart']} ${platform}`;
+}
+
+export function cloudFitDetailLabel(open: boolean, objectName: string): string {
+  return `${open ? M['cloudFit.hideDetail'] : M['cloudFit.showDetail']} ${objectName}`;
 }

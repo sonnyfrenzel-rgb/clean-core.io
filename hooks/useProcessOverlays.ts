@@ -15,6 +15,7 @@ import {
 import type { CallGraphReport } from '@/lib/abap/call-graph';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import type { UsageReport } from '@/lib/abap/usage-model';
+import type { CatalogLookupTarget } from '@/lib/assessment-target';
 import type { ProcessMapModel } from '@/lib/process-map';
 import type { OverlayDefinition, ProcessNavigation } from '@/lib/process-navigation';
 
@@ -60,6 +61,8 @@ export function useProcessOverlays(
   model: ProcessMapModel,
   nav: ProcessNavigation,
   usage: UsageReport | null | undefined,
+  /** The project's target profile — the levels are graded under it (`useAbcdCatalogLookup`). */
+  catalogTarget: CatalogLookupTarget | null,
 ): OverlayDefinition[] {
   const [held, setHeld] = useState<{ key: string; value: Derived }>({ key: '', value: EMPTY });
   const key = useMemo(() => (source ? sha256Hex(source) : ''), [source]);
@@ -107,7 +110,7 @@ export function useProcessOverlays(
     return lookupObjects(placed).slice(0, MAX_GRADED);
   }, [byElement]);
 
-  const lookup = useAbcdCatalogLookup(objects);
+  const lookup = useAbcdCatalogLookup(objects, catalogTarget);
 
   return useMemo(() => {
     const out: OverlayDefinition[] = [];

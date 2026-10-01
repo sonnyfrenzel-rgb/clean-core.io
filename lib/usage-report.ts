@@ -1,4 +1,4 @@
-import type { Firestore } from 'firebase-admin/firestore';
+import type { DocumentData } from 'firebase-admin/firestore';
 import { isTestAccount } from './test-accounts';
 
 /**
@@ -142,9 +142,20 @@ function countFailures(failed: { kind: string; status: string }[]): DeliveryMetr
 }
 
 /**
+ * What the report reads, and all of it. The Admin SDK's `Firestore` satisfies
+ * it, and so does the dependency-free REST client the Friday job uses
+ * (`scripts/lib/firestore-rest.ts`): that job holds an OIDC permission and runs
+ * no third-party package beside it (QA review, fa0aaea6cc47).
+ */
+export interface UsageReportSource {
+  collection(name: string): { get(): Promise<{ docs: { id: string; data(): DocumentData }[] }> };
+  collectionGroup(name: string): { get(): Promise<{ docs: { id: string; data(): DocumentData }[] }> };
+}
+
+/**
  * @param periodEnd end of the reporting week (exclusive); defaults to now
  */
-export async function buildUsageReport(db: Firestore, periodEnd: Date = new Date()): Promise<UsageReport> {
+export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = new Date()): Promise<UsageReport> {
   const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
   const periodStart = new Date(periodEnd.getTime() - WEEK_MS);
   const previousStart = new Date(periodStart.getTime() - WEEK_MS);

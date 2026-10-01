@@ -455,6 +455,42 @@ test.describe('the first look on screen', () => {
     await expect(page.locator('[data-first-look-decisions]')).toHaveAttribute('data-count', /[1-9]/);
   });
 
+  /*
+   * The test above cannot reach Skip: on this source the engine is usually done
+   * before the build-up can be looked at. Holding stage 3's one network read
+   * keeps the build-up on the screen for as long as it takes to find the
+   * control, press it, and see it do what it says (QA full review of
+   * fc787674705f, 9962d7aa0148).
+   */
+  test('Skip is there while the build-up runs, and pressing it ends in the end state', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1400 });
+    await signIn(page, ADMIN);
+
+    const held: Array<() => Promise<void>> = [];
+    await page.route('**/api/projects/*/process-naming', (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      held.push(() => route.continue().catch(() => {}));
+    });
+
+    await page.goto(`/project/${PROJECT_ID}?first=1`, { waitUntil: 'domcontentloaded' });
+    const first = page.locator('[data-first-look]');
+    await expect(first, 'the build-up never started').toHaveAttribute('data-first-look', 'building', {
+      timeout: 60000,
+    });
+
+    const skip = page.locator('[data-first-look-skip]');
+    await expect(skip, 'no Skip while the build-up runs').toBeVisible();
+    await expect(skip).toBeEnabled();
+    await skip.click();
+    await expect(skip, 'Skip did nothing — the build-up is still running').toHaveCount(0);
+    await expect(first).not.toHaveAttribute('data-first-look', 'building');
+
+    await page.unroute('**/api/projects/*/process-naming');
+    for (const release of held.splice(0)) await release();
+    await expect(first).toHaveAttribute('data-first-look', 'end-state', { timeout: 60000 });
+  });
+
   test('a second visit has no build-up — it opens in the end state', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);

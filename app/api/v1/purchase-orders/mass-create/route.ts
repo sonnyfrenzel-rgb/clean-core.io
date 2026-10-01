@@ -3,10 +3,12 @@ import { verifyRequestAuth } from '@/lib/firebase-admin';
 
 export async function POST(request: Request) {
   try {
-    // F-20: demo/mock route — NOT a real SAP integration. Disabled in production so a
-    // simulated "COMPLETED" success can never be mistaken for a live purchase-order
-    // action. Enable in non-prod only via ENABLE_MOCK_PO_ROUTE=true.
-    if (process.env.NODE_ENV === 'production' && process.env.ENABLE_MOCK_PO_ROUTE !== 'true') {
+    // F-20: demo/mock route — NOT a real SAP integration. Never served by a
+    // production build: the ENABLE_MOCK_PO_ROUTE flag used to switch it on
+    // there too, which contradicted this comment (QA full review of
+    // fc787674705f, ba03296d851e). Outside production every answer is labelled
+    // as a simulation, not as completed work.
+    if (process.env.NODE_ENV === 'production') {
       return NextResponse.json({ error: 'Not found.' }, { status: 404 });
     }
 
@@ -36,14 +38,16 @@ export async function POST(request: Request) {
       requisitionId: id,
       purchaseOrderId: purchaseOrderId,
       success: true,
-      message: 'Successfully processed'
+      simulated: true,
+      message: 'Simulated - no purchase order was created in any SAP system.'
     }));
 
     return NextResponse.json({
       jobId,
-      status: 'COMPLETED',
+      status: 'SIMULATED',
+      simulated: true,
       results
-    }, { status: 201 });
+    }, { status: 200 });
 
   } catch (error) {
     return NextResponse.json(

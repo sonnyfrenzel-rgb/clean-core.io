@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { processFlowLevels } from './process-flow-levels';
 import {
   ReactFlow,
   Background,
@@ -167,29 +168,9 @@ const ProcessFlow: React.FC<ProcessFlowProps> = ({ flow, tasks, onNodeClick }) =
     const initialNodes: Node[] = [];
     const initialEdges: Edge[] = [];
 
-    // Horizontal layout calculation
-    const levelMap: Record<string, number> = {};
-    const visited = new Set<string>();
-
-    const calculateLevels = (nodeId: string, level: number, depth: number = 0) => {
-      if (depth > 50) return; // Safety limit
-      if (visited.has(nodeId)) {
-        levelMap[nodeId] = Math.max(levelMap[nodeId] || 0, level);
-        return;
-      }
-      visited.add(nodeId);
-      levelMap[nodeId] = level;
-
-      const node = flow.find((n) => n.id === nodeId);
-      if (node && node.next && Array.isArray(node.next)) {
-        node.next.forEach((nextId) => calculateLevels(nextId, level + 1, depth + 1));
-      }
-    };
-
+    // Horizontal layout calculation: longest path from the start (`./process-flow-levels.ts`).
     const startNode = flow.find((n) => n.type === 'startEvent') || flow[0];
-    if (startNode) {
-      calculateLevels(startNode.id, 0);
-    }
+    const levelMap: Record<string, number> = startNode ? processFlowLevels(flow, startNode.id) : {};
 
     // Determine unique roles for swimlanes Y track alignment
     const roles = Array.from(new Set(flow.map(n => n.role || 'System').filter(Boolean)));

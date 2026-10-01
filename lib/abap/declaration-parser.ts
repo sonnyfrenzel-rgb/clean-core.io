@@ -193,6 +193,13 @@ export function parseDeclarations(source: string, file: string): ClassNode[] {
     if (/^CLASS\s+[\w\/]+\s+IMPLEMENTATION/i.test(st.text)) { inDefinition = false; continue; }
     if (up === 'ENDCLASS' || up === 'ENDINTERFACE') { if (cur) { nodes.push(cur); cur = null; } inDefinition = false; continue; }
 
+    // `CLASS x DEFINITION DEFERRED.` and `… LOAD.` announce a class defined
+    // elsewhere; they declare nothing. Read as a definition they became an
+    // empty class node, and a child inheriting from it looked resolved against
+    // a parent nobody uploaded.
+    if (/^CLASS\s+[\w\/]+\s+DEFINITION\s+(?:DEFERRED|LOAD)\b/i.test(st.text)) continue;
+    if (/^INTERFACE\s+[\w\/]+\s+(?:DEFERRED|LOAD)\b/i.test(st.text)) continue;
+
     // CLASS x DEFINITION ...
     const classDef = st.text.match(/^CLASS\s+([\w\/]+)\s+DEFINITION\b(.*)$/i);
     if (classDef) {

@@ -21,6 +21,7 @@ import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import type { ExtensibilityRouteReport } from '@/lib/abap/extensibility-router';
 import { QUADRANT_META, joinUsageWithEvidence, usageJoinObjectNames } from '@/lib/abap/usage-join';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
+import type { CatalogLookupTarget } from '@/lib/assessment-target';
 
 interface UsageRiskMatrixProps {
   rows: UsageJoinRow[];
@@ -45,14 +46,17 @@ export function UsageRiskMatrixFor({
   usageReport,
   findings,
   route,
+  target,
 }: {
   usageReport: UsageReport;
   findings: EvidenceFinding[];
   route: ExtensibilityRouteReport;
+  /** The project's target profile (`catalogLookupTargetOf`) — the lookup is made under it. */
+  target: CatalogLookupTarget | null;
 }) {
   const objectNames = useMemo(() => usageJoinObjectNames(usageReport, { findings }), [usageReport, findings]);
   const lookupObjects = useMemo(() => objectNames.map((name) => ({ name })), [objectNames]);
-  const lookup = useAbcdCatalogLookup(lookupObjects);
+  const lookup = useAbcdCatalogLookup(lookupObjects, target);
 
   // Kept as a useMemo that runs unconditionally (rules of hooks), but only
   // actually joins once the path lookup is ready — see the header comment.

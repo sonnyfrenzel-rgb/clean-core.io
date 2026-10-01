@@ -18,6 +18,8 @@
 import type { Project, WorklistItem } from '@/lib/types';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { buildEvidenceChain } from '@/lib/evidence-chain';
+import { recordedProfileOf } from '@/lib/assessment-target';
+import { profileCoverage } from '@/lib/assessment-profile';
 // The escaper the HTML/Word executive summary below uses at every interpolation.
 // It is imported rather than defined here: one escaper, shared with the stage
 // exports, and its output is unchanged, so the signed bytes of a pack issued
@@ -104,9 +106,18 @@ function csvCell(value: unknown): string {
   return `"${s.replace(/"/g, '""')}"`;
 }
 
-/** Normalise a value for a Markdown table cell (escape pipes / collapse newlines). */
+/**
+ * Normalise a value for a Markdown table cell: collapse newlines, and
+ * backslash-escape the pipe that would split the cell, the angle brackets that
+ * open raw HTML or an autolink, and the square brackets that open a link or an
+ * image. Most of these values are typed by the project owner (the name, the
+ * approver, the override reason in `07-user-attested.md`), and a reviewer's
+ * Markdown viewer must show them as text rather than render `<img src=…>` or
+ * `![](https://…)` from them (QA full review of v2.20.0). The backslash itself
+ * is escaped first, so a value cannot cancel an escape.
+ */
 function mdCell(value: unknown): string {
-  return String(value ?? '—').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim() || '—';
+  return String(value ?? '—').replace(/\r?\n/g, ' ').replace(/[\\|<>[\]]/g, '\\$&').trim() || '—';
 }
 
 /**
@@ -117,8 +128,9 @@ function mdCell(value: unknown): string {
  * from the browser (`firestore.rules`, the update allowlist) — and the pack
  * hashed and signed the result, so a sign-off typed into a form came out the
  * other end as server-attested evidence. Those statements now live in
- * `07-user-attested.md`, which the manifest names but the signature does not
- * cover, and the signed files say so where the statement used to be.
+ * `07-user-attested.md`, whose name and bytes the signature binds (manifest
+ * format 3 on) but whose statements nobody vouches for, and the signed files
+ * say so where the statement used to be.
  */
 /**
  * What the pack says about the model — roadmap 1.2.
@@ -168,6 +180,41 @@ function byokLineOf(mc: ModelCard | undefined): string {
   // answering it as though it were the same one.
   if (mc?.modelParticipation === 'narrative') return NOT_ESTABLISHED;
   return mc?.byokUsed ? 'Yes — user-provided API key' : 'No — platform key';
+}
+
+/**
+ * The narrative's row in the provenance table.
+ *
+ * It said "model-generated" for every run, including one no model took part in
+ * and one whose narrative arrived without a receipt — the class this file
+ * exists to get right (QA full review of v2.20.0). The hash reference stands
+ * where there is a narrative: `aiNarrativeMeta.responseHash` is inside the
+ * run's signed payload; only the text (`analysis`) is outside it.
+ */
+function narrativeProvenanceRowOf(mc: ModelCard | undefined): string {
+  if (mc?.modelParticipation === 'none') return 'AI narrative | none — no narrative was submitted for this run';
+  const where = 'not in this pack; its SHA-256 is signed with the run';
+  if (mc?.modelParticipation === 'narrative-attested') {
+    return `AI narrative (${mdCell(modelIdOf(mc))}) | model-generated — a receipt for the model call was verified; ${where}`;
+  }
+  if (mc?.modelParticipation === 'narrative') {
+    return `AI narrative | origin not established — submitted with the analysis, no verifiable record of a model call; ${where}`;
+  }
+  return 'AI narrative | origin not recorded — this run predates the record of where the narrative came from; not in this pack';
+}
+
+/**
+ * The SAP API catalog revision the run was computed against.
+ *
+ * Read from the signed run first, then from the model card that mirrors it.
+ * A run that recorded neither says so: the old fallback printed `2024.FPS02`,
+ * a revision nothing had established, into a signed file (QA full review of
+ * v2.20.0).
+ */
+function catalogVersionOf(project: Project): string {
+  const fromRun = (project as { sapApiCatalogVersion?: unknown }).sapApiCatalogVersion;
+  if (typeof fromRun === 'string' && fromRun) return fromRun;
+  return project.auditMetadata?.modelCard?.catalogVersion || NOT_RECORDED;
 }
 
 /**
@@ -294,7 +341,7 @@ export function generateExecutiveSummary(project: Project): string {
 | Field | Value |
 |---|---|
 | Platform Version | ${mdCell(mc?.engineVersion || APP_VERSION)} |
-| SAP API Catalog | ${mdCell((mc as any)?.catalogVersion || '2024.FPS02')} |
+| SAP API Catalog | ${mdCell(catalogVersionOf(project))} |
 | Model Provider | ${mdCell(modelProviderOf(mc))} |
 | Model | ${mdCell(modelIdOf(mc))} |
 | BYOK Used | ${mdCell(byokLineOf(mc))} |
@@ -508,7 +555,7 @@ ${list(oos)}
 ## Evidence
 
 - Extensibility route: ${mdCell(project.extensibilityRoute || original)}
-- Engine: ${mdCell(mc?.engineVersion || APP_VERSION)} · SAP catalog: ${mdCell((mc as any)?.catalogVersion || '2024.FPS02')}
+- Engine: ${mdCell(mc?.engineVersion || APP_VERSION)} · SAP catalog: ${mdCell(catalogVersionOf(project))}
 - Bound to the immutable, HMAC-signed analysis run — the findings behind this decision are reproducible.
 
 ## Limitations
@@ -547,7 +594,7 @@ export function generateModelCard(project: Project): string {
 | Model Provider | ${modelProviderOf(mc)} |
 | Model Identifier | ${modelIdOf(mc)} |
 | Platform Version | ${mc?.engineVersion || APP_VERSION} |
-| SAP API Catalog | ${(mc as any)?.catalogVersion || '2024.FPS02'} |
+| SAP API Catalog | ${mdCell(catalogVersionOf(project))} |
 | BYOK (Bring Your Own Key) | ${byokLineOf(mc)} |
 | Narrative origin | ${narrativeOriginOf(mc)} |
 
@@ -603,7 +650,8 @@ export function generateKnownLimitations(): string {
 }
 
 /**
- * F-04: Provenance manifest. The HMAC signature proves the *integrity* of the
+ * F-04: Provenance manifest. The pack signature (HMAC, and Ed25519 where a
+ * signing key is configured) proves the *integrity* of the
  * generated package (these exact bytes were produced server-side and not altered
  * afterwards) — it does NOT by itself prove every value was deterministically
  * computed by the server. This file labels each evidence file and headline field
@@ -616,7 +664,7 @@ export function generateProvenanceManifest(project: Project): string {
 
 > Generated by Clean-Core.io ${APP_VERSION} on ${new Date().toISOString()}.
 
-The HMAC signature in \`manifest.json\` protects the **integrity** of this package —
+The signature in \`manifest.json\` (HMAC-SHA256, plus Ed25519 where the issuing instance has a signing key) protects the **integrity** of this package —
 that these exact bytes were generated server-side and have not been altered since.
 It does **not**, on its own, attest that every value was deterministically computed
 by the server. Use the classes below to separate deterministic facts from
@@ -655,8 +703,8 @@ model-generated drafts and user-attested inputs.
 | Data-coupling findings | server-computed |
 | Target-architecture route (RAP/CAP/…) | server-computed (deterministic router) |
 | Router rationale in 02 / 06 | server-computed (deterministic router) |
-| AI narrative (${mdCell(modelIdOf(mc))}) | model-generated — not in this pack; referenced by hash on the run |
-| Project name, target architecture, architect sign-off / approver / override reason | user-attested — in ${USER_ATTESTED_FILE}, unsigned |
+| ${narrativeProvenanceRowOf(mc)} |
+| Project name, target architecture, architect sign-off / approver / override reason | user-attested — in ${USER_ATTESTED_FILE}; its bytes are sealed, its statements are not confirmed |
 | HMAC / Ed25519 signature | server-computed integrity seal over the manifest hash |
 
 This is a decision-support package, not a certification. Model-generated and
@@ -666,6 +714,40 @@ user-attested content must be validated by a qualified reviewer.
 
 /** The pack's record of what the run was computed from. Signed. */
 export const INPUT_MANIFEST_FILE = '08-input-manifest.json';
+
+/**
+ * Roadmap 7.10 - the target profile, as the receipt carries it: the profile the
+ * run signed, what the result may claim (`covered` or `unconfirmed`, with every
+ * reason as a sentence) and the subject hash. A run signed before 7.10 says so
+ * - `recorded: false` - rather than being given a profile by the pack.
+ */
+function targetProfileSection(project: Project): Record<string, unknown> {
+  const profile = recordedProfileOf(project);
+  if (!profile) {
+    return {
+      recorded: false,
+      note:
+        'This run was signed before runs recorded the target profile they were assessed against (roadmap 7.10). ' +
+        'Its deployment target is in the inputs above where the run recorded one; release, language versions ' +
+        'and catalog snapshot are not determined.',
+    };
+  }
+  const coverage = profileCoverage(profile);
+  return {
+    recorded: true,
+    claim: coverage.state === 'covered' ? 'confirmed' : 'unconfirmed',
+    coverage: coverage.state,
+    reasons: coverage.gaps
+      .filter((g) => g.severity !== 'notes')
+      .map((g) => ({ code: g.code, subject: g.subject, sentence: g.sentence })),
+    // What the owner did not state - a note, not a reason the claim is weaker.
+    notes: coverage.gaps
+      .filter((g) => g.severity === 'notes')
+      .map((g) => ({ code: g.code, subject: g.subject, sentence: g.sentence })),
+    subject: typeof project.assessmentSubject === 'string' ? project.assessmentSubject : null,
+    profile,
+  };
+}
 
 /**
  * Roadmap 0.5 — the run's `inputs[]`, as the pack carries them.
@@ -709,6 +791,7 @@ export function generateInputManifestFile(project: Project): string {
       projectId: project.id ?? null,
       runId: project.activeRunId ?? null,
       ...body,
+      targetProfile: targetProfileSection(project),
     },
     null,
     2,
@@ -797,9 +880,9 @@ export function generateUserAttestations(
 
 > Generated by Clean-Core.io ${APP_VERSION} on ${new Date().toISOString()} for project ${mdCell(bound.projectId)}, run ${mdCell(bound.runId)}.
 
-**This file is not covered by the pack's signature.** The manifest binds its name, so a
-reader can see it was in the archive when the pack was sealed; nobody vouches for what
-it says. Every value below was entered or confirmed by the signed-in account holder in
+**What this file says is not covered by the pack's signature.** The signature binds its
+name and the SHA-256 of these bytes, so a reader can see it was in the archive when the
+pack was sealed and has not been rewritten since; nobody vouches for what it says. Every value below was entered or confirmed by the signed-in account holder in
 their own session — a self-declaration, not an organisational mandate and not a finding
 of the engine. The signed files (00–06) hold the evidence; this one holds the decision.
 

@@ -32,11 +32,12 @@ import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 // The required-artefact table and its matcher live in lib/ so a spec can run the
 // real gate instead of a copy of it (QA review of 9e408888bfec, 3c05340dc39b).
 import { holdsStoredPackage, missingArtefacts, usableTestSuite, type ProjectFile } from '@/lib/transformation-artefacts';
+import { duplicatePaths } from './duplicate-paths';
 import { matchCdsView } from '@/lib/abap/cds-catalog';
 import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
 // Roadmap 8.3 — the generation follows the architecture contract, not a field
 // on the project document. See `lib/generation-direction.ts` for what it
@@ -79,10 +80,17 @@ const isUsableFile = (f: unknown): f is ProjectFile =>
  * project instead of `zcl_demo_rap_behavior` has still answered the question.
  */
 
-/** The three markers a generation may write into its comments, as code points. */
+/**
+ * The two warning markers a generation may write into its comments, as code
+ * points. A third, the check mark, used to turn a comment into a "Fully
+ * Grounded" dot — as did any comment that happened to say `CDS`, `matched` or
+ * `fully`. Nothing compared that line with a catalog or validated it, so the
+ * dot was the model grading its own output (QA full review of fc78767,
+ * 4cfbf09351f1). A model comment that warns is worth pointing at; one that
+ * praises itself is not evidence, so it gets no marker.
+ */
 const WARNING_SIGN = String.fromCodePoint(0x26a0, 0xfe0f);
 const CROSS_MARK = String.fromCodePoint(0x274c);
-const CHECK_MARK = String.fromCodePoint(0x2705);
 
 export default function TransformationPage() {
   const { projectId } = useParams();
@@ -99,6 +107,9 @@ export default function TransformationPage() {
    */
   const generationInFlight = useRef(false);
   const [loading, setLoading] = useState(true);
+  /** Set by the load when the project has no code yet and could have some. */
+  const [awaitingAutoGeneration, setAwaitingAutoGeneration] = useState(false);
+  const autoGenerationStarted = useRef(false);
 
   useEffect(() => {
     projectRef.current = project;
@@ -119,6 +130,7 @@ export default function TransformationPage() {
   const [progress, setProgress] = useState(0);
   const [isProceeding, setIsProceeding] = useState(false);
   const [showCopyDialog, setShowCopyDialog] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const router = useRouter();
   const { profile } = useUserProfile();
 
@@ -178,13 +190,6 @@ export default function TransformationPage() {
           line: lineNum,
           level: 'not-supported',
           title: 'Manual Review Required',
-          detail: line.replace(/^\s*\/\/\s*/, '').trim()
-        });
-      } else if (line.includes('//') && (line.includes('CDS') || line.includes('matched') || line.includes('fully') || line.includes(CHECK_MARK))) {
-        markers.push({
-          line: lineNum,
-          level: 'fully',
-          title: 'Fully Grounded',
           detail: line.replace(/^\s*\/\/\s*/, '').trim()
         });
       }
@@ -469,8 +474,17 @@ CMD ["node", "srv/service.js"]`
   };
 
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(transformedCode);
+  const handleCopy = async () => {
+    // The toast used to appear before the clipboard had answered, so a denied
+    // clipboard still said "copied" (QA full review of fc78767, 604c2ded57e3).
+    // A failure is a Message Strip, not a toast (§2.8).
+    try {
+      await navigator.clipboard.writeText(transformedCode);
+    } catch {
+      setCopyFailed(true);
+      return;
+    }
+    setCopyFailed(false);
     // `CcToast` removes itself after the four seconds of §2.6.
     setShowCopyDialog(true);
   };
@@ -720,6 +734,12 @@ CMD ["node", "srv/service.js"]`
         throw new Error('The model returned no usable code. Nothing was saved — the previous version is untouched. Try the generation again.');
       }
 
+      // Nor is a package that answers one path twice (6d411bca538c).
+      const repeated = duplicatePaths(filesArray);
+      if (repeated.length > 0) {
+        throw new Error(`The model returned more than one file for the same path: ${repeated.join('; ')}. Nothing was saved — the previous version is untouched. Try the generation again.`);
+      }
+
       // And one file is not a package. Every path the prompt enumerated has to
       // be answered, or this is a half-generation and gets reported as one
       // rather than stored as a finished transformation (b88c77b, 7976bced4c28).
@@ -826,7 +846,8 @@ CMD ["node", "srv/service.js"]`
             // The page used to generate from whatever design was there.
             // The inputs are read again by the generation itself, together
             // with the token they are stored against (roadmap 3.0.11).
-            generateTransformation();
+            // Started by the effect below once the model switch has answered.
+            setAwaitingAutoGeneration(true);
           } else {
             setLoading(false);
           }
@@ -843,6 +864,33 @@ CMD ["node", "srv/service.js"]`
     fetchProject();
   }, [projectId, generateTransformation]);
 
+  /**
+   * The first generation of a project, started only when this stage may call a
+   * model. It used to start straight from the load, whatever the switch in
+   * Settings said or whether any key existed, and the reader got the proxy's
+   * refusal as a failed generation (QA full review of fc78767, 6f3dc15e6f7b).
+   * The hook is optimistic while it loads, so this waits for its answer; a
+   * stage that is off or keyless ends in the "not generated" state, which says
+   * which of the two it is (`autoGenerationBlocked` below — derived, so this
+   * effect writes no state of its own).
+   */
+  useEffect(() => {
+    if (!awaitingAutoGeneration || modelAvailability.loading || autoGenerationStarted.current) return;
+    if (!modelAvailability.enabled('transformation')) return;
+    // Out of the effect body, as the load's call was (it ran after an await):
+    // the generation sets state before its first await. Cancelled with the
+    // effect, so a switch that changes in the same tick starts nothing.
+    const timer = setTimeout(() => {
+      autoGenerationStarted.current = true;
+      generateTransformation();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [awaitingAutoGeneration, modelAvailability, generateTransformation]);
+  const autoGenerationBlocked =
+    awaitingAutoGeneration && !modelAvailability.loading && !modelAvailability.enabled('transformation');
+  /** `loading`, except while waiting on a generation this stage may not start. */
+  const busy = loading && !autoGenerationBlocked;
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (loading && progress < 95) {
@@ -855,10 +903,16 @@ CMD ["node", "srv/service.js"]`
 
   const phases = workflowSteps(project);
   const blockers = generationBlockers(project, 'transformation');
+  /** Why the engine cannot be run by hand now, or null when it can (6f3dc15e6f7b). */
+  const modelOff = modelAvailability.enabled('transformation')
+    ? null
+    : modelAvailability.keyAvailable
+      ? 'The transformation stage is turned off in Settings.'
+      : 'No Gemini API key is available — add your own in Settings.';
   const staleNotes = [
     ...blockers,
     ...(phases.find((p) => p.key === 'transformation')?.state === 'stale'
-      ? ['The code shown here was generated from a previous source — it is not a transformation of the current one.']
+      ? [`The code shown here was generated from ${previousBasis(project)} — it is not a transformation of the current one.`]
       : []),
   ];
 
@@ -892,7 +946,7 @@ CMD ["node", "srv/service.js"]`
 
   const openSignOffs = findings.filter(f => f.requiresSignOff && !signedOffIds.has(`${f.construct}-${f.location?.line}`)).length;
 
-  if (loading && !transformedCode) return (
+  if (busy && !transformedCode) return (
     <div>
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
@@ -1021,24 +1075,32 @@ CMD ["node", "srv/service.js"]`
         </CcButton>
         <CcButton
           icon={<RefreshCw size={16} aria-hidden="true" />}
-          busy={loading}
+          busy={busy}
           onClick={() => {
-            if (blockers.length === 0 && project?.legacyCode && project?.solutionDesign && project?.analysis) {
+            if (modelOff === null && blockers.length === 0 && project?.legacyCode && project?.solutionDesign && project?.analysis) {
               generateTransformation();
             }
           }}
-          disabled={blockers.length > 0}
-          title={blockers.length > 0 ? blockers.join(' ') : undefined}
+          disabled={blockers.length > 0 || modelOff !== null}
+          title={blockers.length > 0 ? blockers.join(' ') : modelOff ?? undefined}
         >
           Re-Run Engine
         </CcButton>
       </div>
 
-      <StaleNotice title="Built for a previous source" reasons={staleNotes} />
+      <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
       <CcToast open={showCopyDialog} onDismiss={closeCopyToast}>
         Code copied to clipboard
       </CcToast>
+
+      {copyFailed && (
+        <div className="mb-8" data-copy-failed>
+          <CcMessageStrip state="error" announce>
+            The browser did not allow copying to the clipboard. Nothing was copied — select the code and copy it by hand.
+          </CcMessageStrip>
+        </div>
+      )}
 
       {/*
         Roadmap 8.3 — a blocked contract generates nothing, and the reader is
@@ -1140,7 +1202,7 @@ CMD ["node", "srv/service.js"]`
                 data-stage-output={transformedCode ? 'generatedCode' : undefined}
                 className="flex-1 min-w-0 overflow-y-auto"
               >
-                {files.length === 0 && !loading ? (
+                {files.length === 0 && !busy ? (
                   /* Roadmap 1.2 / V25-A12. An empty syntax highlighter under a
                      green "AI Generated" badge is the exact failure the
                      acceptance names: a reader sees a code pane that produced
@@ -1226,14 +1288,25 @@ CMD ["node", "srv/service.js"]`
               </span>
             </div>
             <div>
-              <h3 className="cc-text-label text-cc-ink-muted">Overall Support Rollup</h3>
+              {/* The score is the signed analysis of the legacy source. It
+                  used to be headed "Overall Support Rollup" and read out as
+                  "Grounded & Ready" over the generated code, which no
+                  compiler, test or validator has looked at (QA full review of
+                  fc78767, 88b7d2853f85). The words say what was measured. */}
+              <h3 className="cc-text-label text-cc-ink-muted">Signed source-analysis score</h3>
               <p className="cc-text-h2 text-cc-ink mt-1">
                 {currentScore === undefined
                   ? 'Not scored yet'
-                  : currentScore >= 90 ? 'Grounded & Ready' : currentScore >= 70 ? 'Requires Verification' : 'High Risk Gaps'}
+                  : currentScore >= 90 ? 'Source largely supported' : currentScore >= 70 ? 'Source needs verification' : 'Source has high-risk gaps'}
               </p>
-              <p className="cc-text-meta text-cc-ink-muted mt-1">
-                {signedOffIds.size} of {findings.filter(f => f.requiresSignOff).length} manual findings signed off.
+              <p className="cc-text-meta text-cc-ink-muted mt-1" data-score-scope>
+                Scores the legacy source, not the generated code — nothing has compiled or tested the code on the right.
+              </p>
+              {/* The boxes below are component state: no reviewer, no time, no
+                  reason, gone on reload, and no Run is signed when they change.
+                  "signed off" said more than that (af9225424d1d). */}
+              <p className="cc-text-meta text-cc-ink-muted mt-1" data-review-progress>
+                {signedOffIds.size} of {findings.filter(f => f.requiresSignOff).length} manual findings ticked in this browser — review progress only, not saved and not a signed sign-off.
               </p>
             </div>
           </div>
@@ -1352,6 +1425,10 @@ CMD ["node", "srv/service.js"]`
         backLabel="Back to Design"
         proceedPath={`/project/${projectId}/documentation`}
         proceedLabel="Proceed to Documentation"
+        // Skipping a step stays possible, as on every stage; it stops looking
+        // like the recommended way on when there is no package (c1c94b3caae4).
+        incomplete={files.length === 0}
+        incompleteReason="no transformed code has been generated"
       />
     </div>
   );

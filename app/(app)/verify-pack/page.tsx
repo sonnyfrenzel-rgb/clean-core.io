@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useCallback, useRef } from 'react';
-import { verifyAuditPack, type VerifyResult, type FileVerifyResult } from '@/lib/audit-pack-verify';
+import { verifyAuditPack, signatureStateOf, verdictHeadline, type VerifyResult, type FileVerifyResult } from '@/lib/audit-pack-verify';
 import { ShieldCheck, ShieldAlert, ShieldX, Upload, CheckCircle2, XCircle, AlertCircle, FileText, Hash } from 'lucide-react';
 import BackLink from '@/components/BackLink';
 import { motion, AnimatePresence } from 'motion/react';
@@ -30,8 +30,8 @@ export default function VerifyPackPage() {
     setVerifying(true);
     setResult(null);
     try {
-      const blob = new Blob([await file.arrayBuffer()]);
-      const res = await verifyAuditPack(blob);
+      // The file goes in as it is: the verifier asks its size before reading it.
+      const res = await verifyAuditPack(file);
       setResult(res);
     } catch (err: any) {
       setResult({
@@ -63,14 +63,14 @@ export default function VerifyPackPage() {
     if (file) handleFile(file);
   }, [handleFile]);
 
-  const signatureBadge = (sv: boolean | null) => {
-    if (sv === true) return (
+  const signatureBadge = (state: ReturnType<typeof signatureStateOf>) => {
+    if (state === 'valid') return (
       <div className="flex items-center gap-2 text-cc-success">
         <ShieldCheck size={20} className="shrink-0" aria-hidden="true" />
         <span className="font-bold text-sm">Authenticity Confirmed</span>
       </div>
     );
-    if (sv === false) return (
+    if (state === 'invalid') return (
       <div className="flex items-center gap-2 text-cc-error">
         <ShieldX size={20} className="shrink-0" aria-hidden="true" />
         <span className="font-bold text-sm">Signature Invalid</span>
@@ -79,7 +79,7 @@ export default function VerifyPackPage() {
     return (
       <div className="flex items-center gap-2 text-cc-warning">
         <ShieldAlert size={20} className="shrink-0" aria-hidden="true" />
-        <span className="font-bold text-sm">Unsigned / Unverified</span>
+        <span className="font-bold text-sm">{state === 'unchecked' ? 'Signed / Not Checked' : 'Unsigned / Unverified'}</span>
       </div>
     );
   };
@@ -172,11 +172,7 @@ export default function VerifyPackPage() {
                   )}
                   <div>
                     <h2 className="text-xl font-extrabold text-cc-ink">
-                      {result.status === 'authentic'
-                        ? 'Authenticity & Integrity Verified'
-                        : result.status === 'integrity-only'
-                          ? 'Integrity Verified (Unsigned)'
-                          : 'Verification Failed'}
+                      {verdictHeadline(result)}
                     </h2>
                     <p className={`text-sm mt-1 font-semibold ${STATE_CLASSES[VERDICT_STATE[result.status]].text}`}>
                       {fileName}
@@ -256,7 +252,7 @@ export default function VerifyPackPage() {
                     <ShieldCheck size={16} className="text-cc-ink-muted" aria-hidden="true" />
                     <span className="cc-text-label text-cc-ink-muted">Signature</span>
                   </div>
-                  {signatureBadge(result.signatureValid)}
+                  {signatureBadge(signatureStateOf(result))}
                   {result.manifest?.signature && (
                     <p className="text-xs text-cc-ink-muted font-cc-mono mt-2 break-all">
                       {result.manifest.signature.substring(0, 32)}...

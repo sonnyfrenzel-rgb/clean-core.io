@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { MessageSquare, X, Send, PenLine, ShieldCheck } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcIconButton from '@/components/cc/IconButton';
@@ -58,6 +58,14 @@ interface Message {
   /** True when no model was called for this message — the glossary and case paths. */
   noModelCall?: boolean;
 }
+
+/**
+ * Said under the input, in both scopes: the assistant sends only the current
+ * question, never the conversation so far (owner decision 30.09.2026, QA
+ * 795c0e739916), so a follow-up has to carry its own context.
+ */
+const INDEPENDENT_QUESTION_NOTE =
+  'Each question is answered on its own, without the earlier messages — include the context you need.';
 
 /**
  * Everything the assistant is allowed to know inside one project — roadmap 6.8.
@@ -139,15 +147,15 @@ const glossaryTermList = (): string =>
     .map((item) => item.term)
     .join(', ');
 
+const greeting = (): Message => ({
+  sender: 'bot',
+  text: 'Greetings. I am your S/4HANA Modernization Architect Assistant. I can help guide you on Clean Core principles, BTP extensions (CAP), In-App extensions (RAP), released standard APIs, and abapGit handovers. What architecture question can I resolve for you today?',
+  timestamp: clockNow(),
+});
+
 export default function GlossaryChatbot() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      sender: 'bot',
-      text: 'Greetings. I am your S/4HANA Modernization Architect Assistant. I can help guide you on Clean Core principles, BTP extensions (CAP), In-App extensions (RAP), released standard APIs, and abapGit handovers. What architecture question can I resolve for you today?',
-      timestamp: clockNow()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => [greeting()]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const { profile } = useUserProfile();
@@ -188,6 +196,36 @@ export default function GlossaryChatbot() {
    * the header and the account menu; keeping the expression identical is the
    * point — two spellings of "am I in a project" drift apart.
    */
+  // The conversation belongs to the place it was held. The panel lives in the
+  // layout and outlives a navigation, so project A's answers stood under
+  // project B's "Evidence of this project" (QA slice review of 953575fcc9bf,
+  // 76118078e97f). A new place starts from the greeting; the reset happens
+  // while rendering, as React prescribes for state that follows a prop.
+  //
+  // The draft and the busy state belong to it too: a question half-typed in A
+  // stood in B's input, and a request still running for A kept B's assistant
+  // busy until it settled (QA review of 3c411e7b8235, 2b1101d8e13e). Each place
+  // is a new conversation, and an answer or a failure that arrives for an
+  // earlier one is dropped — including one asked in A, answered after the
+  // reader went to B and back to A.
+  const [messagesFor, setMessagesFor] = useState<string | null>(projectId);
+  const [conversation, setConversation] = useState(0);
+  if (messagesFor !== projectId) {
+    setMessagesFor(projectId);
+    setMessages([greeting()]);
+    setInputValue('');
+    setLoading(false);
+    setConversation((n) => n + 1);
+  }
+  // A layout effect, not a passive one: it runs before the browser can hand
+  // the reader an event, so a question asked right after a navigation is
+  // stamped with the new conversation and never with the one just left
+  // (QA review of 09ae0c6ee268, 5ee5ab25f097).
+  const conversationRef = useRef(conversation);
+  useLayoutEffect(() => {
+    conversationRef.current = conversation;
+  }, [conversation]);
+
   const assistantLabel = projectId ? 'Ask this case' : 'Ask the assistant';
 
   const [caseContext, setCaseContext] = useState<CaseContext | null>(null);
@@ -195,13 +233,24 @@ export default function GlossaryChatbot() {
   const caseProjectRef = useRef<string | null>(null);
 
   /**
-   * The project's evidence, read once per project and then reused.
+   * The project's evidence, read once per opening of the panel and then reused.
    *
    * Kept in a promise ref rather than only in state so that a question typed
    * before the warm-up finishes waits for the same read instead of starting a
    * second one — two readings of one source are two places for the line
    * numbers to disagree, which is the defect `lib/process-facts.ts` names.
    */
+  /**
+   * The project the panel stands in right now. The panel lives in the layout
+   * and outlives a navigation, so an answer that was asked for in project A and
+   * arrives after the reader moved to project B is dropped rather than shown
+   * under B's heading (QA full review of v2.20.0).
+   */
+  const currentProjectRef = useRef<string | null>(projectId);
+  useLayoutEffect(() => {
+    currentProjectRef.current = projectId;
+  }, [projectId]);
+
   const ensureCase = (id: string): Promise<CaseContext> => {
     if (caseProjectRef.current !== id || !caseContextRef.current) {
       caseProjectRef.current = id;
@@ -215,8 +264,13 @@ export default function GlossaryChatbot() {
 
   // Warm the evidence up when the panel opens inside a project, so the first
   // question does not pay for the read. Nothing here answers anything.
+  //
+  // Each opening reads afresh: the panel outlives the project's pages, and a
+  // source replaced or re-analysed since the last opening would otherwise be
+  // answered from the old lines (QA full review of v2.20.0).
   useEffect(() => {
     if (!isOpen || !projectId) return;
+    caseContextRef.current = null;
     void ensureCase(projectId);
   }, [isOpen, projectId]);
 
@@ -305,8 +359,10 @@ export default function GlossaryChatbot() {
    *     and nothing else, and the reply is only shown if it cites at least one
    *     of those anchors. Marked *Model proposal*.
    */
-  const answerInProject = async (id: string, text: string): Promise<void> => {
+  const answerInProject = async (id: string, text: string, asked: number): Promise<void> => {
+    const moved = () => currentProjectRef.current !== id || conversationRef.current !== asked;
     const context = await ensureCase(id);
+    if (moved()) return;
     const decision = answerCase(
       context.index,
       { projectId: id, legacyCode: context.legacyCode },
@@ -335,6 +391,7 @@ export default function GlossaryChatbot() {
     }
 
     const raw = await callGemini(decision.prompt, PRODUCT_GEMINI_MODEL, false);
+    if (moved()) return;
     // §3.1 — what the model wrote appears like every other text here. The chip
     // says where it came from; the prose must not.
     const { text: cleaned } = cleanModelText(raw ?? '', 'screen');
@@ -384,6 +441,9 @@ export default function GlossaryChatbot() {
     }
 
     setLoading(true);
+    // The conversation this question belongs to; see the reset above.
+    const asked = conversationRef.current;
+    const superseded = () => conversationRef.current !== asked;
 
     // Roadmap 6.8 — inside a project the knowledge base below is not consulted
     // at all. This branch returns in every case, including its own failures:
@@ -391,15 +451,16 @@ export default function GlossaryChatbot() {
     // in exactly the place nobody would notice it.
     if (projectId) {
       try {
-        await answerInProject(projectId, text);
+        await answerInProject(projectId, text, asked);
       } catch (error) {
         console.error('Ask this case error:', error);
+        if (currentProjectRef.current !== projectId || superseded()) return;
         say({
           text: 'The evidence of this project could not be read just now, so there is no grounded answer. Reload the project page and ask again.',
           provenance: 'not-determined',
         });
       } finally {
-        setLoading(false);
+        if (!superseded()) setLoading(false);
       }
       return;
     }
@@ -437,6 +498,9 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
       const promptContext = `${systemPrompt}\n\nUser Question: ${text}\nAssistant Response:`;
 
       const responseText = await callGemini(promptContext, PRODUCT_GEMINI_MODEL, false);
+      // Asked outside a project; the reader has since opened one, where this
+      // panel answers from that project's evidence only.
+      if (currentProjectRef.current !== null || superseded()) return;
 
       const botMessage: Message = {
         sender: 'bot',
@@ -447,6 +511,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
       console.error('Chatbot error:', error);
+      if (currentProjectRef.current !== null || superseded()) return;
       const botMessage: Message = {
         sender: 'bot',
         text: 'The assistant could not answer just now. Ask again in a moment; if you use your own Gemini API key, check it in Settings.',
@@ -454,7 +519,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
       };
       setMessages((prev) => [...prev, botMessage]);
     } finally {
-      setLoading(false);
+      if (!superseded()) setLoading(false);
     }
   };
 
@@ -566,7 +631,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                   {projectId ? 'Ask this case' : 'SAP Modernization Assistant'}
                 </h2>
                 <p className="m-0 cc-text-meta text-cc-ink-muted">
-                  {projectId ? 'Evidence of this project only' : 'Product and SAP help'}
+                  {projectId ? 'Evidence of this project, and the glossary' : 'Product and SAP help'}
                 </p>
               </div>
             </div>
@@ -582,10 +647,11 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
               {/* Roadmap 6.8 — the reader is told which of the two boundaries
                   is in force before they type, not after an answer disappoints
                   them. Inside a project the assistant has no other source than
-                  this project's evidence, and says so. */}
+                  this project's evidence — except the glossary, which roadmap
+                  6.6 checks first (`handleSend`), so the sentence names it. */}
               <p className="m-0 font-medium" data-chatbot-scope="">
                 {projectId
-                  ? 'Inside a project this assistant answers only from the evidence of this project, and names the line each statement rests on. It has no other source.'
+                  ? 'Inside a project this assistant answers only from the evidence of this project, and names the line each statement rests on. The one exception is a glossary term, which is answered from its glossary entry and marked as such.'
                   : 'Context-restricted assistant. Focused exclusively on SAP S/4HANA Clean Core architectures.'}
               </p>
             </div>
@@ -705,7 +771,15 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             className="flex shrink-0 items-end gap-2 border-t border-cc-line bg-cc-surface p-3"
           >
             <div className="min-w-0 flex-grow">
-              <CcField label="Your question">
+              {/* Owner decision 30.09.2026 (QA 795c0e739916): no conversation
+                  history is sent. Every answer stays anchored to the evidence
+                  gathered for its own question (`lib/case-answer.ts`), so the
+                  reader is told that before typing a follow-up like "and that
+                  one?". Wired to the input through `aria-describedby`. */}
+              <CcField
+                label="Your question"
+                help={<span data-chatbot-independent="">{INDEPENDENT_QUESTION_NOTE}</span>}
+              >
                 {({ id, describedBy, className }) => (
                   <input
                     id={id}

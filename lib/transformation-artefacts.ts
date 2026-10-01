@@ -66,7 +66,7 @@ export const REQUIRED_ARTEFACTS: Record<'abapCloud' | 'btp', Requirement[]> = {
     { label: 'service implementation (*.ts)', match: 'extension', suffix: '.ts' },
     { label: 'schema definition (*.cds)', match: 'extension', suffix: '.cds' },
     { label: 'dependency manifest (package.json)', match: 'name', name: 'package.json' },
-    { label: 'container setup (Dockerfile)', match: 'name', name: 'dockerfile' },
+    { label: 'container setup (Dockerfile)', match: 'name', name: 'Dockerfile' },
     { label: 'ERP-side event publisher (*.clas.abap)', match: 'extension', suffix: '.clas.abap' },
   ],
 };
@@ -77,11 +77,14 @@ export const baseName = (path: string): string => path.split(/[\\/]/).pop() ?? p
 /**
  * A name is compared against the base name, so a `package.json` in a
  * subdirectory still counts — the generator chooses the layout — while a file
- * merely *ending* in `package.json` does not.
+ * merely *ending* in `package.json` does not. The name is compared as written:
+ * npm reads `package.json` and a build reads `Dockerfile`, and neither finds
+ * `PACKAGE.JSON` (QA slice review of 953575fcc9bf, 9b562d2e4e97). Extensions
+ * stay case-insensitive.
  */
 export const satisfies = (required: Requirement, path: string): boolean => {
-  const lower = path.trim().toLowerCase();
-  return required.match === 'extension' ? lower.endsWith(required.suffix) : baseName(lower) === required.name;
+  const trimmed = path.trim();
+  return required.match === 'extension' ? trimmed.toLowerCase().endsWith(required.suffix) : baseName(trimmed) === required.name;
 };
 
 /** What the prompt asked for and the answer does not contain, in reader's words. */

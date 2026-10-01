@@ -226,6 +226,11 @@ export function routeExtensibility(
   const btpTriggerList = drivers.map((d) => d.label).join(', ');
   const presentCategories = [...new Set(findings.map((f) => f.kind))].map(labelFor).join(', ');
 
+  // A direct write to SAP's rows is not a side-by-side trigger in Private
+  // Edition, and it is not compatible with ABAP Cloud either: it stays on-stack
+  // only once it is replaced (QA full review of v2.20.0, e08f739fe79e).
+  const privateStandardWrites = deploymentModel === 'private' && standardWrites.length > 0;
+
   // What this router can say about persistence: a count, not a fit.
   const writeSummary =
     standardWrites.length === 0 && customWrites.length === 0
@@ -329,19 +334,26 @@ export function routeExtensibility(
       evaluation: findings.length === 0 && coverageIncomplete
         ? `Not established. No pattern was found, but ${unassessedSummary || 'part of the code'} was not assessed by any detector \u2014 feasibility cannot be judged from what was not read.`
         : findings.length === 0
-          ? 'Highly feasible. Trivial extension with no database writes or external integrations.'
-          : 'Infeasible. Custom logic, DB writes, or complex calculations exceed Key User capabilities.',
-      resultState: findings.length === 0 && !coverageIncomplete ? 'In-App Preferred' : 'Neutral',
-      cleanCoreImpact: 'Safe upgrades guaranteed. Completely isolated from the SAP core.'
+          ? 'No blocker found: the code shows no database write, external integration or other legacy pattern. Whether its logic can be expressed with Key User tools is not assessed by the engine.'
+          : `Not indicated. The code contains ${presentCategories}, which Key User tools do not cover as it stands. Whether the requirement could be re-expressed with them is not assessed by the engine.`,
+      // Neutral in every case. A finding count says whether a blocker was seen,
+      // not whether the logic fits the low-code tools: no findings is not
+      // "trivially feasible", and one finding of any kind is not "infeasible"
+      // (QA full review of v2.20.0, 1d5ab9d90793). The impact below is what the
+      // track offers, not a property of the analysed code (c658f64f147e).
+      resultState: 'Neutral',
+      cleanCoreImpact: 'Target property of Key User extensions: they use released extension points only. Not established for the analysed code.'
     },
     {
       checkpointName: 'In-App Developer Extensibility (Tier 1)',
       question: 'Is the logic compatible with strict ABAP Cloud (RAP) on the S/4HANA stack?',
       evaluation: needsBtp
         ? `Partial compatibility. What was found — ${btpTriggerList} — cannot run unchanged on the strict ABAP Cloud stack and has to be replaced or decoupled.`
+        : privateStandardWrites
+        ? `Partial compatibility. ${standardWrites.length} direct write(s) to SAP standard tables cannot run unchanged on ABAP Cloud; they have to be replaced by a released write API, a BAPI or a RAP action.`
         : 'High compatibility. Standard reads and helper logic can be directly modernized using RAP CDS views and classes.',
       resultState: needsBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
-      cleanCoreImpact: 'Clean core compliant. Custom objects are clearly separated via Tier-1 API release gates.'
+      cleanCoreImpact: 'Target: clean core compliant once the code uses released APIs only (Tier 1). Not established for the analysed code.'
     },
     {
       checkpointName: 'Side-by-Side Extensibility (SAP BTP CAP)',
@@ -350,7 +362,7 @@ export function routeExtensibility(
         ? `Required by the evidence that chose this route: ${btpTriggerList}.`
         : 'Optional. Simple reads do not justify the architectural overhead of a separate BTP runtime.',
       resultState: needsBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
-      cleanCoreImpact: 'Maximum upgrade safety. Code is completely decoupled from S/4HANA.'
+      cleanCoreImpact: 'Target: decoupled from the S/4HANA core, with its own lifecycle. Not established for the analysed code.'
     }
   ];
 
@@ -373,11 +385,13 @@ export function routeExtensibility(
   const modificationBlocks = modifications.length > 0;
 
   const inAppABAPCloud: ComparativeTrack = {
-    technicalFeasibility: modificationBlocks ? 'Incompatible' : needsBtp ? 'Partially Compatible' : 'Highly Compatible',
+    technicalFeasibility: modificationBlocks ? 'Incompatible' : needsBtp || privateStandardWrites ? 'Partially Compatible' : 'Highly Compatible',
     fitDetails: modificationBlocks
       ? `Not reachable as it stands. ${modifications.length} core modification(s) sit inside SAP standard code and have to be reset via SPAU before any ABAP Cloud target applies.`
       : needsBtp
       ? `Requires refactoring: ${btpTriggerList} must be replaced with released APIs or decoupled.`
+      : privateStandardWrites
+      ? `Requires refactoring: ${standardWrites.length} direct write(s) to SAP standard tables must be replaced by a released write API, a BAPI or a RAP action.`
       : 'Excellent fit. On-stack RAP execution provides high performance and direct access to standard released views.',
     pros: [
       'High-performance database access (local reads)',
@@ -395,7 +409,9 @@ export function routeExtensibility(
     fitDetails: modificationBlocks
       ? 'Not reachable as it stands either. Code that was inserted into an SAP program cannot be moved off the stack before it is removed from it.'
       : needsBtp
-      ? 'Perfect fit. SAP BTP CAP decoupled persistence safely isolates custom code and legacy APIs from S/4HANA core.'
+      // What chose the route, not a claim that CAP persistence is needed or an
+      // isolation design exists (QA full review of v2.20.0, 2b515958f925).
+      ? `Recommended route: what was found (${btpTriggerList}) points off the ABAP Cloud stack. Whether the extension needs its own persistence on BTP, and how it is decoupled, is a design decision this analysis does not establish.`
       : 'Feasible, but introduces architectural overhead for simple read-only reports.',
     pros: [
       'Maximizes upgrade readiness and isolates extensions',

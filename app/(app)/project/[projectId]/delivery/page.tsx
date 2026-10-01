@@ -32,7 +32,7 @@ import { generateAuditPack } from '@/lib/audit-pack';
 import { APP_VERSION } from '@/lib/version';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps, testEvidence, handoverBlockers, PHASES } from '@/lib/workflow-steps';
+import { workflowSteps, testEvidence, handoverBlockers, PHASES, previousBasis } from '@/lib/workflow-steps';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcToast from '@/components/cc/Toast';
@@ -54,7 +54,7 @@ const DOCUMENTATION_FILE = `process-${DOCUMENTATION_LABEL.toLowerCase()}.md`;
 /** An in-text link, as the settings page draws one. */
 const TEXT_LINK = 'font-semibold text-cc-brand-strong underline underline-offset-2 hover:text-cc-brand-deep';
 
-const generateDeveloperGuidelines = (project: any) => {
+const generateDeveloperGuidelines = (project: Project) => {
   const isAbapCloud = (project.extensibilityRoute || '').includes('ABAP Cloud');
   if (isAbapCloud) {
     return `# Developer Extensibility Guidelines - ${project.name}
@@ -130,6 +130,11 @@ export default function DeliveryPage() {
   const blockers = handoverBlockers(project);
   const handoverBlocked = blockers.length > 0;
   const codeStale = phases.find((p) => p.key === 'transformation')?.state === 'stale';
+  // The analysis itself no longer describes the source on the project (the
+  // source changed, or a signed input cannot be shown to match). The deck reads
+  // its metrics from that analysis and its findings from the current source, so
+  // on this state it would present two different sources as one briefing.
+  const analysisStale = phases.find((p) => p.key === 'analyze')?.state === 'stale';
   const docsStale = phases.find((p) => p.key === 'documentation')?.state === 'stale';
   // What the delivery page can actually attest to, each read from an artefact
   // rather than assumed. Nothing here is a decision — the page reports what is
@@ -143,6 +148,10 @@ export default function DeliveryPage() {
       ? project.coverageEstimate.percentage
       : undefined;
   const [loading, setLoading] = useState(true);
+  // The project read threw — permissions, network. Distinct from "no active
+  // run", which redirects, so the page neither renders its deliverables over a
+  // project it never loaded nor flashes an error before that redirect.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [documentation, setDocumentation] = useState('');
   // Entry names of the generated package that would not have stayed inside the
   // archive. Held rather than thrown away, because the reader is the one who has
@@ -217,6 +226,7 @@ export default function DeliveryPage() {
         }
       } catch (err) {
         console.error("Error fetching project:", err);
+        if (isMounted) setLoadFailed(true);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -242,9 +252,9 @@ export default function DeliveryPage() {
   const findings = detection.findings;
 
   const deck = useMemo(() => {
-    if (!project) return null;
+    if (!project || analysisStale) return null;
     return buildBoardDeck({ project, findings, runHistory });
-  }, [project, findings, runHistory]);
+  }, [project, findings, runHistory, analysisStale]);
 
   const downloadZip = async () => {
     if (!project || handoverBlocked) return;
@@ -402,6 +412,22 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
           }
         }, null, 2));
 
+        // `build` is `tsc`, and `tsc` without a project file compiles nothing
+        // and prints its help. `main` and `test` read `dist/`, so the sources
+        // under `src/` are compiled there.
+        zip.file("tsconfig.json", JSON.stringify({
+          "compilerOptions": {
+            "target": "ES2022",
+            "module": "commonjs",
+            "rootDir": "src",
+            "outDir": "dist",
+            "strict": true,
+            "esModuleInterop": true,
+            "skipLibCheck": true
+          },
+          "include": ["src"]
+        }, null, 2));
+
         const src = zip.folder("src");
         if (src && project.generatedCode) {
           src.file("app.ts", project.generatedCode);
@@ -485,7 +511,9 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-    - run: npm ci
+    # No lockfile is generated with the bundle, and \`npm ci\` refuses to run
+    # without one; it is used once the team has committed theirs.
+    - run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
     - run: npm run build --if-present
     - run: npm test
 `);
@@ -524,7 +552,7 @@ jobs:
     }
   };
 
-  if (loading) return (
+  if (loading || (!project && !loadFailed)) return (
     <div>
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
@@ -534,6 +562,24 @@ jobs:
       <Stepper steps={phases} current="delivery" projectId={projectId as string} />
       <StageHeader stage="delivery" />
       <CcSkeleton shape="cards" label="Finalizing delivery package..." count={4} />
+    </div>
+  );
+
+  if (!project) return (
+    <div className="max-w-7xl mx-auto px-4 md:px-0">
+      <VerificationRail steps={phases} current="delivery" projectId={projectId as string} />
+      <Stepper steps={phases} current="delivery" projectId={projectId as string} />
+      <StageHeader stage="delivery" />
+      <div data-delivery-load-failed>
+        <CcMessageStrip
+          state="error"
+          headline="The project could not be loaded."
+          announce
+          actions={<CcButton onClick={() => window.location.reload()}>Try again</CcButton>}
+        >
+          Nothing on this page can be exported until it is.
+        </CcMessageStrip>
+      </div>
     </div>
   );
 
@@ -563,8 +609,8 @@ jobs:
       </StageHeader>
 
       <StaleNotice
-        title="Handover blocked — built for a previous source"
-        reasons={blockers.map((b) => `${b.charAt(0).toUpperCase()}${b.slice(1)} — regenerate it for the current source before handing over.`)}
+        title={`Handover blocked — built for ${previousBasis(project)}`}
+        reasons={blockers.map((b) => `${b.charAt(0).toUpperCase()}${b.slice(1)} — regenerate it for the current ${previousBasis(project) === 'a previous target profile' ? 'target profile' : 'source'} before handing over.`)}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 items-stretch">
@@ -626,7 +672,11 @@ jobs:
             title="Stakeholder briefing"
             lead="Management-ready presentation summarizing the transformation, the measured findings and the architecture — no savings figure."
           >
-            {deck ? (
+            {analysisStale ? (
+              <p className="cc-text-cell text-cc-ink-muted" data-delivery-deck-blocked>
+                Not available — the analysis is from a previous source. Re-run it in stage 1.
+              </p>
+            ) : deck ? (
               <CcButton
                 variant="secondary"
                 density="cozy"
@@ -647,11 +697,16 @@ jobs:
             title="SOP & Compliance"
             lead="Standard Operating Procedures (SOP), RACI Matrix, and Audit Controls compliance documentation (Level 5)."
           >
-            {project?.businessDocumentation ? (
+            {project.businessDocumentation ? (
               <CcButton
                 variant="secondary"
                 density="cozy"
+                // Blocked with the bundle that carries the same file: this
+                // documentation is not tracked by digest of its own, so a
+                // handover blocked for a previous source blocks it too.
+                disabled={handoverBlocked}
                 onClick={() => {
+                  if (handoverBlocked) return;
                   const blob = new Blob([formatBusinessDocsToMarkdown(project.businessDocumentation || '')], { type: "text/markdown;charset=utf-8" });
                   const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
                   saveAs(blob, `${fileName}_BusinessDocumentation.md`);
@@ -659,7 +714,7 @@ jobs:
                 data-stage-output="businessDocumentation"
                 icon={<Download size={16} aria-hidden="true" />}
               >
-                Export Markdown
+                {handoverBlocked ? 'Blocked — see above' : 'Export Markdown'}
               </CcButton>
             ) : (
               <>
@@ -727,7 +782,7 @@ jobs:
                   {!hasGeneratedCode
                     ? 'Run stage 3 to produce the code this line reports on'
                     : codeStale
-                      ? 'Generated from a previous source — regenerate in stage 3'
+                      ? `Generated from ${previousBasis(project)} — regenerate in stage 3`
                       : isAbapCloud
                       ? 'Handover: ABAP Cloud packages generated — not compiled or tested'
                       : 'Handover: TypeScript package generated — not compiled or tested'}
@@ -761,7 +816,7 @@ jobs:
                   {testCaseCount === 0
                     ? 'Nothing to verify'
                     : testingPhase.state === 'stale'
-                      ? 'Written for a previous source — regenerate in stage 5'
+                      ? `Written for ${previousBasis(project)} — regenerate in stage 5`
                       : testsPassed === testCaseCount
                       ? (!testingPhase.proven
                           ? 'Marked as passed — no test run is on record behind these verdicts. Run the suite in stage 5.'
@@ -781,7 +836,7 @@ jobs:
               {/* Neutral, like the code row above it: the figure is the
                   generator's estimate, and a green check beside "not measured"
                   read as a measurement (UX review of b88c77b, fc15ffd1018a). */}
-              {coveragePercentage !== undefined ? (
+              {coveragePercentage !== undefined && testingPhase.state !== 'stale' ? (
                 <Gauge size={18} aria-hidden="true" data-integrity-icon="estimate" className="text-cc-ink-muted mt-0.5 shrink-0" />
               ) : (
                 <AlertCircle size={18} aria-hidden="true" data-integrity-icon="missing" className="text-cc-warning mt-0.5 shrink-0" />
@@ -793,7 +848,11 @@ jobs:
                     check behind either (CR-16). The figure is the generator's
                     own estimate, and says so — since D.19 with the provenance
                     chip as well, because the test generator is a model stage. */}
-                {coveragePercentage !== undefined ? (
+                {coveragePercentage !== undefined && testingPhase.state === 'stale' ? (
+                  <span data-coverage-stale className="cc-text-meta font-medium text-cc-ink-muted block mt-1">
+                    Estimated for a previous source — regenerate in stage 5
+                  </span>
+                ) : coveragePercentage !== undefined ? (
                   <span data-coverage-provenance className="flex flex-wrap items-center gap-2 mt-1">
                     <CcProvenanceChip value="proposed" />
                     <span className="cc-text-meta font-medium text-cc-ink-muted">Estimated by the test generator — not measured</span>
@@ -823,7 +882,7 @@ jobs:
                   {!hasDocumentation
                     ? 'Run stage 4 to produce the documentation this line reports on'
                     : docsStale
-                      ? 'Written for a previous source — regenerate in stage 4'
+                      ? `Written for ${previousBasis(project)} — regenerate in stage 4`
                       : documentationFromCode
                         ? 'Every statement with its lines; owner, roles, KPIs and duration not determined'
                         : 'Written by a language model from 1,000-character slices — read it again from the code in stage 4'}
@@ -861,8 +920,8 @@ jobs:
         <div className="mb-12">
           <CollapsibleAccordion
             title="Compliance Audit Pack"
-            badge={project.auditMetadata?.inputFingerprint ? 'Ready' : 'Partial'}
-            badgeSeverity={project.auditMetadata?.inputFingerprint ? 'neutral' : 'warning'}
+            badge={handoverBlocked ? 'Blocked' : project.auditMetadata?.inputFingerprint ? 'Available' : 'Partial'}
+            badgeSeverity={handoverBlocked || !project.auditMetadata?.inputFingerprint ? 'warning' : 'neutral'}
             tooltip="Exportable evidence package for architecture governance, compliance reviews, and audit documentation."
           >
             <div className="space-y-4">

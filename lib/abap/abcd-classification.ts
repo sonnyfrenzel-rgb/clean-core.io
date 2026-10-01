@@ -263,11 +263,10 @@ export interface GradedObject {
    * as. The grade merges them, and the merge rule is deliberate — but with only
    * the letter on screen, the reasoning is invisible.
    *
-   * That is not theoretical. Two independent reviews of this file in September
-   * 2026 both read `notToBeReleased → D` as a bug and filed it as a priority-zero
-   * defect, because neither view was visible next to the other and the rationale
-   * lived in a comment. Both were wrong. Surfacing the halves is how a reader
-   * checks the answer instead of guessing at it.
+   * The rule most easily misread is `notToBeReleased → D`: with only the letter
+   * on screen it looks as if the classic file's view had been ignored, when the
+   * release file simply decides first (see `gradeFromSapStates`). Surfacing the
+   * halves is how a reader checks the answer instead of guessing at it.
    *
    * Informational only: nothing derives a grade from these.
    */

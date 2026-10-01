@@ -22,6 +22,7 @@ import {
 } from '../lib/process-hints';
 import { EDITOR_PALETTE } from '../components/process-map/BpmnEditor';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * The editor and its check hints — roadmap 3.1 and 3.3.
@@ -374,7 +375,7 @@ test.describe('the editor of roadmap 3.1', () => {
 
     await adminSetDoc('users', uid, {
       firstName: 'Process', lastName: 'Editor', email: EMAIL,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
 

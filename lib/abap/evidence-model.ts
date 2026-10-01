@@ -111,6 +111,17 @@ function replacementProvenance(entry: { confidence?: string } | undefined): {
 }
 
 /**
+ * Does this statement call the function module `pattern` names — or declare the
+ * constant a dynamic call would name it by? The name stands in a literal, so
+ * the literal is read; but only a literal in one of those two places. Anywhere
+ * else — a log message, a value assigned to a text field — it is a word.
+ */
+function namesModule(text: string, pattern: string): boolean {
+  if (new RegExp(`^\\s*CALL\\s+FUNCTION\\s+['\`](?:${pattern})['\`]`, 'i').test(text)) return true;
+  return /^\s*CONSTANTS\b/i.test(text) && new RegExp(`['\`](?:${pattern})['\`]`, 'i').test(text);
+}
+
+/**
  * Conventional ABAP prefixes for local/global data objects and parameters.
  * Used only in combination with "not present in either SAP artifact" — 103 real
  * SAP objects (CS_BOM_EXPL_MAT_V2, RS_*, CT_*) share these prefixes and must
@@ -165,12 +176,26 @@ export function redactCredentials(snippet: string | undefined): string {
     .replace(/\b(password|passwd|pwd)=([^;&'"\s]+)/gi, '$1=…<redacted>')
     .replace(/(\/\/[^\s/:@'"]+):([^\s/@'"]+)@/g, '$1:…<redacted>@')
     // A password or token assigned to a literal in ABAP — of any length: a short
-    // secret is still a secret.
-    .replace(/\b(PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY)\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi,
+    // secret is still a secret. The name may carry a prefix (`lv_password`,
+    // `gv_api_key`): `_` is a word character, so a bare `\bPASSWORD` never
+    // matched inside one (QA slice review of 953575fcc9bf, 21933f60c24d).
+    .replace(/\b([\w/]*?(?:PASSWORD|PASSWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi,
       (_m, word, mid) => `${word}${mid}'…<redacted>'`);
 }
 
-export function buildAbapEvidence(code: string, fileName: string, deployment?: 'public' | 'private'): AbapEvidenceReport {
+/**
+ * `catalogSnapshot` (roadmap 7.10): the release file SAP object states are read
+ * from — `pce-2023-3` for a Private Edition 2023 FPS03 target, say. Omitted, the
+ * default file. A snapshot that is not shipped throws rather than being
+ * answered from another one (`CatalogSnapshotNotShipped`). The successor
+ * mapping (`MERGED_TABLE_MAP`) stays the shared mapping layer.
+ */
+export function buildAbapEvidence(
+  code: string,
+  fileName: string,
+  deployment?: 'public' | 'private',
+  catalogSnapshot?: string,
+): AbapEvidenceReport {
   const findings: EvidenceFinding[] = [];
   const statements = tokenize(code);
   let idCounter = 1;
@@ -217,9 +242,12 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
       ...(finding.objectName !== undefined ? { objectName: redactCredentials(finding.objectName) } : {}),
       technicalDetail: redactCredentials(finding.technicalDetail),
       id: `CC-${String(idCounter++).padStart(3, '0')}`,
-      // Default source: 'static-parser' for all scanner findings.
-      // Upgraded to 'catalog-match' when a sapReplacement is present.
-      source: finding.source || (finding.sapReplacement ? 'catalog-match' : 'static-parser'),
+      // Default source: 'static-parser' for all scanner findings. Upgraded to
+      // 'catalog-match' only when the replacement came out of SAP's release
+      // data; a curated pairing (`'Verified'`, see `replacementProvenance`) is
+      // this file's knowledge, and calling it a catalog match would cite SAP
+      // for it.
+      source: finding.source || (finding.sapReplacement?.confidence === 'Catalog Match' ? 'catalog-match' : 'static-parser'),
     });
   };
 
@@ -231,7 +259,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     // the data coupling asks.
     const routeNote = ROUTE_NOTE[route] ?? '';
 
-    const sapStates = getSapObjectStates(table);
+    const sapStates = getSapObjectStates(table, catalogSnapshot);
     const knownToSap = Boolean(sapStates.releaseState || sapStates.classificationState);
     // Conventional ABAP local-data prefix AND unknown to SAP → a variable whose
     // declaration this upload does not contain (a common case with partial code).
@@ -259,33 +287,48 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
       (!knownToSap && /^\/[^/]+\//.test(table));
     const hasReplacement = STANDARD_TABLE_MAP[table] !== undefined;
 
+    // A `/NS/` name SAP does not list is not SAP standard, but the namespace
+    // alone does not say whose it is — a partner's or the customer's. The
+    // finding is written for "not SAP's", and says no more than that.
+    const unownedNamespace = !table.startsWith('Z') && !table.startsWith('Y');
     if (isCustom) {
       if (isWrite) {
         addFinding({
           kind: 'custom-table-write',
-          title: `Direct Write to Custom Table ${table}`,
+          title: unownedNamespace
+            ? `Direct Write to Namespaced Table ${table}`
+            : `Direct Write to Custom Table ${table}`,
           severity: 'High',
           confidence: 'High',
           objectName: table,
           objectType: 'Database Table',
           lineStart: line,
           snippet: text,
-          technicalDetail: `Direct modification statement (INSERT/UPDATE/MODIFY/DELETE) on custom table ${table}.${routeNote}`,
-          cleanCoreImpact: 'Direct DB access bypasses the application layer and encapsulation, violating clean core rules.',
+          technicalDetail: unownedNamespace
+            ? `Direct modification statement (INSERT/UPDATE/MODIFY/DELETE) on ${table}, a reserved-namespace table SAP does not list — a partner's or the customer's; the name does not say which.${routeNote}`
+            : `Direct modification statement (INSERT/UPDATE/MODIFY/DELETE) on custom table ${table}.${routeNote}`,
+          // Writing to a table that is not SAP's is not itself a clean core
+          // violation (`extensibility-router.ts` says so for Private Edition);
+          // what the write costs is the missing application layer.
+          cleanCoreImpact: 'Direct DB access bypasses the application layer and encapsulation: no business object guards the rows it changes. Writing to a table that is not SAP\'s is not itself a clean core violation, but ABAP Cloud needs the table exposed through a RAP business object or moved side-by-side.',
           recommendation: `Expose custom tables via RAP Business Objects (Developer Extensibility) or use Side-by-Side persistence in BTP (CAP).`,
           targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
         });
       } else {
         addFinding({
           kind: 'table-access',
-          title: `Direct Read from Custom Table ${table}`,
+          title: unownedNamespace
+            ? `Direct Read from Namespaced Table ${table}`
+            : `Direct Read from Custom Table ${table}`,
           severity: 'Low',
           confidence: 'High',
           objectName: table,
           objectType: 'Database Table',
           lineStart: line,
           snippet: text,
-          technicalDetail: `SELECT statement reading from custom table ${table}.${routeNote}`,
+          technicalDetail: unownedNamespace
+            ? `SELECT statement reading from ${table}, a reserved-namespace table SAP does not list — a partner's or the customer's; the name does not say which.${routeNote}`
+            : `SELECT statement reading from custom table ${table}.${routeNote}`,
           cleanCoreImpact: 'Reading from custom tables directly is acceptable if wrapped in Tier-2 or CDS views, but should be checked for proper API usage.',
           recommendation: `Expose custom table via CDS view and wrap it in a RAP service layer.`,
           targetOptions: ['Developer Extensibility / RAP', 'Key User Extensibility']
@@ -432,8 +475,10 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
 
     // Classic ALV Grid. The name of a called function module stands in a
     // literal and is the call target, not prose about one — the exception
-    // `statement-reader.ts` documents. So this reads `text`, not `codeText`.
-    if (/REUSE_ALV_GRID_DISPLAY/i.test(text) || /REUSE_ALV_LIST_DISPLAY/i.test(text)) {
+    // `statement-reader.ts` documents. So this reads `text`, not `codeText` —
+    // but only the literal a `CALL FUNCTION` (or a constant) names: in
+    // `PERFORM add_log USING 'GUI_DOWNLOAD'` the name is a message.
+    if (namesModule(text, 'REUSE_ALV_(?:GRID|LIST)_DISPLAY')) {
       addFinding({
         kind: 'classic-alv',
         title: 'Legacy ALV Grid Display',
@@ -450,7 +495,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
 
     // GUI Download / Local File access. Function-module names again (`text`,
     // for the reason above); `CL_GUI_FRONTEND_SERVICES` is the class form.
-    if (/GUI_DOWNLOAD/i.test(text) || /GUI_UPLOAD/i.test(text) || /CL_GUI_FRONTEND_SERVICES/i.test(text)) {
+    if (namesModule(text, 'GUI_(?:DOWNLOAD|UPLOAD)') || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText)) {
       addFinding({
         kind: 'gui-download',
         title: 'Legacy Frontend File Upload/Download',
@@ -610,7 +655,7 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
     }
 
     // SAPOffice legacy mailing — a function-module name, read from `text`.
-    if (/SO_NEW_DOCUMENT_SEND_API1/i.test(text)) {
+    if (namesModule(text, 'SO_NEW_DOCUMENT_SEND_API1')) {
       addFinding({
         kind: 'legacy-mail',
         title: 'Legacy Mail Service (SO_NEW_DOCUMENT_SEND_API1)',
@@ -733,19 +778,17 @@ export function buildAbapEvidence(code: string, fileName: string, deployment?: '
   // most severe clean core violation would be invisible to the engine.
   const rawLines = code.split(/\r?\n/);
   const MOD_MARKER = /^\s*[*"]\{\s*(INSERT|REPLACE|DELETE)\b(.*)$/i;
-  const seenModifications = new Set<string>();
   for (let i = 0; i < rawLines.length; i++) {
+    // One finding per modification: only the opening marker `*{` matches, the
+    // closing `*}` does not, so each region is counted once. Two regions in the
+    // same include under the same transport request are two modifications —
+    // they were once merged by request, and the count came out one short.
     const m = rawLines[i].match(MOD_MARKER);
     if (!m) continue;
     const action = m[1].toUpperCase();
     // The marker carries the transport request that registered the modification.
     const requestMatch = m[2].match(/([A-Z0-9]{3}K\d{6})/i);
     const request = requestMatch ? requestMatch[1].toUpperCase() : '';
-    // One finding per modification, not one per marker line (each block has an
-    // opening and a closing marker carrying the same request).
-    const dedupKey = request ? `${action}:${request}` : `${action}:${i}`;
-    if (seenModifications.has(dedupKey)) continue;
-    seenModifications.add(dedupKey);
 
     addFinding({
       kind: 'modification',

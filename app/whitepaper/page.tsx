@@ -74,7 +74,7 @@ const apiMappings = [
 ];
 
 const doesDo = [
-  'Generates a first Clean-Core-compliant draft plus signed evidence.',
+  'Generates a first draft toward Clean Core plus signed evidence.',
   'Runs deterministic analysis before any AI.',
   'Recommends RAP / CAP with a transparent rationale.',
   'Produces tests, BPMN 2.0 XML, a cost simulation and an audit pack.',
@@ -136,7 +136,7 @@ export default function WhitepaperPage() {
           </h1>
 
           <p className="mx-auto mb-10 max-w-2xl text-base font-medium leading-relaxed text-cc-ink-muted sm:text-lg md:text-xl">
-            A free, community-built accelerator for SAP Clean Core modernization. It runs a deterministic evidence engine first, then AI — turning legacy custom ABAP into Clean-Core-compliant drafts and cryptographically signed audit evidence for architect review. Complementary to SAP’s own tooling, never a replacement.
+            A free, community-built accelerator for SAP Clean Core modernization. It runs a deterministic evidence engine first, then AI — turning legacy custom ABAP into drafts toward Clean Core and cryptographically signed audit evidence for architect review. Complementary to SAP’s own tooling, never a replacement.
           </p>
 
           <div className="mx-auto grid max-w-2xl grid-cols-2 gap-4 text-left md:grid-cols-4">
@@ -260,7 +260,7 @@ export default function WhitepaperPage() {
         {/* 06 — Technical */}
         <section id="technical">
           <SectionHeader align="left" eyebrow={<SectionNumber number="06" total="08" />} title={<>Technical: RAP vs. CAP &amp; API Mapping</>}>
-            During analysis, the engine decides — from syntax and coupling evidence — which extensibility path best fits each object:
+            During analysis, the engine decides — from syntax and coupling evidence — which extensibility path best fits the uploaded code:
           </SectionHeader>
 
           <div className={`${CARD} overflow-hidden p-3`}>
@@ -284,7 +284,7 @@ export default function WhitepaperPage() {
 
           <div className={`${CARD} mt-6 p-6`}>
             <div className={`${LABEL} mb-3`}>Automated API mapping</div>
-            <p className="mb-4 text-sm leading-relaxed text-cc-ink-muted">Direct reads and writes to internal tables carry different Clean Core weight — direct writes to standard tables are the more critical case. The engine maps such access to released standard interfaces, grounded in SAP’s Apache-2.0 Cloudification Repository:</p>
+            <p className="mb-4 text-sm leading-relaxed text-cc-ink-muted">Direct reads and writes to SAP database tables carry different Clean Core weight — direct writes to standard tables are the more critical case. The engine maps such access to released standard interfaces, grounded in SAP’s Apache-2.0 Cloudification Repository:</p>
             <div className="space-y-2">
               {apiMappings.map((m) => (
                 <div key={m.table} className="flex flex-wrap items-center gap-3 text-sm">
@@ -372,7 +372,7 @@ export default function WhitepaperPage() {
         {/* 08 — CTA */}
         <section id="get-started">
           <SectionHeader align="left" eyebrow={<SectionNumber number="08" total="08" />} title="Start with a non-production sample">
-            Generate the first Clean-Core-compliant draft for review, walk the decision with your SAP architect, and export a governed delivery package. Start with 5 free transformations, or bring your own Gemini API key (BYOK) for unlimited access — no credit card required.
+            Generate the first draft toward Clean Core for review, walk the decision with your SAP architect, and export a governed delivery package. Start with 5 free transformations, or bring your own Gemini API key (BYOK) for unlimited access — no credit card required.
           </SectionHeader>
           <div className="rounded-[28px] border border-cc-line bg-cc-surface p-8 shadow-sm sm:p-12">
             <div className="flex flex-col items-start gap-4 sm:flex-row">

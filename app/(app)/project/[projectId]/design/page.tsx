@@ -56,7 +56,7 @@ import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { SourceFile } from '@/lib/abap/findings-detector';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps, staleness } from '@/lib/workflow-steps';
+import { workflowSteps, staleness, previousBasis } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { buildDesignExportHtml, designExportFileName } from '@/lib/design-export';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
@@ -372,9 +372,40 @@ ${responseText.substring(0, 4000)}`;
     generateDesignRef.current = generateDesign;
   }, [generateDesign]);
 
+  // The analysis the page would generate a first design from, held until
+  // `/api/model-stages` has answered. `loading` stays true meanwhile.
+  const [autoAnalysis, setAutoAnalysis] = useState<string | null>(null);
+  const designAvailable = modelAvailability.enabled('design');
+  useEffect(() => {
+    if (autoAnalysis === null || modelAvailability.loading) return;
+    // Started from a task, not from the effect body: the effect only decides
+    // that the answer is in; a dependency change before it runs reschedules it.
+    const timer = setTimeout(() => {
+      setAutoAnalysis(null);
+      if (designAvailable) {
+        console.log('[Design] Auto-generating design from analysis');
+        generateDesignRef.current(autoAnalysis);
+      } else {
+        setLoading(false);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [autoAnalysis, modelAvailability.loading, designAvailable]);
+
   useEffect(() => {
     const fetchProject = async () => {
-      const data = await loadProjectAndHydrate(projectId as string);
+      let data: Project | null;
+      try {
+        data = await loadProjectAndHydrate(projectId as string);
+      } catch (err) {
+        // A read that failed is not an empty stage and not a page that loads
+        // forever (QA 46b8c6352769): it used to reject here with nothing to
+        // catch it, and `loading` stayed true.
+        console.error('[Design] Project could not be loaded:', err);
+        setDesignError('Could not load the project. This is usually a permissions or connectivity issue — reload the page.');
+        setLoading(false);
+        return;
+      }
       if (!enforceActiveRun(data, projectId as string)) return;
       if (data) {
         // Batch all state updates together to prevent layout shift ("wobble")
@@ -386,9 +417,11 @@ ${responseText.substring(0, 4000)}`;
               setNfrData((data as any).nonFunctionalRequirements);
             }
             setLoading(false);
-        } else if (data.analysis) {
-            console.log('[Design] Auto-generating design from analysis, type:', typeof data.analysis);
-            generateDesignRef.current(typeof data.analysis === 'object' ? JSON.stringify(data.analysis) : data.analysis);
+        } else if (data.analysis && !staleness(data).sourceChanged) {
+            // Started below once the stage's availability is known (QA
+            // 6c4734f60aa8): a stage that is off, or has no key, gets its
+            // reason on screen instead of a request the proxy will refuse.
+            setAutoAnalysis(typeof data.analysis === 'object' ? JSON.stringify(data.analysis) : data.analysis);
         } else if (data._runLoadFailed) {
             // The run (which holds the analysis) could not be read — surface it instead
             // of a silent empty state, so the real cause (permissions/network) is visible.
@@ -653,14 +686,17 @@ ${responseText.substring(0, 4000)}`;
   const staleNotes = [
     ...(stale.sourceChanged ? ['The source changed after the signed run. Re-run the analysis in stage 1.'] : []),
     ...(designStale && !stale.sourceChanged
-      ? ['This design was generated for a previous source. Regenerate it — the analysis it was written from no longer describes the code under review.']
+      ? [`This design was generated for ${previousBasis(project)}. Regenerate it — the analysis it was written from no longer describes the code under review.`]
       : []),
-    ...(stale.signOff ? ['The sign-off below was given for a previous source. Unlock it and confirm the target architecture again.'] : []),
+    ...(stale.signOff ? [`The sign-off below was given for ${previousBasis(project)}. Unlock it and confirm the target architecture again.`] : []),
   ];
   const signOffCurrent = project?.approvedByArchitect === true && !stale.signOff && !designStale;
 
   const regenerate = () => {
-    if (project?.analysis) {
+    if (stale.sourceChanged) {
+      // The analysis on file describes a previous source (QA f9aea437967e).
+      setDesignError('The source changed after the signed run. Re-run the analysis in stage 1 first; a design generated now would describe the previous source.');
+    } else if (project?.analysis) {
       const analysisStr = typeof project.analysis === 'object' ? JSON.stringify(project.analysis) : project.analysis;
       generateDesign(analysisStr);
     } else {
@@ -724,29 +760,31 @@ ${responseText.substring(0, 4000)}`;
 
       <Stepper steps={phases} current="design" projectId={projectId as string} />
 
-      <StaleNotice title="Built for a previous source" reasons={staleNotes} />
+      <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
       <StageHeader
         stage="design"
         actions={design ? (
           <div className="flex flex-wrap gap-2">
+            {/* Regenerate only where it can succeed and would describe the code
+                under review: not with the stage off or keyless (QA
+                6c4734f60aa8), and not from an analysis of a previous source
+                (QA f9aea437967e). A design merely older than the analysis is
+                what Regenerate is for. Exports stay closed on a stale design. */}
             <CcButton
               variant="secondary"
               icon={<RefreshCw size={16} aria-hidden={true} />}
               busy={loading}
-              onClick={() => {
-                if (project?.analysis) {
-                  const analysisStr = typeof project.analysis === 'object' ? JSON.stringify(project.analysis) : project.analysis;
-                  generateDesign(analysisStr);
-                }
-              }}
+              disabled={!designAvailable || stale.sourceChanged}
+              data-design-regenerate=""
+              onClick={regenerate}
             >
               Regenerate
             </CcButton>
-            <CcButton variant="ghost" icon={<Eye size={16} aria-hidden={true} />} onClick={() => exportToConfluence(true)}>
+            <CcButton variant="ghost" icon={<Eye size={16} aria-hidden={true} />} disabled={designStale} data-design-export="view" onClick={() => exportToConfluence(true)}>
               View HTML
             </CcButton>
-            <CcButton variant="ghost" icon={<Download size={16} aria-hidden={true} />} onClick={() => exportToConfluence(false)}>
+            <CcButton variant="ghost" icon={<Download size={16} aria-hidden={true} />} disabled={designStale} data-design-export="save" onClick={() => exportToConfluence(false)}>
               Export HTML
             </CcButton>
           </div>

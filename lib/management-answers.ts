@@ -690,6 +690,15 @@ function decisionAnswer(project: Project | null, steps: readonly RailStep[]): Ma
 function scoreAnswer(project: Project | null, trend: ScoreTrend): ManagementAnswer {
   const hasRun = str(project?.activeRunId) !== null;
   const value = trend.score;
+  // Why a run's score is absent. "Records no score" is true only when the run
+  // was read; an unreadable run list, or an active run that is not in it, says
+  // nothing about the run (QA slice review of bd016957d13c, d97847196408).
+  const runUnread =
+    trend.state === 'unreadable'
+      ? 'the runs of this project could not be read'
+      : trend.state === 'no-score' && trend.ruleVersion === null
+        ? 'the active run could not be read'
+        : null;
 
   const figures: ManagementFigure[] = [
     {
@@ -697,7 +706,7 @@ function scoreAnswer(project: Project | null, trend: ScoreTrend): ManagementAnsw
       label: 'Clean Core Score',
       value: value === null ? null : String(value),
       ...(value === null
-        ? { absentReason: hasRun ? 'the signed run records no score' : 'no signed run' }
+        ? { absentReason: hasRun ? (runUnread ?? 'the signed run records no score') : 'no signed run' }
         : {}),
       provenance: value === null ? 'not-determined' : 'proven',
       coverage: coverage(
@@ -736,7 +745,7 @@ function scoreAnswer(project: Project | null, trend: ScoreTrend): ManagementAnsw
   const headline =
     value === null
       ? `No Clean Core Score: ${
-          hasRun ? 'the signed run records none.' : 'nothing has been analysed under a signature yet.'
+          hasRun ? (runUnread ? `${runUnread}.` : 'the signed run records none.') : 'nothing has been analysed under a signature yet.'
         }`
       : trend.state === 'trend'
         ? `Clean Core Score ${value} — ${trend.sentence}`

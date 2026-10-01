@@ -7,6 +7,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcButton from '@/components/cc/Button';
 import { useProcessRules } from '@/hooks/useProcessRules';
 import { useProcessOverlays } from '@/hooks/useProcessOverlays';
+import type { CatalogLookupTarget } from '@/lib/assessment-target';
 import type { UsageReport } from '@/lib/abap/usage-model';
 import { UNANCHORED } from '@/lib/process-naming';
 import { EARLY_END_WORD, elementsOfPlane, technicalView, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
@@ -145,6 +146,14 @@ export interface ProcessMapProps {
    */
   usage?: UsageReport | null;
   /**
+   * The target profile the *Level* overlay is graded under —
+   * `catalogLookupTargetOf(project)`, so the map shows the grade the project's
+   * run shows (owner decision 30.09.2026). Required: a map that forgot it would
+   * grade a Private Edition project against the Public list without saying so.
+   * `null` only where there is no project behind the map.
+   */
+  catalogTarget: CatalogLookupTarget | null;
+  /**
    * Roadmap 3.2 — keep the draft as a revision. Handed straight to the editor.
    *
    * Omitted here means omitted there, and the editor's footer says saving is not
@@ -165,6 +174,7 @@ export default function ProcessMap({
   defaultView = 'map',
   measuredAt = null,
   usage = null,
+  catalogTarget,
   save,
 }: ProcessMapProps) {
   const [viewLocal, setViewLocal] = useState<ProcessMapView>(defaultView);
@@ -218,7 +228,7 @@ export default function ProcessMap({
     () => buildOverlays(model, nav, rules.byNode),
     [model, nav, rules.byNode],
   );
-  const evidenceOverlays = useProcessOverlays(source, model, nav, usage);
+  const evidenceOverlays = useProcessOverlays(source, model, nav, usage, catalogTarget);
   const overlays = useMemo(
     () => [...modelOverlays, ...evidenceOverlays],
     [modelOverlays, evidenceOverlays],

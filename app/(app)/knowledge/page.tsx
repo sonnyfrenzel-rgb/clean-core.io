@@ -26,7 +26,7 @@ export const metadata: Metadata = withTwitterCard({
 const faqs = [
   {
     question: "What is the SAP S/4HANA Clean Core strategy?",
-    answer: "The Clean Core strategy is an architectural design principle that keeps the SAP standard ERP core software free of custom modifications. Custom extensions are developed either \"in-app\" using key-user extensibility or \"side-by-side\" on the SAP Business Technology Platform (BTP). This decoupling allows businesses to upgrade their core ERP system instantly, reduce technical debt, and ensure continuous innovation without breaking custom business logic."
+    answer: "The Clean Core strategy is an architectural design principle that keeps the SAP standard ERP core software free of custom modifications. Custom extensions are developed either \"in-app\" using key-user extensibility or \"side-by-side\" on the SAP Business Technology Platform (BTP). This decoupling lowers upgrade risk and technical debt: extensions built on released interfaces are far less likely to break on an upgrade, though each upgrade still needs its compatibility and regression testing."
   },
   {
     question: "What is the difference between In-App RAP and Side-by-Side CAP extensions?",
@@ -34,7 +34,7 @@ const faqs = [
   },
   {
     question: "How does Clean-Core.io secure Side-by-Side BTP integration?",
-    answer: "Clean-Core.io configures secure tunnels and authentication pathways on SAP BTP. It implements JSON Web Tokens (JWT) validated by the SAP XSUAA (Extended Services for User Account and Authentication) service. This allows stateless, secure API communication and enforces role-based access control (RBAC). For S/4HANA core connections, it uses SAP BTP Connectivity and Destination services, routing RFC and OData traffic securely via SAP Cloud Connector without exposing internal endpoints."
+    answer: "Clean-Core.io does not configure anything in your BTP or S/4HANA tenant. The usual security pattern for a side-by-side extension is JSON Web Tokens (JWT) validated by the SAP XSUAA (Extended Services for User Account and Authentication) service for stateless API calls with role-based access control (RBAC), and SAP BTP Connectivity and Destination services routing RFC and OData traffic via SAP Cloud Connector without exposing internal endpoints. Setting that up in your tenant is your team's work; the app provides analysis, design drafts and a read-only connection check, not the deployment."
   },
   {
     question: "What is the BYOT (Bring Your Own Tenant) connectivity model?",
@@ -50,7 +50,7 @@ const faqs = [
   },
   {
     question: "How do you run a SAP Clean Core assessment?",
-    answer: "Assess maturity across all five dimensions honestly. For the extensibility dimension specifically, that means getting object-level visibility into your custom ABAP — what touches standard tables or unreleased objects — and attaching KPIs: a Clean Core Score and an A–D readiness grade derived from SAP’s own published object data, so remediation is prioritised. Clean-Core.io provides a free first pass on that extensibility slice; SAP Cloud ALM, LeanIX, Signavio and ATC remain the authoritative, cross-dimension toolchain."
+    answer: "Assess maturity across all five dimensions honestly. For the extensibility dimension specifically, that means getting object-level visibility into your custom ABAP — what touches standard tables or unreleased objects — and attaching KPIs: a Clean Core Score and an A–D readiness grade — a lookup in SAP’s published object data for SAP objects, an estimate for your own Z/Y objects, so remediation is prioritised. Clean-Core.io provides a free first pass on that extensibility slice; SAP Cloud ALM, LeanIX, Signavio and ATC remain the authoritative, cross-dimension toolchain."
   }
 ];
 
@@ -66,7 +66,7 @@ const COMPARISON_ROWS = [
   { criterion: 'Development Languages', rap: 'Modern ABAP (Cloud-enabled subset)', cap: 'JavaScript, TypeScript, Java' },
   { criterion: 'Database Access', rap: 'Native SQL on HANA via CDS views', cap: 'OData, REST, or database targets (HANA, PG, SQLite)' },
   { criterion: 'Core Decoupling', rap: 'High logical coupling (shares SAP memory)', cap: 'Complete architectural separation (connected via APIs)' },
-  { criterion: 'Upgrade Impact', rap: 'Zero impact (uses officially released SAP APIs)', cap: 'Zero impact (completely independent execution)' },
+  { criterion: 'Upgrade Impact', rap: 'Low (released SAP APIs stay stable; regression tests still needed)', cap: 'Low (runs separately; the APIs it calls still need testing)' },
 ];
 
 export default function KnowledgePage() {
@@ -123,7 +123,7 @@ export default function KnowledgePage() {
       {/* GEO Quick Answer Block */}
       <QuickAnswer
         question="What is the SAP Clean Core approach, and how do you assess readiness?"
-        answer="SAP Clean Core is a set of guiding principles for keeping the S/4HANA core standard and upgradeable across five dimensions — business processes, extensibility (custom code), data, integration, and operations. A Clean Core assessment measures maturity across those dimensions. For the extensibility dimension specifically it means getting object-level visibility into custom ABAP (what touches standard tables or unreleased objects) and attaching KPIs — a Clean Core Score and an A–D readiness grade derived from SAP’s own published object data — so the highest-risk objects are remediated first. It is complementary to SAP ADT/ATC and the SAP toolchain (Cloud ALM, LeanIX, Signavio), which remain the authoritative checks."
+        answer="SAP Clean Core is a set of guiding principles for keeping the S/4HANA core standard and upgradeable across five dimensions — business processes, extensibility (custom code), data, integration, and operations. A Clean Core assessment measures maturity across those dimensions. For the extensibility dimension specifically it means getting object-level visibility into custom ABAP (what touches standard tables or unreleased objects) and attaching KPIs — a Clean Core Score and an A–D readiness grade — a lookup in SAP’s published object data for SAP objects, an estimate for your own Z/Y objects — so the highest-risk objects are remediated first. It is complementary to SAP ADT/ATC and the SAP toolchain (Cloud ALM, LeanIX, Signavio), which remain the authoritative checks."
       />
 
       {/* Interactive FAQ & Glossary client component */}

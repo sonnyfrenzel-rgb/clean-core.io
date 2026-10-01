@@ -51,7 +51,7 @@ import { WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { pageStatusOnRecord, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 
-type ContentBlock = 'layerBar' | 'nextStep' | 'layerSection' | 'firstLook' | 'ask' | 'notDetermined';
+type ContentBlock = 'answers' | 'layerBar' | 'nextStep' | 'layerSection' | 'firstLook' | 'ask' | 'notDetermined';
 
 /** Process and reveal line, *Not determined*, "Next step" — §2.3, §2.9. */
 const BUSINESS_ORDER: readonly ContentBlock[] = [
@@ -72,6 +72,16 @@ const OTHER_ORDER: readonly ContentBlock[] = [
   'ask',
   'notDetermined',
 ];
+
+/**
+ * Management opens with its answer, then "Next step" (ADR-029, §2.3 item 5);
+ * its own blocks — steering one-pager, Public-Cloud-Fit, the decision — follow
+ * below, and only then the layers and the reading of the code, which answer the
+ * other two views' questions. Before this order a manager scrolled past the
+ * whole process and every *Not determined* line before reaching the decision.
+ */
+const MANAGEMENT_HEAD: readonly ContentBlock[] = ['answers', 'nextStep'];
+const MANAGEMENT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'firstLook', 'ask', 'notDetermined'];
 
 /**
  * The Object Page of a project — `DESIGN.md` §2.3, roadmap step 1.4.
@@ -285,6 +295,20 @@ export default function WorkspaceShell({
    * the top of the content (§2.3 item 5).
    */
   const contentBlocks: Record<ContentBlock, React.ReactNode> = {
+    // Management begins with its answer, above every card (ADR-029,
+    // `DESIGN.md` §5.6: *"Management beginnt mit einem Satz über allen
+    // Karten, der die Frage der Sicht beantwortet"*) — roadmap 6.4, moved
+    // here from the route by roadmap 6.10: the decision panel, the figures
+    // and the answer cards one action deeper. Rendered only in that view: a
+    // stub of somebody else's answer in the other two views is a promise the
+    // page does not keep. It reads the runs of this project itself, because
+    // the history is the one thing the hydrated project does not carry.
+    answers:
+      view === 'management' ? (
+        <div className="mt-5 max-w-3xl">
+          <ManagementAnswers project={project} projectId={projectId} decisionRevision={decisionRevision} />
+        </div>
+      ) : null,
     layerBar: (
       <div className="mt-5">
         <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} />
@@ -356,7 +380,7 @@ export default function WorkspaceShell({
     ),
   };
   const contentOrder: readonly ContentBlock[] =
-    view === 'business' ? BUSINESS_ORDER : OTHER_ORDER;
+    view === 'business' ? BUSINESS_ORDER : view === 'management' ? MANAGEMENT_HEAD : OTHER_ORDER;
 
   return (
     <div className="cc" data-workspace-shell={view}>
@@ -519,22 +543,6 @@ export default function WorkspaceShell({
         </div>
       )}
 
-      {/* Management begins with its answer, above every card (ADR-029,
-          `DESIGN.md` §5.6: *"Management beginnt mit einem Satz über allen
-          Karten, der die Frage der Sicht beantwortet"*) — roadmap 6.4, moved
-          here from the route by roadmap 6.10. What is confirmed, what is
-          missing, what a decision would bind, and the Clean Core Score with its
-          rule version and history. Rendered only in that view, for the same
-          reason the Public-Cloud-Fit panel below is: a stub of somebody else's
-          answer in the other two views is a promise the page does not keep. It
-          reads the runs of this project itself, because the history is the one
-          thing the hydrated project does not carry. */}
-      {view === 'management' && (
-        <div className="mt-5 max-w-3xl">
-          <ManagementAnswers project={project} projectId={projectId} decisionRevision={decisionRevision} />
-        </div>
-      )}
-
       {/* The steering one-pager (roadmap 8.6, mockup screen 5: "Steering
           one-pager" in Management's tool row) — figures only, each with its
           coverage and a link to its evidence, and a "Not determined" column.
@@ -568,6 +576,11 @@ export default function WorkspaceShell({
           <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} onChanged={onDecisionChanged} />
         </div>
       )}
+
+      {/* The layers and the reading of the code, after Management's own answer. */}
+      {view === 'management'
+        ? MANAGEMENT_TAIL.map((key) => <React.Fragment key={key}>{contentBlocks[key]}</React.Fragment>)
+        : null}
 
       {/* Roadmap 5.5 — "Members on this case" (mockup screen 1/4): who has read
           access, since when, and the revocation. Owner only, and not by hiding

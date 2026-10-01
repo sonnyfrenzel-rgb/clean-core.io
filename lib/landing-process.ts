@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { buildProcessSkeleton, type ProcessSkeleton } from '@/lib/abap/process-skeleton';
-import { plainLabels } from '@/lib/abap/plain-language';
+import { conditionToPhrase, plainContext, plainLabels, type PlainContext } from '@/lib/abap/plain-language';
 import { READING_WRAP } from '@/lib/bpmn/export';
 import { businessExcerpt } from '@/lib/bpmn/excerpt';
 import { buildExportModel, isEarlyEnd, isMultiInstanceLoop, type BpmnTag, type ExportContainer, type ExportModel } from '@/lib/bpmn/model';
@@ -110,6 +110,9 @@ export interface LandingProcess {
     lastLine: number | null;
     helpers: string[];
     clones: number;
+    /** The same two lists with their lines, for the rows under the map. */
+    unreachedList: Array<{ name: string; lineStart: number; lineEnd: number }>;
+    helperList: Array<{ name: string; lineStart: number; lineEnd: number; callSites: number }>;
   };
 }
 
@@ -119,6 +122,13 @@ function readExample(fileName: string): string {
   // LF whatever the checkout did: anchors count lines, and a CRLF working copy
   // must give the same numbers as the deployed image.
   return fs.readFileSync(path.join(EXAMPLES, fileName), 'utf8').replace(/\r\n/g, '\n');
+}
+
+/** A rule's condition as a phrase inside a sentence: "plant 1000", "currency not EUR". */
+function plainRule(condition: string, ctx: PlainContext, line: number): string {
+  const phrase = conditionToPhrase(condition, ctx, line);
+  // Lower-case the first word unless it is an acronym or a code (MRP, EUR).
+  return /^[A-Z][a-z]/.test(phrase) ? phrase[0].toLowerCase() + phrase.slice(1) : phrase;
 }
 
 function anchorLabelOf(a: { lineStart: number; lineEnd: number } | null): string {
@@ -256,6 +266,8 @@ function buildProcess(
         lastLine: unreached.length ? Math.max(...unreached.map((u) => u.lineEnd)) : null,
         helpers: skeleton.notDrawn.technicalHelpers.map((h) => h.name),
         clones: skeleton.notDrawn.clones.length,
+        unreachedList: unreached.map((u) => ({ name: u.name, lineStart: u.lineStart, lineEnd: u.lineEnd })),
+        helperList: skeleton.notDrawn.technicalHelpers.map((h) => ({ name: h.name, lineStart: h.lineStart, lineEnd: h.lineEnd, callSites: h.callSites })),
       },
     },
   };
@@ -279,7 +291,12 @@ export interface LandingHero {
   caption: string;
   /** The routine's own lines, for the source column. */
   code: LandingCodeLine[];
-  rules: { total: number; shown: Array<{ id: string; label: string; line: number }> };
+  /**
+   * The rules the hero names: `label` is the condition as the code writes it,
+   * `plain` the same rule in plain language (`lib/abap/plain-language.ts`,
+   * deterministic, no model) — what the found-in-the-code sentence reads.
+   */
+  rules: { total: number; shown: Array<{ id: string; label: string; plain: string; line: number }> };
   notDetermined: { total: number; groups: Array<{ label: string; anchors: string[] }> };
   includesNotRead: Array<{ line: number; detail: string }>;
 }
@@ -306,6 +323,7 @@ export function landingHero(fileName: string, program: string): LandingHero {
   for (let n = first; n <= last; n += 1) code.push({ number: n, tokens: tokenizeAbapLine(lines[n - 1] ?? '') });
 
   const ruleSet = deriveBusinessRules(source);
+  const ctx = plainContext(source);
   const onPlane = new Set(plane.nodes.map((n) => n.id));
   // The rules a reader can find on the map: the one on the drawn plane first,
   // then the others that sit on a decision, in the engine's own order.
@@ -313,7 +331,7 @@ export function landingHero(fileName: string, program: string): LandingHero {
     const el = r.processElements[0];
     return el ? [{ id: r.id, label: r.label, line: el.lineStart, here: onPlane.has(el.nodeId) }] : [];
   });
-  const shown = [...withLine.filter((r) => r.here), ...withLine.filter((r) => !r.here)].slice(0, 3).map(({ id, label, line }) => ({ id, label, line }));
+  const shown = [...withLine.filter((r) => r.here), ...withLine.filter((r) => !r.here).sort((a, b) => a.label.length - b.label.length)].slice(0, 3).map(({ id, label, line }) => ({ id, label, line, plain: plainRule(label, ctx, line) }));
 
   const nd = notDetermined({ legacyCode: source } as Parameters<typeof notDetermined>[0]);
   const groups = new Map<string, string[]>();

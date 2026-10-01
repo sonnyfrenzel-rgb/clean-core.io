@@ -41,13 +41,25 @@ import {
 export default function AbcdClassificationPanel({
   dataCoupling,
   codeInventory,
+  deployment,
+  release,
 }: {
   dataCoupling?: DataCouplingEntry[];
   codeInventory?: CodeInventoryItem[];
+  /**
+   * Roadmap 7.10 - the target the grades are looked up for. Sent as the
+   * lookup's `profile`, so the answer says which catalog snapshot answered and
+   * whether that snapshot is the one this target's verdicts come from.
+   */
+  deployment?: string;
+  release?: string;
 }) {
   const couplings = dataCoupling || [];
   const inventory = codeInventory || [];
   const [sapGrades, setSapGrades] = useState<Record<string, GradedObject>>({});
+  const [lookupSnapshot, setLookupSnapshot] = useState<{ registryKey: string; sourceSha256: string } | null>(null);
+  const [lookupCoverage, setLookupCoverage] = useState<{ state: string; sentence: string } | null>(null);
+  const [lookupRefusal, setLookupRefusal] = useState<string | null>(null);
 
   const heuristicItems: { name: string; use: ObjectUse | null; sub: string; grade: CloudReadinessGrade }[] = [
     ...couplings.map((c) => ({
@@ -71,6 +83,22 @@ export default function AbcdClassificationPanel({
     .map((i) => gradeKey(i.name, i.use))
     .join('|');
 
+  // A lookup answers for one set of objects on one target. When either moves,
+  // what the last one said goes with it — grades, snapshot, coverage and a
+  // refusal alike — so a failed or refused lookup for the new target never
+  // stands beside the previous target's catalog grades (QA slice review of
+  // e7372791c70d, 0e5a2deebd7a). Reset while rendering, as React prescribes
+  // for state that follows a prop.
+  const lookupTarget = `${lookupKey}#${deployment ?? ''}#${release ?? ''}`;
+  const [lookupFor, setLookupFor] = useState(lookupTarget);
+  if (lookupFor !== lookupTarget) {
+    setLookupFor(lookupTarget);
+    setSapGrades({});
+    setLookupSnapshot(null);
+    setLookupCoverage(null);
+    setLookupRefusal(null);
+  }
+
   useEffect(() => {
     const keys = lookupKey ? lookupKey.split('|') : [];
     if (keys.length === 0) return;
@@ -87,11 +115,28 @@ export default function AbcdClassificationPanel({
         const res = await fetch('/api/abcd-classify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ objects }),
+          body: JSON.stringify({
+            objects,
+            ...(deployment ? { profile: { edition: deployment, release: release || '' } } : {}),
+          }),
         });
+        if (res.status === 422) {
+          // A target nothing can be looked up for: said, never answered with
+          // grades from a catalog that is not its own.
+          const refused = (await res.json().catch(() => ({}))) as { error?: string };
+          if (!cancelled) setLookupRefusal(refused.error || 'No catalog lookup is made for this target.');
+          return;
+        }
         if (!res.ok) return;
-        const data = (await res.json()) as { grades?: Record<string, GradedObject> };
-        if (!cancelled && data.grades) setSapGrades(data.grades);
+        const data = (await res.json()) as {
+          grades?: Record<string, GradedObject>;
+          snapshot?: { registryKey: string; sourceSha256: string };
+          coverage?: { state: string; sentence: string };
+        };
+        if (cancelled) return;
+        if (data.grades) setSapGrades(data.grades);
+        setLookupSnapshot(data.snapshot ?? null);
+        setLookupCoverage(data.coverage ?? null);
       } catch {
         // Leave the heuristic grades in place — a failed lookup must not blank the panel.
       }
@@ -100,7 +145,7 @@ export default function AbcdClassificationPanel({
     return () => {
       cancelled = true;
     };
-  }, [lookupKey]);
+  }, [lookupKey, deployment, release]);
 
   // A catalog grade replaces the heuristic one; anything SAP has not classified
   // keeps its estimate and is labelled as such.
@@ -135,6 +180,29 @@ export default function AbcdClassificationPanel({
       badgeSeverity={dist.D > 0 ? 'error' : dist.C > 0 ? 'warning' : 'neutral'}
       tooltip="SAP's clean core level concept (A = released, B = classic SAP API, C = internal/conditional, D = not recommended), one grade per object. Objects SAP has published a state for are looked up in the Cloudification Repository and SAP's classicAPI/noAPI file, and a table is graded for the access your code makes: reading a table SAP will not release is C, writing to it is D. Your own Z/Y tables are graded B as classic ABAP working on its own data; other objects SAP has not classified fall back to a heuristic and are marked as estimated. Not an authoritative SAP ATC classification and not part of the signed audit pack — verify with SAP ADT/ATC."
     >
+      {/* Roadmap 7.10 - which snapshot answered, and whether it is the one this
+          target's verdicts come from. A refused target shows no catalog grade. */}
+      {lookupRefusal && (
+        <div className="mb-4" data-abcd-lookup="refused">
+          <CcMessageStrip state="error" headline="No catalog lookup for this target.">
+            {lookupRefusal} The grades below are estimates only.
+          </CcMessageStrip>
+        </div>
+      )}
+      {lookupSnapshot && (
+        <div className="mb-4" data-abcd-lookup={lookupCoverage?.state ?? 'no-profile'}>
+          <CcMessageStrip
+            state={lookupCoverage && lookupCoverage.state !== 'covered' ? 'warning' : 'information'}
+            headline={`Looked up in catalog snapshot ${lookupSnapshot.registryKey}@${lookupSnapshot.sourceSha256.slice(0, 8)}.`}
+          >
+            {!lookupCoverage
+              ? 'No target was named for this lookup, so whether this is the snapshot its verdicts come from is not determined.'
+              : lookupCoverage.state !== 'covered'
+                ? lookupCoverage.sentence
+                : "This is the snapshot the target's verdicts come from."}
+          </CcMessageStrip>
+        </div>
+      )}
       {/* Say where each grade comes from, and keep the audit-pack exclusion
           verbatim. */}
       <div className="mb-4">

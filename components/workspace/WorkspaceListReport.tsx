@@ -29,6 +29,7 @@ import {
   runScope,
   type AnalysisRunStage,
 } from '@/lib/analysis-run';
+import { declaredTargetOf } from '@/lib/assessment-target';
 import type { Project } from '@/lib/types';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -109,7 +110,14 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
   const { profile, loading: profileLoading } = useUserProfile();
   const modelAvailability = useModelAvailability();
   const [user, setUser] = useState<User | null>(null);
-  const [projects, setProjects] = useState<(Project & { id: string })[]>([]);
+  // Rows carry the account that loaded them: after a sign-out, or a switch to
+  // another account, the previous account's projects are not shown while the
+  // new query runs (QA full review of v2.20.0).
+  const [loaded, setLoaded] = useState<{ uid: string; rows: (Project & { id: string })[] } | null>(null);
+  const projects = useMemo(
+    () => (loaded && user && loaded.uid === user.uid ? loaded.rows : []),
+    [loaded, user],
+  );
   const [filter, setFilter] = useState<WorkspaceFilter>(EMPTY_FILTER);
   const [runs, setRuns] = useState<Record<string, RunCell>>({});
   const controllers = useRef<Record<string, AbortController>>({});
@@ -126,17 +134,36 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
       orderBy('createdAt', 'desc'),
       limit(25),
     );
+    const uid = user.uid;
     const take = (docs: { id: string; data: () => unknown }[]) =>
-      setProjects(docs.map((d) => ({ ...(d.data() as Project), id: d.id })));
+      setLoaded({ uid, rows: docs.map((d) => ({ ...(d.data() as Project), id: d.id })) });
+    // The one-shot read only fills the list until the listener has spoken: an
+    // older answer arriving after a snapshot would replace newer rows, and
+    // nothing would correct it until the next change.
+    let live = false;
     getDocs(q)
-      .then((snap) => take(snap.docs))
+      .then((snap) => {
+        if (!live) take(snap.docs);
+      })
       .catch(() => undefined);
     return onSnapshot(
       q,
-      (snap) => take(snap.docs),
+      (snap) => {
+        live = true;
+        take(snap.docs);
+      },
       (error) => handleFirestoreError(error, OperationType.LIST, 'projects'),
     );
   }, [user]);
+
+  // Leaving the list ends the analyses it started: nothing is left to show
+  // them, and a run nobody can cancel should not keep going.
+  useEffect(() => {
+    const running = controllers.current;
+    return () => {
+      for (const controller of Object.values(running)) controller.abort();
+    };
+  }, []);
 
   const ownRows = useMemo(() => projects.map(toWorkspaceRow), [projects]);
 
@@ -179,10 +206,16 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
     async (row: WorkspaceRow, callModel: boolean) => {
       const project = projects.find((p) => p.id === row.id);
       if (!project || typeof project.legacyCode !== 'string') return;
+      // Synchronous, before anything awaits: a second activation of Run that
+      // lands before the first `running` state has rendered must not start a
+      // second pipeline for the same project.
+      if (controllers.current[row.id]) return;
       const controller = new AbortController();
       // The controller lives in a ref, not in the state cell: aborting is a side
       // effect and a state updater is not where React allows one.
       controllers.current[row.id] = controller;
+      /** Only the run that owns the row's controller may write the row. */
+      const owns = () => controllers.current[row.id] === controller;
       setRuns((prev) => ({ ...prev, [row.id]: { phase: 'running', stages: [] } }));
       try {
         await runAnalysis({
@@ -190,17 +223,22 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           legacyCode: project.legacyCode,
           fileName: project.auditMetadata?.inputFingerprint?.fileName || 'main.abap',
           deployment: project.s4Deployment === 'public' ? 'public' : 'private',
+          // Roadmap 7.10 - the declaration the project's last run was made under.
+          targetProfile: declaredTargetOf(project),
           callModel,
           signal: controller.signal,
-          onStages: (stages) =>
+          onStages: (stages) => {
+            if (!owns()) return;
             setRuns((prev) => {
               const cell = prev[row.id];
               if (!cell || cell.phase !== 'running') return prev;
               return { ...prev, [row.id]: { ...cell, stages } };
-            }),
+            });
+          },
         });
-        setRuns((prev) => ({ ...prev, [row.id]: undefined }));
+        if (owns()) setRuns((prev) => ({ ...prev, [row.id]: undefined }));
       } catch (err) {
+        if (!owns()) return;
         if (err instanceof AnalysisRunCancelled) {
           setRuns((prev) => ({ ...prev, [row.id]: undefined }));
           return;
@@ -209,6 +247,8 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           ...prev,
           [row.id]: { phase: 'failed', message: err instanceof Error ? err.message : String(err) },
         }));
+      } finally {
+        if (owns()) delete controllers.current[row.id];
       }
     },
     [projects, profile],

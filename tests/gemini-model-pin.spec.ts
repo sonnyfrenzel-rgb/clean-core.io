@@ -37,6 +37,19 @@ function sourceFiles(): string[] {
   return out;
 }
 
+/**
+ * "Not preview" is not "GA": an `-exp-` or `-latest` id passes the first and is
+ * not the second. The register labels every entry `// GA —` or `// PREVIEW —`,
+ * so a model counts as GA when its register line says so and its id carries no
+ * pre-release marker (QA slice review of 953575fcc9bf, 3b4139bffe8b /
+ * 78cf32f47a20).
+ */
+const isRegisteredGa = (model: string): boolean => {
+  const route = read('app/api/gemini/route.ts');
+  const escaped = model.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`'${escaped}',\\s*// GA\\b`).test(route) && !/preview|exp|latest/i.test(model);
+};
+
 test('the model the product calls is named in exactly one place', () => {
   // `lib/constants.ts` holds the choice; `app/api/gemini/route.ts` holds the
   // register of what may be called at all. Everywhere else reads the constant.
@@ -54,6 +67,10 @@ test('the product model is a GA model, and the register agrees with it', () => {
   // The whole point of the move: not a newer model, a model that cannot be
   // withdrawn under the product.
   expect(PRODUCT_GEMINI_MODEL, 'the product default is a preview model again').not.toMatch(/preview/i);
+  expect(isRegisteredGa(PRODUCT_GEMINI_MODEL), 'the product default is not a model the register marks GA').toBe(true);
+  // The check is not vacuous: the register's preview entry and an unlisted id fail it.
+  expect(isRegisteredGa('gemini-3-flash-preview')).toBe(false);
+  expect(isRegisteredGa('gemini-exp-1206')).toBe(false);
 
   const route = read('app/api/gemini/route.ts');
   const register = route.slice(route.indexOf('const ALLOWED_MODELS'), route.indexOf('])', route.indexOf('const ALLOWED_MODELS')));
@@ -62,6 +79,7 @@ test('the product model is a GA model, and the register agrees with it', () => {
 
 test('the naming stage has its own model, a GA one, in the register, and only it uses it (17.3)', () => {
   expect(NAMING_GEMINI_MODEL, 'the naming model is a preview model').not.toMatch(/preview/i);
+  expect(isRegisteredGa(NAMING_GEMINI_MODEL), 'the naming model is not a model the register marks GA').toBe(true);
   const route = read('app/api/gemini/route.ts');
   const register = route.slice(route.indexOf('const ALLOWED_MODELS'), route.indexOf('])', route.indexOf('const ALLOWED_MODELS')));
   expect(register, 'the naming model is not in the server-side register, so every naming call would be refused').toContain(NAMING_GEMINI_MODEL);

@@ -227,7 +227,7 @@ test('the server under test is the one that was changed', async ({ request }: { 
     data: {
       projectId: PROJECT_ID, legacyCode: PROGRAM, s4Deployment: 'private',
       analysis: NARRATIVE, uploadedFileName: 'z_model_receipt.abap',
-      modelReceipt: issueModelReceipt({ uid, text: NARRATIVE, modelId: RECEIPT_MODEL, byok: false }, signingKey()),
+      modelReceipt: issueModelReceipt({ uid, text: NARRATIVE, provider: MODEL_PROVIDER_ID, modelId: RECEIPT_MODEL, byok: false }, signingKey()),
     },
   });
   expect(res.status(), await res.text()).toBe(200);
@@ -240,7 +240,7 @@ test('the server under test is the one that was changed', async ({ request }: { 
 });
 
 test('case 1 — a narrative with a valid receipt: the signed run names the provider and the model', async ({ request }) => {
-  const receipt = issueModelReceipt({ uid, text: NARRATIVE, modelId: RECEIPT_MODEL, byok: false }, signingKey());
+  const receipt = issueModelReceipt({ uid, text: NARRATIVE, provider: MODEL_PROVIDER_ID, modelId: RECEIPT_MODEL, byok: false }, signingKey());
   const run = await createRun(request, receipt);
 
   expect(run.modelParticipation).toBe('narrative-attested');
@@ -290,7 +290,7 @@ test('case 3 — a receipt whose digest does not match the text is not a receipt
   // old. Only the binding to the text is missing — and without that binding a
   // receipt says no more than "a model was called once".
   const elsewhere = issueModelReceipt(
-    { uid, text: 'a narrative the model wrote for some other run', modelId: RECEIPT_MODEL, byok: false },
+    { uid, text: 'a narrative the model wrote for some other run', provider: MODEL_PROVIDER_ID, modelId: RECEIPT_MODEL, byok: false },
     signingKey(),
   );
   expect(elsewhere.textSha256, 'the fixture is not actually a mismatch').not.toBe(narrativeDigest(NARRATIVE));
@@ -312,7 +312,7 @@ test('case 3 — a receipt whose digest does not match the text is not a receipt
 
 test('case 4 — a receipt issued for a different account is refused', async ({ request }) => {
   const borrowed = issueModelReceipt(
-    { uid: otherUid, text: NARRATIVE, modelId: RECEIPT_MODEL, byok: true },
+    { uid: otherUid, text: NARRATIVE, provider: MODEL_PROVIDER_ID, modelId: RECEIPT_MODEL, byok: true },
     signingKey(),
   );
   const run = await createRun(request, borrowed);
@@ -323,11 +323,11 @@ test('case 4 — a receipt issued for a different account is refused', async ({ 
 });
 
 test('a receipt signed with another key, one that has expired, and a hand-written one are all refused', async ({ request }) => {
-  const forged = issueModelReceipt({ uid, text: NARRATIVE, modelId: RECEIPT_MODEL, byok: false }, 'not-the-signing-key');
+  const forged = issueModelReceipt({ uid, text: NARRATIVE, provider: MODEL_PROVIDER_ID, modelId: RECEIPT_MODEL, byok: false }, 'not-the-signing-key');
   expectOriginNotEstablished(await createRun(request, forged));
 
   const stale = issueModelReceipt(
-    { uid, text: NARRATIVE, modelId: RECEIPT_MODEL, byok: false, issuedAt: Date.now() - MODEL_RECEIPT_MAX_AGE_MS - 60_000 },
+    { uid, text: NARRATIVE, provider: MODEL_PROVIDER_ID, modelId: RECEIPT_MODEL, byok: false, issuedAt: Date.now() - MODEL_RECEIPT_MAX_AGE_MS - 60_000 },
     signingKey(),
   );
   expectOriginNotEstablished(await createRun(request, stale));

@@ -42,7 +42,13 @@ export default function InvitationPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [accepted, setAccepted] = useState<{ projectName: string } | null>(null);
-  const [preview, setPreview] = useState<{ invitedBy: string; expiresAt: string } | null>(null);
+  // The preview remembers whom it was read for: it is shown only to that
+  // account, for that invitation. It used to stay on screen after a sign-out
+  // or a switch to another account (QA slice review of 81810c8026e0,
+  // 9e437b2930c4).
+  const [preview, setPreview] = useState<{ readFor: string; invitedBy: string; expiresAt: string } | null>(null);
+  const previewKey = user ? `${user.uid}|${projectId}|${invitationId}` : null;
+  const shownPreview = preview && preview.readFor === previewKey ? preview : null;
 
   // Signed in: ask who sent it and until when. Any refusal simply leaves the
   // page as it was — the accept button gives the reason when it is pressed.
@@ -58,7 +64,7 @@ export default function InvitationPage() {
         if (!res.ok) return;
         const body = await res.json().catch(() => null);
         if (live && body && typeof body.expiresAt === 'string') {
-          setPreview({ invitedBy: String(body.invitedBy ?? ''), expiresAt: body.expiresAt });
+          setPreview({ readFor: `${user.uid}|${projectId}|${invitationId}`, invitedBy: String(body.invitedBy ?? ''), expiresAt: body.expiresAt });
         }
       } catch {
         /* the preview is a courtesy; its absence is the old page */
@@ -135,13 +141,13 @@ export default function InvitationPage() {
             {/* UX-148: whose invitation, and until when — the two facts the mail
                 already gave this address. Only the invited, confirmed account
                 receives them; the project name stays behind acceptance. */}
-            {preview && (
+            {shownPreview && (
               <dl data-invitation-preview className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm mb-6">
                 <dt className="font-bold text-cc-ink-muted">Invited by</dt>
-                <dd data-invitation-inviter className="font-medium text-cc-ink">{preview.invitedBy || 'not recorded'}</dd>
+                <dd data-invitation-inviter className="font-medium text-cc-ink">{shownPreview.invitedBy || 'not recorded'}</dd>
                 <dt className="font-bold text-cc-ink-muted">Open until</dt>
                 <dd data-invitation-expires className="font-medium text-cc-ink">
-                  {formatTextDate(preview.expiresAt) ?? preview.expiresAt}
+                  {formatTextDate(shownPreview.expiresAt) ?? shownPreview.expiresAt}
                 </dd>
               </dl>
             )}

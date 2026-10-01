@@ -93,7 +93,10 @@ const LEAKS: Array<{ file: string; gone: RegExp[]; present: string[] }> = [
   },
   {
     file: 'app/api/admin/approve-tenant/route.ts',
-    gone: [/error\.message \|\|/],
+    // The second shape: the caught message into the log. A body that fails
+    // `req.json()` comes back as a SyntaxError quoting that body, token and
+    // all (QA review of e7372791c70d); the log gets the error's class instead.
+    gone: [/error\.message \|\|/, /error: message\b/],
     // The one route here that answers two different things from its catch.
     // Everything unexpected is still redacted to the fixed sentence; a refusal
     // that `lib/approval-token.ts` marked as its own goes back to the caller,
@@ -282,6 +285,13 @@ test('the readers overview is gated and metered like the revocation beside it', 
   const gate = src.indexOf('async function openAsOwner');
   const body = src.slice(gate, src.indexOf('export async function GET'));
   expect(body, 'the overview is not metered').toContain('assertRateLimit(');
+  // Metered on its own budget: one shared key let reading the list use up the
+  // allowance a revocation needs (QA review of a7e0ae36c896).
+  expect(body, 'GET and DELETE share one rate-limit key').toContain(
+    "const rateKey = req.method === 'GET' ? 'project-readers-list' : 'project-readers';",
+  );
+  expect(body).toContain('assertRateLimit(`${rateKey}:${decoded.uid}`');
+  expect(body, 'a fixed key is back beside the per-verb one').not.toMatch(/assertRateLimit\(`project-readers:/);
   expect(body, 'the overview does not check the account').toContain('assertAccountActive(');
   // Hard suspension only, deliberately: an owner asked to re-accept the Terms
   // must still be able to see and end somebody else's access to their code.

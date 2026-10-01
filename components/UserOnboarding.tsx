@@ -276,7 +276,7 @@ export default function UserOnboarding() {
               are written by a language model — and leaves out the label: §3.1
               has no "powered by Generative AI", and the provenance of a given
               text is the job of the chip where that text is shown. The same fact
-              as section 4.1 of the Terms since v2.2.0 (QA c9ab2c6a6c1c). */}
+              as section 4.1 of Terms v2.2.0 (QA c9ab2c6a6c1c). */}
           <CcMessageStrip state="warning" headline="System disclaimer and terms.">
             This application is a <strong>free community project</strong>. Findings, route and score come from a
             deterministic engine, without a language model. Summaries, designs, generated code, documentation and
@@ -433,7 +433,7 @@ export default function UserOnboarding() {
             </p>
             <ul className="list-disc pl-5 space-y-2 cc-text-cell text-cc-ink-muted">
               <li>
-                <strong>Google Cloud Platform & Firebase:</strong> Hosted on secure European servers in the <strong>Belgium (europe-west1)</strong> region for low-latency, GDPR-aligned authentication and database operations.
+                <strong>Google Cloud Platform & Firebase:</strong> Hosting (Cloud Run) and database (Firestore) on secure European servers in the <strong>Belgium (europe-west1)</strong> region. The sign-in, Firebase Authentication, is a Google service not tied to a region and is covered by the international-transfer safeguards in the full privacy policy.
               </li>
               <li>
                 <strong>Google Gemini API:</strong> Generative AI models used exclusively for code transformation, utilizing secure stateless proxy layers.

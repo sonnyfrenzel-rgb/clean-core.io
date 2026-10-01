@@ -101,19 +101,20 @@ export const ARCHIVED_TERMS_VERSIONS: readonly ArchivedTermsVersion[] = [
   {
     // v2.2.0, the version 3.0 ships with (Sonny, 30.09.2026): section 4.1 says
     // which results the deterministic engine computes and which a model writes
-    // (QA 6b83ef361e80). The id and the effective date are a placeholder for the
-    // 3.0 release day; if that day differs, this is re-extracted under the real
-    // date before release — it has not been published yet, so it is not an edit
-    // of a published version.
-    version: '2026-10-15',
+    // (QA 6b83ef361e80). It was first archived under the placeholder id
+    // 2026-10-15; on 01.10.2026 the effective date became the agreed release
+    // day, 6 October 2026, and the text was re-extracted under it before it was
+    // ever published — so this is not an edit of a published version. Only the
+    // effective date in the opening sentence differs from the placeholder text.
+    version: '2026-10-06',
     label: 'v2.2.0',
-    effectiveOn: '15 October 2026',
-    file: 'docs/terms/2026-10-15.md',
-    sha256: '14b1c96513d6b91201f047fa87a0b5581ce243faeeefcf575e38b064fa011cb7',
+    effectiveOn: '6 October 2026',
+    file: 'docs/terms/2026-10-06.md',
+    sha256: '63bf4c81002d3d43dbff51947de26c7fd8ab11dc2a24ab4643ac284596d4b6c8',
     source: {
       file: 'app/terms/page.tsx',
-      commit: '88377f92ffed2bb58da9147dadb81fc15e65b7b6',
-      blob: '925ece2cce59d21053c8620ffb0a67d40d50ba70',
+      commit: 'ecddd646da255124861586d078694c500ca161c0',
+      blob: '651c1ebce7f69caff977830764e6bd976645593b',
       method:
         'Rendered in a browser at the recorded commit and read out of the DOM with the walk in ' +
         'scratch/extract-legal.js. The "Published versions" list is navigation, not contract text, and was ' +

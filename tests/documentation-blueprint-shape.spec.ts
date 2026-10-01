@@ -8,6 +8,7 @@ import firebaseConfig from '../firebase-config.json';
 import { checkBlueprintShape } from '../app/(app)/project/[projectId]/documentation/blueprint-schema';
 import { sha256Hex } from '../lib/artefact-digest';
 import { signInViaLanding } from './helpers/sign-in';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * QA findings 0d8443fae823 / 58201e6aaedb — a blueprint with the wrong field
@@ -213,7 +214,7 @@ test.describe('the documentation is read from the code, and a legacy blueprint s
 
     await adminSetDoc('users', uid, {
       firstName: 'Doc', lastName: 'Shape', email: EMAIL,
-      tier: 'pilot', status: 'approved',
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 50, createdAt: new Date(),
     });
 

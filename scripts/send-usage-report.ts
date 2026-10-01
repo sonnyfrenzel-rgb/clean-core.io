@@ -10,16 +10,22 @@
  * uid of any account (30.09.2026); see `usageReportSnapshot` in
  * lib/usage-report.ts for the stored fields.
  *
- * Usage:
- *   npx tsx scripts/send-usage-report.ts              # dry run: prints the figures
- *   npx tsx scripts/send-usage-report.ts --apply      # send
- *   npx tsx scripts/send-usage-report.ts --apply --to someone@example.com
+ * It loads no package — not `firebase-admin`, not `tsx`. The Friday job holds
+ * `id-token: write`, and every package it ran could mint a token of its own
+ * from that permission (QA review, fa0aaea6cc47). So Firestore is read over
+ * REST (`scripts/lib/firestore-rest.ts`) with an access token the job hands in,
+ * and the script runs on Node's own type stripping.
+ *
+ * Usage (Node >= 22.15; locally the token comes from `gcloud auth print-access-token`):
+ *   node --experimental-strip-types --import ./scripts/lib/ts-extension-hook.mjs scripts/send-usage-report.ts            # dry run
+ *   node --experimental-strip-types --import ./scripts/lib/ts-extension-hook.mjs scripts/send-usage-report.ts --apply    # send
+ *   … --apply --to someone@example.com
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { execFileSync } from 'node:child_process';
+import { firestoreRest, SERVER_TIMESTAMP } from './lib/firestore-rest';
 import { buildUsageReport, usageReportSnapshot } from '../lib/usage-report';
 import {
   renderUsageReportEmail,
@@ -59,11 +65,30 @@ function readSecret(key: string): string {
   throw new Error(`${key} is not set (environment or .env.local)`);
 }
 
+/**
+ * The access token for Firestore. In CI the authentication step mints it and
+ * passes it in; nothing else in the job can read a credentials file, because
+ * none is written. On a developer machine, the signed-in gcloud account.
+ */
+function accessToken(): string {
+  if (process.env.GOOGLE_ACCESS_TOKEN) return process.env.GOOGLE_ACCESS_TOKEN;
+  if (process.env.CI || process.env.GITHUB_ACTIONS) {
+    throw new Error('GOOGLE_ACCESS_TOKEN is not set — the authentication step must pass its access_token output.');
+  }
+  return execFileSync('gcloud', ['auth', 'print-access-token'], { encoding: 'utf8', shell: process.platform === 'win32' }).trim();
+}
+
 async function main() {
   const to = argValue('--to') || reportRecipient();
 
-  if (!getApps().length) initializeApp({ credential: applicationDefault(), projectId: PROJECT_ID });
-  const db = getFirestore(getApps()[0], FIRESTORE_DB_ID);
+  // The emulator, when one is named, accepts `owner` as an administrator token.
+  const emulator = process.env.FIRESTORE_EMULATOR_HOST;
+  const db = firestoreRest({
+    projectId: PROJECT_ID,
+    databaseId: FIRESTORE_DB_ID,
+    accessToken: emulator ? 'owner' : accessToken(),
+    origin: emulator ? `http://${emulator}` : undefined,
+  });
 
   const report = await buildUsageReport(db);
   const subject = renderUsageReportSubject(report);
@@ -135,7 +160,7 @@ async function main() {
   // address, and the provider id already identifies the message.
   await db.collection('usage_reports').add({
     ...usageReportSnapshot(report, { providerId: id }),
-    generatedAt: FieldValue.serverTimestamp(),
+    generatedAt: SERVER_TIMESTAMP,
   });
   console.log('snapshot stored in usage_reports');
 }

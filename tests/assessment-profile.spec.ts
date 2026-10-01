@@ -7,6 +7,8 @@ import {
   PROFILE_INPUT_ID,
   PROFILE_VERSION,
   SHIPPED_CATALOG_SNAPSHOTS,
+  expectedCatalogKey,
+  pinnedSnapshotForRelease,
   assessmentAllowed,
   assessmentSubjectHash,
   canonicalAssessmentProfile,
@@ -152,7 +154,8 @@ test.describe('7.10 — a profile we do not cover is not treated like one we do'
       ['unknown edition', { ...clone(COVERED), edition: 'hana-cloud' as unknown as AssessmentProfile['edition'] }],
       [
         'unshipped snapshot',
-        { ...clone(COVERED), catalogSnapshot: { registryKey: 'pce-2023-3', sourceSha256: 'a'.repeat(64) } },
+        // `pce-2023-3` ships since 30.09.2026; `btp-latest` is in SAP's registry and not shipped.
+        { ...clone(COVERED), catalogSnapshot: { registryKey: 'btp-latest', sourceSha256: 'a'.repeat(64) } },
       ],
       ['no snapshot digest', { ...clone(COVERED), catalogSnapshot: { registryKey: 'latest', sourceSha256: '' } }],
       ['no rule version', { ...clone(COVERED), ruleVersion: '' }],
@@ -163,14 +166,18 @@ test.describe('7.10 — a profile we do not cover is not treated like one we do'
     }
   });
 
-  test('a missing release is unconfirmed, not refused', () => {
+  test('a missing release is a note, not unconfirmed and not refused (decision 30.09.2026)', () => {
     const noRelease: AssessmentProfile = { ...clone(COVERED), release: '' };
     const coverage = profileCoverage(noRelease);
-    expect(coverage.state).toBe('unconfirmed');
-    expect(coverage.gaps.map((g) => g.code)).toEqual(['release-not-named']);
-    expect(resultConfidence(noRelease)).toBe('unconfirmed');
+    expect(coverage.state).toBe('covered');
+    expect(coverage.gaps.map((g) => `${g.code}:${g.severity}`)).toEqual(['release-not-named:notes']);
+    expect(coverage.gaps[0].sentence).toContain('Release not stated');
+    expect(resultConfidence(noRelease)).toBe('confirmed');
     expect(assessmentAllowed(noRelease)).toBe(true);
-    expect(coverage.sentence).not.toBe('');
+    // The verdict sentence is the verdict's; the note is shown beside it.
+    expect(coverage.sentence).toBe('');
+    // Still a different profile from one that names a release.
+    expect(profileFingerprint(noRelease)).not.toBe(profileFingerprint(COVERED));
   });
 
   test('an unknown ABAP language version is carried, never defaulted to Standard ABAP', () => {
@@ -182,8 +189,10 @@ test.describe('7.10 — a profile we do not cover is not treated like one we do'
       ],
     };
     const coverage = profileCoverage(unknown);
-    expect(coverage.state).toBe('unconfirmed');
+    // A note (decision 30.09.2026), and still never Standard ABAP by default.
+    expect(coverage.state).toBe('covered');
     const gap = coverage.gaps.find((g) => g.code === 'language-version-unknown');
+    expect(gap?.severity).toBe('notes');
     expect(gap?.subject).toBe('ZCL_MYSTERY');
     expect(gap?.sentence).toContain('not assumed to be Standard ABAP');
 
@@ -235,7 +244,8 @@ test.describe('7.10 — a profile we do not cover is not treated like one we do'
     expect(codes).toEqual([
       'language-version-unknown/ZCL_A',
       'language-version-unknown/ZCL_B',
-      'snapshot-substituted/The private edition\'s verdicts come from the "pce-latest" catalog; this profile was assessed against "latest".',
+      // PCE-2023-3 names a pinned file, so that is where the verdicts come from.
+      'snapshot-substituted/The private edition\'s verdicts come from the "pce-2023-3" catalog; this profile was assessed against "latest".',
       'snapshot-unpinned/latest',
     ]);
     expect(profileCoverage(reordered).gaps.map((g) => `${g.code}/${g.subject ?? ''}`)).toEqual(codes);
@@ -270,6 +280,38 @@ test.describe('7.10 — a latest entry does not stand in for a release snapshot'
     const gap = coverage.gaps.find((g) => g.code === 'snapshot-unpinned');
     expect(gap?.subject).toBe('latest');
     expect(gap?.sentence).toContain('does not stand in for one');
+  });
+
+  test('a named Private-Edition release read from its own pinned file is covered', () => {
+    const pinned: AssessmentProfile = {
+      ...clone(COVERED),
+      edition: 'private',
+      release: '2023 FPS03',
+      catalogSnapshot: { registryKey: 'pce-2023-3', sourceSha256: 'a'.repeat(64) },
+    };
+    expect(profileCoverage(pinned)).toMatchObject({ state: 'covered', gaps: [] });
+    // Read from the moving PCE list instead: named, not silent.
+    const moving = { ...clone(pinned), catalogSnapshot: { registryKey: 'pce-latest', sourceSha256: 'a'.repeat(64) } };
+    expect(profileCoverage(moving).state).toBe('unconfirmed');
+    expect(profileCoverage(moving).gaps.map((g) => g.code)).toEqual(['snapshot-substituted', 'snapshot-unpinned']);
+    // No release stated: the moving PCE list is the edition's list, with a note.
+    const unstated = { ...clone(moving), release: '' };
+    expect(profileCoverage(unstated).state).toBe('covered');
+    // A release SAP publishes no pinned file for: the moving list stands in, named.
+    const unpublished = { ...clone(moving), release: '2022 FPS02' };
+    expect(profileCoverage(unpublished).gaps.map((g) => g.code)).toEqual(['snapshot-unpinned']);
+  });
+
+  test('a release name maps to the pinned file SAP publishes for it, and to nothing else', () => {
+    expect(pinnedSnapshotForRelease('private', '2023 FPS03')).toBe('pce-2023-3');
+    expect(pinnedSnapshotForRelease('private', 'PCE-2025-1')).toBe('pce-2025-1');
+    expect(pinnedSnapshotForRelease('private', 'S4HANA-2025-FPS00')).toBe('pce-2025-0');
+    expect(pinnedSnapshotForRelease('private', '2022 FPS02')).toBeNull();
+    expect(pinnedSnapshotForRelease('private', '2023')).toBeNull();
+    expect(pinnedSnapshotForRelease('public', '2023 FPS03')).toBeNull();
+    expect(expectedCatalogKey('private', '')).toBe('pce-latest');
+    expect(expectedCatalogKey('public', '2508')).toBe('latest');
+    expect(expectedCatalogKey('on-premise', '')).toBeNull();
   });
 
   test('the Public Edition has no pinned snapshot to be substituted for', () => {

@@ -101,15 +101,40 @@ export function resolveMethodTarget(
       : { key: null, ambiguous: found.length > 1, byClass };
 
   let cls: string | null = null;
+  // Ob die Klasse der deklarierte Typ einer Referenzvariablen ist.
+  let fromReference = false;
   const q = qualifier?.toUpperCase() ?? null;
   if (op === '=>' && q) cls = q;
   else if (op === null || q === 'ME') cls = ownClass;
   else if (q && q !== ')' && q !== 'SUPER') {
     const types = model.refTypes.get(q);
-    if (types?.size === 1) cls = [...types][0];
+    if (types?.size === 1) {
+      cls = [...types][0];
+      fromReference = true;
+    }
   }
 
   if (q === 'SUPER') cls = ownClass ? model.superOf.get(ownClass) ?? null : null;
+
+  // Der deklarierte Typ ist nicht der Laufzeittyp: `lo TYPE REF TO lcl_base`
+  // kann eine Instanz von `lcl_sub` halten, und `lo->run( )` erreicht dann
+  // dessen Redefinition. Redefiniert eine Unterklasse, die der Quelltext
+  // schreibt, die Methode, ist das Ziel nicht eindeutig (QA full review of
+  // v2.20.0, 5b0e06b9c4ea).
+  if (cls && fromReference) {
+    const base = cls;
+    const below = (at: string): boolean => {
+      const seen = new Set<string>([at]);
+      for (let up = model.superOf.get(at); up && !seen.has(up); up = model.superOf.get(up)) {
+        if (up === base) return true;
+        seen.add(up);
+      }
+      return false;
+    };
+    if (model.impls.some((impl) => impl.cls !== base && byName(impl) && below(impl.cls))) {
+      return { key: null, ambiguous: true, byClass: true };
+    }
+  }
 
   if (cls) {
     // Die Kette hinauf, die der Quelltext schreibt: eine geerbte Methode ist

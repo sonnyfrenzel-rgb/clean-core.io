@@ -112,8 +112,15 @@ async function openAsOwner(
   // people's personal data, and a suspended account kept taking it out, as
   // often as it liked (security audit of b88c77b). The list of who may read a
   // project is not less sensitive than the act of changing it.
+  //
+  // Each verb has its own budget, though. With one shared key, an hour of
+  // looking at the list — across all of an owner's projects — used up the
+  // allowance a revocation needs, and the reader kept access until the window
+  // reset (QA review of a7e0ae36c896). Reading must never be what stops an
+  // owner from ending somebody's access.
+  const rateKey = req.method === 'GET' ? 'project-readers-list' : 'project-readers';
   try {
-    await assertRateLimit(`project-readers:${decoded.uid}`, 60, 60 * 60 * 1000);
+    await assertRateLimit(`${rateKey}:${decoded.uid}`, 60, 60 * 60 * 1000);
   } catch (rateErr: unknown) {
     const q = rateErr as { message?: string; status?: number };
     return {

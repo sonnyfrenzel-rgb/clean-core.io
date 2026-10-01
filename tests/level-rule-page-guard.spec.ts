@@ -50,16 +50,22 @@ test.describe('the published rule matches the code it describes', () => {
 
   test('the page lists every branch, and no branch it does not have', () => {
     const source = fs.readFileSync(PAGE, 'utf8');
-    for (const state of [
-      'released',
-      'notToBeReleased',
-      'deprecated + successor',
-      'deprecated, no successor',
-      'classicAPI',
-      'noAPI',
-      'listed in neither file',
+    // With the grade the page prints for it — the same grades the test above
+    // executes. A row that kept its label and changed its letter used to pass
+    // (QA full review of fc787674705f, 4485fc86cd72).
+    for (const [state, grade] of [
+      ['released', 'A'],
+      ['notToBeReleased', 'D'],
+      ['deprecated + successor', 'C'],
+      ['deprecated, no successor', 'D'],
+      ['classicAPI', 'B'],
+      ['noAPI', 'D'],
+      ['listed in neither file', 'C'],
     ]) {
       expect(source, `the rule table lost the "${state}" row`).toContain(`state: '${state}'`);
+      expect(source, `the rule table prints another grade than ${grade} for "${state}"`).toMatch(
+        new RegExp(`state: '${state.replace(/[+]/g, '\\+')}',\\s*grade: '${grade}'`),
+      );
     }
   });
 
@@ -114,6 +120,23 @@ test.describe('the published rule matches the code it describes', () => {
         'getLevelDerivationCensus(), or a catalog sync will silently make the ' +
         'page wrong about its own data.',
     ).not.toMatch(/>\s*2[12]\s+objects/);
+
+    // Not only 21 or 22 straight after a tag: any typed-in count of objects —
+    // in the copy, in the metadata, in a prop, as digits or as a word — goes
+    // stale at the next catalog sync just the same (QA full review of
+    // fc787674705f, c1bb87df2185). Comments are prose about the page, not on it.
+    const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    const typedCount = [
+      /(^|[^\w$.{])\d[\d,.]*\+?\s+(?:[A-Za-z-]+\s+){0,2}objects\b/,
+      /\b(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred)(?:-[a-z]+)?\s+(?:[A-Za-z-]+\s+){0,2}objects\b/i,
+    ];
+    for (const sample of ['<span>23 objects</span>', "description: '1,204 SAP objects are graded'", 'twenty-two contested objects']) {
+      expect(typedCount.some((re) => re.test(sample)), `the check misses "${sample}"`).toBe(true);
+    }
+    expect(typedCount.some((re) => re.test('{contestedTotal} objects')), 'a computed count is not typed in').toBe(false);
+    for (const re of typedCount) {
+      expect(code, 'a count of objects is typed into the page instead of read from the census').not.toMatch(re);
+    }
   });
 });
 

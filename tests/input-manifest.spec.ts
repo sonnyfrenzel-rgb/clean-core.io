@@ -2,7 +2,8 @@ import { test, expect, type APIRequestContext } from '@playwright/test';
 import { createHash, createHmac } from 'crypto';
 import JSZip from 'jszip';
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { connectAuthToEmulator, requireEmulator } from './helpers/emulator-guard';
 import { initializeApp as initAdminApp, getApps as getAdminApps } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-config.json';
@@ -19,6 +20,7 @@ import { INPUT_MANIFEST_FILE } from '../lib/audit-pack';
 import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
 import { recomputeStoredRunHash, verifyRunIntegrity } from '../lib/run-signature';
 import { TERMS_VERSION } from '../lib/constants';
+import { PROFILE_INPUT_ID } from '../lib/assessment-profile';
 
 /**
  * Roadmap 0.5 — "Manifest- und Inputvertrag: `inputs[]` mit Revision und Hash".
@@ -235,14 +237,19 @@ test.describe('server side', () => {
   const read = async (path: string) => (await db.doc(path).get()).data()!;
 
   test.beforeAll(async () => {
+    // Fail closed before the first write. The Admin SDK goes to the emulator only
+    // because FIRESTORE_EMULATOR_HOST says so; without it, `projectId` below is
+    // the real project and the fixtures would land there (QA full review of
+    // fc787674705f, e737e396484f).
+    requireEmulator();
+    if (!process.env.FIRESTORE_EMULATOR_HOST) {
+      throw new Error('Refusing to run: FIRESTORE_EMULATOR_HOST is not set, so the Admin SDK would write to the real project.');
+    }
     const adminApp = getAdminApps()[0] ?? initAdminApp({ projectId: firebaseConfig.projectId });
     db = getFirestore(adminApp, firebaseConfig.firestoreDatabaseId);
 
     const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    try {
-      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-    } catch { /* already connected */ }
+    const auth = connectAuthToEmulator(getAuth(app));
     const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD);
     token = await cred.user.getIdToken();
     await db.doc(`users/${cred.user.uid}`).set({
@@ -269,7 +276,8 @@ test.describe('server side', () => {
     expect(manifest.manifestVersion).toBe(1);
     expect(manifest.revision).toBe(1);
     expect(manifest.inputs.map((i: ManifestInput) => i.id).sort()).toEqual(
-      [INPUT_IDS.catalog, INPUT_IDS.deployment, INPUT_IDS.engine, INPUT_IDS.model, INPUT_IDS.ruleset, INPUT_IDS.source].sort(),
+      // Roadmap 7.10 added the seventh: the target profile the run was assessed against.
+      [INPUT_IDS.catalog, INPUT_IDS.deployment, INPUT_IDS.engine, INPUT_IDS.model, INPUT_IDS.ruleset, INPUT_IDS.source, PROFILE_INPUT_ID].sort(),
     );
     const source = manifest.inputs.find((i: ManifestInput) => i.id === INPUT_IDS.source);
     expect(source.sha256).toBe(node256(SOURCE));
@@ -318,7 +326,7 @@ test.describe('server side', () => {
     expect(entry, `${INPUT_MANIFEST_FILE} is not in the pack`).toBeTruthy();
     const doc = JSON.parse(await entry!.async('string'));
     expect(doc.recorded).toBe(true);
-    expect(doc.inputs).toHaveLength(6);
+    expect(doc.inputs).toHaveLength(7);
     expect(doc.inputs.find((i: ManifestInput) => i.id === INPUT_IDS.source).sha256).toBe(node256(SOURCE));
 
     // The file is signed, not merely carried: it is listed under `files` with a

@@ -28,11 +28,13 @@ import {
   buildLegacyConfluenceHtml,
   confluenceFileName,
 } from '@/lib/documentation-export';
+import CcStateText from '@/components/cc/StateText';
+import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import { saveAs } from '@/lib/fileSaver';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
-import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { useProcessMap } from '@/hooks/useProcessMap';
@@ -52,6 +54,7 @@ import type {
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import {
   checkBlueprintShape,
+  checkBusinessDocShape,
   STORED_BLUEPRINT_REJECTED,
 } from './blueprint-schema';
 import CcButton from '@/components/cc/Button';
@@ -187,6 +190,8 @@ export default function DocumentationPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  // A failed load is said, not shown as an empty stage (131d46bc4ffd).
+  const [loadError, setLoadError] = useState('');
   
   const [documentation, setDocumentation] = useState('');
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
@@ -248,6 +253,7 @@ export default function DocumentationPage() {
         }
       } catch (err) {
         console.error("Error fetching project:", err);
+        if (isMounted) setLoadError('The project could not be loaded. Check your connection and try again.');
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -298,7 +304,15 @@ export default function DocumentationPage() {
   const parsedBusinessDoc = useMemo(() => {
     if (!businessDocumentation) return null;
     try {
-      return extractJSON(businessDocumentation);
+      const parsed = extractJSON(businessDocumentation);
+      // A layer an earlier build stored with a non-list where the tab maps is
+      // not drawn; the offer to generate it replaces it (69cb77382430).
+      const shape = checkBusinessDocShape(parsed);
+      if (!shape.ok) {
+        console.error('Stored business documentation rejected:', shape.problems);
+        return null;
+      }
+      return parsed;
     } catch (e) {
       console.error("Parsed business documentation is invalid:", e);
       return null;
@@ -380,22 +394,33 @@ Structure the JSON exactly like this:
         throw new Error('Gemini returned an empty response.');
       }
       
-      const parsed = extractJSON(responseText);
-      if (!parsed.raci_matrix || !parsed.sop_details || !parsed.audit_controls) {
-        throw new Error("Invalid business documentation schema returned by AI");
+      // Each list is read with `.map`: truthy is not enough (69cb77382430).
+      const shape = checkBusinessDocShape(extractJSON(responseText));
+      if (!shape.ok) {
+        throw new Error(`Invalid business documentation schema returned by AI: ${shape.problems.join(' ')}`);
       }
-      
-      setBusinessDocumentation(responseText);
-      
-      // One transaction, for the same reason as above (ade8ec0b8903).
+
+      // One transaction, for the same reason as above (ade8ec0b8903). The
+      // layer was written from this run's documentation; if another tab
+      // re-analysed or rewrote the documentation meanwhile, it describes
+      // something else and is not stored (0f6472d80f3f).
       const projectDoc = doc(getDb(), 'projects', idStr);
+      const writtenFromRun = project.activeRunId;
+      const writtenFromDocumentation = documentation;
       const updatedCode = await runTransaction(getDb(), async (tx) => {
         const snap = await tx.get(projectDoc);
-        const merged = addOrUpdateFileInWorkspace(snap.data()?.generatedCode ?? project.generatedCode, 'docs/business-documentation.md', formatBusinessDocsToMarkdown(responseText));
+        const current = snap.data() ?? {};
+        if (current.activeRunId !== writtenFromRun || current.documentation !== writtenFromDocumentation) {
+          throw new Error('The analysis or the documentation of this project changed while the business layer was being written, so nothing was saved. Reload the stage and generate it again.');
+        }
+        const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, 'docs/business-documentation.md', formatBusinessDocsToMarkdown(responseText));
         tx.update(projectDoc, { businessDocumentation: responseText, generatedCode: merged });
         return merged;
       });
 
+      // Shown only once it is stored (52487ee4cacc): a layer the transaction
+      // refused is not this project's business documentation.
+      setBusinessDocumentation(responseText);
       setProject(prev => prev ? { ...prev, businessDocumentation: responseText, generatedCode: updatedCode } : null);
       
     } catch (err: unknown) {
@@ -793,17 +818,25 @@ Structure the JSON exactly like this:
    * Both templates live in `lib/documentation-export.ts` (block D, D.16a):
    * they are documents with a stylesheet of their own, not this screen.
    */
+  const phases = workflowSteps(project);
+  /**
+   * Owner decision 30.09.2026 (QA c8ae21453b3b): a stale documentation stays
+   * exportable, but neither the button nor the file hides that it is stale.
+   * The state is the workflow contract's (`lib/workflow-steps.ts`), the same
+   * one the stepper and the stale notice above read.
+   */
+  const documentationStale = phases.find((p) => p.key === 'documentation')?.state === 'stale';
+
   const downloadConfluenceHTML = () => {
+    const options = { stale: documentationStale };
     const blob = engineDoc
-      ? buildEngineConfluenceHtml(engineDoc, parsedBusinessDoc)
+      ? buildEngineConfluenceHtml(engineDoc, parsedBusinessDoc, options)
       : parsedDoc
-        ? buildLegacyConfluenceHtml(parsedDoc, parsedBusinessDoc)
+        ? buildLegacyConfluenceHtml(parsedDoc, parsedBusinessDoc, options)
         : null;
     if (!blob) return;
     saveAs(blob, confluenceFileName(project?.name));
   };
-
-  const phases = workflowSteps(project);
 
   if (loading) return (
     <div>
@@ -815,6 +848,18 @@ Structure the JSON exactly like this:
       <Stepper steps={phases} current="documentation" projectId={projectId as string} />
       <StageHeader stage="documentation" />
       <CcSkeleton shape="cards" label="documentation" count={2} />
+    </div>
+  );
+
+  if (loadError) return (
+    <div className="p-8 max-w-xl">
+      <CcMessageStrip
+        state="error"
+        headline="This stage could not be opened"
+        actions={<CcButton onClick={() => window.location.reload()}>Try again</CcButton>}
+      >
+        <span data-load-error>{loadError}</span>
+      </CcMessageStrip>
     </div>
   );
 
@@ -1223,11 +1268,11 @@ Structure the JSON exactly like this:
       <Stepper steps={phases} current="documentation" projectId={projectId as string} />
 
       <StaleNotice
-        title="Built for a previous source"
+        title={`Built for ${previousBasis(project)}`}
         reasons={[
           ...generationBlockers(project, 'documentation'),
-          ...(phases.find((p) => p.key === 'documentation')?.state === 'stale'
-            ? ['The blueprint shown here was written for a previous source.']
+          ...(documentationStale
+            ? [`The blueprint shown here was written for ${previousBasis(project)}.`]
             : []),
         ]}
       />
@@ -1328,14 +1373,24 @@ Structure the JSON exactly like this:
 
           {hasDocument && (
             <>
-              <CcButton
-                density="cozy"
-                onClick={downloadConfluenceHTML}
-                disabled={isGeneratingDoc}
-                icon={<Download size={16} aria-hidden={true} />}
-              >
-                Export Confluence
-              </CcButton>
+              <span className="inline-flex flex-col items-start gap-1">
+                <CcButton
+                  density="cozy"
+                  onClick={downloadConfluenceHTML}
+                  disabled={isGeneratingDoc}
+                  data-export-confluence={documentationStale ? 'stale' : 'current'}
+                  aria-describedby={documentationStale ? 'confluence-export-stale' : undefined}
+                  icon={<Download size={16} aria-hidden={true} />}
+                >
+                  Export Confluence
+                </CcButton>
+                {/* The file opens with the same note (`STALE_EXPORT_NOTE`). */}
+                {documentationStale && (
+                  <span id="confluence-export-stale" data-confluence-stale-note="">
+                    <CcStateText state="warning">Stale — regenerate first</CcStateText>
+                  </span>
+                )}
+              </span>
 
               <CcButton
                 variant="primary"
@@ -1372,6 +1427,7 @@ Structure the JSON exactly like this:
                  and an absent import means the overlay is not offered rather
                  than offered empty. */
               usage={project?.usageReport ?? null}
+              catalogTarget={project ? catalogLookupTargetOf(project) : null}
               plane={resolved.plane}
               onPlaneChange={openPlane}
               selected={resolved.node}

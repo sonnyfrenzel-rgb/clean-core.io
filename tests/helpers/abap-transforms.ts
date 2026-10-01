@@ -42,7 +42,8 @@ export type CharClass = 'c' | 'l' | 'x';
  * literal forms are recognised: `'…'`, `` `…` `` and the string template `|…|`.
  * A `"` outside all three opens a comment that runs to the end of the line.
  */
-export function classify(raw: string): CharClass[] {
+export function classify(raw: string, options: { embedsAsCode?: boolean } = {}): CharClass[] {
+  if (options.embedsAsCode) return classifyWithEmbeds(raw);
   const out: CharClass[] = [];
   let inQuote = false;
   let inTick = false;
@@ -69,6 +70,59 @@ export function classify(raw: string): CharClass[] {
       continue;
     }
     out.push(inQuote || inTick || inTemplate ? 'l' : 'c');
+  }
+  return out;
+}
+
+/**
+ * `classify` for a rewrite that must reach every use of a name: the embedded
+ * expressions of a string template (`|{ lv_price }|`) are code, not text.
+ *
+ * The default `classify` calls the whole template a literal, which is right for
+ * what it is used for — where a statement ends, where a comment starts, where a
+ * line may be wrapped — and wrong for renaming: `renameLocals` renamed the
+ * declaration and the assignment of `lv_price` and left the reference inside
+ * `|{ lv_price }|` alone, so the "same program" read an undeclared name (QA full
+ * review of fc787674705f, 6d4c7e0b4125). The template's own text, its braces
+ * and its escapes (`\{`, `\|`) stay literal; literals inside an embedded
+ * expression are literals again.
+ */
+function classifyWithEmbeds(raw: string): CharClass[] {
+  const out: CharClass[] = [];
+  // What the character stands in: code, a '…' or `…` literal, template text, or
+  // an embedded expression of a template.
+  const stack: Array<'code' | 'quote' | 'tick' | 'template' | 'embed'> = ['code'];
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    const top = stack[stack.length - 1];
+    if (top === 'quote' || top === 'tick') {
+      out.push('l');
+      if ((top === 'quote' && ch === "'") || (top === 'tick' && ch === '`')) stack.pop();
+      continue;
+    }
+    if (top === 'template') {
+      out.push('l');
+      if (ch === '\\' && i + 1 < raw.length) {
+        out.push('l');
+        i += 1;
+      } else if (ch === '|') stack.pop();
+      else if (ch === '{') stack.push('embed');
+      continue;
+    }
+    // Code, at the top level or inside `{ … }`.
+    if (top === 'code' && ch === '"') {
+      for (let j = i; j < raw.length; j++) out.push('x');
+      return out;
+    }
+    if (top === 'embed' && ch === '}') {
+      out.push('l');
+      stack.pop();
+      continue;
+    }
+    if (ch === "'") stack.push('quote');
+    else if (ch === '`') stack.push('tick');
+    else if (ch === '|') stack.push('template');
+    out.push(ch === "'" || ch === '`' || ch === '|' ? 'l' : 'c');
   }
   return out;
 }
@@ -220,7 +274,7 @@ export function renameLocals(code: string): Renamed {
   };
 
   const rewrite = (raw: string): string => {
-    const cls = classify(raw);
+    const cls = classify(raw, { embedsAsCode: true });
     let out = '';
     let i = 0;
     while (i < raw.length) {

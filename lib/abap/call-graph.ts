@@ -164,7 +164,8 @@ const LITERAL = /^'(.*)'$|^`(.*)`$/;
 function unquote(token: string): { value: string; literal: boolean } {
   const m = LITERAL.exec(token);
   if (!m) return { value: token, literal: false };
-  return { value: (m[1] ?? m[2] ?? '').replace(/''/g, "'"), literal: true };
+  const value = m[1] !== undefined ? m[1].replace(/''/g, "'") : (m[2] ?? '').replace(/``/g, '`');
+  return { value, literal: true };
 }
 
 /**
@@ -174,11 +175,22 @@ function unquote(token: string): { value: string; literal: boolean } {
  */
 function collectConstants(statements: AbapStatement[]): Map<string, string> {
   const out = new Map<string, string>();
+  // The map is keyed by name alone, not by the method or routine that declares
+  // it. Two declarations of one name with different values — a local constant
+  // in each of two methods — cannot both be the value, and picking either would
+  // resolve a call to a target it may not have. Such a name resolves to nothing.
+  const ambiguous = new Set<string>();
   for (const statement of statements) {
     if (statement.keyword !== 'CONSTANTS') continue;
     const m = /^CONSTANTS\s+([\w/]+)\b[\s\S]*?\bVALUE\s+'((?:[^']|'')*)'/i.exec(statement.text);
-    if (m) out.set(m[1].toUpperCase(), m[2].replace(/''/g, "'"));
+    if (!m) continue;
+    const name = m[1].toUpperCase();
+    const value = m[2].replace(/''/g, "'");
+    const earlier = out.get(name);
+    if (earlier !== undefined && earlier !== value) ambiguous.add(name);
+    out.set(name, value);
   }
+  for (const name of ambiguous) out.delete(name);
   return out;
 }
 
@@ -267,16 +279,22 @@ function readPerform(statement: AbapStatement, site: CallSite): PerformCall | nu
   };
 }
 
-function readFunctionModule(statement: AbapStatement, site: CallSite): FunctionModuleCall | null {
+function readFunctionModule(
+  statement: AbapStatement,
+  site: CallSite,
+  constants: Map<string, string>,
+): FunctionModuleCall | null {
   const m = /^CALL\s+FUNCTION\s+('(?:[^']|'')*'|`(?:[^`]|``)*`|[\w/-]+)/i.exec(statement.text);
   if (!m) return null;
-  const { value, literal } = unquote(m[1]);
+  // A constant declared here closes the name as firmly as a literal does —
+  // the same reading `readTransaction` gives `CALL TRANSACTION c_tcode`.
+  const { value } = resolve(m[1], constants);
   const destination = /\bDESTINATION\s+('(?:[^']|'')*'|[\w/-]+)/i.exec(statement.text);
   return {
     ...site,
-    name: literal ? value.toUpperCase() : undefined,
-    dynamic: !literal,
-    bapi: literal && isBapi(value),
+    name: value !== undefined ? value.toUpperCase() : undefined,
+    dynamic: value === undefined,
+    bapi: value !== undefined && isBapi(value),
     destination: destination ? unquote(destination[1]).value : undefined,
     inUpdateTask: /\bIN\s+UPDATE\s+TASK\b/i.test(statement.text),
     inBackgroundTask: /\bIN\s+BACKGROUND\s+(?:TASK|UNIT)\b/i.test(statement.text),
@@ -289,7 +307,7 @@ function readTransaction(
   site: CallSite,
   constants: Map<string, string>,
 ): TransactionCall | null {
-  const m = /^CALL\s+TRANSACTION\s+('(?:[^']|'')*'|[\w/]+)/i.exec(statement.text);
+  const m = /^CALL\s+TRANSACTION\s+('(?:[^']|'')*'|`(?:[^`]|``)*`|[\w/]+)/i.exec(statement.text);
   if (!m) return null;
   const resolved = resolve(m[1], constants);
   return {
@@ -481,7 +499,7 @@ export function readCallGraphFrom(
         continue;
       }
       case 'CALL': {
-        const fm = readFunctionModule(statement, site);
+        const fm = readFunctionModule(statement, site, constants);
         if (fm) { functionModules.push(fm); continue; }
         const tx = readTransaction(statement, site, constants);
         if (tx) { transactions.push(tx); continue; }
@@ -522,7 +540,15 @@ export function readCallGraphFrom(
       lineEnd: p.lineEnd,
     }));
 
-  const performedNames = new Set(performs.map((p) => p.target).filter((t): t is string => Boolean(t)));
+  // Only a local call performs a local routine: `PERFORM foo IN PROGRAM z_other`
+  // names another program's FOO, and is kept out of the edges for that reason.
+  const performedNames = new Set(
+    performs
+      // `IN PROGRAM sy-repid` is this program by another name.
+      .filter((p) => !p.program || /\bPROGRAM\s+SY-(?:REPID|CPROG)\b/i.test(p.text))
+      .map((p) => p.target)
+      .filter((t): t is string => Boolean(t)),
+  );
   const neverPerformed = forms.map((f) => f.name).filter((name) => !performedNames.has(name));
 
   // Reachability starts wherever a call is written outside a subroutine: an

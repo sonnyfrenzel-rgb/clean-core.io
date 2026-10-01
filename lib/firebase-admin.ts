@@ -1,7 +1,9 @@
 import { randomBytes } from 'crypto';
 import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, termsVersionInForce } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
-import { encrypt, decrypt } from './s4-credentials';
+import { byokAllowed, BYOK_NOT_AVAILABLE_MESSAGE } from './byok-eligibility';
+import { sealByokSecret, openByokSecret, ByokKeyUnreadableError } from './byok-key';
+import { logger, providerErrorShape } from './logger';
 import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp, s4AccessRequiresEnrolment } from './mfa-gate';
 import { starterExampleForFingerprint } from './starter-example-fingerprints';
 import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } from './invitations';
@@ -418,8 +420,12 @@ export async function refundRunQuota(
       if (used > 0) updates.transformationsUsed = FieldValue.increment(-1);
       tx.update(ref, updates);
     });
-  } catch {
-    /* best-effort; intentionally ignored */
+  } catch (err) {
+    // Best-effort for the request — a run that already failed is not also
+    // failed by its refund — but not silent: an unrefunded reservation keeps a
+    // unit and a fingerprint charged, and this line is how an operator finds
+    // the account to put right (QA full review of v2.20.0).
+    console.error('refundRunQuota: refund failed, the reservation stays charged for user:', uid, err);
   }
 }
 
@@ -465,14 +471,43 @@ export async function assertAccountActive(
   // acceptance would have made that clause false from the day it shipped.
   //
   // What still refuses: a version the operator has ended (removed from
-  // `TERMS_VERSIONS_IN_FORCE` after those notices ran). A missing acceptance is
-  // grandfathered as before — it must not lock out pre-existing users. The
-  // client cannot forge or remove the field (see firestore.rules).
+  // `TERMS_VERSIONS_IN_FORCE` after those notices ran). The client cannot forge
+  // or remove the field (see firestore.rules).
+  //
+  // And, since roadmap 3.0.13 (f), **no recorded acceptance at all**. A missing
+  // acceptance used to be grandfathered — read as "accepted" — so an account
+  // with no `consent_events` row behind it passed every gate that asks for the
+  // Terms. § 10.3 is about somebody who accepted an *earlier* version; an
+  // account that accepted none has no Terms to carry on under. It is not
+  // locked out: `components/TermsReacceptGate.tsx` shows the same account a
+  // blocking dialogue whose one action records the acceptance
+  // (`POST /api/consent`, which asks for no Terms itself), and the account,
+  // its sign-in and its data are untouched. Admins stay exempt, as before.
   if (opts.requireCurrentTerms && !isAdmin) {
-    const accepted = data.termsVersionAccepted || null;
-    if (accepted !== null && !termsVersionInForce(accepted)) {
+    const accepted = typeof data.termsVersionAccepted === 'string' && data.termsVersionAccepted ? data.termsVersionAccepted : null;
+    if (accepted === null) {
+      throw new QuotaError('Your account has no recorded acceptance of the Terms of Service. Please accept the Terms in the app to continue.', 403);
+    }
+    if (!termsVersionInForce(accepted)) {
       throw new QuotaError('The version of the Terms of Service your account accepted is no longer in force. Please accept the current Terms in the app to continue.', 403);
     }
+  }
+}
+
+/**
+ * Roadmap 3.0.13 (c): the BYOK tier rule, held on the server.
+ *
+ * The same function the settings screen uses to decide whether to draw the
+ * card (`lib/byok-eligibility.ts`), so the page and the routes cannot drift.
+ * The admin signal is the verified claim, never the profile mirror. Used by
+ * the routes that store and test a key; not by the one that deletes it.
+ */
+export async function assertByokAllowed(uid: string, isAdminClaim: boolean): Promise<void> {
+  const { db } = await getAdminDb();
+  const snap = await db.collection('users').doc(uid).get();
+  const tier = snap.exists ? (snap.data() || {}).tier : undefined;
+  if (!byokAllowed({ isAdmin: isAdminClaim === true, tier })) {
+    throw new QuotaError(BYOK_NOT_AVAILABLE_MESSAGE, 403);
   }
 }
 
@@ -992,9 +1027,12 @@ export async function deleteUserDataAndAccount(
   //    writes it only in a transaction that reads this profile
   //    (`mergeWhileProfileExists`), so one that committed after step 3 is
   //    deleted here, and one that did not can no longer commit.
+  //    The BYOK secret goes in it too, for the same reason: `saveGeminiApiKey`
+  //    writes it in a transaction that reads this profile.
   await tryDelete('users', () => {
     const batch = db.batch();
     batch.delete(db.collection('registration_requests').doc(uid));
+    batch.delete(db.collection('user_secrets').doc(uid).collection('providers').doc('gemini'));
     batch.delete(db.collection('users').doc(uid));
     return batch.commit();
   });
@@ -1084,16 +1122,16 @@ export async function approveTenantWithToken(
   };
 
   if (action === 'approve') {
-    // The request has to still be open, and this is what makes the token
-    // single-use in practice.
+    // The request has to still be open as well as the nonce unused.
     //
-    // `lib/approval-token.ts` signs `uid.requestType.action.exp` and nothing
-    // else: no nonce, no server state, seven days of validity. A rejection
-    // deletes the request document (below) but cannot invalidate the approve
-    // token that was minted beside it, so until this check an approve link for
-    // a request that had been rejected still worked for the rest of that week —
-    // a decision reversed without anyone deciding it again, and without the user
-    // asking again (security audit of v2.14.0, SEC-2026-343).
+    // Until UX-152 `lib/approval-token.ts` signed `uid.requestType.action.exp`
+    // and nothing else — no nonce, no server state, seven days of validity. A
+    // rejection deleted the request document (below) but could not invalidate
+    // the approve token minted beside it, so an approve link for a rejected
+    // request still worked for the rest of that week (security audit of
+    // v2.14.0, SEC-2026-343). The token now signs the request's nonce too
+    // (`uid.requestType.action.exp.nonce`, `createApprovalToken`), and this
+    // check stays as the second condition.
     //
     // Reaching this line already needs an admin claim and fresh step-up MFA
     // (`app/api/admin/approve-tenant/route.ts:8,15`), so this is not the last
@@ -1116,15 +1154,25 @@ export async function approveTenantWithToken(
       consume();
     });
   } else if (action === 'reject') {
+    // The same condition as the approval: a request that is still open. A
+    // manual grant in the admin console resolves the request as well, and a
+    // reject link used afterwards must not reverse it (QA review of
+    // a7e0ae36c896) — the grant also retires the nonce (`adminGrantS4`), this
+    // is the second door.
+    const requestRef: DocumentReference = db.collection('tenant_access_requests').doc(uid);
     await db.runTransaction(async (tx: Transaction) => {
       const consume = await consumeNonce(tx);
+      const snapshot = await tx.get(requestRef);
+      const status = snapshot.exists ? (snapshot.data()?.status as string | undefined) : undefined;
+      if (!snapshot.exists) throw new Error('This tenant access request no longer exists.');
+      if (status && status !== 'pending') throw new Error(`This tenant access request is already ${status}.`);
       // Clean request status on user document
       tx.set(db.collection('users').doc(uid), {
         s4TenantAccessRequested: false,
         s4TenantAccessAllowed: false
       }, { merge: true });
       // Delete tenant access request document
-      tx.delete(db.collection('tenant_access_requests').doc(uid));
+      tx.delete(requestRef);
       consume();
     });
   }
@@ -1223,17 +1271,27 @@ export async function auditActorEmail(db: any, actorUid: string): Promise<string
   return 'system-admin';
 }
 
-export async function logAuditEvent(db: any, actorUid: string, action: string, targetUid: string) {
-  const actorEmail = await auditActorEmail(db, actorUid);
-
-  await db.collection('audit_events').add({
+/** The `audit_events` row for one action, ready for `add()` or for a batch. */
+async function auditEventRecord(db: any, actorUid: string, action: string, targetUid: string) {
+  return {
     actorUid,
-    actorEmail,
+    actorEmail: await auditActorEmail(db, actorUid),
     action,
     targetUid,
     timestamp: new Date(),
-  });
+  };
 }
+
+export async function logAuditEvent(db: any, actorUid: string, action: string, targetUid: string) {
+  await db.collection('audit_events').add(await auditEventRecord(db, actorUid, action, targetUid));
+}
+
+// The four governance actions below write their Firestore state and their
+// `audit_events` row in one batch (QA full review of v2.20.0): written one
+// after the other, a failed audit write left a suspension or an S/4 grant in
+// force with no record of who made it, while the route reported an error. The
+// Auth half of approve and revoke still follows the batch — it is not a
+// Firestore write and cannot join it — so the record exists before it runs.
 
 /**
  * Reinstates a suspended account.
@@ -1243,19 +1301,38 @@ export async function logAuditEvent(db: any, actorUid: string, action: string, t
  * It therefore does NOT reset `transformationsUsed`; a reinstated account keeps
  * the quota it already spent, which is not what a first approval used to do.
  */
+/**
+ * The entitlement fields a reinstatement writes. An enterprise account keeps its
+ * tier: `adminRevokeUser` never touches the tier, so writing `pilot` here turned
+ * a suspension and its undo into a silent downgrade to the metered community
+ * quota (QA full review of v2.20.0). Every other account is reinstated as a
+ * pilot, as before.
+ */
+export function reinstatedEntitlements(profile: { tier?: unknown } | undefined): {
+  status: 'approved';
+  transformationsLimit: number;
+  tier?: 'pilot';
+} {
+  return profile?.tier === 'enterprise'
+    ? { status: 'approved', transformationsLimit: COMMUNITY_QUOTA }
+    : { status: 'approved', tier: 'pilot', transformationsLimit: COMMUNITY_QUOTA };
+}
+
 export async function adminApproveUser(adminUid: string, targetUid: string) {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
-  await db.collection('users').doc(targetUid).set({
-    status: 'approved',
-    tier: 'pilot',
-    transformationsLimit: COMMUNITY_QUOTA,
+  const current = await db.collection('users').doc(targetUid).get();
+  const batch = db.batch();
+  batch.set(db.collection('users').doc(targetUid), {
+    ...reinstatedEntitlements(current.exists ? current.data() : undefined),
     activatedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
-  await db.collection('registration_requests').doc(targetUid).set({
+  batch.set(db.collection('registration_requests').doc(targetUid), {
     status: 'approved',
   }, { merge: true });
+  batch.set(db.collection('audit_events').doc(), await auditEventRecord(db, adminUid, 'APPROVE_USER', targetUid));
+  await batch.commit();
 
   // The other half of `adminRevokeUser`, which disables the sign-in. Without
   // this line a revoked account could be approved again in the console, read
@@ -1264,8 +1341,6 @@ export async function adminApproveUser(adminUid: string, targetUid: string) {
   // fine. Re-enabling is idempotent for an account that was never disabled.
   const auth = await getAdminAuth();
   await auth.updateUser(targetUid, { disabled: false });
-
-  await logAuditEvent(db, adminUid, 'APPROVE_USER', targetUid);
 }
 
 /**
@@ -1280,14 +1355,17 @@ export async function adminApproveUser(adminUid: string, targetUid: string) {
 export async function adminRevokeUser(adminUid: string, targetUid: string) {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
-  await db.collection('users').doc(targetUid).set({
+  const batch = db.batch();
+  batch.set(db.collection('users').doc(targetUid), {
     status: 'suspended',
     transformationsLimit: 0,
     updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
-  await db.collection('registration_requests').doc(targetUid).set({
+  batch.set(db.collection('registration_requests').doc(targetUid), {
     status: 'suspended',
   }, { merge: true });
+  batch.set(db.collection('audit_events').doc(), await auditEventRecord(db, adminUid, 'REVOKE_USER', targetUid));
+  await batch.commit();
 
   // Suspending an account has to end its sessions, not only mark it.
   //
@@ -1317,38 +1395,54 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
   const auth = await getAdminAuth();
   await auth.revokeRefreshTokens(targetUid);
   await auth.updateUser(targetUid, { disabled: true });
+}
 
-  await logAuditEvent(db, adminUid, 'REVOKE_USER', targetUid);
+/**
+ * A decision made in the admin console answers the open request as well, so the
+ * approve and reject links mailed for it stop working: their nonce is removed
+ * first, before the decision is written. Otherwise a reject link used after a
+ * manual grant took the access away again, and an approve link used after a
+ * manual revocation — which puts the request back to `pending` — granted it
+ * again (QA review of a7e0ae36c896).
+ */
+async function retireTenantApprovalLinks(db: Firestore, targetUid: string): Promise<void> {
+  await db.collection(TENANT_APPROVAL_NONCES).doc(targetUid).delete();
 }
 
 export async function adminGrantS4(adminUid: string, targetUid: string) {
   await ensureInitialized();
   const { db } = await getAdminDb();
-  await db.collection('users').doc(targetUid).set({
+  await retireTenantApprovalLinks(db, targetUid);
+  const regRef = db.collection('tenant_access_requests').doc(targetUid);
+  const regSnap = await regRef.get();
+  const batch = db.batch();
+  batch.set(db.collection('users').doc(targetUid), {
     s4TenantAccessAllowed: true,
     s4TenantAccessRequested: false
   }, { merge: true });
-  const regRef = db.collection('tenant_access_requests').doc(targetUid);
-  const regSnap = await regRef.get();
   if (regSnap.exists) {
-    await regRef.set({ status: 'approved' }, { merge: true });
+    batch.set(regRef, { status: 'approved' }, { merge: true });
   }
-  await logAuditEvent(db, adminUid, 'GRANT_S4', targetUid);
+  batch.set(db.collection('audit_events').doc(), await auditEventRecord(db, adminUid, 'GRANT_S4', targetUid));
+  await batch.commit();
 }
 
 export async function adminRevokeS4(adminUid: string, targetUid: string) {
   await ensureInitialized();
   const { db } = await getAdminDb();
-  await db.collection('users').doc(targetUid).set({
+  await retireTenantApprovalLinks(db, targetUid);
+  const regRef = db.collection('tenant_access_requests').doc(targetUid);
+  const regSnap = await regRef.get();
+  const batch = db.batch();
+  batch.set(db.collection('users').doc(targetUid), {
     s4TenantAccessAllowed: false,
     s4TenantAccessRequested: false
   }, { merge: true });
-  const regRef = db.collection('tenant_access_requests').doc(targetUid);
-  const regSnap = await regRef.get();
   if (regSnap.exists) {
-    await regRef.set({ status: 'pending' }, { merge: true });
+    batch.set(regRef, { status: 'pending' }, { merge: true });
   }
-  await logAuditEvent(db, adminUid, 'REVOKE_S4', targetUid);
+  batch.set(db.collection('audit_events').doc(), await auditEventRecord(db, adminUid, 'REVOKE_S4', targetUid));
+  await batch.commit();
 }
 
 export async function adminDeleteUser(adminUid: string, targetUid: string) {
@@ -1363,7 +1457,10 @@ export async function adminDeleteUser(adminUid: string, targetUid: string) {
 
 /**
  * Saves the user's custom Gemini API key securely:
- * 1. Encrypts the key using AES-256-GCM.
+ * 1. Seals the key with AES-256-GCM under `BYOK_ENCRYPTION_KEY`, recording the
+ *    key version in the record (`lib/byok-key.ts`, roadmap 3.0.13 g). Without a
+ *    usable key this throws `ByokKeyUnavailableError` before anything is
+ *    written — there is no fallback to the S/4 key.
  * 2. Saves it in the server-only user_secrets collection.
  * 3. Updates the user profile with BYOK metadata (configured status, last 4 chars, timestamp)
  *    and deletes the legacy cleartext key.
@@ -1371,24 +1468,36 @@ export async function adminDeleteUser(adminUid: string, targetUid: string) {
 export async function saveGeminiApiKey(uid: string, apiKey: string): Promise<any> {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
-  const encrypted = encrypt(apiKey);
+  const sealed = sealByokSecret(apiKey, { uid, provider: 'gemini' });
   const last4 = apiKey.length > 4 ? apiKey.slice(-4) : apiKey;
 
-  // Set the secret document
-  await db.collection('user_secrets').doc(uid).collection('providers').doc('gemini').set({
-    encryptedApiKey: encrypted,
-    last4,
-    rotatedAt: FieldValue.serverTimestamp(),
+  // The secret and the profile's metadata in one transaction that reads the
+  // profile (QA full review of v2.20.0). Two separate writes could leave a key
+  // `loadGeminiApiKey` serves while the save reported failure; and a merge-set
+  // recreated the profile of an account erased while the save was in flight.
+  // Now both commit or neither does, a missing profile refuses the save, and
+  // the erasure deletes this secret again in the batch that deletes the
+  // profile, so a save that committed in between goes with it.
+  const profileRef: DocumentReference = db.collection('users').doc(uid);
+  const secretRef: DocumentReference = db.collection('user_secrets').doc(uid).collection('providers').doc('gemini');
+  await db.runTransaction(async (tx: Transaction) => {
+    const profile = await tx.get(profileRef);
+    if (!profile.exists) throw new QuotaError(PROFILE_GONE, 404);
+    tx.set(secretRef, {
+      encryptedApiKey: sealed.encryptedApiKey,
+      keyVersion: sealed.keyVersion,
+      last4,
+      rotatedAt: FieldValue.serverTimestamp(),
+    });
+    // Mirror metadata to the user profile and remove legacy key
+    tx.update(profileRef, {
+      byokConfigured: true,
+      byokLast4: last4,
+      byokRotatedAt: FieldValue.serverTimestamp(),
+      geminiApiKey: FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
   });
-
-  // Mirror metadata to the user profile and remove legacy key
-  await db.collection('users').doc(uid).set({
-    byokConfigured: true,
-    byokLast4: last4,
-    byokRotatedAt: FieldValue.serverTimestamp(),
-    geminiApiKey: FieldValue.delete(),
-    updatedAt: FieldValue.serverTimestamp(),
-  }, { merge: true });
 
   return {
     byokConfigured: true,
@@ -1398,7 +1507,13 @@ export async function saveGeminiApiKey(uid: string, apiKey: string): Promise<any
 
 /**
  * Loads and decrypts the user's custom Gemini API key.
- * Returns null if not configured or if decryption fails.
+ *
+ * Returns null only when no key is stored. A stored key that cannot be opened —
+ * it has no version or one outside the key ring, its version's key is missing
+ * on this server, or it does not decrypt — throws `ByokKeyUnreadableError`
+ * (3.0.13 g), logged below with its reason. It used to return null there too, and
+ * null reads as "no key": `/api/gemini` then served the call with the
+ * community key, unmetered, because the profile still said BYOK.
  */
 export async function loadGeminiApiKey(uid: string): Promise<string | null> {
   await ensureInitialized();
@@ -1409,10 +1524,15 @@ export async function loadGeminiApiKey(uid: string): Promise<string | null> {
   if (!data || !data.encryptedApiKey) return null;
   
   try {
-    return decrypt(data.encryptedApiKey);
+    return openByokSecret(data as { encryptedApiKey: string; keyVersion?: unknown }, { uid, provider: 'gemini' });
   } catch (err) {
-    console.error('Failed to decrypt Gemini API key for user:', uid, err);
-    return null;
+    // A code, never the error object (3.0.13 e).
+    logger.error('byok key decrypt failed', {
+      error: providerErrorShape(err),
+      keyVersion: err instanceof ByokKeyUnreadableError ? err.keyVersion : null,
+      reason: err instanceof ByokKeyUnreadableError ? err.reason : null,
+    });
+    throw err;
   }
 }
 

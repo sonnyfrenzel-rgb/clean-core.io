@@ -351,6 +351,20 @@ test('before accepting, the invited account sees who sent it and until when — 
   // Two facts and no more: the project's name stays behind acceptance.
   expect(Object.keys(own.body).sort()).toEqual(['expiresAt', 'invitedBy']);
 
+  // A suspended account with a still-valid token is stopped at the account
+  // gate, as POST stops it, before the invitation is read (QA review of
+  // a7e0ae36c896). Reinstated afterwards: later tests accept as this account.
+  await adminMergeDoc('users', accounts[READER_EMAIL].uid, { status: 'suspended' });
+  try {
+    const suspended = await peek(READER_EMAIL, id);
+    expect(suspended.status).toBe(403);
+    expect(suspended.body.code).toBe('account-gate');
+    expect(suspended.body).not.toHaveProperty('invitedBy');
+    expect(suspended.body).not.toHaveProperty('expiresAt');
+  } finally {
+    await adminMergeDoc('users', accounts[READER_EMAIL].uid, { status: 'approved' });
+  }
+
   // A forwarded link, a link that never existed and an expired one answer alike.
   const forwarded = await peek(STRANGER_EMAIL, id);
   expect(forwarded.status).toBe(403);
@@ -441,8 +455,15 @@ test('the invitation subcollection is not client-readable and `readers` is not c
   const block = new RegExp(
     `match\\s+/projects/\\{[^}]+\\}/${INVITATION_COLLECTION}/\\{[^}]+\\}\\s*\\{\\s*allow\\s+read\\s*,\\s*write\\s*:\\s*if\\s+false\\s*;`,
   );
+  // Read against the rules with their comments removed: a denial that survives
+  // only as an example in a comment refuses nothing (QA full review of
+  // fc787674705f, d682fa155a5b).
+  const withoutComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  const denial = `match /projects/{projectId}/${INVITATION_COLLECTION}/{invitationId} {\n  allow read, write: if false;\n}`;
+  expect(withoutComments(denial), 'the pattern no longer matches the denial it is for').toMatch(block);
+  expect(withoutComments(denial.replace(/^/gm, '// ')), 'a commented-out denial still counts').not.toMatch(block);
   expect(
-    rules,
+    withoutComments(rules),
     'the invitation subcollection has no rule that refuses it out loud — it carries the e-mail ' +
       'addresses of other invited people, and a later catch-all match would open it silently',
   ).toMatch(block);

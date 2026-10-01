@@ -72,8 +72,6 @@ export default async function SurveyPage({
   const { token } = await params;
   const { q, a } = await searchParams;
 
-  const answeredInMail = Boolean(q && a && getOption(q, a));
-
   // Next.js hands a dynamic segment over already decoded, so the
   // `decodeURIComponent` that used to stand here was a second decode of a
   // decoded value. For a real token that is a no-op (base64url and the
@@ -144,6 +142,11 @@ export default async function SurveyPage({
     // POST that records it does not depend on anything above.
     logger.error('survey page load failed', { route: 'survey/[token]', error: errMessage(error) });
   }
+
+  // The same rule SurveyClient applies to the proposal: an answer the server
+  // already holds for that question outranks the link, so the email pick is
+  // not selected and the lead must not say it is.
+  const answeredInMail = Boolean(q && a && getOption(q, a) && !(q in existingAnswers));
 
   return (
     <Shell>

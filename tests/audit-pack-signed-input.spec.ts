@@ -122,7 +122,12 @@ test('the forged statements appear in the attested file and nowhere else', () =>
   expect(statement).toContain('cto@example.com');
   expect(statement).toContain('Retire / Decommission');
   expect(statement).toContain('overrides the engine');
-  expect(statement).toContain('not covered by the pack');
+  // What the file has to say about itself is that nobody vouches for its
+  // content — not how its bytes relate to the signature, which the manifest
+  // binds by digest. Asserting "not covered by the pack" pinned a sentence that
+  // is wrong about the bytes, and would fail its correction (QA full review of
+  // fc787674705f, 1a4bf31c89b9).
+  expect(statement).toMatch(/nobody vouches for what it says/i);
 });
 
 test('a changed run field does change the signed files — the check above is not vacuous', () => {

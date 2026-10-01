@@ -52,7 +52,7 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
     const trimmed = line.trim().toUpperCase();
 
     // CLASS ... DEFINITION | IMPLEMENTATION
-    const classMatch = trimmed.match(/^CLASS\s+([\w]+)\s+(DEFINITION|IMPLEMENTATION)/);
+    const classMatch = trimmed.match(/^CLASS\s+([\w/]+)\s+(DEFINITION|IMPLEMENTATION)/);
     if (classMatch && !seen.has(classMatch[1])) {
       seen.add(classMatch[1]);
       items.push({
@@ -64,7 +64,7 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
     }
 
     // REPORT
-    const reportMatch = trimmed.match(/^REPORT\s+([\w]+)/);
+    const reportMatch = trimmed.match(/^REPORT\s+([\w/]+)/);
     if (reportMatch && !seen.has(reportMatch[1])) {
       seen.add(reportMatch[1]);
       items.push({
@@ -75,8 +75,23 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
       });
     }
 
-    // FUNCTION-POOL or FUNCTION
-    const funcMatch = trimmed.match(/^FUNCTION\s+([\w]+)/);
+    // FUNCTION-POOL — the function group. `^FUNCTION\s` below cannot see it:
+    // the hyphen is not a blank. The inventory type list has no function group,
+    // so it is an 'Other' with the category saying which.
+    const poolMatch = trimmed.match(/^FUNCTION-POOL\s+([\w/]+)/);
+    if (poolMatch && !seen.has(poolMatch[1])) {
+      seen.add(poolMatch[1]);
+      items.push({
+        objectName: poolMatch[1],
+        type: 'Other',
+        category: 'Function Group',
+        module: inferModule(poolMatch[1]),
+        criticality: poolMatch[1].startsWith('Z') || poolMatch[1].startsWith('Y') ? 'High' : 'Low',
+      });
+    }
+
+    // FUNCTION
+    const funcMatch = trimmed.match(/^FUNCTION\s+([\w/]+)/);
     if (funcMatch && !seen.has(funcMatch[1])) {
       seen.add(funcMatch[1]);
       items.push({
@@ -88,7 +103,7 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
     }
 
     // FORM ... ENDFORM
-    const formMatch = trimmed.match(/^FORM\s+([\w]+)/);
+    const formMatch = trimmed.match(/^FORM\s+([\w/]+)/);
     if (formMatch && !seen.has(formMatch[1])) {
       seen.add(formMatch[1]);
       items.push({
@@ -100,7 +115,7 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
     }
 
     // INTERFACE ... DEFINITION
-    const ifaceMatch = trimmed.match(/^INTERFACE\s+([\w]+)\s+/);
+    const ifaceMatch = trimmed.match(/^INTERFACE\s+([\w/]+)\s+/);
     if (ifaceMatch && !seen.has(ifaceMatch[1])) {
       seen.add(ifaceMatch[1]);
       items.push({
@@ -116,7 +131,7 @@ export function extractCodeInventory(code: string): CodeInventoryItem[] {
     // an object called STRUCTURE in the inventory (R29: not v1-R16's missing
     // include). The dependency they carry is a table dependency and is read by
     // `table-dependencies.ts`.
-    const includeMatch = trimmed.match(/^INCLUDE\s+(?!STRUCTURE\b|TYPE\b)([\w]+)/);
+    const includeMatch = trimmed.match(/^INCLUDE\s+(?!STRUCTURE\b|TYPE\b)([\w/]+)/);
     if (includeMatch && !seen.has(includeMatch[1])) {
       seen.add(includeMatch[1]);
       items.push({
@@ -248,8 +263,10 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
       recommendation = referenceRecommendation(tableName, stats.routes, stats.programs);
     } else if (isStandard && hasReplacement) {
       recommendation = STANDARD_TABLE_MAP[tableName];
-      // Hand-written guidance in this file, not a lookup in SAP's release data.
-      replacementConfidence = 'Verified';
+      // Hand-written guidance in this file, not a lookup in SAP's release data,
+      // and not checked against the target release or the fields read here. A
+      // candidate to check, not a verified replacement.
+      replacementConfidence = 'Candidate';
     } else if (isStandard) {
       recommendation = 'Verify API availability in SAP API Hub';
       replacementConfidence = 'Candidate';
@@ -330,9 +347,12 @@ function referenceRecommendation(tableName: string, routes: Set<DependencyRoute>
  * Scale: 1 = trivial, 5 = moderate, 10 = highly complex
  */
 export function computeComplexityScore(code: string): number {
-  const lines = code.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  // Measured on what executes: comments and literal contents are blanked first,
+  // so a comment line is no line of code and `'UPDATE'` in a message is no write.
+  const masked = maskNonCode(code);
+  const lines = masked.split(/\r?\n/).filter((l) => l.trim().length > 0);
   const loc = lines.length;
-  const upper = code.toUpperCase();
+  const upper = masked.toUpperCase();
 
   // Nesting depth approximation (IF/LOOP/DO/CASE/TRY blocks).
   //
@@ -378,7 +398,11 @@ export function computeComplexityScore(code: string): number {
  * Scale: 1 = low impact (simple read-only utility), 5 = important, 10 = mission-critical
  */
 export function computeCriticalityScore(code: string): number {
-  const upper = code.toUpperCase();
+  // Same as the complexity score: a table or keyword named in a comment or a
+  // literal is not one the program touches. The one literal that is code — the
+  // name of a called function module — is read back in, as `calledFunctionModules`
+  // reads it.
+  const upper = [maskNonCode(code).toUpperCase(), ...calledFunctionModules(code)].join('\n');
 
   // Module heuristics — check if code touches critical SAP modules
   const criticalModules = ['FI', 'CO', 'MM', 'SD', 'HR', 'PP', 'PM', 'QM'];

@@ -315,6 +315,10 @@ export function inputLabel(id: string): string {
       return 'the engine build';
     case INPUT_IDS.model:
       return 'the narrative model';
+    // `PROFILE_INPUT_ID` of `lib/assessment-profile.ts` (roadmap 7.10), spelled
+    // out: that module imports this one, and the import must not go both ways.
+    case 'profile:assessment':
+      return 'the target profile';
     default:
       return id;
   }

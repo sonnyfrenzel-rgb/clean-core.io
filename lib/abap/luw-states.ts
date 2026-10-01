@@ -119,6 +119,8 @@ export interface LuwModel {
 
 const UPDATE_TASK = /\bIN\s+UPDATE\s+TASK\b/i;
 const SET_LOCAL = /^SET\s+UPDATE\s+TASK\s+LOCAL\b/i;
+/** Statements that never set `sy-subrc`, so a read after them still reads the one before. */
+const SUBRC_NEUTRAL = /^(?:(?:DATA|TYPES|CONSTANTS|STATICS|FIELD-SYMBOLS)\s+[\w/<]|(?:CLEAR|FREE)\s)/i;
 const FLOW = new Set(['if', 'case', 'loop', 'do', 'while', 'select', 'try', 'at', 'provide']);
 const NOT_FLOW = new Set(['form', 'method', 'module', 'class', 'interface', 'define']);
 /** Where the statement after a body belongs to someone else. */
@@ -148,7 +150,15 @@ function andWaitOf(statement: AbapStatement, kind: LuwEventKind): boolean | null
   if (kind === 'rollback') return null;
   if (/^COMMIT\s+WORK\s+AND\s+WAIT\b/i.test(statement.text)) return true;
   if (/^CALL\s+FUNCTION\b/i.test(statement.text)) {
-    return /\bWAIT\s*=\s*('X'|abap_true)/i.test(statement.text);
+    // A literal or constant decides; a variable does not, and is reported as
+    // undetermined rather than as "does not wait" (QA slice review of
+    // 81810c8026e0, b99ee9f51490).
+    const wait = /\bWAIT\s*=\s*('[^']*'|[^\s.]+)/i.exec(statement.text);
+    if (!wait) return false;
+    const value = wait[1].toLowerCase();
+    if (value === "'x'" || value === 'abap_true') return true;
+    if (value === "' '" || value === "''" || value === 'abap_false' || value === 'space') return false;
+    return null;
   }
   return false;
 }
@@ -509,10 +519,24 @@ class LuwReader {
     };
   }
 
+  /**
+   * Does the program read the return code *this* statement set?
+   *
+   * `sy-subrc` is one global field, overwritten by nearly every statement that
+   * does something. The window of two accepted a mention in either of the next
+   * two statements, so `COMMIT WORK AND WAIT. CALL FUNCTION 'X'. IF sy-subrc …`
+   * counted as reading the commit's result when it reads the call's (QA full
+   * review of v2.20.0, 8c3d47dbf614). A statement in between is looked past
+   * only when it cannot set the field: a declaration or a CLEAR.
+   */
   private subrcReadAfter(index: number): boolean {
     const { statements } = this.facts;
     for (let i = index + 1; i <= index + 2 && i < statements.length; i++) {
+      // Clearing the field discards the commit's code; it does not read it
+      // (QA slice review of ad155b478e36, e631e5c76d7c).
+      if (/^(?:CLEAR|FREE)\b[^.]*\bsy-subrc\b/i.test(statements[i].text)) return false;
       if (/\bsy-subrc\b/i.test(statements[i].text)) return true;
+      if (!SUBRC_NEUTRAL.test(statements[i].text)) return false;
     }
     return false;
   }

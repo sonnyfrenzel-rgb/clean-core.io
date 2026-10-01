@@ -10,13 +10,14 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default async function UnsubscribePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ t?: string }>;
-}) {
-  const { t } = await searchParams;
-
+/**
+ * The token is not read here. A mail links to `/unsubscribe#t=…`, and the
+ * fragment never reaches the server, so the Cloud Run request log never sees
+ * it (QA finding 8e25777f1339). `UnsubscribeClient` reads it in the browser —
+ * and, for a mail sent before 30.09.2026, the old `?t=…` as well, which it then
+ * strips from the address bar and the history.
+ */
+export default function UnsubscribePage() {
   return (
     <main className="min-h-screen bg-cc-page flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-lg">
@@ -31,7 +32,7 @@ export default async function UnsubscribePage({
 
         <h1 className="text-3xl font-extrabold text-cc-ink tracking-tight mb-3">Community updates</h1>
 
-        <UnsubscribeClient token={t || ''} />
+        <UnsubscribeClient />
 
         <p className="text-xs text-cc-ink-muted mt-8 leading-relaxed">
           Clean-Core.io · Felix Frenzel · Hellerstraße 9 · 96047 Bamberg · Germany

@@ -9,16 +9,16 @@ import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { publicButton } from '@/components/landing/public-button';
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'SAP Cloudification Repository: Look Up Any Object’s Released Successor | Clean-Core.io',
+  title: 'SAP Cloudification Repository: Look Up an Object’s Released Successor | Clean-Core.io',
   description:
-    'Free lookup against SAP’s official Cloudification Repository: enter any SAP standard object and get its released S/4HANA successor, or an honest “no released path” verdict. Plus what cloudifying custom ABAP means for Clean Core — in-app RAP or side-by-side BTP CAP.',
+    'Free lookup against SAP’s official Cloudification Repository: enter an SAP standard object and, where the repository lists it, get its released S/4HANA successor or an honest “no released path” verdict. Plus what cloudifying custom ABAP means for Clean Core — in-app RAP or side-by-side BTP CAP.',
   alternates: {
     canonical: 'https://clean-core.io/sap-cloudification',
   },
   openGraph: {
-    title: 'SAP Cloudification Repository: Look Up Any Object’s Released Successor | Clean-Core.io',
+    title: 'SAP Cloudification Repository: Look Up an Object’s Released Successor | Clean-Core.io',
     description:
-      'Free lookup against SAP’s official Cloudification Repository — any SAP object, its released S/4HANA successor, or an honest “no released path” verdict. Plus what cloudification means for Clean Core.',
+      'Free lookup against SAP’s official Cloudification Repository — for an object it lists, the released S/4HANA successor or an honest “no released path” verdict. Plus what cloudification means for Clean Core.',
     url: 'https://clean-core.io/sap-cloudification',
     type: 'website',
   },
@@ -161,8 +161,8 @@ export default function SapCloudificationPage() {
               Look up an object in the Cloudification Repository
             </h2>
             <p className="text-sm font-medium leading-relaxed text-cc-ink-muted">
-              Enter any SAP standard object &mdash; VBAK, BSEG, MARA &mdash; and get its released
-              S/4HANA successor, or an honest &ldquo;no released path&rdquo; verdict.
+              Enter an SAP standard object &mdash; VBAK, BSEG, MARA &mdash; and, where the repository
+              lists it, get its released S/4HANA successor or an honest &ldquo;no released path&rdquo; verdict.
               {facts.objectCount > 0 ? ` ${classified} classified objects.` : ''} Free, no sign-up.
             </p>
           </div>
@@ -230,8 +230,9 @@ export default function SapCloudificationPage() {
                     <Link href="/abap-custom-code-analysis" className={LINK}>
                       ABAP static code analysis
                     </Link>{' '}
-                    to inventory every standard object your code touches and flag risky table access,
-                    unreleased calls and modifications — as line-level evidence.
+                    to inventory the standard objects your code names statically and flag risky table access,
+                    unreleased calls and modifications — as line-level evidence. A target computed at
+                    runtime cannot be named this way; the analysis lists such dynamic calls as not assessed.
                   </p>
                 </div>
               </div>
@@ -272,11 +273,12 @@ export default function SapCloudificationPage() {
                   <GitBranch size={20} aria-hidden="true" />
                 </div>
                 <div>
-                  <h3 className={H3}>4. Draft the compliant version + evidence</h3>
+                  <h3 className={H3}>4. Draft the target version + evidence</h3>
                   <p className={STEP_TEXT}>
-                    The engine drafts the first clean-core-compliant RAP or CAP version with a multi-file
-                    abapGit export and ABAP-Unit tests, plus a signed audit evidence pack — a starting point
-                    to review, never a production-ready deliverable.
+                    The model drafts a RAP or CAP version aimed at Clean Core — on the RAP route with a
+                    multi-file abapGit export and ABAP-Unit tests, on the CAP route with Node.js code and a
+                    TypeScript test suite — plus a signed audit evidence pack. Nothing validates the draft for
+                    you: it is a starting point to review, never a production-ready deliverable.
                   </p>
                 </div>
               </div>

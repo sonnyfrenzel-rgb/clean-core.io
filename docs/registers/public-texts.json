@@ -2823,9 +2823,9 @@
       }
     },
     {
-      "path": "docs/terms/2026-10-15.md",
+      "path": "docs/terms/2026-10-06.md",
       "kind": "legal",
-      "purpose": "Terms of Service, version effective 15 October 2026 (v2.2.0, with 3.0)",
+      "purpose": "Terms of Service, version effective 6 October 2026 (v2.2.0, with 3.0)",
       "audience": "oeffentlich, rechtlich (lib/terms-versions.ts)",
       "saysToday": "Terms of Service and Community Guidelines v2.2.0: section 4.1 separates deterministic results from model-generated output.",
       "wrongWith30": [],
@@ -3434,11 +3434,11 @@
       "id": "terms-v2.2.0",
       "date": "2026-09-30",
       "by": "Sonny",
-      "decision": "Replaces terms-unchanged (24.09.2026): a new Terms version, v2.2.0, goes live with 3.0 - section 4.1 states which results are deterministic and which are model-generated (QA 6b83ef361e80, c9ab2c6a6c1c). v2.1.0 archived as docs/terms/2026-09-18.md, v2.2.0 as docs/terms/2026-10-15.md; every existing account accepts v2.2.0 at its next sign-in.",
+      "decision": "Replaces terms-unchanged (24.09.2026): a new Terms version, v2.2.0, goes live with 3.0 - section 4.1 states which results are deterministic and which are model-generated (QA 6b83ef361e80, c9ab2c6a6c1c). v2.1.0 archived as docs/terms/2026-09-18.md, v2.2.0 as docs/terms/2026-10-06.md (effective date set to the agreed release day, 6 October 2026, on 01.10.2026; the placeholder was 2026-10-15); every existing account accepts v2.2.0 at its next sign-in.",
       "status": "vollzogen",
       "files": [
         "docs/terms/2026-09-18.md",
-        "docs/terms/2026-10-15.md"
+        "docs/terms/2026-10-06.md"
       ]
     },
     {

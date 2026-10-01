@@ -19,12 +19,12 @@ const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Cloudification Repository Viewer & Clean Core Object Catalog | Clean-Core.io',
   description:
-    'Browse the SAP Cloudification Repository: look up any SAP standard object, its Clean Core readiness, and its released S/4HANA API successor. Official plus curated reference data, enriched by Clean-Core.io — free.',
+    'Browse the SAP Cloudification Repository: look up the SAP standard objects in our catalog, their Clean Core readiness, and its released S/4HANA API successor. Official plus curated reference data, enriched by Clean-Core.io — free.',
   alternates: { canonical: `${BASE}/catalog` },
   openGraph: {
     title: 'SAP Object Catalog — Cloudification Repository Viewer',
     description:
-      'Look up any SAP standard object, its Clean Core readiness, and its released S/4HANA API successor.',
+      'Look up an SAP standard object in the catalog: its Clean Core readiness and its released S/4HANA API successor.',
     url: `${BASE}/catalog`,
     type: 'website',
   },
@@ -44,8 +44,8 @@ export default function CatalogIndexPage() {
         SAP Object Catalog
       </h1>
       <p className="text-lg text-cc-ink-muted leading-relaxed mb-2">
-        Look up any SAP standard object to see its Clean Core readiness and its released S/4HANA API
-        successor. A factual reference for architects planning custom-code modernization —{' '}
+        Look up an SAP standard object in this catalog to see its Clean Core readiness and its
+        released S/4HANA API successor. A factual reference for architects planning custom-code modernization —{' '}
         <span className="font-semibold text-cc-ink">
           what has a released successor, what needs an architect, and what has no clean path at all.
         </span>
@@ -80,7 +80,7 @@ export default function CatalogIndexPage() {
                   {a.name}
                 </span>
                 <span className="block text-xs text-cc-ink-muted">
-                  {a.objectCount} object{a.objectCount === 1 ? '' : 's'} with a released successor
+                  {a.objectCount} object{a.objectCount === 1 ? '' : 's'} in the catalog
                 </span>
               </span>
             </Link>

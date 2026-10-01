@@ -428,32 +428,13 @@ export function assignPublicCloudFit(
     );
   }
 
-  // Everything past Retire needs a level — a level nobody could determine is
-  // "not assigned", never a guessed bucket (roadmap 6.7 honesty rule; see also
-  // `tests/unearned-verdicts-guard.spec.ts`).
-  if (input.level === 'Unknown') {
-    return unassigned({
-      code: 'level-not-determined',
-      detail:
-        'No clean-core level could be assigned to this object. Provide risk/criticality data or import '
-        + 'ATC findings before a Public-Cloud-Fit bucket can be concluded — never a default bucket for a '
-        + 'level that is not known.',
-    });
-  }
-
-  // Keep, Rebuild and the path question all read the level against the target
-  // platform — without one chosen, none of the three can be concluded either.
-  if (!platform) {
-    return unassigned({
-      code: 'target-platform-not-set',
-      detail:
-        'The project has no target platform yet. Keep, Rebuild and the catalogued-path question all depend on it '
-        + '(Public Edition allows only level A; Private Edition allows A or B) — set the target deployment '
-        + 'before these buckets can be concluded.',
-    });
-  }
-
   // Rule 3, own work — checked before Keep *and* before the path question.
+  //
+  // And before the level and platform gates below: neither is read by this
+  // rule. "Every modification is Rebuild" holds for an object whose level
+  // nobody could determine and in a project with no target platform yet, and
+  // the gates used to answer "not assigned" for exactly those (QA full review
+  // of v2.20.0, ceb59bbace90).
   //
   // The rule table above says a modification and an own write access to an SAP
   // table are Rebuild, full stop: "das ist die Arbeit des Projekts, nie die von
@@ -479,6 +460,32 @@ export function assignPublicCloudFit(
       "The code writes directly to this SAP table — that access is the project's own work, never SAP's, "
         + 'so the way forward is known and sits here.',
     );
+  }
+
+  // Everything past own work needs a level — a level nobody could determine is
+  // "not assigned", never a guessed bucket (roadmap 6.7 honesty rule; see also
+  // `tests/unearned-verdicts-guard.spec.ts`).
+  if (input.level === 'Unknown') {
+    return unassigned({
+      code: 'level-not-determined',
+      detail:
+        'No clean-core level could be assigned to this object. Provide risk/criticality data or import '
+        + 'ATC findings before a Public-Cloud-Fit bucket can be concluded — never a default bucket for a '
+        + 'level that is not known.',
+    });
+  }
+
+  // Keep, Rebuild by elimination and the path question all read the level
+  // against the target platform — without one chosen, none of the three can be
+  // concluded either.
+  if (!platform) {
+    return unassigned({
+      code: 'target-platform-not-set',
+      detail:
+        'The project has no target platform yet. Keep, Rebuild and the catalogued-path question all depend on it '
+        + '(Public Edition allows only level A; Private Edition allows A or B) — set the target deployment '
+        + 'before these buckets can be concluded.',
+    });
   }
 
   // Rule 4 — Keep.
@@ -648,6 +655,13 @@ export function publicCloudFitHeadline(summary: PublicCloudFitSummary): string {
   if (summary.decisionBlocked) {
     const n = summary.objectsWithoutCataloguedPath.length;
     return `${n} object${n === 1 ? ' has' : 's have'} no catalogued path — that has to be answered before a ${platformLabel} decision.`;
+  }
+  // An unassigned object was never asked the path question, so "no object is
+  // waiting" cannot speak for it (QA full review of v2.20.0, 50eec718700f).
+  const open = summary.counts.notAssigned;
+  if (open > 0) {
+    return `No assigned object is waiting on a catalogued path for a ${platformLabel} decision; `
+      + `${open} object${open === 1 ? ' is' : 's are'} not assigned, so the question is still open for ${open === 1 ? 'it' : 'them'}.`;
   }
   return `No object is waiting on a catalogued path for a ${platformLabel} decision.`;
 }

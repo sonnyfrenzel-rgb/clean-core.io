@@ -51,7 +51,7 @@ jobs:
       # Fail on High/Critical advisories. Accepted exceptions are documented with
       # a rationale + review date in audit-ci.jsonc (no blanket lowering of the gate).
       - name: Dependency audit (high+, reviewed allowlist)
-        run: npx --yes audit-ci@^7 --config audit-ci.jsonc
+        run: npx --yes audit-ci@7.1.0 --config audit-ci.jsonc
 
   sbom:
     name: SBOM (CycloneDX)
@@ -64,7 +64,7 @@ jobs:
           cache: 'npm'
       - run: npm ci --ignore-scripts
       - name: Generate CycloneDX SBOM
-        run: npx --yes @cyclonedx/cyclonedx-npm --output-file sbom.json
+        run: npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --output-file sbom.json
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

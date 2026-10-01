@@ -257,9 +257,9 @@ test.describe('QA review of 8f9ea35a000e', () => {
   const text = '{"statements":[]}';
 
   test('33a42c475f1a: a receipt is bound to its model stage, and the statements store asks for its own', () => {
-    const fromNaming = issueModelReceipt({ uid, text, modelId: 'gemini-3.8-flash', byok: false, stage: 'naming' }, KEY);
-    const fromStatements = issueModelReceipt({ uid, text, modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, KEY);
-    const withoutStage = issueModelReceipt({ uid, text, modelId: 'gemini-3.8-flash', byok: false }, KEY);
+    const fromNaming = issueModelReceipt({ uid, text, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'naming' }, KEY);
+    const fromStatements = issueModelReceipt({ uid, text, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, KEY);
+    const withoutStage = issueModelReceipt({ uid, text, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false }, KEY);
 
     expect(verifyModelReceipt(fromNaming, { uid, text, key: KEY, stage: 'statements' })).toEqual({ ok: false, refusal: 'wrong-stage' });
     expect(verifyModelReceipt(withoutStage, { uid, text, key: KEY, stage: 'statements' })).toEqual({ ok: false, refusal: 'wrong-stage' });
@@ -270,10 +270,10 @@ test.describe('QA review of 8f9ea35a000e', () => {
   });
 
   test('33a42c475f1a: callers that do not ask for a stage verify as before — runs/create and naming keep their behaviour', () => {
-    const withoutStage = issueModelReceipt({ uid, text, modelId: 'gemini-3.8-flash', byok: false, issuedAt: 1_000 }, KEY);
+    const withoutStage = issueModelReceipt({ uid, text, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, issuedAt: 1_000 }, KEY);
     expect(Object.keys(withoutStage)).not.toContain('stage');
     expect(verifyModelReceipt(withoutStage, { uid, text, key: KEY, now: 2_000 }).ok).toBe(true);
-    const analyze = issueModelReceipt({ uid, text, modelId: 'gemini-3.8-flash', byok: false, stage: 'analyze' }, KEY);
+    const analyze = issueModelReceipt({ uid, text, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'analyze' }, KEY);
     expect(verifyModelReceipt(analyze, { uid, text, key: KEY }).ok).toBe(true);
   });
 

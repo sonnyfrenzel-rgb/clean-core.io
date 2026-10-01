@@ -29,13 +29,18 @@ service cloud.firestore {
     // mirror). `exists()` first, because `get()` on a missing profile is an
     // evaluation error; it is the caller's own profile, the same one access
     // `accountActive()` already pays for.
+    //
+    // A missing profile denies as well. Erasure deletes `users/{uid}` and the
+    // Auth record, and an ID token minted before it still says `admin: true` for
+    // up to an hour; the server refuses that token (an admin token is verified
+    // with the revocation check, which fails for a deleted user), the rules did
+    // not (QA review of e7372791c70d). Every administrator has a profile —
+    // sign-up writes it first — so this takes nothing from a real one.
     function isAdmin() {
       return isAuthenticated() &&
              request.auth.token.get('admin', false) == true &&
-             !(
-               exists(callerProfilePath()) &&
-               get(callerProfilePath()).data.get('isAdmin', true) == false
-             );
+             exists(callerProfilePath()) &&
+             get(callerProfilePath()).data.get('isAdmin', true) != false;
     }
 
     // NOTE: getUserData() and getUserOrgId() were removed because they used
@@ -97,13 +102,17 @@ service cloud.firestore {
     // helper is called in one rule. The path does not depend on `resource`, so a
     // list query pays it once, not once per document.
     //
-    // `!exists(...)` first, deliberately. `get()` on a missing document is an
+    // `exists(...)` first, deliberately: `get()` on a missing document is an
     // evaluation error, which is what made this file drop getUserData() and the
-    // admin fallback (see above), and a profile legitimately does not exist yet
-    // while a new account is being created. A missing profile is therefore not
-    // treated as suspended here — suspension always writes the profile, so the
-    // state this helper exists for is never a missing document. The server gate
-    // (`assertAccountActive`) still refuses a missing profile outright.
+    // admin fallback (see above). A missing profile is *not* active, the same
+    // answer the server gate (`assertAccountActive`) gives. It used to count as
+    // active, on the reasoning that suspension always writes the profile — but
+    // erasure deletes it (`deleteUserDataAndAccount`, step 5), and the ID token
+    // of an erased account stays valid for up to an hour, so a missing profile
+    // is exactly the state of an account that no longer exists. Nothing that
+    // runs before the profile exists needs this helper: sign-up writes
+    // `users/{uid}` first (its create rule does not ask), and only then the
+    // registration request (QA review of a7e0ae36c896).
     //
     // It is applied to the caller's own grants only — owner and invited reader.
     // The admin branches are left to the custom claim, which is revoked on its
@@ -113,13 +122,10 @@ service cloud.firestore {
     }
 
     function accountActive() {
-      return isAuthenticated() && (
-        !exists(callerProfilePath()) ||
-        (
-          !(get(callerProfilePath()).data.get('status', '') in ['suspended', 'deleted']) &&
-          get(callerProfilePath()).data.get('disabled', false) != true
-        )
-      );
+      return isAuthenticated() &&
+        exists(callerProfilePath()) &&
+        !(get(callerProfilePath()).data.get('status', '') in ['suspended', 'deleted']) &&
+        get(callerProfilePath()).data.get('disabled', false) != true;
     }
 
     function userClientCreateKeys() {

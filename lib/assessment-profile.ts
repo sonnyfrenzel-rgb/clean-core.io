@@ -123,6 +123,12 @@ export interface AssessmentProfile {
 export const SHIPPED_CATALOG_SNAPSHOTS: ReadonlySet<string> = new Set([
   'latest',
   'classifications-sap',
+  // Private Edition, shipped 30.09.2026 (Sonny's decision on 7.10): the moving
+  // list and every release-pinned file SAP publishes.
+  'pce-latest',
+  'pce-2025-1',
+  'pce-2025-0',
+  'pce-2023-3',
 ]);
 
 /** The registry key each edition's verdicts would have to come from. */
@@ -147,6 +153,34 @@ export const EDITION_CATALOG_KEY: Readonly<Record<Edition, string | null>> = {
  * this profile. The digest in `CatalogSnapshotRef` is what identifies it.
  */
 export const RELEASE_PINNED_EDITIONS: ReadonlySet<Edition> = new Set<Edition>(['private']);
+
+/**
+ * The release-pinned snapshot a named release reads, or `null` when the
+ * release names none SAP publishes (or the edition has no pinned files).
+ *
+ * SAP names Private Edition releases as year and feature pack — "2023 FPS03",
+ * "PCE-2025-1", "S4HANA-2023-FPS03" all mean the file `PCE2023_3`. The key is
+ * derived from the name, never guessed from a date. A release that maps to no
+ * published file (2022 FPS02, say) returns `null`, and the moving list is then
+ * read *and named as a stand-in* (`snapshot-unpinned`), never silently.
+ */
+export function pinnedSnapshotForRelease(edition: Edition | string, release: string): string | null {
+  if (edition !== 'private' || !release) return null;
+  const m = /(20\d{2})[\s_-]*(?:FPS|SP)?[\s_-]*0*(\d{1,2})(?!\d)/i.exec(release);
+  if (!m) return null;
+  const key = `pce-${m[1]}-${Number(m[2])}`;
+  return SHIPPED_CATALOG_SNAPSHOTS.has(key) ? key : null;
+}
+
+/**
+ * The snapshot a profile's verdicts have to come from: the pinned file for a
+ * named Private Edition release where SAP publishes one, the edition's moving
+ * list otherwise, `null` for an edition with no catalog at all.
+ */
+export function expectedCatalogKey(edition: Edition | string, release: string): string | null {
+  if (!(EDITIONS as readonly string[]).includes(edition)) return null;
+  return pinnedSnapshotForRelease(edition, release) ?? EDITION_CATALOG_KEY[edition as Edition];
+}
 
 /* ---------- canonical form and fingerprint ---------- */
 
@@ -238,8 +272,14 @@ export type ProfileGapCode = (typeof PROFILE_GAP_CODES)[number];
  *   - `unconfirms` — an assessment may be produced, but it is carried as
  *     unconfirmed everywhere, including inside the signed manifest, whose
  *     revision string then begins with `unconfirmed:`.
+ *   - `notes` — a fact the owner has not stated, which does not make the
+ *     catalog answer for a different target (decision Sonny, 30.09.2026: a
+ *     missing release or language version is a quiet hint with a way to state
+ *     it, not "unconfirmed"). The coverage stays `covered`; the note is shown.
+ *     "Unconfirmed" is kept for real non-coverage — a snapshot that is not the
+ *     one the target's verdicts come from.
  */
-export type ProfileGapSeverity = 'rejects' | 'unconfirms';
+export type ProfileGapSeverity = 'rejects' | 'unconfirms' | 'notes';
 
 export interface ProfileGap {
   code: ProfileGapCode;
@@ -256,7 +296,7 @@ export interface ProfileCoverage {
   state: ProfileCoverageState;
   /** Sorted by code, then subject — same profile, same list, same order. */
   gaps: ProfileGap[];
-  /** One sentence for the reader. Empty string when the profile is covered. */
+  /** One sentence for the reader about the verdict. Empty when covered; notes are not in it. */
   sentence: string;
 }
 
@@ -272,12 +312,12 @@ const SENTENCES: Record<ProfileGapCode, (subject: string | null) => string> = {
   'rule-version-missing': () =>
     'No rule version is named, so a grade could not say what produced it. No assessment is made.',
   'release-not-named': () =>
-    'No release is named. Whether an object is released is release-dependent, so the result is carried as unconfirmed.',
+    'Release not stated. The result is read against the current catalog for this edition; state the target release in the analysis to pin it to that release.',
   'snapshot-substituted': (s) => `${s} The result is carried as unconfirmed.`,
   'snapshot-unpinned': (s) =>
     `The catalog snapshot "${s}" is a moving entry and not the release-pinned snapshot this profile names. It does not stand in for one; the result is carried as unconfirmed.`,
   'language-version-unknown': (s) =>
-    `The ABAP language version of ${s} is not established. It is not assumed to be Standard ABAP; the result is carried as unconfirmed.`,
+    `Language version of ${s} not stated. It is not assumed to be Standard ABAP; state it in the analysis where it decides a verdict.`,
 };
 
 function gap(code: ProfileGapCode, severity: ProfileGapSeverity, subject: string | null): ProfileGap {
@@ -330,12 +370,12 @@ export function profileCoverage(profile: AssessmentProfile | null | undefined): 
   }
 
   if (!profile.release) {
-    gaps.push(gap('release-not-named', 'unconfirms', null));
+    gaps.push(gap('release-not-named', 'notes', null));
   }
 
   // The substitution that is happening today and says nothing: a private-edition
   // project graded against the public `latest` file. Named, not tolerated.
-  const expected = known ? EDITION_CATALOG_KEY[edition] : null;
+  const expected = known ? expectedCatalogKey(edition, profile.release) : null;
   if (expected && key && SHIPPED_CATALOG_SNAPSHOTS.has(key) && key !== expected) {
     gaps.push(
       gap(
@@ -355,7 +395,7 @@ export function profileCoverage(profile: AssessmentProfile | null | undefined): 
 
   for (const entry of profile.languageVersions || []) {
     if (entry.languageVersion === 'unknown') {
-      gaps.push(gap('language-version-unknown', 'unconfirms', (entry.object || '').toUpperCase()));
+      gaps.push(gap('language-version-unknown', 'notes', (entry.object || '').toUpperCase()));
     }
   }
 
@@ -365,11 +405,15 @@ export function profileCoverage(profile: AssessmentProfile | null | undefined): 
 
   const state: ProfileCoverageState = gaps.some((g) => g.severity === 'rejects')
     ? 'rejected'
-    : gaps.length > 0
+    : gaps.some((g) => g.severity === 'unconfirms')
       ? 'unconfirmed'
       : 'covered';
 
-  const relevant = state === 'rejected' ? gaps.filter((g) => g.severity === 'rejects') : gaps;
+  // The sentence is the verdict's; notes are shown beside it, not inside it.
+  const relevant =
+    state === 'rejected'
+      ? gaps.filter((g) => g.severity === 'rejects')
+      : gaps.filter((g) => g.severity === 'unconfirms');
   return { state, gaps, sentence: relevant.map((g) => g.sentence).join(' ') };
 }
 

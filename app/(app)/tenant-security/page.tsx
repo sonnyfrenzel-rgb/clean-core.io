@@ -58,7 +58,7 @@ export default function TenantSecurityPage() {
 
         <div className="bg-cc-surface border border-cc-line rounded-3xl p-6 sm:p-8 space-y-5">
           <p className="text-cc-ink leading-relaxed font-medium">
-            Every tenant connection is strictly limited to a <strong>connection check, read-only OData metadata requests</strong> and one read-only OData call. Running generated tests against the tenant is locked until the isolated live runner has passed its review. Clean-Core.io never writes, modifies, or deletes any data on your S/4HANA system.
+            Every tenant connection is strictly limited to a <strong>connection check, read-only OData metadata requests</strong> and read-only OData GET requests, each one started by you. Running generated tests against the tenant is locked until the isolated live runner has passed its review. Clean-Core.io never writes, modifies, or deletes any data on your S/4HANA system.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -69,8 +69,7 @@ export default function TenantSecurityPage() {
               </div>
               <ul className="space-y-2 text-sm text-cc-ink-muted font-medium">
                 <li className="flex items-start gap-2"><Check size={16} strokeWidth={3} aria-hidden="true" className="text-cc-success mt-0.5 shrink-0" /> OData service metadata ($metadata endpoints)</li>
-                <li className="flex items-start gap-2"><Check size={16} strokeWidth={3} aria-hidden="true" className="text-cc-success mt-0.5 shrink-0" /> One read-only OData response, to confirm the service answers</li>
-                <li className="flex items-start gap-2"><Check size={16} strokeWidth={3} aria-hidden="true" className="text-cc-success mt-0.5 shrink-0" /> Custom code analysis reports (ATC/SCI)</li>
+                <li className="flex items-start gap-2"><Check size={16} strokeWidth={3} aria-hidden="true" className="text-cc-success mt-0.5 shrink-0" /> Read-only OData responses for the entities you choose to read</li>
               </ul>
             </div>
             <div className="bg-cc-surface-muted p-5 rounded-xl border border-cc-line">
@@ -128,7 +127,7 @@ export default function TenantSecurityPage() {
               <Globe className="w-8 h-8 text-cc-brand-strong mx-auto mb-3" aria-hidden="true" />
               <h3 className="text-xs font-extrabold text-cc-ink uppercase tracking-wider mb-2">EU-Region Hosting</h3>
               <p className="text-xs text-cc-ink-muted font-medium leading-relaxed">
-                All processing happens in the GCP europe-west1 (Belgium) region, ensuring GDPR-compliant data residency within the European Union.
+                Hosting, the database and every call to your tenant run in the GCP europe-west1 (Belgium) region. The Gemini API and the mail provider are separate subprocessors, named with their transfer safeguards in the privacy policy.
               </p>
             </div>
           </div>
@@ -161,8 +160,8 @@ export default function TenantSecurityPage() {
 
             <div className="space-y-3">
               {[
-                { step: '1', title: 'You Submit a Connection Request', desc: 'After signing in, navigate to your project settings and submit a tenant connection request with your system details (hostname, client, communication user).' },
-                { step: '2', title: 'Admin Review', desc: 'Our team receives a notification and manually reviews the request. We verify the legitimacy of the connection details and the requesting user account.' },
+                { step: '1', title: 'You Submit a Connection Request', desc: 'After signing in, open Settings and submit a tenant connection request with a short motivation; your name and e-mail address come from your account. The system details (hostname, client, communication user) are entered only after approval.' },
+                { step: '2', title: 'Admin Review', desc: 'Our team receives a notification and manually reviews the request. We check the requesting user account and the stated use before anything is activated.' },
                 { step: '3', title: 'Approval or Feedback', desc: 'Once approved, your tenant connection is activated and you receive an email confirmation. If we have questions, we reach out before activation.' },
                 { step: '4', title: 'Active Monitoring', desc: 'Connected tenants are monitored for unusual activity. Access can be revoked at any time if misuse is detected.' },
               ].map((item) => (

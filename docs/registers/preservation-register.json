@@ -38,7 +38,7 @@
     },
     "rules": {
       "file": "firestore.rules",
-      "sha256OfLfNormalisedText": "235412c50ff78b9d1806bc166e95a864660ed85ed304c93536035e6971c6ef3a",
+      "sha256OfLfNormalisedText": "def53aa157e536bf386ab00b1a552b40f05c28235be5a8e05140e1522c2fc290",
       "deploymentRecord": "docs/registers/rules-deployment.json",
       "note": "Hashed after normalising CRLF to LF so the value is the same on Windows and on CI.",
       "projectDocument": {
@@ -103,7 +103,10 @@
         "originalRecommendation",
         "recommendationConfidence",
         "recommendationJustification",
-        "inputManifest"
+        "inputManifest",
+        "assessmentProfile",
+        "profileCoverage",
+        "assessmentSubject"
       ],
       "unsignedFieldsOnTheRun": [
         "analysis",
@@ -119,6 +122,7 @@
       "transformationBypass",
       "legacyCode",
       "s4Deployment",
+      "assessmentTarget",
       "updatedAt",
       "worklist",
       "extensibilityRoute",
@@ -2380,7 +2384,7 @@
           },
           {
             "module": "lib/workflow-steps.ts",
-            "evidence": "Handover blocked — built for a previous source: ${blockers.join"
+            "evidence": "Handover blocked — built for ${prevBasis}: ${blockers.join"
           }
         ],
         "note": "The stale Delivery detail names every blocker, and it is the detail of Handover."
