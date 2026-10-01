@@ -37,7 +37,13 @@ import type { ProvenanceValue } from './provenance';
  * Rein: keine Netzaufrufe, kein Schlüssel, kein Zustand.
  */
 
-export const STATEMENT_PROMPT_FORMAT_VERSION = 1;
+/**
+ * 2 since 01.10.2026: the statements are ordered in English (owner decision
+ * "alles Englisch"). The version is part of the digest
+ * (`lib/statement-proposal.ts`), so a German proposal saved under 1 no longer
+ * matches and is not shown; the reader can request an English one.
+ */
+export const STATEMENT_PROMPT_FORMAT_VERSION = 2;
 
 /** Ein Satz, der länger ist, sagt mehr als eine Sache. */
 export const STATEMENT_MAX_LENGTH = 400;
@@ -109,11 +115,11 @@ export function buildStatementPrompt(context: StatementContext): string {
     '(DATA, TYPES, CLASS ... DEFINITION, METHODS) or block ends.',
     '',
     'Rules for every statement:',
-    '1. German, one sentence (a semicolon for a closely related second clause is fine), plain language, no Markdown, no backticks.',
-    '2. Say what happens in business terms: name the business thing ("der Betrag", "die Kundennummer"), not the variable',
-    '   (iv_amount, lv_name), and write in the passive voice ("wird gelesen"), never "das System" or "das Programm".',
+    '1. English, one sentence (a semicolon for a closely related second clause is fine), plain language, no Markdown, no backticks.',
+    '2. Say what happens in business terms: name the business thing ("the amount", "the customer number"), not the variable',
+    '   (iv_amount, lv_name), and write in the passive voice ("is read"), never "the system" or "the program".',
     '   Keep the concrete facts the code writes: literal values, table and field names, exact comparison boundaries',
-    '   ("bis einschließlich 100", "größer als 100").',
+    '   ("up to and including 100", "greater than 100").',
     '3. One statement per outcome: each branch of a condition gets its own statement, anchored to the condition line and to',
     '   the line(s) of that branch.',
     '4. Say only what the code at the anchored lines does. Do not claim effects the code does not perform: a status text is not an',
@@ -129,7 +135,7 @@ export function buildStatementPrompt(context: StatementContext): string {
     '{"statements":[{"text":"<statement>","anchors":["<file>:<line>"],"element":"<element id or null>","uncertainty":"<open rest or null>"}]}',
     '',
     'Example of the style (invented code, not from the input):',
-    '{"text":"Ist die Bestellmenge größer als 100, wird der Status HOLD gesetzt; sonst bleibt er unverändert.","anchors":["demo.abap:12","demo.abap:13"],"element":"nd-5-0","uncertainty":null}',
+    '{"text":"If the order quantity is greater than 100, the status is set to HOLD; otherwise it stays unchanged.","anchors":["demo.abap:12","demo.abap:13"],"element":"nd-5-0","uncertainty":null}',
     '',
     'Process elements, as "id | kind | technical label | lines":',
   ];

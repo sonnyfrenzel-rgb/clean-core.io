@@ -174,13 +174,20 @@ function mayWrite(s: AbapStatement): boolean {
  * What the sentence claims.
  * ------------------------------------------------------------------ */
 
-/** "is displayed / output / shown" — the verb, not a noun like "Ausgabetabelle". */
-const DISPLAYED = /\b(ausgegeben|angezeigt|ausgibt|anzeigt|zeigt\b[^.;]*\ban)\b/i;
+/*
+ * The model writes English since 01.10.2026 (prompt version 2, owner decision
+ * "alles Englisch"); every pattern below reads the English wording and keeps
+ * the German one, so a sentence in either language is judged the same way.
+ */
+/** "is displayed / output / shown" — the verb, not a noun like "Ausgabetabelle" or "the output list". */
+const DISPLAYED =
+  /\b(ausgegeben|angezeigt|ausgibt|anzeigt|zeigt\b[^.;]*\ban)\b|\b(is|are|was|were|be|been|gets?)\s+(?:then\s+)?(displayed|shown|output|printed)\b|\b(displays|shows|outputs|prints)\b/i;
 /** "no message is displayed" claims the opposite, and a quiet statement agrees with it. */
-const NOT_DISPLAYED = /\b(keine?|nicht|nie)\b[^.;,]{0,60}\b(ausgegeben|angezeigt)\b/i;
+const NOT_DISPLAYED =
+  /\b(keine?|nicht|nie)\b[^.;,]{0,60}\b(ausgegeben|angezeigt)\b|\b(no|not|never|nothing)\b[^.;,]{0,60}\b(displayed|shown|output|printed)\b/i;
 const claimsDisplay = (text: string) => DISPLAYED.test(text) && !NOT_DISPLAYED.test(text);
-/** A message, as a German sentence names one. */
-const A_MESSAGE = /(meldung|nachricht|information\b|hinweis|warnung|fehlertext)/i;
+/** A message, as a sentence names one. */
+const A_MESSAGE = /(meldung|nachricht|information\b|hinweis|warnung|fehlertext|message|notification|warning|error text)/i;
 /** Message numbers the sentence names: `E110(ZSD)`, `110`, `S203`. */
 function messageNumbers(text: string): string[] {
   return [...text.matchAll(/\b[EWISAX]?(\d{3})\b/gi)].map((m) => m[1]);
@@ -193,12 +200,13 @@ function messageNumberOf(s: AbapStatement): string | null {
 }
 
 const PROGRAM_ENDS =
-  /\b(programm|report|programmausf(ü|ue)hrung|programmlauf)\w*\b[^.;]{0,60}\b(beendet|abgebrochen|verlassen)\b|\b(programm|report)\s+(endet|bricht\s+ab)\b/i;
+  /\b(programm|report|programmausf(ü|ue)hrung|programmlauf)\w*\b[^.;]{0,60}\b(beendet|abgebrochen|verlassen)\b|\b(programm|report)\s+(endet|bricht\s+ab)\b|\b(program|report)\b[^.;]{0,60}\b(ends|ended|terminates|terminated|aborts|aborted|exits|exited|stops|stopped)\b/i;
 
 /** Words that claim data was stored — never an internal table, a variable or a list. */
-const STORED = /\b(gebucht|verbucht|persistiert|festgeschrieben|(in|auf|zur)\s+(der\s+|die\s+)?datenbank)\b/i;
+const STORED =
+  /\b(gebucht|verbucht|persistiert|festgeschrieben|(in|auf|zur)\s+(der\s+|die\s+)?datenbank|posted|persisted|committed|(in|into|to)\s+the\s+database)\b/i;
 
-const CREATED = /\b(angelegt|anlegen|anlage|neu\s+erfasst|erstellt)\b/i;
+const CREATED = /\b(angelegt|anlegen|anlage|neu\s+erfasst|erstellt|created|creates|creation|newly\s+entered)\b/i;
 
 /**
  * SAP standard transactions that display a business object — a fixed list,
@@ -324,7 +332,7 @@ function persistenceRule(text: string, region: AbapStatement[]): StatementContra
 }
 
 function notRaisedRule(text: string, source: ContradictionSource): StatementContradiction | null {
-  const match = /\b(Ausnahme|Exception|Ereignis)\s+([A-Za-z][A-Za-z0-9_]{2,})\b/.exec(text);
+  const match = /\b(Ausnahme|Exception|Ereignis|exception|event)\s+([A-Za-z][A-Za-z0-9_]{2,})\b/.exec(text);
   if (!match) return null;
   const name = match[2];
   // Only a technical name: an ordinary German word after "Ausnahme" is prose, not a claim.
@@ -333,7 +341,7 @@ function notRaisedRule(text: string, source: ContradictionSource): StatementCont
   return {
     verdict: 'contradicts',
     rule: 'not-raised',
-    reason: `The source names no ${match[1] === 'Ereignis' ? 'event' : 'exception'} ${name.toUpperCase()}.`,
+    reason: `The source names no ${/^(Ereignis|event)$/.test(match[1]) ? 'event' : 'exception'} ${name.toUpperCase()}.`,
     lines: [],
   };
 }

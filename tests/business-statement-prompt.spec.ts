@@ -191,3 +191,14 @@ test('Weg B ist verdrahtet, und nur über die Vorschlagsstufe von 17.10: zwei Im
     'lib/statement-proposal.ts',
   ]);
 });
+
+test('the prompt orders English sentences — owner decision 01.10.2026 ("alles Englisch")', () => {
+  // The model proposal stands above the engine's sentence in the product; both
+  // are product text, and product text is English. The style example is English
+  // too, so the model is not shown a German sentence to imitate.
+  const prompt = buildStatementPrompt(buildStatementContext([{ name: 'demo.abap', code: SOURCE }]));
+  expect(prompt).toContain('1. English, one sentence');
+  expect(prompt).not.toMatch(/\bGerman\b/);
+  expect(prompt).not.toMatch(/[äöüÄÖÜß„]/);
+  expect(prompt).not.toMatch(/\b(wird|werden|der Betrag|die Kundennummer)\b/);
+});

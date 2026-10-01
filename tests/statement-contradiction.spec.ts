@@ -265,3 +265,112 @@ test.describe('QA review of 8f9ea35a000e', () => {
     expect(check(src, 'Der Auftrag wird angelegt.', [3])).toBeNull();
   });
 });
+
+/*
+ * Owner decision 01.10.2026 ("alles Englisch"): the model writes its business
+ * statements in English (prompt version 2). Every rule above is held again on
+ * English wording — firing where the code settles it, silent where it does not.
+ * The German cases above stay: a sentence in either language is judged alike.
+ */
+test.describe('the same rules on English sentences', () => {
+  test('message-into: contradicts "is output" at MESSAGE … INTO, silent at "no message is displayed"', () => {
+    expect(check(FORM_INTO, 'If the plant is missing, an error flag is set and the error message E417(ZPP) is output.', [2]))
+      .toMatchObject({ verdict: 'contradicts', rule: 'message-into' });
+    expect(check(FORM_INTO, 'If the quantity is zero, a message is output.', [7])).toBeNull();
+    expect(check(FORM_INTO, 'If the plant is missing, no message is displayed; it is only noted.', [2])).toBeNull();
+    expect(check(FORM_INTO, 'If the plant is missing, the message E417(ZPP) is provided for the log.', [2])).toBeNull();
+  });
+
+  test('message-raising: not supported when the message is said to be output with the exception', () => {
+    const fm = [
+      'FUNCTION z_lese_lagerplatz.',
+      '  SELECT SINGLE * FROM zlagerplatz INTO es_platz',
+      '    WHERE platz = iv_platz.',
+      '  IF sy-subrc <> 0.',
+      '    MESSAGE e020(zlg) WITH iv_platz RAISING platz_unbekannt.',
+      '  ENDIF.',
+      'ENDFUNCTION.',
+    ].join('\n');
+    expect(check(fm, 'If the storage bin does not exist, the error message E020 is output and the exception PLATZ_UNBEKANNT is raised.', [4]))
+      .toMatchObject({ verdict: 'unsupported', rule: 'message-raising' });
+    expect(check(fm, 'If the storage bin does not exist, the exception PLATZ_UNBEKANNT is raised.', [4])).toBeNull();
+  });
+
+  test('write-to: contradicts "is output" at WRITE … TO, silent at a real list output', () => {
+    const src = [
+      'FORM betrag_aufbereiten.',
+      '  WRITE gv_betrag TO gv_text CURRENCY gv_waers.',
+      '  CONDENSE gv_text.',
+      'ENDFORM.',
+      'FORM betrag_drucken.',
+      '  WRITE: / gv_betrag CURRENCY gv_waers.',
+      'ENDFORM.',
+    ].join('\n');
+    expect(check(src, 'The amount is output in the document currency.', [2])).toMatchObject({ verdict: 'contradicts', rule: 'write-to' });
+    expect(check(src, 'The amount is output in the document currency.', [6])).toBeNull();
+  });
+
+  test('program-end: "the program ends" at a RETURN that leaves one block', () => {
+    const report = [
+      'REPORT z_bestand_liste.',
+      'START-OF-SELECTION.',
+      '  SELECT * FROM zbestand INTO TABLE gt_bestand.',
+      '  IF gt_bestand IS INITIAL.',
+      '    MESSAGE s010(zbs).',
+      '    RETURN.',
+      '  ENDIF.',
+      'END-OF-SELECTION.',
+      '  PERFORM protokoll_zeigen.',
+    ].join('\n');
+    expect(check(report, 'If no stock was found, the message S010 is output and the program is ended.', [4]))
+      .toMatchObject({ verdict: 'contradicts', rule: 'program-end' });
+    expect(check(report, 'If no stock was found, the processing of this step is stopped.', [4])).toBeNull();
+  });
+
+  test('persistence: "stored in the database" where the anchors only read and decide', () => {
+    const src = [
+      'FORM kunde_pruefen.',
+      '  SELECT SINGLE kunnr FROM kna1 INTO gv_kunnr WHERE kunnr = p_kunnr.',
+      '  IF sy-subrc <> 0.',
+      '    gv_status = 3.',
+      '  ENDIF.',
+      'ENDFORM.',
+      'FORM status_sichern.',
+      "  IF gv_status = 3.",
+      '    MODIFY zkunde_status FROM gs_status.',
+      '  ENDIF.',
+      'ENDFORM.',
+    ].join('\n');
+    expect(check(src, 'If the customer is missing, status 3 is stored in the database.', [3]))
+      .toMatchObject({ verdict: 'unsupported', rule: 'persistence' });
+    expect(check(src, 'If the status is 3, it is stored in the database.', [8])).toBeNull();
+    expect(check(src, 'If the customer is missing, status 3 is stored in the field.', [3])).toBeNull();
+  });
+
+  test('not-raised: an invented exception name, not the one the code raises', () => {
+    const src = [
+      'METHOD pruefe_charge.',
+      '  IF iv_charge IS INITIAL.',
+      '    RAISE EXCEPTION TYPE zcx_charge_fehlt.',
+      '  ENDIF.',
+      'ENDMETHOD.',
+    ].join('\n');
+    expect(check(src, 'If the batch is missing, the exception CHARGE_GESPERRT is raised.', [2]))
+      .toMatchObject({ verdict: 'contradicts', rule: 'not-raised' });
+    expect(check(src, 'If the batch is missing, the exception ZCX_CHARGE_FEHLT is raised.', [2])).toBeNull();
+    expect(check(src, 'If the batch is missing, an exception is raised.', [2])).toBeNull();
+  });
+
+  test('display-transaction: "created" at VA03, silent at VA01', () => {
+    const src = [
+      'AT LINE-SELECTION.',
+      "  SET PARAMETER ID 'AUN' FIELD gs_liste-vbeln.",
+      "  CALL TRANSACTION 'VA03' AND SKIP FIRST SCREEN.",
+      'FORM anlegen.',
+      "  CALL TRANSACTION 'VA01'.",
+      'ENDFORM.',
+    ].join('\n');
+    expect(check(src, 'A double click creates the sales order.', [2, 3])).toMatchObject({ verdict: 'unsupported', rule: 'display-transaction' });
+    expect(check(src, 'The sales order is created.', [5])).toBeNull();
+  });
+});
