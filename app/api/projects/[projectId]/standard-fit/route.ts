@@ -5,7 +5,6 @@ import { mayReadProject } from '@/lib/project-readers';
 import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { isFirestoreId } from '@/lib/firestore-id';
-import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
 import { deriveStandardCoverageFrom, type CatalogLookup } from '@/lib/abap/standard-coverage';
 import { deriveCounterCheckScenariosFrom } from '@/lib/abap/counter-check';
 import { deriveUserChangeFrom } from '@/lib/abap/user-change';
@@ -14,6 +13,8 @@ import { humaniseField, plainContext } from '@/lib/abap/plain-language';
 import { resolveApi } from '@/lib/abap/catalog-service';
 import { complianceReviewHints, examinedTablesFromDependencies } from '@/lib/compliance-review-hints';
 import { buildStandardFitView } from '@/lib/standard-fit-view';
+import { readSource } from '@/lib/first-look';
+import { plainWordingFor } from '@/lib/business-card';
 
 /**
  * The *Standard fit* layer of one project — mockup screen `s3`, roadmap 7.2.
@@ -95,16 +96,26 @@ export async function GET(
       );
     }
 
-    const ruleSet = deriveBusinessRules(source);
+    const reading = readSource(source);
+    const ruleSet = reading.ruleSet;
     const ctx = plainContext(source);
+    const wording = plainWordingFor(source, reading.skeleton);
+    const words = (text: string | null) => !!text && (text.match(/[A-Za-z]/g) ?? []).length >= 3;
     const view = buildStandardFitView({
       coverage: deriveStandardCoverageFrom(source, ruleSet, { catalog: CATALOG }),
       scenarios: deriveCounterCheckScenariosFrom(ruleSet),
       users: deriveUserChangeFrom(source, ruleSet, { catalog: CATALOG }),
       compliance: complianceReviewHints(examinedTablesFromDependencies(readTableDependencies(source).dependencies)),
-      name: (subject) => {
+      name: (subject, ruleIds) => {
+        // The rule's own phrase ("plant 1000") reads better than the field
+        // alone ("Plant"); the field is the fallback, the code the last resort.
+        const rule = ruleSet.rules.find((r) => r.id === ruleIds[0]);
+        const phrase = rule ? wording.rulePhrase(rule) : null;
+        if (phrase && words(phrase)) return phrase.charAt(0).toUpperCase() + phrase.slice(1);
         const plain = humaniseField(subject, ctx).trim();
-        return plain.length >= 3 && plain.toUpperCase() !== subject.toUpperCase() ? plain : null;
+        if (words(plain) && plain.toUpperCase() !== subject.toUpperCase()) return plain;
+        const sentence = rule ? wording.ruleSentence(rule) : null;
+        return sentence && words(sentence) ? sentence : null;
       },
     });
     return NextResponse.json({ view });

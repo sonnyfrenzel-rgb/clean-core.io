@@ -113,11 +113,11 @@ export default function StandardFitTable({
 
   const columns: CcTableColumn[] = [
     { key: 'capability', label: wt('fit.colCapability'), width: '22%' },
-    { key: 'rules', label: wt('fit.colRules'), width: '10%' },
+    { key: 'rules', label: wt('fit.colRules'), width: '8%' },
     { key: 'candidate', label: wt('fit.colCandidate') },
     { key: 'evidence', label: wt('fit.colEvidence'), width: '15%' },
     { key: 'fit', label: wt('fit.colFit'), width: '16%' },
-    { key: 'next', label: wt('fit.colNext'), width: '16%' },
+    { key: 'next', label: wt('fit.colNext'), width: '18%' },
   ];
 
   const tableRows: CcTableRowSpec[] = rows.map((row) => ({
@@ -253,7 +253,37 @@ export default function StandardFitTable({
               {wt('fit.noCapabilities')}
             </p>
           ) : (
-            <CcTable caption={wt('fit.title')} columns={columns} rows={tableRows} limit={12} />
+            <>
+              {/* The table from the small breakpoint up; a phone reads one card per capability. */}
+              <div className="hidden sm:block">
+                <CcTable caption={wt('fit.title')} columns={columns} rows={tableRows} limit={12} />
+              </div>
+              <ul data-fit-cards="" className="m-0 flex list-none flex-col p-0 sm:hidden">
+                {rows.map((row) => (
+                  <li key={row.id} className="flex flex-col gap-2 border-t border-cc-line py-3 first:border-t-0">
+                    <span className="flex flex-wrap items-baseline gap-2">
+                      <span className="text-[13px] font-bold text-cc-ink">{shortName(row)}</span>
+                      <code className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
+                        {row.id} · {row.ruleIds.join(', ')}
+                      </code>
+                    </span>
+                    <span className="text-[13px] font-medium text-cc-ink">
+                      {row.candidates[0]
+                        ? fitCandidateLine(row.candidates[0].object, row.candidates[0].successor)
+                        : wt('fit.noCatalogHit')}
+                    </span>
+                    <span className="flex flex-wrap items-center gap-2">
+                      <CcEvidenceLevel value={row.level} />
+                      {row.fit === null ? <CcProvenanceChip value="not-determined" /> : <CcObjectStatus value={row.fit} />}
+                    </span>
+                    <span className="text-[12px] font-medium text-cc-ink-muted">
+                      {row.fit === null ? `${fitNotDeterminedShort(row.notDetermined)} · ` : null}
+                      {fitNextShort(row.level)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
           <p data-fit-footer="" className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink-muted">
             {dropped.length > 0 ? `${fitDroppedLine(dropped)} ` : null}

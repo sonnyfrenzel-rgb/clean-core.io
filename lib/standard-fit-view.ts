@@ -103,11 +103,11 @@ export interface StandardFitView {
 /** How many items a list carries over the wire. The counts carry the rest. */
 export const FIT_LIST_LIMIT = 12;
 
-function rowOf(cap: StandardCapability, name: (subject: string) => string | null): FitRow {
+function rowOf(cap: StandardCapability, name: (subject: string, ruleIds: readonly string[]) => string | null): FitRow {
   return {
     id: cap.id,
     key: cap.key,
-    name: name(cap.label),
+    name: name(cap.label, cap.ruleIds),
     technical: cap.label,
     ruleIds: [...cap.ruleIds],
     candidates: cap.candidates.map((c) => ({ object: c.object, successor: c.successor, anchor: c.anchor })),
@@ -127,8 +127,11 @@ export function buildStandardFitView(input: {
   scenarios: CounterCheckScenarios;
   users: UserChangeReport;
   compliance: ComplianceReviewReport;
-  /** The plain name of a subject, or null — `humaniseField` bound to the source. */
-  name: (subject: string) => string | null;
+  /**
+   * The plain name of a capability, or null — the subject in plain words, or
+   * the plain phrase of its first rule; bound to the source by the caller.
+   */
+  name: (subject: string, ruleIds: readonly string[]) => string | null;
 }): StandardFitView {
   const { coverage, scenarios, users, compliance } = input;
   return {
