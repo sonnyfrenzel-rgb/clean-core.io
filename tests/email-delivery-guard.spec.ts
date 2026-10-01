@@ -452,3 +452,13 @@ test('the weekly admin report escapes every string it was handed, and is handed 
   expect(failures).toContain('escapeHtml(f.kind)');
   expect(failures).not.toContain('${f.kind}');
 });
+
+test('a failed-mail warning in the admin console names no address the registering browser wrote', () => {
+  // Carried QA findings bbe8a183fa99 / faa2a17ac8f6: the mail routes send to
+  // the Firebase Auth address, but the warnings named `targetReq.email` — the
+  // address on the request document the registering browser writes itself.
+  const admin = fs.readFileSync(path.join(process.cwd(), 'app', '(app)', 'admin', 'page.tsx'), 'utf8');
+  const warnings = [...admin.matchAll(/setMailWarning\(`([^`]*)`\)/g)].map((m) => m[1]);
+  expect(warnings.length, 'the admin console has no mail warnings where this test looks').toBeGreaterThanOrEqual(4);
+  for (const warning of warnings) expect(warning).not.toContain('targetReq.email');
+});

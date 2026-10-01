@@ -168,10 +168,10 @@ export default function AdminConsole() {
           });
           if (!mailRes.ok) {
             const detail = await mailRes.json().catch(() => ({}));
-            setMailWarning(`The account is active, but the welcome mail to ${targetReq.email} was not sent (${detail.error || mailRes.status}). Write to them directly — the account is open, only the mail failed.`);
+            setMailWarning(`The account is active, but the welcome mail to the account's sign-in address was not sent (${detail.error || mailRes.status}). Write to them directly — the account is open, only the mail failed.`);
           }
         } catch (emailErr) {
-          setMailWarning(`The account is active, but the welcome mail to ${targetReq.email} could not be sent. Write to them directly — the account is open, only the mail failed.`);
+          setMailWarning(`The account is active, but the welcome mail to the account's sign-in address could not be sent. Write to them directly — the account is open, only the mail failed.`);
           console.error('Failed to trigger Welcome Email API:', emailErr);
         }
       }
@@ -281,10 +281,10 @@ export default function AdminConsole() {
           });
           if (!mailRes.ok) {
             const detail = await mailRes.json().catch(() => ({}));
-            setMailWarning(`Tenant access was changed, but the notification to ${targetReq.email} was not sent (${detail.error || mailRes.status}).`);
+            setMailWarning(`Tenant access was changed, but the notification to the account's sign-in address was not sent (${detail.error || mailRes.status}).`);
           }
         } catch (emailErr) {
-          setMailWarning(`Tenant access was changed, but the notification to ${targetReq.email} could not be sent.`);
+          setMailWarning(`Tenant access was changed, but the notification to the account's sign-in address could not be sent.`);
           console.error("Failed to send tenant access update email:", emailErr);
         }
       }
