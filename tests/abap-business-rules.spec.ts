@@ -327,6 +327,25 @@ test.describe('what is not a rule candidate', () => {
     expect(readBusinessRules(read(PO)).rejected).toHaveLength(26);
   });
 
+  test('a path, a URL or a mail address written in place is technical, as it is in a constant', () => {
+    // Carried QA finding 241ba1f2fb0b: the predicate was applied to CONSTANTS
+    // only, so `IF lv_file = '/tmp'.` became a rule candidate.
+    const report = readBusinessRules([
+      'REPORT z_paths.',
+      "IF lv_file = '/tmp'.",
+      'ENDIF.',
+      "IF lv_url = 'https://example.example'.",
+      'ENDIF.',
+      'CASE lv_target.',
+      "  WHEN 'ops@example.example'.",
+      'ENDCASE.',
+      "IF lv_region = 'EMEA'.",
+      'ENDIF.',
+    ].join('\n'));
+    expect(report.candidates.map((c) => c.conditionText)).toEqual(["lv_region = 'EMEA'"]);
+    expect(report.rejected.filter((r) => r.reason === 'technischer-wert').map((r) => r.lineStart)).toEqual([2, 4, 7]);
+  });
+
   test('a branch inside a macro body states no rule here', () => {
     // The body is expanded wherever the macro is used, not where it is written,
     // so neither the condition nor its line describes code that runs at this

@@ -377,6 +377,8 @@ function technicalValue(value: string): boolean {
   if (/^[a-z]+:\/\//i.test(value)) return true;
   if (/^[a-z]:[\\/]/i.test(value)) return true;
   if (/[\\/].*[\\/]/.test(value)) return true;
+  // An absolute path with one segment, `/tmp` (carried QA finding 241ba1f2fb0b).
+  if (/^[\\/][\w.-]+$/.test(value)) return true;
   return false;
 }
 
@@ -640,6 +642,13 @@ function weigh(
     reject(reader, 'technische-konstante', comparison, range);
     return;
   }
+  // The rule the header states for constants holds for a literal written in
+  // place: a path, a URL or a mail address is technical, not a business value
+  // (carried QA finding 241ba1f2fb0b).
+  if (valued.values.every(technicalValue)) {
+    reject(reader, 'technischer-wert', comparison, range);
+    return;
+  }
   if (valued.values.every((v) => TRUTH_VALUE.has(v.trim().toLowerCase()))) {
     reject(reader, 'technischer-wert', comparison, range);
     return;
@@ -785,6 +794,10 @@ function readWhenArm(
     }
     if (isZero(value)) {
       reject(reader, 'null-vergleich', `${selector} = ${token.text}`, context.range);
+      continue;
+    }
+    if (technicalValue(value)) {
+      reject(reader, 'technischer-wert', `${selector} = ${token.text}`, context.range);
       continue;
     }
     if (token.kind === 'template' && /\{/.test(token.text)) {
