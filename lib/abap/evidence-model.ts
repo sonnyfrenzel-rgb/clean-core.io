@@ -223,7 +223,16 @@ export function buildAbapEvidence(
     'ENTRIES', 'BY', 'ORDER', 'GROUP', 'HAVING'
   ]);
 
-  const addFinding = (finding: Omit<EvidenceFinding, 'id' | 'source'> & { source?: EvidenceSource }) => {
+  const addFinding = (raw: Omit<EvidenceFinding, 'id' | 'source'> & { source?: EvidenceSource }) => {
+    // An optional field the detector left `undefined` is left out instead. The
+    // findings go into the signed run through the Admin SDK, which refuses an
+    // `undefined` value outright: a standard table with no mapped successor
+    // (`sapReplacement: undefined`, ELBK in the shipped example) made every
+    // such run a 500. Absent and undefined read the same everywhere else, JSON
+    // and the run signature included.
+    const finding = Object.fromEntries(
+      Object.entries(raw).filter(([, value]) => value !== undefined),
+    ) as typeof raw;
     findings.push({
       ...finding,
       // Every snippet passes through the redaction, here rather than at the
