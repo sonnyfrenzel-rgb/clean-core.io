@@ -136,6 +136,22 @@ test('2 · an invited reader who is active reads the project', async () => {
   expect((await getDoc(doc(db, 'projects', PROJECT))).exists()).toBe(true);
 });
 
+test('2a · even an active account neither reads nor writes the audit trail from a browser', async () => {
+  // Carried QA finding 15f7dc425a46: tests/mfa-reset-audit.spec.ts read the
+  // audit_events rule as text. This asks the rules, as a signed-in browser.
+  await signIn(OWNER);
+  const codeOf = async (op: () => Promise<unknown>) => {
+    try {
+      await op();
+      return 'allowed';
+    } catch (err) {
+      return (err as { code?: string }).code ?? String(err);
+    }
+  };
+  expect(await codeOf(() => getDoc(doc(db, 'audit_events', `probe-${stamp}`))), 'read').toBe('permission-denied');
+  expect(await codeOf(() => setDoc(doc(db, 'audit_events', `probe-${stamp}`), { action: 'forged' })), 'write').toBe('permission-denied');
+});
+
 test('3 · suspended, with the same still-valid token, the owner loses project, run and profile writes', async () => {
   await signIn(OWNER);
   const tokenBefore = await auth.currentUser!.getIdToken();
