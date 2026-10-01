@@ -51,8 +51,8 @@ export interface Block extends SourceRange {
  * method, a dialog module, or an event block such as `START-OF-SELECTION`.
  */
 export interface Container extends SourceRange {
-  kind: 'form' | 'method' | 'module' | 'class' | 'event';
-  /** Upper-cased subroutine, method or module name, or the event keyword. */
+  kind: 'form' | 'method' | 'module' | 'class' | 'function' | 'event';
+  /** Upper-cased subroutine, method, module or function-module name, or the event keyword. */
   name: string;
 }
 
@@ -181,6 +181,7 @@ function readEventBlocks(statements: AbapStatement[]): Container[] {
       const kind = openerKind(statements[j]);
       const boundary =
         isEventStatement(statements[j]) ||
+        (statements[j].keyword === 'FUNCTION' && !statements[j].nativeSql) ||
         kind === 'form' ||
         kind === 'module' ||
         kind === 'class' ||
@@ -194,6 +195,45 @@ function readEventBlocks(statements: AbapStatement[]): Container[] {
       name: eventName(statements[from]),
       lineStart: statements[from].lineStart,
       lineEnd: statements[to].lineEnd,
+    });
+  }
+  return out;
+}
+
+/**
+ * `FUNCTION name.` … `ENDFUNCTION.` as containers only. A function module is not
+ * a `BlockKind`: that table is shared with the branch reader, the call graph and
+ * the comparability rules (see process-skeleton.ts), and what a line needs from
+ * it is the routine it belongs to. An unclosed FUNCTION runs to the last
+ * statement. Carried QA findings ea12fd0bac04 / 46734b4a0a61.
+ */
+function readFunctionModules(statements: AbapStatement[]): Container[] {
+  const out: Container[] = [];
+  const open: Array<{ index: number; name: string }> = [];
+  for (let i = 0; i < statements.length; i++) {
+    const statement = statements[i];
+    if (statement.nativeSql) continue;
+    if (statement.keyword === 'FUNCTION') {
+      const m = /^FUNCTION\s+([\w/]+)/i.exec(statement.text);
+      open.push({ index: i, name: m ? m[1].toUpperCase() : '' });
+    } else if (statement.keyword === 'ENDFUNCTION') {
+      const opener = open.pop();
+      if (opener) {
+        out.push({
+          kind: 'function',
+          name: opener.name,
+          lineStart: statements[opener.index].lineStart,
+          lineEnd: statement.lineEnd,
+        });
+      }
+    }
+  }
+  for (const opener of open) {
+    out.push({
+      kind: 'function',
+      name: opener.name,
+      lineStart: statements[opener.index].lineStart,
+      lineEnd: statements[statements.length - 1].lineEnd,
     });
   }
   return out;
@@ -280,6 +320,7 @@ export function readBlocks(statements: AbapStatement[]): BlockStructure {
       });
     }
   }
+  containers.push(...readFunctionModules(statements));
 
   return { blocks: real, containers, unterminated, enclosing };
 }

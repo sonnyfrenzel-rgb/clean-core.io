@@ -11,6 +11,7 @@ import {
   publicKeyFromBase64,
   resetSigningKeypairCache,
 } from '../lib/audit-signing-keypair';
+import { GET as signingKeysGET } from '../app/.well-known/clean-core-io-signing.json/route';
 
 /**
  * "Anyone can verify" has to be true of someone other than us.
@@ -227,6 +228,20 @@ test.describe('a rotation does not take the old packs with it', () => {
     expect(src).toContain('must-revalidate');
     const revalidate = src.match(/export const revalidate = (\d+);/);
     expect(Number(revalidate![1])).toBeLessThanOrEqual(300);
+  });
+
+  test('the key document is served with the five-minute, must-revalidate header', () => {
+    // Carried QA finding f65908d435a0: the constant above proves nothing if the
+    // response path sends a different header. Ask the route itself.
+    let response: Response | undefined;
+    withKey(generateKeyBase64(), () => {
+      response = signingKeysGET();
+    });
+    expect(response!.status).toBe(200);
+    const cacheControl = response!.headers.get('Cache-Control') ?? '';
+    expect(cacheControl).toContain('max-age=300');
+    expect(cacheControl).toContain('must-revalidate');
+    expect(cacheControl).not.toContain('max-age=3600');
   });
 
   test('with no key at all the ring is empty rather than a fabricated entry', () => {

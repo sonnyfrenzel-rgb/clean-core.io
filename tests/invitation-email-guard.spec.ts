@@ -1,11 +1,13 @@
 import { test, expect } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 import { wrapEmailDocument } from '../lib/email-layout';
 import {
   buildInvitationEmail,
   buildAddressConfirmationEmail,
   INVITATION_EMAIL_SUBJECT,
 } from '../lib/invitation-email';
-import { INVITATION_DEFAULT_DAYS, INVITATION_MAX_DAYS } from '../lib/invitations';
+import { INVITATION_DEFAULT_DAYS, INVITATION_MAX_DAYS, invitationNotSentMessage } from '../lib/invitations';
 import { APP_BASE_URL, CONTACT_EMAIL } from '../lib/constants';
 
 /**
@@ -193,3 +195,32 @@ for (const shell of SHELLS) {
     });
   }
 }
+
+test.describe('a mail that could not be sent', () => {
+  // Carried QA finding b90ef67b9ed8: the route said "the invitation was
+  // withdrawn" even when the withdrawing write had failed and the invitation
+  // was still waiting.
+  test('says "withdrawn" only when the withdrawal was written', () => {
+    expect(invitationNotSentMessage('The mail service refused.', true)).toBe(
+      'The mail service refused. Nothing was sent, and the invitation was withdrawn.',
+    );
+    const notWithdrawn = invitationNotSentMessage('The mail service refused.', false);
+    expect(notWithdrawn).toContain('could not be withdrawn');
+    expect(notWithdrawn).not.toContain('was withdrawn');
+  });
+
+  test('the route passes whether the withdrawal was written, not a constant', () => {
+    const route = fs.readFileSync(path.resolve(__dirname, '..', 'app/api/projects/[projectId]/invitations/route.ts'), 'utf8');
+    expect(route).toContain('invitationNotSentMessage(outcome.detail, withdrawn)');
+    expect(route).toMatch(/const withdrawn = await ref\s*\.set\(/);
+    expect(route).not.toContain('Nothing was sent, and the invitation was withdrawn.');
+  });
+});
+
+test('the open-invitation ceiling is counted from the invitations that have not expired, not the whole history', () => {
+  // Carried QA finding dbab5852246e: the transaction read every invitation the
+  // project ever had to count the ones still waiting.
+  const route = fs.readFileSync(path.resolve(__dirname, '..', 'app/api/projects/[projectId]/invitations/route.ts'), 'utf8');
+  expect(route).not.toContain('tx.get(ref.parent)');
+  expect(route).toContain("tx.get(ref.parent.where('expiresAt', '>', invitedAt.toISOString()))");
+});

@@ -25,7 +25,6 @@
  */
 import type { ArchitectureContract, ContractField, TargetRoute } from './architecture-contract';
 import { routeDrivers, type RouteDriver } from './abap/extensibility-router';
-import type { AbapEvidenceReport } from './abap/evidence-model';
 
 /** The part of a findings row the canvas reads (`ItFindingRow`, structurally). */
 export interface CanvasFinding {
@@ -232,8 +231,7 @@ export function architectureCanvasModel(args: {
     .filter((f) => f.kind === 'gui-download')
     .map((f) => ({ key: `file:${f.id}`, title: f.title, lines: [f.lineStart], findingIds: [f.id] }));
 
-  const evidence = { findings } as unknown as AbapEvidenceReport;
-  const drivers = routeDrivers(evidence, args.deployment === 'public' ? 'public' : 'private');
+  const drivers = routeDrivers({ findings }, args.deployment === 'public' ? 'public' : 'private');
 
   const SHORT_KIND: Record<string, string> = {
     bdc: 'BDC',

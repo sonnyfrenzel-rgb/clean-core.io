@@ -123,7 +123,10 @@ export interface RouteDriver {
  * see `routeExtensibility`).
  */
 export function routeDrivers(
-  evidence: AbapEvidenceReport,
+  // What it reads and nothing more, so a caller holding only findings — the
+  // architecture canvas — passes them without a cast (carried QA finding
+  // 596831bd53a3).
+  evidence: { findings: ReadonlyArray<{ id: string; lineStart: number; kind: string }> },
   deploymentModel: 'public' | 'private',
 ): RouteDriver[] {
   const of = (kind: EvidenceKind) => evidence.findings.filter((f) => f.kind === kind);

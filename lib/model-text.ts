@@ -312,10 +312,12 @@ export function stripModelMarkdown(text: string): string {
 /**
  * The call a display, export or mail path makes.
  *
- * Returns the cleaned text and everything that was wrong with the input, so a
- * caller can both ship the clean version and log what it had to repair. It does
- * not throw: a mail that goes out with the tell removed beats a mail that does
- * not go out.
+ * Returns the text with its Markdown residue removed, and every finding about
+ * the input. Only the Markdown is repaired: a blocklisted phrase or a symbol is
+ * reported in `findings` and stays in the text — no rewrite here decides what a
+ * sentence should have said. It does not throw; a caller that must not ship a
+ * tell at all uses `assertNoAiTells` below (carried QA finding cd5f4ff882b7 —
+ * this comment used to say the mail went out "with the tell removed").
  */
 export function cleanModelText(
   text: string,

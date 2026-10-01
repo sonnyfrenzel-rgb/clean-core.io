@@ -18,7 +18,8 @@ import {
 import PersonalDataHints from '@/components/PersonalDataHints';
 
 interface AtcUploadProps {
-  onImport: (report: AtcReport) => void;
+  /** Resolves once the server has stored the report; rejects when it did not. */
+  onImport: (report: AtcReport) => Promise<void>;
   existingReport?: AtcReport | null;
 }
 
@@ -53,6 +54,10 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<AtcReport | null>(null);
   const [imported, setImported] = useState<AtcReport | null>(existingReport || null);
+  // The save is the server's: "imported" is shown once it answered yes, and a
+  // refusal keeps the preview, so the reader can retry (carried QA finding 0817087d54b5).
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const readSeq = useRef(0);
   const [hintScan, setHintScan] = useState<{
@@ -123,11 +128,20 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
     if (chosen) choose(chosen);
   };
 
-  const confirm = () => {
-    if (!preview || hintPending) return;
+  const confirm = async () => {
+    if (!preview || hintPending || saving) return;
     readSeq.current++;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onImport(preview);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'The server did not store the ATC results.');
+      return;
+    } finally {
+      setSaving(false);
+    }
     setImported(preview);
-    onImport(preview);
     setPreview(null);
     setFile(null);
     setHintScan(null);
@@ -137,6 +151,7 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
   const startOver = () => {
     readSeq.current++;
     hintSeq.current++;
+    setSaveError(null);
     setImported(null);
     setPreview(null);
     setFile(null);
@@ -299,10 +314,19 @@ export default function AtcUpload({ onImport, existingReport }: AtcUploadProps) 
             </div>
           )}
 
+          {saveError && (
+            <div data-atc-save-error="">
+              <CcMessageStrip state="error" headline="Not imported — the server did not confirm the save of the ATC results." announce>
+                {saveError}
+              </CcMessageStrip>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-3">
             <CcButton
               variant="primary"
-              onClick={confirm}
+              onClick={() => void confirm()}
+              busy={saving}
               disabled={preview.findings.length === 0 || hintPending}
               data-atc-confirm
             >

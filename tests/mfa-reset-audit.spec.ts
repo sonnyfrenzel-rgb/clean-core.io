@@ -117,6 +117,18 @@ test.describe('the second-factor reset', () => {
     expect(event.timestamp, 'the record carries no time').toBeTruthy();
   });
 
+  test('the record commits with the profile and the legacy documents, or not at all', () => {
+    // Carried QA finding 90ef26f96c2b: the audit record was a separate last
+    // write, so a failure there left a reset nobody could find. The emulator
+    // cannot fail one write of four on demand; the batch is read off the script.
+    const script = (require('fs').readFileSync(SCRIPT, 'utf8') as string).replace(/\r\n/g, '\n');
+    const write = script.slice(script.indexOf('const batch = db.batch();'), script.indexOf('await batch.commit();'));
+    expect(write, 'the Firestore half is not one batch').toContain("batch.set(db.collection('audit_events').doc()");
+    expect(write).toContain("batch.set(\n    db.collection('users').doc(user.uid)");
+    expect(write).toContain("batch.delete(db.collection('mfa_secrets').doc(user.uid))");
+    expect(script).not.toContain("db.collection('audit_events').add(");
+  });
+
   test('the record is server-only, so nobody can write or read it from a browser', () => {
     // A log a client could append to is not a log. `firestore.rules` denies
     // both directions on `audit_events`; the Admin SDK bypasses rules by design.

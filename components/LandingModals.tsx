@@ -36,6 +36,7 @@ import { finishRegistration } from '@/hooks/useUserProfile';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import MaintenanceNotice from '@/components/MaintenanceNotice';
 import { safeReturnPath } from '@/lib/return-path';
+import { classifyMfaPaste } from '@/lib/mfa-paste';
 import { cn } from '@/lib/utils';
 import CcDialog from '@/components/cc/Dialog';
 import CcButton from '@/components/cc/Button';
@@ -541,28 +542,17 @@ export default function LandingModals() {
     }
   };
 
-  /**
-   * Recovery codes used to look like `CC-XXXX-YYYY`, and people kept them.
-   *
-   * Roadmap 0.13 replaced the application-level TOTP with Firebase's own
-   * factor, and those backup codes no longer exist. Someone pasting an old one got
-   * "that code is not valid" and no idea why (UX review of 52f171091948,
-   * d5f35cf138c5). It is not invalid — it no longer exists, and the way back in
-   * is a different one.
-   */
-  const OLD_RECOVERY_CODE = /^CC-[A-Z0-9]{4}-[A-Z0-9]{4}$/i;
-
+  // An old `CC-XXXX-YYYY` code is told that it no longer exists; see lib/mfa-paste.ts.
   const handleMfaPaste = (e: ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData('text').trim();
-    if (OLD_RECOVERY_CODE.test(pasteData)) {
-      setAuthError('That is one of the old recovery codes, which no longer exist. Sign in with the 6-digit code from your authenticator app, or write to info@clean-core.io from your account address if you have lost it.');
+    const paste = classifyMfaPaste(e.clipboardData.getData('text'));
+    if (paste.kind === 'old-recovery-code') {
+      setAuthError(paste.message);
       return;
     }
-    if (pasteData.length === 6 && !isNaN(Number(pasteData))) {
-      const splitCode = pasteData.split('');
-      setMfaCode(splitCode);
-      handleVerifyMfa(pasteData);
+    if (paste.kind === 'totp') {
+      setMfaCode(paste.code.split(''));
+      handleVerifyMfa(paste.code);
     }
   };
 

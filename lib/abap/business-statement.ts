@@ -809,6 +809,19 @@ function writeToSentence(statement: AbapStatement): string | null {
 const SELECT_LIST = /^SELECT\s+(?:SINGLE\s+)?(?:DISTINCT\s+)?(.+?)\s+FROM\s+/i;
 
 /** Der Satz zu einem `SELECT` — die häufigste fachliche Aussage nach der Ausgabe. */
+/**
+ * Does any `IF`/`ELSEIF`/`CHECK` of the source test the table for content —
+ * `IS NOT INITIAL`, `NOT … IS INITIAL`, or `lines( … ) > 0`?
+ */
+function nonEmptyGuarded(table: string, statements: readonly AbapStatement[]): boolean {
+  const t = `${escapeForRegExp(table)}(?:\\[\\])?`;
+  const guard = new RegExp(
+    `(?:\\b${t}\\s+IS\\s+NOT\\s+INITIAL\\b|\\bNOT\\s+${t}\\s+IS\\s+INITIAL\\b|\\blines\\(\\s*${t}\\s*\\)\\s*(?:>|GT|<>|NE)\\s*0\\b)`,
+    'i',
+  );
+  return statements.some((s) => /^(?:IF|ELSEIF|CHECK)$/.test(s.keyword) && guard.test(s.text));
+}
+
 function selectSentence(statement: AbapStatement, statements: readonly AbapStatement[]): Draft {
   const text = statement.text;
   const anchors = [range(statement)];
@@ -854,6 +867,12 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
   const entries = /\bFOR\s+ALL\s+ENTRIES\s+IN\s+@?([A-Za-z0-9_\-<>]+)/i.exec(text);
   const restriction =
     (filters.length > 0 ? ` with ${enumerate(filters)}` : '') + (entries ? ` for the entries from ${plain(entries[1])}` : '');
+  // An empty FOR ALL ENTRIES table drops the whole WHERE: unless the source
+  // shows the table is checked for content, the restriction is not certain
+  // (carried QA finding 657629d1daa0).
+  if (entries && !nonEmptyGuarded(plain(entries[1]), statements)) {
+    notes.push(`If ${plain(entries[1])} is empty, the restriction is dropped and all rows are read.`);
+  }
 
   if (/\bCOUNT\s*\(/i.test(text)) {
     if (dynamicPredicate) {

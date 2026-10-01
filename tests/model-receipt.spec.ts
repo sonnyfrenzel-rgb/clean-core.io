@@ -6,7 +6,7 @@ import { initializeFirestore, doc, getDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-config.json';
 import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
-import { adminSetDoc } from './helpers/admin-seed';
+import { adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
 import { verifyRunIntegrity } from '../lib/run-signature';
 import {
   issueModelReceipt,
@@ -380,4 +380,23 @@ test('the proxy takes one string, not a structured contents array', async ({ req
   });
   expect(res.status(), await res.text()).toBe(400);
   expect((await res.json()).error).toContain('single string');
+});
+
+test('an account with BYOK set up does not sign BYOK use for a run no model was observed in', async ({ request }) => {
+  // `byokUsed` was `attested ? attested.byok : byokConfigured`: an account
+  // with a key on file signed "BYOK used" into every run without a receipt,
+  // including one no model took part in (carried QA finding 379d85de4e1f).
+  await adminMergeDoc('users', uid, { byokConfigured: true });
+  try {
+    const unattested = await createRun(request, null);
+    expectOriginNotEstablished(unattested);
+    expect(unattested.model.byokUsed, 'no call was observed, so no key served one').toBe(false);
+
+    const noModel = await createRun(request, null, '');
+    expect(noModel.modelParticipation).toBe('none');
+    expect(noModel.model.byokUsed, 'a run no model took part in signed BYOK use').toBe(false);
+    expect(verifyRunIntegrity(noModel as unknown as Record<string, unknown>, signingKey())).toEqual({ valid: true });
+  } finally {
+    await adminMergeDoc('users', uid, { byokConfigured: false });
+  }
 });

@@ -30,3 +30,12 @@ test('both screens with an editor set the base through it', () => {
     expect(src, rel).not.toContain('baseRevision.current = record.revision;');
   }
 });
+
+test('the opening baseline on the documentation stage cannot set the base back either', () => {
+  // Carried QA finding 85a623a08fcf: the baseline asked for on opening answered
+  // after a Save had moved the base to 2, and set it back to 1.
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'app/(app)/project/[projectId]/documentation/page.tsx'), 'utf8');
+  const opening = src.match(/void ensureProcessBaseline\(idStr\)\.then\(\(outcome\) => \{([\s\S]*?)\r?\n {4}\}\);/);
+  expect(opening, 'the opening baseline call is not where this test looks').not.toBeNull();
+  expect(opening![1]).toContain('baseRevision.current = newerBase(baseRevision.current, outcome.record.revision);');
+});

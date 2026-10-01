@@ -164,8 +164,10 @@ function queryIdViolations(src: string): string[] {
         out.push(`.doc(${arg}) builds an id from the query value ${t}; bind it to a name and check that`);
         continue;
       }
-      const check = src.indexOf(`isFirestoreId(${t})`);
-      if (check < 0 || check > at) out.push(`.doc(${t}) is not preceded by isFirestoreId(${t})`);
+      // Carried QA finding 403cd32c23ba: a call whose result is dropped checks
+      // nothing. Only the rejection form, `!isFirestoreId(t)`, counts.
+      const check = src.search(new RegExp(String.raw`!\s*isFirestoreId\(${t}\)`));
+      if (check < 0 || check > at) out.push(`.doc(${t}) is not preceded by a rejection on !isFirestoreId(${t})`);
     }
   }
   return out;
@@ -185,6 +187,16 @@ test('the query-string walk sees a query-derived id and its derivations', () => 
   ].join('\n');
   expect(queryTainted(src).sort()).toEqual(['asked', 'fine', 'n', 'other']);
   expect(queryIdViolations(src)).toHaveLength(3);
+});
+
+test('a validation whose result is ignored is not a validation', () => {
+  const src = [
+    "const asked = req.nextUrl.searchParams.get('id');",
+    'isFirestoreId(asked);',
+    'const ok = isFirestoreId(asked);',
+    'await col.doc(asked).get();',
+  ].join('\n');
+  expect(queryIdViolations(src)).toHaveLength(1);
 });
 
 test('every query-derived document id passes isFirestoreId before it forms a path', () => {

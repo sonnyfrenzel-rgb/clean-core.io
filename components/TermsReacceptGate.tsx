@@ -7,6 +7,7 @@ import { getAuth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { TERMS_VERSION, termsVersionInForce } from '@/lib/constants';
+import { declineMark, declinedInThisSignIn } from '@/lib/terms-decline';
 import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -68,12 +69,17 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 const DECLINE_KEY = `cc.terms.declined.${TERMS_VERSION}`;
 
 /** Storage throws in a private window and is empty in a fresh one; neither is an error. */
-function readDeclined(): boolean {
+function readDeclined(): string | null {
   try {
-    return typeof window !== 'undefined' && window.sessionStorage.getItem(DECLINE_KEY) === '1';
+    return typeof window !== 'undefined' ? window.sessionStorage.getItem(DECLINE_KEY) : null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+/** The sign-in a decline made now belongs to (`lib/terms-decline.ts`). */
+function currentMark(): string | null {
+  return typeof window === 'undefined' ? null : declineMark(getAuth().currentUser);
 }
 
 /**
@@ -132,12 +138,16 @@ export default function TermsReacceptGate() {
   // Safe as a lazy initialiser despite SSR: this component renders `null` while
   // the profile is loading, so the server and the first client paint agree
   // regardless of what storage holds.
-  const [declined, setDeclinedState] = useState<boolean>(readDeclined);
+  const [declinedMark, setDeclinedMark] = useState<string | null>(readDeclined);
+  // A decline counts only for the sign-in it was made in: a sign-out and a new
+  // sign-in in the same tab asks again (carried QA finding 3f5a34a117be).
+  const declined = declinedInThisSignIn(declinedMark, typeof window === 'undefined' ? null : getAuth().currentUser);
 
   const setDeclined = (value: boolean) => {
-    setDeclinedState(value);
+    const mark = value ? currentMark() : null;
+    setDeclinedMark(mark);
     try {
-      if (value) window.sessionStorage.setItem(DECLINE_KEY, '1');
+      if (mark) window.sessionStorage.setItem(DECLINE_KEY, mark);
       else window.sessionStorage.removeItem(DECLINE_KEY);
     } catch {
       // A browser that refuses storage still gets the in-memory behaviour above.

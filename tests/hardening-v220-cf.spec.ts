@@ -207,9 +207,15 @@ test.describe('an internal error answered by a route', () => {
     const offenders: string[] = [];
     for (const rel of routes.filter((r) => !TEST_ONLY.has(r))) {
       const src = read(rel);
+      // Carried QA finding 96af10679a29: the text can also arrive through a
+      // local — `const detail = e.message; … { error: detail }`.
+      const fromMessage = [...src.matchAll(/(?:const|let)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=([^;]*);/g)]
+        .filter((m) => /\.message\b/.test(m[2]))
+        .map((m) => m[1]);
       for (let at = src.indexOf('status: 500'); at >= 0; at = src.indexOf('status: 500', at + 1)) {
         const call = src.slice(src.lastIndexOf('NextResponse.json(', at), at);
-        if (/\b\w+\??\.message\b/.test(call)) offenders.push(`${rel}:${src.slice(0, at).split('\n').length}`);
+        const viaLocal = fromMessage.some((name) => new RegExp(String.raw`(?<![\w$.])${name.replace(/\$/g, '\\$')}(?![\w$])`).test(call));
+        if (/\b\w+\??\.message\b/.test(call) || viaLocal) offenders.push(`${rel}:${src.slice(0, at).split('\n').length}`);
       }
     }
     expect(offenders).toEqual([]);

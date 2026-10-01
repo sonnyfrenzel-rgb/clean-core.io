@@ -254,15 +254,25 @@ export function readTtlFacts(raw: unknown): TtlFact[] {
   });
 }
 
+/** The retention a system log bucket has when `retentionDays` is absent; NaN for any other bucket. */
+function omittedRetentionDays(bucket: string): number {
+  if (bucket === '_Default') return 30;
+  if (bucket === '_Required') return 400;
+  return Number.NaN;
+}
+
 /** Shape of `gcloud logging buckets describe <name> --format=json`. */
 export function readLogBucketFact(raw: unknown): LogBucketFact {
   const bucket = raw as { name?: string; retentionDays?: number; lifecycleState?: string };
   return {
     name: lastSegment(bucket.name),
-    // Cloud Logging omits `retentionDays` when it is the 30-day default, so an
-    // absent value is 30 and not "unset" — reading it as 0 would raise a false
-    // alarm on a bucket that is configured exactly as the document says.
-    retentionDays: typeof bucket.retentionDays === 'number' ? bucket.retentionDays : 30,
+    // Cloud Logging omits `retentionDays` when it is the bucket's default, so an
+    // absent value is that default and not "unset" — reading it as 0 would raise
+    // a false alarm on a bucket configured exactly as the document says. The
+    // default is the bucket's own: 30 days for `_Default`, the fixed 400 for
+    // `_Required`; any other bucket without the field is unreadable and fails
+    // the comparison (carried QA finding 877ffe725921).
+    retentionDays: typeof bucket.retentionDays === 'number' ? bucket.retentionDays : omittedRetentionDays(lastSegment(bucket.name)),
     lifecycleState: String(bucket.lifecycleState ?? 'UNKNOWN'),
   };
 }

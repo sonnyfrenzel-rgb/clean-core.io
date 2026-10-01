@@ -281,11 +281,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: assessmentCoverage.sentence, code: 'profile-rejected' }, { status: 422 });
     }
 
-    // Load user profile from database to determine BYOK configuration server-side (Finding P0/P1)
-    const userDoc = await db.collection('users').doc(decodedToken.uid).get();
-    const userData = userDoc.exists ? userDoc.data() : null;
-    const byokConfigured = userData?.byokConfigured === true;
-
     // 4. Server-Authoritative Analysis Recomputations (Finding 1)
     const encoder = new TextEncoder();
     const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(legacyCode));
@@ -518,10 +513,12 @@ export async function POST(req: NextRequest) {
     // submitted, `narrative` means something was and its origin is unknown.
     const provider = attested ? attested.provider : null;
     const modelId = attested ? attested.modelId : null;
-    // Whose key served the call, where that is known. `byokConfigured` answers a
-    // different question — whether BYOK is set up on the account *now* — and the
-    // model card prints this as though it answered the first one.
-    const byokUsed = attested ? attested.byok : byokConfigured;
+    // Whose key served the call, where that is known. Whether BYOK is set up on
+    // the account answers a different question, and the model card prints this
+    // as though it answered the first one. Without an
+    // observed call no key served anything, so the signed answer is `false`,
+    // whatever the account has set up (carried QA finding 379d85de4e1f).
+    const byokUsed = attested ? attested.byok : false;
 
     // v1.20 §6 — Server-authoritative narrative separation.
     // The AI narrative (`finalAnalysisText`) is client/LLM-produced, not server

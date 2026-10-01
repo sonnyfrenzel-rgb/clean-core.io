@@ -200,6 +200,14 @@ test('the server under test has the route', async ({ request }) => {
   expect(await res.json()).toEqual({ latest: null, revisions: [] });
 });
 
+test('a refused model writes nothing — not even the reconstructed revision 1', async ({ request }) => {
+  // Carried QA finding 32bc71504339: the baseline was written before the XML
+  // was checked, so a save refused with 400 still created revision 1.
+  const refused = await request.post(path, { headers: headers(), data: { xml: '<html/>', baseRevision: 1 } });
+  expect(refused.status(), await refused.text()).toBe(400);
+  expect(await history(request), 'a refused save left a revision behind').toEqual([]);
+});
+
 test('revision 1 is the process reconstructed by the server, and a browser cannot post one', async ({ request }) => {
   // A browser posting its own "revision 1" would be posting an Ist nobody read
   // out of the code. The route reconstructs it and ignores the body.

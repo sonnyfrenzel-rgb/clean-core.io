@@ -177,6 +177,10 @@ test('the Analyze stage says "not generated" and shows the evidence instead of a
   await expect(notGenerated).toContainText(NOT_GENERATED);
   await expect(notGenerated, 'the reason is missing or wrong — an unexplained absence teaches nobody anything')
     .toContainText(expectedReason);
+  // This page was opened after the run: the reason above is the state now, and
+  // the page says the run's own reason was not recorded rather than passing
+  // the present off as the cause (carried QA finding 99d1991763df).
+  await expect(notGenerated).toContainText('Why this run has none was not recorded.');
 
   // The failure this step exists to remove: the page used to offer to start an
   // analysis that had already run and been signed.

@@ -959,7 +959,14 @@ class SkeletonBuilder {
   private performedFrom = new Map<string, string[]>();
   /** `FUNCTION name.` … `ENDFUNCTION.` — roadmap 2.14. Not a block: ABAP closes it, `block-structure.ts` does not open it. */
   private functionBlocks: Array<{ name: string; openIndex: number; closeIndex: number }> = [];
-  /** Method names a class **definition** in this source declares callable from outside, upper-cased. */
+  /**
+   * Methods a class **definition** in this source declares callable from outside,
+   * keyed `CLASS=>METHOD` (an interface prefix as `CLASS=>ZIF~`; an interface's
+   * own methods as `ZIF~METHOD`, which no implementation is looked up by — it
+   * writes `zif~method` in a class). Keyed by name alone, a public
+   * `execute` of one class made a private `execute` of another an entry
+   * (carried QA finding 0fdb072d50a8).
+   */
   private externallyCallableMethods = new Map<string, string>();
   /** Region keys of the entries built, so `unreached()` does not also list them as not reached. */
   private entryOfBlock = new Set<number>();
@@ -1018,6 +1025,12 @@ class SkeletonBuilder {
   private deregisteredHandlers = new Set<string>();
   /** Bound handlers whose `SET HANDLER` the walk has passed, so a later `RAISE EVENT` may run them. */
   private registeredInWalk = new Set<string>();
+  /**
+   * Boundary events of a TRY that nothing enters: no node to attach to, and the
+   * flow before the TRY already cut off (`LEAVE PROGRAM`, `SUBMIT` …) in a
+   * region that has steps before it. Carried QA findings ba3b2a7987ef / 1b831a4853c2.
+   */
+  private cutOffBoundaries = new Set<string>();
   /** > 0 while a branch whose arms the reader cannot separate is walked — no registration counts there. */
   private registrationFrozen = 0;
   /** The event blocks of the report (one program run), for `registeredBefore`. */
@@ -2044,6 +2057,9 @@ class SkeletonBuilder {
     for (const block of this.structure.blocks) {
       if (block.kind !== 'class' && block.kind !== 'interface') continue;
       const opener = this.statements[block.openIndex];
+      const owner = /^(?:CLASS|INTERFACE)\s+([\w/]+)/i.exec(opener.text)?.[1]?.toUpperCase() ?? '';
+      // A class's methods are its own; an interface's are reached as `zif~name`.
+      const keyOf = (method: string) => (block.kind === 'interface' ? `${owner}~${method}` : `${owner}=>${method}`);
       this.readRedefinitions(block);
       // **Local is not public.** `PUBLIC SECTION` in a `CLASS lcl_x DEFINITION`
       // means public *within this program*; only `DEFINITION PUBLIC` — a global
@@ -2073,7 +2089,7 @@ class SkeletonBuilder {
           // Every method of the interface is reachable as `zif~name`, and the
           // prefix is what the implementation writes, so the prefix is recorded.
           const name = /^INTERFACES\s+([\w/]+)/i.exec(statement.text);
-          if (visible && name) this.externallyCallableMethods.set(`${name[1].toUpperCase()}~`, 'interface');
+          if (visible && name) this.externallyCallableMethods.set(`${owner}=>${name[1].toUpperCase()}~`, 'interface');
           continue;
         }
         if (statement.keyword !== 'METHODS' && statement.keyword !== 'CLASS-METHODS') continue;
@@ -2081,10 +2097,10 @@ class SkeletonBuilder {
         if (!name) continue;
         const handler = RAP_HANDLER.exec(statement.text);
         if (handler) {
-          this.externallyCallableMethods.set(name[1].toUpperCase(), `RAP ${handler[1].toUpperCase()}`);
+          this.externallyCallableMethods.set(keyOf(name[1].toUpperCase()), `RAP ${handler[1].toUpperCase()}`);
           continue;
         }
-        if (visible) this.externallyCallableMethods.set(name[1].toUpperCase(), 'public');
+        if (visible) this.externallyCallableMethods.set(keyOf(name[1].toUpperCase()), 'public');
       }
     }
   }
@@ -2098,13 +2114,14 @@ class SkeletonBuilder {
    */
   private readRapHandlers(block: Block): void {
     if (!/\bDEFINITION\b/i.test(this.statements[block.openIndex].text)) return;
+    const owner = /^CLASS\s+([\w/]+)/i.exec(this.statements[block.openIndex].text)?.[1]?.toUpperCase() ?? '';
     for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
       const statement = this.statements[i];
       if (statement.keyword !== 'METHODS' && statement.keyword !== 'CLASS-METHODS') continue;
       const name = /^(?:CLASS-)?METHODS\s+([\w/~]+)/i.exec(statement.text);
       const handler = RAP_HANDLER.exec(statement.text);
       if (name && handler) {
-        this.externallyCallableMethods.set(name[1].toUpperCase(), `RAP ${handler[1].toUpperCase()}`);
+        this.externallyCallableMethods.set(`${owner}=>${name[1].toUpperCase()}`, `RAP ${handler[1].toUpperCase()}`);
       }
     }
   }
@@ -2150,13 +2167,14 @@ class SkeletonBuilder {
   }
 
   /** Is this implemented method one the source declares callable from outside? */
-  private methodTrigger(name: string): string | null {
+  private methodTrigger(cls: string | null, name: string): string | null {
     const upper = name.toUpperCase();
-    const direct = this.externallyCallableMethods.get(upper);
+    const direct = this.externallyCallableMethods.get(`${cls ?? ''}=>${upper}`);
     if (direct) return direct;
     const tilde = upper.indexOf('~');
     if (tilde < 0) return null;
-    return this.externallyCallableMethods.get(upper.slice(0, tilde + 1)) ?? null;
+    // `zif~name`: an interface this class declares in its public section.
+    return this.externallyCallableMethods.get(`${cls ?? ''}=>${upper.slice(0, tilde + 1)}`) ?? null;
   }
 
   /**
@@ -2200,7 +2218,7 @@ class SkeletonBuilder {
       if (!name) continue;
       const cls = this.classOf(block.openIndex);
       const key = `${cls ?? ''}=>${name[1].toUpperCase()}`;
-      const trigger = this.methodTrigger(name[1]) ?? this.implementedInterfaceMethod(name[1], block.openIndex)
+      const trigger = this.methodTrigger(cls, name[1]) ?? this.implementedInterfaceMethod(name[1], block.openIndex)
         ?? this.redefinitionTrigger(key);
       if (orphans) {
         // The last resort: no trigger, no definition, nothing else answered.
@@ -3092,6 +3110,13 @@ class SkeletonBuilder {
     // protected part broke off somewhere, so it — and each handler after it —
     // starts from what was registered before the TRY.
     const registered = new Set(this.registeredInWalk);
+    // Nothing enters the TRY although its region already drew steps: what stood
+    // before it does not come back. At the start of a region an empty `incoming`
+    // only means the walk began here, and the region's entry reaches it. A
+    // routine's end event is added before its body is walked and is no step.
+    const cutOff = incoming.length === 0
+      && this.nodes.slice(0, beforeProtected)
+        .some((n) => n.region === ctx.region.key && n.id !== ctx.region.endNodeId);
     const exits = this.walkRange(block.openIndex + 1, protectedTo, ctx, incoming);
     const attachedTo = this.nodes.slice(beforeProtected).find((n) => n.region === ctx.region.key) ?? null;
 
@@ -3114,6 +3139,7 @@ class SkeletonBuilder {
         for (const entry of incoming) {
           this.edges.push({ from: entry.from, to: boundary.id, kind: 'boundary', condition: '' });
         }
+        if (cutOff) this.cutOffBoundaries.add(boundary.id);
       }
       const to = (handlers[h + 1] ?? block.closeIndex) - 1;
       this.registeredInWalk = new Set(registered);
@@ -3952,7 +3978,9 @@ class SkeletonBuilder {
     const entryNodes = new Set(this.regions.map((r) => r.entryNodeId));
     for (const node of this.nodes) {
       if (reached.has(node.id) || entryNodes.has(node.id) || node.kind === 'start') continue;
-      if (node.kind === 'error-boundary') continue;
+      // A boundary is skipped unless its TRY was entered by nothing after an
+      // abort (carried QA findings ba3b2a7987ef / 1b831a4853c2).
+      if (node.kind === 'error-boundary' && !this.cutOffBoundaries.has(node.id)) continue;
       const statement = node.anchor ? this.statements[node.anchor.statementIndex] : undefined;
       this.notes.push({
         reason: 'unreachable-after-abort',

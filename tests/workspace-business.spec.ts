@@ -124,6 +124,14 @@ test.describe('the Business view of a real project (mockup s1)', () => {
     await expect(process.locator('[data-process-map]')).toBeVisible();
     await expect(page.locator('[data-workspace-source-column]')).toBeVisible();
 
+    // The map is the anchor of the view under every layer, on the screen and
+    // not only in the source guard below (carried QA finding caa77476a0d2).
+    const other = page.locator('nav[data-workspace-layers] button[data-workspace-layer][data-layer-state="off"]').first();
+    if (await other.count()) {
+      await other.click();
+      await expect(page.locator('[data-workspace-process] [data-process-map]')).toBeVisible();
+    }
+
     // The order of s1: answer → Next step → map → layer → folded Not determined.
     const tops = await page.evaluate(() =>
       ['[data-first-look]', '[data-next-step]', '[data-workspace-process]', '[data-workspace-layer-section]', '#not-determined'].map(

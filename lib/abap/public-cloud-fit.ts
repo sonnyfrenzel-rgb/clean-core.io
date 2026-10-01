@@ -133,11 +133,17 @@ export const PUBLIC_CLOUD_FIT_BUCKET_LABELS: Record<PublicCloudFitBucket, string
  */
 export const PUBLIC_CLOUD_FIT_BUCKET_MEANINGS: Record<PublicCloudFitBucket, string> = Object.freeze({
   retire: 'The object goes away. Nothing has to be built for it.',
+  // Each sentence holds for every rule that assigns its bucket (carried QA
+  // finding 2b07dd27e44c): an object SAP's repository does not list at all is
+  // here too, and Rebuild also takes the project's own code, modifications and
+  // direct writes, where SAP names nothing.
   'no-catalogued-path':
-    'Nobody has named a way yet. SAP publishes no released API and no successor for these objects, so the next step '
-    + 'is a question someone has to answer — not work this project can plan, and not a fault in this code.',
+    "Nobody has named a way yet. SAP's repository names no released API and no successor for these objects, or does "
+    + 'not list them at all, so the next step is a question someone has to answer — not work this project can plan, '
+    + 'and not a fault in this code.',
   rebuild:
-    'The way is known and the work sits with this project: SAP names a successor or an extension path to move to.',
+    'The way is known and the work sits with this project: SAP names a successor or an extension path to move to, '
+    + "or the object is the project's own work — its own code, a modification or a direct write.",
   keep: 'The object stays as it is on the chosen platform. Nothing has to be built for it.',
 });
 

@@ -880,6 +880,16 @@ export default function AnalyzePage() {
     modelAvailability.keyAvailable,
     modelAvailability.stages,
   ]);
+  /**
+   * On a page opened later the reason above is the state *now*, not the reason
+   * the run has none, which is not recorded. Said in so many words, so the
+   * present state does not read as the past cause (carried QA finding
+   * 99d1991763df).
+   */
+  const narrativeAbsenceWhy: string | undefined =
+    narrativeAbsence && !lastNarrativeAbsence
+      ? `Why this run has none was not recorded. Right now: ${modelAbsenceReason(narrativeAbsence, 'analyze')}`
+      : undefined;
 
   // ── The results, answer first (ADR-029, §2.11, mockup s8/s4) ──
   //
@@ -1125,13 +1135,13 @@ export default function AnalyzePage() {
           key: 'business-value',
           title: 'Business value assessment',
           reason: 'Asset score, value drivers and the plain-English action plan come from the narrative, which this run does not have.',
-          body: <NotGenerated what="Business value assessment" absence={narrativeAbsence} stage="analyze" />,
+          body: <NotGenerated what="Business value assessment" absence={narrativeAbsence} why={narrativeAbsenceWhy} stage="analyze" />,
         },
         {
           key: 'strategy',
           title: 'Modernisation strategy',
           reason: 'The standardisation fit and the recommendation prose come from the narrative. The route on this page does not.',
-          body: <NotGenerated what="Modernisation strategy" absence={narrativeAbsence} stage="analyze" />,
+          body: <NotGenerated what="Modernisation strategy" absence={narrativeAbsence} why={narrativeAbsenceWhy} stage="analyze" />,
         },
       ];
       const evidenceRoute = project.extensibilityRoute ?? null;
@@ -1157,6 +1167,7 @@ export default function AnalyzePage() {
           <NotGenerated
             what="Analysis narrative"
             absence={narrativeAbsence}
+            why={narrativeAbsenceWhy}
             stage="analyze"
             hint="Everything on this page was computed by the evidence engine and is covered by this run's signature. Re-run the analysis once a model is available to add the narrative."
           />
@@ -1890,20 +1901,18 @@ export default function AnalyzePage() {
                 </div>
                 <UsageUpload
                   onImport={async (report) => {
-                    setUsageReport(report);
                     // Roadmap 0.7: `usageReport` left the client-writable
                     // allowlist. The server holds it to the key set of
                     // lib/abap/usage-model.ts and to a row ceiling — the rules
                     // could only ever say `is map` — and stores what it kept.
-                    try {
-                      const stored = await runProjectCommand(projectId as string, {
-                        command: 'record-usage-report',
-                        usageReport: report,
-                      });
-                      setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
-                    } catch (err) {
-                      console.error('Failed to persist usage report:', err);
-                    }
+                    // A refusal throws into UsageUpload, which keeps the
+                    // preview and says it was not saved.
+                    const stored = await runProjectCommand(projectId as string, {
+                      command: 'record-usage-report',
+                      usageReport: report,
+                    });
+                    setUsageReport(report);
+                    setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
                   }}
                   existingReport={usageReport}
                 />
@@ -1920,19 +1929,16 @@ export default function AnalyzePage() {
                 </div>
                 <AtcUpload
                   onImport={async (report) => {
-                    setAtcReport(report);
                     // Same boundary as `usageReport` above and for the same
                     // reason: server-only, held to the model's key set and a
-                    // row ceiling — see lib/project-commands.ts.
-                    try {
-                      const stored = await runProjectCommand(projectId as string, {
-                        command: 'record-atc-report',
-                        atcReport: report,
-                      });
-                      setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
-                    } catch (err) {
-                      console.error('Failed to persist ATC report:', err);
-                    }
+                    // row ceiling — see lib/project-commands.ts. Shown as
+                    // imported only once stored (carried QA finding 0817087d54b5).
+                    const stored = await runProjectCommand(projectId as string, {
+                      command: 'record-atc-report',
+                      atcReport: report,
+                    });
+                    setAtcReport(report);
+                    setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
                   }}
                   existingReport={atcReport}
                 />

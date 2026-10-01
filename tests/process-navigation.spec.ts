@@ -519,6 +519,18 @@ test.describe('the parts of the navigation say what the file says', () => {
     expect(off.sentence).toContain('1 of 4 steps do not run');
   });
 
+  test('without an answer from the rules there is no Hard-coded overlay, not an empty one', () => {
+    // Carried QA finding 6d875b97d4b5: while the rules were read, the overlay
+    // counted "Hard-coded" from an empty map — 0, which reads as "none".
+    const source = exampleSource();
+    const model = exampleModel(source);
+    const nav = buildNavigation(model);
+    for (const state of ['loading', 'failed'] as const) {
+      expect(buildOverlays(model, nav, new Map(), state).map((o) => o.key), state).toEqual(['not-determined', 'decisions']);
+    }
+    expect(buildOverlays(model, nav, rulesByNode(source, model), 'ready')[0].key).toBe('hard-coded');
+  });
+
   test('an overlay marks with a text identifier and changes no flow', () => {
     const source = exampleSource();
     const model = exampleModel(source);

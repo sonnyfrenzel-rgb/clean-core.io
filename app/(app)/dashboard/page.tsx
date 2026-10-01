@@ -280,7 +280,11 @@ export default function Dashboard() {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${idToken}` },
       });
-      if (!res.ok) {
+      // 404 is what a repeated delete hears once the first one went through and
+      // its answer was lost: the project is gone, which is what was asked for.
+      // The list is a live query, so a project that is still there stays on it
+      // (carried QA finding ac74ebf5a627).
+      if (!res.ok && res.status !== 404) {
         const { error } = await res.json().catch(() => ({ error: 'Delete failed.' }));
         throw new Error(error || 'Delete failed.');
       }

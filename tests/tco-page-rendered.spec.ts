@@ -277,6 +277,9 @@ test('the printed page carries the entered cost figures, and an empty one as "No
   await expect(footer).toContainText(`key-user day rate ${formatAmount(USER_RATE, CURRENCY)}`);
   await expect(footer).toContainText('modernisation investment Not determined');
   await expect(footer).toContainText(`${LOC} LoC`);
+  // Neither cadence was moved: both print as the assumed start value, not as
+  // the reader's figure (carried QA finding 5666ef8155a0).
+  await expect(footer).toContainText('1 release upgrade (assumed, not stated) and 2 feature pack updates (assumed, not stated) per year');
   expect(formatAmount(DEV_RATE, CURRENCY), 'the expected amount names the currency').toContain(CURRENCY);
   await page.emulateMedia({ media: 'screen' });
 });

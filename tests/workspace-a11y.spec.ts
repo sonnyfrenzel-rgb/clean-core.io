@@ -160,6 +160,12 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     expect(named.length, `the region repeats earlier stages: "${final}"`).toBeLessThanOrEqual(1);
 
     const history = await page.evaluate(() => (window as unknown as { __live: string[][] }).__live);
+    // The bounds above pass on a region that never said anything; it has to
+    // have announced a stage at all (carried QA finding 390bcbcb11fd).
+    expect(
+      history.flat().some((text) => labels.some((label) => text.includes(`${label}:`))),
+      'no stage was ever announced',
+    ).toBe(true);
     for (const texts of history) {
       for (const text of texts) {
         const inOne = labels.filter((label) => text.includes(`${label}:`));

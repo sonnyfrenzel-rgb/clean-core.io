@@ -102,3 +102,17 @@ test('604c2ded57e3 · "copied" is said only after the clipboard answered', () =>
   expect(copy.indexOf('setShowCopyDialog(true)')).toBeGreaterThan(write);
   expect(src).toContain('data-copy-failed');
 });
+
+test('4aa2e074b134 · the package lead does not say an ABAP Cloud package runs against mocks', () => {
+  // The Testing tool simulates an ABAP run and says so; the lead above the
+  // generated package said "runs it against mocks" for every track.
+  const page = readFileSync('components/transformation/TransformationObjectPage.tsx', 'utf8');
+  const lead = page.slice(page.indexOf('id="tf-package"'), page.indexOf('{files === null ? ('));
+  expect(lead).toMatch(/track === 'in-app'[\s\S]*simulates a run[\s\S]*runs it against mocks/);
+});
+
+test('7abe866543dd · the loading line names no track before the project has loaded', () => {
+  // `isAbapCloudTrack(undefined)` picks the side-by-side copy, so an ABAP Cloud
+  // project read "Node.js" while it was still loading.
+  expect(code()).toContain("<span data-track-loading>{project ? track.loading : 'Opening the project…'}</span>");
+});

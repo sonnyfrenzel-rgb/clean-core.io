@@ -97,3 +97,11 @@ test('the canvas does not pull the catalog into the browser', () => {
   const engineImports = [...router.matchAll(/^import ([^;]*) from ['"]\.\/evidence-model['"]/gm)].map((m) => m[1]);
   expect(engineImports).toEqual(['{ AbapEvidenceReport, EvidenceKind }']);
 });
+
+test('the canvas hands the router its findings as they are, not cast into a report', () => {
+  // Carried QA finding 596831bd53a3: `{ findings } as unknown as
+  // AbapEvidenceReport` would have hidden any field the router started to read.
+  const canvas = fs.readFileSync(path.join(__dirname, '..', 'lib/architecture-canvas.ts'), 'utf8');
+  expect(canvas).not.toMatch(/as unknown as AbapEvidenceReport/);
+  expect(canvas).toContain('routeDrivers({ findings },');
+});

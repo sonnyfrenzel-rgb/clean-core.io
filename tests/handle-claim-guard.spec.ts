@@ -68,16 +68,30 @@ function files(): string[] {
   return out;
 }
 
+/**
+ * The claims a text makes, read with its line breaks folded into spaces.
+ * Carried QA finding 615f33b1d3ce: copy wrapped across two source lines — JSX
+ * text above all — reads as one sentence on screen, and every pattern above
+ * stopped at the newline.
+ */
+function claimsIn(text: string): string[] {
+  const folded = text.replace(/\s+/g, ' ');
+  return CLAIMS.filter(({ pattern }) => pattern.test(folded)).map(({ says }) => says);
+}
+
 test.describe('nothing claims that only handles are stored', () => {
+  test('a claim wrapped across lines is still the claim', () => {
+    expect(claimsIn(['<p>', '  We keep, for every account,', '  only handles.', '</p>'].join('\n'))).toContain('we store only handles');
+    expect(claimsIn(['We never', 'store your', 'real names.'].join('\r\n'))).toContain('we do not store names');
+  });
+
   test('no product surface makes the claim', () => {
     const offences: string[] = [];
     for (const file of files()) {
       const text = fs.readFileSync(file, 'utf8');
       // This file names the claims in order to forbid them.
-      for (const { pattern, says } of CLAIMS) {
-        if (pattern.test(text)) {
-          offences.push(`${path.relative(ROOT, file).split(path.sep).join('/')} — "${says}"`);
-        }
+      for (const says of claimsIn(text)) {
+        offences.push(`${path.relative(ROOT, file).split(path.sep).join('/')} — "${says}"`);
       }
     }
     expect(

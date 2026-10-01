@@ -488,4 +488,27 @@ test.describe('with projects', () => {
     // The row is still a row: a failed run does not take the project away.
     await expect(page.locator(`[data-cc-table-row="${STAGED_ID}"]`)).toBeVisible();
   });
+
+  test('a delete whose project is already gone is not reported as a failure', async ({ page }) => {
+    // Carried QA finding ac74ebf5a627: the first delete went through and its
+    // answer was lost; the retry hears 404, and the page said the delete failed.
+    test.setTimeout(180 * 1000);
+    await page.route(`**/api/projects/${STAGED_ID}`, (route) =>
+      route.request().method() === 'DELETE'
+        ? route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'Project not found.' }) })
+        : route.continue(),
+    );
+    await openWorkspace(page);
+    await page.click(`[data-workspace-more="${STAGED_ID}"]`);
+    await page.locator(`[data-workspace-delete="${STAGED_ID}"]`).click();
+    const answered = page.waitForResponse(
+      (r) => r.url().endsWith(`/api/projects/${STAGED_ID}`) && r.request().method() === 'DELETE',
+    );
+    await page.locator('[data-cc-message-box]').getByRole('button', { name: 'Delete project' }).click();
+    await answered;
+    await expect(page.locator('[data-cc-message-box]')).toHaveCount(0);
+    // A refusal lands in the action strip on the next render; give it one.
+    await page.waitForTimeout(1000);
+    await expect(page.getByText('Project not found.')).toHaveCount(0);
+  });
 });

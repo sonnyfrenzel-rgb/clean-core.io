@@ -130,6 +130,20 @@ export function invitationTooManyMessage(max: number = INVITATION_MAX_OPEN): str
   return `This project already has ${max} invitation${max === 1 ? '' : 's'} waiting to be accepted. Withdraw one before sending another.`;
 }
 
+/**
+ * What the owner reads when the invitation mail could not be sent.
+ *
+ * The route withdraws the invitation in the same request. When that write
+ * fails too, the invitation is still waiting, and the owner must not be told it
+ * was withdrawn: it is in their list of waiting invitations, with the way to
+ * withdraw it (carried QA finding b90ef67b9ed8).
+ */
+export function invitationNotSentMessage(detail: string, withdrawn: boolean): string {
+  return withdrawn
+    ? `${detail} Nothing was sent, and the invitation was withdrawn.`
+    : `${detail} Nothing was sent, and the invitation could not be withdrawn — withdraw it from the waiting invitations.`;
+}
+
 /* -------------------------------------------------------------------- email */
 
 /**

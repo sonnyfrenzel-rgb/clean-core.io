@@ -32,6 +32,8 @@ import firebaseConfig from '../firebase-config.json';
 import { getCloudServiceDetails } from '../components/design/CloudServiceIntegrations';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
+import { buildAnalysisExportHtml } from '../lib/analysis-export';
+import type { Project } from '../lib/types';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -539,6 +541,46 @@ test('0613631545b2 · and the Confluence export carries no invented evidence eit
   expect(withoutComments(read('lib/analysis-export.ts')), 'the export says so instead').toContain(
     'Not determined for this run',
   );
+});
+
+test('0613631545b2 · the built Confluence export says "not determined" and invents nothing', () => {
+  // Carried QA finding 3c2e730b74ba: the source scan above cannot see a string
+  // assembled at run time. Build the document for an analysis that returned no
+  // checkpoints and no comparison, and read what would be downloaded.
+  const project = {
+    id: 'p-honesty',
+    name: 'Honesty probe',
+    extensibilityRoute: 'Side-by-Side on SAP BTP',
+    analysis: JSON.stringify({
+      projectTitle: 'Honesty probe',
+      summary: 'A short summary.',
+      gaps: [],
+      strategicNextSteps: [],
+      extensibilityRouting: { recommendedRoute: 'Side-by-Side on SAP BTP' },
+    }),
+  } as unknown as Project;
+  const html = buildAnalysisExportHtml({
+    project,
+    routeReport: null,
+    legacyCode: '',
+    uploadedFileName: 'z_probe.abap',
+    targetDeployment: null,
+  });
+  expect(html, 'no document was built').not.toBeNull();
+  const notDetermined = html!.split('Not determined for this run').length - 1;
+  expect(notDetermined, 'both missing parts are reported missing').toBe(2);
+  for (const invented of [
+    'Transactional Coupling',
+    'UI Paradigm & Customization',
+    'Data & DB Proximity',
+    'Lifecycle & Resource Scaling',
+    'Zero latency database reads on core S/4HANA standard tables',
+    'Absolute lifecycle isolation',
+    'Perfect technical fit.',
+    'Feasibility:',
+  ]) {
+    expect(html!, `the export writes "${invented}" for an analysis that produced nothing`).not.toContain(invented);
+  }
 });
 });
 

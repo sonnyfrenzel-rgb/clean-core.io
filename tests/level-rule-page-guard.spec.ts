@@ -256,6 +256,32 @@ test.describe('the rule page carries the version of the rule', () => {
     expect(version.decisions).toBeGreaterThanOrEqual(domain.size);
   });
 
+  test('the production fingerprint is the rule over the states the two artifacts ship', () => {
+    // Carried QA findings 9d0fe72c2bca / 3aa768016cb1 / 4f2851af9a13: the test
+    // above enumerates the rule without the artifacts, so a getLevelRuleVersion()
+    // that stopped passing the shipped states in would still pass it. Read the
+    // two generated files independently and rebuild the table.
+    const statesOf = (file: string): string[] => {
+      const artifact = JSON.parse(
+        fs.readFileSync(path.join(process.cwd(), 'lib/abap/generated', file), 'utf8'),
+      ) as { entries?: Record<string, { state?: string }> };
+      return [...new Set(Object.values(artifact.entries ?? {}).map((e) => e.state).filter((s): s is string => !!s))];
+    };
+    const releaseStates = statesOf('cloudification-repo.latest.json');
+    const classificationStates = statesOf('cloudification-repo.classifications-sap.json');
+    expect(releaseStates.length, 'the release artifact ships no states').toBeGreaterThan(0);
+    expect(classificationStates.length, 'the classification artifact ships no states').toBeGreaterThan(0);
+
+    const expected = enumerateLevelRule({ releaseStates, classificationStates });
+    const version = getLevelRuleVersion();
+    expect(version.fingerprint).toBe(fingerprintLevelRule(expected));
+    expect(version.decisions).toBe(expected.length);
+    const domain = new Set(expected.flatMap((d) => [d.releaseState, d.classificationState].filter(Boolean)));
+    for (const state of [...releaseStates, ...classificationStates]) {
+      expect(domain, `the shipped state "${state}" is not in the decision table`).toContain(state);
+    }
+  });
+
   test('the page states no version of its own', () => {
     const version = getLevelRuleVersion();
     const source = fs.readFileSync(PAGE, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');

@@ -129,11 +129,16 @@ export async function checkRevisionXml(value: unknown): Promise<RevisionXmlCheck
   if (typeof value !== 'string' || value.trim() === '') {
     return { ok: false, code: 'bad-request', error: 'Expected the BPMN 2.0 XML of the model as a string.' };
   }
-  if (value.length > MAX_REVISION_XML) {
+  // Bytes, not characters: Firestore's 1 MiB limit is on the UTF-8 document,
+  // and 300,000 three-byte characters passed a character count while the write
+  // failed as a 500 (carried QA finding 43c81664dd53). TextEncoder, because
+  // this module also runs in the browser (lib/bpmn/import.ts).
+  const bytes = new TextEncoder().encode(value).length;
+  if (bytes > MAX_REVISION_XML) {
     return {
       ok: false,
       code: 'too-large',
-      error: `This model is ${value.length} characters of BPMN; a revision holds at most ${MAX_REVISION_XML}.`,
+      error: `This model is ${bytes} bytes of BPMN; a revision holds at most ${MAX_REVISION_XML}.`,
     };
   }
   const shape = await wellFormedBpmn(value);

@@ -829,12 +829,21 @@ function readCondition(value: unknown): DecisionCondition | null {
   };
 }
 
+/**
+ * The timeline kinds only the server's own lifecycle commands write. A draft
+ * names when it was drafted and what it stands on; that it was confirmed or
+ * withdrawn is never the draft's to say (`record-decision-draft`).
+ */
+export const SERVER_LIFECYCLE_KINDS: readonly TimelineKind[] = ['decision-confirmed', 'decision-withdrawn'];
+
 function readTimelineEntry(value: unknown): DecisionTimelineEntry | null {
   if (!isPlainObject(value)) return null;
   const at = str(value.at, 40);
   const sentence = str(value.sentence);
   const kind = value.kind;
-  if (!at || !sentence) return null;
+  // A real instant, as a server clock writes it — `tomorrow` is not a time a
+  // timeline can be ordered by (carried QA finding 5724ea86c33b).
+  if (!at || !sentence || !isIsoInstant(at)) return null;
   if (typeof kind !== 'string' || !(TIMELINE_KINDS as readonly string[]).includes(kind)) return null;
   return {
     at,

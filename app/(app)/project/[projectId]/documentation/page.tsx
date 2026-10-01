@@ -649,6 +649,12 @@ Structure the JSON exactly like this:
   const baseRevision = useRef<number | null>(null);
   /** Bumped after every answered save, so the history panel reloads. */
   const [revisionsKey, setRevisionsKey] = useState(0);
+  /**
+   * Why the opening baseline was refused, in words. Dropped, the history below
+   * read "no revisions yet" for a project whose run could not be verified
+   * (carried QA finding 5ab84bc9a713).
+   */
+  const [baselineRefusal, setBaselineRefusal] = useState('');
 
   /**
    * Reconstruct revision 1 when this project has none — on opening the stage.
@@ -671,11 +677,19 @@ Structure the JSON exactly like this:
     // moment where a save would otherwise carry the previous project's revision
     // number, and `saveProcessRevision` would read it as "your base is current".
     baseRevision.current = null;
+    setBaselineRefusal('');
     if (!idStr || !signedSource) return;
     let cancelled = false;
     void ensureProcessBaseline(idStr).then((outcome) => {
-      if (cancelled || !outcome.ok) return;
-      baseRevision.current = outcome.record.revision;
+      if (cancelled) return;
+      if (!outcome.ok) {
+        setBaselineRefusal(revisionOutcomeSentence(outcome));
+        return;
+      }
+      // Forward only: a Save pressed before this answer landed has already
+      // moved the base past revision 1, and setting it back would get the next
+      // save refused as `revision-moved` (carried QA finding 85a623a08fcf).
+      baseRevision.current = newerBase(baseRevision.current, outcome.record.revision);
       setRevisionsKey((token) => token + 1);
     });
     return () => { cancelled = true; };
@@ -1602,6 +1616,13 @@ Structure the JSON exactly like this:
       {signedSource && (
         <section data-process-revisions-section className={clsx(SECTION, 'mb-8')}>
           <h2 className="mb-3 cc-text-h2 text-cc-ink">Revisions of this process</h2>
+          {baselineRefusal ? (
+            <div className="mb-3" data-revision-baseline-refused="">
+              <CcMessageStrip state="error" headline="The process as read from the code could not be recorded.">
+                {baselineRefusal}
+              </CcMessageStrip>
+            </div>
+          ) : null}
           <RevisionCompare
             projectId={(Array.isArray(projectId) ? projectId[0] : projectId) ?? ''}
             refreshKey={revisionsKey}

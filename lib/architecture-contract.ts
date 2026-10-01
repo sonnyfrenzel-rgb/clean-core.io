@@ -168,6 +168,8 @@ export const CONTRACT_LIMIT_CODES = [
   'target-not-bound',
   /** The run bound no input manifest at all. */
   'inputs-not-bound',
+  /** The project's source or target deployment is no longer the one the run recorded. */
+  'inputs-differ',
   /** Only the Public Cloud release list ships; no edition-specific catalog answered. */
   'catalog-not-edition-specific',
   /** Core modifications are present; no target is reachable until they are reset. */
@@ -206,6 +208,8 @@ const LIMIT_SENTENCES: Record<ContractLimitCode, (subject: string | null) => str
     `The run bound no target deployment (\`${INPUT_IDS.deployment}\` is not in its input manifest), so this contract cannot name a target context. Nothing is generated against an unknown target.`,
   'inputs-not-bound': () =>
     'The run recorded no input manifest, so this contract cannot say what it was derived from. A contract that names inputs the run never had is the defect the manifest exists to prevent.',
+  'inputs-differ': (s) =>
+    `The project's ${s || 'inputs'} no longer match what the run recorded, so this contract would be derived from inputs the run never analysed. Run the analysis again before anything is generated.`,
   'catalog-not-edition-specific': (s) =>
     `The catalog that answered is the Public Cloud release list; this build ships no edition-specific snapshot, and the lookup takes no edition (\`lib/abap/catalog-service.ts\` names neither \`deployment\` nor \`edition\`). The ${s} target context is bound as an input, not corroborated by a catalog for that edition.`,
   'modification-unreset': (s) =>
@@ -581,6 +585,13 @@ export function buildArchitectureContract(args: {
   /** A route other than the recommended one, with its reason (roadmap 8.3). */
   deviation?: ContractDeviation | null;
   status?: ContractStatus;
+  /**
+   * The inputs the caller derived from that differ from the run's manifest —
+   * named, e.g. `source`, `target deployment`. Any one blocks the contract: its
+   * evidence would be about inputs the run never had (carried QA finding
+   * 79759e45695d).
+   */
+  inputsDiffer?: ReadonlyArray<string>;
 }): ArchitectureContract {
   const { contractId, runId, evidence, route } = args;
   const manifest = args.inputManifest || null;
@@ -618,6 +629,9 @@ export function buildArchitectureContract(args: {
   {
     const limits: ContractLimit[] = [];
     if (!manifest) limits.push(limit('inputs-not-bound', 'blocks', null));
+    if (manifest && args.inputsDiffer && args.inputsDiffer.length > 0) {
+      limits.push(limit('inputs-differ', 'blocks', args.inputsDiffer.join(' and ')));
+    }
     if (!deployment) {
       if (manifest) limits.push(limit('target-not-bound', 'blocks', null));
       fields.push({

@@ -392,6 +392,39 @@ test.describe('the typesetter keeps text inside the column', () => {
   });
 });
 
+/**
+ * Every repository module a file reaches through its imports, as repo-relative
+ * paths. Follows `import … from`, `export … from`, bare `import '…'`, dynamic
+ * `import()` and `require()`, resolving `@/` to the root and relative
+ * specifiers to `.ts`, `.tsx` or an `index` file. Packages are not followed.
+ */
+function reachableModules(startRel: string): Set<string> {
+  const seen = new Set<string>();
+  const resolve = (fromAbs: string, spec: string): string | null => {
+    let base: string;
+    if (spec.startsWith('@/')) base = path.join(ROOT, spec.slice(2));
+    else if (spec.startsWith('.')) base = path.resolve(path.dirname(fromAbs), spec);
+    else return null;
+    for (const candidate of [base, `${base}.ts`, `${base}.tsx`, path.join(base, 'index.ts'), path.join(base, 'index.tsx')]) {
+      if (/\.tsx?$/.test(candidate) && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
+    }
+    return null;
+  };
+  const queue = [path.join(ROOT, startRel)];
+  while (queue.length > 0) {
+    const abs = queue.pop()!;
+    const rel = path.relative(ROOT, abs).split(path.sep).join('/');
+    if (seen.has(rel)) continue;
+    seen.add(rel);
+    const source = fs.readFileSync(abs, 'utf8');
+    for (const m of source.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*|\bimport\s+)['"]([^'"]+)['"]/g)) {
+      const next = resolve(abs, m[1]);
+      if (next) queue.push(next);
+    }
+  }
+  return seen;
+}
+
 test.describe('the brief is a summary and never evidence', () => {
   test('nothing signed imports it', () => {
     const signed = [
@@ -406,6 +439,22 @@ test.describe('the brief is a summary and never evidence', () => {
       const source = fs.readFileSync(path.join(ROOT, rel), 'utf8');
       expect(source, `${rel} reaches into the brief`).not.toContain('lib/brief');
     }
+    // Carried QA finding 7973e7503f8b: the spelling above misses a wrapper that
+    // imports the brief on a signed module's behalf. Walk the import graph.
+    const all = new Set<string>();
+    for (const rel of signed) {
+      const reached = reachableModules(rel);
+      reached.forEach((p) => all.add(p));
+      const brief = [...reached].filter((p) => p.startsWith('lib/brief'));
+      expect(brief, `${rel} reaches the brief through its imports`).toEqual([]);
+    }
+    expect(all.size, 'the walk followed no import of the signed modules').toBeGreaterThan(signed.length * 2);
+  });
+
+  test('the import walk follows aliases and relative paths through a wrapper', () => {
+    const reached = reachableModules('tests/process-brief.spec.ts');
+    expect([...reached].some((p) => p.startsWith('lib/brief/')), 'the walk does not see the brief this spec imports').toBe(true);
+    expect(reached.has('lib/provenance.ts')).toBe(true);
   });
 
   test('and the brief says so on its own first page', () => {

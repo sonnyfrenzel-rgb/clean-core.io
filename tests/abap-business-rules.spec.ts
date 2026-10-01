@@ -126,12 +126,12 @@ test.describe('the eight programs this product ships', () => {
         const token = candidate.viaConstant
           ? candidate.viaConstant.name
           : candidate.literal.split(/,\s*| AND /)[0];
+        // Carried QA findings 95fde6e9443a / ace5761758c9: the token has to
+        // START at the offset — "occurs somewhere after it" accepted offset 0.
         expect(
-          candidate.conditionText.slice(candidate.valueOffset),
-          `${where}: offset ${candidate.valueOffset} does not point at ${token}`,
-        ).toContain(token);
-        expect(candidate.conditionText.indexOf(token), `${where}: token not in the text`)
-          .toBeGreaterThanOrEqual(0);
+          candidate.conditionText.startsWith(token, candidate.valueOffset),
+          `${where}: offset ${candidate.valueOffset} does not point at ${token} in ${candidate.conditionText}`,
+        ).toBe(true);
       }
     }
   });
@@ -325,6 +325,25 @@ test.describe('what is not a rule candidate', () => {
 
     expect(legacy.rejected).toHaveLength(35);
     expect(readBusinessRules(read(PO)).rejected).toHaveLength(26);
+  });
+
+  test('a path, a URL or a mail address written in place is technical, as it is in a constant', () => {
+    // Carried QA finding 241ba1f2fb0b: the predicate was applied to CONSTANTS
+    // only, so `IF lv_file = '/tmp'.` became a rule candidate.
+    const report = readBusinessRules([
+      'REPORT z_paths.',
+      "IF lv_file = '/tmp'.",
+      'ENDIF.',
+      "IF lv_url = 'https://example.example'.",
+      'ENDIF.',
+      'CASE lv_target.',
+      "  WHEN 'ops@example.example'.",
+      'ENDCASE.',
+      "IF lv_region = 'EMEA'.",
+      'ENDIF.',
+    ].join('\n'));
+    expect(report.candidates.map((c) => c.conditionText)).toEqual(["lv_region = 'EMEA'"]);
+    expect(report.rejected.filter((r) => r.reason === 'technischer-wert').map((r) => r.lineStart)).toEqual([2, 4, 7]);
   });
 
   test('a branch inside a macro body states no rule here', () => {

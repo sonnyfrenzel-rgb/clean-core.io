@@ -462,7 +462,10 @@ function sentenceFor(row: Omit<ComparisonRow, 'sentence'>): string {
   const who = row.decision ? row.decision.account.name : null;
   switch (row.verdict) {
     case 'stays':
-      return `Stays as the code has it${who ? `, kept by ${who}` : ''}.`;
+      // Keep records that the business need continues; it preserves and
+      // certifies no ABAP (StateChoice's own help says so). "As the code has
+      // it" read as the opposite (carried QA finding ee0ba98c3cea).
+      return `The business need stays${who ? `, kept by ${who}` : ''}. Keeping it preserves no ABAP.`;
     case 'changes':
       return `Stays and is deliberately changed${who ? `, by ${who}` : ''}. What the change is, nobody has written down here.`;
     case 'goes':

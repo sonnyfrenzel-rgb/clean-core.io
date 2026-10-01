@@ -258,7 +258,30 @@ test.describe('das Bündel steht zum Fallbuch', () => {
 // Kein Zeiger auf fremden Code
 // ---------------------------------------------------------------------------
 
-test('docs/korpus/ trägt keinen Zeiger auf ein fremdes Repository', () => {
+/**
+ * Eine Git-Quelle jenseits der drei großen Hoster: ein SSH-Remote (`git@host:`),
+ * ein URL auf `.git`, ein Host, der mit `git.` beginnt, oder ein bekannter
+ * selbst betriebener Dienst.
+ */
+const GIT_POINTER =
+  /\bgit@[\w.-]+:|\b(?:https?|ssh|git):\/\/[^\s"'<>)]+?\.git\b|\b(?:https?:\/\/)?git\.[a-z0-9-]+(?:\.[a-z0-9-]+)+|\b(?:codeberg\.org|sr\.ht|gitea\.|forgejo\.|gogs\.|gerrit\.)/i;
+
+test('der Git-Zeiger-Test erkennt selbst betriebene Hoster und Remotes', () => {
+  for (const pointer of [
+    'git@git.corp.example:team/repo.git',
+    'https://git.corp.example/team/repo',
+    'https://code.corp.example/team/repo.git',
+    'ssh://scm.example/repo.git',
+    'https://codeberg.org/someone/repo',
+  ]) {
+    expect(GIT_POINTER.test(pointer), pointer).toBe(true);
+  }
+  for (const harmless of ['DATA lv_git TYPE string.', 'see README.md', 'the .gitignore file']) {
+    expect(GIT_POINTER.test(harmless), harmless).toBe(false);
+  }
+});
+
+test('docs/korpus/ und tests/korpus/ tragen keinen Zeiger auf ein fremdes Repository', () => {
   // Neun Fälle sind an echtem Produktivcode belegt, und vierzehn der fünfzehn
   // Quellen tragen keine Lizenz; die tragenden sind nach allen Indizien
   // unautorisiert hochgeladene Arbeitgeberbestände. Dieses Repository ist
@@ -266,7 +289,9 @@ test('docs/korpus/ trägt keinen Zeiger auf ein fremdes Repository', () => {
   // wäre ein dauerhafter, indizierter Zeiger auf eine fremde Offenlegung —
   // auch nachdem jemand ihn wieder herausnimmt. Die Fundstellen sind deshalb
   // nur als Hash belegt; der vollständige Nachweis liegt außerhalb.
-  const root = join(process.cwd(), 'docs/korpus');
+  // Carried QA finding 338ce6c1f72f: the cases under tests/korpus/ are corpus
+  // too, and a self-hosted Git server is as much a pointer as github.com.
+  const roots = ['docs/korpus', 'tests/korpus'].map((r) => join(process.cwd(), r));
   const offenders: string[] = [];
   const walk = (dir: string) => {
     for (const name of readdirSync(dir).sort()) {
@@ -280,13 +305,15 @@ test('docs/korpus/ trägt keinen Zeiger auf ein fremdes Repository', () => {
       const rel = relative(process.cwd(), abs).replace(/\\/g, '/');
       const host = body.match(/\b(?:github|gitlab|bitbucket)\.com\b/i);
       if (host) offenders.push(`  ${rel}: nennt ${host[0]}`);
+      const remote = body.match(GIT_POINTER);
+      if (remote) offenders.push(`  ${rel}: nennt eine Git-Quelle (${remote[0]})`);
       // Die Quellenhashes des Korpus sind 64-stellig; ein 40-stelliger
       // Hex-String ist eine Git-Commit-ID und damit ein Zeiger.
       const commit = body.match(/(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])/);
       if (commit) offenders.push(`  ${rel}: trägt eine 40-stellige Commit-ID (${commit[0].slice(0, 12)}…)`);
     }
   };
-  walk(root);
+  for (const root of roots) walk(root);
   expect(
     offenders.join('\n'),
     'Kein Zeiger auf fremden Code in docs/korpus/ — weder Host noch Commit-ID. Der Beleg einer Fundstelle ist ' +

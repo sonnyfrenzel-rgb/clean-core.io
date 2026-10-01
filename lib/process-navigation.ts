@@ -439,6 +439,13 @@ export function buildOverlays(
   model: ProcessMapModel,
   nav: ProcessNavigation,
   rulesByNode: ReadonlyMap<string, readonly string[]>,
+  /**
+   * Whether `rulesByNode` is an answer. An empty map while the rules are read,
+   * or after they could not be, is not "nothing is hard-coded": the overlay is
+   * left out until there is an answer, like any overlay without one (carried
+   * QA finding 6d875b97d4b5).
+   */
+  rulesState: 'ready' | 'loading' | 'failed' = 'ready',
 ): OverlayDefinition[] {
   const hardCoded = new Map<string, string>();
   const notDetermined = new Map<string, string>();
@@ -455,11 +462,12 @@ export function buildOverlays(
     }
   }
 
-  return [
+  const overlays: OverlayDefinition[] = [
     { key: 'hard-coded', label: 'Hard-coded', ids: [...hardCoded.keys()], marks: hardCoded },
     { key: 'not-determined', label: 'Not determined', ids: [...notDetermined.keys()], marks: notDetermined },
     { key: 'decisions', label: 'Decisions', ids: [...decisions.keys()], marks: decisions },
   ];
+  return rulesState === 'ready' ? overlays : overlays.filter((overlay) => overlay.key !== 'hard-coded');
 }
 
 /* ------------------------------------------------------------------ *

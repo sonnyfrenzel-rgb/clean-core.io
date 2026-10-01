@@ -354,3 +354,24 @@ test.describe('the readers that still kept half the rule (b88c77b4b5d1)', () => 
       .toEqual([['VBAK', 'read']]);
   });
 });
+
+test.describe('a literal inside a template expression is text there too', () => {
+  // Carried QA finding 2bf6a3e76857: inside a template's `{ … }` the scanner
+  // ignored quotes, so the `}` in `'}'` closed the expression, the nested
+  // template's bars were taken for the outer one's, and the period in `|b.c|`
+  // ended a statement that is not in the source.
+  test('a brace in a quoted literal does not close the expression', () => {
+    const code = [
+      "lv = |{ COND string( WHEN x = '}' THEN |b.c| ELSE 'x' ) } done.|.",
+      'WRITE lv.',
+    ].join('\n');
+    expect(readStatements(code).map((s) => s.text)).toEqual([
+      "lv = |{ COND string( WHEN x = '}' THEN |b.c| ELSE 'x' ) } done.|",
+      'WRITE lv',
+    ]);
+  });
+
+  test('the masked text keeps the outer delimiters and hides the expression', () => {
+    expect(maskLiterals("x = |a{ '}' }b|. y.")).toBe('x = |         |. y.');
+  });
+});

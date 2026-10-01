@@ -259,6 +259,17 @@ test('the naming stage is switched on its own, and the proxy is what refuses it'
   expect((await again.json()).code, 'the stage stayed refused after being switched on').not.toBe(STAGE_DISABLED_CODE);
 });
 
+test('a JSON body of null is a 400 with the reason, not a 500', async ({ request }) => {
+  // Carried QA finding 649f8b778f8e: `null` parsed fine and then threw on
+  // `.stages`, and the catch answered 500.
+  const res = await request.post('/api/model-stages', {
+    headers: { ...headers(), 'Content-Type': 'application/json' },
+    data: 'null',
+  });
+  expect(res.status(), await res.text()).toBe(400);
+  expect((await res.json()).error).toContain('Missing required field: stages');
+});
+
 test('an account with the workspace preview is offered the switch — and the click sticks', async ({ page }) => {
   test.setTimeout(180 * 1000);
   // The other half of `tests/zero-llm-path.spec.ts`, which proves that an

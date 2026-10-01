@@ -551,20 +551,23 @@ export async function POST(
     const body = (await req.json().catch(() => null)) as { xml?: unknown; baseRevision?: unknown } | null;
     const { db } = await getAdminDb();
 
-    const baseline = await ensureBaseline(db, gate);
-    if ('refusal' in baseline) return baseline.refusal;
-
-    // No model in the body: the caller wanted the Ist to exist, and now it does.
-    if (!body || body.xml === undefined) {
-      return NextResponse.json({ record: baseline.record, created: baseline.created }, { status: baseline.created ? 201 : 200 });
-    }
-
-    const checked = await checkRevisionXml(body.xml);
-    if (!checked.ok) {
+    // A model that is refused is refused before anything is written: checked
+    // after the baseline, a rejected save still created revision 1 (carried QA
+    // finding 32bc71504339).
+    const checked = body && body.xml !== undefined ? await checkRevisionXml(body.xml) : null;
+    if (checked && !checked.ok) {
       return NextResponse.json(
         { error: checked.error, code: checked.code },
         { status: checked.code === 'too-large' ? 413 : 400 },
       );
+    }
+
+    const baseline = await ensureBaseline(db, gate);
+    if ('refusal' in baseline) return baseline.refusal;
+
+    // No model in the body: the caller wanted the Ist to exist, and now it does.
+    if (!body || body.xml === undefined || !checked) {
+      return NextResponse.json({ record: baseline.record, created: baseline.created }, { status: baseline.created ? 201 : 200 });
     }
 
     const latest = (await latestRevision(db, gate.projectId)) ?? baseline.record;

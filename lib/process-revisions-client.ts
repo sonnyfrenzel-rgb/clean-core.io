@@ -35,16 +35,18 @@ async function authHeader(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${await user.getIdToken()}` };
 }
 
-/** The history of a project, oldest first. Empty when there is none or it cannot be read. */
+/**
+ * The history of a project, oldest first. Empty when there is none; **throws**
+ * when it cannot be read. An expired session or a 500 used to come back as
+ * `[]`, and the history then said "no revisions yet" about a project that had
+ * them (carried QA finding bea464e656f4) — `RevisionCompare` names a failed read
+ * when this throws.
+ */
 export async function fetchProcessRevisions(projectId: string): Promise<ProcessRevisionSummary[]> {
-  try {
-    const res = await fetch(processRevisionsPath(projectId), { headers: await authHeader() });
-    if (!res.ok) return [];
-    const body = (await res.json()) as { revisions?: unknown };
-    return Array.isArray(body.revisions) ? body.revisions.filter(isProcessRevisionSummary) : [];
-  } catch {
-    return [];
-  }
+  const res = await fetch(processRevisionsPath(projectId), { headers: await authHeader() });
+  if (!res.ok) throw new Error(`The revision history could not be read (${res.status}).`);
+  const body = (await res.json()) as { revisions?: unknown };
+  return Array.isArray(body.revisions) ? body.revisions.filter(isProcessRevisionSummary) : [];
 }
 
 /** One revision with its BPMN, or null when there is no such revision. */

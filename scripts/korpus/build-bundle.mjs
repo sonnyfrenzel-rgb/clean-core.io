@@ -388,7 +388,20 @@ function parseSourceSection(section) {
   if (!m) return null;
   const blocks = fencedBlocks(section.lines, 'abap');
   if (blocks.length === 0) return null;
-  return { name: m[1], lines: blocks[0] };
+  return { name: assertPlainSourceName(m[1]), lines: blocks[0] };
+}
+
+/**
+ * Der Name aus der Überschrift wird ein Dateiname unter `tests/korpus/cases/…`
+ * und mit `path.join` geschrieben. Ein Name mit Pfadteilen (`../../package.json`)
+ * schriebe aus dem Ausgabeordner heraus — darum nur ein schlichter Dateiname
+ * (carried QA finding 537a326d624e).
+ */
+export function assertPlainSourceName(name) {
+  if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]*$/.test(name) || name.includes('..')) {
+    throw new Error(`Quelltextname ist kein schlichter Dateiname: ${name}`);
+  }
+  return name;
 }
 
 /**

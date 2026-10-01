@@ -226,6 +226,9 @@ test.describe('the architecture diagram is parsed, not pattern-matched', () => {
       { name: 'a resource split by a comment', dirty: svg(`<style>.n{background:url/**/(https://${OUTSIDE}/m)}</style><text>Order</text>`), mustKeep: 'Order' },
       { name: 'an image set split by a comment', dirty: svg(`<rect style="background-image:image-set/**/('https://${OUTSIDE}/n.png' 1x)" width="4" height="4"/>`) },
       { name: 'a background on a label table', dirty: label(`<table background="https://${OUTSIDE}/l.png"><tr><td>Order</td></tr></table>`), mustKeep: 'Order' },
+      // Carried QA finding 176ee12c2d66: presentation attributes take url() too.
+      { name: 'a marker from outside', dirty: svg(`<path d="M0 0" marker-end="url(https://${OUTSIDE}/o.svg#m)"/><text>Order</text>`), mustKeep: 'Order' },
+      { name: 'a fill and a stroke from outside', dirty: svg(`<rect fill="url(//${OUTSIDE}/p)" stroke="url('https://${OUTSIDE}/q')" width="4" height="4"/>`) },
     ];
 
     const outcome = await page.evaluate((inputs: Array<{ name: string; dirty: string }>) => {
@@ -243,6 +246,13 @@ test.describe('the architecture diagram is parsed, not pattern-matched', () => {
       const keep = cases[i].mustKeep;
       if (keep) expect(got.text, `${got.name}: the label was thrown away with the reference`).toContain(keep);
     }
+
+    // The arrowheads mermaid draws are same-document references, and they stay.
+    const marked = await page.evaluate(
+      (dirty: string) => window.CleanCoreSanitize.sanitizeMermaidSvg(dirty),
+      svg('<defs><marker id="arrowhead"><path d="M0 0"/></marker></defs><path d="M0 0" marker-end="url(#arrowhead)"/>'),
+    );
+    expect(marked, 'a same-document marker was thrown away').toContain('marker-end="url(#arrowhead)"');
 
     // The module exports one SVG sanitizer. A second one, configured looser than
     // this and documented as stricter, is how a caller picks the wrong one.

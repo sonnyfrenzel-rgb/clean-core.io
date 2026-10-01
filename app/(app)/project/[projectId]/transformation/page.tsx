@@ -974,7 +974,10 @@ CMD ["node", "srv/service.js"]`
       <StageProgress steps={phases} current="transformation" projectId={projectId as string} />
 
       <StageHeader stage="transformation" projectName={project?.name}>
-        <span data-track-loading>{track.loading}</span>
+        {/* Before the project has loaded its track is unknown, and the
+            default copy named the side-by-side track for an ABAP Cloud
+            project (carried QA finding 7abe866543dd). */}
+        <span data-track-loading>{project ? track.loading : 'Opening the project…'}</span>
       </StageHeader>
 
       {/* The generation, while it runs. It used to be a black console with a

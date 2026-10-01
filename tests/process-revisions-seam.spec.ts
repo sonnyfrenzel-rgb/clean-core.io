@@ -188,3 +188,38 @@ test('the documentation stage saves a drawn model as a revision and shows it', a
   expect(await storedRevision(request, 3), 'an unchanged save added a revision').toBeNull();
 });
 
+
+test('a history that cannot be read says so, and does not claim there are no revisions', async ({ page }) => {
+  // Carried QA finding bea464e656f4: every non-OK answer came back as an empty
+  // list, so a 500 or an expired session read as "no revisions yet" on a
+  // project that has two.
+  test.setTimeout(240 * 1000);
+  await page.setViewportSize({ width: 1600, height: 1100 });
+  await signIn(page);
+  await page.route('**/api/projects/*/process-revisions**', (route) =>
+    route.request().method() === 'GET' && !new URL(route.request().url()).search
+      ? route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'Refused for the test.' }) })
+      : route.continue(),
+  );
+  await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-revision-compare="failed"]')).toBeVisible({ timeout: 90000 });
+  await expect(page.locator('[data-revision]')).toHaveCount(0);
+});
+
+test('a baseline the server refuses is said, not shown as an empty history', async ({ page }) => {
+  // Carried QA finding 5ab84bc9a713: the opening baseline's refusal was
+  // dropped, and the history under the map read as if there were no revisions
+  // to have. A project whose active run does not exist is refused.
+  test.setTimeout(240 * 1000);
+  const ghost = `${PROJECT_ID}-ghost`;
+  await adminSetDoc('projects', ghost, {
+    name: 'Requisition release, run missing', userId: uid, createdAt: new Date(),
+    status: 'documented', legacyCode: PROGRAM, s4Deployment: 'private',
+    activeRunId: `${RUN_ID}-missing`,
+    inputFingerprint: { sha256: SOURCE_SHA, fileName: FILE_NAME },
+  });
+  await page.setViewportSize({ width: 1600, height: 1100 });
+  await signIn(page);
+  await page.goto(`/project/${ghost}/documentation`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-revision-baseline-refused]')).toBeVisible({ timeout: 90000 });
+});

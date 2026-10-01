@@ -165,7 +165,9 @@ function joinStarts(fromClause: string): { at: number; after: number; type?: str
 }
 
 function parseJoins(fromClause: string): { from: SqlTableRef; joins: JoinClause[] } {
-  const starts = joinStarts(fromClause);
+  // Literal text is not SQL: a quoted JOIN is no join (carried QA finding 8a7790223de2).
+  // maskLiterals keeps offsets, so the slices below still read the original clause.
+  const starts = joinStarts(maskLiterals(fromClause));
   const firstJoin = starts.length ? starts[0].at : -1;
   const head = firstJoin === -1 ? fromClause : fromClause.slice(0, firstJoin);
   const fromTok = head.trim().split(/\s+/).filter(Boolean);
