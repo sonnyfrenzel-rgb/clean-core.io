@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Code2, List, Map as MapIcon, Pencil } from 'lucide-react';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -28,7 +29,8 @@ import {
 } from '@/lib/process-navigation';
 import BpmnCanvas from './BpmnCanvas';
 import { anchorText } from '@/lib/bpmn/layout';
-import BpmnEditor, { type SaveProcessModel } from './BpmnEditor';
+import type { OpenedRevision, SaveProcessModel } from './BpmnEditor';
+import { useBreakpointS } from '@/hooks/useBreakpointS';
 import ProcessBreadcrumb from './ProcessBreadcrumb';
 import ProcessCodeCard from './ProcessCodeCard';
 import ProcessFilters, { type PathHighlight } from './ProcessFilters';
@@ -38,6 +40,13 @@ import ProcessOutline from './ProcessOutline';
 import ProcessSearch from './ProcessSearch';
 import ProcessStepList from './ProcessStepList';
 import { mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } from '@/lib/workspace-messages';
+
+/**
+ * The modeller is loaded when somebody presses *Edit model* and not before: a
+ * reader of the map never pays for bpmn-js's modelling modules, the import or
+ * the properties panel.
+ */
+const BpmnEditor = dynamic(() => import('./BpmnEditor'), { ssr: false });
 
 /**
  * The process map in the workspace — roadmap 2.5, navigable at size since 2.9.
@@ -160,6 +169,11 @@ export interface ProcessMapProps {
    * wired up rather than pretending to have saved.
    */
   save?: SaveProcessModel;
+  /**
+   * The newest saved revision of this process, and the base the next save is
+   * written against — so a revision saved on another screen opens here.
+   */
+  openLatest?: () => Promise<OpenedRevision | null>;
 }
 
 export default function ProcessMap({
@@ -176,7 +190,10 @@ export default function ProcessMap({
   usage = null,
   catalogTarget,
   save,
+  openLatest,
 }: ProcessMapProps) {
+  /** A phone shows the map and the steps; modelling by touch is not offered (`DESIGN.md` §5.7). */
+  const isPhone = useBreakpointS();
   const [viewLocal, setViewLocal] = useState<ProcessMapView>(defaultView);
   const [selectedLocal, setSelectedLocal] = useState<string | null>(null);
   const [planeLocal, setPlaneLocal] = useState<string | null>(null);
@@ -385,9 +402,14 @@ export default function ProcessMap({
   const selectedElement: ProcessMapElement | null = selected ? (byId.get(selected) ?? null) : null;
 
   /** Element id → what a reader calls it. The editor names its hints with these. */
-  const labels = useMemo(
-    () => new Map(model.elements.map((element) => [element.id, element.label])),
-    [model],
+  /** What the editor names elements by: always the plain reading, whatever the switch says. */
+  const plainLabels = useMemo(
+    () => new Map(modelProp.elements.map((element) => [element.id, element.label])),
+    [modelProp],
+  );
+  const proposals = useMemo(
+    () => new Set(modelProp.elements.filter((element) => element.businessName !== null).map((element) => element.id)),
+    [modelProp],
   );
 
   /**
@@ -396,8 +418,8 @@ export default function ProcessMap({
    * here — it is somebody else's process, and it is dropped by not matching.
    */
   const openWith = useCallback(
-    () => (draftRef.current?.source === source ? draftRef.current.xml : model.xml),
-    [model, source],
+    () => (draftRef.current?.source === source ? draftRef.current.xml : modelProp.xml),
+    [modelProp, source],
   );
   const keepDraft = useCallback((xml: string) => {
     draftRef.current = { source, xml };
@@ -614,9 +636,9 @@ export default function ProcessMap({
         </p>
       ) : null}
 
-      <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />
+      {editing ? null : <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
 
-      {openProblem ? (
+      {openProblem && !editing ? (
         <p
           data-process-map-level
           data-determined={openProblem.determined ? 'true' : 'false'}
@@ -626,6 +648,43 @@ export default function ProcessMap({
         </p>
       ) : null}
 
+      {editing && isPhone ? (
+        <CcMessageStrip state="information" headline={wt('editor.phoneTitle')}>
+          <span data-process-editor-phone="">{wt('editor.phoneBody')}</span>
+        </CcMessageStrip>
+      ) : null}
+
+      {editing && view === 'map' && !isPhone ? (
+        (
+          // Editing takes the whole width: the outline, the filters and the code
+          // card belong to reading, and the properties panel shows the code of
+          // the element on the canvas.
+          <BpmnEditor
+            // `session` is what *Discard* bumps; `source` is what a different
+            // process changes. Either one has to build a new modeller: keeping
+            // the old instance would keep the old drawing inside it, whatever
+            // `openWith` now returns.
+            key={`${session}|${source}`}
+            openWith={openWith}
+            baseXml={modelProp.technicalXml ?? modelProp.xml}
+            istXml={modelProp.xml}
+            fileName={model.fileName}
+            source={source}
+            label={`${model.processName}. ${model.overview}`}
+            labels={plainLabels}
+            proposals={proposals}
+            proposedLanes={model.lanes}
+            technical={technical}
+            selected={selected}
+            onSelectedChange={setSelected}
+            onDraftChange={keepDraft}
+            onDiscard={discardDraft}
+            save={save}
+            openLatest={openLatest}
+          />
+        )
+      ) : (
+        <>
       <ProcessFilters
         highlight={highlight}
         onHighlightChange={setHighlight}
@@ -671,26 +730,7 @@ export default function ProcessMap({
         </div>
 
         <div className="min-w-0">
-          {view === 'map' && editing ? (
-            <BpmnEditor
-              // `session` is what *Discard* bumps; `source` is what a different
-              // process changes. Either one has to build a new modeller: keeping
-              // the old instance would keep the old drawing inside it, whatever
-              // `openWith` now returns.
-              key={`${session}|${source}`}
-              openWith={openWith}
-              baseXml={modelProp.technicalXml ?? modelProp.xml}
-              fileName={model.fileName}
-              label={`${model.processName}. ${model.overview}`}
-              labels={labels}
-              proposedLanes={model.lanes}
-              selected={selected}
-              onSelectedChange={setSelected}
-              onDraftChange={keepDraft}
-              onDiscard={discardDraft}
-              save={save}
-            />
-          ) : view === 'map' ? (
+          {view === 'map' ? (
             <BpmnCanvas
               xml={model.xml}
               label={`${model.processName}. ${model.overview}`}
@@ -738,6 +778,8 @@ export default function ProcessMap({
           </p>
         )}
       </div>
+        </>
+      )}
     </section>
   );
 }

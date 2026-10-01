@@ -20,7 +20,11 @@ import {
 } from '../lib/glossary-lookup';
 import {
   buildWorkspaceSearchIndex,
+  groupSearchResults,
+  searchGroupOf,
   searchWorkspace,
+  SEARCH_GROUP_LABEL,
+  SEARCH_GROUP_ORDER,
   SEARCH_KIND_LABEL,
 } from '../lib/workspace-search';
 import type { Project, WorklistItem } from '../lib/types';
@@ -107,7 +111,10 @@ test.describe('the index — elements, rules, findings, glossary', () => {
   test('the gateway and its rule are both in the index, each with the right anchor', () => {
     const index = buildWorkspaceSearchIndex({ projectId: 'proj-1', project, reading });
 
-    const gateway = index.find((r) => r.kind === 'element' && r.title.includes('lv_amount'));
+    // Since 01.10.2026 the title is the plain name (`lib/abap/plain-language.ts`)
+    // and the code's own condition is kept as `technical`, which is what this
+    // looks for — the plain name is asserted on its own below.
+    const gateway = index.find((r) => r.kind === 'element' && (r.technical ?? r.title).includes('lv_amount'));
     expect(gateway, 'the IF gateway is not in the element index').toBeTruthy();
     expect(gateway!.anchor).toMatch(/^L\d+/);
     expect(gateway!.href).toBe('/project/proj-1/documentation');
@@ -162,6 +169,48 @@ test.describe('the index — elements, rules, findings, glossary', () => {
 });
 
 /* ============================================================ searching it */
+
+test.describe('grouped in the words a reader uses — DESIGN.md §2.10, mockup s9', () => {
+  const reading = readSource(SOURCE);
+  const project: Project = { name: 'Search fixture', legacyCode: SOURCE, worklist: WORKLIST };
+  const index = buildWorkspaceSearchIndex({ projectId: 'g1', project, reading });
+
+  test('a gateway is a decision, titled as a plain question, with the code one level deeper', () => {
+    const gateway = index.find((r) => r.kind === 'element' && (r.technical ?? '').includes('lv_amount'));
+    expect(gateway, 'the IF gateway should carry a plain name and keep its condition as technical').toBeTruthy();
+    expect(searchGroupOf(gateway!)).toBe('decision');
+    expect(gateway!.title).not.toContain('lv_amount');
+    expect(gateway!.title.trim().endsWith('?')).toBe(true);
+  });
+
+  test('a rule is titled by its plain sentence and keeps its id and code as technical', () => {
+    const rule = index.find((r) => r.kind === 'rule');
+    expect(rule).toBeTruthy();
+    expect(rule!.technical).toMatch(/^BR-\d+ · /);
+    expect(rule!.title).not.toMatch(/^BR-/);
+  });
+
+  test('a technical query still finds the plain-named hit', () => {
+    const hits = searchWorkspace(index, { projectId: 'g1' }, 'lv_amount');
+    expect(hits.some((r) => searchGroupOf(r) === 'decision')).toBe(true);
+  });
+
+  test('groups come in one fixed order, empty ones left out, and every hit lands in exactly one', () => {
+    const hits = searchWorkspace(index, { projectId: 'g1', legacyCode: SOURCE }, 'limit');
+    const groups = groupSearchResults(hits);
+    expect(groups.length).toBeGreaterThan(0);
+    const order = groups.map((g) => SEARCH_GROUP_ORDER.indexOf(g.group));
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(groups.reduce((n, g) => n + g.results.length, 0)).toBe(hits.length);
+    for (const g of groups) expect(g.results.length).toBeGreaterThan(0);
+  });
+
+  test('every group label is plain words — no engine kind shows through', () => {
+    for (const label of Object.values(SEARCH_GROUP_LABEL)) {
+      expect(label).not.toMatch(/element|source-line|gateway|node/i);
+    }
+  });
+});
 
 test.describe('searching the index', () => {
   const reading = readSource(SOURCE);
@@ -690,7 +739,19 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
     await page.fill('[data-command-search-input]', 'lv_amount');
     const hit = page.locator('[data-command-search-hit="element"]').first();
     await expect(hit).toBeVisible();
-    await expect(hit).toContainText('Element');
+    // Since 01.10.2026 the kind is the heading of the hit's group, in the
+    // reader's words (§2.10, mockup s9): an IF on lv_amount is a decision.
+    const group = page.locator('[data-command-search-group]').filter({ has: hit });
+    await expect(group).toHaveAttribute('data-command-search-group', 'decision');
+    await expect(group.locator('p').first()).toHaveText(SEARCH_GROUP_LABEL.decision);
+    // Every visible hit stands under a heading that names its kind.
+    const hits = page.locator('[data-command-search-hit]');
+    const groups = page.locator('[data-command-search-group]');
+    expect(await groups.count()).toBeGreaterThan(0);
+    for (let i = 0; i < (await hits.count()); i += 1) {
+      const inGroup = await hits.nth(i).evaluate((el) => Boolean(el.closest('[data-command-search-group]')));
+      expect(inGroup, `hit ${i} has no group heading`).toBe(true);
+    }
   });
 
   test('a finding links to the Analyze stage, where the worklist actually renders', async ({ page }) => {

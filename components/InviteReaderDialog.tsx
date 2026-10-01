@@ -7,6 +7,7 @@ import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
 import CcField from '@/components/cc/Field';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import OpenInvitations from '@/components/workspace/OpenInvitations';
 import { formatTextDate } from '@/lib/format';
 import {
   INVITATION_DEFAULT_DAYS,
@@ -105,6 +106,12 @@ export default function InviteReaderDialog({
         <div data-invite-spam-hint>
           <CcMessageStrip state="warning">{INVITATION_SPAM_HINT}</CcMessageStrip>
         </div>
+        {/* Everything still waiting on this project, the new one included —
+            each with its expiry and a way to withdraw it (owner decision
+            01.10.2026). */}
+        <div className="mt-4">
+          <OpenInvitations projectId={projectId} refreshKey={1} />
+        </div>
       </CcDialog>
     );
   }
@@ -176,6 +183,11 @@ export default function InviteReaderDialog({
             <CcMessageStrip state="error">{error}</CcMessageStrip>
           </div>
         )}
+
+        {/* What this project already has waiting (owner decision 01.10.2026):
+            the address, when its link expires, and Withdraw. At most three
+            wait at once, so this is also where a full slot is freed. */}
+        <OpenInvitations projectId={projectId} />
       </div>
     </CcDialog>
   );

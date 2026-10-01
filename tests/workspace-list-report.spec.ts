@@ -5,8 +5,8 @@ import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { CC_MESSAGES } from '../lib/cc-messages';
+import { WORKSPACE_MESSAGES } from '../lib/workspace-messages';
 import { DEMO_PROJECT_TITLE, DEMO_TAG } from '../lib/demo-marks';
-import { OBJECT_STATUS } from '../lib/object-status';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -48,6 +48,8 @@ const SIGN_IN = `spec-${process.pid}-${Math.random().toString(36).slice(2)}-Aa1!
 const STAGED_ID = `ws-staged-${STAMP}`;
 const STALE_ID = `ws-stale-${STAMP}`;
 const RUN_ID = `ws-run-${STAMP}`;
+const SHARED_ID = `ws-shared-${STAMP}`;
+const INVITE_ID = `wsInvite${STAMP}`;
 
 /** Real ABAP, so the engine has something to find if a run is ever started on it. */
 const PROGRAM = [
@@ -84,7 +86,9 @@ async function signIn(page: Page, email: string) {
 async function openWorkspace(page: Page) {
   await page.setViewportSize({ width: 1440, height: 1400 });
   await signIn(page, ADMIN_EMAIL);
-  await page.goto('/admin/workspace', { waitUntil: 'domcontentloaded' });
+  // Since 01.10.2026 there is one "My workspace", at /dashboard: the 3.0 list
+  // for an account with the switch on, the old page for every other account.
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-cc-workspace]', { timeout: 60000 });
   await page.waitForSelector('[data-cc-object-identifier-title]', { timeout: 60000 });
   // Measured styles, not animations. Disabling transitions before anything is
@@ -110,7 +114,7 @@ test.beforeAll(async () => {
     activatedAt: new Date(), transformationsUsed: 1, transformationsLimit: 5,
     termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
   };
-  await adminSetDoc('users', adminUid, { ...profile, email: ADMIN_EMAIL, isAdmin: true });
+  await adminSetDoc('users', adminUid, { ...profile, email: ADMIN_EMAIL, isAdmin: true, workspaceShell: true });
   await adminSetDoc('users', communityUid, { ...profile, email: COMMUNITY_EMAIL, isAdmin: false });
 });
 
@@ -124,27 +128,28 @@ test('the server under test is the one that was changed', async ({ page }) => {
   await expect(page.locator('[data-cc-table]')).toHaveCount(1);
 });
 
-test('a community account cannot reach it, and its dashboard is unchanged', async ({ page }) => {
+test('a community account keeps its dashboard, and the old address of the list leads there', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await signIn(page, COMMUNITY_EMAIL);
 
+  // /admin/workspace was where the 3.0 list grew; it now redirects to the one
+  // "My workspace" — which for an account without the switch is the old page.
   await page.goto('/admin/workspace', { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(3000);
-  expect(
-    await page.locator('[data-cc-workspace]').count(),
-    'the list report renders for a community account',
-  ).toBe(0);
-  await expect(page.locator('text=Access denied')).toBeVisible();
-
-  // The other half of the phase-1 exit criterion: with the switch off, nothing
-  // about the product a community account uses has moved.
-  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.waitForURL(/\/dashboard$/, { timeout: 60000 });
   await page.waitForSelector('[data-testid="demo-entry"]', { timeout: 60000 });
   expect(
     await page.locator('[data-cc-workspace]').count(),
-    'the new workspace leaked into /dashboard',
+    'the new workspace leaked into /dashboard for a community account',
   ).toBe(0);
   await expect(page.locator('[data-testid="demo-entry-title"]')).toBeVisible();
+});
+
+test('the switch decides which "My workspace" /dashboard shows — and there is only one at a time', async ({ page }) => {
+  test.setTimeout(180 * 1000);
+  await openWorkspace(page);
+  await expect(page.locator('[data-cc-workspace]')).toHaveCount(1);
+  expect(await page.locator('[data-dashboard]').count(), 'both workspaces rendered').toBe(0);
+  await expect(page.locator('h1')).toHaveText(CC_MESSAGES['workspace.title']);
 });
 
 test.describe('before the first project', () => {
@@ -161,14 +166,12 @@ test.describe('before the first project', () => {
 
     // Roadmap 0.10 marks every phase of the demo unproven: it produces no signed
     // run and executes no test. A first row that reads as a finished project is
-    // the flattery this screen exists to refuse.
-    const demoStatus = await page
-      .locator('[data-cc-table-row] [data-cc-object-status]')
-      .first()
-      .getAttribute('data-cc-object-status');
-    expect(demoStatus, 'the demo row claims a status it did not earn').not.toBe('handed-over');
-    expect(demoStatus).not.toBe('done');
-    expect(demoStatus).toBe('partial');
+    // the flattery this screen exists to refuse — so the demo row says in one
+    // plain sentence what it is, and carries no status word and no step bar.
+    const demoRow = page.locator('[data-cc-table-row]').first();
+    await expect(demoRow.locator('[data-project-sentence]')).toHaveText(WORKSPACE_MESSAGES['myWorkspace.demoSentence']);
+    await expect(demoRow).not.toContainText('handed over');
+    expect(await demoRow.locator('[data-progress-bar]').count()).toBe(0);
     expect(
       await page.locator('[data-cc-table] [data-provenance="proven"]').count(),
       'the demo row carries a proof chip',
@@ -180,7 +183,9 @@ test.describe('before the first project', () => {
     expect(await page.locator('[data-cc-empty-state="no-matches"]').count()).toBe(0);
     await expect(page.locator('[data-workspace-your-turn]')).toBeVisible();
     expect(
-      await page.locator('[data-cc-filter-bar]').count(),
+      // Scoped to the project list: the examples gallery below it has a
+      // filter bar of its own, over a list that is never empty.
+      await page.locator('[data-workspace-projects] [data-cc-filter-bar]').count(),
       'a filter bar over a table with nothing to filter',
     ).toBe(0);
   });
@@ -225,6 +230,82 @@ test.describe('with projects', () => {
     });
   });
 
+  test('a project shared with the account is listed as read only, offers no owner action, and the access filter finds it', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await adminSetDoc('projects', SHARED_ID, {
+      name: 'Shared credit limit check', userId: communityUid, createdAt: new Date(), status: 'uploaded',
+      legacyCode: PROGRAM, readers: [adminUid],
+    });
+    await openWorkspace(page);
+
+    const row = page.locator(`[data-cc-table-row="${SHARED_ID}"]`);
+    await expect(row).toBeVisible({ timeout: 60000 });
+    await expect(row.locator('[data-workspace-access="shared"]')).toBeVisible();
+    await expect(row).toContainText('Read only');
+    // Read access only: no run, no menu of owner actions — just open.
+    expect(await row.locator(`[data-workspace-run="${SHARED_ID}"]`).count()).toBe(0);
+    expect(await row.locator(`[data-workspace-more="${SHARED_ID}"]`).count()).toBe(0);
+    await expect(row.locator(`[data-workspace-open-button="${SHARED_ID}"]`)).toBeVisible();
+
+    // The sharing section names it too.
+    await expect(page.locator(`[data-workspace-shared-row="${SHARED_ID}"]`)).toBeVisible();
+
+    // Access: "Shared with me" keeps it and drops the own rows and the demo.
+    await page.getByLabel('Access').selectOption('shared');
+    const titles = await rowTitles(page);
+    expect(titles).toEqual(['Shared credit limit check']);
+  });
+
+  test('the row menu keeps every owner action and opens the invite dialog with what is still waiting', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    const now = Date.now();
+    await adminSetDoc(`projects/${STAGED_ID}/invitations`, INVITE_ID, {
+      id: INVITE_ID, projectId: STAGED_ID, email: 'waiting.reader@example.com',
+      invitedBy: { uid: adminUid, name: 'List Report' }, invitedAt: new Date(now).toISOString(),
+      expiresAt: new Date(now + 7 * 864e5).toISOString(), status: 'pending',
+      acceptedBy: null, acceptedAt: null, revokedAt: null,
+    });
+    await openWorkspace(page);
+
+    await page.click(`[data-workspace-more="${STAGED_ID}"]`);
+    const panel = page.locator(`[data-workspace-more-panel="${STAGED_ID}"]`);
+    await expect(panel).toBeVisible();
+    for (const label of ['Invite to read…', 'Duplicate', 'Export as JSON', 'Deliverables', 'Delete…']) {
+      await expect(panel.getByText(label, { exact: true })).toBeVisible();
+    }
+    await panel.locator('[data-invite-open]').click();
+
+    const dialog = page.locator('[data-invite-dialog]');
+    await expect(dialog).toBeVisible();
+    const waiting = dialog.locator(`[data-open-invitation="${INVITE_ID}"]`);
+    await expect(waiting).toBeVisible({ timeout: 60000 });
+    await expect(waiting).toContainText('waiting.reader@example.com');
+    await expect(waiting.locator('[data-open-invitation-expires]')).toContainText('Link expires on');
+
+    // Withdraw asks first, then the link is dead and the entry leaves the list.
+    await waiting.locator(`[data-open-invitation-withdraw="${INVITE_ID}"]`).click();
+    await page.locator('[data-cc-message-box]').getByRole('button', { name: 'Withdraw' }).click();
+    await expect(dialog.locator(`[data-open-invitation="${INVITE_ID}"]`)).toHaveCount(0, { timeout: 60000 });
+  });
+
+  test('on a phone each project is one compact card, with no per-column labels', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, ADMIN_EMAIL);
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    const card = page.locator(`[data-workspace-card="${STAGED_ID}"]`);
+    await expect(card).toBeVisible({ timeout: 60000 });
+    // The table and its column labels are not rendered at all on S.
+    expect(await page.locator('[data-cc-workspace] [data-cc-table]').count()).toBe(0);
+    await expect(card.locator('[data-project-sentence]')).toContainText('Not analysed yet');
+    await expect(card.locator('[data-progress-bar]')).toBeVisible();
+    await expect(card.locator('[data-project-next]')).toHaveCount(1);
+    await expect(card.locator(`[data-workspace-more="${STAGED_ID}"]`)).toBeVisible();
+    // No sideways scroll.
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
   test('every column of a project that has done nothing says so', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await openWorkspace(page);
@@ -247,12 +328,14 @@ test.describe('with projects', () => {
     ).toBe(0);
     await expect(row).toContainText(CC_MESSAGES['workspace.notAnalysed']);
 
-    // Status: one of the ten object statuses, and the one that means "there is
-    // text here and nothing has proved anything about it".
-    await expect(row.locator('[data-cc-object-status="draft"]')).toBeVisible();
-    await expect(row.locator('[data-cc-object-status-label]')).toHaveText(
-      OBJECT_STATUS['draft'].label,
-    );
+    // Status: one plain sentence, not a bare "draft" (owner feedback 01.10.2026),
+    // a bar whose done segments are the count, and the next action as a link.
+    await expect(row.locator('[data-project-progress]')).toHaveAttribute('data-project-stage', 'not-analysed');
+    await expect(row.locator('[data-project-sentence]')).toContainText('Not analysed yet');
+    expect(await row.locator('[data-cc-object-status]').count(), 'a bare status word is back').toBe(0);
+    await expect(row.locator('[data-project-count]')).toHaveText('0 of 7 steps done');
+    expect(await row.locator('[data-progress-bar] [data-segment-state^="done"]').count()).toBe(0);
+    await expect(row.locator('[data-project-next]')).toHaveText('Next: Run the analysis');
 
     // Last change: the ISO date of §3, in mono.
     await expect(row.locator('[data-cc-table-cell="lastChange"]')).toContainText(
@@ -268,14 +351,11 @@ test.describe('with projects', () => {
     await expect(row).toBeVisible();
     await expect(row.locator('[data-provenance="stale"]')).toBeVisible();
 
-    // DESIGN.md §4.1: *stale* and *signed* are provenance, not object statuses —
-    // which is how "stale" once ended up next to "failed" in the same red.
-    const status = await row
-      .locator('[data-cc-object-status]')
-      .first()
-      .getAttribute('data-cc-object-status');
-    expect(status, 'stale was rendered as an object status').not.toBe('failed');
-    expect(Object.keys(OBJECT_STATUS)).toContain(status);
+    // DESIGN.md §4.1: *stale* is provenance, not a status of its own — the row
+    // says it in its sentence, and the stale step is drawn dashed, never red.
+    await expect(row.locator('[data-project-sentence]')).toContainText('no longer match the code');
+    const counted = await row.locator('[data-progress-bar] [data-segment-state^="done"]').count();
+    await expect(row.locator('[data-project-count]')).toHaveText(`${counted} of 7 steps done`);
 
     // It counted the findings that are on record, and did not invent a level.
     await expect(row.locator('[data-workspace-findings]')).toHaveText('2');
@@ -289,10 +369,10 @@ test.describe('with projects', () => {
     expect(before.length, 'the table rendered no rows at all').toBeGreaterThanOrEqual(3);
 
     // With projects of the reader's own there is something to filter.
-    const filter = page.locator('[data-cc-filter-bar]');
+    const filter = page.locator('[data-workspace-projects] [data-cc-filter-bar]');
     await expect(filter).toBeVisible();
 
-    await page.fill('input[type="search"]', 'zzz-nothing-matches-this-zzz');
+    await page.fill('[data-workspace-projects] input[type="search"]', 'zzz-nothing-matches-this-zzz');
     await expect(page.locator('[data-cc-empty-state="no-matches"]')).toBeVisible();
 
     // The distinction this test exists for: the no-match state never wears the
@@ -304,14 +384,14 @@ test.describe('with projects', () => {
     const noMatchTitle = await page.locator('[data-cc-no-match-title]').innerText();
     expect(noMatchTitle).toBe(CC_MESSAGES['workspace.noMatch']);
     expect(noMatchTitle).not.toBe(CC_MESSAGES['workspace.emptyTitle']);
-    await expect(page.locator('[data-cc-clear-filters]')).toBeVisible();
+    await expect(page.locator('[data-workspace-projects] [data-cc-clear-filters]')).toBeVisible();
 
     // And the count says how many of how many, in a live region.
-    await expect(page.locator('[data-cc-filter-count]')).toContainText(
+    await expect(page.locator('[data-workspace-projects] [data-cc-filter-count]')).toContainText(
       `0 ${CC_MESSAGES['filter.of']} ${before.length} ${CC_MESSAGES['workspace.noun']}`,
     );
 
-    await page.click('[data-cc-clear-filters]');
+    await page.click('[data-workspace-projects] [data-cc-clear-filters]');
     await expect(page.locator('[data-cc-empty-state="no-matches"]')).toHaveCount(0);
     await expect(page.locator('[data-cc-table] [data-cc-object-identifier-title]')).toHaveCount(
       before.length,

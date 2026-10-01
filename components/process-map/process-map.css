@@ -253,3 +253,56 @@
   display: block;
   font-family: var(--font-cc-mono);
 }
+
+/*
+ * The editor's canvas — the modeller of roadmap 3.1, with bpmn-js's own tools
+ * (palette, context pad, replace menu, breadcrumbs into a sub-process) left on.
+ */
+.cc-editor-canvas {
+  background: var(--cc-surface);
+}
+
+.cc-editor-canvas .djs-container:focus-visible,
+.cc-editor-canvas svg:focus-visible {
+  outline: 2px solid var(--cc-focus);
+  outline-offset: -2px;
+}
+
+.cc-editor-canvas .djs-palette {
+  border-color: var(--cc-line);
+  border-radius: 8px;
+  background: var(--cc-surface);
+}
+
+/* "Compare with Ist": added is information, changed is warning — never green (green is a proof). */
+.cc-editor-canvas .cc-diff-added .djs-visual > :first-child {
+  stroke: var(--cc-information);
+  stroke-width: 3px;
+  stroke-dasharray: 6 3;
+}
+
+.cc-editor-canvas .cc-diff-changed .djs-visual > :first-child {
+  stroke: var(--cc-warning-mark);
+  stroke-width: 3px;
+}
+
+.cc-diff-swatch-added,
+.cc-diff-swatch-changed {
+  display: inline-block;
+  width: 16px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--cc-surface);
+}
+
+.cc-diff-swatch-added {
+  border: 2px dashed var(--cc-information);
+}
+
+.cc-diff-swatch-changed {
+  border: 2px solid var(--cc-warning-mark);
+}
+
+[data-process-editor][data-editor-fullscreen='true'] {
+  background: var(--cc-page);
+}

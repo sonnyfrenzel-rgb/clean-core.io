@@ -63,7 +63,17 @@ export function useCoachMarks(context: CoachMarkContext): CoachMarkState {
     [hasDecision, hasNextStep],
   );
 
-  const current = dismissed === null ? null : nextCoachMark(available, dismissed);
+  const next = dismissed === null ? null : nextCoachMark(available, dismissed);
+  // "1 of 3" (mockup s9): the place of this mark among the ones this screen
+  // offers. A new object only when the mark changes, so a consumer's effect
+  // keyed on it does not run on every render.
+  const nextId = next?.id ?? null;
+  const total = available.length;
+  const current = useMemo(() => {
+    const mark = available.find((m) => m.id === nextId);
+    if (!mark) return null;
+    return { ...mark, position: available.indexOf(mark) + 1, total };
+  }, [available, nextId, total]);
 
   const dismiss = useCallback((id: CoachMarkId) => {
     setDismissed((prev) => {

@@ -27,6 +27,7 @@ import { WORKSPACE_PAGE_MESSAGES } from './messages/workspace';
 import { WORKSPACE_ANSWER_MESSAGES } from './messages/workspace-answers';
 import { WORKSPACE_SHELL_MESSAGES } from './messages/workspace-shell';
 import { PROCESS_MAP_MESSAGES } from './messages/process-map';
+import { PROCESS_EDITOR_MESSAGES } from './messages/process-editor';
 import { DEMO_WORKSPACE_MESSAGES } from './messages/demo';
 import { OWN_CODE_MESSAGES } from './messages/own-code';
 import { WORKSPACE_BUSINESS_MESSAGES } from './messages/workspace-business';
@@ -38,6 +39,7 @@ export const WORKSPACE_MESSAGE_PARTS = {
   answers: WORKSPACE_ANSWER_MESSAGES,
   shell: WORKSPACE_SHELL_MESSAGES,
   processMap: PROCESS_MAP_MESSAGES,
+  processEditor: PROCESS_EDITOR_MESSAGES,
   demo: DEMO_WORKSPACE_MESSAGES,
   ownCode: OWN_CODE_MESSAGES,
   business: WORKSPACE_BUSINESS_MESSAGES,
@@ -49,6 +51,7 @@ export const WORKSPACE_MESSAGES = {
   ...WORKSPACE_ANSWER_MESSAGES,
   ...WORKSPACE_SHELL_MESSAGES,
   ...PROCESS_MAP_MESSAGES,
+  ...PROCESS_EDITOR_MESSAGES,
   ...DEMO_WORKSPACE_MESSAGES,
   ...OWN_CODE_MESSAGES,
   ...WORKSPACE_BUSINESS_MESSAGES,
@@ -70,6 +73,7 @@ export * from './messages/workspace';
 export * from './messages/workspace-answers';
 export * from './messages/workspace-shell';
 export * from './messages/process-map';
+export * from './messages/process-editor';
 export * from './messages/demo';
 export * from './messages/own-code';
 export * from './messages/workspace-business';

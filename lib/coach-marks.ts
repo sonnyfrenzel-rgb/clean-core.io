@@ -38,6 +38,13 @@ export interface CoachMark {
   title: string;
   /** One sentence of why it is worth doing. Never a second invitation. */
   body: string;
+  /**
+   * Where this mark stands among the ones this screen offers — "1 of 3".
+   * Set by `hooks/useCoachMarks.ts` on the mark it hands out; counted over the
+   * marks that have something to point at, so a screen with two shows "of 2".
+   */
+  position?: number;
+  total?: number;
 }
 
 export const COACH_MARKS: readonly CoachMark[] = Object.freeze([

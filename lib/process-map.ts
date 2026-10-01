@@ -109,7 +109,16 @@ function unescape(value: string): string {
     .replace(/&#10;/g, '\n')
     .replace(/&#13;/g, '\r')
     .replace(/&#9;/g, '\t')
+    // Any other character reference — bpmn-moddle, and so bpmn-js and the
+    // import, writes `<` in an attribute as `&#60;`. Unread, a saved condition
+    // compared unequal to the same condition in the export.
+    .replace(/&#x([0-9a-fA-F]{1,6});/g, (_, hex: string) => safeChar(parseInt(hex, 16)))
+    .replace(/&#([0-9]{1,7});/g, (_, dec: string) => safeChar(Number(dec)))
     .replace(/&amp;/g, '&');
+}
+
+function safeChar(code: number): string {
+  return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '';
 }
 
 function attributes(tag: string): Record<string, string> {
