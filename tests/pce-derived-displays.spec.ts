@@ -166,7 +166,10 @@ test.describe('a PCE project gets the same grade in the core result and each der
     // The hook takes the target as a required argument, so the compiler holds
     // the call sites; this holds the values they pass.
     const callers: Array<[string, RegExp]> = [
-      ['components/workspace/ManagementOverview.tsx', /useAbcdCatalogLookup\(lookupObjects, project \? catalogLookupTargetOf\(project\) : null\)/],
+      // The Management overview and the demo panel share one derivation since the
+      // executive rebuild; the lookup lives in that hook now.
+      ['hooks/useFitByPlatform.ts', /useAbcdCatalogLookup\(lookupObjects, project \? catalogLookupTargetOf\(project\) : null\)/],
+      ['components/workspace/ManagementOverview.tsx', /useFitByPlatform\(findings, project,/],
       ['components/workspace/PublicCloudFitPanel.tsx', /useAbcdCatalogLookup\(lookupObjects, project \? catalogLookupTargetOf\(project\) : null\)/],
       ['hooks/useProcessOverlays.ts', /useAbcdCatalogLookup\(objects, catalogTarget\)/],
       ['components/analyze/UsageRiskMatrix.tsx', /useAbcdCatalogLookup\(lookupObjects, target\)/],
