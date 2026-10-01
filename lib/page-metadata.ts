@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 
 /**
  * The picture every public page shows when it is shared, unless the page names
- * its own. 1200×630, rendered from text by `scripts/render-social-card.mjs`.
+ * its own. 1200×630, rendered by `scripts/render-social-card.mjs` from the USP and
+ * the landing hero's BPMN plane and source lines, captured from the app by
+ * `scripts/capture-social-card-visual.mjs`.
  *
  * Next.js replaces a parent's `openGraph` block wholesale when a page declares
  * its own, so the root layout's image never reached a page that set a title:
