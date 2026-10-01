@@ -35,14 +35,23 @@ const SCAN_EXTENSIONS = new Set(['.ts', '.tsx']);
 const ALLOWLISTED_FILES = new Set([
   // The version.ts file itself defines the version
   path.resolve(ROOT, 'lib/version.ts'),
-  // The Terms archive names *document* versions, not the app's. Its whole
-  // subject is that "v2.0.0" is the label a superseded contract gives itself —
-  // in the data, and in the comments explaining why the label is not a safe key
-  // (the wording published as v2.0.0 was edited three times without the label
-  // moving). None of it follows an app release, and a guard that demanded it did
-  // would be asking for a contract to be renamed every time the product ships.
-  path.resolve(ROOT, 'lib/terms-versions.ts'),
 ]);
+
+/**
+ * The Terms archive names *document* versions, not the app's. Its whole
+ * subject is that "v2.0.0" is the label a superseded contract gives itself —
+ * in the data, and in the comments explaining why the label is not a safe key
+ * (the wording published as v2.0.0 was edited three times without the label
+ * moving). None of it follows an app release, and a guard that demanded it did
+ * would be asking for a contract to be renamed every time the product ships.
+ *
+ * Only those lines, though: a comment, or a `label: 'vX.Y.Z'` data line.
+ * Exempting the whole module (carried QA finding ff98897d2222) let an app
+ * version in its code pass unseen.
+ */
+const DOCUMENT_VERSION_LINES: Record<string, RegExp> = {
+  [path.resolve(ROOT, 'lib/terms-versions.ts')]: /^\s*(?:\/\*\*?|\*|\/\/)|^\s*label:\s*'v\d+\.\d+\.\d+',?\s*$/,
+};
 
 /**
  * Regex patterns in a line that indicate the version string is contextual
@@ -164,6 +173,7 @@ test.describe('Version Drift Guard', () => {
           
           // Skip allowlisted line patterns
           if (isAllowlistedLine(line)) continue;
+          if (DOCUMENT_VERSION_LINES[filePath]?.test(line)) continue;
           
           let match;
           while ((match = VERSION_PATTERN.exec(line)) !== null) {
