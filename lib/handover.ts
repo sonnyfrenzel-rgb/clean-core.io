@@ -714,11 +714,13 @@ export function handoverGroups(
     title: 'Test run',
     sub: tests.state === 'open'
       ? 'No test suite generated.'
-      : tests.provenance === 'demonstrated-mock' || tests.state === 'stale'
-        ? tests.value!
-        : ranWithoutVerdict
-          ? `${tests.value}, the recorded run returned no pass or fail`
-          : `${tests.value}, no run on record`,
+      : tests.state === 'stale'
+        ? `${tests.value} — made for a previous source.`
+        : tests.provenance === 'demonstrated-mock'
+          ? tests.value!
+          : ranWithoutVerdict
+            ? `${tests.value}, the recorded run returned no pass or fail`
+            : `${tests.value}, no run on record`,
     provenance: tests.provenance,
     provenanceNote: tests.state === 'open' ? 'none' : tests.provenanceNote,
   });

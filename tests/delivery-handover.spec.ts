@@ -140,6 +140,20 @@ test.describe('the handover reads what is on record', () => {
     expect(handoverGroups(none, buildHandoverChain(none, workflowSteps(none)), state).find((g) => g.key === 'receipt')!.sub).toContain('no run on record');
   });
 
+  test('a test suite written for a previous source says so on the receipt step, like the other steps (QA review of a88149856dcc)', () => {
+    const changed = project({
+      legacyCode: `${SOURCE}WRITE 'changed'.\n`,
+      generatedCode: 'export const ok = 1;\n',
+      testSuite: { code: "test('t1', () => {});" },
+      testCases: [{ id: 't1', name: 'Case', category: 'Unit', status: 'Not run' }],
+    });
+    const phases = workflowSteps(changed);
+    expect(phases.find((p) => p.key === 'testing')!.state).toBe('stale');
+    const receipt = handoverGroups(changed, buildHandoverChain(changed, phases), { blockers: [], exportedAt: null }).find((g) => g.key === 'receipt')!;
+    expect(receipt.provenance).toBe('stale');
+    expect(receipt.sub).toContain('made for a previous source');
+  });
+
   test('a confirmed decision names the account and stays a self-declaration', () => {
     const decision = buildProjectDecision({
       summary: 'Build this object as Side-by-Side BTP (CAP), as the signed-off target architecture says.',
