@@ -9,8 +9,10 @@ import { build } from 'esbuild';
  * The diagram is drawn by mermaid from a chart this application builds, and the
  * result is written into the page with `innerHTML`. Two layers sit above this
  * one — `components/MermaidDiagram.tsx` initialises mermaid with
- * `securityLevel: 'strict'`, and `TargetArchitectureDiagram` strips its node
- * labels before they become mermaid source — and this file holds the third: the
+ * `securityLevel: 'strict'`, and the model-drawn `TargetArchitectureDiagram`
+ * stripped its node labels before they became mermaid source (removed on
+ * 01.10.2026 with the diagram itself: the Design stage draws its architecture
+ * from the engine, not from model text) — and this file holds the third: the
  * SVG is parsed and rebuilt before it reaches the DOM.
  *
  * Two things have to be true at once, and they pull against each other. The
@@ -262,7 +264,13 @@ test.describe('the architecture diagram is parsed, not pattern-matched', () => {
     const diagram = read('components/MermaidDiagram.tsx');
     expect(diagram, 'mermaid is no longer initialised in strict mode').toContain("securityLevel: 'strict'");
 
-    const target = read('components/design/TargetArchitectureDiagram.tsx');
-    expect(target, 'node labels are no longer neutralised before they become chart source').toMatch(/sanitize\(/);
+    // The model-drawn architecture diagram is gone (owner decision 01.10.2026):
+    // the Design stage's picture is built from the engine's findings as SVG, so
+    // no model-written label becomes mermaid source there. Should a model-fed
+    // diagram come back, its label layer has to come back with it.
+    expect(fs.existsSync(path.join(ROOT, 'components/design/TargetArchitectureDiagram.tsx'))).toBe(false);
+    for (const rel of ['app/(app)/project/[projectId]/design/page.tsx', 'components/design/DesignCanvasStage.tsx']) {
+      expect(read(rel), `${rel} renders mermaid again; neutralise its labels before they become chart source`).not.toContain('MermaidDiagram');
+    }
   });
 });
