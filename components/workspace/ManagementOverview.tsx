@@ -301,7 +301,17 @@ export default function ManagementOverview({
   const hasRun = Boolean(project?.activeRunId);
 
   const [findings, setFindings] = useState<Loaded<ItFindingsSource>>({ state: 'loading' });
-  const [decision, setDecision] = useState<Loaded<DecisionRead>>({ state: 'loading' });
+  // Held with the revision it was read for: after a command the previous
+  // answer is not shown while the new one is read (carried QA finding
+  // 89203dfdb3df) — a withdrawn decision read on as confirmed until it landed.
+  const [decisionHeld, setDecisionHeld] = useState<{ rev: number; value: Loaded<DecisionRead> }>({
+    rev: -1,
+    value: { state: 'loading' },
+  });
+  const decision: Loaded<DecisionRead> = useMemo(
+    () => (decisionHeld.rev === decisionRevision ? decisionHeld.value : { state: 'loading' }),
+    [decisionHeld, decisionRevision],
+  );
 
   useEffect(() => {
     if (!projectId) return;
@@ -328,7 +338,7 @@ export default function ManagementOverview({
     void readProjectRoute<DecisionRead>(
       projectId,
       'decision',
-      setDecision,
+      (value) => setDecisionHeld({ rev: decisionRevision, value }),
       (j) => {
         const d = j as Partial<DecisionRead> | null;
         return d && d.draft ? { draft: d.draft, stored: d.stored ?? null } : null;

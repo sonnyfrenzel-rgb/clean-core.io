@@ -415,6 +415,14 @@ test.describe('(a) one sentence, at most six cards', () => {
     // Both successful commands tell the shell.
     expect(card.match(/setReload\(\(n\) => n \+ 1\);\s*onChanged\?\.\(\);/g)?.length).toBe(2);
   });
+
+  test('while the decision is reread, the previous answer is not shown as current', () => {
+    // Carried QA finding 89203dfdb3df: after a withdrawal the overview kept
+    // the confirmed decision on screen until the new read landed.
+    const component = read('components/workspace/ManagementOverview.tsx');
+    expect(component).toContain("decisionHeld.rev === decisionRevision ? decisionHeld.value : { state: 'loading' }");
+    expect(component).toContain('(value) => setDecisionHeld({ rev: decisionRevision, value })');
+  });
 });
 
 /* -------------------------------------------------------- on the screen */
