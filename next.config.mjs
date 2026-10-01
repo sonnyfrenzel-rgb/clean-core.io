@@ -1,4 +1,21 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
+import { createRequire } from 'node:module';
+
+/**
+ * Crawlers that get the page's metadata in <head>, before the body.
+ *
+ * Next 15 streams metadata: for a user agent outside its list of "HTML-limited
+ * bots" the <title>, description, canonical and Open Graph tags arrive at the
+ * end of the body once the page has rendered — measured on the dev server,
+ * 394 kB into the start page for GPTBot, after the whole inline BPMN. Googlebot
+ * runs JavaScript and copes; the answer-engine fetchers mostly read raw HTML,
+ * often only its first part. They are added to Next's own list, which is read
+ * from Next rather than copied so it keeps its updates.
+ */
+const require = createRequire(import.meta.url);
+const { HTML_LIMITED_BOT_UA_RE } = require('next/dist/shared/lib/router/utils/html-bots.js');
+const ANSWER_ENGINE_BOTS = 'GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-SearchBot|Claude-User|PerplexityBot|Perplexity-User|CCBot|Amazonbot|meta-externalagent';
+const htmlLimitedBots = new RegExp(`${HTML_LIMITED_BOT_UA_RE.source}|${ANSWER_ENGINE_BOTS}`, 'i');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -6,6 +23,7 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Do not leak the framework via the X-Powered-By header (ZAP 10037).
   poweredByHeader: false,
+  htmlLimitedBots,
   async headers() {
     return [
       {

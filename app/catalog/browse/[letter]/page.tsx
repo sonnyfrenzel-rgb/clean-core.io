@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
@@ -30,11 +31,17 @@ export async function generateMetadata({
   const { letter } = await params;
   const L = letter.toUpperCase();
   const label = L === '0' ? '0–9' : L;
-  return {
-    title: `SAP objects starting with ${label} — Clean Core catalog | Clean-Core.io`,
-    description: `SAP standard objects starting with ${label}: their clean core level and, where SAP names one, their released S/4HANA API successor.`,
-    alternates: { canonical: `${BASE}/catalog/browse/${letter.toLowerCase()}` },
-  };
+  const title = `SAP objects starting with ${label} — Clean Core catalog | Clean-Core.io`;
+  const description = `SAP standard objects starting with ${label}: their clean core level and, where SAP names one, their released S/4HANA API successor.`;
+  const canonical = `${BASE}/catalog/browse/${letter.toLowerCase()}`;
+  // Its own social card: without an `openGraph` block an A–Z page was shared
+  // under the site's title and description, not its own.
+  return withTwitterCard({
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { title, description, url: canonical, type: 'website' },
+  });
 }
 
 export default async function CatalogBrowsePage({

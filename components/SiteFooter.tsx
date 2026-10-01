@@ -31,6 +31,7 @@ export const SITE_FOOTER_COLUMNS: { heading: string; links: { href: string; labe
       { href: '/sap-clean-core-object-classification', label: 'Object Classification (A–D)' },
       { href: '/abap-custom-code-analysis', label: 'ABAP Code Analysis' },
       { href: '/sap-cloudification', label: 'SAP Cloudification' },
+      { href: '/method/levels', label: 'How Levels A–D Are Derived' },
     ],
   },
   {
@@ -41,6 +42,11 @@ export const SITE_FOOTER_COLUMNS: { heading: string; links: { href: string; labe
       { href: '/first-run', label: 'Your First Run' },
       { href: '/how-to', label: 'How-To Guide' },
       { href: '/whitepaper', label: 'Whitepaper' },
+      { href: '/reference-analysis', label: 'Reference Analysis' },
+      // `/facts` had no internal link at all — only the sitemap knew it, and it
+      // is the page an answer engine should cite a number from.
+      { href: '/facts', label: 'Facts & Figures' },
+      { href: '/verify-pack', label: 'Verify an Audit Pack' },
       { href: '/trust', label: 'Trust & Transparency' },
       { href: '/tenant-security', label: 'Tenant Security' },
     ],

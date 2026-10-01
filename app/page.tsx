@@ -60,6 +60,7 @@ import { heroSnippets } from '@/lib/landing-hero';
 import { landingShotSrc, stageShot } from '@/lib/landing-shots';
 import { landingStages } from '@/lib/landing-stages';
 import { landingShotSize } from '@/lib/landing-shot-size';
+import { LANDING_FAQ } from '@/lib/landing-faq';
 import '@/components/landing/landing.css';
 
 /**
@@ -89,26 +90,30 @@ import '@/components/landing/landing.css';
  */
 export const revalidate = 300;
 
+/**
+ * Title and description follow the searches that already reach this page
+ * (roadmap 3.0.6: "SAP Clean Core Accelerator", "ABAP code analysis") and say
+ * the approved USP. The description stays under ~160 characters so Google
+ * shows it whole; the social card carries the full short USP.
+ */
+const HOME_TITLE = 'SAP Clean Core Accelerator — Free ABAP Analysis to BPMN | Clean-Core.io';
+const HOME_SHARE_TITLE = 'Clean-Core.io — SAP Clean Core Accelerator for custom ABAP';
+const HOME_SHARE_DESCRIPTION =
+  'From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can check. The process as BPMN with line anchors, SAP clean core level A–D per object, signed runs. Free for the SAP community.';
+
 export const metadata: Metadata = withTwitterCard({
-  title: 'SAP Clean Core Accelerator — Free ABAP Code Analysis | Clean-Core.io',
+  title: HOME_TITLE,
   description:
-    'Free community tool for SAP custom code: a deterministic ABAP static code analysis, the business process as BPMN with a line anchor on every element, or the reason it has none, the SAP clean core Level A–D of each SAP object, then a target design, a code draft and tests on one chain of evidence, sealed as signed runs.',
+    'Free SAP clean core tool: reads custom ABAP before any model does, draws its process as BPMN with line anchors, grades SAP objects A–D, drafts code and tests.',
   alternates: {
     canonical: 'https://clean-core.io',
   },
   openGraph: {
-    title: 'SAP Clean Core Accelerator | Clean-Core.io',
-    description:
-      'From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can check. Every element of the process points to the line it came from; what a model suggested is marked; what could not be determined is said. Free for the SAP community.',
+    title: HOME_SHARE_TITLE,
+    description: HOME_SHARE_DESCRIPTION,
     url: 'https://clean-core.io',
     type: 'website',
     siteName: 'Clean-Core.io',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'SAP Clean Core Accelerator | Clean-Core.io',
-    description:
-      'From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can check. Every element of the process points to the line it came from; what a model suggested is marked; what could not be determined is said. Free for the SAP community.',
   },
 });
 
@@ -333,68 +338,11 @@ export default function Home() {
   ];
 
   /**
-   * The FAQ, once. The visible accordion and the JSON-LD `FAQPage` read this
-   * list, so the two cannot say different things (roadmap 3.0.6).
+   * The FAQ, once — `lib/landing-faq.ts`. The visible accordion, the JSON-LD
+   * `FAQPage` and `/llms-full.txt` read the same list, so they cannot say
+   * different things (roadmap 3.0.6).
    */
-  const faq: Array<{ q: string; a: string; more?: { href: string; label: string }; lang?: string }> = [
-    {
-      q: 'What is SAP clean core?',
-      a: 'Clean core keeps the SAP S/4HANA standard unmodified: extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP Business AI Platform (BAIP, formerly SAP BTP). SAP’s clean core level concept grades what an extension uses from A (released APIs and extension points) to D (not recommended: modifications, implicit enhancements, writes to SAP tables).',
-      more: { href: '/clean-core-explained', label: 'Clean core, explained without the jargon' },
-    },
-    {
-      q: 'What does Clean-Core.io do with my ABAP?',
-      a: 'A deterministic engine reads the program before any language model does. It reconstructs the business process with a line anchor on every element, or the reason it has none, lists the business rules hard-coded in the program, shows the clean core level of each SAP object the code uses, and names what it could not determine. The same evidence then carries a target design, a transformed code draft and test scenarios, run in an isolated runner, and every completed analysis is sealed as a signed run. The code is a draft you review, and the tests check it against test scenarios, not in your S/4HANA system.',
-      more: { href: '/how-it-works', label: 'How it works, and its limits' },
-    },
-    {
-      q: 'Is my code used to train models?',
-      a: TRUST_CLAIMS.find((c) => c.id === 'training')!.text,
-      more: { href: '/datenschutz#source-code', label: 'Privacy Policy §3' },
-    },
-    {
-      q: 'What does it cost?',
-      a: 'Nothing. Clean-Core.io is a free community project with no paid tier, and we accept no payment. An account has five analysis runs; each starter example is free the first time you run it. After that you continue with your own Gemini API key, which Google bills under your own agreement with Google.',
-    },
-    {
-      q: 'Does it replace ABAP Test Cockpit?',
-      a: 'No. ABAP Test Cockpit stays the check to rely on. The level Clean-Core.io shows is its reading of SAP’s published data — an orientation, never part of a signed audit pack. Confirm with ABAP Test Cockpit, and import your ATC results to compare them with the engine.',
-    },
-    {
-      q: 'Does it replace Joule for Developers or SAP’s Custom Code Migration Agent?',
-      a: 'No. SAP’s agents work inside your system and tell developers what to fix. Clean-Core.io shows the business what the code does, then carries the same evidence through a design, a code draft and tests to a decision — including whether the program is still needed at all. What stays goes to the developers and their tools, and ABAP Test Cockpit stays the authority.',
-    },
-    {
-      q: 'Does it work with SAP Signavio?',
-      a: 'Clean-Core.io exports the process as a standard BPMN 2.0 XML file. Import into SAP Signavio has not been verified yet, so we do not claim it, and there is no connection to a Signavio workspace.',
-    },
-    {
-      q: 'What is the SAP Cloudification Repository viewer?',
-      a: 'The SAP object catalog on Clean-Core.io shows SAP’s published Cloudification Repository and object classification: for each SAP object its release state, clean core level and, where SAP names one, its successor — synced from SAP’s public repository. It needs no account.',
-      more: { href: '/catalog', label: 'Open the SAP object catalog' },
-    },
-    {
-      q: 'Who can see my projects?',
-      a: 'Only the account that created a project, and anyone that account invites. An invitation is bound to one confirmed e-mail address, gives read access including the source code, expires, and can be revoked at any time. There are no public links.',
-    },
-    {
-      q: 'Can I try the demo without an account?',
-      a: 'No. The demo project lives in your workspace, so it needs a free account. Inside it nothing you do is saved, and nothing counts against your analysis runs.',
-    },
-    {
-      q: 'How does clean core reduce S/4HANA upgrade risk?',
-      a: 'Custom code that reads or modifies the SAP standard directly is what makes an upgrade expensive: a modification has to be adjusted in SPAU before the upgrade can proceed, native SQL bypasses the database abstraction, and every direct table read relies on a structure SAP never promised to keep. Clean core replaces those with released APIs. Clean-Core.io names them in your own ABAP, object by object against SAP’s published Cloudification Repository, and flags what a generator cannot reach instead of transforming it into something plausible and wrong.',
-    },
-    {
-      q: 'Wie reduziert Clean Core das Upgrade-Risiko in S/4HANA?',
-      a: 'Teuer wird ein Upgrade durch Eigenentwicklungen, die direkt auf dem SAP-Standard lesen oder ihn modifizieren: Eine Modifikation muss in SPAU angepasst werden, bevor das Upgrade weiterlaufen kann, Native SQL umgeht die Datenbankabstraktion, und jeder direkte Tabellenzugriff baut auf einer Struktur, die SAP nie zugesagt hat. Clean Core ersetzt das durch freigegebene APIs. Clean-Core.io benennt sie in Ihrem eigenen ABAP, Objekt für Objekt gegen SAPs veröffentlichtes Cloudification Repository, und markiert, was ein Generator nicht erreicht, statt es in etwas Plausibles und Falsches zu überführen.',
-      lang: 'de',
-    },
-    {
-      q: 'Is Clean-Core.io an SAP product?',
-      a: 'No. It is an independent community project, not affiliated with or endorsed by SAP SE. It follows SAP’s clean core level concept and reads SAP’s published Cloudification Repository.',
-    },
-  ];
+  const faq = LANDING_FAQ;
 
   /**
    * Where Clean-Core.io stands next to SAP's own tools. Defined once and
@@ -429,6 +377,11 @@ export default function Home() {
     },
   ];
 
+  /**
+   * Structured data. Every sentence is one the page also says: the USP from
+   * `llms.txt`, the FAQ from `lib/landing-faq.ts`, version and date from
+   * `lib/version.ts`. No rating, no review, no figure typed in.
+   */
   const schemaJson = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -438,6 +391,7 @@ export default function Home() {
         name: 'Clean-Core.io',
         url: 'https://clean-core.io',
         logo: 'https://clean-core.io/logo.png',
+        description: 'An independent community project for the SAP community, not affiliated with or endorsed by SAP SE.',
         sameAs: ['https://github.com/sonnyfrenzel-rgb/clean-core.io', 'https://www.linkedin.com/company/clean-core-io'],
         founder: {
           '@type': 'Person',
@@ -448,15 +402,44 @@ export default function Home() {
         },
       },
       {
+        '@type': 'WebSite',
+        '@id': 'https://clean-core.io/#website',
+        name: 'Clean-Core.io',
+        url: 'https://clean-core.io',
+        inLanguage: 'en',
+        publisher: { '@id': 'https://clean-core.io/#organization' },
+      },
+      {
         '@type': 'SoftwareApplication',
         '@id': 'https://clean-core.io/#software',
         name: 'Clean-Core.io',
         url: 'https://clean-core.io',
         applicationCategory: 'BusinessApplication',
-        operatingSystem: 'All',
-        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-        description:
-          'Free community tool for SAP custom code: deterministic ABAP static code analysis, the business process reconstructed from the code with line anchors, the SAP clean core Level A–D of each SAP object from the Cloudification Repository, and signed runs.',
+        applicationSubCategory: 'SAP custom code analysis and clean core modernization',
+        operatingSystem: 'Web browser',
+        isAccessibleForFree: true,
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+        publisher: { '@id': 'https://clean-core.io/#organization' },
+        description: `${HOME_SHARE_DESCRIPTION} Not affiliated with or endorsed by SAP SE.`,
+        featureList: [
+          'Deterministic ABAP static code analysis that reads the program before any language model does',
+          'Business process reconstructed from ABAP as BPMN 2.0, with a line anchor on every element or the reason it has none',
+          'BPMN editor with revisions; BPMN 2.0 XML export and import (no SAP Signavio connection; import into SAP Signavio not verified)',
+          'SAP clean core level A–D for every SAP object the code uses, read from SAP’s published Cloudification Repository',
+          'Clean Core Score, 0–100, higher is better, in four bands — published by Clean-Core.io, not an SAP metric',
+          'Business, IT and Management views of the same project',
+          'Target design, transformed RAP or CAP code draft and test scenarios, run in an isolated runner against mocks',
+          'Every completed analysis sealed as a signed run (HMAC and Ed25519); signed audit pack for handover',
+          'Read access by invitation, bound to one confirmed e-mail address, with expiry and revocation',
+          'Demo project with a guided tour',
+          'Stored in the EU; no analytics, advertising or tracking cookies',
+        ],
+        screenshot: stages.slice(0, 3).map((st) => ({
+          '@type': 'ImageObject',
+          url: `https://clean-core.io${st.src}`,
+          caption: st.alt,
+        })),
+        softwareVersion: APP_VERSION,
         datePublished: '2025-01-15',
         // Moves with every release instead of going stale at a typed date.
         dateModified: APP_RELEASE_DATE_ISO,
@@ -472,15 +455,11 @@ export default function Home() {
         })),
       },
       {
+        // The start page is the root of the trail, so its trail is itself. The
+        // earlier list of six pages described a hierarchy the site does not
+        // have and would have shown as one under the start page's search result.
         '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://clean-core.io' },
-          { '@type': 'ListItem', position: 2, name: 'How It Works', item: 'https://clean-core.io/how-it-works' },
-          { '@type': 'ListItem', position: 3, name: 'ABAP Analysis', item: 'https://clean-core.io/abap-custom-code-analysis' },
-          { '@type': 'ListItem', position: 4, name: 'Clean Core Score', item: 'https://clean-core.io/clean-core-score' },
-          { '@type': 'ListItem', position: 5, name: 'Knowledge Base', item: 'https://clean-core.io/knowledge' },
-          { '@type': 'ListItem', position: 6, name: 'About', item: 'https://clean-core.io/about' },
-        ],
+        itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Clean-Core.io', item: 'https://clean-core.io' }],
       },
     ],
   };

@@ -11,7 +11,7 @@ import { publicButton } from '@/components/landing/public-button';
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Cloudification Repository: Look Up an Object’s Released Successor | Clean-Core.io',
   description:
-    'Free lookup against SAP’s official Cloudification Repository: enter an SAP standard object and, where the repository lists it, get its released S/4HANA successor or an honest “no released path” verdict. Plus what cloudifying custom ABAP means for Clean Core — in-app RAP or side-by-side BTP CAP.',
+    'Free SAP Cloudification Repository viewer: enter an SAP object to get its released S/4HANA successor or an honest “no released path” — and what cloudify means.',
   alternates: {
     canonical: 'https://clean-core.io/sap-cloudification',
   },

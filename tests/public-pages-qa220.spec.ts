@@ -98,7 +98,12 @@ test.describe('the landing page and the whitepaper', () => {
   test('the disclaimer does not attribute the deterministic score to the model (9d98a3ea6701)', () => {
     const src = code('app/page.tsx');
     expect(src).not.toMatch(/compliance scores, modular code transformations/);
-    expect(src).toMatch(/A deterministic engine reads the program before any language model does/);
+    // The start page's FAQ lives in lib/landing-faq.ts since the SEO pass for
+    // 3.0 (the accordion, the FAQPage JSON-LD and /llms-full.txt read it there).
+    const faq = code('lib/landing-faq.ts');
+    expect(src).toContain('LANDING_FAQ');
+    expect(faq).not.toMatch(/compliance scores, modular code transformations/);
+    expect(faq).toMatch(/A deterministic engine reads the program before any language model does/);
   });
 
   test('the no-training line carries the free-tier caveat (cc161722d461)', () => {
