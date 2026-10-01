@@ -28,6 +28,7 @@ import {
   DeliveryStatusLine,
   DeliveryStillNeeded,
 } from './DeliveryObjectPage';
+import { scoreWithBand } from '@/lib/clean-core-score';
 
 /**
  * The demo's Delivery stage, in the object-page form of the real one (owner
@@ -180,7 +181,7 @@ export default function DemoDelivery({
                   key: 'requirement',
                   label: 'Requirement',
                   title: `${plural(findings, 'finding')} in the code`,
-                  sub: `Read by the engine · Clean Core Score ${demo.analyze.cleanCoreScore} · no signed run`,
+                  sub: `Read by the engine · Clean Core Score ${scoreWithBand(demo.analyze.cleanCoreScore)} · no signed run`,
                   provenance: 'reconstructed',
                   provenanceNote: null,
                 },

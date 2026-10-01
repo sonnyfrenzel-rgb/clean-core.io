@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { ArrowRight, Shield, BarChart3, Zap, AlertTriangle, Cloud, Code2 } from 'lucide-react';
 import type { SupportFinding } from '@/lib/abap/class-model';
 import SupportLevelMark from '@/components/analyze/SupportLevelMark';
+import { bandRange, scoreBand } from '@/lib/clean-core-score';
 
 interface RoutingRationaleProps {
   /** Optional: absent on runs created before the extensibility router (pre-v1.14). */
@@ -74,7 +75,15 @@ export default function RoutingRationale({
             <BarChart3 className="w-4 h-4 text-cc-ink-muted" aria-hidden="true" />
             <span className="cc-text-label text-cc-ink-muted">Clean Core Score</span>
           </div>
-          <span className="text-[22px] font-bold leading-tight text-cc-ink tabular-nums">{cleanCoreScore ?? '—'}%</span>
+          {/* A grade out of 100 with Clean-Core.io's band — never a percentage. */}
+          <span className="text-[22px] font-bold leading-tight text-cc-ink tabular-nums">
+            {typeof cleanCoreScore === 'number' ? `${cleanCoreScore} of 100` : 'Not determined'}
+          </span>
+          {typeof cleanCoreScore === 'number' ? (
+            <span className="mt-1 block cc-text-meta text-cc-ink-muted">
+              {scoreBand(cleanCoreScore).label} ({bandRange(scoreBand(cleanCoreScore))})
+            </span>
+          ) : null}
         </div>
 
         {/* Deployment */}

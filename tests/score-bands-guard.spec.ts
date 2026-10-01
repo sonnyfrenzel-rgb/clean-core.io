@@ -92,6 +92,15 @@ test.describe('one source for the score bands', () => {
     expect(THRESHOLD.test('x = currentScore >= 90 ? a : b')).toBe(true);
   });
 
+  test('no score is printed as a percentage', () => {
+    const hits: string[] = [];
+    for (const rel of FILES) {
+      const m = /\{\s*(?:cleanCoreScore|signedCleanCoreScore|currentScore)[^}]*\}%/.exec(read(rel));
+      if (m) hits.push(`${rel}: ${m[0]}`);
+    }
+    expect(hits, 'a grade, not a compliance percentage').toEqual([]);
+  });
+
   test('the old guidance wording is gone, the official one is in the module', () => {
     for (const rel of FILES) {
       const src = read(rel);
@@ -118,6 +127,8 @@ test.describe('one source for the score bands', () => {
       'app/reference-analysis/page.tsx',
       'app/llms.txt/route.ts',
       'lib/chatbot-knowledge.ts',
+      'components/design/RoutingRationale.tsx',
+      'components/delivery/DemoDelivery.tsx',
     ];
     for (const rel of SURFACES) {
       expect(read(rel), `${rel} does not read lib/clean-core-score.ts`).toMatch(/from ['"](?:@\/lib|\.\.?(?:\/\.\.)*)?\/?(?:lib\/)?clean-core-score['"]/);
