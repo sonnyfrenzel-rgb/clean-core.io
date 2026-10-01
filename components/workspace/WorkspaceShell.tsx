@@ -430,10 +430,11 @@ export default function WorkspaceShell({
     // there, as in mockup s1; IT and Management keep them in the header.
     statusTools: view === 'business' ? <div data-workspace-status-tools="">{statusAndTools}</div> : null,
     // Business only: the process map and its linked source column (roadmap
-    // 2.5, mockup s1). Shown under "Need & process" — and on arrival, before
-    // the reader has picked a layer — never under a layer they chose instead.
+    // 2.5, mockup s1). It stays under every layer — the map is the anchor of
+    // the Business view and the chosen layer reads beside it (owner,
+    // 01.10.2026; QA 55bcde6ea5e1).
     process:
-      view === 'business' && (hashLayer === null || currentLayer === 'need') ? (
+      view === 'business' ? (
         <div className="mt-4" data-workspace-process-block="">
           <WorkspaceProcess
             project={project}

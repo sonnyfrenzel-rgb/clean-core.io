@@ -234,3 +234,12 @@ test.describe('the shell path', () => {
     await expect(path).toContainText('My workspace');
   });
 });
+
+// Owner, 01.10.2026 (QA 55bcde6ea5e1): the map is the anchor of the Business
+// view and stays under every layer, not only under "Need & process".
+test('the Business map is not tied to the chosen layer', () => {
+  const shell = fs.readFileSync(path.resolve(__dirname, '..', 'components/workspace/WorkspaceShell.tsx'), 'utf8');
+  const block = shell.slice(shell.indexOf('    process:'), shell.indexOf('data-workspace-process-block'));
+  expect(block).toContain("view === 'business' ? (");
+  expect(block).not.toMatch(/currentLayer === 'need'|hashLayer === null/);
+});
