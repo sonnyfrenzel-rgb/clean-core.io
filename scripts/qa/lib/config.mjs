@@ -8,47 +8,47 @@
  */
 
 /**
- * Pinned on purpose: an alias such as `~openai/gpt-luna-latest` would change the reviewer without a commit.
+ * Which model reviews is no longer decided here (owner decision, 01.10.2026). Every agent that runs over
+ * OpenRouter sends `openrouter/auto`, and OpenRouter's Auto Router picks the model per call. What this file
+ * still decides is the band it picks from and what a call may cost:
  *
- * Two reviewers, chosen by Sonny on 15.09.2026: every push to `dev` gets a delta review by the cost-efficient
- * tier; every release on `main` gets a review of the whole code base by the flagship of the same series.
- * GPT-6 Astra reviewed the deltas until then; GPT-6 Astra Pro was considered for `main` and dropped on cost.
+ * - `costTier` is the quality floor: the Auto Router's cost band (`low` … `max`). The delta review of every push
+ *   to `dev` runs at `high`, the full review of a release on `main` at `xhigh`.
+ * - `maxPrice` (USD per million tokens) is sent as `provider.max_price`, so OpenRouter serves no endpoint above
+ *   it, and every pre-call estimate is made at exactly that price. OpenRouter does not publish where a tier
+ *   ends; without a ceiling the "worst case" of a cap would be a guess. Probed 01.10.2026: `high` chose
+ *   z-ai/glm-5.3 ($0.22/$4.40) and glm-5.2 ($1.40/$4.40), `xhigh` anthropic/claude-sonnet-5.5 ($2/$10).
  *
- * The delta reviewer moved to GPT-6 Luna on 22.09.2026 (Sonny). Same 1.05M context, and half the price of the
- * 5.6 tier it replaces — $0.10/$0.50 per million tokens against $0.20/$1.20 — so the budget below buys twice
- * as much review per push.
+ * What this costs, written down: a report can no longer be compared with the one before it as the same
+ * reviewer's judgement, because the reviewer may differ per call. Every report therefore names the model(s)
+ * that answered (meta.models), and a change in findings has to be read with that in mind.
  *
- * The full review followed on 23.09.2026 (Sonny), to GPT-6 Luna Pro — and the reason is coverage, not thrift.
- * Sol's run on v2.14.0 spent $5.54 in 14 calls and stopped with **470 files and 5.4 MB reported as NOT
- * REVIEWED**, about half the code base and the newest half. It was not the cap that stopped it: reading the
- * whole repository once costs 3.09M input tokens, which at Sol's $2 per million is $6.17 before the model
- * thinks at all, so full coverage was about $11 against an approved ceiling of $10. At $0.10/$0.50 the same
- * pass costs about $0.55, and the ceiling stops being the thing that decides how much of the product gets
- * read. The fixed point the earlier note wanted is gone, which is the price of this: a regression in the next
- * report cannot be told from a change of reviewer, and the first run under Luna Pro is a new baseline rather
- * than a comparison.
+ * Until 01.10.2026 the delta reviewer was pinned to openai/gpt-6-luna and the full reviewer to
+ * openai/gpt-6-luna-pro, both at $0.10/$0.50.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export const QA_MODEL = 'openai/gpt-6-luna';
-export const QA_FULL_MODEL = 'openai/gpt-6-luna-pro';
+export const AUTO_MODEL = 'openrouter/auto';
+
+export const ROUTER = {
+  delta: { costTier: 'high', maxPrice: { input: 1.5, output: 4.5 } },
+  full: { costTier: 'xhigh', maxPrice: { input: 3, output: 15 } },
+};
 
 export const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
+/** The public model list — read to confirm what the router chose can read the inputs a call sent (openrouter.mjs confirmInputs). */
+export const OPENROUTER_MODELS_ENDPOINT = 'https://openrouter.ai/api/v1/models';
 
 /** The dev service's run.app address — dev.clean-core.io has no A record (CLAUDE.md). */
 export const DEV_URL = 'https://clean-core-dev-qcevuoi3uq-ew.a.run.app';
 
 /**
- * Spend is capped per review, not hoped for. OpenRouter list prices per million tokens (15.09.2026); the cap
- * is checked against a conservative estimate before any call is made, and the actual cost from OpenRouter's
- * usage record is written into every report. A model without a price here cannot be costed.
+ * Spend is capped per review, not hoped for. The cap is checked before any call against what OpenRouter
+ * actually reported as spent (`usage.cost`) plus an estimate for the call at the price ceiling of its tier —
+ * the most any endpoint may charge for it — and the actual cost is written into every report.
  */
-export const PRICES = {
-  [QA_MODEL]: { input: 0.1, output: 0.5 },
-  [QA_FULL_MODEL]: { input: 0.1, output: 0.5 },
-};
-export const PRICE_PER_MTOK = PRICES[QA_MODEL];
+export const PRICE_PER_MTOK = ROUTER.delta.maxPrice;
 
 export const BUDGET = {
   /**
@@ -70,8 +70,16 @@ export const BUDGET = {
    * $0.006 of input at a full 200k batch. The cap of $0.50 therefore stops binding altogether: ten calls
    * estimate at roughly $0.22, and `maxBatches` is now the only thing that ends a review. The cap stays where
    * it is as a floor against a pricing change nobody noticed, not as a coverage decision.
+   *
+   * Raised from $0.50 to $3.80 on 01.10.2026 (owner decision), with the move to the Auto Router at `high`. At
+   * the ceiling of $1.5/$4.5 one full batch estimates at about $0.30, nearly all of it the 48,000-token output
+   * allowance; at $0.50 a push would have been reviewed in one or two batches, and an incomplete review keeps
+   * the checkpoint where it was (see maxBatches). All ten batches at their worst case come to about $3.02, under
+   * 80 % of $3.80 (tests/qa-review-guard.spec.ts), so the budget can never be the reason a checkpoint sticks.
+   * The cap is an upper bound; what is counted against it is the cost OpenRouter reports (`usage.cost`) — about
+   * $0.09 a full batch at the prices the router chose in the probes.
    */
-  maxCostUsd: 0.5,
+  maxCostUsd: 3.8,
   /** Delta context per model call, in characters. */
   maxBatchChars: 200_000,
   /**
@@ -125,7 +133,7 @@ export const BUDGET = {
 };
 
 /**
- * The full review of a release on `main`: the whole code base, area by area, by QA_FULL_MODEL. It never gates
+ * The full review of a release on `main`: the whole code base, area by area, by the Auto Router at ROUTER.full. It never gates
  * a release; its findings are fixed on `dev` like any other (docs/QA-REVIEW-LOOP.md §10).
  *
  * `maxCostUsd` is the ceiling; `maxBatches` exists so a runaway plan cannot sit in a queue for hours. Until
@@ -149,6 +157,11 @@ export const BUDGET = {
  * cross it, whatever this file says about batches.
  */
 export const FULL_BUDGET = {
+  /**
+   * Unchanged at $10 with the move to the Auto Router at `xhigh` (01.10.2026), and binding again: at the ceiling
+   * of $3/$15 a full batch estimates at about $1.06, and at the prices `xhigh` chose in the probes (Sonnet-class,
+   * $2/$10) it costs about $0.40, so roughly 22 of the 28 batches fit. What does not is named as NOT REVIEWED.
+   */
   maxCostUsd: 10,
   maxBatchChars: 400_000,
   maxBatches: 28,

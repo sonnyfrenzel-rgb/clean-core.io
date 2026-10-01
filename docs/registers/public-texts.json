@@ -129,7 +129,7 @@
     {
       "path": ".claude/skills/ux-review-intake/SKILL.md",
       "kind": "skill",
-      "purpose": "Skill: Intake der UX-Reviews (Muse Spark 1.3)",
+      "purpose": "Skill: Intake der UX-Reviews (OpenRouter Auto Router, nur bildfähige Modelle)",
       "audience": "Coding-Agenten",
       "saysToday": "inbox.mjs, register.mjs, Einplanung in ROADMAP §13; die erste Review nimmt das ganze Produkt.",
       "wrongWith30": [
@@ -1223,7 +1223,7 @@
       "kind": "runbook",
       "purpose": "Runbook QA-Agent (Delta-Review und Smoke-Check auf dev)",
       "audience": "Agenten, Sonny",
-      "saysToday": "Stand 15.09.2026, GPT-6 Luna, Ablauf, Widerruf.",
+      "saysToday": "Stand 15.09.2026, seit 01.10.2026 OpenRouter Auto Router (high/xhigh), Ablauf, Widerruf.",
       "wrongWith30": [
         {
           "lines": "3",
@@ -1411,7 +1411,7 @@
       "kind": "runbook",
       "purpose": "Runbook Security-Agent (Vollaudit jeder main-Version)",
       "audience": "Agenten, Sonny",
-      "saysToday": "Stand 15.09.2026, DeepSeek V4.1 Flash, CISO plus fuenf Consultants.",
+      "saysToday": "Stand 24.09.2026, seit 01.10.2026 OpenRouter Auto Router (high), CISO plus fuenf Consultants.",
       "wrongWith30": [
         {
           "lines": "3",
@@ -1490,7 +1490,7 @@
     {
       "path": "docs/UX-REVIEW-AGENT.md",
       "kind": "runbook",
-      "purpose": "Runbook UX-Agent (Muse Spark 1.3)",
+      "purpose": "Runbook UX-Agent (OpenRouter Auto Router, nur bildfähige Modelle)",
       "audience": "Agenten, Sonny",
       "saysToday": "Ablauf, Screenshots desktop/phone/dark plus Mockups 2.7.",
       "wrongWith30": [

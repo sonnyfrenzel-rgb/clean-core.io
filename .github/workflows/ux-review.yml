@@ -1,7 +1,7 @@
 name: UX Review
 
 # The UX agent (docs/UX-REVIEW-AGENT.md): every release on `main` gets a UX delta
-# review by one pinned multimodal model — Muse Spark 1.3 via OpenRouter — from the
+# review by OpenRouter's Auto Router (cost tier high, image-capable models only) from the
 # source it changed, a design scan of the whole product and screenshots of the
 # screens it touches. Until a complete full review of the whole product exists,
 # every automatic run is that full review. After it, a change to the agent on `dev`
