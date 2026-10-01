@@ -15,6 +15,7 @@ import { processStepList } from '../lib/process-step-list';
 import { readSource } from '../lib/first-look';
 import { printHeaderLine } from '../lib/workspace-messages';
 import { projectProgress, SEGMENT_CLASS } from '../lib/project-progress';
+import { sha256Hex } from '../lib/artefact-digest';
 import { PHASES } from '../lib/workflow-steps';
 import type { ItFindingRow } from '../lib/it-findings';
 import type { Project } from '../lib/types';
@@ -208,5 +209,27 @@ test.describe('a row a business reader understands — lib/project-progress.ts (
     const a = projectProgress(analysed);
     expect(a.stage).toBe('in-progress');
     expect(a.sentence).toContain(a.countLabel);
+  });
+
+  test('inputs that cannot be shown to match are not called a code change — QA review of 072f79996d01 (d423380ea229)', () => {
+    // The source is exactly the one the run signed; what the run never recorded
+    // is the target deployment. The results are out of date for their inputs,
+    // and nothing about the code moved.
+    const SRC = 'REPORT z_po.\nWRITE: / 1.';
+    const project = {
+      id: 'm', name: 'm', legacyCode: SRC, activeRunId: 'run-1', s4Deployment: 'private',
+      inputFingerprint: { sha256: sha256Hex(SRC) },
+      inputManifest: {
+        manifestVersion: 1, revision: 1,
+        inputs: [{ id: 'source:abap', dataClass: 'customer-artefact', revision: 'r', binding: 'content', sha256: sha256Hex(SRC) }],
+      },
+    } as unknown as Project;
+    const p = projectProgress(project);
+    expect(p.stale).toBe(true);
+    expect(p.sentence).not.toContain('no longer match the code');
+    expect(p.sentence).toContain('Some results no longer match their inputs.');
+    // And a changed source still says so in those words.
+    const moved = projectProgress({ ...project, legacyCode: `${SRC}\nWRITE: / 2.` } as Project);
+    expect(moved.sentence).toContain('Some results no longer match the code.');
   });
 });
