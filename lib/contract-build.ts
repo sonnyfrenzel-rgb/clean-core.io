@@ -178,6 +178,8 @@ export function inputsDifferingFromRun(
   const recordedSource = manifest.inputs.find((i) => i.id === INPUT_IDS.source);
   if (recordedSource && recordedSource.sha256 !== sha256Hex(source)) differ.push('source');
   const recordedTarget = manifest.inputs.find((i) => i.id === INPUT_IDS.deployment);
-  if (recordedTarget && recordedTarget.revision !== deployment) differ.push('target deployment');
+  // A project that states no deployment contradicts nothing; one that states
+  // another than the run's does.
+  if (recordedTarget && deployment !== undefined && recordedTarget.revision !== deployment) differ.push('target deployment');
   return differ;
 }
