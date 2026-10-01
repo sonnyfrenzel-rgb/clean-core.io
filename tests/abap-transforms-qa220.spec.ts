@@ -30,3 +30,8 @@ test('the default classification is unchanged: the whole template is literal', (
   expect(T.classify(line).join('')).toBe('cccccc' + 'l'.repeat(14) + 'c');
   expect(T.classify(line, { embedsAsCode: true }).join('')).toBe('cccccc' + 'll' + 'c'.repeat(10) + 'll' + 'c');
 });
+
+test('an ENDEXEC inside a SQL literal does not end the native-SQL block (carried QA findings 44b6a590cb7b / fb183e608b15 / d7046ed7b4db)', () => {
+  const lines = ['EXEC SQL.', "  SELECT 'ENDEXEC' FROM dual", '  UPDATE t SET c = c * 2', 'ENDEXEC.', 'WRITE lv_x.'];
+  expect([...T.nativeSqlLines(lines)].sort()).toEqual([0, 1, 2, 3]);
+});

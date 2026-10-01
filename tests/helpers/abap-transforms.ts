@@ -171,7 +171,12 @@ export function nativeSqlLines(lines: string[]): Set<number> {
   const out = new Set<number>();
   let inside = false;
   for (let i = 0; i < lines.length; i++) {
-    const code = withoutComment(lines[i]);
+    // Only code counts: an ENDEXEC inside a SQL literal ('ENDEXEC') ends
+    // nothing (carried QA findings 44b6a590cb7b / fb183e608b15 / d7046ed7b4db).
+    const raw = lines[i];
+    const cls = classify(raw);
+    let code = '';
+    for (let k = 0; k < raw.length; k++) code += cls[k] === 'c' ? raw[k] : ' ';
     if (/^\s*EXEC\s+SQL\b/i.test(code)) inside = true;
     if (inside) out.add(i);
     if (/\bENDEXEC\b/i.test(code)) inside = false;
