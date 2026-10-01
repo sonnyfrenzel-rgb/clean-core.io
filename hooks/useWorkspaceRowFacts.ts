@@ -67,10 +67,13 @@ export function useWorkspaceRowFacts(wanted: ReadonlyMap<string, string>): Recor
     const pump = () => {
       while (running.current < PARALLEL && queue.current.length > 0) {
         const id = queue.current.shift() as string;
+        // The source key this read is for. When the row's source moves on while
+        // it is in flight, a newer read is queued and this answer is stale.
+        const key = asked.current.get(id);
         running.current += 1;
         factsFor(id)
           .then((value) => {
-            if (alive.current) setFacts((prev) => ({ ...prev, [id]: value }));
+            if (alive.current && asked.current.get(id) === key) setFacts((prev) => ({ ...prev, [id]: value }));
           })
           .finally(() => {
             running.current -= 1;
