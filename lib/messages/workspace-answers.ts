@@ -40,6 +40,86 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'it.colClassification': 'Classification',
   'it.colLevel': 'Level',
   'it.colSuccessor': 'Successor API',
+  // ItAnswers — the 3.0 IT view (mockup s4)
+  'it.whereTo': 'Where to',
+  'it.whereToReading': 'Reading where the objects go on the target platform…',
+  'it.isItRight': 'Is it right',
+  'it.noObject': 'No object',
+  'it.line': 'line',
+  'it.facetFindings': 'Findings',
+  'it.facetLevels': 'Level distribution',
+  'it.facetTarget': 'Target platform',
+  'it.moreKindsLead': 'and',
+  'it.kind': 'more kind',
+  'it.kinds': 'more kinds',
+  'it.objectSingular': 'SAP object placed',
+  'it.objectPlural': 'SAP objects placed',
+  'it.targetDeclared': 'the project’s declared target',
+  'it.targetDefault': 'no target declared — the run’s default',
+  'it.objectsNotPlaced': 'no object placed yet',
+  'it.ofLower': 'of',
+  'it.noLevelReason':
+    'Findings about a statement name no SAP object, so the catalog was never asked — no level, rather than a guessed one.',
+  'it.showThem': 'Show them',
+  'it.linkDetail': 'What this link says',
+  'it.filter': 'Filter',
+  'it.filterKind': 'Kind',
+  'it.allKinds': 'All kinds',
+  'it.allLevels': 'All levels',
+  'it.levelPrefix': 'Level',
+  'it.levelUnknown': 'Unknown — not in SAP’s lists',
+  'it.levelNone': 'Not determined — no object',
+  'it.filterTarget': 'Target',
+  'it.allTargets': 'All targets',
+  'it.catalogView': 'Catalog view',
+  'it.bothViews': 'Both views',
+  'it.colTarget': 'Target',
+  'it.colSapObject': 'SAP object',
+  'it.colLines': 'Lines',
+  'it.objectsTitle': 'Clean core level per SAP object',
+  'it.objectsCaption': 'SAP objects the findings name, with their clean core level and target',
+  'it.whyEachObject': 'Why each object is where it is',
+  'it.railLabel': 'Target profile, route and imports',
+  'it.profileTitle': 'Target profile',
+  'it.profileEdition': 'Edition',
+  'it.profileEditionDefault': 'Not declared — read as the Public Edition, as the run does.',
+  'it.profileRelease': 'Release',
+  'it.profileCatalog': 'Catalog',
+  'it.profileNote':
+    'Every level on this page is looked up under this profile — the same catalog the signed run of this project reads.',
+  'it.notDeclared': 'not declared',
+  'it.notRecorded': 'not recorded',
+  'it.routeTitle': 'Route',
+  'it.contractTitle': 'Architecture contract',
+  'it.contractDraft': 'draft',
+  'it.contractConfirmed': 'confirmed',
+  'it.contractSuperseded': 'superseded',
+  'it.contractUnread': 'The architecture contract of this project could not be read.',
+  'it.contractDemo':
+    'An architecture contract is derived from the signed run of a real project. The demo shows the routes the router named.',
+  'it.contractFields': 'Details',
+  'it.contractAlternatives': 'Alternatives',
+  'it.recommended': 'Recommended',
+  'it.chosenInstead': 'Chosen instead',
+  'it.verdictChosen': 'chosen',
+  'it.verdictRejected': 'rejected',
+  'it.verdictOpen': 'not determined',
+  'it.reviewInDecision': 'Review in the decision',
+  'it.routesNamed': 'Routes the router named on the findings',
+  'it.routesNone': 'The router named no extensibility route on any finding.',
+  'it.importsTitle': 'Imports',
+  'it.atcTitle': 'ABAP Test Cockpit results',
+  'it.atcNone': 'No ATC results imported.',
+  'it.atcImport': 'Import ATC results',
+  'it.importedOn': 'imported',
+  'it.usageTitle': 'Usage',
+  'it.usageRecords': 'records',
+  'it.usageSeen': 'executions seen',
+  'it.to': 'to',
+  'it.usageNoneTitle': 'No usage data yet',
+  'it.usageNoneBody':
+    'Import SCMON, UPL or ST03N covering 13 months, including a year-end close. Until then usage is not determined — never “unused”.',
+  'it.usageImport': 'Import usage',
 
   // ManagementOverview
   'mgmt.whatFindings': 'The findings of this project',
@@ -140,6 +220,16 @@ export function itFindingsCountLabel(count: number, filterLink: string | null, t
     ? `${count} ${noun} ${M['it.filteredBy']} ${filterLink}, ${M['it.outOf']} ${total}`
     : `${count} ${noun}`;
   return `${head}. ${M['it.catalogViewsNote']}`;
+}
+
+/** The ATC import beside the engine, per object — the counts of `summarizeAtcComparison`. */
+export function itAtcComparison(both: number, atcOnly: number, engineOnly: number): string {
+  return `Objects named by both: ${both} · only by ATC: ${atcOnly} · only by the engine: ${engineOnly}`;
+}
+
+/** "CC-004, line 141" — the spoken name of a line anchor in the objects table. */
+export function itAnchorLabel(id: string, line: number): string {
+  return `${id}, ${M['it.line']} ${line}`;
 }
 
 /** "You are signed out, so The findings of this project could not be read." — wording as before D.29. */

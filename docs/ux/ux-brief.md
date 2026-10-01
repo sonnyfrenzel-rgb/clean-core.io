@@ -34,10 +34,12 @@ text verbatim in the language it appears in.
 
 ## The product and its users
 
-Clean-Core.io is a free community web app. It takes one piece of custom SAP ABAP
-from "not understood" to an evidence-backed decision, aligned with SAP's Clean Core
-paradigm. A deterministic evidence engine runs first; a language model then helps
-explain and transform; every analysis is an immutable, signed run.
+Clean-Core.io is a free community web app: from custom ABAP nobody understands to a
+reviewed, tested rebuild — on one chain of evidence you can check. A deterministic
+evidence engine runs first and draws the process as BPMN with a line anchor on every
+element; a language model then proposes a design, a code draft and test scenarios on the
+same evidence; every analysis is an immutable, signed run. The code is a draft for
+review, and the tests check it against test scenarios, not in a real S/4HANA system.
 
 Today the product is a seven-stage workflow per project: Analyze → Design →
 Transformation → Documentation → Testing → Economics (TCO) → Delivery, plus

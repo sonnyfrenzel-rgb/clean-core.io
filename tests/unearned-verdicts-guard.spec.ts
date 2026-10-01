@@ -210,3 +210,17 @@ test.describe('the TCO model refuses degenerate inputs', () => {
     expect(src).toContain('overheadReductionPct');
   });
 });
+
+test.describe('a pass in the mock runner is labelled as one', () => {
+  // QA f2dc77c6c912: the runner executes generated tests against mocks in an
+  // isolated process and never against a tenant, so its passes are
+  // "Demonstrated · mock" (`lib/provenance.ts`), not "Proven" — the green,
+  // reserved word for what a real system or a signed run established.
+  for (const rel of ['app/(app)/project/[projectId]/testing/page.tsx', 'components/TestingCharts.tsx']) {
+    test(`${rel} does not call a runner pass Proven`, () => {
+      const src = rendered(rel);
+      expect(src).not.toMatch(/['">]\s*(?:\{stats\.passed\}\s*)?Proven\b/);
+      expect(src).toContain("provenance('demonstrated-mock').label");
+    });
+  }
+});

@@ -727,10 +727,12 @@ Structure the JSON exactly like this:
     if (!signedSource) return;
     // Loaded on the click: the reader of this stage pays for the ABAP reader
     // only when they ask for the file.
-    const { buildBpmnExportFromSource, bpmnFileName } = await import('@/lib/bpmn/export');
+    const { buildBpmnExportFromSource, bpmnFileName, READING_WRAP } = await import('@/lib/bpmn/export');
     const { xml } = buildBpmnExportFromSource(signedSource.source, {
       processName: project?.name || signedSource.fileName,
       sourceFileName: signedSource.fileName,
+      names: 'plain',
+      wrap: READING_WRAP,
     });
     const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
     saveAs(blob, bpmnFileName(`${project?.name || 'Project'}_Process`));
@@ -775,6 +777,8 @@ Structure the JSON exactly like this:
       const bpmn = exporter.buildBpmnExportFromSource(signedSource.source, {
         processName: project?.name || signedSource.fileName,
         sourceFileName: signedSource.fileName,
+        names: 'plain',
+        wrap: exporter.READING_WRAP,
       });
 
       const view = idStr ? await statesClient.fetchProcessStates(idStr) : null;

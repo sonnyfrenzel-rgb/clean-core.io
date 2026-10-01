@@ -31,7 +31,15 @@ export const FROM = 'Clean-Core.io Security <info@clean-core.io>';
 
 const ORDER = ['kritisch', 'hoch', 'mittel', 'niedrig', 'info'];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-const where = (f) => (f.locations || []).map((l) => `${l.file}:${l.line}`).join(', ') || '—';
+/**
+ * Which model(s) wrote the report. Since 01.10.2026 OpenRouter's Auto Router picks per call, and the payload names
+ * every model that answered (`models`); an older payload names its one pinned model in `model`.
+ */
+export function modelLine(payload) {
+  if (Array.isArray(payload?.models)) return payload.models.length ? `${payload.models.join(', ')} (OpenRouter Auto Router${payload.costTier ? `, Kostenstufe ${payload.costTier}` : ''})` : 'kein Modellaufruf';
+  return payload?.model || 'unbekannt';
+}
+const where = (f) =>(f.locations || []).map((l) => `${l.file}:${l.line}`).join(', ') || '—';
 
 export function fingerprint(finding) {
   const file = finding.locations?.[0]?.file || '';
@@ -168,7 +176,7 @@ export function renderAuditMail(payload, { version, runUrl, sealedSha256 }) {
     'NACHWEIS',
     `  Version ${version} · Commit ${payload.head}`,
     `  Lauf ${runUrl}`,
-    `  Modell ${payload.model} · ${payload.calls ?? '—'} Aufrufe · ${minutes} min · ${cost}`,
+    `  Modell ${modelLine(payload)} · ${payload.calls ?? '—'} Aufrufe · ${minutes} min · ${cost}`,
     `  SHA-256 des versiegelten Berichts: ${sealedSha256}`,
     `  Nachprüfen: node scripts/security/inbox.mjs ${payload.head.slice(0, 12)} — öffnet dasselbe Artefakt mit dem privaten Schlüssel.`,
   ].join('\n');
@@ -305,7 +313,7 @@ function renderHtmlBody({ payload, r, findings, c, v, version, runUrl, sealedSha
     <div style="border-top: 1px solid #f1f5f9; padding-top: 18px;">
       ${label('Nachweis', '#94a3b8')}
       <div style="font-family: ${MONO}; font-size: 11px; color: #64748b; line-height: 1.7; word-break: break-all;">
-        Version ${esc(version)}<br>Commit ${esc(payload.head)}<br>Modell ${esc(payload.model)} &middot; ${esc(payload.calls ?? '—')} Aufrufe<br>Dauer ${minutes}&nbsp;min &middot; Kosten ${esc(cost)}<br>SHA-256 versiegelter Bericht ${esc(sealedSha256)}
+        Version ${esc(version)}<br>Commit ${esc(payload.head)}<br>Modell ${esc(modelLine(payload))} &middot; ${esc(payload.calls ?? '—')} Aufrufe<br>Dauer ${minutes}&nbsp;min &middot; Kosten ${esc(cost)}<br>SHA-256 versiegelter Bericht ${esc(sealedSha256)}
       </div>
       <div style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin-top: 8px;">Nachprüfen: <span style="font-family: ${MONO};">node scripts/security/inbox.mjs ${esc(payload.head.slice(0, 12))}</span> öffnet dasselbe Artefakt mit dem privaten Schlüssel.</div>
     </div>

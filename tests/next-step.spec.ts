@@ -298,7 +298,8 @@ test.describe('the "Next step" card, rendered', () => {
     await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
 
     const card = page.locator('[data-next-step]');
-    await expect(card.locator('[data-cc-card-title]')).toHaveText('Next step');
+    // A card in IT and Management, a bar in Business (mockup s1): a heading either way.
+    await expect(card.getByRole('heading', { name: 'Next step', exact: true })).toBeVisible();
     await expect(card.locator('[data-next-step-state="open"]')).toBeVisible();
 
     const reason = (await card.locator('[data-next-step-reason]').textContent())?.trim() ?? '';
@@ -337,7 +338,8 @@ test.describe('the "Next step" card, rendered', () => {
     await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
 
     const card = page.locator('[data-next-step]');
-    await expect(card.locator('[data-cc-card-title]')).toHaveText('Next step');
+    // A card in IT and Management, a bar in Business (mockup s1): a heading either way.
+    await expect(card.getByRole('heading', { name: 'Next step', exact: true })).toBeVisible();
     const none = card.locator('[data-next-step-state="none"]');
     await expect(none).toBeVisible();
     const text = (await none.textContent())?.trim() ?? '';

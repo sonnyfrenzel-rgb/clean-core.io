@@ -7,18 +7,20 @@
  *   node scripts/ux/review.mjs --dry --mode=full    maintainer: batches, screenshots and estimated cost — no model call
  *
  * Guardrails (docs/UX-REVIEW-AGENT.md §2): reads the repository and the
- * screenshots, calls one pinned model without tools, writes one sealed file.
+ * screenshots, calls OpenRouter's Auto Router (cost tier UX_ROUTER) without tools,
+ * accepts only a model that reads images, writes one sealed file.
  * It never writes to the repository, to GitHub or to any other system.
  */
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { seal } from '../qa/lib/crypto.mjs';
 import { changedFiles, commitIdOrNull, git, isAncestor, isCommit } from '../qa/lib/git-delta.mjs';
-import { callReviewer } from '../qa/lib/openrouter.mjs';
+import { AUTO_MODEL } from '../qa/lib/config.mjs';
+import { callReviewer, modelsOf } from '../qa/lib/openrouter.mjs';
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { loadDotEnv, sealedReports } from '../qa/lib/store.mjs';
 import { assignAreas, numbered, packAreas } from './lib/areas.mjs';
-import { AREAS, BUDGETS, DIFF_CONTEXT_LINES, estimateCostUsd, isUxRelevant, MAX_IMAGE_BYTES_PER_CALL, MOCKUP_SCREENS, mockupScreen, REFERENCE_SCREENS, REQUEST_TIMEOUT_MS, baselineOf, resolveMode, UX_MODEL, WHOLE_FILE_CHARS, withinBudget } from './lib/config.mjs';
+import { AREAS, BUDGETS, DIFF_CONTEXT_LINES, estimateCostUsd, isUxRelevant, MAX_IMAGE_BYTES_PER_CALL, MOCKUP_SCREENS, mockupScreen, REFERENCE_SCREENS, REQUEST_TIMEOUT_MS, baselineOf, resolveMode, UX_ROUTER, WHOLE_FILE_CHARS, withinBudget } from './lib/config.mjs';
 import { buildText, loadBrief, UX_SCHEMA } from './lib/prompt.mjs';
 import { chooseDeltaBase } from './lib/range.mjs';
 import { closedBy, loadRegister, refutedEntries } from './lib/register.mjs';
@@ -202,12 +204,16 @@ async function main() {
 
   const results = [];
   const usages = [];
+  const answered = [];
   let spent = 0;
   const run = async (c, text, effort) => {
     if (!withinBudget(budget, spent, { chars: brief.length + text.length + SCHEMA_CHARS, images: c.picked.length })) return null;
     const r = await callReviewer({
       apiKey: env.OPENROUTER_API_KEY,
-      model: UX_MODEL,
+      costTier: UX_ROUTER.costTier,
+      maxPrice: UX_ROUTER.maxPrice,
+      // A review of screenshots is accepted only from a model that can read them (openrouter.mjs confirmInputs).
+      inputs: c.picked.length ? ['image'] : null,
       name: 'ux_review',
       title: 'Clean-Core.io UX Review',
       system: brief,
@@ -218,6 +224,7 @@ async function main() {
       timeoutMs: REQUEST_TIMEOUT_MS,
     });
     usages.push(r.usage);
+    answered.push(r);
     spent += typeof r.usage?.cost === 'number' ? r.usage.cost : estimateCostUsd({ chars: brief.length + text.length + SCHEMA_CHARS, images: c.picked.length, maxOutputTokens: budget.maxOutputTokens });
     return r;
   };
@@ -259,7 +266,11 @@ async function main() {
     baseline,
     meta: {
       run: { id: env.GITHUB_RUN_ID || null, attempt: env.GITHUB_RUN_ATTEMPT || null },
-      model: UX_MODEL,
+      // What was asked for and who answered: the Auto Router picks per call (owner decision, 01.10.2026).
+      model: AUTO_MODEL,
+      costTier: UX_ROUTER.costTier,
+      maxPrice: UX_ROUTER.maxPrice,
+      models: modelsOf(answered),
       modelCalls: usages.length,
       costUsd: usages.length ? actualCost(usages) : 0,
       budget: { maxCostUsd: budget.maxCostUsd, maxBatches: budget.maxBatches },
@@ -274,7 +285,7 @@ async function main() {
   writeFileSync(join(OUT_DIR, 'ux-review.enc.json'), JSON.stringify(seal(report, secret)));
 
   const summary = publicSummary(report);
-  const line = `UX review ${summary.head} (${summary.mode}): ${summary.status} · ${summary.modelCalls} model call(s) · $${summary.costUsd}`;
+  const line = `UX review ${summary.head} (${summary.mode}): ${summary.status} · ${summary.modelCalls} model call(s) · $${summary.costUsd} · reviewed by ${summary.models}`;
   console.log(line);
   if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `### UX review\n\n${line}\n\nThe report is sealed. Read it locally with \`node scripts/ux/inbox.mjs\`.\n`);
 

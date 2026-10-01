@@ -1,9 +1,9 @@
 # Security-Agent — Vollaudit jeder `main`-Version
 
-**Stand 24.09.2026 (Prüfung in Stapeln) · eingeführt mit v2.9.15 · seit 15.09.2026 mit DeepSeek V4.1 Flash · läuft bei jedem Push auf `main`, bis Sonny ihn widerruft**
+**Stand 24.09.2026 (Prüfung in Stapeln) · eingeführt mit v2.9.15 · seit 01.10.2026 mit dem OpenRouter Auto Router (vorher DeepSeek V4.1 Flash) · läuft bei jedem Push auf `main`, bis Sonny ihn widerruft**
 
 Jede neue Version auf `main` bekommt ein vollständiges Sicherheitsaudit: ein CISO und
-fünf Security-Consultants, **DeepSeek V4.1 Flash über OpenRouter**, als Kette von
+fünf Security-Consultants, **OpenRouter Auto Router (Kostenstufe high)**, als Kette von
 Modellaufrufen ohne Werkzeuge. Der Bericht kommt verdichtet, belegt und auf Deutsch in
 Sonnys Postfach, im Look der übrigen Clean-Core.io-Mails. Claude Code prüft jeden
 Befund, entscheidet im versiegelten Register und plant bestätigte Befunde nach Priorität
@@ -17,6 +17,27 @@ Bis 15.09.2026 lief das Audit mit Claude Fable 5.1 in Claude Code (Ultracode, Bu
 Consultants 194 Kandidaten; der eine CISO-Aufruf erreichte seine Eingabegrenze, bevor
 auch nur ein Kandidat seinen Code bekam, bestätigte nichts — und die Mail sagte
 „0 Befunde, Risiko niedrig", was in Wahrheit „nicht geprüft" hieß (§1a).
+
+> **Model routing since 01.10.2026 (owner decision).** No model is pinned any more. All
+> three kinds of call (consultants, CISO verification, CISO narrative) go to OpenRouter's
+> Auto Router (`openrouter/auto`) at cost tier **`high`**, under a price ceiling of
+> **$1.50 input / $4.50 output per M tokens** (`provider.max_price`, `AUDIT.router` in
+> `scripts/security/lib/team.mjs`). Every reserve and estimate is made at that ceiling;
+> what counts against the cap is the actual `usage.cost`. The cap is now **$20 per
+> release** (was $5): at the ceiling the CISO reserve alone is about $5.90 and a whole run
+> at its worst case about $14.90, under 80 % of the cap. The self-test cap is $0.35 (was
+> $0.20, which the self-test's CISO reserve alone now fills); the live self-test of
+> 01.10.2026 made 3 calls, all answered by z-ai/glm-5.3, for $0.0293.
+>
+> The provider allowlist `['Fireworks', 'CoreWeave', 'Together']` is gone: it named the
+> endpoints of one model and means nothing once the model is free. What still stands
+> against the empty-body endpoint failure of 23.09.2026: `require_parameters: true`,
+> `allow_fallbacks: false`, `data_collection: 'deny'`, the fixed-reason checks for empty
+> or non-JSON content, and the coverage floor (`minDeepReadRatio`), which fails the audit
+> loudly instead of reporting on a fraction. The payload, the public log line and the mail
+> name every model that answered (`models`). DeepSeek V4.1 Flash and its prices below
+> describe the period before 01.10.2026.
+
 
 ---
 
@@ -51,7 +72,7 @@ auch nur ein Kandidat seinen Code bekam, bestätigte nichts — und die Mail sag
 
 | Baustein | Datei | Aufgabe |
 |---|---|---|
-| Team und Grenzen | `scripts/security/lib/team.mjs` | Modell, Preise, Budget, Consultants mit ihren Domänen, Schemata — die einzige Stelle |
+| Team und Grenzen | `scripts/security/lib/team.mjs` | Kostenstufe und Preisobergrenze des Auto Routers, Budget, Consultants mit ihren Domänen, Schemata — die einzige Stelle |
 | Pipeline | `scripts/security/lib/pipeline.mjs` | wer welche Datei liest, was jeder Aufruf sieht, Entdoppeln und Prüfstapel der Kandidaten, Code-Kontext der Fundstellen, gezählte Abdeckung |
 | CISO-Anweisung | `docs/security/ciso-brief.md` | Methode, aktuelle Angriffsmuster, Schweregrade, Berichtsaufbau |
 | Angriffsflächen-Karte | `scripts/security/lib/surface.mjs` | deterministisch, nur `node:`-Module |
@@ -136,8 +157,8 @@ DeepSeek V4.1 Flash: **0,22 $ je Mio. Eingabe-Token, 0,66 $ je Mio. Ausgabe-Toke
 
 | Maßnahme | Wirkung |
 |---|---|
-| **Budget 5 $ je Audit (seit 24.09.2026, vorher 3 $) — geschätzt, vor jedem Aufruf gegen das tatsächlich Ausgegebene geprüft** | ein Aufruf, der es nach der Schätzung reißen würde, findet nicht statt; die Dateien eines Consultant-Aufrufs stehen als nicht gründlich gelesen, die Kandidaten eines Prüfaufrufs als „nicht verifiziert" im Bericht. Alle 25 Prüfaufrufe und die Synthese sind vorab reserviert, bevor ein Consultant etwas ausgibt. Harte Grenze: das Kreditlimit am OpenRouter-Schlüssel |
-| Ungünstigster Fall eines Vollaudits | 60 Consultant-Aufrufe ≈ 1,33 $ + 25 Prüfaufrufe ≈ 0,86 $ + Synthese ≈ 0,01 $ = **≈ 2,20 $** — der Test hält ihn unter 80 % des Budgets. Erwartet je Release (Schätzung, nicht gemessen): rund 1 $, davon für 150–200 Kandidaten in 8–10 Prüfaufrufen etwa 0,10–0,20 $ |
+| **Budget 20 $ je Audit (seit 01.10.2026; 5 $ ab 24.09.2026, vorher 3 $) — geschätzt zur Preisobergrenze, vor jedem Aufruf gegen das tatsächlich Ausgegebene geprüft** | ein Aufruf, der es nach der Schätzung reißen würde, findet nicht statt; die Dateien eines Consultant-Aufrufs stehen als nicht gründlich gelesen, die Kandidaten eines Prüfaufrufs als „nicht verifiziert" im Bericht. Alle 25 Prüfaufrufe und die Synthese sind vorab reserviert, bevor ein Consultant etwas ausgibt. Harte Grenze: das Kreditlimit am OpenRouter-Schlüssel |
+| Ungünstigster Fall eines Vollaudits | Since 01.10.2026, at the $1.50/$4.50 ceiling: 60 consultant calls ≈ 9.10 $ + 25 verification calls and the narrative ≈ 5.90 $ = **≈ 14.90 $** — the test keeps it under 80 % of the budget. Until then (DeepSeek): ≈ 2,20 $. Erwartet je Release (Schätzung, nicht gemessen): rund 1 $, davon für 150–200 Kandidaten in 8–10 Prüfaufrufen etwa 0,10–0,20 $ |
 | Aufteilung nach Domänen | jede Datei wird von genau einem Consultant gelesen oder, bei Testdateien, nur über die Karte geprüft |
 | 100.000 Zeichen je Consultant-Aufruf, höchstens 60 Aufrufe, vier gleichzeitig; eine größere Datei wird in Teilen gelesen | gemessen am 15.09.2026: ein Aufruf mit 284.000 Zeichen lief 16,6 min und endete ohne lesbare Antwort, einer mit 100.000 Zeichen antwortete in 177 s für 0,007 $. Heute 461 Dateien in 51 Aufrufen, Schätzung im ungünstigsten Fall 0,94 $, rund eine halbe Stunde. Das Budget rechnet jeden laufenden Aufruf mit seinem ungünstigsten Fall, bis er abgerechnet ist |
 | Audit nur bei `main`-Releases | kein Audit und seit dem 16.09.2026 auch kein Selbsttest je Push auf `dev` — Sicherheit wird gründlich am Release geprüft, nicht stichprobenartig am Push |

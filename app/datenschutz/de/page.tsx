@@ -53,6 +53,7 @@ export default function DatenschutzDePage() {
         <Link
           href="/datenschutz"
           hrefLang="en"
+          lang="en"
           data-privacy-language-switch="en"
           className="cc-text-label text-cc-ink-muted underline-offset-4 hover:text-cc-brand-strong hover:underline"
         >

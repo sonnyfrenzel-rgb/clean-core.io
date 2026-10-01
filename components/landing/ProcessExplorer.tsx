@@ -12,22 +12,38 @@ import { ChevronRight } from 'lucide-react';
  * which of them is visible. A collapsed sub-process carries `data-opens`; a
  * click, Enter or Space on it opens its plane in the same place, the path above
  * leads back, Escape goes one level up. No diagram library is loaded.
+ *
+ * **Orientation first** (owner, 01.10.2026: "one must always know which level
+ * one is on and how to find one's way"): the bar says the level ("Level 2 of
+ * 3"), the path in the names the map uses, and offers the way back to the
+ * overview; a row of phases shows where this level sits in the whole process; a
+ * short legend says what the plus and the line anchor mean. A level wider than
+ * the box says so at its right edge. Names are plain language by default; the
+ * code's own names are one switch away ("Technical names").
  */
 
 export interface ExplorerPlane {
   id: string;
   label: string;
+  /** The plane's name in the Technical names view. */
+  technicalLabel?: string;
   parent: string | null;
   anchor: string | null;
   map: ReactNode;
   steps: ReactNode;
+  technicalMap?: ReactNode;
+  technicalSteps?: ReactNode;
 }
 
 export default function ProcessExplorer({ planes, rootId, program, sub }: { planes: ExplorerPlane[]; rootId: string; program: string; sub: ReactNode }) {
   const [current, setCurrent] = useState(rootId);
   const [view, setView] = useState<'map' | 'steps'>('map');
+  const [technical, setTechnical] = useState(false);
+  const [more, setMore] = useState(false);
   const byId = new Map(planes.map((p) => [p.id, p]));
   const hostRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const hasTechnical = planes.some((p) => p.technicalMap);
 
   // On a phone the same content opens as the list of steps (landing mockup, phone).
   useEffect(() => {
@@ -42,14 +58,33 @@ export default function ProcessExplorer({ planes, rootId, program, sub }: { plan
     hostRef.current?.querySelector<HTMLElement>(`[data-plane-host="${current}"]`)?.focus();
   }, [current]);
 
+  // A level wider than the box says so at its right edge.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const check = () => setMore(el.scrollWidth - el.scrollLeft - el.clientWidth > 8);
+    check();
+    el.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => {
+      el.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
+    };
+  }, [current, view, technical]);
+
   const go = (id: string) => {
     moved.current = true;
     setCurrent(id);
   };
 
+  const nameOf = (p: ExplorerPlane) => (technical ? (p.technicalLabel ?? p.label) : p.label);
   const trail: ExplorerPlane[] = [];
   for (let p = byId.get(current); p; p = p.parent ? byId.get(p.parent) : undefined) trail.unshift(p);
   const here = byId.get(current) ?? planes[0];
+  const depthOf = (p: ExplorerPlane): number => (p.parent && byId.get(p.parent) ? 1 + depthOf(byId.get(p.parent) as ExplorerPlane) : 1);
+  const levels = Math.max(...planes.map(depthOf));
+  const phases = planes.filter((p) => p.parent === rootId);
+  const phaseHere = trail[1]?.id ?? null;
 
   const open = (target: EventTarget | null) => {
     const el = (target as Element | null)?.closest?.('[data-opens]');
@@ -76,13 +111,16 @@ export default function ProcessExplorer({ planes, rootId, program, sub }: { plan
   return (
     <div ref={hostRef} data-process-explorer="" role="group" aria-label="Process map" onClick={onClick} onKeyDown={onKeyDown}>
       <div className="flow-bar">
+        <span className="lvl" data-explorer-level="">
+          Level {trail.length} of {levels}
+        </span>
         <nav className="crumb" aria-label="Map level">
           {trail.map((p, i) => (
             <span key={p.id} className="crumb-step">
               {i > 0 && <ChevronRight className="i" aria-hidden="true" />}
               {i < trail.length - 1 ? (
                 <button type="button" onClick={() => go(p.id)} className="crumb-link">
-                  {i === 0 ? program : p.label}
+                  {i === 0 ? program : nameOf(p)}
                 </button>
               ) : i === 0 ? (
                 <>
@@ -91,15 +129,15 @@ export default function ProcessExplorer({ planes, rootId, program, sub }: { plan
                   <span aria-current="location">Overview</span>
                 </>
               ) : (
-                <b aria-current="location">{p.label}</b>
+                <b aria-current="location">{nameOf(p)}</b>
               )}
             </span>
           ))}
           {here.anchor && <span className="sub">called at {here.anchor}</span>}
         </nav>
         {here.parent && (
-          <button type="button" onClick={() => go(here.parent as string)} className="wbtn">
-            Close
+          <button type="button" onClick={() => go(rootId)} className="wbtn">
+            Back to overview
           </button>
         )}
         <span className="sub">{sub}</span>
@@ -112,16 +150,51 @@ export default function ProcessExplorer({ planes, rootId, program, sub }: { plan
               Steps
             </button>
           </span>
+          {hasTechnical && (
+            <span className="segb" role="group" aria-label="Names">
+              <button type="button" data-explorer-technical="" aria-pressed={technical} onClick={() => setTechnical((was) => !was)}>
+                Technical names
+              </button>
+            </span>
+          )}
         </span>
       </div>
+      {phases.length > 0 && (
+        <nav className="phase-row" aria-label="Phases of the process">
+          <span className="k">Phases</span>
+          {phases.map((p) => {
+            const at = p.id === phaseHere;
+            return (
+              <button key={p.id} type="button" onClick={() => go(p.id)} aria-current={at ? 'true' : undefined} className={`wbtn${at ? ' primary' : ''}`}>
+                {nameOf(p)}
+                {at ? <span className="sr-only"> (you are here)</span> : null}
+              </button>
+            );
+          })}
+        </nav>
+      )}
       <p className="kbdhint flow-help">
-        {view === 'map'
-          ? 'Tab into the map · Enter or click opens a phase in place · Escape closes it · Steps shows the same content as a list · wide levels scroll sideways'
-          : 'The same level as a list, in the order the map draws it. A phase opens in place.'}
+        {view === 'map' ? (
+          <>
+            <span className="mk" aria-hidden="true">+</span> opens a phase in place · <span className="anc">L182</span> the line the step was read from ·
+            Enter or click opens, Escape goes one level up · Steps shows the same content as a list
+          </>
+        ) : (
+          'The same level as a list, in the order the map draws it. A phase opens in place.'
+        )}
       </p>
       {planes.map((p) => (
-        <div key={p.id} hidden={p.id !== here.id} data-plane-host={p.id} tabIndex={-1} role="group" aria-label={p.id === rootId ? 'Overview' : p.label} className="plane-host">
-          {view === 'map' ? <div className="flow-canvas">{p.map}</div> : <div className="flow-steps">{p.steps}</div>}
+        <div key={p.id} hidden={p.id !== here.id} data-plane-host={p.id} tabIndex={-1} role="group" aria-label={p.id === rootId ? 'Overview' : nameOf(p)} className="plane-host">
+          {view === 'map' ? (
+            <div className="flow-wrap">
+              <div ref={p.id === here.id ? scrollRef : undefined} className="flow-canvas">
+                {technical && p.technicalMap ? p.technicalMap : p.map}
+              </div>
+              {p.id === here.id && more ? <span className="flow-more" aria-hidden="true">more →</span> : null}
+            </div>
+          ) : (
+            <div className="flow-steps">{technical && p.technicalSteps ? p.technicalSteps : p.steps}</div>
+          )}
         </div>
       ))}
     </div>

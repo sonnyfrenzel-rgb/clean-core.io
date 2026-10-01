@@ -293,12 +293,15 @@ test.describe('the stage on "New project"', () => {
     await expect(page.locator('[data-three-views-panel]')).toHaveCount(3);
   });
 
-  test('"Skip intro" is on the stage and folds part 1 away', async ({ page }) => {
+  test('"Skip intro" sits at the top right of the page and folds part 1 away', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page);
     await openStage(page);
-    await expect(page.locator('[data-three-views-skip]')).toBeVisible();
-    await page.locator('[data-three-views-skip]').click();
+    // Mockup 2.8 s14: one "Skip intro", at the top right — not a second one on the stage.
+    await expect(page.locator('[data-new-project-skip]')).toBeVisible();
+    await expect(page.locator('[data-new-project-skip]')).toHaveText('Skip intro');
+    await expect(page.locator('[data-three-views-stage] [data-three-views-skip]')).toHaveCount(0);
+    await page.locator('[data-new-project-skip]').click();
     await expect(page.locator('[data-new-project-intro]')).toHaveAttribute(
       'data-new-project-intro',
       'folded',

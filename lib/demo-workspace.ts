@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { buildDemoProject, assertNoTrustChain, type DemoProject } from '@/lib/demo-project';
-import { buildBpmnExportFromSource } from '@/lib/bpmn/export';
+import { buildReadingExports } from '@/lib/bpmn/export';
 import { buildProcessMapModel, type ProcessMapModel } from '@/lib/process-map';
 import { applyNaming, namingContextOf } from '@/lib/process-naming';
 import { findingsOf } from '@/lib/it-findings-build';
@@ -48,11 +48,8 @@ const DEMO_PATH = path.join(process.cwd(), 'public', 'starter-examples', DEMO_SO
 /** The BPMN and its model, exactly as `hooks/useProcessMap.ts` builds them — without a naming, because a demo calls no model. */
 export function demoProcessMap(source: string): ProcessMapModel {
   const named = applyNaming(namingContextOf(source), null);
-  const bpmn = buildBpmnExportFromSource(source, {
-    processName: DEMO_OBJECT_NAME,
-    sourceFileName: DEMO_SOURCE_FILE,
-  });
-  return buildProcessMapModel({ bpmn, named, fileName: DEMO_SOURCE_FILE });
+  const { bpmn, technical } = buildReadingExports(source, { processName: DEMO_OBJECT_NAME, sourceFileName: DEMO_SOURCE_FILE });
+  return buildProcessMapModel({ bpmn, technical, named, fileName: DEMO_SOURCE_FILE });
 }
 
 export function buildDemoWorkspace(): DemoWorkspaceData {

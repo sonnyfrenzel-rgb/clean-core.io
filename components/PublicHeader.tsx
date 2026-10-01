@@ -65,7 +65,7 @@ export default function PublicHeader({
               <span className="text-xs font-semibold leading-tight text-cc-ink-muted">Free Community Edition</span>
             </span>
           </Link>
-          <nav aria-label="Main" className="hidden items-center gap-6 lg:flex">
+          <nav aria-label="Main" className="hidden items-center gap-6 xl:flex">
             {PUBLIC_NAV.map((n) => (
               <Link key={n.href} href={n.href} className="whitespace-nowrap py-2 text-[15px] font-semibold text-cc-ink-muted hover:text-cc-ink">
                 {n.label}
@@ -74,7 +74,7 @@ export default function PublicHeader({
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-2">
             <HeaderAuthButton signInHref={signInHref} />
-            <details className="group relative lg:hidden">
+            <details className="group relative xl:hidden">
               <summary
                 aria-label="Menu"
                 className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-full border border-cc-field-border bg-cc-surface text-cc-ink [&::-webkit-details-marker]:hidden"

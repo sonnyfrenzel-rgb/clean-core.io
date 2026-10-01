@@ -6,13 +6,35 @@ Jeder neue Stand auf `dev` bekommt zwei Prüfungen, ohne dass jemand sie anstö�
 ein **Delta-Review** durch ein fest eingestelltes Modell (GPT-6 Luna über
 OpenRouter) und einen **Smoke-Check** der Revision, die derselbe Push deployt hat.
 Jede Version auf `main` bekommt zusätzlich ein **Vollreview des ganzen Codes** durch
-das Spitzenmodell der 5.6-Reihe, GPT-5.6 Sol (§10). Modellwahl von Sonny am
+das Spitzenmodell der 5.6-Reihe, GPT-5.6 Sol (§10) — bis 01.10.2026; seitdem siehe unten. Modellwahl von Sonny am
 15.09.2026; bis dahin prüfte GPT-6 Astra die Deltas. Am 22.09.2026 ist der
 Delta-Prüfer auf **GPT-6 Luna** gewechselt (ebenfalls Sonny): gleicher Kontext von
 1,05 Mio. Token, halber Preis.
 Die Befunde gehen versiegelt an den Maintainer — Claude Code —, der jeden prüft,
 bestätigte behebt, widerlegte mit Begründung ablegt und erneut pusht. `main` wird
 erst gefragt, wenn die Schleife sauber ist.
+
+> **Model routing since 01.10.2026 (owner decision).** No model is pinned any more. Every
+> request goes to OpenRouter's Auto Router (`model: 'openrouter/auto'`), which picks the
+> model per call. The agent decides only the cost band and the ceiling
+> (`scripts/qa/lib/config.mjs` `ROUTER`):
+>
+> | Review | Cost tier | Price ceiling (`provider.max_price`, USD per M tokens) | Cap |
+> |---|---|---|---|
+> | Delta on `dev` | `high` | $1.50 input / $4.50 output | **$3.80** per push (was $0.50) |
+> | Full review on `main` | `xhigh` | $3 input / $15 output | $10 per release (unchanged) |
+>
+> Every request also carries `provider: { data_collection: 'deny', require_parameters: true,
+> allow_fallbacks: false }`. The pre-call estimate is made at the ceiling, so OpenRouter can
+> serve no endpoint that costs more than the estimate; what counts against the cap is the
+> actual `usage.cost`. At the delta ceiling all ten batches fit under 80 % of the cap, so
+> the budget never sticks the checkpoint; the full review at `xhigh` is ended by the cap,
+> not the call count (about 22 of 28 batches at the prices the router chose in the probes),
+> and names what it did not read. Every sealed report records the models that answered
+> (`meta.models`), and the step summary and `await.mjs` print them. A change in findings
+> between two reports can now also be a change of reviewer. The model names below
+> (GPT-6 Luna, GPT-5.6 Sol and their prices) describe the period before 01.10.2026.
+
 
 ---
 
@@ -29,7 +51,7 @@ erst gefragt, wenn die Schleife sauber ist.
                 │   3. Vorprüfung ohne Token (Risiko, Test-Signale,       │
                 │      Abnahmekriterien, Geheimnis-Schwärzung)            │
                 │   4. Batches nach Risiko, geschätztes Kostenbudget      │
-                │   5. GPT-6 Luna, strukturierte Antwort, keine Tools     │
+                │   5. Auto Router (high), strikte Antwort, keine Tools   │
                 │   6. Bericht versiegeln → Artefakt qa-review-<sha>      │
                 │                                                         ▼
                 └── job smoke ── wartet auf deploy.yml desselben Commits ─┘
@@ -42,7 +64,7 @@ erst gefragt, wenn die Schleife sauber ist.
                     → prüfen → beheben / widerlegen → push dev → nächste Runde
 
  git push main ── qa-review.yml ── job full (§10)
-                    ganzer Code des Release-Commits, in Batches, GPT-5.6 Sol
+                    ganzer Code des Release-Commits, in Batches, Auto Router (xhigh)
                     versiegeln → Artefakt qa-full-<sha> · entscheidet nichts
  Claude Code (lokal) ── node scripts/qa/await.mjs <sha> --full → prüfen → Schritt auf dev
 ```
@@ -289,7 +311,7 @@ Codes (Sonny, 15.09.2026).
 | | |
 |---|---|
 | Auslöser | Push auf `main`, Job `full` in `.github/workflows/qa-review.yml`; nie abgebrochen, Releases laufen nacheinander |
-| Modell | `openai/gpt-5.6-sol`, das Spitzenmodell der GPT-5.6-Reihe, Reasoning `high`. GPT-6 Astra Pro war erwogen und wurde der Kosten wegen verworfen |
+| Modell | Since 01.10.2026: OpenRouter Auto Router (`openrouter/auto`), cost tier `xhigh`, ceiling $3/$15, reasoning `high`; the report names every model that answered. Before: `openai/gpt-5.6-sol`, later `openai/gpt-6-luna-pro` |
 | Umfang | jede prüfbare Datei des Release-Commits (gleiche Pfadfilter wie das Delta), mit Zeilennummern, dazu eine Übersicht aller Dateien; am 15.09.2026 435 Dateien, rund 4,3 Mio. Zeichen in 12 Batches |
 | Kosten | 2 $ / 10 $ je Mio. Token. Budget **10 $ je Version**, geschätzt wie beim Delta (volle Ausgabe je Aufruf eingerechnet): Vorab-Schätzung 8,95 $, tatsächlich deutlich weniger, weil die Ausgabe selten ausgeschöpft wird |
 | Übertrag | offene Befunde des vorigen Vollreviews (Artefakt `qa-full-<sha>`, 90 Tage aufbewahrt); Widerlegungen aus `docs/qa/refuted-findings.enc.json` gelten wie beim Delta |

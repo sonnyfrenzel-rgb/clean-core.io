@@ -53,6 +53,50 @@ export async function fetchProcessStates(projectId: string): Promise<ProcessStat
   }
 }
 
+/**
+ * Why the confirmations could not be read — the codes `GET` answers with, so a
+ * screen can say *why* there is nothing to confirm instead of showing an empty
+ * list (`no-baseline`: the process has not been reconstructed from a signed run
+ * yet; `source-moved`: the source changed since).
+ */
+export type StatesReadRefusal =
+  | 'no-baseline'
+  | 'no-source'
+  | 'source-moved'
+  | 'source-too-large'
+  | 'format-version'
+  | 'not-found'
+  | 'unreachable';
+
+const READ_REFUSALS: readonly StatesReadRefusal[] = [
+  'no-baseline',
+  'no-source',
+  'source-moved',
+  'source-too-large',
+  'format-version',
+];
+
+export type StatesReadOutcome =
+  | { ok: true; view: ProcessStateView }
+  | { ok: false; code: StatesReadRefusal; status: number };
+
+/** The same read as `fetchProcessStates`, with the reason when there is no view. */
+export async function readProcessStatesOutcome(projectId: string): Promise<StatesReadOutcome> {
+  try {
+    const res = await fetch(processStatesPath(projectId), { headers: await authHeader() });
+    const body = (await res.json().catch(() => ({}))) as { view?: unknown; code?: unknown };
+    if (res.ok && isView(body.view)) return { ok: true, view: body.view };
+    const code = (READ_REFUSALS as readonly unknown[]).includes(body.code)
+      ? (body.code as StatesReadRefusal)
+      : res.status === 404
+        ? 'not-found'
+        : 'unreachable';
+    return { ok: false, code, status: res.status };
+  } catch {
+    return { ok: false, code: 'unreachable', status: 0 };
+  }
+}
+
 /** Why a confirmation produced no revision. */
 export type ConfirmRefusal =
   | 'bad-request'

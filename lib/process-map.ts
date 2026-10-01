@@ -52,6 +52,10 @@ export interface ReconstructionTrace {
   unanchoredReason: string | null;
   /** `@early` — ADR-054: an end event of an early exit, not the normal end. */
   early: boolean;
+  /** `@technicalName` — the source token, when the element's name is a plain label. */
+  technicalName: string | null;
+  /** `@fact` — what a collapsed phase holds, counted ("2 decisions · 1 error end"). */
+  fact: string | null;
 }
 
 /**
@@ -139,8 +143,14 @@ interface ParsedFlow {
   id: string;
   sourceRef: string;
   targetRef: string;
-  /** The condition as the code writes it — 2.6 puts it on the flow's `name`. */
+  /**
+   * The condition as the code writes it. Read from the flow's trace
+   * (`@condition`), where the name may be a branch label ("Yes") or a shortened
+   * condition; from the name only in a file without a trace.
+   */
   condition: string;
+  /** What the flow says on the map — its `name`. */
+  label: string;
 }
 
 export interface ParsedBpmn {
@@ -188,6 +198,7 @@ export function parseBpmn(xml: string): ParsedBpmn {
   let processName = '';
 
   const byId = new Map<string, ParsedElement>();
+  const flowById = new Map<string, ParsedFlow>();
 
   for (const tag of tags(xml)) {
     const name = tagName(tag);
@@ -224,8 +235,12 @@ export function parseBpmn(xml: string): ParsedBpmn {
           lineEnd: number(attrs.lineEnd),
           unanchoredReason: attrs.anchored === 'false' ? (attrs.unanchoredReason ?? '') : null,
           early: attrs.early === 'true',
+          technicalName: attrs.technicalName ?? null,
+          fact: attrs.fact ?? null,
         };
       }
+      const flow = host?.id ? flowById.get(host.id) : undefined;
+      if (flow) flow.condition = attrs.condition ?? '';
     }
 
     if (local && attrs.id) {
@@ -235,12 +250,15 @@ export function parseBpmn(xml: string): ParsedBpmn {
         elements.push(element);
         byId.set(element.id, element);
       } else if (local === 'sequenceFlow' && attrs.sourceRef && attrs.targetRef) {
-        flows.push({
+        const flow: ParsedFlow = {
           id: attrs.id,
           sourceRef: attrs.sourceRef,
           targetRef: attrs.targetRef,
           condition: attrs.name ?? '',
-        });
+          label: attrs.name ?? '',
+        };
+        flows.push(flow);
+        flowById.set(flow.id, flow);
       }
     }
 
@@ -318,6 +336,8 @@ export interface ProcessMapBranch {
   to: string;
   /** What that element is called on the map. */
   toLabel: string;
+  /** What the branch says on the map — "Yes", "No", a value; empty when nothing. */
+  label?: string;
 }
 
 export interface ProcessMapElement {
@@ -327,8 +347,16 @@ export interface ProcessMapElement {
   tag: string;
   /** "Decision", "Service step" — `kindWord(tag)`. */
   kind: string;
-  /** The name in the file: the technical label the skeleton read out of the source. */
+  /** The technical label the skeleton read out of the source (the trace keeps it when the file's name is plain). */
   technicalName: string;
+  /**
+   * The plain-language name (`lib/abap/plain-language.ts`) — deterministic,
+   * provenance `reconstructed`, never a model's. Null when the file names the
+   * element by its technical token.
+   */
+  plainName: string | null;
+  /** What a collapsed phase holds, counted; null for anything else or in a file without it. */
+  fact: string | null;
   /** 2.4's business name for this node, or null. Beside the technical name, never instead of it. */
   businessName: string | null;
   /** What the step list shows first. The business name when there is one. */
@@ -385,6 +413,12 @@ export interface ProcessMapModel {
   fileName: string;
   /** The BPMN 2.0 XML of roadmap 2.6 — what the viewer draws, unchanged. */
   xml: string;
+  /**
+   * The same process with every element named by its source token — what the
+   * map draws when a reader switches to "Technical names". Absent when `xml`
+   * already is that file.
+   */
+  technicalXml?: string;
   elements: ProcessMapElement[];
   planes: ProcessMapPlane[];
   /** Reconstructed · Confirmed · Proven, in that order, counted from the file. */
@@ -446,8 +480,9 @@ function accessibleNameOf(element: Omit<ProcessMapElement, 'accessibleName'>): s
     : element.unanchoredReason
       ? `${UNANCHORED.toLowerCase()} — ${element.unanchoredReason.replace(/\.\s*$/, '')}`
       : UNANCHORED.toLowerCase();
-  const name = element.businessName
-    ? `${element.businessName} (${element.technicalName})`
+  const shown = element.businessName ?? element.plainName;
+  const name = shown && shown !== element.technicalName
+    ? `${shown} (${element.technicalName})`
     : element.technicalName || element.id;
   return `${element.kind}: ${name}. ${where}, ${provenance(element.status).label.toLowerCase()}.`;
 }
@@ -505,6 +540,12 @@ function alongTheFlow(group: Draft[]): Draft[] {
 export interface ProcessMapInput {
   /** What `buildBpmnExport` returned for the source the run signed. */
   bpmn: Pick<BpmnExport, 'xml' | 'elementNode' | 'stats'>;
+  /**
+   * The same export with technical names, when `bpmn` carries plain ones. Its
+   * counts are the traceability line: the plain reading draws the report events
+   * as one flow, and the line counts every element the code was read into.
+   */
+  technical?: Pick<BpmnExport, 'xml' | 'stats'>;
   /** What `applyNaming` returned for the same source. */
   named: NamedProcess;
   /** `inputFingerprint.fileName` of the signed run. */
@@ -518,7 +559,7 @@ export interface ProcessMapInput {
  * field that says something in business language comes from the naming and is
  * marked as a proposal where it is shown. Nothing is invented in between.
  */
-export function buildProcessMapModel({ bpmn, named, fileName }: ProcessMapInput): ProcessMapModel {
+export function buildProcessMapModel({ bpmn, technical, named, fileName }: ProcessMapInput): ProcessMapModel {
   const parsed = parseBpmn(bpmn.xml);
   const namedById = new Map(named.nodes.map((n) => [n.id, n]));
   const laneOfNode = new Map<string, string>();
@@ -528,9 +569,10 @@ export function buildProcessMapModel({ bpmn, named, fileName }: ProcessMapInput)
   const drafts = parsed.elements.map((element) => {
     const nodeId = bpmn.elementNode[element.id] ?? element.trace?.node ?? null;
     const node = nodeId ? namedById.get(nodeId) : undefined;
-    const technicalName = element.name || node?.technicalName || element.id;
+    const plainName = element.trace?.technicalName ? (element.name || null) : null;
+    const technicalName = element.trace?.technicalName || element.name || node?.technicalName || element.id;
     const businessName = node?.businessName ?? null;
-    const label = businessName ?? technicalName;
+    const label = businessName ?? plainName ?? technicalName;
     labelOf.set(element.id, label);
     const anchor = element.trace && element.trace.lineStart !== null && element.trace.lineEnd !== null
       ? { lineStart: element.trace.lineStart, lineEnd: element.trace.lineEnd }
@@ -541,6 +583,8 @@ export function buildProcessMapModel({ bpmn, named, fileName }: ProcessMapInput)
       tag: element.tag,
       kind: early ? EARLY_END_WORD : kindWord(element.tag),
       technicalName,
+      plainName,
+      fact: element.trace?.fact ?? null,
       businessName,
       label,
       nodeId,
@@ -568,6 +612,7 @@ export function buildProcessMapModel({ bpmn, named, fileName }: ProcessMapInput)
       condition: flow.condition,
       to: flow.targetRef,
       toLabel: labelOf.get(flow.targetRef) ?? flow.targetRef,
+      label: flow.label,
     });
   }
 
@@ -602,6 +647,7 @@ export function buildProcessMapModel({ bpmn, named, fileName }: ProcessMapInput)
     processName: parsed.processName || fileName,
     fileName,
     xml: bpmn.xml,
+    ...(technical ? { technicalXml: technical.xml } : {}),
     elements,
     planes: planeOrder,
     legend: LEGEND_VALUES.map((value) => ({
@@ -609,7 +655,7 @@ export function buildProcessMapModel({ bpmn, named, fileName }: ProcessMapInput)
       label: provenance(value).label,
       count: counts.get(value) ?? 0,
     })),
-    traceability: traceabilityOf(bpmn.stats),
+    traceability: traceabilityOf(technical?.stats ?? bpmn.stats),
     overview: overviewOf(elements),
     naming: { state: named.state, notice: named.notice, named: named.counts.named },
     lanes: named.lanes.map((lane) => ({
@@ -786,3 +832,29 @@ export function isProcessMapRecord(value: unknown): value is ProcessMapRecord {
 
 /** The namespace a trace must be in for this module to read it. Held to 2.6 by `tests/process-map.spec.ts`. */
 export const RECONSTRUCTION_NAMESPACE = CC_NAMESPACE;
+
+/**
+ * The same model as a developer reads it: every element by its source token,
+ * the file with technical names on the canvas. The plain-language names are a
+ * reading of the same thing, so nothing else changes — ids, anchors, order,
+ * branches and planes stay exactly as they are.
+ */
+export function technicalView(model: ProcessMapModel): ProcessMapModel {
+  if (!model.technicalXml) return model;
+  const label = new Map(model.elements.map((e) => [e.id, e.technicalName]));
+  const elements = model.elements.map((e) => {
+    const draft = {
+      ...e,
+      label: e.technicalName,
+      plainName: null,
+      branches: e.branches.map((b) => ({ ...b, toLabel: label.get(b.to) ?? b.toLabel, label: b.condition })),
+    };
+    return { ...draft, accessibleName: accessibleNameOf({ ...draft, businessName: null }) };
+  });
+  return {
+    ...model,
+    xml: model.technicalXml,
+    elements,
+    planes: model.planes.map((p) => ({ ...p, label: p.id ? (label.get(p.id) ?? p.label) : p.label })),
+  };
+}

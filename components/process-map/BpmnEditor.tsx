@@ -7,6 +7,7 @@ import CcButton from '@/components/cc/Button';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import './process-map.css';
+import { rendererColors, textRendererConfig } from './bpmn-view';
 import { EARLY_END_WORD, parseBpmn } from '@/lib/process-map';
 import {
   bpmnlintHints,
@@ -486,7 +487,7 @@ export default function BpmnEditor({
       if (!host) return;
       const { default: Modeler } = await import('bpmn-js/lib/Modeler');
       if (cancelled) return;
-      modeler = new Modeler({ container: host }) as unknown as ModelerLike;
+      modeler = new Modeler({ container: host, textRenderer: textRendererConfig(host), bpmnRenderer: rendererColors(host) }) as unknown as ModelerLike;
       modelerRef.current = modeler;
 
       try {

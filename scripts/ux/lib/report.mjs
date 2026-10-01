@@ -96,7 +96,17 @@ export function buildReport({ mode, range, results, synthesis = null, previous =
 
 /** What the public Actions log may say: that it ran, in which mode, and what it cost. Not the rating, not the counts. */
 export function publicSummary(report) {
-  return { head: report.range.head.slice(0, 12), mode: report.mode, status: 'completed, sealed', modelCalls: report.meta?.modelCalls ?? 0, costUsd: report.meta?.costUsd ?? 'unknown' };
+  return { head: report.range.head.slice(0, 12), mode: report.mode, status: 'completed, sealed', modelCalls: report.meta?.modelCalls ?? 0, costUsd: report.meta?.costUsd ?? 'unknown', models: reviewedBy(report) };
+}
+
+/**
+ * The model(s) that answered, as one line. Since 01.10.2026 the Auto Router picks per call (meta.models); a report
+ * written before then names its one pinned model in meta.model.
+ */
+export function reviewedBy(report) {
+  const models = report?.meta?.models;
+  if (Array.isArray(models)) return models.length ? models.join(', ') : 'no model call';
+  return report?.meta?.model || 'unknown';
 }
 
 export function actualCost(usages) {
@@ -112,7 +122,7 @@ export function renderText(report, { untriaged = null } = {}) {
   const counts = SEVERITIES.map((s) => `${report.findings.filter((f) => f.severity === s).length} ${DE[s]}`).join(', ');
   const open = untriaged ? new Set(untriaged.map((f) => f.fingerprint)) : null;
   const L = [
-    `UX-Review ${report.range.head.slice(0, 12)} (${report.mode}${report.incomplete ? ', unvollständig' : ''}) — UX-Gesundheit ${report.ux_health} — ${counts} — Kosten $${report.meta?.costUsd ?? 'unbekannt'} (${report.meta?.modelCalls ?? 0} Aufrufe)`,
+    `UX-Review ${report.range.head.slice(0, 12)} (${report.mode}${report.incomplete ? ', unvollständig' : ''}) — UX-Gesundheit ${report.ux_health} — ${counts} — Kosten $${report.meta?.costUsd ?? 'unbekannt'} (${report.meta?.modelCalls ?? 0} Aufrufe) — Modell ${reviewedBy(report)}`,
     '',
     report.summary,
   ];

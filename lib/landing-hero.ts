@@ -53,10 +53,13 @@ export function heroSnippets(hero: LandingHero, fileName: string): HeroSnippets 
   };
   const snippets: Record<string, HeroSnippet> = {};
 
-  // The steps of the drawn routine: the whole routine, the step's line lit.
+  // The steps of the drawn excerpt. A step inside the shown routine opens the
+  // whole routine with its line lit; a step elsewhere (a phase with its range,
+  // an exit with several places) opens its own lines.
   const routine = hero.code;
   const rFrom = routine[0]?.number ?? 1;
   const rTo = routine[routine.length - 1]?.number ?? rFrom;
+  const MAX_SPAN = 24;
   for (const node of hero.plane.nodes) {
     if (!node.anchor || node.tag === 'boundaryEvent') continue;
     const key = String(node.anchor.lineStart);
@@ -64,12 +67,19 @@ export function heroSnippets(hero: LandingHero, fileName: string): HeroSnippets 
     const kind = node.early ? EARLY_END_WORD : kindWord(node.tag);
     const span = [];
     for (let n = node.anchor.lineStart + 1; n <= node.anchor.lineEnd; n += 1) span.push(n);
+    const inside = node.anchor.lineStart >= rFrom && node.anchor.lineEnd <= rTo;
+    // A phase stands for its routine: its range is in `anchorLabel` (`L60–75`).
+    const range = /^L(\d+)–(\d+)$/.exec(node.anchorLabel ?? '');
+    const from = inside ? rFrom : range ? Number(range[1]) : node.anchor.lineStart - CONTEXT;
+    const to = inside ? rTo : range ? Math.min(Number(range[2]), Number(range[1]) + MAX_SPAN) : node.anchor.lineEnd + CONTEXT;
     snippets[key] = {
-      from: rFrom,
-      to: rTo,
-      lines: cut(rFrom, rTo, node.anchor.lineStart, span),
+      from: Math.max(1, from),
+      to,
+      lines: cut(from, to, node.anchor.lineStart, span),
       title: `${kind}: ${node.name}`,
-      text: `line ${node.anchor.lineStart} of the routine ${hero.plane.label}, where the map draws it.`,
+      text: node.anchorLabel
+        ? `${node.anchorLabel} in the program — the lines this step was read from.`
+        : `line ${node.anchor.lineStart} of the program, where the map draws it.`,
     };
   }
 
@@ -77,15 +87,15 @@ export function heroSnippets(hero: LandingHero, fileName: string): HeroSnippets 
   for (const rule of hero.rules.shown) {
     const key = String(rule.line);
     if (snippets[key]) {
-      snippets[key] = { ...snippets[key], title: `${rule.id} · hard-coded`, text: `the condition ${rule.label} stands in the program at line ${rule.line}.` };
+      snippets[key] = { ...snippets[key], title: `${rule.plain} · ${rule.id}, hard-coded`, text: `the code writes it as ${rule.label} at line ${rule.line}.` };
       continue;
     }
     snippets[key] = {
       from: Math.max(1, rule.line - CONTEXT),
       to: rule.line + CONTEXT,
       lines: cut(rule.line - CONTEXT, rule.line + CONTEXT, rule.line),
-      title: `${rule.id} · hard-coded`,
-      text: `the condition ${rule.label} stands in the program at line ${rule.line}.`,
+      title: `${rule.plain} · ${rule.id}, hard-coded`,
+      text: `the code writes it as ${rule.label} at line ${rule.line}.`,
     };
   }
 
@@ -120,7 +130,9 @@ export function heroSnippets(hero: LandingHero, fileName: string): HeroSnippets 
 
   // The rule on the drawn routine opens the card, as in the mockup.
   const onPlane = hero.rules.shown.find((r) => hero.plane.nodes.some((n) => n.anchor?.lineStart === r.line));
-  const initial = String(onPlane?.line ?? hero.plane.nodes.find((n) => n.anchor)?.anchor?.lineStart ?? rFrom);
+  // Otherwise the first decision of the shown routine — as the mockup opens on one.
+  const decision = hero.plane.nodes.find((n) => n.tag === 'exclusiveGateway' && n.anchor && n.anchor.lineStart >= rFrom && n.anchor.lineStart <= rTo);
+  const initial = String(onPlane?.line ?? decision?.anchor?.lineStart ?? hero.plane.nodes.find((n) => n.anchor)?.anchor?.lineStart ?? rFrom);
 
   return {
     snippets,
