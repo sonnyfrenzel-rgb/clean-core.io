@@ -14,7 +14,9 @@ const PAGE = fs.readFileSync(path.resolve(__dirname, '..', 'app', '(app)', 'sett
 
 test('a failed copy remembers which item it was', () => {
   expect(PAGE).toContain("setMfaCopied(what === 'secret' ? 'failed-secret' : 'failed-link');");
-  expect(PAGE).not.toContain("mfaCopied === 'failed' ");
+  // No trailing space: `mfaCopied === 'failed')` is the same regression
+  // (QA finding 1a4055e4623c). `'failed-secret'` does not contain `'failed'`.
+  expect(PAGE).not.toContain("mfaCopied === 'failed'");
 });
 
 test('the link failure names the link, the key failure the key', () => {
