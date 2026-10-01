@@ -574,8 +574,11 @@ test.describe('the overview on the screen — one rendered test per chart', () =
     await expect(seg).toBeVisible({ timeout: 60000 });
     expect(await seg.evaluate((el) => getComputedStyle(el).borderStyle)).toBe('solid');
     await page.emulateMedia({ media: 'print' });
-    // On paper the numbers are in the tables, whatever the printer does with the fills.
-    await expect(page.locator('[data-overview-card="levels"] [data-overview-table]')).toBeVisible();
+    // Since 5b9a180b the workspace prints its own sheet (§7.1, mockup s10),
+    // never the screen's cards: the chart is not on paper at all, rather than
+    // on paper without its fills. The sheet is what prints.
+    await expect(page.locator('[data-workspace-print]')).toBeVisible();
+    await expect(page.locator('[data-overview-card="levels"]')).toBeHidden();
     await context.close();
   });
 });

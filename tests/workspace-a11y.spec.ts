@@ -418,9 +418,11 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
 
     await page.emulateMedia({ media: 'print' });
 
-    // No tool or footer bars, no shell bar, no layer bar, no search.
+    // No tool or footer bars, no shell bar, no layer bar, no search. The
+    // print sheet's own header (project, run, date — WorkspacePrintSheet,
+    // mockup s10) is the page's heading on paper, not a bar.
     for (const selector of [
-      'header',
+      'header:not([data-workspace-print] header)',
       'footer',
       '[data-workspace-tools="open"]',
       '[data-workspace-tools="menu"]',
