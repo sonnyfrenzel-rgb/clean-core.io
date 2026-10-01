@@ -476,10 +476,13 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
           {layerBar}
           {layerSection}
 
-          <Place place="process-map" className="mt-5">
-            <div className="max-w-3xl">{stop('process-map')}</div>
-            {mapCard}
-          </Place>
+          {/* Under Need & process the map is the layer's content, and says so. */}
+          <div data-workspace-layer-section={currentLayer === 'need' ? 'need' : undefined}>
+            <Place place="process-map" className="mt-5">
+              <div className="max-w-3xl">{stop('process-map')}</div>
+              {mapCard}
+            </Place>
+          </div>
 
           <Place place="process-levels">
             {stop('process-levels')}
@@ -580,7 +583,11 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
           </Place>
           {/* The IT answer first, then the layers, as in Management. */}
           {layerBar}
-          {layerSection ?? <div className="mt-5">{mapCard}</div>}
+          {layerSection ?? (
+            <div className="mt-5" data-workspace-layer-section="need">
+              {mapCard}
+            </div>
+          )}
           <div className="mt-5 max-w-3xl">
             <NotDeterminedCard data={open} />
           </div>
@@ -670,7 +677,11 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
             </CcCard>
           </Place>
           {layerBar}
-          {layerSection ?? <div className="mt-5">{mapCard}</div>}
+          {layerSection ?? (
+            <div className="mt-5" data-workspace-layer-section="need">
+              {mapCard}
+            </div>
+          )}
         </>
       ) : null}
     </div>

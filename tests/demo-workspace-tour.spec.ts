@@ -100,6 +100,8 @@ test('marked as the demo, unsigned, in all three views', async ({ page }) => {
     await expect(page.locator('[data-demo-unsigned]')).toContainText('never signed');
     // Every layer of the anchor bar is reachable, filled or saying why not.
     await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(1);
+    // It opens on Need & process, and in the demo that layer is the process map (mockup s15).
+    await expect(page.locator('[data-workspace-layer-section="need"] [data-demo-tour-place="process-map"], [data-workspace-layer-section="need"]').first()).toBeVisible();
   }
   // IT shows the engine's findings without asking a route for them.
   await openDemo(page, '?view=it');
