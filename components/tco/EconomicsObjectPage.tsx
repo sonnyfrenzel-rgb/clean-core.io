@@ -61,10 +61,14 @@ function segments(t: InputTally) {
   ];
 }
 
-/** The micro bar under the Inputs tile. Text beside it says the same in words. */
+/**
+ * The micro bar under the Inputs tile. It carries its counts as its name, as
+ * the severity bars do: a colour is never the only carrier (DESIGN.md §2.3).
+ */
 export function InputsBar({ tally }: { tally: InputTally }) {
+  const name = `Inputs: ${tally.stated + tally.fromSource} stated, ${tally.assumed} assumed, ${tally.open} open`;
   return (
-    <div aria-hidden={true} data-economics-inputs-bar="" className="flex h-2 w-full gap-1 overflow-hidden rounded-full">
+    <div role="img" aria-label={name} data-economics-inputs-bar="" className="flex h-2 w-full gap-1 overflow-hidden rounded-full">
       {segments(tally)
         .filter((s) => s.count > 0)
         .map((s) => (
