@@ -77,74 +77,60 @@ jobs:
       - name: Checkout Code
         if: steps.clock.outputs.proceed == 'true'
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
 
+      # Nothing from npm runs in this job — no `npm ci`, no `node_modules`, no
+      # `tsx`, no npm cache.
+      #
+      # `id-token: write` puts `ACTIONS_ID_TOKEN_REQUEST_URL` and `…_TOKEN` into
+      # the environment of *every* step of the job, from the first one on, and
+      # the Workload Identity provider accepts the token they mint on the
+      # repository alone. `npm ci --ignore-scripts --omit=dev` stopped install
+      # scripts; it did not stop runtime code — `firebase-admin`, `clsx`,
+      # `tailwind-merge` and everything under them still ran beside that
+      # permission, after a credentials file had been written for them, and any
+      # one of them could mint a token of its own (QA review, fa0aaea6cc47).
+      #
+      # So the job runs only what this repository wrote and pinned tooling:
+      # the report is first-party TypeScript started by Node's own type
+      # stripping, Firestore is read over REST (`scripts/lib/firestore-rest.ts`)
+      # with an access token the auth step hands to that one step, and no
+      # credentials file is written. A third-party import anywhere in the
+      # report's graph fails here loudly, and before that in
+      # `tests/no-fabricated-figures.spec.ts`, which walks the graph.
+      #
+      # This removes what runs beside the permission; the provider's
+      # repository-only condition is still worth narrowing to this workflow,
+      # and that lives in the GCP console (docs/ROADMAP.md §12).
       - name: Setup Node.js
         if: steps.clock.outputs.proceed == 'true'
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
+          # >= 22.15 for `module.registerHooks` (scripts/lib/ts-extension-hook.mjs).
           node-version: 22
-          cache: 'npm'
-
-      - name: Install Dependencies
-        if: steps.clock.outputs.proceed == 'true'
-        # `--ignore-scripts`, unlike everywhere a build happens, because this job
-        # cannot put its OIDC permission somewhere else.
-        #
-        # `id-token: write` hands every step in the job the variables with which
-        # anything can mint a token, and the Workload Identity provider accepts
-        # it on one condition — `attribute.repository`, no ref, no workflow —
-        # for a service account holding `roles/editor`. This job has exactly one
-        # job, so the permission cannot be narrowed to a later step; what can be
-        # narrowed is what runs beside it. Install scripts of every transitive
-        # dependency are the one thing here nobody in this repository wrote.
-        #
-        # The report needs `firebase-admin` and `tsx` at runtime, neither of
-        # which depends on an install script; `security-ci.yml` installs the same
-        # way in three places. If a future dependency does need one, this step
-        # fails loudly on a Friday rather than quietly — which is the right way
-        # round for a job that mails production numbers.
-        #
-        # `--omit=dev` for the other half of the same argument, and it is the
-        # half `--ignore-scripts` does not cover. Install scripts are stopped;
-        # *runtime* code is not, and the report's runner starts after the Google
-        # after the Google authentication step, with `ACTIONS_ID_TOKEN_REQUEST_URL`
-        # and `…_TOKEN` still in the environment of every step. Top-level code in
-        # any package it loads can mint its own token (QA review, fa0aaea6cc47 —
-        # confirmed). What can be made smaller is the set of packages that get
-        # loaded at all: the report's whole import graph is eight local modules
-        # and three packages — `firebase-admin`, `clsx`, `tailwind-merge` — all
-        # of them production dependencies. The 26 devDependencies and everything
-        # under them have no business in this job.
-        #
-        # This narrows the blast radius; it does not close the finding. The rest
-        # is not in this repository: the Workload Identity provider accepts on
-        # `attribute.repository` alone — no ref, no workflow — for
-        # `…-compute@developer.gserviceaccount.com`, which holds `roles/editor`.
-        # A dedicated service account with Firestore read only, and a provider
-        # condition naming this workflow, are the fix, and both live in the GCP
-        # console (docs/ROADMAP.md §12).
-        run: npm ci --omit=dev --ignore-scripts
 
       - name: Authenticate with Google Cloud
+        id: auth
         if: steps.clock.outputs.proceed == 'true'
         uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
         with:
           workload_identity_provider: 'projects/819734065839/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
           service_account: 'usage-report@cleancore-491216.iam.gserviceaccount.com'
           project_id: 'cleancore-491216'
+          # A short-lived access token for this service account, as a masked
+          # step output — not a credentials file that holds the OIDC request
+          # token and is exported to every later step.
+          token_format: 'access_token'
+          access_token_lifetime: '600s'
+          create_credentials_file: false
+          export_environment_variables: false
 
       - name: Send the report
         if: steps.clock.outputs.proceed == 'true'
         env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           # The recipient is a secret, not a literal in a public repository (23.09.2026).
           REPORT_RECIPIENT: ${{ secrets.REPORT_RECIPIENT }}
-        # The local binary, not `npx`. `tsx` is a production dependency, so
-        # `--omit=dev` above keeps it — but `npx` downloads a package it cannot
-        # find, and this line runs *after* the Google authentication step. A
-        # package.json edit that moved `tsx` into devDependencies would therefore
-        # not break the report; it would quietly fetch a runner from the registry
-        # and execute it beside the OIDC permission (QA review, e10075a1a86a —
-        # the finding's premise is wrong today, the hazard it names is not).
-        # Calling the binary by path fails loudly instead.
-        run: ./node_modules/.bin/tsx scripts/send-usage-report.ts --apply
+        run: node --experimental-strip-types --import ./scripts/lib/ts-extension-hook.mjs scripts/send-usage-report.ts --apply

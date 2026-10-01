@@ -134,26 +134,64 @@ test.describe('a private report goes to one address, and no input reaches a shel
     // address is the one the script knows.
     expect(wf, 'no dispatch input at all').not.toMatch(/inputs:\s*\n\s+recipient:/);
 
-    // The job holds `id-token: write`, so every step in it can mint a token for
-    // a service account with `roles/editor`. `--ignore-scripts` stops code at
-    // install time; `--omit=dev` is what keeps 26 devDependencies and their
-    // transitive graph out of the *runtime* the report then executes beside that
-    // permission (QA review, fa0aaea6cc47). Measured: the report's whole import
-    // graph is eight local modules and `firebase-admin`, `clsx`,
-    // `tailwind-merge` — every one a production dependency, so nothing it needs
-    // is lost.
-    expect(wf, 'the OIDC job installs its dev dependencies again').toMatch(/npm ci --omit=dev --ignore-scripts/);
-
-    // And the runner is called by path. `npx` downloads a package it cannot
-    // find, and this step runs *after* the Google authentication — so a
-    // package.json edit that moved `tsx` out of `dependencies` would not break
-    // the report, it would fetch a runner from the registry and execute it
-    // beside the OIDC permission. The local binary fails loudly instead.
-    expect(wf, 'the report is started through npx again, which downloads what it cannot find').not.toMatch(/npx\s+tsx/);
-    expect(wf).toMatch(/\.\/node_modules\/\.bin\/tsx scripts\/send-usage-report\.ts/);
+    // The job holds `id-token: write`, so every step in it — from the first —
+    // can mint a token the provider accepts on the repository alone. Installing
+    // with `--ignore-scripts --omit=dev` stopped install scripts but not runtime
+    // code: `firebase-admin`, `clsx`, `tailwind-merge` and their graph still ran
+    // beside that permission (QA review, fa0aaea6cc47). So the job installs
+    // nothing and runs nothing from npm.
+    const commands = runCommands(wf).join('\n');
+    expect(commands, 'the OIDC job installs packages again').not.toMatch(/\b(?:npm|npx|yarn|pnpm|bun)\b/);
+    expect(commands, 'the OIDC job runs something out of node_modules again').not.toContain('node_modules');
+    expect(commands, 'the report runs through tsx again').not.toMatch(/\btsx\b/);
+    expect(wf, 'the npm cache is restored into the OIDC job again').not.toMatch(/cache:\s*['"]?npm/);
+    expect(wf).toContain(
+      'run: node --experimental-strip-types --import ./scripts/lib/ts-extension-hook.mjs scripts/send-usage-report.ts --apply',
+    );
+    // The credential is a short-lived access token handed to the one step that
+    // uses it — not a credentials file exported to every later step, which
+    // carries the OIDC request token itself.
+    expect(wf).toContain("token_format: 'access_token'");
+    expect(wf).toContain('create_credentials_file: false');
+    expect(wf).toContain('export_environment_variables: false');
+    expect(wf).toContain('GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}');
     expect(wf).not.toMatch(/\$\{\{\s*inputs\./);
-    expect(wf).toContain('./node_modules/.bin/tsx scripts/send-usage-report.ts --apply');
     expect(wf, 'and no override on the command line either').not.toMatch(/--to\s/);
+  });
+
+  test('the report the OIDC job runs imports nothing but its own modules and node:', () => {
+    // The other half of the guard above: with no `node_modules` in the job, a
+    // third-party import would fail on a Friday — this fails it on the push.
+    // Walks every value import from the entry point; `import type` is erased
+    // by Node's type stripping and loads nothing (fa0aaea6cc47).
+    const seen = new Set<string>();
+    const outside: string[] = [];
+    const visit = (file: string) => {
+      if (seen.has(file)) return;
+      seen.add(file);
+      const src = fs.readFileSync(file, 'utf8');
+      const specs = [
+        ...src.matchAll(/^\s*import\s+(?!type\b)[^;]*?from\s+['"]([^'"]+)['"]/gm),
+        ...src.matchAll(/^\s*export\s+(?!type\b)[^;]*?from\s+['"]([^'"]+)['"]/gm),
+        ...src.matchAll(/^\s*import\s+['"]([^'"]+)['"]/gm),
+        ...src.matchAll(/\b(?:import|require)\(\s*['"]([^'"]+)['"]\s*\)/g),
+      ].map((m) => m[1]);
+      for (const spec of specs) {
+        if (spec.startsWith('node:')) continue;
+        if (!spec.startsWith('.')) { outside.push(`${path.relative(ROOT, file)} -> ${spec}`); continue; }
+        const base = path.resolve(path.dirname(file), spec);
+        const target = [base, `${base}.ts`, `${base}.mjs`].find((p) => fs.existsSync(p) && fs.statSync(p).isFile());
+        expect(target, `${path.relative(ROOT, file)} imports ${spec}, which does not resolve`).toBeTruthy();
+        visit(target!);
+      }
+    };
+    visit(path.join(ROOT, 'scripts/send-usage-report.ts'));
+    visit(path.join(ROOT, 'scripts/lib/ts-extension-hook.mjs'));
+    expect(outside, 'a package is loaded beside the OIDC permission').toEqual([]);
+    // The walk reached the report itself, not just the entry point.
+    expect([...seen].map((f) => path.relative(ROOT, f).replace(/\\/g, '/'))).toEqual(
+      expect.arrayContaining(['lib/usage-report.ts', 'lib/usage-report-email.ts', 'scripts/lib/firestore-rest.ts']),
+    );
   });
 
   /**
