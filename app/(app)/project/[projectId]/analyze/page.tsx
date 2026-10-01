@@ -874,6 +874,16 @@ export default function AnalyzePage() {
     modelAvailability.keyAvailable,
     modelAvailability.stages,
   ]);
+  /**
+   * On a page opened later the reason above is the state *now*, not the reason
+   * the run has none, which is not recorded. Said in so many words, so the
+   * present state does not read as the past cause (carried QA finding
+   * 99d1991763df).
+   */
+  const narrativeAbsenceWhy: string | undefined =
+    narrativeAbsence && !lastNarrativeAbsence
+      ? `Why this run has none was not recorded. Right now: ${modelAbsenceReason(narrativeAbsence, 'analyze')}`
+      : undefined;
 
   // ── The results, answer first (ADR-029, §2.11, mockup s8/s4) ──
   //
@@ -1115,13 +1125,13 @@ export default function AnalyzePage() {
           key: 'business-value',
           title: 'Business value assessment',
           reason: 'Asset score, value drivers and the plain-English action plan come from the narrative, which this run does not have.',
-          body: <NotGenerated what="Business value assessment" absence={narrativeAbsence} stage="analyze" />,
+          body: <NotGenerated what="Business value assessment" absence={narrativeAbsence} why={narrativeAbsenceWhy} stage="analyze" />,
         },
         {
           key: 'strategy',
           title: 'Modernisation strategy',
           reason: 'The standardisation fit and the recommendation prose come from the narrative. The route on this page does not.',
-          body: <NotGenerated what="Modernisation strategy" absence={narrativeAbsence} stage="analyze" />,
+          body: <NotGenerated what="Modernisation strategy" absence={narrativeAbsence} why={narrativeAbsenceWhy} stage="analyze" />,
         },
       ];
       const evidenceRoute = project.extensibilityRoute ?? null;
@@ -1147,6 +1157,7 @@ export default function AnalyzePage() {
           <NotGenerated
             what="Analysis narrative"
             absence={narrativeAbsence}
+            why={narrativeAbsenceWhy}
             stage="analyze"
             hint="Everything on this page was computed by the evidence engine and is covered by this run's signature. Re-run the analysis once a model is available to add the narrative."
           />
