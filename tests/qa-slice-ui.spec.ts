@@ -40,3 +40,30 @@ test('0e5a2deebd7a — a new lookup target clears what the last lookup said', ()
   }
   expect(src).toMatch(/const lookupTarget = `\$\{lookupKey\}#\$\{deployment \?\? ''\}#\$\{release \?\? ''\}`;/);
 });
+
+test('2b1101d8e13e — a new place clears the draft and the busy state, and drops a late answer', () => {
+  const src = read('components/GlossaryChatbot.tsx');
+  const reset = src.slice(src.indexOf('if (messagesFor !== projectId) {'), src.indexOf('}', src.indexOf('if (messagesFor !== projectId) {')));
+  for (const clear of ["setInputValue('')", 'setLoading(false)', 'setConversation((n) => n + 1)']) {
+    expect(reset, `the project reset no longer does ${clear}`).toContain(clear);
+  }
+
+  // Every write a request makes after it has awaited something is gated on the
+  // conversation it was asked in — the answer, the failure and the end of the
+  // busy state alike.
+  const send = src.slice(src.indexOf('const handleSend = async'), src.indexOf('const floatingOffOnDesktop'));
+  expect(send).toContain('const asked = conversationRef.current;');
+  // 5ee5ab25f097: both refs follow the render in a layout effect, so no event can see the old values.
+  expect(src).toMatch(/const conversationRef = useRef\(conversation\);\s*useLayoutEffect\(/);
+  expect(src).toMatch(/const currentProjectRef = useRef<string \| null>\(projectId\);\s*useLayoutEffect\(/);
+  expect(send).toContain('await answerInProject(projectId, text, asked);');
+  expect(send.match(/if \(!superseded\(\)\) setLoading\(false\);/g), 'a finally clears the next question\'s busy state').toHaveLength(2);
+  expect(send, 'an unconditional setLoading(false) is back').not.toMatch(/^\s*setLoading\(false\);/m);
+  expect(send.match(/if \(currentProjectRef\.current !== null \|\| superseded\(\)\) return;/g), 'a late product answer or failure lands in a new conversation').toHaveLength(2);
+  expect(send).toContain('if (currentProjectRef.current !== projectId || superseded()) return;');
+
+  const inProject = src.slice(src.indexOf('const answerInProject = async'), src.indexOf('const handleSend = async'));
+  expect(inProject).toContain('const moved = () => currentProjectRef.current !== id || conversationRef.current !== asked;');
+  expect(inProject.match(/if \(moved\(\)\) return;/g), 'an await in the case answer is not followed by the check').toHaveLength(2);
+  expect(inProject.match(/\bawait\b/g)).toHaveLength(2);
+});

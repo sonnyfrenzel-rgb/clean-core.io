@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { MessageSquare, X, Send, PenLine, ShieldCheck } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcIconButton from '@/components/cc/IconButton';
@@ -201,11 +201,30 @@ export default function GlossaryChatbot() {
   // project B's "Evidence of this project" (QA slice review of 953575fcc9bf,
   // 76118078e97f). A new place starts from the greeting; the reset happens
   // while rendering, as React prescribes for state that follows a prop.
+  //
+  // The draft and the busy state belong to it too: a question half-typed in A
+  // stood in B's input, and a request still running for A kept B's assistant
+  // busy until it settled (QA review of 3c411e7b8235, 2b1101d8e13e). Each place
+  // is a new conversation, and an answer or a failure that arrives for an
+  // earlier one is dropped — including one asked in A, answered after the
+  // reader went to B and back to A.
   const [messagesFor, setMessagesFor] = useState<string | null>(projectId);
+  const [conversation, setConversation] = useState(0);
   if (messagesFor !== projectId) {
     setMessagesFor(projectId);
     setMessages([greeting()]);
+    setInputValue('');
+    setLoading(false);
+    setConversation((n) => n + 1);
   }
+  // A layout effect, not a passive one: it runs before the browser can hand
+  // the reader an event, so a question asked right after a navigation is
+  // stamped with the new conversation and never with the one just left
+  // (QA review of 09ae0c6ee268, 5ee5ab25f097).
+  const conversationRef = useRef(conversation);
+  useLayoutEffect(() => {
+    conversationRef.current = conversation;
+  }, [conversation]);
 
   const assistantLabel = projectId ? 'Ask this case' : 'Ask the assistant';
 
@@ -228,7 +247,7 @@ export default function GlossaryChatbot() {
    * under B's heading (QA full review of v2.20.0).
    */
   const currentProjectRef = useRef<string | null>(projectId);
-  useEffect(() => {
+  useLayoutEffect(() => {
     currentProjectRef.current = projectId;
   }, [projectId]);
 
@@ -340,9 +359,10 @@ export default function GlossaryChatbot() {
    *     and nothing else, and the reply is only shown if it cites at least one
    *     of those anchors. Marked *Model proposal*.
    */
-  const answerInProject = async (id: string, text: string): Promise<void> => {
+  const answerInProject = async (id: string, text: string, asked: number): Promise<void> => {
+    const moved = () => currentProjectRef.current !== id || conversationRef.current !== asked;
     const context = await ensureCase(id);
-    if (currentProjectRef.current !== id) return;
+    if (moved()) return;
     const decision = answerCase(
       context.index,
       { projectId: id, legacyCode: context.legacyCode },
@@ -371,7 +391,7 @@ export default function GlossaryChatbot() {
     }
 
     const raw = await callGemini(decision.prompt, PRODUCT_GEMINI_MODEL, false);
-    if (currentProjectRef.current !== id) return;
+    if (moved()) return;
     // §3.1 — what the model wrote appears like every other text here. The chip
     // says where it came from; the prose must not.
     const { text: cleaned } = cleanModelText(raw ?? '', 'screen');
@@ -421,6 +441,9 @@ export default function GlossaryChatbot() {
     }
 
     setLoading(true);
+    // The conversation this question belongs to; see the reset above.
+    const asked = conversationRef.current;
+    const superseded = () => conversationRef.current !== asked;
 
     // Roadmap 6.8 — inside a project the knowledge base below is not consulted
     // at all. This branch returns in every case, including its own failures:
@@ -428,16 +451,16 @@ export default function GlossaryChatbot() {
     // in exactly the place nobody would notice it.
     if (projectId) {
       try {
-        await answerInProject(projectId, text);
+        await answerInProject(projectId, text, asked);
       } catch (error) {
         console.error('Ask this case error:', error);
-        if (currentProjectRef.current !== projectId) return;
+        if (currentProjectRef.current !== projectId || superseded()) return;
         say({
           text: 'The evidence of this project could not be read just now, so there is no grounded answer. Reload the project page and ask again.',
           provenance: 'not-determined',
         });
       } finally {
-        setLoading(false);
+        if (!superseded()) setLoading(false);
       }
       return;
     }
@@ -477,7 +500,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
       const responseText = await callGemini(promptContext, PRODUCT_GEMINI_MODEL, false);
       // Asked outside a project; the reader has since opened one, where this
       // panel answers from that project's evidence only.
-      if (currentProjectRef.current !== null) return;
+      if (currentProjectRef.current !== null || superseded()) return;
 
       const botMessage: Message = {
         sender: 'bot',
@@ -488,6 +511,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
       console.error('Chatbot error:', error);
+      if (currentProjectRef.current !== null || superseded()) return;
       const botMessage: Message = {
         sender: 'bot',
         text: 'The assistant could not answer just now. Ask again in a moment; if you use your own Gemini API key, check it in Settings.',
@@ -495,7 +519,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
       };
       setMessages((prev) => [...prev, botMessage]);
     } finally {
-      setLoading(false);
+      if (!superseded()) setLoading(false);
     }
   };
 
