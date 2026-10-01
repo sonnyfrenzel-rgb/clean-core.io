@@ -315,8 +315,10 @@ export function landingHero(fileName: string, program: string): LandingHero {
 
   // The excerpt: the main line's first steps and the decisions in them that exit.
   const model = buildExportModel(skeleton, { labels: plainLabels(skeleton, source) });
-  const excerpt = businessExcerpt(model, { steps: 5 });
-  const excerptLayout = layoutModel(excerpt, { direction: 'TB' });
+  // Seven elements on the main line at most (owner, 01.10.2026: the hero must
+  // read at a glance, next to the source, without scrolling), tight spacing.
+  const excerpt = businessExcerpt(model, { steps: 5, mainElements: 7 });
+  const excerptLayout = layoutModel(excerpt, { direction: 'TB', compact: true });
   const plane = { ...planeOf(excerpt.root, excerpt, excerptLayout, 'Excerpt · first steps', null, null), id: 'excerpt' };
   const codeRange = (technicalRoutine ?? routine).nodes;
   const anchored = codeRange.flatMap((n) => (n.anchor ? [n.anchor.lineStart, n.anchor.lineEnd] : []));
