@@ -28,6 +28,7 @@ import { cleanModelText } from '@/lib/model-text';
 import { provenance, type ProvenanceValue } from '@/lib/provenance';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { BAIP_FIRST } from '@/lib/sap-naming';
+import { isDemoPath, DEMO_ASSISTANT_NOTICE } from '@/lib/demo-marks';
 
 interface Message {
   sender: 'user' | 'bot';
@@ -228,6 +229,7 @@ export default function GlossaryChatbot() {
   }, [conversation]);
 
   const assistantLabel = projectId ? 'Ask this case' : 'Ask the assistant';
+  const inDemo = isDemoPath(pathname);
 
   const [caseContext, setCaseContext] = useState<CaseContext | null>(null);
   const caseContextRef = useRef<Promise<CaseContext> | null>(null);
@@ -438,6 +440,17 @@ export default function GlossaryChatbot() {
         glossarySource: glossary.item.source,
       };
       setMessages((prev) => [...prev, botMessage]);
+      return;
+    }
+
+    // Codex review code-demo-01 — the demo promises no model call on every
+    // screen, and this panel is on every screen. Past the glossary there is
+    // nothing it may answer there without one, so it says that and stops.
+    if (inDemo) {
+      setMessages((prev) => [
+        ...prev,
+        { sender: 'bot', text: DEMO_ASSISTANT_NOTICE, timestamp: clockNow(), noModelCall: true, provenance: 'not-determined' },
+      ]);
       return;
     }
 
@@ -654,6 +667,8 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
               <p className="m-0 font-medium" data-chatbot-scope="">
                 {projectId
                   ? 'Inside a project this assistant answers only from the evidence of this project. An answer is shown only when it cites at least one source line of this project, and it lists the lines it cites — that does not prove every sentence in it. The one exception is a glossary term, which is answered from its glossary entry and marked as such.'
+                  : inDemo
+                  ? 'In the demo this assistant makes no model call: it answers a glossary term from its entry, and nothing else.'
                   : 'Context-restricted assistant. Focused exclusively on SAP S/4HANA Clean Core architectures.'}
               </p>
             </div>

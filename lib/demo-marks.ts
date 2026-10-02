@@ -31,6 +31,24 @@
 export const DEMO_ROUTE = '/demo';
 
 /**
+ * Whether a path is one of the demo's screens — `/demo` and everything under it.
+ *
+ * The shell assistant lives in the layout and is mounted on every page,
+ * the demo's included. "A demo makes no model call" is said on every demo
+ * stage, so the assistant reads this to keep it true there too (Codex review
+ * code-demo-01): a non-glossary question on a demo screen gets
+ * `DEMO_ASSISTANT_NOTICE` and never reaches `/api/gemini`.
+ */
+export function isDemoPath(pathname: string | null | undefined): boolean {
+  return pathname === DEMO_ROUTE || (pathname ?? '').startsWith(`${DEMO_ROUTE}/`);
+}
+
+/** What the shell assistant answers on a demo screen, instead of calling a model. */
+export const DEMO_ASSISTANT_NOTICE =
+  'The demo makes no model call, and neither does this assistant while you are in it. ' +
+  'A glossary term is answered from its entry; any other question, ask on your dashboard or in a project of your own.';
+
+/**
  * The same demo in the 3.0 workspace, with its tour (roadmap 3.0.7). Behind the
  * workspace switch until 3.0, so it is linked only from screens behind it.
  */

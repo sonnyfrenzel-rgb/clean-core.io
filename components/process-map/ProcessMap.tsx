@@ -194,6 +194,12 @@ export interface ProcessMapProps {
    * workspace's view switch does. Without it the draft lives and dies with the map.
    */
   draftHolder?: DraftHolder;
+  /**
+   * Whether the editor offers its BPMN, SVG and PNG downloads. Default `true`;
+   * the demo passes `false`, because nothing is exported from it (Codex review
+   * code-demo-02). Handed to `BpmnEditor` unread.
+   */
+  exportable?: boolean;
 }
 
 export default function ProcessMap({
@@ -213,6 +219,7 @@ export default function ProcessMap({
   openLatest,
   layout = 'workspace',
   projectId = null,
+  exportable = true,
   draftHolder,
 }: ProcessMapProps) {
   const stage = layout === 'stage';
@@ -726,6 +733,7 @@ export default function ProcessMap({
             onDiscard={discardDraft}
             save={save}
             openLatest={openLatest}
+            exportable={exportable}
           />
         )
       ) : (

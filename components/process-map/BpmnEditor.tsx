@@ -389,6 +389,14 @@ export interface BpmnEditorProps {
    * written against. Omitted: the editor knows only the reconstruction.
    */
   openLatest?: () => Promise<OpenedRevision | null>;
+  /**
+   * Whether the BPMN, SVG and PNG downloads are offered. Default `true`. The
+   * demo passes `false`: it promises that no export comes out of it
+   * (`DEMO_UNSIGNED_NOTICE`, ADR-052), and an omitted control is the only
+   * honest way to keep that — editing stays, the downloads do not exist
+   * (Codex review code-demo-02).
+   */
+  exportable?: boolean;
 }
 
 /** A row of the list beside the canvas. */
@@ -446,6 +454,7 @@ export default function BpmnEditor({
   onDiscard,
   save,
   openLatest,
+  exportable = true,
 }: BpmnEditorProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -1176,16 +1185,20 @@ export default function BpmnEditor({
           aria-hidden={true}
           onChange={(event) => void onFile(event)}
         />
-        <span className="text-[12px] font-semibold text-cc-ink-muted">{wt('editor.exportLabel')}</span>
-        <CcButton data-editor-export="bpmn" icon={<Download size={16} aria-hidden={true} />} onClick={() => void exportAs('bpmn')}>
-          {wt('editor.exportBpmn')}
-        </CcButton>
-        <CcButton data-editor-export="svg" onClick={() => void exportAs('svg')}>
-          {wt('editor.exportSvg')}
-        </CcButton>
-        <CcButton data-editor-export="png" onClick={() => void exportAs('png')}>
-          {wt('editor.exportPng')}
-        </CcButton>
+        {exportable ? (
+          <>
+            <span className="text-[12px] font-semibold text-cc-ink-muted">{wt('editor.exportLabel')}</span>
+            <CcButton data-editor-export="bpmn" icon={<Download size={16} aria-hidden={true} />} onClick={() => void exportAs('bpmn')}>
+              {wt('editor.exportBpmn')}
+            </CcButton>
+            <CcButton data-editor-export="svg" onClick={() => void exportAs('svg')}>
+              {wt('editor.exportSvg')}
+            </CcButton>
+            <CcButton data-editor-export="png" onClick={() => void exportAs('png')}>
+              {wt('editor.exportPng')}
+            </CcButton>
+          </>
+        ) : null}
         <span className="ml-auto" />
         <CcIconButton
           data-editor-fullscreen-toggle=""
