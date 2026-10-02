@@ -13,6 +13,10 @@ import type { CanvasService, EventBusService, ModelerLike, Shape } from './edito
  * Drawn from the modeller's own element registry, not from a second copy of the
  * diagram, so it can never show something the canvas does not. It is a pointer
  * convenience: everything it reaches, the element list reaches by keyboard.
+ *
+ * In full screen the canvas can be shorter than bpmn-js's own tool palette in
+ * the upper left plus this map, so there it sits in the lower right, above the
+ * bpmn.io mark (`corner="right"`), where it covers neither.
  */
 
 interface Box {
@@ -71,7 +75,7 @@ function picture(modeler: ModelerLike): Picture | null {
   };
 }
 
-export default function EditorMinimap({ modeler }: { modeler: ModelerLike }) {
+export default function EditorMinimap({ modeler, corner = 'left' }: { modeler: ModelerLike; corner?: 'left' | 'right' }) {
   const [shown, setShown] = useState<Picture | null>(() => picture(modeler));
 
   useEffect(() => {
@@ -114,7 +118,10 @@ export default function EditorMinimap({ modeler }: { modeler: ModelerLike }) {
   if (!shown) return null;
   const { bounds, view } = shown;
   return (
-    <div className="absolute bottom-2 left-2 rounded-cc-row border border-cc-line bg-cc-surface p-1 shadow-cc">
+    <div
+      data-editor-minimap-corner={corner}
+      className={`absolute ${corner === 'right' ? 'right-2 bottom-12' : 'bottom-2 left-2'} rounded-cc-row border border-cc-line bg-cc-surface p-1 shadow-cc`}
+    >
     <button
       type="button"
       data-editor-minimap=""
