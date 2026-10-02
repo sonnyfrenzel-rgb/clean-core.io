@@ -1,22 +1,22 @@
-# Security-Agent — Vollaudit jeder `main`-Version
+# Security agent — full audit of every `main` version
 
-**Stand 24.09.2026 (Prüfung in Stapeln) · eingeführt mit v2.9.15 · seit 01.10.2026 mit dem OpenRouter Auto Router (vorher DeepSeek V4.1 Flash) · läuft bei jedem Push auf `main`, bis Sonny ihn widerruft**
+**As of 24.09.2026 (verification in batches) · introduced with v2.9.15 · since 01.10.2026 with the OpenRouter Auto Router (previously DeepSeek V4.1 Flash) · runs on every push to `main` until Sonny revokes it**
 
-Jede neue Version auf `main` bekommt ein vollständiges Sicherheitsaudit: ein CISO und
-fünf Security-Consultants, **OpenRouter Auto Router (Kostenstufe high)**, als Kette von
-Modellaufrufen ohne Werkzeuge. Der Bericht kommt verdichtet, belegt und auf Deutsch in
-Sonnys Postfach, im Look der übrigen Clean-Core.io-Mails. Claude Code prüft jeden
-Befund, entscheidet im versiegelten Register und plant bestätigte Befunde nach Priorität
-in die Roadmap ein. Der Agent selbst ändert nichts.
+Every new version on `main` gets a complete security audit: a CISO and
+five security consultants, **OpenRouter Auto Router (cost tier high)**, as a chain of
+model calls without tools. The report arrives condensed, evidenced and in German in
+Sonny's inbox, in the look of the other Clean-Core.io mails. Claude Code checks every
+finding, decides in the sealed register and schedules confirmed findings by priority
+into the roadmap. The agent itself changes nothing.
 
-Bis 15.09.2026 lief das Audit mit Claude Fable 5.1 in Claude Code (Ultracode, Budget
-25 $). Sonny hat auf DeepSeek V4.1 Flash umgestellt, der Kosten wegen.
+Until 15.09.2026 the audit ran with Claude Fable 5.1 in Claude Code (Ultracode, budget
+25 $). Sonny switched to DeepSeek V4.1 Flash, because of the cost.
 
-**Seit 24.09.2026 prüft der CISO in Stapeln** (Sonnys Entscheidung, Option A; Budget
-3 → 5 $). Anlass: Beim Release v2.18.0 (81810c8, Lauf 35998405111) meldeten die
-Consultants 194 Kandidaten; der eine CISO-Aufruf erreichte seine Eingabegrenze, bevor
-auch nur ein Kandidat seinen Code bekam, bestätigte nichts — und die Mail sagte
-„0 Befunde, Risiko niedrig", was in Wahrheit „nicht geprüft" hieß (§1a).
+**Since 24.09.2026 the CISO verifies in batches** (Sonny's decision, option A; budget
+3 → 5 $). Occasion: at the release v2.18.0 (81810c8, run 35998405111) the
+consultants reported 194 candidates; the single CISO call reached its input limit before
+even one candidate got its code, confirmed nothing — and the mail said
+"0 Befunde, Risiko niedrig" ("0 findings, risk low"), which in truth meant "not checked" (§1a).
 
 > **Model routing since 01.10.2026 (owner decision).** No model is pinned any more. All
 > three kinds of call (consultants, CISO verification, CISO narrative) go to OpenRouter's
@@ -41,205 +41,205 @@ auch nur ein Kandidat seinen Code bekam, bestätigte nichts — und die Mail sag
 
 ---
 
-## 1. Architektur
+## 1. Architecture
 
 ```
  git push main ── security-audit.yml
                    │
-                   ├─ scope    (keine Secrets)        nur main → Vollaudit (kein Selbsttest auf dev mehr, Entscheidung Sonny 16.09.2026)
+                   ├─ scope    (no secrets)           main only → full audit (no self-test on dev any more, decision Sonny 16.09.2026)
                    │
-                   ├─ audit    (nur Modellschlüssel)
-                   │    1. Karte der Angriffsfläche — eigener Code, ohne Abhängigkeiten, ohne Token:
-                   │       Dateien mit Domäne, API-Routen mit Auth-Markern, gefährliche Senken,
-                   │       Workflow-Rechte, Firestore-Regelblöcke, CSP, npm audit
-                   │    2. fünf Consultants: jede Datei ihrer Domäne vollständig, mit Zeilennummern und
-                   │       geschwärzt, dazu ihre Karteneinträge — am 15.09.2026 461 Dateien in 51 Aufrufen, vier gleichzeitig; eine große Datei in Teilen
-                   │    3. Kandidaten: Consultant-Befunde entdoppelt (Datei, nahe Zeilen, Befundklasse),
-                   │       nach Schwere geordnet, K-001 … benannt
-                   │    4. CISO prüft in Stapeln zu je 20, jeder Kandidat mit dem Code an seinen Fundstellen
-                   │       (aus dem Repository gelesen), jeder Aufruf ≤ 120.000 Zeichen → verifizierte Befunde;
-                   │       was nicht geprüft wurde, steht namentlich unter „Nicht verifiziert"
-                   │    5. CISO-Synthese: Kurzfazit, Einstufung, Härtung — um die verifizierten Befunde
-                   │    6. versiegelt mit dem ÖFFENTLICHEN Schlüssel
+                   ├─ audit    (model key only)
+                   │    1. map of the attack surface — own code, without dependencies, without tokens:
+                   │       files with domain, API routes with auth markers, dangerous sinks,
+                   │       workflow permissions, Firestore rule blocks, CSP, npm audit
+                   │    2. five consultants: every file of their domain in full, with line numbers and
+                   │       redacted, plus their map entries — on 15.09.2026 461 files in 51 calls, four at a time; a large file in parts
+                   │    3. candidates: consultant findings de-duplicated (file, nearby lines, finding class),
+                   │       ordered by severity, named K-001 …
+                   │    4. CISO verifies in batches of 20, each candidate with the code at its locations
+                   │       (read from the repository), each call ≤ 120,000 characters → verified findings;
+                   │       what was not verified is listed by name under "Nicht verifiziert" (not verified)
+                   │    5. CISO synthesis: short verdict, rating, hardening — around the verified findings
+                   │    6. sealed with the PUBLIC key
                    │
-                   └─ deliver  (privater Schlüssel + Resend, kein Modell)
-                        öffnen · deutsch rendern · Mail an den Administrator
+                   └─ deliver  (private key + Resend, no model)
+                        open · render in German · mail to the administrator
 
- Claude Code (lokal) ── node scripts/security/inbox.mjs <sha>
-                        öffnen · Befunde zeigen, die das Register noch nicht kennt
-                        → prüfen → register.mjs accept/refute/risk/fixed → Roadmap §12 (nur IDs)
+ Claude Code (local) ── node scripts/security/inbox.mjs <sha>
+                        open · show findings the register does not know yet
+                        → verify → register.mjs accept/refute/risk/fixed → roadmap §12 (IDs only)
 ```
 
-| Baustein | Datei | Aufgabe |
+| Building block | File | Task |
 |---|---|---|
-| Team und Grenzen | `scripts/security/lib/team.mjs` | Kostenstufe und Preisobergrenze des Auto Routers, Budget, Consultants mit ihren Domänen, Schemata — die einzige Stelle |
-| Pipeline | `scripts/security/lib/pipeline.mjs` | wer welche Datei liest, was jeder Aufruf sieht, Entdoppeln und Prüfstapel der Kandidaten, Code-Kontext der Fundstellen, gezählte Abdeckung |
-| CISO-Anweisung | `docs/security/ciso-brief.md` | Methode, aktuelle Angriffsmuster, Schweregrade, Berichtsaufbau |
-| Angriffsflächen-Karte | `scripts/security/lib/surface.mjs` | deterministisch, nur `node:`-Module |
-| Audit | `scripts/security/audit.mjs` | Karte, Consultant-Aufrufe, CISO-Aufruf, Bericht versiegeln |
-| Modellaufruf, Schwärzung | `scripts/qa/lib/openrouter.mjs`, `redact.mjs` | dieselben wie beim QA-Agenten: keine Tools, keine Fallback-Modelle, `data_collection: deny` |
-| Siegel | `scripts/security/lib/envelope.mjs`, `docs/security/audit-public-key.pem` | RSA-OAEP-SHA256 + AES-256-GCM |
-| Mail | `scripts/security/lib/mail.mjs`, `mail-shell.mjs`, `deliver.mjs` | Clean-Core.io-Layout, responsiv, jeder Modelltext escaped |
-| Posteingang | `scripts/security/inbox.mjs` | abholen, öffnen, Unbewertetes zeigen; `--brief` beim Sitzungsstart |
-| Register | `scripts/security/register.mjs`, `lib/register.mjs`, `docs/security/register.enc.json` | Entscheidungen, versiegelt |
-| Workflow | `.github/workflows/security-audit.yml` | drei Jobs, drei Vertrauensstufen |
-| Leitplanken im Test | `tests/security-audit-guard.spec.ts` | keine Werkzeuge, Schlüsseltrennung, keine Leaks, Budget, Pipeline, Mail-Look |
-| Arbeitsweise von Claude | `.claude/skills/security-audit-intake/SKILL.md` | wird nur geladen, wenn ein Bericht da ist |
+| Team and limits | `scripts/security/lib/team.mjs` | cost tier and price ceiling of the Auto Router, budget, consultants with their domains, schemas — the only place |
+| Pipeline | `scripts/security/lib/pipeline.mjs` | who reads which file, what each call sees, deduplication and verification batches of the candidates, code context of the locations, counted coverage |
+| CISO brief | `docs/security/ciso-brief.md` | method, current attack patterns, severity levels, report structure |
+| Attack surface map | `scripts/security/lib/surface.mjs` | deterministic, only `node:` modules |
+| Audit | `scripts/security/audit.mjs` | map, consultant calls, CISO call, seal the report |
+| Model call, redaction | `scripts/qa/lib/openrouter.mjs`, `redact.mjs` | the same as for the QA agent: no tools, no fallback models, `data_collection: deny` |
+| Seal | `scripts/security/lib/envelope.mjs`, `docs/security/audit-public-key.pem` | RSA-OAEP-SHA256 + AES-256-GCM |
+| Mail | `scripts/security/lib/mail.mjs`, `mail-shell.mjs`, `deliver.mjs` | Clean-Core.io layout, responsive, every model text escaped |
+| Inbox | `scripts/security/inbox.mjs` | fetch, open, show what is unassessed; `--brief` at session start |
+| Register | `scripts/security/register.mjs`, `lib/register.mjs`, `docs/security/register.enc.json` | decisions, sealed |
+| Workflow | `.github/workflows/security-audit.yml` | three jobs, three trust levels |
+| Guardrails in the test | `tests/security-audit-guard.spec.ts` | no tools, key separation, no leaks, budget, pipeline, mail look |
+| How Claude works | `.claude/skills/security-audit-intake/SKILL.md` | loaded only when a report is there |
 
-### 1a. Prüfung in Stapeln
+### 1a. Verification in batches
 
-| Schritt | Regel | Stelle |
+| Step | Rule | Place |
 |---|---|---|
-| Entdoppeln | zwei Befunde sind einer, wenn sie dieselbe Befundklasse haben (CWE, OWASP API/LLM/Top 10, sonst der Kategorietext) **und** dieselbe Datei an Zeilen höchstens 10 auseinander zitieren; transitiv. Ist die Klasse nur ein Kategorietext („security“), müssen zusätzlich die Titel übereinstimmen (Wortüberdeckung ≥ 0,6) — eine allgemeine Kategorie allein führt nichts zusammen. Der zusammengeführte Kandidat trägt die höchste Schwere, alle Fundstellen und **alle Quellen** (welcher Consultant was meldete, mit dessen Beleg und Empfehlung für den CISO) | `dedupeCandidates`, `isSpecificClass`, `TITLE_SIMILARITY_TO_MERGE`, `AUDIT.dedupeLineDistance` |
-| Ordnen | schwerste zuerst, dann höchste Sicherheit; Namen `K-001`, `K-002`, … in dieser Reihenfolge | `planVerification` |
-| Stapeln | 20 Kandidaten je Aufruf, höchstens 25 Aufrufe (500 Kandidaten) | `AUDIT.verificationBatchSize`, `maxVerificationCalls` |
-| Code je Kandidat | Fenster von ±12 Zeilen um bis zu vier Fundstellen; jeder Kandidat bekommt einen gleichen Anteil der 120.000 Zeichen. Passt er nicht, schrumpfen Fenster und Textfelder schrittweise (±6, ±3, ±1, nur die Zeile) — der Code fällt nie als Erstes weg. Überlange Codezeilen werden bei 300 Zeichen gekürzt | `candidateEntry`, `verificationMessage` |
-| Budget | vor jedem Prüfaufruf gegen das tatsächlich Ausgegebene: Consultants + Prüfaufrufe + dieser Aufruf im ungünstigsten Fall + die Synthese | `runVerification` über `runBounded` |
-| Nicht verifiziert | was außerhalb der Aufrufgrenze, außerhalb des Budgets, nach Schwärzung über der Eingabegrenze oder in einem fehlgeschlagenen Aufruf lag, steht **namentlich** im versiegelten Bericht (`verification.notVerified`: ID, Titel, vorgeschlagene Schwere, Fundstellen, Consultants, Grund) — nie stillschweigend weggelassen, nie als „kein Befund" gezählt | `notVerifiedEntry`, `verificationLimitation` |
-| Überschrift | bleiben Kandidaten ungeprüft, lautet der Betreff „nicht vollständig geprüft: X von Y Kandidaten verifiziert, Z nicht" statt „Risiko …"; die Einstufung erscheint nur als „Einstufung des verifizierten Teils" | `renderAuditMail` |
+| Deduplicate | two findings are one if they have the same finding class (CWE, OWASP API/LLM/Top 10, otherwise the category text) **and** cite the same file at lines at most 10 apart; transitively. If the class is only a category text ("security"), the titles must also match (word overlap ≥ 0.6) — a general category alone merges nothing. The merged candidate carries the highest severity, all locations and **all sources** (which consultant reported what, with their evidence and recommendation for the CISO) | `dedupeCandidates`, `isSpecificClass`, `TITLE_SIMILARITY_TO_MERGE`, `AUDIT.dedupeLineDistance` |
+| Order | most severe first, then highest confidence; names `K-001`, `K-002`, … in this order | `planVerification` |
+| Batch | 20 candidates per call, at most 25 calls (500 candidates) | `AUDIT.verificationBatchSize`, `maxVerificationCalls` |
+| Code per candidate | window of ±12 lines around up to four locations; each candidate gets an equal share of the 120,000 characters. If it does not fit, windows and text fields shrink step by step (±6, ±3, ±1, only the line) — the code is never the first thing to go. Overlong code lines are cut at 300 characters | `candidateEntry`, `verificationMessage` |
+| Budget | before every verification call against what was actually spent: consultants + verification calls + this call in the worst case + the narrative | `runVerification` via `runBounded` |
+| Not verified | whatever lay outside the call limit, outside the budget, above the input limit after redaction or in a failed call is listed **by name** in the sealed report (`verification.notVerified`: ID, title, proposed severity, locations, consultants, reason) — never silently left out, never counted as "no finding" | `notVerifiedEntry`, `verificationLimitation` |
+| Headline | if candidates remain unverified, the subject reads "nicht vollständig geprüft: X von Y Kandidaten verifiziert, Z nicht" ("not fully checked: X of Y candidates verified, Z not") instead of "Risiko …" ("Risk …"); the rating appears only as "Einstufung des verifizierten Teils" ("rating of the verified part") | `renderAuditMail` |
 
-Ein Prüfaufruf, der zurückkommt, hat jeden seiner Kandidaten geprüft: was er behält, ist
-ein Befund, was er fallen lässt, hielt nicht. Scheitert ein Prüfaufruf, bleiben seine
-Kandidaten „nicht verifiziert"; das Log nennt nur ein Wort aus der geschlossenen Liste
-(`failureReason`) und eine Zahl. Scheitern alle Prüfaufrufe **und** die Synthese, bricht
-das Audit ab, statt ungeprüfte Kandidaten unter dem Namen des CISO zu versenden.
+A verification call that comes back has checked each of its candidates: what it keeps is
+a finding, what it drops did not hold. If a verification call fails, its
+candidates remain "not verified"; the log names only one word from the closed list
+(`failureReason`) and a number. If all verification calls **and** the narrative fail,
+the audit aborts instead of sending unverified candidates under the CISO's name.
 
 ---
 
-## 2. Leitplanken
+## 2. Guardrails
 
-**Das Modell hat keine Werkzeuge.** Es bekommt Text und gibt strukturiertes JSON zurück.
-Was es sieht, stellt die Pipeline zusammen: den Code einer Domäne für einen Consultant, die
-Befunde mit ihrem Code für den CISO. Eine Fundstelle, die das Modell nennt, liest die
-Pipeline nur nach, wenn die Datei in der Karte steht — nie einen absoluten Pfad, nie etwas
-außerhalb des Repositorys, nie eine ausgeschlossene Datei.
+**The model has no tools.** It gets text and returns structured JSON.
+What it sees is assembled by the pipeline: the code of a domain for a consultant, the
+findings with their code for the CISO. A location the model names is looked up by the
+pipeline only if the file is in the map — never an absolute path, never anything
+outside the repository, never an excluded file.
 
-**Nichts geht ungeschwärzt hinaus.** Jeder Text passiert die Schwärzung des QA-Agenten,
-bevor er den Runner verlässt; ein Treffer wird als kritischer Befund gemeldet, ohne seinen
-Wert. Der Firebase-Web-Schlüssel ist öffentlich per Design und wird nur geschwärzt.
+**Nothing goes out unredacted.** Every text passes the QA agent's redaction
+before it leaves the runner; a hit is reported as a critical finding, without its
+value. The Firebase web key is public by design and is only redacted.
 
-**Drei Jobs, drei Vertrauensstufen.**
+**Three jobs, three trust levels.**
 
-| Job | Hält | Kann | Kann nicht |
+| Job | Holds | Can | Cannot |
 |---|---|---|---|
-| `scope` | nichts | entscheiden, ob und wie auditiert wird | — |
-| `audit` | OpenRouter-Schlüssel, öffentlichen Schlüssel | Code senden, versiegeln | einen Bericht öffnen, mailen, schreiben |
-| `deliver` | privaten Schlüssel, Resend-Schlüssel | öffnen, rendern, mailen | ein Modell ausführen |
+| `scope` | nothing | decide whether and how to audit | — |
+| `audit` | OpenRouter key, public key | send code, seal | open, mail or write a report |
+| `deliver` | private key, Resend key | open, render, mail | run a model |
 
-Ein manipulierter oder prompt-injizierter Audit-Job hat also nichts zu lesen außer dem
-Lauf, den er gerade macht — frühere Berichte kann er nicht öffnen.
+A manipulated or prompt-injected audit job therefore has nothing to read except the
+run it is doing right now — it cannot open earlier reports.
 
-**Nichts wird öffentlich.** Repository und Actions-Logs sind öffentlich. Das Log trägt
-Aufrufe, Fehlschläge und Kosten, nie einen Befund. Der Bericht verlässt den Runner nur
-versiegelt. Das Register ist versiegelt; die Roadmap zeigt nur ID, Schwere, Priorität,
-Schritt und Status. Titel, Dateien und Beschreibungen unbehobener Befunde erscheinen in
-keiner öffentlichen Datei.
+**Nothing becomes public.** Repository and Actions logs are public. The log carries
+calls, failures and costs, never a finding. The report leaves the runner only
+sealed. The register is sealed; the roadmap shows only ID, severity, priority,
+step and status. Titles, files and descriptions of unfixed findings appear in
+no public file.
 
-**Kein Fremdcode neben Schlüsseln.** Audit- und Mail-Job laufen ohne `npm ci` und führen
-nur eigenen Code aus. Deshalb spiegelt `mail-shell.mjs` die Mail-Shell aus
-`lib/email-layout.ts` — ein Test hält beide gleich.
+**No third-party code next to keys.** The audit and mail jobs run without `npm ci` and execute
+only our own code. That is why `mail-shell.mjs` mirrors the mail shell from
+`lib/email-layout.ts` — a test keeps the two the same.
 
-**Prompt-Injection.** Alles im Repository ist Daten; ein Steuerungsversuch ist selbst ein
-Befund (CISO-Anweisung). Selbst ein erfolgreicher Versuch kann nur einen falschen Befund
-erzeugen — und keiner wird ungeprüft übernommen.
+**Prompt injection.** Everything in the repository is data; an attempt at steering is itself a
+finding (CISO brief). Even a successful attempt can only produce a false finding
+— and none is adopted unchecked.
 
-**Anbieter.** OpenRouter leitet nur an Anbieter ohne Speicherung oder Training weiter
-(`data_collection: deny`) und nie an ein anderes Modell (`allow_fallbacks: false`). Der
-Code des Repositorys ist öffentlich; was ein Audit über seine Schwächen schreibt, ist es
-nicht — deshalb gilt die Bedingung auch hier.
+**Providers.** OpenRouter forwards only to providers without storage or training
+(`data_collection: deny`) and never to another model (`allow_fallbacks: false`). The
+repository's code is public; what an audit writes about its weaknesses is
+not — that is why the condition applies here too.
 
 ---
 
-## 3. Kosten
+## 3. Costs
 
-DeepSeek V4.1 Flash: **0,22 $ je Mio. Eingabe-Token, 0,66 $ je Mio. Ausgabe-Token**
-(Fireworks über OpenRouter, 23.09.2026; bis dahin 0,15/0,60 beim billigsten Anbieter).
+DeepSeek V4.1 Flash: **0.22 $ per M input tokens, 0.66 $ per M output tokens**
+(Fireworks via OpenRouter, 23.09.2026; until then 0.15/0,60 at the cheapest provider).
 
-| Maßnahme | Wirkung |
+| Measure | Effect |
 |---|---|
-| **Budget 20 $ je Audit (seit 01.10.2026; 5 $ ab 24.09.2026, vorher 3 $) — geschätzt zur Preisobergrenze, vor jedem Aufruf gegen das tatsächlich Ausgegebene geprüft** | ein Aufruf, der es nach der Schätzung reißen würde, findet nicht statt; die Dateien eines Consultant-Aufrufs stehen als nicht gründlich gelesen, die Kandidaten eines Prüfaufrufs als „nicht verifiziert" im Bericht. Alle 25 Prüfaufrufe und die Synthese sind vorab reserviert, bevor ein Consultant etwas ausgibt. Harte Grenze: das Kreditlimit am OpenRouter-Schlüssel |
-| Ungünstigster Fall eines Vollaudits | Since 01.10.2026, at the $1.50/$4.50 ceiling: 60 consultant calls ≈ 9.10 $ + 25 verification calls and the narrative ≈ 5.90 $ = **≈ 14.90 $** — the test keeps it under 80 % of the budget. Until then (DeepSeek): ≈ 2,20 $. Erwartet je Release (Schätzung, nicht gemessen): rund 1 $, davon für 150–200 Kandidaten in 8–10 Prüfaufrufen etwa 0,10–0,20 $ |
-| Aufteilung nach Domänen | jede Datei wird von genau einem Consultant gelesen oder, bei Testdateien, nur über die Karte geprüft |
-| 100.000 Zeichen je Consultant-Aufruf, höchstens 60 Aufrufe, vier gleichzeitig; eine größere Datei wird in Teilen gelesen | gemessen am 15.09.2026: ein Aufruf mit 284.000 Zeichen lief 16,6 min und endete ohne lesbare Antwort, einer mit 100.000 Zeichen antwortete in 177 s für 0,007 $. Heute 461 Dateien in 51 Aufrufen, Schätzung im ungünstigsten Fall 0,94 $, rund eine halbe Stunde. Das Budget rechnet jeden laufenden Aufruf mit seinem ungünstigsten Fall, bis er abgerechnet ist |
-| Audit nur bei `main`-Releases | kein Audit und seit dem 16.09.2026 auch kein Selbsttest je Push auf `dev` — Sicherheit wird gründlich am Release geprüft, nicht stichprobenartig am Push |
-| Selbsttest an zwei Dateien mit 0,20 $ | nur noch von Hand: `SECURITY_AUDIT_MODE=self-test node scripts/security/audit.mjs` mit `OPENROUTER_API_KEY` lokal; kein Workflow löst ihn aus |
+| **Budget 20 $ per audit (since 01.10.2026; 5 $ from 24.09.2026, previously 3 $) — estimated at the price ceiling, checked before every call against what was actually spent** | a call that by the estimate would break it does not take place; the files of a consultant call are listed as not read in depth, the candidates of a verification call as "not verified" in the report. All 25 verification calls and the narrative are reserved in advance, before a consultant spends anything. Hard limit: the credit limit on the OpenRouter key |
+| Worst case of a full audit | Since 01.10.2026, at the $1.50/$4.50 ceiling: 60 consultant calls ≈ 9.10 $ + 25 verification calls and the narrative ≈ 5.90 $ = **≈ 14.90 $** — the test keeps it under 80 % of the budget. Until then (DeepSeek): ≈ 2.20 $. Expected per release (estimate, not measured): around 1 $, of which about 0.10–0.20 $ for 150–200 candidates in 8–10 verification calls |
+| Split by domain | every file is read by exactly one consultant or, for test files, checked only via the map |
+| 100,000 characters per consultant call, at most 60 calls, four at a time; a larger file is read in parts | measured on 15.09.2026: a call with 284,000 characters ran 16.6 min and ended without a readable answer, one with 100,000 characters answered in 177 s for 0.007 $. Today 461 files in 51 calls, worst-case estimate 0.94 $, around half an hour. The budget counts every running call at its worst case until it is billed |
+| Audit only on `main` releases | no audit and since 16.09.2026 also no self-test per push to `dev` — security is checked thoroughly at the release, not by sampling at the push |
+| Self-test on two files with 0.20 $ | only by hand now: `SECURITY_AUDIT_MODE=self-test node scripts/security/audit.mjs` with `OPENROUTER_API_KEY` locally; no workflow triggers it |
 
-Die tatsächlichen Kosten stehen in jeder Mail im Nachweisblock; fehlt eine Angabe oder
-scheiterte ein Aufruf, steht dort „unbekannt", nie 0 $.
-
----
-
-## 4. Die Mail
-
-Betreff: `Security-Audit v… (commit) — Risiko …: n kritisch · n hoch · n mittel · n niedrig`.
-Bleiben Kandidaten ungeprüft: `Security-Audit v… (commit) — nicht vollständig geprüft: X von Y
-Kandidaten verifiziert, Z nicht · n kritisch · …` — nie „Risiko niedrig" für einen Bericht,
-dessen Rest niemand geprüft hat. Oben steht dann „Prüfstand: Nicht vollständig geprüft"
-statt „Gesamtrisiko", und nach den Befunden die Liste **Nicht verifiziert** (ID `K-…`,
-vorgeschlagene Schwere, Titel, Fundstellen, Consultants, Grund).
-Inhalt in dieser Reihenfolge: Gesamtrisiko bzw. Prüfstand, Kurzfazit, Befunde (je Befund Fundstelle,
-Beschreibung, Voraussetzung, Auswirkung, Beleg, Empfehlung, **Prüfen vor dem Fix**,
-Sicherheit der Einschätzung), Härtung P1–P3, was gut ist, Umfang und Grenzen (gezählt,
-nicht geschätzt), Nachweis (Version, voller Commit, Modell, Aufrufe, Dauer, Kosten,
-**SHA-256 des versiegelten Berichts**).
-
-**Nachweisbar:** Der SHA-256 in der Mail gehört zu genau dem Artefakt des Laufs;
-`node scripts/security/inbox.mjs <sha>` öffnet dasselbe Artefakt und zeigt denselben
-Bericht.
+The actual costs are in every mail in the evidence block; if a figure is missing or
+a call failed, it says "unbekannt" ("unknown") there, never 0 $.
 
 ---
 
-## 5. Was Claude Code mit dem Bericht tut
+## 4. The mail
 
-Verbindlich im Skill `security-audit-intake`; die Regeln:
+Subject: `Security-Audit v… (commit) — Risiko …: n kritisch · n hoch · n mittel · n niedrig`.
+If candidates remain unverified: `Security-Audit v… (commit) — nicht vollständig geprüft: X von Y
+Kandidaten verifiziert, Z nicht · n kritisch · …` — never "Risiko niedrig" ("risk low") for a report
+whose remainder nobody has checked. At the top it then says "Prüfstand: Nicht vollständig geprüft" ("check status: not fully checked")
+instead of "Gesamtrisiko" ("overall risk"), and after the findings the list **Nicht verifiziert** ("not verified") (ID `K-…`,
+proposed severity, title, locations, consultants, reason).
+Content in this order: overall risk or check status, summary, findings (per finding location,
+description, precondition, impact, evidence, recommendation, **check before the fix**,
+confidence of the assessment), hardening P1–P3, what is good, scope and limits (counted,
+not estimated), evidence (version, full commit, model, calls, duration, costs,
+**SHA-256 of the sealed report**).
 
-1. Abholen nach jedem Push auf `main` (Hook) oder wenn der Sitzungsstart unbewertete
-   Befunde meldet.
-2. Jeden Befund an der zitierten Stelle prüfen: bestätigt, widerlegt oder — nur auf
-   Sonnys Entscheidung — akzeptiertes Risiko.
-3. Entscheidung im versiegelten Register festhalten.
-4. Einplanen: **kritisch** sofort als eigener Patch-Schritt vor allem anderen; **hoch** in
-   die laufende Phase; **mittel** in den nächsten passenden Schritt; **niedrig** neben
-   verwandter Arbeit. Öffentlich nur die ID-Tabelle in `docs/ROADMAP.md` §12.
-5. Beheben wie jeden Schritt: mit Test, QA-Schleife, `main` auf Sonnys Go. Das nächste
-   Audit zeigt, ob der Fix hält.
+**Verifiable:** The SHA-256 in the mail belongs to exactly the artefact of the run;
+`node scripts/security/inbox.mjs <sha>` opens the same artefact and shows the same
+report.
 
 ---
 
-## 6. Widerruf und Einrichtung
+## 5. What Claude Code does with the report
+
+Binding in the skill `security-audit-intake`; the rules:
+
+1. Fetch after every push to `main` (hook) or when the session start reports unassessed
+   findings.
+2. Check every finding at the cited place: confirmed, refuted or — only on
+   Sonny's decision — accepted risk.
+3. Record the decision in the sealed register.
+4. Schedule: **critical** immediately as its own patch step before everything else; **high** into
+   the current phase; **medium** into the next fitting step; **low** alongside
+   related work. Publicly only the ID table in `docs/ROADMAP.md` §12.
+5. Fix like any step: with a test, QA loop, `main` on Sonny's go. The next
+   audit shows whether the fix holds.
+
+---
+
+## 6. Revocation and setup
 
 ```bash
-gh variable set SECURITY_AUDIT_ENABLED --body false   # stoppt Audit und Posteingang
-gh variable delete SECURITY_AUDIT_ENABLED             # wieder an
+gh variable set SECURITY_AUDIT_ENABLED --body false   # stops the audit and the inbox
+gh variable delete SECURITY_AUDIT_ENABLED             # on again
 ```
 
-| Geheimnis | Wo | Zweck |
+| Secret | Where | Purpose |
 |---|---|---|
-| `OPENROUTER_API_KEY` | GitHub-Secret (vorhanden, auch vom QA- und UX-Agenten genutzt) | Modellaufrufe des Audit-Jobs |
-| `SECURITY_AUDIT_PRIVATE_KEY` | GitHub-Secret, `.env.local` | Berichte und Register öffnen |
-| `RESEND_API_KEY` | GitHub-Secret (vorhanden) | Mailversand |
-| öffentlicher Schlüssel | `docs/security/audit-public-key.pem` | versiegeln |
+| `OPENROUTER_API_KEY` | GitHub secret (exists, also used by the QA and UX agents) | model calls of the audit job |
+| `SECURITY_AUDIT_PRIVATE_KEY` | GitHub secret, `.env.local` | open reports and register |
+| `RESEND_API_KEY` | GitHub secret (exists) | sending mail |
+| public key | `docs/security/audit-public-key.pem` | seal |
 
-Das Secret `SECURITY_AGENT` (Anthropic-Schlüssel) wird seit der Umstellung nicht mehr
-gelesen; der Schlüssel kann in der Anthropic-Konsole widerrufen und das Secret gelöscht
-werden.
+The secret `SECURITY_AGENT` (Anthropic key) has not been read
+since the switch; the key can be revoked in the Anthropic console and the secret
+deleted.
 
-**Schlüssel rotieren:** neues Paar erzeugen, öffentlichen Teil committen, privaten in
-Secret und `.env.local`; das Register mit dem alten Schlüssel öffnen und neu versiegeln.
-Alte Berichte bleiben nur mit dem alten Schlüssel lesbar.
+**Rotate keys:** generate a new pair, commit the public part, put the private one in the
+secret and `.env.local`; open the register with the old key and seal it again.
+Old reports remain readable only with the old key.
 
 ---
 
-## 7. Fehlerbilder
+## 7. Failure patterns
 
-| Symptom | Ursache | Vorgehen |
+| Symptom | Cause | Action |
 |---|---|---|
-| `audit` rot, „the audit did not produce a report (every CISO call failed …)" oder Log „CISO verification calls failed: http-401/http-402" | Schlüssel oder Guthaben | OpenRouter-Konto prüfen; das Log enthält keine Inhalte |
-| `audit` rot, „HTTP 404 … no provider matches the data policy" | kein Anbieter des Modells erfüllt `data_collection: deny` | Anbieterliste des Modells bei OpenRouter prüfen; Modellwechsel nur als eigener Schritt |
-| Bericht nennt Dateien „outside the … cost cap" oder „model call failed" | Budget oder ein einzelner Aufruf | der Rest des Audits gilt; die Dateien stehen unter Umfang und Grenzen |
-| Betreff „nicht vollständig geprüft: X von Y Kandidaten verifiziert" | Prüfaufrufe gescheitert (Log: `CISO verification calls failed: <Wort> ×n`), Budget erschöpft oder mehr als 500 Kandidaten | die verifizierten Befunde gelten; die Liste „Nicht verifiziert" ist offen, nicht leer — `kritisch`/`hoch` darin von Hand an der Fundstelle prüfen (Skill `security-audit-intake`). Bei gescheiterten Aufrufen den Lauf neu starten |
-| „model call failed: OpenRouter answered HTTP 429" oder „the audit did not produce a report (CISO call: … HTTP 429)" | Ratenlimit des Anbieters trotz acht Wiederholungen — mit dessen Wartezeit (bis 120 s je Versuch, also bis 16 Minuten) oder 15 s, 30 s, 60 s, dann 120 s, zusammen rund 12 Minuten (seit 15.09.2026; vorher sechs mit rund 100 s, woran die Selbsttests von e3a7853 und 5a284ee scheiterten) | Lauf neu starten (`gh run rerun <id>`); hält es an, `concurrency` in `team.mjs` als eigener Schritt senken. Anbieter-Fallback für dasselbe Modell (`allow_fallbacks`) ist bewusst aus und nur mit Sonnys Entscheidung zu ändern |
-| `deliver` rot, „Resend rejected … HTTP 4xx" | Mailschlüssel oder Absenderdomain | Resend-Konto prüfen; der Bericht liegt 90 Tage als Artefakt |
-| Sitzungsstart meldet „produced no readable report", alle drei Jobs grün | bis 17.09.2026: zwei `inbox.mjs --brief` gleichzeitig (ein fortgesetzter Sitzungsstart startete den Hook zweimal) luden in dasselbe Verzeichnis, und `gh run download` überschreibt keine vorhandene Datei — der Bericht von e3817ce war die ganze Zeit lesbar. Seit dem Fix lädt jeder Aufruf in ein eigenes Verzeichnis (`fetchSealed` in `lib/envelope.mjs`) | `node scripts/security/inbox.mjs <sha>`; öffnet es den Bericht, war es kein Fehler des Audits |
-| Keine Mail nach einem `dev`-Push | der Workflow läuft nur auf `main` | erwartet |
-| Mail mit `[SELBSTTEST]` | jemand hat den Selbsttest von Hand gestartet | Kette funktioniert; kein Audit-Ergebnis |
+| `audit` red, "the audit did not produce a report (every CISO call failed …)" or log "CISO verification calls failed: http-401/http-402" | key or credit | check the OpenRouter account; the log contains no content |
+| `audit` red, "HTTP 404 … no provider matches the data policy" | no provider of the model satisfies `data_collection: deny` | check the model's provider list at OpenRouter; change models only as a step of its own |
+| Report names files "outside the … cost cap" or "model call failed" | budget or a single call | the rest of the audit stands; the files are listed under scope and limits |
+| Subject "nicht vollständig geprüft: X von Y Kandidaten verifiziert" ("not fully checked: X of Y candidates verified") | verification calls failed (log: `CISO verification calls failed: <Wort> ×n`), budget exhausted or more than 500 candidates | the verified findings stand; the list "Nicht verifiziert" ("not verified") is open, not empty — check `kritisch`/`hoch` in it by hand at the location (skill `security-audit-intake`). If calls failed, restart the run |
+| "model call failed: OpenRouter answered HTTP 429" or "the audit did not produce a report (CISO call: … HTTP 429)" | the provider's rate limit despite eight retries — with its waiting time (up to 120 s per attempt, i.e. up to 16 minutes) or 15 s, 30 s, 60 s, then 120 s, together around 12 minutes (since 15.09.2026; previously six with around 100 s, on which the self-tests of e3a7853 and 5a284ee failed) | restart the run (`gh run rerun <id>`); if it persists, lower `concurrency` in `team.mjs` as a step of its own. Provider fallback for the same model (`allow_fallbacks`) is deliberately off and may only be changed with Sonny's decision |
+| `deliver` red, "Resend rejected … HTTP 4xx" | mail key or sender domain | check the Resend account; the report is kept as an artefact for 90 days |
+| Session start reports "produced no readable report", all three jobs green | until 17.09.2026: two `inbox.mjs --brief` at the same time (a resumed session start launched the hook twice) downloaded into the same directory, and `gh run download` does not overwrite an existing file — the report of e3817ce was readable the whole time. Since the fix every call downloads into its own directory (`fetchSealed` in `lib/envelope.mjs`) | `node scripts/security/inbox.mjs <sha>`; if it opens the report, it was not a fault of the audit |
+| No mail after a `dev` push | the workflow runs only on `main` | expected |
+| Mail with `[SELBSTTEST]` | someone started the self-test by hand | chain works; no audit result |

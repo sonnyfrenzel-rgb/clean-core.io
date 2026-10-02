@@ -1,6 +1,6 @@
-# UX-Agent — UX-Review jeder `main`-Version
+# UX agent — UX review of every `main` version
 
-**Stand 15.09.2026 · eingeführt mit v2.9.17 · läuft bei jedem Push auf `main`, bis Sonny ihn widerruft**
+**As of 15.09.2026 · introduced with v2.9.17 · runs on every push to `main` until Sonny revokes it**
 
 > **Model routing since 01.10.2026 (owner decision).** No model is pinned any more. Every
 > call goes to OpenRouter's Auto Router (`openrouter/auto`) at cost tier **`high`**, under a
@@ -15,180 +15,180 @@
 > describe the period before 01.10.2026.
 
 
-Jede neue Version auf `main` bekommt eine UX-Review ihres Deltas. Die allererste Review
-nimmt sich das ganze Produkt vor, Bereich für Bereich, und schließt mit einer
-End-to-End-Synthese. Das Modell wählt seit 01.10.2026 der **OpenRouter Auto Router** (vorher Metas Muse Spark 1.3), nur bildfähige Modelle:
-Es liest den Code und sieht die Screens. Sein einziges Ziel ist eine möglichst perfekte
-UX. Es findet Probleme, hinterfragt Design-Entscheidungen, sieht neue Features aus
-Nutzersicht und prüft Farben, Formen, Schriften und Muster auf Stimmigkeit. Claude Code
-prüft jeden Befund an Code und Screenshot, entscheidet im Register und plant bestätigte
-Befunde in die Roadmap ein. Der Agent selbst ändert nichts.
+Every new version on `main` gets a UX review of its delta. The very first review
+takes on the whole product, area by area, and closes with an
+end-to-end synthesis. Since 01.10.2026 the model is chosen by the **OpenRouter Auto Router** (before that Meta's Muse Spark 1.3), image-capable models only:
+it reads the code and sees the screens. Its only goal is the most perfect possible
+UX. It finds problems, questions design decisions, sees new features from the
+user's point of view and checks colours, shapes, fonts and patterns for consistency. Claude Code
+checks every finding against code and screenshot, decides in the register and schedules confirmed
+findings into the roadmap. The agent itself changes nothing.
 
 ---
 
-## 1. Architektur
+## 1. Architecture
 
 ```
  git push main ── ux-review.yml
                    │
-                   ├─ scope    (keine Secrets)   main → auto · dev → auto, nur wenn der Agent selbst geändert wurde
-                   │                             (auto löst review.mjs auf, das die Berichte öffnen kann: solange es keine
-                   │                             vollständige Vollreview gibt → full; danach main → delta, dev → self-test)
+                   ├─ scope    (no secrets)      main → auto · dev → auto, only when the agent itself was changed
+                   │                             (auto is resolved by review.mjs, which can open the reports: as long as there is
+                   │                             no complete full review → full; after that main → delta, dev → self-test)
                    │
-                   ├─ capture  (keine Secrets)   npm ci · Emulator · Build mit Wegwerf-Schlüsseln ·
-                   │                             Demo-Projekt seeden · tests/capture-screens.spec.ts:
-                   │                             16 Screens × Desktop/Telefon × bis 3 Bildschirmhöhen,
-                   │                             3 Screens im Dark Mode, 7 Schlüsselansichten der Mockups 2.8
+                   ├─ capture  (no secrets)      npm ci · emulator · build with throwaway keys ·
+                   │                             seed the demo project · tests/capture-screens.spec.ts:
+                   │                             16 screens × desktop/phone × up to 3 screen heights,
+                   │                             3 screens in dark mode, 7 key views of the mockups 2.8
                    │
-                   └─ review   (Modell- + Siegelschlüssel, kein npm ci, kein Fremdcode)
-                        1. Design-Scan: Farben, Schriftgrade, Radien, Schatten, Button-Stile,
-                           A11y-Heuristiken, Sprachsignale — deterministisch, ohne Token
-                        2. Bereiche aus dem Import-Graphen: welcher Screen welche Komponente zeigt
-                        3. Auto Router (high, nur bildfähig): Code + Scan + Screenshots je Aufruf, striktes Schema
-                        4. Bericht versiegelt (AES-256-GCM, UX_REVIEW_KEY)
+                   └─ review   (model + seal key, no npm ci, no third-party code)
+                        1. design scan: colours, font sizes, radii, shadows, button styles,
+                           a11y heuristics, language signals — deterministic, without tokens
+                        2. areas from the import graph: which screen shows which component
+                        3. Auto Router (high, image-capable only): code + scan + screenshots per call, strict schema
+                        4. report sealed (AES-256-GCM, UX_REVIEW_KEY)
 
- Claude Code (lokal) ── node scripts/ux/inbox.mjs <sha>
-                        öffnen · Screenshots holen · Unentschiedenes zeigen
-                        → prüfen → register.mjs accept/refute/defer/fixed → Roadmap §13
+ Claude Code (local) ── node scripts/ux/inbox.mjs <sha>
+                        open · fetch screenshots · show what is undecided
+                        → verify → register.mjs accept/refute/defer/fixed → roadmap §13
 ```
 
-**Modi**
+**Modes**
 
-| Modus | Wann | Was das Modell bekommt | Budget (geschätzt) |
+| Mode | When | What the model gets | Budget (estimated) |
 |---|---|---|---|
-| `full` | jeder automatische Lauf, solange keine vollständige Vollreview existiert; danach nur per `workflow_dispatch` | 7 Bereiche (≈ 8 Aufrufe), je Bereich alle Dateien mit Zeilennummern und seine Screens; dann eine Synthese mit Kontaktabzug aller Screens, den Befunden aller Bereiche und Top-10-Prioritäten | 6 $ |
-| `delta` | jeder Push auf `main` nach der Vollreview | geänderte UX-Dateien (klein: ganz; groß: Diff mit 30 Zeilen Kontext; gelöschte mit ihrem letzten Inhalt), der Scan mit den Tokens, die das Release neu und selten einführt, Screens der betroffenen Bereiche plus Referenzscreens, offene Befunde zum Abgleich | 1,50 $ |
-| `self-test` | Agent auf `dev` geändert, nach dem ersten Lauf | eine Datei, zwei Bilder | 0,30 $ |
+| `full` | every automatic run as long as no complete full review exists; after that only via `workflow_dispatch` | 7 areas (≈ 8 calls), per area all files with line numbers and its screens; then a synthesis with a contact sheet of all screens, the findings of all areas and top-10 priorities | 6 $ |
+| `delta` | every push to `main` after the full review | changed UX files (small: whole; large: diff with 30 lines of context; deleted ones with their last content), the scan with the tokens that the release newly and rarely introduces, screens of the affected areas plus reference screens, open findings for comparison | 1.50 $ |
+| `self-test` | agent changed on `dev`, after the first run | one file, two images | 0.30 $ |
 
-Die Bereiche sind Journeys, keine Ordner: **Zugang** (Landing, Zugangsdialog, Features,
-Rechtliches) · **Wissen** (Katalog, Whitepaper, How-to, Trust) · **Rahmen** (App-Layout,
-Projekt-Layout, Dashboard, Einstellungen) · **Analyse** · **Entwurf** (Design,
-Transformation) · **Nachweis** (Dokumentation, Tests, TCO, Übergabe) · **System**
-(gemeinsame Komponenten, Styles, Stufenmodell, Mails). Eine Komponente gehört zu dem
-einen Bereich, dessen Seiten sie rendern, sonst zum System.
+The areas are journeys, not folders: **Access** (landing, access dialog, features,
+legal) · **Knowledge** (catalog, whitepaper, how-to, trust) · **Frame** (app layout,
+project layout, dashboard, settings) · **Analysis** · **Draft** (Design,
+Transformation) · **Evidence** (Documentation, Tests, TCO, handover) · **System**
+(shared components, styles, stage model, mails). A component belongs to the
+one area whose pages render it, otherwise to System.
 
-| Baustein | Datei | Aufgabe |
+| Building block | File | Task |
 |---|---|---|
-| Modell, Budgets, Bereiche | `scripts/ux/lib/config.mjs` | die einzige Stelle für Kostenstufe und Preisobergrenze des Auto Routers, Budgets je Modus, Bereiche, Screen-Namen und die Auflösung von `auto` |
-| UX-Anweisung | `docs/ux/ux-brief.md` | Rolle, Nutzer, Produktregeln, Richtung 3.0, zehn Prüfperspektiven, Schweregrade, die drei Modi |
-| Design-Scan | `scripts/ux/lib/scan.mjs` | Zählungen über alle UX-Dateien; für ein Release die neu eingeführten seltenen Tokens |
-| Bereiche | `scripts/ux/lib/areas.mjs` | Import-Graph, Zuordnung, Pakete ohne geschnittene Dateien |
-| Screenshots | `scripts/ux/lib/shots.mjs`, `tests/capture-screens.spec.ts` | erwartete Namen, JPEG-Signatur, Größenlimit; Auswahl erst je Screen, dann Details |
-| Review | `scripts/ux/review.mjs`, `lib/prompt.mjs`, `lib/range.mjs` | Modus, Basis, Aufrufe, Kostengrenze, Siegel |
-| Bericht | `scripts/ux/lib/report.mjs` | Fingerprints, Zusammenführen, Übernahme offener Befunde, Text für Claude |
-| Transport | `scripts/qa/lib/openrouter.mjs`, `crypto.mjs`, `redact.mjs` | mit dem QA-Agenten geteilt: keine Tools, keine Fallbacks, keine Datennutzung, Schemaprüfung, Redaktion |
-| Posteingang | `scripts/ux/inbox.mjs` | abholen, öffnen, Screenshots holen; `--brief` beim Sitzungsstart |
-| Register | `scripts/ux/register.mjs`, `lib/register.mjs`, `docs/ux/register.json` | Entscheidungen, Roadmap-Tabelle |
-| Workflow | `.github/workflows/ux-review.yml` | drei Jobs, drei Vertrauensstufen |
-| Leitplanken im Test | `tests/ux-review-guard.spec.ts` | Modell, Schema, Jobtrennung, Kosten, Siegel, Basiswahl, Bereiche, Screenshots, Scan, Register |
-| Arbeitsweise von Claude | `.claude/skills/ux-review-intake/SKILL.md` | wird nur geladen, wenn ein Bericht da ist |
+| Model, budgets, areas | `scripts/ux/lib/config.mjs` | the only place for the Auto Router's cost tier and price ceiling, budgets per mode, areas, screen names and the resolution of `auto` |
+| UX instruction | `docs/ux/ux-brief.md` | role, users, product rules, direction 3.0, ten review perspectives, severities, the three modes |
+| Design scan | `scripts/ux/lib/scan.mjs` | counts over all UX files; for a release the newly introduced rare tokens |
+| Areas | `scripts/ux/lib/areas.mjs` | import graph, assignment, packages without cut files |
+| Screenshots | `scripts/ux/lib/shots.mjs`, `tests/capture-screens.spec.ts` | expected names, JPEG signature, size limit; selection first per screen, then details |
+| Review | `scripts/ux/review.mjs`, `lib/prompt.mjs`, `lib/range.mjs` | mode, base, calls, cost limit, seal |
+| Report | `scripts/ux/lib/report.mjs` | fingerprints, merging, carrying over open findings, text for Claude |
+| Transport | `scripts/qa/lib/openrouter.mjs`, `crypto.mjs`, `redact.mjs` | shared with the QA agent: no tools, no fallbacks, no data use, schema check, redaction |
+| Inbox | `scripts/ux/inbox.mjs` | fetch, open, fetch screenshots; `--brief` at session start |
+| Register | `scripts/ux/register.mjs`, `lib/register.mjs`, `docs/ux/register.json` | decisions, roadmap table |
+| Workflow | `.github/workflows/ux-review.yml` | three jobs, three trust levels |
+| Guardrails in the test | `tests/ux-review-guard.spec.ts` | model, schema, job separation, costs, seal, base choice, areas, screenshots, scan, register |
+| Claude's way of working | `.claude/skills/ux-review-intake/SKILL.md` | is loaded only when a report is there |
 
 ---
 
-## 2. Leitplanken
+## 2. Guardrails
 
-**Nur UX.** Die Anweisung schließt Code-Qualität, Performance-Interna, Geschäftslogik und
-Sicherheit aus. Fällt dem Modell etwas Sicherheitsrelevantes auf, nennt es nur die Datei
-in `coverage_notes`; Claude gibt das an das Security-Register weiter.
+**UX only.** The instruction excludes code quality, performance internals, business logic and
+security. If the model notices something security-relevant, it names only the file
+in `coverage_notes`; Claude passes that on to the security register.
 
-**Das Modell kann nichts tun.** Ein Aufruf ohne Tools, mit striktem JSON-Schema, lokal noch
-einmal geprüft. `provider: { allow_fallbacks: false, data_collection: 'deny' }` — kein
-anderes Modell, kein Anbieter, der Prompts speichert oder trainiert. Die
-„Contributor"-Variante des Modells ist ausgeschlossen.
+**The model cannot do anything.** A call without tools, with a strict JSON schema, checked
+once more locally. `provider: { allow_fallbacks: false, data_collection: 'deny' }` — no
+other model, no provider that stores or trains on prompts. The
+"Contributor" variant of the model is excluded.
 
-**Kein Fremdcode neben dem Schlüssel.** Der Review-Job führt kein `npm ci` aus; er nutzt
-nur eigene Module mit `node:`-Imports. Der Capture-Job installiert und startet die App —
-er hat dafür keinerlei Secret, nur Wegwerf-Schlüssel für den Demo-Build. Was er übergibt,
-sind Bytes: Der Review-Job nimmt nur reguläre Dateien mit erwartetem Namen, JPEG-Signatur
-und höchstens 3 MB, keine Symlinks.
+**No third-party code next to the key.** The review job runs no `npm ci`; it uses
+only its own modules with `node:` imports. The capture job installs and starts the app —
+it has no secret whatsoever for that, only throwaway keys for the demo build. What it hands over
+is bytes: the review job takes only regular files with an expected name, JPEG signature
+and at most 3 MB, no symlinks.
 
-**Nichts wird öffentlich.** Das Log nennt Commit, Modus, Aufrufe und Kosten — nicht die
-UX-Gesundheit, nicht die Zahl der Befunde. Der Bericht ist versiegelt. Jeder ausgehende
-Text läuft durch die Redaktion des QA-Agenten.
+**Nothing becomes public.** The log names commit, mode, calls and costs — not the
+UX health, not the number of findings. The report is sealed. Every outgoing
+text runs through the QA agent's redaction.
 
-**Keine geratene Basis.** Ein Release wird ab dem letzten geprüften Stand geprüft, ohne ihn
-ab dem vorherigen `main`-Stand des Push. Gibt es beides nicht, bricht der Lauf ab und
-verlangt `mode=full` oder eine Basis. Ungelesener Code, fehlende Screenshots oder eine
-fehlende Synthese machen einen Bericht **unvollständig**: Der Prüfstand bleibt stehen. Screenshots zählen je Screen, den ein Aufruf braucht — ein einzelnes Bild eines anderen Screens reicht nicht. Nur die Mockups sind erwünscht, aber nicht Pflicht.
-Ein Selbsttest ist nie ein Prüfstand.
+**No guessed base.** A release is reviewed from the last reviewed state, without it
+from the previous `main` state of the push. If neither exists, the run aborts and
+demands `mode=full` or a base. Unread code, missing screenshots or a
+missing synthesis make a report **incomplete**: the reviewed state stays where it is. Screenshots count per screen that a call needs — a single image of another screen is not enough. Only the mockups are wanted but not mandatory.
+A self-test is never a reviewed state.
 
-**Keine Warteschlange, die Läufe verwirft.** Keine Concurrency-Gruppe: jedes Release
-bekommt seine Review.
+**No queue that discards runs.** No concurrency group: every release
+gets its review.
 
 ---
 
-## 3. Kosten
+## 3. Costs
 
-Muse Spark 1.3 kostet 1,25 $ je Million Eingabe- und 4,25 $ je Million Ausgabe-Token
-(OpenRouter, 15.09.2026). Vor jedem Aufruf wird geprüft: bisher tatsächlich ausgegeben plus
-Schätzung für diesen Aufruf — Zeichen ÷ 2,5 (Code mit Zeilennummern ist tokendicht), jedes Bild mit 1.600 Token, die volle
-Ausgabemenge. Was nicht passt, wird nicht gesendet und im Bericht als nicht gelesen
-genannt. Die harte Obergrenze ist das Kreditlimit des OpenRouter-Schlüssels.
+Muse Spark 1.3 costs 1.25 $ per million input and 4.25 $ per million output tokens
+(OpenRouter, 15.09.2026). Before every call it is checked: actually spent so far plus
+the estimate for this call — characters ÷ 2.5 (code with line numbers is token-dense), every image at 1,600 tokens, the full
+output amount. What does not fit is not sent and is named in the report as not read.
+The hard ceiling is the credit limit of the OpenRouter key.
 
-Richtwerte: ein Release mit ein, zwei geänderten Screens 0,10–0,40 $; die erste
-Vollreview mit ≈ 2 MB Code und ≈ 120 gesendeten Bildern 1,50–3 $ (Schätzobergrenze 6 $). Dazu
-≈ 15 Minuten Actions-Zeit für den Capture-Job.
+Guide values: a release with one or two changed screens 0.10–0.40 $; the first
+full review with ≈ 2 MB of code and ≈ 120 images sent 1.50–3 $ (estimate ceiling 6 $). Plus
+≈ 15 minutes of Actions time for the capture job.
 
-**Zielbild: sieben Schlüsselansichten der Mockups 2.8** (Entscheidung Sonny 24.09.2026,
-Option B). Verbindlich ist `docs/roadmap/clean-core-mockups-v2_8.html` mit 16 Ansichten;
-fotografiert werden nur die, an denen das Produkt gemessen wird — `MOCKUP_VIEWS` in
-`scripts/ux/lib/config.mjs`, die einzige Liste, aus der auch der Capture liest:
+**Target picture: seven key views of the mockups 2.8** (decision Sonny 24.09.2026,
+option B). Binding is `docs/roadmap/clean-core-mockups-v2_8.html` with 16 views;
+only those against which the product is measured are photographed — `MOCKUP_VIEWS` in
+`scripts/ux/lib/config.mjs`, the only list, which the capture also reads from:
 
-| Ansicht | Datei | Inhalt |
+| View | File | Content |
 |---|---|---|
-| `s0` | `m0-mockup-desktop.jpg` | Erster Blick |
-| `s1` | `m1-mockup-desktop.jpg` | Business · Prozess (BPMN) & Regeln |
-| `s4` | `m4-mockup-desktop.jpg` | IT · Findings & Kette |
-| `s5` | `m5-mockup-desktop.jpg` | Management · Entscheiden |
-| `s6` | `m6-mockup-desktop.jpg` | Übergabe & Nachweiskette |
-| `s7` | `m7-mockup-desktop.jpg` | Mein Arbeitsbereich |
-| `s12` | `m12-mockup-desktop.jpg` | Großer Prozess · Übersicht |
+| `s0` | `m0-mockup-desktop.jpg` | First look |
+| `s1` | `m1-mockup-desktop.jpg` | Business · Process (BPMN) & rules |
+| `s4` | `m4-mockup-desktop.jpg` | IT · Findings & chain |
+| `s5` | `m5-mockup-desktop.jpg` | Management · Decide |
+| `s6` | `m6-mockup-desktop.jpg` | Handover & evidence chain |
+| `s7` | `m7-mockup-desktop.jpg` | My workspace |
+| `s12` | `m12-mockup-desktop.jpg` | Large process · Overview |
 
-Der Bereich *system* sieht alle sieben (mit den vier Referenzscreens 11 von 16 Bildern je
-Aufruf), die Synthese drei davon (`s0`, `s1`, `s5`, per Ansicht gewählt, nicht per Position) —
-gegenüber den sechs Ansichten der Mockups 2.7 ein Bild mehr, ≈ 0,002 $. Die Budgets bleiben.
-Eine Ansicht mehr oder weniger: nur `MOCKUP_VIEWS` ändern; `tests/ux-review-guard.spec.ts`
-hält 6–8 Ansichten, die Knöpfe in der Mockup-Datei und die Namen im Gleichschritt.
-
----
-
-## 4. Was Claude Code mit dem Bericht tut
-
-Skill `ux-review-intake`. Kurz: im Hintergrund `node scripts/ux/inbox.mjs <sha>`; jeden
-Befund an der zitierten Zeile und am zitierten Screenshot prüfen; Kontrastbehauptungen aus
-den echten Farbwerten nachrechnen; dann `register.mjs accept --step … | refute | defer |
-fixed`. Bestätigte Befunde gehen nach Schwere in die Roadmap (§13): kritisch als eigener
-Schritt sofort, hoch in die laufende Phase — Konsistenz und Komponenten nach **1.5**,
-Rahmen und Navigation nach **1.4** —, mittel in den nächsten passenden Schritt, niedrig
-neben verwandte Arbeit oder nach **3.0**. Design-Entscheidungen und Prioritäten einer
-Vollreview sind Vorschläge für Sonny, keine Befunde.
-
-Beim Sitzungsstart meldet `scripts/ux/inbox.mjs --brief` unentschiedene Befunde der
-letzten Review.
+The area *system* sees all seven (with the four reference screens 11 of 16 images per
+call), the synthesis three of them (`s0`, `s1`, `s5`, chosen by view, not by position) —
+compared to the six views of the mockups 2.7 one image more, ≈ 0.002 $. The budgets stay.
+One view more or fewer: change only `MOCKUP_VIEWS`; `tests/ux-review-guard.spec.ts`
+keeps 6–8 views, the buttons in the mockup file and the names in lockstep.
 
 ---
 
-## 5. Widerruf und Einrichtung
+## 4. What Claude Code does with the report
 
-| Was | Wo | Stand |
+Skill `ux-review-intake`. In short: in the background `node scripts/ux/inbox.mjs <sha>`; check every
+finding against the cited line and the cited screenshot; recompute contrast claims from
+the real colour values; then `register.mjs accept --step … | refute | defer |
+fixed`. Confirmed findings go into the roadmap by severity (§13): critical as a step of its own
+immediately, high into the current phase — consistency and components to **1.5**,
+frame and navigation to **1.4** —, medium into the next fitting step, low
+next to related work or after **3.0**. Design decisions and priorities of a
+full review are proposals for Sonny, not findings.
+
+At session start `scripts/ux/inbox.mjs --brief` reports undecided findings of the
+last review.
+
+---
+
+## 5. Revocation and setup
+
+| What | Where | Status |
 |---|---|---|
-| Widerruf | `gh variable set UX_REVIEW_ENABLED --body false` | — |
-| `OPENROUTER_API_KEY` | GitHub-Secret (mit dem QA-Agenten geteilt), `.env.local` | gesetzt |
-| `UX_REVIEW_KEY` | GitHub-Secret und `.env.local` — nirgends sonst | gesetzt am 15.09.2026 |
-| **18+-Bestätigung bei OpenRouter** | https://openrouter.ai/settings/preferences — nur der Kontoinhaber | **offen:** ohne sie antwortet OpenRouter auf jeden Muse-Spark-Aufruf mit HTTP 403 |
-| Kreditlimit des Schlüssels | OpenRouter → Keys | empfohlen, deckt alle Agenten |
+| Revocation | `gh variable set UX_REVIEW_ENABLED --body false` | — |
+| `OPENROUTER_API_KEY` | GitHub secret (shared with the QA agent), `.env.local` | set |
+| `UX_REVIEW_KEY` | GitHub secret and `.env.local` — nowhere else | set on 15.09.2026 |
+| **18+ confirmation at OpenRouter** | https://openrouter.ai/settings/preferences — only the account holder | **open:** without it OpenRouter answers every Muse Spark call with HTTP 403 |
+| Credit limit of the key | OpenRouter → Keys | recommended, covers all agents |
 
-Ein Lauf lokal, ohne Modellaufruf: `node scripts/ux/review.mjs --dry --mode=full` zeigt
-Pakete, Bilder und geschätzte Kosten.
+A run locally, without a model call: `node scripts/ux/review.mjs --dry --mode=full` shows
+packages, images and estimated costs.
 
 ---
 
-## 6. Fehlerbilder
+## 6. Failure patterns
 
-| Log | Bedeutung | Was tun |
+| Log | Meaning | What to do |
 |---|---|---|
-| `OpenRouter answered HTTP 403 (key or account not permitted …)` | 18+-Bestätigung fehlt | Sonny bestätigt in den OpenRouter-Einstellungen, dann Lauf wiederholen |
-| `OpenRouter answered HTTP 404 (… no provider matches the data policy)` | Meta nimmt den Aufruf unter `data_collection: deny` nicht an | nicht lockern — Sonny entscheidet über Modell oder Richtlinie |
-| `No usable base for a delta review` | kein Prüfstand in dieser Historie und kein vorheriger Stand | `gh workflow run ux-review.yml -f mode=full` oder `-f base=<sha>` |
-| Bericht `unvollständig`, „Screenshots fehlen" | Capture-Job gescheitert | `gh run view <id> --log-failed` im Job *Capture screens*; der nächste Lauf prüft vom alten Stand |
-| Screens zeigen leere Seiten | Seed passt nicht mehr zur Seite | `tests/capture-screens.spec.ts` nachziehen; Befunde dazu widerlegen, nicht einplanen |
+| `OpenRouter answered HTTP 403 (key or account not permitted …)` | 18+ confirmation missing | Sonny confirms in the OpenRouter settings, then repeat the run |
+| `OpenRouter answered HTTP 404 (… no provider matches the data policy)` | Meta does not accept the call under `data_collection: deny` | do not loosen — Sonny decides on model or policy |
+| `No usable base for a delta review` | no reviewed state in this history and no previous state | `gh workflow run ux-review.yml -f mode=full` or `-f base=<sha>` |
+| Report `unvollständig`, "Screenshots missing" | capture job failed | `gh run view <id> --log-failed` in the job *Capture screens*; the next run reviews from the old state |
+| Screens show empty pages | seed no longer fits the page | update `tests/capture-screens.spec.ts`; refute findings about it, do not schedule them |

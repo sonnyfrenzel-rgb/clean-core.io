@@ -146,7 +146,7 @@ jobs:
   # runner-mock / runner-live, tag-based firewall, private DNS for run.app) and
   # the service account without roles: `vars.RUNNER_DEPLOY_ENABLED == 'true'`.
   # Skipped, the app deploys as before — and without RUNNER_URL a deployed app
-  # runs no tests at all ("dort oder gar nicht").
+  # runs no tests at all ("there or not at all").
   #
   # No secret of any kind is read in this job. The runners get RUNNER_MODE and,
   # for the live one, the app origin it may relay to — neither is a secret.
