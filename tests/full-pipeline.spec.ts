@@ -335,36 +335,24 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // second time on the same screen and is now shown only once a suite exists,
     // as "Regenerate Suite". The selector followed the duplicate; it follows the
     // real one now.
-    await page.waitForSelector('#testing-verified button:has-text("Run tests against mocks"), button:has-text("Generate Test Suite")', { timeout: 60000 });
-    
-    // Check if the run button is enabled (preloaded suite), otherwise generate it.
-    // Since proposal A it stands in "From written to verified" and is there
-    // before a suite exists, disabled until there is one to run.
-    const runButton = page.locator('#testing-verified button:has-text("Run tests against mocks")');
-    if (!(await runButton.isEnabled())) {
-      console.log('Test suite not preloaded. Clicking Generate Test Suite...');
-      await page.click('button:has-text("Generate Test Suite")');
-      await expect(runButton).toBeEnabled({ timeout: 60000 });
+    // Step 1 of the guided flow: the scenarios, generated unless the seed preloaded them.
+    await page.waitForSelector('[data-testing-flow]', { timeout: 60000 });
+    if ((await page.locator('[data-testing-step="write"]').getAttribute('data-step-state')) !== 'done') {
+      console.log('Test suite not preloaded. Clicking Generate scenarios...');
+      await page.click('button:has-text("Generate scenarios")');
+      await expect(page.locator('[data-testing-step="write"]')).toHaveAttribute('data-step-state', 'done', { timeout: 60000 });
     } else {
-      console.log('Test suite preloaded. Proceeding directly to execution.');
+      console.log('Test suite preloaded.');
     }
-    
-    // The result card of the seeded case does not exist before the run: the
-    // results grid is filled only by an execution.
-    const resultCard = page.locator('div.group', {
-      has: page.locator('h4', { hasText: 'Extract Invoice Headers' }),
-    });
-    await expect(resultCard).toHaveCount(0);
 
-    // Which execution the run button starts is decided by the project's route,
-    // and the route of this example is decided by the evidence engine, not by a
-    // model: Z_INVOICE_EXTRACTOR has no Side-by-Side driver, so it is routed
-    // In-App (ABAP Cloud) in either deployment. An ABAP Cloud project gets the
-    // simulated ABAP Unit run in the browser (hooks/useTestExecution.ts) — it
-    // never reaches `/api/run-tests`, and it never says "Passed", because a mock
-    // is not a pass. Waiting for a run-tests POST here waited for a request this
-    // project cannot make. Stated as a precondition, so that a change of route
-    // fails here by name instead of as a timeout further down.
+    // Which execution step 2 offers is decided by the project's route, and the
+    // route of this example by the evidence engine, not by a model:
+    // Z_INVOICE_EXTRACTOR has no Side-by-Side driver, so it is routed In-App
+    // (ABAP Cloud). Its suite is an ABAP Unit class, which the isolated runner
+    // cannot execute — so step 2 offers no run and says why, and nothing is
+    // made up. Until 02.10.2026 this route answered "Run" with a simulated run
+    // in the browser that reached no server (owner report). Stated as a
+    // precondition, so a change of route fails here by name.
     const { adminGetDoc } = await import('./helpers/admin-seed');
     const routed = await adminGetDoc('projects', projectId);
     expect(routed?.extensibilityRoute, 'the example is expected on the ABAP Cloud route').toContain('ABAP Cloud');
@@ -373,20 +361,14 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     page.on('request', (r) => {
       if (r.url().includes('/api/run-tests')) runTestsRequests.push(r.method());
     });
-
-    await runButton.click();
-
-    // The verdict on that row is the one this execution produced: the seed says
-    // `Pending`, and nothing but the simulated run writes `Simulated`. The
-    // terminal carries the run's own report, naming the seeded case.
-    await expect(resultCard).toHaveCount(1, { timeout: 15000 });
-    await expect(resultCard).toContainText('Simulated', { timeout: 15000 });
-    await expect(resultCard).not.toContainText('Passed');
-    const terminal = page.locator('pre', { hasText: 'SIMULATED ABAP UNIT TEST REPORT' });
-    await expect(terminal).toBeVisible({ timeout: 15000 });
-    await expect(terminal).toContainText('[SIMULATED PASS] TC_01: Extract Invoice Headers');
-    expect(runTestsRequests, 'a simulated ABAP Unit run must not reach the Node sandbox').toEqual([]);
-    console.log('Stage 5 Complete: simulated ABAP Unit run of the seeded case executed.');
+    const runStep = page.locator('[data-testing-step="run"]');
+    await expect(runStep).toHaveAttribute('data-step-state', 'unavailable');
+    await expect(runStep.locator('[data-testing-run-unavailable]')).toContainText('ABAP Unit test classes run only inside an ABAP system');
+    await expect(runStep.getByRole('button')).toHaveCount(0);
+    // No result card appears from nowhere.
+    await expect(page.locator('div.group', { has: page.locator('h4', { hasText: 'Extract Invoice Headers' }) })).toHaveCount(0);
+    expect(runTestsRequests).toEqual([]);
+    console.log('Stage 5 Complete: scenarios written; ABAP Unit is not run here, and the page says so.');
 
     // --- STAGE 6: ECONOMICS ---
     console.log('Navigating to Stage 6: Economics...');

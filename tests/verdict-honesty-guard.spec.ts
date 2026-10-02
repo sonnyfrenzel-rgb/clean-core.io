@@ -22,7 +22,8 @@ import { parseTapOutput } from '../lib/test-verdicts';
  *   2. A test case the runner never mentioned inherited `exitCode === 0` and was
  *      labelled "Verified by Node.js Test Runner".
  *   3. The ABAP mock set every selected case to `Passed` and put `[SIMULATED]` in
- *      the message — which the delivery page did not read.
+ *      the message — which the delivery page did not read. (Since 02.10.2026
+ *      the mock is gone: an ABAP Unit class is not run here at all.)
  *
  * All three ended on the delivery page, beside a green tick, in the artefact that
  * goes to a customer. These checks are cheap; rediscovering the problem is not.
@@ -54,14 +55,22 @@ test.describe('a verdict is only reported when there is one', () => {
     ).not.toMatch(/const passed = result\.exitCode === 0/);
   });
 
-  test('a simulated run is not a pass', () => {
+  test('a simulated run is not a pass — and since 02.10.2026 there is none at all', () => {
+    // The ABAP mock first marked its results Passed, then (after this guard)
+    // `Simulated`. Both were runs made up in the browser: no request left it,
+    // and the page reported "10 of 10 produced no result" as if a runner had
+    // failed (owner report 02.10.2026). An ABAP Unit class has no runner here,
+    // so the hook now refuses it with a reason and writes no result at all.
     const src = read('hooks/useTestExecution.ts');
-    expect(
-      src,
-      'the ABAP mock marks its results Passed again. The message saying ' +
-        '[SIMULATED] is not enough — every count and the delivery page read the ' +
-        'status, not the message.',
-    ).toContain("status: 'Simulated' as const");
+    expect(src, 'a browser-side run is back: results written without the runner').not.toMatch(/\[SIMULATED\]/);
+    expect(src).not.toMatch(/status:\s*'(Passed|Simulated)'/);
+    const abap = src.slice(src.indexOf('if (isAbapUnitRoute(project)) {'), src.indexOf('return null;', src.indexOf('if (isAbapUnitRoute(project)) {')));
+    expect(abap, 'the ABAP Unit refusal is gone from the hook').toContain('setRunError(ABAP_UNIT_NOT_RUNNABLE)');
+    expect(abap, 'the ABAP Unit refusal writes results').not.toMatch(/setTestResults|fetch\(/);
+    // The only place the hook sets results is after the runner's answer.
+    const sets = [...src.matchAll(/setTestResults\(([^)]*)\)/g)].map((m) => m[1]);
+    expect(sets.sort()).toEqual(['null', 'results']);
+    expect(src.indexOf('setTestResults(results)')).toBeGreaterThan(src.indexOf('await executeWithHealing(payload)'));
   });
 
   test('the delivery page counts verdicts, not generated files', () => {

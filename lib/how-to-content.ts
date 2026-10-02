@@ -154,7 +154,7 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
   },
   testing: {
     summary:
-      'A model writes a test suite for the generated code. On the CAP track the suite can be run against mocks in a restricted Node.js test runner; on the RAP track the ABAP Unit run is only simulated.',
+      'A model writes a test suite for the generated code. On the CAP track the suite runs against mocks in an isolated test runner; on the RAP track it is an ABAP Unit class that runs only in your own system, so nothing is run here.',
     details: [
       'Verdicts are shown on screen and are not stored with the project.',
       'The coverage figure is the test generator’s own estimate, not a measurement.',
@@ -175,7 +175,7 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
       {
         question: 'Does a pass mean the code works in SAP?',
         answer:
-          'No. A pass means a generated test passed against mocks, and a simulated ABAP Unit result means nothing was executed.',
+          'No. A pass means a generated test passed against mocks, and an ABAP Unit class is not run here at all.',
       },
     ],
   },

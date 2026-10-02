@@ -39,23 +39,28 @@ test.describe('testing page — QA full review of fc787674705f', () => {
     expect(guard).toBeLessThan(run.indexOf('runTestCases('));
     // The predicate covers both halves: upstream blockers and a stale suite.
     const s = page();
-    const pred = s.slice(s.indexOf('const testRunBlocked'), s.indexOf('const ENV_SEGMENTS'));
+    const pred = s.slice(s.indexOf('const testRunBlocked'), s.indexOf('const RAIL_GRID'));
+    expect(pred.length, 'the predicate was not found where it stood').toBeGreaterThan(0);
+    expect(pred.length).toBeLessThan(1200);
     expect(pred).toContain("generationBlockers(project, 'testing').length > 0");
     expect(pred).toContain("=== 'stale'");
     // And the button says so instead of accepting the click.
     expect(rendered()).toMatch(/disabled=\{isRunning[^\n]*\|\| testRunBlocked\(project\)\}/);
   });
 
-  test('a saved credential is reported as saved even if the preference write fails (983d23ce4dad)', () => {
+  test('a saved credential is reported as saved — no optional write can fail it (983d23ce4dad)', () => {
+    // The finding: an environment-preference write after the vault save failed
+    // into the save's catch and reported a saved connection as a failed one.
+    // Since 02.10.2026 that preference is gone with the tenant tab it
+    // remembered, so the vault's answer is the last thing that can fail.
     const save = handler('saveS4Config');
+    const vault = save.indexOf("fetch('/api/s4-credentials'");
     const cleared = save.indexOf("setS4Password('')");
-    const pref = save.indexOf('{ s4Environment: activeEnvTab }');
-    expect(cleared).toBeGreaterThan(-1);
-    expect(pref).toBeGreaterThan(-1);
-    expect(cleared, 'the password is cleared only after the optional write').toBeLessThan(pref);
-    // The preference write has its own try, so its failure cannot reach the save's catch.
-    const between = save.slice(cleared, pref);
-    expect(between).toMatch(/try \{/);
+    expect(vault).toBeGreaterThan(-1);
+    expect(cleared).toBeGreaterThan(vault);
+    const afterClear = save.slice(cleared, save.indexOf('} catch (err'));
+    expect(afterClear, 'a write follows the vault save again').not.toMatch(/await |setDoc\(/);
+    expect(save).not.toContain('s4Environment');
   });
 
   test('a failed tenant-access request is reported, and the log follows the request (b1458e593475)', () => {

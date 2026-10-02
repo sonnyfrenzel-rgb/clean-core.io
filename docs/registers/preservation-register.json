@@ -246,7 +246,7 @@
       "source": "lib/locked-paths.ts (LIVE_TEST_EXECUTION)",
       "stage": "testing",
       "closed": "Executing generated tests against a connected S/4HANA tenant (POST /api/run-tests with s4Environment \"live\").",
-      "open": "Running generated tests against mocks in the restricted runner; the tenant connection check, the OData metadata read and one read-only OData call.",
+      "open": "Running generated tests against mocks in the isolated runner; the tenant connection check, the OData metadata read and one read-only OData call.",
       "inheritedFrom": "docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md §1 — \"The boundary is in SECURITY.md; the preservation register inherits it in v2.11.\""
     }
   ],
@@ -1131,7 +1131,7 @@
         "hooks/useTestGeneration.ts",
         "hooks/useTestExecution.ts"
       ],
-      "purpose": "Generate a test suite for the transformed code and run it against mocks in the restricted runner. Tenant execution is locked (G0:R0).",
+      "purpose": "Generate a test suite for the transformed code and run it against mocks in the isolated runner (CAP route; an ABAP Unit suite is not run here). Tenant execution is locked (G0:R0).",
       "inputs": {
         "required": [
           {
@@ -1175,7 +1175,7 @@
           {
             "field": "s4Environment",
             "from": "project",
-            "why": "which environment tab opens"
+            "why": "read once on load: a project an earlier build left on the tenant tab (live) opens the tenant section; the run is always against mocks"
           },
           {
             "field": "s4Meta",
@@ -1196,7 +1196,6 @@
       },
       "outputs": {
         "clientWrites": [
-          "s4Environment",
           "testCases",
           "testSuite",
           "coverageEstimate",
@@ -1275,13 +1274,13 @@
             "field": "testSuite",
             "locator": "[data-stage-output=\"testSuite\"]",
             "opensWith": ["Run output and module code", "View Module Code"],
-            "why": "the generated suite, behind the terminal toggle inside the folded run output (testing rebuilt as two tabs, mockup s8)"
+            "why": "the generated suite, behind the terminal toggle inside the folded run output (testing rebuilt as one guided flow, owner 02.10.2026)"
           },
           {
             "field": "coverageEstimate",
             "locator": "[data-stage-output=\"coverageEstimate\"]",
             "text": "{project.coverageEstimate.percentage}%",
-            "why": "the Coverage estimate card (its title says what the figure is; the figure itself carries no suffix since the two-tab rebuild), which is on screen without a run"
+            "why": "the Coverage estimate card (its title says what the figure is; the figure itself carries no suffix since the object-page rebuild), which is on screen without a run"
           }
         ],
         "onlyAfterARun": [
@@ -1293,7 +1292,7 @@
         "notShown": [
           {
             "field": "s4Environment",
-            "why": "not printed: it decides which of the two environment tabs is selected"
+            "why": "not printed: a project an earlier build left on the tenant tab (live) opens with the tenant section open; the run is always against mocks"
           },
           {
             "field": "status",

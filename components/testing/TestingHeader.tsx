@@ -12,7 +12,9 @@ import { countsLine, type LastRun } from './testing-summary';
 /**
  * The head of the Testing tool — proposal A (Fiori object page), owner decision
  * 01.10.2026: a mono meta line, four facet tiles and a status line, between the
- * stage title and the tabs.
+ * stage title and the guided steps. Since 02.10.2026 the tiles appear only once
+ * there is something to report (scenarios, an unreadable suite, a run); an
+ * empty tool opens on its first step instead.
  *
  *   Scenarios · Last run · Check by hand · Tenant tests
  *
@@ -173,7 +175,7 @@ export default function TestingHeader({
   } else {
     runFigure = <span className={WORD}>None</span>;
     runSub = isAbapCloud
-      ? 'No run on record — a run here is simulated; your own system gives the ABAP Unit stubs a verdict'
+      ? 'No run here — ABAP Unit runs only in your own ABAP system, which gives these scenarios their verdict'
       : 'No run on record yet — no pass rate, because a rate over nothing is not a number';
   }
 
