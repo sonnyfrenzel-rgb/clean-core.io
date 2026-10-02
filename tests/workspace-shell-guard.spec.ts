@@ -1,4 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import {
   getAuth,
@@ -11,16 +13,14 @@ import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import { receiptFor } from './helpers/test-receipt';
 import firebaseConfig from '../firebase-config.json';
 import { workspaceShellEligible, workspaceShellEnabled } from '../lib/workspace-shell';
+import * as workspaceModel from '../lib/workspace-model';
 import {
-  DEFAULT_IT_FOCUS,
   DEFAULT_VIEW,
-  IT_FOCUS_OPTIONS,
   META_ABSENT,
   STATUS_FACETS,
   VIEW_ABOUT,
   VIEW_QUESTIONS,
   WORKSPACE_VIEWS,
-  itFocusFromParam,
   metaLine,
   notDetermined,
   statusOfPhase,
@@ -411,15 +411,22 @@ test.describe('a view in the URL', () => {
   });
 });
 
-test.describe('IT\'s secondary focus (roadmap 6.1)', () => {
-  test('reads the same way a view does — an unknown or missing value is the default, never an error', () => {
-    expect(DEFAULT_IT_FOCUS).toBe('application');
-    expect(IT_FOCUS_OPTIONS).toEqual(['application', 'solution', 'enterprise']);
-    expect(itFocusFromParam('solution')).toBe('solution');
-    expect(itFocusFromParam('enterprise')).toBe('enterprise');
-    expect(itFocusFromParam('portfolio')).toBe('application');
-    expect(itFocusFromParam(null)).toBe('application');
-    expect(itFocusFromParam(undefined)).toBe('application');
+test.describe('there is no IT focus (ADR-058, owner 02.10.2026)', () => {
+  // The "Focus: Application · Solution · Enterprise" switch changed nothing on
+  // screen — a button that does nothing breaks "a button does what it says".
+  // Removed, not hidden: no option list, no parser, no label, no prop.
+  test('the model, the page and the message catalogue carry no focus any more', () => {
+    for (const name of ['IT_FOCUS_OPTIONS', 'IT_FOCUS_LABELS', 'DEFAULT_IT_FOCUS', 'itFocusFromParam', 'isItFocus']) {
+      expect(name in workspaceModel, `lib/workspace-model.ts still exports ${name}`).toBe(false);
+    }
+    const root = path.join(__dirname, '..');
+    const pageSrc = fs.readFileSync(path.join(root, 'app', '(app)', 'project', '[projectId]', 'page.tsx'), 'utf8');
+    expect(pageSrc, 'the workspace page still reads ?focus=').not.toMatch(/get\(\s*'focus'\s*\)/);
+    const shellSrc = fs.readFileSync(path.join(root, 'components', 'workspace', 'WorkspaceShell.tsx'), 'utf8');
+    expect(shellSrc).not.toMatch(/data-workspace-it-focus|onFocusChange|page\.focus/);
+    const messages = fs.readFileSync(path.join(root, 'lib', 'messages', 'workspace-shell.ts'), 'utf8');
+    expect(messages).not.toContain("'page.focus'");
+    expect(VIEW_ABOUT.it, '"About this view" still promises a Focus').not.toMatch(/\bFocus\b/);
   });
 });
 
@@ -665,13 +672,13 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     // The area the row asks for, and the sentence that is not "0".
     await expect(page.locator('[data-not-determined-state="no-source"]')).toBeVisible();
 
-    // And the meta line, when it is opened, admits it has nothing to show.
+    // And the meta line, when it is opened, admits it has nothing to show —
+    // since 02.10.2026 in one sentence instead of a row of "not recorded".
     await page.click('[data-workspace-details-toggle]');
-    const recorded = await page
-      .locator('[data-workspace-meta-value]:not([data-workspace-meta-value="project"])')
-      .evaluateAll((els) => els.map((el) => el.getAttribute('data-recorded')));
-    expect(recorded.length).toBeGreaterThan(4);
-    expect([...new Set(recorded)], 'a meta value appeared from nowhere').toEqual(['no']);
+    const meta = page.locator('[data-workspace-meta]');
+    await expect(meta).toHaveAttribute('data-recorded', 'none');
+    await expect(meta).toContainText('No signed run yet');
+    await expect(page.locator('[data-workspace-meta-value]'), 'a meta value appeared from nowhere').toHaveCount(0);
 
     // A fold folds back (QA review of 247b20c16e38): the row stays, and the
     // same button closes what it opened.
@@ -747,7 +754,7 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     await expect(page.locator('[data-not-determined-item]').first()).toContainText('L2');
   });
 
-  test('the view switcher, the IT focus and "About this view" — roadmap 6.1', async ({ page }) => {
+  test('the view switcher and "About this view" — roadmap 6.1; no IT focus (ADR-058)', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     await signIn(page, ADMIN);
@@ -770,8 +777,8 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     expect(await openWorkspace(page, FULL_ID)).toBe('shell');
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'business');
 
-    // Business: no Focus control — it means nothing outside IT (roadmap 6.1).
-    await expect(page.locator('[data-workspace-it-focus]')).toHaveCount(0);
+    // One segmented control in the header: the view. There is no Focus (ADR-058).
+    await expect(page.locator('[data-cc-segmented][aria-label="Focus"]')).toHaveCount(0);
 
     // "About this view" is a real button, collapsed by default, with an
     // accessible name and a proper expanded/controls relationship — not a
@@ -796,8 +803,9 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     expect(controls, 'the toggle does not name the paragraph it opens').toBeTruthy();
     expect(controls).toBe(panelId);
 
-    // Switching to IT reveals the Focus control — a real radio group, three
-    // segments in the roadmap's order, Application selected on arrival.
+    // Switching to IT shows IT — and no Focus switch beside the view (ADR-058:
+    // the "Application · Solution · Enterprise" switch scoped nothing and was
+    // removed on the owner's decision of 02.10.2026).
     //
     // The generous timeout below is not slack for a flaky assertion: the dev
     // server compiles `/project/[projectId]` on demand, and the client-side
@@ -810,40 +818,46 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     await expect(page).toHaveURL(/[?&]view=it\b/, { timeout: 30000 });
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
 
-    const focusGroup = page.locator('[data-workspace-it-focus] [data-cc-segmented]');
-    await expect(focusGroup).toHaveAttribute('role', 'radiogroup');
-    const focusSegments = focusGroup.locator('button[role="radio"]');
-    await expect(focusSegments).toHaveCount(3);
-    await expect(focusSegments).toHaveText(['Application', 'Solution', 'Enterprise']);
-    await expect(focusSegments.nth(0)).toHaveAttribute('aria-checked', 'true');
+    await expect(page.locator('[data-workspace-it-focus]')).toHaveCount(0);
+    await expect(page.locator('[data-cc-segmented][aria-label="Focus"]')).toHaveCount(0);
+    for (const word of ['Application', 'Solution', 'Enterprise']) {
+      await expect(
+        page.locator('[data-workspace-shell] button[role="radio"]', { hasText: word }),
+        `the IT header still offers a "${word}" segment`,
+      ).toHaveCount(0);
+    }
 
     // The "About this view" paragraph re-opens for IT's own text — the toggle
     // state is not reset by a view switch, but the content it shows is.
     await expect(page.locator('[data-workspace-view-about]')).toHaveText(VIEW_ABOUT.it);
 
-    // Choosing Solution is held in `?focus=`, exactly like the view itself,
-    // and nowhere else (`tests/view-attribute-guard.spec.ts` is the guard for
-    // "nowhere else" — this is only the UI half).
-    await focusSegments.nth(1).click();
-    // Tight on purpose. The 30 s above buys the *first* hit of this route the
-    // compile a dev server may need; by here the page is loaded and the URL
-    // change is client-side, so anything beyond a moment is a hang and should be
-    // reported as one rather than waited out. The QA review of 4a99d5355716
-    // flagged long waits in this file. Its premise — that this change raised
-    // them — does not hold (130 insertions, 0 deletions against bc2f786), but
-    // the point stands for the waits the new block introduced itself.
-    await expect(page).toHaveURL(/[?&]focus=solution\b/, { timeout: 5000 });
-    await expect(focusSegments.nth(1)).toHaveAttribute('aria-checked', 'true');
-    await expect(focusSegments.nth(0)).toHaveAttribute('aria-checked', 'false');
-
-    // Management: Focus is gone again, and the view is still in the URL.
+    // Management: the view is still in the URL. Tight on purpose: by here the
+    // page is loaded and the URL change is client-side (QA review of 4a99d5355716).
     await page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'Management' }).click();
     await expect(page).toHaveURL(/[?&]view=management\b/, { timeout: 5000 });
-    await expect(page.locator('[data-workspace-it-focus]')).toHaveCount(0);
 
-    // Every switch above — two views, one focus, one "About this view" toggle
-    // — and not one of them called the model or minted a run.
-    expect(modelOrRunCalls, `a view or focus switch reached ${JSON.stringify(modelOrRunCalls)}`).toEqual([]);
+    // Every switch above — two views, one "About this view" toggle — and not
+    // one of them called the model or minted a run.
+    expect(modelOrRunCalls, `a view switch reached ${JSON.stringify(modelOrRunCalls)}`).toEqual([]);
+  });
+
+  test('an old link with ?focus=solution opens the IT view normally — the parameter is ignored (ADR-058)', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1200 });
+    const pageErrors: string[] = [];
+    page.on('pageerror', (err) => pageErrors.push(err.message));
+    await signIn(page, ADMIN);
+
+    expect(await openWorkspace(page, FULL_ID, '?view=it&focus=solution')).toBe('shell');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
+    await expect(page.locator('[data-workspace-gate]')).toHaveCount(0);
+    await expect(page.locator('[data-workspace-it-focus]')).toHaveCount(0);
+    await expect(page.locator('[data-cc-segmented][aria-label="Focus"]')).toHaveCount(0);
+    // The view switch still works from there, and nothing rewrote or acted on the old parameter.
+    await page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'Business' }).click();
+    await expect(page).toHaveURL(/[?&]view=business\b/, { timeout: 30000 });
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'business');
+    expect(pageErrors, `the page threw: ${pageErrors.join(' | ')}`).toEqual([]);
   });
 
   /**

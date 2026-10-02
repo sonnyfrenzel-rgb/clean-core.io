@@ -166,7 +166,7 @@ Not buttons in the sense of this rule, but with a fixed appearance:
 
 | Control | Appearance | Where |
 |---|---|---|
-| **Segmented control** | Border `--cc-field-border`; selected segment surface `--cc-ink`, text white, `aria-pressed`/`role="radio"`; other segments text `--cc-ink-muted` | Views, "Map \| Steps", focus in IT, rule decision |
+| **Segmented control** | Border `--cc-field-border`; selected segment surface `--cc-ink`, text white, `aria-pressed`/`role="radio"`; other segments text `--cc-ink-muted` | Views, "Map \| Steps", rule decision (no focus in IT — ADR-058) |
 | **Icon button** | like `ghost`, square at button height, icon 16 px, `aria-label` mandatory | Zoom, close, search and menu on S |
 | **"Why?" target** | Icon "?" 16 px in `--cc-ink-muted` in a target of at least 24 × 24 px, name "Why: …" | on number and status (§2.10) |
 

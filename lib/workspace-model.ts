@@ -105,52 +105,14 @@ export const VIEW_ABOUT: Record<WorkspaceView, string> = {
     'rather than folding them behind a summary or a menu. It shows the findings with both ' +
     'SAP catalog views, the clean core levels across them, and the trace from a requirement ' +
     'through the anchor and the finding to a target draft — for the finding you select, and ' +
-    'it says how many findings that trace is complete for. The Focus above still scopes ' +
-    'nothing: it will narrow the same evidence to one Application, the Solution it belongs ' +
-    'to, or the wider Enterprise landscape, and today it only records where you are looking. ' +
-    'It does not decide anything, and switching either the view or the Focus calls no model ' +
-    'and stores nothing.',
+    'it says how many findings that trace is complete for. It does not decide anything, ' +
+    'and switching the view calls no model and stores nothing.',
   management:
     'Management opens the seven statuses — what is confirmed, what is missing — ' +
     'while the meta line stays behind "Details", the same as Business. It does not ' +
     'show source code, line anchors or a findings table, and it is not a separate ' +
     'rollup: it reads the identical case Business and IT do, with no figure of its own.',
 };
-
-/* -------------------------------------------------------------- IT focus */
-
-/**
- * The IT view's secondary focus (roadmap 6.1, mockup screen `s4`): the same
- * evidence read at three widening scopes. Application first — the scope a
- * finding already opens at — because a reader widens deliberately from one
- * object outward, rather than starting at the landscape and narrowing past
- * everything else first.
- *
- * Like the view itself, this is ordering, not a filter: it is a perspective
- * held in the URL and the browser, the same as `WorkspaceView`, and it must
- * never reach a stored project, run or audit pack either — see
- * `tests/view-attribute-guard.spec.ts`.
- */
-export const IT_FOCUS_OPTIONS = ['application', 'solution', 'enterprise'] as const;
-export type ItFocus = (typeof IT_FOCUS_OPTIONS)[number];
-
-/** The scope the IT view opens at. */
-export const DEFAULT_IT_FOCUS: ItFocus = 'application';
-
-export const IT_FOCUS_LABELS: Record<ItFocus, string> = {
-  application: 'Application',
-  solution: 'Solution',
-  enterprise: 'Enterprise',
-};
-
-export function isItFocus(value: unknown): value is ItFocus {
-  return typeof value === 'string' && (IT_FOCUS_OPTIONS as readonly string[]).includes(value);
-}
-
-/** Same rule as `viewFromParam`: an unknown or missing value is the default, never an error. */
-export function itFocusFromParam(value: string | null | undefined): ItFocus {
-  return isItFocus(value) ? value : DEFAULT_IT_FOCUS;
-}
 
 /* --------------------------------------------------------------- meta line */
 

@@ -33,8 +33,6 @@ import type { SourceReading } from '@/lib/first-look';
 import { nextOpenPoint } from '@/lib/next-step';
 import type { ModelStageSubject } from '@/lib/model-stages';
 import {
-  IT_FOCUS_LABELS,
-  IT_FOCUS_OPTIONS,
   LAYERS,
   VIEW_ABOUT,
   VIEW_LABELS,
@@ -46,7 +44,6 @@ import {
   workspaceLayers,
   workspaceStatusLine,
   workspaceTools,
-  type ItFocus,
   type LayerKey,
   type WorkspaceView,
 } from '@/lib/workspace-model';
@@ -148,8 +145,6 @@ export default function WorkspaceShell({
   projectId,
   view,
   onViewChange,
-  focus,
-  onFocusChange,
   account,
   buildUp = false,
 }: {
@@ -157,17 +152,6 @@ export default function WorkspaceShell({
   projectId: string;
   view: WorkspaceView;
   onViewChange: (view: WorkspaceView) => void;
-  /**
-   * IT's secondary focus (roadmap 6.1) — Application · Solution · Enterprise.
-   * Meaningless outside IT, and still not read there: roadmap 8.1 built the
-   * findings the Focus would scope, and scoping them is a separate step that
-   * needs a notion of what an Application, a Solution and an Enterprise are on
-   * a project that holds one program. It is ordering infrastructure, held the
-   * same way the view is, ahead of the content it will one day order — and
-   * `VIEW_ABOUT.it` says so rather than letting the control imply otherwise.
-   */
-  focus: ItFocus;
-  onFocusChange: (focus: ItFocus) => void;
   /**
    * The signed-in account's own profile, or `undefined`/`null` while it has
    * not loaded — just enough of it (`modelStages`) for `lib/next-step.ts` to
@@ -589,24 +573,6 @@ export default function WorkspaceShell({
               onChange={onViewChange}
               segments={WORKSPACE_VIEWS.map((v) => ({ value: v, label: VIEW_LABELS[v] }))}
             />
-            {/* IT's secondary focus (roadmap 6.1, mockup `s4`) — meaningless in
-                the other two views, so it exists only where it means something
-                rather than sitting disabled beside them. Nothing reads it yet
-                (the layers it would scope are later roadmap steps); it is
-                ordering infrastructure, held the same way the view is. */}
-            {view === 'it' && (
-              <div className="flex items-center gap-2" data-workspace-it-focus="">
-                <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-                  {wt('page.focus')}
-                </span>
-                <CcSegmentedControl
-                  label={wt('page.focus')}
-                  value={focus}
-                  onChange={onFocusChange}
-                  segments={IT_FOCUS_OPTIONS.map((f) => ({ value: f, label: IT_FOCUS_LABELS[f] }))}
-                />
-              </div>
-            )}
             <p
               data-workspace-view-question
               className="m-0 max-w-xs text-[12px] leading-snug font-medium text-cc-ink-muted"

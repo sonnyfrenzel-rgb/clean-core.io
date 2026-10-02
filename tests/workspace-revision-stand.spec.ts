@@ -339,19 +339,7 @@ test.describe('the workspace on the screen', () => {
       new URL(page.url()).hash,
       'the view switch dropped the fragment — same subject, other view, lost place',
     ).toBe('#L42');
-
-    // And the focus switch, which only IT has, on the same terms. The control
-    // is waited for rather than clicked at once: it appears with the IT view,
-    // and a click that lands before React has attached its handler is a lost
-    // click, which no amount of polling afterwards recovers.
-    const solution = page.locator('[data-workspace-it-focus] button:has-text("Solution")');
-    await expect(solution).toBeVisible({ timeout: 30000 });
-    await expect(solution).toHaveAttribute('aria-checked', 'false');
-    await solution.click();
-    await expect(solution).toHaveAttribute('aria-checked', 'true', { timeout: 30000 });
-    await expect
-      .poll(() => new URL(page.url()).searchParams.get('focus'), { timeout: 30000 })
-      .toBe('solution');
-    expect(new URL(page.url()).hash, 'the focus switch dropped the fragment').toBe('#L42');
+    // The IT focus switch that used to be checked here on the same terms is
+    // gone (ADR-058); the view switch is the only query rewrite left.
   });
 });

@@ -7,7 +7,7 @@ import { notFound, useParams, useRouter, useSearchParams } from 'next/navigation
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
-import { itFocusFromParam, viewFromParam, type ItFocus, type WorkspaceView } from '@/lib/workspace-model';
+import { viewFromParam, type WorkspaceView } from '@/lib/workspace-model';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
 import WorkspaceShell from '@/components/workspace/WorkspaceShell';
 import CcButton from '@/components/cc/Button';
@@ -49,12 +49,13 @@ const FIRST_LOOK_PARAM = 'first';
  *
  * The view lives in `?view=` and nowhere else (ADR-018): it is a perspective,
  * not a grant, so it is kept in the URL and in browser history and never on the
- * project, the run, a signature or an audit pack. IT's secondary focus
- * (roadmap 6.1) lives in `?focus=` on the same terms — see
- * `tests/view-attribute-guard.spec.ts` for the guard that proves it.
+ * project, the run, a signature or an audit pack — see
+ * `tests/view-attribute-guard.spec.ts` for the guard that proves it. There is
+ * no IT focus any more (ADR-057): an old link with `?focus=…` opens the
+ * workspace as it would without it, because nothing here reads that parameter.
  */
 /**
- * The `#fragment` of the current address. A view or focus switch rewrites the
+ * The `#fragment` of the current address. A view switch rewrites the
  * query and used to drop it, so a shared link to one element lost its place the
  * moment the reader changed the view (Gegenreview c5085bb, CR-14). Same
  * subject, other view, same place.
@@ -79,7 +80,6 @@ export default function ProjectWorkspacePage() {
   const [buildUp, setBuildUp] = useState<boolean | null>(null);
 
   const view = viewFromParam(searchParams?.get('view'));
-  const focus = itFocusFromParam(searchParams?.get('focus'));
   const asked = searchParams?.get(FIRST_LOOK_PARAM) === '1';
 
   useEffect(() => {
@@ -105,16 +105,6 @@ export default function ProjectWorkspacePage() {
       query.set('view', next);
       // `push`, not `replace`: a view is a place the reader chose to be, and Back
       // should return them to the one they came from (ADR-018).
-      router.push(`?${query.toString()}${currentHash()}`, { scroll: false });
-    },
-    [router, searchParams],
-  );
-
-  /** Same mechanism as `setView`, for the same reason: `?focus=` is IT's own perspective, not data. */
-  const setFocus = useCallback(
-    (next: ItFocus) => {
-      const query = new URLSearchParams(searchParams?.toString() ?? '');
-      query.set('focus', next);
       router.push(`?${query.toString()}${currentHash()}`, { scroll: false });
     },
     [router, searchParams],
@@ -196,8 +186,6 @@ export default function ProjectWorkspacePage() {
       projectId={projectId}
       view={view}
       onViewChange={setView}
-      focus={focus}
-      onFocusChange={setFocus}
       account={profile}
       buildUp={buildUp}
     />
