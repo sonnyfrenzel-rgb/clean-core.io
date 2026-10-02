@@ -69,8 +69,10 @@ const accessUseOf = (kind: string): ObjectUse | null =>
 test.describe('the premise', () => {
   test('the core run of a PCE project reads the PCE snapshot, and the object is graded differently there', () => {
     expect(coreKey).toBe('pce-latest');
-    expect(gradeSapObjectUse(PCE_ONLY, 'write', coreKey).grade).toBe('A');
-    expect(gradeSapObjectUse(PCE_ONLY, 'write').grade, 'the default list must grade it otherwise, or this spec proves nothing').not.toBe('A');
+    expect(gradeSapObjectUse(PCE_ONLY, 'read', coreKey).grade).toBe('A');
+    expect(gradeSapObjectUse(PCE_ONLY, 'read').grade, 'the default list must grade it otherwise, or this spec proves nothing').not.toBe('A');
+    // A direct write is D under either list (code-engine-05); the object's own level is what the catalog decides.
+    expect(gradeSapObjectUse(PCE_ONLY, 'write', coreKey).grade).toBe('D');
   });
 
   test('the project target every display is given is the one the run reads', () => {
@@ -105,7 +107,8 @@ test.describe('a PCE project gets the same grade in the core result and each der
     expect(built.rows.some((r) => r.objectName === PCE_ONLY && r.kind.endsWith('-read'))).toBe(false);
     const write = built.rows.find((r) => r.objectName === PCE_ONLY);
     expect(write, 'the write of the PCE-only object is missing from the IT rows').toBeTruthy();
-    expect(write!.level).toBe('A');
+    expect(write!.level, 'written directly: D whatever the catalog says').toBe('D');
+    expect(write!.objectLevel, 'the PCE list still releases the object itself: its own level is A').toBe('A');
     for (const row of built.rows) {
       if (!row.objectName) continue;
       expect(row.level, `${row.id} ${row.objectName}`).toBe(gradeSapObjectUse(row.objectName, accessUseOf(row.kind), coreKey).grade);
