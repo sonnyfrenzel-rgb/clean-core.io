@@ -756,7 +756,7 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
     }
   });
 
-  test('a finding links to the Analyze stage, where the worklist actually renders', async ({ page }) => {
+  test('a finding links to the Analyze stage, where its findings list draws it', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
     await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });

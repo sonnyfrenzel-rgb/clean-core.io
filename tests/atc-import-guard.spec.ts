@@ -181,6 +181,8 @@ test.describe('the analyze page stores nothing before confirmation, and then the
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
 
+    // The upload opens from the header action "Add ATC results" (owner decision 02.10.2026).
+    await page.locator('[data-analyze-add-atc]').click({ timeout: 60000 });
     await page.locator('[data-atc-file]').setInputFiles({
       name: 'atc.csv',
       mimeType: 'text/csv',
@@ -252,6 +254,8 @@ test.describe('a save the server refused is not shown as imported', () => {
     );
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
 
+    // The upload opens from the header action "Add ATC results" (owner decision 02.10.2026).
+    await page.locator('[data-analyze-add-atc]').click({ timeout: 60000 });
     await page.locator('[data-atc-file]').setInputFiles({
       name: 'atc.csv',
       mimeType: 'text/csv',
@@ -327,11 +331,12 @@ test.describe('the comparison panel, once an analysis exists', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
 
-    // Since the answer-first Analyze (01d3d2bb) the imports sit folded with
-    // their count, "Imported usage and ATC results" — one click, not gone.
-    const imports = page.getByRole('button', { name: /Imported usage and ATC results/ });
-    await expect(imports).toBeVisible({ timeout: 30000 });
-    if ((await imports.getAttribute('aria-expanded')) !== 'true') await imports.click();
+    // Since 02.10.2026 the imports are a part of the folded "Technical
+    // detail", under their own heading — one click, not gone.
+    const detail = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]').first();
+    await expect(detail).toBeVisible({ timeout: 30000 });
+    if ((await detail.getAttribute('aria-expanded')) !== 'true') await detail.click();
+    await expect(page.getByRole('heading', { level: 3, name: 'Imported usage and ATC results' })).toBeVisible();
 
     const panel = page.locator('[data-atc-findings-panel]');
     await expect(panel).toBeVisible({ timeout: 30000 });

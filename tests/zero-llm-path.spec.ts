@@ -172,7 +172,11 @@ test('the Analyze stage says "not generated" and shows the evidence instead of a
   const report = page.locator('[data-evidence-only-report]');
   await expect(report, 'a signed run with no narrative rendered nothing at all').toBeVisible({ timeout: 60000 });
 
-  const notGenerated = report.locator('[data-not-generated="Analysis narrative"]');
+  // Where the summary would stand: the folded "Model summary" (02.10.2026), which says it is not there.
+  const summary = report.locator('#analyze-summary');
+  await expect(summary.locator('[data-cc-disclosure-trigger]').first()).toHaveAttribute('aria-expanded', 'false');
+  await summary.locator('[data-cc-disclosure-trigger]').first().click();
+  const notGenerated = summary.locator('[data-not-generated="Analysis narrative"]');
   await expect(notGenerated).toBeVisible();
   await expect(notGenerated).toContainText(NOT_GENERATED);
   await expect(notGenerated, 'the reason is missing or wrong — an unexplained absence teaches nobody anything')

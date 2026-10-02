@@ -18,8 +18,9 @@ import type { EvidenceFinding } from '../lib/abap/evidence-model';
  *   - the answer comes first: one sentence and four figures, before any table;
  *   - the Clean Core Score is "a grade, not a compliance percentage" — no
  *     "Compliance" label, no percentage, no ring;
- *   - everything this analysis could not determine is one folded section with
- *     a count, each entry with its reason — folded, never dropped;
+ *   - everything this analysis could not determine is one list with a count —
+ *     the side card "Not determined" — each entry with its reason, its detail
+ *     one action deeper (owner decision 02.10.2026: one place, not three);
  *   - in the workspace there is no "Continue to Design" and no sticky bar.
  */
 const ROOT = path.resolve(__dirname, '..');
@@ -51,7 +52,7 @@ test.describe('the answer, in words', () => {
     expect(a.detail).toContain('read all 669 lines without a model');
     expect(a.detail).toContain('1 critical, 3 high, 16 medium, 4 low');
     expect(a.detail).toContain('a side-by-side extension on SAP Business AI Platform (formerly SAP BTP)');
-    expect(a.detail).toContain('5 things this analysis could not determine are listed at the end');
+    expect(a.detail).toContain('5 things this analysis could not determine are listed under Not determined');
     expect(`${a.headline} ${a.detail}`).not.toMatch(/%|compliance/i);
   });
 
@@ -99,8 +100,10 @@ test.describe('the page, read', () => {
     expect(src).toContain('<StageFooter');
     // The sticky bar with "Continue to Design" is for accounts without the workspace only.
     expect(src).toMatch(/hasResults && !profileLoading && !shell && project && \(/);
-    // One place for all that is not determined.
-    expect(src.match(/id="analysis-not-determined"/g) ?? []).toHaveLength(1);
+    // One place for all that is not determined: the side card, drawn by one component.
+    expect(src).not.toContain('id="analysis-not-determined"');
+    expect(src).not.toContain('could not determine`}');
+    expect(read('components/analyze/NotDeterminedSide.tsx').match(/id="analysis-not-determined"/g) ?? []).toHaveLength(1);
     expect(read('components/analyze/PlainEnglishGuide.tsx')).not.toMatch(/Executive Summary|Plain English Guide|Business Roadmap/);
   });
 });
@@ -108,7 +111,7 @@ test.describe('the page, read', () => {
 test.describe('the page, rendered in the workspace', () => {
   test.describe.configure({ mode: 'serial' });
 
-  test('answer first, a grade not a percentage, the open items folded with their reasons', async ({ page }) => {
+  test('answer first, a grade not a percentage, the open items listed once with their reasons', async ({ page }) => {
     test.setTimeout(240 * 1000);
     const acct = await seedStageProject({ prefix: 'anlzanswer', admin: true, acceptTerms: true, rich: true });
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -121,46 +124,54 @@ test.describe('the page, rendered in the workspace', () => {
     await expect(answer).toContainText('A grade, not a compliance percentage');
     await expect(answer).toContainText(/Clean Core Score\s*\n?\s*62 of 100/i);
 
-    // The answer stands above the findings and the worklist.
+    // The answer stands above the findings; what is not determined stands
+    // beside them, in the side column, and nowhere else.
     const order = await page.evaluate(() => {
       const top = (sel: string) => document.querySelector(sel)?.getBoundingClientRect().top ?? -1;
       return {
         answer: top('[data-analysis-answer]'),
         findings: top('[data-analysis-findings]'),
-        worklist: top('[data-stage-output="worklist"]'),
-        open: top('[data-analysis-not-determined]'),
+        openInFindings: !!document.querySelector('[data-analysis-findings] [data-analysis-not-determined]'),
       };
     });
     expect(order.answer).toBeGreaterThan(0);
     expect(order.answer).toBeLessThan(order.findings);
-    expect(order.findings).toBeLessThan(order.worklist);
-    expect(order.worklist).toBeLessThan(order.open);
+    expect(order.openInFindings).toBe(true);
 
     const body = page.locator('body');
     await expect(body).not.toContainText(/\d+\s*%\s*Compliance|Compliance:/i);
     await expect(body).not.toContainText(/Proceed to |Continue to /);
     await expect(body).not.toContainText('Business Analysis Report');
 
-    // One folded section, its count in the title and on the figure.
+    // One list, its count in the card's title row and on the figure.
     const open = page.locator('[data-analysis-not-determined]');
     await expect(open).toHaveCount(1);
     const n = Number(await open.getAttribute('data-analysis-not-determined'));
     expect(n).toBeGreaterThan(0);
-    const trigger = open.locator('[data-cc-disclosure-trigger]').first();
-    await expect(trigger).toContainText(`${n} ${n === 1 ? 'thing' : 'things'} this analysis could not determine`);
-    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(open.locator('h2')).toHaveText('Not determined');
+    await expect(answer).toContainText(`${n} ${n === 1 ? 'thing' : 'things'} not determined`);
     const items = open.locator('[data-not-determined-item]');
     await expect(items).toHaveCount(n);
-    await expect(items.first()).toBeHidden();
 
-    // "Show the list" on the figure opens it; every entry carries its reason.
-    await answer.getByRole('button', { name: 'Show the list' }).click();
-    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    // Every entry carries its reason in plain sight; the panel behind it is one action deeper.
     for (let i = 0; i < n; i++) {
       const item = items.nth(i);
+      await expect(item.locator(':scope > h3')).toBeVisible();
       await expect(item.locator(':scope > h3')).not.toBeEmpty();
       expect((await item.locator(':scope > p').innerText()).length).toBeGreaterThan(20);
     }
+    const details = open.locator('[data-not-determined-detail]');
+    if ((await details.count()) > 0) {
+      const trigger = details.first().locator('[data-cc-disclosure-trigger]').first();
+      await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+      await trigger.click();
+      await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    }
+
+    // "Show the list" on the figure brings the card into view.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await answer.getByRole('button', { name: 'Show the list' }).click();
+    await expect(open).toBeInViewport({ timeout: 10000 });
   });
 
   test('a phone reads it without sideways scrolling', async ({ page }) => {

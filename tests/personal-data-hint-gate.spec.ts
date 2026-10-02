@@ -251,7 +251,8 @@ test('the usage import asks the same question, and it matters more there', async
   // An SCMON export names the user who ran each object by construction. This
   // one does, in a column the parser is about to throw away — which is exactly
   // why the person has to see it before the file is handed over rather than
-  // after.
+  // after. The upload opens from the header action "Add usage data" (02.10.2026).
+  await page.locator('[data-analyze-add-usage]').click({ timeout: 60000 });
   await page.locator('[data-usage-file]').setInputFiles({
     name: 'scmon.csv',
     mimeType: 'text/csv',

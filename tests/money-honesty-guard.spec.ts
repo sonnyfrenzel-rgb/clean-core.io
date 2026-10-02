@@ -136,6 +136,9 @@ test.describe('a stored analysis with amounts in its prose', () => {
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     const exportButton = page.getByRole('button', { name: /Export Confluence/ });
     await expect(exportButton).toBeVisible({ timeout: 60000 });
+    // The model's summary is folded since 02.10.2026; open it, so the prose is read as shown.
+    await page.locator('#analyze-summary [data-cc-disclosure-trigger]').first().click();
+    await expect(page.locator('#analyze-summary [data-cc-disclosure-region]').first()).toBeVisible();
     const text = await page.locator('body').innerText();
     for (const amount of AMOUNTS) expect(text, `the stage shows ${amount}`).not.toContain(amount);
     // Not vacuous: the prose is on the page, with its amount replaced.
@@ -146,6 +149,21 @@ test.describe('a stored analysis with amounts in its prose', () => {
     expect(html).toContain('Business Analysis Report');
     for (const amount of AMOUNTS) expect(html, `the export carries ${amount}`).not.toContain(amount);
     expect(html).toContain(NO_AMOUNT);
+  });
+
+  test('the business value and action plan, on Economics since 02.10.2026, show none of them', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    await signInViaLanding(page, EMAIL, PASSWORD);
+    await page.goto(`/project/${PROJECT_ID}/tco`, { waitUntil: 'domcontentloaded' });
+    const plan = page.locator('[data-business-value-plan="model"]');
+    await expect(plan).toHaveCount(1, { timeout: 60000 });
+    await plan.locator('[data-cc-disclosure-trigger]').first().click();
+    await expect(plan.locator('[data-action-plan-origin="model"]')).toBeVisible();
+    const text = await plan.innerText();
+    for (const amount of AMOUNTS) expect(text, `Economics' business value shows ${amount}`).not.toContain(amount);
+    // Not vacuous: the value driver and the plan step are there, their amounts replaced.
+    expect(text).toContain(NO_AMOUNT);
+    expect(text).toContain('by retiring it');
   });
 });
 

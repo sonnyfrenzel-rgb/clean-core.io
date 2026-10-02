@@ -159,7 +159,7 @@ export function analysisAnswer(input: AnswerInput): AnalysisAnswerText {
   }
 
   if (narrative) {
-    parts.push('The Summary further down was written by a model: a proposal, marked as such, and not part of this evidence.');
+    parts.push('The Model summary further down was written by a model: a proposal, marked as such, and not part of this evidence.');
   }
 
   if (!routeWords) {
@@ -172,7 +172,7 @@ export function analysisAnswer(input: AnswerInput): AnalysisAnswerText {
 
   if (notDetermined > 0) {
     parts.push(
-      `${plural(notDetermined, 'thing', 'things')} this analysis could not determine ${notDetermined === 1 ? 'is' : 'are'} listed at the end, each with its reason.`,
+      `${plural(notDetermined, 'thing', 'things')} this analysis could not determine ${notDetermined === 1 ? 'is' : 'are'} listed under Not determined, each with its reason.`,
     );
   }
 

@@ -113,7 +113,7 @@ test.describe('4. the head does not contradict itself about the model', () => {
   test('with a narrative, the answer says the Summary is a model proposal and not evidence', () => {
     const a = analysisAnswer({ counts, lines: 669, route: null, routeChosenByReader: false, notDetermined: 0, narrative: true });
     expect(a.detail).toContain('read all 669 lines without a model');
-    expect(a.detail).toContain('The Summary further down was written by a model: a proposal, marked as such, and not part of this evidence.');
+    expect(a.detail).toContain('The Model summary further down was written by a model: a proposal, marked as such, and not part of this evidence.');
   });
 
   test('without one, nothing about a model narrative is said', () => {
@@ -125,7 +125,13 @@ test.describe('4. the head does not contradict itself about the model', () => {
     const page = read('app/(app)/project/[projectId]/analyze/page.tsx');
     expect(page).not.toContain('engine, with a model narrative');
     expect(page).toContain("{ key: 'evidence', label: 'Evidence', value: 'engine only, no model'");
-    expect(page).toContain("value: project?.analysis ? 'model proposal, not evidence' : 'none for this run'");
+    // Evidence · Run · Route (owner decision 02.10.2026): the narrative is not
+    // a status of its own — it says what it is where it stands, folded as
+    // "Model summary" and marked "Model proposal".
+    expect(page).not.toContain("key: 'narrative'");
+    expect(page).not.toContain("key: 'successors'");
+    expect([...page.matchAll(/\{ key: '(\w+)', label: '\w+', value:/g)].map((m) => m[1])).toEqual(['evidence', 'run', 'route']);
+    expect(page).toMatch(/title="Model summary"\s*aside=\{<CcProvenanceChip value="proposed" \/>\}/);
     expect(page).toMatch(/notDetermined: openItems\.length,\s*\/\/[^\n]*\n\s*narrative: true,/);
   });
 });

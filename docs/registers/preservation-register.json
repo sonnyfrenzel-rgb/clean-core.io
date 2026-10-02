@@ -193,7 +193,8 @@
       "s4Deployment": "Written by POST /api/runs/create from the deployment the reader chose on Analyze.",
       "updatedAt": "Written by POST /api/runs/create.",
       "s4Environment": "Written by nothing since the Testing stage became one guided flow (owner 02.10.2026): the tenant tab no longer stores it. Still in the client allowlist and read once by the Testing page, so a project an earlier build left on 'live' opens the tenant section; the run is always against mocks.",
-      "presentation": "Written by nothing. Declared on the Project type, size-validated in firestore.rules and in the client-writable allowlist, and no stage or route sets it (see knownLimit L-09)."
+      "presentation": "Written by nothing. Declared on the Project type, size-validated in firestore.rules and in the client-writable allowlist, and no stage or route sets it (see knownLimit L-09).",
+      "worklist": "Written by POST /api/runs/create (the initial worklist of a run). Analyze edited item statuses from the browser until 02.10.2026, when the Gaps Prioritization Matrix left the stage (owner decision); the rules still allow the write, and no stage makes it now."
     },
     "generationBlockerTargets": [
       "transformation",
@@ -472,7 +473,7 @@
             "field": "worklist",
             "from": "project",
             "via": "buildAnalysisExportHtml",
-            "why": "the editable gaps worklist (components/analyze/GapsWorklist.tsx, from the project prop) and the Confluence export, which lib/analysis-export.ts builds since D.28"
+            "why": "the Confluence export, which lib/analysis-export.ts builds since D.28. The page no longer draws the worklist (owner decision 02.10.2026: the Gaps Prioritization Matrix left Analyze); the findings it was built from are the findings table itself"
           },
           {
             "field": "usageReport",
@@ -503,7 +504,6 @@
       },
       "outputs": {
         "clientWrites": [
-          "worklist",
           "extensibilityRoute",
           "exports"
         ],
@@ -578,11 +578,6 @@
             "field": "extensibilityRoute",
             "locator": "[data-stage-output=\"extensibilityRoute\"]",
             "why": "the badge in the Extensibility Router card; it prints the route as a label (\"BTP Side-by-Side\"), never the stored string, so only its presence is asserted"
-          },
-          {
-            "field": "worklist",
-            "locator": "[data-stage-output=\"worklist\"]",
-            "why": "the backlog panel, shown on the page since the answer-first Analyze (the Gaps Backlog tab is gone); its counts come from findings and analysis gaps as well as this field, so only its presence is asserted"
           }
         ],
         "onlyAfterARun": [
@@ -624,7 +619,7 @@
             "evidence": "value: `${nameOr(entry.accessType"
           }
         ],
-        "note": "The signed run as the Provenance status and the Evidence layer (run, fingerprint), inventory and data coupling in the Architecture layer, usage in the Need layer, the score in the Costs layer. The worklist, the extensibility route and the analysis report are read in the Analyze tool."
+        "note": "The signed run as the Provenance status and the Evidence layer (run, fingerprint), inventory and data coupling in the Architecture layer, usage in the Need layer, the score in the Costs layer. The extensibility route and the analysis report are read in the Analyze tool; the worklist is counted in the workspace rows and carried by the Confluence export."
       }
     },
     {
@@ -1347,6 +1342,11 @@
             "field": "legacyCode",
             "from": "project",
             "why": "its line count seeds the editable estate size — not multiplied"
+          },
+          {
+            "field": "analysis",
+            "from": "run",
+            "why": "the model's business value assessment and action plan, folded and marked as a proposal (components/tco/BusinessValuePlan.tsx) — moved here from Analyze on 02.10.2026; read through readStoredAnalysis, which masks every amount"
           }
         ]
       },
