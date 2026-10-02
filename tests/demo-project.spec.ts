@@ -318,11 +318,15 @@ test.describe('the demo costs an account nothing', () => {
     await page.click('button[type="submit"]:has-text("Sign In")');
     await page.waitForURL('**/dashboard', { timeout: 60000 });
 
-    await expect(page.getByTestId('demo-entry-title')).toContainText(DEMO_TITLE_PREFIX.trim());
+    // "My workspace" is the 3.0 list for every account (roadmap 3.0.1): the
+    // demo is its first row, and it opens the demo workspace with its tour.
+    const demoRow = page.locator('[data-workspace-open="demo"]').first();
+    await expect(demoRow).toContainText(DEMO_TITLE_PREFIX.trim(), { timeout: 60000 });
     await expect(page.getByText('No projects yet')).toBeVisible();
 
-    await page.getByTestId('demo-entry').click();
-    await page.waitForURL('**/demo/analyze', { timeout: 60000 });
+    await demoRow.click();
+    await page.waitForURL('**/demo/workspace', { timeout: 60000 });
+    await expect(page.locator('[data-demo-workspace]')).toBeAttached({ timeout: 90000 });
 
     for (const stage of STAGES) {
       await page.goto(`/demo/${stage}`, { waitUntil: 'domcontentloaded' });
