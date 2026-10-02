@@ -75,6 +75,15 @@ export interface AnalysisRun {
   profileCoverage?: import('../assessment-target').RecordedProfileCoverage;
   /** `assessmentSubjectHash()` — the source under the profile. A profile change is a new subject. */
   assessmentSubject?: string;
+  /**
+   * What the quota decided for this run when it was created (`reserveRunQuota`):
+   * `charged` spent one unit; `reanalysis` and `starter-example` were free;
+   * `byok` and `enterprise` are unmetered. Inside the signed payload — it is
+   * the server's decision, not the client's. Absent on runs created before
+   * 2026-10-02; the weekly report counts those as undetermined rather than
+   * guessing from the account's current state.
+   */
+  metering?: 'charged' | 'reanalysis' | 'byok' | 'enterprise' | 'starter-example';
   // Results
   extensibilityRoute: string;
   cleanCoreScore: number;

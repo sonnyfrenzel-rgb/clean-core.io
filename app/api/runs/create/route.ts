@@ -61,6 +61,8 @@ export async function POST(req: NextRequest) {
   let chargedUid: string | null = null;
   let chargedHash: string | null = null;
   let reservation: RunQuotaResult | null = null;
+  // What the quota decided for this run, recorded on it (codex code-mail-03).
+  let metering: RunQuotaResult['reason'] | undefined;
 
   try {
     // 1. Signing key. Unconditional: the check used to run only when NODE_ENV was
@@ -299,6 +301,7 @@ export async function POST(req: NextRequest) {
     // does not complete.
     try {
       const quota = await reserveRunQuota(decodedToken.uid, hashHex);
+      metering = quota.reason;
       if (quota.charged || quota.reason === 'starter-example') {
         chargedUid = decodedToken.uid;
         chargedHash = hashHex;
@@ -628,6 +631,10 @@ export async function POST(req: NextRequest) {
       assessmentProfile: profileRecord.assessmentProfile,
       profileCoverage: profileRecord.profileCoverage,
       assessmentSubject: profileRecord.assessmentSubject,
+      // What this run cost the account, as the quota decided it at the time:
+      // the weekly report counts units from this rather than from the account's
+      // current tier and key (codex code-mail-03).
+      metering,
     };
 
     // Calculate cryptographic runHash over sorted canonical representation of complete payload (Finding 2)

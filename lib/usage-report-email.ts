@@ -39,6 +39,15 @@ function trend(current: number, previous: number): { text: string; colour: strin
   return { text: `${diff} zur Vorwoche`, colour: '#b45309' };
 }
 
+/**
+ * Runs from before each run recorded what it was charged: whether they spent a
+ * unit is not known, so they are named beside the figure instead of being
+ * counted into it (codex code-mail-03).
+ */
+function undeterminedNote(count: number): string {
+  return `Dazu ${count} Analyse${count === 1 ? '' : 'n'} von vor der Erfassung (02.10.2026) — ob sie eine Einheit kosteten, ist nicht bekannt.`;
+}
+
 function metricRow(label: string, current: number, previous: number): string {
   const t = trend(current, previous);
   // Block layout, not a two-column row: at 320px a long German label and a right
@@ -263,6 +272,7 @@ export function renderUsageReportEmail(report: UsageReport): string {
       ${metricRow('Analysen durchgeführt', current.runs, previous.runs)}
       ${metricRow('Neue Projekte', current.projects, previous.projects)}
       ${metricRow('Verbrauchte Einheiten', current.units, previous.units)}
+      ${current.unitsUndetermined ? `<p style="font-size: 12px; color: #64748b; margin: 6px 0 0 0;">${undeterminedNote(current.unitsUndetermined)}</p>` : ''}
     </div>
 
     <!-- Bestand -->
@@ -377,7 +387,7 @@ ${line('Erstmals aktiviert', current.activations, previous.activations)}
 ${line('Aktive Accounts', current.activeAccounts, previous.activeAccounts)}
 ${line('Analysen durchgefuehrt', current.runs, previous.runs)}
 ${line('Neue Projekte', current.projects, previous.projects)}
-${line('Verbrauchte Einheiten', current.units, previous.units)}
+${line('Verbrauchte Einheiten', current.units, previous.units)}${current.unitsUndetermined ? `\n  ${undeterminedNote(current.unitsUndetermined)}` : ''}
 
 GESAMTBESTAND
   Accounts (ohne Testkonten)  ${totals.accounts}
