@@ -17,6 +17,7 @@ import {
 import {
   resolveRunnerTarget,
   callIsolatedRunner,
+  describeFetchFailure,
   MOCK_RUNNER_UNAVAILABLE,
   type RunnerConfig,
 } from '../lib/test-runner-client';
@@ -181,6 +182,25 @@ test.describe('calling the runner', () => {
       fetchImpl: ok(reportFor()),
     });
     expect(noIdentity).toMatchObject({ ok: false, status: 503 });
+  });
+
+  // 02.10.2026: the dev self-test said only "fetch failed" for all three probes,
+  // which reads the same for a DNS failure, a refused connection and a TLS error.
+  test('an unreachable runner says why: the fetch cause code reaches the reason, the token does not', async () => {
+    const input = { files: FILES, suiteCode: SUITE, patterns: [], mode: 'mock' as const };
+    const dns = Object.assign(new Error('getaddrinfo ENOTFOUND r.example.run.app'), { code: 'ENOTFOUND' });
+    const failed = new TypeError('fetch failed', { cause: dns });
+    const down = (async () => {
+      throw failed;
+    }) as unknown as typeof fetch;
+    const r = await callIsolatedRunner('https://r.example.run.app', input, { idToken: async () => 'secret-id-token', fetchImpl: down });
+    expect(r).toEqual({ ok: false, status: 502, reason: 'The test runner could not be reached (ENOTFOUND).' });
+    expect(describeFetchFailure(failed)).toEqual({ code: 'ENOTFOUND', message: 'fetch failed: getaddrinfo ENOTFOUND r.example.run.app' });
+    expect(JSON.stringify(describeFetchFailure(failed))).not.toContain('secret-id-token');
+    // No cause: the message alone, no invented code.
+    expect(describeFetchFailure(new Error('boom'))).toEqual({ code: null, message: 'boom' });
+    const aborted = Object.assign(new Error('This operation was aborted'), { name: 'AbortError' });
+    expect(describeFetchFailure(aborted).code).toBe('ABORTED');
   });
 });
 

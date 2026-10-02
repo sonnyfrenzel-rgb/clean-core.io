@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminRequest, assertAdminStepUp } from '@/lib/firebase-admin';
 import { logger, errMessage } from '@/lib/logger';
-import { callIsolatedRunner, readRunnerConfig } from '@/lib/test-runner-client';
+import { callIsolatedRunner, describeFetchFailure, readRunnerConfig } from '@/lib/test-runner-client';
 import { fetchMetadataIdToken } from '@/lib/google-id-token';
 import {
   RUNNER_SELFTEST_SUITE,
@@ -55,7 +55,10 @@ async function networkProbe(url: string): Promise<{ ok: boolean; held: boolean; 
     const verdict = evaluateNetworkProbe(body);
     return { ok: true, held: verdict.held, reason: verdict.reason, detail: body };
   } catch (err: unknown) {
-    const detail = errMessage(err).slice(0, 200);
+    // `fetch failed` alone hides whether DNS, the route or TLS broke; the cause says which.
+    const failure = describeFetchFailure(err);
+    logger.warn('runner network probe unreachable', { route: 'api/admin/runner-selftest', runner: url, code: failure.code, cause: failure.message });
+    const detail = failure.code ? `${failure.message} [${failure.code}]`.slice(0, 200) : failure.message;
     return { ok: false, held: false, reason: detail, detail };
   }
 }
