@@ -295,7 +295,8 @@ test.describe('"Back to workspace" leads to the view and layer the stage was ope
     // copy of it, and neither reads the profile to make it.
     for (const rel of ['components/StageHeader.tsx', 'components/StageFooter.tsx']) {
       const src = fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
-      expect(src, rel).toContain('const back = stageBackLink({ projectId, search });');
+      // The header adds the demo's flag (its stages lead back to /demo/workspace).
+      expect(src, rel).toMatch(/const back = stageBackLink\(\{ projectId, search(, demo)? \}\);/);
       expect(src, rel).not.toContain('workspaceBackHref(');
       expect(src, `${rel} decides the way back by account`).not.toContain('useUserProfile');
       expect(src, `${rel} still knows a dashboard way back`).not.toContain("'/dashboard'");

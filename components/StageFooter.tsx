@@ -19,8 +19,8 @@ const serverSearch = () => '';
  * step is the workspace's to say, once, from its rules (roadmap 6.5), not a
  * position in a list of seven (ADR-018 — the toolbar "is not a progress
  * indicator"). Until roadmap 3.0.1 an account without the workspace still got
- * the old "Back to X / Proceed to Y" pair here; since then every account has
- * the workspace (ADR-061) and the pair is gone. Nothing was lost by it: no
+ * the old back-and-onward button pair here; since then every account has the
+ * workspace (ADR-061) and the pair is gone. Nothing was lost by it: no
  * stage's forward button did anything but navigate, and the gates it showed —
  * "Confirm architecture to proceed" — are the stage's own controls above it.
  */

@@ -426,7 +426,7 @@ test.describe('the open gaps are still open — closing one has to update the re
     expect(back).toEqual({ kind: 'link', href: '/project/p-1' });
     // …and the stage header renders exactly that decision as its link (QA 1a44e754567b).
     const header = raw('components/StageHeader.tsx');
-    expect(header).toContain('const back = stageBackLink({ projectId, search });');
+    expect(header).toContain('const back = stageBackLink({ projectId, search, demo });');
     expect(header).toContain('href={back.href}');
   });
 

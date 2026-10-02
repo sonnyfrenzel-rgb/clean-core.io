@@ -163,7 +163,9 @@ test.describe('every view reads the contract', () => {
 
   test('the TCO page is phase 6, not a borrowed step 1', () => {
     const src = read(stage('tco'));
-    expect(src).toContain('current="tco"');
+    // The tools bar under its header names it (the stepper's `current="tco"`
+    // went with roadmap 3.0.1).
+    expect(src).toContain("tools={{ steps: phases, current: 'tco' }}");
     expect(src).not.toMatch(/currentStep=\{1\}/);
   });
 
