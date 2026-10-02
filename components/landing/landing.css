@@ -186,6 +186,7 @@
 .lp3 .lad[aria-checked='true'] { border-color: var(--cc-ink); box-shadow: inset 3px 0 0 var(--cc-ink); background: var(--cc-surface-muted); }
 .lp3 .lad .i { color: var(--cc-ink-muted); }
 .lp3 .lad-detail { margin-top: 12px; padding: 14px 16px; border: 1px solid var(--cc-line); border-radius: 14px; background: var(--cc-surface-muted); font-size: 14px; line-height: 1.6; color: var(--cc-ink); font-weight: 500; min-height: 118px; }
+.lp3 .lad-detail .ex-label { margin: 0 0 6px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--cc-ink-muted); }
 .lp3 .lad-detail .obj { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
 .lp3 .lad-detail code { font-size: 14px; font-weight: 700; color: var(--cc-ink); }
 .lp3 .lad-detail a { color: var(--cc-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
