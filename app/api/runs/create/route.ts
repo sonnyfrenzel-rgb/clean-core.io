@@ -27,6 +27,14 @@ import {
   runProfileRecord,
 } from '@/lib/assessment-target';
 import { INPUT_IDS } from '@/lib/input-manifest';
+import {
+  checkProjectWrite,
+  mergedDocument,
+  projectTooLargeMessage,
+  ProjectTooLargeError,
+  PROJECT_TOO_LARGE_CODE,
+  type ProjectSizeCheck,
+} from '@/lib/firestore-doc-size';
 import { catalogSnapshotRefFor } from '@/lib/abap/catalog-snapshots';
 
 /**
@@ -699,135 +707,187 @@ export async function POST(req: NextRequest) {
     let sourceMoved = false;
     let profileMoved = false;
     let projectGone = false;
-    await db.runTransaction(async (tx: any) => {
-      const fresh = await tx.get(projectRef);
-      if (!fresh.exists) {
-        projectGone = true;
-        return;
-      }
-      const freshData = fresh.data() || {};
-      const readSource = typeof projectData?.legacyCode === 'string' ? projectData.legacyCode : '';
-      const nowSource = typeof freshData.legacyCode === 'string' ? freshData.legacyCode : '';
-      if (nowSource !== readSource) {
-        sourceMoved = true;
-        return;
-      }
-      // The same rule for the declared target. Two runs over the same source
-      // under different profiles used to commit in finishing order, so the
-      // slower, older request put its profile back over the one the newer run
-      // had just made current (QA review of e7372791c70d).
-      const profileAt = (d: Record<string, unknown> | undefined) =>
-        JSON.stringify([d?.s4Deployment ?? null, d?.assessmentTarget ?? null]);
-      if (profileAt(freshData) !== profileAt(projectData)) {
-        profileMoved = true;
-        return;
-      }
-      // Rebuilt from the transaction's own snapshot rather than the one read at
-      // the start: the source is proven unchanged, the artefacts around it are not.
-      const previousInTx: string | undefined = freshData.auditMetadata?.inputFingerprint?.sha256 || previousSha256;
-      // Roadmap 7.10 - "ein Profilwechsel ändert den Subject-Hash und entwertet
-      // abhängige Freigaben". The same code under another profile is another
-      // subject: the design, the code, the tests, the documentation and the
-      // sign-off standing now were made for the old one. Recorded with the
-      // mechanism a source change uses, so every reader that already treats a
-      // changed source as stale treats a changed profile the same way.
-      //
-      // The previous subject comes from the project's own server-written
-      // mirror. A project whose last run predates 7.10 has none; there the
-      // one profile fact that run did record - the deployment in its manifest,
-      // or failing that on the project - is compared, and nothing else is
-      // read into it.
-      const previousSubject: unknown = freshData.auditMetadata?.assessmentSubject;
-      const previousDeploymentEntry = Array.isArray(freshData.auditMetadata?.inputManifest?.inputs)
-        ? freshData.auditMetadata.inputManifest.inputs.find((i: { id?: unknown }) => i?.id === INPUT_IDS.deployment)
-        : null;
-      const previousDeployment: unknown =
-        typeof previousDeploymentEntry?.revision === 'string' ? previousDeploymentEntry.revision : freshData.s4Deployment;
-      const sourceDiffers = Boolean(previousInTx && previousInTx !== hashHex);
-      const profileDiffers =
-        Boolean(previousInTx) &&
-        !sourceDiffers &&
-        (typeof previousSubject === 'string'
-          ? previousSubject !== profileRecord.assessmentSubject
-          : typeof previousDeployment === 'string' && previousDeployment !== '' && previousDeployment !== targetDeployment);
-      const sourceChange =
-        previousInTx && (sourceDiffers || profileDiffers)
-          ? {
-              ...buildSourceChangeRecord(freshData as Record<string, unknown>, previousInTx, runId, new Date().toISOString()),
-              ...(profileDiffers
-                ? { reason: 'profile' as const, previousSubject: typeof previousSubject === 'string' ? previousSubject : null }
-                : {}),
-            }
+    // Cast, not annotated: assigned in the catch below the transaction, after
+    // a callback that control-flow narrowing does not follow.
+    let tooLarge = null as ProjectSizeCheck | null;
+    try {
+      await db.runTransaction(async (tx: any) => {
+        const fresh = await tx.get(projectRef);
+        if (!fresh.exists) {
+          projectGone = true;
+          return;
+        }
+        const freshData = fresh.data() || {};
+        const readSource = typeof projectData?.legacyCode === 'string' ? projectData.legacyCode : '';
+        const nowSource = typeof freshData.legacyCode === 'string' ? freshData.legacyCode : '';
+        if (nowSource !== readSource) {
+          sourceMoved = true;
+          return;
+        }
+        // The same rule for the declared target. Two runs over the same source
+        // under different profiles used to commit in finishing order, so the
+        // slower, older request put its profile back over the one the newer run
+        // had just made current (QA review of e7372791c70d).
+        const profileAt = (d: Record<string, unknown> | undefined) =>
+          JSON.stringify([d?.s4Deployment ?? null, d?.assessmentTarget ?? null]);
+        if (profileAt(freshData) !== profileAt(projectData)) {
+          profileMoved = true;
+          return;
+        }
+        // Rebuilt from the transaction's own snapshot rather than the one read at
+        // the start: the source is proven unchanged, the artefacts around it are not.
+        const previousInTx: string | undefined = freshData.auditMetadata?.inputFingerprint?.sha256 || previousSha256;
+        // Roadmap 7.10 - "ein Profilwechsel ändert den Subject-Hash und entwertet
+        // abhängige Freigaben". The same code under another profile is another
+        // subject: the design, the code, the tests, the documentation and the
+        // sign-off standing now were made for the old one. Recorded with the
+        // mechanism a source change uses, so every reader that already treats a
+        // changed source as stale treats a changed profile the same way.
+        //
+        // The previous subject comes from the project's own server-written
+        // mirror. A project whose last run predates 7.10 has none; there the
+        // one profile fact that run did record - the deployment in its manifest,
+        // or failing that on the project - is compared, and nothing else is
+        // read into it.
+        const previousSubject: unknown = freshData.auditMetadata?.assessmentSubject;
+        const previousDeploymentEntry = Array.isArray(freshData.auditMetadata?.inputManifest?.inputs)
+          ? freshData.auditMetadata.inputManifest.inputs.find((i: { id?: unknown }) => i?.id === INPUT_IDS.deployment)
           : null;
+        const previousDeployment: unknown =
+          typeof previousDeploymentEntry?.revision === 'string' ? previousDeploymentEntry.revision : freshData.s4Deployment;
+        const sourceDiffers = Boolean(previousInTx && previousInTx !== hashHex);
+        const profileDiffers =
+          Boolean(previousInTx) &&
+          !sourceDiffers &&
+          (typeof previousSubject === 'string'
+            ? previousSubject !== profileRecord.assessmentSubject
+            : typeof previousDeployment === 'string' && previousDeployment !== '' && previousDeployment !== targetDeployment);
+        const sourceChange =
+          previousInTx && (sourceDiffers || profileDiffers)
+            ? {
+                ...buildSourceChangeRecord(freshData as Record<string, unknown>, previousInTx, runId, new Date().toISOString()),
+                ...(profileDiffers
+                  ? { reason: 'profile' as const, previousSubject: typeof previousSubject === 'string' ? previousSubject : null }
+                  : {}),
+              }
+            : null;
 
-      // runs/{runId} is client-write-blocked; written here so the new run cannot
-      // become the active one without its source-change record being written
-      // alongside — a run switched in without the record would make every
-      // artefact of the old source read as current again.
-      tx.set(newRunDoc, analysisRun);
-      tx.set(
-        projectRef,
-        {
-          activeRunId: runId,
-          status: 'analyzed',
-          charged: true,
-          transformationBypass: true,
-          legacyCode,
-          s4Deployment: targetDeployment,
-          // Roadmap 7.10 - the owner's declaration, kept for the next run and
-          // for the live comparison. Admin SDK only: it is not in the client
-          // allowlist of `firestore.rules`, so it changes with a run or not at all.
-          assessmentTarget,
-          updatedAt: new Date(),
+        // runs/{runId} is client-write-blocked; written here so the new run cannot
+        // become the active one without its source-change record being written
+        // alongside — a run switched in without the record would make every
+        // artefact of the old source read as current again.
+        // Codex architecture-02: the source, the worklist and the mirrored
+        // manifest join every artefact already on the project in one document,
+        // which Firestore caps at 1 MiB. The project write below passes through
+        // this check against the transaction's own snapshot, the field-path
+        // update after it included; a document that would outgrow the cap throws,
+        // the transaction is abandoned with nothing committed — the run document
+        // included — and the caller is told by name rather than by a failed commit.
+        const withinProjectBudget = <T extends Record<string, unknown>>(fields: T): T => {
+          const size = checkProjectWrite(
+            mergedDocument(freshData, fields, 'merge'),
+            sourceChange ? { 'auditMetadata.sourceChange': sourceChange } : {},
+            projectRef.path,
+            'update',
+          );
+          if (!size.ok) throw new ProjectTooLargeError(size);
+          return fields;
+        };
+        tx.set(newRunDoc, analysisRun);
+        tx.set(
+          projectRef,
+          withinProjectBudget({
+            activeRunId: runId,
+            status: 'analyzed',
+            charged: true,
+            transformationBypass: true,
+            legacyCode,
+            s4Deployment: targetDeployment,
+            // Roadmap 7.10 - the owner's declaration, kept for the next run and
+            // for the live comparison. Admin SDK only: it is not in the client
+            // allowlist of `firestore.rules`, so it changes with a run or not at all.
+            assessmentTarget,
+            updatedAt: new Date(),
 
-          // Save client-writable/interactive fields initially — findings plus the
-          // narrative's gaps, which belong here and not in the signed run.
-          worklist: [...signedWorklist, ...narrativeGapItems],
-          extensibilityRoute: extensibilityReport.recommendedRoute,
+            // Save client-writable/interactive fields initially — findings plus the
+            // narrative's gaps, which belong here and not in the signed run.
+            worklist: [...signedWorklist, ...narrativeGapItems],
+            extensibilityRoute: extensibilityReport.recommendedRoute,
 
-          // Write a minimal auditMetadata summary on the project
-          auditMetadata: {
-            inputFingerprint: {
-              sha256: hashHex,
-              fileName: targetFileName,
-              lineCount: legacyCode.split('\n').length,
-              byteSize: encoder.encode(legacyCode).byteLength,
-              uploadedAt: new Date().toISOString(),
-              objectType: detectObjectType(legacyCode),
+            // Write a minimal auditMetadata summary on the project
+            auditMetadata: {
+              inputFingerprint: {
+                sha256: hashHex,
+                fileName: targetFileName,
+                lineCount: legacyCode.split('\n').length,
+                byteSize: encoder.encode(legacyCode).byteLength,
+                uploadedAt: new Date().toISOString(),
+                objectType: detectObjectType(legacyCode),
+              },
+              modelCard: {
+                // Mirrors the run's own answer: a card that named a provider and
+                // a model for a run no model took part in was the same untrue
+                // claim one document further out, and this is the copy the
+                // delivery screen and the audit pack read.
+                provider,
+                model: modelId,
+                modelParticipation,
+                engineVersion: APP_VERSION,
+                catalogVersion,
+                byokUsed,
+                analysisTimestamp: new Date().toISOString(),
+              },
+              // Roadmap 0.5 — the same manifest the run signed, mirrored where a
+              // reader that holds only the project document can find it.
+              inputManifest,
+              // Roadmap 7.10 - the subject of the active run, so the next run can
+              // tell a profile change from a re-analysis of the same subject.
+              assessmentSubject: profileRecord.assessmentSubject,
+              // An audit pack exported for the previous run is not one for this
+              // run (codex code-trust-07): the marker goes with the run it named.
+              auditPackExportedAt: FieldValue.delete(),
+              auditPackExportedRunId: FieldValue.delete(),
             },
-            modelCard: {
-              // Mirrors the run's own answer: a card that named a provider and
-              // a model for a run no model took part in was the same untrue
-              // claim one document further out, and this is the copy the
-              // delivery screen and the audit pack read.
-              provider,
-              model: modelId,
-              modelParticipation,
-              engineVersion: APP_VERSION,
-              catalogVersion,
-              byokUsed,
-              analysisTimestamp: new Date().toISOString(),
-            },
-            // Roadmap 0.5 — the same manifest the run signed, mirrored where a
-            // reader that holds only the project document can find it.
-            inputManifest,
-            // Roadmap 7.10 - the subject of the active run, so the next run can
-            // tell a profile change from a re-analysis of the same subject.
-            assessmentSubject: profileRecord.assessmentSubject,
-            // An audit pack exported for the previous run is not one for this
-            // run (codex code-trust-07): the marker goes with the run it named.
-            auditPackExportedAt: FieldValue.delete(),
-            auditPackExportedRunId: FieldValue.delete(),
-          },
-        },
-        { merge: true },
-      );
-      // An `update` with a field path rather than part of the merge above: a merge
-      // would keep keys from an earlier record that this one no longer has.
-      if (sourceChange) {
-        tx.update(projectRef, { 'auditMetadata.sourceChange': sourceChange });
+          }),
+          { merge: true },
+        );
+        // An `update` with a field path rather than part of the merge above: a merge
+        // would keep keys from an earlier record that this one no longer has.
+        if (sourceChange) {
+          tx.update(projectRef, { 'auditMetadata.sourceChange': sourceChange });
+        }
+      });
+    } catch (txErr) {
+      if (!(txErr instanceof ProjectTooLargeError)) throw txErr;
+      tooLarge = txErr.check;
+    }
+
+    if (tooLarge) {
+      // Nothing was written, so nothing is charged — the rule of the refusals
+      // below.
+      if (chargedUid && chargedHash) {
+        await refundRunQuota(chargedUid, chargedHash, reservation ?? undefined);
+        chargedUid = null;
+        chargedHash = null;
+        reservation = null;
       }
-    });
+      logger.warn('runs/create refused: the project would outgrow its document', {
+        route: 'api/runs/create',
+        projectId,
+        bytes: tooLarge.bytes,
+        budget: tooLarge.budget,
+      });
+      return NextResponse.json(
+        {
+          error: projectTooLargeMessage(tooLarge, 'this analysis'),
+          code: PROJECT_TOO_LARGE_CODE,
+          bytes: tooLarge.bytes,
+          budget: tooLarge.budget,
+          largest: tooLarge.largest,
+        },
+        { status: 413 },
+      );
+    }
 
     if (projectGone) {
       // The same rule as `sourceMoved`: nothing was written, so nothing is

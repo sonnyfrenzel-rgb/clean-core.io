@@ -114,7 +114,7 @@ export async function storeGeneration(
     /** `fetchGenerationDecision().generation.token`. */
     generationToken: string;
   },
-): Promise<{ ok: true; fields: StoredGeneration } | { ok: false; error: string }> {
+): Promise<{ ok: true; fields: StoredGeneration } | { ok: false; error: string; code?: string }> {
   let res: Response;
   try {
     res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/contract`, {
@@ -125,7 +125,7 @@ export async function storeGeneration(
   } catch {
     throw new CommandAnswerLostError('No answer came back from the server, so it is not known whether this generation was stored.');
   }
-  const body = (await res.json().catch(() => null)) as { fields?: StoredGeneration; error?: string } | null;
+  const body = (await res.json().catch(() => null)) as { fields?: StoredGeneration; error?: string; code?: string } | null;
   if (res.status >= 500) {
     throw new CommandAnswerLostError(
       `The server did not finish answering (${res.status}), so it is not known whether this generation was stored.`,
@@ -138,7 +138,11 @@ export async function storeGeneration(
     throw new CommandAnswerLostError('The answer to this generation arrived incomplete, so it is not known whether it was stored.');
   }
   if (!res.ok || !body?.fields) {
-    return { ok: false, error: body?.error || 'This generation could not be stored.' };
+    return {
+      ok: false,
+      error: body?.error || 'This generation could not be stored.',
+      ...(typeof body?.code === 'string' ? { code: body.code } : {}),
+    };
   }
   return { ok: true, fields: body.fields };
 }
