@@ -695,7 +695,7 @@ export default function Home() {
                     icon: <Code2 className="i" aria-hidden="true" />,
                     name: 'IT',
                     q: 'What exactly, where to, and is it right?',
-                    a: 'Opens with the findings at their line, the successor SAP names, and the chain from requirement to anchor, finding and target draft.',
+                    a: 'Opens with the findings at their line, the successor named and who names it, and the chain from requirement to anchor, finding and target draft.',
                   },
                   {
                     icon: <BarChart3 className="i" aria-hidden="true" />,

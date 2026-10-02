@@ -98,7 +98,7 @@ import type { ProvenanceValue } from '../provenance';
  * hand it a catalogue with exactly one entry in it.
  */
 export interface CatalogLookup {
-  /** The released successor SAP's catalogue names for this object, or `null`. */
+  /** The released successor the merged catalogue (SAP's data or the curated layer) names for this object, or `null`. */
   successorFor(objectName: string): string | null;
 }
 

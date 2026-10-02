@@ -9,6 +9,7 @@ import { CcSeverity, CcCleanCoreLevel } from '@/components/cc/Identifier';
 import { codeCardLabel, codeCardLines } from '@/lib/process-map';
 import { normaliseSeverity } from '@/lib/severity';
 import { calmTitle, type FindingRow } from '@/lib/findings-view';
+import { successorSourceNote } from '@/lib/successor-source';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 
@@ -100,9 +101,12 @@ export default function SourcePanel({
               </span>
               {ef.cleanCoreImpact ? <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{ef.cleanCoreImpact}</p> : null}
               <p className="m-0 mt-1 cc-text-meta text-cc-ink">
-                SAP successor:{' '}
+                Successor:{' '}
                 {ef.sapReplacement?.objectName ? (
-                  <span className="font-cc-mono font-semibold">{ef.sapReplacement.objectName}</span>
+                  <>
+                    <span className="font-cc-mono font-semibold">{ef.sapReplacement.objectName}</span>
+                    <span className="text-cc-ink-muted"> · {successorSourceNote(ef.sapReplacement.confidence)}</span>
+                  </>
                 ) : (
                   <span className="text-cc-ink-muted">none named</span>
                 )}

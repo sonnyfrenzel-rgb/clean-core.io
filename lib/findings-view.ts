@@ -530,7 +530,7 @@ export function groupHint(group: KindGroup): string {
   return names.length > 3 ? `${shown} and ${names.length - 3} more` : shown;
 }
 
-/** Rows of a group that name a released SAP successor. */
+/** Rows of a group that name a released successor (SAP's catalog or the curated mapping). */
 export function withSuccessor(rows: readonly FindingRow[]): number {
   return rows.filter((r) => Boolean(r.finding.sapReplacement?.objectName)).length;
 }

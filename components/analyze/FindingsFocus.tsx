@@ -10,14 +10,16 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { normaliseSeverity } from '@/lib/severity';
 import { tokenizeAbapLine } from '@/lib/process-map';
 import { calmTitle, type FocusPick } from '@/lib/findings-view';
+import { successorSource, successorSourceNote } from '@/lib/successor-source';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 
 /**
  * "Look here first" — the two or three findings that matter most, picked by
  * the fixed rules of `lookHereFirst` (`lib/findings-view.ts`), as the cards of
  * proposal A: severity, level and line on top, the calm title, what it means
- * in the engine's own words, the code at that line, and what SAP names as its
- * successor — or that it names none.
+ * in the engine's own words, the code at that line, and the successor named for
+ * it, with who names it — SAP's catalog or Clean-Core.io's curated mapping
+ * (`lib/successor-source.ts`) — or that none is named.
  */
 export const FOCUS_BAR: Record<string, string> = {
   Critical: 'shadow-[inset_4px_0_0_var(--cc-error)]',
@@ -116,10 +118,10 @@ export default function FindingsFocus({
                 {ef.sapReplacement?.objectName ? (
                   <div className="flex flex-wrap items-center gap-2 cc-text-cell">
                     <ArrowRight size={14} aria-hidden="true" className="text-cc-ink-muted" />
-                    <span className="sr-only">SAP successor:</span>
+                    <span className="sr-only">Successor:</span>
                     <span className="font-cc-mono font-semibold text-cc-ink break-all">{ef.sapReplacement.objectName}</span>
-                    {ef.sapReplacement.confidence === 'Catalog Match' || ef.sapReplacement.confidence === 'Verified' ? (
-                      <CcProvenanceChip value="imported" note="SAP catalog" />
+                    {successorSource(ef.sapReplacement.confidence) !== 'unconfirmed' ? (
+                      <CcProvenanceChip value="imported" note={successorSourceNote(ef.sapReplacement.confidence)} />
                     ) : (
                       <span className="cc-text-meta text-cc-warning">{ef.sapReplacement.confidence ?? 'To be checked'}</span>
                     )}

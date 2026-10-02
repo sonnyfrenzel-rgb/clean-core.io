@@ -34,6 +34,7 @@ import {
   type ProcessStepBand,
   type ShownSeverity,
 } from '@/lib/findings-view';
+import { successorSourceNote } from '@/lib/successor-source';
 import FindingsFocus from './FindingsFocus';
 import ProgramMap from './ProgramMap';
 import ObjectSection from './ObjectSection';
@@ -64,7 +65,7 @@ const COLUMNS = [
   { key: 'severity', label: 'Severity', width: '6rem' },
   { key: 'what', label: 'What' },
   { key: 'level', label: 'Level', width: '4rem' },
-  { key: 'successor', label: 'SAP successor' },
+  { key: 'successor', label: 'Successor' },
 ] as const;
 
 export interface LevelLookup {
@@ -106,7 +107,10 @@ function rowCells(r: FindingRow, level: CloudReadinessGrade | null, lookup: Leve
       </span>
     ),
     successor: ef.sapReplacement?.objectName ? (
-      <span className="font-cc-mono cc-text-meta font-semibold text-cc-ink break-all">{ef.sapReplacement.objectName}</span>
+      <span className="cc-text-meta">
+        <span className="font-cc-mono font-semibold text-cc-ink break-all">{ef.sapReplacement.objectName}</span>
+        <span className="block text-cc-ink-muted">{successorSourceNote(ef.sapReplacement.confidence)}</span>
+      </span>
     ) : (
       <span className="cc-text-meta text-cc-ink-muted">none named</span>
     ),
