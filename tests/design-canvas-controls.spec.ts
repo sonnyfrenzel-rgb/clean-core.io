@@ -65,6 +65,25 @@ async function expectOnTop(page: Page, selector: string) {
   expect(hit, `${selector} is covered`).toBe(true);
 }
 
+/** Where the drawing sits in its scroll box: whole, centred, and filling one side (or at the largest step). */
+async function fitInBox(page: Page) {
+  return page.locator('[data-canvas-scroll]').evaluate((box) => {
+    const svg = box.querySelector('svg[data-architecture-canvas]')!.getBoundingClientRect();
+    const b = box.getBoundingClientRect();
+    const zoom = Number(box.getAttribute('data-canvas-zoom'));
+    const left = svg.left - b.left;
+    const right = b.right - svg.right;
+    const top = svg.top - b.top;
+    const bottom = b.bottom - svg.bottom;
+    return {
+      zoom,
+      whole: box.scrollWidth <= box.clientWidth + 1 && box.scrollHeight <= box.clientHeight + 1,
+      centred: Math.abs(left - right) <= 3 && Math.abs(top - bottom) <= 3,
+      filled: zoom >= 1.4 - 0.001 || svg.width >= b.width * 0.95 || svg.height >= b.height * 0.95,
+    };
+  });
+}
+
 test('zoom changes the scale both ways, fit returns, and full screen opens and closes by Escape and by its button', async ({ page }) => {
   test.setTimeout(300_000);
   await openDesign(page, 'dctl-zoom');
@@ -115,6 +134,9 @@ test('zoom changes the scale both ways, fit returns, and full screen opens and c
   await page.keyboard.press('ArrowRight');
   await expect.poll(() => scroller.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
   await fit.click();
+  // The reader's own zoom before full screen, to be given back after it.
+  await zoomIn.click();
+  const ownZoom = await scale(page);
 
   // Full screen: the card fills the window.
   await full.click();
@@ -127,8 +149,16 @@ test('zoom changes the scale both ways, fit returns, and full screen opens and c
   expect(box!.y).toBeLessThanOrEqual(1);
   expect(box!.width).toBeGreaterThanOrEqual(vp.width - 2);
   expect(box!.height).toBeGreaterThanOrEqual(vp.height - 2);
-  // The drawing is in it, and the controls work there too.
+  // The drawing is in it, fitted to the full-screen box — width and height,
+  // whole, centred — not left at the column's zoom with half the screen empty.
   await expect(card.locator('svg[data-architecture-canvas]')).toBeVisible();
+  await expect
+    .poll(async () => {
+      const f = await fitInBox(page);
+      return f.whole && f.centred && f.filled;
+    }, { message: `drawing not fitted: ${JSON.stringify(await fitInBox(page))}` })
+    .toBe(true);
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/design-ctl-fullscreen-1440.png` });
   await expectOnTop(page, '[data-canvas-fullscreen-toggle]');
   const before = await scale(page);
   await zoomIn.click();
@@ -138,12 +168,12 @@ test('zoom changes the scale both ways, fit returns, and full screen opens and c
     await page.keyboard.press('Tab');
     expect(await card.evaluate((el) => el.contains(document.activeElement))).toBe(true);
   }
-  if (SHOTS) await page.screenshot({ path: `${SHOTS}/design-ctl-fullscreen-1440.png` });
 
-  // Escape leaves, and the focus is back on the toggle.
+  // Escape leaves, the focus is back on the toggle, and the reader's zoom is back.
   await page.keyboard.press('Escape');
   await expect(card).toHaveAttribute('data-canvas-fullscreen', 'false');
   await expect(full).toBeFocused();
+  await expect.poll(() => scale(page)).toBeCloseTo(ownZoom, 2);
   await expect(full).toHaveAttribute('aria-label', 'Full screen');
 
   // So does the visible button.

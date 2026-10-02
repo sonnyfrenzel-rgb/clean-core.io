@@ -13,7 +13,7 @@ import CcDateText from '@/components/cc/DateText';
 import CcDialog from '@/components/cc/Dialog';
 import CcMessageBox from '@/components/cc/MessageBox';
 import ArchitectureCanvas from '@/components/design/ArchitectureCanvas';
-import { ArchitectureList, ARCHITECTURE_ZOOM, fitArchitectureScale } from '@/components/design/ArchitectureCanvas';
+import { ArchitectureList, ARCHITECTURE_ZOOM, fitArchitectureScale, fitArchitectureToBox } from '@/components/design/ArchitectureCanvas';
 import { cn } from '@/lib/utils';
 import { contractForDisplay, type ArchitectureContract, type ContractAlternative, type ContractField } from '@/lib/architecture-contract';
 import type { ArchitectureCanvasModel } from '@/lib/architecture-canvas';
@@ -104,18 +104,27 @@ export interface DesignCanvasStageProps {
 }
 
 /**
- * The width the canvas has, measured: "Fit" scales the drawing to it within
- * `ARCHITECTURE_ZOOM`, never past the drawing's natural size.
+ * The box the canvas has, measured, and the drawing's natural height (its
+ * viewBox): "Fit" scales the drawing to it within `ARCHITECTURE_ZOOM`.
  */
-function useAvailableWidth(el: HTMLDivElement | null): number {
-  const [width, setWidth] = useState(0);
+function useCanvasBox(el: HTMLDivElement | null): { width: number; height: number; drawing: number } {
+  const [box, setBox] = useState({ width: 0, height: 0, drawing: 0 });
   useEffect(() => {
     if (!el) return undefined;
-    const observer = new ResizeObserver(() => setWidth(el.clientWidth));
+    const measure = () => {
+      const svg = el.querySelector<SVGSVGElement>('svg[data-architecture-canvas]');
+      const drawing = svg?.viewBox.baseVal?.height ?? 0;
+      setBox((was) =>
+        was.width === el.clientWidth && was.height === el.clientHeight && was.drawing === drawing
+          ? was
+          : { width: el.clientWidth, height: el.clientHeight, drawing },
+      );
+    };
+    const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
   }, [el]);
-  return width;
+  return box;
 }
 
 const LABEL = 'm-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase';
@@ -254,8 +263,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
   const [zoomChoice, setZoom] = useState<number | 'fit'>('fit');
   // A callback ref: the canvas mounts only once the contract has been read.
   const [canvasEl, setCanvasEl] = useState<HTMLDivElement | null>(null);
-  const available = useAvailableWidth(canvasEl);
-  const zoom = zoomChoice === 'fit' ? fitArchitectureScale(available) : zoomChoice;
+  const canvasBox = useCanvasBox(canvasEl);
   const firstWritten = sections.find((s) => s.written)?.key ?? sections[0]?.key ?? null;
   // The section the reader picked; until then (and when it is not written any
   // more after a regeneration) the first written one.
@@ -318,6 +326,26 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
   const [browserFull, setBrowserFull] = useState(false);
   const [overlayFull, setOverlayFull] = useState(false);
   const filled = browserFull || overlayFull;
+  // Entering full screen fits the drawing to the window — width and height,
+  // centred, up to the largest step; leaving it brings back the reader's own
+  // zoom (owner review 02.10.2026: at 120 % the lower half stayed empty).
+  const [filledSeen, setFilledSeen] = useState(filled);
+  const [zoomBeforeFull, setZoomBeforeFull] = useState<number | 'fit'>('fit');
+  if (filledSeen !== filled) {
+    setFilledSeen(filled);
+    if (filled) {
+      setZoomBeforeFull(zoomChoice);
+      setZoom('fit');
+    } else {
+      setZoom(zoomBeforeFull);
+    }
+  }
+  const zoom =
+    zoomChoice !== 'fit'
+      ? zoomChoice
+      : filled && canvasBox.drawing > 0 && canvasBox.height > 0
+        ? fitArchitectureToBox(canvasBox.width, canvasBox.height, canvasBox.drawing)
+        : fitArchitectureScale(canvasBox.width);
   useEffect(() => {
     const onChange = () => setBrowserFull(stageRef.current !== null && document.fullscreenElement === stageRef.current);
     document.addEventListener('fullscreenchange', onChange);
@@ -506,10 +534,14 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
             onClickCapture={onPanClickCapture}
             className={cn(
               'overflow-auto rounded-cc-row',
-              filled && 'min-h-0 flex-1',
+              // In full screen a flex box, so the drawing centres both ways
+              // (`m-auto`) and still scrolls from its edge when it is larger.
+              filled && 'flex min-h-0 flex-1',
             )}
           >
-            <ArchitectureCanvas model={model} targetLine={targetLine} selected={selected} onSelect={select} description={description} zoom={zoom} />
+            <div className={filled ? 'm-auto' : undefined}>
+              <ArchitectureCanvas model={model} targetLine={targetLine} selected={selected} onSelect={select} description={description} zoom={zoom} />
+            </div>
           </div>
         )}
       </>
