@@ -837,6 +837,12 @@ is how Signavio handles foreign `extensionElements`** — exactly that is what 4
 | — | **After 3.0 · Key history for the audit signing key** (decision Sonny, 01.10.2026; QA 462335bf7edb): verify against a list of keys, then the deploy checks the key length again (tests/signing-key-guard.spec.ts) | M |
 | — | **After 3.0, idea only · IT focus Application · Solution · Enterprise** (removed 02.10.2026, owner decision, ADR-058): comes back only together with a solution or landscape view across several projects that it could actually narrow — not as a switch over one program. §8 does not build portfolio steering, so today there is no such view | — |
 | — | **Kept as is · Welcome mail to an unverified address** (decision Sonny, 01.10.2026; QA 4359c775bab2, fd3acb754f97): sign-up stays unchanged; address verification at sign-up would be its own product step | — |
+| — | **Kept as is · Landing hero** (decision Sonny, 02.10.2026; Codex code-demo-03, usp-07, usp-01 hero part): the hero, its limits line and the demo button stay as they are for 3.0; the FAQ, JSON-LD, llms.txt and stage texts already say which tests run where | — |
+| — | **After 3.0 · Audit pack covers the rebuild** (Codex usp-03, decision Sonny 02.10.2026): server-validated digests of the generated code and the test receipt in the pack, so a signed record of the whole chain becomes true; until then the copy says the pack records the analysis | M |
+| — | **After 3.0 · Design writes through the server** (Codex usp-02, rest): the run binding is checked in a transaction since 02.10.2026; a server endpoint with a stored binding follows | M |
+| — | **After 3.0 · Editor list selects connections** (Codex code-ui-04, rest): sequence flows and their conditions reachable from the element list, not only from the canvas | S |
+| — | **After 3.0 · Ceiling for the community model key** (Codex architecture-03): a shared spending ceiling and concurrency limit that counts every retry, alerts, and what a user sees when it is reached | M |
+| — | **After 3.0 · Project artefacts in their own documents** (Codex architecture-02, long term): generated code, test suite, documentation and design move out of the one project document; the size check before 3.0 refuses an over-size write with 413 and keeps the draft | L |
 | no version | Publish the bench, fair comparison, team acceptance — need appointments with third parties, not development time · Runner isolation: since 19.09.2026 before 3.0 as 8.9 (CR-09)|
 
 ---
