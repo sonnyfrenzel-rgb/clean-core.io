@@ -108,8 +108,10 @@ test.describe('no fabricated figures on measured values', () => {
     // "every generated test returned a pass". `proven` is what the contract
     // calls a verdict something checked (`lib/workflow-steps.ts`), it is what
     // the stepper and the rail paint green, and it is strictly narrower than
-    // every condition this line has had.
-    expect(source).toContain('testingPhase.proven ? (');
+    // every condition this line has had. Narrower still since codex code-trust-04:
+    // a pass recorded against mocks is Demonstrated · mock, never Proven, so the
+    // tick is green only when the proven run was not a mock.
+    expect(source).toContain('testingPhase.proven && !testingPhase.mock ? (');
     expect(source).not.toContain('testingPhase.done ? (');
     // And the line beside the tick says which of the two it is.
     expect(source).toContain('no test run is on record behind these verdicts');

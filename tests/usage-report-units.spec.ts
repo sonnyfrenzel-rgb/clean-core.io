@@ -70,5 +70,5 @@ test('every run the route writes carries the quota decision inside the signed pa
   const src = fs.readFileSync(path.resolve(__dirname, '..', 'app', 'api', 'runs', 'create', 'route.ts'), 'utf8');
   expect(src).toContain('metering = quota.reason;');
   const payload = src.slice(src.indexOf('const unsignedRunPayload'), src.indexOf('const canonicalPayloadStr'));
-  expect(payload, 'the quota decision is not in the signed run payload').toMatch(/\n\s*metering,\n/);
+  expect(payload, 'the quota decision is not in the signed run payload').toMatch(/\n\s*metering,\r?\n/);
 });
