@@ -24,9 +24,9 @@
  */
 
 import { chromium } from 'playwright';
-import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileDigest, readStamp, sourceFingerprint, stampText } from './lib/pdf-stamp';
 
 const PRINT_PATH = '/clean-core-explained-print';
 const OUT = path.resolve(process.cwd(), 'public', 'clean-core-explained.pdf');
@@ -36,16 +36,13 @@ const STAMP = `${OUT}.sha256`;
 const SOURCES = [
   'lib/clean-core-guide.ts',
   'lib/clean-core-capabilities.ts',
+  // The honest-scope answer on source code quotes the training sentence of the trust card.
+  'lib/trust-claims.ts',
   'app/clean-core-explained-print/page.tsx',
 ];
 
 function sourceHash(): string {
-  const h = createHash('sha256');
-  for (const rel of SOURCES) {
-    h.update(rel);
-    h.update(fs.readFileSync(path.resolve(process.cwd(), rel)));
-  }
-  return h.digest('hex');
+  return sourceFingerprint(process.cwd(), SOURCES);
 }
 
 function argValue(flag: string): string | undefined {
@@ -81,8 +78,11 @@ function check(): void {
     throw new Error('No PDF (or no stamp) has been generated yet. Run: npm run build:guide-pdf');
   }
 
-  const actual = fs.readFileSync(STAMP, 'utf8').trim();
-  if (actual !== expected) {
+  const stamp = readStamp(STAMP);
+  if (stamp.pdf !== fileDigest(OUT)) {
+    throw new Error('public/clean-core-explained.pdf is not the file its stamp was written for. Start the app and run: npm run build:guide-pdf');
+  }
+  if (stamp.sources !== expected) {
     throw new Error(
       'public/clean-core-explained.pdf is out of date — the guide content has changed since it was ' +
         'generated. Start the app and run: npm run build:guide-pdf',
@@ -137,7 +137,7 @@ async function main() {
 
   // Written only after the render is known good, so a failed run never leaves a
   // stamp claiming an out-of-date PDF is current.
-  fs.writeFileSync(STAMP, sourceHash(), 'utf8');
+  fs.writeFileSync(STAMP, stampText(sourceHash(), fileDigest(OUT)), 'utf8');
 
   console.log(`wrote ${path.relative(process.cwd(), OUT)} — ${(bytes / 1024).toFixed(0)} kB`);
 }
