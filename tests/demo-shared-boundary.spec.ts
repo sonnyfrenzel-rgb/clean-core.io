@@ -5,6 +5,7 @@ import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { DEMO_ASSISTANT_NOTICE, isDemoPath } from '../lib/demo-marks';
+import { TOUR_STORAGE_KEY, TOUR_STATIONS } from '../lib/demo-tour';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -108,4 +109,38 @@ test.describe('the shared components keep the demo’s promise', () => {
       expect(forbidden, 'the demo’s assistant called /api/gemini').toEqual([]);
     });
   }
+
+  test('the editor behind the demo workspace map offers no download, and none happens', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1100 });
+
+    const downloads: string[] = [];
+    page.on('download', (d) => downloads.push(d.suggestedFilename()));
+
+    await signInViaLanding(page, ADMIN, PASSWORD);
+    // The tour stands beside the map; ended, it stays out of the way.
+    await page.addInitScript(
+      ([key, last]) => window.localStorage.setItem(key, JSON.stringify({ index: last, state: 'ended', inviting: false })),
+      [TOUR_STORAGE_KEY, TOUR_STATIONS.length - 1] as const,
+    );
+    await page.goto('/demo/workspace?view=business', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });
+
+    await page.locator('[data-process-map-canvas]').first().waitFor({ timeout: 90000 });
+    await page.locator('[data-process-edit-toggle]').first().click();
+    await page.locator('[data-process-editor]').waitFor({ timeout: 60000 });
+    await expect
+      .poll(async () => page.locator('[data-process-editor-canvas] .djs-shape').count(), { timeout: 60000 })
+      .toBeGreaterThan(5);
+
+    // Editing is kept; the three downloads are not there to press.
+    await expect(page.locator('[data-editor-save], [data-editor-discard]').first()).toBeVisible();
+    await expect(page.locator('[data-editor-export]')).toHaveCount(0);
+    const editor = page.locator('[data-process-editor]');
+    await expect(editor.locator('button, a').filter({ hasText: /^(BPMN|SVG|PNG)\b|export/i })).toHaveCount(0);
+    await expect(editor.locator('a[download]')).toHaveCount(0);
+
+    await page.waitForTimeout(1000);
+    expect(downloads, 'the demo workspace downloaded a file').toEqual([]);
+  });
 });

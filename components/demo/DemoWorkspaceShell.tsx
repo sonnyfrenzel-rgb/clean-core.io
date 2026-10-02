@@ -329,6 +329,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         onPlaneChange={setPlane}
         selected={selected}
         onSelectedChange={setSelected}
+        exportable={false}
       />
     </CcCard>
   );
