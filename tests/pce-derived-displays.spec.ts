@@ -13,6 +13,7 @@ import { buildArchitectureContract } from '../lib/architecture-contract';
 import { catalogLookupTargetOf } from '../lib/assessment-target';
 import { contractOfProject, FIRST_CONTRACT_ID } from '../lib/contract-build';
 import { findingsOf } from '../lib/it-findings-build';
+import { buildProjectEvidence, buildRunEvidence } from '../lib/project-evidence-build';
 import { buildDemoWorkspace } from '../lib/demo-workspace';
 import type { ObjectUse } from '../lib/abap/abcd-classification';
 
@@ -163,6 +164,55 @@ test.describe('a PCE project gets the same grade in the core result and each der
       if (!row.objectName) continue;
       expect(row.level, `${row.id} ${row.objectName}`).toBe(gradeSapObjectUse(row.objectName, accessUseOf(row.kind), demoKey).grade);
     }
+  });
+
+  test('evidence route: the report Analyze, Transformation and the fit card draw is the core result', () => {
+    // What GET /api/projects/{id}/evidence answers for the stored project …
+    const stored = buildProjectEvidence(PCE_PROJECT, SOURCE);
+    expect(stored.catalog.registryKey).toBe(coreKey);
+    expect(stored.fileName).toBe(FILE);
+    expect(stored.evidence).toEqual(core);
+    // … and what POST answers for the same source before the run: the run's
+    // own inputs for the same request body, so the run signs what it showed.
+    const preview = buildRunEvidence({ userId: 'owner' }, { source: SOURCE, fileName: FILE, deployment: 'private' });
+    expect(preview.catalog.registryKey).toBe(coreKey);
+    expect(preview.evidence).toEqual(core);
+    // A pinned release is read from its pinned file on both halves.
+    const pinned = { ...PCE_PROJECT, assessmentTarget: { release: '2023 FPS03' } };
+    const pinnedKey = catalogSnapshotRefFor('private', '2023 FPS03').registryKey;
+    expect(buildProjectEvidence(pinned, SOURCE).catalog.registryKey).toBe(pinnedKey);
+    expect(
+      buildRunEvidence(PCE_PROJECT, { source: SOURCE, fileName: FILE, deployment: 'private', release: '2023 FPS03' }).catalog.registryKey,
+    ).toBe(pinnedKey);
+
+    // What the three displays computed in the browser until 02.10.2026 — the
+    // default list and a fixed file name — is not this report. Otherwise the
+    // equality above would hold whichever catalog the route read.
+    const browserBuilt = buildAbapEvidence(SOURCE, 'main.abap', 'private');
+    expect(browserBuilt.findings.map((f) => f.kind), 'pick a fixture the default list reads otherwise').not.toEqual(
+      core.findings.map((f) => f.kind),
+    );
+  });
+
+  test('evidence displays: Analyze, Transformation and the fit card read the server, not an engine of their own', () => {
+    for (const file of [
+      'app/(app)/project/[projectId]/analyze/page.tsx',
+      'app/(app)/project/[projectId]/transformation/page.tsx',
+      'components/workspace/PublicCloudFitPanel.tsx',
+    ]) {
+      const src = read(file);
+      expect(src, `${file} builds the evidence itself`).not.toMatch(/buildAbapEvidence\s*\(/);
+      // A dynamic import of the engine, not a type named through `import('…').T`.
+      expect(src, `${file} loads the engine`).not.toMatch(/import\(\s*['"]@\/lib\/abap\/evidence-model['"]\s*\)(?!\.)|useEvidenceEngine|loadEvidenceEngine/);
+      expect(src, `${file} does not read the project's evidence`).toMatch(/useProjectEvidence\(/);
+    }
+    // The Analyze run's first half reads the server too, with the run's inputs.
+    expect(read('app/(app)/project/[projectId]/analyze/page.tsx')).toMatch(/await previewRunEvidence\(projectId as string, \{/);
+    // And the route reads the project's target, as the findings route does.
+    expect(read('lib/project-evidence-build.ts')).toContain('const catalog = catalogSnapshotRefForProject(project);');
+    expect(read('lib/project-evidence-build.ts')).toContain('const catalog = catalogSnapshotRefFor(input.deployment, release);');
+    // The demo hands the card its own precomputed findings: no server call.
+    expect(read('components/demo/DemoWorkspaceShell.tsx')).toContain('<PublicCloudFitPanel project={project} findings={demo.analyze.findings} />');
   });
 
   test('client lookups: every display that asks /api/abcd-classify names the project target', () => {
