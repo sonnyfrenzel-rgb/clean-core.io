@@ -245,6 +245,8 @@ test.describe('a signed-in account reading its own project', () => {
     await page.waitForSelector('[data-cc-workspace]', { timeout: 60000 });
     await expect(page.locator('[data-forum-readonly]')).toHaveCount(0);
     expect(read('app/(app)/dashboard/page.tsx')).not.toContain('data-forum-readonly');
+    // Nor does its help text promise the board (QA review of 65f4fcc37189).
+    expect(read('app/(app)/dashboard/page.tsx')).not.toMatch(/Announcements:|release notes from the team/);
     const text = await page.locator('body').innerText();
     for (const gone of [
       'Post to Forum',

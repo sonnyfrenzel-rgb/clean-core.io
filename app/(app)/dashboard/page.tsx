@@ -789,7 +789,7 @@ export default function Dashboard() {
               <li><strong>Create projects:</strong> one project for a custom report, function module, or table mapping.</li>
               <li><strong>Full lifecycle tracking:</strong> analysis, target design, generated code, tests and documentation, per phase.</li>
               <li><strong>Deliverables:</strong> view generated assets, download code modules, or read summaries on screen.</li>
-              <li><strong>Announcements:</strong> read release notes from the team; questions go to admin@clean-core.io.</li>
+              <li><strong>Questions:</strong> write to admin@clean-core.io.</li>
             </ul>
           </div>
           <p className="m-0 border-t border-cc-line pt-3 cc-text-meta text-cc-ink-muted">
