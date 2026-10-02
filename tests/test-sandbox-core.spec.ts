@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test';
 import http from 'http';
 import type { AddressInfo } from 'net';
-import { executeSandboxRun, resolvePermissionFlag } from '../lib/test-sandbox/core';
+import { executeSandboxRun, resolvePermissionFlag, collectNamedImports, neutralize, scrubRunDirNames, testNamePattern } from '../lib/test-sandbox/core';
 import { hashRunInputs } from '../lib/test-sandbox/protocol';
 import { sandboxFilesFromStoredCode, normalizeSandboxPath, sandboxPatterns } from '../lib/test-sandbox/files';
 import { parseTapOutput } from '../lib/test-verdicts';
@@ -137,13 +137,107 @@ test.describe('what the app sends', () => {
     expect(sandboxFilesFromStoredCode('{"a":1}')).toEqual([{ path: 'app.ts', content: '{"a":1}' }]);
   });
 
-  test('paths normalise or are dropped; patterns keep word characters only', () => {
+  test('paths normalise or are dropped; patterns are the ids themselves, or refused', () => {
     expect(normalizeSandboxPath('a\\b\\c.ts')).toBe('a/b/c.ts');
     expect(normalizeSandboxPath('./x/./y.ts')).toBe('x/y.ts');
     expect(normalizeSandboxPath('..')).toBeNull();
     expect(normalizeSandboxPath('a\u0000b')).toBeNull();
     expect(normalizeSandboxPath('x'.repeat(301))).toBeNull();
-    expect(sandboxPatterns(['TC_01', 'TC-02; rm', 42])).toEqual(['TC_01', 'TC02rm', '42']);
+    // Codex code-runner-04: `TC-001` used to go out as `TC001`, which names no test.
+    expect(sandboxPatterns(['TC_01', 'TC-001', 'TC.002', 42])).toEqual(['TC_01', 'TC-001', 'TC.002', '42']);
+    expect(sandboxPatterns(['TC_01', 'TC-02; rm'])).toBeNull();
+    expect(sandboxPatterns(['TC|01'])).toBeNull();
     expect(sandboxPatterns(undefined)).toEqual([]);
+  });
+});
+
+// Codex code-runner-04: the filter ran `TC_010` for `TC_01` and nothing for `TC-001`.
+test.describe('the name filter takes each selected id literally and whole', () => {
+  test.setTimeout(90_000);
+
+  test('the pattern matches the id at the start of a name, up to where the parser ends an id', () => {
+    const re = new RegExp(testNamePattern(['TC_01', 'TC-001', 'TC.2']));
+    for (const name of ['TC_01: adds', 'TC_01', 'TC_01 adds', 'TC-001: totals', 'TC.2: x']) expect(re.test(name), name).toBe(true);
+    for (const name of ['TC_010: adds', 'XTC_01: adds', 'TC-0011', 'TCx2: x', 'TC_01x']) expect(re.test(name), name).toBe(false);
+    expect(testNamePattern([])).toBe('');
+  });
+
+  test('an execution runs exactly the selected cases', async () => {
+    const suite = [
+      "import { test } from 'node:test';",
+      "test('TC_01: one', () => {});",
+      "test('TC_010: ten', () => {});",
+      "test('TC-001: hyphen', () => {});",
+    ].join('\n');
+    const ran = async (patterns: string[]) => {
+      const out = await executeSandboxRun({ files: [], suiteCode: suite, patterns, allowUnsandboxed: true });
+      expect(out.kind).toBe('ran');
+      return out.kind === 'ran' ? parseTapOutput(out.stdout).filter((r) => r.status === 'Passed').map((r) => r.id).sort() : [];
+    };
+    expect(await ran(['TC_01'])).toEqual(['TC_01']);
+    expect(await ran(['TC-001'])).toEqual(['TC-001']);
+  });
+});
+
+// Codex code-runner-05: the rewrite put `: any[]` into JavaScript files.
+test.describe('server bootstrap is neutralised in JavaScript as well', () => {
+  test.setTimeout(90_000);
+
+  test('a .js app that calls app.listen bundles and runs', async () => {
+    const files = [{ path: 'app.js', content: "const express = require('express');\nconst app = express();\nexports.sum = (a, b) => a + b;\nexports.server = app.listen(3000, () => {});\n" }];
+    const suite = "import { test } from 'node:test';\nimport assert from 'node:assert';\nimport { sum } from './app.js';\ntest('TC_JS: adds', () => { assert.strictEqual(sum(2, 3), 5); });";
+    const out = await executeSandboxRun({ files, suiteCode: suite, patterns: [], allowUnsandboxed: true });
+    expect(out.kind, JSON.stringify(out).slice(0, 600)).toBe('ran');
+    if (out.kind === 'ran') expect(parseTapOutput(out.stdout).map((r) => [r.id, r.status])).toEqual([['TC_JS', 'Passed']]);
+  });
+
+  test('only the app.listen call itself is rewritten', () => {
+    expect(neutralize('myapp.listen(1); app.listener; app.listen(2)')).toBe('myapp.listen(1); app.listener; ((..._args) => ({ close: () => {} }))(2)');
+  });
+});
+
+// codex code-runner-03
+test.describe('the service-side scans are linear', () => {
+  const REGEX_IMPORTS = /import[^{};]*\{([^}]*)\}/g;
+  const viaRegex = (src: string) => {
+    const names = new Set<string>();
+    for (const m of src.matchAll(REGEX_IMPORTS)) {
+      for (const raw of m[1].split(',')) {
+        const name = raw.trim().split(/\s+as\s+/)[0].trim().replace(/^type\s+/, '');
+        if (/^[A-Za-z_$][\w$]*$/.test(name)) names.add(name);
+      }
+    }
+    return [...names];
+  };
+  const viaScrubRegex = (t: string) => t.replace(/[^\s'"`:]*cc-tests-[A-Za-z0-9]+/g, '<sandbox>');
+
+  test('the named-import scan reads what the regex read', () => {
+    const samples = [
+      "import { A, B as C, type D } from 'x';\nimport E, { F } from 'y';\nimport * as G from 'z';\nimport 'side';\nconst o = { a: 1 };",
+      'import x; import { Y } from "y"; import {',
+      'importimport { Q }',
+      "export { A } from 'a'; import type { T } from 't'; import {\n  M,\n  N,\n} from 'mn';",
+    ];
+    for (const s of samples) expect(collectNamedImports([s]), s).toEqual(viaRegex(s));
+  });
+
+  test('the run-directory scrub replaces what the regex replaced', () => {
+    const samples = [
+      'Error at /tmp/cc-tests-AbC123/app.ts:3:1',
+      "at '../../tmp/cc-tests-x1/a.ts' and cc-tests-  and cc-tests--cc-tests-z9",
+      'x:cc-tests-q"y cc-tests-r',
+      'nothing here',
+    ];
+    for (const s of samples) expect(scrubRunDirNames(s), s).toBe(viaScrubRegex(s));
+  });
+
+  test('long input finishes in well under a second', () => {
+    const imports = 'import '.repeat(80_000); // 560 kB, inside the payload limit
+    const unclosed = 'import {'.repeat(70_000);
+    const stderr = 'a'.repeat(2_000_000) + 'cc-tests--'.repeat(100_000);
+    const started = Date.now();
+    expect(collectNamedImports([imports, unclosed])).toEqual([]);
+    expect(scrubRunDirNames(stderr)).toBe(stderr);
+    expect(Date.now() - started).toBeLessThan(1000);
   });
 });

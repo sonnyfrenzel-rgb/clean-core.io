@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { normalizeSandboxPath, MAX_SANDBOX_PATH, type SandboxFile } from './files';
+import { normalizeSandboxPath, MAX_SANDBOX_PATH, SANDBOX_PATTERN_ID, type SandboxFile } from './files';
 
 /**
  * The wire contract between the app and the isolated test runner (roadmap 8.9).
@@ -143,7 +143,10 @@ export function parseRunRequest(body: unknown, opts: { serviceMode: RunnerMode; 
   if (!Array.isArray(rawPatterns) || rawPatterns.length > MAX_RUN_PATTERNS) return fail(400, 'suite.patterns must be a short array.');
   const patterns: string[] = [];
   for (const p of rawPatterns) {
-    if (typeof p !== 'string' || !/^[A-Za-z0-9_]{1,100}$/.test(p)) return fail(400, 'A test pattern may hold word characters only.');
+    // Word characters, `.` and `-`: the case ids, taken literally — the core
+    // escapes and anchors them (`testNamePattern`). A superset of what the app
+    // sent before, so an older app's request still passes.
+    if (typeof p !== 'string' || !SANDBOX_PATTERN_ID.test(p)) return fail(400, 'A test pattern may hold word characters, "." and "-" only.');
     patterns.push(p);
   }
 

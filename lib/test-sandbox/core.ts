@@ -84,11 +84,9 @@ module.exports = universal;
  */
 export function collectNamedImports(sources: string[]): string[] {
   const names = new Set<string>();
-  const re = /import[^{};]*\{([^}]*)\}/g;
   for (const src of sources) {
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(src)) !== null) {
-      for (const raw of m[1].split(',')) {
+    for (const body of namedImportBodies(src)) {
+      for (const raw of body.split(',')) {
         // Use the exported name (before `as`), strip a leading `type` modifier.
         const name = raw.trim().split(/\s+as\s+/)[0].trim().replace(/^type\s+/, '');
         if (/^[A-Za-z_$][\w$]*$/.test(name)) names.add(name);
@@ -96,6 +94,36 @@ export function collectNamedImports(sources: string[]): string[] {
     }
   }
   return [...names];
+}
+
+/**
+ * The `{ … }` bodies `/import[^{};]*\{([^}]*)\}/g` would capture, found in one
+ * pass: both pointers below only move forward (codex code-runner-03).
+ */
+function namedImportBodies(src: string): string[] {
+  const bodies: string[] = [];
+  // The first `{`, `}` or `;` at or after some position, or src.length for none.
+  let stop = -1;
+  let from = 0;
+  for (;;) {
+    const at = src.indexOf('import', from);
+    if (at === -1) break;
+    const after = at + 'import'.length;
+    if (stop < after) {
+      stop = after;
+      while (stop < src.length && src[stop] !== '{' && src[stop] !== '}' && src[stop] !== ';') stop++;
+    }
+    if (stop >= src.length) break; // no stop character left: no later import can match either
+    if (src[stop] !== '{') {
+      from = at + 1;
+      continue;
+    }
+    const close = src.indexOf('}', stop + 1);
+    if (close === -1) break; // no `}` left: no later import can match either
+    bodies.push(src.slice(stop + 1, close));
+    from = close + 1;
+  }
+  return bodies;
 }
 
 export function buildStubModule(namedExports: string[]): string {
@@ -240,14 +268,34 @@ async function loadEsbuild(): Promise<Esbuild | null> {
   }
 }
 
-function neutralize(content: string): string {
-  return content.replace(/app\.listen/g, '((...args: any[]) => ({ close: () => {} }))');
+/**
+ * `app.listen` becomes a function that binds nothing. The replacement is plain
+ * JavaScript because `.js` files go through it too and esbuild loads them as
+ * JavaScript — a TypeScript annotation here broke every `.js` app that started
+ * a server (Codex code-runner-05). `\b` keeps `myapp.listen` intact.
+ */
+export function neutralize(content: string): string {
+  return content.replace(/\bapp\.listen\b/g, '((..._args) => ({ close: () => {} }))');
+}
+
+/**
+ * The child's name filter for the selected case ids: each id taken literally,
+ * anchored at the start of a test's name and ending where `parseTapOutput`
+ * ends an id (whitespace, `:` or `#`, or the end). Unanchored and stripped of
+ * punctuation, `TC_01` also ran `TC_010` and `TC-001` ran nothing (Codex
+ * code-runner-04). Node matches the pattern against each test's own name, so
+ * the anchor holds inside a `describe` as well.
+ */
+export function testNamePattern(ids: string[]): string {
+  if (ids.length === 0) return '';
+  const escaped = ids.map((id) => id.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&'));
+  return `^(?:${escaped.join('|')})(?![^\\s:#])`;
 }
 
 export interface SandboxRunInput {
   files: SandboxFile[];
   suiteCode: string;
-  /** Case ids for the name filter, word characters only. Empty = the whole suite. */
+  /** Case ids for the name filter, taken literally (`testNamePattern`). Empty = the whole suite. */
   patterns: string[];
   /** See `resolvePermissionFlag`. */
   allowUnsandboxed: boolean;
@@ -394,8 +442,9 @@ process.exitCode = failed ? 1 : 0;
     // isolation:'none' does not exist (Node < 22.8, the named fallback), run()
     // spawns one child per file and the option filters there — the flag would
     // match the parent's file-level test instead and skip the whole suite.
-    if (input.patterns.length > 0 && inProcessIsolationSupported()) {
-      args.push(`--test-name-pattern=${input.patterns.join('|')}`);
+    const namePattern = testNamePattern(input.patterns);
+    if (namePattern && inProcessIsolationSupported()) {
+      args.push(`--test-name-pattern=${namePattern}`);
     }
     args.push(runnerPath);
 
@@ -403,7 +452,7 @@ process.exitCode = failed ? 1 : 0;
       PATH: process.env.PATH || '',
       ...(process.platform === 'win32' ? { SYSTEMROOT: process.env.SYSTEMROOT || '' } : {}),
       NODE_ENV: 'test',
-      SANDBOX_TEST_PATTERNS: input.patterns.join('|'),
+      SANDBOX_TEST_PATTERNS: namePattern,
       ...(input.extraEnv || {}),
     };
 
@@ -432,7 +481,35 @@ process.exitCode = failed ? 1 : 0;
  * use for where on the runner a run lived.
  */
 function scrubRunDir(text: string, testDir: string): string {
-  return text.split(testDir).join('<sandbox>').replace(/[^\s'"`:]*cc-tests-[A-Za-z0-9]+/g, '<sandbox>');
+  return scrubRunDirNames(text.split(testDir).join('<sandbox>'));
+}
+
+/**
+ * `text.replace(/[^\s'"`:]*cc-tests-[A-Za-z0-9]+/g, '<sandbox>')`, in one pass:
+ * every index below only moves forward (codex code-runner-03).
+ */
+export function scrubRunDirNames(text: string): string {
+  const MARK = 'cc-tests-';
+  const isStop = (c: string) => /[\s'"`:]/.test(c);
+  const isAlnum = (c: string) => /[A-Za-z0-9]/.test(c);
+  let out = '';
+  let emitted = 0; // text before this index is in `out`
+  let segStart = 0; // start of the run of non-stop characters `scan` is in
+  let scan = 0;
+  let at = text.indexOf(MARK);
+  while (at !== -1) {
+    for (; scan < at; scan++) if (isStop(text[scan])) segStart = scan + 1;
+    let end = at + MARK.length;
+    while (end < text.length && isAlnum(text[end])) end++;
+    if (end === at + MARK.length) {
+      at = text.indexOf(MARK, at + 1);
+      continue;
+    }
+    out += text.slice(emitted, Math.max(segStart, emitted)) + '<sandbox>';
+    emitted = segStart = scan = end;
+    at = text.indexOf(MARK, end);
+  }
+  return out + text.slice(emitted);
 }
 
 // Child-process execution with timeout & output cap.

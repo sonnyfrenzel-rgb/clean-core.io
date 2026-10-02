@@ -286,6 +286,12 @@ export async function POST(req: Request) {
 
   const files = sandboxFilesFromStoredCode(code);
   const patterns = sandboxPatterns(selectedTestIds);
+  if (patterns === null) {
+    return NextResponse.json(
+      { output: '', error: 'A selected test id holds characters the runner cannot filter on (letters, digits, "_", "." and "-" only).', exitCode: 1, testResults: [] },
+      { status: 400 },
+    );
+  }
 
   // Concurrency cap (per instance): refuse new heavy runs at capacity so one user
   // cannot exhaust the instance with many parallel executions. Check + increment run
