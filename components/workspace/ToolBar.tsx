@@ -5,7 +5,7 @@ import { Check, ChevronDown, Wrench } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import { cn } from '@/lib/utils';
-import { PHASE_TONE_CLASS, type PhaseKey, type PhaseState } from '@/lib/workflow-steps';
+import { type PhaseKey, type PhaseState } from '@/lib/workflow-steps';
 import { toolMark, type WorkspaceView } from '@/lib/workspace-model';
 import { useWorkspaceLayer } from '@/hooks/useWorkspaceLayer';
 import { stageHref, WORKSPACE_RETURN, type WorkspaceReturnPoint } from '@/lib/workspace-back-href';
@@ -21,34 +21,66 @@ export interface WorkspaceTool {
 }
 
 /**
- * The small mark after a tool's name: what is on record for that stage, said
- * the way the stepper says it (`components/Stepper.tsx`), because two surfaces
- * that read one phase differently is roadmap 1.7 all over again.
+ * The small mark after a tool's name. It answers one question — has this tool
+ * been used in this project? (ADR-060, amended by Sonny 02.10.2026) — and not
+ * how strong what it produced is; that stays with the stepper and the status
+ * chips ("Proven", "Demonstrated · mock").
  *
- *   - a tick where the stepper ticks (`done`), in the stepper's tone: green
- *     only where something verified it (`proven`, DESIGN.md §1.1 "green says
- *     proven"), amber where it is on record and nothing did;
- *   - a dot where the stepper shows a coloured circle without a tick: amber for
- *     started-not-done, the darker warning for out of date (stale is never done);
+ *   - a small green check where something of the phase is on record and it is
+ *     not out of date (`toolMark` → `used`);
+ *   - an amber dot where the phase is out of date: its inputs changed since;
  *   - nothing where nothing is on record.
  *
  * The colour is never the only carrier: each mark has its words for a screen
- * reader, appended to the link's name.
+ * reader, appended to the link's name ("Analyze (used)"), a tooltip, and the
+ * legend beside "Tools" says the same in text.
  */
+function MarkGlyph({ kind }: { kind: 'check' | 'dot' }) {
+  return kind === 'check' ? (
+    <Check size={14} strokeWidth={3} aria-hidden={true} data-workspace-tool-mark="check" className="text-cc-success" />
+  ) : (
+    <span aria-hidden={true} data-workspace-tool-mark="dot" className="inline-block h-2 w-2 rounded-full bg-cc-warning-mark" />
+  );
+}
+
 function ToolMark({ tool }: { tool: WorkspaceTool }) {
   const mark = toolMark(tool);
   if (mark.kind === 'none' || !mark.words) return null;
-  const paint = PHASE_TONE_CLASS[mark.tone];
-  const words = wt(mark.words);
+  const hint = wt(mark.meaning === 'used' ? 'tools.mark.usedHint' : 'tools.mark.staleHint');
   return (
     <>
-      {mark.kind === 'check' ? (
-        <Check size={14} strokeWidth={3} aria-hidden={true} data-workspace-tool-mark="check" className={paint.ink} />
-      ) : (
-        <span aria-hidden={true} data-workspace-tool-mark="dot" className={cn('inline-block h-2 w-2 rounded-full', paint.fill)} />
-      )}
-      <span className="sr-only">({words})</span>
+      <span aria-hidden={true} title={hint} className="inline-flex items-center">
+        <MarkGlyph kind={mark.kind} />
+      </span>
+      <span className="sr-only">({wt(mark.words)})</span>
     </>
+  );
+}
+
+/**
+ * What the marks mean, in text — beside "Tools" on the open bar and at the top
+ * of the phone menu. Both entries always, so the legend does not change shape
+ * with the project.
+ */
+function ToolsLegend({ inMenu }: { inMenu?: boolean }) {
+  return (
+    <p
+      data-tools-legend={inMenu ? 'menu' : 'bar'}
+      className={cn(
+        'flex items-center gap-3 text-[11px] leading-4 text-cc-ink-muted',
+        inMenu && 'border-b border-cc-line pb-2',
+      )}
+    >
+      <span className="sr-only">{wt('tools.legend.label')}</span>
+      <span className="inline-flex items-center gap-1">
+        <Check size={12} strokeWidth={3} aria-hidden={true} className="text-cc-success" />
+        {wt('tools.legend.used')}
+      </span>
+      <span className="inline-flex items-center gap-1">
+        <span aria-hidden={true} className="inline-block h-2 w-2 rounded-full bg-cc-warning-mark" />
+        {wt('tools.legend.stale')}
+      </span>
+    </p>
   );
 }
 
@@ -57,9 +89,10 @@ function ToolMark({ tool }: { tool: WorkspaceTool }) {
  * item 3) and under "Back to workspace" on every stage (ADR-060). One
  * component for both, so the two bars cannot drift apart.
  *
- *   - **It opens pages, and it says what is on record** (ADR-060, Sonny
+ *   - **It opens pages, and it says which tools were used** (ADR-060, Sonny
  *     02.10.2026). A tool opens a stage as its own page; the mark after its
- *     name is the stepper's reading of that phase (`ToolMark`), derived from
+ *     name says whether the tool has been used in this project, or is out of
+ *     date (`ToolMark`), derived from the phase state in
  *     `lib/workflow-steps.ts` like every other phase state in the product — so
  *     the bar and the stepper cannot disagree about one phase. On a stage the
  *     tool of that stage is the current one (`aria-current="page"`, ink, never
@@ -116,7 +149,7 @@ function ToolsNav({
         key={tool.key}
         data-workspace-tool={tool.key}
         data-phase-state={tool.state}
-        data-phase-tone={mark.tone}
+        data-workspace-tool-mark-meaning={mark.meaning}
         data-workspace-tool-mark-kind={mark.kind}
         current={tool.key === current}
         href={stageHref({ ...link, path: tool.path })}
@@ -142,8 +175,11 @@ function ToolsNav({
         aria-label={wt('tools.label')}
         className={cn('cc-no-print flex flex-wrap items-center gap-2', barHidden)}
       >
-        <span aria-hidden={true} className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-          {wt('tools.label')}
+        <span className="flex flex-col gap-1">
+          <span aria-hidden={true} className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+            {wt('tools.label')}
+          </span>
+          <ToolsLegend />
         </span>
         {links}
       </nav>
@@ -163,6 +199,7 @@ function ToolsNav({
             data-workspace-tools-panel=""
             className="absolute left-0 z-20 mt-1 flex w-64 max-w-[calc(100vw-2rem)] flex-col items-stretch gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc-dialog"
           >
+            <ToolsLegend inMenu />
             {links}
           </div>
         )}

@@ -257,9 +257,12 @@ From top to bottom:
    an icon, a provenance chip carries only the nine values from `lib/provenance.ts`.
 3. **Toolbar:** the seven stages as tools (Analyze … Delivery), left-aligned; on the right export and
    sharing. From breakpoint L open side by side in every view; below L open in IT and a "Tools" menu in
-   Business and Management; on S a menu in every view (§2.9, §2.11, ADR-060). Each tool carries the stepper's
-   mark for its phase: a tick where the phase is done (green only where proven, amber otherwise), a dot where it
-   is started or out of date, nothing where nothing is on record — with the state in words for a screen reader.
+   Business and Management; on S a menu in every view (§2.9, §2.11, ADR-060). Each tool says whether it has been
+   used in this project: a small green check where something of its phase is on record and current, an amber dot
+   where it is out of date (inputs changed since), nothing where nothing is on record. A legend in text ("used ·
+   out of date") stands beside "Tools" and at the top of the phone menu; each mark has a tooltip and its words for
+   a screen reader. The bar says nothing about proof — that stays with the stepper and the status chips, and the
+   mark is never called "proven" or "verified" (the one exception to "green says proven", ADR-060).
 4. **Anchor bar:** for the layers alone — Need & process · Standard fit · Costs & assumptions · Architecture &
    dependencies · Evidence & controls · Changes & commitments. Empty layers are under "More" and say there what is
    missing (§2.11).
@@ -286,14 +289,14 @@ Headings: the project title is `h1`, every section `h2`, every card `h3`; no lev
 |---|---|---|---|---|
 | **View** (segmented control) | orders the same content by a question and selects the first answer (§5.6) | changes no data, filters nothing out, opens no page | Business | URL (`?view=`) and browser |
 | **Layer** (anchor bar) | jumps to a section of the page and marks where you are | does not switch the view | Need & process | URL fragment (`#need`) |
-| **Tool** (toolbar) | opens the stage as a page of its own; "Back to workspace" returns to view and layer; marks what is on record for its phase the way the stepper does (ADR-060) | marks no position — the workspace is no stage | — | URL of the stage |
+| **Tool** (toolbar) | opens the stage as a page of its own; "Back to workspace" returns to view and layer; marks whether the tool has been used in this project, or is out of date (ADR-060) | marks no position — the workspace is no stage | — | URL of the stage |
 
 **The header of a stage** (ADR-050). A stage is a tool page of the workspace, not a landing section. Its
 header comes from `StageHeader` and stands like the project title: **22 px / 800, `-0.02em`, `--cc-ink`**, as `h1`. The
 icon stands neutrally in front of it — 20 px, `--cc-ink-muted`, without a surface; no green bubble, because in the workspace green means
 evidenced (§1.1). Above the title the link **"Back to workspace"** (13 px / 600, `--cc-ink-muted`, arrow left; a link,
 not a button), which leads back to the view and layer from which the stage was opened. Below it the same toolbar as in
-the workspace (ADR-060): the seven tools with their marks, the stage's own tool selected in `--cc-ink` with
+the workspace (ADR-060): the seven tools with their marks and the legend, the stage's own tool selected in `--cc-ink` with
 `aria-current="page"`, each link keeping view, origin and layer — side by side from breakpoint L, a "Tools" menu below.
 It replaces the stepper wherever it is drawn (a workspace account, the demo); one way across, not two. Eyebrow and lead
 stay, in the scale of §1.2 (micro label, body text).
@@ -1096,6 +1099,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.2 | 02.10.2026 | The tools bar marks use, not proof (ADR-060 amended, Sonny 02.10.2026): a green check for a used tool, an amber dot for an out-of-date one, a text legend beside "Tools" and in the phone menu: §2.3 item 3, the navigation table, the header of a stage |
 | 1.8.1 | 02.10.2026 | Tools side by side from breakpoint L in every view, each with the stepper's mark for its phase, and the same bar under "Back to workspace" on every stage and demo stage (ADR-060, Sonny 02.10.2026): §2.3 item 3, the header per view, the navigation table, the header of a stage, §2.11 |
 | 1.8 (draft, for acceptance by Sonny) | 30.09.2026 | Block D completed (D.30): all guards apply to `app/**` and `components/**`, the exception lists are deleted, only named exceptions remain (§8); `--cc-warning-mark` `#d97706` for warning marks in bars and dots (§1.1, §1.8); generated Markdown text in `.cc-prose` on the scale §1.2 |
 | 1.7 | 27.09.2026 | Business statement as the model's proposal above the engine's sentence, contradiction as an edge stroke with words instead of a chip, requesting only via a button with a cost line (§5.10, ADR-055, roadmap 17.10) |

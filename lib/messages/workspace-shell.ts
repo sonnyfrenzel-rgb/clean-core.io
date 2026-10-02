@@ -37,12 +37,17 @@ export const WORKSPACE_SHELL_MESSAGES = {
 
   // The tools, the status line and "Next step" — ToolBar, StatusLine, NextStepCard.
   'tools.label': 'Tools',
-  // What the mark beside a tool says to a screen reader — the stepper's
-  // reading of the phase (`phaseTone`), in words (Sonny 02.10.2026, ADR-060).
-  'tools.mark.proven': 'done and verified',
-  'tools.mark.unproven': 'done, not verified',
-  'tools.mark.started': 'started, not done',
-  'tools.mark.stale': 'out of date, built for an earlier source',
+  // What the mark beside a tool says to a screen reader and in its tooltip:
+  // has this tool been used in this project (Sonny 02.10.2026, ADR-060). It
+  // never says how strong the record is — that is the stepper's and the chips'.
+  'tools.mark.used': 'used',
+  'tools.mark.stale': 'out of date',
+  'tools.mark.usedHint': 'Used in this project',
+  'tools.mark.staleHint': 'Out of date — inputs changed since',
+  // The legend beside "Tools" and at the top of the phone menu.
+  'tools.legend.label': 'What the marks mean:',
+  'tools.legend.used': 'used',
+  'tools.legend.stale': 'out of date',
   'status.label': 'Project status',
   'status.open': 'Open',
   'nextStep.title': 'Next step',
