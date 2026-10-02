@@ -198,10 +198,10 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
     // this call's worst case, and the narrative still to come.
     fits: (committed, chars) => run.spent + committed + estimate(chars, cisoTokens) + narrativeReserve <= cap,
     worstCase: (chars) => estimate(chars, cisoTokens),
-    call: ({ system, user }) =>
+    call: ({ system, user }, budget) =>
       askAgainIfTruncated(
         () => callReviewer({ apiKey, system, user, schema: FINDINGS_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, costTier: AUDIT.router.costTier, maxPrice: AUDIT.router.maxPrice, maxTokens: cisoTokens, timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: (answer) => ({ findings: coerceFindings(answer), notes: String(answer?.notes || '') }) }),
-        { retries: CISO_TRUNCATED_RETRIES, warn: (n) => console.warn(`CISO verification call ${n} answered with a body that is not JSON — asking once more.`) },
+        { retries: CISO_TRUNCATED_RETRIES, mayRetry: budget.another, warn: (n) => console.warn(`CISO verification call ${n} answered with a body that is not JSON — asking once more.`) },
       ),
   });
   // A fixed word per reason and a count — never a message, never a candidate.
@@ -236,10 +236,18 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
     narrativeUser = `${narrativeUser.slice(0, NARRATIVE_CAP - 120)}\n\n(Cut here: the message did not fit the reserve for this call. Findings beyond this point are in the report and counted above.)`;
   }
   let narrative = null;
+  // The narrative's retry is paid like any call: the lost attempt at its reserve, the next one only if a second
+  // reserve still fits beside everything already spent.
+  let narrativeLost = 0;
+  const narrativeMayRetry = () => {
+    if (run.spent + check.spent + 2 * narrativeReserve > cap) return false;
+    narrativeLost++;
+    return true;
+  };
   try {
     narrative = await askAgainIfTruncated(
       () => callReviewer({ apiKey, system: clean('outgoing message', brief), user: narrativeUser, schema: NARRATIVE_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, costTier: AUDIT.router.costTier, maxPrice: AUDIT.router.maxPrice, maxTokens: SELF_TEST ? 6_000 : AUDIT.narrativeOutputTokens, timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceNarrative }),
-      { retries: CISO_TRUNCATED_RETRIES, warn: (n) => console.warn(`CISO narrative call ${n} answered with a body that is not JSON — asking once more.`) },
+      { retries: CISO_TRUNCATED_RETRIES, mayRetry: narrativeMayRetry, warn: (n) => console.warn(`CISO narrative call ${n} answered with a body that is not JSON — asking once more.`) },
     );
   } catch (err) {
     console.warn(`CISO narrative call failed (${failureReason(String(err?.message || err).split('\n')[0])}) — the findings are reported without a synthesis.`);
@@ -287,7 +295,8 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
   );
 
   const usages = [...results.map((r) => r.usage), ...check.results.map((r) => r.usage), narrative?.usage].filter(Boolean);
-  const costUsd = !run.failedCalls && !check.failedCalls && usages.every((u) => typeof u?.cost === 'number') ? Number(usages.reduce((n, u) => n + u.cost, 0).toFixed(4)) : null;
+  // A lost attempt was billed without a usage record: the total is unknown, not the sum of what came back.
+  const costUsd = !run.failedCalls && !check.failedCalls && !check.lostAttempts && !narrativeLost && usages.every((u) => typeof u?.cost === 'number') ? Number(usages.reduce((n, u) => n + u.cost, 0).toFixed(4)) : null;
   const payload = {
     version: 2,
     head: surface.head,

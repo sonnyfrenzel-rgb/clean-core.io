@@ -55,7 +55,7 @@ test.describe('the agent has no tools and a small budget', () => {
     expect(src).toMatch(/callReviewer\(\{ apiKey, system: clean\('outgoing message', brief\), user: narrativeUser, schema: NARRATIVE_SCHEMA,/);
     const cisoBlock = src.slice(src.indexOf('const CISO_TRUNCATED_RETRIES'), src.indexOf('const secretFindings'));
     expect(cisoBlock).toMatch(/const CISO_TRUNCATED_RETRIES = 1;/);
-    expect(cisoBlock.match(/\{ retries: CISO_TRUNCATED_RETRIES, warn:/g)?.length, 'both CISO calls are asked again').toBe(2);
+    expect(cisoBlock.match(/\{ retries: CISO_TRUNCATED_RETRIES, mayRetry: (budget\.another|narrativeMayRetry), warn:/g)?.length, 'both CISO calls are asked again, each only when the budget holds it').toBe(2);
     expect(src.match(/askAgainIfTruncated\(/g)?.length, 'wrapped more than the two CISO calls').toBe(2);
     expect(src.slice(0, src.indexOf('const CISO_TRUNCATED_RETRIES'))).not.toMatch(/askAgainIfTruncated\(/);
     // Neither loss throws away the other half; losing both does.
@@ -897,6 +897,48 @@ test.describe('the audit pipeline', () => {
     ).rejects.toThrow(/did not match the schema at findings/);
   });
 
+  test('a retry after a truncated answer is charged and reserved like a call, and refused when the cap cannot hold it', async () => {
+    const { runVerification, askAgainIfTruncated } = await lib('pipeline.mjs');
+    const truncated = () => new Error('OpenRouter returned a response that is not JSON.');
+    // Every first attempt is cut off, every second one answers; each attempt costs its worst case, 0.6.
+    const verify = async (cap: number, batches: number) => {
+      let attempts = 0;
+      const run = await runVerification({
+        batches: Array.from({ length: batches }, (_, i) => [{ id: `K-${i + 1}` }]),
+        capUsd: cap,
+        messageFor: () => ({ system: 's', user: 'u' }),
+        fits: (committed: number) => committed + 0.6 <= cap,
+        worstCase: () => 0.6,
+        call: (_: unknown, budget: { another: () => boolean }) =>
+          askAgainIfTruncated(
+            async (attempt: number) => {
+              attempts++;
+              if (attempt === 0) throw truncated();
+              return { review: { findings: [] }, usage: { cost: 0.6 } };
+            },
+            { retries: 1, mayRetry: budget.another },
+          ),
+      });
+      return { ...run, attempts, billed: attempts * 0.6 };
+    };
+    // Cap 1.3: one call and its retry fit (1.2); the second call does not start. Before, four attempts ran
+    // (2.4 billed) and the ledger said 1.2.
+    const roomy = await verify(1.3, 2);
+    expect(roomy.attempts).toBe(2);
+    expect(roomy.spent).toBeCloseTo(1.2);
+    expect(roomy.billed).toBeLessThanOrEqual(1.3);
+    expect(roomy.lostAttempts).toBe(1);
+    expect(roomy.results).toHaveLength(1);
+    expect(roomy.notVerified.map((n: { reason: string }) => n.reason)).toEqual(['outside the $1.3 cost cap']);
+    // Cap 1.0: the retry would not fit beside the attempt already billed, so it is not asked; the call fails as it stood.
+    const tight = await verify(1.0, 1);
+    expect(tight.attempts).toBe(1);
+    expect(tight.spent).toBeCloseTo(0.6);
+    expect(tight.lostAttempts).toBe(0);
+    expect(tight.failureReasons).toEqual([{ reason: 'body-not-json', count: 1 }]);
+    expect(tight.notVerified.map((n: { reason: string }) => n.reason)).toEqual(['verification call failed (body-not-json)']);
+  });
+
   test('a failed consultant call leaves a reason in the log — a word from a closed list, never a message', async () => {
     /**
      * Run 35842725923 (2170cf35ea5e, 23.09.2026) lost 51 of 60 consultant calls
@@ -998,7 +1040,7 @@ test.describe('the audit pipeline', () => {
     expect(src).toMatch(/fits: \(committed, chars\) => committed \+ estimate\(chars, consultantTokens\) \+ cisoReserve <= cap,/);
     expect(src).toMatch(/const run = await runConsultants\(\{/);
     expect(src).toMatch(/concurrency: SELF_TEST \? 1 : AUDIT\.concurrency,/);
-    expect(src).toMatch(/const costUsd = !run\.failedCalls && !check\.failedCalls && usages\.every/);
+    expect(src).toMatch(/const costUsd = !run\.failedCalls && !check\.failedCalls && !check\.lostAttempts && !narrativeLost && usages\.every/);
     // Secrets found in the code become findings without their value; a public-by-design key does not.
     expect(src).toMatch(/secretHits\.filter\(\(h\) => h\.path !== 'outgoing message' && !isPublicByDesign\(h\)\)/);
   });
@@ -1304,7 +1346,7 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
     }));
     type Call = { user: string; schema: { properties?: Record<string, unknown> }; name?: string; coerce?: (a: unknown) => unknown };
     const keys = () => crypto.generateKeyPairSync('rsa', { modulusLength: 2048, publicKeyEncoding: { type: 'spki', format: 'pem' }, privateKeyEncoding: { type: 'pkcs8', format: 'pem' } });
-    const reviewer = ({ consultantCost = 0.1, verifyCost = 0.02, failWhen }: { consultantCost?: number; verifyCost?: number; failWhen?: (user: string) => boolean } = {}) => {
+    const reviewer = ({ consultantCost = 0.1, verifyCost = 0.02, failWhen, truncateOnce }: { consultantCost?: number; verifyCost?: number; failWhen?: (user: string) => boolean; truncateOnce?: 'verification' | 'narrative' } = {}) => {
       const seen = { consultant: 0, verification: 0, narrative: 0 };
       const call = async ({ user, schema, name, coerce }: Call) => {
         const wrap = (answer: unknown, cost: number) => ({ review: coerce ? coerce(answer) : answer, usage: { cost } });
@@ -1314,9 +1356,11 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
         }
         if (schema.properties?.executive_summary) {
           seen.narrative++;
+          if (truncateOnce === 'narrative' && seen.narrative === 1) throw new Error('OpenRouter returned a response that is not JSON.');
           return wrap({ executive_summary: 'Zusammenfassung', risk_rating: 'mittel', hardening: [], positive_observations: [], coverage: { files_in_scope: 0, deep_read: 0, pattern_scanned_only: 0, notes: '' }, limitations: [] }, 0.01);
         }
         seen.verification++;
+        if (truncateOnce === 'verification' && seen.verification === 1) throw new Error('OpenRouter returned a response that is not JSON.');
         if (failWhen?.(user)) throw new Error('OpenRouter did not answer within 600 s.');
         const ids = [...user.matchAll(/^### (K-\d+)/gm)].map((m) => m[1]);
         return wrap({ findings: ids.map((id) => ({ title: `Bestätigt ${id}`, severity: 'hoch', category: 'CWE-1', locations: [{ file: 'middleware.ts', line: 1 }], description: 'd', preconditions: 'p', impact: 'i', evidence: 'e', recommendation: 'r', verification: 'v', confidence: 0.8 })), notes: '' }, verifyCost);
@@ -1370,6 +1414,17 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
       expect(mail.text).not.toContain('nicht gründlich gelesen');
       expect(payload.report.limitations[0]).toContain('25 von 45 Kandidaten wurden am Code verifiziert, 20 nicht');
     });
+
+    for (const kind of ['verification', 'narrative'] as const) {
+      test(`a ${kind} call asked again after a truncated answer: everything is verified, and the cost is unknown, not understated`, async () => {
+        const fake = reviewer({ truncateOnce: kind });
+        const { payload } = await run(fake);
+        expect(fake.seen).toEqual({ consultant: 1, verification: kind === 'verification' ? 4 : 3, narrative: kind === 'narrative' ? 2 : 1 });
+        expect(payload.verification).toMatchObject({ candidates: 45, verified: 45, failedCalls: 0, notVerified: [] });
+        expect(payload.synthesis).toEqual({ findings: 'ciso', narrative: 'ciso' });
+        expect(payload.costUsd, 'the lost attempt was billed without a usage record').toBeNull();
+      });
+    }
 
     test('the budget runs out after one verification batch: the other twenty-five are named as outside the budget', async () => {
       const { AUDIT } = await lib('team.mjs');

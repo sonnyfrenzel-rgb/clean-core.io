@@ -160,6 +160,7 @@ export async function runBounded({ count, messageFor, call, fits, worstCase, con
   let spent = 0;
   let inFlight = 0;
   let failedCalls = 0;
+  let lostAttempts = 0;
   let next = 0;
   let stopped = false;
 
@@ -182,11 +183,28 @@ export async function runBounded({ count, messageFor, call, fits, worstCase, con
         if (stopped) return;
       }
       inFlight += worst;
+      // A call that wants to ask again (askAgainIfTruncated) must earn it here: the attempt it lost was billed at
+      // a cost nobody reported, so it is charged at its worst case, and the next attempt is admitted like a new
+      // call - or refused, and the call fails as it stands.
+      const budget = {
+        another: () => {
+          spent += worst;
+          inFlight -= worst;
+          if (fits(spent + inFlight, chars)) {
+            inFlight += worst;
+            lostAttempts++;
+            return true;
+          }
+          spent -= worst;
+          inFlight += worst;
+          return false;
+        },
+      };
       let task;
       task = (async () => {
         await null; // the task is in `pending` before its body can settle
         try {
-          const r = await call(message);
+          const r = await call(message, budget);
           spent += typeof r.usage?.cost === 'number' ? r.usage.cost : worst;
           outcomes[i] = { ok: true, answer: r };
         } catch (err) {
@@ -209,6 +227,8 @@ export async function runBounded({ count, messageFor, call, fits, worstCase, con
   return {
     outcomes,
     failedCalls,
+    // Attempts billed and lost before a retry: charged at their worst case in `spent`; the true total is unknown.
+    lostAttempts,
     spent,
     failureReasons: [...failures].map(([reason, n]) => ({ reason, count: n })).sort((a, b) => b.count - a.count),
   };
@@ -334,14 +354,16 @@ export const MAX_CONTEXT_LOCATIONS = 8;
  * @param call    (attempt) => Promise<answer>
  * @param retries how many extra asks a truncated body is worth; 1 for the CISO
  * @param warn    (attemptNumber) => void, told before each extra ask
+ * @param mayRetry (attemptNumber) => boolean, asked before each extra ask - the budget's say: the lost attempt was
+ *                billed, so it is charged, and the next one is asked only if the cap still holds it
  */
-export async function askAgainIfTruncated(call, { retries = 1, warn = () => {} } = {}) {
+export async function askAgainIfTruncated(call, { retries = 1, warn = () => {}, mayRetry = () => true } = {}) {
   for (let attempt = 0; ; attempt++) {
     try {
       return await call(attempt);
     } catch (err) {
       const message = String(err?.message || err).split('\n')[0];
-      if (attempt < retries && /response that is not JSON/.test(message)) {
+      if (attempt < retries && /response that is not JSON/.test(message) && mayRetry(attempt + 1)) {
         warn(attempt + 1);
         continue;
       }
@@ -559,7 +581,7 @@ export async function runVerification({ batches, messageFor, call, fits, worstCa
     if (o?.ok) results.push({ ...o.answer, candidates: b.map((c) => c.id) });
     else for (const candidate of b) notVerified.push({ candidate, reason: o ? `verification call failed (${o.code})` : `outside the $${capUsd} cost cap` });
   });
-  return { results, notVerified, failedCalls: run.failedCalls, spent: run.spent, failureReasons: run.failureReasons };
+  return { results, notVerified, failedCalls: run.failedCalls, lostAttempts: run.lostAttempts, spent: run.spent, failureReasons: run.failureReasons };
 }
 
 /** A not-verified candidate as the sealed report carries it: by name, with where, who and why. */
