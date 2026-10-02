@@ -1108,8 +1108,11 @@ test.describe('the full review of a release on main', () => {
     expect(job('smoke')).toContain("github.event_name == 'push' && github.ref_name == 'dev'");
     expect(job('full')).toContain("if: vars.QA_REVIEW_ENABLED != 'false' && github.event_name == 'push' && github.ref_name == 'main'");
     // A release is never cancelled by the next one, and a main run never shares a group with a dev run.
-    expect(wf()).toContain('group: qa-review-${{ github.ref_name }}');
+    // `cancel-in-progress: false` is not enough for the first half: GitHub keeps one pending run per group
+    // and cancels it when another queues, so each main run needs a group no other run has (codex code-ci-04).
+    expect(wf()).toContain("group: ${{ github.ref_name == 'main' && format('qa-review-main-{0}', github.run_id) || format('qa-review-{0}', github.ref_name) }}");
     expect(wf()).toContain("cancel-in-progress: ${{ github.ref_name != 'main' }}");
+    expect(wf().match(/^\s+group:/gm), 'one concurrency group for the whole workflow').toHaveLength(1);
   });
 
   test('the full review job holds the same guardrails: no install, two secrets, a sealed upload', () => {

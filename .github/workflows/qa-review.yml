@@ -32,11 +32,17 @@ permissions:
   actions: read
 
 # On dev a newer push supersedes a running review. Nothing is lost: the next review
-# starts from the last *reviewed* commit, so it covers the cancelled delta too. On
-# main a release is never cancelled — each one is reviewed in full, one after the
-# other — and a main run never shares a group with a dev run.
+# starts from the last *reviewed* commit, so it covers the cancelled delta too.
+#
+# On main every run has a group of its own (codex code-ci-04). `cancel-in-progress:
+# false` alone does not make a queue: GitHub holds one pending run per group and
+# cancels it when the next one queues, so a third release would have discarded the
+# second one's full review - the failure the security agent already had and lost
+# its group for. Releases that overlap are therefore reviewed side by side; the
+# cost is that the later one may carry over the findings of the review before the
+# one still running. A main run never shares a group with a dev run.
 concurrency:
-  group: qa-review-${{ github.ref_name }}
+  group: ${{ github.ref_name == 'main' && format('qa-review-main-{0}', github.run_id) || format('qa-review-{0}', github.ref_name) }}
   cancel-in-progress: ${{ github.ref_name != 'main' }}
 
 jobs:

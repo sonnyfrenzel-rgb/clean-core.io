@@ -312,7 +312,7 @@ code (Sonny, 15.09.2026).
 
 | | |
 |---|---|
-| Trigger | push to `main`, job `full` in `.github/workflows/qa-review.yml`; never aborted, releases run one after the other |
+| Trigger | push to `main`, job `full` in `.github/workflows/qa-review.yml`; never aborted and never displaced: each run on `main` has a concurrency group of its own, because GitHub keeps only one *pending* run per group and cancels it when the next one queues. Releases that overlap are reviewed side by side; the later one then carries over the findings of the last *completed* full review |
 | Model | Since 01.10.2026: OpenRouter Auto Router (`openrouter/auto`), cost tier `xhigh`, ceiling $3/$15, reasoning `high`; the report names every model that answered. Before: `openai/gpt-5.6-sol`, later `openai/gpt-6-luna-pro` |
 | Scope | every reviewable file of the release commit (same path filters as the delta), with line numbers, plus an overview of all files; on 15.09.2026 435 files, around 4.3 M characters in 12 batches |
 | Costs | $2 / $10 per M tokens. Budget **$10 per version**, estimated as for the delta (full output per call included): advance estimate $8.95, actually considerably less, because the output is rarely used up |
