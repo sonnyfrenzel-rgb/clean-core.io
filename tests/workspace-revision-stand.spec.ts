@@ -19,6 +19,7 @@ import {
   type RevisionStand,
 } from '../lib/workspace-revision';
 import { signInViaLanding } from './helpers/sign-in';
+import { PROCESS_REVISION_COLLECTION, PROCESS_REVISION_FORMAT_VERSION } from '../lib/process-revisions';
 
 /**
  * Roadmap 6.9 — the Revisionshinweis (CR-15) and the fragment across a view
@@ -301,10 +302,12 @@ async function signIn(page: Page, email: string): Promise<void> {
 test.describe('the workspace on the screen', () => {
   const ADMIN = `${unique('stand-admin')}@cleancore-test.io`;
   const PROJECT_ID = unique('stand-project');
+  let adminUid = '';
 
   test.beforeAll(async () => {
     test.setTimeout(180 * 1000);
     const cred = await createUserWithEmailAndPassword(clientAuth, ADMIN, PASSWORD);
+    adminUid = cred.user.uid;
     await adminSetCustomClaim(cred.user.uid, { admin: true });
     await adminSetDoc('users', cred.user.uid, {
       firstName: 'Stand', lastName: 'Admin', email: ADMIN,
@@ -336,6 +339,81 @@ test.describe('the workspace on the screen', () => {
     // Nothing has moved, so there is no notice. A banner on every load would be
     // the notice nobody reads.
     await expect(page.locator('[data-workspace-revision-banner]')).toHaveCount(0);
+  });
+
+  test('a revision written underneath the screen raises the notice; keep holds the screen, refresh takes the new Stand (CR-15)', async ({ page }) => {
+    // Codex review code-tests-02: every other check in this file would stay
+    // green if the notice never appeared. Here a second writer — the Admin SDK,
+    // standing in for tab B — saves a revision while the page is open, and the
+    // page has to notice it on focus.
+    test.setTimeout(240 * 1000);
+    const MOVED_ID = unique('stand-moved');
+    const revisions = `projects/${MOVED_ID}/${PROCESS_REVISION_COLLECTION}`;
+    const xml =
+      '<?xml version="1.0"?><bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="d">' +
+      '<bpmn:process id="p"/></bpmn:definitions>';
+    const revision = (n: number) => ({
+      formatVersion: PROCESS_REVISION_FORMAT_VERSION,
+      revision: n,
+      origin: n === 1 ? 'reconstructed' : 'edited',
+      account: { uid: 'tab-b', name: 'Tab B', email: 'tab-b@cleancore-test.io' },
+      savedAt: new Date().toISOString(),
+      xmlSha256: `sha-${n}`,
+      sourceSha256: 'source',
+      fileName: 'z_stand.abap',
+      runId: null,
+      flowNodes: 0,
+      anchored: 0,
+      unanchored: 0,
+      xml,
+    });
+    await adminSetDoc('projects', MOVED_ID, {
+      name: 'Stand moved underneath', userId: adminUid,
+      createdAt: new Date(), status: 'created',
+      legacyCode: 'REPORT z_stand.\nWRITE 1.\n',
+    });
+    await adminSetDoc(revisions, '1', revision(1));
+
+    await signIn(page, ADMIN);
+    await page.goto(`/project/${MOVED_ID}`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    const badge = page.locator('[data-workspace-revision]');
+    const banner = page.locator('[data-workspace-revision-banner]');
+    await expect(badge).toHaveAttribute('data-workspace-revision', '1', { timeout: 30000 });
+    await expect(banner).toHaveCount(0);
+
+    // The probe answers from its last read for STAND_COOLDOWN_MS, so focus is
+    // sent until a fresh read lands — never a fixed wait.
+    const focusUntilNotice = async () => {
+      await expect(async () => {
+        await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+        await expect(banner).toBeVisible({ timeout: 1000 });
+      }).toPass({ timeout: STAND_COOLDOWN_MS * 4, intervals: [1000] });
+    };
+
+    await adminSetDoc(revisions, '2', revision(2));
+    await focusUntilNotice();
+    await expect(banner, 'the notice does not name the newer revision').toContainText('Revision 2');
+    await expect(badge, 'the notice relabelled the screen instead of telling the reader').toHaveAttribute(
+      'data-workspace-revision',
+      '1',
+    );
+
+    // Keep: the notice goes, the screen still says what it is showing.
+    await banner.locator('[data-workspace-revision-keep]').click();
+    await expect(banner).toHaveCount(0);
+    await expect(badge).toHaveAttribute('data-workspace-revision', '1');
+
+    // A further revision after keep is news again; refresh takes it.
+    await adminSetDoc(revisions, '3', revision(3));
+    await focusUntilNotice();
+    await expect(banner).toContainText('Revision 3');
+    await banner.locator('[data-workspace-revision-refresh]').click();
+    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    await expect(badge, 'refresh did not load the newer revision').toHaveAttribute('data-workspace-revision', '3', {
+      timeout: 30000,
+    });
+    await expect(banner).toHaveCount(0);
   });
 
   test('a view switch keeps the place the link pointed at (CR-14)', async ({ page }) => {

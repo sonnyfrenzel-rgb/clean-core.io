@@ -212,7 +212,7 @@ test.describe('design rendered guard (DESIGN.md on every route, zero)', () => {
   // QA f8887638a04b, 0564882579db: the two checks on fixtures whose answer is
   // known, so a measurement that goes blind again is red here and not quietly
   // green on every route.
-  test('contrast applies opacity above 0.5 to the text, and a shadow the element always wears is no focus ring', async ({ page }) => {
+  test('contrast applies any opacity to the text, and a shadow the element always wears is no focus ring', async ({ page }) => {
     await page.setContent(`<!doctype html><html><head><style>
       body { margin: 0; background: #ffffff; font: 16px/1.5 sans-serif; }
       button { font: inherit; margin: 8px; padding: 8px; border: 1px solid #555; background: #fff; color: #111; outline: none; }
@@ -227,6 +227,11 @@ test.describe('design rendered guard (DESIGN.md on every route, zero)', () => {
       <p data-case="control" style="color:#595959">Grey text at full strength</p>
       <p data-case="faded-self" style="color:#595959;opacity:0.6">Grey text faded on itself</p>
       <div style="opacity:0.6"><p data-case="faded-parent" style="color:#595959">Grey text faded by its card</p></div>
+      <p style="color:#000000;opacity:0.5">Black text at half on itself</p>
+      <div style="opacity:0.5"><p style="color:#000000">Black text at half by its card</p></div>
+      <p style="color:#000000;opacity:0.3">Black text at a third on itself</p>
+      <div style="opacity:0.3"><p style="color:#000000">Black text at a third by its card</p></div>
+      <div style="opacity:0.4"><button disabled style="color:#595959">Disabled and fainter, exempt</button></div>
       <div style="opacity:0.6"><button disabled style="color:#595959">Disabled action, exempt</button></div>
       <button class="decor">Decoration only</button>
       <button class="ring">Ring on focus</button>
@@ -237,9 +242,14 @@ test.describe('design rendered guard (DESIGN.md on every route, zero)', () => {
     </body></html>`);
 
     const m = await page.evaluate(measurePage, 12);
-    expect(m.counts.contrast, m.samples.contrast.join('\n')).toBe(2);
+    expect(m.counts.contrast, m.samples.contrast.join('\n')).toBe(6);
     expect(m.samples.contrast.join('\n')).toContain('faded on itself');
     expect(m.samples.contrast.join('\n')).toContain('faded by its card');
+    // Black on white at 0.5 is about 3.98:1, below 4.5. No opacity floor may
+    // exempt faint active text, whether the opacity sits on it or an ancestor.
+    for (const faint of ['at half on itself', 'at half by its card', 'at a third on itself', 'at a third by its card']) {
+      expect(m.samples.contrast.join('\n'), `faint text was not measured: ${faint}`).toContain(faint);
+    }
 
     await page.evaluate(focusStart);
     const ringless: Record<string, boolean> = {};

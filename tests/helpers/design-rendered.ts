@@ -293,7 +293,9 @@ export function measurePage(sampleMax = 12): PageMeasure {
     // disabled control is named by what it is, not guessed from how faint it
     // is: WCAG 1.4.3 exempts inactive components, and the design system dims
     // them to 0.6 — which the opacity applied below would otherwise count.
-    if (own.length < 2 || opacity <= 0.5) continue;
+    // Faintness itself exempts nothing: text at opacity 0.5 is still read, and
+    // an opacity floor here let any active text out of the measurement.
+    if (own.length < 2) continue;
     if (el.closest(':disabled, [aria-disabled="true"]')) continue;
     if (/text/.test(s.backgroundClip || '') || /text/.test((s as unknown as Record<string, string>).webkitBackgroundClip || '')) continue;
     const isSvg = el instanceof SVGElement;
