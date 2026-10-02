@@ -77,7 +77,7 @@ export const ROWS = [
   { id: 'IMPORT', title: 'File import: a BPMN 2.0 file comes in as a new revision (ADR-056)', specs: ['process-import.spec.ts', 'editor-import-dialog.spec.ts', 'process-revisions.spec.ts'] },
   // --- "Done when" of the 3.0 row ---
   { id: 'DW-1', title: 'All phase acceptances have run on main', specs: [], manual: 'CI validate job green on the main release commit (gh run list --branch main)' },
-  { id: 'DW-2', title: 'Three complete paths plus the undecidable case, with negative probes', specs: ['full-pipeline.spec.ts'], manual: 'no spec for the three paths exists — manual walk per protocol' },
+  { id: 'DW-2', title: 'Three complete paths plus the undecidable case, with negative probes', specs: ['g4-chain-acceptance.spec.ts', 'full-pipeline.spec.ts'], manual: 'protocol and findings: docs/release/g4-chain-acceptance.md; the owner watches one walk on the release build' },
   { id: 'DW-3', title: 'Copy CI green', specs: ['copy-ci-guard.spec.ts'] },
   { id: 'DW-4', title: 'New landing live with real product views, no mockup image', specs: ['landing-consistency-guard.spec.ts'], manual: 'captures re-recorded (CAPTURE_LANDING=1) with a community account; live check on clean-core.io after deploy' },
   { id: 'DW-5', title: 'Sign-in reachable as today', specs: ['public-pages-smoke.spec.ts'], manual: '/?auth=signin on clean-core.io after deploy' },
@@ -90,7 +90,7 @@ export const ROWS = [
   { id: 'G1', title: 'Trust boundaries', specs: ['project-access-matrix.spec.ts', 'run-bound-approval.spec.ts', 'repair-draft.spec.ts', 'repair-draft-runner.spec.ts', 'runner-isolation.spec.ts', 'admin-runner-selftest.spec.ts'], manual: 'runner negative test on the deployed profile (admin self-test on clean-core.io)' },
   { id: 'G2', title: 'One consistent work item', specs: ['workspace-revision-stand.spec.ts', 'generation-store-cas.spec.ts', 'process-revisions.spec.ts'], manual: 'Business → IT → Management → back after reload, by hand' },
   { id: 'G3', title: 'Decide first, then build', specs: ['rules-fit-firstlook.spec.ts', 'element-comparability.spec.ts', 'public-cloud-fit.spec.ts', 'usage-import-guard.spec.ts', 'usage-unknown-guard.spec.ts', 'project-decision.spec.ts', 'decision-card.spec.ts', 'steering-one-pager.spec.ts'] },
-  { id: 'G4', title: 'Proven handover', specs: ['trust-chain-e2e.spec.ts', 'trust-chain-binding.spec.ts', 'evidence-chain-covers.spec.ts', 'generation-follows-contract.spec.ts'], manual: 'fresh pack verified offline with the published key (scripts/verify-pack.mjs)' },
+  { id: 'G4', title: 'Proven handover', specs: ['g4-chain-acceptance.spec.ts', 'trust-chain-e2e.spec.ts', 'trust-chain-binding.spec.ts', 'evidence-chain-covers.spec.ts', 'generation-follows-contract.spec.ts'], manual: 'fresh pack verified offline with the published key (scripts/verify-pack.mjs)' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -190,7 +190,10 @@ function writeConfig(baseUrl) {
 async function waitFor(url, ms) {
   const until = Date.now() + ms;
   while (Date.now() < until) {
-    try { const r = await fetch(url); if (r.status < 500) return true; } catch { /* not up yet */ }
+    // Any HTTP answer means the server is up. `/api/health` answers 503 "degraded"
+    // whenever GEMINI_API_KEY is empty — which safeEnv() makes it on purpose — so
+    // waiting for < 500 never ended and every rendered run stopped with exit 3.
+    try { await fetch(url); return true; } catch { /* not up yet */ }
     await new Promise((r) => setTimeout(r, 1000));
   }
   return false;
