@@ -36,6 +36,7 @@ import {
   type ProjectSizeCheck,
 } from '@/lib/firestore-doc-size';
 import { catalogSnapshotRefFor } from '@/lib/abap/catalog-snapshots';
+import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
 
 /**
  * The most ABAP one request may be asked to analyse.
@@ -59,6 +60,41 @@ import { catalogSnapshotRefFor } from '@/lib/abap/catalog-snapshots';
  */
 const MAX_ANALYSED_SOURCE_BYTES = 256 * 1024;
 
+/**
+ * The most one request body may carry, read or not — external audit SEC-01.
+ *
+ * `MAX_ANALYSED_SOURCE_BYTES` bounds the source, but only after `req.json()`
+ * had read and parsed the whole body, of any size, into memory. The body is
+ * the source, the model's analysis and a few ids: the source is at most
+ * 256 KiB, and the analysis has to fit the 1 MiB Firestore document it is
+ * stored on beside it. 1 MiB is that, with room; a larger body cannot be a
+ * run this route would store. A declared `Content-Length` above it is refused
+ * before anything else happens; a body that grows past it while streaming is
+ * cancelled. Both are 413, and neither reaches the quota or a model.
+ */
+const MAX_RUN_BODY_BYTES = 1024 * 1024;
+const RUN_BODY_LIMITS = { maxBytes: MAX_RUN_BODY_BYTES, timeoutMs: 20_000 };
+
+/** The body as JSON, or `{}` when it is not an object — what `req.json().catch(() => ({}))` gave. */
+function parseRunBody(raw: string) {
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function bodyTooLarge(): NextResponse {
+  return NextResponse.json(
+    {
+      error: `The request is larger than ${MAX_RUN_BODY_BYTES / 1024} KB. One analysis run takes at most ${MAX_ANALYSED_SOURCE_BYTES / 1024} KB of source — analyse the object in parts.`,
+      code: 'body-too-large',
+    },
+    { status: 413 },
+  );
+}
+
 // The canonicaliser moved to lib/run-signature.ts so the route that verifies a
 // run uses the same one that produced it. Two implementations of "canonical"
 // drift, and a verification that drifts is a verification that passes.
@@ -71,6 +107,13 @@ export async function POST(req: NextRequest) {
   let reservation: RunQuotaResult | null = null;
   // What the quota decided for this run, recorded on it (codex code-mail-03).
   let metering: RunQuotaResult['reason'] | undefined;
+
+  // 0. Body size, by its declaration. Nothing has been read, verified or
+  // reserved yet, so an oversized request costs a header lookup.
+  const declaredLength = Number(req.headers.get('content-length'));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_RUN_BODY_BYTES) {
+    return bodyTooLarge();
+  }
 
   try {
     // 1. Signing key. Unconditional: the check used to run only when NODE_ENV was
@@ -116,7 +159,13 @@ export async function POST(req: NextRequest) {
       throw rateErr;
     }
 
-    const body = await req.json().catch(() => ({}));
+    // Read under the byte cap: a chunked body without a Content-Length, or one
+    // that understated it, is cut off at MAX_RUN_BODY_BYTES instead of parsed.
+    const raw = await readBoundedBody(req, RUN_BODY_LIMITS).catch((bodyErr) =>
+      bodyErr instanceof ResponseLimitError ? null : '',
+    );
+    if (raw === null) return bodyTooLarge();
+    const body = parseRunBody(raw);
     const {
       projectId,
       analysis,
