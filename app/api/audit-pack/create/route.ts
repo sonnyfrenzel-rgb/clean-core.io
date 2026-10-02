@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
 import JSZip from 'jszip';
-import type { Transaction } from 'firebase-admin/firestore';
+import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { verifyRunIntegrity } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
@@ -417,7 +417,7 @@ export async function POST(req: NextRequest) {
     // run is still the active one, and with its id beside the timestamp. A new
     // run clears the marker (`/api/runs/create`), so "handed over" never
     // describes a run nobody exported.
-    const exportRef = db.collection('projects').doc(projectId);
+    const exportRef: DocumentReference = db.collection('projects').doc(projectId);
     await db.runTransaction(async (tx: Transaction) => {
       const now = await tx.get(exportRef);
       if (!now.exists || now.data()?.activeRunId !== runId) return;
