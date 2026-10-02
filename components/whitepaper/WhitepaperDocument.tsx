@@ -481,7 +481,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
             <div className="pcard" data-wp-score="">
               <h3>The Clean Core Score</h3>
               <p className="sub2">
-                One figure from 0 to 100 for how far the analysed code is decoupled from the SAP standard core — higher is
+                One figure from 5 to 100 for how far the analysed code is decoupled from the SAP standard core — higher is
                 better. {SCORE_NATURE}: SAP publishes no metric of that name, and it is not SAP&apos;s Technical Debt Score,
                 which runs the other way.
               </p>

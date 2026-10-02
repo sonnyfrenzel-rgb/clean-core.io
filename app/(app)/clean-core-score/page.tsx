@@ -266,7 +266,7 @@ export default function CleanCoreScorePage() {
             SAP Clean Core <span className="text-cc-brand-strong">Score</span>
           </h1>
           <p className="max-w-2xl text-lg font-medium leading-relaxed text-cc-ink-muted">
-            One number, 0 to 100, for how far your custom ABAP is decoupled from the SAP standard core.
+            One number, 5 to 100, for how far your custom ABAP is decoupled from the SAP standard core.
             Higher is better. It is our measure, not a figure SAP publishes — and it points the
             opposite way to SAP&rsquo;s Technical Debt Score.
           </p>

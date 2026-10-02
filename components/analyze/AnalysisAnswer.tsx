@@ -19,7 +19,7 @@ import { ScoreScale } from './CleanCoreScoreSection';
  * findings, the Clean Core Score, the clean core levels, what was not assessed
  * — each with its figure, its words and a micro chart, then the status line.
  *
- * The Clean Core Score is shown as what it is — a grade from 0 to 100, "a
+ * The Clean Core Score is shown as what it is — a grade from 5 to 100, "a
  * grade, not a compliance percentage" (DESIGN.md §6.1, glossary B) — never as
  * a percentage or a ring that fills up to one; its tile carries the band the
  * score falls in, explained in full in the score section below. Nothing here
