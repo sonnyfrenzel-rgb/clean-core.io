@@ -8,7 +8,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, getDocs, limit } from 'firebase/firestore';
-import { Plus, Trash2, ArrowRight, ChevronRight, ChevronDown, FileText, FileCode2, Download, Copy, Eye, BookOpen, ShieldAlert, Clock, Shield, HelpCircle, UserPlus, Play } from 'lucide-react';
+import { Plus, Trash2, ArrowRight, ChevronRight, ChevronDown, FileText, FileCode2, Download, Copy, Eye, BookOpen, ShieldAlert, Clock, HelpCircle, UserPlus, Play } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { quotaExhausted, runsRemaining, runsAreSelfFunded } from '@/lib/run-quota-rule';
 import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
@@ -21,7 +21,6 @@ import ProjectProgressCell from '@/components/ProjectProgress';
 import StarterExamples from '@/components/StarterExamples';
 import DemoEntryCard from '@/components/demo/DemoEntryCard';
 import InviteReaderDialog from '@/components/InviteReaderDialog';
-import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcDateText from '@/components/cc/DateText';
@@ -45,8 +44,9 @@ import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
  *
  * Rebuilt to `DESIGN.md` §2.2 (List Report) and mockup 2.8 s7, not removed
  * (ADR-052): the project list, Continue, Duplicate, Export, Delete, Invite, the
- * deliverables of a project, the quota, the "Your turn" card, the shipped starter
- * examples and the announcements are all still here. One thing is not: the
+ * deliverables of a project, the quota, the "Your turn" card and the shipped
+ * starter examples are all still here. The read-only announcements board is
+ * gone (owner 02.10.2026, outdated; ADR-061). One thing more is not: the
  * personal example library (uploading your own ABAP file to an `abap_examples`
  * list, browsing and deleting it) went with the redesign and has no successor
  * on this page — a project is where your own code goes. The
@@ -66,27 +66,6 @@ interface ViewContent {
   content: string;
   type: ViewType;
 }
-
-type ForumTopic = 'announcements' | 'technical' | 'general';
-
-interface ForumPost {
-  id: string;
-  title: string;
-  author: string;
-  authorEmail?: string;
-  isAdmin: boolean;
-  category: ForumTopic;
-  message: string;
-  // No date: the posts are static text in this file, and a "Just now" on them
-  // read as freshly published on every visit (QA 18158b8c64f9).
-  pinned: boolean;
-}
-
-const TOPIC_LABEL: Record<ForumTopic, string> = {
-  announcements: 'Announcement',
-  technical: 'Technical',
-  general: 'General',
-};
 
 /** Rendered markdown on the type scale (`.cc-prose`, app/globals.css). */
 const PROSE = 'cc-prose';
@@ -133,8 +112,6 @@ export default function Dashboard() {
   // exists but is still 'pending'. See the retry block further down.
   const [retryingActivation, setRetryingActivation] = useState(false);
   const [activationError, setActivationError] = useState('');
-
-  const [showForum, setShowForum] = useState(false);
 
   // The project list's live filter (§2.5).
   const [projectSearch, setProjectSearch] = useState('');
@@ -327,73 +304,6 @@ export default function Dashboard() {
     setProceedingId(project.id);
     router.push(continuePath(project));
   };
-
-  /**
-   * Roadmap 0.2 (UX-059). The board below used to carry a "Post to Forum" form,
-   * a "Like Post" button and a comment box. None of them reached a server:
-   * `handleCreateForumPost` waited 800ms on a timer, pushed the thread into
-   * this component's `useState`, and rendered "Thread Posted Successfully! —
-   * Thank you for contributing to our developer community". One reload and the
-   * question was gone, and nobody had ever seen it. The same was true of every
-   * like and every comment.
-   *
-   * Written questions about somebody's own ABAP are the last thing this product
-   * should take and silently drop, so the write half is removed rather than
-   * relabelled — there is no forum backend to bind it to, and building one is
-   * not a Phase 0 correction. What remains is what was always real: the
-   * announcements the administrator ships with the app, readable, searchable,
-   * and said to be read-only in as many words, next to the address that does
-   * reach a person.
-   */
-  const [activePost, setActivePost] = useState<ForumPost | null>(null);
-  const [forumFilter, setForumFilter] = useState<'all' | ForumTopic>('all');
-  const [forumSearch, setForumSearch] = useState('');
-
-  const [forumPosts] = useState<ForumPost[]>([
-    {
-      id: 'post-pinned',
-      title: 'Welcome to the Clean-Core.io Community Forum & Tech Escalations',
-      author: 'Clean-Core Admin',
-      authorEmail: 'admin@clean-core.io',
-      isAdmin: true,
-      category: 'announcements',
-      message: 'Welcome everyone! This board carries announcements from the administrator about Clean-Core.io; it takes no posts or comments. Everything on Clean-Core.io is free to use: every user gets the full 7-stage workflow (5 transformations to start; bring your own Gemini key for unlimited runs). For account approvals or an admin-gated S/4HANA sandbox connection, reach the admin team at admin@clean-core.io. Happy modernizing!',
-      pinned: true,
-    },
-    {
-      id: 'post-abcd-blog',
-      title: 'New on SAP Community: Clean Core Levels A–D — classify your custom ABAP',
-      author: 'Clean-Core Admin',
-      authorEmail: 'admin@clean-core.io',
-      isAdmin: true,
-      category: 'announcements',
-      message: `We just published a full write-up on SAP Community — "Clean Core Levels A–D: how to classify your custom ABAP (and what to do with it)". Here's the short version:\n\nSAP Clean Core guidance moved from a fuzzy "clean / not clean" view to a four-grade, cloud-readiness classification for technical objects — A, B, C, D:\n\n- A — Released SAP APIs & extension points. Cloud-ready; build here.\n- B — Classic SAP APIs, SAP-recommended. Usable; plan for released successors over time.\n- C — Internal SAP APIs, conditionally clean. Wrap behind a clean interface; verify per release.\n- D — Not-recommended objects/tech (direct writes to standard tables, unreleased dependencies, dynpro/kernel). The upgrade blockers — replace or re-architect.\n\nPractical flow: identify each object → look it up in SAP's Cloudification Repository → assign a grade → decide remediation (map to a released API/CDS view, wrap, or re-architect) → confirm with SAP ADT/ATC.\n\nFull post on SAP Community: https://community.sap.com/t5/technology-blog-posts-by-members/clean-core-levels-a-d-how-to-classify-your-custom-abap-and-what-to-do-with/ba-p/14437956\n\nTry the A–D readiness estimate on your own code (free): https://clean-core.io/sap-clean-core-object-classification\n\nNote: Clean-Core.io's A–D grade is an experimental preview estimate — a fast orientation aid, not an authoritative SAP ATC classification. Always verify with SAP ADT/ATC for your target release.`,
-      pinned: true,
-    },
-    {
-      id: 'post-pinned-techstack',
-      title: 'Clean-Core.io Technical Architecture & Tech Stack Deep Dive',
-      author: 'Clean-Core Admin',
-      authorEmail: 'admin@clean-core.io',
-      isAdmin: true,
-      category: 'technical',
-      message: `Welcome to the official technical blueprint of Clean-Core.io!\n\nClean-Core.io modernizes custom SAP ABAP toward clean, upgrade-safe TypeScript/Node.js — deterministic evidence first, AI second. The stack:\n\n- Frontend: Next.js 15 (App Router), React 19, TypeScript (strict), Tailwind v4.\n- Evidence engine: a deterministic ABAP parser/analyzer runs first and produces the auditable facts (code inventory, findings, complexity/criticality scores, RAP vs CAP routing) — before any AI call, to prevent structure hallucination.\n- AI gateway: Google Gemini (${PRODUCT_GEMINI_MODEL}) narrates and transforms on top of that evidence. Keys never reach the client — every call is proxied through our server.\n- BYOK: your own Gemini API key is encrypted at rest (AES-256-GCM) in a server-only store and used exclusively via the secure backend proxy — it is never returned to the client.\n- Sandbox testing: generated tests run in a separate runner service with no roles, no platform secrets and no open network egress, inside a restricted Node child process there (esbuild bundle + Node Permission Model + preloaded module and network guards). Test execution against a live S/4HANA tenant is locked until the isolated live runner has passed its review.\n- Trust chain: every analysis is frozen as an immutable, HMAC-signed Run that anchors a server-generated, verifiable audit evidence pack.\n- Persistence: strict per-user isolation via Firestore security rules.\n\nQuestions about the evidence engine or the transformation go to admin@clean-core.io.`,
-      pinned: true,
-    }
-  ]);
-
-  // Render a forum message as plain text with any http(s) URL turned into a clickable link.
-  // Newlines are preserved by the container's `whitespace-pre-line`.
-  const renderMessageWithLinks = (text: string) =>
-    (text || '').split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
-      /^https?:\/\//.test(part) ? (
-        <a key={i} href={part} target="_blank" rel="noopener noreferrer" className={`${LINK} break-all`}>
-          {part}
-        </a>
-      ) : (
-        part
-      )
-    );
 
   const downloadFile = async (content: string, filename: string, type: string = 'text/plain') => {
     const blob = new Blob([content], { type });
@@ -616,25 +526,6 @@ export default function Dashboard() {
     };
   });
 
-  const topics = [
-    { id: 'all' as const, label: 'All', count: forumPosts.length },
-    { id: 'announcements' as const, label: 'Announcements', count: forumPosts.filter(p => p.pinned || p.category === 'announcements').length },
-    { id: 'technical' as const, label: 'Technical', count: forumPosts.filter(p => p.category === 'technical').length },
-    { id: 'general' as const, label: 'General', count: forumPosts.filter(p => p.category === 'general').length },
-  ];
-
-  const filteredForumPosts = forumPosts.filter(post => {
-    if (forumFilter === 'announcements' && !post.pinned && post.category !== 'announcements') return false;
-    if (forumFilter === 'technical' && post.category !== 'technical') return false;
-    if (forumFilter === 'general' && post.category !== 'general') return false;
-
-    if (forumSearch.trim()) {
-      const q = forumSearch.toLowerCase();
-      return [post.title, post.message, post.author].some((s) => (s || '').toLowerCase().includes(q));
-    }
-    return true;
-  });
-
   return (
     <div className="cc min-h-screen bg-cc-page px-4 py-6 sm:px-6" data-dashboard="">
       <div className="mx-auto flex max-w-[1280px] flex-col gap-4">
@@ -776,149 +667,6 @@ export default function Dashboard() {
           <StarterExamples userId={user.uid} account={profile} />
         ) : null}
 
-        {/* Announcements — read-only (UX-059, UX-147). */}
-        <section
-          aria-labelledby="dashboard-announcements-title"
-          className="rounded-cc-card border border-cc-line bg-cc-surface p-4 shadow-cc sm:p-6"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0 flex-1 basis-64">
-              <h2 id="dashboard-announcements-title" className="m-0 cc-text-h2 text-cc-ink">
-                Clean-Core.io announcements
-              </h2>
-              <p className="mt-1 mb-0 cc-text-cell text-cc-ink-muted">
-                Release notes and background from the people who build this. Read-only for now — there is no forum server behind it, so nothing written here would reach anyone.
-              </p>
-            </div>
-            <CcButton
-              variant="ghost"
-              aria-expanded={showForum}
-              aria-controls="dashboard-announcements"
-              icon={<ChevronDown size={16} aria-hidden={true} />}
-              onClick={() => setShowForum(!showForum)}
-            >
-              {showForum ? 'Close announcements' : 'Open announcements'}
-            </CcButton>
-          </div>
-
-          {showForum ? (
-            <div id="dashboard-announcements" className="mt-4 flex flex-col gap-4">
-              <CcFilterBar
-                noun="posts"
-                shown={filteredForumPosts.length}
-                total={forumPosts.length}
-                search={forumSearch}
-                onSearch={setForumSearch}
-                active={forumSearch.trim().length > 0 || forumFilter !== 'all'}
-                onClear={() => {
-                  setForumSearch('');
-                  setForumFilter('all');
-                }}
-              >
-                {/*
-                  A topic appears once it has something to show. The board
-                  became read-only announcements, but "Technical Q&A" and
-                  "General" stayed on the bar with a count of 0 — an offer of
-                  discussion on a board that carries none (UX review of
-                  bc2f7863464c). Filtering the list rather than deleting the
-                  entries keeps them correct either way. "All" always stays.
-                */}
-                <CcSelect<'all' | ForumTopic>
-                  label="Topic"
-                  value={forumFilter}
-                  onChange={setForumFilter}
-                  options={topics
-                    .filter((tab) => tab.id === 'all' || tab.count > 0)
-                    .map((tab) => ({ value: tab.id, label: `${tab.label} (${tab.count})` }))}
-                />
-              </CcFilterBar>
-
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                {/* Announcements list (read-only, UX-147) */}
-                <div className="flex flex-col gap-3 lg:col-span-2">
-                  <div>
-                    <h3 className="m-0 cc-text-h3 text-cc-ink">Announcements</h3>
-                    {/* Read-only posts by the Clean-Core team, each with a topic —
-                        none of them is a discussion (QA review of 4b4586aff273). */}
-                    <p className="mt-1 mb-0 cc-text-meta text-cc-ink-muted">Read-only posts from the Clean-Core team, filed by topic. Tap any entry to read it in full.</p>
-                  </div>
-
-                  {filteredForumPosts.length === 0 ? (
-                    <CcNoMatches
-                      title="No announcements match these filters"
-                      reason="Every post is still here — the filters are hiding them."
-                      onClear={() => {
-                        setForumSearch('');
-                        setForumFilter('all');
-                      }}
-                    />
-                  ) : (
-                    filteredForumPosts.map((post) => (
-                      <article key={post.id} className="flex flex-col gap-2 rounded-cc-row border border-cc-line bg-cc-surface p-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {post.pinned ? <CcTag>Pinned</CcTag> : null}
-                          {post.isAdmin ? <CcTag>Admin</CcTag> : null}
-                          <CcTag>{TOPIC_LABEL[post.category]}</CcTag>
-                        </div>
-                        <h4 className="m-0 cc-text-identifier text-cc-ink">{post.title}</h4>
-                        <p className="m-0 cc-text-meta text-cc-ink-muted">
-                          By @{post.author}
-                        </p>
-                        <p className="m-0 line-clamp-3 whitespace-pre-wrap cc-text-cell text-cc-ink">{post.message}</p>
-                        <div className="flex justify-end">
-                          <CcButton variant="ghost" onClick={() => setActivePost(post)} aria-label={`Read: ${post.title}`}>
-                            Read
-                          </CcButton>
-                        </div>
-                      </article>
-                    ))
-                  )}
-                </div>
-
-                {/* How to reach a person, and why the board is read-only */}
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-cc-ink-muted">
-                        <Shield size={20} aria-hidden={true} />
-                      </span>
-                      <div className="min-w-0">
-                        <span className="block cc-text-label text-cc-ink-muted">Verified administrator</span>
-                        <h4 className="m-0 cc-text-h3 text-cc-ink">Clean-Core Admin</h4>
-                      </div>
-                    </div>
-                    <p className="m-0 cc-text-cell text-cc-ink-muted">
-                      Our admin team handles account approvals, admin-gated S/4HANA sandbox access, and platform questions. Email is the way to reach them.
-                    </p>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="min-w-0">
-                        <span className="block cc-text-label text-cc-ink-muted">Admin mailbox</span>
-                        <a href="mailto:admin@clean-core.io" className={`${LINK} font-cc-mono`}>admin@clean-core.io</a>
-                      </span>
-                      <span title="All emails sent to admin@clean-core.io are securely forwarded to the platform administrators.">
-                        <CcTag>Forwarded</CcTag>
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-4" data-forum-readonly>
-                    <h3 className="m-0 cc-text-h3 text-cc-ink">This board is read-only</h3>
-                    <p className="m-0 cc-text-meta text-cc-ink-muted">
-                      There is no forum server behind this page yet, so there is nowhere for a post to go. Until there is,
-                      the board carries the administrator&apos;s announcements and nothing else — no posting, no comments,
-                      no likes.
-                    </p>
-                    <p className="m-0 cc-text-meta text-cc-ink-muted">
-                      A question, a finding that looks wrong, an edge case worth reporting: write to{' '}
-                      <a href="mailto:admin@clean-core.io" className={LINK}>admin@clean-core.io</a>{' '}
-                      and a person reads it.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </section>
       </div>
 
       {/* Delete — a Message Box, the consequence in words (§1.5, §2.6). */}
@@ -1051,27 +799,6 @@ export default function Dashboard() {
         </div>
       </CcDialog>
 
-      <CcDialog
-        open={!!activePost}
-        onClose={() => setActivePost(null)}
-        title={activePost?.title ?? ''}
-        lead={activePost ? `@${activePost.author}${activePost.authorEmail ? ` · ${activePost.authorEmail}` : ''}` : undefined}
-        size="wide"
-      >
-        {activePost ? (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              {activePost.pinned ? <CcTag>Pinned</CcTag> : null}
-              {activePost.isAdmin ? <CcTag>Admin</CcTag> : null}
-              <CcTag>{TOPIC_LABEL[activePost.category]}</CcTag>
-            </div>
-            <p className="m-0 whitespace-pre-line">{renderMessageWithLinks(activePost.message)}</p>
-            {/* Roadmap 0.2 (UX-059): no like counter, no comment box — an
-                announcement is something to read, and the address beside it is
-                the one that reaches somebody. */}
-          </div>
-        ) : null}
-      </CcDialog>
 
       {inviting ? (
         <InviteReaderDialog projectId={inviting.id} projectName={inviting.name} onClose={() => setInviting(null)} />

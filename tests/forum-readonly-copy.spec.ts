@@ -2,15 +2,17 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
-// QA e81c64678cca: the announcements board is read-only (`data-forum-readonly`),
-// so no post on it may invite the reader to post, share or ask "below". Questions
-// go to the administrator's address, which the board names.
-test('the read-only board does not invite posts, comments or questions on the board', () => {
-  const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'dashboard', 'page.tsx'), 'utf8');
-  const start = page.indexOf('const [forumPosts] = useState');
-  expect(start, 'the board posts moved — re-read this test').toBeGreaterThan(-1);
-  const posts = page.slice(start, page.indexOf('];', start));
-  expect(posts).not.toMatch(/\bbelow!?\b/i);
-  expect(posts).not.toMatch(/\b(share|post|comment)\b[^.]*\b(learnings|here|below)\b/i);
-  expect(posts).not.toMatch(/\bask\b[^.]*\bquestions\b(?![^.]*admin@clean-core\.io)/i);
+// QA e81c64678cca held the read-only announcements board to "no post invites a
+// reply". The owner dropped the board on 02.10.2026 as outdated (ADR-061), so
+// what is held now is that it stays gone: no board, no static posts, nothing
+// that could invite a post — on the old page or on the list every account
+// lands on.
+test('the announcements board is gone, and nothing in its place invites posts', () => {
+  const root = path.join(__dirname, '..');
+  for (const rel of ['app/(app)/dashboard/page.tsx', 'components/workspace/WorkspaceListReport.tsx']) {
+    const src = fs.readFileSync(path.join(root, rel), 'utf8');
+    expect(src, `${rel} still carries the board's posts`).not.toContain('forumPosts');
+    expect(src, `${rel} still carries the read-only board`).not.toContain('data-forum-readonly');
+    expect(src, `${rel} still announces`).not.toMatch(/Clean-Core\.io announcements|Open announcements/);
+  }
 });
