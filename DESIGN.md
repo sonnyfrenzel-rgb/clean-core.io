@@ -298,7 +298,7 @@ evidenced (§1.1). Above the title the link **"Back to workspace"** (13 px / 600
 not a button), which leads back to the view and layer from which the stage was opened. Below it the same toolbar as in
 the workspace (ADR-060): the seven tools with their marks and the legend, the stage's own tool selected in `--cc-ink` with
 `aria-current="page"`, each link keeping view, origin and layer — side by side from breakpoint L, a "Tools" menu below.
-It replaces the stepper wherever it is drawn (a workspace account, the demo); one way across, not two. Eyebrow and lead
+It replaces the stepper wherever it is drawn (a workspace account, the demo); one way across, not two. Every stage stands in the **same frame** (`StageFrame`, ADR-063): way back, tools bar, title and content start at the same x on all seven tools and the demo at every width; a stage sets no width of its own, a narrower block is left-aligned to the frame. Eyebrow and lead
 stay, in the scale of §1.2 (micro label, body text).
 
 On scrolling the header shrinks to title, view switcher and the facet line — in Business the "Project
@@ -386,7 +386,7 @@ The most used pattern — for confirming rules, inviting, capturing assumptions:
 | **S** | ≤ 600 px | one column, tables as cards, toolbar as a menu, page margin 16 px |
 | **M** | 601–1024 px | one column, side column below the content, page margin 24 px |
 | **L** | 1025–1440 px | content + side column 360 px |
-| **XL** | > 1440 px | like L, content at most 1280 px wide, centred |
+| **XL** | > 1440 px | like L, content at most 1280 px wide, centred; the workspace and its seven tools at most 1536 px — one frame for all of them (ADR-063) |
 
 - **Target sizes:** at least 24 × 24 px (WCAG 2.5.8) *compact*, 44 × 44 px *cozy* and on touch.
 - **Order on S** in the Business view: process name and plain-language sentence → disclosure line and *Not determined*
@@ -1099,6 +1099,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.3 | 02.10.2026 | One frame for every stage (ADR-063, owner 02.10.2026): the seven tools and the demo stages stand in the workspace's 1536 px column, header and content at the same x on every tool: §2.3 the header of a stage, §2.9 XL |
 | 1.8.2 | 02.10.2026 | The tools bar marks use, not proof (ADR-060 amended, Sonny 02.10.2026): a green check for a used tool, an amber dot for an out-of-date one, a text legend beside "Tools" and in the phone menu: §2.3 item 3, the navigation table, the header of a stage |
 | 1.8.1 | 02.10.2026 | Tools side by side from breakpoint L in every view, each with the stepper's mark for its phase, and the same bar under "Back to workspace" on every stage and demo stage (ADR-060, Sonny 02.10.2026): §2.3 item 3, the header per view, the navigation table, the header of a stage, §2.11 |
 | 1.8 (draft, for acceptance by Sonny) | 30.09.2026 | Block D completed (D.30): all guards apply to `app/**` and `components/**`, the exception lists are deleted, only named exceptions remain (§8); `--cc-warning-mark` `#d97706` for warning marks in bars and dots (§1.1, §1.8); generated Markdown text in `.cc-prose` on the scale §1.2 |

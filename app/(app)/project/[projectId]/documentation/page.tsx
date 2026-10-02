@@ -38,6 +38,7 @@ import { useProcessHandbook } from '@/hooks/useProcessHandbook';
 import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { saveAs } from '@/lib/fileSaver';
 import StageHeader from '@/components/StageHeader';
+import StageFrame from '@/components/StageFrame';
 import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { sha256Hex } from '@/lib/artefact-digest';
@@ -886,7 +887,7 @@ Structure the JSON exactly like this:
   };
 
   if (loading) return (
-    <div>
+    <StageFrame stage="documentation">
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
@@ -894,19 +895,21 @@ Structure the JSON exactly like this:
       <StageProgress steps={phases} current="documentation" projectId={projectId as string} />
       <StageHeader stage="documentation" tools={{ steps: phases, current: 'documentation' }} projectName={project?.name} />
       <CcSkeleton shape="cards" label="documentation" count={2} />
-    </div>
+    </StageFrame>
   );
 
   if (loadError) return (
-    <div className="p-8 max-w-xl">
-      <CcMessageStrip
-        state="error"
-        headline="This stage could not be opened"
-        actions={<CcButton onClick={() => window.location.reload()}>Try again</CcButton>}
-      >
-        <span data-load-error>{loadError}</span>
-      </CcMessageStrip>
-    </div>
+    <StageFrame stage="documentation">
+      <div className="max-w-xl">
+        <CcMessageStrip
+          state="error"
+          headline="This stage could not be opened"
+          actions={<CcButton onClick={() => window.location.reload()}>Try again</CcButton>}
+        >
+          <span data-load-error>{loadError}</span>
+        </CcMessageStrip>
+      </div>
+    </StageFrame>
   );
 
   /**
@@ -1306,7 +1309,7 @@ Structure the JSON exactly like this:
   );
 
   return (
-    <div className="min-h-screen">
+    <StageFrame stage="documentation" className="min-h-screen">
       <StageProgress steps={phases} current="documentation" projectId={projectId as string} />
 
       <StaleNotice
@@ -1734,6 +1737,6 @@ Structure the JSON exactly like this:
         incomplete={!documentation}
         incompleteReason="no process documentation has been read from the code yet"
       />
-    </div>
+    </StageFrame>
   );
 }

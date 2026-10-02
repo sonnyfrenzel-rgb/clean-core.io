@@ -37,6 +37,7 @@ import { duplicatePaths } from './duplicate-paths';
 import { matchCdsView } from '@/lib/abap/cds-catalog';
 import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
 import StageHeader from '@/components/StageHeader';
+import StageFrame from '@/components/StageFrame';
 import CcLinkButton from '@/components/cc/LinkButton';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
@@ -995,7 +996,7 @@ CMD ["node", "srv/service.js"]`
   const openSignOffs = findings.filter(f => f.requiresSignOff && !signedOffIds.has(`${f.construct}-${f.location?.line}`)).length;
 
   if (busy && !transformedCode) return (
-    <div>
+    <StageFrame stage="transformation">
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
@@ -1056,11 +1057,11 @@ CMD ["node", "srv/service.js"]`
           <CcSkeleton shape="text" label="transformed code" count={6} />
         </div>
       </section>
-    </div>
+    </StageFrame>
   );
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <StageFrame stage="transformation">
       {/* Rendered here as well as in the loading state — it used to exist only
           there, and disappeared as soon as the page had loaded. */}
 
@@ -1513,6 +1514,6 @@ CMD ["node", "srv/service.js"]`
         incomplete={files.length === 0}
         incompleteReason="no transformed code has been generated"
       />
-    </div>
+    </StageFrame>
   );
 }

@@ -52,17 +52,19 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
     pathname.startsWith('/admin/new-project') ||
     pathname.startsWith('/invitation');
   // The object page uses the full frame (mockup s1: map and source column side
-  // by side); the stages and every other page keep the reading width.
+  // by side); every other page keeps the reading width.
   const isObjectPage = /^\/project\/[^/]+\/?$/.test(pathname ?? '');
-  // The Documentation and Design stages draw a canvas (owner decision
-  // 01.10.2026, proposal B) and take the object page's width for it. The
-  // Design stage used to break out of the column to the window's edges, and
-  // on a 3400 px window its drawing scaled with it (owner 02.10.2026); now it
-  // keeps this frame, in the product and in the demo alike.
-  const isWidePage =
-    isObjectPage ||
-    /^\/project\/[^/]+\/(documentation|design)\/?$/.test(pathname ?? '') ||
-    /^\/demo\/design\/?$/.test(pathname ?? '');
+  // The seven stages are tools of that object page (ADR-008) and stand in its
+  // frame — all seven, in the product and in the demo alike (ADR-063, owner
+  // 02.10.2026). Only Design and Documentation used to: they draw a canvas
+  // (owner decision 01.10.2026, proposal B), and every other stage kept the
+  // reading width, so switching from Analyze to Design moved the shell bar,
+  // the way back, the title and the content sideways. The frame inside the
+  // column is `StageFrame`; this picks the column's width.
+  const isStagePage =
+    /^\/project\/[^/]+\/(analyze|design|transformation|documentation|testing|tco|delivery)\/?$/.test(pathname ?? '') ||
+    /^\/demo\/(analyze|design|transformation|documentation|testing|tco|delivery)\/?$/.test(pathname ?? '');
+  const isWidePage = isObjectPage || isStagePage;
 
   // Scroll to top on every page navigation
   useEffect(() => {
