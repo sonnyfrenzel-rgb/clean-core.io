@@ -47,6 +47,7 @@ const SIGN_IN = `spec-${process.pid}-${Math.random().toString(36).slice(2)}-Aa1!
 
 const STAGED_ID = `ws-staged-${STAMP}`;
 const STALE_ID = `ws-stale-${STAMP}`;
+const LEGACY_ID = `ws-legacy-${STAMP}`;
 const RUN_ID = `ws-run-${STAMP}`;
 const SHARED_ID = `ws-shared-${STAMP}`;
 const INVITE_ID = `wsInvite${STAMP}`;
@@ -202,6 +203,23 @@ test.describe('with projects', () => {
       s4Deployment: 'private',
     });
 
+    // A project from before the trust chain, as on the owner's own account on
+    // 02.10.2026: design, code, documentation and a test draft on record, and no
+    // signed run. Its row used to say "Not analysed yet" above "2 of 7 steps done".
+    await adminSetDoc('projects', LEGACY_ID, {
+      name: 'Made before the trust chain',
+      userId: adminUid,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      status: 'completed',
+      legacyCode: PROGRAM,
+      s4Deployment: 'private',
+      solutionDesign: '# Design',
+      generatedCode: 'CLASS zcl_credit DEFINITION. ENDCLASS.',
+      documentation: '# Blueprint',
+      testCases: [{ id: 't1', title: 'Credit check', status: 'Not run' }],
+    });
+
     // A signed run whose recorded source is not the source on the project: the
     // one thing `staleness()` calls stale without having to be told.
     await adminSetDoc('projects', STALE_ID, {
@@ -298,7 +316,8 @@ test.describe('with projects', () => {
     // The table and its column labels are not rendered at all on S.
     expect(await page.locator('[data-cc-workspace] [data-cc-table]').count()).toBe(0);
     await expect(card.locator('[data-project-sentence]')).toContainText('Not analysed yet');
-    await expect(card.locator('[data-progress-bar]')).toBeVisible();
+    await expect(card.locator('[data-project-step]')).toHaveText('Step 1 of 7');
+    expect(await card.locator('[data-progress-bar]').count(), 'the step bar is back').toBe(0);
     await expect(card.locator('[data-project-next]')).toHaveCount(1);
     await expect(card.locator(`[data-workspace-more="${STAGED_ID}"]`)).toBeVisible();
     // No sideways scroll.
@@ -329,13 +348,15 @@ test.describe('with projects', () => {
     await expect(row).toContainText(CC_MESSAGES['workspace.notAnalysed']);
 
     // Status: one plain sentence, not a bare "draft" (owner feedback 01.10.2026),
-    // a bar whose done segments are the count, and the next action as a link.
+    // the step it is at, and one next action — here the row's own run button,
+    // so no second link to the same thing (owner feedback 02.10.2026).
     await expect(row.locator('[data-project-progress]')).toHaveAttribute('data-project-stage', 'not-analysed');
-    await expect(row.locator('[data-project-sentence]')).toContainText('Not analysed yet');
+    await expect(row.locator('[data-project-sentence]')).toHaveText('Not analysed yet — the code is uploaded.');
     expect(await row.locator('[data-cc-object-status]').count(), 'a bare status word is back').toBe(0);
-    await expect(row.locator('[data-project-count]')).toHaveText('0 of 7 steps done');
-    expect(await row.locator('[data-progress-bar] [data-segment-state^="done"]').count()).toBe(0);
-    await expect(row.locator('[data-project-next]')).toHaveText('Next: Run the analysis');
+    await expect(row.locator('[data-project-step]')).toHaveText('Step 1 of 7');
+    await expect(row.locator(`[data-workspace-run="${STAGED_ID}"]`)).toBeVisible();
+    expect(await row.locator('[data-project-next]').count(), 'the run is offered twice').toBe(0);
+    expect(await row.locator('[data-progress-bar]').count(), 'the step bar is back').toBe(0);
 
     // Last change: the ISO date of §3, in mono.
     await expect(row.locator('[data-cc-table-cell="lastChange"]')).toContainText(
@@ -352,13 +373,45 @@ test.describe('with projects', () => {
     await expect(row.locator('[data-provenance="stale"]')).toBeVisible();
 
     // DESIGN.md §4.1: *stale* is provenance, not a status of its own — the row
-    // says it in its sentence, and the stale step is drawn dashed, never red.
+    // says it in its sentence, its dot takes the warning look, never red, and
+    // the next step is the analysis again.
     await expect(row.locator('[data-project-sentence]')).toContainText('no longer match the code');
-    const counted = await row.locator('[data-progress-bar] [data-segment-state^="done"]').count();
-    await expect(row.locator('[data-project-count]')).toHaveText(`${counted} of 7 steps done`);
+    await expect(row.locator('[data-project-progress]')).toHaveAttribute('data-project-tone', 'outdated');
+    await expect(row.locator('[data-project-step]')).toHaveText('Step 1 of 7');
 
     // It counted the findings that are on record, and did not invent a level.
     await expect(row.locator('[data-workspace-findings]')).toHaveText('2');
+  });
+
+  test('a project with no signed run reads "not analysed" throughout — no step count, no step bar, no legend', async ({
+    page,
+  }) => {
+    test.setTimeout(180 * 1000);
+    await openWorkspace(page);
+
+    const row = page.locator(`[data-cc-table-row="${LEGACY_ID}"]`);
+    await expect(row).toBeVisible({ timeout: 60000 });
+    // One sentence, and it does not contradict itself: what is on record without
+    // an analysis is out of date, in words, and nothing counts as done.
+    await expect(row.locator('[data-project-progress]')).toHaveAttribute('data-project-stage', 'not-analysed');
+    await expect(row.locator('[data-project-sentence]')).toHaveText(
+      'Not analysed yet — earlier results on it are out of date.',
+    );
+    await expect(row.locator('[data-project-progress]')).toHaveAttribute('data-project-tone', 'outdated');
+    await expect(row.locator('[data-project-step]')).toHaveText('Step 1 of 7');
+    await expect(row.locator(`[data-workspace-run="${LEGACY_ID}"]`)).toBeVisible();
+    await expect(row).not.toContainText(/\d of 7 steps done/);
+    await expect(row.locator('[data-cc-table-cell="status"]')).not.toContainText('In progress');
+
+    // The list carries no five-state legend and no seven-segment bar anywhere.
+    const list = page.locator('[data-workspace-projects]');
+    expect(await list.locator('[data-progress-legend]').count(), 'the legend is back').toBe(0);
+    expect(await list.locator('[data-progress-bar]').count(), 'a step bar is back').toBe(0);
+    await expect(list).not.toContainText('Done and verified');
+
+    // The Status filter agrees with the sentence.
+    await page.getByLabel('Status').selectOption('not-analysed');
+    expect(await rowTitles(page)).toContain('Made before the trust chain');
   });
 
   test('no projects yet and no matches are two different states', async ({ page }) => {

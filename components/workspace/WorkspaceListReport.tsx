@@ -48,7 +48,7 @@ import {
 } from '@/lib/workspace-rows';
 import { ROW_LEVELS, rowHasLevel, type RowFacts, type RowLevels } from '@/lib/workspace-row-facts';
 import { projectProgress, PROJECT_STAGE_LABEL } from '@/lib/project-progress';
-import ProjectProgressCell, { ProgressLegend } from '@/components/ProjectProgress';
+import ProjectProgressCell from '@/components/ProjectProgress';
 import { AnalysisRunCancelled, runAnalysis, runScope, type AnalysisRunStage } from '@/lib/analysis-run';
 import { sourceFileName } from '@/lib/source-file-name';
 import { declaredTargetOf } from '@/lib/assessment-target';
@@ -514,6 +514,22 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
     const cell = runs[row.id];
     const rowFacts = factsOf(row);
     const analysed = row.isDemo || row.hasRun;
+    const progress = row.isDemo ? null : projectProgress(projectById.get(row.id) ?? null);
+    // The row runs the analysis itself when that is the next step — then the
+    // button is the one next action, and the cell offers no second link to it.
+    const runAction =
+      progress?.next?.path === 'analyze' && runnable(row) && !cell ? (
+        <span className="mt-1 flex flex-col items-start gap-1">
+          <CcButton
+            variant="secondary"
+            onClick={() => start(row, modelAvailability.enabled('analyze'))}
+            data-workspace-run={row.id}
+          >
+            {modelAvailability.enabled('analyze') ? t('action.runAnalysis') : t('action.runWithoutModel')}
+          </CcButton>
+          <CcRunCost cost={costFor(modelAvailability.enabled('analyze'))} />
+        </span>
+      ) : undefined;
     const ownerLine =
       row.access === 'shared' ? (
         <span className="inline-flex flex-wrap items-center gap-1">
@@ -550,32 +566,21 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
         rules: analysed ? <RulesCell facts={rowFacts?.rules} /> : <Absent>{t('workspace.notAnalysed')}</Absent>,
         status: (
           <span className="flex w-full flex-col items-start gap-1">
-            {row.isDemo ? (
+            {progress ? (
+              <ProjectProgressCell
+                progress={progress}
+                projectHref={`/project/${row.id}`}
+                id={row.id}
+                nextAction={runAction}
+              />
+            ) : (
               // The demo is nobody's project and has no steps of its own: one
               // plain sentence, never a status it did not earn.
               <span className="text-[13px] leading-snug font-semibold text-cc-ink" data-project-sentence="">
                 {wt('myWorkspace.demoSentence')}
               </span>
-            ) : (
-              <ProjectProgressCell
-                progress={projectProgress(projectById.get(row.id) ?? null)}
-                projectHref={`/project/${row.id}`}
-                id={row.id}
-              />
             )}
             {row.stale ? <CcProvenanceChip value="stale" note={row.stale.note} /> : null}
-            {runnable(row) && !cell ? (
-              <span className="mt-1 flex flex-col items-start gap-1">
-                <CcButton
-                  variant="secondary"
-                  onClick={() => start(row, modelAvailability.enabled('analyze'))}
-                  data-workspace-run={row.id}
-                >
-                  {modelAvailability.enabled('analyze') ? t('action.runAnalysis') : t('action.runWithoutModel')}
-                </CcButton>
-                <CcRunCost cost={costFor(modelAvailability.enabled('analyze'))} />
-              </span>
-            ) : null}
           </span>
         ),
         lastChange: row.lastChange ? (
@@ -650,7 +655,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
     }
 
     // Breakpoint S (§2.9, mockup s10): the same row as one compact card — name,
-    // the status sentence with its step bar and one "Next:" link, the row menu,
+    // the status sentence with its step and one "Next:" link, the row menu,
     // and the facts as one muted line. No per-column labels.
     const facts: React.ReactNode[] = [];
     if (row.lines !== null) facts.push(<span key="l">{rowLinesLabel(number(row.lines))}</span>);
@@ -698,13 +703,9 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
           <span className="text-[13px] leading-snug font-semibold text-cc-ink" data-project-sentence="">
             {wt('myWorkspace.demoSentence')}
           </span>
-        ) : (
-          <ProjectProgressCell
-            progress={projectProgress(projectById.get(row.id) ?? null)}
-            projectHref={`/project/${row.id}`}
-            id={row.id}
-          />
-        )}
+        ) : progress ? (
+          <ProjectProgressCell progress={progress} projectHref={`/project/${row.id}`} id={row.id} />
+        ) : null}
         {row.stale ? <CcProvenanceChip value="stale" note={row.stale.note} /> : null}
         {/* Nothing measured yet: the sentence above already says so. */}
         {facts.length > 0 ? (
@@ -833,10 +834,6 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
             <CcNoMatches title={t('workspace.noMatch')} reason={t('workspace.noMatchReason')} onClear={clear} />
           ) : (
             <>
-              {/* What the step bar in every row means — one line, above the list. */}
-              <div className="mb-2">
-                <ProgressLegend />
-              </div>
               {isS ? (
                 <ul aria-label={t('workspace.projects')} className="m-0 flex list-none flex-col gap-2 p-0" data-workspace-cards="">
                   {phoneCards}

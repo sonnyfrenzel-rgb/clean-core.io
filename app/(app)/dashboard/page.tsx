@@ -16,7 +16,7 @@ import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
 import { workflowSteps, workflowSummary, testEvidence, staleness, PHASES } from '@/lib/workflow-steps';
 import { projectProgress, PROJECT_STAGE_LABEL, type ProjectStage } from '@/lib/project-progress';
-import ProjectProgressCell, { ProgressLegend } from '@/components/ProjectProgress';
+import ProjectProgressCell from '@/components/ProjectProgress';
 
 import StarterExamples from '@/components/StarterExamples';
 import DemoEntryCard from '@/components/demo/DemoEntryCard';
@@ -562,9 +562,9 @@ export default function Dashboard() {
             </Link>
           </span>
         ),
-        // One plain sentence, the seven steps as a bar that agrees with its
-        // count, and the next action as a link (owner feedback 01.10.2026,
-        // `lib/project-progress.ts`). The phase contract is the only source.
+        // One plain sentence, the step it is at and the next action as a link
+        // (owner feedback 01.10. and 02.10.2026, `lib/project-progress.ts`).
+        // The phase contract is the only source.
         progress: <ProjectProgressCell progress={progress} projectHref={`/project/${project.id}`} id={project.id} />,
         created: (
           <span className="font-cc-mono text-[12px]">
@@ -758,8 +758,6 @@ export default function Dashboard() {
                   />
                 ) : (
                   <>
-                    {/* What the step bar in every row means (owner feedback 01.10.2026). */}
-                    <ProgressLegend />
                     <CcTable caption="Projects" columns={PROJECT_COLUMNS} rows={tableRows} />
                   </>
                 )}

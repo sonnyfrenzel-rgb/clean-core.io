@@ -51,7 +51,9 @@ export type PhaseKey =
  *             coefficients.
  * - `done`    the phase's own evidence is on record.
  * - `stale`   it exists, but was built for a source that is no longer the one
- *             under analysis (E01-F01-US02). Never done, whatever it contains.
+ *             under analysis (E01-F01-US02), or with no signed analysis on
+ *             record at all (a project from before the trust chain). Never
+ *             done, whatever it contains.
  */
 export type PhaseState = 'empty' | 'partial' | 'done' | 'stale';
 
@@ -664,6 +666,32 @@ export function workflowSteps(project: Project | null): RailStep[] {
     badge,
     detail,
   });
+
+  // No signed analysis, and yet a design, code, documentation or tests on
+  // record (owner feedback 02.10.2026). Every downstream page refuses to work
+  // without a run (`enforceActiveRun`), so these are left over from before the
+  // trust chain existed — or from a source nobody analysed since. They were
+  // read as finished and in-progress steps, so "Not analysed yet" sat above a
+  // bar saying "2 of 7 steps done". Nothing built on an analysis that is not on
+  // record can be a done step, and calling it "not started" would hide what is
+  // there: it is out of date, said in words, until the analysis runs and the
+  // step is made again.
+  if (!hasRun) {
+    const noAnalysis = (base: RailStep): RailStep =>
+      stale(base, 'Made before this project had a signed analysis — run the analysis, then make it again.', 'Out of date');
+    const leftovers = hasGenerated || tests.total > 0 || hasDocs;
+    return [
+      analyze,
+      hasDesign ? noAnalysis(design) : design,
+      hasGenerated ? noAnalysis(transformation) : transformation,
+      hasDocs ? noAnalysis(documentation) : documentation,
+      tests.total > 0 ? noAnalysis(testing) : testing,
+      economics,
+      leftovers
+        ? stale(delivery, 'Nothing can be handed over before a signed analysis — run the analysis first.', 'Blocked')
+        : delivery,
+    ];
+  }
 
   return [
     hasRun && s.sourceChanged

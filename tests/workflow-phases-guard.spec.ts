@@ -274,9 +274,12 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
     }
     const row = page.locator('[data-project-progress]').first();
     await row.waitFor({ timeout: 60000 });
-    const dashTesting = row.locator('[data-phase="testing"]');
-    await expect(dashTesting).toHaveAttribute('data-phase-state', 'partial');
-    await expect(dashTesting).toContainText('Test draft');
+    // The row no longer draws the seven steps (owner feedback 02.10.2026): it
+    // names the step it is at and the next action, from the same contract. A
+    // test draft is step 5 with "Run the tests" still to do — never done.
+    await expect(row.locator('[data-project-sentence]')).toHaveText('Analysed — in progress.');
+    await expect(row.locator('[data-project-step]')).toHaveText('Step 5 of 7');
+    await expect(row.locator('[data-project-next]')).toHaveText('Next: Run the tests');
     await expect(row).not.toContainText('Completed');
     await expect(row).not.toContainText('100%');
 
