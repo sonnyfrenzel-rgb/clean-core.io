@@ -641,7 +641,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
           <Place place="four-buckets">
             {stop('four-buckets')}
-            <PublicCloudFitPanel project={project} />
+            <PublicCloudFitPanel project={project} findings={demo.analyze.findings} />
           </Place>
 
           <Place place="costs">

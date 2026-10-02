@@ -23,7 +23,8 @@ import {
   type PublicCloudFitRule,
 } from '@/lib/abap/public-cloud-fit';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
-import { useEvidenceEngine } from '@/hooks/useEvidenceEngine';
+import { useProjectEvidence } from '@/hooks/useProjectEvidence';
+import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import type { Project } from '@/lib/types';
 import { wt, cloudFitDetailLabel, cloudFitNotAssigned, cloudFitTargetPlatform, type WorkspaceMessageKey } from '@/lib/workspace-messages';
@@ -44,14 +45,17 @@ import { wt, cloudFitDetailLabel, cloudFitNotAssigned, cloudFitTargetPlatform, t
  * wiring into the Management view is the smallest edit that could work: one
  * import and one conditional block.
  *
- * Evidence is computed client-side from `project.legacyCode`, mirroring the
- * analyze page's own `buildAbapEvidence(...)` call (`app/(app)/project/
- * [projectId]/analyze/page.tsx`) rather than inventing a second way to reach
- * the same findings. The engine arrives through `useEvidenceEngine`, a dynamic
- * import, so the catalog it reads is fetched when this card has a source to
- * sort and not with every workspace page (external audit PERF-01). Until it is
- * here the card shows its loading state; if it cannot be fetched, its error
- * state — never the "no source" card for a project that has one.
+ * The findings are the ones the Analyze stage shows, read from the server
+ * (`useProjectEvidence`, `GET /api/projects/{id}/evidence`): computed from the
+ * stored source with the file name the run signed and the catalog snapshot of
+ * the project's target profile — the signed run's own inputs (owner decision
+ * 30.09.2026). Computing them here with the default catalog let a Private
+ * Edition project sort objects its run never found; and neither the engine nor
+ * a catalog is downloaded for this card (external audit PERF-01). Until the
+ * answer is here the card shows its loading state; if it cannot be read, its
+ * error state — never the "no source" card for a project that has one. The
+ * demo has no project on the server and hands its precomputed findings in as
+ * `findings` instead.
  *
  * **ADR-029 — the answer before the number.** The headline sentence
  * (`publicCloudFitHeadline`) is the first thing on the card, the shape DESIGN.md
@@ -59,8 +63,8 @@ import { wt, cloudFitDetailLabel, cloudFitNotAssigned, cloudFitTargetPlatform, t
  * a percentage — and the fifth area, *not assigned*, is always visible rather
  * than folded into one of the four when a rule could not be applied.
  *
- * **The catalog lookup is server-side (roadmap "SAP-Katalog im
- * Browser-Bundle").** `resolvePublicCloudFit` takes its grading and
+ * **The catalog lookup is server-side (roadmap "SAP catalog in the
+ * browser bundle").** `resolvePublicCloudFit` takes its grading and
  * "released path" facts as `deps` rather than reading the ~5 MB Cloudification
  * Repository itself, so this component batches exactly the objects the
  * resolver needs (`publicCloudFitLookupObjects`) through `/api/abcd-classify`
@@ -80,7 +84,7 @@ import { wt, cloudFitDetailLabel, cloudFitNotAssigned, cloudFitTargetPlatform, t
  */
 
 /**
- * The synced SAP repository files, for the "Datenbasis und Datum" the fourth
+ * The synced SAP repository files, for the "data basis and date" the fourth
  * bucket has to carry.
  *
  * Read from `/facts.json` — the same `getFacts()` the public `/facts` page
@@ -121,15 +125,29 @@ function useCatalogBasis(): CatalogSnapshot[] | null {
   return basis;
 }
 
-export default function PublicCloudFitPanel({ project }: { project: Project | null }) {
+export default function PublicCloudFitPanel({
+  project,
+  findings: givenFindings,
+}: {
+  project: Project | null;
+  /**
+   * The engine's findings, where the caller already holds them — the demo,
+   * computed on the server with its own snapshot. Without it the card reads the
+   * project's evidence from the server.
+   */
+  findings?: readonly EvidenceFinding[];
+}) {
   const catalogBasis = useCatalogBasis();
   const hasSource = Boolean(project?.legacyCode?.trim());
-  const { engine, failed: engineFailed } = useEvidenceEngine(hasSource);
-  const findings = useMemo(() => {
-    const code = project?.legacyCode?.trim();
-    if (!code || !project || !engine) return null;
-    return engine.buildAbapEvidence(code, 'main.abap', project.s4Deployment).findings;
-  }, [project, engine]);
+  const projectEvidence = useProjectEvidence(project?.id, hasSource && !givenFindings, project?.activeRunId ?? '');
+  // No project id and no findings handed in: nothing can be read, which is a
+  // failure to say, not an empty card.
+  const evidenceFailed = !givenFindings && hasSource && (projectEvidence.state === 'failed' || !project?.id);
+  const findings = useMemo<EvidenceFinding[] | null>(() => {
+    if (!hasSource) return null;
+    if (givenFindings) return [...givenFindings];
+    return projectEvidence.state === 'ready' ? projectEvidence.value.evidence.findings : null;
+  }, [hasSource, givenFindings, projectEvidence]);
 
   const lookupObjects = useMemo(() => (findings ? publicCloudFitLookupObjects(findings) : []), [findings]);
   // Graded under the project's target profile (owner decision 30.09.2026).
@@ -165,7 +183,7 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
 
   // Visible "not loaded yet" state — the resolver has not run, so there is
   // nothing to render below but a placeholder, never a matrix of guesses.
-  if (!engineFailed && (!findings || lookup.status === 'loading')) {
+  if (!evidenceFailed && (!findings || lookup.status === 'loading')) {
     return (
       <div className="cc" id="public-cloud-fit" data-public-cloud-fit-panel="loading">
         <CcCard title={wt('cloudFit.title')} meta={<CcProvenanceChip value="not-determined" />}>
@@ -178,7 +196,7 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
   }
 
   // Visible "the lookup failed" state — never silently defaulted to "has a path".
-  if (engineFailed || lookup.status === 'error' || !result) {
+  if (evidenceFailed || lookup.status === 'error' || !result) {
     return (
       <div className="cc" id="public-cloud-fit" data-public-cloud-fit-panel="error">
         <CcCard title={wt('cloudFit.title')} meta={<CcProvenanceChip value="not-determined" />}>

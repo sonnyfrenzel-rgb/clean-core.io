@@ -13,6 +13,7 @@ const code = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
 for (const rel of [
   'app/api/projects/[projectId]/findings/route.ts',
+  'app/api/projects/[projectId]/evidence/route.ts',
   'app/api/projects/[projectId]/contract/route.ts',
 ]) {
   test(`${rel} meters every request per account before it reads the project`, () => {

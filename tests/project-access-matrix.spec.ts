@@ -247,6 +247,29 @@ const CASES: RouteCase[] = [
     readerAdmitted: true,
   },
   {
+    key: 'app/api/projects/[projectId]/evidence/route.ts#GET',
+    what: 'the evidence report the Analyze, Transformation and fit displays draw — derived from the customer\'s source',
+    method: 'GET',
+    path: (p) => `/api/projects/${p}/evidence`,
+    refusal: 404,
+    // The fixture stages source, so the report is derived; owner and reader
+    // read the same report.
+    owner: [200],
+    readerAdmitted: true,
+  },
+  {
+    key: 'app/api/projects/[projectId]/evidence/route.ts#POST',
+    what: 'the evidence of a source about to be analysed — the first half of a run',
+    method: 'POST',
+    path: (p) => `/api/projects/${p}/evidence`,
+    // No ABAP construct: the owner is let through the gate and refused for the
+    // body, which proves the gate without computing anything.
+    body: { source: 'not abap at all', s4Deployment: 'public' },
+    refusal: 404,
+    owner: [400],
+    readerAdmitted: false,
+  },
+  {
     key: 'app/api/projects/[projectId]/standard-fit/route.ts#GET',
     what: 'the Standard fit layer — coverage, counter-checks and user changes derived from the customer\'s source',
     method: 'GET',
@@ -683,6 +706,8 @@ test('403-vs-404: what a refusal tells a stranger about a project they cannot se
       'app/api/projects/[projectId]/process-states/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/process-states/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/findings/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/evidence/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/evidence/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/standard-fit/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/contract/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/contract/route.ts#POST → 404 vs 404',

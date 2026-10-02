@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { SCORE_BANDS_SOURCE, bandRange, scoreBand } from '@/lib/clean-core-score';
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -39,9 +39,10 @@ import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import CcLinkButton from '@/components/cc/LinkButton';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
-// The engine reads the ~4.5 MB SAP catalog; it is fetched once the project
-// has a source, not with the page's own code (external audit PERF-01).
-import { useEvidenceEngine } from '@/hooks/useEvidenceEngine';
+// The engine's evidence comes from the server, computed with the catalog
+// snapshot the signed run reads; neither the engine nor a catalog is
+// downloaded by this page (owner decision 30.09.2026, external audit PERF-01).
+import { EVIDENCE_UNREAD, useProjectEvidence } from '@/hooks/useProjectEvidence';
 import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
 // Roadmap 8.3 — the generation follows the architecture contract, not a field
@@ -172,27 +173,25 @@ export default function TransformationPage() {
   }, [project?.legacyCode]);
 
   /**
-   * The engine's findings for this source — the deterministic run the Analyze
-   * stage shows, recomputed from the stored source the same way it does. The
+   * The engine's findings for this source — the evidence the Analyze stage
+   * shows, read from the server: the stored source, the file name the run
+   * signed and the catalog snapshot of the project's target profile. The
    * Object Page counts its facets, flow and plan from these and nothing else.
    */
-  const { engine: evidenceEngine, failed: evidenceEngineFailed } = useEvidenceEngine(Boolean(project?.legacyCode));
-  const evidence = useMemo(() => {
-    if (!project?.legacyCode || !evidenceEngine) return null;
-    try {
-      return evidenceEngine.buildAbapEvidence(project.legacyCode, 'main.abap', project.s4Deployment);
-    } catch (e) {
-      console.error('Error building the evidence for the plan:', e);
-      return null;
-    }
-  }, [project?.legacyCode, project?.s4Deployment, evidenceEngine]);
+  const projectEvidence = useProjectEvidence(
+    projectId as string,
+    Boolean(project?.legacyCode),
+    project?.activeRunId ?? '',
+  );
+  const evidence = projectEvidence.state === 'ready' ? projectEvidence.value.evidence : null;
   /**
-   * The engine has not arrived yet. The facets are counted from its findings,
+   * The server has not answered yet. The facets are counted from its findings,
    * and drawn without them they would say "0 findings" for a program that has
-   * some, so the stage stays in its opening state for that moment. A failed
-   * load falls through to the page with no findings, as a throw above does.
+   * some, so the stage stays in its opening state for that moment.
    */
-  const evidencePending = Boolean(project?.legacyCode) && !evidenceEngine && !evidenceEngineFailed;
+  const evidencePending = Boolean(project?.legacyCode) && projectEvidence.state === 'loading';
+  /** The read failed: the findings-derived page is not drawn, and the strip says why. */
+  const evidenceFailed = project?.legacyCode && projectEvidence.state === 'failed' ? projectEvidence.reason : null;
 
   const toggleSignOff = (findingId: string) => {
     setSignedOffIds(prev => {
@@ -1074,131 +1073,8 @@ CMD ["node", "srv/service.js"]`
     </StageFrame>
   );
 
-  return (
-    <StageFrame stage="transformation">
-      {/* The quota used to be stated a third time here, as "Free
-          Transformations: 4 / 5". The header carries it once. Proposal A
-          (owner decision 01.10.2026): the title row carries the stage's two
-          actions, the facets below it carry the answer. */}
-      <StageHeader tools={{ steps: phases, current: 'transformation' }}
-        stage="transformation"
-        projectName={project?.name}
-        actions={
-          <>
-            <CcButton
-              icon={<RefreshCw size={16} aria-hidden="true" />}
-              busy={busy}
-              onClick={() => {
-                if (modelOff === null && blockers.length === 0 && project?.legacyCode && project?.solutionDesign && project?.analysis) {
-                  generateTransformation();
-                }
-              }}
-              disabled={blockers.length > 0 || modelOff !== null}
-              title={blockers.length > 0 ? blockers.join(' ') : modelOff ?? undefined}
-            >
-              Re-Run Engine
-            </CcButton>
-            <CcButton icon={<Code2 size={16} aria-hidden="true" />} onClick={handleCopy}>
-              Copy Code
-            </CcButton>
-          </>
-        }
-      >
-        {/* The track decides the words (roadmap 0.2, UX-037): the in-app
-            track generates RAP artefacts, and the lead used to promise
-            Node.js over them anyway. */}
-        <span data-track-lead>{track.lead}</span>
-        {/* Which contract this stand followed, roadmap 8.3. A declared
-            deviation is named here, not only applied: a deviation nobody is
-            shown is applied but not held. */}
-        {contractTrack && (
-          <span className="block mt-1 cc-text-cell text-cc-ink-muted" data-contract-sentence>
-            {contractTrack.sentence}
-          </span>
-        )}
-      </StageHeader>
-
-      <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
-
-      <CcToast open={showCopyDialog} onDismiss={closeCopyToast}>
-        Code copied to clipboard
-      </CcToast>
-
-      {copyFailed && (
-        <div className="mb-6" data-copy-failed>
-          <CcMessageStrip state="error" announce>
-            The browser did not allow copying to the clipboard. Nothing was copied — select the code and copy it by hand.
-          </CcMessageStrip>
-        </div>
-      )}
-
-      {/*
-        Roadmap 8.3 — a blocked contract generates nothing, and the reader is
-        told which sentence of the contract stopped it and what ends it. An
-        empty stage with no reason would meet the letter of "nothing is
-        generated" and none of the point.
-      */}
-      {contractRefusal && (
-        <div data-contract-refusal={contractRefusal.code} className="mb-6">
-          <CcMessageStrip state="warning" headline="Nothing was generated against this contract." announce>
-            <span className="block">{contractRefusal.sentence}</span>
-            <span className="block">{contractRefusal.remedy}</span>
-          </CcMessageStrip>
-        </div>
-      )}
-
-      {error && (
-        <div className="mb-6">
-          <CcMessageStrip state="error" announce>
-            {error}
-          </CcMessageStrip>
-        </div>
-      )}
-
-      {unsavedDraft && (
-        <div className="mb-6" data-unsaved-draft>
-          <CcMessageStrip state="warning" headline="Unsaved draft — this package is not stored on the project.">
-            <span className="block">
-              The code below is the generation the project could not hold. It is gone once you leave or reload this page.
-            </span>
-            <span className="mt-2 block">
-              <CcButton icon={<Download size={16} aria-hidden="true" />} onClick={downloadUnsavedDraft}>
-                Download draft (JSON)
-              </CcButton>
-            </span>
-          </CcMessageStrip>
-        </div>
-      )}
-
-      {/* The stage's answer, before the code (ADR-050): the facets, the status
-          line and the sections of proposal A, every figure counted from the
-          engine's findings or the stored package. */}
-      <div data-transformation-answer={unsavedDraft ? 'unsaved-draft' : files.length > 0 ? 'generated' : 'none'}>
-        <TransformationObjectPage
-          findings={evidence?.findings ?? []}
-          coverage={evidence?.coverage ?? null}
-          track={isAbapCloud ? 'in-app' : 'side-by-side'}
-          codeKind={isAbapCloud ? 'ABAP Cloud (RAP)' : 'Node.js (TypeScript)'}
-          files={files}
-          openSignOffs={openSignOffs}
-          onOpenAudit={() => setDrawerOpen(true)}
-          packageActions={
-            <CcLinkButton href="#tf-side" icon={<Code2 size={16} aria-hidden="true" />}>
-              Side by side with ABAP
-            </CcLinkButton>
-          }
-          emptyPackage={
-            <div className="rounded-cc-row border border-dashed border-cc-line bg-cc-surface p-4">
-              <p className="m-0 cc-text-h3 text-cc-ink">No transformed code yet</p>
-              <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                {blockers.length > 0
-                  ? blockers.join(' ')
-                  : modelOff ?? 'The code is generated from the signed analysis and the approved design when you run the engine.'}
-              </p>
-            </div>
-          }
-          extraAnchors={[['tf-side', 'Side by side']]}
-          after={
+  /** The legacy source beside the generated code — drawn whether or not the findings could be read. */
+  const sideBySide = (
           <section
             id="tf-side"
             aria-labelledby="tf-side-title"
@@ -1355,9 +1231,149 @@ CMD ["node", "srv/service.js"]`
         </section>
       </div>
           </section>
+  );
+
+  return (
+    <StageFrame stage="transformation">
+      {/* The quota used to be stated a third time here, as "Free
+          Transformations: 4 / 5". The header carries it once. Proposal A
+          (owner decision 01.10.2026): the title row carries the stage's two
+          actions, the facets below it carry the answer. */}
+      <StageHeader tools={{ steps: phases, current: 'transformation' }}
+        stage="transformation"
+        projectName={project?.name}
+        actions={
+          <>
+            <CcButton
+              icon={<RefreshCw size={16} aria-hidden="true" />}
+              busy={busy}
+              onClick={() => {
+                if (modelOff === null && blockers.length === 0 && project?.legacyCode && project?.solutionDesign && project?.analysis) {
+                  generateTransformation();
+                }
+              }}
+              disabled={blockers.length > 0 || modelOff !== null}
+              title={blockers.length > 0 ? blockers.join(' ') : modelOff ?? undefined}
+            >
+              Re-Run Engine
+            </CcButton>
+            <CcButton icon={<Code2 size={16} aria-hidden="true" />} onClick={handleCopy}>
+              Copy Code
+            </CcButton>
+          </>
+        }
+      >
+        {/* The track decides the words (roadmap 0.2, UX-037): the in-app
+            track generates RAP artefacts, and the lead used to promise
+            Node.js over them anyway. */}
+        <span data-track-lead>{track.lead}</span>
+        {/* Which contract this stand followed, roadmap 8.3. A declared
+            deviation is named here, not only applied: a deviation nobody is
+            shown is applied but not held. */}
+        {contractTrack && (
+          <span className="block mt-1 cc-text-cell text-cc-ink-muted" data-contract-sentence>
+            {contractTrack.sentence}
+          </span>
+        )}
+      </StageHeader>
+
+      <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
+
+      <CcToast open={showCopyDialog} onDismiss={closeCopyToast}>
+        Code copied to clipboard
+      </CcToast>
+
+      {copyFailed && (
+        <div className="mb-6" data-copy-failed>
+          <CcMessageStrip state="error" announce>
+            The browser did not allow copying to the clipboard. Nothing was copied — select the code and copy it by hand.
+          </CcMessageStrip>
+        </div>
+      )}
+
+      {/*
+        Roadmap 8.3 — a blocked contract generates nothing, and the reader is
+        told which sentence of the contract stopped it and what ends it. An
+        empty stage with no reason would meet the letter of "nothing is
+        generated" and none of the point.
+      */}
+      {contractRefusal && (
+        <div data-contract-refusal={contractRefusal.code} className="mb-6">
+          <CcMessageStrip state="warning" headline="Nothing was generated against this contract." announce>
+            <span className="block">{contractRefusal.sentence}</span>
+            <span className="block">{contractRefusal.remedy}</span>
+          </CcMessageStrip>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-6">
+          <CcMessageStrip state="error" announce>
+            {error}
+          </CcMessageStrip>
+        </div>
+      )}
+
+      {unsavedDraft && (
+        <div className="mb-6" data-unsaved-draft>
+          <CcMessageStrip state="warning" headline="Unsaved draft — this package is not stored on the project.">
+            <span className="block">
+              The code below is the generation the project could not hold. It is gone once you leave or reload this page.
+            </span>
+            <span className="mt-2 block">
+              <CcButton icon={<Download size={16} aria-hidden="true" />} onClick={downloadUnsavedDraft}>
+                Download draft (JSON)
+              </CcButton>
+            </span>
+          </CcMessageStrip>
+        </div>
+      )}
+
+      {/* The stage's answer, before the code (ADR-050): the facets, the status
+          line and the sections of proposal A, every figure counted from the
+          engine's findings or the stored package. */}
+      {/* Without the engine's findings every facet below would count none —
+          "0 findings" for a program that has them. The strip says the read
+          failed, and only the source and the package beside it are drawn. */}
+      {evidenceFailed ? (
+        <div className="mb-6 flex flex-col gap-6" data-transformation-evidence-failed="">
+          <CcMessageStrip state="error" announce>
+            The evidence for this code could not be read, so its findings and the plan built from them are not shown.
+            Reload the page to try again.
+            {evidenceFailed !== EVIDENCE_UNREAD ? ` ${evidenceFailed}` : null}
+          </CcMessageStrip>
+          {sideBySide}
+        </div>
+      ) : (
+      <div data-transformation-answer={unsavedDraft ? 'unsaved-draft' : files.length > 0 ? 'generated' : 'none'}>
+        <TransformationObjectPage
+          findings={evidence?.findings ?? []}
+          coverage={evidence?.coverage ?? null}
+          track={isAbapCloud ? 'in-app' : 'side-by-side'}
+          codeKind={isAbapCloud ? 'ABAP Cloud (RAP)' : 'Node.js (TypeScript)'}
+          files={files}
+          openSignOffs={openSignOffs}
+          onOpenAudit={() => setDrawerOpen(true)}
+          packageActions={
+            <CcLinkButton href="#tf-side" icon={<Code2 size={16} aria-hidden="true" />}>
+              Side by side with ABAP
+            </CcLinkButton>
           }
+          emptyPackage={
+            <div className="rounded-cc-row border border-dashed border-cc-line bg-cc-surface p-4">
+              <p className="m-0 cc-text-h3 text-cc-ink">No transformed code yet</p>
+              <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+                {blockers.length > 0
+                  ? blockers.join(' ')
+                  : modelOff ?? 'The code is generated from the signed analysis and the approved design when you run the engine.'}
+              </p>
+            </div>
+          }
+          extraAnchors={[['tf-side', 'Side by side']]}
+          after={sideBySide}
         />
       </div>
+      )}
 
       {/* The grounding audit. It was a dark drawer from the right edge; it is
           a light `CcDialog` now (§1.1: the only dark surface that carries
