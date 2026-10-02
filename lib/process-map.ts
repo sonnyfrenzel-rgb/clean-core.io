@@ -67,7 +67,7 @@ export interface ReconstructionTrace {
  * `lib/bpmn/xml.ts` escapes both — so finding the `>` that is not inside quotes
  * is enough, and it is exact rather than nearly right.
  */
-function* tags(xml: string): Generator<string> {
+function* tags(xml: string): Generator<[tag: string, end: number]> {
   let i = 0;
   while (i < xml.length) {
     const open = xml.indexOf('<', i);
@@ -92,7 +92,7 @@ function* tags(xml: string): Generator<string> {
       j += 1;
     }
     if (j >= xml.length) return;
-    yield xml.slice(open, j + 1);
+    yield [xml.slice(open, j + 1), j + 1];
     i = j + 1;
   }
 }
@@ -123,6 +123,29 @@ function safeChar(code: number): string {
   return Number.isFinite(code) && code > 0 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff)
     ? String.fromCodePoint(code)
     : '';
+}
+
+/**
+ * The text of an element whose open tag ends at `from`: up to its closing tag,
+ * with character references decoded and a CDATA section read as written.
+ */
+function expressionText(xml: string, from: number, name: string): string {
+  const close = xml.indexOf(`</${name}`, from);
+  const raw = close < 0 ? '' : xml.slice(from, close);
+  let out = '';
+  let i = 0;
+  while (i < raw.length) {
+    const cdata = raw.indexOf('<![CDATA[', i);
+    if (cdata < 0) {
+      out += unescape(raw.slice(i));
+      break;
+    }
+    out += unescape(raw.slice(i, cdata));
+    const stop = raw.indexOf(']]>', cdata + 9);
+    out += raw.slice(cdata + 9, stop < 0 ? raw.length : stop);
+    i = stop < 0 ? raw.length : stop + 3;
+  }
+  return out.trim();
 }
 
 function attributes(tag: string): Record<string, string> {
@@ -164,6 +187,12 @@ interface ParsedFlow {
   condition: string;
   /** What the flow says on the map — its `name`. */
   label: string;
+  /**
+   * The text of the flow's `bpmn:conditionExpression`, or null when it has
+   * none. Unlike `condition` this is what the file says the flow tests today,
+   * whatever the trace remembers of the code.
+   */
+  expression: string | null;
 }
 
 export interface ParsedBpmn {
@@ -213,7 +242,7 @@ export function parseBpmn(xml: string): ParsedBpmn {
   const byId = new Map<string, ParsedElement>();
   const flowById = new Map<string, ParsedFlow>();
 
-  for (const tag of tags(xml)) {
+  for (const [tag, end] of tags(xml)) {
     const name = tagName(tag);
     if (tag.startsWith('</')) {
       // Pop to the matching open tag. `bpmn:documentation` and the other text
@@ -256,6 +285,16 @@ export function parseBpmn(xml: string): ParsedBpmn {
       if (flow) flow.condition = attrs.condition ?? '';
     }
 
+    // The expression the flow actually carries. The editor writes a changed
+    // condition here and nowhere else, and an imported file may change it while
+    // keeping ids, names and the restored trace — so it is read on its own and
+    // not taken from the trace (codex code-engine-01).
+    if (name === 'bpmn:conditionExpression') {
+      const host = stack[stack.length - 1];
+      const flow = host?.id ? flowById.get(host.id) : undefined;
+      if (flow) flow.expression = selfClosing ? '' : expressionText(xml, end, name);
+    }
+
     if (local && attrs.id) {
       if (FLOW_TAGS.has(local)) {
         const plane = [...stack].reverse().find((frame) => frame.tag === 'bpmn:subProcess')?.id ?? null;
@@ -269,6 +308,7 @@ export function parseBpmn(xml: string): ParsedBpmn {
           targetRef: attrs.targetRef,
           condition: attrs.name ?? '',
           label: attrs.name ?? '',
+          expression: null,
         };
         flows.push(flow);
         flowById.set(flow.id, flow);

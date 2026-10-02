@@ -172,6 +172,42 @@ test.describe('what changed between two revisions', () => {
       { field: 'name', label: 'Name', before: name, after: 'Check the budget' },
     ]);
   });
+
+  test('a condition changed only in its expression is a change, not an identical revision (codex code-engine-01)', () => {
+    // The editor writes a new condition into `bpmn:conditionExpression` and
+    // leaves ids, names, endpoints and the trace alone; an imported file can do
+    // the same. Before the fix the comparison read only the trace and said
+    // "No element differs".
+    const program = [
+      'REPORT z_revision_cond.',
+      'START-OF-SELECTION.',
+      '  SELECT SINGLE * FROM eban INTO @DATA(ls_eban) WHERE banfn = @gv_banfn.',
+      '  IF ls_eban-preis > 1000.',
+      "    UPDATE eban SET frgkz = 'X' WHERE banfn = gv_banfn.",
+      '  ELSE.',
+      "    UPDATE eban SET frgkz = 'Y' WHERE banfn = gv_banfn.",
+      '  ENDIF.',
+    ].join('\n');
+    const { xml } = buildBpmnExportFromSource(program, {
+      processName: 'Requisition release',
+      sourceFileName: 'z_revision_cond.abap',
+    });
+    const expr = /(<bpmn:sequenceFlow id="[^"]+"[^>]*? sourceRef="([^"]+)"[^>]*>(?:(?!<\/bpmn:sequenceFlow>)[\s\S])*?<bpmn:conditionExpression[^>]*>)([^<]+)(<\/bpmn:conditionExpression>)/.exec(xml);
+    expect(expr, 'the export wrote no conditional flow').toBeTruthy();
+    const [whole, open, gateway, text, close] = expr as RegExpExecArray;
+    const edited = xml.replace(whole, `${open}${text} AND lv_amount &gt; 100000${close}`);
+
+    const diff = diffProcessRevisions({ revision: 1, xml }, { revision: 2, xml: edited });
+    expect(diff.identical).toBe(false);
+    expect(diff.changed.map((c) => c.id)).toEqual([gateway]);
+    const flows = diff.changed[0].fields.find((f) => f.field === 'flows');
+    expect(flows?.after).toContain('[tests: ');
+    expect(flows?.after).toContain('lv_amount > 100000');
+
+    // The same expression written as CDATA is the same condition.
+    const cdata = xml.replace(whole, `${open}<![CDATA[${text.replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&')}]]>${close}`);
+    expect(diffProcessRevisions({ revision: 1, xml }, { revision: 2, xml: cdata }).identical).toBe(true);
+  });
 });
 
 test.describe('what a revision may hold', () => {
