@@ -158,12 +158,20 @@ test.describe('every stage renders its title identically', () => {
       expect(href, `${stage}: "Back to workspace" leads to ${href}`).toBe(
         kind === 'workspace' ? `/project/${encodeURIComponent(PROJECT_ID)}` : '/dashboard',
       );
-      const backBox = await back.boundingBox();
-      const titleBox = await title.boundingBox();
-      expect(
-        Boolean(backBox && titleBox && backBox.y + backBox.height <= titleBox.y),
-        `${stage}: "Back to workspace" is not above the title`,
-      ).toBe(true);
+      // Both boxes in one read: since roadmap 3.0.1 the way back stands from the
+      // first render, and a stage that swaps its loading header for the loaded
+      // one between two separate reads would compare a detached element.
+      await expect
+        .poll(
+          () =>
+            page.evaluate(() => {
+              const b = document.querySelector('[data-stage-back]')?.getBoundingClientRect();
+              const t = document.querySelector('[data-stage-title]')?.getBoundingClientRect();
+              return Boolean(b && t && b.height > 0 && t.height > 0 && b.bottom <= t.top);
+            }),
+          { message: `${stage}: "Back to workspace" is not above the title`, timeout: 15000 },
+        )
+        .toBe(true);
 
       // An icon, where a stage has one, stands neutral: no surface, 20 px, --cc-ink-muted.
       const icon = page.locator('[data-stage-icon]');
