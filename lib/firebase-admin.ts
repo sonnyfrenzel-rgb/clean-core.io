@@ -1276,8 +1276,15 @@ export async function assertMfaSatisfied(
  * that produced it within five minutes. Re-authenticating an enrolled account
  * runs the factor again, so both facts arrive on one token.
  */
-export async function assertMfaStepUp(req: Request, decodedToken: any) {
+export async function assertMfaStepUp(req: Request, decodedToken: any, opts?: { factorEnrolled?: boolean }) {
   void req;
+  // A caller that has read the factor from Firebase Auth itself decides on
+  // that, not on the profile flag, which mirrors it and can lag behind.
+  if (opts?.factorEnrolled) {
+    const refusal = mfaSteppedUp(true, decodedToken, Math.floor(Date.now() / 1000));
+    if (refusal) throw new QuotaError(refusal.message, refusal.status);
+    return;
+  }
   const uid = decodedToken.uid;
   const { db } = await getAdminDb();
 

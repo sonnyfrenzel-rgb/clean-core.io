@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
     if (hasFactor) {
       try {
         assertRecentAuth(decodedToken, 300);
-        await assertMfaStepUp(request, decodedToken);
+        // The factor Firebase Auth holds decides, not the profile flag.
+        await assertMfaStepUp(request, decodedToken, { factorEnrolled: true });
       } catch (err: unknown) {
         const status = err instanceof QuotaError ? err.status : 403;
         const message = err instanceof Error ? err.message : 'Recent MFA step-up verification required.';
