@@ -272,7 +272,12 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
       recommendation = 'Verify API availability in SAP API Hub';
       replacementConfidence = 'Candidate';
     } else if (isCustom && hasWrite) {
-      recommendation = 'Requires Side-by-Side model (custom persistence)';
+      // Not "requires Side-by-Side": a table in the customer namespace is what
+      // developer extensibility is for, on-stack, in Private Edition / RISE and
+      // in Public Edition alike (CR-03/CR-04). This reader does not know the
+      // target edition — the router does — so the advice names both paths and
+      // claims neither (codex code-engine-06).
+      recommendation = 'Custom persistence: can stay on-stack with developer extensibility (a RAP business object on the customer table) or move Side-by-Side; the target edition and the requirement decide';
       replacementConfidence = 'Needs Validation';
     } else if (isCustom) {
       recommendation = 'Custom table — evaluate migration or retirement';
