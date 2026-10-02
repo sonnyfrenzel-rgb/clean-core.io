@@ -32,8 +32,10 @@ function keysPresent(keys: readonly string[], forbidden: readonly string[]): str
  *   > belegt, dass kein gespeichertes Artefakt, kein Run und kein Pack ein
  *   > Sichtattribut trägt.
  *
- * `lib/workspace-model.ts` keeps the view and IT's secondary focus in
- * `?view=`/`?focus=` and nowhere else — a claim about where the *reader's own
+ * `lib/workspace-model.ts` keeps the view in `?view=` and nowhere else (the IT
+ * focus that once lived in `?focus=` is gone, ADR-057 — the plants of an
+ * `itFocus` key below stay, because a stored focus would break the same
+ * rule) — a claim about where the *reader's own
  * code* looks. It says nothing about whether a project, a run or an audit
  * pack could still end up carrying one: by a client trying to smuggle a value
  * in, or by a later change that spreads a request body somewhere it should
@@ -353,8 +355,8 @@ test.describe('the audit-pack allowlist keeps a planted view off every generated
  * the honest reading of it is that changing a view is a free act that leaves
  * no trace anywhere.
  *
- * So this one drives the shipped page — three views, IT's focus, two layers, a
- * reload — and holds two independent measurements over it:
+ * So this one drives the shipped page — three views, two layers, a reload —
+ * and holds two independent measurements over it:
  *
  *   - **nothing left the browser that could write.** Every request the page
  *     makes is classified; Firestore's write channel and any mutating call to
@@ -413,7 +415,7 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     });
   });
 
-  test('three views, a focus, two layers and a reload leave the project and the account untouched', async ({ page }) => {
+  test('three views, two layers and a reload leave the project and the account untouched', async ({ page }) => {
     test.setTimeout(300 * 1000);
 
     const writes: string[] = [];
@@ -453,11 +455,6 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
       timeout: 30000,
     });
 
-    const focus = page.locator('[data-workspace-it-focus] button[role="radio"]', { hasText: 'Enterprise' });
-    await expect(focus).toBeVisible({ timeout: 30000 });
-    await focus.click();
-    await expect(focus).toHaveAttribute('aria-checked', 'true', { timeout: 30000 });
-
     await view('Management').click();
     await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
       'data-workspace-shell',
@@ -493,7 +490,7 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
 
     expect(
       writes,
-      `a view, focus or layer switch sent something that writes: ${JSON.stringify(writes)}`,
+      `a view or layer switch sent something that writes:${JSON.stringify(writes)}`,
     ).toEqual([]);
     expect(
       firestoreRequests,

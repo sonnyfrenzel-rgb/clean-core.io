@@ -485,7 +485,7 @@ Mockup Screens 1–4: switcher, layers, status chips, next step, search.
 
 | # | Step | Size |
 |---|---|---|
-| 6.1 | **Switcher Business · IT · Management** (always in this order, Business first and selected on opening; decision Sonny 15.09.2026), in IT with focus Application · Solution · Enterprise. Held in URL and browser — not in the account, not in the project, not in run or audit pack. Plus **the three views in motion** in "New project" (`DESIGN.md` §6.1.1): one fact with a fixed anchor travels once through the three views, from the real run of the example, skippable, still under reduced motion. Below the switcher, per view, one sentence on which question it answers, with "About this view" (`DESIGN.md` §2.3) | M |
+| 6.1 | **Switcher Business · IT · Management** (always in this order, Business first and selected on opening; decision Sonny 15.09.2026). ~~In IT with focus Application · Solution · Enterprise~~ — **IT focus switch removed 02.10.2026, owner decision** (ADR-057): it changed nothing on screen, and 3.0 has no multi-project scope a Solution or Enterprise focus could narrow to (§8); an old link with `?focus=…` opens the workspace normally and the parameter is ignored. An idea for after 3.0 only if a solution/landscape view is ever built (§7). Held in URL and browser — not in the account, not in the project, not in run or audit pack. Plus **the three views in motion** in "New project" (`DESIGN.md` §6.1.1): one fact with a fixed anchor travels once through the three views, from the real run of the example, skippable, still under reduced motion. Below the switcher, per view, one sentence on which question it answers, with "About this view" (`DESIGN.md` §2.3) | M |
 | 6.2 | **Layers:** Need & process · Standard fit · Costs & assumptions · Architecture & dependencies · Evidence & controls · Changes & commitments. A layer without content says so instead of inventing something (W22-A03) | M |
 | 6.3 | **Overlays on the process model:** clean core level of the code behind a task, findings, usage (if imported) — presentation, not content; the level stays outside the signed audit pack | M |
 | 6.4 | **Management view of the same project:** what is confirmed, what is missing, what a decision would bind; **Clean Core Score with rule version and history** — a history compares only runs of the same rule version — no portfolio. **The presentation of this view is step 3.0.10** (charts, overview screen, "not determined" as its own area): here the answers are created, there their form — whoever builds 6.4 reads 3.0.10 alongside, so that the figures carry from the start the coverage the chart must show | M |
@@ -701,7 +701,7 @@ example `Z_MM_PO_APPROVAL` (L87, L108, L231, L412, L470, L502, L512), which are 
 | s3 | Given/When/Then scenarios | 7.3 |
 | s3 | Check assignments | 7.5 |
 | s3 | Compliance notes | 7.7 |
-| s4 IT · Findings & chain | IT focus Application · Solution · Enterprise | 6.1 |
+| s4 IT · Findings & chain | IT focus Application · Solution · Enterprise — **not built: removed 02.10.2026** (owner decision, ADR-057; the mockup keeps it, see §7) | 6.1 |
 | s4 | Chain per selected finding with coverage "Chain complete for 31 of 42" | 8.1 |
 | s4 | Findings with both catalog views, five rows and "Show all", live filter | 8.1, 1.5 |
 | s4 | Level facet, overlays | 6.3 |
@@ -835,6 +835,7 @@ is how Signavio handles foreign `extensionElements`** — exactly that is what 4
 | — | **After 3.0 · Transformation: recorded finding → code mapping** (decision Sonny, 01.10.2026): the generation records which generated file and lines answer each finding, replacing today's clearly labelled text search on the Transformation page | M |
 | — | **After 3.0 · Account deletion closes the token window** (decision Sonny, 01.10.2026; QA 483136c43105): a server-written tombstone on deletion that the rules check, so a still-valid token cannot recreate a profile. Needs a manual rules deploy | S |
 | — | **After 3.0 · Key history for the audit signing key** (decision Sonny, 01.10.2026; QA 462335bf7edb): verify against a list of keys, then the deploy checks the key length again (tests/signing-key-guard.spec.ts) | M |
+| — | **After 3.0, idea only · IT focus Application · Solution · Enterprise** (removed 02.10.2026, owner decision, ADR-057): comes back only together with a solution or landscape view across several projects that it could actually narrow — not as a switch over one program. §8 does not build portfolio steering, so today there is no such view | — |
 | — | **Kept as is · Welcome mail to an unverified address** (decision Sonny, 01.10.2026; QA 4359c775bab2, fd3acb754f97): sign-up stays unchanged; address verification at sign-up would be its own product step | — |
 | no version | Publish the bench, fair comparison, team acceptance — need appointments with third parties, not development time · Runner isolation: since 19.09.2026 before 3.0 as 8.9 (CR-09)|
 
