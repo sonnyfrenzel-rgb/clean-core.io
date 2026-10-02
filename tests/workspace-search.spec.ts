@@ -296,9 +296,9 @@ test.describe('answering "What is …?" from the glossary — no model call', ()
   });
 
   test('a term named inside a longer sentence is found', () => {
-    expect(findGlossaryTerm('tell me about SAP BTP please')?.key).toBe('BAIP');
-    expect(findGlossaryTerm('BTP')?.key, 'the former name still finds the entry').toBe('BAIP');
-    expect(findGlossaryTerm('what is the SAP Business AI Platform')?.key).toBe('BAIP');
+    expect(findGlossaryTerm('tell me about SAP BTP please')?.key).toBe('SAP BTP');
+    expect(findGlossaryTerm('BTP')?.key, 'the former name still finds the entry').toBe('SAP BTP');
+    expect(findGlossaryTerm('what is the SAP Business AI Platform')?.key).toBe('SAP BTP');
   });
 
   test('a short query only matches when it is at least three characters', () => {

@@ -32,7 +32,7 @@ import { escapeHtml } from '@/lib/export-safety';
 // the hashes in its manifest, not by being generated again, so every pack
 // issued before this change still verifies.
 import { EXPORT_WORD_CSS } from '@/lib/export-style';
-import { BAIP, BAIP_FIRST, routeLabel } from '@/lib/sap-naming';
+import { BTP, BTP_FIRST, routeLabel } from '@/lib/sap-naming';
 import { recommendedArchitecture } from '@/lib/project-commands';
 
 interface ManifestFile {
@@ -101,7 +101,7 @@ export interface AuditPackManifest {
 
 const ARCH_LABELS: Record<string, string> = {
   rap: 'In-App ABAP Cloud (RAP)',
-  cap: `Side-by-Side ${BAIP} (CAP)`,
+  cap: `Side-by-Side ${BTP} (CAP)`,
   integration: 'SAP Integration Suite',
   event: 'SAP Event Mesh',
   retire: 'Retire / Decommission',
@@ -579,7 +579,7 @@ ${mdCell(project.recommendationJustification || 'Derived from the deterministic 
 ## Considered options
 
 - **In-App ABAP Cloud (RAP)** — extend within the S/4HANA boundary on released APIs.
-- **Side-by-Side on ${BAIP_FIRST} (CAP)** — decoupled Node.js/TypeScript services, upgrade-safe.
+- **Side-by-Side (CAP) on ${BTP_FIRST}** — decoupled Node.js/TypeScript services, upgrade-safe.
 - **Integration Suite / Event Mesh / Retire** — for middleware, asynchronous, or deprecation cases.
 
 ## Scope & consequences

@@ -128,9 +128,9 @@ export const FROM_LANDING = {
     'A view orders what you see. It is never stored with a project, a run, a signature or an audit pack, and it changes no result. You confirm as the signed-in account — a self-declaration, not an organisational mandate.',
 
   cleanCoreLead:
-    'Clean core keeps SAP S/4HANA standard. Clean core extensibility means extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP Business AI Platform (formerly SAP BTP).',
+    'Clean core keeps SAP S/4HANA standard. Clean core extensibility means extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP, part of the SAP Business AI Platform.',
   cleanCoreMeans:
-    'Keep the SAP core standard: extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on BAIP.',
+    'Keep the SAP core standard: extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP.',
   /** One real SAP object per level, graded at render time; shown only while the catalog still puts it there. */
   levelExamples: [
     { name: 'I_SALESDOCUMENT', note: 'Released CDS view.' },

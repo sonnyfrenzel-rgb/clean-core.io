@@ -133,7 +133,7 @@ export default function TenantSecurityPage() {
           </div>
 
           <CcMessageStrip state="information" headline="SAP Destination service:">
-            For maximum security, we recommend importing your connection as a standard <strong>HTTP destination JSON from the SAP Destination service</strong> instead of manually entering credentials. This inherits your existing connectivity profiles on BAIP and OAuth configurations.
+            For maximum security, we recommend importing your connection as a standard <strong>HTTP destination JSON from the SAP Destination service</strong> instead of manually entering credentials. This inherits your existing connectivity profiles on SAP BTP and OAuth configurations.
           </CcMessageStrip>
         </div>
       </section>

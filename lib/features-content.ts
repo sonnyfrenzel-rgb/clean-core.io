@@ -3,7 +3,7 @@
  * Sourced from the existing landing copy, the chatbot knowledge base and the docs —
  * kept honest (every page states its limitations) and on-narrative for v2.0.
  */
-import { BAIP_FIRST } from './sap-naming';
+import { BTP_FIRST } from './sap-naming';
 
 export interface FeatureContent {
   slug: string;
@@ -26,7 +26,7 @@ export const FEATURES: FeatureContent[] = [
       'Classify custom ABAP against SAP Clean Core guidelines, get a deterministic RAP-vs-CAP recommendation, and gate transformation behind an explicit architect sign-off.',
     stage: 'Stage 2 — Solution Design',
     what: [
-      `Before any code is generated, Clean-Core.io classifies each piece of legacy custom logic against SAP’s Clean Core extensibility guidelines and routes it to the right target track: In-App Developer Extensibility (ABAP Cloud / RAP) or Side-by-Side on ${BAIP_FIRST} (CAP).`,
+      `Before any code is generated, Clean-Core.io classifies each piece of legacy custom logic against SAP’s Clean Core extensibility guidelines and routes it to the right target track: In-App Developer Extensibility (ABAP Cloud / RAP) or Side-by-Side (CAP) on ${BTP_FIRST}.`,
       'The recommendation is deterministic — derived from the evidence engine (data coupling, released-API usage, transaction semantics) — not guessed by a language model.',
     ],
     capabilities: [
@@ -74,7 +74,7 @@ export const FEATURES: FeatureContent[] = [
     title: 'Dual RAP & CAP Engine',
     eyebrow: 'Code transformation',
     summary:
-      `Generate clean In-App ABAP Cloud (RAP) handlers or decoupled CAP services on ${BAIP_FIRST}, with a deterministic dependency resolver that reduces structural AI hallucinations.`,
+      `Generate clean In-App ABAP Cloud (RAP) handlers or decoupled CAP services on ${BTP_FIRST}, with a deterministic dependency resolver that reduces structural AI hallucinations.`,
     stage: 'Stage 3 — Transformation',
     what: [
       'Depending on the routing decision, the engine drafts either In-App ABAP Cloud RAP artifacts or decoupled Side-by-Side CAP (Node.js / TypeScript) services.',

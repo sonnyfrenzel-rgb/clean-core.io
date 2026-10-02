@@ -5,7 +5,7 @@ import { Check, Code2, Layers, X } from 'lucide-react';
 import clsx from 'clsx';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
-import { BAIP, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
+import { BTP, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
 
 interface Checkpoint {
   checkpointName: string;
@@ -266,11 +266,11 @@ export default function ExtensibilityDecisionMatrix({
             target="Target: Released CDS Views & RAP Business Objects"
           />
           <Track
-            title={`Side-by-Side ${BAIP} (CAP)`}
+            title={`Side-by-Side ${BTP} (CAP)`}
             icon={<Layers size={16} aria-hidden="true" />}
             track={comparative.sideBySideBTP}
             chosen={isBtp}
-            target={`Target: CAP OData APIs & Decoupled ${BAIP} Microservices`}
+            target={`Target: CAP OData APIs & Decoupled ${BTP} Microservices`}
           />
         </div>
         )}

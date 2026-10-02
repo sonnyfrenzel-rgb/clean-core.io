@@ -36,7 +36,7 @@
 
 import { howToSteps } from './how-to-content';
 import { LIVE_TEST_EXECUTION } from './locked-paths';
-import { BAIP, BAIP_FIRST, SAP_BTP_COCKPIT } from './sap-naming';
+import { BTP, BTP_FIRST, BUSINESS_AI_PLATFORM, BUSINESS_AI_PLATFORM_PARTS, SAP_BTP_COCKPIT } from './sap-naming';
 import { SCORE_BANDS_SOURCE, scoreBandsProse, scoreDeductionsProse } from './clean-core-score';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,13 +47,13 @@ export const KNOWLEDGE_HUB_FAQS = `
 ## KNOWLEDGE HUB — FREQUENTLY ASKED QUESTIONS
 
 ### Q: What is the SAP S/4HANA Clean Core strategy?
-A: The Clean Core strategy is an architectural design principle that keeps the SAP standard ERP core software free of custom modifications. Custom extensions are developed either "in-app" using key-user extensibility or "side-by-side" on the ${BAIP_FIRST}. This decoupling allows businesses to upgrade their core ERP system instantly, reduce technical debt, and ensure continuous innovation without breaking custom business logic.
+A: The Clean Core strategy is an architectural design principle that keeps the SAP standard ERP core software free of custom modifications. Custom extensions are developed either "in-app" using key-user extensibility or "side-by-side" on ${BTP_FIRST}. This decoupling allows businesses to upgrade their core ERP system instantly, reduce technical debt, and ensure continuous innovation without breaking custom business logic.
 
 ### Q: What is the difference between In-App RAP and Side-by-Side CAP extensions?
-A: In-App RAP (ABAP RESTful Application Programming Model) runs directly within the S/4HANA tenant. It is ideal for extending standard SAP business objects and UI layers using native ABAP in a cloud-compliant way. Side-by-Side CAP (Cloud Application Programming Model) runs externally on ${BAIP}, typically using Node.js or Java. It is designed for standalone cloud-native applications, multi-tenant SaaS products, and integration with non-SAP systems, fully decoupling execution from the ERP core.
+A: In-App RAP (ABAP RESTful Application Programming Model) runs directly within the S/4HANA tenant. It is ideal for extending standard SAP business objects and UI layers using native ABAP in a cloud-compliant way. Side-by-Side CAP (Cloud Application Programming Model) runs externally on ${BTP}, typically using Node.js or Java. It is designed for standalone cloud-native applications, multi-tenant SaaS products, and integration with non-SAP systems, fully decoupling execution from the ERP core.
 
-### Q: How does Clean-Core.io secure a side-by-side integration on ${BAIP}?
-A: Clean-Core.io configures secure tunnels and authentication pathways on ${BAIP}. It implements JSON Web Tokens (JWT) validated by the SAP XSUAA (Extended Services for User Account and Authentication) service. This allows stateless, secure API communication and enforces role-based access control (RBAC). For S/4HANA core connections, it uses the SAP Connectivity and Destination services, routing RFC and OData traffic securely via SAP Cloud Connector without exposing internal endpoints.
+### Q: How does Clean-Core.io secure a side-by-side integration on ${BTP}?
+A: Clean-Core.io configures secure tunnels and authentication pathways on ${BTP}. It implements JSON Web Tokens (JWT) validated by the SAP XSUAA (Extended Services for User Account and Authentication) service. This allows stateless, secure API communication and enforces role-based access control (RBAC). For S/4HANA core connections, it uses the SAP Connectivity and Destination services, routing RFC and OData traffic securely via SAP Cloud Connector without exposing internal endpoints.
 
 ### Q: What is the BYOT (Bring Your Own Tenant) connectivity model?
 A: BYOT lets a developer connect their own NON-PRODUCTION S/4HANA sandbox to check the connection, read OData metadata and make one read-only call against a real service. ${LIVE_TEST_EXECUTION.userNotice} It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier.
@@ -69,10 +69,10 @@ A: A deterministic ABAP evidence engine parses the custom code FIRST (classes, r
 export const EXTENDED_GLOSSARY = `
 ## EXTENDED GLOSSARY
 
-- **${BAIP_FIRST}**: The platform portfolio SAP announced at Sapphire 2026, consolidating the platform with SAP Business Data Cloud and SAP Business AI into one governed environment. It is not a retirement: the services keep their names, and SAP was still shipping releases under the name "SAP BTP ABAP environment" in August 2026. Call the platform "${BAIP_FIRST}" at its first mention and "${BAIP}" after that; use SAP's own names for the concrete services.
-- **SAP Cloud Connector**: A secure software link that runs inside the customer's on-premise or private cloud network, establishing an encrypted TLS connection to ${BAIP} without requiring complex inbound firewall configurations.
+- **${BTP}**: SAP's platform for side-by-side extensions, part of the ${BUSINESS_AI_PLATFORM} — the portfolio SAP presented at Sapphire 2026, which bundles ${BUSINESS_AI_PLATFORM_PARTS}. SAP BTP keeps its name inside it, and so do the services: SAP was still shipping releases under the name "SAP BTP ABAP environment" in August 2026. Call the platform "${BTP_FIRST}" at its first mention and "${BTP}" after that; never call SAP BTP "SAP Business AI Platform" on its own; use SAP's own names for the concrete services.
+- **SAP Cloud Connector**: A secure software link that runs inside the customer's on-premise or private cloud network, establishing an encrypted TLS connection to ${BTP} without requiring complex inbound firewall configurations.
 - **CDS (Core Data Services)**: The data modeling infrastructure used by SAP. CDS views define database tables, relationships, and service projections declaratively inside both the ABAP environment (RAP) and the Node.js/Java environment (CAP).
-- **XSUAA (Extended Services for User Account and Authentication)**: the identity and access management service on ${BAIP}. It issues and validates OAuth 2.0 tokens (JWTs) for securing microservice-to-microservice communication and enforcing user-level authorization scopes.
+- **XSUAA (Extended Services for User Account and Authentication)**: the identity and access management service on ${BTP}. It issues and validates OAuth 2.0 tokens (JWTs) for securing microservice-to-microservice communication and enforcing user-level authorization scopes.
 - **SAP Signavio**: SAP's business process management and mining suite. Clean-Core.io exports BPMN 2.0 XML diagrams for process documentation; import into SAP Signavio has not been verified yet.
 - **BPMN 2.0**: Business Process Model and Notation — an industry-standard graphical notation for specifying business processes. Clean-Core.io generates BPMN 2.0 XML for automated process documentation.
 - **RACI Matrix**: Responsible, Accountable, Consulted, Informed — a framework for assigning roles in a process. Clean-Core.io auto-generates dynamic RACI matrices during documentation.
@@ -86,9 +86,9 @@ export const EXTENDED_GLOSSARY = `
 export const RAP_VS_CAP_COMPARISON = `
 ## RAP vs CAP EXTENSIBILITY COMPARISON
 
-| Criteria | In-App RAP (ABAP RESTful) | Side-by-Side CAP (${BAIP}) |
+| Criteria | In-App RAP (ABAP RESTful) | Side-by-Side CAP (${BTP}) |
 |---|---|---|
-| Runtime Environment | Directly inside SAP S/4HANA (ABAP stack) | ${BAIP} (Node.js, Java, Cloud Foundry/Kyma) |
+| Runtime Environment | Directly inside SAP S/4HANA (ABAP stack) | ${BTP} (Node.js, Java, Cloud Foundry/Kyma) |
 | Primary Use Case | Modifying/enhancing standard SAP business logic | Standalone apps, partner SaaS, multi-system integration |
 | Development Languages | Modern ABAP (Cloud-enabled subset) | JavaScript, TypeScript, Java |
 | Database Access | Native SQL on HANA via CDS views | OData, REST, or database targets (HANA, PG, SQLite) |
@@ -156,9 +156,9 @@ Upload and analyze legacy SAP ABAP customizations. The static analysis engine pr
 - **Risk Assessment**: Highlights high-risk patterns like direct table modifications, unreleased API usage, and hardcoded values
 
 ### Solution Design Stage (/project/[id]/design)
-A model drafts the target architecture for the route on the project, and the user records which target they accept. The draft follows the track: on the RAP track a RAP design inside SAP S/4HANA, on the CAP track a SAP CAP design on ${BAIP}. Never describe the CAP draft as if it were the product's only output.
+A model drafts the target architecture for the route on the project, and the user records which target they accept. The draft follows the track: on the RAP track a RAP design inside SAP S/4HANA, on the CAP track a SAP CAP design on ${BTP}. Never describe the CAP draft as if it were the product's only output.
 - **Architecture Blueprint**: project structure, service endpoints, data consistency, security requirements and a phased roadmap
-- **CAP track only**: the drafted layout names CDS schema files, service handlers and a Dockerfile, and the security requirements are written in ${BAIP} terms (XSUAA/JWT). These are words in a model-written draft — the product does not create a destination, a trust configuration or an XSUAA binding for anyone, and it never connects to ${BAIP}.
+- **CAP track only**: the drafted layout names CDS schema files, service handlers and a Dockerfile, and the security requirements are written in ${BTP} terms (XSUAA/JWT). These are words in a model-written draft — the product does not create a destination, a trust configuration or an XSUAA binding for anyone, and it never connects to ${BTP}.
 - **Accepting a target** records the target, the account and the time on the server: a self-declaration, not an organisational approval
 - **Stale drafts**: a design or an acceptance given for a previous source is marked stale, and code is not generated from it
 
@@ -209,9 +209,9 @@ Global platform configuration.
 - **Access & Usage**: Clean-Core.io is 100% free. Every user has the Free Community Edition with full feature access and 5 transformations; add your own Gemini key for unlimited runs. There are no paid, premium, or purchasable tiers.
 
 ### Knowledge Hub (/knowledge)
-Reference library for SAP Clean Core architecture and ${BAIP} extensibility patterns.
+Reference library for SAP Clean Core architecture and ${BTP} extensibility patterns.
 - **FAQ Section**: Detailed answers to common architecture questions
-- **Glossary**: Key SAP, ${BAIP}, and Cloud Extensibility terms with Clean Core implications
+- **Glossary**: Key SAP, ${BTP}, and Cloud Extensibility terms with Clean Core implications
 - **RAP vs CAP Comparison Table**: Decision framework for choosing the right extensibility paradigm
 - **Clean Core Alignment**: How findings map to SAP's Clean Core extensibility guidance. Clean-Core.io is not affiliated with or certified by SAP — it complements SAP's own tools (ADT, ATC, Readiness Check).
 

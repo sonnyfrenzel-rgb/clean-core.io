@@ -23,7 +23,7 @@ const EXPLANATIONS: { level: SupportLevel; title: string; text: string }[] = [
   {
     level: 'fully',
     title: 'Fully Supported',
-    text: 'Statically verified constructs that map 1:1 to released standard models or automatically transformed APIs on BAIP.',
+    text: 'Statically verified constructs that map 1:1 to released standard models or automatically transformed APIs on SAP BTP.',
   },
   {
     level: 'partial',
@@ -147,7 +147,7 @@ export default function CoverageVerdict({ findings, summary }: CoverageVerdictPr
         open={showExplanation}
         onClose={() => setShowExplanation(false)}
         title="Coverage Verdict Architecture"
-        lead="The Coverage Verdict is computed statically by analyzing your custom repository against released SAP S/4HANA APIs and the BAIP cloud guidelines."
+        lead="The Coverage Verdict is computed statically by analyzing your custom repository against released SAP S/4HANA APIs and the SAP BTP cloud guidelines."
       >
         <span className="cc-text-label text-cc-ink-muted">EA Assessment Guidelines</span>
         <div className="mt-2 space-y-3">

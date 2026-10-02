@@ -4,7 +4,7 @@ import React, { useId } from 'react';
 import { ArrowDown } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import type { ArchitectureCanvasModel, CanvasSuccessor } from '@/lib/architecture-canvas';
-import { BAIP_FORMERLY } from '@/lib/sap-naming';
+import { BTP, BUSINESS_AI_PLATFORM } from '@/lib/sap-naming';
 
 /**
  * The target architecture as one picture — proposal B "Canvas first" of the
@@ -216,7 +216,7 @@ function WideCanvas({ model, targetLine, selected, onSelect, description, zoom =
       <title id={`t-${uid}`}>
         {inApp
           ? 'Target architecture: in-app ABAP Cloud with RAP inside SAP S/4HANA'
-          : 'Target architecture: side-by-side CAP service on SAP Business AI Platform next to SAP S/4HANA'}
+          : `Target architecture: side-by-side CAP service on ${BTP} next to SAP S/4HANA`}
       </title>
       <desc id={`d-${uid}`}>{description}</desc>
       <defs>
@@ -358,10 +358,10 @@ function WideCanvas({ model, targetLine, selected, onSelect, description, zoom =
         strokeDasharray={inApp ? '7 5' : undefined}
       />
       <text x={rX + 20} y={38} fontFamily={SANS} fontSize={13} fontWeight={800} fill={C.ink}>
-        {inApp ? 'ABAP Cloud on the stack' : 'SAP Business AI Platform'}
+        {inApp ? 'ABAP Cloud on the stack' : BTP}
       </text>
       <text x={rX + 20} y={55} fontFamily={SANS} fontSize={12} fill={C.muted}>
-        {inApp ? 'in-app developer extensibility · customer namespace' : `${BAIP_FORMERLY} · side-by-side, own lifecycle`}
+        {inApp ? 'in-app developer extensibility · customer namespace' : `part of the ${BUSINESS_AI_PLATFORM} · own lifecycle`}
       </text>
 
       <Pick k="runtime" label={inApp ? 'RAP business object, runtime stipulated by the route' : 'CAP service, runtime stipulated by the route'} selected={selected} onSelect={onSelect}>
@@ -507,9 +507,9 @@ function TallCanvas({ model, targetLine }: ArchitectureCanvasProps) {
         style={{ background: inApp ? 'var(--cc-surface)' : C.btpBg, borderColor: inApp ? 'var(--cc-brand-strong)' : C.btpLine }}
       >
         <p className="m-0 text-[13px] font-extrabold text-cc-ink">
-          {inApp ? 'ABAP Cloud on the stack' : 'SAP Business AI Platform'}
+          {inApp ? 'ABAP Cloud on the stack' : BTP}
           <span className="block text-[12px] font-medium text-cc-ink-muted">
-            {inApp ? 'in-app developer extensibility' : `${BAIP_FORMERLY} · side-by-side`}
+            {inApp ? 'in-app developer extensibility' : `part of the ${BUSINESS_AI_PLATFORM} · side-by-side`}
           </span>
         </p>
         <div className="mt-2 rounded-cc-row border bg-cc-surface px-3 py-2 text-[13px]" style={{ borderColor: inApp ? 'var(--cc-brand-strong)' : C.btp }}>

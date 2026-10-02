@@ -32,7 +32,7 @@ export const cloudServiceDetails: Record<string, {
 }> = {
   xsuaa: {
     title: 'XSUAA Identity Federation',
-    details: 'XSUAA acts as the OAuth 2.0 authorization server on BAIP. It handles authentications, validates incoming JSON Web Tokens (JWTs), and resolves user roles/scopes. This keeps identity federation and access management separate from application logic.',
+    details: 'XSUAA acts as the OAuth 2.0 authorization server on SAP BTP. It handles authentications, validates incoming JSON Web Tokens (JWTs), and resolves user roles/scopes. This keeps identity federation and access management separate from application logic.',
     whyCritical: 'Ensures secure, audited cloud access that adheres strictly to clean-core guidelines. User identities are resolved dynamically via federated identity providers (like SAP IAS or Azure AD) rather than database-level hardcoding in legacy layers.',
     npmPackages: ['@sap/xssec', 'passport'],
     codeSnippet: `const express = require('express');
@@ -121,7 +121,7 @@ async function startListening() {
   },
   postgresql: {
     title: 'PostgreSQL Relational Database',
-    details: 'PostgreSQL on BAIP or AWS is an enterprise-grade relational database. It is utilized to store extension-specific application states, customer metadata, and transactional caches, fully isolating side-by-side data from the ERP legacy schema.',
+    details: 'PostgreSQL on SAP BTP or AWS is an enterprise-grade relational database. It is utilized to store extension-specific application states, customer metadata, and transactional caches, fully isolating side-by-side data from the ERP legacy schema.',
     whyCritical: 'Guarantees zero database-level pollution. Custom tables are kept out of the core S/4HANA database, avoiding schema upgrade lockouts and keeping the ERP core pristine and easily upgradeable.',
     npmPackages: ['pg', '@sap/xsenv'],
     codeSnippet: `const { Pool } = require('pg');
@@ -155,7 +155,7 @@ async function queryExtensionData(userId) {
   },
   hanaCloud: {
     title: 'SAP HANA Cloud Database',
-    details: 'SAP HANA Cloud is the managed database behind an HDI container on BAIP. A side-by-side extension binds to its own container, so the extension schema is separate from the S/4HANA core schema while still sitting on the same database technology. Node.js reaches it through the SAP HANA client, not through a PostgreSQL driver.',
+    details: 'SAP HANA Cloud is the managed database behind an HDI container on SAP BTP. A side-by-side extension binds to its own container, so the extension schema is separate from the S/4HANA core schema while still sitting on the same database technology. Node.js reaches it through the SAP HANA client, not through a PostgreSQL driver.',
     whyCritical: 'Extension tables belong in the extension’s own HDI container, never in the S/4HANA core schema — that is what keeps an upgrade from colliding with custom data. The binding is injected by the platform, so nothing about the host, schema or certificate is written into the application.',
     npmPackages: ['@sap/hana-client', '@sap/xsenv'],
     codeSnippet: `const hana = require('@sap/hana-client');

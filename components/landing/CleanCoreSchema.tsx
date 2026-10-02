@@ -4,15 +4,14 @@
  *
  * A concept, not data: the SAP core stays standard inside a boundary of
  * released interfaces; in-app with ABAP Cloud docks on the boundary, a
- * side-by-side extension on BAIP (SAP Business AI Platform, formerly SAP BTP)
- * comes through an API, and a modification breaks into the core. The mockup's
+ * side-by-side extension on SAP BTP comes through an API, and a modification breaks into the core. The mockup's
  * geometry, drawn in the page's tokens.
  */
 const BOX = 'fill-cc-surface stroke-cc-field-border';
 const STRONG = { fontWeight: 600 } as const;
 const SOFT = { fontWeight: 500 } as const;
 const LABEL =
-  'The SAP core with a boundary of released interfaces. An in-app extension with ABAP Cloud docks on the boundary, a side-by-side extension on BAIP connects through an API, and a modification breaks into the core and changes SAP code.';
+  'The SAP core with a boundary of released interfaces. An in-app extension with ABAP Cloud docks on the boundary, a side-by-side extension on SAP BTP connects through an API, and a modification breaks into the core and changes SAP code.';
 
 export default function CleanCoreSchema() {
   return (
@@ -49,7 +48,7 @@ export default function CleanCoreSchema() {
           side-by-side
         </text>
         <text x="50" y="108" textAnchor="middle" style={SOFT} className="fill-cc-ink-muted">
-          BAIP
+          SAP BTP
         </text>
         <path d="M99 95.5 H132" className="stroke-cc-field-border" strokeWidth={1.2} />
         <text x="116" y="88" textAnchor="middle" style={SOFT} className="fill-cc-ink-muted">
@@ -70,7 +69,7 @@ export default function CleanCoreSchema() {
           side-by-side
         </text>
         <text x="105" y="41" textAnchor="middle" style={SOFT} className="fill-cc-ink-muted">
-          BAIP
+          SAP BTP
         </text>
         <path d="M105.5 53 V82" className="stroke-cc-field-border" strokeWidth={1.2} />
         <text x="114" y="72" style={SOFT} className="fill-cc-ink-muted">

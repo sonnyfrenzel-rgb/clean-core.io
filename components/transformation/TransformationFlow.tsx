@@ -37,7 +37,7 @@ const MAX_FILES = 6;
 /**
  * The width a target's label may take: from its text to the file column, less
  * a margin. A label used to run under the file boxes and be cut by them ("…on
- * BAIF" for "BAIP"); it now wraps inside this column instead.
+ * BAIF" for "BAIP", the platform's 30.09 short name); it now wraps inside this column instead.
  */
 const TARGET_TEXT_X = TX + 18;
 const TARGET_TEXT_W = FX - TARGET_TEXT_X - 16;

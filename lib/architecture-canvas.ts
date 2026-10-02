@@ -6,8 +6,8 @@
  * centre of the Design tool: the S/4HANA core with its clean-core boundary, the
  * released APIs and CDS views the catalog names as successors, the objects that
  * have none, the custom tables the code uses, and — depending on the route the
- * architecture contract chose — the side-by-side service on SAP Business AI
- * Platform (formerly SAP BTP) or the in-app RAP object on the stack. Every box
+ * architecture contract chose — the side-by-side service on SAP BTP, part of
+ * the SAP Business AI Platform, or the in-app RAP object on the stack. Every box
  * carries the lines of the code it stands for.
  *
  * **Where each part comes from.** Nothing here is a second opinion:

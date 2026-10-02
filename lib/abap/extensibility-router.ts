@@ -1,6 +1,6 @@
 import { AbapEvidenceReport, EvidenceKind } from './evidence-model';
 import { scoreFromFindings, scoreWithUnassessed } from '../clean-core-score';
-import { BAIP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE } from '../sap-naming';
+import { BTP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE } from '../sap-naming';
 
 export interface DecisionCheckpoint {
   checkpointName: string;
@@ -292,7 +292,7 @@ export function routeExtensibility(
   } else if (rfcCalls.length > 0) {
     rationale = `RFC integrations are present. These should be externalized via SAP Integration Suite destination service.`;
   } else if (fileAccess.length > 0) {
-    rationale = `Frontend GUI file services are used. Decoupled web client uploads on ${BAIP} are required.`;
+    rationale = `Frontend GUI file services are used. Decoupled web client uploads on ${BTP} are required.`;
   } else if (nativeSql.length > 0) {
     // Native SQL and BDC set `needsBtp` and had no branch of their own, so a
     // program whose only finding was an `EXEC SQL` block was routed
@@ -381,11 +381,11 @@ export function routeExtensibility(
       cleanCoreImpact: 'Target: clean core compliant once the code uses released APIs only (Tier 1). Not established for the analysed code.'
     },
     {
-      checkpointName: `Side-by-Side Extensibility (${BAIP} CAP)`,
+      checkpointName: `Side-by-Side Extensibility (${BTP} CAP)`,
       question: 'Does the extension require external persistency, non-ABAP runtime, or decoupling?',
       evaluation: needsBtp
         ? `Required by the evidence that chose this route: ${btpTriggerList}.`
-        : `Optional. Simple reads do not justify the architectural overhead of a separate ${BAIP} runtime.`,
+        : `Optional. Simple reads do not justify the architectural overhead of a separate ${BTP} runtime.`,
       resultState: needsBtp ? 'Side-by-Side Preferred' : 'In-App Preferred',
       cleanCoreImpact: 'Target: decoupled from the S/4HANA core, with its own lifecycle. Not established for the analysed code.'
     }
@@ -436,7 +436,7 @@ export function routeExtensibility(
       : needsBtp
       // What chose the route, not a claim that CAP persistence is needed or an
       // isolation design exists (QA full review of v2.20.0, 2b515958f925).
-      ? `Recommended route: what was found (${btpTriggerList}) points off the ABAP Cloud stack. Whether the extension needs its own persistence on ${BAIP}, and how it is decoupled, is a design decision this analysis does not establish.`
+      ? `Recommended route: what was found (${btpTriggerList}) points off the ABAP Cloud stack. Whether the extension needs its own persistence on ${BTP}, and how it is decoupled, is a design decision this analysis does not establish.`
       : 'Feasible, but introduces architectural overhead for simple read-only reports.',
     pros: [
       'Maximizes upgrade readiness and isolates extensions',
@@ -445,7 +445,7 @@ export function routeExtensibility(
     ],
     cons: [
       'Network latency for database queries (OData overhead)',
-      `Requires separate licensing for ${BAIP} runtimes`
+      `Requires separate licensing for ${BTP} runtimes`
     ]
   };
 
@@ -480,7 +480,7 @@ export function routeExtensibility(
     assumptions.push('RFC destinations are not yet migrated to SAP Integration Suite or Event Mesh.');
   }
   if (customWrites.length > 0) {
-    assumptions.push(`Custom table persistence is not yet decoupled into a ${BAIP}-managed database or CAP service.`);
+    assumptions.push(`Custom table persistence is not yet decoupled into an ${BTP}-managed database or CAP service.`);
   }
   if (bdcCalls.length > 0) {
     assumptions.push('BDC screen automations have no equivalent Fiori/API-based replacement yet.');

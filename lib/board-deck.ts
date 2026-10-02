@@ -4,7 +4,7 @@ import type { SupportFinding } from '@/lib/abap/class-model';
 import { rollupLevel, LEVEL_LABEL, type SupportLevel } from '@/lib/abap/support-matrix';
 import { formatIsoDate } from '@/lib/format';
 import { APP_VERSION } from '@/lib/version';
-import { BAIP, routeLabel, routeLabelFirst } from '@/lib/sap-naming';
+import { BTP, routeLabel, routeLabelFirst } from '@/lib/sap-naming';
 import type { PresentationData, SlideData } from '@/components/PresentationViewer';
 
 /** A lightweight, per-run snapshot used to render the run-over-run trend slide. */
@@ -334,7 +334,7 @@ export function buildBoardDeck(input: {
     riskRows.push({
       col1: 'Database Table Coupling writes',
       col2: 'Architect',
-      col3: `Migrate custom persistence to PostgreSQL on ${BAIP} / isolated schema`,
+      col3: `Migrate custom persistence to PostgreSQL on ${BTP} / isolated schema`,
       col4: 'PostgreSQL Schema Verification',
       status: 'danger'
     });
@@ -387,7 +387,7 @@ export function buildBoardDeck(input: {
     riskRows.push({
       col1: 'Transformation Sandbox Deploy',
       col2: 'Release Mgr',
-      col3: `Execute deployment testing on a mock ${BAIP} sandbox tenant`,
+      col3: `Execute deployment testing on a mock ${BTP} sandbox tenant`,
       col4: 'Sandbox Smoke Test Pass',
       status: 'success'
     });

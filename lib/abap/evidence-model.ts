@@ -5,7 +5,7 @@ import { MERGED_TABLE_MAP, getMergedCatalogVersion, hasNoReleasedApiPath, getSap
 import { assessCoverage, type CoverageReport } from './coverage';
 import { readTableDependencies, type DependencyRoute, type TableDependency } from './table-dependencies';
 import { maskLiterals } from './statement-reader';
-import { BAIP } from '../sap-naming';
+import { BTP } from '../sap-naming';
 
 export type EvidenceKind =
   | 'table-access'
@@ -321,7 +321,7 @@ export function buildAbapEvidence(
           // violation (`extensibility-router.ts` says so for Private Edition);
           // what the write costs is the missing application layer.
           cleanCoreImpact: 'Direct DB access bypasses the application layer and encapsulation: no business object guards the rows it changes. Writing to a table that is not SAP\'s is not itself a clean core violation, but ABAP Cloud needs the table exposed through a RAP business object or moved side-by-side.',
-          recommendation: `Expose custom tables via RAP Business Objects (Developer Extensibility) or use Side-by-Side persistence on ${BAIP} (CAP).`,
+          recommendation: `Expose custom tables via RAP Business Objects (Developer Extensibility) or use Side-by-Side persistence on ${BTP} (CAP).`,
           targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
         });
       } else {
@@ -478,7 +478,7 @@ export function buildAbapEvidence(
         snippet: text,
         technicalDetail: `Legacy Dynpro CALL SCREEN or MODULE statement.`,
         cleanCoreImpact: 'Dynpro screens only work in SAP GUI. Modern web-based Fiori architectures require decoupled REST/OData APIs and UI5 frontend elements.',
-        recommendation: `Rewrite UI as a Fiori Elements app on ${BAIP} or S/4HANA, backed by a RAP OData service.`,
+        recommendation: `Rewrite UI as a Fiori Elements app on ${BTP} or S/4HANA, backed by a RAP OData service.`,
         targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP']
       });
     }
@@ -612,7 +612,7 @@ export function buildAbapEvidence(
         snippet: text,
         technicalDetail: `COMMIT WORK statement.`,
         cleanCoreImpact: 'Explicit commits break the transactional safety of modern frameworks like RAP (which handles commits orchestrally).',
-        recommendation: `Remove explicit COMMIT WORK and let the framework (RAP save sequence) or a ${BAIP} API broker handle the transaction boundary.`,
+        recommendation: `Remove explicit COMMIT WORK and let the framework (RAP save sequence) or an ${BTP} API broker handle the transaction boundary.`,
         targetOptions: ['Developer Extensibility / RAP']
       });
     }
@@ -659,7 +659,7 @@ export function buildAbapEvidence(
         snippet: text,
         technicalDetail: `Hardcoded file paths, system IDs, or URLs detected.`,
         cleanCoreImpact: 'Hardcoding system configuration makes applications non-portable and forces code changes when deploying across stages (Dev/Stg/Prd).',
-        recommendation: `Externalize configurations using SAP Destination service, ${BAIP} environment variables, or custom configuration tables.`,
+        recommendation: `Externalize configurations using SAP Destination service, ${BTP} environment variables, or custom configuration tables.`,
         targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP', 'Integration Suite']
       });
     }
@@ -675,7 +675,7 @@ export function buildAbapEvidence(
         snippet: text,
         technicalDetail: `Usage of legacy SAPOffice mail API.`,
         cleanCoreImpact: 'Classic SAPOffice APIs are unreleased and deprecated in S/4HANA Cloud.',
-        recommendation: `Migrate to modern BCS (Business Communication Services) APIs, SAP Alert Notification service, or a ${BAIP} mail service.`,
+        recommendation: `Migrate to modern BCS (Business Communication Services) APIs, SAP Alert Notification service, or an ${BTP} mail service.`,
         targetOptions: ['Developer Extensibility / RAP', 'Integration Suite']
       });
     }
@@ -691,7 +691,7 @@ export function buildAbapEvidence(
         snippet: text,
         technicalDetail: `Custom credit management function module detected. Evaluate if SAP FSCM / Advanced Credit Management (F1007) can replace this custom risk engine.`,
         cleanCoreImpact: 'Custom credit/risk engines duplicate functionality that SAP Financial Supply Chain Management (FSCM) provides as standard. Maintaining custom logic increases TCO and blocks cloud migration.',
-        recommendation: `Evaluate if SAP FSCM / Advanced Credit Management (F1007) covers this use case. If standard coverage is insufficient, implement remaining gap as a Side-by-Side microservice on ${BAIP}.`,
+        recommendation: `Evaluate if SAP FSCM / Advanced Credit Management (F1007) covers this use case. If standard coverage is insufficient, implement remaining gap as a Side-by-Side microservice on ${BTP}.`,
         targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP'],
         needsBusinessDecision: true
       });

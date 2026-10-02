@@ -72,7 +72,7 @@ export const ROWS = [
   { id: '3.0.12', title: 'Blocked accounts lose Firestore access immediately', specs: ['firestore-rules-suspended.spec.ts', 'suspended-account-api-reads.spec.ts', 'firestore-rules.spec.ts', 'rules-deploy-order.spec.ts'], manual: 'npm run rules:verify against production — Sonny' },
   { id: '3.0.13', title: 'BYOK hardening (a)–(g)', specs: ['byok-hardening.spec.ts', 'byok-hardening-routes.spec.ts'] },
   { id: '3.0.14', title: 'Everything public current and English only', specs: ['public-texts-guard.spec.ts'], manual: 'the guard reads .md/.txt only; code comments and test titles per docs/release/3.0-text-scan.md' },
-  { id: '3.0.15', title: 'SAP Business AI Platform (formerly SAP BTP) naming', specs: ['sap-naming-guard.spec.ts'] },
+  { id: '3.0.15', title: 'SAP BTP, part of the SAP Business AI Platform — naming', specs: ['sap-naming-guard.spec.ts'] },
   { id: '3.0.16', title: 'Final external review verified finding by finding', specs: [], manual: 'Codex review of 187ccbce: every finding fixed, refuted or scheduled — disposition list' },
   { id: 'IMPORT', title: 'File import: a BPMN 2.0 file comes in as a new revision (ADR-056)', specs: ['process-import.spec.ts', 'editor-import-dialog.spec.ts', 'process-revisions.spec.ts'] },
   // --- "Done when" of the 3.0 row ---

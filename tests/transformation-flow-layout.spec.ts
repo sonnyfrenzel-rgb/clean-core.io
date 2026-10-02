@@ -3,7 +3,7 @@ import { wrapToWidth } from '../components/transformation/TransformationFlow';
 
 /**
  * The Transformation Sankey's target labels stay in their column. "The project
- * route · Side-by-side on BAIP · 1" ran under the generated-file boxes and was
+ * route · Side-by-side on BAIP · 1" (the 30.09 short name) ran under the generated-file boxes and was
  * cut by them to "…on BAIF" (video run of Z_MM_PO_APPROVAL, 02.10.2026). The
  * labels now wrap to the column; on a phone the flow is a list whose cells wrap.
  */
@@ -17,9 +17,9 @@ async function openDemoFlow(page: Page) {
 }
 
 test('a long label wraps into lines that fit, and a single long word is cut, never spilled', () => {
-  const lines = wrapToWidth('The project route · Side-by-side on BAIP · 1', 13, 236);
+  const lines = wrapToWidth('The project route · Side-by-side on SAP BTP · 1', 13, 236);
   expect(lines.length).toBeGreaterThan(1);
-  expect(lines.join(' ')).toBe('The project route · Side-by-side on BAIP · 1');
+  expect(lines.join(' ')).toBe('The project route · Side-by-side on SAP BTP · 1');
   for (const l of lines) expect(l.length * 13 * 0.62).toBeLessThanOrEqual(236);
   expect(wrapToWidth('X'.repeat(80), 13, 236)[0].endsWith('…')).toBe(true);
 });
@@ -30,7 +30,7 @@ test('at 1440 no target label reaches the generated-files column', async ({ page
   await openDemoFlow(page);
   const svg = page.locator('[data-transformation-flow] svg');
   await expect(svg).toBeVisible();
-  await expect(svg).toContainText('Side-by-side on BAIP');
+  await expect(svg).toContainText('Side-by-side on SAP BTP');
   const rights = await svg.locator('[data-flow-target-label]').evaluateAll((els) =>
     els.map((el) => {
       const b = (el as SVGGraphicsElement).getBBox();
@@ -47,7 +47,7 @@ test('at 390 the flow is a list that fits the screen', async ({ page }) => {
   await openDemoFlow(page);
   const list = page.locator('[data-transformation-flow] ul[aria-label="Findings by kind and target"]');
   await expect(list).toBeVisible();
-  await expect(list).toContainText('Side-by-side on BAIP');
+  await expect(list).toContainText('Side-by-side on SAP BTP');
   const overflow = await list.evaluate((ul) => {
     const box = ul.getBoundingClientRect();
     return Array.from(ul.querySelectorAll('span')).some((s) => {

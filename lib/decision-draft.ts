@@ -39,7 +39,7 @@
 import type { ArchitectureContract } from './architecture-contract';
 import type { OptionKind } from './cost-assumptions';
 import { buildProjectDecision, type SignOffBasis } from './project-decision-build';
-import { FINGERPRINTED_FORMER_SHORT as FORMER_SHORT } from './sap-naming';
+import { FINGERPRINTED_PLATFORM_SHORT as FORMER_SHORT } from './sap-naming';
 import {
   normaliseProjectDecision,
   type DecisionConfirmation,

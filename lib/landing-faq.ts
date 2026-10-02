@@ -31,7 +31,7 @@ const bandLabels = SCORE_BANDS.map((b) => `${b.label} (${b.from}–${b.to})`).jo
 export const LANDING_FAQ: LandingFaq[] = [
   {
     q: 'What is SAP clean core?',
-    a: 'Clean core keeps the SAP S/4HANA standard unmodified: extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP Business AI Platform (BAIP, formerly SAP BTP). SAP’s clean core level concept grades what an extension uses from A (released APIs and extension points) to D (not recommended: modifications, implicit enhancements, writes to SAP tables).',
+    a: 'Clean core keeps the SAP S/4HANA standard unmodified: extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP, part of the SAP Business AI Platform. SAP’s clean core level concept grades what an extension uses from A (released APIs and extension points) to D (not recommended: modifications, implicit enhancements, writes to SAP tables).',
     more: { href: '/clean-core-explained', label: 'Clean core, explained without the jargon' },
   },
   {

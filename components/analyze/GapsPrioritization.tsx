@@ -47,7 +47,7 @@ const quadrants = [
   {
     key: 'strategic' as const,
     label: 'Strategic Extensions',
-    subtitle: 'High complexity, no standard fit. Best implemented side-by-side on BAIP.',
+    subtitle: 'High complexity, no standard fit. Best implemented side-by-side on SAP BTP.',
     tag: 'Transformed App',
     Icon: Layers,
   },
