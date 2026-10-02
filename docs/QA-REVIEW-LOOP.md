@@ -55,7 +55,8 @@ only asked for once the loop is clean.
                 │   6. seal the report → artifact qa-review-<sha>         │
                 │                                                         ▼
                 └── job smoke ── waits for deploy.yml of the same commit ─┘
-                    checks /api/health (commit), routes, security headers
+                    checks /api/health (commit) and its deep probe, routes incl. sign-in,
+                    security headers, build assets, the Ed25519 signing key
                     seal → artifact qa-smoke-<sha>
 
  Claude Code (local) ── node scripts/qa/await.mjs <sha>
@@ -66,6 +67,9 @@ only asked for once the loop is clean.
  git push main ── qa-review.yml ── job full (§10)
                     whole code of the release commit, in batches, Auto Router (xhigh)
                     seal → artifact qa-full-<sha> · gates nothing
+ git push main ── deploy.yml ── job smoke-production (§11), after the deploy job
+                    the same checks against https://clean-core.io
+                    seal → artifact prod-smoke-<sha> · red on failure, names the rollback, never rolls back
  Claude Code (local) ── node scripts/qa/await.mjs <sha> --full → verify → step on dev
 ```
 
@@ -81,7 +85,8 @@ only asked for once the loop is clean.
 | Model call | `scripts/qa/lib/openrouter.mjs` | one endpoint, no tools, no fallback models, `data_collection: deny`, retry only on 429 — what might already have been generated is never paid for a second time |
 | Report | `scripts/qa/lib/report.mjs` | fingerprints, carry-over of open findings, refuted ones not carried over (re-raised ones remain, marked), `no_review` for a run that read nothing, public line without content |
 | Seal | `scripts/qa/lib/crypto.mjs`, `lib/store.mjs` | AES-256-GCM under `QA_REVIEW_KEY` |
-| Entry points | `scripts/qa/review.mjs`, `smoke.mjs`, `await.mjs`, `refute.mjs` | CI review, CI smoke, local fetch, refute |
+| Entry points | `scripts/qa/review.mjs`, `smoke.mjs`, `await.mjs`, `refute.mjs` | CI review, CI smoke (`--target production` after a main deploy, `--open <file>` to read a sealed result), local fetch, refute |
+| Smoke checks | `scripts/qa/lib/smoke.mjs` | the checks of a deployed revision, the same for dev and production (§11) |
 | Workflow | `.github/workflows/qa-review.yml` | triggers, permissions, revocation, artifacts |
 | Guardrails in the test | `tests/qa-review-guard.spec.ts` | seal, no leaks, read only, cost budget, delta, report, weekly check |
 | Claude's way of working | `.claude/skills/qa-review-loop/SKILL.md` | only loaded when the loop is due — otherwise costs no context |
@@ -277,6 +282,7 @@ gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>   # re-run t
 | Job `review` red, "OpenRouter answered HTTP 402/401" | credit or key | check the OpenRouter account; only a 429 is retried |
 | Job `review` red, "QA_REVIEW_KEY is missing" | secret missing | set the secret; without a key nothing is ever written unsealed |
 | Smoke "new revision serving: no" | deploy ran, but `/api/health` reports a different commit | check the Cloud Run revision (`gcloud run services describe clean-core-dev --region=europe-west1 --project=cleancore-491216`) |
+| Job `smoke-production` red in `deploy.yml` | the production revision of a main deploy failed a check | download the artifact `prod-smoke-<sha>-<attempt>`, read it with `node scripts/qa/smoke.mjs --open <file>`, then decide on the rollback (§11) |
 | Report names "NOT REVIEWED" | delta over the budget | cut smaller or re-check the range specifically via `workflow_dispatch` |
 | Verdict `no_review`, `await.mjs` exit 2 "Nothing of this delta was read" | no batch fit into the budget, or every call failed | measure the range with `--dry` (§7), then check it in slices via `workflow_dispatch`, oldest first and one after the other — a new run on `dev` aborts the running one. `node scripts/qa/review.mjs --dry` with `QA_BASE_OVERRIDE`/`QA_HEAD` shows beforehand whether a slice becomes complete (`notReviewed` empty) |
 | A finding comes back after refutation | title changed → new fingerprint | refute again; the reason refers to the earlier one |
@@ -327,3 +333,40 @@ node scripts/qa/await.mjs <sha> --full           # fetch the result of a release
 ```
 
 The hook after a push to `main` reminds of it, together with the security and UX agents.
+
+---
+
+## 11. Smoke check of production after every deploy from `main`
+
+Since 02.10.2026 (codex architecture-04 / code-ci-03, owner go of the same day) the
+pipeline no longer ends at the deploy. A production revision that came up broken
+used to stay live until somebody noticed.
+
+| | |
+|---|---|
+| Where | `.github/workflows/deploy.yml`, job `smoke-production`, after `deploy` (which itself waits for `deploy-runner` when the runners deploy). Not in `qa-review.yml`: it belongs to the deploy, so `QA_REVIEW_ENABLED` does not switch it off |
+| When | push to `main`, and only when this run actually deployed — the deploy job exports `deployed` from its newest-commit check; a superseded run skips the deploy and the smoke, and the newer run does both |
+| What | `node scripts/qa/smoke.mjs --target production` — the dev smoke's checks (`scripts/qa/lib/smoke.mjs`) against `https://clean-core.io`: `/api/health` reports this commit (polled up to 10 minutes); one deep probe `/api/health?deep=1` (Firestore reachable, every required key usable, still this commit); `/`, `/?auth=signin` and the public pages answer 200; `/` carries every security header; every build script and stylesheet the landing page names answers 200 (a page naming chunks it does not serve is blank, sign-in included, while its HTML still answers 200); `/.well-known/clean-core-io-signing.json` holds exactly one active key, labelled Ed25519 and parsing as one (codex usp-09) |
+| Safe on production | GETs only, no credential: no sign-in, no write, no mail (no Resend quota), no model call. The one cost is a single Firestore read of `_health/ping`, bounded by the route's own cooldown |
+| Not checked | the **runner self-test** — `POST /api/admin/runner-selftest` needs an administrator with a fresh step-up, and the smoke holds no credential; run it from the admin page after a release that touched the runners. The **rendered sign-in dialog** — it renders in the browser; the job has no browser and no `npm ci`, so it checks the page shell and its scripts. Both are recorded as skipped, with the reason, in every result |
+| Result | sealed with `QA_REVIEW_KEY` (no new secret) as artifact `prod-smoke-<sha>-<attempt>`, kept 30 days, uploaded on a failure too. The log and the step summary say passed, failed or superseded — never what failed |
+| On failure | the job is red and its summary names the rollback. **It never rolls back**: whether a release goes back is a decision. The job holds no Google credential (`contents: read`, no `id-token`) and could not |
+| Superseded | when another commit is serving and the remote `main` has moved on, a newer deploy replaced this one: the job ends green with a notice. An unreadable head is not "superseded" — the check fails closed |
+
+Reading a failed result and rolling back:
+
+```bash
+gh run download <run-id> -n prod-smoke-<sha>-<attempt> -D .qa-review/prod
+node scripts/qa/smoke.mjs --open .qa-review/prod/prod-smoke.enc.json   # QA_REVIEW_KEY from .env.local
+gcloud run revisions list --service=clean-core --region=europe-west1 --project=cleancore-491216 --limit=5
+gcloud run services update-traffic clean-core --to-revisions=<previous>=100 --region=europe-west1 --project=cleancore-491216
+```
+
+A rollback pins traffic to a named revision. Once the fix is deployed, confirm that
+traffic follows it (`gcloud run services describe clean-core --region=europe-west1 --project=cleancore-491216`)
+and lift the pin if it does not: `gcloud run services update-traffic clean-core --to-latest --region=europe-west1 --project=cleancore-491216`.
+The smoke check of that deploy reports "new revision serving: no" while the pin holds.
+
+`tests/deploy-order-guard.spec.ts` holds the job (runs after the deploy, main only,
+read-only, one secret, sealed upload, last job, nothing depends on it);
+`tests/qa-review-guard.spec.ts` holds the checks, end to end against a local revision.

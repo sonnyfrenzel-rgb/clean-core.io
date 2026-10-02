@@ -29,6 +29,7 @@ import { join } from 'node:path';
 import { gh, ghJson, jobsOf, waitForJob, waitForRun } from './lib/gh.mjs';
 import { git } from './lib/git-delta.mjs';
 import { isBlocking, needsAnotherRound, readNothing, renderHeader, renderText } from './lib/report.mjs';
+import { renderSmoke } from './lib/smoke.mjs';
 import { LOCAL_DIR, loadDotEnv, sealedReports } from './lib/store.mjs';
 
 const arg = process.argv.slice(2).find((a) => !a.startsWith('--'));
@@ -55,14 +56,6 @@ function reportNothingRead(report, file, full) {
       ? 'Nothing of this release was read; the reasons are under NOT REVIEWED above. Fix the cause on dev — the next release gets its full review.'
       : `Nothing of this delta was read. Review it in slices that fit: gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>, oldest first (docs/QA-REVIEW-LOOP.md §8).`,
   );
-}
-
-function renderSmoke(s) {
-  if (!s) return 'Smoke: no result.';
-  const lines = [`Smoke ${s.ok ? 'OK' : 'NOT OK'} — pipeline ${s.pipeline.conclusion}; new revision serving: ${s.revision.serving ? 'yes' : 'no'}`];
-  for (const j of s.pipeline.jobs.filter((j) => j.conclusion !== 'success')) lines.push(`  job ${j.name}: ${j.conclusion}`);
-  for (const r of s.routes.filter((r) => !r.ok)) lines.push(`  ${r.path}: ${r.status || r.error}${r.missingHeaders?.length ? ` · missing headers ${r.missingHeaders.join(', ')}` : ''}`);
-  return lines.join('\n');
 }
 
 /**

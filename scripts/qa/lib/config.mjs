@@ -43,6 +43,9 @@ export const OPENROUTER_MODELS_ENDPOINT = 'https://openrouter.ai/api/v1/models';
 /** The dev service's run.app address — dev.clean-core.io has no A record (CLAUDE.md). */
 export const DEV_URL = 'https://clean-core-dev-qcevuoi3uq-ew.a.run.app';
 
+/** The production service `clean-core`, checked after every deploy from main (deploy.yml, job smoke-production). */
+export const PROD_URL = 'https://clean-core.io';
+
 /**
  * Spend is capped per review, not hoped for. The cap is checked before any call against what OpenRouter
  * actually reported as spent (`usage.cost`) plus an estimate for the call at the price ceiling of its tier —
@@ -292,8 +295,15 @@ export const RISK_RULES = [
   { tag: 'ui', elevated: false, test: (p) => /^(app|components)\/.*\.tsx$/.test(p) },
 ];
 
-/** Routes the smoke check expects to answer 200 on the freshly deployed dev revision. */
-export const SMOKE_ROUTES = ['/', '/api/health', '/method/levels', '/verify-pack', '/trust', '/robots.txt', '/sitemap.xml', '/llms.txt'];
+/**
+ * Routes the smoke check expects to answer 200 on a freshly deployed revision, dev and production alike.
+ * `/?auth=signin` is the sign-in page: the dialog renders in the browser, so the server answers the landing shell
+ * and the static-asset check (scripts/qa/lib/smoke.mjs) is what proves its scripts are there.
+ */
+export const SMOKE_ROUTES = ['/', '/?auth=signin', '/api/health', '/method/levels', '/verify-pack', '/trust', '/robots.txt', '/sitemap.xml', '/llms.txt'];
+
+/** The public half of the audit-pack signing key (app/.well-known/clean-core-io-signing.json/route.ts). */
+export const SIGNING_KEY_PATH = '/.well-known/clean-core-io-signing.json';
 
 /** Response headers the root page must carry (set in middleware.ts / next.config.mjs). */
 export const SMOKE_HEADERS = ['content-security-policy', 'strict-transport-security', 'x-content-type-options', 'x-frame-options', 'referrer-policy'];

@@ -311,6 +311,10 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    # Whether this run put a new revision live: false when the newest-commit check
+    # found a newer commit (that run deploys and smokes). Read by smoke-production.
+    outputs:
+      deployed: ${{ steps.fresh.outputs.current }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -545,3 +549,57 @@ jobs:
             RUNNER_LIVE_URL=${{ steps.env-ctx.outputs.runner_live_url }}
             RUNNER_SERVICE_ACCOUNT=${{ steps.env-ctx.outputs.runner_sa }}
             S4_PROXY_BASE_URL=${{ steps.env-ctx.outputs.proxy_base }}
+
+  # Job 3: Smoke check of the production revision (codex architecture-04, code-ci-03).
+  #
+  # The pipeline used to end at the deploy: a revision that came up broken -
+  # degraded health, a page answering 500, HTML naming scripts it does not serve,
+  # no Ed25519 key published - stayed live until someone noticed. This job checks
+  # the revision the deploy job just put live, with the same checks the QA agent
+  # runs after every push to dev (scripts/qa/lib/smoke.mjs): /api/health reports
+  # this commit, the deep probe is ok, the landing, sign-in and public pages
+  # answer with their security headers and build assets, and the signing key set
+  # holds one active Ed25519 key. GETs only: no sign-in, no write, no mail, no
+  # model call. The one cost is a single Firestore read of `_health/ping`.
+  #
+  # On a failure the job is red and its summary names the rollback; it never
+  # rolls back itself - whether to is a decision (docs/ARCHITECTURE.md, runbook).
+  # What failed is sealed with QA_REVIEW_KEY like the dev smoke: the log is public.
+  #
+  # Main only: dev has its smoke in qa-review.yml. Runs only when this run
+  # deployed; `!cancelled()` because a skipped deploy-runner would otherwise skip
+  # this job too, the way it would skip the deploy without its own condition.
+  # No OIDC token, no install, one secret.
+  smoke-production:
+    needs: [deploy]
+    if: ${{ !cancelled() && github.ref_name == 'main' && needs.deploy.result == 'success' && needs.deploy.outputs.deployed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Smoke check of the production revision
+        env:
+          QA_REVIEW_KEY: ${{ secrets.QA_REVIEW_KEY }}
+          QA_HEAD: ${{ github.sha }}
+        run: node scripts/qa/smoke.mjs --target production
+
+      # Uploaded on a failure too: that is when the sealed result is needed.
+      - name: Upload sealed smoke result
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: prod-smoke-${{ github.sha }}-${{ github.run_attempt }}
+          path: .qa-review/out/prod-smoke.enc.json
+          retention-days: 30
+          if-no-files-found: error

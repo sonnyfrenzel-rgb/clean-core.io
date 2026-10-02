@@ -85,6 +85,54 @@ test('both jobs run the same check, and the workflow has no concurrency group', 
   expect(src).not.toMatch(/^\s*concurrency:/m);
 });
 
+/**
+ * codex architecture-04 / code-ci-03: the pipeline no longer ends at the deploy.
+ * After a deploy from main that actually ran, a job checks the revision it put
+ * live (scripts/qa/smoke.mjs --target production; the checks themselves are held
+ * in tests/qa-review-guard.spec.ts). It turns the run red on a failure and names
+ * the rollback; it never performs one, and it holds no Google credential that
+ * could.
+ */
+test('every deploy from main is followed by a smoke check of the production revision, which can read and nothing else', () => {
+  const src = wf();
+  // The deploy job says whether it deployed, from the same check that gates the deploy step.
+  expect(job(src, 'deploy')).toMatch(/\n {4}outputs:\n {6}deployed: \$\{\{ steps\.fresh\.outputs\.current \}\}\n/);
+
+  const smoke = job(src, 'smoke-production');
+  expect(smoke).toMatch(/\n {4}needs: \[deploy\]\n/);
+  // `!cancelled()`: with the runner job switched off (skipped) a plain condition would skip this job as well.
+  expect(smoke).toContain(
+    "if: ${{ !cancelled() && github.ref_name == 'main' && needs.deploy.result == 'success' && needs.deploy.outputs.deployed == 'true' }}",
+  );
+  expect(smoke).toContain('run: node scripts/qa/smoke.mjs --target production');
+  expect(smoke).toContain('QA_HEAD: ${{ github.sha }}');
+
+  // Read-only: no OIDC token, no Google sign-in, no deploy, no traffic change, no install.
+  expect(smoke).toMatch(/\n {4}permissions:\n {6}contents: read\n {4}steps:/);
+  expect(smoke).not.toMatch(/id-token|write/);
+  expect(smoke).not.toMatch(/google-github-actions\/|gcloud|update-traffic|npm (ci|install)/);
+  expect(smoke).toContain('persist-credentials: false');
+  // Exactly one secret, the sealing key, and only as an env entry.
+  expect([...smoke.matchAll(/secrets\.([A-Z_]+)/g)].map((m) => m[1])).toEqual(['QA_REVIEW_KEY']);
+  for (const line of smoke.split('\n').filter((l) => /\$\{\{\s*secrets\./.test(l))) expect(line).toMatch(/^\s+[A-Z_]+: \$\{\{ secrets\.[A-Z_]+ \}\}$/);
+
+  // The sealed result is uploaded on a failure too - that is when it is read.
+  const upload = steps(smoke).find((s) => s.name === 'Upload sealed smoke result');
+  expect(upload, 'no sealed upload').toBeTruthy();
+  expect(upload!.text).toContain('if: ${{ !cancelled() }}');
+  expect(upload!.text).toContain('path: .qa-review/out/prod-smoke.enc.json');
+  expect(upload!.text).toContain('name: prod-smoke-${{ github.sha }}-${{ github.run_attempt }}');
+
+  // It is the last job, and nothing in the workflow depends on it: a red smoke reports, it does not block or undo.
+  expect(src.trimEnd().endsWith(smoke.trimEnd())).toBe(true);
+  expect(src).not.toMatch(/needs: \[[^\]]*smoke-production/);
+
+  // Every action in the whole pipeline is pinned to a commit.
+  const uses = src.match(/uses: [^\s]+/g) || [];
+  expect(uses.length).toBeGreaterThan(0);
+  for (const u of uses) expect(u).toMatch(/@[0-9a-f]{40}$/);
+});
+
 /** Git's own bash on Windows (System32\bash.exe is WSL); `bash` elsewhere. */
 function bash(): string {
   if (process.platform !== 'win32') return 'bash';

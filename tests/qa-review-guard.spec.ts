@@ -1267,3 +1267,152 @@ test.describe('the full review of a release on main', () => {
     expect(read('scripts/qa/lib/gh.mjs')).toMatch(/if \(branch\) args\.push\('--branch', branch\)/);
   });
 });
+
+/**
+ * codex architecture-04 / code-ci-03: the smoke check of a deployed revision runs for production too, after
+ * every deploy from main (deploy.yml, job smoke-production). One script, one set of checks, two targets - the
+ * workflow half is held in tests/deploy-order-guard.spec.ts.
+ */
+test.describe('the smoke check of a deployed revision, dev and production', () => {
+  test('two targets with their own sealed file; an unknown target is refused, not defaulted', async () => {
+    const { SMOKE_TARGETS, targetFrom } = await lib('smoke.mjs');
+    expect(targetFrom([]).name).toBe('dev');
+    expect(targetFrom(['--target', 'production']).name).toBe('production');
+    expect(targetFrom(['--target=production']).name).toBe('production');
+    expect(() => targetFrom(['--target', 'prod'])).toThrow(/Unknown smoke target/);
+    expect(() => targetFrom(['--target'])).toThrow(/Unknown smoke target/);
+    expect(SMOKE_TARGETS.production).toMatchObject({ url: 'https://clean-core.io', service: 'clean-core', file: 'prod-smoke.enc.json', waitForPipeline: false });
+    expect(SMOKE_TARGETS.dev).toMatchObject({ service: 'clean-core-dev', file: 'qa-smoke.enc.json', waitForPipeline: true });
+    const { SMOKE_ROUTES } = await lib('config.mjs');
+    for (const route of ['/', '/?auth=signin', '/api/health', '/verify-pack']) expect(SMOKE_ROUTES).toContain(route);
+  });
+
+  test('the rollback is named, exactly, and never run', async () => {
+    const { rollbackCommands } = await lib('smoke.mjs');
+    expect(rollbackCommands('clean-core')).toContain('gcloud run services update-traffic clean-core --to-revisions=<previous>=100 --region=europe-west1 --project=cleancore-491216');
+    expect(rollbackCommands('clean-core')).toContain('gcloud run revisions list --service=clean-core --region=europe-west1 --project=cleancore-491216 --limit=5');
+    for (const f of ['scripts/qa/smoke.mjs', 'scripts/qa/lib/smoke.mjs']) {
+      expect(read(f), `${f} runs gcloud`).not.toMatch(/(execFileSync|execSync|spawn\w*)\(\s*['"`]gcloud/);
+    }
+  });
+
+  test('every request is a GET without credentials, and the public output carries no detail', () => {
+    const smokeLib = read('scripts/qa/lib/smoke.mjs');
+    expect(smokeLib).not.toMatch(/method:/);
+    expect(smokeLib).not.toMatch(/[Aa]uthorization|[Cc]ookie|QA_REVIEW_KEY|secrets?\./);
+    const cli = read('scripts/qa/smoke.mjs').replace(/\r\n/g, '\n');
+    // `--open` renders a sealed result in the maintainer's own terminal, with the key from .env.local; it is the
+    // one place the detail may be printed, and it is never what CI runs.
+    const local = cli.slice(cli.indexOf('function openLocally('), cli.indexOf('\n}\n', cli.indexOf('function openLocally(')) + 3);
+    expect(local).toContain('renderSmoke(open(');
+    expect(read('.github/workflows/deploy.yml')).not.toMatch(/smoke\.mjs[^\n]*--open/);
+    // The summary and the log say passed / failed / superseded and name the rollback; what failed stays sealed.
+    const publicCalls = cli.replace(local, '').match(/(summary|console\.log)\([\s\S]*?\);\n/g) || [];
+    expect(publicCalls.length).toBeGreaterThan(4);
+    for (const call of publicCalls) {
+      expect(call, 'a public line carries the result').not.toMatch(/result\.(routes|checks|revision)|missingHeaders|renderSmoke|\.reason|keyId/);
+    }
+    expect(cli).toMatch(/writeFileSync\(join\(OUT_DIR, target\.file\), JSON\.stringify\(seal\(result, secret\)\)\)/);
+    expect(cli).toContain('process.exitCode = 1;');
+    expect(cli).toContain('Nothing was rolled back');
+  });
+
+  test('the signing key check wants exactly one active key that parses as Ed25519', async () => {
+    const { evaluateSigningKeyring } = await lib('smoke.mjs');
+    const { generateKeyPairSync } = await import('node:crypto');
+    const ed = () => generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'pem' }).toString();
+    const rsa = () => generateKeyPairSync('rsa', { modulusLength: 1024 }).publicKey.export({ type: 'spki', format: 'pem' }).toString();
+    const key = (over: Record<string, unknown> = {}) => ({ keyId: 'a1b2c3', algorithm: 'Ed25519', status: 'active', publicKey: 'x', publicKeyPem: ed(), ...over });
+    expect(evaluateSigningKeyring(200, { keys: [key(), key({ keyId: 'old', status: 'retired' })] })).toMatchObject({ ok: true, keyId: 'a1b2c3', keys: 2 });
+    expect(evaluateSigningKeyring(503, { keys: [] }).ok, 'no key configured').toBe(false);
+    expect(evaluateSigningKeyring(200, { keys: [key({ status: 'retired' })] }).ok, 'only a retired key').toBe(false);
+    expect(evaluateSigningKeyring(200, { keys: [key(), key({ keyId: 'b' })] }).ok, 'two active keys').toBe(false);
+    expect(evaluateSigningKeyring(200, { keys: [key({ algorithm: 'RS256' })] }).ok, 'labelled otherwise').toBe(false);
+    expect(evaluateSigningKeyring(200, { keys: [key({ publicKeyPem: rsa() })] }).ok, 'an RSA key labelled Ed25519').toBe(false);
+    expect(evaluateSigningKeyring(200, { keys: [key({ publicKeyPem: 'not a key' })] }).ok, 'garbage').toBe(false);
+    expect(evaluateSigningKeyring(200, null).ok).toBe(false);
+  });
+
+  test('the build assets a page names are found, deduplicated, and only our own', async () => {
+    const { staticAssetPaths } = await lib('smoke.mjs');
+    const html =
+      '<script src="/_next/static/chunks/a.js"></script><script src="/_next/static/chunks/a.js"></script>' +
+      '<link rel="stylesheet" href="/_next/static/css/b.css?dpl=1"/><script src="https://example.invalid/x.js"></script>' +
+      '<img src="/_next/static/media/c.png"/>';
+    expect(staticAssetPaths(html)).toEqual(['/_next/static/chunks/a.js', '/_next/static/css/b.css']);
+    expect(staticAssetPaths('<html></html>')).toEqual([]);
+  });
+
+  /** A revision on a local port, healthy unless told otherwise - the checks run end to end against it. */
+  test('against a served revision: healthy passes, and each kind of breakage fails its own check', async () => {
+    const http = await import('node:http');
+    const { generateKeyPairSync } = await import('node:crypto');
+    const { runChecks, waitForRevision } = await lib('smoke.mjs');
+    const { SMOKE_HEADERS } = await lib('config.mjs');
+    const sha = 'abcdef0123456789abcdef0123456789abcdef01';
+    const keyPem = generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'pem' }).toString();
+    const state = { commit: sha.slice(0, 12), deep: 'ok', asset: 200, keys: 200, headers: true, methods: new Set<string>() };
+    const server = http.createServer((req, res) => {
+      state.methods.add(req.method || '');
+      const url = new URL(req.url || '/', 'http://x');
+      const json = (status: number, body: unknown) => {
+        res.writeHead(status, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(body));
+      };
+      if (url.pathname === '/api/health') {
+        const status = url.searchParams.get('deep') === '1' ? state.deep : 'ok';
+        return json(status === 'ok' ? 200 : 503, { status, version: 'v0', commit: state.commit });
+      }
+      if (url.pathname === '/.well-known/clean-core-io-signing.json') {
+        return json(state.keys, { keys: state.keys === 200 ? [{ keyId: 'k1', algorithm: 'Ed25519', status: 'active', publicKey: 'x', publicKeyPem: keyPem }] : [] });
+      }
+      if (url.pathname === '/_next/static/chunks/main.js') {
+        res.writeHead(state.asset);
+        return res.end('');
+      }
+      const headers: Record<string, string> = { 'content-type': 'text/html' };
+      if (state.headers) for (const h of SMOKE_HEADERS) headers[h] = 'x';
+      res.writeHead(200, headers);
+      res.end('<html><script src="/_next/static/chunks/main.js"></script></html>');
+    });
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()));
+    const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+    const failing = async () => {
+      const { routes, checks } = await runChecks(base, sha);
+      return [
+        ...routes.filter((r: { ok: boolean }) => !r.ok).map((r: { path: string }) => r.path),
+        ...checks.filter((c: { ok: boolean }) => !c.ok).map((c: { name: string }) => c.name),
+      ];
+    };
+    try {
+      expect(await waitForRevision(base, sha, { timeoutMs: 2_000, intervalMs: 10 })).toMatchObject({ serving: true });
+      expect(await failing()).toEqual([]);
+
+      state.asset = 404;
+      expect(await failing()).toEqual(['static assets']);
+      state.asset = 200;
+
+      state.keys = 503;
+      expect(await failing()).toEqual(['signing key']);
+      state.keys = 200;
+
+      state.deep = 'degraded';
+      expect(await failing()).toEqual(['deep health']);
+      state.deep = 'ok';
+
+      state.headers = false;
+      expect(await failing()).toEqual(['/']);
+      state.headers = true;
+
+      // Another commit serving is not this revision; superseded only when the caller says the branch moved on.
+      state.commit = '0123456789ab';
+      expect(await waitForRevision(base, sha, { timeoutMs: 200, intervalMs: 10 })).toMatchObject({ serving: false });
+      expect(await waitForRevision(base, sha, { timeoutMs: 2_000, intervalMs: 10, superseded: () => true })).toMatchObject({ serving: false, superseded: true });
+      expect(await failing(), 'the deep probe reads the commit too').toEqual(['deep health']);
+
+      expect([...state.methods]).toEqual(['GET']);
+    } finally {
+      await new Promise((r) => server.close(r));
+    }
+  });
+});
