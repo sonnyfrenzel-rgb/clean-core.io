@@ -14,6 +14,8 @@ export const WORKSPACE_SHELL_MESSAGES = {
 
   // The header of the object page — components/workspace/WorkspaceShell.tsx.
   'page.details': 'Details',
+  'page.metaProject': 'Project',
+  'page.metaNoRun': 'No signed run yet — source, engine, rules and catalog are recorded with the first analysis.',
   'page.view': 'View',
   'page.aboutThisView': 'About this view',
   'page.projectStatus': 'Project status',

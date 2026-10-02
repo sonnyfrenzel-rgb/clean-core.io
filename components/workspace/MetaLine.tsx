@@ -3,6 +3,7 @@
 import React from 'react';
 import type { MetaEntry } from '@/lib/workspace-model';
 import { META_ABSENT } from '@/lib/workspace-model';
+import { wt } from '@/lib/workspace-messages';
 
 /**
  * What this case's evidence rests on — `DESIGN.md` §2.3, roadmap 1.4.
@@ -32,10 +33,10 @@ export default function WorkspaceMetaLine({ entries }: { entries: MetaEntry[] })
       <p data-workspace-meta="" data-recorded="none" className="m-0 cc-text-meta text-cc-ink-muted">
         {project?.value ? (
           <>
-            Project <span className="font-cc-mono font-semibold text-cc-ink">{project.value}</span> ·{' '}
+            {wt('page.metaProject')} <span className="font-cc-mono font-semibold text-cc-ink">{project.value}</span> ·{' '}
           </>
         ) : null}
-        No signed run yet — source, engine, rules and catalog are recorded with the first analysis.
+        {wt('page.metaNoRun')}
       </p>
     );
   }
