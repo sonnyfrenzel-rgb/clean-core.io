@@ -152,6 +152,7 @@ function decisionFixture(): ProjectDecision {
     runSignedAt: '2026-09-20T08:00:00.000Z',
     contract,
     signedOffArchitecture: 'rap',
+    signOff: { by: 'owner@example.invalid', at: '2026-09-21T08:00:00.000Z', reason: '', notCurrent: null },
     need: { revision: 4, confirmedDrops: 0, undecided: 0 },
     handedOver: false,
     stored: undefined,

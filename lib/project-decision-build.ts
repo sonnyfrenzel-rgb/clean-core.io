@@ -34,10 +34,14 @@ import {
   type CostComparison,
   type OptionKind,
 } from './cost-assumptions';
+import { sha256Hex } from './artefact-digest';
 import {
   DECISION_BINDING_LABELS,
   DECISION_VERSION,
+  NO_CONTRACT_PREFIX,
   SELF_DECLARATION,
+  SIGN_OFF_NOT_CURRENT_PREFIX,
+  optionGeneratesNothing,
   TIMELINE_KINDS,
   decisionFingerprint,
   decisionManifestInput,
@@ -86,6 +90,57 @@ export function decisionManifestInputs(
 
 
 
+/**
+ * The architecture sign-off as the project records it — what a decision whose
+ * option generates nothing rests on in place of a contract (G4-F1).
+ */
+export interface SignOffBasis {
+  /** `approvedBy`: the address on the verified token when it was given. */
+  by: string | null;
+  /** `architectSignOffAt`, ISO 8601; `null` when it cannot be read. */
+  at: string | null;
+  /** `architectJustifiedOverride`, trimmed. */
+  reason: string;
+  /** Why it cannot be stood on now — one sentence — or `null` when it is current. */
+  notCurrent: string | null;
+}
+
+/**
+ * The `contract` binding of a decision whose option generates nothing: no
+ * contract is required, and the binding names the sign-off — by its time and a
+ * digest over who gave it, for which option, and why — rather than a contract
+ * nobody built under. A sign-off that is missing, unexplained or not current
+ * makes it `not-current:`, which `decisionCoverage()` blocks.
+ *
+ * A reason is required, not optional: no option that generates nothing is ever
+ * the engine's route (`recommendationOfProject()` answers `rap` or `cap`), so
+ * `approve-architecture` refuses such a sign-off without one
+ * (`override-needs-reason`). A record without it was not written by that path.
+ */
+function noContractBinding(kind: OptionKind, optionId: string, signOff: SignOffBasis | null | undefined): DecisionBinding {
+  const at = signOff?.at && /^[0-9A-Za-z:.-]+$/.test(signOff.at) ? signOff.at : null;
+  const digest = sha256Hex(JSON.stringify([optionId, signOff?.by ?? null, signOff?.at ?? null, signOff?.reason ?? ''])).slice(0, 12);
+  const key = `${NO_CONTRACT_PREFIX}${kind}/sign-off@${at ?? 'unknown'}+${digest}`;
+  const why = !signOff
+    ? 'no architecture sign-off is on record.'
+    : signOff.notCurrent
+      ? signOff.notCurrent
+      : !signOff.reason
+        ? 'it records no reason, and an option that generates nothing always departs from the route the engine names.'
+        : !at
+          ? 'the time it was given cannot be read.'
+          : null;
+  if (why) {
+    return bound('contract', `${SIGN_OFF_NOT_CURRENT_PREFIX}${key}`, 'stale', why.charAt(0).toUpperCase() + why.slice(1));
+  }
+  return bound(
+    'contract',
+    key,
+    'confirmed',
+    `No architecture contract is required: this option generates nothing. The decision rests on the analysis run and on the sign-off ${signOff!.by ? `by ${signOff!.by} ` : ''}at ${at}, with its reason.`,
+  );
+}
+
 /** An account's word on one condition, carried from one revision into the next. */
 export interface ConditionAttestation {
   conditionId: string;
@@ -123,6 +178,14 @@ export interface BuildDecisionArgs {
   need: { revision: number | null; confirmedDrops: number; undecided: number | null };
   /** Has a handover package for this project left the product (roadmap 8.5)? */
   handedOver: boolean;
+  /**
+   * The architecture sign-off, for a chosen option that generates nothing
+   * (G4-F1): such an option has no contract, and the `contract` binding names
+   * this sign-off instead. Ignored when a contract is passed or the option
+   * builds something. `null`/absent there reads as a sign-off that cannot be
+   * stood on — never as one that can.
+   */
+  signOff?: SignOffBasis | null;
   attestations?: readonly ConditionAttestation[];
   timeline: DecisionTimelineFacts;
 }
@@ -225,7 +288,11 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
     );
   }
 
-  if (!args.contract) {
+  const chosenKind: OptionKind | null =
+    option?.kind ?? (args.chosenOptionId === null ? null : (args.chosenOptionKind ?? null));
+  if (!args.contract && args.chosenOptionId !== null && optionGeneratesNothing(chosenKind)) {
+    bindings.push(noContractBinding(chosenKind!, args.chosenOptionId, args.signOff));
+  } else if (!args.contract) {
     bindings.push(notDetermined('contract', 'No architecture contract has been derived for this run.'));
   } else {
     const coverage = contractCoverage(args.contract);
@@ -341,7 +408,7 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
     bindings,
     conditions,
     reversibility: decisionReversibility({
-      optionKind: option?.kind ?? (args.chosenOptionId === null ? null : (args.chosenOptionKind ?? null)),
+      optionKind: chosenKind,
       handedOver: args.handedOver,
       confirmedDrops: args.need.confirmedDrops,
     }),

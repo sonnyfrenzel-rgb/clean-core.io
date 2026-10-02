@@ -1,7 +1,8 @@
 import type { DocumentReference, Query, Transaction } from 'firebase-admin/firestore';
 import type { getAdminDb } from '@/lib/firebase-admin';
-import { sha256Hex } from '@/lib/artefact-digest';
-import { contractOfProject } from '@/lib/contract-build';
+import { sha256Hex, signOffKey } from '@/lib/artefact-digest';
+import { contractOfProject, inputsDifferingFromRun } from '@/lib/contract-build';
+import type { SignOffBasis } from '@/lib/project-decision-build';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
 import { parseBpmn } from '@/lib/process-map';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
@@ -113,6 +114,58 @@ async function needFactsOf(
   return { revision: revision > 0 ? revision : null, confirmedDrops: drops, undecided };
 }
 
+/**
+ * The architecture sign-off as the project records it, and whether it can
+ * still be stood on — what a decision whose option generates nothing rests on
+ * in place of a contract (G4-F1). `null` when nothing is signed off.
+ *
+ * "Current" asks what a contract would have asked for a rebuild: is the source
+ * on the project the source the run read (`inputsDifferingFromRun`, as
+ * `contractOfProject` does), and was the sign-off given after the last change
+ * of source or profile (`auditMetadata.sourceChange.signOff`, the rule
+ * `/api/audit-pack/create` and `lib/workflow-steps.ts` apply). A re-run of the
+ * same source leaves the sign-off standing, as it does for a rebuild.
+ */
+export function signOffFactsOf(
+  data: Record<string, unknown>,
+  manifest: InputManifest | null,
+): SignOffBasis | null {
+  if (data.approvedByArchitect !== true) return null;
+  const source = typeof data.legacyCode === 'string' ? data.legacyCode : '';
+  const auditMetadata = (data.auditMetadata ?? {}) as {
+    sourceChange?: { signOff?: unknown; reason?: unknown };
+    inputFingerprint?: { sha256?: unknown };
+  };
+
+  let notCurrent: string | null = null;
+  const given = signOffKey(data.architectSignOffAt);
+  const change = auditMetadata.sourceChange;
+  if (given && typeof change?.signOff === 'string' && change.signOff === given) {
+    notCurrent =
+      change.reason === 'profile'
+        ? 'It was given for a previous target profile. Sign off again on the current analysis.'
+        : 'It was given for a previous source. Sign off again on the current analysis.';
+  } else {
+    const deployment =
+      data.s4Deployment === 'private' ? 'private' : data.s4Deployment === 'public' ? 'public' : undefined;
+    const differ = manifest
+      ? inputsDifferingFromRun(manifest, source, deployment)
+      : typeof auditMetadata.inputFingerprint?.sha256 === 'string' && auditMetadata.inputFingerprint.sha256 !== sha256Hex(source)
+        ? ['source']
+        : [];
+    if (differ.length > 0) {
+      notCurrent = `The ${differ.join(' and ')} on the project is not what the analysis run read. Re-run the analysis and sign off on what it says.`;
+    }
+  }
+
+  return {
+    by: typeof data.approvedBy === 'string' && data.approvedBy ? data.approvedBy : null,
+    at: isoOf(data.architectSignOffAt),
+    reason: typeof data.architectJustifiedOverride === 'string' ? data.architectJustifiedOverride.trim() : '',
+    notCurrent,
+  };
+}
+
 export type ProjectDecisionDerivation =
   | { ok: true; answer: DecisionDraftAnswer; runId: string | null; evidenceDigest: string | null }
   | { ok: false; code: 'no-source' | 'too-large' };
@@ -146,7 +199,8 @@ export async function deriveProjectDecision(
   }
   const digest = run ? evidenceDigest(run) : null;
 
-  const built = contractOfProject(data, manifestOfRun(run));
+  const manifest = manifestOfRun(run);
+  const built = contractOfProject(data, manifest);
   const auditMetadata = (data.auditMetadata ?? {}) as { auditPackExportedAt?: unknown };
 
   const answer = deriveDecisionDraft({
@@ -159,6 +213,7 @@ export async function deriveProjectDecision(
       data.approvedByArchitect === true && typeof data.targetArchitecture === 'string'
         ? data.targetArchitecture
         : null,
+    signOff: signOffFactsOf(data, manifest),
     need: await needFactsOf(db, projectId, source, tx),
     handedOver: isoOf(auditMetadata.auditPackExportedAt) !== null,
     stored: data.decision,

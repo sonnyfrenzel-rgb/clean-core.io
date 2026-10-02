@@ -11,11 +11,11 @@ faulty generation, access and revision changes)" (`docs/ROADMAP.md` §4, accepta
 §15 G4, the proven handover). This file says what the spec proves for each path, which corpus
 case it uses, how to run it, what the run gave — and what the product cannot do today.
 
-**Result in one line:** paths 2 (targeted extension) and 4 (undecidable) are complete. Paths 1
-(standard adoption) and 3 (retirement) run through every stage **except the confirmed
-decision**: the product cannot confirm a Retire decision (finding **G4-F1**), so both stop at
-"signed off, decision drafted, not confirmed", and the spec records that as an expected
-failure rather than working around it. G4 is therefore **not** closed by this run.
+**Result in one line:** all four paths are complete. Paths 2 (targeted extension) and 4
+(undecidable) were complete in the first run; paths 1 (standard adoption) and 3 (retirement)
+stopped before the confirmed decision (finding **G4-F1**) until the fix of 02.10.2026, and now
+run through confirmation and a verified pack as well. G4 stays **open** for G4-F2 and G4-F3,
+which need an owner decision, not for a broken path.
 
 ## How it runs
 
@@ -76,13 +76,16 @@ A report that selects customers from KNA1 and lists them.
 | Analyze | signed run, verified against its HMAC; engine route In-App; finding on KNA1 |
 | Standard | the architecture contract names `KNA1 → API_BUSINESS_PARTNER` from the catalogue and keeps "Cover the requirement with SAP standard — build nothing" as an open alternative; the standard-fit layer claims no fit (for this case it holds no capability row at all — no business rule to read one from) |
 | Design | the account signs off **Retire (Standard Replacement / Deprecation)** — the product's only option for adopting the standard — with a reason |
-| Decision | drafted from the sign-off, bound to the run; **confirmation fails (G4-F1)** — marked `test.fail` |
-| Delivery | pack sealed against the current run, authentic, names run and run hash; the attested file carries the sign-off and the approver; the handover shows the design confirmed, the decision *draft, not confirmed*, transformation and tests open (nothing generated, nothing claimed); the Delivery page shows the same |
+| Decision | drafted from the sign-off, bound to the run; **confirmed by the account** — the `contract` binding reads `none-required:retire/sign-off@…` (no contract is required; the decision rests on the run and the sign-off with its reason), since the G4-F1 fix |
+| Delivery | pack sealed against the current run, authentic, names run and run hash; the attested file carries the sign-off and the approver; the handover shows the design confirmed ("No architecture contract is required: nothing is generated"), the decision *confirmed*, transformation and tests open (nothing generated, nothing claimed); the Delivery page shows the same |
 
 Probes: an evidence digest the run does not carry → 409 `evidence-moved`; Retire without a
 reason against the engine route → 400 `override-needs-reason`, nothing written; a stranger's
 sign-off → 404; a stranger reads the decision → 404; a stranger confirms → 404; a pack with
-one appended row in `03-findings.csv` → `verifyAuditPack` *failed*, `verify-pack.mjs` exit 1.
+one appended row in `03-findings.csv` → `verifyAuditPack` *failed*, `verify-pack.mjs` exit 1;
+**the source changes after the sign-off** → the Retire sign-off is not current, the new draft's
+binding reads `not-current:none-required:…`, and its confirmation is refused (409
+`decision-blocked`, "It was given for a previous source").
 
 ### Path 2 — targeted extension · `CC-031`
 
@@ -122,8 +125,8 @@ A logical-database report that reads KNA1 without a SELECT — `NODES kna1`, `GE
 | Usage | an SCMON import recorded through `record-usage-report`; the Analyze stage's join (`joinUsageWithEvidence`) makes ZCC_REF_047 a **Retire candidate** for zero calls over a 396-day window, described as "retire after business owner confirmation" |
 | Candidate ≠ decision | with nothing signed off the decision picks nothing; confirming it → 409 `decision-blocked`; the handover does not read it as confirmed |
 | Design | Retire signed off with the usage evidence as the reason |
-| Decision | drafted, *Derived by rules, not confirmed*, still needed; cost binding not determined (G4-F3); **confirmation fails (G4-F1)** — marked `test.fail` |
-| Delivery | pack authentic against run A; after a new run of the same source the export of run A no longer counts, the draft is *stale*, the usage evidence still only makes a candidate, and a new pack is sealed against run B; the Delivery page shows the decision *not confirmed* and still needed |
+| Decision | drafted, *Derived by rules, not confirmed*, still needed; cost binding not determined (G4-F3); then **confirmed by the account** on the run and the sign-off (G4-F1 fix) |
+| Delivery | pack authentic against run A; after a new run of the same source the export of run A no longer counts, the confirmed decision is *stale*, the usage evidence still only makes a candidate; the confirmation prepared on run A is refused (409 `run-moved`); withdraw, redraft and confirm give revision 3 bound to run B (the sign-off stands: same source), and a new pack is sealed against run B; the Delivery page shows the decision *confirmed* |
 
 Probes: zero calls over 42 days → *unknown*, not a candidate; Retire without a reason → 400;
 an invited reader (as `readersAfterGrant` writes it) reads the decision with `canDecide: false`,
@@ -146,7 +149,8 @@ zcc_ref_021_rules`, which was not supplied.
 
 ## Findings
 
-**G4-F1 — a Retire decision cannot be confirmed (release-relevant; paths 1 and 3).** The
+**G4-F1 — a Retire decision cannot be confirmed (release-relevant; paths 1 and 3) — fixed
+02.10.2026.** The
 sign-off options are RAP, CAP, Integration Suite, Event Mesh and Retire; standard adoption
 and retirement both go through Retire. `contractOfProject` (`lib/contract-build.ts`) answers
 `off-track` for any decision off the two generation tracks (`declaredDeviation`), so
@@ -161,6 +165,30 @@ standard adoption or retirement can reach a confirmed decision, and the Manageme
 "Confirm the decision" can never complete for them. The spec marks the two confirmations
 `test.fail` with this ID; when the gap is closed they fail as "passed unexpectedly" and the
 mark comes off.
+
+*Fix (branch `fix/g4-retire-confirm`).* The rule lives in the derivation and in
+`decisionCoverage`, not in the route. An option that generates nothing
+(`NO_GENERATION_OPTION_KINDS` in `lib/project-decision.ts`: retire, standard, keep,
+do-nothing) has no contract, and `buildProjectDecision` no longer leaves its `contract`
+binding *not determined*: it binds what the decision rests on instead — the sign-off, as
+`none-required:<kind>/sign-off@<time>+<digest over option, account, time and reason>`,
+provenance *confirmed*, with a note that no contract is required — next to the run binding.
+`deriveProjectDecision` reads the sign-off's facts (`signOffFactsOf` in
+`lib/decision-facts.ts`): it is **not current** when it was given before the last source or
+profile change (`auditMetadata.sourceChange.signOff`, the rule the pack route applies), when
+the project's source or deployment is not what the run read (`inputsDifferingFromRun`, as
+the contract checks), when it records no reason (Retire always departs from the engine's
+route), or when its time cannot be read; the binding is then `not-current:…`, which
+`decisionCoverage` blocks as `sign-off-not-current`. Every other blocking reason is
+unchanged: a decision bound to an old run is refused (`run-moved`,
+`decision-run-mismatch`), one that picks nothing is blocked (`option-not-chosen`), and an
+extension without a contract — Integration Suite, Event Mesh, or a rebuild handed none —
+stays `contract-not-bound`; a record that claims the no-contract shape for a rebuild, or in
+a malformed form, is blocked too, and a browser-sent record is confirmed only when it equals
+the server's derivation, as before. The unit test that confirmed Retire on a contract
+fixture now uses the real derivation (`deriveProjectDecision` over a project and run
+document; `contractOfProject` answers `off-track`), with a probe for each refusal
+(`tests/decision-card.spec.ts`, "an option that generates nothing").
 
 **G4-F2 — the undecidable case reads as decidable on Analyze and Design.** For CC-021 the
 engine records 0 findings, a Clean Core Score of 95 and the In-App route at confidence 55; the
@@ -189,9 +217,12 @@ after 3.0); recorded so that nobody reads "handover verified" as more.
 
 Smaller observations, none blocking the paths:
 
-- `lib/evidence-chain.ts` writes into the signed `09-evidence-chain.json` that a test-run
+- `lib/evidence-chain.ts` wrote into the signed `09-evidence-chain.json` that a test-run
   receipt "sits on the project document where the browser can write it". The spec shows the
-  browser cannot (`testRunReceipt` → permission denied); the sentence is stale.
+  browser cannot (`testRunReceipt` → permission denied). *Fixed 02.10.2026 for new packs:*
+  the sentence now says only the server writes one and this pack does not carry it. Packs
+  sealed before keep the old sentence inside their signed bytes; no verifier recomputes the
+  file, so they still verify.
 - A suite stored only by the generation store (`{ config, spec }`) runs — the route falls back
   to `spec` — but the receipt it writes can never cover the project (`testRunSubject` hashes
   `testSuite.code` only). The Testing stage's step 1 writes `code`, so the normal path works.
@@ -229,6 +260,29 @@ pass, but two of the three complete paths cannot reach a confirmed decision (G4-
 undecidable case is shown as undecided only on the decision side (G4-F2), and no decision
 binds a cost revision (G4-F3). G4-F1 is release-relevant; G4-F2 and G4-F3 need an owner
 decision on whether they hold 3.0.
+
+### Re-run after the G4-F1 fix (02.10.2026)
+
+| | |
+|---|---|
+| Base | `19ef5966` (`integrate/next-3.0`) plus `fix/g4-retire-confirm` |
+| Server | `next start` on :3591, production build with `NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true`, model and mail keys blank, no Ed25519 key (HMAC only; offline verifier exit 2 as expected, tampered packs exit 1) |
+| `g4-chain-acceptance` | **25 of 25 passed**, no expected failures — the two G4-F1 tests are ordinary tests now, plus the new path 1 probe (sign-off not current after a source change) |
+| Same run | `trust-chain-e2e`, `trust-chain-binding`, the six `audit-pack-*` specs, `evidence-chain-covers`, `preservation-register`, `decision-card`, `project-decision`, `project-document-size`, `steering-one-pager`, `delivery-handover`, `demo-release-guard`: green |
+
+**Found on the way — every analysis was refused on the production build.** At `19ef5966`,
+`POST /api/runs/create` answered 413 `project-too-large` ("NaN KB") for every run on a
+production build; `trust-chain-e2e` and every G4 path failed at their first analysis. Cause:
+the minifier (SWC, Next 15) compiled `valueSize()` in `lib/firestore-doc-size.ts` — a
+`switch` with `case 'object': break;` followed by the object handling — into a function that
+returned `undefined` for every object, so every size summed to NaN and no write passed the
+budget check (introduced with Codex architecture-02, `9bbe1a4c`). `next dev` does not minify
+and hid it. Rewritten with plain `if`s on this branch; the compiled function was read back
+from `.next/server/chunks` to confirm it.
+
+**Verdict after the fix.** G4-F1 is closed: three complete paths and the undecidable case
+reach the end of the chain. DW-2 and G4 stay **open** on G4-F2 and G4-F3 (owner decision)
+and on the owner's watched walk; G4-F4 is the accepted scope.
 
 The acceptance script's rendered mode could not run at all before this work: it waited for
 `/api/health` to answer below 500, and the health probe answers 503 *degraded* whenever

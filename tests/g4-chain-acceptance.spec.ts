@@ -255,27 +255,32 @@ async function draftAndConfirm(a: Api, projectId: string) {
 }
 
 /**
- * Finding G4-F1 (docs/release/g4-chain-acceptance.md). A sign-off of `retire`
- * — the only option the product offers for a standard adoption as well as for
- * a retirement — takes the project off both generation tracks, so
- * `contractOfProject` answers `off-track` and no architecture contract exists;
- * the decision's `contract` binding is then not determined, which
- * `decisionCoverage` treats as blocking, and `confirm-decision` answers 409
- * `decision-blocked` ("No architecture contract is bound"). Paths 1 and 3 can
- * therefore not reach a confirmed decision today. The tests below state the
- * behaviour the gate needs and are marked as expected to fail; the day the gap
- * closes they turn red as "passed unexpectedly", and the mark comes off.
+ * Finding G4-F1 (docs/release/g4-chain-acceptance.md), closed 02.10.2026. A
+ * sign-off of `retire` — the only option the product offers for a standard
+ * adoption as well as for a retirement — takes the project off both generation
+ * tracks, so `contractOfProject` answers `off-track` and no architecture
+ * contract exists. The decision no longer needs one: an option that generates
+ * nothing binds, in its `contract` slot, the sign-off it rests on
+ * (`none-required:retire/sign-off@…`), next to the run; a sign-off that is not
+ * current blocks it (`sign-off-not-current`). Until then these two
+ * confirmations were marked as expected failures.
  */
-const GAP_RETIRE =
-  'G4-F1: a retire decision cannot be confirmed — no architecture contract exists off the generation tracks, and confirm-decision answers 409 decision-blocked';
-
-async function expectRetireConfirmable(a: Api, projectId: string) {
+async function confirmRetire(a: Api, projectId: string, account: Account) {
   const read = await readDecision(a, projectId);
+  const contract = read.draft.bindings.find((b) => b.key === 'contract');
+  expect(contract?.revision, 'Retire binds the sign-off, not a contract').toMatch(/^none-required:retire\/sign-off@/);
+  expect(contract?.note).toContain('No architecture contract is required');
+  expect(read.draft.boundRunId).toBe(read.runId);
   const confirmed = await a.command(projectId, {
     command: 'confirm-decision', expectedRunId: read.runId, expectedEvidenceDigest: read.evidenceDigest,
     expectedDecisionFingerprint: read.draft.fingerprint,
   });
   expect(confirmed.status(), await confirmed.text()).toBe(200);
+  const after = await handover(projectId);
+  expect(after.decision?.status).toBe('confirmed');
+  expect(after.decision?.confirmation?.account).toBe(account.email);
+  expect(after.decision?.boundRunId).toBe(read.runId);
+  return read;
 }
 
 /* ------------------------------------------------------------ analysis */
@@ -610,12 +615,11 @@ test.describe('G4 path 1 — standard adoption (CC-001: KNA1 list → SAP standa
     expect(h.link('economics').provenance).toBe('not-determined');
   });
 
-  test('GAP G4-F1: the account confirms the standard-adoption decision', async ({ request }) => {
-    test.fail(true, GAP_RETIRE);
-    await expectRetireConfirmable(api(request, owner), projectId);
+  test('decision: the account confirms the standard adoption — no contract is required; it rests on the run and the sign-off (G4-F1)', async ({ request }) => {
+    await confirmRetire(api(request, owner), projectId, owner);
   });
 
-  test('delivery: the pack is sealed against the current run and verifies; the handover names run, sign-off and the unconfirmed decision', async ({ request, baseURL }, testInfo) => {
+  test('delivery: the pack is sealed against the current run and verifies; the handover names run, sign-off and the confirmed decision', async ({ request, baseURL }, testInfo) => {
     test.setTimeout(180_000);
     const a = api(request, owner);
     const { attested, runId } = await sealAndVerify(a, projectId, baseURL!, testInfo.outputDir);
@@ -626,29 +630,48 @@ test.describe('G4 path 1 — standard adoption (CC-001: KNA1 list → SAP standa
     const h = await handover(projectId);
     expect(h.link('run').value).toContain(runId.slice(0, 12));
     expect(h.link('design').provenance).toBe('confirmed');
-    // The decision is current and drafted, and — because it cannot be
-    // confirmed (G4-F1) — nothing reads it as confirmed.
+    // What the decision binds instead of a contract, said as such.
+    expect(h.link('design').missing).toContain('No architecture contract is required');
     const decisionLink = h.link('decision');
     expect(decisionLink.state).toBe('on-record');
     expect(decisionLink.value).toContain('DEC-1 · revision 1');
-    expect(decisionLink.provenance).toBe('reconstructed');
-    expect(decisionLink.by).toBe('Derived by rules, not confirmed');
+    expect(decisionLink.provenance).toBe('confirmed');
     expect(h.decision?.boundRunId).toBe(runId);
-    expect(h.status('decision').value).toBe('draft, not confirmed');
-    expect(h.stillNeeded).toContain('decision');
+    expect(h.status('decision').value).toBe('confirmed');
+    expect(h.stillNeeded).not.toContain('decision');
     // A standard adoption generates nothing and tests nothing, and the handover says so rather than filling it in.
     expect(h.link('transformation').state).toBe('open');
     expect(h.link('tests').state).toBe('open');
     expect(h.groups.find((g) => g.key === 'delivery')?.sub).toBe('Audit pack sealed and downloaded.');
   });
 
-  test('delivery page: the rendered handover shows the sign-off and a decision that is not confirmed', async ({ page }) => {
+  test('delivery page: the rendered handover shows the sign-off and the confirmed decision', async ({ page }) => {
     test.setTimeout(240_000);
     await openDelivery(page, owner, projectId);
-    await expect(page.locator('[data-delivery-status-item="decision"]')).toContainText('draft, not confirmed');
-    await expect(page.locator('[data-chain-group="decision"]')).not.toHaveAttribute('data-chain-group-provenance', 'confirmed');
-    await expect(page.locator('[data-still-needed-item="decision"]')).toBeVisible();
+    await expect(page.locator('[data-delivery-status-item="decision"]')).toContainText('confirmed');
+    await expect(page.locator('[data-delivery-status-item="decision"]')).not.toContainText('not confirmed');
+    await expect(page.locator('[data-still-needed-item="decision"]')).toHaveCount(0);
     await expect(page.locator('[data-delivery-status-item="run"]')).toContainText('signed');
+  });
+
+  test('probe: after the source changes, the Retire sign-off is not current and a new decision on it is refused', async ({ request }) => {
+    test.setTimeout(240_000);
+    const a = api(request, owner);
+    const changed = `${source}* G4 probe: the source changed after the sign-off.\n`;
+    await analyse(a, projectId, changed);
+
+    // The confirmed decision of the old source is history; a new one may be drafted only after a withdrawal …
+    const withdrawn = await a.command(projectId, { command: 'withdraw-decision' });
+    expect(withdrawn.status(), await withdrawn.text()).toBe(200);
+    const read = await readDecision(a, projectId);
+    expect(read.draft.bindings.find((b) => b.key === 'contract')?.revision).toMatch(/^not-current:none-required:retire\//);
+    // … and it rests on a sign-off given for the previous source, so it cannot be confirmed.
+    const { confirmed } = await draftAndConfirm(a, projectId);
+    expect(confirmed.status()).toBe(409);
+    const body = (await confirmed.json()) as { code: string; error: string };
+    expect(body.code).toBe('decision-blocked');
+    expect(body.error).toContain('It was given for a previous source');
+    expect((await stored(projectId)).project.decision?.status).toBe('draft');
   });
 });
 
@@ -991,9 +1014,8 @@ test.describe('G4 path 3 — retirement (CC-047: measured zero over 13 months, R
     expect(h.decision?.bindings.find((b) => b.key === 'cost')?.revision).toBeNull();
   });
 
-  test('GAP G4-F1: the account confirms the retirement decision', async ({ request }) => {
-    test.fail(true, GAP_RETIRE);
-    await expectRetireConfirmable(api(request, owner), projectId);
+  test('decision: the account confirms the retirement — it rests on the run and the sign-off with the usage evidence (G4-F1)', async ({ request }) => {
+    await confirmRetire(api(request, owner), projectId, owner);
   });
 
   test('access: an invited reader reads but cannot write or decide; once revoked, reads nothing', async ({ request }) => {
@@ -1021,7 +1043,7 @@ test.describe('G4 path 3 — retirement (CC-047: measured zero over 13 months, R
     ).rejects.toThrow(/permission|PERMISSION_DENIED/i);
     const after = await stored(projectId);
     expect(after.project.approvedByArchitect).toBe(true);
-    expect(after.project.decision?.status).toBe('draft');
+    expect(after.project.decision?.status).toBe('confirmed');
 
     const revoked = await a.revokeReader(projectId, reader.uid);
     expect(revoked.status(), await revoked.text()).toBe(200);
@@ -1029,33 +1051,60 @@ test.describe('G4 path 3 — retirement (CC-047: measured zero over 13 months, R
     expect(gone.status()).toBe(404);
   });
 
-  test('delivery: the pack verifies; after a new run it is sealed again against that run', async ({ request, baseURL }, testInfo) => {
+  test('delivery: the pack verifies; after a new run the Retire decision is stale, is confirmed again as the next revision, and the pack is sealed against that run', async ({ request, baseURL }, testInfo) => {
     test.setTimeout(300_000);
     const a = api(request, owner);
+    const before = await readDecision(a, projectId);
     const first = await sealAndVerify(a, projectId, baseURL!, testInfo.outputDir);
     expect(first.runId).toBe(firstRunId);
     expect(first.attested).toContain('Retire');
     expect(first.attested).toContain('given (self-attested)');
 
-    // A new run of the same source: the export of run A is not one of run B, and the draft of run A is history.
+    // A new run of the same source: the export of run A is not one of run B, and the decision of run A is history.
     const { runId } = await analyse(a, projectId, source);
     expect(runId).not.toBe(firstRunId);
-    const h = await handover(projectId);
+    let h = await handover(projectId);
     expect(h.groups.find((g) => g.key === 'delivery')?.sub, 'the export of run A is not one of run B').toBe('Audit pack not sealed yet.');
     expect(h.decision?.boundRunId).toBe(firstRunId);
     expect(h.link('decision').state).toBe('stale');
+    expect(h.status('decision').value).not.toBe('confirmed');
     // The usage evidence is the project's, not the run's: it still makes a candidate, and still only a candidate.
     expect(await quadrant()).toBe('retire-candidate');
 
+    // Probe — Retire on a stale run: a confirmation prepared on run A is not moved onto run B.
+    const late = await a.command(projectId, {
+      command: 'confirm-decision', expectedRunId: before.runId, expectedEvidenceDigest: before.evidenceDigest,
+      expectedDecisionFingerprint: before.draft.fingerprint,
+    });
+    expect(late.status()).toBe(409);
+    expect((await late.json()).code).toBe('run-moved');
+
+    // The same source, so the sign-off still stands: withdraw, and confirm the decision of run B as revision 2.
+    const withdrawn = await a.command(projectId, { command: 'withdraw-decision' });
+    expect(withdrawn.status(), await withdrawn.text()).toBe(200);
+    const drafted = await readDecision(a, projectId);
+    // The draft without a sign-off was revision 1 and the confirmed Retire revision 2; run B's is the next.
+    expect(before.draft.revision).toBe(2);
+    expect(drafted.draft.revision).toBe(3);
+    const redrafted = await a.command(projectId, { command: 'record-decision-draft', decision: drafted.draft });
+    expect(redrafted.status(), await redrafted.text()).toBe(200);
+    await confirmRetire(a, projectId, owner);
+
     const second = await sealAndVerify(a, projectId, baseURL!, testInfo.outputDir);
     expect(second.runId).toBe(runId);
+    h = await handover(projectId);
+    expect(h.link('decision').state).toBe('on-record');
+    expect(h.link('decision').provenance).toBe('confirmed');
+    expect(h.link('decision').value).toContain('DEC-1 · revision 3');
+    expect(h.decision?.boundRunId).toBe(runId);
   });
 
-  test('delivery page: the retirement is signed off, the decision is not shown as confirmed', async ({ page }) => {
+  test('delivery page: the retirement is signed off and the decision is shown as confirmed', async ({ page }) => {
     test.setTimeout(240_000);
     await openDelivery(page, owner, projectId);
-    await expect(page.locator('[data-delivery-status-item="decision"]')).toContainText('not confirmed');
-    await expect(page.locator('[data-still-needed-item="decision"]')).toBeVisible();
+    await expect(page.locator('[data-delivery-status-item="decision"]')).toContainText('confirmed');
+    await expect(page.locator('[data-delivery-status-item="decision"]')).not.toContainText('not confirmed');
+    await expect(page.locator('[data-still-needed-item="decision"]')).toHaveCount(0);
   });
 });
 

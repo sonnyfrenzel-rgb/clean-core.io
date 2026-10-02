@@ -6,7 +6,9 @@ import { analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { evidenceDigest } from '../lib/run-evidence-digest';
-import { SELF_DECLARATION, normaliseProjectDecision } from '../lib/project-decision';
+import { SELF_DECLARATION, decisionCoverage, normaliseProjectDecision } from '../lib/project-decision';
+import { sha256Hex } from '../lib/artefact-digest';
+import { contractOfProject } from '../lib/contract-build';
 import { validateProjectCommand, type ProjectCommandState } from '../lib/project-commands';
 import { deriveDecisionDraft, readStoredDecision, type DecisionDraftFacts } from '../lib/decision-draft';
 import { bindingShown, conditionsSummary, decisionCardView } from '../lib/decision-card';
@@ -68,6 +70,7 @@ const facts = (over: Partial<DecisionDraftFacts> = {}): DecisionDraftFacts => ({
   runSignedAt: '2026-09-20T08:00:00.000Z',
   contract: contractFixture(),
   signedOffArchitecture: 'rap',
+  signOff: { by: 'owner@example.invalid', at: '2026-09-21T08:00:00.000Z', reason: '', notCurrent: null },
   need: { revision: 4, confirmedDrops: 0, undecided: 0 },
   handedOver: false,
   stored: undefined,
@@ -76,6 +79,14 @@ const facts = (over: Partial<DecisionDraftFacts> = {}): DecisionDraftFacts => ({
 });
 
 const ACTOR = { email: 'owner@example.invalid', now: '2026-09-24T11:00:00.000Z' };
+
+/** A Retire sign-off as `approve-architecture` writes it, with the facts `deriveProjectDecision` reads from it. */
+const RETIRE_REASON = 'SCMON shows zero executions over 13 months; the business owner confirmed nothing depends on it.';
+const RETIRE_FACTS: Partial<DecisionDraftFacts> = {
+  contract: null,
+  signedOffArchitecture: 'retire',
+  signOff: { by: 'owner@example.invalid', at: '2026-09-21T08:00:00.000Z', reason: RETIRE_REASON, notCurrent: null },
+};
 
 /**
  * The project document as the commands route hands it to `validateProjectCommand`,
@@ -137,7 +148,12 @@ test.describe('8.4 card — what the draft binds on this project', () => {
   });
 
   test('an option the comparison does not carry still has a kind — reversibility does not claim none is chosen', () => {
-    const { draft } = deriveDecisionDraft(facts({ signedOffArchitecture: 'retire', handedOver: true, need: { revision: 2, confirmedDrops: 3, undecided: 0 } }));
+    // Retire as the real derivation hands it over: no contract (`contractOfProject`
+    // answers off-track, see "8.4 card — an option that generates nothing" below)
+    // and the sign-off it rests on instead.
+    const { draft } = deriveDecisionDraft(
+      facts({ ...RETIRE_FACTS, handedOver: true, need: { revision: 2, confirmedDrops: 3, undecided: 0 } }),
+    );
     expect(draft.reversibility.answer).toBe('irreversible');
     expect(decisionCardView(draft).reversible.answer).toBe('No');
   });
@@ -444,5 +460,232 @@ test.describe('a bound revision, as the reader is told it', () => {
   test('a key of a shape it does not know is shown as it is, not guessed at', () => {
     expect(bindingShown('cost', 'something-else')).toBe('something-else');
     expect(bindingShown('option', 'rap · In-App ABAP Cloud (RAP)')).toBe('rap · In-App ABAP Cloud (RAP)');
+  });
+});
+
+/**
+ * G4-F1 (`docs/release/g4-chain-acceptance.md`). Retire is the product's option
+ * for a retirement and for a standard adoption alike, and it generates nothing:
+ * `contractOfProject` answers `off-track` and no architecture contract exists.
+ * The decision must still be confirmable on what it does rest on — the signed
+ * run and the account's sign-off with its reason — and must stay refused when
+ * any of that is stale or missing. Derived through `deriveProjectDecision`, the
+ * server's own derivation, over a project and run document as the routes write
+ * them — not over a contract fixture the derivation never produces.
+ */
+test.describe('8.4 card — an option that generates nothing (G4-F1)', () => {
+  const SIGNED_AT = '2026-09-21T08:00:00.000Z';
+  const manifest = buildInputManifest(
+    analysisRunInputs({
+      sourceSha256: sha256Hex(SOURCE),
+      deploymentTarget: 'public',
+      catalogVersion: '2026.FPS01',
+      rulesetVersion: 'rules-v1.0',
+      engineVersion: '2.15.0',
+      model: null,
+    }),
+    null,
+  );
+  const runDoc = { ...RUN, inputManifest: manifest, createdAt: '2026-09-20T08:00:00.000Z' };
+  const runDigest = evidenceDigest(runDoc);
+  const run2Doc = { ...runDoc, runHash: 'c'.repeat(64) };
+
+  /** Only the runs exist; the need collections are empty, as on a project nobody reconstructed. */
+  function fakeDb(runs: Record<string, Record<string, unknown>>) {
+    const nothing = { empty: true, docs: [], exists: false, data: () => undefined };
+    type Node = { path: string; collection: (c: string) => Node; doc: (d: string) => Node; orderBy: () => Node; limit: () => Node; get: () => Promise<unknown> };
+    const node = (p: string): Node => ({
+      path: p,
+      collection: (c) => node(`${p}/${c}`),
+      doc: (d) => node(`${p}/${d}`),
+      orderBy: () => node(`${p}?newest`),
+      limit: () => node(p),
+      get: async () => {
+        const id = /^projects\/p1\/runs\/(.+)$/.exec(p)?.[1];
+        return id && runs[id] ? { exists: true, data: () => runs[id] } : nothing;
+      },
+    });
+    return { collection: (c: string) => node(c) } as unknown as Parameters<typeof deriveProjectDecision>[0];
+  }
+
+  const project = (over: Record<string, unknown> = {}): Record<string, unknown> => ({
+    legacyCode: SOURCE,
+    s4Deployment: 'public',
+    activeRunId: 'run-1',
+    approvedByArchitect: true,
+    targetArchitecture: 'retire',
+    architectJustifiedOverride: RETIRE_REASON,
+    architectSignOffAt: SIGNED_AT,
+    approvedBy: 'owner@example.invalid',
+    ...over,
+  });
+
+  async function derive(data: Record<string, unknown>) {
+    const derived = await deriveProjectDecision(fakeDb({ 'run-1': runDoc, 'run-2': run2Doc }), 'p1', data, '2026-09-24T12:00:00.000Z');
+    expect(derived.ok).toBe(true);
+    if (!derived.ok) throw new Error(derived.code);
+    return derived;
+  }
+
+  /**
+   * Record the draft and confirm it the way the card does, with the fingerprint
+   * the commands route derives from the project as it stands at confirmation.
+   */
+  async function recordAndConfirm(data: Record<string, unknown>, active: { runId: string; digest: string } = { runId: 'run-1', digest: runDigest }) {
+    const { answer } = await derive(data);
+    const recorded = validateProjectCommand({ command: 'record-decision-draft', decision: answer.draft }, { decision: undefined } as ProjectCommandState, ACTOR);
+    expect(recorded.ok).toBe(true);
+    if (!recorded.ok) throw new Error(recorded.code);
+    const onProject = recorded.fields.decision;
+    const atConfirmation = await derive({ ...data, activeRunId: active.runId, decision: onProject });
+    return validateProjectCommand(
+      {
+        command: 'confirm-decision',
+        expectedDecisionFingerprint: answer.draft.fingerprint,
+        expectedRunId: active.runId,
+        expectedEvidenceDigest: active.digest,
+      },
+      {
+        activeRunId: active.runId,
+        activeRunEvidence: active.digest,
+        decision: onProject,
+        derivedDecisionFingerprint: atConfirmation.answer.draft.fingerprint,
+      } as ProjectCommandState,
+      ACTOR,
+    );
+  }
+
+  const blocking = (d: Parameters<typeof decisionCoverage>[0]) =>
+    decisionCoverage(d).gaps.filter((g) => g.severity === 'blocks').map((g) => g.code);
+
+  test('the real derivation has no contract for Retire — off-track, as the finding says', () => {
+    const built = contractOfProject(project(), manifest);
+    expect(built.ok).toBe(false);
+    if (built.ok) return;
+    expect(built.code).toBe('off-track');
+  });
+
+  test('Retire binds the run and the sign-off in place of a contract, and is confirmed', async () => {
+    const { answer, runId, evidenceDigest: digest } = await derive(project());
+    const contract = answer.draft.bindings.find((b) => b.key === 'contract')!;
+    expect(contract.revision).toMatch(/^none-required:retire\/sign-off@2026-09-21T08:00:00\.000Z\+[0-9a-f]{12}$/);
+    expect(contract.provenance).toBe('confirmed');
+    expect(contract.note).toContain('No architecture contract is required');
+    expect(contract.note).toContain('owner@example.invalid');
+    expect(runId).toBe('run-1');
+    expect(digest).toBe(runDigest);
+    expect(answer.draft.boundRunId).toBe('run-1');
+    expect(answer.draft.bindings.find((b) => b.key === 'run')!.revision).toBe('run-1');
+    expect(blocking(answer.draft)).toEqual([]);
+    const view = decisionCardView(answer.draft);
+    expect(view.confirmable).toBe(true);
+    expect(view.bindings.find((b) => b.key === 'contract')!.shown).toBe(
+      'none required — nothing is generated; rests on the analysis run and the sign-off of 2026-09-21',
+    );
+
+    const confirmed = await recordAndConfirm(project());
+    expect(confirmed.ok, confirmed.ok ? '' : `${confirmed.code}: ${confirmed.error}`).toBe(true);
+    if (!confirmed.ok) return;
+    expect(readStoredDecision(confirmed.fields.decision)?.status).toBe('confirmed');
+  });
+
+  test('another reason or another sign-off is another binding — the decision names this sign-off', async () => {
+    const a = (await derive(project())).answer.draft;
+    const b = (await derive(project({ architectJustifiedOverride: `${RETIRE_REASON} Also checked with finance.` }))).answer.draft;
+    const c = (await derive(project({ architectSignOffAt: '2026-09-22T08:00:00.000Z' }))).answer.draft;
+    const key = (d: typeof a) => d.bindings.find((x) => x.key === 'contract')!.revision;
+    expect(key(b)).not.toBe(key(a));
+    expect(key(c)).not.toBe(key(a));
+    expect(b.fingerprint).not.toBe(a.fingerprint);
+  });
+
+  test('probe: Retire on a stale run is refused — the decision of run 1 is not one of run 2', async () => {
+    const refused = await recordAndConfirm(project(), { runId: 'run-2', digest: evidenceDigest(run2Doc) });
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.status).toBe(409);
+    expect(refused.code).toBe('decision-run-mismatch');
+  });
+
+  test('probe: Retire signed off for a previous source is refused', async () => {
+    const stale = project({
+      auditMetadata: { sourceChange: { at: SIGNED_AT, runId: 'run-1', previousSha256: 'd'.repeat(64), artefacts: {}, signOff: SIGNED_AT } },
+    });
+    const { answer } = await derive(stale);
+    expect(answer.draft.bindings.find((b) => b.key === 'contract')!.revision).toMatch(/^not-current:none-required:retire\//);
+    expect(blocking(answer.draft)).toEqual(['sign-off-not-current']);
+    expect(decisionCoverage(answer.draft).sentence).toContain('It was given for a previous source');
+    expect(decisionCardView(answer.draft).confirmable).toBe(false);
+    const refused = await recordAndConfirm(stale);
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.code).toBe('decision-blocked');
+  });
+
+  test('probe: Retire after the source moved past the run is refused', async () => {
+    const moved = project({ legacyCode: `${SOURCE}WRITE 1.\n` });
+    const { answer } = await derive(moved);
+    expect(blocking(answer.draft)).toEqual(['sign-off-not-current']);
+    expect(decisionCoverage(answer.draft).sentence).toContain('source on the project is not what the analysis run read');
+    const refused = await recordAndConfirm(moved);
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.code).toBe('decision-blocked');
+  });
+
+  test('probe: Retire without the required sign-off is refused — no sign-off, or one without its reason', async () => {
+    const none = project({ approvedByArchitect: false, targetArchitecture: null, architectJustifiedOverride: '', architectSignOffAt: null, approvedBy: '' });
+    const unsigned = await derive(none);
+    expect(blocking(unsigned.answer.draft)).toContain('option-not-chosen');
+    const refusedNone = await recordAndConfirm(none);
+    expect(refusedNone.ok).toBe(false);
+    if (!refusedNone.ok) expect(refusedNone.code).toBe('decision-blocked');
+
+    // `approve-architecture` refuses Retire without a reason (override-needs-reason);
+    // a record that carries none anyway was not written by it and is not stood on.
+    const bare = project({ architectJustifiedOverride: '' });
+    const { answer } = await derive(bare);
+    expect(blocking(answer.draft)).toEqual(['sign-off-not-current']);
+    expect(decisionCoverage(answer.draft).sentence).toContain('records no reason');
+    const refused = await recordAndConfirm(bare);
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) expect(refused.code).toBe('decision-blocked');
+  });
+
+  test('probe: an extension decision without a contract stays refused', async () => {
+    // Integration Suite and Event Mesh build something and are off both generation tracks, so no contract exists.
+    for (const target of ['integration', 'event']) {
+      const data = project({ targetArchitecture: target });
+      const { answer } = await derive(data);
+      expect(answer.draft.bindings.find((b) => b.key === 'contract')!.revision).toBeNull();
+      expect(blocking(answer.draft)).toEqual(['contract-not-bound']);
+      const refused = await recordAndConfirm(data);
+      expect(refused.ok).toBe(false);
+      if (!refused.ok) expect(refused.code).toBe('decision-blocked');
+    }
+    // A rebuild handed no contract is not let through as "nothing to generate" either.
+    const { draft } = deriveDecisionDraft(facts({ contract: null }));
+    expect(blocking(draft)).toEqual(['contract-not-bound']);
+  });
+
+  test('probe: a record claiming "no contract required" for a rebuild, or in a shape it does not have, is blocked', () => {
+    const { draft } = deriveDecisionDraft(facts());
+    for (const revision of [
+      'none-required:rebuild/sign-off@2026-09-21T08:00:00.000Z+0123456789ab',
+      'none-required:retire',
+      'not-current:none-required:',
+    ]) {
+      const forged = {
+        ...draft,
+        bindings: draft.bindings.map((b) => (b.key === 'contract' ? { ...b, revision, notDeterminedReason: null } : b)),
+      };
+      expect(blocking(forged), revision).toEqual(['contract-not-bound']);
+    }
+  });
+
+  test('a key of the no-contract shape is told as what it is', () => {
+    expect(bindingShown('contract', 'not-current:none-required:retire/sign-off@2026-09-21T08:00:00.000Z+0123456789ab')).toBe(
+      'none required — nothing is generated; the sign-off of 2026-09-21 is not current',
+    );
   });
 });
