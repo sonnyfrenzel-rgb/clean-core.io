@@ -832,8 +832,18 @@ export function notDetermined(project: Project | null): NotDetermined {
  */
 export function workspaceTools(
   project: Project | null,
-): Array<{ key: PhaseKey; label: string; path: string; state: PhaseState; proven: boolean }> {
-  return workflowSteps(project).map((s) => ({ key: s.key, label: s.label, path: s.path, state: s.state, proven: s.proven }));
+): Array<{ key: PhaseKey; label: string; path: string; state: PhaseState; proven: boolean; mock?: boolean }> {
+  // `mock` travels too: `phaseTone` paints a phase that rests on a sandbox run
+  // against mocks amber, not green (codex code-trust-04), and without it the
+  // workspace's bar ticked such a phase green while every stage's bar did not.
+  return workflowSteps(project).map((s) => ({
+    key: s.key,
+    label: s.label,
+    path: s.path,
+    state: s.state,
+    proven: s.proven,
+    ...(s.mock ? { mock: true } : {}),
+  }));
 }
 
 /**
@@ -844,7 +854,7 @@ export function workspaceTools(
  * green stays the colour of `proven` alone (ADR-007, ADR-060); `words` is the
  * catalogue key of what a screen reader hears instead of the colour.
  */
-export function toolMark(tool: { state: PhaseState; proven: boolean }): {
+export function toolMark(tool: { state: PhaseState; proven: boolean; mock?: boolean }): {
   kind: 'check' | 'dot' | 'none';
   tone: PhaseTone;
   words: 'tools.mark.proven' | 'tools.mark.unproven' | 'tools.mark.started' | 'tools.mark.stale' | null;

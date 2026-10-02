@@ -294,7 +294,8 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
     await expect(tools).toHaveCount(7);
     await expect(tools.nth(5)).toHaveAttribute('data-workspace-tool', 'tco');
     const toolTesting = bar.locator('a[data-workspace-tool="testing"]');
-    await expect(toolTesting).toHaveAttribute('data-phase-state', 'partial');
+    // The bar stands before the project is read (every phase empty); wait for the reading.
+    await expect(toolTesting).toHaveAttribute('data-phase-state', 'partial', { timeout: 60000 });
     await expect(toolTesting).toHaveAttribute('data-workspace-tool-mark-kind', 'dot');
 
     // Delivery
@@ -308,7 +309,7 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
     await expect(body).not.toContainText('lifecycle is complete');
     await expect(body).not.toContainText('Ready to hand over');
     await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="testing"]'))
-      .toHaveAttribute('data-phase-state', 'partial');
+      .toHaveAttribute('data-phase-state', 'partial', { timeout: 60000 });
 
     // Economics shows itself as the current tool on its own page.
     await page.goto(`/project/${PROJECT_ID}/tco`, { waitUntil: 'domcontentloaded' });

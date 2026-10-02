@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { adminSetDoc } from './helpers/admin-seed';
+import { receiptFor } from './helpers/test-receipt';
 import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
 import { toolMark, workspaceTools } from '../lib/workspace-model';
 import { workflowSteps } from '../lib/workflow-steps';
@@ -87,6 +88,30 @@ test.describe('the mark is the stepper\'s reading of the phase', () => {
     expect(toolMark({ state: 'partial', proven: false })).toEqual({ kind: 'dot', tone: 'unproven', words: 'tools.mark.started' });
     expect(toolMark({ state: 'stale', proven: false })).toEqual({ kind: 'dot', tone: 'stale', words: 'tools.mark.stale' });
     expect(toolMark({ state: 'empty', proven: false })).toEqual({ kind: 'none', tone: 'none', words: null });
+    // A run against mocks is a record, not a proof: ticked, never green.
+    expect(toolMark({ state: 'done', proven: true, mock: true })).toEqual({ kind: 'check', tone: 'unproven', words: 'tools.mark.unproven' });
+  });
+
+  test('the workspace bar carries the mock flag the stage bar reads (found by phase-honesty-guard, 3.0.1)', () => {
+    // A suite that ran in the sandbox against mocks, with its receipt: Testing
+    // and Delivery are done and `proven`, and rest on mocks.
+    const cases = [{ id: 't1', name: 'Totals', category: 'Unit', description: 'd', priority: 'High', status: 'Passed' as const }];
+    const executed = {
+      name: 'Mocked',
+      legacyCode: 'REPORT z_x.\n',
+      activeRunId: 'run-1',
+      generatedCode: 'export const ok = true;\n',
+      testSuite: { code: "import { test } from 'node:test';\ntest('t1', () => {});\n" },
+      testCases: cases,
+    } as Project;
+    const mocked = { ...executed, testRunReceipt: receiptFor(executed) } as Project;
+    const steps = workflowSteps(mocked);
+    expect(steps.some((s) => s.mock), 'the fixture has no phase resting on mocks — the check would be vacuous').toBe(true);
+    const tools = workspaceTools(mocked);
+    expect(tools.map((t) => Boolean(t.mock))).toEqual(steps.map((s) => Boolean(s.mock)));
+    for (const tool of tools) {
+      if (tool.mock) expect(toolMark(tool).tone, `${tool.key} rests on mocks and is painted green`).not.toBe('proven');
+    }
   });
 
   test('the toolbar never reads a client-set status', () => {

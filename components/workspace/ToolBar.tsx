@@ -18,6 +18,8 @@ export interface WorkspaceTool {
   /** From `workflowSteps` — the stepper's reading of this phase, never a client-set status. */
   state: PhaseState;
   proven: boolean;
+  /** A phase that rests on a run against mocks — never green (`phaseTone`). */
+  mock?: boolean;
 }
 
 /**
