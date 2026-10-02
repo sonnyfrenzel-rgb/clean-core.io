@@ -7,8 +7,8 @@ import { TERMS_VERSION } from '../lib/constants';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
- * Owner, 02.10.2026: "wenn ich ein Beispiel aus dem Workspace heraus öffne, geht
- * immer zuerst der Arbeitsraum auf mit dem ersten Blick und nicht die Analyze."
+ * Owner, 02.10.2026 (translated): "when I open an example from the workspace,
+ * the workspace with the first look always opens first, and not Analyze."
  *
  * Every way an ordinary community account starts an example — or its own code —
  * lands on the project's workspace with the first look (`?first=1`, the

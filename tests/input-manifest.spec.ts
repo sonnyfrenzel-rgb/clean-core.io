@@ -23,14 +23,14 @@ import { TERMS_VERSION } from '../lib/constants';
 import { PROFILE_INPUT_ID } from '../lib/assessment-profile';
 
 /**
- * Roadmap 0.5 — "Manifest- und Inputvertrag: `inputs[]` mit Revision und Hash".
+ * Roadmap 0.5 — "manifest and input contract: `inputs[]` with revision and hash".
  *
  * Work package `docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §6 (`UX-E02-F01:R0`):
- * *"Ableitungen sagen, woraus sie entstanden sind — mit Revision und Hash, nicht
- * mit einer Heuristik"*, and as the first work item: *"`inputs[]` je abgeleitetem
- * Artefakt: ID, Revision, Hash (QA24-13) — ersetzt den Digest-Vergleich als
- * Wahrheitsquelle"*, with *"die vier Datenklassen typisiert"* (QA24-14) and
- * *"Migration: IDs, Hashes und Signaturzustände bleiben erhalten"* (C23-A02).
+ * *"Derivations say what they came from — with revision and hash, not with a
+ * heuristic"*, and as the first work item: *"`inputs[]` per derived artefact:
+ * ID, revision, hash (QA24-13) — replaces the digest comparison as the source
+ * of truth"*, with *"the four data classes typed"* (QA24-14) and *"migration:
+ * IDs, hashes and signature states are preserved"* (C23-A02).
  *
  * Before this, a signed run named its inputs in five unrelated fields and the
  * only one anybody compared was the source digest.

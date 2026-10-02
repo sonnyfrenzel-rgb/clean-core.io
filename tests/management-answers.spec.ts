@@ -25,15 +25,16 @@ import { signInViaLanding } from './helpers/sign-in';
  * The row names four things and every one of them is a way to lie by arithmetic,
  * so each gets its own check:
  *
- *   - **„was bestätigt ist"** is `proven`, not `done`. A design the account
+ *   - **"what is confirmed"** is `proven`, not `done`. A design the account
  *     signed off is on record and nothing checked it; counted as confirmed it
  *     becomes the number somebody quotes in a board paper.
- *   - **„was fehlt"** has to include what the engine stepped over, as its own
+ *   - **"what is missing"** has to include what the engine stepped over, as its own
  *     figure, with `null` — not `0` — when nothing was assessed at all.
- *   - **„was eine Entscheidung binden würde"** is a list with evidence per
+ *   - **"what a decision would bind"** is a list with evidence per
  *     line, and the blockers are named rather than counted into a share.
- *   - **„Clean Core Score mit Regelversion und Verlauf"**, and the clause that
- *     governs it: *ein Verlauf vergleicht nur Runs derselben Regelversion*. A
+ *   - **"Clean Core Score with rule version and history"**, and the clause
+ *     that governs it: *a history compares only runs of the same rule
+ *     version*. A
  *     line across a rule change is a change of scale, and a line through one
  *     point is an invented second observation.
  *
@@ -107,7 +108,7 @@ const figureOf = (view: ReturnType<typeof managementAnswers>, answer: string, ke
   return figure;
 };
 
-/* ------------------------------------------- 1. „bestätigt" is the narrow word */
+/* ------------------------------------------- 1. "confirmed" is the narrow word */
 
 test.describe('what is confirmed', () => {
   test('a design the account signed off is NOT counted as confirmed', () => {

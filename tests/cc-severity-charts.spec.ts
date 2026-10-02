@@ -163,7 +163,7 @@ test.describe('the chart palettes are tokens, and never green', () => {
   });
 
   test('the score bands run from the error red to deep indigo, every band seen on card and page', () => {
-    // Owner, 02.10.2026: "Analysis Farben sehen zu blass aus" — state colours faded to 40 %.
+    // Owner, 02.10.2026: "Analysis colours look too pale" — state colours faded to 40 %.
     // Owner, 02.10.2026 (ADR-057, amended): far from clean core is red; amber, then indigo; never green.
     const tokens = declaredTokens();
     // Ordered by meaning: far and significant rework *are* the error and warning-mark tokens, not copies.

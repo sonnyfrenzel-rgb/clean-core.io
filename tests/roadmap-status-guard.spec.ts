@@ -3,51 +3,51 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * Der Standmesser misst, und er erfindet nicht.
+ * The status meter measures, and it does not invent.
  *
- * `docs/ROADMAP.md` führt Schritte und **keinen Status** — die letzte Spalte ist
- * eine Größenschätzung. Am 23.09.2026 konnte deshalb niemand sagen, wie weit 3.0
- * ist. `scripts/roadmap/status.mjs` leitet den Stand aus den beiden Quellen ab,
- * die ohnehin gepflegt werden: den Commit-Betreffen und der Roadmap selbst.
+ * `docs/ROADMAP.md` lists steps and **no status** — the last column is a size
+ * estimate. So on 23.09.2026 nobody could say how far along 3.0 was.
+ * `scripts/roadmap/status.mjs` derives the state from the two sources that are
+ * maintained anyway: the commit subjects and the roadmap itself.
  *
- * Abgeleitet statt gepflegt, weil eine Statusspalte von Hand driftet. Aber ein
- * Messgerät, das falsch zählt, ist schlimmer als keines: es sieht aus wie eine
- * Antwort. Was hier gehalten wird, ist deshalb die Messung selbst — nicht ihr
- * Ergebnis, das sich mit jedem Commit ändern soll.
+ * Derived rather than maintained, because a status column kept by hand drifts.
+ * But a meter that counts wrong is worse than none: it looks like an answer.
+ * What is held here is therefore the measurement itself — not its result,
+ * which is meant to change with every commit.
  */
 const ROOT = path.resolve(__dirname, '..');
 const lib = () => import(path.resolve(ROOT, 'scripts/roadmap/status.mjs'));
 const roadmap = () => fs.readFileSync(path.resolve(ROOT, 'docs/ROADMAP.md'), 'utf8');
 
-test.describe('der Standmesser', () => {
-  test('sieht jeden Schritt der Roadmap, und keinen, den es nicht gibt', async () => {
+test.describe('the status meter', () => {
+  test('sees every step of the roadmap, and none that does not exist', async () => {
     const { readSteps } = await lib();
     const source = roadmap();
     const seen = readSteps(source).map((s: { id: string }) => s.id);
 
-    // Der Gegenzähler liest dieselbe Datei mit einem anderen Ausdruck: eine
-    // Tabellenzeile, die mit einer Schrittnummer beginnt. Zwei Wege zur selben
-    // Menge — ein Parser, der eine Zeile verschluckt, fällt hier auf.
-    // Zwei ODER drei Zahlenteile — dieselbe Regel wie im Instrument. Diese Zeile
-    // trug bis zum 23.09.2026 dieselbe Blindstelle wie der Parser, den sie
-    // bewacht: beide verlangten genau zwei Teile, also fielen die zehn Schritte
-    // 3.0.1–3.0.10 aus Zählung und Prüfung heraus, ohne dass etwas rot wurde.
-    // Ein Wächter, der die Annahme des Geprüften teilt, prüft sie nicht.
+    // The counter-check reads the same file with a different expression: a
+    // table row that begins with a step number. Two roads to the same set — a
+    // parser that swallows a row shows up here.
+    // Two OR three numeric parts — the same rule as in the instrument. Until
+    // 23.09.2026 this line carried the same blind spot as the parser it
+    // guards: both demanded exactly two parts, so the ten steps 3.0.1–3.0.10
+    // dropped out of counting and checking without anything turning red.
+    // A guard that shares the assumption of what it checks does not check it.
     const expected = (source.match(/^\|\s*\d+(?:\.\d+){1,2}\s*\|/gm) || []).map((m) => m.replace(/[|\s]/g, ''));
     expect(seen.sort()).toEqual(expected.sort());
-    expect(seen.length, 'die Roadmap hat keine Schritte mehr — das ist kein Erfolg, das ist ein Parserfehler').toBeGreaterThan(50);
+    expect(seen.length, 'the roadmap has no steps any more — that is not a success, it is a parser error').toBeGreaterThan(50);
   });
 
-  test('jeder Schritt bekommt seinen Abschnitt, keiner landet im Niemandsland', async () => {
+  test('every step gets its section, none ends up in no man\'s land', async () => {
     const { readSteps } = await lib();
     const orphans = readSteps(roadmap()).filter((s: { section: string }) => s.section === '(ohne Abschnitt)');
-    expect(orphans.map((s: { id: string }) => s.id), 'diese Schritte hängen unter keiner Überschrift').toEqual([]);
+    expect(orphans.map((s: { id: string }) => s.id), 'these steps hang under no heading').toEqual([]);
   });
 
-  test('ein Commit-Betreff mit mehreren Schritten zählt für jeden von ihnen', async () => {
+  test('a commit subject with several steps counts for each of them', async () => {
     const { idsFromSubjects } = await lib();
-    // Die Form gibt es wirklich: `feat(1.9, 7.8, 3.3): der Korpus misst endlich …`.
-    // Ein Parser, der nur den ersten nimmt, meldet zwei gebaute Schritte als offen.
+    // The form really exists: `feat(1.9, 7.8, 3.3): der Korpus misst endlich …`.
+    // A parser that takes only the first reports two built steps as open.
     const found = idsFromSubjects([
       'feat(1.9, 7.8, 3.3): der Korpus misst endlich das Skelett',
       'test(5.6): die Leseabnahme über alle Projektrouten',
@@ -55,11 +55,11 @@ test.describe('der Standmesser', () => {
       'chore(release): v2.14.0',
     ]);
     expect([...found.keys()].sort()).toEqual(['1.9', '3.3', '5.6', '7.8']);
-    // Ein Betreff ohne Schrittnummer bringt keine mit — `v2.14.0` ist eine Version.
+    // A subject without a step number brings none — `v2.14.0` is a version.
     expect(found.has('2.14')).toBe(false);
   });
 
-  test('„gebaut wird" ist eine Absicht, keine Meldung', async () => {
+  test('"gebaut wird" (is being built) is an intention, not a report', async () => {
     const { claimsBuilt } = await lib();
     expect(claimsBuilt('**Gebaut 16.09.2026 (`dev`):** der Modellaufruf ist ein Abschnitt')).toBe(true);
     expect(claimsBuilt('**Gebaut in v2.10.3**')).toBe(true);
@@ -70,15 +70,15 @@ test.describe('der Standmesser', () => {
     expect(claimsBuilt('what is still to be built is named')).toBe(false);
     expect(claimsBuilt('built to [`DESIGN.md`]')).toBe(false);
     expect(claimsBuilt('fixed (dev) — the same defect as UX-012')).toBe(false);
-    // Und die drei Formen, die nicht zählen dürfen: eine Absicht, ein Verweis, und
-    // das Wort aus den Befundtabellen in §12–§14, das zu einem Befund gehört und
-    // nicht zu einem Schritt.
+    // And the three German forms that must not count: an intention, a reference,
+    // and the word from the finding tables in §12–§14, which belongs to a finding
+    // and not to a step.
     expect(claimsBuilt('was noch gebaut wird, wird benannt')).toBe(false);
     expect(claimsBuilt('gebaut nach [`DESIGN.md`]')).toBe(false);
     expect(claimsBuilt('behoben (dev) — derselbe Defekt wie UX-012')).toBe(false);
   });
 
-  test('ein Schritt, den ein Commit nennt, gilt als belegt — und die Herkunft steht dabei', async () => {
+  test('a step that a commit names counts as evidenced — and the source is stated', async () => {
     const { buildStatus } = await lib();
     const markdown = ['### Phase 9 — v9.9 „Probe"', '| 9.1 | etwas | M |', '| 9.2 | **Gebaut 01.01.2026** etwas | M |', '| 9.3 | etwas | M |'].join('\n');
     const steps = buildStatus(markdown, ['feat(9.1): gebaut']);
@@ -87,7 +87,7 @@ test.describe('der Standmesser', () => {
       ['9.2', 'behauptet'],
       ['9.3', 'offen'],
     ]);
-    // Die Herkunft ist der Punkt: „belegt" nennt den Commit, „behauptet" kann es nicht.
+    // The source is the point: "belegt" (evidenced) names the commit, "behauptet" (claimed) cannot.
     expect(steps[0].commit).toBe('feat(9.1): gebaut');
     expect(steps[1].commit).toBeNull();
   });

@@ -48,8 +48,8 @@ import { TERMS_VERSION } from '../lib/constants';
  * component and wrong in a route is still a leak.
  *
  * **Two: every chip is honest.** The row asks for it in as many words —
- * *sieben Status-Chips — jeder ehrlich, „nicht begonnen", solange nichts da
- * ist*. A tick, a colour or a percentage for a phase nobody ran is the defect
+ * *seven status chips — each one honest, "not started" as long as nothing is
+ * there*. A tick, a colour or a percentage for a phase nobody ran is the defect
  * this phase exists to remove. So the check below opens a genuinely empty
  * project as an ordinary community account and reads what the browser
  * **painted**: seven statuses, all "not started", and no green anywhere. A
@@ -456,7 +456,7 @@ test.describe('"About this view" (`DESIGN.md` §6.1)', () => {
       expect(VIEW_ABOUT[view]).not.toBe(VIEW_QUESTIONS[view]);
     }
     // Every paragraph names something it does not show, per DESIGN.md's own
-    // wording for the affordance ("was die Sicht zeigt und was nicht") — a
+    // wording for the affordance ("what the view shows and what it does not") — a
     // paragraph that only restates what is visible would pass a length check
     // while still failing the one thing this text exists to say.
     for (const view of WORKSPACE_VIEWS) {
@@ -770,8 +770,8 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     await signIn(page, ADMIN);
 
     // W22-A02 of the phase's acceptance line, checked from the network rather
-    // than from the component: a switch "erzeugt keine neue Hypothese" and
-    // "löst keinen Modellaufruf aus". Any request to the one path a model call
+    // than from the component: a switch "creates no new hypothesis" and
+    // "triggers no model call". Any request to the one path a model call
     // can leave this product (`/api/gemini`) or to the route that mints a
     // signed run would show up here regardless of what the UI claims to do.
     const modelOrRunCalls: string[] = [];
@@ -879,8 +879,8 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
    * `app/(app)/project/[projectId]/page.tsx`. Nobody decided that order, and
    * it read Public-Cloud-Fit → members → answers: a decider met an access
    * control list before the verdict, which is exactly the state ADR-029
-   * abolished (`DESIGN.md` §5.6: *"Management beginnt mit einem Satz über
-   * allen Karten, der die Frage der Sicht beantwortet"*).
+   * abolished (`DESIGN.md` §5.6: *"Management begins with a sentence above
+   * all cards that answers the view's question"*).
    *
    * Measured on the painted page rather than in the source, and twice over:
    * the document order of the three sections **and** their vertical position,

@@ -19,25 +19,24 @@ import { tableTerm, termFor } from '../lib/abap/business-glossary';
 import { PROVENANCE } from '../lib/provenance';
 
 /**
- * Der Fachsatz-Erzeuger der Engine (Roadmap 17.7, Weg A).
+ * The engine's business-statement generator (roadmap 17.7, Path A).
  *
- * Dieses Spec prüft **nicht**, wie gut die Sätze sind — das tut der Korpus
- * (`tests/korpus/baseline.json`, Facette `fachsaetze`), und zwar mit einem
- * Vergleicher, den dieser Schritt nicht angefasst hat. Hier stehen die drei
- * Zusagen, die 17.7 dem Erzeuger auferlegt und die eine Trefferzahl nicht
- * abdeckt:
+ * This spec does **not** check how good the sentences are — the corpus does
+ * that (`tests/korpus/baseline.json`, facet `fachsaetze`), with a comparator
+ * this step did not touch. What stands here are the three promises 17.7
+ * imposes on the generator and that a hit count does not cover:
  *
- * 1. **Unschärfe wird aufgelöst und ausgewiesen, in dieser Reihenfolge.**
- *    Kein Element trägt „nicht bestimmt" *statt* einer Aussage.
- * 2. **Regel 6 bleibt, wo sie steht.** Die Knotenbeschriftung des Skeletts ist
- *    weiter ein wörtliches Token; der Fachsatz ist eine Ebene daneben.
- * 3. **Deterministisch.** Kein Modell, kein Netz, kein Schlüssel — und
- *    derselbe Quelltext ergibt denselben Satz.
+ * 1. **Vagueness is resolved and then declared, in that order.**
+ *    No element carries "not determined" *instead of* a statement.
+ * 2. **Rule 6 stays where it is.** The skeleton's node label is still a
+ *    literal token; the business statement is a layer beside it.
+ * 3. **Deterministic.** No model, no network, no key — and the same source
+ *    yields the same sentence.
  */
 
 /**
- * Der Wortschatz, den dieses Modul führt — großzügig gelesen, damit die
- * Obergrenze unten keine zu kleine Zahl ausrechnet.
+ * The vocabulary this module uses — read generously, so that the ceiling
+ * below does not compute too small a number.
  */
 const HOUSE_VOCABULARY = `output selected read determined changed persisted
 discarded called passed placed set exited block reporting
@@ -62,54 +61,54 @@ const ALL: Array<{ case: string; file: string; statement: BusinessStatement }> =
   ),
 );
 
-test('die Engine erzeugt überhaupt Fachsätze — für jeden Fall des Korpus', () => {
-  // Vor 17.7 war die Antwort null, über alle 68 Fälle. Das war eine Messung,
-  // keine Verdrahtung, und dieser Test hält den Unterschied fest.
-  expect(ALL.length, 'kein einziger erzeugter Fachsatz').toBeGreaterThan(0);
+test('the engine produces business statements at all — for every case of the corpus', () => {
+  // Before 17.7 the answer was zero, across all 68 cases. That was a
+  // measurement, not wiring, and this test holds on to the difference.
+  expect(ALL.length, 'not a single business statement produced').toBeGreaterThan(0);
   const silent = CASES.filter(
     (korpusCase) => !ALL.some((entry) => entry.case === korpusCase.id),
   ).map((korpusCase) => korpusCase.id);
-  expect(silent.join(', '), 'diese Fälle bekommen von der Engine keinen einzigen Satz').toEqual('');
+  expect(silent.join(', '), 'these cases get not a single sentence from the engine').toEqual('');
 });
 
-test('„nicht bestimmt" tritt nie an die Stelle eines Satzes (Forderung 3)', () => {
-  // Der bequeme Weg wäre, bei jeder Lücke zu schweigen und das Schweigen als
-  // Ehrlichkeit auszugeben. Genau das ist hier untersagt: erst die
-  // bestmögliche belegbare Aussage, dann der Rest an Unsicherheit *an* ihr.
+test('"not determined" never takes the place of a sentence (requirement 3)', () => {
+  // The easy way would be to fall silent at every gap and pass the silence off
+  // as honesty. That is exactly what is forbidden here: first the best
+  // statement the evidence supports, then the remaining uncertainty *on* it.
   const broken: string[] = [];
   for (const entry of ALL) {
     const { core, text, uncertainties, provenance } = entry.statement;
-    if (!core.trim()) broken.push(`${entry.case}/${entry.statement.id}: leerer Kernsatz`);
+    if (!core.trim()) broken.push(`${entry.case}/${entry.statement.id}: empty core sentence`);
     if (provenance !== 'reconstructed') {
-      broken.push(`${entry.case}/${entry.statement.id}: Herkunft ${provenance} statt reconstructed`);
+      broken.push(`${entry.case}/${entry.statement.id}: provenance ${provenance} instead of reconstructed`);
     }
     if (!text.startsWith(core)) {
-      broken.push(`${entry.case}/${entry.statement.id}: der Vorbehalt steht vor der Aussage`);
+      broken.push(`${entry.case}/${entry.statement.id}: the caveat comes before the statement`);
     }
     for (const note of uncertainties) {
       if (note.provenance !== 'not-determined') {
-        broken.push(`${entry.case}/${entry.statement.id}: Vorbehalt mit fremder Herkunft`);
+        broken.push(`${entry.case}/${entry.statement.id}: caveat with a foreign provenance`);
       }
     }
-    // Eine Aussage, die nur aus einem Vorbehalt besteht, ist keine Aussage.
+    // A statement that consists of nothing but a caveat is no statement.
     if (/^(nicht bestimmt|unbekannt|nicht belegt)\.?$/i.test(core.trim())) {
-      broken.push(`${entry.case}/${entry.statement.id}: „${core}" ist kein Fachsatz`);
+      broken.push(`${entry.case}/${entry.statement.id}: "${core}" is not a business statement`);
     }
   }
   expect(broken.slice(0, 10).join('\n')).toEqual('');
 });
 
-test('die Herkunft kommt aus lib/provenance.ts und ist nie neu erfunden', () => {
-  // `reconstructed` heißt dort: „Derived from the code, not confirmed by
-  // anyone." Genau das ist ein Engine-Satz, und deshalb steht hier kein
-  // eigener Wert.
+test('the provenance comes from lib/provenance.ts and is never invented anew', () => {
+  // There, `reconstructed` means: "Derived from the code, not confirmed by
+  // anyone." That is exactly what an engine sentence is, and that is why no
+  // value of its own stands here.
   expect(PROVENANCE.reconstructed.value).toBe('reconstructed');
   expect(PROVENANCE['not-determined'].value).toBe('not-determined');
   const values = new Set(ALL.map((entry) => entry.statement.provenance));
   expect([...values]).toEqual(['reconstructed']);
 });
 
-test('jeder Anker zeigt auf eine ABAP-Anweisung, die es gibt', () => {
+test('every anchor points to an ABAP statement that exists', () => {
   const broken: string[] = [];
   for (const korpusCase of CASES) {
     for (const source of korpusCase.sources) {
@@ -127,22 +126,22 @@ test('jeder Anker zeigt auf eine ABAP-Anweisung, die es gibt', () => {
   expect(broken.slice(0, 10).join(', ')).toEqual('');
 });
 
-test('derselbe Quelltext ergibt denselben Satz — kein Modell, kein Zufall', () => {
+test('the same source yields the same sentence — no model, no chance', () => {
   for (const korpusCase of CASES.slice(0, 12)) {
     for (const source of korpusCase.sources) {
       const first = buildBusinessStatements(source.code);
       const second = buildBusinessStatements(source.code);
-      expect(JSON.stringify(second), `${korpusCase.id}/${source.name} ist nicht reproduzierbar`).toEqual(
+      expect(JSON.stringify(second), `${korpusCase.id}/${source.name} is not reproducible`).toEqual(
         JSON.stringify(first),
       );
     }
   }
 });
 
-test('Schritt 1 vor Schritt 2: der Wert wird aufgelöst, bevor er bemängelt wird', () => {
-  // CC-036 nennt die Tabelle über eine Konstante; CC-011 den Baustein über
-  // eine Zuweisung. Ein Erzeuger, der hier „nicht bestimmt" sagt, hat die
-  // Auflösung übersprungen — und das ist der Fehler, den 17.7 verbietet.
+test('step 1 before step 2: the value is resolved before it is flagged', () => {
+  // CC-036 names the table through a constant; CC-011 names the function
+  // module through an assignment. A generator that says "not determined" here
+  // has skipped the resolution — and that is the error 17.7 forbids.
   const constantCase = readStatements(
     readFileSync(join(process.cwd(), 'tests/korpus/cases/CC-036/source.abap'), 'utf8'),
   );
@@ -158,37 +157,37 @@ test('Schritt 1 vor Schritt 2: der Wert wird aufgelöst, bevor er bemängelt wir
   expect(assigned.from).toBe('assignment');
 });
 
-test('Regel 6 bleibt im Skelett: der Fachsatz ist eine Ebene daneben', () => {
-  // (a) Die Abhängigkeit zeigt nur in eine Richtung. Importierte
-  //     `process-skeleton.ts` den Erzeuger, könnte eine erfundene Phrase in
-  //     eine Knotenbeschriftung geraten, ohne dass es jemand bemerkt.
+test('Rule 6 stays in the skeleton: the business statement is a layer beside it', () => {
+  // (a) The dependency points one way only. If `process-skeleton.ts` imported
+  //     the generator, an invented phrase could end up in a node label without
+  //     anyone noticing.
   const skeletonSource = readFileSync(join(process.cwd(), 'lib/abap/process-skeleton.ts'), 'utf8');
   expect(
     skeletonSource.includes('business-statement'),
-    'process-skeleton.ts darf den Fachsatz-Erzeuger nicht kennen — sonst ist Regel 6 offen',
+    'process-skeleton.ts must not know the business-statement generator — otherwise Rule 6 is open',
   ).toBe(false);
 
-  // (b) Das Skelett kommt unverändert aus der Zuordnung zurück, und die
-  //     Beschriftungen bleiben wörtliche Tokens aus der Quelle.
+  // (b) The skeleton comes back from the attachment unchanged, and the labels
+  //     remain literal tokens from the source.
   for (const korpusCase of CASES.slice(0, 20)) {
     for (const source of korpusCase.sources) {
       const skeleton = buildProcessSkeleton(source.code);
       const before = JSON.stringify(skeleton);
       const attached = attachTo(skeleton.nodes, buildBusinessStatements(source.code));
-      expect(JSON.stringify(skeleton), `${korpusCase.id}: attachTo hat das Skelett verändert`).toEqual(before);
+      expect(JSON.stringify(skeleton), `${korpusCase.id}: attachTo changed the skeleton`).toEqual(before);
       for (const [nodeId, statement] of attached) {
         const node = skeleton.nodes.find((candidate) => candidate.id === nodeId);
-        expect(node, `${korpusCase.id}: Satz an einem Knoten, den es nicht gibt`).toBeTruthy();
-        expect(statement.core.length, `${korpusCase.id}/${nodeId}: leerer Satz am Knoten`).toBeGreaterThan(0);
+        expect(node, `${korpusCase.id}: sentence on a node that does not exist`).toBeTruthy();
+        expect(statement.core.length, `${korpusCase.id}/${nodeId}: empty sentence on the node`).toBeGreaterThan(0);
       }
     }
   }
 });
 
-test('der Fachsatz steht am BPMN-Element, nicht in einer Liste daneben (Forderung 2)', () => {
-  // Gemessen, nicht behauptet: wie viele Knoten mit Zeilenanker bekommen einen
-  // Satz? Die Zahl darf sinken, wenn das Skelett wächst — aber nicht auf null,
-  // und nicht unter die Hälfte, sonst ist die Business-Sicht wieder eine Liste.
+test('the business statement sits on the BPMN element, not in a list beside it (requirement 2)', () => {
+  // Measured, not claimed: how many nodes with a line anchor get a sentence?
+  // The number may drop as the skeleton grows — but not to zero, and not below
+  // half, otherwise the Business view is a list again.
   let anchored = 0;
   let withSentence = 0;
   for (const korpusCase of CASES) {
@@ -202,32 +201,33 @@ test('der Fachsatz steht am BPMN-Element, nicht in einer Liste daneben (Forderun
       }
     }
   }
-  expect(anchored, 'kein Knoten des Korpus trägt einen Zeilenanker').toBeGreaterThan(100);
+  expect(anchored, 'no node of the corpus carries a line anchor').toBeGreaterThan(100);
   expect(
     withSentence / anchored,
-    `nur ${withSentence} von ${anchored} verankerten Knoten tragen einen Fachsatz`,
+    `only ${withSentence} of ${anchored} anchored nodes carry a business statement`,
   ).toBeGreaterThan(0.5);
 });
 
 /**
- * **Die Obergrenze — gemessen, nicht behauptet.**
+ * **The ceiling — measured, not claimed.**
  *
- * Die Abnahmezahl aus 17.7 („≥ 120 von 173") ist in 17.6 gesetzt worden, bevor
- * es einen Erzeuger gab; die Roadmap sagt selbst: *„Eine Zielzahl für den
- * ersten Erzeuger fehlt noch."* Dieser Test rechnet nach, was ein
- * **Satzbaukasten überhaupt erreichen kann**, und zwar großzügig: er unterstellt
- * einen Erzeuger, der aus jedem Sollsatz genau die Wörter trifft, die aus dem
- * Anker ableitbar sind — jedes Wort der ABAP-Anweisung, jede Übersetzung des
- * Wörterbuchs, dazu den ganzen Wortschatz, den die Sätze dieses Moduls führen.
- * Besser als dieser Erzeuger kann keiner werden, der nichts erfindet.
+ * The acceptance figure from 17.7 ("≥ 120 of 173") was set in 17.6, before
+ * there was a generator; the roadmap itself says: *"A target figure for the
+ * first generator is still missing."* This test works out what a
+ * **sentence kit can reach at all**, and generously so: it assumes a
+ * generator that hits, in every expected sentence, exactly the words derivable
+ * from the anchor — every word of the ABAP statement, every translation in the
+ * glossary, plus the whole vocabulary the sentences of this module use. No
+ * generator that invents nothing can do better than that one.
  *
- * Was übrig bleibt, ist der Teil der Sollsätze, der **nicht im Code steht**:
- * die Beurteilungsprosa des Fallbuchs — „nicht belegt", „im Slice unbekannt",
- * „ein Fachsatz über ‚Kunden' ist hier nicht tragbar", Verweise auf F03, S11
- * und auf andere Fälle. Wer diese Zahl heben will, muss die Engine diese Sätze
- * sagen lassen; sie sind Bewertung, nicht Ableitung.
+ * What remains is the part of the expected sentences that is **not in the
+ * code**: the casebook's judgement prose — "not evidenced", "unknown in the
+ * slice", "a business statement about 'customers' cannot be supported here",
+ * references to F03, S11 and to other cases. Whoever wants to raise this
+ * number has to make the engine say these sentences; they are judgement, not
+ * derivation.
  */
-test('die Obergrenze eines Satzbaukastens ist gemessen und benannt', () => {
+test('the ceiling of a sentence kit is measured and named', () => {
   const house = HOUSE_VOCABULARY;
   let reachable = 0;
   let total = 0;
@@ -261,50 +261,51 @@ test('die Obergrenze eines Satzbaukastens ist gemessen und benannt', () => {
     }
   }
   expect(total).toBe(173);
-  // Der gemessene Wert am 23.09.2026, auf Deutsch: **116** — nachgerechnet,
-  // indem die Schranke testweise unerfüllbar gesetzt und die gemeldete Zahl
-  // gelesen wurde. Damals lag die Abnahme aus 17.6 (120) knapp darüber.
+  // The value measured on 23.09.2026, in German: **116** — recomputed by
+  // setting the bound to something unsatisfiable for a trial run and reading
+  // the reported number. At the time the acceptance figure from 17.6 (120) lay
+  // just above it.
   //
-  // Seit dem 01.10.2026 sind Erzeuger und Fallbuch Englisch (Sonny: „alles
-  // Englisch"), und dieselbe Rechnung ergibt **143**. Der Grund ist die Sprache,
-  // nicht ein besserer Erzeuger: Englisch schreibt ein deutsches Kompositum in
-  // zwei Wörtern („Kundennummer" → „customer number"), und das Dice-Maß zählt
-  // jedes davon. Die Zahl ist deshalb nicht mit der deutschen vergleichbar, und
-  // die Aussage „120 ist für Weg A unerreichbar" gilt so nicht mehr — ob die
-  // Abnahme auf Englisch neu gesetzt wird, ist Sonnys Entscheidung.
+  // Since 01.10.2026 generator and casebook are English (Sonny: "everything
+  // English"), and the same computation yields **143**. The reason is the
+  // language, not a better generator: English writes a German compound as two
+  // words ("Kundennummer" → "customer number"), and the Dice measure counts
+  // each of them. The number is therefore not comparable with the German one,
+  // and the statement "120 is unreachable for Path A" no longer holds as such —
+  // whether the acceptance figure is reset for English is Sonny's decision.
   //
-  // Die Schranke unten steht bewusst unter dem Messwert und nicht darauf — sie
-  // darf sich bewegen, wenn das Wörterbuch wächst, und fällt, wenn es schrumpft.
+  // The bound below deliberately sits under the measured value, not on it — it
+  // may move as the glossary grows, and fails when it shrinks.
   expect(
     reachable,
-    `Ein Satzbaukasten kann höchstens ${reachable} von ${total} Sollsätzen treffen — ` +
-      'die Obergrenze ist gefallen, das Wörterbuch ist geschrumpft',
+    `A sentence kit can hit at most ${reachable} of ${total} expected sentences — ` +
+      'the ceiling has dropped, the glossary has shrunk',
   ).toBeGreaterThan(130);
 });
 
 /**
- * Ein UPDATE mit Schlüssel sagt „des angegebenen …", eines ohne nicht.
+ * An UPDATE with a key says "of the specified …", one without does not.
  *
- * Die Unterscheidung existierte bis zum 23.09.2026 nicht, ohne dass etwas rot
- * wurde: in der Erkennung stand ein echtes Backspace-Zeichen (0x08) an der
- * Stelle der Wortgrenze — `/<BS>WHERE…/` statt `/\bWHERE…/`. ABAP-Quelltext
- * enthält keine Steuerzeichen, also traf die Regel nie und `keyed` war immer
- * falsch. Gefunden hat es die QA-Delta-Prüfung von e24d1fb; kein Test des
- * Erzeugers hatte den Zweig je betreten.
+ * Until 23.09.2026 the distinction did not exist, and nothing turned red: the
+ * detection held a real backspace character (0x08) where the word boundary
+ * belonged — `/<BS>WHERE…/` instead of `/\bWHERE…/`. ABAP source contains no
+ * control characters, so the rule never matched and `keyed` was always false.
+ * The QA delta review of e24d1fb found it; no test of the generator had ever
+ * entered the branch.
  *
- * Der Test prüft beide Seiten. Eine Prüfung nur auf den Schlüsselfall wäre
- * wieder grün, wenn jemand `keyed` fest auf `true` setzt.
+ * The test checks both sides. A check on the keyed case alone would be green
+ * again if someone hard-wired `keyed` to `true`.
  *
- * Die Tabelle ist `KNA1`, weil der Unterschied nur bei einer Tabelle sichtbar
- * wird, die das Wörterbuch kennt — bei einer unbekannten fällt der Satz auf den
- * wörtlichen Namen zurück und spricht gar nicht von „angegeben".
+ * The table is `KNA1` because the difference only shows for a table the
+ * glossary knows — for an unknown one the sentence falls back to the literal
+ * name and does not speak of "specified" at all.
  */
-test('ein UPDATE mit Schlüssel wird als solches beschrieben, eines ohne nicht', () => {
+test('an UPDATE with a key is described as such, one without is not', () => {
   const zeilen = (...z: string[]) => z.join('\n') + '\n';
 
   const updateSatz = (quelle: string): BusinessStatement => {
     const treffer = buildBusinessStatements(quelle).filter((s) => /is changed\./.test(s.core));
-    expect(treffer, `kein UPDATE-Satz für:\n${quelle}`).toHaveLength(1);
+    expect(treffer, `no UPDATE sentence for:\n${quelle}`).toHaveLength(1);
     return treffer[0];
   };
 
@@ -315,27 +316,27 @@ test('ein UPDATE mit Schlüssel wird als solches beschrieben, eines ohne nicht',
 
   expect(
     mitSchluessel.core,
-    'ein UPDATE mit WHERE auf einen Eingabeparameter trifft eine bestimmte Zeile — der Satz muss das sagen',
+    'an UPDATE with WHERE on an input parameter hits a specific row — the sentence must say so',
   ).toContain('specified');
 
   expect(
     ohneSchluessel.core,
-    'ein UPDATE ohne WHERE trifft alles; „of the specified" wäre hier eine Erfindung',
+    'an UPDATE without WHERE hits everything; "of the specified" would be an invention here',
   ).not.toContain('specified');
 
-  // Der Vorbehalt bleibt in beiden Fällen: ein Schlüssel im WHERE sagt nicht,
-  // dass es die Zeile gibt.
+  // The caveat stays in both cases: a key in the WHERE does not say that the
+  // row exists.
   for (const satz of [mitSchluessel, ohneSchluessel]) {
     expect(satz.text).toContain('does not guarantee that a row is hit');
   }
 });
 
 // ---------------------------------------------------------------------------
-// Die Fehlmuster aus dem Prozess-Benchmark (F1–F12)
+// The failure patterns from the process benchmark (F1–F12)
 //
-// Jeder Test unten benennt ein Muster, das fünf unabhängige Richter an den
-// Sätzen dieses Erzeugers gefunden haben, und hält die Korrektur mit einem
-// eigens geschriebenen Minimal-ABAP fest — kein Fall aus dem Benchmark.
+// Each test below names a pattern that five independent judges found in the
+// sentences of this generator, and pins the correction with a minimal ABAP
+// written for the purpose — not a case from the benchmark.
 // ---------------------------------------------------------------------------
 
 const quelle = (...z: string[]) => z.join('\n') + '\n';
@@ -345,8 +346,8 @@ const satzAn = (code: string, zeile: number) =>
     .filter((s) => s.anchors.some((a) => a.lineStart <= zeile && zeile <= a.lineEnd))
     .map((s) => s.text);
 
-test('F1 — CHECK sagt die Folge seines Orts und die Bedingung, wie sie ist', () => {
-  // In einer FORM ohne Schleife: die Routine wird verlassen, nichts läuft „weiter".
+test('F1 — CHECK states the consequence for where it stands and the condition as it is', () => {
+  // In a FORM without a loop: the routine is exited, nothing "continues".
   const imUnterprogramm = satzAn(
     quelle('FORM freigabe USING iv_art TYPE c.', "  CHECK iv_art = 'A'.", '  WRITE / iv_art.', 'ENDFORM.'),
     2,
@@ -355,7 +356,7 @@ test('F1 — CHECK sagt die Folge seines Orts und die Bedingung, wie sie ist', (
   expect(imUnterprogramm).toContain('the field iv_art is A');
   expect(imUnterprogramm).not.toMatch(/loop|smaller/);
 
-  // In einem Ereignisblock: der Block wird verlassen.
+  // In an event block: the block is exited.
   const imEreignis = satzAn(
     quelle('REPORT z_f1.', 'PARAMETERS p_echt AS CHECKBOX.', 'START-OF-SELECTION.', '  CHECK p_echt IS NOT INITIAL.', "  WRITE / 'X'."),
     4,
@@ -364,8 +365,8 @@ test('F1 — CHECK sagt die Folge seines Orts und die Bedingung, wie sie ist', (
   expect(imEreignis).toContain('not empty');
   expect(imEreignis).not.toMatch(/loop|smaller/);
 
-  // In einer Schleife mit Gleichheit: der Durchlauf wird übersprungen, aber
-  // „kleinere" gibt es bei einer Gleichheitsprüfung nicht.
+  // In a loop with an equality: the pass is skipped, but there are no
+  // "smaller ones" in an equality check.
   const inSchleife = satzAn(
     quelle('FORM zeilen TABLES it_pos.', '  LOOP AT it_pos INTO DATA(ls_pos).', "    CHECK ls_pos-kz = 'L'.", '  ENDLOOP.', 'ENDFORM.'),
     3,
@@ -373,8 +374,8 @@ test('F1 — CHECK sagt die Folge seines Orts und die Bedingung, wie sie ist', (
   expect(inSchleife).toContain('loop pass');
   expect(inSchleife).not.toContain('smaller');
 
-  // Ein SELECT in eine Tabelle öffnet keine Schleife — auch nicht mit
-  // CORRESPONDING FIELDS OF TABLE. Der CHECK dahinter steht in der Routine.
+  // A SELECT into a table opens no loop — not with CORRESPONDING FIELDS OF
+  // TABLE either. The CHECK after it stands in the routine.
   const nachSelect = satzAn(
     quelle(
       'FORM lesen.',
@@ -387,8 +388,8 @@ test('F1 — CHECK sagt die Folge seines Orts und die Bedingung, wie sie ist', (
   expect(nachSelect).toContain('subroutine lesen');
   expect(nachSelect).not.toContain('loop');
 
-  // Wo „kleinere" wahr ist, bleibt es: ein Größenvergleich über ein bekanntes
-  // Fachwort in einer Schleife.
+  // Where "smaller ones" is true, it stays: a magnitude comparison on a known
+  // business term inside a loop.
   const groesse = satzAn(
     quelle('LOOP AT gt_pos INTO gs_pos.', '  CHECK gs_pos-betrag >= 100.', 'ENDLOOP.'),
     2,
@@ -396,11 +397,11 @@ test('F1 — CHECK sagt die Folge seines Orts und die Bedingung, wie sie ist', (
   expect(groesse).toContain('smaller ones are skipped, and the loop continues');
 });
 
-test('F2 — die Wortwahl nach sy-subrc folgt der Anweisung, die es gesetzt hat', () => {
+test('F2 — the wording after sy-subrc follows the statement that set it', () => {
   const nach = (...setter: string[]) =>
     satzAn(quelle('FORM probe.', ...setter, '  IF sy-subrc <> 0.', "    WRITE / 'FEHLER'.", '    RETURN.', '  ENDIF.', 'ENDFORM.'), setter.length + 2).join(' ');
 
-  // Ein Lesen: „Treffer" ist hier das richtige Wort und bleibt.
+  // A read: "hit" is the right word here, and it stays.
   expect(nach('  SELECT SINGLE name1 FROM zkunde INTO @DATA(lv_name) WHERE id = @gv_id.')).toContain('Without a hit');
 
   const berechtigung = nach("  AUTHORITY-CHECK OBJECT 'Z_BELEG' ID 'ACTVT' FIELD '02'.");
@@ -417,14 +418,14 @@ test('F2 — die Wortwahl nach sy-subrc folgt der Anweisung, die es gesetzt hat'
   expect(nach('  OPEN DATASET gv_datei FOR INPUT IN TEXT MODE ENCODING DEFAULT.')).toContain('file cannot be opened');
   expect(nach('  INSERT zbeleg FROM gs_beleg.')).toContain('database change');
 
-  // Wo die setzende Anweisung nicht eindeutig ist — hier liegt ein Zweig
-  // dazwischen —, bleibt der Satz neutral statt geraten.
+  // Where the setting statement is not unambiguous — here a branch lies in
+  // between — the sentence stays neutral instead of guessing.
   const offen = nach("  IF gv_modus = 'A'.", "    SELECT SINGLE name1 FROM zkunde INTO @DATA(lv_x) WHERE id = @gv_id.", '  ENDIF.');
   expect(offen).toContain('return code other than 0');
   expect(offen).not.toMatch(/\bhits?\b/);
 });
 
-test('F3 — nur GET <knoten> ist eine logische Datenbank; GET PARAMETER, TIME, REFERENCE nicht', () => {
+test('F3 — only GET <node> is a logical database; GET PARAMETER, TIME, REFERENCE are not', () => {
   const code = quelle(
     'REPORT z_f3.',
     'INITIALIZATION.',
@@ -436,14 +437,14 @@ test('F3 — nur GET <knoten> ist eine logische Datenbank; GET PARAMETER, TIME, 
   );
   for (const zeile of [3, 4, 5]) {
     const text = satzAn(code, zeile).join(' ');
-    expect(text, `Zeile ${zeile}`).not.toContain('logical database');
-    expect(text.length, `Zeile ${zeile} hat keinen Satz`).toBeGreaterThan(0);
+    expect(text, `line ${zeile}`).not.toContain('logical database');
+    expect(text.length, `line ${zeile} has no sentence`).toBeGreaterThan(0);
   }
   expect(satzAn(code, 3).join(' ')).toContain('user parameter BUK');
   expect(satzAn(code, 6).join(' ')).toContain('logical database');
 });
 
-test('F4 — CALL TRANSACTION sagt den Aufruf, nicht einen aus dem Namen gelesenen Zweck', () => {
+test('F4 — CALL TRANSACTION states the call, not a purpose read from the name', () => {
   const code = quelle(
     'REPORT z_f4.',
     'START-OF-SELECTION.',
@@ -463,7 +464,7 @@ test('F4 — CALL TRANSACTION sagt den Aufruf, nicht einen aus dem Namen gelesen
   expect(mappe).not.toContain('creat');
 });
 
-test('F5 — MESSAGE … INTO und WRITE … TO geben nichts aus', () => {
+test('F5 — MESSAGE … INTO and WRITE … TO output nothing', () => {
   const code = quelle(
     'FORM pruefen CHANGING cv_text TYPE string.',
     "  MESSAGE e010(zbel) WITH gv_beleg INTO cv_text.",
@@ -498,15 +499,15 @@ test('F5 — MESSAGE … INTO und WRITE … TO geben nichts aus', () => {
   expect(formatiert).not.toMatch(/(?<!nothing )is output/);
   expect(lauf).toContain('a value is formatted into gv_anzeige');
 
-  // Eine echte Meldung sagt ihren Typ; eine echte Ausgabe bleibt eine Ausgabe,
-  // ohne die Formatierungszusätze als Inhalt zu lesen.
+  // A real message states its type; a real output stays an output, without
+  // reading the formatting additions as content.
   expect(satzAn(code, 5).join(' ')).toContain('status message 012(ZBEL) is output, displayed like an error message');
   const ausgabe = satzAn(code, 6).join(' ');
   expect(ausgabe).toContain('is output');
   expect(ausgabe).not.toContain('CURRENCY');
 });
 
-test('F6 — „es wird nichts geschrieben" und „kein COMMIT WORK" nur, wenn der Weg es trägt', () => {
+test('F6 — "nothing is written" and "no COMMIT WORK" only when the path supports it', () => {
   const waechter = (...danach: string[]) =>
     quelle(
       'REPORT z_f6.',
@@ -519,15 +520,15 @@ test('F6 — „es wird nichts geschrieben" und „kein COMMIT WORK" nur, wenn d
       "  UPDATE zbeleg SET status = 'X' WHERE id = p_id.",
       ...danach,
     );
-  // Der einfache Fall trägt die Aussage: nichts anderes läuft danach.
+  // The simple case supports the statement: nothing else runs afterwards.
   expect(satzAn(waechter(), 4).join(' ')).toContain('nothing is written');
 
-  // Ein späteres Ereignis, das etwas aufruft, macht sie unbelegt.
+  // A later event that calls something leaves it unevidenced.
   const mitEnde = satzAn(waechter('END-OF-SELECTION.', '  PERFORM protokoll_sichern.'), 4).join(' ');
   expect(mitEnde).toContain('processing returns before the database operation');
   expect(mitEnde).not.toContain('nothing is written');
 
-  // Ein Wächter, der selbst sichert, schreibt.
+  // A guard that saves on its own does write.
   const sichernd = satzAn(
     quelle(
       'REPORT z_f6b.',
@@ -542,7 +543,7 @@ test('F6 — „es wird nichts geschrieben" und „kein COMMIT WORK" nur, wenn d
   ).join(' ');
   expect(sichernd).not.toContain('nothing is written');
 
-  // Ein EXIT in einer Schleife verlässt nur die Schleife.
+  // An EXIT in a loop leaves only the loop.
   const schleife = satzAn(
     quelle('REPORT z_f6c.', 'LOOP AT gt_pos INTO gs_pos.', "  IF gs_pos-kz = 'E'.", '    EXIT.', '  ENDIF.', 'ENDLOOP.', 'DELETE FROM zbeleg WHERE id = gv_id.'),
     3,
@@ -550,27 +551,27 @@ test('F6 — „es wird nichts geschrieben" und „kein COMMIT WORK" nur, wenn d
   expect(schleife).toContain('loop is exited');
   expect(schleife).not.toContain('database operation');
 
-  // „kein COMMIT WORK" nicht neben einem BAPI_TRANSACTION_COMMIT …
+  // No "no COMMIT WORK" next to a BAPI_TRANSACTION_COMMIT …
   const bapi = satzAn(
     quelle('REPORT z_f6d.', "UPDATE zbeleg SET status = 'X' WHERE id = gv_id.", "CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'."),
     2,
   ).join(' ');
   expect(bapi).not.toMatch(/no COMMIT|not persisted/);
-  // … und nicht in einer Routine ohne Programm: dort schreibt der Aufrufer fest.
+  // … and not in a routine without a program: there the caller commits.
   const routine = satzAn(quelle('FORM speichern.', "  UPDATE zbeleg SET status = 'X' WHERE id = gv_id.", 'ENDFORM.'), 2).join(' ');
   expect(routine).not.toMatch(/no COMMIT|not persisted/);
-  // Wo es wahr ist, bleibt es stehen.
+  // Where it is true, it stays.
   expect(satzAn(quelle('REPORT z_f6e.', "UPDATE zbeleg SET status = 'X' WHERE id = gv_id."), 2).join(' ')).toContain(
     'no COMMIT WORK',
   );
 
-  // Ein MODIFY auf eine interne Tabelle oder das Bild schreibt nicht in die Datenbank.
+  // A MODIFY on an internal table or on the screen does not write to the database.
   const intern = satzAn(quelle('REPORT z_f6f.', 'MODIFY gt_pos FROM gs_pos INDEX 1.'), 2).join(' ');
   expect(intern).toContain('internal table gt_pos');
   expect(intern).not.toMatch(/no COMMIT|inserted or overwritten/);
 });
 
-test('F7 — „nicht belegt" nur, wenn das Aufrufziel wirklich fehlt', () => {
+test('F7 — "not evidenced" only when the call target is really missing', () => {
   const code = quelle(
     'REPORT z_f7.',
     'CLASS lcl_protokoll DEFINITION.',
@@ -603,13 +604,13 @@ test('F7 — „nicht belegt" nur, wenn das Aufrufziel wirklich fehlt', () => {
   expect(methode).toContain('COMMIT WORK');
   expect(methode).not.toContain('not evidenced');
 
-  // Was nicht im Ausschnitt steht, bleibt „nicht belegt" — auch eine globale
-  // Klasse, deren Methode zufällig so heißt wie eine lokale.
+  // What is not in the excerpt stays "not evidenced" — including a global
+  // class whose method happens to share its name with a local one.
   expect(satzAn(code, 16).join(' ')).toContain('not evidenced');
   expect(satzAn(code, 17).join(' ')).toContain('not evidenced');
 });
 
-test('F8 — der Rückgabewert landet beim Empfänger links vom =, nicht bei der Klasse vor =>', () => {
+test('F8 — the return value lands in the receiver left of the =, not in the class before =>', () => {
   const code = quelle(
     'REPORT z_f8.',
     'START-OF-SELECTION.',
@@ -628,7 +629,7 @@ test('F8 — der Rückgabewert landet beim Empfänger links vom =, nicht bei der
   expect(satzAn(code, 5).join(' ')).toContain('placed in gv_anzahl');
 });
 
-test('F9 — LEAVE sagt, wohin es geht: Folgebild, Listenende, Programmende', () => {
+test('F9 — LEAVE says where it goes: next screen, end of list, end of program', () => {
   const code = quelle(
     'MODULE user_command_0100 INPUT.',
     '  CASE ok_code.',
@@ -653,7 +654,7 @@ test('F9 — LEAVE sagt, wohin es geht: Folgebild, Listenende, Programmende', ()
   expect(liste).not.toContain('screen sequence');
 });
 
-test('F10 — keine Übergaben und Wirkungen, die der Code nicht trägt', () => {
+test('F10 — no hand-overs and effects the code does not support', () => {
   const code = quelle(
     'REPORT z_f10.',
     'PARAMETERS p_ziel TYPE rfcdest.',
@@ -679,7 +680,7 @@ test('F10 — keine Übergaben und Wirkungen, die der Code nicht trägt', () => 
   expect(rfc).not.toContain('notif');
 });
 
-test('F11 — ein Satz je Aussage: keine Wiederholung derselben Sache an derselben Stelle', () => {
+test('F11 — one sentence per statement: no repetition of the same thing at the same place', () => {
   const code = quelle(
     'REPORT z_f11.',
     'START-OF-SELECTION.',
@@ -701,23 +702,23 @@ test('F11 — ein Satz je Aussage: keine Wiederholung derselben Sache an derselb
   const alle = buildBusinessStatements(code);
   const an = (zeile: number) => alle.filter((s) => s.anchors.some((a) => a.lineStart === zeile));
 
-  // Die Ausgabeliste ist ein Satz; die Spalten bekommen keinen eigenen daneben.
+  // The output list is one sentence; the columns get no sentence of their own beside it.
   expect(an(9).map((s) => s.text)).toEqual(['With hits, the customer number and the name are output as a list.']);
 
-  // Wächter und Zweig über dasselbe IF sind ein Satz, nicht zwei oder drei.
+  // Guard and branch over the same IF are one sentence, not two or three.
   expect(an(4).length).toBe(1);
   expect(an(4)[0].text).toContain('Without a hit, KEINE is output');
 
-  // Ein IF … ELSE ist eine Entscheidung mit zwei Ausgängen: ein Satz.
+  // An IF … ELSE is one decision with two exits: one sentence.
   const entscheidung = an(12);
   expect(entscheidung.filter((s) => s.grain === 'group').length).toBe(1);
   expect(entscheidung.find((s) => s.grain === 'group')!.text).toContain('otherwise AENDERN is output');
 
-  // „übergibt … und übernimmt dessen Ausgabe nach …" nennt das Ergebnis schon.
+  // "passes … and takes its output into …" already names the result.
   expect(an(16).filter((s) => /placed in|takes its output/.test(s.text)).length).toBe(1);
 });
 
-test('F12 — kein erratenes Geschlecht vor Bezeichnern, Verb passt zum Subjekt', () => {
+test('F12 — no guessed gender before identifiers, the verb agrees with the subject', () => {
   const code = quelle(
     'REPORT z_f12.',
     'START-OF-SELECTION.',
@@ -741,7 +742,7 @@ test('F12 — kein erratenes Geschlecht vor Bezeichnern, Verb passt zum Subjekt'
   expect(zweig).not.toMatch(/An empty lv_msgno| set the/);
   expect(zweig).toContain('If the field lv_msgno is empty, the field gv_stufe is set to E');
 
-  // Mit einem bekannten Fachwort bleibt das Mehrzahl-Subjekt, und das Verb passt.
+  // With a known business term the plural subject stays, and the verb agrees.
   expect(satzAn(code, 8).join(' ')).toContain('Negative amounts set the route to NEGATIV');
 
   expect(satzAn(code, 10).join(' ')).toContain('The material number from zmatzuo is read');
@@ -751,7 +752,7 @@ test('F12 — kein erratenes Geschlecht vor Bezeichnern, Verb passt zum Subjekt'
   expect(existenz).not.toContain('abap_true');
 });
 
-test('17.9 — die Sätze sagen nicht, was der Code an ihrem Anker nicht trägt', () => {
+test('17.9 — the sentences do not say what the code at their anchor does not support', () => {
   const code = quelle(
     'REPORT z_verboten.',
     'CLASS lcl_zaehler DEFINITION.',
@@ -768,13 +769,13 @@ test('17.9 — die Sätze sagen nicht, was der Code an ihrem Anker nicht trägt'
     "  AUTHORITY-CHECK OBJECT 'Z_LISTE' ID 'ACTVT' FIELD '03'.",
     '  SELECT kunnr FROM kna1 FOR ALL ENTRIES IN @gt_schluessel WHERE kunnr = @gt_schluessel-kunnr INTO TABLE @DATA(lt_da).',
   );
-  // Drei Aufrufe nacheinander, nicht einer mit zwei Parametern.
+  // Three calls one after another, not one with two parameters.
   expect(satzAn(code, 12).join(' ')).toContain('The subroutines lesen, rechnen and ausgeben are called one after another, each without parameters');
-  // Eine Berechtigungsprüfung, deren Ergebnis niemand liest, schützt nichts.
+  // An authorization check whose result nobody reads protects nothing.
   expect(satzAn(code, 13).join(' ')).toContain('The result of the check is not evaluated');
-  // Ein RETURNING-Parameter ist das Ergebnis der Methode, kein Feld mit eigenem Namen.
+  // A RETURNING parameter is the method's result, not a field with a name of its own.
   expect(satzAn(code, 8).join(' ')).toContain('The method naechster returns the value 7');
-  // FOR ALL ENTRIES liest zu den Einträgen einer Tabelle, nicht „die Kunden".
+  // FOR ALL ENTRIES reads for the entries of a table, not "the customers".
   expect(satzAn(code, 14).join(' ')).toContain('for the entries from gt_schluessel');
 });
 
@@ -793,7 +794,7 @@ test('FOR ALL ENTRIES over a table nobody checks for content says what an empty 
   }
 });
 
-test('weitere Aussagen, die der Code nicht trägt: Auflösung, LOOP … WHERE, ASSIGN, TRANSLATE, SUBMIT VIA JOB', () => {
+test('more statements the code does not support: resolution, LOOP … WHERE, ASSIGN, TRANSLATE, SUBMIT VIA JOB', () => {
   const code = quelle(
     'REPORT z_weitere.',
     'START-OF-SELECTION.',
@@ -808,7 +809,7 @@ test('weitere Aussagen, die der Code nicht trägt: Auflösung, LOOP … WHERE, A
     '  TRANSLATE gv_name TO UPPER CASE.',
     "  SUBMIT zfolge VIA JOB gv_job NUMBER gv_nummer AND RETURN.",
   );
-  // Ein Literal neben einem gelesenen Wert ist ein Vorschlag, keine Festlegung.
+  // A literal next to a value that is read is a default, not a fixed setting.
   const dynamisch = satzAn(code, 7).join(' ');
   expect(dynamisch).not.toContain('fixed by');
   expect(dynamisch).not.toContain('the input decides');
@@ -823,7 +824,7 @@ test('weitere Aussagen, die der Code nicht trägt: Auflösung, LOOP … WHERE, A
   expect(satzAn(code, 12).join(' ')).toContain('background job');
 });
 
-test('Wortwahl — SAP-Standardtabellen und -felder heißen fachlich, mit dem richtigen Artikel', () => {
+test('wording — SAP standard tables and fields go by their business names, with the right article', () => {
   const code = quelle(
     'REPORT z_wort.',
     'PARAMETERS p_ebeln TYPE ebeln.',
@@ -833,12 +834,12 @@ test('Wortwahl — SAP-Standardtabellen und -felder heißen fachlich, mit dem ri
     '  SELECT SINGLE lifnr FROM ekko INTO @DATA(lv_lifnr) WHERE ebeln = @p_ebeln.',
   );
   expect(satzAn(code, 4).join(' ')).toContain('material number and plant');
-  // EKKO heißt fachlich "purchase order", mit Schlüssel "the specified".
+  // EKKO's business name is "purchase order", and with a key "the specified".
   expect(satzAn(code, 5).join(' ')).toContain('of the specified purchase order');
   expect(satzAn(code, 6).join(' ')).toContain('supplier number of the purchase order');
 });
 
-test('F11/F4 — Kettenausgabe im Zweig ohne zweiten Satz; ein Dialogaufruf ist keine Datenbankoperation', () => {
+test('F11/F4 — chained output in a branch without a second sentence; a dialog call is not a database operation', () => {
   const code = quelle(
     'REPORT z_nachtrag.',
     'START-OF-SELECTION.',
@@ -858,28 +859,28 @@ test('F11/F4 — Kettenausgabe im Zweig ohne zweiten Satz; ein Dialogaufruf ist 
   expect(satzAn(code, 5).filter((s) => /are output/.test(s))).toEqual([]);
   expect(satzAn(code, 10).join(' ')).not.toContain('database operation');
 
-  // QA cb41c1e00bc0: dass kein Listensatz mehr dasteht, genügt nicht — die
-  // Kette muss im Zweigsatz stehen, ganz, mit seiner Bedingung, und genau einmal.
+  // QA cb41c1e00bc0: that no list sentence is left is not enough — the chain
+  // must stand in the branch sentence, whole, with its condition, and exactly once.
   const an5 = buildBusinessStatements(code).filter((s) => s.anchors.some((a) => a.lineStart === 5));
   const zweig = an5.filter((s) => s.grain === 'group');
-  expect(zweig.length, 'genau ein Zweigsatz trägt die Kette').toBe(1);
+  expect(zweig.length, 'exactly one branch sentence carries the chain').toBe(1);
   expect(zweig[0].text).toMatch(/^If the field p_test is set, /);
   for (const wert of ['the material number', 'the plant', 'TEST']) expect(zweig[0].text).toContain(`${wert} is output`);
   expect(zweig[0].text).toContain('the loop pass is skipped');
-  // Daneben steht an Zeile 5 höchstens der Satz zum ausgegebenen Literal —
-  // keine Spalte der Kette ein zweites Mal ohne Bedingung.
+  // Beside it, line 5 carries at most the sentence about the output literal —
+  // no column of the chain a second time without its condition.
   const daneben = an5.filter((s) => s.grain === 'statement').map((s) => s.text);
   expect(daneben.filter((text) => /material number|plant/.test(text))).toEqual([]);
   expect(daneben).toEqual(['TEST is output. The output only proves that this point in the code was reached.']);
 });
 
-test('QA d7a7d3a66683 — „es wird nichts geschrieben" nur, wo die Quellreihenfolge die Ausführung ist', () => {
+test('QA d7a7d3a66683 — "nothing is written" only where source order is execution order', () => {
   const waechter = (...z: string[]) => satzAn(quelle(...z), z.findIndex((zeile) => /IF p_stop/.test(zeile)) + 1).join(' ');
   const danach = ['  IF p_stop = abap_true.', '    RETURN.', '  ENDIF.'];
 
-  // Getragen: ein Programm, ein einmal laufendes Ereignis, davor nichts. Auch
-  // mit einem zweiten IF, das nur auf dem anderen Weg schreibt — wer p_stop
-  // setzt, erreicht es nicht.
+  // Supported: one program, an event that runs once, nothing before it. Also
+  // with a second IF that writes only on the other path — whoever sets p_stop
+  // never reaches it.
   const getragen = waechter(
     'REPORT z_d7a.',
     'PARAMETERS: p_stop AS CHECKBOX, p_gut AS CHECKBOX.',
@@ -895,9 +896,9 @@ test('QA d7a7d3a66683 — „es wird nichts geschrieben" nur, wo die Quellreihen
     expect(text, label).toContain('processing returns before the database operation');
     expect(text, label).not.toContain('nothing is written');
   };
-  // In einer Schleife hat ein früherer Durchlauf schon geschrieben.
+  // In a loop, an earlier pass has already written.
   ohneAussage(
-    'Schleife',
+    'loop',
     waechter(
       'REPORT z_d7b.',
       'START-OF-SELECTION.',
@@ -907,9 +908,9 @@ test('QA d7a7d3a66683 — „es wird nichts geschrieben" nur, wo die Quellreihen
       '  ENDLOOP.',
     ),
   );
-  // Ein Aufruf vor dem Wächter kann schreiben — hier tut er es.
+  // A call before the guard can write — here it does.
   ohneAussage(
-    'PERFORM davor',
+    'PERFORM before',
     waechter(
       'REPORT z_d7c.',
       'START-OF-SELECTION.',
@@ -921,9 +922,9 @@ test('QA d7a7d3a66683 — „es wird nichts geschrieben" nur, wo die Quellreihen
       'ENDFORM.',
     ),
   );
-  // Ein Ereignis, das in der Quelle **vor** dem Wächter steht, hat schon geschrieben.
+  // An event that stands **before** the guard in the source has already written.
   ohneAussage(
-    'INITIALIZATION davor',
+    'INITIALIZATION before',
     waechter(
       'REPORT z_d7d.',
       'INITIALIZATION.',
@@ -933,16 +934,16 @@ test('QA d7a7d3a66683 — „es wird nichts geschrieben" nur, wo die Quellreihen
       "  UPDATE kna1 SET loevm = 'X' WHERE kunnr = '1'.",
     ),
   );
-  // Ein mehrfach laufendes Ereignis: der vorige Benutzerbefehl hat geschrieben.
+  // An event that runs repeatedly: the previous user command has written.
   ohneAussage(
     'AT USER-COMMAND',
     waechter('REPORT z_d7e.', 'AT USER-COMMAND.', ...danach, "  UPDATE zbeleg SET status = 'X' WHERE id = gv_id."),
   );
-  // Ein Include ohne REPORT kehrt zu einem Aufrufer zurück, der weitermacht.
-  ohneAussage('Include', waechter(...danach, "UPDATE zbeleg SET status = 'X' WHERE id = gv_id."));
+  // An include without REPORT returns to a caller that carries on.
+  ohneAussage('include', waechter(...danach, "UPDATE zbeleg SET status = 'X' WHERE id = gv_id."));
 });
 
-test('QA b7e191a72212 — eine lokale Wirkung nur, wenn der Empfänger die lokale Klasse ist', () => {
+test('QA b7e191a72212 — a local effect only when the receiver is the local class', () => {
   const klassen = [
     'REPORT z_b7e.',
     'CLASS lcl_log DEFINITION.',
@@ -963,27 +964,27 @@ test('QA b7e191a72212 — eine lokale Wirkung nur, wenn der Empfänger die lokal
   const code = quelle(...klassen, '  lo_fremd->save( ).', '  CALL METHOD lo_fremd->save.', '  lo_kind->save( ).', '  lo_offen->save( ).');
   const zeile = (n: number) => satzAn(code, klassen.length + n).join(' ');
 
-  // Eine fremde Klasse: nicht die lokale `save`, die zufällig gleich heißt.
+  // A foreign class: not the local `save` that happens to share the name.
   for (const fremd of [zeile(1), zeile(2)]) {
     expect(fremd).toContain('The method save of lo_fremd is called');
     expect(fremd).not.toContain('ZLOG');
     expect(fremd).toContain('not evidenced in the supplied code');
   }
-  // Eine lokale Kindklasse erbt `save` — die Wirkung gehört ihr.
+  // A local child class inherits `save` — the effect is its own.
   expect(zeile(3)).toContain('The method save of lo_kind is called; it changes ZLOG');
-  // Ein Objekt ohne Deklaration: offen, welche Implementierung läuft — keine Wirkung.
+  // An object without a declaration: which implementation runs is open — no effect.
   expect(zeile(4)).not.toContain('ZLOG');
   expect(zeile(4)).toContain('Which implementation of save runs here');
 
-  // Und die negative Aussage an der Datenbankänderung davor: ein fremder
-  // Aufruf danach kann festschreiben, also kein „kein COMMIT WORK".
+  // And the negative statement on the database change before it: a foreign
+  // call afterwards can commit, so no "no COMMIT WORK".
   const mitFremd = quelle(...klassen, "  UPDATE zbeleg SET status = 'X' WHERE id = gv_id.", '  lo_fremd->save( ).');
   expect(satzAn(mitFremd, klassen.length + 1).join(' ')).not.toContain('no COMMIT WORK');
   const mitLokal = quelle(...klassen, "  UPDATE zbeleg SET status = 'X' WHERE id = gv_id.", '  lo_kind->save( ).');
   expect(satzAn(mitLokal, klassen.length + 1).join(' ')).toContain('no COMMIT WORK');
 });
 
-test('QA 594357222bd7 — ein Kennzeichen ohne erratenes Geschlecht, im Zweig und im Wächter', () => {
+test('QA 594357222bd7 — a flag without a guessed gender, in the branch and in the guard', () => {
   const code = quelle(
     'REPORT z_594.',
     'START-OF-SELECTION.',
@@ -1002,11 +1003,11 @@ test('QA 594357222bd7 — ein Kennzeichen ohne erratenes Geschlecht, im Zweig un
   expect(alle).not.toMatch(/\b[Tt]he (?:gv_flag|gv_modus|loevm)\b/);
   expect(satzAn(code, 4).join(' ')).toContain('If the field gv_flag is set, the field gv_modus is set to A');
   expect(satzAn(code, 6).join(' ')).toContain('If the field gv_flag is not set, the block is exited');
-  // Ein Feld, das das Glossar kennt, heißt mit seinem Fachwort.
+  // A field the glossary knows goes by its business term.
   expect(satzAn(code, 10).join(' ')).toContain('If the deletion flag is set');
 });
 
-test('QA b8f597730411 — SELECT … WHERE sagt seine Einschränkung, MESSAGE … INTO im Zweig gibt nichts aus', () => {
+test('QA b8f597730411 — SELECT … WHERE states its restriction, MESSAGE … INTO in a branch outputs nothing', () => {
   const code = quelle(
     'REPORT z_b8f.',
     'PARAMETERS p_status TYPE c LENGTH 1.',
@@ -1023,46 +1024,46 @@ test('QA b8f597730411 — SELECT … WHERE sagt seine Einschränkung, MESSAGE �
   const mitWhere = satzAn(code, 4).join(' ');
   expect(mitWhere).toContain('Records from zbeleg with the entered status are selected');
   expect(mitWhere).not.toMatch(/\b(?:all|each|every)\b/i);
-  // Ohne WHERE wird keine Einschränkung erfunden.
+  // Without WHERE no restriction is invented.
   expect(satzAn(code, 5).join(' ')).toBe('Records from zbeleg are selected.');
   const schleife = satzAn(code, 6).join(' ');
   expect(schleife).toContain('with the entered status');
   expect(schleife).not.toMatch(/\b(?:all|each|every)\b/i);
 
-  // MESSAGE … INTO bleibt im Zweigsatz eine Übernahme, keine Ausgabe.
+  // In the branch sentence, MESSAGE … INTO stays a placement, not an output.
   const zweig = buildBusinessStatements(code).filter((s) => s.grain === 'group' && s.anchors.some((a) => a.lineStart === 10));
   expect(zweig.length).toBe(1);
   expect(zweig[0].text).toContain('the message text is placed in gv_text');
   expect(zweig[0].text).not.toMatch(/is output|is displayed/);
 });
 
-test('QA 23c5c0362148 — eine Kopie von sy-subrc trägt die Bedeutung ihrer setzenden Anweisung, solange sie gilt', () => {
+test('QA 23c5c0362148 — a copy of sy-subrc carries the meaning of its setting statement for as long as it holds', () => {
   const pruefung = (...zeilen: string[]) =>
     satzAn(quelle('FORM probe.', ...zeilen, '  IF lv_rc <> 0.', '    RETURN.', '  ENDIF.', 'ENDFORM.'), zeilen.length + 2).join(' ');
   const auth = "  AUTHORITY-CHECK OBJECT 'Z_BELEG' ID 'ACTVT' FIELD '02'.";
   const lesen = '  SELECT SINGLE name1 FROM zkunde INTO @DATA(lv_name) WHERE id = @gv_id.';
 
-  // Die Kopie nach einer Berechtigungsprüfung: keine „Treffer".
+  // The copy after an authorization check: no "hits".
   const kopie = pruefung(auth, '  lv_rc = sy-subrc.');
   expect(kopie).toContain('Without authorization for Z_BELEG, the block is exited');
   expect(kopie).not.toMatch(/\bhits?\b/);
   expect(pruefung(auth, '  DATA(lv_rc) = sy-subrc.')).toContain('Without authorization for Z_BELEG');
 
-  // Ein Lesen **nach** der Kopie ändert sy-subrc, nicht die Kopie.
+  // A read **after** the copy changes sy-subrc, not the copy.
   const danachGelesen = pruefung(auth, '  lv_rc = sy-subrc.', lesen);
   expect(danachGelesen).toContain('Without authorization for Z_BELEG');
   expect(danachGelesen).not.toMatch(/\bhits?\b/);
 
-  // Kopiert nach dem Lesen: dann sind es Treffer.
+  // Copied after the read: then they are hits.
   expect(pruefung(auth, lesen, '  lv_rc = sy-subrc.')).toContain('Without a hit');
 
-  // Überschrieben, geleert oder nur in einem Zweig kopiert: die Variable hält
-  // nicht mehr (sicher) das sy-subrc — der Satz bleibt neutral.
+  // Overwritten, cleared or copied only in a branch: the variable no longer
+  // (reliably) holds the sy-subrc — the sentence stays neutral.
   for (const [label, ...zeilen] of [
-    ['überschrieben', auth, '  lv_rc = sy-subrc.', '  lv_rc = gv_anderes.'],
-    ['geleert', auth, '  lv_rc = sy-subrc.', '  CLEAR lv_rc.'],
-    ['im Zweig', auth, '  IF gv_modus = 1.', '    lv_rc = sy-subrc.', '  ENDIF.'],
-    ['aus einem Aufruf', auth, '  lv_rc = sy-subrc.', "  CALL FUNCTION 'Z_PRUEFEN' IMPORTING ev_rc = lv_rc."],
+    ['overwritten', auth, '  lv_rc = sy-subrc.', '  lv_rc = gv_anderes.'],
+    ['cleared', auth, '  lv_rc = sy-subrc.', '  CLEAR lv_rc.'],
+    ['in a branch', auth, '  IF gv_modus = 1.', '    lv_rc = sy-subrc.', '  ENDIF.'],
+    ['from a call', auth, '  lv_rc = sy-subrc.', "  CALL FUNCTION 'Z_PRUEFEN' IMPORTING ev_rc = lv_rc."],
   ]) {
     const text = pruefung(...zeilen);
     expect(text, label).toContain('If the field lv_rc is not 0');

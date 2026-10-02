@@ -27,8 +27,8 @@ import { TERMS_VERSION } from '../lib/constants';
 /**
  * The editor and its check hints — roadmap 3.1 and 3.3.
  *
- * The two steps are measured together because 3.3 is written as *"Prüfhinweise
- * **beim Modellieren**"*: a hint that nobody can provoke is not a hint, and an
+ * The two steps are measured together because 3.3 is written as *"check hints
+ * **while modelling**"*: a hint that nobody can provoke is not a hint, and an
  * editor whose drawing is never checked is the half of 3.1 that matters least.
  *
  * Two halves, and the split is on purpose:
@@ -575,8 +575,8 @@ test.describe('the editor of roadmap 3.1', () => {
     await page.locator('[data-palette-item="exclusive-gateway"]').click();
     await expect(page.locator('[data-draft-row][data-drawn="true"]')).toHaveCount(2);
 
-    // Back to reading. Phase 3's acceptance: *"die Ist-Revision nach dem
-    // Bearbeiten ist unverändert"* — so the sentence over the map, the outline
+    // Back to reading. Phase 3's acceptance: *"the as-is revision is unchanged
+    // after editing"* — so the sentence over the map, the outline
     // and the number of shapes are the numbers of the reconstruction.
     await page.locator('[data-process-edit-toggle]').click();
     await page.locator('[data-process-map-canvas]').waitFor({ timeout: 60000 });

@@ -14,7 +14,7 @@ import { signInViaLanding } from './helpers/sign-in';
  *
  * Both were built, and nothing joined them: `saveProcessRevision` was called
  * from nowhere and `RevisionCompare` was mounted nowhere, so roadmap 3.2's
- * promise — *"jedes Speichern eine unveränderliche Revision"* — was a store with
+ * promise — *"every save an immutable revision"* — was a store with
  * no door (QA finding 54a73bb3bed2). A test that asserts the two functions exist
  * would have passed on the day the finding was written, so this one **presses
  * Save in the browser and then finds the revision**: in the history under the

@@ -25,9 +25,9 @@ import {
 } from '../lib/documentation-lists';
 
 /**
- * Owner feedback 02.10.2026 on the Documentation stage: "die langen Listen
- * standardmäßig eingeklappt lassen, das sind Details die die meisten User nicht
- * benötigen aber da sein sollten".
+ * Owner feedback 02.10.2026 on the Documentation stage (translated): "leave the
+ * long lists folded by default, those are details most users don't need but
+ * that should be there".
  *
  * One rule for every list on the stage (`lib/documentation-lists.ts`): more than
  * five rows and it starts folded — heading, count and one line computed from

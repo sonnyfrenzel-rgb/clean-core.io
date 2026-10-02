@@ -1,25 +1,24 @@
 /**
- * Der Referenzkorpus gegen die Engine — die Vergleichsschicht.
+ * The reference corpus against the engine — the comparison layer.
  *
- * Der Korpus und die Engine sprechen nicht dieselbe Sprache. Der Korpus
- * arbeitet mit Regelnummern (`R01@1.0.0`), einem Clean-Core-Level A–D je
- * Artefakt, SAP-Objekten mit Eigentümer und Verwendung, einem Prozessskelett
- * mit Knotentypen und Fachsätzen. `lib/abap/` kennt davon: Befunde mit einer
- * `kind`-Marke und einer Startzeile, eine Datenkopplung über Tabellennamen,
- * Verzweigungen und Blöcke, und — in einem *anderen* Modul, das nicht am
- * Evidenzbericht hängt — eine Katalognote A–D je Objekt.
+ * The corpus and the engine do not speak the same language. The corpus works
+ * with rule numbers (`R01@1.0.0`), one clean core level A–D per artefact, SAP
+ * objects with owner and usage, a process skeleton with node types, and
+ * business statements. Of that, `lib/abap/` knows: findings with a `kind` mark
+ * and a start line, a data coupling over table names, branches and blocks, and
+ * — in a *different* module that is not attached to the evidence report — a
+ * catalogue grade A–D per object.
  *
- * Deshalb wird nicht „der Fall" verglichen, sondern je **Aussageklasse**
- * getrennt, und jede Klasse sagt von sich aus, ob sie überhaupt vergleichbar
- * ist. Eine Klasse, für die die Engine kein Gegenstück hat, ist
- * `nicht-vergleichbar` — das ist kein Fehler des Korpus und kein Fehler der
- * Engine, sondern eine Aussage über den Stand von Phase 2, und sie wird als
- * solche gezählt.
+ * So the comparison is not of "the case" but separate per **statement class**,
+ * and each class says on its own whether it is comparable at all. A class for
+ * which the engine has no counterpart is `nicht-vergleichbar` (not comparable)
+ * — that is neither a fault of the corpus nor a fault of the engine, but a
+ * statement about the state of phase 2, and it is counted as such.
  *
- * Was hier bewusst *nicht* passiert: die Sollantworten werden nicht
- * umgedeutet, damit sie passen. Wo die Zuordnung eine Auslegung ist — und die
- * Regel-auf-`kind`-Tabelle unten ist eine —, steht sie an einer Stelle,
- * sichtbar und mit Begründung, statt verteilt in Vergleichen.
+ * What deliberately does *not* happen here: the expected answers are not
+ * reinterpreted to make them fit. Where the mapping is an interpretation — and
+ * the rule-to-`kind` table below is one — it sits in one place, visible and
+ * with its reason, instead of being spread across comparisons.
  */
 
 import { readFileSync, readdirSync, existsSync } from 'fs';
@@ -46,15 +45,15 @@ import {
 } from '../../lib/abap/abcd-classification';
 
 /**
- * Das Bündel. `KORPUS_ROOT` lässt sich überschreiben, damit derselbe Vergleich
- * gegen ein älteres Bündel laufen kann, ohne das im Baum zu tauschen — so
- * entsteht die Differenz zwischen zwei Fassungen des Fallbuchs aus zwei Läufen
- * desselben Codes und nicht aus zwei Erinnerungen.
+ * The bundle. `KORPUS_ROOT` can be overridden so the same comparison can run
+ * against an older bundle without swapping it in the tree — that way the
+ * difference between two versions of the case book comes from two runs of the
+ * same code and not from two recollections.
  */
 export const KORPUS_ROOT = process.env.KORPUS_ROOT ?? join(process.cwd(), 'tests/korpus');
 
 // ---------------------------------------------------------------------------
-// Das Bündel
+// The bundle
 // ---------------------------------------------------------------------------
 
 export interface KorpusAnchor {
@@ -107,29 +106,29 @@ export interface KorpusExpected {
       anchor: KorpusAnchor | null;
       meaning: string | null;
       /**
-       * Die Felder, die 2.15 (Gateway-Klasse), 2.16 (Lane) und 2.17
-       * (Parallelität) füllen werden. Heute steht in keiner der 68
-       * `expected.json` eines davon; sie werden trotzdem gelesen, damit der
-       * Vergleicher rot wird, sobald ein Fall sie trägt und die Engine sie
-       * nicht liefert — und damit die Facette bis dahin „nicht geprüft" sagt
-       * statt `agree` (CR-05).
+       * The fields that 2.15 (gateway class), 2.16 (lane) and 2.17
+       * (parallelism) will fill. Today none of the 68 `expected.json` files
+       * carries any of them; they are read anyway so the comparer turns red as
+       * soon as a case carries one and the engine does not deliver it — and so
+       * that until then the facet says "not checked" instead of `agree`
+       * (CR-05).
        */
       gatewayClass?: string | null;
       parallel?: boolean | null;
       lane?: string | null;
     }>;
     edges: Array<{ from: string; to: string; condition: string | null }>;
-    /** 2.16: Lanes mit Beweis. Heute in keinem Fall gesetzt. */
+    /** 2.16: lanes with proof. Set in no case today. */
     lanes?: Array<{ id: string; evidence?: string | null; anchor?: KorpusAnchor | null }> | null;
   };
   /**
-   * Die ausdrücklich **verbotenen** Aussagen des Fallbuchs (Roadmap 17.9).
+   * The case book's explicitly **forbidden** statements (roadmap 17.9).
    *
-   * 47 der 68 Fälle führen dieses Feld, zusammen 197 Sätze; bis zum 23.09.2026
-   * hat es niemand gelesen. Es ist der einzige Sollwert im Korpus, der sagt,
-   * was der Code an einer Stelle **nicht** trägt — und damit die einzige
-   * Grundlage, auf der sich Erfindung messen lässt, ohne Gründlichkeit zu
-   * bestrafen (siehe `compareBusinessStatements`, Teil 4).
+   * 47 of the 68 cases carry this field, 197 sentences in all; until
+   * 23.09.2026 nobody read it. It is the only expected value in the corpus
+   * that says what the code does **not** support at a given place — and so
+   * the only basis on which invention can be measured without punishing
+   * thoroughness (see `compareBusinessStatements`, part 4).
    */
   forbiddenConclusions?: string[] | null;
   declaredEmpty: { findings: boolean; objects: boolean };
@@ -179,42 +178,43 @@ export function readCases(): KorpusCase[] {
 }
 
 // ---------------------------------------------------------------------------
-// Die Auslegung, die dieser Vergleich braucht — an einer Stelle
+// The interpretation this comparison needs — in one place
 // ---------------------------------------------------------------------------
 
 /**
- * Korpusregel -> Befundmarke der Engine, **an einem benannten Konstrukt**.
+ * Corpus rule -> engine finding mark, **at a named construct**.
  *
- * Die Engine vergibt keine Regelnummern (`EvidenceFinding` hat kein `rule`-Feld
- * und keine Regelversion); ihre stabile Identität ist `kind`. Eine Regel auf
- * eine Marke abzubilden reicht deshalb nicht: R25 (LUW) deckt im Korpus
+ * The engine assigns no rule numbers (`EvidenceFinding` has no `rule` field
+ * and no rule version); its stable identity is `kind`. Mapping a rule onto a
+ * mark is therefore not enough: in the corpus R25 (LUW) covers
  * `IN UPDATE TASK`, `COMMIT WORK`, `ROLLBACK WORK`, `BAPI_TRANSACTION_COMMIT`
- * und die impliziten Commits ab — die Engine kennt davon genau zwei Marken.
- * Ein Sollbefund an `ROLLBACK WORK` als „von der Engine verfehlt" zu zählen
- * wäre falsch: die Engine führt diese Aussage nicht, sie verfehlt sie nicht.
+ * and the implicit commits — of those, the engine knows exactly two marks.
+ * Counting an expected finding at `ROLLBACK WORK` as "missed by the engine"
+ * would be wrong: the engine does not carry that statement, it does not miss
+ * it.
  *
- * Eine Brücke gilt deshalb erst, wenn die **ABAP-Anweisung am Anker** das
- * benannte Konstrukt trägt. Das ist ein Blick in den Quelltext, nicht in die
- * Prosa der Sollaussage, und damit nachprüfbar. Findet keine Brücke ein
- * Konstrukt, ist der Sollbefund `nicht-vergleichbar` — gezählt, nicht verfehlt.
+ * A bridge therefore only applies when the **ABAP statement at the anchor**
+ * carries the named construct. That is a look at the source, not at the prose
+ * of the expected statement, and so it can be checked. If no bridge finds a
+ * construct, the expected finding is `nicht-vergleichbar` — counted, not missed.
  */
 export interface RuleBridge {
   rule: string;
   /**
-   * Befundmarken der Engine — oder, als `gap:<Lücke>`, eine Stelle, die die
-   * Engine ausdrücklich als *nicht bestimmt* führt (`coverage.unassessed`).
-   * Eine Sollaussage „das ist nicht bekannt" (R16) hat in der Engine kein
-   * Befundgegenstück und soll keines haben: ein nicht gelesenes Include ist
-   * kein Mangel des Codes, sondern eine Grenze der Antwort. Dass die Engine
-   * diese Grenze an derselben Anweisung benennt, ist dieselbe Aussage.
+   * Engine finding marks — or, as `gap:<gap>`, a place the engine explicitly
+   * carries as *not determined* (`coverage.unassessed`). An expected statement
+   * "this is not known" (R16) has no finding counterpart in the engine and
+   * should not have one: an include that was not read is not a defect of the
+   * code but a limit of the answer. The engine naming that limit at the same
+   * statement is the same statement.
    */
   kinds: EngineMark[];
   construct: RegExp;
-  /** Warum die Engine hier dieselbe Sache meint. */
+  /** Why the engine means the same thing here. */
   why: string;
 }
 
-/** Eine Befundmarke oder eine als nicht bestimmt geführte Stelle der Engine. */
+/** A finding mark, or a place the engine carries as not determined. */
 export type EngineMark = EvidenceKind | `gap:${CoverageGap}`;
 
 export const RULE_BRIDGES: RuleBridge[] = [
@@ -222,100 +222,100 @@ export const RULE_BRIDGES: RuleBridge[] = [
     rule: 'R01',
     kinds: ['standard-table-read'],
     construct: /\bSELECT\b/i,
-    why: 'Direktes Lesen eines SAP-Objekts; die Engine meldet denselben SELECT als standard-table-read.',
+    why: 'Direct read of an SAP object; the engine reports the same SELECT as standard-table-read.',
   },
   {
     rule: 'R01',
     kinds: ['standard-table-read'],
     construct: /\bGET\s+(?!BADI|TIME|PARAMETER|RUN|BIT|CURSOR|REFERENCE|LOCALE|DATASET|PF-STATUS|PROPERTY)\w/i,
     why:
-      'Lesen über eine logische Datenbank. R01 Bedingung (c) verweist das LDB-Lesen an R33, und R33 sagt, dass ' +
-      '`GET <node>` den Satz je Ereignis erhält — der SELECT läuft in der LDB, nicht in dieser Quelle. Genau das ' +
-      'meldet die Engine am GET: einen standard-table-read über die Route logical-database, mit dem Satz in der ' +
-      'Begründung. Die Ausnahmeliste hält die anderen GET-Anweisungen heraus, die keine LDB-Knoten sind ' +
+      'Read through a logical database. R01 condition (c) refers LDB reads to R33, and R33 says that ' +
+      '`GET <node>` receives the record per event — the SELECT runs in the LDB, not in this source. That is ' +
+      'exactly what the engine reports at the GET: a standard-table-read via the route logical-database, with that ' +
+      'sentence in its reason. The exception list keeps out the other GET statements that are not LDB nodes ' +
       '(GET BADI, GET TIME, GET PARAMETER …).',
   },
   {
     rule: 'R02',
     kinds: ['standard-table-write'],
     construct: /\b(INSERT|UPDATE|MODIFY|DELETE)\b/i,
-    why: 'Direktes Schreiben auf eine SAP-Tabelle; die Engine meldet dasselbe DML als standard-table-write.',
+    why: 'Direct write to an SAP table; the engine reports the same DML as standard-table-write.',
   },
   {
     rule: 'R13b',
     kinds: ['native-sql'],
     construct: /(EXEC\s+SQL|cl_sql_statement|execute_update|execute_query)/i,
-    why: 'Literal mit Konsumenten — von den Konsumentenklassen der Regel kennt die Engine nur Native SQL und ADBC.',
+    why: 'Literal with consumers — of the consumer classes of the rule, the engine knows only Native SQL and ADBC.',
   },
   {
     rule: 'R16',
     kinds: ['gap:include-not-read'],
     construct: /^\s*INCLUDE\s+(?!STRUCTURE\b|TYPE\b)[\w/]+/i,
     why:
-      'Unaufgelöste kundeneigene Abhängigkeit an einem Programm-Include: der Text des Includes liegt nicht vor, ' +
-      'also darf sein Verhalten nicht als bekannt ausgegeben werden. Die Engine führt genau das an derselben ' +
-      'Anweisung als nicht bestimmt (coverage-Lücke include-not-read: „Include … was not uploaded — what it does ' +
-      'is not determined"). INCLUDE STRUCTURE/TYPE ist eine Typkomponente (R29), kein Include in diesem Sinn.',
+      'Unresolved customer dependency at a program include: the text of the include is not available, so its ' +
+      'behaviour must not be presented as known. The engine carries exactly that at the same statement as not ' +
+      'determined (coverage gap include-not-read: "Include … was not uploaded — what it does is not ' +
+      'determined"). INCLUDE STRUCTURE/TYPE is a type component (R29), not an include in this sense.',
   },
   {
     rule: 'R25',
     kinds: ['update-task'],
     construct: /\bIN\s+UPDATE\s+TASK\b/i,
-    why: 'Registrierung beim Verbucher; die Engine führt dafür die Marke update-task.',
+    why: 'Registration with the update task; the engine carries the mark update-task for it.',
   },
   {
     rule: 'R25',
     kinds: ['commit-work'],
     construct: /\bCOMMIT\s+WORK\b/i,
-    why: 'Explizite Transaktionsgrenze; die Engine führt dafür die Marke commit-work.',
+    why: 'Explicit transaction boundary; the engine carries the mark commit-work for it.',
   },
   {
     rule: 'R28',
     kinds: ['authority-check'],
     construct: /\bAUTHORITY-CHECK\b/i,
-    why: 'Von der Aussageklasse Sicherheit kennt die Engine genau den AUTHORITY-CHECK — nicht Injektion, nicht PRIVILEGED ACCESS, nicht CLIENT SPECIFIED.',
+    why: 'Of the security statement class, the engine knows exactly the AUTHORITY-CHECK — not injection, not PRIVILEGED ACCESS, not CLIENT SPECIFIED.',
   },
   {
     rule: 'R32',
     kinds: ['enhancement', 'modification'],
     construct: /(ENHANCEMENT|CALL\s+CUSTOMER-FUNCTION|CL_EXITHANDLER|GET\s+BADI)/i,
-    why: 'Hostkontext an einem syntaktischen Marker; die Engine liest dieselben Marker als enhancement bzw. modification.',
+    why: 'Host context at a syntactic marker; the engine reads the same markers as enhancement or modification.',
   },
   {
     rule: 'R34',
     kinds: ['submit'],
     construct: /\bSUBMIT\b/i,
-    why: 'Programmübergreifender Aufruf über SUBMIT; die Engine führt dafür die Marke submit.',
+    why: 'Cross-program call via SUBMIT; the engine carries the mark submit for it.',
   },
   {
     rule: 'R34',
     kinds: ['bdc'],
     construct: /\bCALL\s+TRANSACTION\b/i,
-    why: 'Batch-Input über CALL TRANSACTION; die Engine führt dafür die Marke bdc.',
+    why: 'Batch input via CALL TRANSACTION; the engine carries the mark bdc for it.',
   },
   {
     rule: 'R34',
     kinds: ['rfc-call'],
     construct: /\bDESTINATION\b/i,
-    why: 'Systemgrenze über einen RFC mit Destination; die Engine führt dafür die Marke rfc-call.',
+    why: 'System boundary via an RFC with a destination; the engine carries the mark rfc-call for it.',
   },
 ];
 
 /**
- * Welche Befundmarken der Engine überhaupt in einer Brücke vorkommen. Nur diese
- * zählen bei den Negativkontrollen als Widerspruch; ein `hardcoded-value` in
- * CC-016 wäre kein Verstoß gegen „keine Findings im v1-Regelvertrag", weil der
- * Vertrag diese Aussage nicht führt.
+ * Which engine finding marks occur in a bridge at all. Only these count as a
+ * contradiction in the negative controls; a `hardcoded-value` in CC-016 would
+ * not violate "no findings in the v1 rule contract", because the contract
+ * does not carry that statement.
  */
 const MAPPED_KINDS = new Set<EngineMark>(RULE_BRIDGES.flatMap((bridge) => bridge.kinds));
 const BRIDGED_RULES = new Set(RULE_BRIDGES.map((bridge) => bridge.rule));
 
 /**
- * Verwendung im Korpus -> Zugriffsart der Datenkopplung. Nur Tabellenobjekte
- * (`objectType: 'TABL'`) werden verglichen: das ist die Fläche, die
- * `extractDataCoupling` modelliert. Ein Funktionsbaustein, ein BAdI oder eine
- * Nachrichtenklasse steht im Korpus als Objekt, in der Engine aber nicht in
- * derselben Liste — das ist nicht vergleichbar, nicht fehlend.
+ * Usage in the corpus -> access type of the data coupling. Only table objects
+ * (`objectType: 'TABL'`) are compared: that is the surface `extractDataCoupling`
+ * models. A function module, a BAdI or a message class is an object in the
+ * corpus, but not in the same list in the engine — that is not comparable,
+ * not missing.
  */
 const USAGE_TO_ACCESS: Record<string, 'Read' | 'Write'> = {
   read: 'Read',
@@ -330,7 +330,7 @@ const USAGE_TO_ACCESS: Record<string, 'Read' | 'Write'> = {
   write_native_sql_via_adbc: 'Write',
 };
 
-/** Das Deployment, mit dem die Engine gefahren wird — aus dem Zielprofil des Falls. */
+/** The deployment the engine is run with — from the case's target profile. */
 export function deploymentOf(profile: KorpusProfile): 'public' | 'private' {
   const first = profile.profiles && profile.profiles.length > 0 ? profile.profiles[0] : profile;
   const edition = (first.edition ?? '').toLowerCase();
@@ -339,7 +339,7 @@ export function deploymentOf(profile: KorpusProfile): 'public' | 'private' {
 }
 
 // ---------------------------------------------------------------------------
-// Ein Lauf der Engine über einen Fall
+// One engine run over one case
 // ---------------------------------------------------------------------------
 
 export interface EngineReading {
@@ -348,52 +348,52 @@ export interface EngineReading {
     evidence: AbapEvidenceReport;
     facts: ProcessFacts;
     /**
-     * Das **echte** Prozessskelett aus `lib/abap/process-skeleton.ts`.
+     * The **real** process skeleton from `lib/abap/process-skeleton.ts`.
      *
-     * Bis 1.9 stand hier nur `facts`, und `compareSkeleton` verglich
-     * zeilenweise gegen Verzweigungen und Blöcke — weder Knotenart noch Kante.
-     * Ein Vergleicher, der das Skelett nie aufruft, kann keine Änderung am
-     * Skelett fangen; genau das ist der Zweck dieser Facette, und genau darauf
-     * bauen 2.15, 2.16 und 2.17 auf.
+     * Until 1.9 only `facts` stood here, and `compareSkeleton` compared line by
+     * line against branches and blocks — neither node kind nor edge. A comparer
+     * that never calls the skeleton cannot catch a change to the skeleton;
+     * that is exactly the purpose of this facet, and exactly what 2.15, 2.16
+     * and 2.17 build on.
      */
     skeleton: ProcessSkeleton;
     statements: AbapStatement[];
     tables: Array<{ name: string; access: string; custom: boolean }>;
   }>;
-  /** Alle Objektnamen, die die Engine über den ganzen Fall gesehen hat. */
+  /** All object names the engine saw across the whole case. */
   objectNames: Set<string>;
   /**
-   * Die schlechteste Note über alle gesehenen Objekte — je Objekt die Note, die
-   * das Analyse-Panel für dasselbe Objekt zeigt: `gradeSapObjectUse` mit der
-   * Zugriffsart aus `extractDataCoupling`, dieselbe Funktion und dieselbe
-   * Eingabe wie `/api/abcd-classify`. Ein Name, den nur ein Befund nennt, hat
-   * keine Zugriffsart und bekommt die Note seines Namens.
+   * The worst grade across all objects seen — per object the grade the
+   * analysis panel shows for the same object: `gradeSapObjectUse` with the
+   * access type from `extractDataCoupling`, the same function and the same
+   * input as `/api/abcd-classify`. A name that only a finding mentions has no
+   * access type and gets the grade of its name.
    *
-   * Die Rollup-Regel selbst (`worstGrade`) ist eine Bildung dieses Vergleichs:
-   * das Produkt zeigt keine Gesamtnote für ein Programm, nur eine Note je Zeile
-   * und deren Verteilung.
+   * The roll-up rule itself (`worstGrade`) is a construct of this comparison:
+   * the product shows no overall grade for a program, only one grade per row
+   * and their distribution.
    */
   worst: CloudReadinessGrade;
-  /** Nur als Lebenszeichen: die Route ist im Korpus ohne Gegenstück. */
+  /** Only as a sign of life: the route has no counterpart in the corpus. */
   routeCount: number;
   /**
-   * Die Fachsätze, die dieser Lauf erzeugt hat.
+   * The business statements this run produced.
    *
-   * Sie stehen hier und nicht im Vergleicher, weil der Vergleicher sonst
-   * beides wäre: Erzeuger und Richter. Seit 17.7 hängt `ENGINE_PRODUCER` an
-   * dieser Naht, und am Vergleich selbst ist dafür nichts geändert worden.
+   * They live here and not in the comparer, because otherwise the comparer
+   * would be both: producer and judge. Since 17.7 `ENGINE_PRODUCER` hangs off
+   * this seam, and nothing in the comparison itself was changed for it.
    */
   businessStatements: GeneratedStatement[];
-  /** Wer sie erzeugt hat. Steht in jedem Beleg der Facette `fachsaetze`. */
+  /** Who produced them. Appears in every piece of evidence of the `fachsaetze` facet. */
   producer: StatementProducer;
 }
 
 /**
- * Ein Eingriff in das Gelesene, **bevor** verglichen wird.
+ * An intervention in what was read, **before** comparing.
  *
- * Nur für die Empfindlichkeitsprobe (`tests/korpus-mutation.spec.ts`): ein
- * Vergleicher, der bei einer verfälschten Engine-Antwort grün bleibt, misst
- * nichts. Der Eingriff verändert nie `lib/` und ist im Normallauf nicht gesetzt.
+ * Only for the sensitivity probe (`tests/korpus-mutation.spec.ts`): a comparer
+ * that stays green on a falsified engine answer measures nothing. The
+ * intervention never changes `lib/` and is not set in a normal run.
  */
 export type SkeletonMutation = (skeleton: ProcessSkeleton, file: string) => ProcessSkeleton;
 
@@ -416,8 +416,8 @@ export function readWithEngine(
     }));
     for (const table of tables) {
       objectNames.add(table.name);
-      // Über mehrere Dateien gilt, was das Panel je Datei sähe, zusammengefasst:
-      // ein Schreiben irgendwo macht die Verwendung zum Schreiben.
+      // Across several files, what the panel would see per file is combined:
+      // a write anywhere makes the usage a write.
       const use = objectUseFromAccess(table.access);
       if (use && uses.get(table.name) !== 'write') uses.set(table.name, use);
     }
@@ -435,7 +435,7 @@ export function readWithEngine(
 }
 
 // ---------------------------------------------------------------------------
-// Der Vergleich, je Aussageklasse
+// The comparison, per statement class
 // ---------------------------------------------------------------------------
 
 export const STATEMENT_CLASSES = ['befunde', 'level', 'objekte', 'skelett', 'fachsaetze'] as const;
@@ -444,32 +444,32 @@ export type StatementClass = (typeof STATEMENT_CLASSES)[number];
 export type Verdict = 'engine-defekt' | 'korpus-offen' | 'nicht-vergleichbar';
 
 /**
- * Was eine Facette von sich aus über ihren eigenen Umfang sagt (Roadmap 1.9).
+ * What a facet says on its own about its own scope (roadmap 1.9).
  *
- * Vor diesem Schritt hatte eine Aussageklasse nur `agree`/`disagree`, und das
- * war die Lücke: `skelett` stand 47-mal auf `agree`, während über diese Fälle
- * **71 von 390 Sollknoten (18,2 %)** überhaupt verglichen wurden, und
- * `fachsaetze` stand 68-mal auf `agree` mit dem Grund „die Engine erzeugt keine
- * Fachsätze". Ein Grün, das „nicht geprüft" heißt, ist genau der Befund CR-05
- * des Gegenreviews. Deshalb trägt jede Facette jetzt ihren Prüfstatus:
+ * Before this step a statement class had only `agree`/`disagree`, and that was
+ * the gap: `skelett` stood at `agree` 47 times while across those cases
+ * **71 of 390 expected nodes (18.2 %)** were compared at all, and `fachsaetze`
+ * stood at `agree` 68 times with the reason "the engine produces no business
+ * statements". A green that means "not checked" is exactly finding CR-05 of the
+ * counter-review. So every facet now carries its check status:
  *
- * - `compared` — es wurde wirklich gegen die Engine verglichen,
- * - `not_checked` — die Engine (oder der Fall) führt diese Aussage nicht; das
- *   darf nie zu `agree` führen,
- * - `anchor_validation_passed` — es wurde **nur** geprüft, dass die Anker in
- *   den Quelltext zeigen. Ein syntaktischer Ankercheck ist keine Aussage über
- *   den Inhalt, und er bekommt deshalb einen eigenen Namen statt eines Grüns.
+ * - `compared` — it really was compared against the engine,
+ * - `not_checked` — the engine (or the case) does not carry this statement;
+ *   that must never lead to `agree`,
+ * - `anchor_validation_passed` — **only** checked that the anchors point into
+ *   the source. A syntactic anchor check is no statement about the content,
+ *   and so it gets a name of its own instead of a green.
  */
 export type AspectStatus = 'compared' | 'not_checked' | 'anchor_validation_passed';
 
 export interface FacetAspect {
-  /** Der Name der Teilprüfung, so wie die Roadmap sie nennt. */
+  /** The name of the sub-check, as the roadmap names it. */
   name: string;
   status: AspectStatus;
-  /** Zähler und Nenner: wie viel von dem, was der Fall behauptet, geprüft wurde. */
+  /** Numerator and denominator: how much of what the case claims was checked. */
   compared: number;
   total: number;
-  /** Warum der Status so ist. Bei `not_checked` die Stelle, die ihn auflöst. */
+  /** Why the status is what it is. For `not_checked`, the place that resolves it. */
   note: string;
 }
 
@@ -477,21 +477,25 @@ export interface ClassResult {
   case: string;
   class: StatementClass;
   state: 'agree' | 'disagree';
-  /** Nur bei `disagree` gesetzt — der Grund, den die Ratsche festhält. */
+  /** Set only on `disagree` — the reason the ratchet records. */
   verdict: Verdict | null;
   /**
-   * Zähler und Nenner der Facette: wie viele Sollaussagen dieser Klasse
-   * überhaupt vergleichbar waren, von wie vielen. `agree` unter der Hälfte ist
-   * in `skelett` verboten (1.9).
+   * The facet's numerator and denominator: how many expected statements of
+   * this class were comparable at all, out of how many. `agree` below half is
+   * forbidden in `skelett` (1.9).
    */
   scope: { compared: number; total: number };
-  /** Die Teilprüfungen dieser Facette, jede mit eigenem Status und Nenner. */
+  /** The sub-checks of this facet, each with its own status and denominator. */
   aspects: FacetAspect[];
-  /** Was tatsächlich verglichen wurde, in Zahlen und Beispielen. */
+  /**
+   * What was actually compared, in numbers and examples. Still German, like
+   * every facet `note`: both are stored verbatim in `tests/korpus/baseline.json`
+   * (`reason`, `aspects`), and the ratchet compares them character for character.
+   */
   evidence: string;
 }
 
-/** Der Kern eines Ergebnisses; Umfang und Facettenstatus kommen aus `done`. */
+/** The core of a result; scope and facet status come from `done`. */
 type ClassCore = Omit<ClassResult, 'scope' | 'aspects'>;
 
 const GRADE_ORDER: CloudReadinessGrade[] = ['A', 'B', 'C', 'D'];
@@ -503,14 +507,14 @@ function levelRank(level: string | null): number {
   return index;
 }
 
-/** Die ABAP-Anweisung, in deren Zeilenbereich eine Ankerzeile liegt. */
+/** The ABAP statement whose line range contains an anchor line. */
 function statementAt(statements: AbapStatement[], line: number): AbapStatement | null {
   return statements.find((s) => s.lineStart <= line && line <= s.lineEnd) ?? null;
 }
 
 /**
- * Eine Teilprüfung mit Zähler und Nenner. Ohne Nenner ist ein Status eine
- * Behauptung: „geprüft" sagt nichts, solange offen bleibt, wovon.
+ * A sub-check with numerator and denominator. Without a denominator a status
+ * is a claim: "checked" says nothing as long as it stays open of what.
  */
 function facet(name: string, compared: number, total: number, note: string, status?: AspectStatus): FacetAspect {
   return { name, status: status ?? (compared > 0 ? 'compared' : 'not_checked'), compared, total, note };
@@ -550,7 +554,7 @@ function compareFindings(korpusCase: KorpusCase, reading: EngineReading): ClassR
     }
   }
 
-  // Negativkontrolle: der Fall sagt in Worten, dass es keinen Befund gibt.
+  // Negative control: the case says in words that there is no finding.
   if (korpusCase.expected.declaredEmpty.findings) {
     const state = engineMapped.length === 0 ? 'agree' : 'disagree';
     scope.compared = 1;
@@ -597,8 +601,8 @@ function compareFindings(korpusCase: KorpusCase, reading: EngineReading): ClassR
     const to = statement?.lineEnd ?? anchor.line;
     const inStatement = [
       ...entry.evidence.findings,
-      // Eine als nicht bestimmt geführte Stelle zählt nur über eine Brücke, die
-      // sie ausdrücklich nennt (`gap:…`); als Befund gilt sie nirgends.
+      // A place carried as not determined counts only through a bridge that
+      // names it explicitly (`gap:…`); it never counts as a finding.
       ...entry.evidence.coverage.unassessed.map((u) => ({ kind: `gap:${u.gap}` as EngineMark, lineStart: u.line })),
     ].filter((f) => kinds.has(f.kind) && f.lineStart >= from && f.lineStart <= to);
     if (inStatement.some((f) => f.lineStart === anchor.line)) exact.push(label);
@@ -650,7 +654,7 @@ function compareFindings(korpusCase: KorpusCase, reading: EngineReading): ClassR
 function compareLevel(korpusCase: KorpusCase, reading: EngineReading): ClassResult {
   const expected = korpusCase.expected.classic_level;
   const engine = reading.worst;
-  // Die Klasse führt genau eine Sollaussage: das Level des Artefakts.
+  // The class carries exactly one expected statement: the artefact's level.
   const scope = { compared: 0, total: 1 };
   const done = (core: ClassCore): ClassResult => ({
     ...core,
@@ -713,9 +717,9 @@ function compareLevel(korpusCase: KorpusCase, reading: EngineReading): ClassResu
       evidence: `${base}. Die Engine urteilt milder als der Fall — ein falsches Grün ist die eine Richtung, in der ein Levelunterschied gefährlich ist.`,
     });
   }
-  // Strenger als der Fall. Das ist nur dann ein Defekt, wenn der Fall seine
-  // mildere Antwort auf einen Nachfolger stützt, der im selben Katalog steht:
-  // dann liest die Note denselben Eintrag und lässt die Hälfte davon liegen.
+  // Stricter than the case. That is only a defect when the case bases its
+  // milder answer on a successor listed in the same catalogue: then the grade
+  // reads the same entry and leaves half of it unread.
   const withSuccessor = korpusCase.expected.objects.filter(
     (object) => object.identity?.objectType === 'TABL' && (object.successors?.length ?? 0) > 0,
   );
@@ -809,10 +813,10 @@ function compareObjects(korpusCase: KorpusCase, reading: EngineReading): ClassRe
       wrongAccess.push(`${name}: Korpus ${object.usage} · Engine ${access}`);
     }
   }
-  // Namen, die der Fall nicht als Objekt führt. Nicht jeder ist ein Fehler —
-  // der Fall nennt nur, was für die Sollantwort zählt —, aber ein Makroplatz-
-  // halter oder eine lokale Variable in dieser Liste ist eine erfundene
-  // Abhängigkeit, und die steht dann hier, wo sie jemand liest.
+  // Names the case does not carry as an object. Not every one is an error —
+  // the case names only what counts for the expected answer — but a macro
+  // placeholder or a local variable in this list is an invented dependency,
+  // and then it stands here, where someone reads it.
   const undeclared = [...engineTables.keys()].filter((name) => !declared.has(name));
   scope.compared = tables.length;
   const state = missing.length === 0 && wrongAccess.length === 0 ? 'agree' : 'disagree';
@@ -829,50 +833,49 @@ function compareObjects(korpusCase: KorpusCase, reading: EngineReading): ClassRe
 }
 
 // ---------------------------------------------------------------------------
-// Das Skelett — die Facette, die vor 1.9 nichts verglich
+// The skeleton — the facet that compared nothing before 1.9
 // ---------------------------------------------------------------------------
 
 /**
- * Korpus-Knotenart -> Knotenart der Engine, **an einem benannten Konstrukt**.
+ * Corpus node type -> engine node kind, **at a named construct**.
  *
- * Dieselbe Disziplin wie bei `RULE_BRIDGES` und aus demselben Grund: die beiden
- * Vokabulare sind nicht deckungsgleich, und eine Zuordnung ohne Blick in den
- * Quelltext wäre eine Behauptung. Der Korpus schreibt `transaction` sowohl an
- * ein `CALL TRANSACTION` als auch an ein `COMMIT WORK` — das erste ist eine
- * Aufruf-Aktivität, das zweite eine LUW-Grenze, die `process-skeleton.ts`
- * bewusst als Anmerkung (`commit-boundary`) und als Wirkungsstatus (`luw`,
- * 2.12) führt und nicht als Knoten. Eine
- * Brücke gilt deshalb erst, wenn die **ABAP-Anweisung am Anker** das benannte
- * Konstrukt trägt; sonst ist der Sollknoten `nicht-vergleichbar` — gezählt,
- * nicht verfehlt.
+ * The same discipline as `RULE_BRIDGES`, for the same reason: the two
+ * vocabularies do not coincide, and a mapping without a look at the source
+ * would be a claim. The corpus writes `transaction` on a `CALL TRANSACTION` as
+ * well as on a `COMMIT WORK` — the first is a call activity, the second an LUW
+ * boundary that `process-skeleton.ts` deliberately carries as an annotation
+ * (`commit-boundary`) and as an effect state (`luw`, 2.12), not as a node. A
+ * bridge therefore only applies when the **ABAP statement at the anchor**
+ * carries the named construct; otherwise the expected node is
+ * `nicht-vergleichbar` — counted, not missed.
  *
- * Gemessen am 22.09.2026 über alle 68 Fälle (Probe gegen `buildProcessSkeleton`):
- * 43 von 49 Knoten der Korpusart `action` sitzen auf einer reinen Zuweisung
- * (`rv_route = 'INVALID'`, `APPEND … TO lt_…`, `MOVE-CORRESPONDING`). Das
- * Skelett zeichnet Wirkung und Fluss, keine Wertzuweisung — deshalb trägt
- * `action` ein Konstrukt und nicht die leere Erlaubnis.
+ * Measured on 22.09.2026 across all 68 cases (probe against
+ * `buildProcessSkeleton`): 43 of 49 nodes of corpus type `action` sit on a pure
+ * assignment (`rv_route = 'INVALID'`, `APPEND … TO lt_…`,
+ * `MOVE-CORRESPONDING`). The skeleton draws effect and flow, not value
+ * assignment — so `action` carries a construct and not the empty permission.
  */
 export interface SkeletonBridge {
-  /** Die Knotenart, wie das Fallbuch sie schreibt. */
+  /** The node type as the case book writes it. */
   type: string;
-  /** Die Knotenarten aus `SkeletonNodeKind`, die dasselbe meinen. */
+  /** The node kinds from `SkeletonNodeKind` that mean the same thing. */
   kinds: SkeletonNodeKind[];
-  /** Das Konstrukt, das die Anweisung am Anker tragen muss. */
+  /** The construct the statement at the anchor must carry. */
   construct: RegExp;
-  /** Warum die Engine hier dieselbe Sache meint. */
+  /** Why the engine means the same thing here. */
   why: string;
 }
 
 /**
- * Die funktionale Schreibweise eines Methodenaufrufs — `lo->m( … )`,
- * `cls=>m( … )`, `me->m( … )`, `lv = lo->m( … )`, `DATA(x) = lo->m( … )` und,
- * in einer Klasse, das bloße `m( … )` am Anfang der Anweisung. Seit D2
- * (27.09.2026) liest die Engine genau diese Formen als Aufruf
- * (`methodCallsIn` in `process-skeleton.ts`, Auflösung über
- * `lib/abap/method-resolution.ts`) und zeichnet sie wie `CALL METHOD`. Ein
- * Konstrukt, das nur `CALL METHOD` kennt, machte jeden Sollaufruf in dieser
- * Schreibweise „nicht vergleichbar" — eine Lücke der Messung, nicht der Engine.
- * `DATA(x) = …` ohne Aufruf ist eine Deklaration und bleibt draußen.
+ * The functional notation of a method call — `lo->m( … )`, `cls=>m( … )`,
+ * `me->m( … )`, `lv = lo->m( … )`, `DATA(x) = lo->m( … )` and, inside a class,
+ * the bare `m( … )` at the start of the statement. Since D2 (27.09.2026) the
+ * engine reads exactly these forms as a call (`methodCallsIn` in
+ * `process-skeleton.ts`, resolution via `lib/abap/method-resolution.ts`) and
+ * draws them like `CALL METHOD`. A construct that knew only `CALL METHOD` made
+ * every expected call in this notation "not comparable" — a gap in the
+ * measurement, not in the engine. `DATA(x) = …` without a call is a
+ * declaration and stays out.
  */
 const FUNCTIONAL_METHOD_CALL = String.raw`^(?:[\w/<>]+(?:->|=>))+[\w/~]+\(|^(?!(?:DATA|FINAL)\()[\w/~]+\(`;
 const withMethodCalls = (construct: RegExp): RegExp =>
@@ -884,66 +887,66 @@ export const SKELETON_BRIDGES: SkeletonBridge[] = [
     kinds: ['start'],
     construct: /[\s\S]/,
     why:
-      'Prozessstart. Die Engine öffnet für jeden Ereignisblock und für das implizite START-OF-SELECTION einen ' +
-      'Startknoten; welche Anweisung das ist, entscheidet sie selbst, deshalb ohne Konstruktfilter.',
+      'Process start. The engine opens a start node for every event block and for the implicit ' +
+      'START-OF-SELECTION; which statement that is, it decides itself, hence no construct filter.',
   },
   {
     type: 'event_block',
     kinds: ['start'],
     construct: /[\s\S]/,
     why:
-      'Ein Ereignisblock ist in §5.8 ein Startereignis der eigenen Region; die Engine führt ihn als Region mit ' +
-      'einem Startknoten, nicht als eigene Knotenart.',
+      'In §5.8 an event block is a start event of its own region; the engine carries it as a region with ' +
+      'a start node, not as a node kind of its own.',
   },
   {
     type: 'end',
     kinds: ['end', 'end-error'],
     construct: /^(RETURN|EXIT|STOP|LEAVE|ENDFORM|ENDMETHOD|ENDMODULE|ENDFUNCTION|ENDLOOP|ENDIF|ENDCASE|ENDSELECT|MESSAGE|RAISE|ASSERT|CHECK|SUBMIT)\b/i,
     why:
-      'Ende eines Pfades. Die Engine kennt `end` und `end-error`; welches von beiden, entscheidet sie an der ' +
-      'Anweisung, und beide zählen hier als Treffer.',
+      'End of a path. The engine knows `end` and `end-error`; which of the two, it decides at the ' +
+      'statement, and both count as a hit here.',
   },
   {
     type: 'return',
     kinds: ['end', 'end-error'],
     construct: /^(RETURN|EXIT|LEAVE)\b/i,
-    why: 'Wie `end`: der Fall zeichnet den Rücksprung als Ende des Pfades.',
+    why: 'Like `end`: the case draws the return as the end of the path.',
   },
   {
     type: 'gateway',
     kinds: ['gateway'],
     construct: /^(IF|ELSEIF|ELSE|CASE|WHEN|CHECK|ASSERT|AT)\b/i,
     why:
-      'Exklusives Gateway. Die Engine öffnet es an IF/ELSEIF/CASE/WHEN und an einem CHECK, das kein Laufschalter ' +
-      'ist. Ein `gateway` auf einem CATCH ist damit nicht vergleichbar — TRY/CATCH ist keine Verzweigung des ' +
-      'Lesers, sondern eine Lücke, die das Fallbuch §8 selbst als solche benennt.',
+      'Exclusive gateway. The engine opens it at IF/ELSEIF/CASE/WHEN and at a CHECK that is not a run ' +
+      'switch. A `gateway` on a CATCH is therefore not comparable — TRY/CATCH is not a branch of the ' +
+      'reader but a gap that the case book itself names as such in §8.',
   },
   {
     type: 'loop',
     kinds: ['loop'],
     construct: /^(LOOP|DO|WHILE|SELECT|AT|PROVIDE)\b/i,
-    why: 'Iteration. Das Skelett zeichnet jede Schleife als `loop`, auch `SELECT … ENDSELECT` und `DO`/`WHILE`.',
+    why: 'Iteration. The skeleton draws every loop as `loop`, including `SELECT … ENDSELECT` and `DO`/`WHILE`.',
   },
   {
     type: 'read',
     kinds: ['read'],
     construct: /\b(SELECT|OPEN\s+CURSOR|FETCH|GET)\b/i,
-    why: 'Lesender Datenspeicher; die Engine führt dafür `read`.',
+    why: 'Data store being read; the engine carries `read` for it.',
   },
   {
     type: 'write',
     kinds: ['write'],
     construct: /\b(INSERT|UPDATE|MODIFY|DELETE)\b/i,
-    why: 'Schreibender Datenspeicher; die Engine führt dafür `write`.',
+    why: 'Data store being written; the engine carries `write` for it.',
   },
   {
     type: 'output',
     kinds: ['output', 'send-task', 'user-task', 'end-error'],
     construct: /^(WRITE|MESSAGE|NEW-PAGE|SKIP|ULINE|FORMAT|CALL\s+SCREEN|CALL\s+FUNCTION|PERFORM|LEAVE|TRANSFER|OPEN\s+DATASET|CLOSE\s+DATASET)\b/i,
     why:
-      'Ausgabe. Die Engine unterscheidet die Ergebnisliste (`output`), das Versenden (`send-task`), die ' +
-      'Bildschirmausgabe (`user-task`) und die Fehlermeldung, die den Pfad beendet (`end-error`); der Korpus ' +
-      'fasst das als eine Art. Alle vier zählen deshalb als Treffer.',
+      'Output. The engine distinguishes the result list (`output`), sending (`send-task`), screen ' +
+      'output (`user-task`) and the error message that ends the path (`end-error`); the corpus ' +
+      'treats these as one type. All four therefore count as a hit.',
   },
   {
     type: 'action',
@@ -962,116 +965,119 @@ export const SKELETON_BRIDGES: SkeletonBridge[] = [
     ],
     construct: withMethodCalls(/^(CALL\s+(FUNCTION|METHOD|SCREEN|TRANSACTION|BADI)|PERFORM|SUBMIT|MESSAGE|WRITE|EXPORT|IMPORT|TRANSFER|OPEN\s+DATASET|ENQUEUE|DEQUEUE|AUTHORITY-CHECK|SELECT|INSERT|UPDATE|MODIFY|DELETE|COMMIT|ROLLBACK)\b/i),
     why:
-      'Ein Schritt ohne eigene Art im Fallbuch. Die Engine vergibt dem Schritt eine Art aus §5.8 — welche, ' +
-      'entscheidet sie am Konstrukt —, deshalb zählt jede Aktivitätsart als Treffer. Eine reine Wertzuweisung ' +
-      'trägt keines dieser Konstrukte: das Skelett zeichnet Wirkung und Fluss, keine Zuweisung, und ein Knoten ' +
-      'darauf ist nicht vergleichbar statt verfehlt.',
+      'A step without a type of its own in the case book. The engine gives the step a kind from §5.8 — which ' +
+      'one, it decides at the construct — so every activity kind counts as a hit. A pure value assignment ' +
+      'carries none of these constructs: the skeleton draws effect and flow, not assignment, and a node ' +
+      'on one is not comparable rather than missed.',
   },
   {
     type: 'call',
     kinds: ['call-activity', 'service-task', 'sub-process', 'transaction', 'user-task', 'task'],
     construct: withMethodCalls(/^(CALL\s+(FUNCTION|METHOD|SCREEN|TRANSACTION|BADI)|PERFORM|SUBMIT)\b/i),
     why:
-      'Aufruf mit bekanntem Ziel; die Engine benennt ihn nach dem, was das Ziel tut. Ein Methodenaufruf zählt in ' +
-      'jeder Schreibweise, die die Engine seit D2 als Aufruf liest (`withMethodCalls`).',
+      'Call with a known target; the engine names it after what the target does. A method call counts in ' +
+      'every notation the engine has read as a call since D2 (`withMethodCalls`).',
   },
   {
     type: 'opaque_call',
     kinds: ['call-opaque', 'service-task', 'call-activity', 'sub-process', 'transaction', 'user-task'],
     construct: withMethodCalls(/^(CALL\s+(FUNCTION|METHOD|SCREEN|TRANSACTION|BADI)|PERFORM|SUBMIT|CREATE\s+OBJECT)\b/i),
     why:
-      'Aufruf, dessen Quelle der Leser nicht hat. Die Engine führt `call-opaque`, benennt den Aufruf aber nach ' +
-      'seiner Art, wenn die Anweisung sie hergibt (ein `CALL FUNCTION` bleibt eine Service-Aktivität, auch wenn ' +
-      'der Baustein nicht in der Scheibe liegt).',
+      'Call whose source the reader does not have. The engine carries `call-opaque`, but names the call after ' +
+      'its kind when the statement reveals it (a `CALL FUNCTION` stays a service activity even when ' +
+      'the function module is not in the slice).',
   },
   {
     type: 'opaque_call',
     kinds: ['send-task'],
     construct: /^CALL\s+FUNCTION\b/i,
     why:
-      'Ein Baustein, den §5.8 als Versand erkennt (Zeile Send-Task: Mail, Nachricht, IDoc-Ausgang), ist für den ' +
-      'Leser kein undurchsichtiger Aufruf mehr: die Engine benennt ihn nach seiner Wirkung, wie sie einen ' +
-      '`CALL FUNCTION` sonst als Service-Aktivität benennt. Dieselbe Anweisung, genauer gelesen — kein anderer Schritt.',
+      'A function module that §5.8 recognises as sending (row send task: mail, message, outbound IDoc) is no ' +
+      'longer an opaque call for the reader: the engine names it after its effect, just as it otherwise names a ' +
+      '`CALL FUNCTION` a service activity. The same statement, read more closely — not a different step.',
   },
   {
     type: 'call',
     kinds: ['business-rule-task', 'read', 'write'],
     construct: withMethodCalls(/^(PERFORM|CALL\s+METHOD)\b/i),
     why:
-      'Ein Aufruf einer Routine dieser Quelle. §5.8 zeichnet eine kleine Routine als **einen** Schritt ' +
-      '(`collapseSmallRegions`) und benennt ihn nach ihrer Wirkung — liest sie nur, ist er ein Lesen, schreibt sie ' +
-      'nur, ein Schreiben, stuft sie aus Literalen ein, eine Entscheidungstabelle (Business-Rule-Task). Der Knoten ' +
-      'steht auf der Aufrufzeile und meint denselben Aufruf.',
+      'A call of a routine in this source. §5.8 draws a small routine as **one** step ' +
+      '(`collapseSmallRegions`) and names it after its effect — if it only reads, it is a read; if it only ' +
+      'writes, a write; if it classifies from literals, a decision table (business rule task). The node ' +
+      'sits on the call line and means the same call.',
   },
   {
     type: 'opaque_call',
     kinds: ['business-rule-task', 'read', 'write'],
     construct: withMethodCalls(/^(PERFORM|CALL\s+METHOD)\b/i),
     why:
-      'Wie bei `call`: das Fallbuch hielt das Ziel für undurchsichtig, die Engine hat die Routine in der Quelle ' +
-      'gefunden und zeichnet sie nach §5.8 als einen Schritt mit ihrer Wirkung (Lesen, Schreiben, ' +
-      'Entscheidungstabelle) — derselbe Aufruf, genauer gelesen.',
+      'As with `call`: the case book took the target to be opaque, the engine found the routine in the source ' +
+      'and draws it per §5.8 as one step with its effect (read, write, ' +
+      'decision table) — the same call, read more closely.',
   },
   {
     type: 'call-opaque',
     kinds: ['call-opaque'],
     construct: /[\s\S]/,
-    why: 'Dieselbe Art, in der Schreibweise der Engine — ein Fall schreibt sie so.',
+    why: 'The same kind, in the engine\'s spelling — one case writes it that way.',
   },
   {
     type: 'transaction',
     kinds: ['transaction', 'call-activity'],
     construct: /\bCALL\s+TRANSACTION\b/i,
     why:
-      'Aufruf-Aktivität auf eine Transaktion. **Nicht** die LUW-Grenze: der Korpus schreibt `transaction` auch an ' +
-      'COMMIT WORK und ROLLBACK WORK, und die führt `process-skeleton.ts` nicht als Knoten, sondern als Anmerkung ' +
-      '(`commit-boundary`) und seit 2.12 als Wirkungsstatus im Modell (`luw`: angestoßen/verworfen). Solche ' +
-      'Knoten sind hier nicht vergleichbar; die Zustände prüft `tests/luw-states.spec.ts` an CC-026/CC-027.',
+      'Call activity on a transaction. **Not** the LUW boundary: the corpus also writes `transaction` on ' +
+      'COMMIT WORK and ROLLBACK WORK, and `process-skeleton.ts` carries those not as a node but as an annotation ' +
+      '(`commit-boundary`) and, since 2.12, as an effect state in the model (`luw`: triggered/discarded). Such ' +
+      'nodes are not comparable here; `tests/luw-states.spec.ts` checks the states on CC-026/CC-027.',
   },
   {
     type: 'external_program',
     kinds: ['call-activity', 'transaction'],
     construct: /\b(SUBMIT|CALL\s+TRANSACTION)\b/i,
-    why: 'Programmübergreifender Aufruf; die Engine führt ihn als Aufruf-Aktivität.',
+    why: 'Cross-program call; the engine carries it as a call activity.',
   },
   {
     type: 'update_task',
     kinds: ['service-task'],
     construct: /\bIN\s+UPDATE\s+TASK\b/i,
     why:
-      'Registrierung beim Verbucher; die Engine zeichnet den CALL FUNCTION als Service-Aktivität und trägt am ' +
-      'Knoten `effectState = registered` (2.12) — die Art bleibt, der Zustand steht daneben.',
+      'Registration with the update task; the engine draws the CALL FUNCTION as a service activity and puts ' +
+      '`effectState = registered` on the node (2.12) — the kind stays, the state sits beside it.',
   },
   {
     type: 'async',
     kinds: ['service-task'],
     construct: /\b(STARTING\s+NEW\s+TASK|IN\s+BACKGROUND\s+TASK|RECEIVE\s+RESULTS)\b/i,
     why:
-      'Asynchroner Aufruf. Bis 2.17 gibt es dafür keine eigene Art — ein `STARTING NEW TASK` bleibt eine ' +
-      'Service-Aktivität; die Parallelität wird als eigene Teilprüfung geführt, nicht hier versteckt.',
+      'Asynchronous call. Until 2.17 there is no kind of its own for it — a `STARTING NEW TASK` stays a ' +
+      'service activity; parallelism is carried as a sub-check of its own, not hidden here.',
   },
   {
     type: 'rfc',
     kinds: ['service-task', 'call-activity'],
     construct: /\bDESTINATION\b/i,
-    why: 'Systemgrenze über einen RFC mit Destination.',
+    why: 'System boundary via an RFC with a destination.',
   },
   {
     type: 'lock',
     kinds: ['service-task'],
     construct: /\b(ENQUEUE|DEQUEUE)_/i,
-    why: 'Sperrbaustein; die Engine zeichnet ihn als Service-Aktivität wie jeden anderen CALL FUNCTION.',
+    why: 'Lock module; the engine draws it as a service activity like any other CALL FUNCTION.',
   },
 ];
 
 /**
- * Wie die Bedingung eines Sollflusses zur Kantenart der Engine steht.
+ * How the condition of an expected flow relates to the engine's edge kind.
  *
- * Das Fallbuch schreibt die Bedingung in Worten („always", „next iteration",
- * „no more rows") oder als Ausdruck aus der Quelle. Die Engine schreibt eine
- * Art. Mehr als die Art lässt sich hier nicht vergleichen, ohne die Sollangabe
- * umzudeuten — und der Bedingungstext selbst bleibt ungeprüft, weil Regel 6 ihn
- * wörtlich aus der Quelle nimmt, das Fallbuch ihn aber paraphrasiert.
+ * The case book writes the condition in words ("always", "next iteration",
+ * "no more rows") or as an expression from the source. The engine writes a
+ * kind. Nothing beyond the kind can be compared here without reinterpreting
+ * the expected value — and the condition text itself stays unchecked, because
+ * rule 6 takes it verbatim from the source while the case book paraphrases it.
+ *
+ * The `label` values stay German: they go into the evidence text that the
+ * baseline stores verbatim.
  */
 const EDGE_EXPECTATIONS: Array<{ condition: RegExp; kinds: SkeletonEdgeKind[]; label: string }> = [
   {
@@ -1096,31 +1102,34 @@ function expectedEdgeKinds(condition: string | null): { kinds: SkeletonEdgeKind[
 }
 
 /**
- * Die drei Skelettaussagen, die der Vergleicher **noch nicht** vergleicht —
- * an einer Stelle, benannt, mit dem Roadmap-Schritt, der sie auflöst.
+ * The three skeleton statements the comparer does **not yet** compare — in one
+ * place, named, with the roadmap step that resolves them.
  *
- * Anlass: QA-Review von `9e408888bfec`, Fingerabdruck `c100d056f0d2`. Eine
- * Facette, deren Status am bloßen Vorhandensein des Sollfelds hängt, zählt
- * ungeprüfte Sollwerte als verglichen — dieselbe Sorte Grün, die 1.9 (CR-05)
- * abgeschafft hat. Deshalb steht hier nur, *was* einmal verglichen wird, nie
- * ein Status: den vergibt `compareSkeleton` fest als `not_checked`.
+ * Occasion: QA review of `9e408888bfec`, fingerprint `c100d056f0d2`. A facet
+ * whose status hangs on the mere presence of the expected field counts
+ * unchecked expected values as compared — the same kind of green that 1.9
+ * (CR-05) abolished. So only *what* will one day be compared stands here,
+ * never a status: `compareSkeleton` assigns that as a fixed `not_checked`.
  *
- * Wer 2.15, 2.16 oder 2.17 baut, hat hier seine Einhängestelle: Eintrag raus,
- * echter Vergleich rein, Baseline neu schreiben. Der Wechsel des Prüfstatus
- * ist in `tests/korpus-facets.spec.ts` eine Ratsche und fällt damit auf.
+ * Whoever builds 2.15, 2.16 or 2.17 has their hook here: entry out, real
+ * comparison in, rewrite the baseline. The change of check status is a ratchet
+ * in `tests/korpus-facets.spec.ts` and so it shows.
+ *
+ * `what` and `absent` stay German: they go into the facet note that the
+ * baseline stores verbatim.
  */
 export interface PendingSkeletonAspect {
-  /** Der Facettenname, wie er im Ergebnis und in der Baseline steht. */
+  /** The facet name as it stands in the result and in the baseline. */
   name: string;
-  /** Der Roadmap-Schritt, der diese Teilprüfung auflöst. */
+  /** The roadmap step that resolves this sub-check. */
   step: string;
-  /** Was der Fall behauptet, in einem Satzteil — für die Begründung. */
+  /** What the case claims, as a phrase — for the reason. */
   what: string;
-  /** Derselbe Satzteil verneint, für den (heute immer) leeren Fall. */
+  /** The same phrase negated, for the (today always) empty case. */
   absent: string;
-  /** Wie viele Sollwerte der Fall dafür trägt (heute überall 0). */
+  /** How many expected values the case carries for it (0 everywhere today). */
   given: (counts: { gatewayClassGiven: number; lanes: number; parallel: number }) => number;
-  /** Der Nenner: wie viele Stellen dieser Art der Fall überhaupt kennt. */
+  /** The denominator: how many places of this kind the case knows at all. */
   total: (counts: { gateways: number; lanes: number; parallel: number }) => number;
 }
 
@@ -1161,7 +1170,7 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
   const missed: string[] = [];
   const wrongKind: string[] = [];
   const notComparable: string[] = [];
-  /** Sollknoten-Id -> Knoten-Id der Engine. Die Grundlage des Kantenvergleichs. */
+  /** Expected node id -> engine node id. The basis of the edge comparison. */
   const resolved = new Map<string, string>();
 
   for (const node of nodes) {
@@ -1181,9 +1190,9 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
       continue;
     }
     const allowed = new Set<SkeletonNodeKind>(bridges.flatMap((bridge) => bridge.kinds));
-    // Derselbe Ankerbegriff wie bei den Befunden: die Anweisung, nicht die
-    // Zeile. `SELECT … INTO TABLE` steht über fünf Zeilen, und CC-001
-    // verankert es auf der FROM-Zeile, die Engine auf der ersten.
+    // The same notion of anchor as for findings: the statement, not the
+    // line. `SELECT … INTO TABLE` spans five lines, and CC-001 anchors it on
+    // the FROM line, the engine on the first.
     const from = statement?.lineStart ?? line;
     const to = statement?.lineEnd ?? line;
     const atAnchor = entry.skeleton.nodes.filter(
@@ -1204,8 +1213,8 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
 
   const comparableNodes = hit.length + missed.length + wrongKind.length;
 
-  // --- Kanten. Vergleichbar ist eine Sollkante nur, wenn beide Enden auf einen
-  //     Engine-Knoten aufgelöst sind; sonst wüsste niemand, wonach gesucht wird.
+  // --- Edges. An expected edge is comparable only when both ends are resolved
+  //     to an engine node; otherwise nobody would know what to look for.
   const edgeHit: string[] = [];
   const edgeMissing: string[] = [];
   const edgeWrongKind: string[] = [];
@@ -1230,33 +1239,34 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
   }
   const comparableEdges = edgeHit.length + edgeMissing.length + edgeWrongKind.length;
 
-  // --- Die drei Teilprüfungen, die 2.15, 2.16 und 2.17 füllen werden.
+  // --- The three sub-checks that 2.15, 2.16 and 2.17 will fill.
   //
-  // QA-Review von `9e408888bfec`, Fingerabdruck `c100d056f0d2`: bis dahin hob
-  // jede dieser drei Teilprüfungen ihren Status auf `compared`, sobald ein
-  // Sollwert **auftauchte** — verglichen wurde er nie. Das ist genau der
-  // Mechanismus, gegen den 1.9 gebaut wurde (CR-05): ein Grün, das „nicht
-  // geprüft" heißt. Heute trägt keine der 68 `expected.json` eines der drei
-  // Felder, der Fehler war also noch nicht wirksam; wirksam geworden wäre er
-  // mit dem ersten Fall aus 2.10, und dann hätte ein Sollwert still danebenge-
-  // legen, während die Facette „verglichen" sagt.
+  // QA review of `9e408888bfec`, fingerprint `c100d056f0d2`: until then each
+  // of these three sub-checks raised its status to `compared` as soon as an
+  // expected value **appeared** — it was never compared. That is exactly the
+  // mechanism 1.9 was built against (CR-05): a green that means "not
+  // checked". Today none of the 68 `expected.json` files carries any of the
+  // three fields, so the fault was not yet in effect; it would have taken
+  // effect with the first case from 2.10, and then an expected value would
+  // have sat there silently while the facet said "compared".
   //
-  // Gewählt ist der erste der beiden Wege: die Facetten bleiben `not_checked`,
-  // **auch wenn Sollwerte da sind**, und ihr Zähler bleibt 0. Wirklich zu
-  // vergleichen wäre heute kein Vergleich: `lib/abap/process-skeleton.ts`
-  // führt weder eine Gateway-Klasse noch eine Lane noch einen Parallel-Marker
-  // (`SkeletonNode` hat keines dieser Felder, und der Kopf der Datei sagt für
-  // Lanes und parallele Gateways ausdrücklich, dass sie später kommen). Jeder
-  // Sollwert wäre gegen `undefined` verglichen und damit pauschal „von der
-  // Engine verfehlt" — eine Rotfärbung, die nichts über die Engine aussagt.
+  // The first of the two ways was chosen: the facets stay `not_checked`,
+  // **even when expected values are present**, and their numerator stays 0.
+  // Really comparing would not be a comparison today:
+  // `lib/abap/process-skeleton.ts` carries neither a gateway class nor a lane
+  // nor a parallel marker (`SkeletonNode` has none of these fields, and the
+  // file header says explicitly that lanes and parallel gateways come later).
+  // Every expected value would be compared against `undefined` and so be
+  // "missed by the engine" across the board — a red that says nothing about
+  // the engine.
   //
-  // `PENDING_SKELETON_ASPECTS` ist die benannte Einhängestelle: wer 2.15, 2.16
-  // oder 2.17 baut, ersetzt hier den Eintrag durch einen echten Vergleich und
-  // schreibt die Baseline neu — der Statuswechsel `not_checked` → `compared`
-  // ist die Ratsche, die das sichtbar macht.
+  // `PENDING_SKELETON_ASPECTS` is the named hook: whoever builds 2.15, 2.16 or
+  // 2.17 replaces the entry here with a real comparison and rewrites the
+  // baseline — the status change `not_checked` → `compared` is the ratchet
+  // that makes this visible.
   //
-  // Damit ein Sollwert bis dahin nicht still liegen bleibt: ein Fall, der eines
-  // der drei Felder trägt, gilt nicht als übereinstimmend (siehe unten).
+  // So that an expected value does not lie silent until then: a case that
+  // carries one of the three fields does not count as agreeing (see below).
   const gatewayNodes = nodes.filter((node) => node.type === 'gateway');
   const gatewayClassGiven = gatewayNodes.filter((node) => (node.gatewayClass ?? null) != null);
   const laneGiven = skeleton.lanes ?? [];
@@ -1271,7 +1281,7 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
       given: aspect.given({ gatewayClassGiven: gatewayClassGiven.length, lanes: laneGiven.length, parallel: parallelGiven.length }),
       total: aspect.total({ gateways: gatewayNodes.length, lanes: laneGiven.length, parallel: parallelGiven.length }),
     }));
-  /** Sollwerte, für die es heute keinen Vergleich gibt. Heute überall leer. */
+  /** Expected values for which there is no comparison today. Empty everywhere today. */
   const unchecked = pending.filter((entry) => entry.given > 0);
 
   const aspects: FacetAspect[] = [
@@ -1287,8 +1297,9 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
       skeleton.edges.length,
       'Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten.',
     ),
-    // Zähler fest 0 und Status fest `not_checked`: hier wird nichts verglichen,
-    // und ein vorhandener Sollwert ändert daran nichts (c100d056f0d2).
+    // Numerator fixed at 0 and status fixed at `not_checked`: nothing is
+    // compared here, and a present expected value changes nothing about that
+    // (c100d056f0d2).
     ...pending.map((entry) =>
       facet(
         entry.name,
@@ -1331,8 +1342,8 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
     });
   }
 
-  // Unter der Hälfte ist die Zahl selbst der Befund: ein Grün hieße hier, die
-  // Mehrheit der Sollknoten sei geprüft worden, und das wäre nicht wahr (1.9).
+  // Below half, the number itself is the finding: a green here would mean the
+  // majority of expected nodes had been checked, and that would not be true (1.9).
   if (comparableNodes * 2 < nodes.length) {
     return done({
       case: korpusCase.id,
@@ -1355,9 +1366,10 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
         `Fehlende Kante: ${sample(edgeMissing)}. Andere Kantenart: ${sample(edgeWrongKind)}.${tail}`,
     });
   }
-  // Knoten und Kanten stimmen — aber der Fall trägt eine Sollaussage, für die
-  // es heute keinen Vergleich gibt. Ein `agree` hieße hier „alles geprüft",
-  // und das wäre die Lüge aus CR-05 mit anderen Feldern (c100d056f0d2).
+  // Nodes and edges agree — but the case carries an expected statement for
+  // which there is no comparison today. An `agree` here would mean "all
+  // checked", and that would be the lie from CR-05 with other fields
+  // (c100d056f0d2).
   if (unchecked.length > 0) {
     return done({
       case: korpusCase.id,
@@ -1374,16 +1386,16 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
 }
 
 // ---------------------------------------------------------------------------
-// Fachsätze: das Textmaß, der Ankerschlüssel und der Erzeuger (Roadmap 17.5)
+// Business statements: the text measure, the anchor key and the producer (roadmap 17.5)
 // ---------------------------------------------------------------------------
 
 /**
- * Die Funktionswörter, die aus einem Fachsatz nichts über den Code sagen.
+ * The function words that, in a business statement, say nothing about the code.
  *
- * Eine Streichliste ist eine Auslegung, und sie steht deshalb hier, sichtbar und
- * vollständig, statt in einer Ähnlichkeitszahl zu verschwinden. Sie enthält
- * ausschließlich englische Funktionswörter — kein Fachwort, kein ABAP-Bezeichner,
- * nichts, was zwei Sätze inhaltlich unterscheiden könnte.
+ * A stop list is an interpretation, so it sits here, visible and complete,
+ * instead of vanishing into a similarity number. It contains only English
+ * function words — no domain term, no ABAP identifier, nothing that could
+ * distinguish two statements by content.
  *
  * English since 01.10.2026 (owner decision "alles Englisch"): the engine's
  * business statements and the case book's expected statements are English, and
@@ -1400,13 +1412,13 @@ export const STATEMENT_STOPWORDS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Ein Fachsatz in Inhaltswörter zerlegt.
+ * A business statement split into content words.
  *
- * Normalisierung, offen und in dieser Reihenfolge: Kleinschreibung, Umlaute und
- * ß aufgelöst (`ä`→`ae` … `ß`→`ss`), alles außer `a–z`, `0–9` und `_` zu
- * Trennern, Wörter unter drei Zeichen und die Streichliste oben entfernt.
- * `_` bleibt, weil ABAP-Bezeichner wie `lv_count` genau das Wort sind, an dem
- * zwei Sätze sich unterscheiden.
+ * Normalisation, open and in this order: lower case, umlauts and ß expanded
+ * (`ä`→`ae` … `ß`→`ss`), everything except `a–z`, `0–9` and `_` turned into
+ * separators, words under three characters and the stop list above removed.
+ * `_` stays, because ABAP identifiers such as `lv_count` are exactly the word
+ * on which two statements differ.
  */
 export function statementTokens(text: string): Set<string> {
   return new Set(
@@ -1423,12 +1435,12 @@ export function statementTokens(text: string): Set<string> {
 }
 
 /**
- * Das Maß: der Dice-Koeffizient über diese Inhaltswörter, `2·|A∩B| / (|A|+|B|)`.
+ * The measure: the Dice coefficient over these content words, `2·|A∩B| / (|A|+|B|)`.
  *
- * Warum dieses und kein cleveres: es ist von Hand nachrechenbar, es braucht kein
- * Modell, keine Einbettung und keinen Schlüssel, und es sagt bei jedem Wert, aus
- * welchen Wörtern er kommt. Eine Zahl, deren Zustandekommen niemand nachprüfen
- * kann, wäre hier genau der Fehler, den die Zweitmessung vom 23.09. gemacht hat.
+ * Why this one and not a clever one: it can be recomputed by hand, it needs no
+ * model, no embedding and no key, and for every value it says which words it
+ * comes from. A number whose derivation nobody can check would be exactly the
+ * mistake the second measurement of 23.09. made.
  */
 export function statementSimilarity(a: string, b: string): number {
   const left = statementTokens(a);
@@ -1440,42 +1452,44 @@ export function statementSimilarity(a: string, b: string): number {
 }
 
 /**
- * Die Schwelle — **am Korpus kalibriert, nicht geraten.**
+ * The threshold — **calibrated on the corpus, not guessed.**
  *
- * Gemessen am 23.09.2026 über alle 173 Sollsätze (nachzurechnen mit dem Test
- * „die Schwelle liegt in der gemessenen Lücke" in `tests/korpus-facets.spec.ts`,
- * der dieselben Zahlen bei jedem Lauf neu bildet):
+ * Measured on 23.09.2026 across all 173 expected statements (recompute with the
+ * test on the threshold lying in the measured gap in
+ * `tests/korpus-facets.spec.ts`, which rebuilds the same numbers on every run):
  *
- * - Zwei **verschiedene** Sollsätze desselben Falls über **verschiedene** Anker:
- *   115 Paare, höchster Wert **0,400**, 95. Perzentil 0,267, Median 0,051.
- * - Derselbe Satz, um seine letzten zwei Wörter gekürzt — die mildeste
- *   Umformulierung, die noch dasselbe meint: 173 Paare, **niedrigster** Wert
- *   **0,571**, Median 0,909.
+ * - Two **different** expected statements of the same case over **different**
+ *   anchors: 115 pairs, highest value **0.400**, 95th percentile 0.267,
+ *   median 0.051.
+ * - The same statement with its last two words cut — the mildest rewording
+ *   that still means the same: 173 pairs, **lowest** value **0.571**,
+ *   median 0.909.
  *
- * Zwischen 0,400 und 0,571 liegt eine Lücke, und `0.50` liegt in ihr: über jedem
- * gemessenen Paar, das **nicht** dasselbe meint, und unter jedem, das es tut.
- * Das ist die ganze Begründung; sie ist reproduzierbar und sie kann kippen, wenn
- * das Fallbuch wächst — dann fällt der Test, und die Schwelle wird neu begründet
- * statt nachgezogen.
+ * Between 0.400 and 0.571 there is a gap, and `0.50` lies in it: above every
+ * measured pair that does **not** mean the same, and below every one that
+ * does. That is the whole justification; it is reproducible and it can tip
+ * over when the case book grows — then the test fails and the threshold is
+ * justified anew instead of being nudged along.
  *
- * **Die ehrliche Grenze:** zwei Sollsätze am *selben* Anker können sich näher
- * stehen als 0,50 — CC-042-B01/B02 liegen bei 0,667 und unterscheiden sich nur
- * in `KNA1`/`KNB1`. Deshalb ist die Zuordnung eins zu eins und gierig; ein
- * erzeugter Satz kann nicht zwei Sollsätze gutschreiben. Ein Erzeuger, der von
- * zwei Sätzen nur einen liefert, bekommt für den anderen kein Gegenstück und
- * damit kein `compared`.
+ * **The honest limit:** two expected statements at the *same* anchor can be
+ * closer than 0.50 — CC-042-B01/B02 sit at 0.667 and differ only in
+ * `KNA1`/`KNB1`. That is why the matching is one-to-one and greedy; one
+ * produced statement cannot credit two expected ones. A producer that
+ * delivers only one of two statements gets no counterpart for the other and
+ * so no `compared`.
  */
 export const STATEMENT_MATCH_THRESHOLD = 0.5;
 
 /**
- * Der Schlüssel, über den zwei Sätze überhaupt vergleichbar sind: die
- * **ABAP-Anweisung**, in der die Ankerzeile liegt — nicht die Zeile selbst.
+ * The key by which two statements are comparable at all: the **ABAP
+ * statement** that contains the anchor line — not the line itself.
  *
- * Grund: das Fallbuch verankert denselben Satz mal auf `source.abap:6`, mal auf
- * `source.abap:6–7`, weil ein `SELECT` über zwei Zeilen geht. Zwei Sätze über
- * dieselbe Anweisung sprechen über dieselbe Sache; zwei Sätze über verschiedene
- * Anweisungen nicht. Findet sich an der Zeile keine Anweisung (Kommentar,
- * Leerzeile), bleibt die Zeile selbst der Schlüssel — geraten wird nichts.
+ * Reason: the case book anchors the same sentence sometimes on
+ * `source.abap:6`, sometimes on `source.abap:6–7`, because a `SELECT` spans two
+ * lines. Two sentences about the same statement talk about the same thing; two
+ * sentences about different statements do not. If there is no statement at
+ * the line (comment, blank line), the line itself stays the key — nothing is
+ * guessed.
  */
 export function anchorKeys(
   anchors: Array<{ file: string | null; line: number | null }>,
@@ -1491,7 +1505,7 @@ export function anchorKeys(
   return keys;
 }
 
-/** Ein Fachsatz, wie ein Erzeuger ihn liefert. */
+/** A business statement as a producer delivers it. */
 export interface GeneratedStatement {
   id: string;
   text: string;
@@ -1499,35 +1513,38 @@ export interface GeneratedStatement {
 }
 
 /**
- * Wer die Fachsätze erzeugt — die Naht, die 17.6 füllt.
+ * Who produces the business statements — the seam that 17.6 fills.
  *
- * Sie ist ausdrücklich **leer**, weil heute niemand sie füllt, und sie ist
- * ausdrücklich **da**, damit der erste echte Erzeuger gemessen wird, ohne dass
- * an dieser Facette noch etwas umgebaut werden muss. Einen Erzeuger hier zu
- * erfinden wäre 17.6 vorweggenommen und eine Produktentscheidung, die Sonny
- * gehört.
+ * It is explicitly **empty**, because nobody fills it today, and it is
+ * explicitly **there**, so the first real producer is measured without
+ * anything in this facet having to be rebuilt. Inventing a producer here
+ * would pre-empt 17.6 and be a product decision that belongs to Sonny.
+ *
+ * `name` and `note` go verbatim into evidence and facet notes that the
+ * baseline stores, so the values below stay German.
  */
 export interface StatementProducer {
-  /** Steht im Beleg jedes Ergebnisses; ohne Namen weiß niemand, was gemessen wurde. */
+  /** Appears in the evidence of every result; without a name nobody knows what was measured. */
   name: string;
-  /** Warum es (nicht) etwas gibt — geht wörtlich in die Begründung der Teilprüfung. */
+  /** Why there is (no)thing — goes verbatim into the sub-check's reason. */
   note: string;
   produce(korpusCase: KorpusCase, reading: Omit<EngineReading, 'businessStatements' | 'producer'>): GeneratedStatement[];
 }
 
 /**
- * Der heutige Stand, gemessen und nicht behauptet: **niemand erzeugt Fachsätze.**
+ * The state as of then, measured and not claimed: **nobody produces business
+ * statements.**
  *
- * Nachgeprüft am 23.09.2026 über `lib/`, `app/` und `components/` — kein Treffer
- * auf `businessStatement`, `business_statement` oder `Fachsatz`; `readWithEngine`
- * ruft `buildAbapEvidence`, `buildProcessFacts`, `buildProcessSkeleton`,
- * `readStatements`, `extractDataCoupling`, `routeExtensibility` und
- * `gradeSapObjectUse`, und keine davon gibt einen Satz zurück.
- * `process-skeleton.ts` sagt über seine Knotenbeschriftung ausdrücklich: „A token
- * out of the source. Never a phrase this engine made up (rule 6)." Das Modell
- * bestellt in `lib/analysis-prompt.ts` eine „business executive summary" — keinen
- * verankerten Einzelsatz, und der Weg dorthin führt über das Netz und ist damit
- * hier ohnehin nicht messbar.
+ * Checked on 23.09.2026 across `lib/`, `app/` and `components/` — no hit for
+ * `businessStatement`, `business_statement` or `Fachsatz`; `readWithEngine`
+ * calls `buildAbapEvidence`, `buildProcessFacts`, `buildProcessSkeleton`,
+ * `readStatements`, `extractDataCoupling`, `routeExtensibility` and
+ * `gradeSapObjectUse`, and none of them returns a sentence.
+ * `process-skeleton.ts` says explicitly about its node labels: "A token out of
+ * the source. Never a phrase this engine made up (rule 6)." In
+ * `lib/analysis-prompt.ts` the model is asked for a "business executive
+ * summary" — not an anchored single statement, and the path there goes over
+ * the network and so cannot be measured here anyway.
  */
 export const NO_PRODUCER: StatementProducer = {
   name: 'kein-erzeuger',
@@ -1538,18 +1555,17 @@ export const NO_PRODUCER: StatementProducer = {
 };
 
 /**
- * **Der Erzeuger des Produkts** (Roadmap 17.7, Weg A — entschieden 23.09.2026).
+ * **The product's producer** (roadmap 17.7, way A — decided 23.09.2026).
  *
- * `lib/abap/business-statement.ts` bildet die Sätze deterministisch aus dem
- * Quelltext: kein Modellaufruf, kein Netz, kein Schlüssel, und derselbe
- * Quelltext ergibt denselben Satz. Er ist seit diesem Schritt die **Vorgabe**
- * von `readWithEngine` — `NO_PRODUCER` bleibt exportiert, weil die
- * Empfindlichkeitsprobe in `tests/korpus-mutation.spec.ts` den leeren Stand
- * weiterhin gegen ihn misst.
+ * `lib/abap/business-statement.ts` builds the statements deterministically
+ * from the source: no model call, no network, no key, and the same source
+ * yields the same statement. Since that step it is the **default** of
+ * `readWithEngine` — `NO_PRODUCER` stays exported because the sensitivity
+ * probe in `tests/korpus-mutation.spec.ts` still measures the empty state
+ * against it.
  *
- * Diese Naht ist die einzige Verbindung zwischen Erzeuger und Vergleicher:
- * am Vergleich selbst ist für 17.7 **nichts** geändert worden. Erzeuger und
- * Richter bleiben zwei.
+ * This seam is the only connection between producer and comparer: **nothing**
+ * in the comparison itself was changed for 17.7. Producer and judge stay two.
  */
 export const ENGINE_PRODUCER: StatementProducer = {
   name: 'engine:fachsatz',
@@ -1567,16 +1583,16 @@ export const ENGINE_PRODUCER: StatementProducer = {
 };
 
 /**
- * Proben für die Empfindlichkeitsmessung — **nie im Normallauf.**
+ * Probes for the sensitivity measurement — **never in a normal run.**
  *
- * Sie sind kein Erzeuger des Produkts und dürfen nie einer werden: `SOLL_ECHO`
- * schreibt das Fallbuch ab und wüsste über fremden Code nichts. Ihr einziger
- * Zweck ist die Frage, die 17.5 beantworten muss — *bewegt sich die Zahl, wenn
- * man den Erzeuger ändert, und wird die Facette rot, wenn er schlechter wird?*
- * `tests/korpus-mutation.spec.ts` fährt sie.
+ * They are not a producer of the product and must never become one:
+ * `SOLL_ECHO` copies the case book and would know nothing about foreign code.
+ * Their only purpose is the question 17.5 has to answer — *does the number
+ * move when the producer changes, and does the facet turn red when it gets
+ * worse?* `tests/korpus-mutation.spec.ts` runs them.
  */
 export const PROBE_PRODUCERS = {
-  /** Der perfekte Erzeuger: er schreibt die Sollsätze ab. Die Obergrenze der Messung. */
+  /** The perfect producer: it copies the expected statements. The upper bound of the measurement. */
   echo: (transform?: (text: string, index: number) => string, shift = 0, keep?: (index: number) => boolean): StatementProducer => ({
     name: 'probe:soll-echo',
     note: 'Empfindlichkeitsprobe — schreibt das Fallbuch ab und ist kein Erzeuger des Produkts.',
@@ -1593,16 +1609,18 @@ export const PROBE_PRODUCERS = {
         })),
   }),
   /**
-   * **Der Erzeuger, der halluziniert** (Roadmap 17.9).
+   * **The producer that hallucinates** (roadmap 17.9).
    *
-   * Er schreibt erst das Fallbuch ab — damit Abdeckung und Inhalt heil bleiben
-   * und wirklich nur die neue Teilprüfung zuschlägt — und sagt dann zusätzlich
-   * zu jeder verbotenen Aussage des Falls genau deren Kern, an deren eigenem
-   * Anker. Eine Facette, die dabei grün bleibt, misst gegen Erfindung nichts.
+   * It first copies the case book — so coverage and content stay intact and
+   * really only the new sub-check fires — and then additionally says, for
+   * every forbidden statement of the case, exactly its core, at its own
+   * anchor. A facet that stays green under this measures nothing against
+   * invention.
    *
-   * Aussagen ohne Anker gelten für den ganzen Fall (`FORBIDDEN_WHOLE_SLICE`);
-   * die Probe hängt sie deshalb an die erste Zeile der ersten Quelle — der
-   * Vergleich misst sie ohnehin gegen jeden erzeugten Satz.
+   * Statements without an anchor apply to the whole case
+   * (`FORBIDDEN_WHOLE_SLICE`); the probe therefore attaches them to the first
+   * line of the first source — the comparison measures them against every
+   * produced statement anyway.
    */
   forbidden: (): StatementProducer => ({
     name: 'probe:verbotene-aussage',
@@ -1614,9 +1632,8 @@ export const PROBE_PRODUCERS = {
         text: statement.text ?? '',
         anchors: statement.anchors.map((anchor) => ({ file: anchor.file, line: anchor.line })),
       }));
-      // Jeden Kern, nicht nur den ersten (QA-Review von 4b4586aff273): eine
-      // Regression, die einen späteren Kern nicht mehr erkennt, bliebe sonst
-      // unbemerkt.
+      // Every core, not only the first (QA review of 4b4586aff273): otherwise a
+      // regression that no longer recognises a later core would go unnoticed.
       const said = readForbiddenConclusions(korpusCase)
         .filter((entry) => entry.cores.length > 0)
         .flatMap((entry, index) =>
@@ -1635,78 +1652,79 @@ export const PROBE_PRODUCERS = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Verbotene Aussagen: die Halluzinationsmessung (Roadmap 17.9)
+// Forbidden statements: the hallucination measurement (roadmap 17.9)
 // ---------------------------------------------------------------------------
 
 /**
- * Eine verbotene Aussage, zerlegt in das, was sich messen lässt.
+ * A forbidden statement, broken down into what can be measured.
  *
- * Der Korpus führt in 47 von 68 Fällen ein Feld `forbiddenConclusions` mit
- * zusammen **197 Sätzen**, 158 davon mit Ankerpräfix `source.abap:NN` — von
- * Hand geschrieben, seit Monaten im Repository, und bis zum 23.09.2026 hat
- * dieser Vergleicher das Feld kein einziges Mal genannt. Dasselbe Muster wie
- * bei `businessStatements` vor 17.5: ein Sollwert liegt da, nichts vergleicht
- * ihn.
+ * In 47 of 68 cases the corpus carries a `forbiddenConclusions` field with
+ * **197 sentences** in all, 158 of them with an anchor prefix `source.abap:NN`
+ * — written by hand, in the repository for months, and until 23.09.2026 this
+ * comparer did not mention the field once. The same pattern as with
+ * `businessStatements` before 17.5: an expected value lies there, nothing
+ * compares it.
  *
- * **Warum das die richtige Messung gegen Erfindung ist.** Ein erzeugter Satz
- * *ohne* Sollsatz ist keine Halluzination, sondern mehr Abdeckung als das
- * Fallbuch geschrieben hat; eine Regel „Extras sind Fehler" hätte 17.7 dafür
- * bestraft, gründlicher zu sein. Eine Halluzination ist eine Aussage, die der
- * Code **an ihrem Anker nicht trägt** — und genau die benennen diese 197 Sätze.
+ * **Why this is the right measurement against invention.** A produced
+ * statement *without* an expected statement is not a hallucination but more
+ * coverage than the case book wrote; a rule "extras are errors" would have
+ * punished 17.7 for being more thorough. A hallucination is a statement the
+ * code **does not support at its anchor** — and exactly those are what these
+ * 197 sentences name.
  *
- * **Die Maschine ist dieselbe wie in 17.5, nur umgedreht:** derselbe
- * Dice-Koeffizient (`statementSimilarity`), dieselbe Schwelle
- * (`STATEMENT_MATCH_THRESHOLD`), dieselbe Ankerlogik (`anchorKeys`, die
- * ABAP-Anweisung und nicht die Zeile). Erreicht ein erzeugter Satz die Schwelle
- * gegen eine verbotene Aussage, ist das ein **Fehler** statt eines Treffers.
+ * **The machine is the same as in 17.5, just inverted:** the same Dice
+ * coefficient (`statementSimilarity`), the same threshold
+ * (`STATEMENT_MATCH_THRESHOLD`), the same anchor logic (`anchorKeys`, the ABAP
+ * statement and not the line). If a produced statement reaches the threshold
+ * against a forbidden statement, that is an **error** instead of a hit.
  */
 export interface ForbiddenConclusion {
-  /** Der Satz, wie er im Fallbuch steht. Er geht wörtlich in jeden Beleg. */
+  /** The sentence as it stands in the case book. It goes verbatim into every piece of evidence. */
   raw: string;
-  /** Das Präfix vor dem Gedankenstrich, wörtlich; `null`, wenn es keines gibt. */
+  /** The prefix before the dash, verbatim; `null` when there is none. */
   scopeText: string | null;
   /**
-   * Die Anker aus dem Präfix. **Leer heißt: der Satz gilt für den ganzen Fall**
-   * (siehe `FORBIDDEN_WHOLE_SLICE` unten) — nicht: er wird übergangen.
+   * The anchors from the prefix. **Empty means: the sentence applies to the
+   * whole case** (see `FORBIDDEN_WHOLE_SLICE` below) — not: it is skipped.
    */
   anchors: Array<{ file: string | null; line: number }>;
-  /** Der erste Teilsatz: alles vor der Begründung (siehe `forbiddenClause`). */
+  /** The first clause: everything before the justification (see `forbiddenClause`). */
   clause: string;
   /**
-   * Die Kerne, gegen die gemessen wird. **Leer heißt `nicht vergleichbar`** —
-   * gezählt und benannt, nie stillschweigend als bestanden verbucht.
+   * The cores measured against. **Empty means `not comparable`** — counted
+   * and named, never silently booked as passed.
    */
   cores: string[];
-  /** Warum es keinen Kern gibt. Steht im Beleg, damit die Lücke sichtbar ist. */
+  /** Why there is no core. Stated so the gap is visible. */
   why: string;
 }
 
 /**
- * **Die 39 Sätze ohne Ankerpräfix** („gesamte Scheibe — …", „beide Profile — …",
- * und die wenigen ganz ohne Präfix) gelten für den **ganzen Fall**.
+ * **The 39 sentences without an anchor prefix** ("whole slice — …", "both
+ * profiles — …", and the few with no prefix at all) apply to the **whole
+ * case**.
  *
- * Die Alternative wäre, sie zu übergehen, weil der Vergleich über den Anker
- * geht — und das wäre die stillschweigende Abwertung eines Fünftels des
- * Sollwerts. Sie werden deshalb gegen **jeden** erzeugten Satz des Falls
- * gemessen. Das ist die strengere Lesart, und sie ist die richtige: „im Slice
- * ist keine Berechtigungsprüfung sichtbar" verbietet die Aussage überall im
- * Fall, nicht an einer Zeile.
+ * The alternative would be to skip them because the comparison goes through
+ * the anchor — and that would silently devalue a fifth of the expected value.
+ * So they are measured against **every** produced statement of the case. That
+ * is the stricter reading, and it is the right one: "no authority check is
+ * visible in the slice" forbids the statement everywhere in the case, not at
+ * one line.
  *
- * Diese Konstante hat keinen technischen Zweck; sie steht hier, damit die
- * Entscheidung einen Namen hat und in `compareBusinessStatements` zitiert
- * werden kann.
+ * This constant has no technical purpose; it is here so the decision has a
+ * name and can be cited in `compareBusinessStatements`.
  */
 export const FORBIDDEN_WHOLE_SLICE = 'whole slice';
 
 /**
- * Das Präfix eines verbotenen Satzes ist ein **Geltungsbereich** und keine
- * Aussage — aber nur, wenn es ausschließlich aus Geltungsangaben besteht.
+ * The prefix of a forbidden sentence is a **scope** and not a statement — but
+ * only when it consists solely of scope indications.
  *
- * Geprüft wird durch Wegstreichen: Profilangaben, „gesamte Scheibe", Dateinamen
- * mit Zeile, Zeilenlisten, Bereiche, Tokenoffsets (`+4`) und Satzzeichen
- * werden entfernt. Bleibt etwas übrig, war der Gedankenstrich Teil des Satzes
- * und kein Trenner — dann gibt es kein Präfix, und der Satz gilt für den ganzen
- * Fall. Geraten wird nichts.
+ * It is checked by striking out: profile indications, "whole slice", file
+ * names with a line, line lists, ranges, token offsets (`+4`) and punctuation
+ * are removed. If anything is left, the dash was part of the sentence and not
+ * a separator — then there is no prefix, and the sentence applies to the whole
+ * case. Nothing is guessed.
  */
 function forbiddenScopeResidue(prefix: string): string {
   return prefix
@@ -1718,14 +1736,14 @@ function forbiddenScopeResidue(prefix: string): string {
     .trim();
 }
 
-/** Die Anker eines Präfixes, in der Schreibweise, die das Fallbuch benutzt. */
+/** The anchors of a prefix, in the notation the case book uses. */
 function forbiddenAnchors(prefix: string, fallbackFile: string | null): Array<{ file: string | null; line: number }> {
   const anchors: Array<{ file: string | null; line: number }> = [];
   let current: string | null = fallbackFile;
   for (const rawPiece of prefix.split(',')) {
-    // Profilangaben zuerst weg: „Profil 1 und 2" darf keine Zeile 1 und keine
-    // Zeile 2 werden. Tokenoffsets (`+4`, `+1 … +3`) bezeichnen eine Stelle
-    // *innerhalb* der Anweisung an derselben Zeile und ändern den Anker nicht.
+    // Profile indications go first: "Profile 1 and 2" must not become line 1
+    // and line 2. Token offsets (`+4`, `+1 … +3`) denote a place *inside* the
+    // statement on the same line and do not change the anchor.
     const piece = rawPiece
       .replace(/Profile?\s*\d+(\s*(and|or)\s*\d+)*/g, '')
       .replace(/both profiles/g, '')
@@ -1744,22 +1762,22 @@ function forbiddenAnchors(prefix: string, fallbackFile: string | null): Array<{ 
 }
 
 /**
- * **Der erste Teilsatz — und warum der Rest nicht mitgemessen werden darf.**
+ * **The first clause — and why the rest must not be measured with it.**
  *
- * Fast jeder verbotene Satz besteht aus zwei Teilen: dem Verbot und seiner
- * Begründung, getrennt durch `;`, `:` oder einen Punkt. Die Begründung ist
- * eine **wahre** Aussage über den Code:
+ * Almost every forbidden sentence has two parts: the prohibition and its
+ * justification, separated by `;`, `:` or a full stop. The justification is a
+ * **true** statement about the code:
  *
- * > „Kein ungesichertes Leertabellen-FAE melden**; Guard und Return sind
- * > vorhanden.**"
+ * > "Do not report an unguarded empty-table FAE**; guard and return are
+ * > present.**"
  *
- * Wer den ganzen Satz als Kern nimmt, verbietet dem Erzeuger genau das, was er
- * sagen *soll*. Der Kern kommt deshalb nur aus dem ersten Teilsatz; Klammern
- * (Regelzitate wie `(R13a)`, `(REV2-04)`, `(Grok H-023)`) fallen weg, weil sie
- * Herkunftsangaben sind und keine Aussage über den Code.
+ * Taking the whole sentence as the core would forbid the producer exactly what
+ * it *should* say. So the core comes from the first clause only; parentheses
+ * (rule citations such as `(R13a)`, `(REV2-04)`, `(Grok H-023)`) are dropped,
+ * because they are provenance and not a statement about the code.
  *
- * Getrennt wird außerhalb von Anführungszeichen und Klammern — sonst zerschnitte
- * ein Doppelpunkt innerhalb eines Zitats den Kern.
+ * Splitting happens outside quotation marks and parentheses — otherwise a
+ * colon inside a quotation would cut the core apart.
  */
 function forbiddenClause(body: string): string {
   let depth = 0;
@@ -1784,28 +1802,28 @@ function forbiddenClause(body: string): string {
 }
 
 /**
- * **Die Verpackung einer verbotenen Aussage — vollständig aufgezählt.**
+ * **The packaging of a forbidden statement — enumerated in full.**
  *
- * „Kein Befund X **melden**" ist sprachlich nicht die Aussage X. Gemessen wird
- * aber gegen Sätze, die X *behaupten*, und deshalb braucht das Maß den Kern und
- * nicht die Verpackung. Die Verpackung besteht aus zwei Sorten Wörtern, und
- * beide stehen hier, sichtbar und abzählbar, statt in einer Zahl zu
- * verschwinden — dieselbe Regel wie bei `STATEMENT_STOPWORDS` und
- * `RULE_BRIDGES`:
+ * "Do not **report** finding X" is linguistically not the statement X. But the
+ * measurement is against sentences that *claim* X, so the measure needs the
+ * core and not the packaging. The packaging consists of two sorts of words,
+ * and both stand here, visible and countable, instead of vanishing into a
+ * number — the same rule as for `STATEMENT_STOPWORDS` and `RULE_BRIDGES`:
  *
- * 1. **Verneinung.** `nicht`, `kein` und `keine` sind ohnehin schon
- *    Streichwörter des Maßes; `keinen`, `keiner`, `keinem`, `keines`, `nie` und
- *    `weder` fehlten dort und gehören hier dazu.
- * 2. **Berichtsverben.** Sie machen aus einer Aussage eine Anweisung an den
- *    Erzeuger — „melden", „ableiten", „behaupten", „erfinden". Kein Fachsatz
- *    über ABAP-Code benutzt sie; sie stehen nur in der Verpackung.
+ * 1. **Negation.** In the German list this replaced, `nicht`, `kein` and
+ *    `keine` were already stop words of the measure; `keinen`, `keiner`,
+ *    `keinem`, `keines`, `nie` and `weder` were missing there and belonged
+ *    here.
+ * 2. **Reporting verbs.** They turn a statement into an instruction to the
+ *    producer — "report", "derive", "claim", "invent". No business statement
+ *    about ABAP code uses them; they occur only in the packaging.
  *
- * **Was hier bewusst *nicht* steht:** die Klassennomen „Befund", „Fachsatz",
- * „Knoten", „Level". Sie sehen nach Verpackung aus, sind aber die einzige
- * Stelle, an der manche Sätze überhaupt noch Inhalt tragen („Kein dritter
- * Lesebefund"), und sie zu streichen wäre eine Auslegung, die sich nicht
- * begründen lässt. Wo sie den Kern verwässern, steht die eigentliche Aussage
- * ohnehin im Zitat (Regel 1 in `forbiddenCores`).
+ * **What deliberately does *not* stand here:** the class nouns "finding",
+ * "business statement", "node", "level". They look like packaging, but they
+ * are the only place where some sentences still carry content at all ("no
+ * third read finding"), and striking them would be an interpretation that
+ * cannot be justified. Where they dilute the core, the actual statement is in
+ * the quotation anyway (rule 1 in `forbiddenCores`).
  */
 export const FORBIDDEN_PACKAGING: ReadonlySet<string> = new Set([
   // English since 01.10.2026, the counterpart of the German list word for word:
@@ -1819,7 +1837,7 @@ export const FORBIDDEN_PACKAGING: ReadonlySet<string> = new Set([
   'propose', 'proposed', 'discard', 'discarded', 'may', 'must',
 ]);
 
-/** Ein Wort so normalisieren, wie `statementTokens` es tut — für den Abgleich oben. */
+/** Normalise a word the way `statementTokens` does — for the lookup above. */
 function normalizeWord(word: string): string {
   return word
     .toLowerCase()
@@ -1830,7 +1848,7 @@ function normalizeWord(word: string): string {
     .replace(/[^a-z0-9_]+/g, '');
 }
 
-/** Die Verpackung abziehen; der Rest ist der Kern, aus dem das Maß seine Wörter nimmt. */
+/** Strip the packaging; the rest is the core from which the measure takes its words. */
 function stripPackaging(text: string): string {
   return text
     .split(/\s+/)
@@ -1839,64 +1857,67 @@ function stripPackaging(text: string): string {
 }
 
 /**
- * **Die Untergrenze eines Kerns: zwei Inhaltswörter.**
+ * **The lower bound of a core: two content words.**
  *
- * Ein Kern aus einem einzigen Wort — „Kernelaufruf", „Level" — ist keine
- * Aussage, sondern ein Wortnachschlag; das Dice-Maß gäbe dort einem beliebigen
- * kurzen Satz mit diesem Wort einen Treffer. Zwei Wörter sind das Kürzeste, was
- * das Maß als Behauptung ausdrücken kann, und die Schwelle 0,50 verlangt dann
- * immer noch, dass der erzeugte Satz beide Wörter trägt **und** selbst höchstens
- * sechs Inhaltswörter lang ist (`2·2 / (2+6) = 0,50`). Darunter wird nichts
- * geraten: der Satz zählt als **nicht vergleichbar**, nicht als bestanden.
+ * A core of a single word — "kernel call", "level" — is not a statement but a
+ * word lookup; the Dice measure would give any short sentence with that word
+ * a hit. Two words are the shortest thing the measure can express as a claim,
+ * and the threshold 0.50 then still requires that the produced statement
+ * carries both words **and** is itself at most six content words long
+ * (`2·2 / (2+6) = 0.50`). Below that nothing is guessed: the sentence counts
+ * as **not comparable**, not as passed.
  */
 export const MIN_FORBIDDEN_CORE_TOKENS = 2;
 
 /**
- * Der Kern einer verbotenen Aussage, in zwei offengelegten Stufen.
+ * The core of a forbidden statement, in two disclosed stages.
  *
- * 1. **Das Zitat.** Wo das Fallbuch die verbotene Aussage in deutsche
- *    Anführungszeichen setzt — „Berechtigungsprüfung fehlt", „die Verbuchung
- *    läuft nach Programmende" —, ist sie wörtlich da, und das ist der sicherste
- *    Kern, den es gibt. Jedes Zitat des ersten Teilsatzes wird ein eigener
- *    Kern; ein erzeugter Satz, der einen davon erreicht, verletzt den Satz.
- * 2. **Die Verneinung.** Ohne brauchbares Zitat bleibt der erste Teilsatz ohne
- *    seine Verpackung (`FORBIDDEN_PACKAGING`).
+ * 1. **The quotation.** Where the case book puts the forbidden statement in
+ *    quotation marks — "authority check missing", "the update runs after the
+ *    end of the program" — it is there verbatim, and that is the safest core
+ *    there is. Every quotation in the first clause becomes a core of its own;
+ *    a produced statement that reaches one of them violates the sentence.
+ * 2. **The negation.** Without a usable quotation, the first clause without
+ *    its packaging (`FORBIDDEN_PACKAGING`) remains.
  *
- * Bleibt danach weniger als `MIN_FORBIDDEN_CORE_TOKENS` übrig, gibt es keinen
- * Kern — der Satz ist nicht vergleichbar und wird als solcher gezählt.
+ * If less than `MIN_FORBIDDEN_CORE_TOKENS` remains after that, there is no
+ * core — the sentence is not comparable and is counted as such.
  */
 /**
- * Deutsche Anführungszeichen: „…" — geöffnet wird mit U+201E, geschlossen im
- * Fallbuch mal mit U+201C, mal mit dem geraden `"`. Beides wird genommen.
+ * Quotation marks: English `"…"`/`“…”`, and the German „…" of the case book
+ * before 01.10.2026 — opened with U+201E and closed sometimes with U+201C,
+ * sometimes with the straight `"`. All of them are taken.
  */
 const QUOTED_CORE = /(?:„|"|“)([^„"“”]*?)["“”]/g;
 
 export function forbiddenCores(clause: string): string[] {
   const marks = clause.matchAll(QUOTED_CORE);
-  // Im Zitat wird **nichts** abgezogen: es steht wörtlich für die verbotene
-  // Aussage, und was darin steht, gehört zu ihr. Die Verpackung liegt immer
-  // außerhalb der Anführungszeichen — „Kein Fachsatz ‚NO_AUTH wird
-  // gemeldet'": „gemeldet" ist hier Teil der Aussage, nicht des Verbots.
+  // **Nothing** is stripped inside a quotation: it stands verbatim for the
+  // forbidden statement, and whatever is in it belongs to it. The packaging
+  // always lies outside the quotation marks — in `No business statement
+  // "NO_AUTH is reported"`, "reported" is part of the statement, not of the
+  // prohibition.
   const quoted = [...marks].map((match) => match[1]);
   if (quoted.length > 0) {
-    // **Das Zitat ist abschließend.** Wo das Fallbuch die verbotene Aussage in
-    // Anführungszeichen gesetzt hat, hat es genau gesagt, welche Wörter
-    // verboten sind. Reicht das Zitat nicht für einen Kern, wird der Satz
-    // **nicht** auf seine Umgebung ausgeweitet — dann gäbe das Maß etwas
-    // vor, das der Fall so nicht verboten hat. Gemessen, nicht vermutet:
-    // genau diese Ausweitung hat am 23.09.2026 die Gegenprobe F0 in
-    // `tests/korpus-mutation.spec.ts` rot gemacht. Aus
-    // „Kein Fachsatz ‚es wird 0 ausgegeben'" (Zitat: ein Inhaltswort) wurde
-    // der Kern «Fachsatz es wird 0 ausgegeben», und der traf mit 0,50 den
-    // Sollsatz „Der Zählerstand wird ausgegeben" — eine wahre Aussage, als
-    // Halluzination gezählt. Das Wort „Fachsatz" kam aus der Verpackung.
+    // **The quotation is final.** Where the case book put the forbidden
+    // statement in quotation marks, it said exactly which words are
+    // forbidden. If the quotation is not enough for a core, the sentence is
+    // **not** widened to its surroundings — the measure would then claim
+    // something the case did not forbid in that form. Measured, not assumed:
+    // exactly this widening turned the counter-probe F0 in
+    // `tests/korpus-mutation.spec.ts` red on 23.09.2026. From the then-German
+    // sentence "no business statement 'it outputs 0'" (quotation: one content
+    // word) came the core «business statement it outputs 0», and it hit, at
+    // 0.50, the expected statement "the counter value is output" — a true
+    // statement, counted as a hallucination. The word "business statement"
+    // came from the packaging.
     return quoted.filter((core) => statementTokens(core).size >= MIN_FORBIDDEN_CORE_TOKENS);
   }
   const core = stripPackaging(clause);
   return statementTokens(core).size >= MIN_FORBIDDEN_CORE_TOKENS ? [core] : [];
 }
 
-/** Ein Satz aus `forbiddenConclusions`, zerlegt. */
+/** One sentence from `forbiddenConclusions`, broken down. */
 export function parseForbiddenConclusion(raw: string, fallbackFile: string | null): ForbiddenConclusion {
   const dash = raw.indexOf('—');
   const prefix = dash > 0 ? raw.slice(0, dash).trim() : '';
@@ -1914,17 +1935,17 @@ export function parseForbiddenConclusion(raw: string, fallbackFile: string | nul
     why:
       cores.length > 0
         ? ''
-        : `nicht vergleichbar: aus „${clause}" lässt sich kein Kern mit ${MIN_FORBIDDEN_CORE_TOKENS} Inhaltswörtern bilden`,
+        : `not comparable: no core of ${MIN_FORBIDDEN_CORE_TOKENS} content words can be formed from "${clause}"`,
   };
 }
 
-/** Alle verbotenen Aussagen eines Falls, zerlegt. */
+/** All forbidden statements of a case, broken down. */
 export function readForbiddenConclusions(korpusCase: KorpusCase): ForbiddenConclusion[] {
   const fallback = korpusCase.sources[0]?.name ?? null;
   return (korpusCase.expected.forbiddenConclusions ?? []).map((raw) => parseForbiddenConclusion(raw, fallback));
 }
 
-/** Eine Verletzung: welcher verbotene Satz, von welchem erzeugten Satz, mit welchem Maß. */
+/** A violation: which forbidden sentence, by which produced statement, with which score. */
 export interface ForbiddenViolation {
   conclusion: ForbiddenConclusion;
   statementId: string;
@@ -1933,12 +1954,12 @@ export interface ForbiddenViolation {
 }
 
 /**
- * Der Vergleich selbst — dieselbe Schwelle, dieselben Anker, umgedrehtes
- * Vorzeichen.
+ * The comparison itself — the same threshold, the same anchors, inverted sign.
  *
- * Geltungsbereich: ein Satz **mit** Anker wird nur gegen erzeugte Sätze an
- * derselben ABAP-Anweisung gemessen (`anchorKeys`, wie in 17.5); ein Satz
- * **ohne** Anker gegen jeden erzeugten Satz des Falls (`FORBIDDEN_WHOLE_SLICE`).
+ * Scope: a sentence **with** an anchor is measured only against produced
+ * statements at the same ABAP statement (`anchorKeys`, as in 17.5); a sentence
+ * **without** an anchor against every produced statement of the case
+ * (`FORBIDDEN_WHOLE_SLICE`).
  */
 export function forbiddenViolations(
   conclusions: ForbiddenConclusion[],
@@ -1965,32 +1986,31 @@ export function forbiddenViolations(
 }
 
 /**
- * Fachsätze — der Vergleich, der bis zum 23.09.2026 keiner war.
+ * Business statements — the comparison that was none until 23.09.2026.
  *
- * Bis 1.9 stand die Klasse 68-mal auf `agree`, weil die einzige Prüfung — zeigen
- * die Anker in den Quelltext? — bestanden wurde. 1.9 hat daraus ein ehrliches
- * `anchor_validation_passed` gemacht und die Facette hart auf `disagree`
- * verdrahtet. Ehrlich, aber blind: 0 agree / 68 disagree hieß nicht „das Produkt
- * versagt", sondern „es wurde nichts verglichen", und solange das so steht, kann
- * keine Prompt- und keine Modelländerung zeigen, ob sie etwas verbessert hat
- * (Roadmap 17.5).
+ * Until 1.9 the class stood at `agree` 68 times, because the only check — do
+ * the anchors point into the source? — passed. 1.9 turned that into an honest
+ * `anchor_validation_passed` and hard-wired the facet to `disagree`. Honest,
+ * but blind: 0 agree / 68 disagree did not mean "the product fails" but
+ * "nothing was compared", and as long as that stands, no prompt change and no
+ * model change can show whether it improved anything (roadmap 17.5).
  *
- * Dieser Vergleich misst wirklich, und zwar **deterministisch**: kein Modell als
- * Richter, kein Netz, kein Schlüssel. Er hat drei Teile, und jeder steht offen:
+ * This comparison really measures, and **deterministically**: no model as
+ * judge, no network, no key. It has three parts, and each is open:
  *
- * 1. **Der Anker ist der Schlüssel** (`anchorKeys`). Zwei Sätze über dieselbe
- *    ABAP-Anweisung sind vergleichbar, zwei Sätze über verschiedene nicht. Ein
- *    Satz ohne Gegenstück am selben Anker ist **nicht verglichen** — er zählt in
- *    den Nenner, nie in den Zähler.
- * 2. **Das Textmaß** (`statementSimilarity`) ist ein Dice-Koeffizient über
- *    normalisierte Inhaltswörter. Simpel und nachrechenbar, mit einer Schwelle,
- *    die am Korpus selbst kalibriert ist (siehe `STATEMENT_MATCH_THRESHOLD`).
- * 3. **Der Erzeuger** (`StatementProducer`) ist austauschbar. Seit 17.7 ist die
- *    Vorgabe `ENGINE_PRODUCER` — `lib/abap/business-statement.ts`, deterministisch
- *    und ohne Modell. `NO_PRODUCER` bleibt daneben stehen, weil die
- *    Empfindlichkeitsprobe den leeren Stand weiter gegen ihn misst. Regel 6 im
- *    Skelett ist dabei unberührt: die Knotenbeschriftung bleibt ein wörtliches
- *    Token, der Fachsatz ist eine eigene Ebene in einer eigenen Datei.
+ * 1. **The anchor is the key** (`anchorKeys`). Two statements about the same
+ *    ABAP statement are comparable, two about different ones are not. A
+ *    statement without a counterpart at the same anchor is **not compared** —
+ *    it counts in the denominator, never in the numerator.
+ * 2. **The text measure** (`statementSimilarity`) is a Dice coefficient over
+ *    normalised content words. Simple and recomputable, with a threshold
+ *    calibrated on the corpus itself (see `STATEMENT_MATCH_THRESHOLD`).
+ * 3. **The producer** (`StatementProducer`) is interchangeable. Since 17.7 the
+ *    default is `ENGINE_PRODUCER` — `lib/abap/business-statement.ts`,
+ *    deterministic and without a model. `NO_PRODUCER` stays alongside because
+ *    the sensitivity probe still measures the empty state against it. Rule 6
+ *    in the skeleton is untouched by this: the node label stays a verbatim
+ *    token, the business statement is a layer of its own in a file of its own.
  */
 function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReading): ClassResult {
   const statements = korpusCase.expected.businessStatements;
@@ -2003,19 +2023,20 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
 
   const produced = reading.businessStatements;
 
-  // --- Die verbotenen Aussagen (Roadmap 17.9) ------------------------------
+  // --- The forbidden statements (roadmap 17.9) ------------------------------
   //
-  // Dieselbe Maschine wie der Inhaltsvergleich, umgedreht: derselbe
-  // Dice-Koeffizient, dieselbe Schwelle, dieselbe Ankerlogik — nur ist ein
-  // Treffer hier ein **Fehler**. Was ein Kern ist und was nicht vergleichbar
-  // bleibt, steht in `forbiddenCores`; wie die Aussagen ohne Anker behandelt
-  // werden, in `FORBIDDEN_WHOLE_SLICE`.
+  // The same machine as the content comparison, inverted: the same Dice
+  // coefficient, the same threshold, the same anchor logic — only here a hit
+  // is an **error**. What a core is and what stays not comparable is in
+  // `forbiddenCores`; how statements without an anchor are treated, in
+  // `FORBIDDEN_WHOLE_SLICE`.
   //
-  // Vor dem Zweig ohne Sollfachsatz gemessen, nicht danach: die verbotenen
-  // Aussagen hängen nicht an den Sollsätzen, sondern an dem, was der Erzeuger
-  // sagt — und der sagt auch in einem Fall ohne Sollsatz etwas. Bis zum
-  // QA-Review von 4b4586aff273 kehrte dieser Zweig vorher zurück, und eine
-  // verbotene Aussage in so einem Fall blieb ungeprüft.
+  // Measured before the branch without an expected business statement, not
+  // after it: the forbidden statements do not depend on the expected
+  // statements but on what the producer says — and it says something even in
+  // a case without an expected statement. Until the QA review of 4b4586aff273
+  // this branch returned first, and a forbidden statement in such a case went
+  // unchecked.
   const conclusions = readForbiddenConclusions(korpusCase);
   const comparableConclusions = conclusions.filter((entry) => entry.cores.length > 0);
   const uncomparableConclusions = conclusions.filter((entry) => entry.cores.length === 0);
@@ -2079,8 +2100,8 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
         case: korpusCase.id,
         class: 'fachsaetze',
         state: 'disagree',
-        // Eine verbotene Aussage bleibt ein Defekt des Erzeugers, auch wenn der
-        // Fall keinen Sollsatz führt, mit dem sich sonst vergleichen ließe.
+        // A forbidden statement stays a producer defect even when the case
+        // carries no expected statement that could otherwise be compared.
         verdict: violated.size > 0 ? 'engine-defekt' : 'nicht-vergleichbar',
         evidence:
           `Der Fall führt keine fachlichen Ground-Truth-Kandidaten; es gibt keinen Sollsatz zu vergleichen. ` +
@@ -2091,7 +2112,7 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
     );
   }
 
-  // --- Teil 1: der Ankercheck, unverändert seit 1.9 -------------------------
+  // --- Part 1: the anchor check, unchanged since 1.9 -------------------------
   const broken: string[] = [];
   let checked = 0;
   for (const statement of statements) {
@@ -2105,17 +2126,17 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
     }
   }
 
-  // --- Teil 2: der Inhalt, über den Anker als Schlüssel ---------------------
+  // --- Part 2: the content, with the anchor as key ---------------------------
   const keysOf = (anchors: Array<{ file: string | null; line: number | null }>) => anchorKeys(anchors, reading);
 
   /**
-   * Alle Paare, die überhaupt über dieselbe Stelle sprechen, mit ihrem Maß.
-   * Die Zuordnung ist **eins zu eins und gierig**: das beste Paar zuerst, dann
-   * sind beide Seiten verbraucht. Ohne diese Regel könnte ein einziger erzeugter
-   * Satz zwei Sollsätze am selben Anker gutschreiben — im Korpus gibt es genau
-   * solche Paare (CC-042-B01/B02 teilen Zeile 4 und unterscheiden sich nur im
-   * Tabellennamen, Dice 0,67). Bei Gleichstand entscheidet die Zahl der geteilten
-   * Ankerschlüssel, dann die ID; der Lauf ist damit reproduzierbar.
+   * All pairs that talk about the same place at all, with their score. The
+   * matching is **one-to-one and greedy**: best pair first, then both sides
+   * are used up. Without this rule a single produced statement could credit
+   * two expected statements at the same anchor — the corpus has exactly such
+   * pairs (CC-042-B01/B02 share line 4 and differ only in the table name,
+   * Dice 0.67). On a tie the number of shared anchor keys decides, then the
+   * id; that makes the run reproducible.
    */
   const pairs: Array<{ expected: number; produced: number; score: number; shared: number }> = [];
   const expectedKeys = statements.map((statement) => keysOf(statement.anchors));
@@ -2150,10 +2171,10 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
   const comparedCount = takenExpected.size;
   const extra = produced.filter((_, index) => !takenProduced.has(index)).length;
 
-  // --- Teil 3, die verbotenen Aussagen, steht oben vor dem Zweig ohne
-  // Sollfachsatz (`forbiddenFacet`, `forbiddenEvidence`).
+  // --- Part 3, the forbidden statements, sits above, before the branch
+  // without an expected business statement (`forbiddenFacet`, `forbiddenEvidence`).
 
-  // --- Teil 4: Status, Zähler, Nenner --------------------------------------
+  // --- Part 4: status, numerator, denominator ------------------------------
   const aspects: FacetAspect[] = [
     facet(
       'ankerpruefung',
@@ -2184,21 +2205,23 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
   ];
 
   /**
-   * **Warum hier die halbe Deckung nicht reicht, anders als in `skelett`.**
+   * **Why half coverage is not enough here, unlike in `skelett`.**
    *
-   * Dort steht die 50-%-Regel, weil die Engine ganze Knotenarten nicht führt —
-   * das ist Unvergleichbarkeit und keine Abweichung. Hier ist es umgekehrt: ein
-   * Sollsatz ohne erzeugtes Gegenstück an derselben Anweisung heißt, dass der
-   * Erzeuger dieselbe Quelle gelesen und an dieser Stelle nichts gesagt hat.
-   * Ein Grün über einem Erzeuger, der ein Drittel der Aussagen still auslässt,
-   * wäre genau das Grün, das „nicht geprüft" heißt (1.9, CR-05).
+   * There the 50 % rule stands because the engine does not carry whole node
+   * kinds — that is non-comparability, not deviation. Here it is the other way
+   * round: an expected statement with no produced counterpart at the same
+   * statement means the producer read the same source and said nothing at
+   * that place. A green over a producer that silently leaves out a third of
+   * the statements would be exactly the green that means "not checked" (1.9,
+   * CR-05).
    *
-   * Was hier bewusst **nicht** zählt: erzeugte Sätze ohne Sollsatz an derselben
-   * Stelle (`extra`). Das Fallbuch erklärt seine Fachsatzliste nirgends für
-   * vollständig — `declaredEmpty` gibt es für Befunde und Objekte, nicht für
-   * Fachsätze —, und was der Korpus nicht behauptet, darf dieser Vergleich
-   * nicht gegen einen Erzeuger verwenden. Die Zahl steht deshalb im Beleg, und
-   * sie ist die Größe, über die 17.6 zu entscheiden hat.
+   * What deliberately does **not** count here: produced statements with no
+   * expected statement at the same place (`extra`). The case book nowhere
+   * declares its business statement list complete — `declaredEmpty` exists for
+   * findings and objects, not for business statements — and what the corpus
+   * does not claim, this comparison must not use against a producer. So the
+   * number goes into the evidence, and it is the quantity 17.6 has to decide
+   * on.
    */
   const agree =
     broken.length === 0 && comparedCount === statements.length && misses.length === 0 && violated.size === 0;
@@ -2207,8 +2230,8 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
     : broken.length > 0
       ? 'korpus-offen'
       : violated.size > 0
-        ? // Eine verbotene Aussage ist ein Defekt des Erzeugers und keine offene
-          // Frage an den Korpus: der Fall hat sie ausdrücklich hingeschrieben.
+        ? // A forbidden statement is a producer defect and not an open
+          // question for the corpus: the case wrote it down explicitly.
           'engine-defekt'
         : produced.length === 0 || comparedCount === 0
           ? 'nicht-vergleichbar'
@@ -2260,7 +2283,7 @@ export function resultId(result: Pick<ClassResult, 'case' | 'class'>): string {
 }
 
 // ---------------------------------------------------------------------------
-// Die Ratsche
+// The ratchet
 // ---------------------------------------------------------------------------
 
 export interface BaselineEntry {
@@ -2269,12 +2292,12 @@ export interface BaselineEntry {
   state: 'agree' | 'disagree';
   verdict: Verdict | null;
   /**
-   * Zähler und Nenner der Facette (1.9). Ohne sie war die Ratsche blind für
-   * den Unterschied zwischen "geprüft und übereinstimmend" und "nicht geprüft":
-   * CC-001 stand auf `agree` mit dem Grund "2 von 8 Knoten vergleichbar".
+   * The facet's numerator and denominator (1.9). Without them the ratchet was
+   * blind to the difference between "checked and agreeing" and "not checked":
+   * CC-001 stood at `agree` with the reason "2 of 8 nodes comparable".
    */
   scope: { compared: number; total: number };
-  /** Der Prüfstatus je Teilprüfung, mit eigenem Nenner. */
+  /** The check status per sub-check, with its own denominator. */
   aspects: FacetAspect[];
   reason: string;
 }

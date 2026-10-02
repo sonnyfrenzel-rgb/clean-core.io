@@ -324,7 +324,7 @@ test.describe('no model call and no knowledge base, by construction', () => {
   test('the assistant names no model stage — so it charges no quota', () => {
     // `app/api/gemini/route.ts` honours the per-stage switch and the run route
     // does the metering; a caller that names no stage spends nothing. Roadmap
-    // 6.8: "Zählt nicht aufs Kontingent."
+    // 6.8: "does not count against the quota."
     const src = read('components/GlossaryChatbot.tsx');
     for (const call of src.match(/callGemini\([^;]*?\);/g) ?? []) {
       expect(call, 'the assistant started naming a model stage — that would charge the quota').not.toMatch(/stage/);

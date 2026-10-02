@@ -12,13 +12,13 @@
  * named exceptions below, each a rule with its reason rather than a list entry.
  *
  * Where each rule comes from (DESIGN.md):
- *   R1  type below 11 px ............................ §1.2 "Untergrenze 11 px"
- *   R2  weight 900 .................................. §1.2 "900 gibt es im Arbeitsraum nicht"
- *   R3  hex / rgb() / hsl() literal ................. §1.1, §8 "Tokens statt Hex"
+ *   R1  type below 11 px ............................ §1.2 "lower limit 11 px"
+ *   R2  weight 900 .................................. §1.2 "there is no 900 in the workspace"
+ *   R3  hex / rgb() / hsl() literal ................. §1.1, §8 "tokens instead of hex"
  *   R4  Tailwind palette class ...................... §1.1, §8
- *   R5  green palette class (subset of R4) .......... §1.1, ADR-007 "Grün heißt belegt"
+ *   R5  green palette class (subset of R4) .......... §1.1, ADR-007 "green means evidenced"
  *   R6  native alert / confirm / prompt ............. §1.5, §2.6 Message Box
- *   R7  own-surface button or link .................. §1.5 "genau vier"
+ *   R7  own-surface button or link .................. §1.5 "exactly four"
  *   R8  outline-none without a focus-visible ring ... §1.6
  *   R9  onClick on div/span/li/tr/td without role
  *       and key handler ............................. §1.6, §2 keyboard
@@ -157,8 +157,8 @@ export function isUiFile(rel: string): boolean {
 }
 
 /**
- * Public pages (§1.4 "Öffentliche Seiten": 22–28 px radii, mesh, shadows "wie
- * heute", E-5). R12 is a workspace rule and does not apply to them. The list is
+ * Public pages (§1.4 "public pages": 22–28 px radii, mesh, shadows "as
+ * today", E-5). R12 is a workspace rule and does not apply to them. The list is
  * the public surfaces of the plan's Lane C: landing, public header and footer,
  * catalogue and method, public content, legal and account-action pages, and the
  * knowledge pages.

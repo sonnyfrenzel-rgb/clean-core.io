@@ -23,8 +23,8 @@ import {
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
- * Roadmap 7.7 — "Prüfhinweise Compliance: … sie bestimmen Prüftiefe und
- * Testpflicht, sind aber **Hinweise, keine Einstufung**."
+ * Roadmap 7.7 — "compliance review hints: … they set the review depth and the
+ * test obligation, but are **hints, not a classification**."
  *
  * That last clause is the whole step, and it is the kind of line a product
  * drifts across one adjective at a time. "Tables of this kind often carry

@@ -53,15 +53,15 @@ import { signInViaLanding } from './helpers/sign-in';
  * wiring, one test per sentence of the roadmap line, each one red without the
  * change it names:
  *
- *   - *nicht abgedeckte Profile werden sichtbar abgelehnt oder als unbestätigt
- *     geführt* — an on-premise target is a 422 with a sentence, where the route
+ *   - *profiles not covered are visibly refused or carried as unconfirmed* —
+ *     an on-premise target is a 422 with a sentence, where the route
  *     used to coerce it to a signed Public-Cloud run; a Private-Edition run is
  *     signed as `unconfirmed` with the reason;
- *   - *ein Profilwechsel ändert den Subject-Hash und entwertet abhängige
- *     Freigaben* — the same source under a second profile writes the change
+ *   - *a profile change alters the subject hash and invalidates dependent
+ *     sign-offs* — the same source under a second profile writes the change
  *     record that makes the sign-off stale, and a sign-off on a run whose
  *     profile is no longer the project's is a 409;
- *   - *ein Latest-Eintrag ersetzt keinen älteren Release-Snapshot still* — a
+ *   - *a latest entry does not silently replace an older release snapshot* — a
  *     lookup that names `pce-2023-3` is refused, never answered from `latest`;
  *   - and the old runs: a run signed before 7.10 verifies as it was sealed and
  *     is labelled, not reinterpreted.

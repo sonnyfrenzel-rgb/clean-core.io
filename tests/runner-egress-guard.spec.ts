@@ -4,9 +4,9 @@
  *
  * The acceptance criterion this pins, from the roadmap:
  *
- *   "Bei deaktiviertem oder nicht attestiertem Runner lehnt die API neue
- *    Ausführungen serverseitig ab. Ein Frontend-Flag oder das bloße Setzen
- *    einer Egress-Umgebungsvariable aktiviert ihn nicht."
+ *   "With the runner deactivated or not attested, the API refuses new
+ *    executions on the server side. A frontend flag or merely setting an
+ *    egress environment variable does not activate it."
  *
  * History: `S4_TEST_RUNNER_EGRESS_ENFORCED=true` was once the whole gate — it
  * put decrypted tenant credentials into a child process of the API service and

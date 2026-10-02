@@ -74,7 +74,7 @@ test.describe('rule 1 — Retire', () => {
   });
 
   /**
-   * CR-17, confirmed: "Nullnutzung → endgültig Retire".
+   * CR-17, confirmed: "zero usage → definitively Retire".
    *
    * The evidence sentence used to read "No executions in SCMON, 2025-08-01 to
    * 2026-08-31 (13 months, includes year-end close)." Two things were wrong
@@ -435,7 +435,7 @@ test.describe('summarizePublicCloudFit and the headline (ADR-029)', () => {
   });
 
   /**
-   * "Ein leerer Zustand ist nicht null." A project whose objects SAP has never
+   * "An empty state is not zero." A project whose objects SAP has never
    * heard of is not a project with zero path problems — it is a project the
    * catalogue could not speak about at all, and the card has to say that in a
    * word instead of showing a reassuring 0.
@@ -673,8 +673,8 @@ test.describe('resolvePublicCloudFit — wiring findings, usage and the catalog 
  * Keep said "nothing to do" over a modification (f9695d22d124).
  *
  * The rule table in the head of `public-cloud-fit.ts` states it twice: every
- * modification and every own write access to an SAP table is Rebuild, "das ist
- * die Arbeit des Projekts, nie die von SAP". Both checks stood *after*
+ * modification and every own write access to an SAP table is Rebuild, "that is
+ * the project's work, never SAP's". Both checks stood *after*
  * `isKeepEligible`, which returns on the first match — so a level-A object the
  * project had modified came back as Keep. The existing coverage was `D` plus a
  * modification (a level that never keeps), so the combination that mattered was
