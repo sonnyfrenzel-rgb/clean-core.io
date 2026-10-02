@@ -271,33 +271,35 @@ test.describe('every stage stays on the type scale', () => {
 });
 
 test.describe('"Back to workspace" leads to the view and layer the stage was opened from (QA 472315d93455, e5483b2e4ca7)', () => {
-  test('view and layer are kept, anything unknown is dropped, no workspace means the dashboard', () => {
-    expect(workspaceBackHref({ projectId: 'p-1', shell: true, search: '?view=it&from=it-answers-heading' })).toBe(
+  test('view and layer are kept, anything unknown is dropped, and the way back is always the workspace', () => {
+    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=it&from=it-answers-heading' })).toBe(
       '/project/p-1?view=it#it-answers-heading',
     );
-    expect(workspaceBackHref({ projectId: 'p-1', shell: true, search: '' })).toBe('/project/p-1');
+    expect(workspaceBackHref({ projectId: 'p-1', search: '' })).toBe('/project/p-1');
     // A view the workspace does not know, and a layer id that is not an id, are dropped.
-    expect(workspaceBackHref({ projectId: 'p-1', shell: true, search: '?view=admin&from=%3Cscript%3E' })).toBe('/project/p-1');
-    expect(workspaceBackHref({ projectId: 'p 1', shell: true, search: '' })).toBe('/project/p%201');
-    // Without the workspace switch /project/[id] is a 404 — the way back is the dashboard.
-    expect(workspaceBackHref({ projectId: 'p-1', shell: false, search: '?view=it' })).toBe('/dashboard');
+    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=admin&from=%3Cscript%3E' })).toBe('/project/p-1');
+    expect(workspaceBackHref({ projectId: 'p 1', search: '' })).toBe('/project/p%201');
+    // Roadmap 3.0.1 (ADR-061): every account has the workspace, so no reader is
+    // sent to the dashboard by "Back to workspace" any more.
+    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=it' })).toBe('/project/p-1?view=it');
   });
 
-  test('the link waits for the profile, so a workspace account is never sent to the dashboard (f8d5367e0a00, ba5d2cdeda03)', () => {
-    // While the profile loads, every account reads as having no workspace: the
-    // header must hold the place, not offer a way that may be the wrong one.
-    expect(stageBackLink({ projectId: 'p-1', profileLoading: true, shell: false, search: '?view=it' })).toEqual({ kind: 'pending' });
-    expect(stageBackLink({ projectId: 'p-1', profileLoading: false, shell: true, search: '?view=it' })).toEqual({
-      kind: 'link', href: '/project/p-1?view=it', to: 'workspace',
-    });
-    expect(stageBackLink({ projectId: 'p-1', profileLoading: false, shell: false, search: '' })).toEqual({
-      kind: 'link', href: '/dashboard', to: 'dashboard',
-    });
-    expect(stageBackLink({ projectId: '', profileLoading: false, shell: true, search: '' })).toEqual({ kind: 'none' });
-    // …and the header renders from that decision, not from a second copy of it.
-    const src = fs.readFileSync(path.join(process.cwd(), 'components/StageHeader.tsx'), 'utf8');
-    expect(src).toContain('const back = stageBackLink({ projectId, profileLoading, shell, search });');
-    expect(src).not.toContain('workspaceBackHref(');
+  test('a workspace account is never sent to the dashboard — no account is, any more (f8d5367e0a00, ba5d2cdeda03)', () => {
+    // The wrong way used to be possible while the profile loaded, because the
+    // way back depended on the account. Since roadmap 3.0.1 (ADR-061) it does
+    // not: the link is the workspace's from the first render, for every reader.
+    expect(stageBackLink({ projectId: 'p-1', search: '?view=it' })).toEqual({ kind: 'link', href: '/project/p-1?view=it' });
+    expect(stageBackLink({ projectId: 'p-1', search: '' })).toEqual({ kind: 'link', href: '/project/p-1' });
+    expect(stageBackLink({ projectId: '', search: '' })).toEqual({ kind: 'none' });
+    // …and the header and footer render from that decision, not from a second
+    // copy of it, and neither reads the profile to make it.
+    for (const rel of ['components/StageHeader.tsx', 'components/StageFooter.tsx']) {
+      const src = fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
+      expect(src, rel).toContain('const back = stageBackLink({ projectId, search });');
+      expect(src, rel).not.toContain('workspaceBackHref(');
+      expect(src, `${rel} decides the way back by account`).not.toContain('useUserProfile');
+      expect(src, `${rel} still knows a dashboard way back`).not.toContain("'/dashboard'");
+    }
   });
 
   test('the way in carries what the way back reads — the three workspace links, round trip (D.29)', () => {
@@ -309,7 +311,7 @@ test.describe('"Back to workspace" leads to the view and layer the stage was ope
         const href = stageHref({ base: '/project/p-1', path: 'design', view, from });
         expect(href).toBe(`/project/p-1/design?view=${view}&from=${from}`);
         const search = href.slice(href.indexOf('?'));
-        expect(workspaceBackHref({ projectId: 'p-1', shell: true, search })).toBe(`/project/p-1?view=${view}#${from}`);
+        expect(workspaceBackHref({ projectId: 'p-1', search })).toBe(`/project/p-1?view=${view}#${from}`);
       }
     }
     // The demo has no workspace to return to, and an unknown view is dropped.

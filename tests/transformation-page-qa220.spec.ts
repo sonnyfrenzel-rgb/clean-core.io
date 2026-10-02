@@ -84,13 +84,16 @@ test('6f3dc15e6f7b · generation waits for the model switch and respects it', ()
   expect(src).toMatch(/disabled=\{blockers\.length > 0 \|\| modelOff !== null\}/);
 });
 
-test('c1c94b3caae4 · proceeding without a package is marked as leaving it behind', () => {
+test('c1c94b3caae4 · there is no "proceed" that could look recommended without a package', () => {
   const src = code();
-  // The stage's footer passes NavigationButtons' props through unchanged for an
-  // account without the workspace (components/StageFooter.tsx).
-  const nav = src.slice(src.indexOf('<StageFooter'));
-  expect(nav).toMatch(/incomplete=\{files\.length === 0\}/);
-  expect(nav).toContain('incompleteReason="no transformed code has been generated"');
+  // The finding was a forward button that looked like the way on over an empty
+  // package. Since roadmap 3.0.1 (ADR-061) no stage has a forward button at
+  // all: the footer is the way back to the workspace, and the next step is the
+  // workspace's to say (components/StageFooter.tsx).
+  expect(src).toContain('<StageFooter />');
+  expect(src).not.toMatch(/proceedPath|proceedLabel|Proceed to Documentation/);
+  // The page still says what is missing where it is missing: the empty state.
+  expect(src).toMatch(/files\.length === 0 && !busy \?/);
 });
 
 test('604c2ded57e3 · "copied" is said only after the clipboard answered', () => {

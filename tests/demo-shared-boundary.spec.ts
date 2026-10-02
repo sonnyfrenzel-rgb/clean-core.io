@@ -60,7 +60,7 @@ test.describe('the shared components keep the demo’s promise', () => {
     await adminSetDoc('users', admin.user.uid, {
       tier: 'pilot', status: 'approved', transformationsUsed: 0, transformationsLimit: 5,
       termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
-      firstName: 'Demo', lastName: 'Boundary', email: ADMIN, isAdmin: true, workspaceShell: true,
+      firstName: 'Demo', lastName: 'Boundary', email: ADMIN, isAdmin: true,
     });
   });
 

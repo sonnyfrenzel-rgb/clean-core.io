@@ -243,15 +243,18 @@ test.describe('progress lives in this browser only', () => {
 });
 
 test.describe('"Show tips again" in the help menu', () => {
-  test('is in the account menu, behind the workspace switch, and clears both kinds of tip', () => {
+  test('is in the account menu, for every account, and clears both kinds of tip', () => {
     const layout = read('app/(app)/layout.tsx');
     expect(layout).toContain('Show tips again');
-    // The item is the one element inside the switch's condition: from the
-    // condition to the end of that button, and nowhere else (the menu item
-    // carries its ARIA attributes since D.6, so a fixed window no longer fits).
-    const at = layout.indexOf('{workspaceShellEnabled(profile) && (');
-    expect(at, 'the item is not behind the workspace switch').toBeGreaterThan(-1);
+    // Behind the workspace switch until roadmap 3.0.1; every account has the
+    // workspace since (ADR-061), so the item is a plain menu item. From its
+    // marker to the end of that button (the menu item carries its ARIA
+    // attributes since D.6, so a fixed window does not fit).
+    expect(layout, 'the item is behind a switch again').not.toMatch(/workspaceShell/);
+    const at = layout.lastIndexOf('<button', layout.indexOf('data-show-tips-again'));
+    expect(at, 'the item is not a button of the menu').toBeGreaterThan(-1);
     const item = layout.slice(at, layout.indexOf('</button>', at));
+    expect(item).toContain('role="menuitem"');
     expect(item).toContain('showTipsAgain()');
     expect(item).toContain('Show tips again');
     const fn = read('lib/show-tips-again.ts');

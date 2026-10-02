@@ -87,8 +87,8 @@ async function signIn(page: Page, email: string) {
 async function openWorkspace(page: Page) {
   await page.setViewportSize({ width: 1440, height: 1400 });
   await signIn(page, ADMIN_EMAIL);
-  // Since 01.10.2026 there is one "My workspace", at /dashboard: the 3.0 list
-  // for an account with the switch on, the old page for every other account.
+  // Since 01.10.2026 there is one "My workspace", at /dashboard: the 3.0 list,
+  // for every account in good standing since roadmap 3.0.1.
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-cc-workspace]', { timeout: 60000 });
   await page.waitForSelector('[data-cc-object-identifier-title]', { timeout: 60000 });
@@ -115,7 +115,7 @@ test.beforeAll(async () => {
     activatedAt: new Date(), transformationsUsed: 1, transformationsLimit: 5,
     termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
   };
-  await adminSetDoc('users', adminUid, { ...profile, email: ADMIN_EMAIL, isAdmin: true, workspaceShell: true });
+  await adminSetDoc('users', adminUid, { ...profile, email: ADMIN_EMAIL, isAdmin: true });
   await adminSetDoc('users', communityUid, { ...profile, email: COMMUNITY_EMAIL, isAdmin: false });
 });
 
@@ -129,23 +129,25 @@ test('the server under test is the one that was changed', async ({ page }) => {
   await expect(page.locator('[data-cc-table]')).toHaveCount(1);
 });
 
-test('a community account keeps its dashboard, and the old address of the list leads there', async ({ page }) => {
+test('a community account gets the same "My workspace", and the old address of the list leads there', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await signIn(page, COMMUNITY_EMAIL);
 
   // /admin/workspace was where the 3.0 list grew; it now redirects to the one
-  // "My workspace" — which for an account without the switch is the old page.
+  // "My workspace" — which since roadmap 3.0.1 (ADR-061) is the 3.0 list for
+  // every account in good standing, not only for an administrator.
   await page.goto('/admin/workspace', { waitUntil: 'domcontentloaded' });
   await page.waitForURL(/\/dashboard$/, { timeout: 60000 });
-  await page.waitForSelector('[data-testid="demo-entry"]', { timeout: 60000 });
-  expect(
-    await page.locator('[data-cc-workspace]').count(),
-    'the new workspace leaked into /dashboard for a community account',
-  ).toBe(0);
-  await expect(page.locator('[data-testid="demo-entry-title"]')).toBeVisible();
+  await expect(page.locator('[data-cc-workspace]'), 'a community account still gets the old page').toHaveCount(1, {
+    timeout: 60000,
+  });
+  expect(await page.locator('[data-dashboard]').count(), 'both workspaces rendered').toBe(0);
+  await expect(page.locator('h1')).toHaveText(CC_MESSAGES['workspace.title']);
+  // The demo is the list's first row and leads to the workspace demo with its tour.
+  await expect(page.locator('[data-workspace-open="demo"]').first()).toHaveAttribute('href', '/demo/workspace');
 });
 
-test('the switch decides which "My workspace" /dashboard shows — and there is only one at a time', async ({ page }) => {
+test('there is only one "My workspace" at a time on /dashboard', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openWorkspace(page);
   await expect(page.locator('[data-cc-workspace]')).toHaveCount(1);

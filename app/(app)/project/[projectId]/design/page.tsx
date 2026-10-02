@@ -8,7 +8,6 @@ import { doc, updateDoc, deleteField, runTransaction } from 'firebase/firestore'
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
-import StageProgress from '@/components/StageProgress';
 import { FileText, Download, RefreshCw, Eye, LayoutGrid, List } from 'lucide-react';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
@@ -615,12 +614,6 @@ ${responseText.substring(0, 4000)}`;
 
   if (loading && !design) return (
     <div className="min-h-screen">
-      {/* Where am I, what is behind me, what is still open — kept on
-          screen while the stepper scrolls away. Both read the same contract;
-          neither decides anything. */}
-
-      <StageProgress steps={phases} current="design" projectId={projectId as string} />
-
       <StageHeader stage="design" tools={{ steps: phases, current: 'design' }} projectName={project?.name}>Where this code should run after the change, and the design that gets it there.</StageHeader>
 
       <div className="overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc">
@@ -899,12 +892,6 @@ ${responseText.substring(0, 4000)}`;
 
   return (
     <div className="min-h-screen">
-      {/* The rail used to render only while the page was loading: it sat in the
-          early return and nowhere else, so it vanished the moment there was
-          something to report on. */}
-
-      <StageProgress steps={phases} current="design" projectId={projectId as string} />
-
       <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
       <StageHeader tools={{ steps: phases, current: 'design' }} projectName={project?.name}
@@ -999,20 +986,7 @@ ${responseText.substring(0, 4000)}`;
         />
       </div>
 
-      <StageFooter
-        backPath={`/project/${projectId}/analyze`}
-        backLabel="Back to Analysis"
-        proceedPath={signOffCurrent ? `/project/${projectId}/transformation` : undefined}
-        proceedLabel={
-          signOffCurrent
-            ? 'Continue to Transformation'
-            : project?.approvedByArchitect
-              ? designStale
-                ? 'Regenerate and re-confirm to proceed'
-                : 'Re-confirm to proceed'
-              : 'Confirm architecture to proceed'
-        }
-      />
+      <StageFooter />
     </div>
   );
 }

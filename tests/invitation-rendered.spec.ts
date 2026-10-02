@@ -80,9 +80,10 @@ test('the invitation dialog says, in the dialog, that this includes the source c
   // profile has arrived, so this is the wait that makes the list meaningful.
   await expect(page.locator('[data-account-menu]')).toHaveText('IU', { timeout: 90000 });
   await page.waitForURL('**/dashboard', { timeout: 60000 });
-  await page.waitForSelector('[data-invite-open]', { timeout: 60000 });
-
-  await page.locator('[data-invite-open]').first().click();
+  // My workspace is the 3.0 list for every account since roadmap 3.0.1: the
+  // invitation is one of the row's actions, behind its "More" menu.
+  await page.click(`[data-workspace-more="${PROJECT_ID}"]`, { timeout: 60000 });
+  await page.locator(`[data-workspace-more-panel="${PROJECT_ID}"] [data-invite-open]`).click();
   const dialog = page.locator('[data-invite-dialog]');
   await expect(dialog).toBeVisible();
 

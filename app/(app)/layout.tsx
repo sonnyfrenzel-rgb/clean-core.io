@@ -27,7 +27,6 @@ import UserOnboarding from '@/components/UserOnboarding';
 import TermsReacceptGate from '@/components/TermsReacceptGate';
 import { runsAreSelfFunded, runsRemaining } from '@/lib/run-quota-rule';
 import { Lightbulb } from 'lucide-react';
-import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { showTipsAgain } from '@/lib/show-tips-again';
 import { forgetShellProject, openProjectSearch, useProjectSearchAvailable, useShellProjectName } from '@/lib/shell-context';
 import { workspaceBackHref } from '@/lib/workspace-back-href';
@@ -182,14 +181,11 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
     return null;
   })();
   // On a stage the project crumb leads back to the workspace — the object page,
-  // in the view the stage was opened from, for an account behind the preview
-  // switch; the dashboard for everyone else (the same rule as the stage's own
+  // in the view the stage was opened from (the same rule as the stage's own
   // "Back to workspace", `lib/workspace-back-href.ts`). On the object page it is
   // where the reader stands.
   const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
-  const projectHref = projectId
-    ? workspaceBackHref({ projectId, shell: workspaceShellEnabled(profile), search })
-    : null;
+  const projectHref = projectId ? workspaceBackHref({ projectId, search }) : null;
   // The search slot of §2.1: a button only while a project search is on the
   // page (the object page's ⌘K dialog), opening it by a named event.
   const projectSearch = useProjectSearchAvailable();
@@ -382,18 +378,16 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
 
                     {/* Roadmap 3.0.7, DESIGN.md §6.2: brings back the coach marks
                         and restarts the demo tour — both live in this browser
-                        only. Behind the workspace switch, like the tips. */}
-                    {workspaceShellEnabled(profile) && (
-                      <button
-                        type="button"
-                        role="menuitem"
-                        tabIndex={-1}
-                        onClick={() => { closeAccountMenu(true); showTipsAgain(); }}
-                        data-show-tips-again=""
-                      >
-                        <Lightbulb size={16} aria-hidden={true} /> Show tips again
-                      </button>
-                    )}
+                        only. For every account since 3.0.1, like the tips. */}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      tabIndex={-1}
+                      onClick={() => { closeAccountMenu(true); showTipsAgain(); }}
+                      data-show-tips-again=""
+                    >
+                      <Lightbulb size={16} aria-hidden={true} /> Show tips again
+                    </button>
 
                     <div role="separator" className={SHELL_MENU_SEPARATOR} />
                     {/* The focus goes back to the account button before the box

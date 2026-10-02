@@ -44,20 +44,6 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'revision.movedHeadline': 'This process has moved on.',
   'revision.keep': 'Keep this Stand',
   'revision.refresh': 'Refresh',
-  // ShellSwitch
-  'shellSwitch.signInAgain': 'Sign in again to change this setting.',
-  'shellSwitch.saveFailed': 'Could not save the setting.',
-  'shellSwitch.title': 'Workspace preview',
-  'shellSwitch.facet': 'Preview',
-  'shellSwitch.turnOff': 'Turn off',
-  'shellSwitch.turnOn': 'Turn on',
-  'shellSwitch.leadBefore': 'The 3.0 workspace, on your own account only. It adds one address —',
-  'shellSwitch.address': '/project/<id>',
-  'shellSwitch.leadAfter':
-    '— which stays a 404 for every other account, signed in or not. Nothing else changes anywhere, and nothing behind it is privileged: it is the same project, read the same way, drawn differently.',
-  'shellSwitch.designSystem': 'The design system',
-  'shellSwitch.designSystemAfter': 'is the language it is built from.',
-  'shellSwitch.notSaved': 'Not saved.',
   // ManagementAnswers
   'mgmtAnswers.reading': 'Reading the runs of this project…',
   'mgmtAnswers.notDetermined': 'Not determined',
@@ -136,8 +122,8 @@ export const WORKSPACE_PAGE_MESSAGES = {
   // NewProject
   'newProject.createFailed': 'The project could not be created. Nothing was saved.',
   'newProject.loading': 'Loading',
-  'newProject.accessDenied': 'Access denied',
-  'newProject.adminOnly': 'This page is restricted to Clean-Core.io system administrators.',
+  'newProject.signInTitle': 'Sign in to start a project',
+  'newProject.signInBody': 'A project belongs to an account. Sign in, and this page offers an example or your own code.',
   'newProject.title': 'New project',
   'newProject.different': 'What is different here',
   'newProject.cleanCoreMeans': 'What clean core means',
@@ -155,9 +141,6 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'newProject.nothingCreated': 'Nothing was created.',
   'newProject.personalDataPending':
     'Read the lines above and tick the box to carry on. Nothing has been created yet.',
-  // WorkspaceListReport (the rest of its text is in lib/cc-messages.ts)
-  'listReport.accessDenied': 'Access denied',
-  'listReport.adminOnly': 'This page is restricted to Clean-Core.io system administrators.',
   // My workspace — the 3.0 list (mockup s7), its sharing section and row menu
   'myWorkspace.colLevels': 'Levels',
   'myWorkspace.colRules': 'Rules confirmed',
@@ -335,11 +318,6 @@ export function layerSectionShowing(shown: number, total: number): string {
 /** RevisionStand — the notice when somebody else has moved the Stand. */
 export function revisionMovedMessage(seenBadge: string, heldBadgeLower: string): string {
   return `${seenBadge} was written somewhere else while this screen was open. You are reading ${heldBadgeLower}. Nothing here has changed and nothing of yours was overwritten.`;
-}
-
-/** ShellSwitch — the save failed with a status and no message of its own. */
-export function shellSwitchHttpError(status: number): string {
-  return `Could not save the setting (HTTP ${status}).`;
 }
 
 /** ThreeViewsStage — the line under the stage, after the example's name. */

@@ -292,11 +292,12 @@ Headings: the project title is `h1`, every section `h2`, every card `h3`; no lev
 header comes from `StageHeader` and stands like the project title: **22 px / 800, `-0.02em`, `--cc-ink`**, as `h1`. The
 icon stands neutrally in front of it — 20 px, `--cc-ink-muted`, without a surface; no green bubble, because in the workspace green means
 evidenced (§1.1). Above the title the link **"Back to workspace"** (13 px / 600, `--cc-ink-muted`, arrow left; a link,
-not a button), which leads back to the view and layer from which the stage was opened. Below it the same toolbar as in
+not a button), which leads back to the view and layer from which the stage was opened — on a demo stage to the demo
+workspace (`/demo/workspace`) by the same rule. Below it the same toolbar as in
 the workspace (ADR-060): the seven tools with their marks, the stage's own tool selected in `--cc-ink` with
 `aria-current="page"`, each link keeping view, origin and layer — side by side from breakpoint L, a "Tools" menu below.
-It replaces the stepper wherever it is drawn (a workspace account, the demo); one way across, not two. Eyebrow and lead
-stay, in the scale of §1.2 (micro label, body text).
+It is the one way across for every account and in the demo; the seven-circle stepper, its rail and the "Proceed to …"
+footer are gone (ADR-061). Eyebrow and lead stay, in the scale of §1.2 (micro label, body text).
 
 On scrolling the header shrinks to title, view switcher and the facet line — in Business the "Project
 status" line; the anchor bar stays in place. **A
@@ -857,7 +858,7 @@ On the element and in the list of all business statements (ADR-055, roadmap 17.1
 | **Request** | a button *Propose business sentences* (Secondary), after the first proposal *Ask the model again* (Ghost); next to it, before the click, the cost line per §2.8 — one model call, does not count against the analysis runs, counts against the hourly limit of model calls; with your own key "with your own Gemini key". Only the owner has it; an invited reader sees what the owner requested |
 | **Without proposal** | not requested, discarded, for an earlier source or failed: the engine's sentences alone, as before — no empty area, no error tone; a reason, if one is known, in `--cc-ink-muted` |
 
-Never automatic: opening the stage costs no model call. Until 3.0 only with the workspace preview.
+Never automatic: opening the stage costs no model call. For every account since roadmap 3.0.1 (ADR-061).
 
 ---
 
@@ -1096,6 +1097,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.2 | 02.10.2026 | The switch for everyone (roadmap 3.0.1, ADR-061): every account opens its projects in the workspace and "My workspace" is the list report; the stepper, its rail and the linear stage footer are gone; a demo stage's "Back to workspace" leads to the demo workspace (§2.3, the header of a stage; §5.10) |
 | 1.8.1 | 02.10.2026 | Tools side by side from breakpoint L in every view, each with the stepper's mark for its phase, and the same bar under "Back to workspace" on every stage and demo stage (ADR-060, Sonny 02.10.2026): §2.3 item 3, the header per view, the navigation table, the header of a stage, §2.11 |
 | 1.8 (draft, for acceptance by Sonny) | 30.09.2026 | Block D completed (D.30): all guards apply to `app/**` and `components/**`, the exception lists are deleted, only named exceptions remain (§8); `--cc-warning-mark` `#d97706` for warning marks in bars and dots (§1.1, §1.8); generated Markdown text in `.cc-prose` on the scale §1.2 |
 | 1.7 | 27.09.2026 | Business statement as the model's proposal above the engine's sentence, contradiction as an edge stroke with words instead of a chip, requesting only via a button with a cost line (§5.10, ADR-055, roadmap 17.10) |

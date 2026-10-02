@@ -665,7 +665,7 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
     await adminSetCustomClaim(adminUid, { admin: true });
     await adminSetDoc('users', adminUid, {
       firstName: 'Search', lastName: 'Admin', email: ADMIN,
-      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
+      tier: 'pilot', status: 'approved', isAdmin: true,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
     await adminSetDoc('projects', PROJECT_ID, {
@@ -849,7 +849,7 @@ test.describe('a Fachwort in the answer carries the glossary with it', () => {
     await adminSetCustomClaim(cred.user.uid, { admin: true });
     await adminSetDoc('users', cred.user.uid, {
       firstName: 'Glossary', lastName: 'Admin', email: ADMIN,
-      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
+      tier: 'pilot', status: 'approved', isAdmin: true,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
     await adminSetDoc('projects', PROJECT_ID, {

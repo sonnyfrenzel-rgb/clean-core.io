@@ -40,6 +40,8 @@ test.describe('a target outside our own paths is discarded', () => {
     ['javascript:alert(1)', 'a scheme'],
     ['/admin/console-action', 'an internal path that is not on the list'],
     ['/project/abc/secrets', 'a stage that does not exist'],
+    ['/demo/workspace/', 'the workspace demo with a trailing slash'],
+    ['/demo/workspacex', 'a look-alike of the workspace demo'],
     ['', 'the empty string'],
     ['/' + 'x'.repeat(600), 'an absurd length'],
   ];
@@ -68,6 +70,8 @@ test.describe('our own paths survive', () => {
     '/settings',
     '/first-run',
     '/demo',
+    // Roadmap 3.0.1: the landing's "Explore the demo" signs in to the workspace demo.
+    '/demo/workspace',
     '/trust',
     '/verify-pack',
     '/project/abc123',

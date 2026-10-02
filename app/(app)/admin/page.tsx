@@ -19,7 +19,8 @@ import { CcTag } from '@/components/cc/Tag';
 import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
 import { AccountStateText, accountState, type AccountStateEntry } from '@/components/admin/AccountState';
 import UsageQuotaPanel from '@/components/admin/UsageQuotaPanel';
-import WorkspaceShellSwitch from '@/components/workspace/ShellSwitch';
+import CcCard from '@/components/cc/Card';
+import CcLinkButton from '@/components/cc/LinkButton';
 import RunnerSelftestPanel from '@/components/admin/RunnerSelftestPanel';
 
 export default function AdminConsole() {
@@ -552,10 +553,19 @@ export default function AdminConsole() {
         </CcMessageStrip>
       )}
 
-      {/* The switch the 3.0 interface grows behind (roadmap 1.4). Here because
-          this is where the gate it shares already is, and because it only ever
-          acts on the signed-in administrator's own account. */}
-      <WorkspaceShellSwitch />
+      {/* The design-system gallery. Its link used to sit inside the workspace
+          preview switch; the switch went with roadmap 3.0.1 (ADR-061), the
+          gallery stays an administrator's reference. */}
+      <div className="cc">
+        <CcCard
+          title="Design system"
+          actions={<CcLinkButton href="/admin/design-system" variant="ghost">Open the gallery</CcLinkButton>}
+        >
+          <p className="m-0 text-[13px] leading-relaxed font-medium text-cc-ink-muted">
+            The components and tokens the workspace is built from, rendered.
+          </p>
+        </CcCard>
+      </div>
 
       {/* The negative test of the isolated runners (roadmap 8.9), one click.
           Same gate as every action here: admin claim plus a fresh step-up. */}

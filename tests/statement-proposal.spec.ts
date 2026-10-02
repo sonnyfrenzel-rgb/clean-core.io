@@ -4,7 +4,6 @@ import path from 'path';
 import { validateStatementAnswer } from '../lib/business-statement-prompt';
 import {
   MODEL_STAGES,
-  PREVIEW_MODEL_STAGES,
   modelAbsenceReason,
   offeredModelStages,
 } from '../lib/model-stages';
@@ -75,12 +74,11 @@ function recordFor(source: string, answer = ANSWER): StatementProposalRecord {
 }
 
 test.describe('the stage', () => {
-  test('statements is a model stage of its own, offered with the workspace preview only', () => {
+  test('statements is a model stage of its own, offered to every account', () => {
     expect(STATEMENT_STAGE).toBe('statements');
     expect(MODEL_STAGES).toContain('statements');
-    expect(PREVIEW_MODEL_STAGES).toContain('statements');
-    expect(offeredModelStages(true)).toContain('statements');
-    expect(offeredModelStages(false)).not.toContain('statements');
+    // Roadmap 3.0.1: the workspace is every account's, so is its stage's switch.
+    expect(offeredModelStages()).toContain('statements');
   });
 
   test('the cost line says a model is called and what it counts against, before the click', () => {

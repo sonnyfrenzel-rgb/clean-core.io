@@ -269,11 +269,11 @@ test.describe('own code: the handoff to Analyze', () => {
     const take = analyze.indexOf('const handoff = takeOwnCodeHandoff(projectId as string);');
     expect(set).toBeGreaterThan(take);
     expect(analyze.slice(take, set)).toContain('if (handoff) {');
-    // After the signed run's id is in hand, behind the workspace switch.
+    // After the signed run's id is in hand — for every account since roadmap 3.0.1.
     const runId = analyze.indexOf('const activeRunId = runResult.runId;');
     const push = analyze.indexOf("router.push(`/project/${projectId}?first=1`)");
     expect(push).toBeGreaterThan(runId);
-    expect(analyze.slice(runId, push)).toContain('openWorkspaceAfterRunRef.current && workspaceShellEnabled(profile)');
+    expect(analyze.slice(runId, push)).toContain('if (openWorkspaceAfterRunRef.current) {');
   });
 });
 

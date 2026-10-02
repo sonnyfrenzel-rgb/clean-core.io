@@ -277,10 +277,11 @@ reference-case expectation is met and which gaps are still open.
   Documentation have no facet of their own (`DESIGN.md` §2.3); the "Why?" of
   *Handover* states both, badge and detail, with a link to each tool. Every
   reference case's badges and details can therefore be read in the workspace.
-- **Open gaps** (`workspace.openGaps`): WG-01 the workspace is behind the admin
-  switch (3.0.1); WG-02 the way back from a stage leads to the dashboard, not
-  to the workspace (3.0.1); WG-03 the "Why?" target on a phone (3.0.4). Each
-  is held by an assertion, so closing one has to update the register.
+- **Open gaps** (`workspace.openGaps`): WG-03 the "Why?" target on a phone
+  (3.0.4). It is held by an assertion, so closing it has to update the register.
+  WG-01 (the workspace was behind the admin switch) and WG-02 (the way back
+  from a stage led to the dashboard) closed with roadmap 3.0.1 (ADR-061); the
+  spec now holds them closed.
 - **L-04** is left to 3.0.5, which retires it (`workspace.notAssessedHere`).
 
 [`tests/preservation-workspace.spec.ts`](../tests/preservation-workspace.spec.ts)

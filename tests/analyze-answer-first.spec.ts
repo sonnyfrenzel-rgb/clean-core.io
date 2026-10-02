@@ -98,8 +98,10 @@ test.describe('the page, read', () => {
     expect(src).not.toContain('Business Analysis Report');
     expect(src).not.toContain('<CcTabs');
     expect(src).toContain('<StageFooter');
-    // The sticky bar with "Continue to Design" is for accounts without the workspace only.
-    expect(src).toMatch(/hasResults && !profileLoading && !shell && project && \(/);
+    // The sticky bar with "Continue to Design" was for accounts without the
+    // workspace; since roadmap 3.0.1 (ADR-061) there are none, and it is gone.
+    expect(src).not.toContain('Continue to Design');
+    expect(src).not.toContain('isSticky');
     // One place for all that is not determined: the side card, drawn by one component.
     expect(src).not.toContain('id="analysis-not-determined"');
     expect(src).not.toContain('could not determine`}');

@@ -44,8 +44,9 @@ export const CHECK_LABEL: Record<CheckId, string> = {
 
 /**
  * Which session opens a route: `public` in a fresh, signed-out context (what a
- * visitor sees), `signed-in` as an administrator with the workspace switch on
- * and the Terms accepted (what `/project/[id]` and `/admin/workspace` need).
+ * visitor sees), `signed-in` as an administrator with the Terms accepted (the
+ * admin console needs the role; `/project/[id]` needs only an account since
+ * roadmap 3.0.1).
  */
 export type Session = 'public' | 'signed-in';
 
@@ -78,7 +79,7 @@ export const ROUTES: RouteDef[] = [
   { key: 'trust', route: '/trust', session: 'public', url: '/trust', ready: ['h1'] },
   { key: 'how-to', route: '/how-to', session: 'public', url: '/how-to', ready: ['h1'] },
   { key: 'demo-analyze', route: '/demo/[stage] (analyze)', session: 'public', url: '/demo/analyze', ready: ['h1'] },
-  // Behind the workspace switch like /project/[id]: a visitor gets a 404 (DemoWorkspaceShell).
+  // Every signed-in account's since 3.0.1; a visitor is sent to sign in and back (DemoWorkspaceShell).
   { key: 'demo-workspace', route: '/demo/workspace', session: 'signed-in', url: '/demo/workspace', ready: ['[data-demo-ready="true"] h1', FIRST_LOOK_DONE] },
   { key: 'settings', route: '/settings', session: 'signed-in', url: '/settings', ready: ['h1'] },
   { key: 'admin-workspace', route: '/admin/workspace', session: 'signed-in', url: '/admin/workspace', ready: ['h1'] },

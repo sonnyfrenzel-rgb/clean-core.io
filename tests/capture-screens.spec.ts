@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { adminMergeDoc, adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
+import { adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
 import { TOUR_STORAGE_KEY } from '../lib/demo-tour';
 import { LANDING_SHOTS, LANDING_SHOT_DIR, STAGE_SHOTS, STAGE_SHOT_SOURCE } from '../lib/landing-shots';
 import sharp from 'sharp';
@@ -343,14 +343,16 @@ test.describe('capture', () => {
  * to choose a new excerpt from.
  *
  * `LANDING_SHOTS` (`lib/landing-shots.ts`) is the contract with `app/page.tsx`:
- * the page names these files and nothing else. The account is an administrator with the workspace
- * switch on, because until 3.0.1 that is who `/demo/workspace` opens for.
+ * the page names these files and nothing else. The account is an ordinary community account —
+ * no admin claim, no `isAdmin` (owner decision 24.09.2026, roadmap 3.0.1): since 3.0.1 every
+ * account opens `/demo/workspace` and its projects in the workspace, and the pictures show what
+ * a community member sees, not an administrator's view of it.
  */
 
 test.describe('capture the landing page views', () => {
   test.skip(process.env.CAPTURE_LANDING !== '1', 'set CAPTURE_LANDING=1 to run');
 
-  /** A fresh administrator account in the emulator, signed in on `page`. */
+  /** A fresh community account in the emulator — no admin claim — signed in on `page`. */
   const signIn = async (page: Page) => {
     if (!getApps().length) initializeApp(firebaseConfig);
     const auth = getAuth();
@@ -359,7 +361,6 @@ test.describe('capture the landing page views', () => {
     } catch { /* already connected */ }
     const email = `capture-landing-${Date.now()}@cleancore-test.io`;
     const cred = await createUserWithEmailAndPassword(auth, email, PASSWORD);
-    await adminSetCustomClaim(cred.user.uid, { admin: true });
     await adminSetDoc('users', cred.user.uid, {
       termsVersionAccepted: TERMS_VERSION,
       termsAcceptedAt: new Date(),
@@ -371,8 +372,6 @@ test.describe('capture the landing page views', () => {
       transformationsUsed: 0,
       transformationsLimit: 5,
       mfaEnabled: false,
-      isAdmin: true,
-      workspaceShell: true,
       createdAt: new Date(),
     });
 
@@ -409,9 +408,8 @@ test.describe('capture the landing page views', () => {
     await open('?view=business');
     await page.evaluate((key) => window.localStorage.removeItem(key), TOUR_STORAGE_KEY);
     await open('?view=business');
-    // From the workspace itself down, without the account bar above it: the
-    // capture account is an administrator (the switch), and a public page has
-    // no business showing whose session took the picture.
+    // From the workspace itself down, without the account bar above it: a
+    // public page has no business showing whose session took the picture.
     const below = async () => {
       const top = (await page.locator('[data-demo-workspace]').first().boundingBox())!.y;
       return { x: 96, y: Math.max(0, top - 20), width: 1248, height: 820 };

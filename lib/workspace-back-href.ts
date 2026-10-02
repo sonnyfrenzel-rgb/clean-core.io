@@ -1,4 +1,5 @@
 import { isWorkspaceView, LAYERS, VIEW_LABELS, type LayerKey } from '@/lib/workspace-model';
+import { DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 
 const LAYER_ID = /^[A-Za-z][\w-]{0,63}$/;
 
@@ -10,16 +11,27 @@ const LAYER_ID = /^[A-Za-z][\w-]{0,63}$/;
  */
 export function workspaceBackHref({
   projectId,
-  shell,
   search,
 }: {
   projectId: string;
-  /** Whether this account has the object-page workspace (`workspaceShellEnabled`). */
-  shell: boolean;
   /** The stage's `location.search`, e.g. `?view=it&from=it-answers-heading`. */
   search: string;
 }): string {
-  if (!shell) return '/dashboard';
+  return backTo(`/project/${encodeURIComponent(projectId)}`, search);
+}
+
+/**
+ * The same rule for the demo: its stages lead back to the demo workspace
+ * (`/demo/workspace`), in the view and layer they were opened from (owner
+ * 02.10.2026: "from the demo, a button back to the workspace at the top").
+ * The tour's place lives in the browser (`lib/demo-tour.ts`), so it is kept
+ * without travelling in the address.
+ */
+export function demoWorkspaceBackHref(search: string): string {
+  return backTo(DEMO_WORKSPACE_ROUTE, search);
+}
+
+function backTo(workspace: string, search: string): string {
   const params = new URLSearchParams(search);
   const view = params.get('view');
   const from = params.get('from');
@@ -29,30 +41,33 @@ export function workspaceBackHref({
   // the workspace holds the layer in its fragment (ADR-018), and returning to
   // the toolbar of another layer would lose the place the reader was reading.
   const hash = layer ? `#${layer}` : from && LAYER_ID.test(from) ? `#${from}` : '';
-  return `/project/${encodeURIComponent(projectId)}${query}${hash}`;
+  return `${workspace}${query}${hash}`;
 }
 
 /**
- * What the stage header shows where "Back to workspace" stands: nothing on the
- * demo (no project), a held place while the profile is still loading — before
- * that every account reads as having no workspace, and a click would send a
- * workspace user to the dashboard (QA review of 472315d93455, f8d5367e0a00) —
- * and the link once it is known where it leads.
+ * What the stage header shows where "Back to workspace" stands: the link to the
+ * project's workspace on a project's stage, the link to the demo workspace on
+ * a demo stage, and nothing where there is neither.
+ *
+ * Since roadmap 3.0.1 (ADR-061) every account has the workspace, so where the
+ * link leads no longer depends on who is reading. It used to: until the profile
+ * was read every account looked like one without a workspace, and the header
+ * held an invisible place rather than send a workspace reader to the dashboard
+ * (QA review of 472315d93455, f8d5367e0a00). There is nothing left to wait for.
  */
 export function stageBackLink({
   projectId,
-  profileLoading,
-  shell,
   search,
+  demo = false,
 }: {
   projectId: string;
-  profileLoading: boolean;
-  shell: boolean;
   search: string;
-}): { kind: 'none' } | { kind: 'pending' } | { kind: 'link'; href: string; to: 'workspace' | 'dashboard' } {
+  /** A demo stage (`/demo/<stage>`): back to `/demo/workspace`. */
+  demo?: boolean;
+}): { kind: 'none' } | { kind: 'link'; href: string } {
+  if (demo) return { kind: 'link', href: demoWorkspaceBackHref(search) };
   if (!projectId) return { kind: 'none' };
-  if (profileLoading) return { kind: 'pending' };
-  return { kind: 'link', href: workspaceBackHref({ projectId, shell, search }), to: shell ? 'workspace' : 'dashboard' };
+  return { kind: 'link', href: workspaceBackHref({ projectId, search }) };
 }
 
 /**

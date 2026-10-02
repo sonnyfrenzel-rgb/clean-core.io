@@ -22,8 +22,9 @@ export interface WorkspaceTool {
 
 /**
  * The small mark after a tool's name: what is on record for that stage, said
- * the way the stepper says it (`components/Stepper.tsx`), because two surfaces
- * that read one phase differently is roadmap 1.7 all over again.
+ * the way the old seven-circle stepper said it (roadmap 3.0.1 retired the
+ * stepper; this mark is its reading), because two surfaces that read one phase
+ * differently is roadmap 1.7 all over again.
  *
  *   - a tick where the stepper ticks (`done`), in the stepper's tone: green
  *     only where something verified it (`proven`, DESIGN.md §1.1 "green says

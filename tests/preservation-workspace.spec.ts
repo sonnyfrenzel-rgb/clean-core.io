@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
-import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
+import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import {
@@ -412,28 +412,21 @@ test.describe('each reference case holds in the workspace', () => {
 test.describe('the open gaps are still open — closing one has to update the register', () => {
   const gap = (id: string) => register.workspace.openGaps.find((g) => g.id === id);
 
-  test('WG-01: the workspace is still behind the admin-only switch (3.0.1)', () => {
-    expect(gap('WG-01')?.step).toBe('3.0.1');
+  test('WG-01 and WG-02 are closed by 3.0.1 — and stay out of the open gaps', () => {
+    // Roadmap 3.0.1 (ADR-061) closed both: the register says so, and the code
+    // holds it — the workspace asks for a signed-in account, not a switch, and
+    // the way back from a stage leads to the workspace for every account.
+    expect(gap('WG-01'), 'WG-01 is closed by 3.0.1 — the register still lists it').toBeUndefined();
+    expect(gap('WG-02'), 'WG-02 is closed by 3.0.1 — the register still lists it').toBeUndefined();
+    expect(register.workspace.reachability).toContain('3.0.1');
     const page = raw(register.workspace.page);
-    expect(page).toContain('const enabled = workspaceShellEnabled(profile);');
-    expect(page).toContain('notFound();');
-  });
-
-  test('WG-02: the way back from a stage still leads to the dashboard (3.0.1)', () => {
-    expect(gap('WG-02')?.step).toBe('3.0.1');
-    // Since D.6 the shell carries a path instead of the "Back to My Workspace"
-    // pill, and since D.9 the stage's own "Back to workspace" link is the way
-    // back. Both still lead to /dashboard for every account outside the switch.
-    const layout = raw('app/(app)/layout.tsx');
-    const at = layout.indexOf('data-shell-path=""');
-    expect(at, 'the shell path moved — re-read WG-02').toBeGreaterThan(-1);
-    expect(layout.slice(at, at + 600)).toContain('href="/dashboard"');
-    const back = stageBackLink({ projectId: 'p-1', profileLoading: false, shell: false, search: '' });
-    expect(back, 'the stage link no longer leads a switch-less account to the dashboard — re-read WG-02').toMatchObject({ kind: 'link', to: 'dashboard' });
-    if (back.kind === 'link') expect(back.href.startsWith('/dashboard')).toBe(true);
+    expect(page).toContain('const enabled = profile != null;');
+    expect(page).not.toMatch(/workspaceShell|isAdmin/);
+    const back = stageBackLink({ projectId: 'p-1', search: '' });
+    expect(back).toEqual({ kind: 'link', href: '/project/p-1' });
     // …and the stage header renders exactly that decision as its link (QA 1a44e754567b).
     const header = raw('components/StageHeader.tsx');
-    expect(header).toMatch(/const back = stageBackLink\(\{ projectId, profileLoading, shell, search \}\);/);
+    expect(header).toContain('const back = stageBackLink({ projectId, search });');
     expect(header).toContain('href={back.href}');
   });
 
@@ -480,17 +473,14 @@ test.describe('the reference cases, opened in the workspace', () => {
     }
     const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD);
     const uid = cred.user.uid;
-    // The workspace is the admin preview until 3.0.1 (WG-01): claim first, so
-    // the token minted at sign-in already carries it.
-    await adminSetCustomClaim(uid, { admin: true });
+    // An ordinary community account: no admin claim and no preview flag. Since
+    // roadmap 3.0.1 (WG-01 closed) that is all the workspace asks for.
     await adminSetDoc('users', uid, {
       firstName: 'Preservation',
       lastName: 'Workspace',
       email: EMAIL,
       tier: 'pilot',
       status: 'approved',
-      isAdmin: true,
-      workspaceShell: true,
       transformationsUsed: 1,
       transformationsLimit: 5,
       termsVersionAccepted: TERMS_VERSION,

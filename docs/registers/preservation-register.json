@@ -2308,7 +2308,7 @@
     "shell": "components/workspace/WorkspaceShell.tsx",
     "model": "lib/workspace-model.ts",
     "guard": "tests/preservation-workspace.spec.ts",
-    "reachability": "Behind the admin-only switch (`workspaceShellEnabled`) until roadmap 3.0.1 opens it for every account. Until then everything recorded under `workspace` is true of the preview, and a community account still meets the seven stages alone — which is the reason the stages stay whole.",
+    "reachability": "Every signed-in account since roadmap 3.0.1 (ADR-061): every project opens in the workspace and the seven stages are its tools. Until then it was an administrator's preview; WG-01 (reachability) and WG-02 (the way back led to /dashboard) closed with 3.0.1. The stages stay whole because they are the tools.",
     "kinds": {
       "shown": "the workspace itself states it — a status, a chip, a layer row, the \"Why?\" of a status or the Next step card",
       "linked": "it lives on the stage page and the workspace opens that stage as a tool; the workspace neither repeats nor bypasses it",
@@ -2417,18 +2417,6 @@
       "L-04": "Roadmap 3.0.5 retires this limit on its own branch (the Documentation stage writes `documentation` from the engine), so 3.0.3 leaves the entry untouched. Today it lives only in the Documentation tool, which the workspace links."
     },
     "openGaps": [
-      {
-        "id": "WG-01",
-        "subject": "reachability",
-        "statement": "The workspace is behind the admin-only switch; a community account cannot open it.",
-        "step": "3.0.1"
-      },
-      {
-        "id": "WG-02",
-        "subject": "navigation",
-        "statement": "The way back from a stage leads to /dashboard, not to the workspace of the project with its view and layer (DESIGN.md §2.3, \"Back to workspace\"). Pointing it at the workspace before the switch is open would send a community account to a 404.",
-        "step": "3.0.1"
-      },
       {
         "id": "WG-03",
         "subject": "phone",

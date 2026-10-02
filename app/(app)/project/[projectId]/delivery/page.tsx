@@ -11,7 +11,6 @@ import { doc, updateDoc, collection, getDocs, query, where } from 'firebase/fire
 import { getDb, getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
-import StageProgress from '@/components/StageProgress';
 import { PresentationViewer, PresentationData } from '@/components/PresentationViewer';
 import { buildBoardDeck, type RunTrendPoint } from '@/lib/board-deck';
 import { detectFindings } from '@/lib/abap/findings-detector';
@@ -613,11 +612,6 @@ jobs:
 
   if (loading || (!project && !loadFailed)) return (
     <div>
-      {/* Where am I, what is behind me, what is still open — kept on
-          screen while the stepper scrolls away. Both read the same contract;
-          neither decides anything. */}
-
-      <StageProgress steps={phases} current="delivery" projectId={projectId as string} />
       <StageHeader stage="delivery" tools={{ steps: phases, current: 'delivery' }} projectName={project?.name} />
       <CcSkeleton shape="cards" label="Finalizing delivery package..." count={4} />
     </div>
@@ -625,7 +619,6 @@ jobs:
 
   if (!project) return (
     <div className="max-w-7xl mx-auto px-4 md:px-0">
-      <StageProgress steps={phases} current="delivery" projectId={projectId as string} />
       <StageHeader stage="delivery" tools={{ steps: phases, current: 'delivery' }} />
       <div data-delivery-load-failed>
         <CcMessageStrip
@@ -684,8 +677,6 @@ jobs:
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-0">
-      <StageProgress steps={phases} current="delivery" projectId={projectId as string} />
-
       {/* The lead used to read "The transformation lifecycle is complete … ready
           for deployment" on every project, including one with nothing but an
           analysis run behind it. Block D, D.19: the title is the stage's name

@@ -270,9 +270,10 @@ test.describe('server side', () => {
     await page.goto(`/project/${PROJECT_ID}/delivery`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stale-notice]')).toBeVisible({ timeout: 30000 });
     await expect(page.locator('[data-handover-bundle]')).toBeDisabled();
-    await expect(page.locator('nav[aria-label="Workflow phases"] [data-phase="design"]'))
+    // The tools bar under the stage header (it replaced the stepper, roadmap 3.0.1).
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]'))
       .toHaveAttribute('data-phase-state', 'stale');
-    await expect(page.locator('nav[aria-label="Workflow phases"] [data-phase="delivery"]'))
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="delivery"]'))
       .toHaveAttribute('data-phase-state', 'stale');
 
     await page.goto(`/project/${PROJECT_ID}/transformation`, { waitUntil: 'domcontentloaded' });

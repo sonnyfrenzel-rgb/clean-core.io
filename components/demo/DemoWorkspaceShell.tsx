@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { notFound, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronRight, RotateCcw } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -26,11 +26,10 @@ import { useFitByPlatform } from '@/hooks/useFitByPlatform';
 import { managementExecutive, type ExecutiveTarget } from '@/lib/management-executive';
 import { managementOverview, type Loaded } from '@/lib/management-overview';
 import type { ItFindingsSource } from '@/lib/it-findings';
-import { stageHref } from '@/lib/workspace-back-href';
+import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import DemoTourStop from '@/components/demo/DemoTourStop';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDemoTour } from '@/hooks/useDemoTour';
-import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import {
   VIEW_LABELS,
   VIEW_QUESTIONS,
@@ -54,7 +53,9 @@ import {
   DEMO_STRIP_NOTICE,
   DEMO_TAG,
   DEMO_UNSIGNED_NOTICE,
+  DEMO_WORKSPACE_ROUTE,
 } from '@/lib/demo-marks';
+import { signInLinkFor } from '@/lib/return-path';
 import {
   TOUR_INVITATION_HREF,
   nextStep,
@@ -168,7 +169,14 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   const router = useRouter();
   const searchParams = useSearchParams();
   const { profile, loading: profileLoading } = useUserProfile();
-  const enabled = workspaceShellEnabled(profile);
+  // Every signed-in account since roadmap 3.0.1. A visitor without an account
+  // is sent to sign in and returned here (`lib/return-path.ts`): the public
+  // demo stages lead back to this page, and a 404 at the end of "Back to
+  // workspace" would be a dead end (owner 02.10.2026).
+  const enabled = profile != null;
+  useEffect(() => {
+    if (!profileLoading && !enabled) router.replace(signInLinkFor(DEMO_WORKSPACE_ROUTE));
+  }, [profileLoading, enabled, router]);
 
   const view = viewFromParam(searchParams?.get('view'));
   const setView = useCallback(
@@ -304,14 +312,13 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   const cardInvites = tourInvitationShowing(tour.progress, view);
   const waiting = stationOf(tour.progress);
 
-  if (profileLoading) {
+  if (profileLoading || !enabled) {
     return (
       <div data-workspace-gate="loading" role="status" className="py-16">
         <span className="sr-only">{wt('demo.loading')}</span>
       </div>
     );
   }
-  if (!enabled) notFound();
 
   const standard = demo.transformation.plan.filter((p) => p.successor);
 
@@ -442,9 +449,19 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         ) : null}
 
         {/* The seven stages of the demo — the tools of this workspace (ADR-018). */}
-        <nav aria-label={wt('demo.stagesNav')} className="mt-4 flex flex-wrap gap-2" data-demo-stages="">
+        {/* Each carries the view and layer it was opened from, so the demo
+            stage's "Back to workspace" returns here (owner 02.10.2026). */}
+        <nav
+          id={WORKSPACE_RETURN.tools}
+          aria-label={wt('demo.stagesNav')}
+          className="mt-4 flex flex-wrap gap-2"
+          data-demo-stages=""
+        >
           {PHASES.map((p) => (
-            <CcLinkButton key={p.key} href={`/demo/${p.key}`}>
+            <CcLinkButton
+              key={p.key}
+              href={stageHref({ base: '/demo', path: p.key, view, from: WORKSPACE_RETURN.tools, layer: hashLayer })}
+            >
               {p.label}
             </CcLinkButton>
           ))}

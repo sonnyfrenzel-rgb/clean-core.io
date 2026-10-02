@@ -31,7 +31,6 @@ import {
 import ModelStagesCard from '@/components/ModelStagesCard';
 import { byokAllowed } from '@/lib/byok-eligibility';
 import CommunityMailCard from '@/components/CommunityMailCard';
-import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcLinkButton from '@/components/cc/LinkButton';
@@ -1456,11 +1455,8 @@ export default function SettingsPage() {
       )}
 
       {/* Roadmap 1.2 — the model stages, one switch each. Next to the
-          key it spends, because the two questions are asked together.
-          Roadmap 2.4: the naming stage is offered only where the
-          workspace preview is on — the map it names is not shown
-          anywhere else yet. */}
-      <ModelStagesCard showPreviewStages={workspaceShellEnabled(profile)} />
+          key it spends, because the two questions are asked together. */}
+      <ModelStagesCard />
 
       {/* System Preferences. Until the 3.0 rebuild this card also offered
           "Default Landing View" and "Automated Backup Sync". Both were saved

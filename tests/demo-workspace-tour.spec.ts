@@ -60,7 +60,7 @@ test.beforeAll(async () => {
   const admin = await createUserWithEmailAndPassword(auth, ADMIN, PASSWORD);
   await adminSetCustomClaim(admin.user.uid, { admin: true });
   await adminSetDoc('users', admin.user.uid, {
-    ...profile, firstName: 'Demo', lastName: 'Tour', email: ADMIN, isAdmin: true, workspaceShell: true,
+    ...profile, firstName: 'Demo', lastName: 'Tour', email: ADMIN, isAdmin: true,
   });
   const community = await createUserWithEmailAndPassword(auth, COMMUNITY, PASSWORD);
   await adminSetDoc('users', community.user.uid, {

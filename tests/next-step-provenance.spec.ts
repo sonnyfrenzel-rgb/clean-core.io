@@ -249,7 +249,7 @@ test.describe('the card, as the reader sees it', () => {
     await adminSetCustomClaim(adminUid, { admin: true });
     await adminSetDoc('users', adminUid, {
       firstName: 'Prov', lastName: 'Reader', email: ADMIN,
-      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
+      tier: 'pilot', status: 'approved', isAdmin: true,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
 

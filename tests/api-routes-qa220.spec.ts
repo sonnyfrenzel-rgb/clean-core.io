@@ -196,21 +196,13 @@ test.describe('the Resend webhook', () => {
   });
 });
 
-test('the workspace switch does not report a landed write as failed', () => {
-  const src = code('app/api/workspace-shell/route.ts');
-  const post = src.slice(src.indexOf('export async function POST'));
-  expect(post).not.toContain('...(await answerFor(uid))');
-  expect(post).toMatch(/answerFor\(uid\)\.catch\(/);
-});
-
-test('the workspace switch reads its body through ?. so a JSON null is the 400, not a 500', () => {
-  // Carried QA finding 8c778be1d34d. The behaviour — a `null` body answered
-  // 400 — is exercised against the route as an administrator in
-  // tests/workspace-shell-guard.spec.ts ('the switch is written by the
-  // server …'); this half keeps the shape of the read (QA finding 85123a06a2b7).
-  const post = code('app/api/workspace-shell/route.ts');
-  expect(post).toContain('(body as { enabled?: unknown } | null)?.enabled');
-  expect(post).not.toContain('(body as { enabled?: unknown }).enabled');
+test('the workspace switch route is gone, and with it the two findings on its write and its body', () => {
+  // QA findings 8c778be1d34d and 85123a06a2b7 were about how
+  // `POST /api/workspace-shell` answered a landed write and a JSON `null`. The
+  // route went with the switch in roadmap 3.0.1 (ADR-061): every account has
+  // the workspace, so there is no write left to report. That it answers 404
+  // now is checked against the server in tests/workspace-shell-guard.spec.ts.
+  expect(fs.existsSync(path.resolve(process.cwd(), 'app/api/workspace-shell/route.ts'))).toBe(false);
 });
 
 test('the mock purchase-order route is never served in production and says it is a simulation', () => {

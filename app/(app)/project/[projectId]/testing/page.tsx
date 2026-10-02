@@ -10,7 +10,6 @@ import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
-import StageProgress from '@/components/StageProgress';
 import type { Project } from '@/lib/types';
 import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft, Check, Circle, Plug, Lock } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
@@ -1047,12 +1046,6 @@ export default function TestingSandboxPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Where am I, what is behind me, what is still open — kept on
-          screen while the stepper scrolls away. Both read the same contract;
-          neither decides anything. */}
-
-      <StageProgress steps={phases} current="testing" projectId={projectId as string} />
-
       <StaleNotice
         title={`Built for ${previousBasis(project)}`}
         reasons={[
@@ -2623,14 +2616,7 @@ export default function TestingSandboxPage() {
         The tenant URL, the user and the encrypted secret are removed from your account — for every project, not only this one. Checks need a new connection afterwards.
       </CcMessageBox>
 
-      <StageFooter
-        backPath={`/project/${projectId}/documentation`}
-        backLabel="Back to Documentation"
-        proceedPath={`/project/${projectId}/tco`}
-        proceedLabel="Proceed to Economics"
-        incomplete={testCases.length === 0}
-        incompleteReason="no test suite has been generated"
-      />
+      <StageFooter />
     </div>
   );
 }

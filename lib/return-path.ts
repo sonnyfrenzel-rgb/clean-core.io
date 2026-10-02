@@ -48,6 +48,8 @@ const ALLOWED_TARGETS: RegExp[] = [
   /^\/admin$/,
   /^\/first-run$/,
   /^\/demo$/,
+  // Roadmap 3.0.1: the landing's "Explore the demo" opens the workspace demo with its tour.
+  /^\/demo\/workspace$/,
   /^\/knowledge$/,
   /^\/trust$/,
   /^\/verify-pack$/,

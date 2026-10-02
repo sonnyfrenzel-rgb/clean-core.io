@@ -42,6 +42,9 @@ import { TERMS_VERSION } from '../lib/constants';
  * and ask three things a constant cannot answer — do the two surfaces paint the
  * same phase the same, does the colour stay put when the reader moves, and is
  * the colour of verified work different from the colour of work nothing checked.
+ * Since roadmap 3.0.1 (ADR-061) the stepper and the rail are gone and the two
+ * surfaces are the tools bars that replaced them: the one under every stage
+ * header and the workspace's own (ADR-060).
  */
 
 const draft: TestCase[] = [
@@ -223,7 +226,7 @@ test.describe('the stepper and the rail say the same thing about the same phase'
   const RUN_ID = `honesty-run-${Date.now()}`;
 
   // All seven, and populated enough that none of them renders an empty state:
-  // an empty stage has no stepper to compare.
+  // an empty stage has a different header to compare.
   const STAGES = ['analyze', 'design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'];
 
   // What the fixture below is, phase by phase — asserted rather than assumed.
@@ -290,97 +293,113 @@ test.describe('the stepper and the rail say the same thing about the same phase'
 
   test('same colour, same tick, on every page — and the reader\'s position changes neither', async ({ page }) => {
     test.setTimeout(240 * 1000);
-    // Wide enough for the rail: it is `hidden 2xl:flex`, and 2xl is 1536px.
+    // Wide enough for the open bar in every view (breakpoint L, ADR-060).
     await page.setViewportSize({ width: 1680, height: 1000 });
 
     await signInViaLanding(page, EMAIL, PASSWORD);
 
+    // Since roadmap 3.0.1 (ADR-061) the seven-circle stepper and its rail are
+    // gone; the phase marks every account reads are the tools bar's — the one
+    // under every stage header and the one in the workspace. Those are the two
+    // surfaces compared here, the way the stepper and the rail were before.
     type Mark = { colour: string; tone: string | null; tick: boolean };
-    const seen: Record<string, { stepper: Mark; rail: Mark }[]> = {};
+    const seen: Record<string, { stage: Mark; workspace: Mark }[]> = {};
+
+    const killTransitions = () =>
+      page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important;}' });
+
+    // The mark's paint: a tick is drawn in its ink, a dot in its fill.
+    const readMarks = async (bar: string): Promise<Record<string, Mark>> => {
+      const rows = await page.locator(`${bar} a[data-workspace-tool]`).evaluateAll((els) =>
+        els.map((el) => {
+          const mark = el.querySelector('[data-workspace-tool-mark]');
+          const kind = el.getAttribute('data-workspace-tool-mark-kind');
+          const colour = mark
+            ? kind === 'check'
+              ? getComputedStyle(mark).color
+              : getComputedStyle(mark).backgroundColor
+            : 'none';
+          return {
+            key: el.getAttribute('data-workspace-tool') || '',
+            colour,
+            tone: el.getAttribute('data-phase-tone'),
+            tick: kind === 'check',
+          };
+        }),
+      );
+      return Object.fromEntries(rows.map((r) => [r.key, { colour: r.colour, tone: r.tone, tick: r.tick }]));
+    };
+
+    // The workspace's own bar, once: the reference every stage page is held to.
+    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-tools="open"] a[data-workspace-tool="testing"]')).toHaveAttribute(
+      'data-phase-state',
+      'done',
+      { timeout: 60000 },
+    );
+    await killTransitions();
+    const workspaceMarks = await readMarks('[data-workspace-tools="open"]');
 
     for (const stage of STAGES) {
       await page.goto(`/project/${PROJECT_ID}/${stage}`, { waitUntil: 'domcontentloaded' });
-      const stepper = page.locator('nav[aria-label="Workflow phases"]');
-      const rail = page.locator('nav[aria-label="Workflow progress"]');
-      await stepper.waitFor({ timeout: 45000 });
-      await rail.waitFor({ timeout: 45000 });
+      const bar = page.locator('[data-stage-tools="open"]');
+      await bar.waitFor({ timeout: 45000 });
       // The loaded state, not the loading one: the fixture's Testing is done.
-      await expect(stepper.locator('[data-phase="testing"]')).toHaveAttribute('data-phase-state', 'done', { timeout: 45000 });
-
-      // No window to race: the circles carry `transition-all duration-300`, and a
-      // read taken mid-transition would pass or fail by how fast the machine is.
-      // Killing transitions outright is deterministic; waiting a beat is not.
-      await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important;}' });
-
-      const readMark = async (selector: string): Promise<Mark> => {
-        const el = page.locator(selector).first();
-        const colour = await el.evaluate((node) => {
-          const s = getComputedStyle(node);
-          return [s.borderTopColor, s.backgroundColor].join(' | ');
-        });
-        const tone = await el.getAttribute('data-phase-tone');
-        const tick = (await el.locator('svg').count()) > 0;
-        return { colour, tone, tick };
-      };
-
+      await expect(bar.locator('a[data-workspace-tool="testing"]')).toHaveAttribute('data-phase-state', 'done', { timeout: 45000 });
+      // No window to race: killing transitions outright is deterministic.
+      await killTransitions();
+      const marks = await readMarks('[data-stage-tools="open"]');
       for (const p of [...PROVEN, ...UNPROVEN]) {
         if (!seen[p]) seen[p] = [];
-        seen[p].push({
-          stepper: await readMark(`nav[aria-label="Workflow phases"] [data-phase="${p}"]`),
-          rail: await readMark(`nav[aria-label="Workflow progress"] [data-rail-phase="${p}"]`),
-        });
+        seen[p].push({ stage: marks[p], workspace: workspaceMarks[p] });
       }
     }
 
-    // 1. The two surfaces, on the same page, about the same phase.
+    // 1. The two surfaces, about the same phase.
     const disagreements: string[] = [];
     for (const [key, rows] of Object.entries(seen)) {
       rows.forEach((row, i) => {
-        if (row.stepper.colour !== row.rail.colour) {
-          disagreements.push(`${STAGES[i]} page · ${key}: stepper ${row.stepper.colour} vs rail ${row.rail.colour}`);
-        }
-        if (row.stepper.tick !== row.rail.tick) {
-          disagreements.push(`${STAGES[i]} page · ${key}: stepper tick ${row.stepper.tick} vs rail tick ${row.rail.tick}`);
-        }
-        if (row.stepper.tone !== row.rail.tone) {
-          disagreements.push(`${STAGES[i]} page · ${key}: stepper tone ${row.stepper.tone} vs rail tone ${row.rail.tone}`);
+        for (const field of ['colour', 'tick', 'tone'] as const) {
+          if (row.stage[field] !== row.workspace[field]) {
+            disagreements.push(
+              `${STAGES[i]} page · ${key}: stage bar ${field} ${row.stage[field]} vs workspace bar ${row.workspace[field]}`,
+            );
+          }
         }
       });
     }
-    expect(disagreements, `the stepper and the rail disagree:\n${disagreements.join('\n')}`).toEqual([]);
+    expect(disagreements, `the stage bar and the workspace bar disagree:\n${disagreements.join('\n')}`).toEqual([]);
 
-    // 2. Position is not evidence: the same phase looks the same from all seven pages.
+    // 2. Position is not evidence: the same phase looks the same from all seven
+    //    pages — being the current tool (ink, aria-current) paints no mark.
     const moved: string[] = [];
     for (const [key, rows] of Object.entries(seen)) {
-      for (const surface of ['stepper', 'rail'] as const) {
-        const distinct = [...new Set(rows.map((r) => r[surface].colour))];
-        if (distinct.length !== 1) {
-          moved.push(`${surface} · ${key} changes colour with the open page: ${distinct.join('  /  ')}`);
-        }
-      }
+      const distinct = [...new Set(rows.map((r) => r.stage.colour))];
+      if (distinct.length !== 1) moved.push(`${key} changes colour with the open page: ${distinct.join('  /  ')}`);
     }
     expect(moved, `colour follows the reader instead of the evidence:\n${moved.join('\n')}`).toEqual([]);
 
     // 3. Green means proven. Verified work and unverified work are not the same
-    //    colour, and a `done` phase nothing checked is painted like a `partial`
-    //    one — because that is what it is.
-    const colourOf = (key: string) => seen[key][0].stepper.colour;
-    for (const key of PROVEN) expect(seen[key][0].stepper.tone, `${key} should be proven`).toBe('proven');
-    for (const key of UNPROVEN) expect(seen[key][0].stepper.tone, `${key} should not be proven`).toBe('unproven');
+    //    colour, and a `done` phase nothing checked carries the same tone as a
+    //    `partial` one — because that is what it is.
+    const first = (key: string) => seen[key][0].stage;
+    for (const key of PROVEN) expect(first(key).tone, `${key} should be proven`).toBe('proven');
+    for (const key of UNPROVEN) expect(first(key).tone, `${key} should not be proven`).toBe('unproven');
 
-    expect([...new Set(PROVEN.map(colourOf))], 'the proven phases are not one colour').toHaveLength(1);
-    expect([...new Set(UNPROVEN.map(colourOf))], 'the unproven phases are not one colour').toHaveLength(1);
+    const tickColour = (keys: string[]) => [...new Set(keys.filter((k) => first(k).tick).map((k) => first(k).colour))];
+    expect(tickColour(PROVEN), 'the proven ticks are not one colour').toHaveLength(1);
+    expect(tickColour(UNPROVEN), 'the unproven ticks are not one colour').toHaveLength(1);
     expect(
-      colourOf('transformation'),
-      `generated code is painted like a signed run: ${colourOf('transformation')}`,
-    ).not.toBe(colourOf('analyze'));
+      first('transformation').colour,
+      `generated code is painted like a signed run: ${first('transformation').colour}`,
+    ).not.toBe(first('analyze').colour);
     // Economics is `partial`, Transformation is `done` — and neither was checked.
-    expect(colourOf('transformation')).toBe(colourOf('tco'));
+    expect(first('transformation').tone).toBe(first('tco').tone);
 
     // 4. Done is done in both: the tick is on exactly the phases the contract calls done.
     for (const key of [...PROVEN, ...UNPROVEN]) {
-      expect(seen[key][0].stepper.tick, `${key}: stepper tick`).toBe(key !== 'tco');
-      expect(seen[key][0].rail.tick, `${key}: rail tick`).toBe(key !== 'tco');
+      expect(first(key).tick, `${key}: stage bar tick`).toBe(key !== 'tco');
+      expect(seen[key][0].workspace.tick, `${key}: workspace bar tick`).toBe(key !== 'tco');
     }
   });
 });

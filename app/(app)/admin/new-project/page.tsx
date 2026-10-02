@@ -25,10 +25,10 @@ import {
  * when `npm run sync:catalog` runs and a deploy follows, so a cached copy is
  * never older than the deploy that changed it.
  *
- * **Nothing here is live product.** The new interface grows behind an admin-only
- * switch until 3.0 (`docs/ROADMAP.md`, preamble). Like the design-system gallery
- * of 1.5 and the list report of 1.8, this mounts under `app/(app)/admin/` and
- * the gate is checked inside the component itself.
+ * It grew under `app/(app)/admin/` while the new interface was behind an
+ * administrator's switch, and keeps the address now that it is every
+ * account's (roadmap 3.0.1, ADR-061); the component checks only that somebody
+ * is signed in.
  */
 export const revalidate = 300;
 

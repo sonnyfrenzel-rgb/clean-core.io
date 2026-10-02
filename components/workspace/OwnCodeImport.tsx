@@ -252,14 +252,15 @@ export default function OwnCodeImport() {
     );
   }
 
-  if (!profile || !profile.isAdmin) {
+  // Every signed-in account since roadmap 3.0.1 (ADR-061), as "New project".
+  if (!profile) {
     return (
       <div className="mx-auto my-12 max-w-md rounded-cc-card border border-cc-error-border bg-cc-surface p-8 text-center shadow-cc">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-cc-card border border-cc-error-border bg-cc-error-bg text-cc-error">
           <ShieldAlert className="h-7 w-7" aria-hidden={true} />
         </div>
-        <h2 className="mb-2 text-[15px] font-bold text-cc-ink">{wt('newProject.accessDenied')}</h2>
-        <p className="text-[13px] leading-relaxed font-medium text-cc-ink-muted">{wt('newProject.adminOnly')}</p>
+        <h2 className="mb-2 text-[15px] font-bold text-cc-ink">{wt('newProject.signInTitle')}</h2>
+        <p className="text-[13px] leading-relaxed font-medium text-cc-ink-muted">{wt('newProject.signInBody')}</p>
       </div>
     );
   }

@@ -7,7 +7,6 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
-import StageProgress from '@/components/StageProgress';
 import { Code2, ArrowRight, RefreshCw, FileCode2, Terminal, CheckCircle2, Folder, Lock, Unlock, Layers } from 'lucide-react';
 import clsx from 'clsx';
 import StageFooter from '@/components/StageFooter';
@@ -967,12 +966,6 @@ CMD ["node", "srv/service.js"]`
 
   if (busy && !transformedCode) return (
     <div>
-      {/* Where am I, what is behind me, what is still open — kept on
-          screen while the stepper scrolls away. Both read the same contract;
-          neither decides anything. */}
-
-      <StageProgress steps={phases} current="transformation" projectId={projectId as string} />
-
       <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} projectName={project?.name}>
         {/* Before the project has loaded its track is unknown, and the
             default copy named the side-by-side track for an ABAP Cloud
@@ -1032,11 +1025,6 @@ CMD ["node", "srv/service.js"]`
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Rendered here as well as in the loading state — it used to exist only
-          there, and disappeared as soon as the page had loaded. */}
-
-      <StageProgress steps={phases} current="transformation" projectId={projectId as string} />
-
       {/* The quota used to be stated a third time here, as "Free
           Transformations: 4 / 5". The header carries it once. Proposal A
           (owner decision 01.10.2026): the title row carries the stage's two
@@ -1459,16 +1447,7 @@ CMD ["node", "srv/service.js"]`
         </div>
       </CcDialog>
 
-      <StageFooter
-        backPath={`/project/${projectId}/design`}
-        backLabel="Back to Design"
-        proceedPath={`/project/${projectId}/documentation`}
-        proceedLabel="Proceed to Documentation"
-        // Skipping a step stays possible, as on every stage; it stops looking
-        // like the recommended way on when there is no package (c1c94b3caae4).
-        incomplete={files.length === 0}
-        incompleteReason="no transformed code has been generated"
-      />
+      <StageFooter />
     </div>
   );
 }

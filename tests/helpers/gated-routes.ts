@@ -39,12 +39,6 @@ export const GATED_ROUTES: GatedRoute[] = [
   // Roadmap 8.7: repair drafts. Adoption rewrites the generated code and puts a
   // receipt on the project — the same weight as a run, behind the same factor.
   { file: 'app/api/projects/[projectId]/repair-drafts/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/repair-drafts`, body: { action: 'adopt', draftId: 'none', expectedDraftDigest: 'none' } },
-  // Roadmap 1.4: the admin-only switch for the workspace shell. Both verbs gate
-  // on the factor; only GET is knocked on here, because POST checks
-  // administrator status first and the probe account is not one — it would
-  // refuse with 403 "administrator setting" and prove nothing about the factor.
-  // The POST refusal for a non-admin is proven in `workspace-shell-guard`.
-  { file: 'app/api/workspace-shell/route.ts', method: 'GET', path: () => '/api/workspace-shell' },
   { file: 'app/api/gemini/route.ts', method: 'POST', path: () => '/api/gemini', body: { prompt: 'hello' } },
   { file: 'app/api/run-tests/route.ts', method: 'POST', path: () => '/api/run-tests', body: { projectId: 'nowhere', testCases: [] } },
   { file: 'app/api/s4-credentials/route.ts', method: 'POST', path: () => '/api/s4-credentials', body: { url: 'https://example.invalid', username: 'u', password: 'p', authType: 'basic' } },

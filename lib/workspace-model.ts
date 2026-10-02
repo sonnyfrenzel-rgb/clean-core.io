@@ -837,9 +837,9 @@ export function workspaceTools(
 }
 
 /**
- * The mark after a tool's name, read the way the stepper reads the phase
- * (`components/Stepper.tsx`): a tick where the stepper ticks (`done`), a dot
- * where it shows a coloured circle without one (started, or stale — stale is
+ * The mark after a tool's name, read the way the old seven-circle stepper read
+ * the phase (it went with roadmap 3.0.1; the bar carries its reading now): a
+ * tick where the phase is `done`, a dot where it is started or stale (stale is
  * never done), nothing where nothing is on record. The tone is `phaseTone`, so
  * green stays the colour of `proven` alone (ADR-007, ADR-060); `words` is the
  * catalogue key of what a screen reader hears instead of the colour.

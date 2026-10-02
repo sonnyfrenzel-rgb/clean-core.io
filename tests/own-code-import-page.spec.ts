@@ -208,7 +208,7 @@ test.describe('own code: after the run, the workspace', () => {
     await adminSetCustomClaim(cred.user.uid, { admin: true });
     await adminSetDoc('users', cred.user.uid, {
       firstName: 'Own', lastName: 'Workspace', email: EMAIL,
-      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true, activatedAt: new Date(),
+      tier: 'pilot', status: 'approved', isAdmin: true, activatedAt: new Date(),
       termsVersionAccepted: TERMS_VERSION, mfaEnabled: false,
       transformationsUsed: 0, transformationsLimit: 5, createdAt: new Date(),
       // No model on any machine: the run is the deterministic one, signed.

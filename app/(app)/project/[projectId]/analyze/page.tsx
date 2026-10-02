@@ -12,7 +12,6 @@ import { runProjectCommand } from '@/lib/project-command-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType, getAuth } from '@/lib/firebase';
-import StageProgress from '@/components/StageProgress';
 import { UploadCloud, FileCode2, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Info, Layers, Shield, Zap, Cloud } from 'lucide-react';
 import clsx from 'clsx';
 import CcButton from '@/components/cc/Button';
@@ -32,7 +31,6 @@ import type { ModelReceipt } from '@/lib/model-receipt';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import type { Project, AnalysisData, CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import { readModelGaps } from '@/lib/model-gaps';
-import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { absenceFromError, modelAbsenceReason, type ModelAbsence } from '@/lib/model-stages';
 import GlossaryTerm from '@/components/GlossaryTerm';
@@ -93,7 +91,6 @@ import type { AtcReport as AtcReportType } from '@/lib/abap/atc-model';
 
 import StageHeader from '@/components/StageHeader';
 import StageFooter from '@/components/StageFooter';
-import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { coverageCaveat } from '@/lib/abap/coverage';
 import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
 import EvidenceFindingsTable from '@/components/analyze/EvidenceFindingsTable';
@@ -124,7 +121,6 @@ export default function AnalyzePage() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { profile, loading: profileLoading } = useUserProfile();
   // Help Mode removed — Ask AI chatbot replaces this functionality
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(0);
@@ -138,7 +134,6 @@ export default function AnalyzePage() {
   const isFromExample = !!project?.fromExample || project?.isExample;
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState(PASTED_SOURCE_NAME);
-  const [isSticky, setIsSticky] = useState(false);
   const [routeReport, setRouteReport] = useState<import('@/lib/abap/extensibility-router').ExtensibilityRouteReport | null>(null);
   const [usageReport, setUsageReport] = useState<UsageReportType | null>(null);
   // Roadmap 7.5: the check tasks this source leaves open - a window too
@@ -168,14 +163,6 @@ export default function AnalyzePage() {
   const modelAvailability = useModelAvailability();
   /** Set by the run just completed. `null` on a fresh page — see `narrativeAbsence`. */
   const [lastNarrativeAbsence, setLastNarrativeAbsence] = useState<ModelAbsence>(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsSticky(window.scrollY > 300);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -590,7 +577,7 @@ export default function AnalyzePage() {
         );
         // Own code from the import page: on to the workspace, like an example.
         // Only once the run is signed — a failed run stays here with its error.
-        if (openWorkspaceAfterRunRef.current && workspaceShellEnabled(profile)) {
+        if (openWorkspaceAfterRunRef.current) {
           router.push(`/project/${projectId}?first=1`);
         }
       } catch (error) {
@@ -1474,7 +1461,6 @@ export default function AnalyzePage() {
   const phases = workflowSteps(project);
   /** The run's report is on screen rather than the upload form. */
   const hasResults = !!(project?.analysis || project?.activeRunId);
-  const shell = workspaceShellEnabled(profile);
 
   if (loading && !project) return (
     <div className="h-[60vh] flex flex-col items-center justify-center">
@@ -1492,55 +1478,6 @@ export default function AnalyzePage() {
         hasResults ? 'w-full' : 'max-w-5xl mx-auto',
       )}
     >
-      {/* Sticky Decision-Header. Bound to the run rather than to the narrative
-          (roadmap 1.2): the route and the score in it are the run's, and a run
-          without a narrative has both. Only for accounts without the
-          workspace: there a stage is a tool, with no "continue" (ADR-050). */}
-      {hasResults && !profileLoading && !shell && project && (
-        <div
-          className={clsx(
-            "fixed left-0 right-0 z-50 transition-all duration-500 font-sans bg-cc-surface border-b border-cc-line shadow-cc",
-            isSticky
-              ? "top-[64px] opacity-100 translate-y-0"
-              : "top-0 opacity-0 -translate-y-full pointer-events-none"
-          )}
-        >
-          <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              {/* Route */}
-              <span className={ROUTE_TAG_CLASS}>
-                {isSideBySideRoute(project.extensibilityRoute) ? `${BAIP} Side-by-Side` : 'ABAP Cloud (RAP)'}
-              </span>
-
-              {/* Score */}
-              <div className="flex items-center gap-1">
-                <span className="cc-text-label text-cc-ink-muted">Clean Core Score:</span>
-                <span className="cc-text-identifier text-cc-ink">
-                  {signedCleanCoreScore !== null ? `${signedCleanCoreScore} of 100` : 'Not yet computed'}
-                </span>
-              </div>
-
-              {/* Target Deployment */}
-              <div className="h-4 w-px bg-cc-line hidden sm:block"></div>
-              <span className="cc-text-label text-cc-ink-muted hidden sm:inline">
-                Target: {project.s4Deployment === 'public' ? 'Public Cloud' : 'Private Cloud RISE'}
-              </span>
-            </div>
-
-            {/* Next Step CTA */}
-            <CcButton variant="primary" onClick={() => router.push(`/project/${projectId}/design`)}>
-              Continue to Design <ArrowRight size={16} aria-hidden="true" />
-            </CcButton>
-          </div>
-        </div>
-      )}
-
-      {/* Where am I, what is behind me, what is still open — kept on
-          screen while the stepper scrolls away. Both read the same contract;
-          neither decides anything. */}
-
-      <StageProgress steps={phases} current="analyze" projectId={projectId as string} />
-
       <StageHeader tools={{ steps: phases, current: 'analyze' }}
         projectName={project?.name}
         stage="analyze"
@@ -1878,12 +1815,7 @@ export default function AnalyzePage() {
         <div id="analysis-report" className="motion-safe:animate-in slide-in-from-bottom-6">
           {renderAnalysisContent()}
 
-          <StageFooter
-            backPath="/dashboard"
-            backLabel="Return to Dashboard"
-            proceedPath={`/project/${projectId}/design`}
-            proceedLabel="Continue to Design"
-          />
+          <StageFooter />
         </div>
       )}
 

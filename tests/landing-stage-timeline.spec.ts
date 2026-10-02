@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { PHASES } from '../lib/workflow-steps';
 import { LANDING_STAGE_TEXT } from '../lib/landing-stages';
 import { PROVENANCE } from '../lib/provenance';
-import { DEMO_ROUTE } from '../lib/demo-marks';
+import { DEMO_WORKSPACE_ROUTE } from '../lib/demo-marks';
 
 /**
  * The seven stages on the landing page as a timeline — roadmap 3.0.6
@@ -150,7 +150,7 @@ test.describe('the seven stages as a timeline', () => {
     const links = section.locator('a');
     await expect(links).toHaveCount(1);
     await expect(links.first()).toContainText('Take the tour in the demo');
-    expect(await links.first().getAttribute('href')).toContain(DEMO_ROUTE);
+    expect(await links.first().getAttribute('href')).toContain(DEMO_WORKSPACE_ROUTE);
   });
 });
 

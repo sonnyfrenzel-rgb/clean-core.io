@@ -53,18 +53,13 @@ export const MODEL_STAGES = ['analyze', 'naming', 'statements', 'design', 'trans
 export type ModelStage = (typeof MODEL_STAGES)[number];
 
 /**
- * Stages that belong to the new workspace and are offered only where it is on.
- *
- * The switch is honoured by the server for every account — `/api/gemini` does
- * not know about previews and should not. What waits for 3.0 is the *offer*:
- * a settings row for a process map the account cannot open would be the half
- * of a rebuild `docs/ROADMAP.md` §4 promises nobody sees.
+ * The stages a settings screen offers, in order — all of them, to every
+ * account. `naming` and `statements` were offered only behind the workspace
+ * preview while the map they name was; since roadmap 3.0.1 (ADR-061) every
+ * account has that map, so every account has their switches.
  */
-export const PREVIEW_MODEL_STAGES: readonly ModelStage[] = Object.freeze(['naming', 'statements'] as ModelStage[]);
-
-/** The stages a settings screen offers, in order. */
-export function offeredModelStages(showPreview: boolean): ModelStage[] {
-  return MODEL_STAGES.filter((stage) => showPreview || !PREVIEW_MODEL_STAGES.includes(stage));
+export function offeredModelStages(): ModelStage[] {
+  return [...MODEL_STAGES];
 }
 
 /** What each stage asks the model for — the sentence the settings screen shows. */

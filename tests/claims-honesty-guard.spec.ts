@@ -238,11 +238,17 @@ test.describe('a signed-in account reading its own project', () => {
   });
 
   test('UX-059 · the board does not offer to publish anything', async ({ page }) => {
+    // Since roadmap 3.0.1 (ADR-061) "My workspace" is the 3.0 list for every
+    // account, and the list carries no announcements board; the board is left
+    // on the old page, which now renders only for the account states it
+    // explains. What this finding forbids — an offer to publish — is checked
+    // on the page every account lands on, and the board's own copy stays
+    // read-only in the source.
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('text=Open announcements', { timeout: 60000 });
-    await page.click('text=Open announcements');
-    await page.waitForSelector('[data-forum-readonly]', { timeout: 30000 });
-    await expect(page.locator('[data-forum-readonly]')).toContainText('read-only');
+    await page.waitForSelector('[data-cc-workspace]', { timeout: 60000 });
+    const board = read('app/(app)/dashboard/page.tsx');
+    expect(board).toContain('data-forum-readonly');
+    expect(board).toContain('This board is read-only');
     const text = await page.locator('body').innerText();
     for (const gone of [
       'Post to Forum',
