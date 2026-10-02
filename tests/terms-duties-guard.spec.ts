@@ -229,12 +229,12 @@ test.describe('and a reader opening the page finds them', () => {
     expect(
       rendered,
       'the effective version a reader sees is not the one the gate compares against',
-    ).toContain(normalise('effective 6 October 2026 (v2.2.0)'));
+    ).toContain(normalise('effective 3 October 2026 (v2.2.0)'));
     // On the authoritative line itself, not anywhere on the page: the archive
     // list further down also says "effective …" for every earlier version
     // (carried QA finding a76871dd992d).
-    await expect(page.getByText(/Consolidated version — effective/)).toContainText('effective 6 October 2026 (v2.2.0)');
-    expect(TERMS_VERSION).toBe('2026-10-06');
+    await expect(page.getByText(/Consolidated version — effective/)).toContainText('effective 3 October 2026 (v2.2.0)');
+    expect(TERMS_VERSION).toBe('2026-10-03');
     // And the two clauses that version was raised for, on the same page.
     expect(rendered).toContain(normalise('at least 18 years old'));
     expect(rendered).toContain(normalise('Do not submit personal data of third parties'));
@@ -257,7 +257,7 @@ test('the effective version, the constant and the new obligations are one change
   expect(terms, 'the Terms no longer state an effective version').toMatch(
     /effective\s+6\s+October\s+2026\s+\(v2\.2\.0\)/,
   );
-  expect(TERMS_VERSION, 'the constant and the document disagree about which version is current').toBe('2026-10-06');
+  expect(TERMS_VERSION, 'the constant and the document disagree about which version is current').toBe('2026-10-03');
 
   // And the substance that version exists for.
   expect(terms, 'the version moved without the age rule it was raised for').toMatch(/at least 18 years old/);

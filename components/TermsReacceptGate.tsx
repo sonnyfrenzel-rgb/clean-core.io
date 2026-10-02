@@ -93,7 +93,7 @@ function currentMark(): string | null {
  */
 const WHAT_CHANGED: ReadonlyArray<{ version: string; items: ReadonlyArray<{ lead: string; text: string }> }> = [
   {
-    version: '2026-10-06',
+    version: '2026-10-03',
     items: [
       {
         lead: 'What is computed, and what a model writes.',
