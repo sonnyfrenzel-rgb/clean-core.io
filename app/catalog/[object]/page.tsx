@@ -97,7 +97,7 @@ export async function generateMetadata({
     ? curated
       ? `${name} maps to the released S/4HANA successor ${successor} in Clean-Core.io's curated mapping, not from SAP's Cloudification Repository.${levelPhrase}`
       : `${name} maps to the released S/4HANA successor ${successor}.${levelPhrase} Clean Core readiness reference from the SAP Cloudification Repository.`
-    : `${name} has no released API successor in the SAP Cloudification Repository — it requires re-architecture for a Clean Core target.${levelPhrase}`;
+    : `No released successor is named in SAP's data for ${name}; assess alternatives (released APIs, standard, retirement) for your target release.${levelPhrase}`;
 
   return withTwitterCard({
     title,
@@ -154,7 +154,7 @@ export default async function CatalogObjectPage({
         name,
         description: successor
           ? `Released S/4HANA API successor: ${successor}${curated ? ' (Clean-Core.io curated mapping)' : ''}`
-          : 'No released API successor — requires re-architecture for Clean Core.',
+          : "No released successor is named in SAP's data for this object; assess alternatives (released APIs, standard, retirement) for your target release.",
         inDefinedTermSet: `${BASE}/catalog`,
         url: `${BASE}/catalog/${objectToSlug(name)}`,
       },
@@ -168,7 +168,7 @@ export default async function CatalogObjectPage({
               '@type': 'Answer',
               text: successor
                 ? `${name} maps to the released successor ${successor}${successorType ? ` (${successorType})` : ''}, ${curated ? "per Clean-Core.io's curated mapping, not SAP's Cloudification Repository" : 'per the SAP Cloudification Repository'}.`
-                : `${name} has no released API successor in the SAP Cloudification Repository and requires re-architecture rather than a direct replacement.`,
+                : `No released successor is named in SAP's data for ${name}; assess alternatives (released APIs, standard, retirement) for your target release.`,
             },
           },
           {
@@ -437,8 +437,8 @@ export default async function CatalogObjectPage({
                 the first for the second would put SAP's words in the wrong file.
               */}
               {dimensions.classificationState === 'noAPI' && !dimensions.releaseState
-                ? 'SAP classifies this object as noAPI — not intended for customer use — and names no replacement. Custom code calling it cannot simply be re-pointed; it requires re-architecture (e.g. a side-by-side extension). This is an honest limitation, not an omission.'
-                : 'This object is not released and has no direct released replacement. Custom code using it cannot simply be re-pointed — it requires re-architecture (e.g. a side-by-side extension) rather than a drop-in successor. This is an honest limitation, not an omission.'}
+                ? 'SAP classifies this object as noAPI — not intended for customer use — and names no replacement. Custom code calling it cannot simply be re-pointed; assess alternatives for your target release: a released API, the standard, or retiring the code. This is an honest limitation, not an omission.'
+                : 'No released successor is named in SAP\'s data for this object. Custom code using it cannot simply be re-pointed — assess alternatives for your target release: a released API, the standard, or retiring the code. This is an honest limitation, not an omission.'}
             </p>
           </div>
         </>
