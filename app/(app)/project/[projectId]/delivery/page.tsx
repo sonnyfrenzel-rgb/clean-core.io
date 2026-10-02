@@ -697,7 +697,9 @@ jobs:
             of a19945ef01dc). In that case the lead falls through to the phase's
             own detail, which says so. */}
         {deliveryPhase.proven
-          ? 'Code, documentation and a passing test run are on record. Whether to deploy remains an architect’s decision, not this page’s.'
+          ? deliveryPhase.mock
+            ? 'Code, documentation and a passing sandbox test run against mocks are on record — not a run against an SAP system. Whether to deploy remains an architect’s decision, not this page’s.'
+            : 'Code, documentation and a passing test run are on record. Whether to deploy remains an architect’s decision, not this page’s.'
           : handoverBlocked
             ? 'What is on record for handover, and what is not yet.'
             : `What is on record for handover, and what is not yet. ${deliveryPhase.detail}`}
@@ -860,7 +862,7 @@ jobs:
                               // Green only when an execution is on record — `proven`
                               // on this page as on the stepper and the rail. A row of
                               // `Passed` strings is client-writable and is not one.
-                              testingPhase.proven ? (
+                              testingPhase.proven && !testingPhase.mock ? (
                                 <CheckCircle2 size={18} aria-hidden="true" className="text-cc-success mt-0.5 shrink-0" />
                               ) : (
                                 <AlertCircle size={18} aria-hidden="true" className="text-cc-warning mt-0.5 shrink-0" />

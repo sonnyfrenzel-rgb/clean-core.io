@@ -78,6 +78,15 @@ export interface RailStep {
    * on a phase the reader can never finish.
    */
   proven: boolean;
+  /**
+   * `proven` rests on an execution against mocks — the test sandbox — and not
+   * on a real system. The record is still the server's, so the gates that ask
+   * "did an execution happen" read `proven`; what the reader is shown is
+   * *Demonstrated · mock* (DESIGN.md §4, `lib/provenance.ts`) in the warning
+   * tone, never green and never *Proven* (codex code-trust-04). False whenever
+   * `proven` is.
+   */
+  mock: boolean;
   /** A few words for a badge — "Test draft", "Model estimate". */
   badge: string;
   /** What is on record, in the product's own words. */
@@ -104,9 +113,9 @@ export interface RailStep {
  */
 export type PhaseTone = 'proven' | 'unproven' | 'stale' | 'none';
 
-export function phaseTone(step: Pick<RailStep, 'state' | 'proven'>): PhaseTone {
+export function phaseTone(step: Pick<RailStep, 'state' | 'proven'> & { mock?: boolean }): PhaseTone {
   if (step.state === 'stale') return 'stale';
-  if (step.proven) return 'proven';
+  if (step.proven && !step.mock) return 'proven';
   return step.state === 'empty' ? 'none' : 'unproven';
 }
 
@@ -420,10 +429,14 @@ export function workflowSteps(project: Project | null): RailStep[] {
   const hasDocs = has(project?.documentation);
   const tests = testEvidence(project);
   const executed = tests.passed + tests.failed;
+  // Every receipt `/api/run-tests` writes today is the sandbox's
+  // (`TestRunReceipt.environment` is always `mock`); asked, not assumed, so a
+  // live run, once there is one, is not called a mock.
+  const mockRun = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0])?.environment === 'mock';
 
   // `proven` is opt-in and can only ever be true on a `done` phase: a phase that
   // forgets to claim it is amber, which is the safe direction. Roadmap 1.7.
-  type PhaseFacts = Omit<RailStep, 'n' | 'key' | 'label' | 'path' | 'done' | 'proven'> & { proven?: boolean };
+  type PhaseFacts = Omit<RailStep, 'n' | 'key' | 'label' | 'path' | 'done' | 'proven' | 'mock'> & { proven?: boolean; mock?: boolean };
   const phase = (key: PhaseKey, s: PhaseFacts): RailStep => {
     const p = PHASES.find((x) => x.key === key)!;
     return {
@@ -436,6 +449,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
       detail: s.detail,
       done: s.state === 'done',
       proven: s.state === 'done' && s.proven === true,
+      mock: s.state === 'done' && s.proven === true && s.mock === true,
     };
   };
 
@@ -543,8 +557,11 @@ export function workflowSteps(project: Project | null): RailStep[] {
     testing = phase('testing', {
       state: 'done',
       proven: true,
-      badge: 'Passed',
-      detail: `All ${plural(tests.total, 'test case')} returned a pass in a recorded run.`,
+      mock: mockRun,
+      badge: mockRun ? 'Passed · mock' : 'Passed',
+      detail: mockRun
+        ? `All ${plural(tests.total, 'test case')} returned a pass in a recorded sandbox run against mocks — not against an SAP system.`
+        : `All ${plural(tests.total, 'test case')} returned a pass in a recorded run.`,
     });
   } else if (tests.passed === tests.total) {
     // Every case says it passed, and no execution on record says so. Still
@@ -632,8 +649,11 @@ export function workflowSteps(project: Project | null): RailStep[] {
     ? phase('delivery', {
         state: 'done',
         proven: testing.proven,
-        badge: testing.proven ? 'Ready' : 'Unverified',
-        detail: testing.proven
+        mock: testing.mock,
+        badge: testing.proven ? (testing.mock ? 'Ready · mock tests' : 'Ready') : 'Unverified',
+        detail: testing.mock
+          ? 'Code, documentation and a passing sandbox test run against mocks are on record — not a run against an SAP system. Whether to deploy remains an architect’s decision.'
+          : testing.proven
           ? 'Code, documentation and a passing test run are on record. Whether to deploy remains an architect’s decision.'
           : 'Code, documentation and test verdicts are on record — no test run is on record behind the verdicts. Run the suite in stage 5 before handing this over.',
       })
@@ -661,6 +681,7 @@ export function workflowSteps(project: Project | null): RailStep[] {
     state: 'stale',
     done: false,
     proven: false,
+    mock: false,
     badge,
     detail,
   });

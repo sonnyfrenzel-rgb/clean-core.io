@@ -93,9 +93,10 @@ export interface ProjectProgress {
   next: { label: string; path: string } | null;
 }
 
-export function segmentStateOf(step: Pick<RailStep, 'state' | 'proven'>): SegmentState {
+export function segmentStateOf(step: Pick<RailStep, 'state' | 'proven'> & { mock?: boolean }): SegmentState {
   if (step.state === 'stale') return 'stale';
-  if (step.state === 'done') return step.proven ? 'done-verified' : 'done';
+  // "Done and verified" is green; a sandbox run against mocks is not (codex code-trust-04).
+  if (step.state === 'done') return step.proven && !step.mock ? 'done-verified' : 'done';
   if (step.state === 'partial') return 'in-progress';
   return 'not-started';
 }

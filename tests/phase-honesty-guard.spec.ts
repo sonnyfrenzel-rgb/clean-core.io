@@ -181,7 +181,9 @@ test.describe('what green is allowed to mean', () => {
     for (const p of shapes) {
       for (const step of workflowSteps(p)) {
         if (step.proven) expect(step.done, `${step.key} is proven but not done`).toBe(true);
-        expect(phaseTone(step) === 'proven', `${step.key} tone and proven disagree`).toBe(step.proven);
+        if (step.mock) expect(step.proven, `${step.key} is mock but not proven`).toBe(true);
+        // Green is proven by a real record; a sandbox run against mocks is not green (codex code-trust-04).
+        expect(phaseTone(step) === 'proven', `${step.key} tone and proven disagree`).toBe(step.proven && !step.mock);
       }
     }
   });
@@ -225,8 +227,10 @@ test.describe('the stepper and the rail say the same thing about the same phase'
   const STAGES = ['analyze', 'design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'];
 
   // What the fixture below is, phase by phase — asserted rather than assumed.
-  const PROVEN = ['analyze', 'testing', 'delivery'];
-  const UNPROVEN = ['design', 'transformation', 'documentation', 'tco'];
+  // Testing and Delivery rest on a sandbox run against mocks — a record, but
+  // Demonstrated · mock and not green (codex code-trust-04).
+  const PROVEN = ['analyze'];
+  const UNPROVEN = ['design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'];
 
   test.beforeAll(async () => {
     // The first seed call of a run compiles `/api/test/seed`; 30 s is not enough

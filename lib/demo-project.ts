@@ -93,6 +93,8 @@ export interface DemoRailStep {
    * for proven work (roadmap 1.7), and a demo may not borrow it.
    */
   proven: boolean;
+  /** Always false, with `proven`. */
+  mock: boolean;
   badge: string;
   detail: string;
 }
@@ -259,7 +261,7 @@ function railStep(
   detail: string,
 ): DemoRailStep {
   const p = PHASES.find((x) => x.key === key)!;
-  return { n: p.n, key, label: p.label, path: key, state, done: state === 'done', proven: false, badge, detail };
+  return { n: p.n, key, label: p.label, path: key, state, done: state === 'done', proven: false, mock: false, badge, detail };
 }
 
 /**
