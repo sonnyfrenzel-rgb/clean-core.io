@@ -62,20 +62,34 @@ export function fitWithPadding(canvas: ViewboxCanvas): void {
   canvas.viewbox({ x, y, width, height });
 }
 
+/** Below this canvas width (a phone) the whole-process fit stops at {@link NARROW_MIN_SCALE}. */
+export const NARROW_CANVAS = 640;
+/** The smallest scale a phone opens at — 40 %, where the names can still be read. */
+export const NARROW_MIN_SCALE = 0.4;
+
 /**
- * The whole level in the canvas, however small — what the Documentation map
- * opens with (owner 02.10.2026: "den ganzen Prozess sehen"), and the same
- * overview the editor's *Fit* gives. Never above 100 %; the + button is there
- * for reading the names of a wide process.
+ * The whole level in the canvas — what the Documentation map opens with (owner
+ * 02.10.2026: "den ganzen Prozess sehen"), and the same overview the editor's
+ * *Fit* gives. Never above 100 %; the + button is there for reading the names
+ * of a wide process. On a phone-wide canvas it never goes below 40 % (owner:
+ * navigable, and 20 % is not readable): a level that does not fit then opens
+ * at its start, and the reader pans or zooms out.
  */
 export function fitWhole(canvas: ViewboxCanvas): void {
   const { inner, outer } = canvas.viewbox();
   if (!inner.width || !inner.height || !outer.width || !outer.height) return;
-  const scale = Math.min(1, (outer.width - 2 * MARGIN) / inner.width, (outer.height - 2 * MARGIN) / inner.height);
-  if (scale <= 0) return;
+  const fit = Math.min(1, (outer.width - 2 * MARGIN) / inner.width, (outer.height - 2 * MARGIN) / inner.height);
+  if (fit <= 0) return;
+  const floor = outer.width < NARROW_CANVAS ? NARROW_MIN_SCALE : 0;
+  const scale = Math.max(floor, fit);
   const width = outer.width / scale;
   const height = outer.height / scale;
-  canvas.viewbox({ x: inner.x + inner.width / 2 - width / 2, y: inner.y + inner.height / 2 - height / 2, width, height });
+  if (scale === fit) {
+    canvas.viewbox({ x: inner.x + inner.width / 2 - width / 2, y: inner.y + inner.height / 2 - height / 2, width, height });
+    return;
+  }
+  // Floored: from the start of the level (top left), as the reading map does.
+  canvas.viewbox({ x: inner.x - MARGIN / scale, y: inner.y - MARGIN / scale, width, height });
 }
 
 /** Dispatched (bubbling) on the map's frame after a step was chosen in full screen. */

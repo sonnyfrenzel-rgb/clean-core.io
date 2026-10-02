@@ -182,4 +182,22 @@ test.describe('the Documentation map: whole process, zoom, full screen', () => {
     const { panel } = await exerciseTheMap(page, 'demo');
     await expect(panel).not.toHaveAttribute('data-handbook-panel', 'none');
   });
+
+  test('on a phone the fitted map stays readable: never below 40 %, and it still zooms out', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/demo/documentation', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
+    await expect.poll(async () => page.locator('[data-process-map-canvas] [data-map-node]').count(), { timeout: 90000 }).toBeGreaterThan(5);
+    // The premise: this process is far too wide to fit a phone readably.
+    await expect.poll(() => zoomPercent(page)).toBeGreaterThanOrEqual(40);
+    const opened = await zoomPercent(page);
+    // It opens at the start of the process, not somewhere in its middle.
+    const first = await page.locator('[data-process-map-canvas] [data-map-node]').first().boundingBox();
+    const canvas = await page.locator('[data-process-map-canvas]').boundingBox();
+    expect(first!.x).toBeGreaterThanOrEqual(canvas!.x - 1);
+    expect(first!.x).toBeLessThan(canvas!.x + canvas!.width);
+    await page.locator('[data-map-canvas-frame]').getByRole('button', { name: 'Zoom out' }).click();
+    await expect.poll(() => zoomPercent(page)).toBeLessThan(opened);
+  });
 });
