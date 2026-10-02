@@ -22,6 +22,23 @@ import { META_ABSENT } from '@/lib/workspace-model';
  * subject of this product.
  */
 export default function WorkspaceMetaLine({ entries }: { entries: MetaEntry[] }) {
+  // Before the first signed run nothing but the project id is recorded; six
+  // "not recorded" in a row read as a broken line (owner, 02.10.2026). One
+  // sentence says the same, and the line appears in full once a run wrote it.
+  const recorded = entries.filter((e) => e.value !== null && e.key !== 'project');
+  const project = entries.find((e) => e.key === 'project');
+  if (recorded.length === 0) {
+    return (
+      <p data-workspace-meta="" data-recorded="none" className="m-0 cc-text-meta text-cc-ink-muted">
+        {project?.value ? (
+          <>
+            Project <span className="font-cc-mono font-semibold text-cc-ink">{project.value}</span> ·{' '}
+          </>
+        ) : null}
+        No signed run yet — source, engine, rules and catalog are recorded with the first analysis.
+      </p>
+    );
+  }
   return (
     <dl
       data-workspace-meta=""

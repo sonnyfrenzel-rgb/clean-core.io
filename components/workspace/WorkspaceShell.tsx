@@ -569,7 +569,7 @@ export default function WorkspaceShell({
                     data-workspace-details-toggle=""
                   >
                     {wt('page.details')}
-                    <ChevronDown size={14} aria-hidden={true} />
+                    <ChevronDown size={14} aria-hidden={true} className={detailsOpen ? 'rotate-180' : undefined} />
                   </CcButton>
                 </span>
               )}
