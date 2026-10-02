@@ -58,7 +58,9 @@ test.describe('the analysis runs under the deployment the reader chose (2878b5f8
 
     // The four places that consume it, so a future edit cannot quietly drop one
     // back to the state variable while the signature keeps its parameter.
-    expect(body).toMatch(/buildAbapEvidence\(codeToAnalyze, uploadedFileName \|\| 'main\.abap', deployment as/);
+    // Since the server-side evidence (02.10.2026) the scan runs on the server
+    // through `previewRunEvidence`; the deployment it is handed is still the argument.
+    expect(body).toMatch(/previewRunEvidence\(projectId as string, \{\s*source: codeToAnalyze,\s*fileName: uploadedFileName,\s*deployment,/);
     expect(body).toMatch(/routeExtensibility\(evidenceReport, deployment \|\| 'private'\)/);
     expect(body).toMatch(/buildAnalysisPrompt\(\{ targetDeployment: deployment,/);
     expect(body.match(/s4Deployment: deployment/g) || [], 'both run writes must carry the argument').toHaveLength(2);
