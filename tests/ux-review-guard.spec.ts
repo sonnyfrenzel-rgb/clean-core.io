@@ -450,7 +450,7 @@ test.describe('Claude hears about it', () => {
     expect(out).toContain('scripts/ux/inbox.mjs');
     const skill = read('.claude/skills/ux-review-intake/SKILL.md');
     for (const must of ['scripts/ux/inbox.mjs', 'scripts/ux/register.mjs', 'ROADMAP.md` §13', 'CONFIRMED', 'REFUTED']) expect(skill).toContain(must);
-    expect(read('docs/ROADMAP.md')).toMatch(/## 13\. UX-Befunde aus dem UX-Agenten/);
+    expect(read('docs/ROADMAP.md')).toMatch(/## 13\. UX findings from the UX agent/);
   });
 });
 
@@ -557,7 +557,8 @@ test.describe('the register Claude decides in', () => {
     const findings = [{ fingerprint: 'fixed1' }, { fingerprint: 'plan1' }, { fingerprint: 'ref1' }, { fingerprint: 'new1' }];
     expect(untriaged(findings, register, { head: 'after', isAncestorOf })).toEqual([{ fingerprint: 'fixed1', reopened: true }, { fingerprint: 'new1' }]);
     expect(untriaged(findings, register, { head: 'before', isAncestorOf })).toEqual([{ fingerprint: 'new1' }]);
-    expect(roadmapRows(register)).toEqual(['| UX-001 | high | A | — | behoben |', '| UX-002 | medium | B / C | 1.5 | eingeplant |']);
+    // The public roadmap is English (3.0.14): the register's German status words are mapped.
+    expect(roadmapRows(register)).toEqual(['| UX-001 | high | A | — | fixed |', '| UX-002 | medium | B / C | 1.5 | scheduled |']);
   });
 
   test('a decision closes what it was made about, not a regression raised after it — even across an unrelated release', async () => {

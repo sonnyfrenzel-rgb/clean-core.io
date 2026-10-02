@@ -34,7 +34,7 @@ if (cmd === 'list') {
   process.exit(0);
 }
 if (cmd === 'table') {
-  console.log('| ID | Schwere | Befund | Roadmap-Schritt | Status |\n|---|---|---|---|---|');
+  console.log('| ID | Severity | Finding | Roadmap step | Status |\n|---|---|---|---|---|');
   for (const row of roadmapRows(register)) console.log(row);
   process.exit(0);
 }

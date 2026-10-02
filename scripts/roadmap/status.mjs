@@ -66,9 +66,14 @@ export function readSteps(markdown) {
  *
  * Bewusst eng: „gebaut wird" und „gebaut nach" sind Absichten, keine Meldungen, und
  * `behoben` gehört zu den Befundtabellen in §12–§14, nicht zu einem Schritt.
+ *
+ * Since the roadmap is English (3.0.14, 02.10.2026) a row reports "**Built",
+ * "**Shipped" or "**Fully built"; the German forms stay accepted. "to be built"
+ * and "built to" are intentions, and "fixed" belongs to the finding tables.
  */
 export const claimsBuilt = (text) =>
-  /\*\*(Gebaut|Ausgeliefert|Fertig gebaut)\b/.test(text) || /\bGebaut (in v[\d.]+|\d{2}\.\d{2}\.\d{4})/.test(text);
+  /\*\*(Gebaut|Ausgeliefert|Fertig gebaut|Built|Shipped|Fully built)\b/.test(text) ||
+  /\b(Gebaut|Built) (in v[\d.]+|\d{2}\.\d{2}\.\d{4})/.test(text);
 
 /** Die Schrittnummern, die ein Commit-Betreff nennt: `feat(2.15)`, `fix(1.9, 7.8, 3.3)`. */
 export function idsFromSubjects(subjects) {

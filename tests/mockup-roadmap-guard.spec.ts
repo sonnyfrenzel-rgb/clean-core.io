@@ -17,7 +17,7 @@ const STEP = /^\d+\.\d+(?:\.\d+)?$/;
 const steps = new Set([...roadmap.matchAll(/^\| (\d+\.\d+(?:\.\d+)?) \|/gm)].map((m) => m[1]));
 
 function section5(): string {
-  const start = roadmap.indexOf('## 5. Abgleich mit den Mockups');
+  const start = roadmap.indexOf('## 5. Reconciliation with the mockups');
   const end = roadmap.indexOf('## 6.', start);
   expect(start, 'ROADMAP.md §5 is missing').toBeGreaterThan(-1);
   expect(end, 'ROADMAP.md §6 must follow §5').toBeGreaterThan(start);
