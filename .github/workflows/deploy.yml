@@ -211,8 +211,41 @@ jobs:
           digest="$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")"
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
 
+      # Newest commit wins (codex code-ci-03). Each push runs this pipeline on
+      # its own, and a run whose validate job is slower can reach this point
+      # after a newer commit has already shipped - it would then put older code
+      # back over newer. So, as the last thing before deploying, the run asks
+      # the remote for the branch head and deploys only if that is still its
+      # own commit; a superseded run skips the deploy with a notice and stays
+      # green, because the newer run deploys. A head that cannot be read stops
+      # the job (fail closed).
+      #
+      # Deliberately no `concurrency:` group: GitHub keeps one pending run per
+      # group and cancels it when a later one queues, by queue time and not by
+      # commit, so an older run reaching the group late would cancel the newer
+      # one's waiting deploy. Rollback is not a re-run of an old workflow run
+      # (this check refuses it) but `gcloud run services update-traffic`.
+      - name: Newest Commit Wins (runners)
+        id: fresh
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          head="$(git ls-remote --exit-code origin "refs/heads/$REF_NAME" | cut -f1)" || head=""
+          if ! printf '%s' "$head" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::Could not read the head of $REF_NAME; not deploying without knowing it." >&2
+            exit 1
+          fi
+          if [ "$head" = "$SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$SHA is no longer the head of $REF_NAME ($head is); the newer run deploys, this one does not."
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+
       # The mock runner: its VPC egress reaches nothing.
       - name: Deploy Mock Runner
+        if: steps.fresh.outputs.current == 'true'
         uses: google-github-actions/deploy-cloudrun@251330ba9a8a34bfbc1622895f42e1d53fd14522 # v2
         with:
           service: ${{ steps.runner-ctx.outputs.mock_service }}
@@ -239,6 +272,7 @@ jobs:
       # The live runner: its VPC egress reaches only the app, through Private
       # Google Access. It relays to that one origin and holds no credential.
       - name: Deploy Live Runner
+        if: steps.fresh.outputs.current == 'true'
         uses: google-github-actions/deploy-cloudrun@251330ba9a8a34bfbc1622895f42e1d53fd14522 # v2
         with:
           service: ${{ steps.runner-ctx.outputs.live_service }}
@@ -440,6 +474,26 @@ jobs:
           service_account: '819734065839-compute@developer.gserviceaccount.com'
           project_id: 'cleancore-491216'
 
+      # Newest commit wins (codex code-ci-03): the same check as before the
+      # runners, and why there is no concurrency group, is described there.
+      - name: Newest Commit Wins (app)
+        id: fresh
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          head="$(git ls-remote --exit-code origin "refs/heads/$REF_NAME" | cut -f1)" || head=""
+          if ! printf '%s' "$head" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::Could not read the head of $REF_NAME; not deploying without knowing it." >&2
+            exit 1
+          fi
+          if [ "$head" = "$SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$SHA is no longer the head of $REF_NAME ($head is); the newer run deploys, this one does not."
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+
       # Deploy source code directly to Cloud Run.
       #
       # AUDIT_SIGNING_PRIVATE_KEY is passed but is NOT asserted above, unlike the
@@ -457,6 +511,7 @@ jobs:
       # migrate: no model key was stored before 3.0.13, and the pre-3.0.13
       # record shape is no longer read.
       - name: Deploy to Google Cloud Run
+        if: steps.fresh.outputs.current == 'true'
         uses: google-github-actions/deploy-cloudrun@251330ba9a8a34bfbc1622895f42e1d53fd14522 # v2
         with:
           service: ${{ steps.env-ctx.outputs.service }}
