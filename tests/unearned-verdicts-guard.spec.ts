@@ -46,8 +46,12 @@ test.describe('the Clean Core Score on screen is the one that was signed', () =>
   test('an unscored project shows nothing rather than a default', () => {
     const src = read(REL);
     expect(src).toMatch(/signedCleanCoreScore[\s\S]{0,300}?:\s*null/);
-    // The renderer has to have a not-yet-computed branch.
-    expect(rendered(REL)).toContain('Not yet computed');
+    // The renderer has to have a not-yet-computed branch. Since 3.0.1 the page
+    // has no sticky score bar of its own; the answer at the top shows the score,
+    // and it is handed the signed score — null when there is none.
+    expect(src).toMatch(/<AnalysisAnswer[\s\S]{0,400}?score=\{signedCleanCoreScore\}/);
+    const answer = rendered('components/analyze/AnalysisAnswer.tsx');
+    expect(answer).toMatch(/score !== null \?[\s\S]{0,400}?Not yet computed/);
   });
 
   test('the stored score is not overwritten on the way to the renderer', () => {
