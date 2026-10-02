@@ -17,8 +17,8 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'it.noChainUnreadable':
     'The findings of this project could not be read, so no chain is shown. An empty chain would say there were none.',
   'it.noChainEmpty': 'This run reported no findings, so there is nothing to trace.',
-  'it.levelsTitle': 'Clean core levels across the findings',
-  'it.findingsTitle': 'Findings',
+  'it.levelsTitle': 'Clean core levels across the places in the code',
+  'it.findingsTitle': 'Places in the code',
   'it.clearFilter': 'Clear filter',
   'it.noFindingsTitle': 'No findings on record',
   'it.noFindingsUnreadable':
@@ -29,6 +29,9 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'it.successorNone': 'none published',
   'it.finding': 'finding',
   'it.findings': 'findings',
+  // The IT rows are one per place in the code; "findings" is the unit Analyze counts (owner decision 02.10.2026).
+  'it.place': 'place in the code',
+  'it.places': 'places in the code',
   'it.filteredBy': 'filtered by',
   'it.outOf': 'out of',
   'it.catalogViewsNote':
@@ -46,7 +49,7 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'it.isItRight': 'Is it right',
   'it.noObject': 'No object',
   'it.line': 'line',
-  'it.facetFindings': 'Findings',
+  'it.facetFindings': 'Places in the code',
   'it.facetLevels': 'Level distribution',
   'it.facetTarget': 'Target platform',
   'it.moreKindsLead': 'and',
@@ -158,10 +161,10 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'mgmt.colObject': 'Object',
   'mgmt.colPrivate': 'Private Edition',
   'mgmt.colPublic': 'Public Edition',
-  'mgmt.levelsChart': 'Clean core levels across the findings',
-  'mgmt.levelsCaption': 'Findings per clean core level',
-  'mgmt.levelsUnit': 'Level (findings)',
-  'mgmt.levelsColumn': 'Findings',
+  'mgmt.levelsChart': 'Clean core levels across the places in the code',
+  'mgmt.levelsCaption': 'Places in the code per clean core level',
+  'mgmt.levelsUnit': 'Level (places in the code)',
+  'mgmt.levelsColumn': 'Places in the code',
   'mgmt.hideDetail': 'Hide the answers in detail',
   'mgmt.showDetail': 'Show the answers in detail',
   'mgmt.signedOutLead': 'You are signed out, so',
@@ -215,7 +218,7 @@ const M = WORKSPACE_ANSWER_MESSAGES;
  * table's business (its own "Show all N"), so this says how many there are.
  */
 export function itFindingsCountLabel(count: number, filterLink: string | null, total: number): string {
-  const noun = count === 1 ? M['it.finding'] : M['it.findings'];
+  const noun = count === 1 ? M['it.place'] : M['it.places'];
   const head = filterLink
     ? `${count} ${noun} ${M['it.filteredBy']} ${filterLink}, ${M['it.outOf']} ${total}`
     : `${count} ${noun}`;

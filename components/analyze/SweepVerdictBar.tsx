@@ -85,7 +85,8 @@ export default function SweepVerdictBar({
           {isComplete ? 'Evidence scan complete' : 'Scanning…'}
         </span>
         <span className="cc-text-identifier tabular-nums text-cc-ink">
-          {totalFindings} {totalFindings === 1 ? 'finding' : 'findings'}
+          {/* The sweep reveals the engine's entries one line at a time — places in the code. */}
+          {totalFindings} {totalFindings === 1 ? 'place' : 'places'} in the code
         </span>
       </div>
     </div>

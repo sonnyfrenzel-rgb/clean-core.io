@@ -66,7 +66,7 @@ export default function ProgramStrip({
   labels.push(lines);
 
   const label =
-    `Where in the program: lines 1 to ${lines}. ${ticks.length} finding${ticks.length === 1 ? '' : 's'} by line, ` +
+    `Where in the program: lines 1 to ${lines}. ${ticks.length} ${ticks.length === 1 ? 'place' : 'places'} in the code with a finding, ` +
     `${marks.length} construct${marks.length === 1 ? '' : 's'} the engine did not judge, ${bands.length} routine${bands.length === 1 ? '' : 's'}.`;
 
   return (

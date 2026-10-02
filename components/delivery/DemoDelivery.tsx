@@ -58,7 +58,9 @@ export default function DemoDelivery({
   patch: (n: Partial<DemoDeliveryState>) => void;
 }) {
   const route = routeLabel(demo.design.recommendedRoute);
-  const findings = demo.analyze.findings.length;
+  // Findings as Analyze counts them — one per pattern and object — not the
+  // engine's occurrences, which are places in the code.
+  const findings = demo.analyze.distinctFindings;
   const missing = demo.delivery.missing;
   const ran = demo.testing.verdicts.passed + demo.testing.verdicts.failed;
 

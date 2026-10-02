@@ -1,6 +1,6 @@
 import { SCORE_BANDS_SOURCE, scoreWithBand } from './clean-core-score';
 import { coverage, SCORE_MEANING, type ManagementView, type ScoreTrend } from './management-answers';
-import { levelDistribution, type ItFindingsSource } from './it-findings';
+import { levelDistribution, placesInTheCode, type ItFindingsSource } from './it-findings';
 import { LEVEL_OVERLAY_NOTE } from './process-overlays';
 import {
   PUBLIC_CLOUD_FIT_BUCKETS,
@@ -475,8 +475,8 @@ export function levelsCard(findings: Loaded<ItFindingsSource>): LevelsCard {
     rows.length === 0
       ? 'No findings in this source, so there is no level to count'
       : dist.graded === 0
-        ? `None of the ${rows.length} findings names an object the catalog can grade`
-        : `${dist.graded} of ${rows.length} findings carry a level: A ${by('A')}, B ${by('B')}, C ${by('C')}, ` +
+        ? `None of the ${rows.length} ${placesInTheCode(rows.length)} names an object the catalog can grade`
+        : `${dist.graded} of ${rows.length} ${placesInTheCode(rows.length)} carry a level: A ${by('A')}, B ${by('B')}, C ${by('C')}, ` +
           `D ${by('D')}, ${by('Unknown')} not determined`;
 
   return {

@@ -200,7 +200,7 @@ test.describe('8.6 one-pager — every number comes from a workspace model', () 
     const page = steeringOnePager(full());
     const dist = page.figures.find((f) => f.key === 'it-level-distribution');
     expect(dist?.value).toBe('A 1 · B 0 · C 1 · D 0 · Unknown 0');
-    expect(dist?.coverage).toContain('2 of 3 findings in this run');
+    expect(dist?.coverage).toContain('2 of 3 places in the code in this run');
   });
 
   test('the decision figures are counted from the record, out of all five bindings', () => {

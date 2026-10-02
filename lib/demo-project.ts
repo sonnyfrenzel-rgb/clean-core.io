@@ -295,7 +295,9 @@ function buildRail(demo: Omit<DemoProject, 'rail'>): DemoRailStep[] {
       'transformation',
       'partial',
       'Plan only',
-      `${demo.transformation.plan.length} findings with a target route. The transformed code is a model's work and the demo has none.`,
+      // Findings as everywhere else — one per pattern and object — not the
+      // plan's lines, which are one per place in the code.
+      `${findingRows(demo.analyze.findings).filter((r) => (r.finding.targetOptions ?? []).length > 0).length} findings with a target route. The transformed code is a model's work and the demo has none.`,
     ),
     railStep(
       'documentation',

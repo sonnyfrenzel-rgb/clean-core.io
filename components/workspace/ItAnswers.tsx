@@ -400,7 +400,7 @@ export default function ItAnswers({
           value={view.unreadable ? null : String(noObject)}
           absent={view.unreadable ? view.figures[0].absentReason : undefined}
           provenance="not-determined"
-          coverage={`${noObject} ${wt('it.ofLower')} ${view.rows.length} ${wt('it.findings')}`}
+          coverage={`${noObject} ${wt('it.ofLower')} ${view.rows.length} ${view.rows.length === 1 ? wt('it.place') : wt('it.places')}`}
         >
           <p className="m-0 mt-1 hidden text-[12px] leading-snug font-medium text-cc-ink-muted sm:block">{wt('it.noLevelReason')}</p>
           {noObject > 0 ? (
@@ -534,7 +534,7 @@ export default function ItAnswers({
                 <>
                   <div id="it-filter-bar" data-it-filter-bar="" className={cn('mb-3 sm:block', filtersOpen ? 'block' : 'hidden')}>
                     <CcFilterBar
-                      noun={wt('it.findings')}
+                      noun={wt('it.places')}
                       shown={filtered.length}
                       total={view.rows.length}
                       search={filters.search}

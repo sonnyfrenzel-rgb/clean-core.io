@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { buildDemoProject } from '../lib/demo-project';
 import type { EvidenceFinding } from '../lib/abap/evidence-model';
+import { findingRows } from '../lib/findings-view';
+import DEMO_RELEASE from '../lib/demo-release.json';
 import {
   changeExcerpt,
+  changeOrder,
   fileCard,
   findingTarget,
   planByKind,
@@ -80,17 +83,31 @@ test.describe('the per-finding target is honest about the project route', () => 
 });
 
 test.describe('the figures are counts of what the engine and the package hold', () => {
-  test('the flow, the plan and the facets add up to the findings', () => {
+  test('the flow, the plan and the facets add up to the findings — one per pattern and object', () => {
     const demo = buildDemoProject();
     const f = demo.analyze.findings;
+    // Owner decision 02.10.2026: "findings" is the unit Analyze counts; the
+    // engine's list is one entry per place in the code.
+    const units = findingRows(f).map((r) => r.finding);
+    expect(units.length).toBe(demo.analyze.distinctFindings);
+    expect(units.length).toBeLessThan(f.length);
     const track = trackOfRoute(demo.design.recommendedRoute);
     const fig = transformationFigures(f);
-    expect(fig.planned + fig.unplanned).toBe(f.length);
-    expect(fig.successorNamed).toBe(f.filter((x) => x.sapReplacement?.objectName).length);
+    expect(fig.findings).toBe(units.length);
+    expect(fig.places).toBe(f.length);
+    expect(fig.planned + fig.unplanned).toBe(units.length);
+    expect(fig.successorNamed).toBe(units.filter((x) => x.sapReplacement?.objectName).length);
     const flow = transformationFlow(f, track);
-    expect(flow.links.reduce((n, l) => n + l.count, 0)).toBe(f.length);
-    expect(flow.targets.reduce((n, t) => n + t.count, 0)).toBe(f.length);
-    expect(planByKind(f).reduce((n, k) => n + k.total, 0)).toBe(f.length);
+    expect(flow.links.reduce((n, l) => n + l.count, 0)).toBe(units.length);
+    expect(flow.targets.reduce((n, t) => n + t.count, 0)).toBe(units.length);
+    expect(planByKind(f).reduce((n, k) => n + k.total, 0)).toBe(units.length);
+    expect(changeOrder(f, track)).toHaveLength(units.length);
+  });
+
+  test('the demo figures are the release file’s: 25 findings at 31 places in the code', () => {
+    const fig = transformationFigures(buildDemoProject().analyze.findings);
+    expect(fig.findings).toBe(DEMO_RELEASE.figures.distinctFindings);
+    expect(fig.places).toBe(DEMO_RELEASE.figures.findings);
   });
 
   test('a change excerpt is a real line of a stored file, or nothing', () => {
@@ -121,6 +138,16 @@ test.describe('the demo Transformation renders the Object Page', () => {
     const tool = page.getByTestId('demo-stage-transformation');
     await expect(tool.locator('[data-transformation-object-page]')).toBeVisible({ timeout: 90000 });
     await expect(tool.locator('[data-transformation-flow]')).toBeVisible();
+    // One count under one word: findings are the 25 Analyze lists; the 31 are places in the code.
+    const { distinctFindings, findings: places } = DEMO_RELEASE.figures;
+    const plan = tool.locator('[data-transformation-facet="Plan from the engine"]');
+    await expect(plan).toContainText(`of ${distinctFindings} findings with a target option`);
+    await expect(plan).toContainText(`${places} places in the code`);
+    await expect(tool.locator('[data-transformation-facet="Released successors"]')).toContainText(`of ${distinctFindings} named`);
+    await expect(tool.locator('[data-transformation-flow] svg')).toContainText(`YOUR CODE · ${distinctFindings} FINDINGS`);
+    await expect(tool.locator('[data-code-status]')).toContainText(`${distinctFindings} findings at ${places} places in the code`);
+    await expect(tool.locator('a[href="#tf-changes"]')).toContainText(`(${distinctFindings})`);
+    await expect(tool).not.toContainText(`${places} findings`);
     await expect(tool.locator('[data-demo-package]')).toContainText('The demo stops where the model begins');
     // No generated file is shown in a demo.
     await expect(tool.locator('[data-package-file]')).toHaveCount(0);
