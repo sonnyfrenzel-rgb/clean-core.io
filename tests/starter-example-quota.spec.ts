@@ -10,6 +10,7 @@ import { adminSetDoc } from './helpers/admin-seed';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 import { starterExampleIndex, fingerprintExampleSource } from '../lib/starter-example-fingerprints';
 import { starterExampleIsFree } from '../lib/run-quota-rule';
+import { computeRunHash, signRunHash, verifyRunIntegrity } from '../lib/run-signature';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { observedWhile } from './helpers/observed-while';
@@ -244,6 +245,52 @@ test.describe('an example costs nothing the first time, and counts every time af
     const later = await profile();
     expect(later.transformationsUsed, 'the untouched example is still free').toBe(1);
     expect(later.starterExamplesUsed?.[EXAMPLE.name]).toBe(true);
+  });
+});
+
+test.describe('each signed run records what the quota charged for it', () => {
+  // codex code-mail-03: the weekly usage report counts units from the run's own
+  // `metering`, not from the account's tier and key today. A source grep proves
+  // the field is in the payload; only a run through the route proves it carries
+  // the quota's decision for each case, and that the decision is signed
+  // (QA review of 1c4f24f3343f).
+  async function meteredRun(request: APIRequestContext, legacyCode: string) {
+    const projectId = await newProject();
+    const res = await request.post('/api/runs/create', {
+      headers: headers(),
+      data: { projectId, legacyCode, s4Deployment: 'public', analysis: '{}' },
+    });
+    expect(res.status(), await res.text()).toBe(200);
+    const { runId } = await res.json();
+    const run = (await db().collection('projects').doc(projectId).collection('runs').doc(runId).get()).data()!;
+    expect(verifyRunIntegrity(run, process.env.AUDIT_SIGNING_KEY!), 'the run as stored verifies').toEqual({ valid: true });
+    const tampered = { ...run, metering: run.metering === 'charged' ? 'reanalysis' : 'charged' };
+    expect(verifyRunIntegrity(tampered, process.env.AUDIT_SIGNING_KEY!).valid, 'metering is inside the signature').toBe(false);
+    return run.metering;
+  }
+
+  test('free example, charged repeat, own code, re-analysis and own key each say so', async ({ request }) => {
+    test.setTimeout(120 * 1000);
+    await resetAccount();
+    const source = await exampleSource(request, EXAMPLE.file);
+    const own = `${source}\n* metering: my own code\n`;
+
+    expect(await meteredRun(request, source), 'first start of an example').toBe('starter-example');
+    expect(await meteredRun(request, source), 'a further start of an example').toBe('charged');
+    expect(await meteredRun(request, own), 'own code, first time').toBe('charged');
+    expect(await meteredRun(request, own), 'own code again').toBe('reanalysis');
+
+    await resetAccount({ byokConfigured: true });
+    expect(await meteredRun(request, `${own}* and on my own key\n`), 'own key').toBe('byok');
+  });
+
+  test('a run signed before the field existed still verifies', () => {
+    const key = 'k'.repeat(64);
+    const unsigned = { runId: 'r-old', status: 'completed', inputFingerprint: { sha256: 'a'.repeat(64) } };
+    const runHash = computeRunHash(unsigned);
+    const old = { ...unsigned, runHash, signature: signRunHash(runHash, key) };
+    expect('metering' in old).toBe(false);
+    expect(verifyRunIntegrity(old, key)).toEqual({ valid: true });
   });
 });
 
