@@ -276,6 +276,13 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // Wait for the analysis loader to complete and render the analysis report
     const complianceHeader = page.getByRole('dialog', { name: 'Understanding Clean Core' });
     // Generous timeout since Gemini call is executed live in this test context
+    // A project's first run continues in the workspace with the first look
+    // (owner 02.10.2026, roadmap 3.0.1); the report is read on the Analyze
+    // tool, opened from the workspace's tools bar.
+    await page.waitForURL(new RegExp(`/project/${projectId}\\?first=1`), { timeout: 180000 });
+    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 90000 });
+    await page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]').click({ timeout: 60000 });
+    await page.waitForURL(new RegExp(`/project/${projectId}/analyze`), { timeout: 60000 });
     // The stage answers first since the tool-page rebuild (ADR-029, ADR-050).
     await expect(page.locator('[data-analysis-answer]')).toBeVisible({ timeout: 90000 });
     console.log('Stage 1 Complete: Analysis report parsed and rendered.');
