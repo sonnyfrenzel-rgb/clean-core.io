@@ -192,7 +192,7 @@ export const SUMMARY_CARDS = [
   {
     k: 'What you get',
     t: 'The process, the rules and SAP’s view of every object',
-    d: 'The process the program runs, drawn as BPMN in plain language. The business rules hard-coded in it, each with its line. SAP’s clean core level for every SAP object it touches. Then a target design, a code draft and tests on the same evidence — and a signed record of all of it.',
+    d: 'The process the program runs, drawn as BPMN in plain language. The business rules hard-coded in it, each with its line. SAP’s clean core level for every SAP object it touches. Then a target design, a code draft and tests on the same evidence — and a signed record of the analysis they rest on.',
   },
   {
     k: 'What stays with you',
@@ -240,7 +240,7 @@ export const WORKSPACE_FACTS = [
   },
   {
     t: 'Share by invitation',
-    d: 'Only the account that created a project, and anyone that account invites, can open it. An invitation is bound to one confirmed e-mail address, gives read access including the source code, expires, and can be revoked at any time. There are no public links.',
+    d: 'Only the account that created a project, and anyone that account invites, can open it. An invitation is bound to one confirmed e-mail address and gives read access including the source code until it is withdrawn, which can happen at any time. Its link expires if nobody accepts it. There are no public links.',
   },
   {
     t: 'A print sheet per project',
