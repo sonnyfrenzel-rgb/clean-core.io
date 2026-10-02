@@ -70,17 +70,29 @@ type ContentBlock =
 /**
  * Business in the order of mockup s1: the answer (process name, sentence,
  * found in the code beside not determined), "Next step" near the top, the
- * folded project status with Tools / Export / Invite, the anchor bar, the map
- * with its source column, the layer's own rows, the pre-answered question —
- * and the not-determined detail last and folded, because its count and its
- * groups already stand beside the answer at the top.
+ * map with its source column, then the folded project status with Tools /
+ * Export / Invite, the anchor bar, the layer's own rows, the pre-answered
+ * question — and the not-determined detail last and folded, because its count
+ * and its groups already stand beside the answer at the top.
+ *
+ * **The map follows the answer directly** (owner, 02.10.2026: "Der Prozess muss
+ * immer angezeigt werden, wenn ich ein neues Projekt starte, mit erster
+ * Blick"). The first look's build-up draws the process inside its own card;
+ * when it ends (~2.4 s) the card turns into the answer and that drawing goes.
+ * With status, tools and the anchor bar in between, the map then stood about
+ * 1,070 px down, under the fold of a 1440×1000 screen, so a new project's
+ * process appeared and vanished. Under the answer it stands in the first
+ * screen from the first frame of the build-up on, and stays (§5.1: "below it
+ * the process map"). The anchor bar now sits where it belongs, over the layer
+ * it switches — the map is not tied to a layer (owner, 01.10.2026).
+ * `tests/first-look-map.spec.ts` holds it.
  */
 const BUSINESS_ORDER: readonly ContentBlock[] = [
   'firstLook',
   'nextStep',
+  'process',
   'statusTools',
   'layerBar',
-  'process',
   'layerSection',
   'ask',
   'notDetermined',
@@ -261,6 +273,10 @@ export default function WorkspaceShell({
    */
   const [reading, setReading] = useState<SourceReading | null>(null);
   const onReading = useCallback((next: SourceReading) => setReading(next), []);
+  /** From the first look's picture of the main line to the whole map, right under it. */
+  const openMap = useCallback(() => {
+    document.getElementById('workspace-process-title')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, []);
   // The layers count the rules and capabilities of that reading (mockups s2, s3).
   const layers = useMemo(() => workspaceLayers(project, reading), [project, reading]);
 
@@ -458,7 +474,13 @@ export default function WorkspaceShell({
     // process name, traceability, the reveal line and the decisions.
     firstLook: (
       <div className="mt-5">
-        <FirstLook project={project} projectId={projectId} buildUp={buildUp} onReading={onReading} />
+        <FirstLook
+          project={project}
+          projectId={projectId}
+          buildUp={buildUp}
+          onReading={onReading}
+          onOpenMap={view === 'business' ? openMap : undefined}
+        />
       </div>
     ),
     // The first ten seconds after it (§5.3): one question already answered,
