@@ -14,7 +14,7 @@ import { getAuth } from '@/lib/firebase';
 import type { DataCouplingEntry, CodeInventoryItem } from '@/lib/types';
 import {
   ABCD_META, GRADES, ALL_GRADES, gradeDistribution, gradeFromCoupling, gradeFromInventory,
-  gradeKey, objectUseFromAccess,
+  gradeKey, couplingUse,
   type CloudReadinessGrade, type GradedObject, type ObjectUse, type GradeProvenance,
 } from '@/lib/abap/abcd-classification';
 
@@ -64,7 +64,7 @@ export default function AbcdClassificationPanel({
   const heuristicItems: { name: string; use: ObjectUse | null; sub: string; grade: CloudReadinessGrade }[] = [
     ...couplings.map((c) => ({
       name: c.tableName,
-      use: objectUseFromAccess(c.accessType),
+      use: couplingUse(c),
       sub: `${c.accessType || 'access'}${c.isCustom ? ' · custom' : ''} — ${c.recommendation || ''}`.trim(),
       grade: gradeFromCoupling(c),
     })),
@@ -335,6 +335,12 @@ function gradeOrigin(it: {
   objectGrade?: CloudReadinessGrade;
 }): string {
   const access = it.use === 'read' ? 'read' : it.use === 'write' ? 'written' : null;
+  // A direct write moves an SAP object to D whatever its own grade, and the
+  // sentence has to say both, or a residual C on the catalog page and a D here
+  // disagree without a word (codex code-engine-05).
+  if (it.use === 'write' && it.grade === 'D' && it.objectGrade && it.provenance !== 'own-object') {
+    return `Written directly by this code, which makes it D; the object on its own is ${it.objectGrade}${it.sapState ? ` (SAP state: ${it.sapState})` : ''}`;
+  }
   switch (it.provenance) {
     case 'catalog': {
       const base = `SAP state: ${it.sapState}`;

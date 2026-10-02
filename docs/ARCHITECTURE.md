@@ -112,6 +112,16 @@ Two things about the second file are easy to get wrong:
 
 The `catalog-residual` case is not a guess: "SAP internal objects, not classified or intended for customer use" is what the clean core level concept defines level C to be.
 
+**The use moves the level in three places** (`gradeFromSapStatesForUse`, published as the access table on `/method/levels`, held by `tests/level-rule-page-guard.spec.ts`). The table above answers for the *name*; the analysis also knows how the code touches a data object:
+
+| Object and use | Level |
+|---|---|
+| `notToBeReleased` (classic file silent), read or referenced as a type | C |
+| SAP object, written directly (INSERT / UPDATE / MODIFY / DELETE, `FROM TABLE`, a resolved dynamic name, ADBC) | D, whatever the object's own level (ADR-062, codex code-engine-05) |
+| customer Z/Y table, read or written | B (`own-object`) |
+
+Where the use moves the letter, `objectGrade` keeps the object's own level beside it ("written directly, which makes it D; the object on its own is C"). A `write` reaches the rule only from a direct database statement (`readTableDependencies`): EML (`MODIFY ENTITIES`) and `DELETE DATASET` are not table writes, a BAPI or class is a call graded by its name, and a possible-only dynamic target (R26) is graded by its name (`couplingUse`). The rule fingerprint (`level-rule-version.ts`) is a hash over every input the rule distinguishes, so this change moved it by itself; the demo release record carries it.
+
 Client surfaces receive resolved grades, never the maps:
 
 - Server components (`/catalog/[object]`, `/sap-clean-core-object-classification`) call `gradeSapObject()` / `getPublishedGradeDistribution()` directly.

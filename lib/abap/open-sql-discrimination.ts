@@ -112,3 +112,32 @@ export function isInternalTableOperation(text: string): boolean {
   const bare = maskLiterals(text);
   return INTERNAL_TABLE_CLAUSE.test(bare) || /^INSERT\s+[\w/]+(?:-[\w]+)*\s+INTO\b/i.test(bare);
 }
+
+/**
+ * An EML statement — `MODIFY ENTITIES OF bdef …`, `MODIFY ENTITY bdef\entity …`,
+ * `MODIFY AUGMENTING ENTITY …`.
+ *
+ * It begins with the Open SQL keyword and is not Open SQL: it goes through the
+ * business object's behaviour, its checks and its transactional buffer, and
+ * touches no table itself. `databaseWriteIn` reads the next word as the table
+ * and answers `ENTITIES`; the process skeleton keeps that answer for its write
+ * node, but a *table dependency* must not — "a direct write to SAP table
+ * ENTITIES" was a Critical finding on a RAP determination (corpus CC-059), and
+ * since codex code-engine-05 a direct write to an SAP object is level D, so the
+ * same misreading would grade the permitted write path as the forbidden one.
+ */
+export function isEntityManipulation(text: string): boolean {
+  return /^MODIFY\s+(?:AUGMENTING\s+)?ENTIT(?:Y|IES)\b/i.test(maskLiterals(text).trim());
+}
+
+/**
+ * `DELETE DATASET file` — deletes a file on the application server.
+ *
+ * Same keyword, no table: `databaseWriteIn` answers `DATASET`, a table nobody
+ * has, which the data coupling then listed as an SAP table written directly —
+ * level D under code-engine-05 for a program that removes the file it has just
+ * read. The table dependency layer asks this first, like `isEntityManipulation`.
+ */
+export function isDatasetDeletion(text: string): boolean {
+  return /^DELETE\s+DATASET(?![\w-])/i.test(maskLiterals(text).trim());
+}

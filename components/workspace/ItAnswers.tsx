@@ -757,6 +757,11 @@ function findingCells(
       ) : (
         <span data-it-level={row.id}>
           <CcCleanCoreLevel value={row.level} />
+          {row.objectLevel && row.objectLevel !== row.level ? (
+            <span data-it-object-level={row.id} className="mt-1 block text-[11px] font-medium text-cc-ink-muted">
+              {row.objectLevel} {wt('it.levelOwn')}
+            </span>
+          ) : null}
         </span>
       ),
     successor: (
