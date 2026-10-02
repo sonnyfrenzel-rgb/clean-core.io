@@ -220,8 +220,8 @@ function narrativeProvenanceRowOf(mc: ModelCard | undefined): string {
  *
  * Read from the signed run first, then from the model card that mirrors it.
  * A run that recorded neither says so: the old fallback printed `2024.FPS02`,
- * a revision nothing had established, into a signed file (QA full review of
- * v2.20.0).
+ * a revision nothing had established, into a signed file
+ * (QA full review of v2.20.0).
  */
 function catalogVersionOf(project: Project): string {
   const fromRun = (project as { sapApiCatalogVersion?: unknown }).sapApiCatalogVersion;

@@ -439,8 +439,8 @@ export function assignPublicCloudFit(
   // And before the level and platform gates below: neither is read by this
   // rule. "Every modification is Rebuild" holds for an object whose level
   // nobody could determine and in a project with no target platform yet, and
-  // the gates used to answer "not assigned" for exactly those (QA full review
-  // of v2.20.0, ceb59bbace90).
+  // the gates used to answer "not assigned" for exactly those
+  // (QA full review of v2.20.0, ceb59bbace90).
   //
   // The rule table above says a modification and an own write access to an SAP
   // table are Rebuild, full stop: "that is the project's work, never
