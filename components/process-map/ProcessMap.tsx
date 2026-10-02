@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { draftFor, type HeldDraft } from '@/lib/process-map-draft';
+import { createDraftHolder, draftFor, type DraftHolder } from '@/lib/process-map-draft';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Code2, List, Map as MapIcon, Pencil } from 'lucide-react';
@@ -189,6 +189,11 @@ export interface ProcessMapProps {
    * a project with the same source (a duplicate) never opens another's draft.
    */
   projectId?: string | null;
+  /**
+   * Where the unsaved drawing lives when the caller may unmount this map — the
+   * workspace's view switch does. Without it the draft lives and dies with the map.
+   */
+  draftHolder?: DraftHolder;
 }
 
 export default function ProcessMap({
@@ -208,6 +213,7 @@ export default function ProcessMap({
   openLatest,
   layout = 'workspace',
   projectId = null,
+  draftHolder,
 }: ProcessMapProps) {
   const stage = layout === 'stage';
   /** A phone shows the map and the steps; modelling by touch is not offered (`DESIGN.md` §5.7). */
@@ -324,7 +330,8 @@ export default function ProcessMap({
    * drawing inside it. `model` is untouched either way — the Ist revision after
    * editing is the Ist revision before it.
    */
-  const draftRef = useRef<HeldDraft | null>(null);
+  const [ownDraft] = useState(createDraftHolder);
+  const drafts = draftHolder ?? ownDraft;
 
   /**
    * What the tree has open: what the reader opened, plus the way down to the
@@ -437,16 +444,16 @@ export default function ProcessMap({
    * here — it is somebody else's process, and it is dropped by not matching.
    */
   const openWith = useCallback(
-    () => draftFor(draftRef.current, projectId, source) ?? modelProp.xml,
-    [modelProp, projectId, source],
+    () => draftFor(drafts.get(), projectId, source) ?? modelProp.xml,
+    [drafts, modelProp, projectId, source],
   );
   const keepDraft = useCallback((xml: string) => {
-    draftRef.current = { projectId, source, xml };
-  }, [projectId, source]);
+    drafts.set({ projectId, source, xml });
+  }, [drafts, projectId, source]);
   const discardDraft = useCallback(() => {
-    draftRef.current = null;
+    drafts.set(null);
     setSession((token) => token + 1);
-  }, []);
+  }, [drafts]);
 
   /**
    * Open a step: its level, its selection and the focus, in that order.

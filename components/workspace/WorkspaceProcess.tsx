@@ -25,6 +25,7 @@ import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import type { NotDetermined, WorkspaceView } from '@/lib/workspace-model';
 import { bizLinesLabel, bizShowingLines, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
+import type { DraftHolder } from '@/lib/process-map-draft';
 
 /**
  * Client only and on demand, as on the Documentation stage: the map pulls
@@ -66,6 +67,7 @@ export default function WorkspaceProcess({
   notDetermined,
   beforeWrite,
   onWritten,
+  draftHolder,
 }: {
   project: Project | null;
   projectId: string;
@@ -78,6 +80,8 @@ export default function WorkspaceProcess({
   beforeWrite?: () => Promise<boolean>;
   /** A revision this screen wrote, so the Stand holds it and never reports it as somebody else's. */
   onWritten?: (revision: number) => void;
+  /** The shell's hold on the unsaved drawing, so a view switch or a breakpoint does not discard it. */
+  draftHolder?: DraftHolder;
   /**
    * The engine's own list — the second tab of the source column, where each
    * line opens in the first. The full card, with what the record does not
@@ -386,6 +390,7 @@ export default function WorkspaceProcess({
               save={save}
               openLatest={openLatest}
               projectId={projectId || null}
+              draftHolder={draftHolder}
             />
           ) : map.status === 'failed' ? (
             <p data-workspace-process-failed="" className="m-0 text-[13px] font-medium text-cc-ink-muted">

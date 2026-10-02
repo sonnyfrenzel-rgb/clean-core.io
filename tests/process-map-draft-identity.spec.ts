@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { draftFor, type HeldDraft } from '../lib/process-map-draft';
+import { createDraftHolder, draftFor, type HeldDraft } from '../lib/process-map-draft';
 
 /**
  * An unsaved drawing belongs to one project's process, not to a source text —
@@ -32,8 +32,8 @@ test('a different source in the same project is not this draft either', () => {
 
 test('ProcessMap holds the draft through it and keys the editor on the project', () => {
   const src = fs.readFileSync(path.resolve(__dirname, '..', 'components', 'process-map', 'ProcessMap.tsx'), 'utf8');
-  expect(src).toContain('draftFor(draftRef.current, projectId, source)');
-  expect(src).toContain('draftRef.current = { projectId, source, xml }');
+  expect(src).toContain('draftFor(drafts.get(), projectId, source)');
+  expect(src).toContain('drafts.set({ projectId, source, xml })');
   expect(src).toMatch(/key=\{`\$\{session\}\|\$\{projectId \?\? ''\}\|\$\{source\}`\}/);
   // Both screens with an editor hand their project in.
   for (const rel of ['components/workspace/WorkspaceProcess.tsx', 'app/(app)/project/[projectId]/documentation/page.tsx']) {
@@ -41,4 +41,38 @@ test('ProcessMap holds the draft through it and keys the editor on the project',
     const map = screen.slice(screen.indexOf('<ProcessMap'), screen.indexOf('/>', screen.indexOf('<ProcessMap')));
     expect(map, `${rel} does not tell the map which project it shows`).toMatch(/\bprojectId=\{/);
   }
+});
+
+/**
+ * Codex code-ui-03: the workspace drops the map when the reader switches to IT
+ * or Management and remounts it across the phone breakpoint. A draft held only
+ * inside the map died with it, unasked; the shell now holds it.
+ */
+test('a draft held by the caller outlives the map that drew it', () => {
+  const holder = createDraftHolder();
+  // The first map keeps a drawing, then is unmounted (the view switch).
+  holder.set(held);
+  // The map mounted on the way back opens it — and only in its own project.
+  expect(draftFor(holder.get(), 'project-a', SOURCE)).toBe(held.xml);
+  expect(draftFor(holder.get(), 'project-b', SOURCE)).toBeNull();
+  holder.set(null);
+  expect(holder.get()).toBeNull();
+  // Two holders are two drafts: a map without a caller's holder shares nothing.
+  expect(createDraftHolder().get()).toBeNull();
+});
+
+test('the workspace holds the draft above the view switch and hands it down to the map', () => {
+  const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
+  const shell = read('components/workspace/WorkspaceShell.tsx');
+  const holderAt = shell.indexOf('useState(createDraftHolder)');
+  expect(holderAt, 'the shell keeps no draft, so a view switch discards it').toBeGreaterThan(-1);
+  const mount = shell.slice(shell.indexOf('<WorkspaceProcess'), shell.indexOf('/>', shell.indexOf('<WorkspaceProcess')));
+  expect(mount, 'the shell does not hand its draft to the process block').toMatch(/\bdraftHolder=\{processDraft\}/);
+
+  const process = read('components/workspace/WorkspaceProcess.tsx');
+  const map = process.slice(process.indexOf('<ProcessMap'), process.indexOf('/>', process.indexOf('<ProcessMap')));
+  expect(map, 'the process block does not pass the draft on to the map').toMatch(/\bdraftHolder=\{draftHolder\}/);
+
+  const pm = read('components/process-map/ProcessMap.tsx');
+  expect(pm).toContain('const drafts = draftHolder ?? ownDraft;');
 });
