@@ -22,9 +22,9 @@ applies only publicly are the large radii (§1.4), mesh and grid as background, 
 
 ## 1. Look & Feel
 
-Today the app speaks two colour dialects (Tailwind `green-600`/`gray-950` and `#006b2c`/`#00873a`/`#0b1c30`), 78
-button styles and type down to 8 px. This becomes one set of **semantic tokens** in `app/globals.css`
-(`@theme`); new components use only these. This applies to every page — workspace, stages, account and
+Before 3.0 the app spoke two colour dialects (Tailwind `green-600`/`gray-950` and `#006b2c`/`#00873a`/`#0b1c30`), 78
+button styles and type down to 8 px. They became one set of **semantic tokens** in `app/globals.css`
+(`@theme`, Block D); components use only these. This applies to every page — workspace, stages, account and
 public pages (ADR-051).
 
 ### 1.1 Colour
@@ -487,7 +487,7 @@ Markdown where nothing is rendered.
 From step 1.5 there is **one** list, `lib/provenance.ts`; the status chip can only show its values, a guard
 forbids freely worded provenance badges (ADR-006).
 
-| Value | Label (key) | State | Icon | Meaning | Today, for example |
+| Value | Label (key) | State | Icon | Meaning | Where it appears, and labels it replaced |
 |---|---|---|---|---|---|
 | `proven` | **Proven** | success | Check mark in a shield | backed by the engine, a signature or a real run | Signed run, Passed |
 | `confirmed` | **Confirmed** | information | Person | confirmed by the account — self-declaration, no mandate | Signed off, confirmed rule |
@@ -607,7 +607,7 @@ the same end state. A second visit has no build-up.
 ### 5.4 What explicitly not
 
 Confetti, decorative gradients, typewriter effects, pulsing dots, loading animations without content, *"AI is
-thinking…"*, artificial minimum durations (like the six seconds of the Evidence Scanner today). Everything that costs time and
+thinking…"*, artificial minimum durations (like the six seconds the Evidence Scanner once took). Everything that costs time and
 shows nothing lowers the credibility the moment needs.
 
 **The one deliberate exception (owner decision, 01.10.2026):** the first look's build-up runs on a fixed budget of

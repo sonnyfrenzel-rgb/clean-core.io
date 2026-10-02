@@ -7,10 +7,10 @@ import type { TestRunReceipt, TestRunVerdict } from '../test-receipt';
 /**
  * Counter-check scenarios — roadmap 7.3, mockup screen `s3`.
  *
- * The roadmap row, verbatim: *Gegenprobe-Szenarien aus dem bestätigten Bedarf,
- * als Given/When/Then mit Testdatenbedarf, damit Fachbereiche sie ohne ABAP
- * prüfen; Testing speichert Verdikte als Receipt mit Umfang, Umgebung und
- * Stubs.* Four things are load-bearing in that sentence and each one is a way
+ * The roadmap row, verbatim: *Counter-check scenarios from the confirmed need,
+ * as Given/When/Then with test data needs, so that business departments check
+ * them without ABAP; Testing stores verdicts as a receipt with scope,
+ * environment and stubs.* Four things are load-bearing in that sentence and each one is a way
  * this product could be caught lying.
  *
  * ## 1. A scenario is a question, not an answer
@@ -19,16 +19,16 @@ import type { TestRunReceipt, TestRunVerdict } from '../test-receipt';
  * here is a verdict, and no field of `CounterCheckScenario` carries an outcome.
  * Until an execution exists and a receipt attests to it, the capability is
  * `notDetermined` in the sense of roadmap 7.2 — the acceptance line the 2.7
- * catalogue writes as UX-E08-F01-US02: *ein bestätigter Szenarioentwurf wird
- * nicht als tatsächlich durchgeführter Test angezeigt*.
+ * catalogue writes as UX-E08-F01-US02: *a confirmed scenario draft is not
+ * shown as a test that was actually carried out*.
  *
  * ## 2. From the confirmed need, not from the generated code
  *
  * The scenarios are derived from `deriveBusinessRules` (roadmap 3.4) — the
  * `BR-nnn` decisions read out of the **original ABAP**. They are deliberately
  * not read out of the transformed code: UX-E08-F01-US01 names a test derived
- * only from the same generated code as *kein unabhängiger fachlicher
- * Erfüllungsbeleg*, and it is right. A scenario that comes from the output
+ * only from the same generated code as *no independent business evidence
+ * of fulfilment*, and it is right. A scenario that comes from the output
  * cannot catch the output.
  *
  * ## 3. The counter-check is the second scenario, not a nicety
@@ -36,7 +36,7 @@ import type { TestRunReceipt, TestRunVerdict } from '../test-receipt';
  * Every decision yields **two** scenarios: one in which the test holds and one
  * in which it does not. A suite that only ever exercises the case the rule was
  * written for is passed by an implementation that always fires. The
- * `does-not-apply` arm is the *Gegenprobe* the roadmap names, and it is why the
+ * `does-not-apply` arm is the *counter-check* the roadmap names, and it is why the
  * data needs are stated with their operator inverted rather than omitted.
  *
  * ## 4. The test data need is what makes it a task
@@ -46,8 +46,8 @@ import type { TestRunReceipt, TestRunVerdict } from '../test-receipt';
  * code writes it, the operator, the literal, the line it stands on, and what
  * the code does **not** say about the value (a currency, a unit). A business
  * department can read that list, prepare the records and check the outcome
- * without opening the ABAP — which is the whole of *damit Fachbereiche sie ohne
- * ABAP prüfen*.
+ * without opening the ABAP — which is the whole of *so that business departments
+ * check them without ABAP*.
  *
  * The names stay code. `GS_EBAN-WAERS` is not translated into "the currency of
  * the requisition", because nothing in the source says that is what it means;
@@ -67,8 +67,8 @@ import type { TestRunReceipt, TestRunVerdict } from '../test-receipt';
  *   - Only `Passed` produces evidence. `Skipped`, `Todo`, `Failed`, `Error` and
  *     a case the runner never mentioned each produce a *refusal* with its own
  *     reason, because W22-A15 and the 2.7 contract both say the same thing:
- *     *fehlend, geplant, simuliert, nur Connectivity, übersprungen,
- *     fehlgeschlagen und bestanden bleiben verschieden*.
+ *     *missing, planned, simulated, connectivity only, skipped,
+ *     failed and passed stay distinct*.
  *   - The evidence it produces is `kind: 'demonstration'`, whose ceiling is E3,
  *     which `fitOfLevel` renders as `mock-only` with the `demonstrated-mock`
  *     provenance. **No level here is ever green**, and nothing in this file
@@ -76,8 +76,8 @@ import type { TestRunReceipt, TestRunVerdict } from '../test-receipt';
  *     execution in a sandbox; W22-A15 asks that no view present it as a
  *     successful business execution, and the way to keep that is to say what it
  *     was — which is why `environment` and the stubbed packages travel into the
- *     evidence sentence itself (UX-E08-F02-US02: *Umgebung und ersetzte
- *     Abhängigkeiten sind am Ergebnis sichtbar*).
+ *     evidence sentence itself (UX-E08-F02-US02: *environment and replaced
+ *     dependencies are visible on the result*).
  *   - Which test case executes which scenario is **declared, never derived**.
  *     The suite is model-generated and its ids mean nothing to this module;
  *     guessing a link would fabricate exactly the evidence the step exists to

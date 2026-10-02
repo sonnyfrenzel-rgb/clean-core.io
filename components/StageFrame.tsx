@@ -4,9 +4,9 @@ import { cn } from '@/lib/utils';
 /**
  * The frame of a workflow stage. There is exactly one (ADR-063).
  *
- * Owner, 02.10.2026: "wenn ich von analyze zu design schalte ist der ganze
- * bildschirm nach links gerückt, alle screens müssen je nach formfaktor sich
- * gleich anfühlen". Each stage used to choose its own container — Analyze
+ * Owner, 02.10.2026: "when I switch from analyze to design the whole screen
+ * has moved to the left; all screens have to feel the same for each form
+ * factor". Each stage used to choose its own container — Analyze
  * `max-w-5xl mx-auto` until it had results, Transformation and Delivery
  * `max-w-7xl mx-auto` (Delivery with a padding of its own on phones), Testing,
  * Economics and Documentation none, and the shell gave Design and

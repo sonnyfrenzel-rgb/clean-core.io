@@ -126,8 +126,8 @@ export function phaseTone(step: Pick<RailStep, 'state' | 'proven'> & { mock?: bo
  * cannot drift into four shades of "nearly green". Tokens only (`DESIGN.md`
  * §1.1, block D step D.29): green is `--cc-success` and belongs to `proven`
  * alone; done-but-unchecked and stale are both `warning` — *stale* means
- * "recompute", which is `warning` and never `error` ("Veraltet ist nicht
- * falsch"); stale takes the darker ink of that family so the two stay apart
+ * "recompute", which is `warning` and never `error` ("Stale is not
+ * wrong"); stale takes the darker ink of that family so the two stay apart
  * beside each other, and the tick and the `data-phase-tone` say which is which
  * in words. An empty phase is the neutral line.
  */

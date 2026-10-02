@@ -3,8 +3,8 @@
  *
  * `declaration-parser.ts` already tokenises, and for what it does — resolving
  * class declarations — a start line is enough. Phase 2 needs more: its acceptance
- * is that "jeder Task, jedes Gateway und jede Lane trägt einen Zeilenanker oder
- * ist sichtbar unbelegt" (`docs/ROADMAP.md` §4, Phase 2). A gateway drawn from an
+ * is that "every task, every gateway and every lane carries a line anchor or
+ * is visibly unevidenced" (`docs/ROADMAP.md` §4, Phase 2). A gateway drawn from an
  * `IF` whose condition runs over four lines has to be able to point at all four,
  * and a reader who clicks it has to land on the whole condition rather than on
  * its first word. So every statement here carries a range, not a line.

@@ -3,17 +3,17 @@ import type { ProcessMapElement, ProcessMapModel } from './process-map';
 import type { ElementState, ProcessStates, StateEntry } from './process-states';
 
 /**
- * Ist and Soll — roadmap 3.6.
+ * As-is and to-be — roadmap 3.6.
  *
- * The Ist is `lib/process-map.ts`: a process reconstructed from ABAP, every
+ * The as-is process is `lib/process-map.ts`: a process reconstructed from ABAP, every
  * element carrying the lines it was read out of. The states are 3.5: what an
  * account says should happen to each element and each rule. This module puts
- * the two together into the **Soll** and then holds the two side by side.
+ * the two together into the **to-be process** and then holds the two side by side.
  *
  * Four rules, and they are the whole of the derivation:
  *
- *   - `keep`   — the element stays in the Soll exactly as the Ist has it.
- *   - `drop`   — the element is **not** in the Soll. It is still carried in
+ *   - `keep`   — the element stays in the to-be process exactly as the as-is process has it.
+ *   - `drop`   — the element is **not** in the to-be process. It is still carried in
  *                `dropped`, with its line anchor, because the comparison has to
  *                be able to say *what* goes and *where the code for it was*.
  *   - `change` — the element stays, marked as deliberately changed. What the
@@ -28,15 +28,15 @@ import type { ElementState, ProcessStates, StateEntry } from './process-states';
  *                `undecided`), and two counters that are never summed into one.
  *
  * **C23-A06 — a need without code gets no invented anchor.** Every anchor in
- * here is copied from the Ist element it belongs to. A subject that exists only
- * in the Soll has no line and is given none: not the neighbour's, not the
+ * here is copied from the as-is element it belongs to. A subject that exists only
+ * in the to-be process has no line and is given none: not the neighbour's, not the
  * parent's, not the enclosing sub-process's. It is visibly `Unanchored` — 2.4's
  * word, imported rather than respelt — and the comparison counts it as **added**
- * and never as confirmed. The other direction holds too: an element that the Ist
+ * and never as confirmed. The other direction holds too: an element that the as-is process
  * anchored and the states dropped keeps its anchor in the comparison, because it
  * is established that the code was there.
  *
- * **A Soll is not a statement about the code.** It says what somebody holds to
+ * **A to-be process is not a statement about the code.** It says what somebody holds to
  * be necessary. It enters no signed run and no audit pack
  * (`lib/audit-pack-build.ts`), and no wording here or in the views over it may
  * suggest otherwise.
@@ -49,12 +49,12 @@ import type { ElementState, ProcessStates, StateEntry } from './process-states';
 /** Bumped when the derived record changes shape. */
 export const PROCESS_TARGET_FORMAT_VERSION = 1;
 
-/** The one sentence a Soll carries wherever it is shown. */
+/** The one sentence a to-be process carries wherever it is shown. */
 export const TARGET_DISCLAIMER =
   'A target model says what somebody holds to be necessary. It is not a statement about the code, '
   + 'it changes no run, and it is in no audit pack.';
 
-/** Why a subject that exists only in the Soll carries no line anchor. */
+/** Why a subject that exists only in the to-be process carries no line anchor. */
 export const NEED_WITHOUT_CODE = 'This exists only in the target model. No code was read for it, so it has no line anchor.';
 
 /** How far the target has got with one subject. `dropped` subjects are not in the target at all. */
@@ -78,11 +78,11 @@ export type OpenReason = 'clarify' | 'undecided';
  * this module may produce a line range.
  */
 export type AnchorBasis =
-  /** Copied from the Ist element. The only basis that carries a line range. */
+  /** Copied from the as-is element. The only basis that carries a line range. */
   | 'code'
-  /** In the Ist, and the reconstruction found no line for it (2.4's `Unanchored`). */
+  /** In the as-is process, and the reconstruction found no line for it (2.4's `Unanchored`). */
   | 'unanchored'
-  /** Only in the Soll: there is no code for it, so there is no anchor. C23-A06. */
+  /** Only in the to-be process: there is no code for it, so there is no anchor. C23-A06. */
   | 'need'
   /** Not established here. Rules carry this — see `buildTargetModel`. */
   | 'unknown';
@@ -101,7 +101,7 @@ export interface TargetDecision {
   note: string | null;
 }
 
-/** One element or one rule, as the Soll has it. */
+/** One element or one rule, as the to-be process has it. */
 export interface TargetSubject {
   /** The stable BPMN element id of 2.6, or a rule id `BR-nnn` of 3.4. */
   subject: string;
@@ -119,9 +119,9 @@ export interface TargetSubject {
   anchorBasis: AnchorBasis;
   /** `Unanchored` whenever there is no anchor to show, whatever the subject is called. */
   evidenceLabel: string | null;
-  /** The Ist's reason, or `NEED_WITHOUT_CODE` for a subject that exists only here. */
+  /** The as-is reason, or `NEED_WITHOUT_CODE` for a subject that exists only here. */
   unanchoredReason: string | null;
-  /** True when the Ist contains this subject. False for a need drawn without code. */
+  /** True when the as-is process contains this subject. False for a need drawn without code. */
   fromIst: boolean;
   /** Null exactly when `state` is null. */
   decision: TargetDecision | null;
@@ -130,7 +130,7 @@ export interface TargetSubject {
 }
 
 export interface TargetCounts {
-  /** Everything considered: the Ist's subjects plus every subject the states name. */
+  /** Everything considered: the as-is subjects plus every subject the states name. */
   subjects: number;
   kept: number;
   changed: number;
@@ -139,7 +139,7 @@ export interface TargetCounts {
   clarify: number;
   /** Open because nobody has said anything. Never added to `clarify`. */
   undecided: number;
-  /** Of `subjects`: those that exist only in the Soll and therefore carry no anchor. */
+  /** Of `subjects`: those that exist only in the to-be process and therefore carry no anchor. */
   needsWithoutCode: number;
   elements: number;
   rules: number;
@@ -148,11 +148,11 @@ export interface TargetCounts {
 export interface TargetModel {
   formatVersion: number;
   processName: string;
-  /** The file the Ist was reconstructed from. */
+  /** The file the as-is process was reconstructed from. */
   fileName: string;
-  /** Everything the Soll contains: the Ist minus what was dropped, plus the needs. */
+  /** Everything the to-be process contains: the as-is process minus what was dropped, plus the needs. */
   subjects: TargetSubject[];
-  /** What the states dropped. Not part of the Soll — carried so the comparison can name it. */
+  /** What the states dropped. Not part of the to-be process — carried so the comparison can name it. */
   dropped: TargetSubject[];
   counts: TargetCounts;
   /** Counted, in one sentence. Never a claim about the code. */
@@ -161,7 +161,7 @@ export interface TargetModel {
 }
 
 /* ------------------------------------------------------------------ *
- * The Soll.
+ * The to-be process.
  * ------------------------------------------------------------------ */
 
 function anchorOf(element: ProcessMapElement): TargetAnchor | null {
@@ -190,7 +190,7 @@ function openReasonOf(state: ElementState | null): OpenReason | null {
   return state === 'clarify' ? 'clarify' : null;
 }
 
-/** One subject of the Ist, with whatever the states say about it. */
+/** One subject of the as-is process, with whatever the states say about it. */
 function subjectFromIst(element: ProcessMapElement, entry: StateEntry | undefined): TargetSubject {
   const state = entry ? entry.state : null;
   const anchor = anchorOf(element);
@@ -214,7 +214,7 @@ function subjectFromIst(element: ProcessMapElement, entry: StateEntry | undefine
 }
 
 /**
- * A subject the states name that the Ist does not contain — a need somebody drew.
+ * A subject the states name that the as-is process does not contain — a need somebody drew.
  *
  * This is the function C23-A06 is about, and the only thing worth saying about
  * it is what it does **not** do: it takes no element, so it has nothing to copy
@@ -304,7 +304,7 @@ function count(n: number, one: string, many: string): string {
 }
 
 /**
- * The Soll, out of the Ist and the states.
+ * The to-be process, out of the as-is process and the states.
  *
  * `istRuleIds` is optional and is the ids of the rules 3.4 derived from the
  * same source. Hand them in and a rule nobody has spoken about is counted as
@@ -315,7 +315,7 @@ function count(n: number, one: string, many: string): string {
  *
  * A rule id the states name that is not in `istRuleIds` is a need without code,
  * like a drawn element. Without `istRuleIds` a named rule is taken to be in the
- * Ist, because a `BR-nnn` is produced by the engine out of the source and is not
+ * as-is process, because a `BR-nnn` is produced by the engine out of the source and is not
  * something a reader invents.
  */
 export function buildTargetModel(
@@ -330,7 +330,7 @@ export function buildTargetModel(
     (subject.disposition === 'dropped' ? dropped : kept).push(subject);
   };
 
-  // The Ist's elements first, in the Ist's order — the order a reader already knows.
+  // The as-is elements first, in the as-is order — the order a reader already knows.
   const inIst = new Set<string>();
   for (const element of ist.elements) {
     inIst.add(element.id);
@@ -354,7 +354,7 @@ export function buildTargetModel(
     place(subjectFromRule(id, entries[id]));
   }
 
-  // And last what the states name that the Ist does not have. Sorted by id so
+  // And last what the states name that the as-is process does not have. Sorted by id so
   // the answer does not depend on the order a store happened to return keys in.
   const needs = Object.values(entries)
     .filter((entry) => !inIst.has(entry.subject))
@@ -381,14 +381,14 @@ export function buildTargetModel(
 }
 
 /* ------------------------------------------------------------------ *
- * Ist against Soll.
+ * As-is against to-be.
  * ------------------------------------------------------------------ */
 
 /**
  * What the comparison says about one subject. Exactly one per row.
  *
  * `added` is its own verdict and takes precedence over everything else, which
- * is C23-A06 in one line: a subject that exists only in the Soll is what
+ * is C23-A06 in one line: a subject that exists only in the to-be process is what
  * somebody wants, never what the code was shown to do. It is counted as added
  * even when an account has confirmed it — a confirmation of a need is still a
  * need.
@@ -407,7 +407,7 @@ export interface ComparisonRow {
   openReason: OpenReason | null;
   inIst: boolean;
   inTarget: boolean;
-  /** The Ist's line range, copied. Never a neighbour's, never a parent's. */
+  /** The as-is line range, copied. Never a neighbour's, never a parent's. */
   anchor: TargetAnchor | null;
   anchorBasis: AnchorBasis;
   evidenceLabel: string | null;
@@ -435,7 +435,7 @@ export interface Comparison {
   formatVersion: number;
   processName: string;
   fileName: string;
-  /** Every subject, once: the Ist's order, then the rules, then the needs. */
+  /** Every subject, once: the as-is order, then the rules, then the needs. */
   rows: ComparisonRow[];
   byVerdict: Record<ComparisonVerdict, ComparisonRow[]>;
   counts: ComparisonCounts;
@@ -501,7 +501,7 @@ function rowFrom(subject: TargetSubject, inIst: boolean, inTarget: boolean): Com
 }
 
 /**
- * The Ist and the Soll side by side: what stays, what changes, what goes, what
+ * The as-is and the to-be side by side: what stays, what changes, what goes, what
  * is open, what was added.
  *
  * **Why this is not `diffProcessRevisions`.** That function compares two BPMN
@@ -515,7 +515,7 @@ function rowFrom(subject: TargetSubject, inIst: boolean, inTarget: boolean): Com
  * Wiring this through that one would have meant inventing an "after" side, and
  * inventing is the thing this step is measured on not doing.
  *
- * `ist` is read rather than trusted: whether a subject is in the Ist is decided
+ * `ist` is read rather than trusted: whether a subject is in the as-is process is decided
  * against `ist.elements` for every element, not from the flag the target model
  * carries, so the two cannot drift apart.
  */
@@ -529,7 +529,7 @@ export function compareIstSoll(ist: ProcessMapModel, target: TargetModel): Compa
     rows.push(rowFrom(subject, fromIst, inTarget.has(subject.subject)));
   }
 
-  // Back into the order a reader has in front of them: the Ist's elements as
+  // Back into the order a reader has in front of them: the as-is elements as
   // the map draws them, then the rules, then everything that is in neither.
   const istOrder = new Map(ist.elements.map((element, index) => [element.id, index]));
   const rank = (row: ComparisonRow): number => {

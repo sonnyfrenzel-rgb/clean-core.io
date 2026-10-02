@@ -12,8 +12,8 @@
  *
  * ## The ladder, and the three sentences it exists to keep
  *
- * Roadmap 7.2, verbatim: *ein Kataloglink ergibt höchstens E1, ein Scope Item
- * ist eine zu prüfende ID, ein fehlender Katalogtreffer beweist nichts.* Those
+ * Roadmap 7.2, verbatim: *a catalog link yields at most E1, a scope item is
+ * an ID to be checked, a missing catalog hit proves nothing.* Those
  * are not remarks about wording; they are the arithmetic below.
  *
  *   1. **A catalogue link is worth at most E1.** That an object stands in SAP's

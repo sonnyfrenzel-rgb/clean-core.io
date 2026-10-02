@@ -176,7 +176,7 @@ function mayWrite(s: AbapStatement): boolean {
 
 /*
  * The model writes English since 01.10.2026 (prompt version 2, owner decision
- * "alles Englisch"); every pattern below reads the English wording and keeps
+ * "everything in English"); every pattern below reads the English wording and keeps
  * the German one, so a sentence in either language is judged the same way.
  */
 /** "is displayed / output / shown" — the verb, not a noun like "Ausgabetabelle" or "the output list". */

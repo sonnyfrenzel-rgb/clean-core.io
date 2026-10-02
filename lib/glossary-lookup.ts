@@ -1,13 +1,13 @@
 /**
  * Answering "What is …?" from the glossary — no model call.
  *
- * Roadmap 6.6 and `DESIGN.md` §6.1 ("Glossar in „Ask this case‟"): a question
+ * Roadmap 6.6 and `DESIGN.md` §6.1 ("Glossary in "Ask this case""): a question
  * that names a glossary term is answered **from that entry**, never by asking
  * Gemini to restate it. This module is the one place that decides whether a
  * piece of free text names a term, so the ⌘K search (`lib/workspace-search.ts`)
  * and the embedded assistant (`components/GlossaryChatbot.tsx`) read the same
  * answer for the same word — the owner decision of 15.09.2026 was explicit that
- * both surfaces use "dieselbe Quelle wie im Text".
+ * both surfaces use "the same source as in the text".
  *
  * Pure and synchronous throughout: nothing here imports `lib/gemini.ts`, and a
  * test can therefore prove "no model call" by checking that this module is
@@ -130,8 +130,8 @@ export function glossaryAnswerFor(question: string): (GlossaryMatch & { answer: 
 
 /**
  * Every glossary term named in a piece of running text, with where it sits —
- * the scan behind the underlined Fachwort of `DESIGN.md` §6.1 ("Glossar im
- * Text", ADR-034).
+ * the scan behind the underlined technical term of `DESIGN.md` §6.1 ("Glossary in
+ * the text", ADR-034).
  *
  * Three rules, each there to stop a specific kind of noise:
  *

@@ -1,8 +1,7 @@
 # S/4HANA Live Tenant Bridge — Feature Documentation
 
-> **Version:** 1.6.0  
-> **Last Updated:** 2026-06-10  
-> **Status:** Production-Ready (Pilot)
+> **Written for:** 1.6.0 (2026-06-10) · **Reviewed for 3.0:** 2026-10-02  
+> **Status:** connection check, metadata read and read-only OData call available; test execution against a tenant locked (see below)
 
 > **Locked since 2026-09-15 (gate `G0:R0`):** running generated tests against a connected tenant is locked until the isolated live runner has passed its external review — see [`SECURITY.md`](../SECURITY.md) §7.1 and `lib/locked-paths.ts`. The connection check, the metadata read and the read-only OData call described here still work. Where this document describes test execution against a tenant (sections 5 and 9), it describes the locked path, not current behaviour.
 
@@ -88,7 +87,7 @@ The **S/4HANA Live Tenant Bridge** (internally: BYOT — *Bring Your Own Tenant*
 | `app/api/test-s4-connection/route.ts` | API: Real HTTP connectivity test (389 lines) |
 | `app/api/run-tests/route.ts` | API: Node.js sandbox test runner |
 | `hooks/useTestExecution.ts` | Hook: Orchestrates test execution (Live vs. Mock) |
-| `hooks/useTestGeneration.ts` | Hook: AI-powered test case generation via Gemini |
+| `hooks/useTestGeneration.ts` | Hook: test case generation via Gemini (a model proposal) |
 | `lib/types.ts` | TypeScript interfaces: `S4Config`, `Project` |
 
 ---
@@ -248,7 +247,7 @@ When no live tenant is configured:
 
 ### Node.js/CAP Projects
 
-Node.js projects use a real sandbox runner (`/api/run-tests`) that executes TypeScript code via `tsx --test`. The tests are AI-generated unit tests that validate the generated application code's internal logic. S/4HANA credentials are passed as environment variables but tests are designed to be isolated (no network calls).
+Node.js projects use a real sandbox runner (`/api/run-tests`) that executes TypeScript code via `tsx --test`. The tests are unit tests proposed by the model (*Model proposal*) that validate the generated application code's internal logic. S/4HANA credentials are passed as environment variables but tests are designed to be isolated (no network calls).
 
 ---
 
@@ -407,7 +406,7 @@ Credentials are decrypted server-side only during test execution.
 
 ### Step 1: Open the Testing Page
 
-Navigate to your project → **Stage 5: Testing** → scroll to the **S/4HANA Live Tenant Bridge** panel.
+Open your project's workspace → **Testing** in the tool bar → scroll to the **S/4HANA Live Tenant Bridge** panel.
 
 ### Step 2: Enter Tenant URL
 

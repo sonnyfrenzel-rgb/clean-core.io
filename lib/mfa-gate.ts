@@ -74,8 +74,8 @@ export const S4_MFA_ENROLMENT_REQUIRED: GateRefusal = {
 };
 
 /**
- * The enrolment requirement for S/4HANA access (Sonny, 18.09.2026: "MFA-Zwang
- * für S/4-Zugang, ja").
+ * The enrolment requirement for S/4HANA access (Sonny, 18.09.2026: "mandatory
+ * MFA for S/4 access, yes").
  *
  * `mfaSatisfied` above is a *conditional* gate: an account that never enrolled
  * passes it with any token, because there is no factor to ask for. That is
@@ -104,8 +104,8 @@ export const BYOK_MFA_ENROLMENT_REQUIRED: GateRefusal = {
 
 /**
  * The same requirement for the routes that hold a person's own model key
- * (Sonny, 18.09.2026: "MFA-Zwang nur bei Gemini eigenen Schlüssel, Rest bleibt
- * optional"). A stolen first-factor token could otherwise replace the key
+ * (Sonny, 18.09.2026: "mandatory MFA only for an own Gemini key, the rest
+ * stays optional"). A stolen first-factor token could otherwise replace the key
  * with one the attacker controls - and every transformation would then run
  * against it. Measured before shipping: no production account held a key,
  * so the requirement locks nobody out today.

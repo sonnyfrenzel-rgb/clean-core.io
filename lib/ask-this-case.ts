@@ -1,10 +1,10 @@
 /**
  * The one question that is already answered — `DESIGN.md` §5.3, §6.2, roadmap 2.7.
  *
- *   > *"Eine Frage ist schon beantwortet."* „Ask this case" zeigt beim ersten
- *   > Öffnen eine gestellte Frage mit Antwort und Ankern — **abgeleitet aus den
- *   > Verzweigungen des Codes** (Chip *Reconstructed*), ohne Modellaufruf und
- *   > ohne das Kontingent des Nutzers anzutasten.
+ *   > *"One question is already answered."* "Ask this case" shows, when first
+ *   > opened, an asked question with answer and anchors — **derived from the
+ *   > branches of the code** (chip *Reconstructed*), without a model call and
+ *   > without touching the user's quota.
  *
  * So there is no prompt in this file, no model stage, no network and no quota:
  * the question and its answer are read off the process skeleton (roadmap 2.1 /

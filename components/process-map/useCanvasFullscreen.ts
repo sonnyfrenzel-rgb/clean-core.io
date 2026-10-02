@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Full screen for a bpmn-js canvas — the one mechanism the editor and the
- * reading map share (owner 02.10.2026: "+ - und vollbild wie auch sonst").
+ * reading map share (owner 02.10.2026: "+ - and full screen, like everywhere else").
  *
  * The browser's own full screen (Fullscreen API) holds `rootRef`. Where the
  * browser refuses or has none — an embedded page, an iPhone — the root covers

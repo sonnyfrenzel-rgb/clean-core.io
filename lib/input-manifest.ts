@@ -2,10 +2,10 @@
  * What a derivation was computed from — by name, revision and hash.
  *
  * Roadmap 0.5 (`docs/ROADMAP.md` §Phase 0, work package
- * `docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §6 `UX-E02-F01:R0`): *"Ableitungen sagen,
- * woraus sie entstanden sind — mit Revision und Hash, nicht mit einer
- * Heuristik"*, and, precisely: *"`inputs[]` je abgeleitetem Artefakt: ID,
- * Revision, Hash (QA24-13) — ersetzt den Digest-Vergleich als Wahrheitsquelle"*.
+ * `docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §6 `UX-E02-F01:R0`): *"Derivations say
+ * what they were made from — with revision and hash, not with a
+ * heuristic"*, and, precisely: *"`inputs[]` per derived artefact: ID,
+ * revision, hash (QA24-13) — replaces the digest comparison as source of truth"*.
  *
  * Until now a signed run recorded its inputs in five unrelated fields —
  * `inputFingerprint.sha256`, `analyzerVersion`, `rulesetVersion`,

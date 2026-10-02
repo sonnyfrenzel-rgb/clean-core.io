@@ -29,8 +29,8 @@ import { wt, threeViewsFactNote, threeViewsOffered } from '@/lib/workspace-messa
  * marketing stage would teach the wrong thing twice.
  *
  * **What moves, and for how long.** `DESIGN.md` §1.7 allows exactly two
- * stagings in the product and this is one of them: *„laufen einmal, sind
- * überspringbar und stehen bei reduzierter Bewegung still"*. So: one pass, 3.5 s
+ * stagings in the product and this is one of them: *"run once, can be
+ * skipped and stand still under reduced motion"*. So: one pass, 3.5 s
  * a view, a 200 ms cross-fade, then the stage rests on Business with *Replay*.
  * No loop. Hover and focus hold it; a click takes it over and ends the automatic
  * change for good, because somebody who has started steering is steering.
@@ -52,7 +52,7 @@ export default function ThreeViewsStage({
   /** Derived from the example's own source. `null` renders nothing at all. */
   fact: TravellingFact | null;
   /**
-   * *„Skip intro" ist immer sichtbar* — folds part 1 away. "New project" now
+   * *"Skip intro" is always visible* — folds part 1 away. "New project" now
    * carries it at the top right of the page, where mockup 2.8 s14 puts it, so
    * it passes nothing and the stage draws no second one.
    */
@@ -183,8 +183,8 @@ export default function ThreeViewsStage({
                 label={wt('threeViews.viewLabel')}
                 value={view}
                 onChange={(next) => {
-                  // "Ein Klick auf eine Sicht übernimmt und beendet das
-                  // automatische Wechseln" — and it does not come back.
+                  // "A click on a view takes over and ends the automatic
+                  // switching" — and it does not come back.
                   setAuto(false);
                   show(next, true);
                 }}
@@ -253,8 +253,8 @@ export default function ThreeViewsStage({
 /**
  * One view's panel.
  *
- * `aria-live` is deliberately absent: §6.1.1 — *„automatisches Wechseln sagt
- * nichts an"*. A stage that narrated itself every 3.5 seconds would make the
+ * `aria-live` is deliberately absent: §6.1.1 — *"automatic switching announces
+ * nothing"*. A stage that narrated itself every 3.5 seconds would make the
  * page unusable with a screen reader, which is the opposite of what the second
  * of the three difference lines promises.
  */

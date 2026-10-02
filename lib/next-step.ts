@@ -6,8 +6,8 @@ import type { ProvenanceValue } from './provenance';
 /**
  * "Next step" — `DESIGN.md` §2.3 item 5, §5.5, roadmap step 6.5.
  *
- * *"Nächster Schritt: regelbasiert der nächste offene Punkt mit Grund, ohne
- * Modellaufruf."* That last clause is the whole character of this module: it
+ * *"Next step: rule-based, the next open item with a reason, without a
+ * model call."* That last clause is the whole character of this module: it
  * is a deterministic function of what is already on record for a project, not
  * a generated suggestion, and it must be checkable as one rather than trusted
  * as a sentence somebody wrote once and never re-derives.

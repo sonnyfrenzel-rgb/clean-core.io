@@ -1,9 +1,9 @@
 /**
- * The project search index — roadmap 6.6, `DESIGN.md` §2.1 ("Shell Bar …
- * Suche ⌘K") and §5.9's precedent for the pattern.
+ * The project search index — roadmap 6.6, `DESIGN.md` §2.1 ("Shell bar …
+ * search ⌘K") and §5.9's precedent for the pattern.
  *
- * Five kinds, because the roadmap row names five: *Elemente, Regeln, Findings,
- * Zeilen und Glossar*. Every one of the first four is read off data the
+ * Five kinds, because the roadmap row names five: *elements, rules, findings,
+ * lines and glossary*. Every one of the first four is read off data the
  * workspace already holds — the process reading `FirstLook` computed for this
  * screen, and the run's own worklist — rather than recomputed here, for the
  * same reason `lib/first-look.ts` gives for not calling `buildAbapEvidence` a
@@ -36,7 +36,7 @@ import { plainWordingFor } from './business-card';
 
 export type SearchResultKind = 'element' | 'rule' | 'finding' | 'source-line' | 'glossary';
 
-/** What a reader sees named beside every hit — roadmap 6.6: "was für ein Ding". */
+/** What a reader sees named beside every hit — roadmap 6.6: "what kind of thing". */
 export const SEARCH_KIND_LABEL: Record<SearchResultKind, string> = {
   element: 'Element',
   rule: 'Rule',
@@ -46,8 +46,8 @@ export const SEARCH_KIND_LABEL: Record<SearchResultKind, string> = {
 };
 
 /**
- * How the dialog groups hits — `DESIGN.md` §2.10 ("Treffer gruppiert nach
- * Art") and mockup s9: in the words a business reader uses, not the engine's.
+ * How the dialog groups hits — `DESIGN.md` §2.10 ("Hits grouped by
+ * kind") and mockup s9: in the words a business reader uses, not the engine's.
  * A gateway is an element to the engine and a *decision* to the reader, so it
  * is grouped as one; everything else follows its kind.
  */

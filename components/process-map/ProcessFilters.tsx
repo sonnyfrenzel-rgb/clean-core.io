@@ -24,8 +24,8 @@ import { wt } from '@/lib/workspace-messages';
  *     value the code declares as their position, and only the switches a
  *     condition in the drawn process reads literally.
  *
- * All three start off (`DESIGN.md` §5.7: *"Overlays der Karte sind beim ersten
- * Öffnen aus"*). The first thing a reader sees is the process, not a filtered
+ * All three start off (`DESIGN.md` §5.7: *"Overlays of the map are off on first
+ * opening"*). The first thing a reader sees is the process, not a filtered
  * version of it they did not ask for.
  */
 export type PathHighlight = 'none' | 'main' | 'to-selected';

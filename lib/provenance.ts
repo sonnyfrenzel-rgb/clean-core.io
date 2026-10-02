@@ -194,7 +194,7 @@ export function isProvenanceLabel(text: string): boolean {
  *
  * Kept in the code rather than in a commit message: a guard that says "this
  * badge is not allowed" is only half an answer, and the other half is which of
- * the nine values the author meant. `DESIGN.md` §4 column "Heute zum Beispiel".
+ * the nine values the author meant. `DESIGN.md` §4 column "Today, for example".
  */
 export const RETIRED_PROVENANCE_WORDINGS: Readonly<Record<string, ProvenanceValue>> = Object.freeze({
   'signed run': 'proven',

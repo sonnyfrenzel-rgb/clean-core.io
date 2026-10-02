@@ -92,8 +92,8 @@ export interface DesignCanvasStageProps {
    */
   signOffWording?: { open: string; confirmed: string; dialogLead: string };
   /**
-   * Confirming the target is a question first (owner 02.10.2026: "sonst kann
-   * man sich schnell verklicken"). Set, "Confirm target" opens a small message
+   * Confirming the target is a question first (owner 02.10.2026: "otherwise it
+   * is easy to misclick"). Set, "Confirm target" opens a small message
    * box naming `label`; only its own "Confirm target" calls `onConfirm`, and a
    * thrown error is shown in the box, which stays open. With `chooseOther`,
    * "Choose another target…" in the box opens the full sign-off

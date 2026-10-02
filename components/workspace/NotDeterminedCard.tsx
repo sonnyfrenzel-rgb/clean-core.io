@@ -11,7 +11,7 @@ import { wt } from '@/lib/workspace-messages';
 /**
  * What the engine could not work out — `DESIGN.md` §5.1, §5.5, roadmap 1.4.
  *
- * *"Der Zweifel wird sofort beantwortet."* For a sceptical audience this area
+ * *"The doubt is answered at once."* For a sceptical audience this area
  * is part of the moment, not an apology for it: the tool claims nothing it does
  * not know, and says so in a place of its own. **An absence is shown as a
  * thing** — that is the whole point of the row that asked for it.

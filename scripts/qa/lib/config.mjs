@@ -227,8 +227,8 @@ export const IGNORED_PATHS = [
   // is written by the same converter (`build-bundle.mjs`, `files.set('manifest.json', …)`),
   // a 72,399-character diff when it arrived in `b64818a`. The same guards cover it:
   // `--check` compares it byte for byte with a fresh build (`korpus-engine.spec.ts`,
-  // "ein erneuter Lauf des Konverters erzeugt keine Änderung"), and "der
-  // Fallbuch-Hash im Manifest ist der Hash der Datei in docs/korpus/" ties it to
+  // "a fresh run of the converter produces no change"), and "the case book
+  // hash in the manifest is the hash of the file in docs/korpus/" ties it to
   // the book. Not `tests/korpus/baseline.json`: that file is judged by hand — a
   // verdict and a reason per case — and is read like any other code, in parts
   // when it is large.

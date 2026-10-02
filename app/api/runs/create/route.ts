@@ -729,8 +729,8 @@ export async function POST(req: NextRequest) {
     }
     // 6+7. Run document and project metadata, in one transaction that is bound
     // to the source this run actually analysed (roadmap 0.6, acceptance W22-A06:
-    // *"Neue Analyse trifft nach Quellenänderung ein — Ergebnis bleibt an alte
-    // Eingabe gebunden; kein stilles Überschreiben des aktuellen Stands"*).
+    // *"A new analysis arrives after a source change — the result stays bound to
+    // the old input; no silent overwrite of the current state"*).
     //
     // The evidence build and the model call take time. The route used to write
     // `legacyCode` and `activeRunId` from what it had read at the start, so an
@@ -786,8 +786,8 @@ export async function POST(req: NextRequest) {
         // Rebuilt from the transaction's own snapshot rather than the one read at
         // the start: the source is proven unchanged, the artefacts around it are not.
         const previousInTx: string | undefined = freshData.auditMetadata?.inputFingerprint?.sha256 || previousSha256;
-        // Roadmap 7.10 - "ein Profilwechsel ändert den Subject-Hash und entwertet
-        // abhängige Freigaben". The same code under another profile is another
+        // Roadmap 7.10 - "a profile change changes the subject hash and invalidates
+        // dependent approvals". The same code under another profile is another
         // subject: the design, the code, the tests, the documentation and the
         // sign-off standing now were made for the old one. Recorded with the
         // mechanism a source change uses, so every reader that already treats a

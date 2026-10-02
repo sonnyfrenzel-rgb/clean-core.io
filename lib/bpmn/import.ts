@@ -8,24 +8,24 @@ import { diffProcessRevisions, MAX_REVISION_XML, type RevisionDiff } from '../pr
  * round trip before 3.0").
  *
  * **What an import is, and what it is not.** It is a *proposal for the next
- * revision* of the process — never a replacement of the reconstructed Ist.
+ * revision* of the process — never a replacement of the reconstructed as-is process.
  * Revision 1 is built on the server out of the signed source and nothing here
- * can reach it; the file is read in the browser, compared with the Ist, and
+ * can reach it; the file is read in the browser, compared with the as-is process, and
  * only becomes a revision when the reader presses Save, through the same store
  * every edit goes through.
  *
  * **Line anchors are the product's, not the file's.** A file can say anything
  * in a `cc:trace` — a line range, `status="proven"`. None of that is believed.
  * Every `cc:*` extension in the imported file is dropped first; then an element
- * that is *the same element as in the Ist* gets the Ist's own trace back:
+ * that is *the same element as in the as-is process* gets its own trace back from the as-is process:
  *
  *   - **by id** — the file kept our element id (Camunda, and Signavio when it
  *     round-trips ids) and the element is still of the same BPMN type;
- *   - **by name** — the id was rewritten (`sid-…`), but exactly one Ist element
+ *   - **by name** — the id was rewritten (`sid-…`), but exactly one as-is element
  *     of the same type carries exactly this name and no other element of the
  *     file claimed it — across the model, then inside each recognised
  *     sub-process, then by the recognised element it is entered from. The
- *     element then takes the Ist id back, so a later comparison names it as
+ *     element then takes the as-is id back, so a later comparison names it as
  *     the same step. A name that stays ambiguous is not guessed.
  *
  * Everything else is *added outside Clean-Core.io* and carries no line anchor —
@@ -64,11 +64,11 @@ export type ImportRefusal =
 export interface ImportSummary {
   /** Flow nodes in the imported file. */
   flowNodes: number;
-  /** Elements recognised as Ist elements by their id. */
+  /** Elements recognised as elements of the as-is process by their id. */
   matchedById: number;
-  /** Elements recognised as Ist elements by type and exact name (their id was rewritten). */
+  /** Elements recognised as elements of the as-is process by type and exact name (their id was rewritten). */
   matchedByName: number;
-  /** Flow nodes that carry a line anchor after the import — only ever the Ist's own. */
+  /** Flow nodes that carry a line anchor after the import — only ever the as-is process's own. */
   anchored: number;
   /** Flow nodes added outside Clean-Core.io: no line anchor. */
   outside: number;
@@ -76,7 +76,7 @@ export interface ImportSummary {
   droppedClaims: number;
   /** Names or documentation texts that were cleaned or shortened. */
   cleaned: number;
-  /** The comparison with the Ist, element by element. */
+  /** The comparison with the as-is process, element by element. */
   diff: RevisionDiff;
 }
 
@@ -335,7 +335,7 @@ export async function importBpmn(text: string, ist: { xml: string; revision: num
     }
   }
 
-  // ---- the Ist, element by element, with its own traces ----
+  // ---- the as-is process, element by element, with its own traces ----
   const istParsed = await moddle.fromXML(ist.xml, 'bpmn:Definitions');
   const istById = new Map<string, IstElement>();
   for (const root of (istParsed.rootElement.rootElements as ModdleElement[] | undefined) ?? []) {
@@ -379,10 +379,10 @@ export async function importBpmn(text: string, ist: { xml: string; revision: num
   }
 
   /**
-   * By name: one Ist element of the same type with exactly this name, unclaimed
+   * By name: one as-is element of the same type with exactly this name, unclaimed
    * — first across the whole model, then inside a sub-process that was itself
    * recognised (every level has its own "Start" and "Done"), level by level.
-   * The element takes the Ist id back, and with it the Ist's trace.
+   * The element takes the as-is id back, and with it the as-is trace.
    */
   let matchedByName = 0;
   const take = (element: ModdleElement, istId: string) => {
@@ -393,7 +393,7 @@ export async function importBpmn(text: string, ist: { xml: string; revision: num
     const twin = istById.get(istId);
     if (twin?.trace) restore(element, twin.trace);
   };
-  // Where each Ist element is entered from — the last tie-breaker for two
+  // Where each as-is element is entered from — the last tie-breaker for two
   // elements of one name on one level ("Not authorized?" twice in a row).
   const istIncoming = new Map<string, string[]>();
   for (const twin of istById.values()) {
@@ -441,7 +441,7 @@ export async function importBpmn(text: string, ist: { xml: string; revision: num
     if (found === 0) break;
   }
 
-  // Sequence flows between two recognised elements take the Ist flow back, and
+  // Sequence flows between two recognised elements take the as-is flow back, and
   // with it the condition the code wrote on it.
   for (const element of all) {
     if (element.$type !== 'bpmn:SequenceFlow' || !element.id || claimed.has(element.id)) continue;

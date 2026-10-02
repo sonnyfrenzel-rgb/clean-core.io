@@ -28,7 +28,7 @@ import { SHOW_TIPS_EVENT } from '@/lib/show-tips-again';
  * `lib/coach-marks.ts` for why the account is deliberately not involved.
  */
 export interface CoachMarkState {
-  /** The one mark to show now, or null. Never two (§6.1.2: *immer nur eine*). */
+  /** The one mark to show now, or null. Never two (§6.1.2: *only ever one*). */
   current: CoachMark | null;
   /** True once storage has been read — before that nothing is rendered. */
   ready: boolean;

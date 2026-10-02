@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   try {
     const adminToken = await verifyAdminRequest(request);
     if (!adminToken) {
-      // Bewusst 403 (nicht 401): Token kann gültig sein, aber ohne Admin-Recht.
+      // Deliberately 403 (not 401): the token may be valid, but without admin rights.
       return NextResponse.json(
         { error: 'Forbidden: administrator privileges required.' },
         { status: 403 },
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
      * a clean-core.io mail to them.
      *
      * The old check validated the *shape* of the address and not its *binding*,
-     * which is why "F-04: Empfängeradresse validieren" did not prevent this.
+     * which is why "F-04: validate the recipient address" did not prevent this.
      * Firebase Auth holds the address the account was created with, so that is
      * what this reads. Security audit of bc2f786, SEC-bc2f786-12 — the only part
      * of that finding that stands.

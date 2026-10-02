@@ -6,8 +6,8 @@ import type { ProvenanceValue } from './provenance';
 /**
  * The IT view's answers — roadmap step 8.1.
  *
- * *„IT-Sicht: Findings mit beiden Katalogsichten, Level-Verteilung, Spur
- * Anforderung → Anker → Finding → Zielentwurf."*
+ * *"IT view: findings with both catalog views, level distribution, trace
+ * requirement → anchor → finding → target design."*
  *
  * This is the counterpart of `lib/management-answers.ts`, and it is deliberately
  * built out of the same parts: `Coverage` is imported from there rather than
@@ -18,9 +18,9 @@ import type { ProvenanceValue } from './provenance';
  *
  * Four things decide the shape of this module.
  *
- * **1. The chain belongs to a chosen finding (ADR-029).** *„Die Kette gehört zu
- * einem gewählten Befund. Die Tabelle markiert die gewählte Zeile, die Kette
- * steht darüber … und die Abdeckung steht dabei."* So a chain is built **per
+ * **1. The chain belongs to a chosen finding (ADR-029).** *"The chain belongs to
+ * a selected finding. The table marks the selected row, the chain sits above
+ * it … and the coverage is stated with it."* So a chain is built **per
  * finding**, and the view carries `chainCoverage` — how many of all findings the
  * chain is complete for, and where the others stop. A chain that is visibly
  * about CC-017 without saying for how many findings it holds is precisely the

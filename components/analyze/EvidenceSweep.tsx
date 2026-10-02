@@ -23,8 +23,8 @@ interface EvidenceSweepProps {
 }
 
 /**
- * The whole replay may take this long, and no longer (§5.1: "gerafft auf das
- * Zeitbudget"). It is a ceiling, not a floor: a program with three findings is
+ * The whole replay may take this long, and no longer (§5.1: "compressed to the
+ * time budget"). It is a ceiling, not a floor: a program with three findings is
  * done in a fraction of it.
  */
 const SWEEP_BUDGET_MS = 2400;

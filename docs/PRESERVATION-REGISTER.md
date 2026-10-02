@@ -20,7 +20,8 @@ is the test that checks it.
 errors and one reference case each; commit, build and rules pinned. Nothing gets
 lost unnoticed in the rebuild."*
 
-The 3.0 rebuild replaces the workspace around these seven stages. The risk is not
+The 3.0 rebuild replaced the frame around these seven stages with the workspace
+(roadmap 3.0.1); the stages remain as its tools. The risk was never
 that a stage disappears — that would be noticed. The risk is that a *field*, a
 *guard* or a *refusal* disappears: the blocker that stops a blueprint being
 written about code generated from a previous source, the refusal to call a
@@ -147,7 +148,7 @@ agree with the contract.
 | `RC-transformation-generated-not-tested` | Transformation | "Generated — not compiled or tested"; Delivery drops to "Review only" |
 | `RC-documentation-blocked-by-stale-code` | Documentation | the blueprint refuses to describe code built for a previous source, and says so on screen |
 | `RC-testing-draft` | Testing | generated cases with no verdict are a draft in every view; Delivery says "tests not run" |
-| `RC-tco-model-estimate` | Economics | "Model estimate", from assumed coefficients — never `done` |
+| `RC-tco-model-estimate` | Economics | a simulation on assumed coefficients — never `done` |
 | `RC-delivery-blocked-source-changed` | Delivery | the source moved: all seven phases `stale`, both downloads disabled |
 
 No reference case triggers a model call, so the whole set runs against the
@@ -188,13 +189,13 @@ has an assertion in the guard so that fixing it forces the register to be update
   `businessDocumentation`, and neither is tracked — so a bundle for the current
   source can contain a test suite and a business SOP written for the previous one,
   with nothing saying so.
-- **L-04 — the blueprint reads slices. Resolved in 3.0.5 (Weg C, 24.09.2026).**
-  The documentation prompt was built from the first 1,000 characters of
+- **L-04 — the blueprint read slices. Resolved in 3.0.5 (Path C, 24.09.2026).**
+  The removed documentation prompt was built from a short prefix of
   `generatedCode`, `solutionDesign` and `analysis`, so a business rule beyond
-  that could not reach it (QA24-A10). The prompt and the generator are gone:
+  that could not reach it (QA24-A10). The prompt and the generator were removed:
   stage 4 now writes `documentation` from the engine over the whole signed
-  source (`lib/process-documentation-build.ts`), and owner, roles, KPIs and
-  duration are listed as not determined. Blueprints stored before stay readable
+  source (`lib/process-documentation-build.ts`), and the owner, the roles, the
+  KPIs and the duration are listed as not determined. Blueprints stored before stay readable
   and are marked as the earlier form. The entry stays in the JSON with
   `"status": "resolved"`, and the guard asserts the fix instead of the limit.
 - **L-05 — two stages show staleness only as a coloured circle.** Analyze and

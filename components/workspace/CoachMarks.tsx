@@ -20,8 +20,8 @@ import { coachPositionLabel, wt } from '@/lib/workspace-messages';
  * resize, fold and font change (a `ResizeObserver`), so it never points at a
  * place the element has left.
  *
- * **A strip on S.** `DESIGN.md` §2.9: *"Coach Marks erscheinen auf S als ein
- * Hinweis-Strip, nicht als schwebende Blasen"* — on a phone a floating bubble
+ * **A strip on S.** `DESIGN.md` §2.9: *"Coach marks appear on S as a hint
+ * strip, not as floating bubbles"* — on a phone a floating bubble
  * covers the very thing it explains.
  *
  * **In the flow for the keyboard.** The popover is positioned absolutely but

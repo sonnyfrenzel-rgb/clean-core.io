@@ -1,7 +1,7 @@
 /**
  * Einsicht per Einladung — the shape of an invitation, and nothing else.
  *
- * Roadmap phase 5 (`docs/ROADMAP.md`, Fassung 2.8): sharing is *read access by
+ * Roadmap phase 5 (`docs/ROADMAP.md`, version 2.8): sharing is *read access by
  * invitation* — a link bound to one confirmed e-mail address, including source
  * code, with expiry and revocation. There is exactly one level: reading. No
  * rights tiers, no raw-code switch, no guest without an account.
@@ -26,7 +26,7 @@ export type InvitationStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
 export interface Invitation {
   id: string;
   projectId: string;
-  /** Kleingeschrieben und getrimmt. Die Adresse, an die eingeladen wurde. */
+  /** Lower-cased and trimmed. The address the invitation went to. */
   email: string;
   invitedBy: { uid: string; name: string };
   invitedAt: string;              // Serveruhr, ISO 8601
@@ -242,8 +242,8 @@ export function invitationLinkPath(projectId: string, invitationId: string): str
 /**
  * What the owner is handing over, in the words the dialog has to use.
  *
- * `docs/ROADMAP.md` phase 5, "Fertig, wenn": *der Einladungsdialog sagt
- * ausdrücklich „inklusive Quellcode"*. It is a sentence in the dialog, not a
+ * `docs/ROADMAP.md` phase 5, "Done when": *the invitation dialog says
+ * expressly: "including source code"*. It is a sentence in the dialog, not a
  * tooltip and not a popover — somebody who is about to give a third party the
  * ABAP of a customer system should not have to hover over anything to find that
  * out. `tests/invitation-flow.spec.ts` reads it out of the rendered dialog.

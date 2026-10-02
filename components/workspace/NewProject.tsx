@@ -44,8 +44,8 @@ const CHOICE_OFF = 'border-cc-field-border bg-cc-surface hover:border-cc-ink-mut
  *
  * **The figures on this page are not written on this page.** §6.1.1 is explicit
  * about the one that would be tempting to type out: the SAP catalog is shown
- * *„mit Anzahl und Stand des letzten Abgleichs aus dem Katalog, nie fest im
- * Text"*. So the entry counts and the sync dates arrive as props from the server
+ * *"with count and date of the last sync from the catalog, never fixed in the
+ * text"*. So the entry counts and the sync dates arrive as props from the server
  * (`getLevelRuleVersion()` reads the two synced artifacts) and this component
  * prints what it is handed, or says there is no catalog. The quota line is the
  * same rule one layer down: it comes from `lib/run-cost.ts`, which is the module
@@ -111,7 +111,7 @@ export default function NewProject({
 
   useEffect(() => onAuthStateChanged(getAuth(), setUser), []);
 
-  // "Beim ersten Mal offen; danach eine Zeile … gemerkt im Browser" (§6.1.1).
+  // "Open the first time; afterwards one line … remembered in the browser" (§6.1.1).
   useEffect(() => setIntroOpen(!readIntroSeen()), []);
 
   const stations = useMemo(() => evidenceStations(catalogArtifacts), [catalogArtifacts]);

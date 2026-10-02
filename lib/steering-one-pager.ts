@@ -9,8 +9,8 @@ import type { Project } from './types';
  * The steering one-pager — roadmap step 8.6, mockup screen 5 ("Steering
  * one-pager" in the Management tool row).
  *
- * *„Eine Seite (PDF) mit ausschließlich Zahlen, die per Link zur Evidenz
- * führen, jede mit ihrer Abdeckung, und der Spalte ‚nicht bestimmt'"* —
+ * *"One page (PDF) with exclusively figures that lead via link to the
+ * evidence, each with its coverage, and the column 'not determined'"* —
  * feedback of 15.09.2026.
  *
  * Four rules decide the shape of this module.

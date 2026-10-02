@@ -38,7 +38,8 @@ findings into the roadmap. The agent itself changes nothing.
                    ├─ capture  (no secrets)      npm ci · emulator · build with throwaway keys ·
                    │                             seed the demo project · tests/capture-screens.spec.ts:
                    │                             16 screens × desktop/phone × up to 3 screen heights,
-                   │                             3 screens in dark mode, 7 key views of the mockups 2.8
+                   │                             3 screens with the retired dark theme set (there is no dark mode;
+                   │                             they must match), 7 key views of the mockups 2.8
                    │
                    └─ review   (model + seal key, no npm ci, no third-party code)
                         1. design scan: colours, font sizes, radii, shadows, button styles,

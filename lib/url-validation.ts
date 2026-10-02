@@ -1,6 +1,6 @@
 /**
- * SSRF-Schutz: validiert URLs für serverseitiges Fetching und stellt einen
- * rebinding-/redirect-sicheren safeFetch() bereit.
+ * SSRF protection: validates URLs for server-side fetching and provides a
+ * rebinding-/redirect-safe safeFetch().
  */
 import dns from 'dns/promises';
 import net from 'net';
@@ -13,7 +13,7 @@ export class SsrfError extends Error {
   }
 }
 
-// Optionale Allowlist (kommagetrennte Host-Suffixe), z. B.
+// Optional allowlist (comma-separated host suffixes), e.g.
 // S4_HOST_ALLOWLIST=".s4hana.cloud,.hana.ondemand.com,.sapcloud.cn"
 function allowlist(): string[] {
   return (process.env.S4_HOST_ALLOWLIST || '')
@@ -30,26 +30,26 @@ function inV4(ip: string, base: string, bits: number): boolean {
 }
 function isBlockedV4(ip: string): boolean {
   return (
-    inV4(ip, '0.0.0.0', 8) ||        // „this network"
-    inV4(ip, '10.0.0.0', 8) ||       // privat
+    inV4(ip, '0.0.0.0', 8) ||        // "this network"
+    inV4(ip, '10.0.0.0', 8) ||       // private
     inV4(ip, '100.64.0.0', 10) ||    // CGNAT
     inV4(ip, '127.0.0.0', 8) ||      // loopback
-    inV4(ip, '169.254.0.0', 16) ||   // link-local + Cloud-Metadata
-    inV4(ip, '172.16.0.0', 12) ||    // privat
+    inV4(ip, '169.254.0.0', 16) ||   // link-local + cloud metadata
+    inV4(ip, '172.16.0.0', 12) ||    // private
     inV4(ip, '192.0.0.0', 24) ||     // IETF
     inV4(ip, '192.0.2.0', 24) ||     // TEST-NET-1
-    inV4(ip, '192.168.0.0', 16) ||   // privat
+    inV4(ip, '192.168.0.0', 16) ||   // private
     inV4(ip, '198.18.0.0', 15) ||    // Benchmark
     inV4(ip, '198.51.100.0', 24) ||  // TEST-NET-2
     inV4(ip, '203.0.113.0', 24) ||   // TEST-NET-3
     inV4(ip, '224.0.0.0', 4) ||      // Multicast
-    inV4(ip, '240.0.0.0', 4)         // reserviert
+    inV4(ip, '240.0.0.0', 4)         // reserved
   );
 }
 
 // ── IPv6 ────────────────────────────────────────────────────────────────────
 function v6ToBytes(ipIn: string): number[] | null {
-  let ip = ipIn.split('%')[0]; // Zone-ID entfernen
+  let ip = ipIn.split('%')[0]; // strip the zone ID
   let v4: number[] | null = null;
   if (ip.includes('.')) {
     const lc = ip.lastIndexOf(':');
@@ -84,9 +84,9 @@ function v6ToBytes(ipIn: string): number[] | null {
 }
 function isBlockedV6(ip: string): boolean {
   const b = v6ToBytes(ip);
-  if (!b) return true; // unparsebar → blocken
+  if (!b) return true; // unparseable → block
   const allZeroUpto = (n: number) => b.slice(0, n).every((x) => x === 0);
-  // ::  und  ::1
+  // ::  and  ::1
   if (allZeroUpto(15) && (b[15] === 0 || b[15] === 1)) return true;
   // IPv4-mapped ::ffff:0:0/96
   if (allZeroUpto(10) && b[10] === 0xff && b[11] === 0xff) {
@@ -107,7 +107,7 @@ function isBlockedIp(ip: string): boolean {
   const fam = net.isIP(ip);
   if (fam === 4) return isBlockedV4(ip);
   if (fam === 6) return isBlockedV6(ip);
-  return true; // unbekannt → blocken
+  return true; // unknown → block
 }
 
 export interface UrlSafeResult {
@@ -131,7 +131,7 @@ export async function isUrlSafe(urlString: string): Promise<UrlSafeResult> {
 
   const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
 
-  // Schnelle Denylist + Policy
+  // Fast denylist + policy
   if (host === 'metadata.google.internal' || host.endsWith('.internal') || host.endsWith('.local')) {
     return { safe: false, reason: 'Internal/metadata hostnames are blocked.' };
   }
@@ -139,7 +139,7 @@ export async function isUrlSafe(urlString: string): Promise<UrlSafeResult> {
     return { safe: false, reason: 'Production tenant API endpoints are blocked.' };
   }
 
-  // Optionale Allowlist
+  // Optional allowlist
   const al = allowlist();
   // At a label boundary: an entry `s4hana.cloud` (with or without the leading
   // dot) admits `x.s4hana.cloud` and never `evil-s4hana.cloud`.
@@ -150,7 +150,7 @@ export async function isUrlSafe(urlString: string): Promise<UrlSafeResult> {
     return { safe: false, reason: 'Host is not in the configured allowlist.' };
   }
 
-  // IP-Literal oder DNS-Auflösung (getaddrinfo normalisiert encodierte Formen)
+  // IP literal or DNS resolution (getaddrinfo normalises encoded forms)
   let records: { address: string; family: number }[];
   if (net.isIP(host)) {
     records = [{ address: host, family: net.isIP(host) }];
@@ -185,13 +185,13 @@ function carriesSecrets(init: RequestInit): boolean {
 }
 
 /**
- * Rebinding-/Redirect-sicherer Fetch:
- *  - validiert jede URL (auch nach Redirect) per isUrlSafe,
- *  - pinnt die TCP-Verbindung an die validierte IP (SNI/TLS bleibt am Hostnamen),
- *  - folgt Redirects nur manuell, begrenzt auf maxRedirects,
- *  - folgt keinem Redirect auf einen anderen Origin, wenn die Anfrage einen
- *    Body oder andere als harmlose Header traegt (Credentials).
- * Wirft SsrfError bei blockierten Zielen.
+ * Rebinding-/redirect-safe fetch:
+ *  - validates every URL (also after a redirect) via isUrlSafe,
+ *  - pins the TCP connection to the validated IP (SNI/TLS stays on the hostname),
+ *  - follows redirects only manually, limited to maxRedirects,
+ *  - follows no redirect to another origin when the request carries a
+ *    body or headers other than harmless ones (credentials).
+ * Throws SsrfError for blocked targets.
  */
 export async function safeFetch(
   url: string,

@@ -13,31 +13,31 @@ import {
 /**
  * The Management view's answers — roadmap step 6.4.
  *
- * *„Management-Sicht auf dasselbe Projekt: was bestätigt ist, was fehlt, was
- * eine Entscheidung binden würde; Clean Core Score mit Regelversion und Verlauf
- * — ein Verlauf vergleicht nur Runs derselben Regelversion — kein Portfolio."*
+ * *"Management view of the same project: what is confirmed, what is missing,
+ * what a decision would bind; Clean Core Score with rule version and history
+ * — a history compares only runs of the same rule version — no portfolio."*
  *
  * Three things decide the shape of this module and none of them is cosmetic.
  *
  * **1. This is one project, and it says so by construction.** Every function
  * here takes one `Project` and the runs of that one project. There is no list
- * of projects, no average across projects, no rank — *kein Portfolio* is not a
+ * of projects, no average across projects, no rank — *no portfolio* is not a
  * rule this module obeys, it is a shape it cannot leave.
  *
- * **2. „Bestätigt" is `proven`, not „done".** `lib/workflow-steps.ts` already
+ * **2. "Confirmed" is `proven`, not "done".** `lib/workflow-steps.ts` already
  * separates the two and explains why: `done` says a phase's own output is on
  * record, `proven` says something other than the account checked it — a
  * server-written signed run, an executed test receipt. A design the signed-in
  * account signed off is `done` and deliberately **not** `proven`, because
  * `lib/provenance.ts` calls that value *Confirmed* and spells out what it is
  * worth: *"a self-declaration, not a mandate"*. A management view that counted
- * "erledigt" as "bestätigt" would produce exactly the figure somebody quotes in
+ * "done" as "confirmed" would produce exactly the figure somebody quotes in
  * a board paper — so the two are counted separately here, they are never added
  * up, and the self-declared one carries the word "claim" in its own sentence.
  *
  * **3. Every figure carries its coverage, from the first line of code.** Step
- * 3.0.10 draws this view and requires *„jede Zahl nennt ihre Abdeckung"* and
- * *„nicht bestimmt als eigene, sichtbare Fläche"*. A figure that is computed
+ * 3.0.10 draws this view and requires *"every number names its coverage"* and
+ * *"not determined as its own, visible area"*. A figure that is computed
  * without its denominator cannot honestly be given one later: nobody will know
  * what was counted and what was skipped. So `Coverage` is not optional on
  * `ManagementFigure`, the sentence is built here rather than in JSX, and what
@@ -46,7 +46,7 @@ import {
  * **What this module is not.** It does not answer "what is the next open
  * point" — `lib/next-step.ts` does that, rule-based and with its reason, and
  * the card built on it is the page's one primary action. This view answers a
- * different question (*„What do I risk, what do I decide?"*,
+ * different question (*"What do I risk, what do I decide?"*,
  * `lib/workspace-model.ts`): what a decision would be bound to, and what stands
  * in its way. Where the two would overlap, this module states the *state* and
  * leaves the instruction to the other one.
@@ -143,8 +143,8 @@ export interface ManagementAnswer {
   /** The question this card answers, so the card can be read on its own. */
   question: string;
   /**
-   * The answer, as a sentence — `DESIGN.md` ADR-029 and roadmap 3.0.10: *„jede
-   * Karte beginnt mit ihrem Antwortsatz als Titel"*. Never a label like "Score".
+   * The answer, as a sentence — `DESIGN.md` ADR-029 and roadmap 3.0.10: *"every
+   * card begins with its answer sentence as the title"*. Never a label like "Score".
    */
   headline: string;
   figures: ManagementFigure[];
@@ -270,7 +270,7 @@ const runWord = (n: number) => `${n} ${n === 1 ? 'run' : 'runs'}`;
 /**
  * The Clean Core Score over time — and the one rule that governs it.
  *
- * *„Ein Verlauf vergleicht nur Runs derselben Regelversion."* A line drawn
+ * *"A history compares only runs of the same rule version."* A line drawn
  * across a rule change is not a development, it is a change of scale wearing
  * the shape of one: the second score answers a different question from the
  * first, and the reader is invited to read the difference as progress. So runs
@@ -572,7 +572,7 @@ function missingAnswer(steps: readonly RailStep[], open: NotDetermined | null): 
 
 /**
  * What a decision would be bound to, and what stands in the way — roadmap
- * 3.0.10 (e): *„was die Entscheidung blockiert"* as a short, ordered list with
+ * 3.0.10 (e): *"what blocks the decision"* as a short, ordered list with
  * evidence per line, not a share of anything.
  *
  * The bindings are the records a decision taken today would attach itself to.

@@ -442,7 +442,7 @@ export interface ProcessMapElement {
   /** ADR-054: an end event of an early exit (`cc:trace/@early`), shown as `EARLY_END_WORD`. */
   early: boolean;
   branches: ProcessMapBranch[];
-  /** Art, Titel, Anker und Herkunft in one line — `DESIGN.md` §5.7. */
+  /** Kind, title, anchor and provenance in one line — `DESIGN.md` §5.7. */
   accessibleName: string;
 }
 

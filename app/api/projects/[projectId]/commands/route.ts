@@ -27,7 +27,7 @@ import { logger, errMessage } from '@/lib/logger';
  * `architectSignOffAt`, `approvedBy`, `usageReport`, `atcReport` and — since
  * roadmap 8.4 — `decision`.
  *
- * *„Eine Freigabe entsteht auf dem Server oder gar nicht."*
+ * *"An approval is created on the server or not at all."*
  * (`docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §8.) Until this route existed, the design
  * stage wrote all five release fields straight from the browser — `approvedBy`
  * included, taken from `auth.currentUser.email`, which is to say the browser

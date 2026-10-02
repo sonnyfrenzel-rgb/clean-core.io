@@ -73,10 +73,10 @@ import {
  * from SAP Signavio and Camunda Modeler (owner: "a real professional BPMN
  * editor, before 3.0").
  *
- * ## The reconstructed Ist is never touched
+ * ## The reconstructed as-is process is never touched
  *
- * Phase 3's acceptance is explicit: *"die Ist-Revision nach dem Bearbeiten ist
- * unverändert"*. So the modeller is handed a **copy**: the draft lives in the
+ * Phase 3's acceptance is explicit: *"the as-is revision is unchanged after
+ * editing"*. So the modeller is handed a **copy**: the draft lives in the
  * modeller and in the string this component hands back, and nothing is ever
  * written into the model the reading view draws. An import reads a file into
  * that copy; it never replaces revision 1, which only the server writes.
@@ -354,7 +354,7 @@ export interface BpmnEditorProps {
   openWith: () => string;
   /** The reconstruction itself. Handed to `save` as the base of revision 1; never written to. */
   baseXml: string;
-  /** The reconstruction in the plain reading the editor shows — what "Compare with Ist" and an import compare against. */
+  /** The reconstruction in the plain reading the editor shows — what "Compare with the as-is process" and an import compare against. */
   istXml: string;
   /** The file the signed run analysed. */
   fileName: string;
@@ -725,7 +725,7 @@ export default function BpmnEditor({
     return () => window.clearTimeout(handle);
   }, [modeler, tick]);
 
-  /* ---------------- compare with the Ist ---------------- */
+  /* ---------------- compare with the as-is process ---------------- */
 
   const diff: RevisionDiff | null = useMemo(
     () => (comparing ? diffProcessRevisions({ revision: 1, xml: istXml }, { revision: 2, xml: draftXml }) : null),

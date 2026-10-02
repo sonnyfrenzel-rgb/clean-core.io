@@ -41,9 +41,11 @@ element; a language model then proposes a design, a code draft and test scenario
 same evidence; every analysis is an immutable, signed run. The code is a draft for
 review, and the tests check it against test scenarios, not in a real S/4HANA system.
 
-Today the product is a seven-stage workflow per project: Analyze → Design →
-Transformation → Documentation → Testing → Economics (TCO) → Delivery, plus
-dashboard, knowledge pages, settings and a public site with a catalog of SAP
+Since 3.0.1 every project opens in its workspace: the business process reconstructed
+from the code leads (Business view), with an IT view and a Management view over the
+same facts and six layers; the seven stages — Analyze → Design → Transformation →
+Documentation → Testing → Economics → Delivery — are tools in its tool bar. Around
+it: "My workspace", knowledge pages, settings and a public site with a catalog of SAP
 objects.
 
 Who uses it, and what they are trying to get done:
@@ -51,10 +53,10 @@ Who uses it, and what they are trying to get done:
 - **ABAP developer / maintainer** — understand an unfamiliar Z-program quickly, see
   what blocks Clean Core, get concrete work items.
 - **Solution or enterprise architect** — choose the extensibility route, defend it
-  with evidence, see dependencies and levels A–D.
+  with evidence, see dependencies and Level A–D.
 - **Business process owner / key user** — understand what the code does as a
-  process, confirm or change it, see the standard fit. This group becomes the most
-  important one: the next major version reconstructs the process as BPMN.
+  process, confirm or change it, see the standard fit. This group is the most
+  important one: the workspace leads with the process reconstructed as BPMN.
 - **Manager / decision-maker** — what is confirmed, what is missing, what a
   decision would commit to. No portfolio.
 - **First-time visitor** — decide within a minute whether this is serious and worth
@@ -63,7 +65,7 @@ Who uses it, and what they are trying to get done:
 Product rules that are UX requirements, not just engineering rules:
 
 - **Honest states.** Missing stays missing, simulated is never shown as passed,
-  reconstructed is never shown as confirmed, a model estimate is never an observed
+  reconstructed is never shown as confirmed, a simulation is never an observed
   value. The UI must make these states *visibly different*. A badge, colour or word
   that claims more than the data is a finding.
 - **Evidence you can follow.** Statements carry anchors to code lines. Where a user
@@ -94,9 +96,10 @@ Design-system facts you can rely on:
   `@theme` block of `app/globals.css` and a test fails on undeclared ones.
 - Inter (next/font) as the family. Icons from `lucide-react`. Motion from `motion`.
 - Every landing section header comes from `components/SectionHeader.tsx`; every
-  stage title from `components/StageHeader.tsx` (ink `gray-950`). Both are enforced
+  stage tool's title from `components/StageHeader.tsx` (ink `gray-950`). Both are enforced
   by tests — report them only where the source you see bypasses them.
-- Dark mode is a `dark` class driven by the user's profile setting.
+- There is no dark mode (dropped in 1.6). The `dark` screenshots are taken with the
+  retired profile theme set to dark; they must look like the light ones.
 
 ## What you receive
 
@@ -110,7 +113,8 @@ Design-system facts you can rely on:
   release introduced that are rare elsewhere. The numbers are exact; do not recount,
   interpret.
 - **Screenshots**: `NN-screen-viewport[-sK]` — viewport `desktop` (1440 px), `phone`
-  (390 px) or `dark` (desktop, dark theme); `sK` is the K-th screen height from the
+  (390 px) or `dark` (desktop, retired profile theme set to dark — there is no dark
+  mode, so it must match `desktop`); `sK` is the K-th screen height from the
   top. A seeded demo project is signed in. A screenshot that shows an error or an
   empty page may be a capture limit — say so in `coverage_notes` instead of
   reporting it, unless the code shows the user would see the same.
@@ -132,7 +136,7 @@ Design-system facts you can rely on:
 4. **Visual consistency, end to end.** Compare across screens, not within one:
    - colour — semantic use (status, success/warning/error, brand accent) identical in
      every stage; the same meaning never in two colours, one colour never with two
-     meanings; dark-mode parity;
+     meanings; no leftover dark styling — there is no dark mode;
    - typography — scale steps, weights, letter case, line length, hierarchy of
      title / section / label / body;
    - shape — radius scale, borders, shadows and elevation per component type;

@@ -9,8 +9,8 @@ import CcIconButton from '@/components/cc/IconButton';
 
 /**
  * The Help menu of the shell bar, and the "Keyboard shortcuts" it opens —
- * `DESIGN.md` §2.1 (Shell Bar: search, help, account), §5.9 item 12 (*„alle
- * Kürzel unter ‚Keyboard shortcuts' im Hilfe-Menü"*), roadmap 3.0.4.
+ * `DESIGN.md` §2.1 (Shell Bar: search, help, account), §5.9 item 12 (*"all
+ * shortcuts under 'Keyboard shortcuts' in the help menu"*), roadmap 3.0.4.
  *
  * **Only keys that work today are listed.** §5.7 and §5.9 also name `+`, `−`,
  * `0`, `F`, `M` and `P` on the process map; none of them is wired yet, and a

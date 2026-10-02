@@ -79,9 +79,9 @@ import {
  * **Editing** (owner only — the route refuses everybody else, and the button is
  * not offered to them). Keep · Change deliberately · Drop · Clarify per rule,
  * nothing pre-selected; Change and Drop need a reason; the draft is saved as
- * one new Bedarfsrevision through `POST /api/projects/{id}/process-states`,
+ * one new need revision through `POST /api/projects/{id}/process-states`,
  * which writes through the Admin SDK into a subcollection no client rule
- * reaches. No `firestore.rules` change. Revision 1 — the reconstructed Ist —
+ * reaches. No `firestore.rules` change. Revision 1 — the reconstructed as-is process —
  * and the signed run are never touched: a confirmation is a self-declaration of
  * the signed-in account, not evidence.
  *
@@ -358,7 +358,7 @@ export default function BusinessRulesEditor({
   const startEditing = useCallback(async () => {
     setNotice(null);
     if (outcome && !outcome.ok && outcome.code === 'no-baseline') {
-      // The need is stated about the reconstructed Ist, which exists only once
+      // The need is stated about the reconstructed as-is process, which exists only once
       // the server has rebuilt it from the signed run. Asking for it here is
       // the same call the process map makes on open; it never rebuilds an
       // existing revision 1.

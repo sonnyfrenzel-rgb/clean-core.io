@@ -7,8 +7,8 @@ import { STATE_CLASSES } from '@/components/cc/state';
 
 /**
  * The state of an account, as the admin console shows it — text with a state
- * dot, the same shape as `CcObjectStatus` (`DESIGN.md` §2.4: "Status als Text
- * mit Punkt — nie nur Farbe").
+ * dot, the same shape as `CcObjectStatus` (`DESIGN.md` §2.4: "Status as text
+ * with a dot — never colour alone").
  *
  * Not `CcObjectStatus` itself, because that one takes a value from the fixed
  * list in `lib/object-status.ts` (how far a *piece of work* has got), and

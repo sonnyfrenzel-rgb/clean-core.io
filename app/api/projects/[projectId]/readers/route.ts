@@ -14,9 +14,9 @@ import type { Invitation, InvitationStatus } from '@/lib/invitations';
 import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
- * Roadmap 5.5 — Übersicht und Widerruf.
+ * Roadmap 5.5 — overview and revocation.
  *
- * GET    → who has Einsicht into this project, and since when.
+ * GET    → who has read access to this project, and since when.
  * DELETE → take it away. Effective immediately, and at the rules.
  *
  * Both are the owner's, and only the owner's. An administrator does not
@@ -24,7 +24,7 @@ import { isFirestoreId } from '@/lib/firestore-id';
  * and a route that let one read — or change — the list of who else may would
  * hand that back through the side door.
  *
- * "Wer seit wann" comes off the server's own record. The name and the address
+ * "Who, since when" comes off the server's own record. The name and the address
  * are on the invitation, written by the Admin SDK when it was accepted; the
  * timestamp is the server clock at that moment. Nothing on this page was ever
  * typed by a browser.

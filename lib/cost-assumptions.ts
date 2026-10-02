@@ -1,10 +1,10 @@
 /**
  * Options with costs, and only ever out of one revision of stated assumptions.
  *
- * Roadmap 7.4 (`docs/ROADMAP.md` §Phase 7): *"**Optionen mit Kosten** nur aus
- * einer Annahmenrevision; **„Nichts tun" als Vergleichsoption**
- * (Regressionstest je Release, Upgrade-Verzug) und die Empfindlichkeit der
- * Annahmen; kein Kostensieger, solange eine Option unvollständig ist."*
+ * Roadmap 7.4 (`docs/ROADMAP.md` §Phase 7): *"**Options with costs** only from
+ * an assumption revision; **"Do nothing" as a comparison option**
+ * (regression test per release, upgrade delay) and the sensitivity of the
+ * assumptions; no cost winner as long as an option is incomplete."*
  *
  * The mandatory fields are ADR-035 (`docs/design/decisions.md:44`, decision
  * Sonny 15.09.2026), verbatim: currency **with no default** · **two day rates**
@@ -63,8 +63,8 @@ import { referenceDigest, type ManifestInput } from './input-manifest';
 export const COST_ASSUMPTIONS_VERSION = 1;
 
 /**
- * Effort split the way the two day rates split it (ADR-035: *"bitte 2
- * Tagessätze"*). One number for both would make the second rate decoration.
+ * Effort split the way the two day rates split it (ADR-035: *"two day rates,
+ * please"*). One number for both would make the second rate decoration.
  */
 export interface EffortDays {
   devDays: number;
@@ -93,7 +93,7 @@ export type OptionKind = (typeof OPTION_KINDS)[number];
 
 /**
  * The kinds that carry a separate yearly maintenance baseline (ADR-035:
- * *"Wartungs-Baseline für Keep und Do nothing"*). For every other kind the
+ * *"maintenance baseline for Keep and Do nothing"*). For every other kind the
  * baseline has to be absent rather than zero — see `option-baseline-unexpected`.
  */
 export const BASELINE_KINDS: ReadonlySet<OptionKind> = new Set<OptionKind>(['do-nothing', 'keep']);
@@ -105,7 +105,7 @@ export const COMPARISON_KIND: OptionKind = 'do-nothing';
  * Where an option's effort figures come from.
  *
  * `proposal-unconfirmed` is not a field. The roadmap allows the fixed factors
- * per 1,000 lines *"nur als bestätigungspflichtiger Vorschlag"* — a proposal
+ * per 1,000 lines *"only as a proposal requiring confirmation"* — a proposal
  * nobody confirmed is a suggestion on screen, and an option resting on one is
  * incomplete, not merely unconfirmed.
  */
@@ -136,7 +136,7 @@ export interface CostOption {
 
 export interface ReleaseCadence {
   perYear: number;
-  /** ADR-035: *"Release-Takt (Vorschlag nur bestätigt)"*. */
+  /** ADR-035: *"release cadence (proposal only confirmed)"*. */
   confirmed: boolean;
 }
 
@@ -587,7 +587,7 @@ function price(e: EffortDays, devRate: number, testRate: number): number {
 /**
  * One option's cost over the observation period, or a refusal.
  *
- * Nothing is rounded here. ADR/CR-16: *"Rundung erst bei der Darstellung"* —
+ * Nothing is rounded here. ADR/CR-16: *"rounding only at presentation"* —
  * rounding inside the model is how the demonstration forecast once turned a
  * small project's modernised side into zero days and its overhead reduction
  * into 100 %.

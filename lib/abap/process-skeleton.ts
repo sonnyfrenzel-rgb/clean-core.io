@@ -319,8 +319,8 @@ export interface SkeletonLane {
   evidence: LaneEvidence[];
   /**
    * The skeleton nodes this lane holds. Empty for an `authority` lane on
-   * purpose: `DESIGN.md` §5.8 calls that actor *"Prüfer (außerhalb des
-   * Programms)"* — the checker does not execute a statement of this program, and
+   * purpose: `DESIGN.md` §5.8 calls that actor *"reviewer (outside the
+   * program)"* — the checker does not execute a statement of this program, and
    * saying they do would be a sentence the source does not contain.
    */
   nodeIds: string[];
@@ -328,7 +328,7 @@ export interface SkeletonLane {
   status: 'reconstructed';
 }
 
-/** Above this many lanes no further evidence opens one (2.16, "mit Obergrenze"). */
+/** Above this many lanes no further evidence opens one (2.16, "with an upper limit"). */
 export const MAX_LANES = 12;
 
 export interface FoldedForm {
@@ -621,8 +621,8 @@ function isErrorMessage(text: string): boolean {
 /**
  * `MESSAGE i001 …`, `MESSAGE '…' TYPE 'I'` — an information message, which
  * ABAP shows as a **dialog box the user has to confirm** before the program
- * goes on, in every context. §5.8 lists the popup under User-Task: *"ein
- * Mensch handelt im Programm: `CALL SCREEN`, Popup, …"* (D4).
+ * goes on, in every context. §5.8 lists the popup under user task: *"a
+ * person acts in the program: `CALL SCREEN`, popup, …"* (D4).
  *
  * `S` and `W` stay without a node, on purpose. `S` goes to the status line and
  * nobody acts on it — §5.8 has no element for a text nobody answers. `W`
@@ -1276,7 +1276,7 @@ class SkeletonBuilder {
    * one that disappears.
    *
    * Since 27.09.2026 (D2) the same holds for a method this source implements:
-   * §5.8 names "eine `FORM`/Methode mit eigener Wirkung" in one breath, so a
+   * §5.8 names "a `FORM`/method with an effect of its own" in one breath, so a
    * method is a routine here, and the effect travels along a method call that
    * resolves to one exactly as it travels along a `PERFORM`.
    */
@@ -1499,8 +1499,8 @@ class SkeletonBuilder {
    * is not a binding — a handler nobody registers never runs — and the
    * registration alone does not say which event it answers. With both, the
    * `RAISE EVENT done` calls that method, synchronously, and the statement after
-   * it runs next: a method call in all but spelling, and §5.8 draws "eine
-   * `FORM`/Methode mit eigener Wirkung" as a sub-process.
+   * it runs next: a method call in all but spelling, and §5.8 draws "a
+   * `FORM`/method with an effect of its own" as a sub-process.
    *
    * The handler named in `SET HANDLER` is resolved by the one rule every
    * method call uses (`method-resolution.ts`, via `resolveMethod`) — no second
@@ -1808,8 +1808,8 @@ class SkeletonBuilder {
    * the event blocks. Only the bare `FORM` stays a last resort: a report that
    * performs it has said it is a step.
    *
-   * One precedence is kept, the one §5.8's own note on 2.14 writes: *"ein
-   * Programm, das `START-OF-SELECTION` schreibt, hat gesagt, wo es beginnt"*.
+   * One precedence is kept, the one §5.8's own note on 2.14 writes: *"a
+   * program that writes `START-OF-SELECTION` has said where it begins"*.
    * An executable report shows its screens only through a `CALL SCREEN` of its
    * own, so there its modules run exactly when such a statement runs — and
    * which screen's flow logic calls which module is not in this source. The
@@ -1879,8 +1879,8 @@ class SkeletonBuilder {
     // a class whose definition this source does not hold, which no call of the
     // source reaches. Its visibility is written only in the missing definition
     // — so it is not read as "public" — but whoever calls it is outside this
-    // source either way, which is exactly the evidence "eine `FORM`, die kein
-    // `PERFORM` erreicht" is (§5.8). Only here, where nothing above answered:
+    // source either way, which is exactly the evidence "a `FORM` that no
+    // `PERFORM` reaches" is (§5.8). Only here, where nothing above answered:
     // a report or a function group has said where it begins.
     const forms = [...this.formEntries(), ...this.methodEntries(true)]
       .sort((a, b) => a.statement.index - b.statement.index);
@@ -2196,7 +2196,7 @@ class SkeletonBuilder {
    *
    * Two limits keep it to that evidence. Only where the definition is **not**
    * here — where it is, `readMethodVisibility` has already decided, and a local
-   * class stays local (2.14: "Public heißt nicht von außen aufrufbar"). And
+   * class stays local (2.14: "public does not mean callable from outside"). And
    * never in a source that writes an event block: a report holds only local
    * classes, so an implementation without its definition there is a partial
    * upload of a local class, not a BAdI. What calls it stays not determined
@@ -2280,8 +2280,8 @@ class SkeletonBuilder {
    * that report, and drawing it as a second beginning would double it.
    *
    * **Only a form no `PERFORM` of this source names** (`neverPerformed`), which
-   * is the sentence `DESIGN.md` §5.8 writes: *"eine `FORM`, die kein `PERFORM`
-   * erreicht"*. This used to read `unreachable` — and when nothing else in the
+   * is the sentence `DESIGN.md` §5.8 writes: *"a `FORM` that no `PERFORM`
+   * reaches"*. This used to read `unreachable` — and when nothing else in the
    * source is an entry, reachability has no root, so *every* form is
    * unreachable, the performed ones included. `PERFORM b` inside the entry `a`
    * then drew `b` twice: once as the sub-process `a` opens and once as a second
@@ -2742,8 +2742,8 @@ class SkeletonBuilder {
   /**
    * A fork of parallel tasks starting at `index` — roadmap 2.17 (a), or `null`.
    *
-   * `DESIGN.md` §5.8 draws a parallel gateway *"nur wo der Code Parallelität
-   * beweist"*, and 2.17 says what that proof is: **two or more**
+   * `DESIGN.md` §5.8 draws a parallel gateway *"only where the code proves
+   * parallelism"*, and 2.17 says what that proof is: **two or more**
    * `STARTING NEW TASK` calls, and either a `WAIT UNTIL` that holds the caller
    * for them or a `RECEIVE RESULTS` in the routine one of them names
    * `ON END OF TASK`. A single `STARTING NEW TASK` stays a service task — one
@@ -3032,7 +3032,7 @@ class SkeletonBuilder {
     // = lv_sum + ls-netwr … ENDLOOP` is a calculation, and §5.8 gives a
     // calculation no element — so the region would hold one end event and
     // nothing to reach it. §5.8 offers the other half of the same row for
-    // exactly this: *eine Aktivität* with the marker on it, no sub-process. The
+    // exactly this: *an activity* with the marker on it, no sub-process. The
     // loop keeps its anchor, its table and its marker and stops expanding.
     if (!body.length) {
       this.regions = this.regions.filter((r) => r !== region);
@@ -3483,7 +3483,7 @@ class SkeletonBuilder {
   }
 
   /**
-   * ADR-054, "kein Gewirr". An early end whose statement stands directly before
+   * ADR-054, "no tangle". An early end whose statement stands directly before
    * the block's end — nothing drawn in between — is the normal end, and its
    * flows go back to it. Decided on the complete walk, because whether anything
    * is drawn after a statement is only known once the statements after it have
@@ -3644,8 +3644,8 @@ class SkeletonBuilder {
   /**
    * A call into a routine of this source — a `PERFORM` on a local form, or
    * since D2 a call on a method this source implements. One behaviour for both,
-   * because §5.8 names them in one breath ("eine `FORM`/Methode mit eigener
-   * Wirkung"): a routine without an effect of its own is folded into its caller
+   * because §5.8 names them in one breath ("a `FORM`/method with an effect of its
+   * own"): a routine without an effect of its own is folded into its caller
    * (technical helper), one with an effect opens a sub-process, a small one is
    * collapsed afterwards (`collapseSmallRegions`), and recursion stops at the
    * region already being built.
@@ -3689,7 +3689,7 @@ class SkeletonBuilder {
   /**
    * D2 — the method calls of one statement.
    *
-   * §5.8 draws "eine `FORM`/Methode mit eigener Wirkung" as a collapsed
+   * §5.8 draws "a `FORM`/method with an effect of its own" as a collapsed
    * sub-process, and until 27.09.2026 `CALL METHOD`, `x->m( … ).` and their
    * relatives fell into the branch for moves and calculations: no node at all.
    * Three cases, and where the line between them runs:
@@ -4104,7 +4104,7 @@ class SkeletonBuilder {
    *    name from `REPORT`/`PROGRAM`, which is still a token out of the source.
    * 2. **One lane per distinct `AUTHORITY-CHECK` object.** That is the only
    *    place ABAP names an actor *outside* the program, and §5.8 calls it
-   *    exactly that — *"Prüfer (außerhalb des Programms)"*. Two checks on
+   *    exactly that — *"reviewer (outside the program)"*. Two checks on
    *    `V_VBAK_VKO` are one actor and therefore one lane; the lane holds no flow
    *    node, because the checker runs none of them.
    *

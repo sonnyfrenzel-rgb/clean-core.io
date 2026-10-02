@@ -57,8 +57,8 @@ import type { TableDependency } from './abap/table-dependencies';
 /* ----------------------------------------------------------------- concerns */
 
 /**
- * The three things roadmap 7.7 names: *"personenbezogene, steuer- oder
- * revisionsrelevante Daten"*.
+ * The three things roadmap 7.7 names: *"personal, tax- or
+ * audit-relevant data"*.
  */
 export type ComplianceConcern = 'personal-data' | 'tax-relevant' | 'audit-relevant';
 
@@ -86,7 +86,7 @@ export interface ConcernCopy {
   carries: string;
   /**
    * What a raised concern normally means for how deeply the change is reviewed
-   * and tested — roadmap 7.7's *"sie bestimmen Prüftiefe und Testpflicht"*.
+   * and tested — roadmap 7.7's *"they determine check depth and test obligation"*.
    *
    * Hedged on purpose, and every sentence hands the decision away. Clean-Core.io
    * is not in a position to tell anybody what their retention rules, their

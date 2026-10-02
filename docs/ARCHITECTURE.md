@@ -6,7 +6,7 @@ Deep reference for the platform. For the quick orientation read `CLAUDE.md`; for
 
 ## 1. System overview
 
-Clean-Core.io takes custom SAP ABAP from "nobody understands it" to a reviewed, tested rebuild on one chain of evidence (process → design → code draft → tests → handover), aligned with SAP's Clean Core paradigm. The pipeline is **deterministic-first, AI-second**: a static ABAP evidence engine (`lib/abap/`) produces the auditable facts, and Gemini only *narrates/transforms* on top of them. Every analysis is frozen into an immutable, HMAC-signed **Run**, which is the root of the trust/audit chain.
+Clean-Core.io takes custom SAP ABAP from "nobody understands it" to an evidence-backed decision, aligned with SAP's Clean Core paradigm. Every project opens in its **workspace** (roadmap 3.0.1): the business process reconstructed from the code as BPMN leads (Business view), with an IT view and a Management view over the same facts, and the seven stages — process → design → code draft → tests → handover on one chain of evidence — as tools of that workspace. The pipeline is **deterministic-first, AI-second**: a static ABAP evidence engine (`lib/abap/`) produces the auditable facts, and Gemini only *narrates/transforms* on top of them. Every analysis is frozen into an immutable, HMAC-signed **Run**, which is the root of the trust/audit chain.
 
 ```
 Upload ABAP ─▶ Deterministic Evidence Engine (lib/abap) ─▶ Run (immutable, signed)
@@ -22,7 +22,9 @@ Upload ABAP ─▶ Deterministic Evidence Engine (lib/abap) ─▶ Run (immutabl
 
 ---
 
-## 2. The 7-stage workflow
+## 2. The workspace and its seven stages as tools
+
+`app/(app)/project/[projectId]/page.tsx` is the workspace (`components/workspace/WorkspaceShell.tsx`; views, layers and their labels in `lib/workspace-model.ts`). Every project opens there for every account since roadmap 3.0.1; Business, IT and Management are views only and never stored (CLAUDE.md). The tool bar (`components/workspace/ToolBar.tsx`) leads from the workspace to the seven stages.
 
 Under `app/(app)/project/[projectId]/`, each stage is its own `page.tsx` (`'use client'`, `export const dynamic = 'force-dynamic'`), hydrated by `lib/project-loader.ts` and gated by `lib/run-guard.ts`:
 
@@ -43,7 +45,7 @@ Downstream stages call `enforceActiveRun()` — missing Run redirects to Analyze
 - **`project.status` is not read.** It is a client-writable label; the dashboard used to turn "tests generated" into "Testing & QA (85%)" from it. Every state derives from an artefact or a verdict.
 - **Testing is done only when every case carries `Passed`.** `Simulated`, `Not run`, `Pending` and absent are not passes. The testing page shows a run's verdicts on screen but does not store them, so in practice Testing — and therefore Delivery — stays `partial`; a stored, attributable run is E07-F02's receipt, not a client write.
 - **Economics cannot be `done` in this release** (no observed costs exist; CR-23 / E12-F02). `workflowSummary().next` skips it so "continue" never parks there.
-- The stepper's circles show state, not position: being on Testing says nothing about Design. `tests/workflow-phases-guard.spec.ts` holds this, including a rendered check that dashboard, stepper and delivery agree on a test draft.
+- The tool bar shows state, not position: being on Testing says nothing about Design. `tests/workflow-phases-guard.spec.ts` holds this, including a rendered check that dashboard, tool bar and delivery agree on a test draft.
 
 **What each stage reads, writes, requires and does when something fails** is the preservation register — `docs/PRESERVATION-REGISTER.md` (the reasoning and the limits) and `docs/registers/preservation-register.json` (the same thing field by field, with one seeded reference case per stage). `tests/preservation-register.spec.ts` re-derives all of it from the code, so a stage that gains or loses a field, a guard or a blocker fails the suite. Roadmap step 1.1; it is what step 3.0.3 re-runs against the rebuilt workspace.
 
@@ -96,7 +98,7 @@ Two things about the second file are easy to get wrong:
 
 `scripts/sync-cloudification-repo.ts` dispatches on the registry entry (`CLASSIFICATION_RELEASES`) rather than sniffing the payload, and throws on a shape mismatch — a half-parsed catalog would produce confidently wrong grades.
 
-### 4.2 Clean core levels A–D, and their provenance
+### 4.2 Clean core Level A–D, and their provenance
 
 `abcd-classification.ts` is deliberately **dependency-free**: the panel that renders grades is a client component, and importing the catalog there would ship ~4 MB of JSON to the browser. The lookup therefore lives in `catalog-service.ts` (server-only) and the pure grading functions live in `abcd-classification.ts`.
 
@@ -127,7 +129,7 @@ Client surfaces receive resolved grades, never the maps:
 - Server components (`/catalog/[object]`, `/sap-clean-core-object-classification`) call `gradeSapObject()` / `getPublishedGradeDistribution()` directly.
 - The client `AbcdClassificationPanel` posts object names to **`/api/abcd-classify`** (auth-gated, read-only, max 500 objects) and renders heuristic grades until the lookup lands, so a slow or failed call never blanks the panel.
 
-**The A–D grade is deliberately excluded from the signed audit pack.** It is an orientation aid, not evidence; a wrong grade must never become signed material. Every surface that shows a grade repeats this.
+**The grade (Level A–D) is deliberately excluded from the signed audit pack.** It is an orientation aid, not evidence; a wrong grade must never become signed material. Every surface that shows a grade repeats this.
 
 The ATC severity per level is stored as `atcReading` — *our* reading, not an SAP-published mapping. No SAP source stating it outright could be cited; what SAP does document is the recommendation to run ATC in blocking mode for Priority 1 and 2 findings. Do not present it as SAP doctrine without a source.
 
@@ -424,7 +426,7 @@ organisation and stopped at its perimeter.
 
 `|| <number>` on a value the product measured turns "we do not know" into
 something a customer will quote. The delivery handover once read `|| 10` tests
-and `|| 92` % coverage under a green tick. Say "not generated" / "not computed"
+and `|| 92` % coverage under a green tick. Say "not generated" / "not determined"
 instead, and let the status icon follow the fact. Product defaults (the free
 tier's 5 transformations) are configuration and are fine.
 `tests/no-fabricated-figures.spec.ts` guards the known sites.
@@ -512,7 +514,7 @@ Switch `service_name` to `clean-core-dev`, or to `clean-core-runner[-live][-dev]
 - Path alias `@/*` → repo root.
 - No global state lib / no React Context — component-local state + Firestore via `getDb()` and `useUserProfile`.
 - Naming: components `PascalCase.tsx`, hooks `useX.ts`, lib kebab-case, routes `route.ts`, pages `page.tsx`, stage folders lowercase verbs.
-- Styling: Tailwind v4 + `clsx`/`tailwind-merge` (`lib/utils.ts`); dark mode via `dark` class from profile; icons `lucide-react`, diagrams `mermaid`/`@xyflow/react`, charts `recharts`, animation `motion`.
+- Styling: Tailwind v4 + `clsx`/`tailwind-merge` (`lib/utils.ts`); light theme only — there is no dark mode since 1.6 (`tests/dark-mode-guard.spec.ts`); icons `lucide-react`, diagrams `mermaid`/`@xyflow/react`, charts `recharts`, animation `motion`.
 - `lib/version.ts` (`APP_VERSION`, `APP_RELEASE_DATE`) drives sitemap `lastModified` and drift-guard tests — keep it in sync on release.
 
 ## 10. Public content surface (the Clean Core guide)

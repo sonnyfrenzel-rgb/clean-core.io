@@ -34,8 +34,8 @@ import './handbook.css';
 
 /**
  * The Documentation stage as a canvas — proposal B, chosen by the owner on
- * 01.10.2026 ("nicht enterprise-würdig und praktisch aufbereitet für den
- * Endanwender").
+ * 01.10.2026 ("not enterprise-worthy, and practically prepared for the end
+ * user").
  *
  * The process map is the stage. Beside it stands one chapter of the handbook:
  * the step the reader selected on the map, or the first one until they do.

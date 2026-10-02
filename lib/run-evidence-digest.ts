@@ -1,7 +1,7 @@
 /**
  * What the approver read, in a form the server can compare and a person can read.
  *
- * Roadmap 8.8, finding CR-11: *„Freigabe nicht an den Run gebunden"*. The
+ * Roadmap 8.8, finding CR-11: *"Approval not bound to the run"*. The
  * sign-off command named an architecture and nothing else, so the server bound
  * the decision to whatever `projects/{id}.activeRunId` happened to point at when
  * the request arrived. Two tabs are enough to make that the wrong run: read the

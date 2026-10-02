@@ -19,8 +19,8 @@ const PII_FIELD_PATTERNS = [
   /^hostname/i, /^ip_addr/i, /^logon/i, /^account/i,
   /^benutzer/i, /^endgerät/i,
   // ATC worklist exports name the person who wrote or last touched a check
-  // result rather than the person who ran it — "Autor, Prüfer, letzter
-  // Änderer" (roadmap 7.1) — which is a different shape of column than any
+  // result rather than the person who ran it — "author, reviewer, last
+  // changed by" (roadmap 7.1) — which is a different shape of column than any
   // usage export carries and was not covered above.
   /^author/i, /^responsible/i, /^reviewer/i, /^approver/i,
   /^created_?by/i, /^changed_?by/i, /^last_?changed_?by/i, /^modified_?by/i,

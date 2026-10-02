@@ -94,17 +94,17 @@ export function valueSourceRequired(state: ElementState): boolean {
 }
 
 export interface StateEntry {
-  /** Eine stabile BPMN-Element-Id (aus 2.6) oder eine Regel-Id `BR-nnn` (3.4). */
+  /** A stable BPMN element id (from 2.6) or a rule id `BR-nnn` (3.4). */
   subject: string;
   kind: 'element' | 'rule';
   state: ElementState;
-  /** Was das Konto dazugeschrieben hat, oder null. */
+  /** What the account wrote alongside, or null. */
   note: string | null;
-  /** Wer bestätigt hat — Anzeigename und uid, beide vom Server. */
+  /** Who confirmed — display name and uid, both from the server. */
   account: { uid: string; name: string };
-  /** Serveruhr, ISO 8601. Nie aus dem Browser. */
+  /** Server clock, ISO 8601. Never from the browser. */
   confirmedAt: string;
-  /** Die Revision, die diese Bestätigung angelegt hat. */
+  /** The revision that created this confirmation. */
   revision: number;
   /** Where the value comes from (Keep, Change), or absent. Rules only. */
   valueSource?: ValueSource | null;
@@ -113,7 +113,7 @@ export interface StateEntry {
 }
 
 export interface ProcessStates {
-  /** Schlüssel ist `subject`. Wer hier fehlt, ist unentschieden — das ist kein Zustand, sondern seine Abwesenheit. */
+  /** Keyed by `subject`. Whatever is missing here is undecided — that is not a state, but its absence. */
   bySubject: Record<string, StateEntry>;
   counts: { keep: number; change: number; drop: number; clarify: number; undecided: number };
 }
@@ -206,7 +206,7 @@ export function isStateEntry(value: unknown): value is StateEntry {
 }
 
 /**
- * Rein: zählt über die Elemente und Regeln, die es wirklich gibt.
+ * Pure: counts over the elements and rules that actually exist.
  *
  * Three things it refuses to do, each of which was the easy version:
  *
@@ -384,7 +384,7 @@ export interface ProcessStateView {
   formatVersion: number;
   /** The newest Bedarfsrevision, or 0 when the process has none yet. */
   revision: number;
-  /** The model revision the need is stated against. Always 1 — the reconstructed Ist. */
+  /** The model revision the need is stated against. Always 1 — the reconstructed as-is process. */
   baselineRevision: number;
   subjects: StateSubject[];
   entries: StateEntry[];
@@ -549,8 +549,8 @@ export function checkStateChoices(
  * A snapshot and not a delta, and each entry keeps the account, the time and
  * the revision of the confirmation that **made** it — so a subject confirmed at
  * revision 2 and untouched since still shows the name and the time of revision
- * 2 when it is read at revision 9. That is what "jede Bestätigung zeigt Name
- * und Zeit" has to mean; a snapshot that restamped every row would show one
+ * 2 when it is read at revision 9. That is what "every confirmation shows name
+ * and time" has to mean; a snapshot that restamped every row would show one
  * name and one time for work that several people did on different days.
  */
 export function applyStateChoices(

@@ -3,8 +3,7 @@
  *
  * Each capability carries what it produces, what it saves, what it costs in effort
  * and quota, and where it stops. That last field is the important one: the
- * governing principle of the project is "belegt, nicht behauptet" — proven, not
- * claimed — and a capability list without limits is a claim.
+ * governing principle of the project is "proven, not claimed" — and a capability list without limits is a claim.
  */
 
 import { BTP_FIRST } from './sap-naming';

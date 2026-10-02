@@ -1,5 +1,5 @@
 /**
- * Der Fachsatz — was ein Stück ABAP **fachlich** tut, in einem Satz am Element.
+ * The business statement — what a piece of ABAP does **in business terms**, in one sentence on the element.
  *
  * **The sentences are English** (owner decision 01.10.2026, "alles Englisch"):
  * the business statement is product text, and every product text is English.
@@ -8,54 +8,54 @@
  * the sentence changed. `tests/business-statement-english.spec.ts` holds it.
  * The comments below are the module's design notes from before the switch.
  *
- * Roadmap 17.7 (Weg A, entschieden von Sonny am 23.09.2026): die Engine erzeugt
- * ihn, deterministisch aus dem Quelltext, ohne Modellaufruf, ohne Netz und ohne
- * Schlüssel. Der Maßstab ist ein Fachbereichsmensch ohne ABAP-Kenntnis: nicht
- * „SELECT auf KNA1", sondern was an dieser Stelle fachlich geschieht. Die
- * Übersetzung dorthin steht in `business-glossary.ts`, sichtbar an einer Stelle.
+ * Roadmap 17.7 (Path A, decided by Sonny on 23.09.2026): the engine produces
+ * it, deterministically from the source, with no model call, no network and no
+ * key. The yardstick is a business-side reader without ABAP knowledge: not
+ * "SELECT on KNA1", but what happens at this point in business terms. The
+ * translation to that lives in `business-glossary.ts`, visible in one place.
  *
- * ## Die Abgrenzung zu Regel 6 — die einzige Stelle, an der sie geöffnet wird
+ * ## The boundary to rule 6 — the only place where it is opened
  *
- * `process-skeleton.ts` sagt über seine Knotenbeschriftung: *„A token out of the
- * source. Never a phrase this engine made up (rule 6)."* Das bleibt so. Dieses
- * Modul ist eine **zweite, eigene Ebene**: es schreibt keine Beschriftung, es
- * ändert kein Skelett, und `process-skeleton.ts` importiert es nicht — die
- * Abhängigkeit zeigt nur in diese Richtung (`attachTo` unten nimmt ein fertiges
- * Skelett entgegen und gibt es unverändert zurück). Ein Fachsatz ist erklärter
- * Text; ein Knotenlabel bleibt ein wörtliches Token. Wer beides in eine Datei
- * legt, hebt Regel 6 auf, ohne es zu merken.
+ * `process-skeleton.ts` says about its node labels: *„A token out of the
+ * source. Never a phrase this engine made up (rule 6)."* That stays as it is. This
+ * module is a **second, separate layer**: it writes no label, it changes no
+ * skeleton, and `process-skeleton.ts` does not import it — the dependency
+ * points in this direction only (`attachTo` below takes a finished skeleton
+ * and returns it unchanged). A business statement is explanatory text; a node
+ * label stays a literal token. Whoever puts both into one file repeals rule 6
+ * without noticing.
  *
- * ## Die schärfste Forderung: Unschärfe wird aufgelöst **und** ausgewiesen
+ * ## The strictest requirement: vagueness is resolved **and** disclosed
  *
- * In dieser Reihenfolge. `not-determined` darf nie an die Stelle eines Satzes
- * treten. Ein Element, das statt einer Aussage „nicht bestimmt" trägt, erfüllt
- * 17.7 nicht — das wäre der bequeme Weg, bei jeder Lücke zu schweigen und das
- * Schweigen als Ehrlichkeit auszugeben.
+ * In that order. `not-determined` may never take the place of a sentence. An
+ * element that carries „nicht bestimmt" instead of a statement does not meet
+ * 17.7 — that would be the easy way out: stay silent at every gap and pass the
+ * silence off as honesty.
  *
- * Also zwei Schritte, und der erste kommt zuerst:
+ * So two steps, and the first one comes first:
  *
- * 1. **Auflösen.** Ein dynamischer Tabellenname, ein Bausteinname aus einer
- *    Variablen, ein Literal aus einer Konstanten: `resolveValue` sucht die
- *    Zuweisung im gelieferten Ausschnitt und setzt den gefundenen Wert in den
- *    Satz ein, mit der Zeile, aus der er kommt.
- * 2. **Ausweisen.** Was dabei offen bleibt, hängt als Vorbehalt **an** diesem
- *    Satz (`uncertainties`, und im `text` hinter dem Kernsatz) — nicht an seiner
- *    Stelle. `provenance` des Satzes ist immer `reconstructed`; `not-determined`
- *    trägt ausschließlich der einzelne Vorbehalt, also ein *Bestandteil* der
- *    Aussage.
+ * 1. **Resolve.** A dynamic table name, a function module name from a
+ *    variable, a literal from a constant: `resolveValue` looks for the
+ *    assignment in the supplied excerpt and puts the value it finds into the
+ *    sentence, with the line it comes from.
+ * 2. **Disclose.** Whatever stays open in the process is attached as a caveat
+ *    **to** this sentence (`uncertainties`, and in `text` after the core
+ *    sentence) — not in its place. The sentence's `provenance` is always
+ *    `reconstructed`; `not-determined` is carried only by the individual caveat,
+ *    i.e. by a *component* of the statement.
  *
- * `assertStatementNeverReplacedByUncertainty` hält die Regel im Code fest und
- * läuft bei jedem Aufbau, nicht nur im Test.
+ * `assertStatementNeverReplacedByUncertainty` pins the rule down in code and
+ * runs on every build-up, not only in the test.
  *
- * ## Darstellung, nicht Signatur
+ * ## Presentation, not signature
  *
- * Der Fachsatz gehört **nicht** in den signierten Payload. Das ist keine neue
- * Entscheidung, sondern die bestehende: `app/api/runs/create/route.ts` signiert
- * `Omit<…, 'analysis'>` — die Prosa eines Laufs ist ausdrücklich aus der
- * Signatur ausgenommen, während die Evidenz, aus der sie stammt, drin ist. Ein
- * Fachsatz ist aus derselben Evidenz gebildet und aus demselben Grund
- * ausgenommen: er ist eine Lesart, deren Wortlaut sich ändern darf, ohne dass
- * eine Quittung bricht. Signiert sind die Anker und die Evidenz dahinter.
+ * The business statement does **not** belong in the signed payload. That is no new
+ * decision but the existing one: `app/api/runs/create/route.ts` signs
+ * `Omit<…, 'analysis'>` — the prose of a run is explicitly excluded from the
+ * signature, while the evidence it comes from is inside. A business statement
+ * is built from the same evidence and excluded for the same reason: it is a
+ * reading whose wording may change without a receipt breaking. What is signed
+ * are the anchors and the evidence behind them.
  */
 
 import { readStatements, type AbapStatement, type SourceRange } from './statement-reader';
@@ -65,11 +65,11 @@ import { readLuwStates, type LuwModel } from './luw-states';
 import { readReferenceTypes, resolveMethodTarget, type ClassModel, type MethodTarget } from './method-resolution';
 
 /**
- * Ein Vorbehalt **an** einer Aussage — nie an ihrer Stelle.
+ * A caveat **on** a statement — never in its place.
  *
- * `provenance` ist hier `not-determined`, und das ist der einzige Ort im
- * Fachsatz, an dem dieser Wert vorkommen darf: er beschreibt einen Bestandteil
- * („welche Tabelle, entscheidet die Eingabe"), nie den Satz selbst.
+ * `provenance` here is `not-determined`, and this is the only place in the
+ * business statement where that value may occur: it describes a component
+ * („welche Tabelle, entscheidet die Eingabe"), never the sentence itself.
  */
 export interface StatementUncertainty {
   note: string;
@@ -77,39 +77,39 @@ export interface StatementUncertainty {
 }
 
 export interface BusinessStatement {
-  /** Stabil über einen Lauf: `B` plus Startzeile und Art. */
+  /** Stable across a run: `B` plus start line and kind. */
   id: string;
-  /** Der Kernsatz — die bestmögliche belegbare Aussage. Nie leer. */
+  /** The core sentence — the best statement the evidence supports. Never empty. */
   core: string;
   /**
-   * Was am Element steht: Kern plus Vorbehalte, in einem Text. Kürze ist kein
-   * Wert an sich (Forderung 2) — wo die Sache Details verlangt, stehen sie hier
-   * und nicht in einer Liste daneben.
+   * What is shown on the element: core plus caveats, in one text. Brevity is no
+   * value in itself (requirement 2) — where the matter needs details, they go here
+   * and not into a list beside it.
    */
   text: string;
   uncertainties: StatementUncertainty[];
-  /** Engine-Sätze sind `reconstructed` (lib/provenance.ts). Nie etwas anderes. */
+  /** Engine sentences are `reconstructed` (lib/provenance.ts). Never anything else. */
   provenance: 'reconstructed';
   /**
-   * Jede ABAP-Anweisung, über die dieser Satz spricht. Nie leer.
+   * Every ABAP statement this sentence talks about. Never empty.
    *
-   * Mehrere, weil eine fachliche Aussage über mehrere Anweisungen gehen kann —
-   * ein Wächter ist Bedingung, Ausgabe und Rücksprung zusammen, und wer auf
-   * eine davon zeigt, meint dieselbe Sache.
+   * Several, because one business statement can span several statements —
+   * a guard is condition, output and return together, and whoever points at
+   * one of them means the same thing.
    */
   anchors: SourceRange[];
   /**
-   * Wie grob: `statement` für eine Anweisung, `group` für einen fachlichen
-   * Block (Wächter, Ausgabeliste, Zweig mit Zuweisung).
+   * How coarse: `statement` for one statement, `group` for a business
+   * block (guard, output list, branch with assignment).
    *
-   * Die Oberfläche wählt danach: ein BPMN-Element aus mehreren Anweisungen
-   * nimmt den `group`-Satz, eine einzelne Aktivität ihren eigenen.
+   * The UI chooses by it: a BPMN element made of several statements
+   * takes the `group` sentence, a single activity its own.
    */
   grain: 'statement' | 'group';
 }
 
 // ---------------------------------------------------------------------------
-// Schritt 1 — auflösen
+// Step 1 — resolve
 // ---------------------------------------------------------------------------
 
 export interface ResolvedValue {
@@ -120,7 +120,7 @@ export interface ResolvedValue {
 
 const QUOTED = /^(?:'([^']*)'|`([^`]*)`)$/;
 
-/** Ein Literal in Anführungszeichen, entkleidet. Sonst null. */
+/** A literal in quotes, stripped. Otherwise null. */
 export function literalOf(text: string): string | null {
   const match = QUOTED.exec(text.trim());
   if (!match) return null;
@@ -132,12 +132,12 @@ function escapeForRegExp(text: string): string {
 }
 
 /**
- * Den Wert eines Bezeichners im gelieferten Ausschnitt suchen — Schritt 1.
+ * Look up the value of an identifier in the supplied excerpt — step 1.
  *
- * Gesucht wird nur, was **im Ausschnitt steht**: `CONSTANTS … VALUE 'X'` oder
- * eine Zuweisung `name = 'X'` vor der fragenden Stelle. Geraten wird nichts;
- * zwei verschiedene Zuweisungen sind keine Auflösung, sondern eine Verzweigung,
- * und kommen als `unresolved` zurück — also als Vorbehalt, nicht als Schweigen.
+ * Only what **is in the excerpt** is looked up: `CONSTANTS … VALUE 'X'` or
+ * an assignment `name = 'X'` before the asking position. Nothing is guessed;
+ * two different assignments are not a resolution but a branching,
+ * and come back as `unresolved` — i.e. as a caveat, not as silence.
  */
 export function resolveValue(
   name: string,
@@ -164,7 +164,7 @@ export function resolveValue(
       const value = literalOf(constant[1]);
       if (value != null) return { value, from: 'constant', line: statement.lineStart };
     }
-    // `lv_x = 'A'` und ein `DATA(lv_x) = …` sind dieselbe Zuweisung.
+    // `lv_x = 'A'` and a `DATA(lv_x) = …` are the same assignment.
     const assigned = new RegExp(
       `^(?:DATA\\()?${escapeForRegExp(needle)}\\)?\\s*=\\s*('[^']*'|\`[^\`]*\`)\\s*$`,
       'i',
@@ -178,18 +178,18 @@ export function resolveValue(
       }
       continue;
     }
-    // Wird die Variable auch **anders** gefüllt — aus einer Tabelle gelesen,
-    // von einem Aufruf zurückgegeben, aus einem anderen Feld kopiert —, dann
-    // ist ein Literal daneben nur einer von mehreren möglichen Werten, oft
-    // der Vorschlag für den Fall, dass nichts gepflegt ist. Es als „festgelegt"
-    // auszugeben hieße, den Rückfall für die Regel zu halten.
+    // If the variable is also filled **differently** — read from a table,
+    // returned by a call, copied from another field —, then a literal next to
+    // it is only one of several possible values, often the default for the
+    // case that nothing is maintained. Presenting it as „festgelegt" would
+    // mean mistaking the fallback for the rule.
     if (writesVariable(text, needle)) seen.add(`\u0000${statement.index}`);
   }
   if (seen.size > 1) return { value: null, from: 'unresolved', line: null };
-  // Eine einzige Zuweisung ist nur dann *der* Wert, wenn sie auf jedem Weg zur
-  // fragenden Stelle läuft. Steht sie in einem Zweig, einer Schleife oder einer
-  // Routine, die die fragende Stelle nicht mit umschließt, lief sie auf manchen
-  // Wegen nicht — dann steht der Wert erst zur Laufzeit fest.
+  // A single assignment is *the* value only if it runs on every path to the
+  // asking position. If it sits in a branch, a loop or a routine that does not
+  // also enclose the asking position, it did not run on some paths — then the
+  // value is only known at runtime.
   if (foundAt !== -1 && !assignmentReaches(statements, foundAt, usedAt)) {
     return { value: null, from: 'unresolved', line: null };
   }
@@ -199,9 +199,9 @@ export function resolveValue(
 const STACKS = new WeakMap<readonly AbapStatement[], Block[][]>();
 
 /**
- * Ob die Zuweisung an Position `from` die Stelle `to` auf jedem Weg erreicht:
- * jeder Block um die Zuweisung — jeder Zweig (`IF`, `ELSE`, `WHEN` sind je ein
- * eigener), jede Schleife, jede Routine — umschließt auch die fragende Stelle.
+ * Whether the assignment at position `from` reaches position `to` on every path:
+ * every block around the assignment — every branch (`IF`, `ELSE`, `WHEN` are each
+ * a separate one), every loop, every routine — also encloses the asking position.
  */
 function assignmentReaches(statements: readonly AbapStatement[], from: number, to: number): boolean {
   let stacks = STACKS.get(statements);
@@ -215,11 +215,11 @@ function assignmentReaches(statements: readonly AbapStatement[], from: number, t
 }
 
 /**
- * Woher ein erst zur Laufzeit bekannter Name kommt — nur so weit, wie der
- * Code es zeigt. „Entscheidet die Eingabe" steht nur bei einem Feld des
- * Selektionsbilds; ein Importparameter kommt vom Aufrufer; alles andere
- * (gelesen aus einer Pflegetabelle, berechnet) steht einfach erst zur
- * Laufzeit fest.
+ * Where a name that is only known at runtime comes from — only as far as the
+ * code shows it. „Entscheidet die Eingabe" is said only for a field of the
+ * selection screen; an importing parameter comes from the caller; everything
+ * else (read from a customising table, computed) is simply only known at
+ * runtime.
  */
 function runtimeNote(question: string, variable: string, statements: readonly AbapStatement[]): string {
   const name = plain(variable).toLowerCase();
@@ -231,7 +231,7 @@ function runtimeNote(question: string, variable: string, statements: readonly Ab
   return `Only at runtime does ${plain(variable)} settle ${question}.`;
 }
 
-/** Ob eine Anweisung die Variable `needle` anders als mit einem Literal füllt. */
+/** Whether a statement fills the variable `needle` with something other than a literal. */
 function writesVariable(text: string, needle: string): boolean {
   const name = escapeForRegExp(needle);
   const target = `@?(?:DATA\\()?${name}\\)?(?![\\w-])`;
@@ -244,12 +244,12 @@ function writesVariable(text: string, needle: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Schritt 2 — ausweisen
+// Step 2 — disclose
 // ---------------------------------------------------------------------------
 
 /**
- * Die Regel aus 17.7, als Funktion statt als Vorsatz: sie wirft, wenn ein Satz
- * leer ist, eine fremde Herkunft trägt oder nicht verankert ist.
+ * The rule from 17.7, as a function instead of an intention: it throws if a sentence
+ * is empty, carries a foreign provenance or is not anchored.
  */
 export function assertStatementNeverReplacedByUncertainty(statement: BusinessStatement): void {
   if (!statement.core.trim()) {
@@ -266,7 +266,7 @@ export function assertStatementNeverReplacedByUncertainty(statement: BusinessSta
 }
 
 // ---------------------------------------------------------------------------
-// Der Block, in dem eine Anweisung steht
+// The block a statement sits in
 // ---------------------------------------------------------------------------
 
 type BlockKind = 'if' | 'elseif' | 'else' | 'loop' | 'case' | 'when' | 'routine' | 'try' | 'catch' | 'class';
@@ -274,7 +274,7 @@ type BlockKind = 'if' | 'elseif' | 'else' | 'loop' | 'case' | 'when' | 'routine'
 interface Block {
   kind: BlockKind;
   head: AbapStatement;
-  /** Bei `elseif`/`else`: die Bedingung des vorangegangenen Zweigs. */
+  /** For `elseif`/`else`: the condition of the preceding branch. */
   previous?: AbapStatement;
 }
 
@@ -298,14 +298,14 @@ const CLOSERS = new Set([
 ]);
 
 /**
- * Welche `SELECT` eine Schleife öffnen — die, zu denen ein `ENDSELECT` gehört.
+ * Which `SELECT`s open a loop — the ones an `ENDSELECT` belongs to.
  *
- * Früher galt jedes `SELECT` ohne `INTO TABLE` und ohne `SINGLE` als Schleife.
- * Ein `INTO CORRESPONDING FIELDS OF TABLE`, ein `APPENDING TABLE` oder ein
- * `SELECT COUNT(*)` öffnet aber keine, und weil nie ein `ENDSELECT` kam, stand
- * danach **der ganze Rest des Programms** in einer erfundenen Schleife — mit
- * „Bei Treffern … als Liste" und „die Schleife läuft weiter" an Stellen, die in
- * keiner Schleife stehen. Gezählt wird deshalb gegen die `ENDSELECT`.
+ * It used to be that every `SELECT` without `INTO TABLE` and without `SINGLE` counted as a loop.
+ * An `INTO CORRESPONDING FIELDS OF TABLE`, an `APPENDING TABLE` or a
+ * `SELECT COUNT(*)` opens none, though, and because no `ENDSELECT` ever came,
+ * **the whole rest of the program** then sat in an invented loop — with
+ * „Bei Treffern … als Liste" and „die Schleife läuft weiter" at places that are in
+ * no loop. So the count is made against the `ENDSELECT`s.
  */
 function selectLoops(statements: readonly AbapStatement[]): Set<number> {
   const loops = new Set<number>();
@@ -326,18 +326,18 @@ function selectLoops(statements: readonly AbapStatement[]): Set<number> {
   return loops;
 }
 
-/** Was einen Block öffnet — die Tabelle oben plus die Sonderfälle, die ein Schlüsselwort allein nicht sagt. */
+/** What opens a block — the table above plus the special cases a keyword alone does not tell. */
 function opens(statement: AbapStatement, loops: ReadonlySet<number>): BlockKind | null {
   const keyword = statement.keyword.toUpperCase();
   if (keyword === 'SELECT') return loops.has(statement.index) ? 'loop' : null;
-  // `CLASS x DEFINITION DEFERRED.` und `… LOAD.` haben kein ENDCLASS.
+  // `CLASS x DEFINITION DEFERRED.` and `… LOAD.` have no ENDCLASS.
   if (keyword === 'CLASS' && /\bDEFINITION\s+(?:DEFERRED|LOAD)\b/i.test(statement.text)) return null;
-  // `CATCH SYSTEM-EXCEPTIONS … ENDCATCH` ist ein eigener Block, kein Zweig eines TRY.
+  // `CATCH SYSTEM-EXCEPTIONS … ENDCATCH` is a block of its own, not a branch of a TRY.
   if (keyword === 'CATCH' && /^CATCH\s+SYSTEM-EXCEPTIONS\b/i.test(statement.text)) return 'try';
   return OPENERS[keyword] ?? null;
 }
 
-/** Für jede Anweisung der Stapel der offenen Blöcke — ohne zweiten Parser. */
+/** For every statement the stack of open blocks — without a second parser. */
 function blockStacks(statements: readonly AbapStatement[], loops: ReadonlySet<number>): Block[][] {
   const stacks: Block[][] = [];
   const stack: Block[] = [];
@@ -368,14 +368,14 @@ function blockStacks(statements: readonly AbapStatement[], loops: ReadonlySet<nu
 }
 
 // ---------------------------------------------------------------------------
-// Die Einheit, die ein CHECK, RETURN oder EXIT verlässt
+// The unit that a CHECK, RETURN or EXIT leaves
 // ---------------------------------------------------------------------------
 
-/** Die Ereignisse eines Reports — ein RETURN oder CHECK darin verlässt nur dieses Ereignis. */
+/** The events of a report — a RETURN or CHECK in one of them leaves only that event. */
 const EVENT =
   /^(START-OF-SELECTION|END-OF-SELECTION|INITIALIZATION|LOAD-OF-PROGRAM|TOP-OF-PAGE(?:\s+DURING\s+LINE-SELECTION)?|END-OF-PAGE|AT\s+SELECTION-SCREEN(?:\s+OUTPUT|\s+ON\s+(?:VALUE-REQUEST\s+FOR\s+|HELP-REQUEST\s+FOR\s+|BLOCK\s+|RADIOBUTTON\s+GROUP\s+|END\s+OF\s+)?\S+)?|AT\s+LINE-SELECTION|AT\s+USER-COMMAND|AT\s+PF\d+)$/i;
 
-/** Ein `GET knoten` — das Ereignis einer logischen Datenbank, nicht `GET PARAMETER`, `GET TIME` … */
+/** A `GET node` — the event of a logical database, not `GET PARAMETER`, `GET TIME` … */
 const GET_NOT_LDB =
   /^GET\s+(?:PARAMETER|TIME|REFERENCE|BADI|CURSOR|PF-STATUS|LOCALE|BIT|RUN\s+TIME|DATASET|PROPERTY|PERMISSIONS)\b/i;
 
@@ -393,10 +393,10 @@ interface Unit {
 }
 
 /**
- * Was ein `CHECK` an dieser Stelle verlässt: die innerste Schleife, sonst die
- * Routine, sonst das Ereignis. Das ist ABAP-Semantik, keine Auslegung — und die
- * Folge ist jeweils eine andere: ein übersprungener Durchlauf, eine verlassene
- * Routine, ein verlassener Ereignisblock.
+ * What a `CHECK` leaves at this point: the innermost loop, otherwise the
+ * routine, otherwise the event. That is ABAP semantics, not interpretation — and the
+ * consequence differs each time: a skipped iteration, a left
+ * routine, a left event block.
  */
 function enclosingUnit(statements: readonly AbapStatement[], stack: readonly Block[], index: number): Unit {
   for (let i = stack.length - 1; i >= 0; i -= 1) {
@@ -428,7 +428,7 @@ function routineLabel(head: AbapStatement): string {
   }
 }
 
-/** Der Block, den ein CHECK oder RETURN außerhalb jeder Schleife verlässt — mit Namen. */
+/** The block a CHECK or RETURN outside any loop leaves — with its name. */
 function unitLabel(unit: Unit): string {
   if (unit.kind === 'routine' && unit.head) return routineLabel(unit.head);
   if (unit.kind === 'event' && unit.head) {
@@ -438,7 +438,7 @@ function unitLabel(unit: Unit): string {
 }
 
 // ---------------------------------------------------------------------------
-// Die Sprachbausteine
+// The phrase building blocks
 // ---------------------------------------------------------------------------
 
 const range = (statement: AbapStatement): SourceRange => ({
@@ -446,20 +446,20 @@ const range = (statement: AbapStatement): SourceRange => ({
   lineEnd: statement.lineEnd,
 });
 
-/** Ein Bezeichner, wie ein Fachsatz ihn schreibt: ohne `@`, ohne Klammern. */
+/** An identifier as a business statement writes it: without `@`, without brackets. */
 function plain(text: string): string {
   const inline = /^DATA\((\w+)\)$/i.exec(text.trim());
   if (inline) return inline[1];
-  // Ein Feldsymbol `<ls_x>-feld` verliert seine Klammern ganz, nicht nur die erste.
+  // A field symbol `<ls_x>-feld` loses its brackets entirely, not only the first one.
   return text.trim().replace(/<([A-Za-z0-9_]+)>/g, '$1').replace(/^[@(<]+/, '').replace(/[)>]+$/, '').trim();
 }
 
-/** Ob ein Bezeichner vom Selektionsbild kommt — `p_…`, `s_…`. */
+/** Whether an identifier comes from the selection screen — `p_…`, `s_…`. */
 function fromSelectionScreen(identifier: string): boolean {
   return /^[@]?[ps]_/i.test(identifier.trim());
 }
 
-/** Erster Buchstabe groß — für eine Nominalgruppe am Satzanfang. */
+/** First letter upper case — for a noun phrase at the start of a sentence. */
 function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
@@ -472,7 +472,7 @@ function capitalizeWord(word: string): string {
   return /[_\-~<>/]/.test(word) || /[A-Z]/.test(word) ? word : capitalize(word);
 }
 
-/** Eine Aufzählung, wie man sie spricht: „A, B und C". */
+/** An enumeration as one speaks it: „A, B und C". */
 function enumerate(parts: string[]): string {
   const unique = parts.filter((part, index) => part && parts.indexOf(part) === index);
   if (unique.length === 0) return '';
@@ -481,11 +481,11 @@ function enumerate(parts: string[]): string {
 }
 
 /**
- * Aus einer ABAP-Bedingung das **Subjekt** eines Fachsatzes.
+ * From an ABAP condition, the **subject** of a business statement.
  *
  * `iv_amount < 0` → „Negative Beträge", `p_amount > 20000` → „Beträge größer
- * 20000". Findet sich kein Muster, bleibt die Bedingung wörtlich stehen —
- * lieber technisch und wahr als fachlich und erfunden.
+ * 20000". If no pattern fits, the condition stays literally as written —
+ * better technical and true than business-like and invented.
  */
 function conditionSubject(condition: string): { subject: string; term: BusinessTerm | null; comparison: string | null } {
   const text = condition.replace(/^(IF|ELSEIF|WHILE|CHECK)\s+/i, '').trim();
@@ -534,29 +534,29 @@ const OPERATOR_WORDS: Record<string, string> = {
 const TRUE_VALUES = /^(?:'X'|abap_true|b_true|c_true)$/i;
 const FALSE_VALUES = /^(?:''|' '|space|abap_false|b_false|c_false)$/i;
 
-/** Ein Vergleichswert, wie ein Satz ihn schreibt: Literal ohne Anführungszeichen, Bezeichner wie im Quelltext. */
+/** A comparison value as a sentence writes it: literal without quotes, identifier as in the source. */
 function valueText(value: string): string {
   const literal = literalOf(value.replace(/\(\d+\)$/, ''));
   return literal ?? plain(value);
 }
 
 /**
- * Eine ABAP-Bedingung als **Nebensatz** — „der Betrag größer als 0 ist".
+ * An ABAP condition as a **subordinate clause** — „der Betrag größer als 0 ist".
  *
- * Der Nebensatz trägt die Bedingung, wie sie ist: kein erfundenes „kleinere",
- * keine Umkehrung, kein erratenes Geschlecht (ein unbekannter Bezeichner heißt
- * „das Feld …"). Was sich nicht in einen einfachen Satz fassen lässt — eine
- * Verknüpfung mit AND/OR, ein Ausdruck —, steht wörtlich in Anführungszeichen.
- * Wörtlich ist technisch, aber wahr.
+ * The clause carries the condition as it is: no invented „kleinere",
+ * no inversion, no guessed grammatical gender (an unknown identifier is called
+ * „das Feld …"). Whatever cannot be put into a simple sentence — a
+ * combination with AND/OR, an expression — stands literally in quotes.
+ * Literal is technical, but true.
  *
- * `subrc` sagt, was `sy-subrc` an dieser Stelle bedeutet (F2); ohne Angabe
- * bleibt es beim neutralen „der Rückgabewert".
+ * `subrc` says what `sy-subrc` means at this point (F2); without it
+ * it stays with the neutral „der Rückgabewert".
  */
 function conditionClause(condition: string, subrc?: (value: string, equal: boolean) => string | null): string {
   const text = condition.replace(/^(IF|ELSEIF|WHILE|CHECK)\s+/i, '').trim();
   const literally = `the condition "${text}" holds`;
-  // Eine reine UND- oder reine ODER-Kette ohne Klammern ist eine Aufzählung
-  // einfacher Bedingungen; jede Mischung und jede Klammer bleibt wörtlich.
+  // A pure AND chain or pure OR chain without brackets is an enumeration
+  // of simple conditions; every mixture and every bracket stays literal.
   if (!/[()]/.test(text)) {
     for (const [connector, word] of [['AND', 'and'], ['OR', 'or']] as const) {
       const parts = text.split(connector === 'AND' ? /\s+AND\s+/i : /\s+OR\s+/i);
@@ -615,11 +615,11 @@ function conditionClause(condition: string, subrc?: (value: string, equal: boole
 }
 
 /**
- * Das Mehrzahl-Subjekt aus `conditionSubject` — aber nur, wenn es ein
- * Deutsch-Subjekt ist: ein Vergleich über ein **bekanntes** Fachwort
- * („Beträge größer 10000"). Über einen unbekannten Bezeichner ergäbe es
- * „lv_frei bis einschließlich 0 setzen …", und dann steht besser der
- * Bedingungssatz da (F12).
+ * The plural subject from `conditionSubject` — but only if it is a
+ * German subject: a comparison over a **known** business word
+ * („Beträge größer 10000"). Over an unknown identifier it would give
+ * „lv_frei bis einschließlich 0 setzen …", and then the condition
+ * clause is the better choice (F12).
  */
 function pluralSubject(condition: string): string | null {
   const text = condition.replace(/^(IF|ELSEIF|WHILE|CHECK)\s+/i, '').trim();
@@ -629,13 +629,13 @@ function pluralSubject(condition: string): string | null {
   return conditionSubject(text).subject;
 }
 
-/** Das Gegenstück zu `conditionSubject` für einen `ELSE`-Zweig. */
+/** The counterpart of `conditionSubject` for an `ELSE` branch. */
 function elseSubject(previous: AbapStatement | undefined): string {
   if (!previous) return 'Otherwise';
   const { subject, term, comparison } = conditionSubject(previous.text);
   if (!term || !comparison || pluralSubject(previous.text) === null) return 'Otherwise';
-  // Das Gegenteil hält die Grenze: nach `< 100` gehört 100 in den ELSE-Zweig,
-  // nach `<= 100` nicht (wie `CHECK_COMPLEMENT` für `CHECK`).
+  // The opposite keeps the boundary: after `< 100`, 100 belongs in the ELSE branch,
+  // after `<= 100` it does not (like `CHECK_COMPLEMENT` for `CHECK`).
   if (comparison === '<') return `Equal or greater ${term.plural}`;
   if (comparison === '<=') return `Greater ${term.plural}`;
   if (comparison === '>') return `Equal or smaller ${term.plural}`;
@@ -645,7 +645,7 @@ function elseSubject(previous: AbapStatement | undefined): string {
 }
 
 // ---------------------------------------------------------------------------
-// Die Sätze
+// The sentences
 // ---------------------------------------------------------------------------
 
 interface Draft {
@@ -654,9 +654,9 @@ interface Draft {
   notes?: string[];
   grain?: 'statement' | 'group';
   tag?: string;
-  /** Nur am Wächter: wovor sein Rücksprung schützt (F11 führt ihn mit dem Zweig zusammen). */
+  /** Only on the guard: what its return protects against (F11 merges it with the branch). */
   exit?: string;
-  /** Nur am Wächter: sein Satzanfang, den der Zweig übernimmt. */
+  /** Only on the guard: its sentence opening, which the branch takes over. */
   subject?: Lead;
 }
 
@@ -677,12 +677,12 @@ function build(draft: Draft): BusinessStatement {
 }
 
 /**
- * Woher der Wert einer Variablen kommt — die zweite Auflösung (Schritt 1).
+ * Where the value of a variable comes from — the second resolution (step 1).
  *
- * „lv_output wird ausgegeben" sagt einem Fachbereichsmenschen nichts. „Das vom
- * Funktionsbaustein zurückgegebene Feld wird ausgegeben" sagt ihm, **warum**
- * dieser Wert an dieser Stelle steht. Gesucht wird nur, was im Ausschnitt
- * steht; was sich nicht zurückverfolgen lässt, behält seinen Namen.
+ * „lv_output wird ausgegeben" tells a business-side reader nothing. „Das vom
+ * Funktionsbaustein zurückgegebene Feld wird ausgegeben" tells them **why**
+ * this value is at this point. Only what is in the excerpt is looked up;
+ * whatever cannot be traced back keeps its name.
  */
 export type ValueOrigin = 'function-return' | 'method-return' | 'none';
 
@@ -691,7 +691,7 @@ const ORIGIN_TERMS: Record<Exclude<ValueOrigin, 'none'>, string> = {
   'method-return': 'the return value',
 };
 
-/** Welche Variablen eine Anweisung mit dem Ergebnis eines Aufrufs füllt. */
+/** Which variables a statement fills with the result of a call. */
 function originsSetBy(text: string): Array<[string, ValueOrigin]> {
   const out: Array<[string, ValueOrigin]> = [];
   if (/^CALL\s+FUNCTION\b/i.test(text)) {
@@ -712,7 +712,7 @@ function originsSetBy(text: string): Array<[string, ValueOrigin]> {
     }
     return out;
   }
-  // `DATA(lv_x) = cls=>meth( … )` und `lv_x = obj->meth( … )`.
+  // `DATA(lv_x) = cls=>meth( … )` and `lv_x = obj->meth( … )`.
   const call = /^(?:DATA\()?([A-Za-z0-9_]+)\)?\s*=(?!>)\s*\S+(?:=>|->)\w+\s*\(/.exec(text);
   if (call) out.push([call[1].toLowerCase(), 'method-return']);
   return out;
@@ -723,10 +723,10 @@ const ROUTINE_EDGES = new Set([
 ]);
 
 /**
- * Die Herkunft je Ausgabe, nicht je Name: Schlüssel ist `index|variable` des
- * `WRITE`. Eine Herkunft gilt nur, solange die Variable seit dem Aufruf nicht
- * anders beschrieben wurde, und nur in der Routine, in der der Aufruf steht —
- * ein `lv_x` in einer anderen Methode ist eine andere Variable.
+ * The origin per output, not per name: the key is `index|variable` of the
+ * `WRITE`. An origin holds only as long as the variable has not been written
+ * differently since the call, and only in the routine the call is in —
+ * an `lv_x` in another method is a different variable.
  */
 function originMap(statements: readonly AbapStatement[]): Map<string, ValueOrigin> {
   const origins = new Map<string, ValueOrigin>();
@@ -758,8 +758,8 @@ function originMap(statements: readonly AbapStatement[]): Map<string, ValueOrigi
 }
 
 /**
- * `WRITE x TO y` gibt nichts aus: es schreibt `x` formatiert in `y` (F5).
- * Nur ein `WRITE` ohne `TO` ist eine Listenausgabe.
+ * `WRITE x TO y` outputs nothing: it writes `x` formatted into `y` (F5).
+ * Only a `WRITE` without `TO` is a list output.
  */
 function isOutputWrite(statement: AbapStatement): boolean {
   return statement.keyword.toUpperCase() === 'WRITE' && !WRITE_TO.test(statement.text);
@@ -767,11 +767,11 @@ function isOutputWrite(statement: AbapStatement): boolean {
 
 const WRITE_TO = /^WRITE\s+(.+?)\s+TO\s+([A-Za-z0-9_\-<>~]+(?:\+\d+)?(?:\(\d+\))?)(?:\s|$)/i;
 
-/** Die Formatierungszusätze einer Listenausgabe — sie sagen, wie, nicht was ausgegeben wird. */
+/** The formatting additions of a list output — they say how, not what is output. */
 const WRITE_OPTIONS =
   /\s+(?:UNIT|CURRENCY|DECIMALS|EXPONENT|ROUND|TIME\s+ZONE|USING\s+(?:NO\s+)?EDIT\s+MASK|COLOR|INTENSIFIED|INVERSE|HOTSPOT|INPUT|FRAME|NO-GAP|NO-SIGN|NO-ZERO|NO-GROUPING|LEFT-JUSTIFIED|CENTERED|RIGHT-JUSTIFIED|UNDER|DD\/MM\/YY(?:YY)?|MM\/DD\/YY(?:YY)?|DDMMYY|MMDDYY|YYMMDD|AS\s+(?:CHECKBOX|ICON|SYMBOL|LINE)|QUICKINFO|ENVIRONMENT\s+TIME\s+FORMAT|STYLE)\b.*$/i;
 
-/** Was ein `WRITE` ausgibt, ohne Position, Zeilenvorschub und Formatierung. */
+/** What a `WRITE` outputs, without position, line feed and formatting. */
 function writeBody(statement: AbapStatement): string {
   return statement.text
     .replace(/^WRITE\s*/i, '')
@@ -782,13 +782,13 @@ function writeBody(statement: AbapStatement): string {
     .trim();
 }
 
-/** `WRITE / 'X'` oder `WRITE / lv_x` — der häufigste Anker des Korpus. */
+/** `WRITE / 'X'` or `WRITE / lv_x` — the most frequent anchor of the corpus. */
 function writtenTarget(
   statement: AbapStatement,
   origins?: Map<string, ValueOrigin>,
 ): { label: string; literal: boolean } {
   const body = writeBody(statement);
-  // `'Text'(001)` ist ein Literal mit Textsymbol, `gv_x(10)` ein Ausschnitt.
+  // `'Text'(001)` is a literal with a text symbol, `gv_x(10)` a substring.
   const literal = literalOf(body.replace(/^('[^']*')\(\w{1,3}\)$/, '$1'));
   if (literal != null) return { label: literal, literal: true };
   const cut = body.replace(/(?:\+\d+)?\(\d+\)$/, '');
@@ -797,7 +797,7 @@ function writtenTarget(
   return { label: isKnownField(cut) ? `the ${termFor(cut).singular}` : termFor(cut).singular, literal: false };
 }
 
-/** Der Satz zu `WRITE x TO y` — Formatierung in ein Feld, keine Ausgabe (F5). */
+/** The sentence for `WRITE x TO y` — formatting into a field, not an output (F5). */
 function writeToSentence(statement: AbapStatement): string | null {
   const match = WRITE_TO.exec(statement.text);
   if (!match) return null;
@@ -808,7 +808,7 @@ function writeToSentence(statement: AbapStatement): string | null {
 
 const SELECT_LIST = /^SELECT\s+(?:SINGLE\s+)?(?:DISTINCT\s+)?(.+?)\s+FROM\s+/i;
 
-/** Der Satz zu einem `SELECT` — die häufigste fachliche Aussage nach der Ausgabe. */
+/** The sentence for a `SELECT` — the most frequent business statement after output. */
 /**
  * Does any `IF`/`ELSEIF`/`CHECK` of the source test the table for content —
  * `IS NOT INITIAL`, `NOT … IS INITIAL`, `lines( … ) > 0` or `lines( … ) >= 1`
@@ -848,7 +848,7 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
     }
   }
 
-  // Das WHERE, als fachliche Einschränkung gelesen.
+  // The WHERE, read as a business restriction.
   const where = /\bWHERE\s+(.+?)(?:\s+(?:ORDER\s+BY|GROUP\s+BY|INTO|UP\s+TO)\b|$)/i.exec(text);
   const filters: string[] = [];
   let dynamicPredicate = false;
@@ -865,8 +865,8 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
       }
     }
   }
-  // FOR ALL ENTRIES: gelesen wird zu den Zeilen einer internen Tabelle —
-  // das gehört in den Satz, sonst klingt er nach „alle Kunden".
+  // FOR ALL ENTRIES: what is read is for the rows of an internal table —
+  // that belongs in the sentence, otherwise it sounds like „alle Kunden".
   const entries = /\bFOR\s+ALL\s+ENTRIES\s+IN\s+@?([A-Za-z0-9_\-<>]+)/i.exec(text);
   const restriction =
     (filters.length > 0 ? ` with ${enumerate(filters)}` : '') + (entries ? ` for the entries from ${plain(entries[1])}` : '');
@@ -902,14 +902,14 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
   const list = SELECT_LIST.exec(text);
   const single = /\bSINGLE\b/i.test(text);
   if (single && list) {
-    // Die alte Syntax trennt die Feldliste mit Leerzeichen, die neue mit Komma.
-    // Die alte Syntax kann das INTO vor dem FROM haben; es gehört nicht zur
-    // Feldliste. Ein Alias `v~feld` heißt im Satz nur `feld`.
+    // The old syntax separates the field list with spaces, the new one with commas.
+    // The old syntax can have the INTO before the FROM; it does not belong to the
+    // field list. An alias `v~feld` is just `feld` in the sentence.
     const columns = list[1].replace(/\s+INTO\s+.*$/i, '');
     const fields = (columns.includes(',') ? columns.split(',') : columns.split(/\s+/))
       .map((field) => field.trim().replace(/^\w+~/, ''))
       .filter((field) => field && !/^\*$/.test(field));
-    // `SELECT SINGLE @abap_true …` liest kein Feld: es prüft, ob es einen Satz gibt.
+    // `SELECT SINGLE @abap_true …` reads no field: it checks whether a record exists.
     if (fields.length === 1 && (literalOf(fields[0].replace(/^@/, '')) != null || /^@?abap_true$/i.test(fields[0]))) {
       return {
         anchors,
@@ -921,8 +921,8 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
     const known = fields.every((field) => isKnownField(field));
     const named = fields.map((field) => (known ? termFor(field).singular : plain(field)));
     if (named.length > 0 && named.length <= 3) {
-      // F12: ein unbekanntes Feld bekommt kein erratenes Geschlecht; es heißt
-      // „das Feld …", und die Tabelle steht mit Namen da statt „des Satzes".
+      // F12: an unknown field gets no guessed grammatical gender; it is called
+      // „das Feld …", and the table appears by name instead of „des Satzes".
       const owner = entity ? genitivePhrase(entity) : `from ${rawFrom ?? 'the table'}`;
       const core = known && entity
         ? `${named.length === 1 ? capitalize(nounPhrase(fields[0])) : `The ${enumerate(named)}`} ${genitivePhrase(entity)}${restriction} ${named.length > 1 ? 'are' : 'is'} read.`
@@ -939,12 +939,12 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
 }
 
 /**
- * Die Feldliste eines `SELECT` als eigener Satz: **was im Ergebnis steht.**
+ * The field list of a `SELECT` as a sentence of its own: **what the result contains.**
  *
- * „Das Ergebnis enthält Kundennummer, Buchungskreis und Abstimmkonto" ist eine
- * andere fachliche Aussage als „es werden Kunden selektiert" — die eine sagt,
- * *welche* Sätze kommen, die andere, *was* an ihnen bekannt ist. Das Fallbuch
- * führt beide, und die Business-Sicht zeigt beide am selben Element.
+ * „Das Ergebnis enthält Kundennummer, Buchungskreis und Abstimmkonto" is a
+ * different business statement from „es werden Kunden selektiert" — the one says
+ * *which* records come, the other *what* is known about them. The case book
+ * lists both, and the Business view shows both on the same element.
  */
 function resultFieldsSentence(statement: AbapStatement): Draft | null {
   if (statement.keyword.toUpperCase() !== 'SELECT') return null;
@@ -964,13 +964,13 @@ function resultFieldsSentence(statement: AbapStatement): Draft | null {
 }
 
 // ---------------------------------------------------------------------------
-// Was `sy-subrc` an einer Stelle bedeutet (F2)
+// What `sy-subrc` means at a given point (F2)
 // ---------------------------------------------------------------------------
 
 /**
- * Der Anfang eines Satzes über eine Bedingung: entweder eine Wendung („Ohne
- * Treffer wird …") oder ein vorangestellter Bedingungssatz („Ist die Sperre
- * nicht zu erhalten, wird …"). Der Unterschied ist nur das Komma.
+ * The opening of a sentence about a condition: either a phrase („Ohne
+ * Treffer wird …") or a preceding conditional clause („Ist die Sperre
+ * nicht zu erhalten, wird …"). The only difference is the comma.
  */
 interface Lead {
   text: string;
@@ -980,25 +980,25 @@ interface Lead {
 const lead = (text: string, clause = false): Lead => ({ text, clause });
 
 /**
- * Der Satzanfang zu einem Kennzeichen (`= 'X'`): „Wenn das Feld gv_flag
+ * The sentence opening for a flag (`= 'X'`): „Wenn das Feld gv_flag
  * gesetzt ist, wird …".
  *
- * Ein Nebensatz mit `nounPhrase`, kein „Mit gesetztem gv_flag": die Endung
- * von „gesetztem" rät ein Geschlecht, das für einen unbekannten Bezeichner
- * niemand festgelegt hat (F12, QA 594357222bd7). `nounPhrase` nimmt das
- * Geschlecht aus dem Glossar, wo es eines führt, und sonst „das Feld …" —
- * dann trägt das Wort „Feld" den Artikel, nicht der Bezeichner.
+ * A subordinate clause with `nounPhrase`, not „Mit gesetztem gv_flag": the ending
+ * of „gesetztem" guesses a grammatical gender that nobody has fixed for an
+ * unknown identifier (F12, QA 594357222bd7). `nounPhrase` takes the
+ * gender from the glossary where it lists one, and otherwise „das Feld …" —
+ * then the word „Feld" carries the article, not the identifier.
  */
 function flagLead(identifier: string, set: boolean): Lead {
   return lead(`If ${nounPhrase(identifier)} is ${set ? '' : 'not '}set`, true);
 }
 
-/** „Ohne Treffer wird X" oder „Ist die Sperre nicht zu erhalten, wird X". */
+/** „Ohne Treffer wird X" or „Ist die Sperre nicht zu erhalten, wird X". */
 function compose(subject: Lead, rest: string): string {
   return `${subject.text}, ${rest}`;
 }
 
-/** Beide Ausgänge einer `sy-subrc`-Prüfung, als Satzanfang und als Nebensatz. */
+/** Both outcomes of a `sy-subrc` check, as sentence opening and as subordinate clause. */
 interface SubrcOutcome {
   fail: Lead;
   ok: Lead;
@@ -1013,7 +1013,7 @@ const outcome = (fail: Lead, ok: Lead, failClause: string, okClause: string): Su
   okClause,
 });
 
-/** Wo die setzende Anweisung nicht eindeutig ist, bleibt es neutral. */
+/** Where the setting statement is not unambiguous, it stays neutral. */
 function neutralOutcome(value = '0'): SubrcOutcome {
   return outcome(
     lead(`With a return code other than ${value}`),
@@ -1023,7 +1023,7 @@ function neutralOutcome(value = '0'): SubrcOutcome {
   );
 }
 
-/** Namen, die im ganzen Ausschnitt als interne Tabelle deklariert oder gefüllt werden. */
+/** Names declared or filled as an internal table anywhere in the excerpt. */
 function internalTables(statements: readonly AbapStatement[]): Set<string> {
   const names = new Set<string>();
   for (const statement of statements) {
@@ -1045,7 +1045,7 @@ function internalTables(statements: readonly AbapStatement[]): Set<string> {
   return names;
 }
 
-/** Ob ein Schreibziel eine interne Tabelle (oder das Bild) ist statt einer Datenbanktabelle. */
+/** Whether a write target is an internal table (or the screen) rather than a database table. */
 function writesInternally(statement: AbapStatement, tables: ReadonlySet<string>): boolean {
   const text = statement.text;
   const keyword = statement.keyword.toUpperCase();
@@ -1057,26 +1057,26 @@ function writesInternally(statement: AbapStatement, tables: ReadonlySet<string>)
     /^(?:INSERT\s+INTO|DELETE\s+FROM|MODIFY|INSERT|DELETE)\s+(\(?[A-Za-z0-9_/<>~-]+\)?)/i.exec(text)?.[1] ?? '';
   const name = target.replace(/[()]/g, '').toLowerCase();
   if (/^</.test(name) || INTERNAL_TABLE.test(name) || /^[mgl]t_|^[xy][a-z]/.test(name) || tables.has(name)) {
-    // `xvbap`, `yvbap` sind die Vorher/Nachher-Tabellen der Exits; eine
-    // Datenbanktabelle beginnt nicht mit x oder y, eine Z-Tabelle mit z.
+    // `xvbap`, `yvbap` are the before/after tables of the exits; a
+    // database table does not start with x or y, a Z table starts with z.
     return tableTerm(name) === null;
   }
   return false;
 }
 
-/** Ob eine Anweisung in die Datenbank schreibt — nicht in eine interne Tabelle, nicht auf das Bild. */
+/** Whether a statement writes to the database — not to an internal table, not to the screen. */
 function isDbWrite(statement: AbapStatement, tables: ReadonlySet<string>): boolean {
   if (!DB_WRITE.test(statement.text)) return false;
   if (/^(?:UPDATE|MODIFY|INSERT|DELETE)\b/i.test(statement.text) && !/^MODIFY\s+ENTITIES\b/i.test(statement.text)) {
     return !writesInternally(statement, tables);
   }
-  // Ein CALL TRANSACTION ohne Bilddaten ist ein Dialogaufruf — ob dort
-  // geschrieben wird, entscheidet der Benutzer, nicht dieser Code (F4).
+  // A CALL TRANSACTION without screen data is a dialog call — whether anything is
+  // written there is decided by the user, not by this code (F4).
   if (/^CALL\s+TRANSACTION\b/i.test(statement.text)) return /\bUSING\b/i.test(statement.text);
   return true;
 }
 
-/** Die Anweisungen, die `sy-subrc` nicht anfassen — über sie hinweg wird weitergesucht. */
+/** The statements that do not touch `sy-subrc` — the search continues across them. */
 const SUBRC_NEUTRAL = new Set([
   'WRITE', 'CLEAR', 'FREE', 'REFRESH', 'DATA', 'CONSTANTS', 'TYPES', 'FIELD-SYMBOLS', 'STATICS', 'MESSAGE', 'ADD',
   'SUBTRACT', 'MULTIPLY', 'DIVIDE', 'CONDENSE', 'TRANSLATE', 'APPEND', 'COLLECT', 'ULINE', 'SKIP', 'NEW-LINE',
@@ -1084,13 +1084,13 @@ const SUBRC_NEUTRAL = new Set([
 ]);
 
 /**
- * Die Anweisung, die das geprüfte `sy-subrc` gesetzt hat — oder `null`, wenn
- * das aus dem Code nicht eindeutig folgt.
+ * The statement that set the checked `sy-subrc` — or `null` if that does not
+ * follow unambiguously from the code.
  *
- * Gesucht wird rückwärts, über Zuweisungen, Ausgaben und Kopien von
- * `sy-subrc` hinweg. Eine Blockgrenze (`ENDIF`, `ELSE`, `ENDTRY` …) oder ein
- * Aufruf, dessen Inneres `sy-subrc` setzen kann (`PERFORM`, Methode), beendet
- * die Suche ohne Ergebnis: dann ist der Satz neutral statt geraten.
+ * The search runs backwards, across assignments, outputs and copies of
+ * `sy-subrc`. A block boundary (`ENDIF`, `ELSE`, `ENDTRY` …) or a
+ * call whose inside can set `sy-subrc` (`PERFORM`, method) ends
+ * the search without a result: then the sentence is neutral instead of guessed.
  */
 function subrcSetter(statements: readonly AbapStatement[], before: number): AbapStatement | null {
   for (let i = before - 1; i >= 0; i -= 1) {
@@ -1099,7 +1099,7 @@ function subrcSetter(statements: readonly AbapStatement[], before: number): Abap
     const keyword = statement.keyword.toUpperCase();
     const text = statement.text;
     if (keyword === 'ENDLOOP' || keyword === 'ENDSELECT' || keyword === 'ENDCATCH') {
-      // Der Kopf der Schleife ist die setzende Anweisung.
+      // The head of the loop is the setting statement.
       let depth = 0;
       const opener = keyword === 'ENDLOOP' ? 'LOOP' : keyword === 'ENDSELECT' ? 'SELECT' : 'CATCH';
       for (let j = i - 1; j >= 0; j -= 1) {
@@ -1114,14 +1114,14 @@ function subrcSetter(statements: readonly AbapStatement[], before: number): Abap
     }
     if (keyword === 'ENDEXEC') return statement;
     if (SUBRC_NEUTRAL.has(keyword) && !(keyword === 'GET' && /^GET\s+PARAMETER\b/i.test(text))) continue;
-    // Eine Zuweisung ohne Methodenaufruf, auch die Kopie `lv_rc = sy-subrc`.
+    // An assignment without a method call, including the copy `lv_rc = sy-subrc`.
     if (/^(?:DATA\()?[A-Za-z0-9_\-<>~]+\)?\s*(?:[-+*/]|&&)?=\s/.test(text) && !/->|=>/.test(text)) continue;
     return statement;
   }
   return null;
 }
 
-/** Was `sy-subrc` nach genau dieser Anweisung bedeutet. */
+/** What `sy-subrc` means after exactly this statement. */
 function outcomeOf(setter: AbapStatement | null, statements: readonly AbapStatement[], value: string): SubrcOutcome {
   if (!setter || value !== '0') return neutralOutcome(value);
   const text = setter.text;
@@ -1270,10 +1270,10 @@ function outcomeOf(setter: AbapStatement | null, statements: readonly AbapStatem
 }
 
 /**
- * Was `sy-subrc` (oder eine Kopie davon) an der Stelle `index` bedeutet.
+ * What `sy-subrc` (or a copy of it) means at position `index`.
  *
- * Für eine Kopie `lv_rc = sy-subrc` zählt die Anweisung vor der Kopie, nicht
- * vor der Prüfung — dazwischen kann beliebig viel stehen.
+ * For a copy `lv_rc = sy-subrc`, what counts is the statement before the copy, not
+ * before the check — anything can stand in between.
  */
 function subrcOutcome(statements: readonly AbapStatement[], index: number, variable = 'sy-subrc', value = '0'): SubrcOutcome {
   let from = index;
@@ -1286,16 +1286,16 @@ function subrcOutcome(statements: readonly AbapStatement[], index: number, varia
 }
 
 /**
- * Die Kopie `variable = sy-subrc`, deren Wert an der Stelle `index` noch in
- * `variable` steht — ihr Index, oder `null`.
+ * The copy `variable = sy-subrc` whose value is still held in `variable` at
+ * position `index` — its index, or `null`.
  *
- * Rückwärts bis zur letzten Anweisung, die `variable` schreibt. Ist das die
- * Kopie, trägt die Variable das `sy-subrc` ihrer setzenden Anweisung. Ist es
- * etwas anderes — `lv_rc = 4`, `CLEAR lv_rc`, `… INTO lv_rc`, ein
- * `IMPORTING … = lv_rc` —, hält sie etwas anderes, und „Ohne Berechtigung"
- * wäre geraten (QA 23c5c0362148). Eine Kopie in einem inneren Block (`IF …
- * lv_rc = sy-subrc. ENDIF.`) ist vielleicht nie gelaufen und zählt ebenso
- * wenig; der Anfang der Routine beendet die Suche.
+ * Backwards to the last statement that writes `variable`. If that is the
+ * copy, the variable carries the `sy-subrc` of its setting statement. If it is
+ * something else — `lv_rc = 4`, `CLEAR lv_rc`, `… INTO lv_rc`, an
+ * `IMPORTING … = lv_rc` —, it holds something else, and „Ohne Berechtigung"
+ * would be guessed (QA 23c5c0362148). A copy in an inner block (`IF …
+ * lv_rc = sy-subrc. ENDIF.`) may never have run and does not count either;
+ * the start of the routine ends the search.
  */
 function subrcCopyBefore(statements: readonly AbapStatement[], index: number, variable: string): number | null {
   const name = escapeForRegExp(variable);
@@ -1311,10 +1311,10 @@ function subrcCopyBefore(statements: readonly AbapStatement[], index: number, va
     const statement = statements[i];
     const keyword = statement.keyword.toUpperCase();
     if (/^(?:FORM|METHOD|FUNCTION|MODULE)$/.test(keyword) || isEvent(statement)) return null;
-    // Ein Nachbarzweig (`ELSE`, `WHEN` …) läuft nicht vor diesem, sondern
-    // statt seiner: weiter vor dem Kopf des ganzen Blocks.
-    // Ein `CATCH` kommt aus einem Versuch, der irgendwo abgebrochen ist: was
-    // davor in der Variablen steht, sagt der Code nicht.
+    // A neighbouring branch (`ELSE`, `WHEN` …) does not run before this one but
+    // instead of it: continue before the head of the whole block.
+    // A `CATCH` comes from an attempt that aborted somewhere: what was in the
+    // variable before that, the code does not say.
     if (depth === 0 && /^(?:CATCH|CLEANUP)$/.test(keyword)) return null;
     if (depth === 0 && /^(?:ELSE|ELSEIF|WHEN)$/.test(keyword)) {
       let nested = 0;
@@ -1340,7 +1340,7 @@ function subrcCopyBefore(statements: readonly AbapStatement[], index: number, va
   return null;
 }
 
-/** Der Nebensatz zu `sy-subrc = value` an dieser Stelle — für `conditionClause`. */
+/** The subordinate clause for `sy-subrc = value` at this point — for `conditionClause`. */
 function subrcClauseAt(statements: readonly AbapStatement[], index: number) {
   return (value: string, equal: boolean): string => {
     const result = subrcOutcome(statements, index, 'sy-subrc', value);
@@ -1349,17 +1349,17 @@ function subrcClauseAt(statements: readonly AbapStatement[], index: number) {
 }
 
 /**
- * Der Satzanfang zu `IF x IS [NOT] INITIAL`.
+ * The sentence opening for `IF x IS [NOT] INITIAL`.
  *
- * „Ohne Treffer" ist nur wahr, wenn die leere Tabelle das Ergebnis eines
- * Lesens ist — ein `SELECT … INTO TABLE` in genau diese Tabelle. Sonst ist sie
- * einfach leer, und so steht es auch da.
+ * „Ohne Treffer" is only true if the empty table is the result of a
+ * read — a `SELECT … INTO TABLE` into exactly this table. Otherwise it is
+ * simply empty, and that is what the sentence says.
  */
 function lastWriteIsSelect(statements: readonly AbapStatement[], index: number, needle: string): boolean {
   const name = escapeForRegExp(needle);
   const selectInto = new RegExp(`\\b(?:INTO|APPENDING)\\s+(?:CORRESPONDING\\s+FIELDS\\s+OF\\s+)?TABLE\\s+@?(?:DATA\\()?${name}\\b`, 'i');
-  // Was die Tabelle sonst füllt oder leert. Ein `CLEAR` nach dem `SELECT`
-  // macht sie leer, ohne dass etwas nicht gefunden wurde.
+  // Whatever else fills or empties the table. A `CLEAR` after the `SELECT`
+  // empties it without anything having not been found.
   const otherWrite = new RegExp(
     `^(?:CLEAR|REFRESH|FREE)\\b.*\\b${name}\\b(?![\\w-])` +
       `|^${name}(?:\\[\\])?\\s*=` +
@@ -1390,7 +1390,7 @@ function initialLead(name: string, statements: readonly AbapStatement[], index: 
   return lead(`If ${nounPhrase(name)} is ${negated ? 'not ' : ''}empty`, true);
 }
 
-/** Die Wächter: `IF … . WRITE 'X'. RETURN.` — Bedingung, Ausgabe und Rücksprung als eine Aussage. */
+/** The guards: `IF … . WRITE 'X'. RETURN.` — condition, output and return as one statement. */
 function guardSentence(
   statements: readonly AbapStatement[],
   index: number,
@@ -1400,9 +1400,9 @@ function guardSentence(
   const head = statements[index];
   if (head.keyword.toUpperCase() !== 'IF') return null;
   const initial = /^IF\s+(\S+)\s+IS\s+INITIAL\s*$/i.exec(head.text);
-  // Ein `DATA(lv_auth_result) = sy-subrc.` ist eine Kopie, kein anderer Wert —
-  // der Wächter dahinter prüft dieselbe Sache und wird auch so gelesen.
-  // Nur, solange die Kopie noch in der Variablen steht (QA 23c5c0362148).
+  // A `DATA(lv_auth_result) = sy-subrc.` is a copy, not a different value —
+  // the guard behind it checks the same thing and is read that way too.
+  // Only as long as the copy is still held in the variable (QA 23c5c0362148).
   const compared = /^IF\s+(\S+)\s*(<>|=)\s*0\s*$/i.exec(head.text);
   const isSubrc =
     compared !== null &&
@@ -1411,8 +1411,8 @@ function guardSentence(
   const subrc = isSubrc ? [compared![0], compared![2]] : null;
   const compare = /^IF\s+(\S+)\s*(<>|=)\s*('[^']*'|\S+)\s*$/i.exec(head.text);
 
-  // Der Rumpf des Wächters, nur seine eigene Ebene: ein RETURN in einer
-  // inneren Schleife oder einem inneren IF gehört nicht ihm.
+  // The guard's body, only its own level: a RETURN in an
+  // inner loop or an inner IF does not belong to it.
   const body: AbapStatement[] = [];
   let depth = 0;
   for (let i = index + 1; i < statements.length; i += 1) {
@@ -1431,21 +1431,21 @@ function guardSentence(
   let subject: Lead;
   if (initial) subject = initialLead(initial[1], statements, index, false);
   else if (subrc) {
-    // Ein `sy-subrc` sagt für sich nichts. Was es bedeutet, sagt die Anweisung,
-    // die es gesetzt hat (F2): nach einer Berechtigungsprüfung heißt „<> 0"
-    // fehlende Berechtigung, nach einer Sperre eine nicht erhaltene Sperre,
-    // nach einem Lesen fehlender Treffer.
+    // A `sy-subrc` says nothing by itself. What it means is said by the statement
+    // that set it (F2): after an authority check „<> 0" means
+    // missing authorisation, after a lock a lock not obtained,
+    // after a read no match.
     const outcome = subrcOutcome(statements, index, compared![1]);
     subject = subrc[1] === '<>' ? outcome.fail : outcome.ok;
   }
   else if (compare) {
-    // Ein Kennzeichen ist im ABAP ein `= 'X'`; fachlich ist es „gesetzt" oder
-    // „nicht gesetzt", und genau so liest es ein Fachbereichsmensch.
+    // A flag in ABAP is an `= 'X'`; in business terms it is „gesetzt" or
+    // „nicht gesetzt", and that is exactly how a business-side reader reads it.
     const value = literalOf(compare[3]) ?? plain(compare[3]);
     const name = plain(compare[1]);
     if (/^sy-subrc$/i.test(name)) {
-      // Ein anderer Wert als 0: was er heißt, sagt nur die Dokumentation der
-      // setzenden Anweisung — der Satz bleibt neutral.
+      // A value other than 0: what it means only the documentation of the
+      // setting statement says — the sentence stays neutral.
       const neutral = neutralOutcome(value);
       subject = compare[2] === '=' ? neutral.ok : neutral.fail;
     } else if (value === 'X') {
@@ -1464,13 +1464,13 @@ function guardSentence(
   return { anchors, core, grain: 'group', tag: 'guard', exit, subject };
 }
 
-/** Ereignisse, die in einem Programmlauf genau einmal laufen. */
+/** Events that run exactly once in a program run. */
 const ONCE_EVENT = /^(?:START-OF-SELECTION|END-OF-SELECTION|INITIALIZATION|LOAD-OF-PROGRAM)\.?$/i;
 
-/** Was eine Datenbankzeile ändern kann — die Liste, auf die sich der Wächter beruft. */
+/** What can change a database row — the list the guard relies on. */
 const DB_WRITE = /^(UPDATE|MODIFY|INSERT|DELETE|EXEC\s+SQL)\b|execute_update|CALL\s+TRANSACTION|IN\s+UPDATE\s+TASK/i;
 
-/** Was über eine ganze Quelle einmal gelesen wird und viele Sätze brauchen. */
+/** What is read once across a whole source and needed by many sentences. */
 interface SourceContext {
   stacks: Block[][];
   loops: ReadonlySet<number>;
@@ -1478,8 +1478,8 @@ interface SourceContext {
 }
 
 /**
- * Ob das Ziel eines Aufrufs im gelieferten Code steht — `FORM x`, `METHOD x`,
- * `FUNCTION x`. Nur dann lässt sich über seine Wirkung etwas sagen.
+ * Whether the target of a call is in the supplied code — `FORM x`, `METHOD x`,
+ * `FUNCTION x`. Only then can anything be said about its effect.
  */
 function definedInSource(statement: AbapStatement, statements: readonly AbapStatement[]): boolean {
   const text = statement.text;
@@ -1488,9 +1488,9 @@ function definedInSource(statement: AbapStatement, statements: readonly AbapStat
   if (perform) return !/\bIN\s+PROGRAM\b/i.test(text) && routineHead(statements, 'FORM', perform[1]) !== null;
   const fn = /^CALL\s+FUNCTION\s+'([^']+)'/i.exec(text);
   if (fn) return routineHead(statements, 'FUNCTION', fn[1]) !== null;
-  // Eine Methode nur, wenn feststeht, dass der Aufruf die lokale
-  // Implementierung meint (QA b7e191a72212) — sonst kann ein fremdes
-  // `lo_external->save( )` festschreiben, und „kein COMMIT WORK" wäre falsch.
+  // A method only if it is certain that the call means the local
+  // implementation (QA b7e191a72212) — otherwise a foreign
+  // `lo_external->save( )` can commit, and „kein COMMIT WORK" would be wrong.
   const explicit = /^CALL\s+METHOD\s+(?:(\S*?)(->|=>))?([A-Za-z0-9_]+)(?:\s|$|\()/i.exec(text);
   if (explicit) {
     return methodImplementation(statements, explicit[1] ?? '', (explicit[2] as '->' | '=>' | undefined) ?? null, explicit[3], statement.index) !== null;
@@ -1500,7 +1500,7 @@ function definedInSource(statement: AbapStatement, statements: readonly AbapStat
   return false;
 }
 
-/** Der Kopf einer Routine im gelieferten Code — `FORM name`, `METHOD name`, `FUNCTION name`. */
+/** The head of a routine in the supplied code — `FORM name`, `METHOD name`, `FUNCTION name`. */
 function routineHead(
   statements: readonly AbapStatement[],
   kind: 'FORM' | 'METHOD' | 'FUNCTION' | 'MODULE',
@@ -1513,23 +1513,23 @@ function routineHead(
       const match = /^\S+\s+([A-Za-z0-9_~/]+)/.exec(other.text);
       if (!match) return false;
       const found = match[1].toLowerCase();
-      // `METHOD if_x~name` implementiert `name` einer Schnittstelle.
+      // `METHOD if_x~name` implements `name` of an interface.
       return found === wanted || found.endsWith(`~${wanted}`);
     }) ?? null
   );
 }
 
-/** Die Klassen des Quelltexts, einmal je Quelle gelesen: Methoden, Oberklassen, Referenztypen. */
+/** The classes of the source, read once per source: methods, superclasses, reference types. */
 interface LocalClasses {
   model: ClassModel;
   heads: Map<string, AbapStatement>;
-  /** Die Klasse, in deren `IMPLEMENTATION` eine Anweisung steht — je Index. */
+  /** The class in whose `IMPLEMENTATION` a statement sits — per index. */
   ownClass: (string | null)[];
 }
 
 const CLASS_CACHE = new WeakMap<readonly AbapStatement[], LocalClasses>();
 
-/** Die Klasse der Methoden, die ohne `CLASS … IMPLEMENTATION` im Ausschnitt stehen. Kein ABAP-Name. */
+/** The class of the methods that stand in the excerpt without `CLASS … IMPLEMENTATION`. Not an ABAP name. */
 const UNNAMED_CLASS = '(AUSSCHNITT)';
 
 function localClasses(statements: readonly AbapStatement[]): LocalClasses {
@@ -1540,10 +1540,10 @@ function localClasses(statements: readonly AbapStatement[]): LocalClasses {
   const superOf = new Map<string, string>();
   const ownClass: (string | null)[] = [];
   let current: string | null = null;
-  // Methoden ohne umgebendes `CLASS … IMPLEMENTATION` — ein Web-Dynpro-
-  // Controller, eine aus dem Class Builder kopierte Klasse — gehören zu einer
-  // Klasse, die der Ausschnitt nicht nennt, aber zu **einer**: der, in der sie
-  // alle stehen.
+  // Methods without an enclosing `CLASS … IMPLEMENTATION` — a Web Dynpro
+  // controller, a class copied from the Class Builder — belong to a
+  // class the excerpt does not name, but to **one**: the one they all
+  // stand in.
   let loose = false;
   for (const statement of statements) {
     const keyword = statement.keyword.toUpperCase();
@@ -1551,7 +1551,7 @@ function localClasses(statements: readonly AbapStatement[]): LocalClasses {
     if (opener) {
       const parent = /\bINHERITING\s+FROM\s+([A-Za-z0-9_/]+)/i.exec(statement.text);
       if (parent) superOf.set(opener[1].toUpperCase(), parent[1].toUpperCase());
-      // `CLASS x DEFINITION DEFERRED.` öffnet nichts.
+      // `CLASS x DEFINITION DEFERRED.` opens nothing.
       if (opener[2].toUpperCase() === 'IMPLEMENTATION') current = opener[1].toUpperCase();
     } else if (keyword === 'ENDCLASS') current = null;
     else if (keyword === 'METHOD' && current === null) loose = true;
@@ -1574,20 +1574,20 @@ function localClasses(statements: readonly AbapStatement[]): LocalClasses {
 }
 
 /**
- * Die Implementierung einer aufgerufenen Methode im gelieferten Code — oder
- * `null`, wenn sie dort nicht steht **oder nicht feststeht, dass sie gemeint
- * ist**.
+ * The implementation of a called method in the supplied code — or
+ * `null` if it is not there **or it is not certain that it is the one
+ * meant**.
  *
- * Die Auflösung ist die des Skeletts (`method-resolution.ts`): die Klasse
- * kommt aus dem Aufruf — `klasse=>m`, `me->m`, `super->m`, oder `lo->m` mit
- * dem Typ, mit dem `lo` deklariert ist —, dann die Vererbungskette hinauf.
- * Anders als das Skelett entscheidet der Name hier nie allein: ein
- * `lo_external->save( )` auf einem Objekt, dessen Klasse der Ausschnitt nicht
- * nennt, ist nicht die lokale Methode `save`, die zufällig gleich heißt, und
- * bekommt deren Wirkung nicht zugeschrieben (QA b7e191a72212).
+ * The resolution is the skeleton's (`method-resolution.ts`): the class
+ * comes from the call — `klasse=>m`, `me->m`, `super->m`, or `lo->m` with
+ * the type `lo` is declared with —, then up the inheritance chain.
+ * Unlike in the skeleton, the name alone never decides here: an
+ * `lo_external->save( )` on an object whose class the excerpt does not
+ * name is not the local method `save` that happens to have the same name, and
+ * does not get its effect attributed (QA b7e191a72212).
  *
- * `owner` ist, was vor dem letzten Pfeil steht; eine Kette `lo->mo_sub->m`
- * wird am letzten Glied gelesen.
+ * `owner` is what stands before the last arrow; a chain `lo->mo_sub->m`
+ * is read at its last link.
  */
 function methodImplementation(
   statements: readonly AbapStatement[],
@@ -1609,7 +1609,7 @@ function resolveCall(
   const classes = localClasses(statements);
   const segments = owner.split(/->|=>/);
   const last = segments[segments.length - 1] ?? '';
-  // `wd_this` ist im Web Dynpro der Controller selbst — wie `me`.
+  // In Web Dynpro, `wd_this` is the controller itself — like `me`.
   const self = /^wd_this$/i.test(last) ? 'me' : last;
   const qualifier = op === null ? null : /^[A-Za-z0-9_/]+$/.test(self) ? self : ')';
   const { key, byClass } = resolveMethodTarget(classes.model, qualifier, op, name, classes.ownClass[at] ?? null, {
@@ -1617,10 +1617,10 @@ function resolveCall(
   });
   const head = key ? classes.heads.get(key) ?? null : null;
   if (head) return { head, note: null };
-  // Steht die Klasse nicht fest, der Ausschnitt implementiert aber eine
-  // gleichnamige Methode, ist das Verhalten nicht „nicht belegt" — es ist nur
-  // offen, welche Implementierung läuft (eine Referenz mit zwei Typen, ein
-  // Objekt ohne Deklaration im Ausschnitt).
+  // If the class is not certain but the excerpt implements a method of the
+  // same name, the behaviour is not „nicht belegt" — it is only
+  // open which implementation runs (a reference with two types, an
+  // object without a declaration in the excerpt).
   const wanted = name.toUpperCase();
   const namesake = !byClass && classes.model.impls.some((impl) => impl.name === wanted || impl.short === wanted);
   return {
@@ -1632,9 +1632,9 @@ function resolveCall(
 }
 
 /**
- * Was eine Routine im gelieferten Code tut, als kurze Satzteile — höchstens
- * drei, das Schreibende zuerst: „ruft BAL_DB_SAVE auf und schreibt mit COMMIT
- * WORK fest". Gelesen wird nur die Routine selbst, nicht, was sie aufruft.
+ * What a routine in the supplied code does, as short clauses — at most
+ * three, the writing ones first: „ruft BAL_DB_SAVE auf und schreibt mit COMMIT
+ * WORK fest". Only the routine itself is read, not what it calls.
  */
 function routineEffects(statements: readonly AbapStatement[], head: AbapStatement): string[] {
   const closer = `END${head.keyword.toUpperCase()}`;
@@ -1689,15 +1689,15 @@ function routineEffects(statements: readonly AbapStatement[], head: AbapStatemen
   return effects.slice(0, 3);
 }
 
-/** Eine Anweisung, hinter der Code steht, der schreiben oder festschreiben kann. */
+/** A statement behind which there is code that can write or commit. */
 function callsOut(statement: AbapStatement): boolean {
   return /^(?:PERFORM|CALL|SUBMIT|COMMIT|RAISE\s+EVENT)\b/i.test(statement.text) || /->|=>/.test(statement.text);
 }
 
 /**
- * Die Verarbeitungseinheit, die ein RETURN verlässt, und wo sie endet: die
- * Routine bis zu ihrem END…, das Ereignis bis zum nächsten Ereignis oder zur
- * nächsten Routine.
+ * The processing unit a RETURN leaves, and where it ends: the
+ * routine up to its END…, the event up to the next event or the
+ * next routine.
  */
 function processingUnit(
   statements: readonly AbapStatement[],
@@ -1732,33 +1732,32 @@ function processingUnit(
 }
 
 /**
- * Was ein Wächter mit seinem Rücksprung verhindert (F6).
+ * What a guard prevents with its return (F6).
  *
- * „Vor der Datenbankoperation zurückgekehrt" nur, wenn in derselben Einheit
- * hinter dem Rücksprung wirklich geschrieben wird. „Es wird nichts
- * geschrieben" ist eine Aussage über den **ganzen Weg** bis zum Rücksprung,
- * und die Quellreihenfolge trägt sie nur dort, wo sie die
- * Ausführungsreihenfolge ist. Also nur, wenn
+ * „Vor der Datenbankoperation zurückgekehrt" only if, in the same unit,
+ * something really is written after the return. „Es wird nichts
+ * geschrieben" is a statement about the **whole path** up to the return,
+ * and the source order supports it only where it is the
+ * execution order. So only if
  *
- * - der Rücksprung ein einmal laufendes Ereignis verlässt (START-OF-SELECTION,
- *   INITIALIZATION …, oder den Code eines Programms ohne Ereignis): eine
- *   Routine oder ein Include ohne REPORT kehrt zum Aufrufer zurück, und der
- *   macht weiter; `AT USER-COMMAND`, `AT SELECTION-SCREEN` oder ein `GET` laufen
- *   mehrfach, und ein früherer Durchlauf kann hinter dem Wächter geschrieben
+ * - the return leaves an event that runs once (START-OF-SELECTION,
+ *   INITIALIZATION …, or the code of a program without an event): a
+ *   routine or an include without REPORT returns to the caller, which
+ *   carries on; `AT USER-COMMAND`, `AT SELECTION-SCREEN` or a `GET` run
+ *   several times, and an earlier pass may have written behind the guard;
  *   haben;
- * - der Wächter in keiner Schleife steht — sonst hat ein früherer Durchlauf
- *   die Anweisung hinter ihm schon ausgeführt (QA d7a7d3a66683);
- * - der Wächter selbst nichts aufruft und vor ihm in der Einheit weder
- *   geschrieben noch etwas aufgerufen wird — ein `PERFORM protokoll` davor
- *   kann schreiben;
- * - kein anderes Ereignis, vor **oder** hinter der Einheit in der Quelle,
- *   schreibt oder etwas aufruft: ein `INITIALIZATION` mit DELETE davor hat
- *   geschrieben, bevor der Wächter überhaupt läuft.
+ * - the guard is in no loop — otherwise an earlier iteration has
+ *   already executed the statement behind it (QA d7a7d3a66683);
+ * - the guard itself calls nothing, and before it in the unit nothing is
+ *   written and nothing is called — a `PERFORM protokoll` before it
+ *   can write;
+ * - no other event, before **or** after the unit in the source,
+ *   writes or calls anything: an `INITIALIZATION` with a DELETE before it has
+ *   written before the guard even runs.
  *
- * Fehlt eine Bedingung, bleibt es bei „vor der Datenbankoperation
- * zurückgekehrt" — lieber die Aussage weglassen als sie falsch machen. Genau
- * das haben die Richter an einem `log_sichern` mit COMMIT WORK dahinter
- * gefunden.
+ * If a condition is missing, it stays at „vor der Datenbankoperation
+ * zurückgekehrt" — better to leave the statement out than to make it wrong. That is
+ * exactly what the judges found on a `log_sichern` with COMMIT WORK behind it.
  */
 function guardExit(
   statements: readonly AbapStatement[],
@@ -1775,8 +1774,8 @@ function guardExit(
   const unit = processingUnit(statements, stack, leave.index);
   const writesLater = statements.slice(leave.index + 1, unit.end).some((next) => isDbWrite(next, context.tables));
   if (!writesLater) return 'the block is exited';
-  // Ein Sperrbaustein (`ENQUEUE_…`/`DEQUEUE_…`) setzt eine Sperre, er schreibt
-  // keine Datenbankzeile.
+  // A lock function module (`ENQUEUE_…`/`DEQUEUE_…`) sets a lock; it writes
+  // no database row.
   const lockOnly = (statement: AbapStatement) =>
     /^CALL\s+FUNCTION\s+'(?:ENQUEUE|DEQUEUE)_[A-Za-z0-9_/]+'/i.test(statement.text) &&
     !/\bIN\s+UPDATE\s+TASK\b|\bDESTINATION\b/i.test(statement.text);
@@ -1784,9 +1783,9 @@ function guardExit(
     (callsOut(statement) && !lockOnly(statement)) ||
     isDbWrite(statement, context.tables) ||
     /^CREATE\s+OBJECT\b|\bNEW\s+[A-Za-z0-9_/]+\s*\(/i.test(statement.text);
-  // Ohne Ereignis ist der Code nur dann das implizite START-OF-SELECTION, wenn
-  // er ein Programm ist; ein Include oder Exit ohne REPORT kehrt zu einem
-  // Aufrufer zurück, der weitermacht.
+  // Without an event, the code is the implicit START-OF-SELECTION only if
+  // it is a program; an include or exit without REPORT returns to a
+  // caller that carries on.
   const onceOnly =
     (unit.kind === 'unknown' && statements.some((other) => /^(?:REPORT|PROGRAM)$/i.test(other.keyword))) ||
     (unit.kind === 'event' && ONCE_EVENT.test(statements[unit.start].text.trim()));
@@ -1807,11 +1806,11 @@ function guardExit(
 }
 
 /**
- * Wohin ein `LEAVE` führt, als Satzteil nach „wird" (F9).
+ * Where a `LEAVE` leads, as a clause after „wird" (F9).
  *
- * Früher hieß jedes LEAVE „die Screenfolge wird beendet" — auch `LEAVE TO
- * SCREEN 200` (weiter mit Bild 200), `LEAVE LIST-PROCESSING` (zurück aus der
- * Liste) und `LEAVE PROGRAM` (das ganze Programm endet).
+ * Every LEAVE used to be called „die Screenfolge wird beendet" — including `LEAVE TO
+ * SCREEN 200` (continue with screen 200), `LEAVE LIST-PROCESSING` (back from the
+ * list) and `LEAVE PROGRAM` (the whole program ends).
  */
 function leavePhrase(statement: AbapStatement): string | null {
   const text = statement.text.trim();
@@ -1830,7 +1829,7 @@ function leavePhrase(statement: AbapStatement): string | null {
   return null;
 }
 
-/** Der ganze Satz zu einem `LEAVE`. */
+/** The whole sentence for a `LEAVE`. */
 function leaveSentence(statement: AbapStatement, statements: readonly AbapStatement[]): string {
   const text = statement.text.trim();
   if (/^LEAVE\s+TO\s+SCREEN\s+0$/i.test(text)) return 'The screen sequence is ended.';
@@ -1858,24 +1857,24 @@ function leaveSentence(statement: AbapStatement, statements: readonly AbapStatem
   return 'The current processing is exited.';
 }
 
-/** Eine Zuweisung in einem Zweig: „Negative Beträge setzen die Route auf INVALID." */
+/** An assignment in a branch: „Negative Beträge setzen die Route auf INVALID." */
 function branchAssignment(statement: AbapStatement, stack: Block[], statements: readonly AbapStatement[]): Draft | null {
   const assign = /^(\S+)\s*=\s*('[^']*'|`[^`]*`|-?\d+)\s*$/.exec(statement.text);
   if (!assign) return null;
   const branch = [...stack].reverse().find((block) => block.kind === 'if' || block.kind === 'elseif' || block.kind === 'else');
   if (!branch) return null;
   const value = literalOf(assign[2]) ?? assign[2];
-  // F12: „Negative Beträge setzen die Route" ist ein Satz mit Mehrzahl-
-  // Subjekt; „Eine leere lv_msgno setzen die Status" war keiner. Nur ein
-  // Vergleich über ein bekanntes Fachwort bleibt Subjekt, sonst trägt ein
-  // Bedingungssatz die Aussage, und der Bezeichner bekommt keinen erratenen
-  // Artikel („das Feld …").
+  // F12: „Negative Beträge setzen die Route" is a sentence with a plural
+  // subject; „Eine leere lv_msgno setzen die Status" was not one. Only a
+  // comparison over a known business word stays the subject; otherwise a
+  // conditional clause carries the statement, and the identifier gets no guessed
+  // article („das Feld …").
   const plural =
     branch.kind === 'else'
       ? elseSubject(branch.previous) === 'Otherwise' ? null : elseSubject(branch.previous)
       : pluralSubject(branch.head.text);
-  // Ein `rv_`/`cv_`/`ev_` ist das Ergebnis der Routine selbst: der Fall
-  // *erhält* diesen Wert. Eine gewöhnliche Variable wird dagegen *gesetzt*.
+  // An `rv_`/`cv_`/`ev_` is the result of the routine itself: the case
+  // *receives* this value. An ordinary variable, by contrast, is *set*.
   const returning = /^(rv_|cv_|ev_)/i.test(assign[1].trim());
   let core: string;
   if (plural) {
@@ -1890,14 +1889,14 @@ function branchAssignment(statement: AbapStatement, stack: Block[], statements: 
   return { anchors: [range(statement), range(branch.head)], core, grain: 'group', tag: 'branch' };
 }
 
-/** Eine Zuweisung ohne Zweig: „Die Review-Markierung wird auf N gesetzt." */
+/** An assignment without a branch: „Die Review-Markierung wird auf N gesetzt." */
 function plainAssignment(statement: AbapStatement, statements: readonly AbapStatement[], stack: Block[]): Draft | null {
   const assign = /^(\S+)\s*=\s*('[^']*'|`[^`]*`|-?\d+)\s*$/.exec(statement.text);
   if (!assign) return null;
   const value = literalOf(assign[2]) ?? assign[2];
-  // Der RETURNING-Parameter einer Methode ist ihr Ergebnis, kein Feld mit
-  // eigener Bedeutung: `text = 'x'` in `METHOD tick` heißt „tick gibt x
-  // zurück", nicht „der Text wird auf x gesetzt".
+  // The RETURNING parameter of a method is its result, not a field with a
+  // meaning of its own: `text = 'x'` in `METHOD tick` means „tick gibt x
+  // zurück", not „der Text wird auf x gesetzt".
   const method = [...stack].reverse().find((block) => block.kind === 'routine' && /^METHOD$/i.test(block.head.keyword));
   if (method) {
     const methodName = /^METHOD\s+(?:\S+~)?([A-Za-z0-9_]+)/i.exec(method.head.text)?.[1] ?? '';
@@ -1918,9 +1917,9 @@ function plainAssignment(statement: AbapStatement, statements: readonly AbapStat
 }
 
 /**
- * Was aus einer Registrierung wird — roadmap 2.12, als Vorbehalt am Satz.
- * Angestoßen, verworfen oder beim Programmende nicht ausgeführt, jeweils mit
- * der Zeile, die es trägt; was offen bleibt, wird gesagt.
+ * What becomes of a registration — roadmap 2.12, as a caveat on the sentence.
+ * Triggered, discarded or not executed at program end, each with
+ * the line that supports it; whatever stays open is said.
  */
 function registrationNotes(luw: LuwModel, index: number): string[] {
   const registration = luw.registrations.find((r) => r.statementIndex === index);
@@ -1956,7 +1955,7 @@ const MESSAGE_TYPES: Record<string, { noun: string; article: string }> = {
 };
 
 interface MessageParts {
-  /** `001(ZSD)`, `„Text"` oder der Name der Variablen. */
+  /** `001(ZSD)`, `„Text"` or the name of the variable. */
   label: string | null;
   type: string | null;
   into: string | null;
@@ -1964,7 +1963,7 @@ interface MessageParts {
   displayLike: string | null;
 }
 
-/** Die Bestandteile einer `MESSAGE`-Anweisung — Nummer, Typ, INTO, RAISING, DISPLAY LIKE. */
+/** The parts of a `MESSAGE` statement — number, type, INTO, RAISING, DISPLAY LIKE. */
 function messageParts(text: string): MessageParts {
   const body = text.replace(/^MESSAGE\s+/i, '');
   const short = /^([AEISWX])(\d{3})(?:\((\S+?)\))?(?=\s|$)/i.exec(body);
@@ -1977,8 +1976,8 @@ function messageParts(text: string): MessageParts {
     label = `${short[2]}${short[3] ? `(${short[3].toUpperCase()})` : ''}`;
   } else if (byId) {
     type = (literalOf(byId[2]) ?? '').toUpperCase() || null;
-    // Nummer und Klasse aus Variablen sind erst zur Laufzeit bekannt — dann
-    // bleibt die Meldung ohne Nummer, statt Feldnamen als Nummer zu zeigen.
+    // Number and class from variables are only known at runtime — then the
+    // message stays without a number, instead of showing field names as a number.
     const number = literalOf(byId[3]);
     const id = literalOf(byId[1]);
     label = number != null && id != null ? `${number}(${id.toUpperCase()})` : null;
@@ -2001,12 +2000,12 @@ function messageParts(text: string): MessageParts {
 }
 
 /**
- * Der Satz zu `MESSAGE` (F5).
+ * The sentence for `MESSAGE` (F5).
  *
- * `MESSAGE … INTO v` gibt **nichts** aus — der Meldungstext landet in `v`.
- * `MESSAGE … RAISING x` löst eine Ausnahme aus; angezeigt wird nur, wenn der
- * Aufrufer sie nicht behandelt. Nur die übrigen Formen zeigen etwas an, und
- * dann mit ihrem Typ.
+ * `MESSAGE … INTO v` outputs **nothing** — the message text ends up in `v`.
+ * `MESSAGE … RAISING x` raises an exception; something is displayed only if the
+ * caller does not handle it. Only the remaining forms display something, and
+ * then with their type.
  */
 function messageSentence(text: string): string {
   const parts = messageParts(text);
@@ -2031,7 +2030,7 @@ function messageSentence(text: string): string {
   return `The ${noun}${label} is output${like}${consequence}.`;
 }
 
-/** Derselbe Inhalt als Satzteil für Zweige und Folgen. */
+/** The same content as a clause for branches and sequences. */
 function messageFragment(text: string): string {
   const parts = messageParts(text);
   if (parts.into) return `the message text is placed in ${parts.into}`;
@@ -2040,7 +2039,7 @@ function messageFragment(text: string): string {
   return kind ? `${kind.article} ${kind.noun} is output` : 'a message is output';
 }
 
-/** Was übersprungen wird, wenn ein CHECK mit diesem Vergleich in einer Schleife steht. */
+/** What is skipped when a CHECK with this comparison sits in a loop. */
 const CHECK_COMPLEMENT: Record<string, string> = {
   '>=': 'smaller ones',
   GE: 'smaller ones',
@@ -2053,14 +2052,14 @@ const CHECK_COMPLEMENT: Record<string, string> = {
 };
 
 /**
- * Der Satz zu einem `CHECK` (F1) — die Folge hängt am Ort, nicht an einer Vorlage.
+ * The sentence for a `CHECK` (F1) — the consequence depends on the place, not on a template.
  *
- * `CHECK` verlässt in einer Schleife den **Durchlauf**, in einer Routine die
- * **Routine**, sonst den **Ereignisblock**. Die frühere Vorlage sagte überall
- * „kleinere werden übersprungen, die Schleife läuft weiter" — auch ohne
- * Schleife und auch bei einer Gleichheitsprüfung, wo es kein „kleiner" gibt.
- * „Kleinere" steht jetzt nur noch dort, wo es wahr ist: ein Größenvergleich
- * über ein bekanntes Fachwort in einer Schleife.
+ * In a loop, `CHECK` leaves the **iteration**, in a routine the
+ * **routine**, otherwise the **event block**. The former template said everywhere
+ * „kleinere werden übersprungen, die Schleife läuft weiter" — even without a
+ * loop and even for an equality check, where there is no „kleiner".
+ * „Kleinere" now appears only where it is true: a size comparison
+ * over a known business word in a loop.
  */
 function checkSentence(
   statement: AbapStatement,
@@ -2087,7 +2086,7 @@ function normalizeOperator(operator: string): string {
   return ({ GE: '>=', GT: '>', LE: '<=', LT: '<', EQ: '=', NE: '<>' } as Record<string, string>)[operator.toUpperCase()] ?? operator;
 }
 
-/** Die Sätze, die aus einer einzelnen Anweisung kommen. */
+/** The sentences that come from a single statement. */
 function sentenceFor(
   statement: AbapStatement,
   statements: readonly AbapStatement[],
@@ -2105,30 +2104,30 @@ function sentenceFor(
     const written = writeBody(statement);
     const resolvedText = literalOf(written) == null ? resolveValue(written, statements, statement.index) : null;
     if (resolvedText && resolvedText.value) {
-      // Schritt 1 vor Schritt 2: der Leser sieht den Text, nicht den Variablennamen.
+      // Step 1 before step 2: the reader sees the text, not the variable name.
       return { anchors, core: `The text ${resolvedText.value} is output.`, tag: 'write' };
     }
     const { label, literal } = writtenTarget(statement, origins);
-    // Ein ausgegebenes Literal ist **kein** Erfolgsnachweis: es belegt, dass
-    // diese Stelle erreicht wurde, und nichts sonst. Das steht als Vorbehalt
-    // am Satz, weil es aus dem Code folgt und nicht aus Vorsicht.
+    // An output literal is **not** proof of success: it shows that
+    // this point was reached, and nothing else. That is a caveat
+    // on the sentence, because it follows from the code and not from caution.
     const notes = literal ? ['The output only proves that this point in the code was reached.'] : [];
     return { anchors, core: `${startSentence(label)} is output.`, notes, tag: 'write' };
   }
 
   if (keyword === 'SELECT') return selectSentence(statement, statements);
 
-  // **Angekündigt oder persistiert?** Eine Datenbankänderung ohne COMMIT im
-  // gelieferten Code ist angekündigt und nicht persistiert; steht hinter ihr
-  // kein `sy-subrc`-Vergleich, ist auch der Erfolg nicht geprüft. Beides ist
-  // aus dem Ausschnitt ablesbar und gehört deshalb an den Satz.
+  // **Announced or persisted?** A database change without a COMMIT in the
+  // supplied code is announced and not persisted; if no `sy-subrc` comparison
+  // follows it, success is not checked either. Both can be read
+  // from the excerpt and therefore belong on the sentence.
   //
-  // F6: „kein COMMIT WORK" ist eine negative Behauptung und steht nur da, wo
-  // sie trägt. Ein `BAPI_TRANSACTION_COMMIT` schreibt fest wie ein COMMIT
-  // WORK; ein Aufruf, dessen Inneres nicht im Ausschnitt steht, kann es tun;
-  // und außerhalb eines ausführbaren Programms (Methode, Baustein, Exit)
-  // gehört das Festschreiben dem Aufrufer. In all diesen Fällen schweigt der
-  // Satz dazu, statt etwas zu behaupten, was der Code nicht zeigt.
+  // F6: „kein COMMIT WORK" is a negative claim and appears only where
+  // it holds. A `BAPI_TRANSACTION_COMMIT` commits like a COMMIT
+  // WORK; a call whose inside is not in the excerpt can do it;
+  // and outside an executable program (method, function module, exit)
+  // committing belongs to the caller. In all these cases the sentence stays
+  // silent on it instead of claiming something the code does not show.
   const persistenceNotes = (): string[] => {
     const notes: string[] = [];
     const rest = statements.slice(statement.index + 1);
@@ -2192,9 +2191,9 @@ function sentenceFor(
     };
   }
 
-  // Roadmap 2.12: vor einem COMMIT WORK registrierte Verbuchungsbausteine
-  // werden damit **angestoßen**, nicht als ausgeführt belegt (CC-026, CR-06).
-  // Ohne Registrierung bleibt der bisherige Satz über die direkte Änderung.
+  // Roadmap 2.12: update function modules registered before a COMMIT WORK
+  // are thereby **triggered**, not shown as executed (CC-026, CR-06).
+  // Without a registration, the previous sentence about the direct change stays.
   const event = luw.events.find((e) => e.statementIndex === statement.index);
   if (keyword === 'COMMIT') {
     if (event && event.registrations.length > 0) {
@@ -2224,8 +2223,8 @@ function sentenceFor(
   if (keyword === 'PERFORM') {
     const name = /^PERFORM\s+(\([^)]+\)|[A-Za-z0-9_]+)/i.exec(text);
     const external = /\bIN\s+PROGRAM\b/i.test(text);
-    // F7: steht die FORM im gelieferten Code, ist ihre Wirkung belegt — und
-    // wird genannt, soweit sie sich ablesen lässt, statt „nicht belegt".
+    // F7: if the FORM is in the supplied code, its effect is evidenced — and
+    // is named, as far as it can be read, instead of „nicht belegt".
     const head = name && !external && !/^\(/.test(name[1]) ? routineHead(statements, 'FORM', name[1]) : null;
     const effects = head ? routineEffects(statements, head) : [];
     return {
@@ -2238,8 +2237,8 @@ function sentenceFor(
 
   if (keyword === 'SUBMIT') {
     const name = /^SUBMIT\s+([A-Za-z0-9_/]+)/i.exec(text);
-    // Mit VIA JOB läuft das Programm nicht hier, sondern wird als Schritt
-    // eines Hintergrundjobs eingeplant; gestartet wird es erst mit dem Job.
+    // With VIA JOB the program does not run here but is scheduled as a step
+    // of a background job; it is only started with the job.
     const job = /\bVIA\s+JOB\s+('[^']*'|\S+)/i.exec(text);
     if (job) {
       return {
@@ -2270,8 +2269,8 @@ function sentenceFor(
   if (keyword === 'AUTHORITY-CHECK') {
     const object = /OBJECT\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(text);
     const name = object ? (literalOf(object[1]) ?? object[1]) : '';
-    // Eine Prüfung, deren sy-subrc niemand liest, schützt nichts: der Satz
-    // sagt es, statt einen Schutz nahezulegen, den der Code nicht hat.
+    // A check whose sy-subrc nobody reads protects nothing: the sentence
+    // says so, instead of suggesting a protection the code does not have.
     let evaluated = false;
     for (let i = statement.index + 1; i < statements.length; i += 1) {
       const next = statements[i];
@@ -2332,9 +2331,9 @@ function sentenceFor(
         core = `The function module ${name} is started asynchronously in a separate task.`;
         notes.push('No result is available at this point.');
       } else if (/\bDESTINATION\b/i.test(text)) {
-        // F10: „benachrichtigt" und „eingegebene" standen fest im Satz. Was
-        // der Code trägt: der Baustein läuft in einem entfernten System, über
-        // die Destination, die hier steht.
+        // F10: „benachrichtigt" and „eingegebene" were fixed in the sentence. What
+        // the code supports: the function module runs in a remote system, via
+        // the destination given here.
         const destination = /\bDESTINATION\s+('[^']*'|\S+)/i.exec(text);
         const where = !destination
           ? 'a destination'
@@ -2346,8 +2345,8 @@ function sentenceFor(
         core = `${name} is called in a remote system via ${where}.`;
         notes.push('Which system that is and what happens there cannot be derived from the supplied code.');
       }
-      // Was hineingeht und was herauskommt — das ist die fachliche Aussage
-      // eines Bausteinaufrufs, nicht sein Name allein.
+      // What goes in and what comes out — that is the business statement
+      // of a function module call, not its name alone.
       const exporting = [...text.matchAll(/\bEXPORTING\s+\w+\s*=\s*(\S+)/gi)].map((m) => plain(m[1]));
       const importing = [...text.matchAll(/\bIMPORTING\s+\w+\s*=\s*(\S+)/gi)].map((m) => plain(m[1]));
       if (
@@ -2364,7 +2363,7 @@ function sentenceFor(
     if (method) {
       const called = /^(?:(.*?)(->|=>))?([A-Za-z0-9_]+)$/.exec(method[1]);
       if (!called) {
-        // `CALL METHOD (lv_name)` oder `obj->(lv_name)`: der Name steht erst zur Laufzeit fest.
+        // `CALL METHOD (lv_name)` or `obj->(lv_name)`: the name is only known at runtime.
         const receiving = /\b(?:RECEIVING|IMPORTING)\s+\w+\s*=\s*(\S+)/i.exec(text);
         return {
           anchors,
@@ -2387,9 +2386,9 @@ function sentenceFor(
     }
     const transaction = /^CALL\s+TRANSACTION\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(text);
     if (transaction) {
-      // F4: der Satz sagt, **dass** die Transaktion aufgerufen wird und wie —
-      // nicht, wozu. „Anlage" aus dem Namen zu lesen hieß bei VA02, ME53N
-      // oder PA20 schlicht das Falsche.
+      // F4: the sentence says **that** the transaction is called and how —
+      // not what for. Reading „Anlage" from the name was simply wrong for VA02, ME53N
+      // or PA20.
       const name = literalOf(transaction[1]) ?? transaction[1];
       const using = /\bUSING\s+(\S+)/i.exec(text);
       const mode = /\bMODE\s+('[^']*'|\S+)/i.exec(text);
@@ -2410,8 +2409,8 @@ function sentenceFor(
               : '';
       const after: string[] = [];
       if (/\bAND\s+SKIP\s+FIRST\s+SCREEN\b/i.test(text)) after.push('the initial screen is skipped');
-      // Mit Bilddaten stößt der Aufruf die Verarbeitung der Transaktion an;
-      // ohne ist es ein Dialogaufruf. Beides sagt nichts über ihren Zweck.
+      // With screen data the call triggers the processing of the transaction;
+      // without it, it is a dialog call. Neither says anything about its purpose.
       return {
         anchors,
         core: `Transaction ${name} is ${using ? 'triggered' : 'called'}${how.length > 0 ? ` ${how.join(' ')}` : ''}${booking}${after.length > 0 ? `; ${after.join(', ')}` : ''}.`,
@@ -2425,9 +2424,9 @@ function sentenceFor(
     }
     const badi = /^CALL\s+BADI\s+(\S+)/i.exec(text);
     if (badi) {
-      // F10: was hineingeht und herauskommt, steht in EXPORTING und
-      // CHANGING/IMPORTING/RECEIVING — nicht in einem festen Satz über
-      // „Betrag" und „Routentext", der nur für einen einzigen Fall stimmte.
+      // F10: what goes in and comes out is in EXPORTING and
+      // CHANGING/IMPORTING/RECEIVING — not in a fixed sentence about
+      // „Betrag" and „Routentext" that was true for one single case only.
       const name = badi[1].split('->')[1] ?? badi[1];
       const given = [...text.matchAll(/\bEXPORTING\s+(.+?)(?=\s+(?:IMPORTING|CHANGING|RECEIVING|EXCEPTIONS)\b|$)/gi)]
         .flatMap((match) => [...match[1].matchAll(/\w+\s*=\s*(\S+)/g)].map((pair) => pair[1]));
@@ -2457,8 +2456,8 @@ function sentenceFor(
     if (/^GET\s+BADI\b/i.test(text)) {
       return { anchors, core: 'The configured BAdI implementation is requested.', tag: 'get' };
     }
-    // Nur `GET knoten` ist das Ereignis einer logischen Datenbank (F3). Alles
-    // andere mit GET liest einen Wert aus der Laufzeitumgebung.
+    // Only `GET node` is the event of a logical database (F3). Everything
+    // else with GET reads a value from the runtime environment.
     const parameter = /^GET\s+PARAMETER\s+ID\s+('[^']*'|\S+)\s+FIELD\s+(\S+)/i.exec(text);
     if (parameter) {
       return {
@@ -2519,8 +2518,8 @@ function sentenceFor(
     if (/\bCOMPONENT\b/i.test(text)) {
       return { anchors, core: 'A component of the structure is bound to the field symbol.', tag: 'assign' };
     }
-    // Nur `ASSIGN ('(PROGRAMM)FELD') …` greift in den Speicher eines anderen
-    // Programms. Ein gewöhnliches ASSIGN bindet ein Feld dieses Programms.
+    // Only `ASSIGN ('(PROGRAMM)FELD') …` reaches into the memory of another
+    // program. An ordinary ASSIGN binds a field of this program.
     const source = /^ASSIGN\s+(\([^)]*\)|\S+)\s+TO\s+(\S+)/i.exec(text);
     const dynamic = source && /^\(/.test(source[1]) ? source[1].slice(1, -1).trim() : null;
     const dynamicValue = dynamic ? (literalOf(dynamic) ?? resolveValue(dynamic, statements, statement.index).value) : null;
@@ -2581,7 +2580,7 @@ function sentenceFor(
   }
 
   if (keyword === 'TYPES' && /\bBEGIN\s+OF\b/i.test(text)) {
-    // Die Bestandteile stehen in den Folgegliedern derselben Kette.
+    // The parts are in the following links of the same chain.
     const fields: string[] = [];
     for (let i = statement.index + 1; i < statements.length; i += 1) {
       const part = statements[i];
@@ -2596,8 +2595,8 @@ function sentenceFor(
   }
 
   if (keyword === 'TRANSLATE' && /\b(?:UPPER|LOWER)\s+CASE\b/i.test(text)) {
-    // „Die Eingabe" nur für ein Feld des Selektionsbilds; „keine Ablehnung"
-    // nur, wenn im Rest der Einheit wirklich nichts ablehnen kann (F6).
+    // „Die Eingabe" only for a field of the selection screen; „keine Ablehnung"
+    // only if nothing in the rest of the unit can really reject (F6).
     const field = /^TRANSLATE\s+(\S+)/i.exec(text)?.[1] ?? '';
     const input =
       fromSelectionScreen(field) ||
@@ -2615,22 +2614,22 @@ function sentenceFor(
     };
   }
 
-  // Ein Methodenaufruf, ob mit oder ohne Zuweisung: `lv_x = cls=>meth( … )`,
-  // `obj->meth( … )`, `super->route( … )`. Was die Methode tut, steht nur dann
-  // fest, wenn sie im gelieferten Code definiert ist — sonst wird es gesagt.
+  // A method call, with or without assignment: `lv_x = cls=>meth( … )`,
+  // `obj->meth( … )`, `super->route( … )`. What the method does is only
+  // certain if it is defined in the supplied code — otherwise that is said.
   const method = /([A-Za-z0-9_/<>]+)(=>|->)([A-Za-z0-9_]+)\s*\(/.exec(text);
   if (method) {
     const owner = method[1];
     const name = method[3];
-    // F7: „nicht belegt" nur, wenn die Methode wirklich fehlt. Bis hierher
-    // prüfte ein Muster auf `METHODS name` — in einem Template-String, in dem
-    // `\s` zu `s` und `\b` zu einem Backspace wurde; es traf nie, und jede
-    // Methode galt als fehlend, auch die im selben Quelltext implementierten.
+    // F7: „nicht belegt" only if the method is really missing. Until now
+    // a pattern checked for `METHODS name` — in a template string in which
+    // `\s` became `s` and `\b` a backspace; it never matched, and every
+    // method counted as missing, even the ones implemented in the same source.
     const { head, note } = resolveCall(statements, owner, method[2] as '->' | '=>', name, statement.index);
-    // F8: der Empfänger steht **links vom Gleichheitszeichen** — nicht vor dem
-    // `=>` eines statischen Aufrufs. `/^([A-Za-z0-9_()]+)\s*=/` las in
-    // `cl_salv_table=>factory( … )` das `=` des Pfeils und nannte die Klasse
-    // als Empfänger ihres eigenen Rückgabewerts.
+    // F8: the receiver stands **to the left of the equals sign** — not before the
+    // `=>` of a static call. `/^([A-Za-z0-9_()]+)\s*=/` read the `=` of the arrow in
+    // `cl_salv_table=>factory( … )` and named the class as
+    // the receiver of its own return value.
     const target = /^(?:DATA\(([A-Za-z0-9_]+)\)|([A-Za-z0-9_\-~>]+?))\s*=(?!>)/.exec(text);
     const receiver = target ? (target[1] ?? target[2]) : null;
     const exported = !receiver
@@ -2662,8 +2661,8 @@ function sentenceFor(
     if (over && /^SCREEN$/i.test(over[1])) {
       return { anchors, core: 'Each element of the screen is processed one by one.', tag: 'loop' };
     }
-    // „Jede Zeile" ist falsch, sobald ein WHERE die Schleife einschränkt —
-    // dann läuft sie nur über die passenden Zeilen, und genau das sagt der Satz.
+    // „Jede Zeile" is wrong as soon as a WHERE restricts the loop —
+    // then it runs only over the matching rows, and that is exactly what the sentence says.
     const where = /\bWHERE\s+(.+?)(?:\s+(?:GROUP\s+BY|ASSIGNING|INTO|REFERENCE\s+INTO|TRANSPORTING|FROM|TO|USING\s+KEY)\b|$)/i.exec(text);
     if (over && where) {
       return {
@@ -2686,13 +2685,13 @@ function sentenceFor(
 }
 
 /**
- * Was ein Zweig **tut**, als Satzteil — „COMMIT WORK ausgeführt und RECORDED
+ * What a branch **does**, as a clause — „COMMIT WORK ausgeführt und RECORDED
  * ausgegeben".
  *
- * Ein Fachbereichsmensch liest eine Verzweigung als *eine* Aussage mit zwei
- * Ausgängen, nicht als sechs Anweisungen. Genau so steht sie auch im BPMN: ein
- * Gateway mit zwei Kanten. Erkannt wird nur, was hier benannt ist; eine
- * Anweisung ohne Satzteil wird übergangen, statt erfunden zu werden.
+ * A business-side reader reads a branching as *one* statement with two
+ * outcomes, not as six statements. That is exactly how it appears in BPMN too: a
+ * gateway with two edges. Only what is named here is recognised; a
+ * statement without a clause is skipped instead of being invented.
  */
 function bodyFragment(statement: AbapStatement, origins: Map<string, ValueOrigin>, stacks?: Block[][]): string | null {
   const text = statement.text;
@@ -2730,7 +2729,7 @@ function bodyFragment(statement: AbapStatement, origins: Map<string, ValueOrigin
   return null;
 }
 
-/** Eine interne Tabelle, an ihrem Präfix erkannt. */
+/** An internal table, recognised by its prefix. */
 const INTERNAL_TABLE = /^@?[lgie]t_/i;
 
 interface Branch {
@@ -2740,7 +2739,7 @@ interface Branch {
   body: AbapStatement[];
 }
 
-/** Die Zweige einer `IF … ELSEIF … ELSE … ENDIF`-Kette ab `index`. */
+/** The branches of an `IF … ELSEIF … ELSE … ENDIF` chain from `index`. */
 function branchChain(statements: readonly AbapStatement[], index: number, loops: ReadonlySet<number>): Branch[] | null {
   if (statements[index].keyword.toUpperCase() !== 'IF') return null;
   const branches: Branch[] = [];
@@ -2771,9 +2770,9 @@ function branchChain(statements: readonly AbapStatement[], index: number, loops:
 }
 
 /**
- * Der Satzanfang eines Zweigs. `chainHead` ist die Stelle des `IF` — auch für
- * ein `ELSEIF sy-subrc …` zählt die Anweisung vor dem `IF`, denn was zwischen
- * `IF` und `ELSEIF` steht, gehört zum vorigen Zweig und läuft hier nicht.
+ * The sentence opening of a branch. `chainHead` is the position of the `IF` — even for
+ * an `ELSEIF sy-subrc …` the statement before the `IF` counts, because what stands between
+ * `IF` and `ELSEIF` belongs to the previous branch and does not run here.
  */
 function branchSubject(branch: Branch, statements: readonly AbapStatement[], chainHead: number): Lead {
   if (branch.kind === 'else') {
@@ -2790,20 +2789,20 @@ function branchSubject(branch: Branch, statements: readonly AbapStatement[], cha
   if (initial) return initialLead(initial[1], statements, chainHead, Boolean(initial[2]));
   const flag = /^(?:IF|ELSEIF)\s+(\S+)\s*(<>|=)\s*'X'\s*$/i.exec(head);
   if (flag) return flagLead(flag[1], flag[2] === '=');
-  // „Beträge größer 10000" ist ein Subjekt, kein Satzanfang vor „wird".
-  // Das Fallbuch schreibt an dieser Stelle „Für größere Beträge wird …", und
-  // genau diese Form trägt auch einen erzeugten Satz.
+  // „Beträge größer 10000" is a subject, not a sentence opening before „wird".
+  // The case book writes „Für größere Beträge wird …" at this point, and
+  // exactly this form also carries a generated sentence.
   const plural = pluralSubject(head);
   if (plural) return lead(`For ${lowerFirst(plural)}`);
   return lead(`If ${conditionClause(head, subrcClauseAt(statements, chainHead))}`, true);
 }
 
 /**
- * Erster Buchstabe klein — aber **nur** bei einem Adjektiv.
+ * First letter lower case — but **only** for an adjective.
  *
- * Deutsch schreibt Substantive groß, auch mitten im Satz: „Für Beträge größer
- * 10000" ist richtig, „für beträge" ist es nicht. Klein wird deshalb nur, was
- * hier als Adjektiv aufgeführt ist, und nichts sonst.
+ * German capitalises nouns, even mid-sentence: „Für Beträge größer
+ * 10000" is correct, „für beträge" is not. So only what is listed
+ * here as an adjective becomes lower case, and nothing else.
  */
 function lowerFirst(text: string): string {
   const [first] = text.split(' ');
@@ -2828,8 +2827,8 @@ function startSentence(text: string): string {
 }
 
 /**
- * Die Sätze einer Verzweigung: je Zweig einer, und für `IF … ELSE` zusätzlich
- * der Satz über beide Ausgänge — „Bei Treffer wird X ausgegeben, sonst Y".
+ * The sentences of a branching: one per branch, and for `IF … ELSE` additionally
+ * the sentence about both outcomes — „Bei Treffer wird X ausgegeben, sonst Y".
  */
 function branchSentences(
   statements: readonly AbapStatement[],
@@ -2844,8 +2843,8 @@ function branchSentences(
   const drafts: Draft[] = [];
   const parts: Array<{ branch: Branch; subject: Lead; phrase: string }> = [];
   for (const branch of branches) {
-    // Steht ein Wächter auf demselben IF, spricht der erste Zweig mit seiner
-    // Bedingung und sagt, wovor der Rücksprung schützt (F11: ein Satz statt zwei).
+    // If a guard sits on the same IF, the first branch speaks with its
+    // condition and says what the return protects against (F11: one sentence instead of two).
     const guarded = guard && branch.kind === 'if' ? guard : null;
     const fragments = branch.body
       .map((statement) => {
@@ -2867,10 +2866,10 @@ function branchSentences(
   }
   if (parts.length >= 2) {
     const [first, ...rest] = parts;
-    // „…, sonst Y" ist nur wahr, wenn Y der einzige andere Ausgang ist: ein
-    // ELSE direkt hinter dem ersten Zweig. Ein ELSEIF hat eine eigene
-    // Bedingung, und die gehört in den Satz, statt in einem „sonst" zu
-    // verschwinden.
+    // „…, sonst Y" is only true if Y is the only other outcome: an
+    // ELSE directly after the first branch. An ELSEIF has a condition of its own,
+    // and that belongs in the sentence instead of disappearing in a
+    // „sonst".
     const plainElse = parts.length === branches.length && rest.length === 1 && rest[0].branch.kind === 'else';
     drafts.push({
       anchors: [
@@ -2884,22 +2883,22 @@ function branchSentences(
       tag: `chain${first.branch.head.lineStart}`,
     });
   }
-  // F11: ein IF … ELSE ist **eine** Entscheidung mit zwei Ausgängen — dafür
-  // steht der „…, sonst …"-Satz, und die Einzelsätze der Zweige sagten
-  // dasselbe noch einmal. Bei ELSEIF-Ketten ist der Kettensatz nur die
-  // Aneinanderreihung der Zweigsätze; dort bleiben die Zweige.
+  // F11: an IF … ELSE is **one** decision with two outcomes — that is what
+  // the „…, sonst …" sentence stands for, and the branches' individual sentences said
+  // the same thing again. For ELSEIF chains the chain sentence is only the
+  // concatenation of the branch sentences; there the branches stay.
   const chain = drafts.find((draft) => draft.tag?.startsWith('chain'));
   if (chain && /; otherwise /.test(chain.core)) return [chain];
   return drafts.filter((draft) => !draft.tag?.startsWith('chain'));
 }
 
 /**
- * Ein gerader Lauf von Anweisungen ist **eine** fachliche Aussage.
+ * A straight run of statements is **one** business statement.
  *
- * `COMMIT WORK.` und `WRITE / 'RECORDED'.` nacheinander sind für einen
- * Fachbereichsmenschen ein Schritt: „es wird festgeschrieben und bestätigt".
- * Im BPMN ist das eine Aktivität, nicht zwei — und das Fallbuch verankert
- * solche Aussagen auch auf allen beteiligten Zeilen.
+ * `COMMIT WORK.` and `WRITE / 'RECORDED'.` one after the other are, for a
+ * business-side reader, one step: „es wird festgeschrieben und bestätigt".
+ * In BPMN that is one activity, not two — and the case book anchors
+ * such statements on all lines involved, too.
  */
 function sequenceSentences(
   statements: readonly AbapStatement[],
@@ -2911,11 +2910,11 @@ function sequenceSentences(
   let fragments: string[] = [];
   let depth = -1;
   const flush = () => {
-    // Ein Lauf aus lauter `WRITE` ist die Ausgabeliste — dafür gibt es
-    // `listSentence`, und zwei Sätze über dieselbe Liste sind einer zu viel.
+    // A run of nothing but `WRITE` is the output list — that is what
+    // `listSentence` is for, and two sentences about the same list are one too many.
     const onlyOutput = run.every((statement) => isOutputWrite(statement));
-    // Lauter PERFORMs sind drei Aufrufe nacheinander, nicht einer mit
-    // Parametern — der Satz sagt beides: welche Art und in welcher Folge.
+    // Nothing but PERFORMs is three calls in a row, not one with
+    // parameters — the sentence says both: which kind and in which order.
     const performs = run.every((statement) => /^PERFORM\s+[A-Za-z0-9_]+/i.test(statement.text));
     if (run.length >= 2 && !onlyOutput) {
       const names = run.map((statement) => /^PERFORM\s+([A-Za-z0-9_]+)/i.exec(statement.text)?.[1] ?? '');
@@ -2949,23 +2948,23 @@ function sequenceSentences(
 }
 
 /**
- * Das Ergebnis eines Aufrufs, als eigene Aussage neben dem Aufruf selbst.
+ * The result of a call, as a statement of its own next to the call itself.
  *
- * „Was wird gerufen" und „was kommt zurück" sind zwei fachliche Sätze über
- * dieselbe Anweisung, und das Fallbuch führt sie auch als zwei (CC-006-B01
- * nennt das Aufrufziel, CC-006-B02 die Übernahme des Ergebnisses). Der
- * Vergleicher ordnet eins zu eins zu: ein erzeugter Satz kann nie zwei
- * Sollsätze gutschreiben, und mehrere Sätze an einer Anweisung sind deshalb
- * keine zweite Chance, sondern zwei Aussagen.
+ * „Was wird gerufen" and „was kommt zurück" are two business sentences about
+ * the same statement, and the case book lists them as two as well (CC-006-B01
+ * names the call target, CC-006-B02 the takeover of the result). The
+ * comparator matches one to one: a generated sentence can never credit two
+ * expected sentences, and several sentences on one statement are therefore
+ * not a second chance, but two statements.
  */
 function resultSentence(statement: AbapStatement, statements: readonly AbapStatement[]): Draft | null {
   if (!/^CALL\s+FUNCTION\b/i.test(statement.text)) return null;
   if (/\bIN\s+UPDATE\s+TASK\b|\bSTARTING\s+NEW\s+TASK\b/i.test(statement.text)) return null;
   const importing = /\bIMPORTING\s+\w+\s*=\s*(\S+)/i.exec(statement.text);
   if (!importing) return null;
-  // F10: „das konvertierte Ergebnis" stand an jedem Bausteinaufruf mit
-  // IMPORTING — gelesen aus dem Namen eines einzigen Konvertierungsbausteins.
-  // Was der Baustein zurückgibt, ist sein Ergebnis; mehr sagt der Code nicht.
+  // F10: „das konvertierte Ergebnis" stood on every function module call with
+  // IMPORTING — read from the name of a single conversion function module.
+  // What the function module returns is its result; the code says no more.
   const fn = /^CALL\s+FUNCTION\s+('[^']*'|[A-Za-z0-9_]+)/i.exec(statement.text);
   const name = fn ? (resolveValue(fn[1], statements, statement.index).value ?? plain(fn[1])) : '';
   return {
@@ -2976,9 +2975,9 @@ function resultSentence(statement: AbapStatement, statements: readonly AbapState
 }
 
 /**
- * Die Ausgabeliste: aufeinanderfolgende `WRITE` in derselben Schleife sind
- * **eine** fachliche Aussage — „Bei Treffern werden Kundennummer und Name als
- * Liste ausgegeben", nicht drei Sätze über drei Spalten.
+ * The output list: consecutive `WRITE`s in the same loop are
+ * **one** business statement — „Bei Treffern werden Kundennummer und Name als
+ * Liste ausgegeben", not three sentences about three columns.
  */
 function listSentence(
   group: AbapStatement[],
@@ -3006,20 +3005,20 @@ function listSentence(
 }
 
 /**
- * Alle Fachsätze eines Quelltexts, in der Reihenfolge des Programms.
+ * All business statements of a source, in program order.
  *
- * Deterministisch: dieselbe Quelle ergibt dieselben Sätze, Wort für Wort und
- * Anker für Anker. Kein Modell, kein Netz, kein Schlüssel.
+ * Deterministic: the same source yields the same sentences, word for word and
+ * anchor for anchor. No model, no network, no key.
  *
- * Es entstehen **zwei Körnungen** (`grain`), und das ist kein Zufall: die
- * Business-Sicht zeigt am BPMN-Element den Satz des Blocks (ein Wächter ist ein
- * Gateway mit zwei Kanten, nicht drei Kästen), die Zeilenansicht den Satz der
- * einzelnen Anweisung. `attachTo` wählt je Knoten.
+ * **Two grains** (`grain`) come out, and that is no accident: the
+ * Business view shows the block's sentence on the BPMN element (a guard is a
+ * gateway with two edges, not three boxes), the line view the sentence of the
+ * single statement. `attachTo` chooses per node.
  */
 export function buildBusinessStatements(source: string): BusinessStatement[] {
   const statements = readStatements(source);
-  // Dieselbe Lesung wie im Skelett: der Satz verdichtet den Wirkungsstatus
-  // des Modells (2.12), er bildet keinen eigenen.
+  // The same reading as in the skeleton: the sentence condenses the model's
+  // effect status (2.12); it does not form one of its own.
   const luw = readLuwStates(buildProcessFacts(source));
   const loops = selectLoops(statements);
   const stacks = blockStacks(statements, loops);
@@ -3027,14 +3026,14 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
   const context: SourceContext = { stacks, loops, tables: internalTables(statements) };
   const out: BusinessStatement[] = [];
 
-  // F11: ein Satz je Aussage. Was ein gröberer Satz schon sagt — der Zweig
-  // mit seiner Bedingung, die Ausgabeliste mit allen Spalten —, sagt kein
-  // zweiter Satz an derselben Stelle noch einmal ohne Bedingung.
+  // F11: one sentence per statement. What a coarser sentence already says — the branch
+  // with its condition, the output list with all columns —, no
+  // second sentence at the same place says again without the condition.
   const inBranch = new Set<number>();
   for (let i = 0; i < statements.length; i += 1) {
-    // Wächter und erster Zweig sind dieselbe Aussage über dasselbe IF. Der
-    // Zweig nennt alles, was er tut; vom Wächter übernimmt er Satzanfang und
-    // das, was nur der Wächter weiß — wovor der Rücksprung schützt.
+    // Guard and first branch are the same statement about the same IF. The
+    // branch names everything it does; from the guard it takes over the sentence opening and
+    // what only the guard knows — what the return protects against.
     const guard = guardSentence(statements, i, origins, context);
     const branches = branchSentences(statements, i, origins, loops, stacks, guard);
     const first = branches.find(
@@ -3044,7 +3043,7 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
     for (const draft of branches) {
       out.push(build(draft));
       for (const anchor of draft.anchors.slice(1)) {
-        // Eine Kette `WRITE: / a, b.` sind mehrere Anweisungen auf derselben Zeile.
+        // A chain `WRITE: / a, b.` is several statements on the same line.
         for (const covered of statements) {
           if (covered.lineStart === anchor.lineStart && covered.lineEnd === anchor.lineEnd) inBranch.add(covered.index);
         }
@@ -3052,25 +3051,25 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
     }
   }
   for (const draft of sequenceSentences(statements, stacks, origins)) {
-    // Eine Folge, die ganz in einem Zweig liegt, hat der Zweig schon gesagt.
+    // A sequence that lies entirely in a branch has already been said by the branch.
     const indices = draft.anchors.map((anchor) => statements.find((s) => s.lineStart === anchor.lineStart)?.index ?? -1);
     if (indices.every((index) => inBranch.has(index))) continue;
     out.push(build(draft));
   }
 
-  // Ausgabeläufe: zusammenhängende WRITEs im selben Block.
+  // Output runs: contiguous WRITEs in the same block.
   const listed = new Set<number>();
   let run: AbapStatement[] = [];
   let runStack: Block[] = [];
   const flush = () => {
     if (run.length > 0) {
-      // „Bei Treffern" trägt nur eine Ausgabe, die **unmittelbar** in der
-      // Schleife steht; in einem Zweig der Schleife hängt sie an dessen
-      // Bedingung, nicht an einem Treffer.
+      // „Bei Treffern" applies only to an output that stands **directly** in the
+      // loop; in a branch of the loop it depends on that branch's
+      // condition, not on a match.
       const draft = listSentence(run, runStack[runStack.length - 1]?.kind === 'loop', origins);
       if (draft) {
-        // Eine Liste, die ganz in einem Zweig steht, nennt der Zweig schon —
-        // mit seiner Bedingung. Ihre Spalten bekommen dann auch keinen eigenen Satz.
+        // A list that stands entirely in a branch is already named by the branch —
+        // with its condition. Its columns then get no sentence of their own either.
         if (!run.every((statement) => inBranch.has(statement.index))) out.push(build(draft));
         for (const statement of run) listed.add(statement.index);
       }
@@ -3101,20 +3100,20 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
       out.push(build(plainSet));
       continue;
     }
-    // Eine Spalte, die schon in der Ausgabeliste steht, bekommt keinen
-    // eigenen „x wird ausgegeben"-Satz daneben.
+    // A column that is already in the output list gets no
+    // „x wird ausgegeben" sentence of its own beside it.
     if (listed.has(statement.index) && !literalOf(writeBody(statement).replace(/\(\w{1,3}\)$/, ''))) continue;
     const draft = sentenceFor(statement, statements, stack, origins, luw);
     if (draft) out.push(build(draft));
     const result = resultSentence(statement, statements);
-    // „übergibt … und übernimmt dessen Ausgabe nach y" sagt das Ergebnis schon.
+    // „übergibt … und übernimmt dessen Ausgabe nach y" already states the result.
     if (result && !(draft && /takes its output into/.test(draft.core))) out.push(build(result));
     const fields = resultFieldsSentence(statement);
     if (fields) out.push(build(fields));
   }
 
-  // Zwei Wege können denselben Satz an denselben Ankern bilden — ein Wächter
-  // ist auch ein Zweig. Zweimal dasselbe ist kein zweiter Fachsatz.
+  // Two paths can form the same sentence on the same anchors — a guard
+  // is also a branch. The same thing twice is not a second business statement.
   const seen = new Set<string>();
   const unique = out.filter((statement) => {
     const key = `${statement.text}@${statement.anchors.map((a) => `${a.lineStart}-${a.lineEnd}`).join(',')}`;
@@ -3126,16 +3125,16 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
 }
 
 /**
- * Den Fachsatz an das Element hängen — Forderung 2, ohne das Skelett zu ändern.
+ * Attach the business statement to the element — requirement 2, without changing the skeleton.
  *
- * Das Skelett geht unverändert hinein und unverändert wieder heraus; was
- * zurückkommt, ist eine **Zuordnung** von Knoten-Id auf Fachsatz. Damit bleibt
- * Regel 6 dort, wo sie steht: die Beschriftung des Knotens ist weiter ein
- * wörtliches Token, der Fachsatz eine eigene Ebene daneben.
+ * The skeleton goes in unchanged and comes out unchanged; what
+ * comes back is a **mapping** from node id to business statement. That keeps
+ * rule 6 where it stands: the node's label is still a
+ * literal token, the business statement a separate layer beside it.
  *
- * Gewählt wird je Knoten der Satz, dessen Anker die Zeile des Knotens
- * **enthält**, und unter mehreren der gröbere (`group` vor `statement`) — ein
- * Gateway aus drei Anweisungen sagt einen Satz, nicht drei.
+ * Per node, the sentence chosen is the one whose anchor **contains** the node's line,
+ * and among several the coarser one (`group` before `statement`) — a
+ * gateway made of three statements says one sentence, not three.
  */
 export function attachTo(
   nodes: ReadonlyArray<{ id: string; anchor?: { lineStart: number; lineEnd: number } | null }>,

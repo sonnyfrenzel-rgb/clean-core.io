@@ -280,7 +280,7 @@ export function isEarlyEnd(node: SkeletonNode): boolean {
 
 function tagOf(node: SkeletonNode): BpmnTag {
   // A multi-instance `LOOP AT` whose body draws no element is the other half of
-  // §5.8's row — *eine Aktivität* with the marker, and no plane behind it.
+  // §5.8's row — *an activity* with the marker, and no plane behind it.
   if (isMultiInstanceLoop(node)) return node.expandsTo ? 'subProcess' : 'task';
   switch (node.kind) {
     case 'start': return 'startEvent';

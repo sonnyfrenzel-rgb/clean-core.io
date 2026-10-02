@@ -73,9 +73,9 @@ type ContentBlock =
  * question — and the not-determined detail last and folded, because its count
  * and its groups already stand beside the answer at the top.
  *
- * **The map follows the answer directly** (owner, 02.10.2026: "Der Prozess muss
- * immer angezeigt werden, wenn ich ein neues Projekt starte, mit erster
- * Blick"). The first look's build-up draws the process inside its own card;
+ * **The map follows the answer directly** (owner, 02.10.2026: "The process
+ * always has to be shown when I start a new project, with first
+ * look"). The first look's build-up draws the process inside its own card;
  * when it ends (~2.4 s) the card turns into the answer and that drawing goes.
  * With status, tools and the anchor bar in between, the map then stood about
  * 1,070 px down, under the fold of a 1440×1000 screen, so a new project's
@@ -146,7 +146,7 @@ const MANAGEMENT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'f
  * — this component renders one project that the reader could already open.
  *
  * **"Next step"** (roadmap 6.5) is the one card here with a `primary` button —
- * *"die Hauptaktion der Seite steht in „Next step""* (`DESIGN.md` §1.5) — and
+ * *"the page's main action is in 'Next step'"* (`DESIGN.md` §1.5) — and
  * it renders `lib/next-step.ts`'s answer without adding an opinion of its own.
  * The Business view also carries the process map with its linked source
  * column (`WorkspaceProcess.tsx`, mockup s1), drawn from the source the active
@@ -178,7 +178,7 @@ export default function WorkspaceShell({
   /**
    * Whether the first look builds itself up in four stages (`DESIGN.md` §5.2)
    * or goes straight to its end state. True after an import or an example, and
-   * never on a second visit — *„Ein zweiter Besuch hat keinen Aufbau"*. The
+   * never on a second visit — *"A second visit has no build-up"*. The
    * decision is the route's, because it is the route that knows where the
    * reader came from.
    */
@@ -196,7 +196,7 @@ export default function WorkspaceShell({
 
   /**
    * The layer lives in the URL fragment and nowhere else (ADR-018, roadmap
-   * 6.2): *„Ebene … gehalten in URL-Fragment (`#need`)"*.
+   * 6.2): *"layer … held in the URL fragment (`#need`)"*.
    *
    * `null` until the browser has been asked, because this component is rendered
    * on the server too and `window.location.hash` does not exist there. Reading
@@ -208,7 +208,7 @@ export default function WorkspaceShell({
    * `hashchange` rather than `useSearchParams`: the fragment is never sent to
    * the server and Next's router does not re-render on it. Back and Forward
    * move between layers because each choice is a history entry, which is the
-   * "und Browser" half of the roadmap line — and it is the *browser's* history,
+   * "and browser" half of the roadmap line — and it is the *browser's* history,
    * not a preference stored anywhere.
    */
   const [hashLayer, setHashLayer] = useState<LayerKey | null>(null);
@@ -389,8 +389,8 @@ export default function WorkspaceShell({
    */
   const contentBlocks: Record<ContentBlock, React.ReactNode> = {
     // Management begins with its answer, above every card (ADR-029,
-    // `DESIGN.md` §5.6: *"Management beginnt mit einem Satz über allen
-    // Karten, der die Frage der Sicht beantwortet"*) — roadmap 6.4, moved
+    // `DESIGN.md` §5.6: *"Management begins with a sentence above all
+    // cards that answers the view's question"*) — roadmap 6.4, moved
     // here from the route by roadmap 6.10: the decision panel, the figures
     // and the answer cards one action deeper. Rendered only in that view: a
     // stub of somebody else's answer in the other two views is a promise the
@@ -647,8 +647,8 @@ export default function WorkspaceShell({
         <React.Fragment key={key}>{contentBlocks[key]}</React.Fragment>
       ))}
 
-      {/* IT's own answer (ADR-029, `DESIGN.md` §5.6: *"die Kette gehört zu einem
-          gewählten Befund … und die Abdeckung steht dabei"*) — roadmap 8.1: the
+      {/* IT's own answer (ADR-029, `DESIGN.md` §5.6: *"the chain belongs to a
+          selected finding … and the coverage is stated with it"*) — roadmap 8.1: the
           findings with both catalog views, the level distribution, and the trace
           Requirement → Anchor → Finding → Target draft. Rendered only in that
           view, for the same reason the two Management panels below are: a stub

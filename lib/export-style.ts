@@ -15,8 +15,8 @@
  *   - Inter where it is installed, the system face otherwise (§1.2) — no font
  *     is fetched: the exports carry no `<link>` (`tests/export-inertness-guard.spec.ts`
  *     counts them).
- *   - Headings and table heads in ink, never brand green (§1.1, "Grün heißt
- *     belegt"); a state colour only on a word that names the state.
+ *   - Headings and table heads in ink, never brand green (§1.1, "green means
+ *     evidenced"); a state colour only on a word that names the state.
  *   - The type scale of the workspace: 22 / 15 / 14 / 13 / 12 / 11 px.
  *   - Every text pair ≥ 4.5 : 1 — the footer is ink-muted on a muted surface.
  *   - The print rules of §7.1: no background, ink on white, a 1-px border
