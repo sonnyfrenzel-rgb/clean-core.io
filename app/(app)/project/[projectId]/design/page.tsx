@@ -608,7 +608,7 @@ ${responseText.substring(0, 4000)}`;
 
       <StageProgress steps={phases} current="design" projectId={projectId as string} />
 
-      <StageHeader stage="design" projectName={project?.name}>Where this code should run after the change, and the design that gets it there.</StageHeader>
+      <StageHeader stage="design" tools={{ steps: phases, current: 'design' }} projectName={project?.name}>Where this code should run after the change, and the design that gets it there.</StageHeader>
 
       <div className="overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc">
         <div role="status" className="flex items-center gap-3 border-b border-cc-line bg-cc-surface-muted px-4 py-4 sm:px-8">
@@ -894,7 +894,7 @@ ${responseText.substring(0, 4000)}`;
 
       <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
-      <StageHeader projectName={project?.name}
+      <StageHeader tools={{ steps: phases, current: 'design' }} projectName={project?.name}
         stage="design"
         eyebrow={design ? <CcProvenanceChip value="proposed" note="document" /> : null}
         actions={

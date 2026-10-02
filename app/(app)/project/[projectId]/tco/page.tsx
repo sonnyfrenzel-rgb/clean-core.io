@@ -305,7 +305,7 @@ export default function TcoCalculatorPage() {
     <div className="cc min-h-screen print:p-0" data-economics="">
       <StageProgress steps={phases} current="tco" projectId={projectId as string} />
 
-      <StageHeader projectName={project?.name} stage="tco" eyebrow={<CcProvenanceChip value="simulation" />}>
+      <StageHeader tools={{ steps: phases, current: 'tco' }} projectName={project?.name} stage="tco" eyebrow={<CcProvenanceChip value="simulation" />}>
         What keeping, changing or retiring this code would cost — priced only from figures you state.
       </StageHeader>
 

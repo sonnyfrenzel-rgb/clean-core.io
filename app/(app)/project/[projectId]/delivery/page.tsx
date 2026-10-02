@@ -618,7 +618,7 @@ jobs:
           neither decides anything. */}
 
       <StageProgress steps={phases} current="delivery" projectId={projectId as string} />
-      <StageHeader stage="delivery" projectName={project?.name} />
+      <StageHeader stage="delivery" tools={{ steps: phases, current: 'delivery' }} projectName={project?.name} />
       <CcSkeleton shape="cards" label="Finalizing delivery package..." count={4} />
     </div>
   );
@@ -626,7 +626,7 @@ jobs:
   if (!project) return (
     <div className="max-w-7xl mx-auto px-4 md:px-0">
       <StageProgress steps={phases} current="delivery" projectId={projectId as string} />
-      <StageHeader stage="delivery" />
+      <StageHeader stage="delivery" tools={{ steps: phases, current: 'delivery' }} />
       <div data-delivery-load-failed>
         <CcMessageStrip
           state="error"
@@ -690,7 +690,7 @@ jobs:
           for deployment" on every project, including one with nothing but an
           analysis run behind it. Block D, D.19: the title is the stage's name
           from `PHASES`, left-aligned like every other stage. */}
-      <StageHeader stage="delivery" projectName={project?.name}>
+      <StageHeader stage="delivery" tools={{ steps: phases, current: 'delivery' }} projectName={project?.name}>
         {/* `proven`, not `done`. The material can all be present while the test
             run behind the verdicts never happened — `testCases[].status` is
             client-writable and used to be read as an execution (QA full review

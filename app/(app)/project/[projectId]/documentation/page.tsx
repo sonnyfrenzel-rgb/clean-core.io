@@ -883,7 +883,7 @@ Structure the JSON exactly like this:
           neither decides anything. */}
 
       <StageProgress steps={phases} current="documentation" projectId={projectId as string} />
-      <StageHeader stage="documentation" projectName={project?.name} />
+      <StageHeader stage="documentation" tools={{ steps: phases, current: 'documentation' }} projectName={project?.name} />
       <CcSkeleton shape="cards" label="documentation" count={2} />
     </div>
   );
@@ -1315,7 +1315,7 @@ Structure the JSON exactly like this:
           stage, one chapter of the handbook beside it, the chapters in a drawer
           below. The frame (progress, header, back link) is shared and unstyled
           here; everything under it is this stage's. */}
-      <StageHeader
+      <StageHeader tools={{ steps: phases, current: 'documentation' }}
         stage="documentation"
         projectName={project?.name}
         eyebrow={

@@ -65,10 +65,11 @@ test.describe('a stage as a tool, rendered', () => {
   test.describe.configure({ mode: 'serial' });
 
   test('in the workspace: tool header, no stepper, no rail', async ({ page }) => {
-    test.setTimeout(240 * 1000);
+    test.setTimeout(420 * 1000);
     const acct = await seedStageProject({ prefix: 'stageframe', admin: true, acceptTerms: true });
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInThroughForm(page, acct);
+    let marks: string[] | undefined;
     for (const st of STAGES) {
       await page.goto(`/project/${acct.projectId}/${st}?view=business&from=workspace-tools&layer=need`, {
         waitUntil: 'domcontentloaded',
@@ -81,7 +82,37 @@ test.describe('a stage as a tool, rendered', () => {
       await expect(page.locator('nav[aria-label="Workflow phases"]'), `${st}: the old stepper`).toHaveCount(0);
       await expect(page.locator('[aria-label^="Workflow progress"], [data-rail-phase]'), `${st}: the rail`).toHaveCount(0);
       await expect(page.locator('body'), `${st}: linear-flow footer`).not.toContainText(/Proceed to |Continue to /);
+
+      // The way across (ADR-060, Sonny 02.10.2026): the seven tools under the
+      // way back, the current one marked, every other one a link that keeps
+      // the view, the origin and the layer — so the next stage's way back
+      // still leads to where the reader left the workspace.
+      const bar = page.locator('[data-stage-tools="open"]');
+      await expect(bar, `${st}: the tools bar`).toBeVisible({ timeout: 30000 });
+      await expect(page.locator('[data-stage-tools="menu"]'), `${st}: a menu beside the open bar`).toBeHidden();
+      const tools = bar.locator('a[data-workspace-tool]');
+      await expect(tools).toHaveCount(7);
+      await expect(bar.locator('a[aria-current="page"]'), `${st}: the current tool`).toHaveCount(1);
+      await expect(bar.locator(`a[data-workspace-tool="${st}"]`)).toHaveAttribute('aria-current', 'page');
+      const other = STAGES.find((s) => s !== st)!;
+      await expect(bar.locator(`a[data-workspace-tool="${other}"]`)).toHaveAttribute(
+        'href',
+        `/project/${acct.projectId}/${other}?view=business&from=workspace-tools&layer=need`,
+      );
+      // One project, one reading: every stage shows the same marks.
+      const reading = await tools.evaluateAll((els) =>
+        els.map((el) => `${el.getAttribute('data-workspace-tool')}:${el.getAttribute('data-phase-state')}:${el.getAttribute('data-phase-tone')}`),
+      );
+      marks ??= reading;
+      expect(reading, `${st}: the bar reads the project differently here`).toEqual(marks);
     }
+
+    // And a link to another tool goes there, with the way back intact.
+    await page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]').click();
+    await page.waitForURL(`**/project/${acct.projectId}/analyze?view=business&from=workspace-tools&layer=need`, { timeout: 60000 });
+    await expect(page.locator('[data-stage-header="analyze"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-stage-back]')).toHaveText(/Back to workspace · Business, Need & process/, { timeout: 30000 });
+    await expect(page.locator('[data-stage-tools="open"] a[aria-current="page"]')).toHaveAttribute('data-workspace-tool', 'analyze');
   });
 
   test('without the workspace: the stepper stays', async ({ page }) => {
@@ -92,5 +123,24 @@ test.describe('a stage as a tool, rendered', () => {
     await page.goto(`/project/${acct.projectId}/documentation`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('nav[aria-label="Workflow phases"] [data-phase]')).toHaveCount(7, { timeout: 60000 });
     await expect(page.locator('[data-stage-tool]')).toHaveCount(0);
+    // One way across, not two: the stepper is the one navigation here.
+    await expect(page.locator('[data-stage-tools]')).toHaveCount(0);
+  });
+
+  test('the demo stages carry the same bar instead of the stepper', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    for (const st of STAGES) {
+      await page.goto(`/demo/${st}`, { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
+      const bar = page.locator('[data-stage-tools="open"]');
+      await expect(bar, `demo ${st}: the tools bar`).toBeVisible();
+      await expect(bar.locator('a[data-workspace-tool]')).toHaveCount(7);
+      await expect(bar.locator(`a[data-workspace-tool="${st}"]`)).toHaveAttribute('aria-current', 'page');
+      await expect(page.locator('nav[aria-label="Workflow phases"]'), `demo ${st}: a second navigation`).toHaveCount(0);
+    }
+    await page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]').click();
+    await page.waitForURL('**/demo/design', { timeout: 60000 });
+    await expect(page.locator('[data-stage-tools="open"] a[aria-current="page"]')).toHaveAttribute('data-workspace-tool', 'design');
   });
 });
