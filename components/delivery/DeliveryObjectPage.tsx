@@ -6,6 +6,7 @@ import { ArrowRight, ChevronRight, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcWhyPopover from '@/components/cc/WhyPopover';
+import StageMetaDetails from '@/components/StageMetaDetails';
 import { CcStateDot } from '@/components/cc/StateText';
 import type { ProvenanceValue, SemanticState } from '@/lib/provenance';
 
@@ -29,24 +30,30 @@ export interface MetaItem {
   value: string | null;
 }
 
-/** File · lines · catalog · engine, in monospace, under the lead. */
+/**
+ * File · lines · catalog · engine, in monospace, under the lead — behind
+ * "Details" until asked for (owner 02.10.2026, DESIGN.md §2.11). Inline: the
+ * real stage puts it inside the lead paragraph.
+ */
 export function DeliveryMetaline({ items }: { items: MetaItem[] }) {
   return (
-    <span data-delivery-meta="" className="mt-2 block font-cc-mono text-[12px] leading-relaxed font-medium text-cc-ink-muted">
-      {items.map((m, i) => (
-        <React.Fragment key={m.key}>
-          {i > 0 ? <span aria-hidden={true}> · </span> : null}
-          <span data-delivery-meta-item={m.key}>
-            {m.label ? `${m.label} ` : null}
-            {m.value === null ? (
-              <span className="italic">not recorded</span>
-            ) : (
-              <span className="font-semibold text-cc-ink">{m.value}</span>
-            )}
-          </span>
-        </React.Fragment>
-      ))}
-    </span>
+    <StageMetaDetails inline className="mt-2">
+      <span data-delivery-meta="" className="block font-cc-mono text-[12px] leading-relaxed font-medium text-cc-ink-muted">
+        {items.map((m, i) => (
+          <React.Fragment key={m.key}>
+            {i > 0 ? <span aria-hidden={true}> · </span> : null}
+            <span data-delivery-meta-item={m.key}>
+              {m.label ? `${m.label} ` : null}
+              {m.value === null ? (
+                <span className="italic">not recorded</span>
+              ) : (
+                <span className="font-semibold text-cc-ink">{m.value}</span>
+              )}
+            </span>
+          </React.Fragment>
+        ))}
+      </span>
+    </StageMetaDetails>
   );
 }
 

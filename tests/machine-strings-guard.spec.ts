@@ -180,6 +180,10 @@ test.describe('machine strings — rendered', () => {
         await page.locator('[data-decision-card], [data-decision-status]').first().waitFor({ timeout: 60_000 }).catch(() => undefined);
         await page.waitForFunction(pageSettled, 1500, { polling: 200, timeout: 60_000 }).catch(() => undefined);
       }
+      // A stage's provenance line sits behind "Details" (owner 02.10.2026); open
+      // every one, so the collapsed line is read as well and nothing escapes the walk.
+      const closedMeta = page.locator('[data-stage-meta-toggle][aria-expanded="false"]');
+      for (let i = await closedMeta.count(); i > 0; i--) await closedMeta.first().click();
       const texts = await page.evaluate(visibleProse);
       read += texts.length;
       const seen = new Set<string>();

@@ -31,6 +31,7 @@ import {
   tallyRows,
 } from '@/components/tco/EconomicsObjectPage';
 import WorkspaceMetaLine from '@/components/workspace/MetaLine';
+import StageMetaDetails from '@/components/StageMetaDetails';
 import { metaLine } from '@/lib/workspace-model';
 import {
   costComparison,
@@ -312,7 +313,10 @@ export default function TcoCalculatorPage() {
           facets, the status line. Every tile counts rows and options; the only
           amounts in it are the ones the comparison or the model already priced. */}
       <div className="-mt-6" data-economics-head="">
-        <WorkspaceMetaLine entries={metaEntries} />
+        {/* Behind "Details" until asked for (owner 02.10.2026, DESIGN.md §2.11). */}
+        <StageMetaDetails>
+          <WorkspaceMetaLine entries={metaEntries} />
+        </StageMetaDetails>
         <ul className="m-0 mt-4 grid list-none grid-cols-2 gap-3 p-0 lg:grid-cols-4">
           <EconomicsFacet
             id="inputs"

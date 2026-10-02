@@ -121,6 +121,9 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
     inputFingerprint: { fileName: string };
   };
   expect(run.inputFingerprint.fileName, 'the run was signed under the paste placeholder').toBe('Z_MM_PO_APPROVAL.abap');
+  // The provenance line sits behind "Details" (owner 02.10.2026): hidden first, then opened.
+  await expect(page.locator('[data-analysis-meta]')).toHaveCount(0);
+  await page.locator('[data-analysis-answer] [data-stage-meta-toggle]').click();
   await expect(page.locator('[data-analysis-meta]')).toContainText('Z_MM_PO_APPROVAL.abap');
   await expect(page.locator('body')).not.toContainText('manual-input.abap');
 

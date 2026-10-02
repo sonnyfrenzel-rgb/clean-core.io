@@ -6,6 +6,7 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcDateText from '@/components/cc/DateText';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcWhyPopover from '@/components/cc/WhyPopover';
+import StageMetaDetails from '@/components/StageMetaDetails';
 import type { ProvenanceValue } from '@/lib/provenance';
 import { countsLine, type LastRun } from './testing-summary';
 
@@ -61,18 +62,21 @@ export interface StatusEntry {
 
 export function TestingMetaLine({ parts }: { parts: MetaPart[] }) {
   if (parts.length === 0) return null;
+  // Behind "Details" until asked for (owner 02.10.2026, DESIGN.md §2.11).
   return (
-    <p data-testing-meta="" className="m-0 -mt-6 mb-4 font-cc-mono text-[12px] leading-relaxed font-medium text-cc-ink-muted break-words">
-      {parts.map((p, i) => (
-        <React.Fragment key={`${p.label ?? ''}${p.value}`}>
-          {i > 0 ? ' · ' : null}
-          {p.label ? `${p.label} ` : null}
-          <span title={p.title} className="font-semibold text-cc-ink">
-            {p.value}
-          </span>
-        </React.Fragment>
-      ))}
-    </p>
+    <StageMetaDetails className="-mt-6 mb-4">
+      <p data-testing-meta="" className="m-0 font-cc-mono text-[12px] leading-relaxed font-medium text-cc-ink-muted break-words">
+        {parts.map((p, i) => (
+          <React.Fragment key={`${p.label ?? ''}${p.value}`}>
+            {i > 0 ? ' · ' : null}
+            {p.label ? `${p.label} ` : null}
+            <span title={p.title} className="font-semibold text-cc-ink">
+              {p.value}
+            </span>
+          </React.Fragment>
+        ))}
+      </p>
+    </StageMetaDetails>
   );
 }
 
