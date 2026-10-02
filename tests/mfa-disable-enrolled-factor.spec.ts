@@ -18,7 +18,7 @@ import { adminSetDoc } from './helpers/admin-seed';
 const EMULATOR = 'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1';
 const PROJECT = firebaseConfig.projectId;
 
-async function emulator(path: string, body: unknown): Promise<any> {
+async function emulator(path: string, body: unknown): Promise<{ users?: { mfaInfo?: unknown[] }[] }> {
   const res = await fetch(`${EMULATOR}/projects/${PROJECT}/${path}`, {
     method: 'POST',
     headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' },
