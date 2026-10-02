@@ -25,6 +25,7 @@
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { buildAbapEvidence, type AbapEvidenceReport, type EvidenceKind } from '../../lib/abap/evidence-model';
+import type { CoverageGap } from '../../lib/abap/coverage';
 import { extractDataCoupling } from '../../lib/abap/code-assessment';
 import { routeExtensibility } from '../../lib/abap/extensibility-router';
 import { buildProcessFacts, type ProcessFacts } from '../../lib/abap/process-facts';
@@ -199,11 +200,22 @@ export function readCases(): KorpusCase[] {
  */
 export interface RuleBridge {
   rule: string;
-  kinds: EvidenceKind[];
+  /**
+   * Befundmarken der Engine — oder, als `gap:<Lücke>`, eine Stelle, die die
+   * Engine ausdrücklich als *nicht bestimmt* führt (`coverage.unassessed`).
+   * Eine Sollaussage „das ist nicht bekannt" (R16) hat in der Engine kein
+   * Befundgegenstück und soll keines haben: ein nicht gelesenes Include ist
+   * kein Mangel des Codes, sondern eine Grenze der Antwort. Dass die Engine
+   * diese Grenze an derselben Anweisung benennt, ist dieselbe Aussage.
+   */
+  kinds: EngineMark[];
   construct: RegExp;
   /** Warum die Engine hier dieselbe Sache meint. */
   why: string;
 }
+
+/** Eine Befundmarke oder eine als nicht bestimmt geführte Stelle der Engine. */
+export type EngineMark = EvidenceKind | `gap:${CoverageGap}`;
 
 export const RULE_BRIDGES: RuleBridge[] = [
   {
@@ -234,6 +246,16 @@ export const RULE_BRIDGES: RuleBridge[] = [
     kinds: ['native-sql'],
     construct: /(EXEC\s+SQL|cl_sql_statement|execute_update|execute_query)/i,
     why: 'Literal mit Konsumenten — von den Konsumentenklassen der Regel kennt die Engine nur Native SQL und ADBC.',
+  },
+  {
+    rule: 'R16',
+    kinds: ['gap:include-not-read'],
+    construct: /^\s*INCLUDE\s+(?!STRUCTURE\b|TYPE\b)[\w/]+/i,
+    why:
+      'Unaufgelöste kundeneigene Abhängigkeit an einem Programm-Include: der Text des Includes liegt nicht vor, ' +
+      'also darf sein Verhalten nicht als bekannt ausgegeben werden. Die Engine führt genau das an derselben ' +
+      'Anweisung als nicht bestimmt (coverage-Lücke include-not-read: „Include … was not uploaded — what it does ' +
+      'is not determined"). INCLUDE STRUCTURE/TYPE ist eine Typkomponente (R29), kein Include in diesem Sinn.',
   },
   {
     rule: 'R25',
@@ -285,7 +307,7 @@ export const RULE_BRIDGES: RuleBridge[] = [
  * CC-016 wäre kein Verstoß gegen „keine Findings im v1-Regelvertrag", weil der
  * Vertrag diese Aussage nicht führt.
  */
-const MAPPED_KINDS = new Set<EvidenceKind>(RULE_BRIDGES.flatMap((bridge) => bridge.kinds));
+const MAPPED_KINDS = new Set<EngineMark>(RULE_BRIDGES.flatMap((bridge) => bridge.kinds));
 const BRIDGED_RULES = new Set(RULE_BRIDGES.map((bridge) => bridge.rule));
 
 /**
@@ -573,9 +595,12 @@ function compareFindings(korpusCase: KorpusCase, reading: EngineReading): ClassR
     const kinds = new Set(bridges.flatMap((bridge) => bridge.kinds));
     const from = statement?.lineStart ?? anchor.line;
     const to = statement?.lineEnd ?? anchor.line;
-    const inStatement = entry.evidence.findings.filter(
-      (f) => kinds.has(f.kind) && f.lineStart >= from && f.lineStart <= to,
-    );
+    const inStatement = [
+      ...entry.evidence.findings,
+      // Eine als nicht bestimmt geführte Stelle zählt nur über eine Brücke, die
+      // sie ausdrücklich nennt (`gap:…`); als Befund gilt sie nirgends.
+      ...entry.evidence.coverage.unassessed.map((u) => ({ kind: `gap:${u.gap}` as EngineMark, lineStart: u.line })),
+    ].filter((f) => kinds.has(f.kind) && f.lineStart >= from && f.lineStart <= to);
     if (inStatement.some((f) => f.lineStart === anchor.line)) exact.push(label);
     else if (inStatement.length > 0) {
       onlyInStatement.push(`${label} → Engine ${inStatement[0].kind}@${file}:${inStatement[0].lineStart}`);
