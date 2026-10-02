@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import CcIconButton from '@/components/cc/IconButton';
 import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
+import StageMetaDetails from '@/components/StageMetaDetails';
 import { severityChartMark, levelChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
 import { scoreBand } from '@/lib/clean-core-score';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
@@ -99,15 +100,18 @@ export default function AnalysisAnswer({
 
   return (
     <section data-analysis-answer="" aria-labelledby="analysis-answer-title" className="min-w-0">
+      {/* Behind "Details" until asked for (owner 02.10.2026, DESIGN.md §2.11). */}
       {metaParts.length ? (
-        <p className="m-0 font-cc-mono cc-text-meta font-medium text-cc-ink-muted break-words" data-analysis-meta="">
-          {metaParts.map((p, i) => (
-            <React.Fragment key={i}>
-              {i > 0 ? ' · ' : null}
-              {p}
-            </React.Fragment>
-          ))}
-        </p>
+        <StageMetaDetails>
+          <p className="m-0 font-cc-mono cc-text-meta font-medium text-cc-ink-muted break-words" data-analysis-meta="">
+            {metaParts.map((p, i) => (
+              <React.Fragment key={i}>
+                {i > 0 ? ' · ' : null}
+                {p}
+              </React.Fragment>
+            ))}
+          </p>
+        </StageMetaDetails>
       ) : null}
       <h2 id="analysis-answer-title" className="m-0 mt-3 cc-text-h2 text-cc-ink text-balance">
         {answer.headline}
