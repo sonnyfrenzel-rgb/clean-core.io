@@ -31,6 +31,13 @@
 /** The former name, as the first mention carries it. */
 export const BAIP_FORMERLY = 'formerly SAP BTP';
 
+/**
+ * The former name with its abbreviation spelled out, for a glossary that
+ * explains what BTP stood for. The one place the spelled-out former name may
+ * stand; `tests/sap-naming-guard.spec.ts` fails on it anywhere else.
+ */
+export const BAIP_FORMERLY_SPELLED = `${BAIP_FORMERLY} (Business Technology Platform)`;
+
 /** First mention of the platform on a page or in a document. */
 export const BAIP_FIRST = `SAP Business AI Platform (${BAIP_FORMERLY})`;
 

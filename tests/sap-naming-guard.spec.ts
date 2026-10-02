@@ -9,6 +9,7 @@ import {
   BAIP,
   BAIP_FIRST,
   BAIP_FORMERLY,
+  BAIP_FORMERLY_SPELLED,
   IN_APP_ROUTE,
   SAP_NAMES_WITH_BTP,
   SIDE_BY_SIDE_LABEL,
@@ -17,6 +18,7 @@ import {
   routeLabel,
   sapNamesForDisplay,
 } from '../lib/sap-naming';
+import { FEATURE_SLUGS } from '../lib/features-content';
 
 /**
  * SAP naming — roadmap 3.0.15.
@@ -69,10 +71,19 @@ function walk(dir: string, out: string[] = []): string[] {
 /** What is left of a text once SAP's own names and the prescribed first mention are taken out. */
 function bareBtp(text: string): string[] {
   // JSX text keeps its line breaks; "formerly\n   SAP BTP" is the same words.
-  let rest = text.replace(/\s+/g, ' ').split(BAIP_FORMERLY).join(' ');
+  // The former name spelled out is the former name too (codex code-public-06:
+  // "Side-by-Side on SAP Business Technology Platform" passed a guard that only
+  // looked for the three letters). The one place it may stand is right after
+  // the prescribed "formerly SAP BTP", expanding the abbreviation.
+  let rest = text
+    .replace(/\s+/g, ' ')
+    .split(BAIP_FORMERLY_SPELLED)
+    .join(' ')
+    .split(BAIP_FORMERLY)
+    .join(' ');
   for (const name of SAP_NAMES_WITH_BTP) rest = rest.split(name).join(' ');
   const hits: string[] = [];
-  const re = /\bBTP\b/g;
+  const re = /\bBTP\b|\b[Bb]usiness [Tt]echnology [Pp]latform\b/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(rest))) hits.push(rest.slice(Math.max(0, m.index - 40), m.index + 40).replace(/\s+/g, ' '));
   return hits;
@@ -172,6 +183,10 @@ test.describe('SAP naming (roadmap 3.0.15) — source', () => {
     expect(bareBtp('Released for the SAP BTP, ABAP environment')).toHaveLength(0);
     expect(bareBtp('Open the SAP BTP cockpit')).toHaveLength(0);
     expect(bareBtp('btp-latest, isBtp, objectReleaseInfo_BTPLatest')).toHaveLength(0);
+    // The former name spelled out (codex code-public-06), and its one allowed place.
+    expect(bareBtp('or Side-by-Side on SAP Business Technology Platform (CAP).')).toHaveLength(1);
+    expect(bareBtp('a business technology platform')).toHaveLength(1);
+    expect(bareBtp(`SAP's cloud platform, ${BAIP_FORMERLY_SPELLED}.`)).toHaveLength(0);
   });
 });
 
@@ -252,6 +267,8 @@ test.describe('SAP naming (roadmap 3.0.15) — rendered', () => {
       '/whitepaper',
       '/reference-analysis',
       '/impressum',
+      // The feature pages (codex code-public-06: the extensibility page still spelled out the former name).
+      ...FEATURE_SLUGS.map((slug) => `/features/${slug}`),
     ];
     const hits: string[] = [];
     for (const url of routes) {
