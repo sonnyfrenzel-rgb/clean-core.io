@@ -301,12 +301,15 @@ the time of the run. What it cannot prove: that no other destination is reachabl
 egress boundary is the runner VPC without NAT and its firewall, and that has to be checked where it is
 configured. Nor the metadata server (below).
 
-**Status (02.10.2026): deployed and wired, no result recorded.** All four runner services (`clean-core-runner`,
+**Status (02.10.2026): held on dev.** All four runner services (`clean-core-runner`,
 `clean-core-runner-live` and their `-dev` twins) are deployed with internal ingress; `run.invoker` on each names
 the app's service account only; the runner URLs are set as deploy variables for both lanes. The `dev` app runs on
-`app-net`; the production app receives the network with its next deploy from `main`. The gcloud check below was
-read on 02.10.2026: `clean-core-runner` held no role in the project. No result of the probe run is recorded in
-the repository yet, so the isolation counts as configured, not proven.
+`app-net`, whose private DNS resolves `*.run.app` through `private.googleapis.com` (a zone for that one name, so
+the CNAME resolves inside the network; a zone for all of googleapis.com stays forbidden). The owner ran the probe
+on 02.10.2026 at 05:42 UTC against `clean-core-runner-dev-00031` and `clean-core-runner-live-dev-00031`: **held** —
+every sandbox probe and every network probe on both runners failed to reach its target; the runners logged the
+three POSTs (200). The gcloud check below was read the same day: `clean-core-runner` held no role in the project.
+The production app receives the network with its next deploy from `main`; the probe is to be repeated there.
 
 How the owner runs it, after the runners are deployed and `RUNNER_URL` is set:
 
