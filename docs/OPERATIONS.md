@@ -7,9 +7,9 @@ Operational runbook for running Clean-Core.io in production (Google Cloud Run, p
 ## Health probe
 
 `GET /api/health` — liveness/readiness for Cloud Run health checks and uptime monitors.
-- Shallow (default): process up + required config (`AUDIT_SIGNING_KEY`, `GEMINI_API_KEY`) present → `200 {status:'ok'}`, else `503 {status:'degraded'}`.
-- Deep: `GET /api/health?deep=1` additionally pings Firestore.
-- Minimal body by design (no per-check disclosure to unauthenticated callers).
+- Shallow (default): process up, `AUDIT_SIGNING_KEY` and `GEMINI_API_KEY` present, `BYOK_ENCRYPTION_KEY` usable, and — when set — `AUDIT_SIGNING_PRIVATE_KEY` loadable as an Ed25519 key → `200 {status:'ok'}`, else `503 {status:'degraded'}`. The signing key is checked for presence only, not for the 32-character minimum the signing routes enforce.
+- Deep: `GET /api/health?deep=1` additionally reads Firestore — at most once per 10 s per instance, concurrent callers share one read.
+- Minimal body by design: status, version, short commit and time; no per-check disclosure to unauthenticated callers.
 
 ## Structured logging
 
@@ -42,14 +42,10 @@ gcloud beta monitoring channels create --display-name="Ops" \
 
 ## Backups & restore
 
-- **Scheduled Firestore exports** (managed) to a dedicated EU GCS bucket, daily, 30-day retention:
-```bash
-gcloud firestore export gs://cleancore-backups/$(date +%F) \
-  --database=clean-core-eu --region=europe-west1
-# Schedule via Cloud Scheduler → a small job / Cloud Function invoking the export.
-```
-- **Restore must be tested** at least annually (an untested backup is not a backup); record the result in the ops log.
-- Backup vs. GDPR erasure: Art. 17 deletions remove live data immediately; residual backup copies age out within the 30-day window (see `docs/DATA-RETENTION.md`).
+- **Firestore managed backup schedules** on `clean-core-eu` (europe-west1): a **daily** backup kept **7 days** and a **weekly** backup (Sunday) kept **28 days**; **point-in-time recovery** with a 7-day window on the same database. There is no export bucket. The authoritative description, and why an earlier version of this section described exports that never existed, is `docs/DATA-RETENTION.md` → Backups.
+- Check the live configuration with `npm run retention:verify` (read-only, needs a developer's `gcloud` login, not in CI).
+- **Restore has not been tested yet** (an untested backup is not a backup); a restore drill into a scratch database is the next operations step. Record the result in the ops log.
+- Backup vs. GDPR erasure: Art. 17 deletions remove live data immediately; residual backup copies age out within 30 days (see `docs/DATA-RETENTION.md`).
 
 ## Firestore rules deployment (all databases)
 
@@ -67,8 +63,8 @@ npm run rules:record -- --deployed        # deployed by hand elsewhere; write it
 
 ## Secret rotation
 
-Rotate on a defined cadence and after any suspected exposure: `AUDIT_SIGNING_KEY`, `GEMINI_API_KEY`, `RESEND_API_KEY`, `S4_ENCRYPTION_KEY`, `MFA_BACKUP_CODE_PEPPER`, `PILOT_APPROVAL_SECRET`, Firebase service account. Rotating `AUDIT_SIGNING_KEY` invalidates prior audit-pack signatures (treat old packs as `integrity-only`); see `docs/INCIDENT-RESPONSE.md` R1.
+Rotate on a defined cadence and after any suspected exposure: `AUDIT_SIGNING_KEY`, `AUDIT_SIGNING_PRIVATE_KEY` (move the old public key into `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED` so earlier packs keep verifying), `GEMINI_API_KEY`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `S4_ENCRYPTION_KEY`, `BYOK_ENCRYPTION_KEY` (versioned: add a new version to the key ring in `lib/byok-key.ts`, then retire the old one), `RATE_LIMIT_PEPPER` (resets the current windows), `PILOT_APPROVAL_SECRET`, the Firebase service account. `MFA_BACKUP_CODE_PEPPER` is still passed by the deploy but no code reads it since the backup codes were retired. Rotating `AUDIT_SIGNING_KEY` invalidates prior HMAC signatures — there is no key history for it yet (treat old packs as `integrity-only`); see `docs/INCIDENT-RESPONSE.md` R1.
 
 ## Deploy pipeline
 
-`main`/`release`/`dev` push → GitHub Actions `deploy.yml` (`validate`: lint + build + Playwright E2E on the Firestore emulator → `deploy`: Cloud Run). `security-ci.yml` runs gitleaks + dependency audit + SBOM in parallel.
+`main`/`dev` push → GitHub Actions `deploy.yml` (`release` is retired and fails): `validate` (lint + build + type check + Playwright E2E on the Firestore emulator) and `security` (`npm audit --omit=dev --audit-level=high`) → `deploy-runner` (the isolated test runners, when `RUNNER_DEPLOY_ENABLED`) → `deploy` (Cloud Run app, its VPC egress per `APP_VPC_NETWORK` / `APP_VPC_SUBNET`; see `SECURITY.md` §7). `security-ci.yml` runs gitleaks + `audit-ci` + SBOM in parallel.
