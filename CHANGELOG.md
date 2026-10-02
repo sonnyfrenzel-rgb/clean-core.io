@@ -12,3480 +12,3473 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v2.20.0] — 2026-09-28
 
-Der Prozess wird genauer: Gemessen an einem neuen Benchmark aus 300 konstruierten,
-blind geschriebenen und gegengeprüften ABAP-Fällen (`docs/prozess-benchmark/BERICHT.md`)
-trifft das rekonstruierte Prozessskelett 81,1 % statt 61,3 % der Sollknoten, auf der
-verdeckten Prüfhälfte 82,1 %; auf der schweren, objektorientierten dritten Welle 72,3 %
-statt 39,5 %. Die Fachsätze sagen fast nichts Falsches mehr, und ein Modellvorschlag mit
-Beleg und Widerspruchsmarkierung steht für die Arbeitsraum-Vorschau bereit (17.10).
-Dazu der Anfang von Block D — die ganze App aus einem Guss nach `DESIGN.md`, vor 3.0 —,
-Schritt A aus dem Security-Audit von v2.19.0 und die Befunde der Vollprüfung.
+The process gets more accurate: measured against a new benchmark of 300 constructed,
+blind-written and cross-checked ABAP cases (`docs/prozess-benchmark/BERICHT.md`),
+the reconstructed process skeleton hits 81.1 % instead of 61.3 % of the target nodes, on the
+hidden test half 82.1 %; on the hard, object-oriented third wave 72.3 %
+instead of 39.5 %. The business statements say almost nothing wrong any more, and a Model proposal with
+evidence and contradiction marking is ready for the workspace preview (17.10).
+On top of that, the start of Block D — the whole app of a piece along `DESIGN.md`, before 3.0 —,
+step A from the security audit of v2.19.0 and the findings of the full review.
 
-### Was alle bemerken
+### What everyone notices
 
-- **Der Prozess aus objektorientiertem Code und aus Modulpools ist vollständig.**
-  Ein Methodenaufruf war bisher kein Schritt: Rief ein Report `go_x->run( )` auf eine
-  Klasse im selben Quelltext, fehlte der ganze Methodenrumpf im Prozess. Jetzt öffnet er
-  einen Teilprozess wie ein `PERFORM`, und ein Aufruf auf eine fremde Methode steht als
-  Aufruf da. Dynpro-Module und Funktionsbausteine sind Einstiege, auch wenn die Quelle
-  zusätzlich ein Ereignis wie `LOAD-OF-PROGRAM` schreibt. Eine per `PERFORM` gerufene
-  FORM erscheint nicht mehr zusätzlich als eigener Start, und ein Popup
-  (`MESSAGE … TYPE 'I'`) ist ein Schritt, den der Benutzer bestätigt. Gemessen an einem
-  neuen Benchmark aus 200 konstruierten ABAP-Fällen (`tests/prozess-benchmark/`):
-  Knoten-Treffer über eingefügte Programme mit Includes von 61,3 % auf 69,4 %, auf der
-  Prüfhälfte, die bei der Entwicklung verdeckt blieb, von 61,9 % auf 69,1 %.
-- **Jede Ebene des Prozesses hat einen sichtbaren Anfang, und ein vorzeitiges Ende ist
-  als solches erkennbar (ADR-054).** Klappt man einen Teilprozess auf, beginnt er an
-  einem Startereignis auf seiner `FORM`- bzw. `METHOD`-Zeile. Ein `RETURN`, ein `EXIT`
-  außerhalb einer Schleife oder ein `STOP` mitten in einer Routine endet auf einem eigenen
-  Endereignis, beschriftet als „End (early)" und mit der Bedingung wörtlich an der Kante —
-  statt still in das gemeinsame Ende zu laufen. Ein `CHECK` bleibt ein bedingter Fluss.
-  Ereignisse zählen nirgends als Schritt. Gemessen am Prozess-Benchmark: Knoten-Treffer
-  von 69,4 % auf 78,7 %, auf der verdeckten Prüfhälfte von 69,1 % auf 78,8 %.
-- **Was die Laufzeit aufruft, beginnt auch im Prozess.** Ein `RAISE EVENT` ist kein
-  Fehler-Ende mehr, das den Ablauf abschnitt, sondern ruft den per `SET HANDLER`
-  gebundenen Behandler — aber nur, wenn die Registrierung vorher durchlaufen wurde und
-  nirgends abgemeldet wird. Nach `LEAVE TO SCREEN` läuft der Fluss nicht mehr weiter.
-  Rückrufe (`ON END OF TASK`), ALV-Ereignisbehandler, BAdI-Methoden (`intf~meth`) und
-  Redefinitionen einer Oberklasse, die nicht im Upload steht, sind Einstiege statt „nicht
-  erreicht“ — mit dem Vermerk, dass ihr Auslöser nicht im Code steht. Endstand am
-  Benchmark: 81,1 % (Prüfhälfte 82,1 %); auf der schweren dritten Welle 72,3 %.
-- **Die Fachsätze der Business-Sicht sagen nichts mehr, was der Code nicht trägt.**
-  Fünf unabhängige Prüfungen über 2.273 Sollsätze fanden dieselben Fehler: `CHECK` hieß
-  überall „kleinere werden übersprungen, die Schleife läuft weiter", jedes `sy-subrc`
-  wurde zu „Ohne Treffer", `GET PARAMETER ID` zu einer logischen Datenbank, jede
-  Transaktion zu einer „Anlage", `MESSAGE … INTO` zu einer Ausgabe, und Routinen im
-  selben Quelltext hießen „im gelieferten Code nicht belegt". Jetzt folgt der Satz der
-  Anweisung: `CHECK` nennt die Folge seines Orts, nach `sy-subrc` steht, was die setzende
-  Anweisung bedeutet („Ist die Sperre nicht zu erhalten, …"), eine gerufene Routine sagt,
-  was sie tut. Dazu ein Satz statt fünf gleichen, richtige Artikel vor Feldnamen und
-  deutsche Begriffe für die SAP-Standardtabellen und -felder. Im Referenzkorpus verletzt
-  kein Satz mehr eine der 166 verbotenen Aussagen (vorher vier).
-- **Fachsätze in Klarsprache vom Modell, der Satz aus dem Code als Beleg darunter
-  (17.10, mit der Arbeitsraum-Vorschau).** Ein Knopf in der Dokumentation lässt das
-  Modell je Schritt einen Fachsatz vorschlagen und sagt vorher, was das kostet: ein
-  Modellaufruf, nicht auf die Analyse-Läufe, aber auf das Stundenlimit. Der Vorschlag
-  steht oben mit *Model proposal*, der Satz der Engine darunter mit *Reconstructed* —
-  er fällt nie weg. Sagt der Vorschlag etwas, das die Anweisungen an seinen Zeilen
-  nicht tragen — eine „angezeigte" Meldung, die `MESSAGE … INTO` nur in Variablen
-  schreibt, ein „Programmende" vor einem `END-OF-SELECTION` —, steht daran *Contradicts
-  the evidence* oder *Not supported by the code*, mit dem Grund auf Nachfrage. Der
-  Vorschlag liegt außerhalb jeder Signatur; ohne ihn bleibt die Seite, wie sie war.
-  Grundlage ist eine blinde Bewertung von 2.273 Sollsätzen durch fünf Richter: das
-  Modell trifft den fachlichen Sinn in 86,5 % der Fälle, die Engine in 10,3 %, aber das
-  Modell erfindet öfter (39 gegen 11 falsche Aussagen).
-- **Die sieben Stufen haben einen Kopf.** Jede Stufe trägt ihren Namen aus derselben
-  Liste wie der Stepper, in 22 px / 800, mit neutralem Icon statt grüner Blase und
-  „Back to workspace" darüber — der Link führt in die Sicht und Ebene zurück, aus der
-  die Stufe geöffnet wurde. Die Dokumentationsstufe heißt überall „Documentation".
-- **Die Analyse-Stufe ist umgebaut (D.10a).** Farben aus Tokens statt einer eigenen Palette, eine Schriftskala, vier Button-Stile, keine Emojis und keine KI-Symbolik; Grün nur noch dort, wo etwas belegt ist. Der Titel heißt jetzt „Analyze", wie im Stepper. Eine erfundene Routen-Begründung („AI analyzed legacy database joins…") heißt jetzt ehrlich „No rationale was recorded for this route."
-- **Stepper, Hinweise und Fehlerseiten sprechen eine Sprache.** Veraltete Stände sind
-  eine Warnung statt Rosa, Fehlerseiten und leere Zustände nutzen dieselben Bausteine,
-  die Stufen-Labels sind nicht mehr 9 px klein.
-- **Fokus überall sichtbar.** Jedes bedienbare Element zeigt beim Tabben denselben
-  Fokusring, auch außerhalb des neuen Arbeitsraums; wer reduzierte Bewegung
-  eingestellt hat, sieht keine CSS-Animationen mehr.
-- **Datum und Zahl sehen überall gleich aus** — „15 Sep 2026", Zeiten mit ihrer Zone,
-  unabhängig von der Spracheinstellung des Browsers.
-- **Gesperrte Konten lesen auch über die API nichts mehr.** Die Projekt-Routen prüfen
-  den Kontostatus wie die Firestore-Regeln.
-- **Die Einwilligung vor der Analyse lässt sich nicht mehr per Adresse überspringen.**
-  Nur ein gespeichertes Beispielprojekt ist davon ausgenommen.
-- **Eine Löschung bleibt eine Löschung.** Registrierung, MFA-Abgleich und
-  Modell-Einstellungen legen ein gelöschtes Profil nicht mehr neu an; eine Einladung
-  entsteht nicht unter einem gelöschten Projekt.
+- **The process from object-oriented code and from module pools is complete.**
+  A method call used not to be a step: if a report called `go_x->run( )` on a
+  class in the same source, the whole method body was missing from the process. Now it opens
+  a subprocess like a `PERFORM`, and a call to a foreign method stands there as a
+  call. Dynpro modules and function modules are entry points, even if the source
+  additionally writes an event such as `LOAD-OF-PROGRAM`. A FORM called via `PERFORM`
+  no longer additionally appears as a start of its own, and a popup
+  (`MESSAGE … TYPE 'I'`) is a step the user confirms. Measured against a
+  new benchmark of 200 constructed ABAP cases (`tests/prozess-benchmark/`):
+  node hits across pasted programs with includes from 61.3 % to 69.4 %, on the
+  test half that stayed hidden during development, from 61.9 % to 69.1 %.
+- **Every level of the process has a visible start, and an early end is
+  recognisable as such (ADR-054).** If you expand a subprocess, it begins at
+  a start event on its `FORM` or `METHOD` line. A `RETURN`, an `EXIT`
+  outside a loop or a `STOP` in the middle of a routine ends on an end event
+  of its own, labelled "End (early)" and with the condition verbatim on the edge —
+  instead of running silently into the shared end. A `CHECK` stays a conditional flow.
+  Events count nowhere as a step. Measured on the process benchmark: node hits
+  from 69.4 % to 78.7 %, on the hidden test half from 69.1 % to 78.8 %.
+- **What the runtime calls also begins in the process.** A `RAISE EVENT` is no longer an
+  error end that cut off the flow, but calls the handler bound via `SET HANDLER`
+  — but only if the registration was passed through beforehand and is
+  nowhere deregistered. After `LEAVE TO SCREEN` the flow no longer continues.
+  Callbacks (`ON END OF TASK`), ALV event handlers, BAdI methods (`intf~meth`) and
+  redefinitions of a superclass that is not in the upload are entry points instead of "not
+  reached" — with the note that their trigger is not in the code. Final result on the
+  benchmark: 81.1 % (test half 82.1 %); on the hard third wave 72.3 %.
+- **The business statements of the Business view no longer say anything the code does not carry.**
+  Five independent reviews over 2,273 target statements found the same errors: `CHECK` read
+  everywhere "kleinere werden übersprungen, die Schleife läuft weiter", every `sy-subrc`
+  became "Ohne Treffer", `GET PARAMETER ID` a logical database, every
+  transaction an "Anlage", `MESSAGE … INTO` an output, and routines in the
+  same source were called "im gelieferten Code nicht belegt". Now the statement follows the
+  statement in the code: `CHECK` names the consequence of its location, after `sy-subrc` stands what the setting
+  statement means ("Ist die Sperre nicht zu erhalten, …"), a called routine says
+  what it does. On top of that, one statement instead of five identical ones, correct articles before field names and
+  German terms for the SAP standard tables and fields. In the reference corpus
+  no statement violates any of the 166 forbidden assertions any more (four before).
+- **Business statements in plain language from the model, the statement from the code as evidence below
+  (17.10, with the workspace preview).** A button in the Documentation lets the
+  model propose a business statement per step and says beforehand what that costs: one
+  model call, not on the analysis runs, but on the hourly limit. The proposal
+  stands on top with *Model proposal*, the engine's statement below with *Reconstructed* —
+  it never drops away. If the proposal says something the statements at its lines
+  do not carry — a "displayed" message that `MESSAGE … INTO` only writes into variables,
+  a "program end" before an `END-OF-SELECTION` —, it carries *Contradicts
+  the evidence* or *Not supported by the code*, with the reason on request. The
+  proposal lies outside every signature; without it the page stays as it was.
+  The basis is a blind assessment of 2,273 target statements by five judges: the
+  model hits the business meaning in 86.5 % of cases, the engine in 10.3 %, but the
+  model invents more often (39 against 11 false assertions).
+- **The seven stages have a header.** Every stage carries its name from the same
+  list as the stepper, in 22 px / 800, with a neutral icon instead of a green bubble and
+  "Back to workspace" above — the link leads back into the view and layer from which
+  the stage was opened. The Documentation stage is called "Documentation" everywhere.
+- **The Analyze stage is rebuilt (D.10a).** Colours from tokens instead of a palette of its own, one type scale, four button styles, no emojis and no AI symbolism; green only where something is evidenced. The title is now "Analyze", as in the stepper. An invented route rationale ("AI analyzed legacy database joins…") now honestly reads "No rationale was recorded for this route."
+- **Stepper, notices and error pages speak one language.** Outdated states are
+  a warning instead of pink, error pages and empty states use the same building blocks,
+  the stage labels are no longer 9 px small.
+- **Focus visible everywhere.** Every operable element shows the same
+  focus ring when tabbing, also outside the new workspace; anyone who has set reduced
+  motion no longer sees CSS animations.
+- **Date and number look the same everywhere** — "15 Sep 2026", times with their zone,
+  independent of the browser's language setting.
+- **Blocked accounts no longer read anything via the API either.** The project routes check
+  the account status like the Firestore rules.
+- **The consent before the analysis can no longer be skipped via the address.**
+  Only a saved example project is exempt from this.
+- **A deletion stays a deletion.** Registration, MFA reconciliation and
+  model settings no longer recreate a deleted profile; an invitation
+  is not created under a deleted project.
 
-### Sicherheit (Audit von v2.19.0, Schritt A)
+### Security (audit of v2.19.0, step A)
 
-- Dokument-IDs aus einer Anfrage werden an einer Stelle geprüft, bevor sie einen
-  Datenbankpfad bilden — in rund zwanzig Routen, gehalten von einem Guard
+- Document IDs from a request are checked in one place before they form a
+  database path — in around twenty routes, held by a guard
   (SEC-2026-514).
-- Die S/4-Routen geben keinen Antworttext eines Token- oder Metadaten-Endpunkts mehr
-  an den Aufrufer (SEC-2026-525); drei Routen antworten mit festem Wortlaut statt mit
-  internen Fehlertexten (SEC-2026-481, -492, -497).
-- Das Audit selbst: 81 verifizierte Befunde, 55 eingeplant, 26 widerlegt — der erste
-  Lauf mit der Stapelprüfung.
+- The S/4 routes no longer pass any response text of a token or metadata endpoint
+  to the caller (SEC-2026-525); three routes answer with fixed wording instead of
+  internal error texts (SEC-2026-481, -492, -497).
+- The audit itself: 81 verified findings, 55 scheduled, 26 refuted — the first
+  run with the batch check.
 
-### Hinter den Kulissen
+### Behind the scenes
 
-- **Design-Guard mit Ratsche (D.1):** 19 Regeln aus `DESIGN.md` über alle
-  UI-Dateien; je Datei und Regel darf die Zahl nur sinken, neue Dateien haben keine
-  Ausnahme. Der Stufenrahmen steht bereits auf null.
-- **Die Bausteinbibliothek ist vollständig (D.5a–d):** Dialog und Meldungs-Popover mit
-  einem gemeinsamen Modal-Verhalten, Checkbox, Radio-Gruppe, Select, Textarea, Switch,
-  Skeleton, Busy-Zustand am Button, Aufklappen, Reiter, „Show all N" in Tabellen,
-  Datumsanzeige, die Schwere eines Befunds als fünfte feste Liste und Diagrammfarben
-  aus Tokens.
-- **Grundlagen (D.3):** Textrollen `cc-text-*`, `lib/format.ts`, eine Druckregel für
-  die ganze Seite.
-- **`DESIGN.md` 1.5 (D.4):** die Entscheidungen vom 24.09. als ADR-047 bis ADR-053 —
-  12 px für Meta/Chip, 2 px nur in Chips, Stufenkopf 22/800, Schwere als feste Liste,
-  Tokens auch öffentlich, Dashboard und Stufen-Demo werden neu gebaut, die deutsche
-  Datenschutzerklärung als Rechtstext-Ausnahme.
-- Eine Überlast von Gemini und ein fremder Zeitzonen-Name brechen keine Tests mehr;
-  `CcButton` behält ein übergebenes `aria-busy`.
+- **Design guard with ratchet (D.1):** 19 rules from `DESIGN.md` across all
+  UI files; per file and rule the count may only fall, new files have no
+  exception. The stage frame is already at zero.
+- **The building-block library is complete (D.5a–d):** dialog and message popover with
+  a shared modal behaviour, checkbox, radio group, select, textarea, switch,
+  skeleton, busy state on the button, expand, tabs, "Show all N" in tables,
+  date display, the severity of a finding as the fifth fixed list and chart colours
+  from tokens.
+- **Foundations (D.3):** text roles `cc-text-*`, `lib/format.ts`, one print rule for
+  the whole page.
+- **`DESIGN.md` 1.5 (D.4):** the decisions of 24.09. as ADR-047 to ADR-053 —
+  12 px for meta/chip, 2 px only in chips, stage header 22/800, severity as a fixed list,
+  tokens in public too, dashboard and stage demo are rebuilt, the German
+  Datenschutzerklärung as the legal-text exception.
+- An overload at Gemini and a foreign time zone name no longer break tests;
+  `CcButton` keeps a passed `aria-busy`.
 
 ## [v2.19.0] — 2026-09-24
 
-Der isolierte Test-Runner (8.9) ist gebaut und läuft, die Mails kommen bei Microsoft an,
-und die Vollprüfung von v2.18.0 ist abgearbeitet. Die neue Startseite und der Arbeitsraum
-für alle bleiben für 3.0 zurückgehalten.
+The isolated test runner (8.9) is built and running, the mails arrive at Microsoft,
+and the full review of v2.18.0 is worked through. The new start page and the workspace
+for everyone stay held back for 3.0.
 
-### Was alle bemerken
+### What everyone notices
 
-- **Mails landen im Posteingang statt im Spam — bei Microsoft und Gmail.** Alle Mails an
-  Nutzer haben ein schlichtes Layout: Absätze, ein einziger sichtbarer Link am Ende, kein
-  großer Button, keine Emojis, immer mit Textteil. Die Adressbestätigung verlinkt auf
-  clean-core.io statt auf eine Firebase-Adresse. Im Seed-Test stieg Office 365 von 4 auf
-  7 von 8 Mails im Posteingang, Outlook.com von 1 auf 8 von 8; Gmail blieb bei 8 von 8.
-  GMX und web.de filtern weiter — dort zählt der Ruf des Absenders, nicht der Inhalt.
-- **Eine Überlast bei Gemini bricht die Analyse nicht mehr beim ersten Nein ab.** Meldet
-  das Modell „high demand“ (503), fragt der Server bis zu dreimal nach, wie bisher schon
-  bei einem Kontingent-Limit.
-- **Zwei offene Tabs überschreiben sich die Transformation nicht mehr.** Der Server
-  speichert Code, Testsuite und Status in einer Transaktion, geprüft gegen den Stand, auf
-  dem die Generierung begann; ein zwischenzeitlich geändertes Design führt zu einer
-  verständlichen Ablehnung statt zu stillem Überschreiben.
-- **Gesperrte Konten verlieren den Zugriff sofort,** nicht erst, wenn ihr Anmelde-Token
-  abläuft. Die Firestore-Regeln lesen den Kontostatus; ausgerollt am 24.09.2026.
-- **Die Routenkarte zeigt die signierte Konfidenz,** nie mehr eine Zahl aus dem
-  Modelltext.
-- **„Nicht bestimmt“ verschwindet nicht mehr** in der A–D-Anzeige der Prozesskarte.
-- **Der BPMN-Editor speichert, was auf dem Canvas steht,** auch wenn man direkt nach
-  einer Änderung speichert.
+- **Mails land in the inbox instead of spam — at Microsoft and Gmail.** All mails to
+  users have a plain layout: paragraphs, a single visible link at the end, no
+  large button, no emojis, always with a text part. The address confirmation links to
+  clean-core.io instead of a Firebase address. In the seed test Office 365 rose from 4 to
+  7 of 8 mails in the inbox, Outlook.com from 1 to 8 of 8; Gmail stayed at 8 of 8.
+  GMX and web.de keep filtering — there the sender's reputation counts, not the content.
+- **An overload at Gemini no longer aborts the analysis at the first no.** If
+  the model reports "high demand" (503), the server asks again up to three times, as it already did
+  for a quota limit.
+- **Two open tabs no longer overwrite each other's Transformation.** The server
+  saves code, test suite and status in one transaction, checked against the state on
+  which the generation began; a design changed in the meantime leads to an
+  understandable rejection instead of silent overwriting.
+- **Blocked accounts lose access immediately,** not only when their sign-in token
+  expires. The Firestore rules read the account status; rolled out on 24.09.2026.
+- **The route map shows the signed confidence,** never again a number from the
+  model text.
+- **"Not determined" no longer disappears** in the A–D display of the process map.
+- **The BPMN editor saves what is on the canvas,** even if you save directly after
+  a change.
 
-### Test-Runner (8.9)
+### Test runner (8.9)
 
-- Generierte Tests laufen in einem eigenen Cloud-Run-Dienst ohne Rollen, ohne Secrets und
-  ohne offenes Netz; ein Live-Lauf erreicht den Tenant nur über einen Proxy der App, der die
-  Zugangsdaten selbst einsetzt. Der Live-Pfad bleibt gesperrt, bis der Negativtest auf dem
-  deployten Profil, die IAM-Prüfung und eine belegte eigene Prüfung vorliegen (Entscheidung
-  24.09.2026: keine externe Prüfung).
-- Der Selbsttest der Runner läuft aus der Admin-Konsole mit einem Klick; „unvollständig“
-  sieht nie wie „bestanden“ aus.
+- Generated tests run in a Cloud Run service of their own without roles, without secrets and
+  without an open network; a live run reaches the tenant only through a proxy of the app that
+  inserts the credentials itself. The live path stays locked until the negative test on the
+  deployed profile, the IAM check and an evidenced check of our own are in place (decision
+  24.09.2026: no external audit).
+- The runners' self-test runs from the admin console with one click; "incomplete"
+  never looks like "passed".
 
-### Hinter den Kulissen
+### Behind the scenes
 
-- Der Security-Agent prüft seine Kandidaten entdoppelt und in Stapeln mit dem Code an den
-  zitierten Zeilen; was er nicht prüfen konnte, nennt er beim Namen, und der Bericht sagt
-  dann nicht mehr „Risiko niedrig“. Budget 5 USD je Release.
-- Der UX-Agent misst am verbindlichen Zielbild, den Mockups 2.8.
-- Tests mit dem Firebase-Client laufen nur noch gegen den Emulator und mit Wegwerfkonten.
-- Die automatische Analyse per URL-Parameter ist entfernt; das Senden an das Modell prüft
-  immer dieselben Voraussetzungen wie der Button.
-- Eine Transformation ohne gültige Testsuite wird nicht gespeichert.
-- Ein `JOIN` in einem SQL-String erzeugt keine erfundene Tabellenabhängigkeit mehr.
+- The security agent checks its candidates de-duplicated and in batches with the code at the
+  cited lines; what it could not check it names by name, and the report then
+  no longer says "Risiko niedrig". Budget 5 USD per release.
+- The UX agent measures against the binding target picture, the mockups 2.8.
+- Tests with the Firebase client now run only against the emulator and with throwaway accounts.
+- The automatic analysis via URL parameter is removed; sending to the model always checks
+  the same preconditions as the button.
+- A Transformation without a valid test suite is not saved.
+- A `JOIN` in an SQL string no longer creates an invented table dependency.
 
 ## [v2.18.0] — 2026-09-24
 
-Phase 8 der Roadmap, „Entscheiden und Übergeben", bis auf den isolierten Test-Runner
-(8.9). Dazu die ersten Teile von 3.0 hinter dem Admin-Schalter und die Modellmessungen
-aus §17. v2.16 und v2.17 sind nie als eigene Versionen erschienen; ihre Schritte stecken
-in v2.15.0 und in dieser.
+Phase 8 of the roadmap, "Decide and hand over", except for the isolated test runner
+(8.9). On top of that, the first parts of 3.0 behind the admin switch and the model measurements
+from §17. v2.16 and v2.17 never appeared as versions of their own; their steps are
+in v2.15.0 and in this one.
 
-### Was alle bemerken
+### What everyone notices
 
-- **Die Dokumentationsstufe liest das ganze Programm.** Bisher bekam das Modell je die
-  ersten 1.000 Zeichen von Code, Design und Analyse und schrieb daraus einen Blueprint
-  mit Rollen, KPIs und Dauern, die nirgends im Code stehen. Jetzt entsteht die
-  Dokumentation ohne Modellaufruf aus der Engine: Prozessschritte mit Zeilenanker,
-  Fachsätze, Wirkungsstatus der Verbuchung und die Lanes, die der Code belegt. Was der
-  Code nicht sagt — Prozess-Owner, Rollen, KPIs, Dauer —, steht als „not determined"
-  mit Grund da. Beim Bestellfreigabe-Beispiel kommt so das Notlimit aus Zeile 422 im
-  Dokument an; mit 1.000 Zeichen kam es nie hin. Ältere Blueprints bleiben lesbar und
-  sind als frühere Form markiert. Die Business-Ebene (RACI, SOP) schreibt weiter das
-  Modell.
-- **Die Transformation folgt der Architekturentscheidung.** Sie nahm ihr Ziel bisher aus
-  einem Umschalter der Analyse, den jeder Klick ohne Begründung umstellte, und las die
-  begründete Freigabe gar nicht. Jetzt generiert sie gegen den Architekturvertrag;
-  eine Abweichung von der Empfehlung wird festgehalten und angewendet.
-- **Eine Freigabe ist an den Lauf gebunden, den man gelesen hat.** Hat sich die Analyse
-  seitdem geändert, lehnt der Server ab und nennt, was sich geändert hat, statt die
-  Freigabe still auf den neuen Stand zu hängen. Eine Ablehnung sah bisher aus wie
-  Erfolg.
-- **Auto-Healing in der Teststufe wirkt.** Der Server legt einen unveränderlichen
-  Reparaturentwurf an, der Runner führt genau diesen aus, und übernommen wird er nur,
-  wenn sich der Stand inzwischen nicht geändert hat. Vorher lief die Wiederholung gegen
-  den alten Code.
-- **Eine Fachlücke, die das Modell als Einzelobjekt statt als Liste liefert, geht nicht
-  mehr verloren.** Gemessen trat das beim 1.000-Zeilen-Beispiel in zwei von drei
-  Läufen auf; die Lücke fiel still aus der Arbeitsliste, und die signierende Route wäre
-  daran gescheitert. Jede andere unlesbare Form wird jetzt gesagt statt geleert.
-- **Die Einladungsseite nennt vor der Annahme, wer einlädt und bis wann** — nur dem
-  angemeldeten Konto mit der eingeladenen, bestätigten Adresse. Der Projektname bleibt
-  hinter der Annahme.
-- **Freigabelinks für den S/4-Tenant-Zugang handeln nicht mehr beim Öffnen und gelten
-  genau einmal.** Beide Links einer Anfrage verfallen, sobald einer benutzt wurde, und
-  mit jeder neuen Anfrage. Links aus Mails vor dieser Version funktionieren nicht mehr;
-  wer betroffen ist, stellt die Anfrage neu.
-- **Die Namensstufe ist schneller.** Sie läuft auf `gemini-3.5-flash-lite` und verlangt
-  Start, Ende und Verzweigungen ausdrücklich beim Namen: Median 2,0 statt 4,6 Sekunden,
-  96 % der tragenden Knoten benannt.
-- Kleinere Korrekturen aus der UX-Review: der Admin-Tab „Not active" heißt, was er
-  enthält; das schreibgeschützte Board lädt nicht mehr zum Diskutieren ein; Fehlerseiten
-  zeigen die technische Meldung eingeklappt.
+- **The Documentation stage reads the whole program.** Until now the model got the
+  first 1,000 characters each of code, design and analysis and wrote from that a blueprint
+  with roles, KPIs and durations that appear nowhere in the code. Now the
+  documentation is created without a model call from the engine: process steps with line anchor,
+  business statements, effect status of the update task and the lanes the code evidences. What the
+  code does not say — process owner, roles, KPIs, duration — stands as "not determined"
+  with a reason. In the purchase order approval example, the emergency limit from line 422 thus arrives in the
+  document; with 1,000 characters it never got there. Older blueprints stay readable and
+  are marked as an earlier form. The Business layer (RACI, SOP) is still written by the
+  model.
+- **The Transformation follows the architecture decision.** Until now it took its target from
+  a toggle in the analysis that every click switched without a rationale, and did not read the
+  justified approval at all. Now it generates against the architecture contract;
+  a deviation from the recommendation is recorded and applied.
+- **An approval is bound to the run you read.** If the analysis has changed
+  since then, the server rejects and names what has changed, instead of silently hanging the
+  approval onto the new state. A rejection used to look like
+  success.
+- **Auto-healing in the Testing stage works.** The server creates an immutable
+  repair draft, the runner executes exactly this one, and it is adopted only
+  if the state has not changed in the meantime. Before, the repetition ran against
+  the old code.
+- **A business gap that the model delivers as a single object instead of a list is no longer
+  lost.** Measured, this occurred with the 1,000-line example in two of three
+  runs; the gap fell silently out of the work list, and the signing route would have
+  failed on it. Every other unreadable form is now stated instead of emptied.
+- **The invitation page names, before acceptance, who is inviting and until when** — only to the
+  signed-in account with the invited, confirmed address. The project name stays
+  behind the acceptance.
+- **Approval links for S/4 tenant access no longer act on opening and are valid
+  exactly once.** Both links of a request expire as soon as one has been used, and
+  with every new request. Links from mails before this version no longer work;
+  anyone affected makes the request again.
+- **The naming stage is faster.** It runs on `gemini-3.5-flash-lite` and explicitly requires
+  start, end and branches by name: median 2.0 instead of 4.6 seconds,
+  96 % of the load-bearing nodes named.
+- Smaller corrections from the UX review: the admin tab "Not active" is named for what it
+  contains; the read-only board no longer invites discussion; error pages
+  show the technical message collapsed.
 
-### Die Nachweiskette im Audit-Pack
+### The evidence chain in the audit pack
 
-Das Signaturmanifest nennt ab Format 4.0 (HMAC) bzw. 4.1 (Ed25519) die
-Übergabekette — Anforderung, Entscheidung, Receipt, Lieferartefakt — als `covers[]`
-im signierten String, und `09-evidence-chain.json` sagt je Glied, ob die Signatur es
-trägt, ob es eine Selbstauskunft ist oder ob es nicht bestimmt ist, mit Grund. Heute
-trägt die Signatur höchstens ein Glied (das Receipt, wenn der Lauf eine
-Modellquittung hat), eine Selbstauskunft ein zweites, und zwei sind offen; das Paket
-sagt das, statt eine kürzere Kette zu zeigen. Web-Verifier und
-`scripts/verify-pack.mjs` prüfen es; ältere Pakete verifizieren wie bisher.
+From format 4.0 (HMAC) and 4.1 (Ed25519), the signature manifest names the
+handover chain — requirement, decision, receipt, delivery artefact — as `covers[]`
+in the signed string, and `09-evidence-chain.json` says per link whether the signature
+carries it, whether it is a self-declaration or whether it is not determined, with a reason. Today
+the signature carries at most one link (the receipt, if the run has a
+model receipt), a self-declaration a second one, and two are open; the pack
+says so instead of showing a shorter chain. Web verifier and
+`scripts/verify-pack.mjs` check it; older packs verify as before.
 
-### Hinter dem Admin-Schalter (Vorbereitung für 3.0)
+### Behind the admin switch (preparation for 3.0)
 
-Der neue Arbeitsraum bekommt die IT-Sicht (Befunde mit beiden Katalogsichten und der
-ehrlichen Kette Anforderung → Anker → Befund → Zielentwurf), die Entscheidungskarte
-(Bedarf, Option, Kostenrevision, Vertrag; Bestätigung als Selbstauskunft, Rücknahme mit
-Spur), den Steering-Einseiter zum Drucken, eine Management-Übersicht mit Diagrammen, in
-denen „not determined" eine eigene Fläche ist, und den Nachweis, dass jeder Referenzfall
-des Erhaltungsregisters dort besteht. Bestandsprojekte öffnen in jeder gespeicherten
-Form, ohne dass etwas geschrieben wird; ein nicht lesbarer Lauf heißt jetzt so, statt
-grün als vorhanden zu gelten.
+The new workspace gets the IT view (findings with both catalog views and the
+honest chain requirement → anchor → finding → target draft), the decision card
+(need, option, cost revision, contract; confirmation as a self-declaration, withdrawal with
+a trace), the steering one-pager for printing, a Management overview with charts in
+which "not determined" is an area of its own, and the evidence that every reference case
+of the preservation register holds there. Existing projects open in every saved
+form without anything being written; an unreadable run is now called that, instead of
+counting green as present.
 
-### Messungen (§17)
+### Measurements (§17)
 
-Drei Durchgänge je Modell auf allen acht Startbeispielen: dasselbe Modell schwankt
-zwischen Durchgängen im Mittel um 33 Prozentpunkte Ankerquote — mehr als jeder
-Modellunterschied. Die Produktvorgabe bleibt. Fachsätze vom Modell (Weg B) treffen 7
-bis 9 von 173 Sollsätzen gegen 69 der Engine; die Engine bleibt allein.
+Three passes per model on all eight start examples: the same model fluctuates
+between passes on average by 33 percentage points of anchor rate — more than any
+model difference. The product default stays. Business statements from the model (path B) hit 7
+to 9 of 173 target statements against 69 for the engine; the engine stays alone.
 
 ## [v2.15.0] — 2026-09-23
 
-### Die eigene Adresse stand in einem öffentlichen Log — und im Quellcode
+### Our own address was in a public log — and in the source code
 
-Das Repository ist öffentlich, und damit ist es jedes Actions-Log. Der Wochenbericht
-druckte bei jedem geplanten Lauf die Betreffzeile („9 von 43 Accounts aktiv"), die
-Wochenzahlen zu Registrierungen, Aktivierungen, Läufen und Projekten sowie die Adresse
-des Administrators direkt dorthin — nachweisbar in Lauf 35333168862 und elf weiteren seit
-dem 20.08. Die Sicherheitswarnung war schlimmer: sie druckte den Empfänger **und den
-ganzen Warntext**, also die gefallenen Jobs eines Sicherheitslaufs.
+The repository is public, and so is every Actions log. The weekly report
+printed on every scheduled run the subject line ("9 von 43 Accounts aktiv"), the
+weekly numbers on registrations, activations, runs and projects and the address
+of the administrator directly there — demonstrably in run 35333168862 and eleven more since
+20.08. The security warning was worse: it printed the recipient **and the
+whole warning text**, i.e. the failed jobs of a security run.
 
-Es ist dieselbe Klasse, für die die Survey-Skripte am 15.09. abgeschaltet wurden. Der Fix
-von damals gab `send-survey-digest.ts` seinen Riegel; die beiden anderen wurden übersehen,
-**weil nichts die Sender verglichen hat**. Die Regel liegt deshalb jetzt in
-`tests/public-log-guard.spec.ts` über allen vier Sendern statt in den Skripten — dasselbe
-Muster wie `SectionHeader` und `StageHeader`. Zwölf veröffentlichte Läufe gelöscht, 404
-nachgeprüft.
+It is the same class for which the survey scripts were switched off on 15.09. The fix
+back then gave `send-survey-digest.ts` its bolt; the other two were overlooked,
+**because nothing compared the senders**. The rule therefore now lives in
+`tests/public-log-guard.spec.ts` over all four senders instead of in the scripts — the same
+pattern as `SectionHeader` and `StageHeader`. Twelve published runs deleted, 404
+re-checked.
 
-Dazu verließ die Adresse den Quellcode: vier Dateien hielten sie als Zeichenkette, jetzt
-liest `scripts/lib/report-recipient.ts` sie aus `REPORT_RECIPIENT`, ohne Rückfall. **Was
-das nicht behebt und hier hingehört:** dieselbe Adresse ist die Autoradresse aller 1.318
-Commits, und die GitHub-API gibt sie öffentlich heraus. Der Quellcode ist die einzige
-Kopie, die sich entfernen ließ.
+On top of that, the address left the source code: four files held it as a string, now
+`scripts/lib/report-recipient.ts` reads it from `REPORT_RECIPIENT`, without a fallback. **What
+this does not fix and belongs here:** the same address is the author address of all 1,318
+commits, and the GitHub API gives it out publicly. The source code is the only
+copy that could be removed.
 
-### Der Security-Audit hing am billigsten Endpunkt, und der war kaputt
+### The security audit was pinned to the cheapest endpoint, and it was broken
 
-Der Lauf vom Morgen fiel mit zwei leeren CISO-Antworten und **51 von 60 gefallenen
-Beraterrufen** — und die 51 standen mit keinem Wort im Log, nur als Zahl.
+The morning's run failed with two empty CISO answers and **51 of 60 failed
+consultant calls** — and the 51 were not in the log with a single word, only as a number.
 
-Gemessen statt vermutet: das Modell lebt, 26 Endpunkte, alle mit reichlich Ausgabebudget.
-Ein einziger ist defekt — **OpenInference, 0 von 7 Rufen mit Inhalt**, unabhängig von der
-Inputgröße; dieselbe Anfrage läuft auf Fireworks und CoreWeave fehlerfrei. Er ist der
-billigste der 26, OpenRouter sortiert nach Preis, und `allow_fallbacks: false` nagelte den
-Audit fest darauf. Jetzt eine benannte Anbieterliste; die Datenzusage bleibt in beiden
-Zweigen bei `data_collection: deny`.
+Measured instead of guessed: the model is alive, 26 endpoints, all with plenty of output budget.
+A single one is defective — **OpenInference, 0 of 7 calls with content**, independent of the
+input size; the same request runs without error on Fireworks and CoreWeave. It is the
+cheapest of the 26, OpenRouter sorts by price, and `allow_fallbacks: false` nailed the
+audit to it. Now a named provider list; the data commitment stays at
+`data_collection: deny` in both branches.
 
-Zwei Mängel unabhängig davon behoben: Fehlschläge hinterlassen ihren Grund — ein Wort aus
-geschlossenem Vokabular, nie ein Fehlertext, denn das Repo ist öffentlich —, und ein Audit
-bricht **vor** den teuren CISO-Rufen ab, wenn weniger als 85 % des geplanten Codes gelesen
-wurden. Vorher wäre ein versiegelter Bericht über 15 % des Codes erschienen und hätte wie
-ein vollständiges Audit ausgesehen.
+Two defects fixed independently of that: failures leave their reason behind — a word from a
+closed vocabulary, never an error text, because the repo is public —, and an audit
+aborts **before** the expensive CISO calls if less than 85 % of the planned code was
+read. Before, a sealed report over 15 % of the code would have appeared and looked like
+a complete audit.
 
-**Offen geblieben, und der erste scharfe Lauf hat es gezeigt:** die Nachprüf-Grundlage
-bricht auf einer anderen Achse weg. Der Audit zu diesem Release lief sauber durch, aber zu
-keinem der 203 Beraterbefunde kam der zitierte Code mit — die *Eingabe*grenze des
-CISO-Prompts war erreicht. Ergebnis: „Risiko niedrig, 0 Befunde", und der CISO schreibt
-selbst dazu, das sei keine Aussage über die Sicherheit, sondern der niedrigste Wert der
-Skala bei leerer Liste.
+**Left open, and the first live run showed it:** the basis for re-checking
+breaks away on a different axis. The audit for this release ran through cleanly, but for
+none of the 203 consultant findings did the cited code come along — the *input* limit of the
+CISO prompt was reached. Result: "Risiko niedrig, 0 Befunde", and the CISO itself writes
+that this is not a statement about security, but the lowest value of the
+scale for an empty list.
 
-### Der Wochenbericht lief mit den Rechten des Deploys
+### The weekly report ran with the deploy's rights
 
-`usage-report.yml` und `deploy.yml` teilten sich das Compute-Standardkonto des Projekts.
-Der Bericht braucht davon eines: Firestore lesen und einen Schnappschuss schreiben. Er hat
-jetzt ein eigenes Konto mit `roles/datastore.user` und nichts weiter.
+`usage-report.yml` and `deploy.yml` shared the project's default compute account.
+The report needs one thing of it: read Firestore and write a snapshot. It now has
+an account of its own with `roles/datastore.user` and nothing more.
 
-### Die Business-Sicht bekommt Sätze, die aus dem Code fallen (17.5, 17.7)
+### The Business view gets statements that fall out of the code (17.5, 17.7)
 
-Die Korpus-Facette `fachsaetze` stand auf 0 von 173 und las sich wie ein Befund. Sie war
-keiner: **die Facette verglich nichts.** Sie prüfte den Anker und hielt den Inhalt gar
-nicht daneben — ein Satz, richtig verankert und völlig falsch, kam durch. Und es erzeugte
-ohnehin kein Modul einen Fachsatz.
+The corpus facet `fachsaetze` stood at 0 of 173 and read like a finding. It was
+none: **the facet compared nothing.** It checked the anchor and did not hold the content
+next to it at all — a statement, correctly anchored and completely wrong, got through. And
+no module produced a business statement anyway.
 
-Jetzt misst sie: Schlüssel ist die ABAP-Anweisung an der Ankerzeile, das Textmaß ist von
-Hand nachrechenbar, und die Schwelle 0,50 wird bei **jedem Lauf neu am Korpus kalibriert**
-— verschiedene Sollsätze erreichen höchstens 0,400, die mildeste Umformulierung fällt
-nicht unter 0,571.
+Now it measures: the key is the ABAP statement at the anchor line, the text measure can be
+recomputed by hand, and the threshold 0.50 is **recalibrated on the corpus on every run**
+— different target statements reach at most 0.400, the mildest rewording does
+not fall below 0.571.
 
-Darauf erzeugt `lib/abap/business-statement.ts` die Sätze deterministisch aus dem Code,
-ohne Modell und ohne Netz: **69 von 173 getroffen, Abdeckung 167 von 173.** Unschärfe wird
-aufgelöst *und* ausgewiesen, in dieser Reihenfolge — „nicht bestimmt" darf nie an die
-Stelle eines Satzes treten, und ein Wurf beim Aufbau verhindert einen leeren Kernsatz.
+On that basis, `lib/abap/business-statement.ts` produces the statements deterministically from the code,
+without a model and without a network: **69 of 173 hit, coverage 167 of 173.** Vagueness is
+resolved *and* flagged, in that order — "not determined" may never take the
+place of a statement, and a throw during construction prevents an empty core statement.
 
-Gemessen ist auch die Decke: **116.** Mehr kann kein Erzeuger treffen, der nichts erfindet;
-die fehlenden Sollsätze sind Beurteilungsprosa des Fallbuchs. Die Abnahme steht deshalb bei
-90, den Rest trägt das Modell.
+The ceiling is measured too: **116.** No producer that invents nothing can hit more;
+the missing target statements are judgement prose of the case book. Acceptance is therefore set at
+90, the rest is carried by the model.
 
-Ein Fehler darin, gefunden von der QA-Prüfung: in der Erkennung stand ein **echtes
-Backspace-Zeichen (0x08)** an der Stelle der Wortgrenze. ABAP enthält keine Steuerzeichen,
-also traf die Regel nie — der Erzeuger hat nie unterschieden, ob ein `UPDATE` eine
-bestimmte Zeile trifft oder die ganze Tabelle.
+An error in it, found by the QA review: in the detection, a **real
+backspace character (0x08)** stood in the place of the word boundary. ABAP contains no control characters,
+so the rule never hit — the producer never distinguished whether an `UPDATE` hits a
+specific row or the whole table.
 
-### Kein Kostensieger, solange eine Option unvollständig ist (7.4, 7.11, 7.12)
+### No cost winner as long as an option is incomplete (7.4, 7.11, 7.12)
 
-Optionen mit Kosten nur aus einer Annahmenrevision. Vier Gründe, keinen Sieger zu nennen,
-und der lehrreichste ist der vierte: **überlappende Spannen nennen niemanden** — liegt die
-Obergrenze der billigsten nicht unter der Untergrenze der nächsten, ist der Unterschied
-innerhalb der Aufwandsspanne und damit nicht festgestellt. „Nichts tun" ist Pflichtoption;
-ihr Upgrade-Verzug wird benannt, nicht bepreist.
+Options with costs only from an assumption revision. Four reasons not to name a winner,
+and the most instructive is the fourth: **overlapping ranges name no one** — if the
+upper bound of the cheapest does not lie below the lower bound of the next, the difference is
+within the effort range and thus not established. "Do nothing" is a mandatory option;
+its upgrade backlog is named, not priced.
 
-Dazu zwei Entscheidungen: die Seite hatte acht harte Euro-Zeichen und kein einziges
-Eingabefeld für die Währung, während das Panel darunter danach fragte — jetzt eine Währung
-für die ganze Seite, ohne Währung keine Zahl. Und der gesetzte Empfindlichkeitsradius von
-±25 % ist **ersatzlos weg**: das Panel rechnet den Kipppunkt, also wie weit eine Annahme
-sich bewegen muss, bis die Führung wechselt.
+On top of that, two decisions: the page had eight hard euro signs and not a single
+input field for the currency, while the panel below asked for it — now one currency
+for the whole page, no number without a currency. And the set sensitivity radius of
+±25 % is **gone without replacement**: the panel computes the tipping point, i.e. how far an assumption
+has to move until the lead changes.
 
-### Der Arbeitsraum (6.1, 6.3, 6.4, 6.10)
+### The workspace (6.1, 6.3, 6.4, 6.10)
 
-Die drei Sichten in Bewegung auf „New project", abgeleitet aus dem Beispielcode statt
-getextet. Das Mockup skizziert für Management *„Rebuild — part of decision DEC-1"* — **das
-steht nicht da**, es gibt kein DEC-1, und ein Objekt ohne Katalogeintrag fällt unter *not
-assigned*. Auf der Seite, die „never passes an assumption off as a fact" verspricht, wäre
-das die teuerste Erfindung; dort steht jetzt die Abwesenheit.
+The three views in motion on "New project", derived from the example code instead of
+copywritten. For Management the mockup sketches *"Rebuild — part of decision DEC-1"* — **that
+is not there**, there is no DEC-1, and an object without a catalog entry falls under *not
+assigned*. On the page that promises "never passes an assumption off as a fact", that would
+be the most expensive invention; the absence now stands there.
 
-Overlays auf dem Prozessmodell: ein Join allein auf den Anker traf **8 von 102**
-Objektstellen — der Median-Anker ist eine Zeile, also die Zeile, die einen Schritt
-*aufruft*, nicht der Code dahinter. Mit dem Rumpf jedes `FORM`, den ein `PERFORM` im Anker
-nennt, sind es 23 auf 17 Elementen; die übrigen wurden nachgesehen statt weggerundet.
+Overlays on the process model: a join on the anchor alone hit **8 of 102**
+object locations — the median anchor is one line, i.e. the line that *calls* a step,
+not the code behind it. With the body of every `FORM` that a `PERFORM` in the anchor
+names, it is 23 on 17 elements; the rest were looked up instead of rounded away.
 
-Die Management-Sicht antwortet auf vier Fragen, zeichnet aber **keine Linie durch einen
-Punkt** („a history needs two runs measured by the same rule"), und „bestätigt" heißt
-`proven`, nie `done`. Sie las zuletzt in der falschen Reihenfolge — Public-Cloud-Fit,
-Mitgliederliste, dann erst das Urteil; behoben, und dabei zeigte sich, dass **kein
-Struktur-Wächter die Reihenfolge je festgehalten hatte**.
+The Management view answers four questions, but draws **no line through one
+point** ("a history needs two runs measured by the same rule"), and "confirmed" means
+`proven`, never `done`. Most recently it read in the wrong order — public cloud fit,
+member list, only then the verdict; fixed, and in the process it turned out that **no
+structure guard had ever pinned the order down**.
 
-### Ein Zielprofil, das sich nicht signieren lässt, wenn es abgelehnt wurde (7.10)
+### A target profile that cannot be signed if it was rejected (7.10)
 
-`AssessmentProfile` mit drei Abdeckungszuständen und neun Lückencodes;
-`profileManifestInput()` wirft bei `rejected` — eine Ablehnung, die sich trotzdem signieren
-lässt, ist keine. Beim Bauen fiel ein Fehler auf, der heute wirkt: `catalog-service.ts`
-kennt weder `deployment` noch `edition`, und der einzige Schnappschuss ist die
-Freigabeliste der **Public** Cloud. Ein Private-Edition-Projekt wird gegen sie beurteilt,
-ohne dass das Ergebnis sagt, welcher Schnappschuss geantwortet hat.
+`AssessmentProfile` with three coverage states and nine gap codes;
+`profileManifestInput()` throws on `rejected` — a rejection that can be signed
+anyway is none. While building, an error came up that is in effect today: `catalog-service.ts`
+knows neither `deployment` nor `edition`, and the only snapshot is the
+release list of the **Public** Cloud. A Private Edition project is assessed against it
+without the result saying which snapshot answered.
 
-### Kleinere Änderungen
+### Smaller changes
 
-- Das Statusinstrument der Roadmap meldete „gesamt 0" — eine leere Roadmap statt eines
-  kaputten Parsers: es teilte am nackten Zeilenumbruch, und `core.autocrlf=true` ist unter
-  Windows der Normalfall.
-- Die QA-Delta-Prüfung durfte 32.000 Token ausgeben und schöpfte sie aus, davon nur 3.855
-  fürs Denken. Die Stapelung teilt nach *Eingabe*, und das ist für diesen Fehler die
-  falsche Achse; jetzt 48.000, die Zahl, mit der die Vollprüfung seit dem 15.09. läuft.
+- The roadmap's status instrument reported "gesamt 0" (total 0) — an empty roadmap instead of a
+  broken parser: it split on the bare line break, and `core.autocrlf=true` is the normal case under
+  Windows.
+- The QA delta review was allowed to spend 32,000 tokens and used them up, only 3,855 of them
+  for thinking. The batching splits by *input*, and for this error that is the
+  wrong axis; now 48,000, the number the full review has run with since 15.09.
 
-### Zwei Prüfagenten urteilten über Code, den sie nie gesehen haben
+### Two review agents judged code they had never seen
 
-Der Security-Audit zu v2.14.0 meldete **„Risiko kritisch: 7 kritisch, 18 hoch"**. Alle
-154 Befunde sind gegen den Code geprüft — **kein einziger kritischer hat gehalten.**
-Der Consultant, dessen Zuständigkeitsbereich `firestore.rules` ist, hat die Datei nie
-bekommen (zehn von einundfünfzig Modellaufrufen waren fehlgeschlagen) und schreibt das
-in fünf seiner Befunde selbst hin; der Frontend-Consultant hat `lib/sanitize-html.ts`
-nie bekommen und bewertete fünf XSS-Befunde mit „Sanitizer nicht einsehbar". **19 der
-46 mittleren Befunde fallen aus demselben Grund geschlossen.**
+The security audit for v2.14.0 reported **"Risiko kritisch: 7 kritisch, 18 hoch"**. All
+154 findings were checked against the code — **not a single critical one held.**
+The consultant whose area of responsibility is `firestore.rules` never
+got the file (ten of fifty-one model calls had failed) and writes that
+himself in five of his findings; the frontend consultant never got `lib/sanitize-html.ts`
+and rated five XSS findings with "Sanitizer nicht einsehbar". **19 of the
+46 medium findings fall closed for the same reason.**
 
-Die QA-Vollprüfung hatte dieselbe Bauart: fünf kritische „Zugangsdaten rotieren" waren
-drei localStorage-Schlüssel, eine interpolierte Vorlage und eine öffentliche URL — jeder
-als `RE-RAISED after refutation`, weil die Widerlegung im Register liegt und der Treffer
-bei jedem Lauf neu im Scanner entsteht. Und sie meldete **470 Dateien mit 5,4 MB als
-NOT REVIEWED**: die Hälfte des Bestands, und zwar die neueste.
+The QA full review had the same design: five critical "rotate credentials" were
+three localStorage keys, one interpolated template and one public URL — each
+as `RE-RAISED after refutation`, because the refutation lies in the register and the hit
+arises anew in the scanner on every run. And it reported **470 files with 5.4 MB as
+NOT REVIEWED**: half of the code base, and the newest half at that.
 
-Beides ist an der Ursache repariert, nicht per Ausnahmeliste. Eine Datei auf der neuen
-`PINNED`-Liste fährt in *jedem* Aufruf ihres Consultants mit; die Secret-Regel
-entscheidet am Wert statt am Pfad; und die Vollprüfung läuft auf einem Modell, dessen
-Preis nicht mehr darüber entscheidet, wie viel vom Produkt gelesen wird.
+Both are repaired at the cause, not via an exception list. A file on the new
+`PINNED` list rides along in *every* call of its consultant; the secret rule
+decides by the value instead of by the path; and the full review runs on a model whose
+price no longer decides how much of the product is read.
 
-### Der signierte Run lief unter der falschen Edition
+### The signed run ran under the wrong edition
 
-Im Analyse-Dialog standen `setTargetDeployment(x)` und `handleAnalyze(code)` im selben
-Handler — ein State-Setter ändert aber nicht den Wert, den diese Closure schon gefangen
-hat. Beim **ersten** Lauf war die Zielplattform deshalb `null`, beim Wechsel die alte.
-Und zwar überall: Evidenzlauf, Extensibility-Routing, Prompt und `s4Deployment` auf dem
-**signierten Run** — während der Bildschirm die neue Auswahl zeigte. Ein Ergebnis, das
-nicht zu dem Run gehört, der es bezeugt. Die Edition ist jetzt ein Argument.
+In the analysis dialog, `setTargetDeployment(x)` and `handleAnalyze(code)` stood in the same
+handler — but a state setter does not change the value that this closure has already
+captured. On the **first** run the target platform was therefore `null`, on a switch the old one.
+And everywhere at that: evidence run, extensibility routing, prompt and `s4Deployment` on the
+**signed run** — while the screen showed the new selection. A result that
+does not belong to the run that attests it. The edition is now an argument.
 
-Dazu: ein gesperrtes Konto behielt Schreibzugriff über das Client-SDK (`adminRevokeUser`
-markierte nur, entzog keine Tokens — das Fenster ist jetzt eine Stunde statt unbegrenzt,
-geschlossen wird es mit einer Regeländerung), und eine Leserechts-Rücknahme konnte ein
-gelöschtes Projekt als Geisterdokument wiederauferstehen lassen.
+On top of that: a blocked account kept write access via the client SDK (`adminRevokeUser`
+only marked, did not revoke tokens — the window is now one hour instead of unlimited,
+it is closed with a rules change), and a revocation of read access could resurrect a
+deleted project as a ghost document.
 
-### 367 Objekte ohne freigegebenen Pfad hießen „clean-core-ready" (7.9)
+### 367 objects without a released path were called "clean-core-ready" (7.9)
 
-`buildMerged()` besuchte die Klassifikationsdatei nie. Was das im Produkt heißt, zeigt
-der Test: eine SCMON-Einspielung mit 90.000 Aufrufen auf eine solche BAPI landete im
-Quadranten `prioritize` — grün, „das kannst du verschieben". Jetzt `no-released-api-path`
-und `danger`. Die Katalogseite beantwortet außerdem zwei Fragen getrennt statt einer
-unklaren, und **183 der 259 `deprecated`-Objekte nennen gar keinen Nachfolger** — sie
-werden als Prüfung ausgewiesen, nicht als fertiges Urteil.
+`buildMerged()` never visited the classification file. What that means in the product is shown by
+the test: a SCMON import with 90,000 calls to such a BAPI landed in the
+quadrant `prioritize` — green, "you can postpone this". Now `no-released-api-path`
+and `danger`. The catalog page also answers two questions separately instead of one
+unclear one, and **183 of the 259 `deprecated` objects name no successor at all** — they
+are flagged as a check, not as a finished verdict.
 
-### Der Rückgabecode gehört an den Schritt (2.15)
+### The return code belongs to the step (2.15)
 
-Ein `CALL FUNCTION … EXCEPTIONS` und ein `IF sy-subrc <> 0` dahinter waren zwei
-Zeichnungen derselben Sache. 20 technische Gateways sind jetzt Randereignisse am Schritt;
-der Anteil rein technischer XOR fällt von **32,7 % auf 14,6 %**. Die Setzung von ≤ 10 %
-ist damit bewusst korrigiert: von den sieben Übriggebliebenen setzen vier den
-Rückgabecode, **ohne einen Knoten zu zeichnen** — es fehlen Schritte, nicht Bedingungen.
+A `CALL FUNCTION … EXCEPTIONS` and an `IF sy-subrc <> 0` behind it were two
+drawings of the same thing. 20 technical gateways are now boundary events on the step;
+the share of purely technical XOR falls from **32.7 % to 14.6 %**. The target of ≤ 10 %
+is thereby deliberately corrected: of the seven remaining, four set the
+return code **without drawing a node** — steps are missing, not conditions.
 
-Der Korpus hat dabei einen echten Defekt gefangen, bevor er ausgeliefert wurde: an
-CC-055 hätte die Faltung „Fehlermeldung vorhanden?" als *Fehler der Transaktion*
-ausgegeben — einen Satz, den die Quelle nicht enthält.
+The corpus caught a real defect in the process before it shipped: at
+CC-055 the folding would have output "Fehlermeldung vorhanden?" as *Fehler der Transaktion*
+— a statement the source does not contain.
 
-### Der Arbeitsraum sagt, auf welchem Stand er steht (6.9)
+### The workspace says which state it is on (6.9)
 
-Revisionsanzeige neben dem Titel, ein Hinweis mit zwei gleichwertigen Auswegen, wenn
-sich der Stand bewegt, und eine Rückfrage vor der einzigen schreibenden Aktion — eine
-Rücknahme von Leserecht ist nicht rückgängig zu machen. Kosten: sechs Lesevorgänge je
-Minute je offenem Tab, unter jeder Nebenläufigkeit. Der Fragmentanker überlebt jetzt
-auch gerendert den Sichtwechsel.
+Revision display next to the title, a notice with two equivalent ways out when
+the state moves, and a confirmation before the only writing action — a
+revocation of read access cannot be undone. Cost: six reads per
+minute per open tab, under any concurrency. The fragment anchor now also survives
+the view switch when rendered.
 
-### „Ask this case" (6.8)
+### "Ask this case" (6.8)
 
-Im Projekt antwortet der Assistent aus verankerter Evidenz über den hochgeladenen Code —
-oder er antwortet nicht. Ohne Evidenz gibt es kein `prompt`-Feld, also nichts zu senden;
-im Browser mit abgefangenem `/api/gemini` gemessen: kein Aufruf. Eine Antwort, die keinen
-der übergebenen Anker zitiert, wird verworfen und durch die Evidenz ersetzt.
+In the project the assistant answers from anchored evidence about the uploaded code —
+or it does not answer. Without evidence there is no `prompt` field, so nothing to send;
+measured in the browser with an intercepted `/api/gemini`: no call. An answer that cites none
+of the passed anchors is discarded and replaced by the evidence.
 
-### Kleinere Änderungen
+### Smaller changes
 
-- Der Wochenbericht nennt neue Konten nicht mehr namentlich, sondern zählt sie.
-- Ein Audit-Paket mit `"files": null` meldet sich als ungültig, statt zu werfen.
-- `render()` in der Rundmail escapt den Vornamen, den der Browser schreiben darf.
-- Zwei rote Workflows: die Ausnahmeliste des Secret-Scanners zitierte den Namen, den sie
-  entschuldigte; und ein `HTTP 503` **4,5 Sekunden** nach dem Start hat die ganze
-  UX-Prüfung einer Version gekostet — ein sofortiger Gateway-Fehler wird jetzt wiederholt,
-  ein später weiterhin nicht.
+- The weekly report no longer names new accounts by name, but counts them.
+- An audit pack with `"files": null` reports itself as invalid instead of throwing.
+- `render()` in the circular mail escapes the first name that the browser is allowed to write.
+- Two red workflows: the secret scanner's exception list quoted the name it
+  excused; and an `HTTP 503` **4.5 seconds** after the start cost the whole
+  UX review of a version — an immediate gateway error is now retried,
+  a late one still is not.
 
 ## [v2.14.0] — 2026-09-22
 
-### Beide Prüfagenten haben ihren Posteingang geleert — und die Engine ist tausendmal schneller
+### Both review agents have emptied their inbox — and the engine is a thousand times faster
 
-**316 Befunde entschieden.** 90 offene Sicherheitsbefunde und 226 hohe Befunde der
-QA-Vollprüfung zu `b88c77b`, jeder an der zitierten Zeile geprüft statt am Bericht.
-Ergebnis: **244 Widerlegungen mit Beleg**, rund 65 Befunde waren seit dem geprüften
-Commit bereits behoben, rund dreißig echte Fehler bleiben — die dringendsten sind in
-dieser Version gebaut, der Rest ist eingeplant.
+**316 findings decided.** 90 open security findings and 226 high findings of the
+QA full review of `b88c77b`, each checked at the cited line instead of against the report.
+Result: **244 refutations with evidence**, around 65 findings had already been fixed since the reviewed
+commit, around thirty real errors remain — the most urgent are built in
+this version, the rest is scheduled.
 
-Was die Zahl erklärt: derselbe Fundort kam bis zu **sechsmal** unter verschiedenen
-Fingerabdrücken; ein Stapel von 26 Befunden bestand aus vier Sachverhalten, einer von
-36 aus dreizehn. Und mehrfach zitierte der Prüfer Zeilen, die weder heute noch am
-geprüften Commit das enthielten, was er behauptete.
+What explains the number: the same location came up to **six times** under different
+fingerprints; a batch of 26 findings consisted of four matters, one of
+36 of thirteen. And several times the reviewer cited lines that contained neither today nor at the
+reviewed commit what he claimed.
 
-### Die Engine: 482 Sekunden auf 447 Millisekunden
+### The engine: 482 seconds to 447 milliseconds
 
-`tokenize` scannte den Puffer bei jeder Zeile neu — quadratisch. `buildAbapEvidence`
-auf einer 378-kB-Quelle brauchte **482 Sekunden**; jetzt **447 Millisekunden**. Dazu
-zwei Stapelüberläufe: `walk` ist iterativ, und die wechselseitige Rekursion des
-Skeletts, die zwischen 800 und 1200 Kettengliedern kippte, hat einen Boden bei 200 —
-**mit benannter Meldung** `expansion-depth-reached`. Die Engine sagt, dass sie nicht
-gelesen hat, statt stillschweigend weniger zu finden.
+`tokenize` rescanned the buffer on every line — quadratic. `buildAbapEvidence`
+on a 378 kB source took **482 seconds**; now **447 milliseconds**. On top of that,
+two stack overflows: `walk` is iterative, and the mutual recursion of the
+skeleton, which tipped over between 800 and 1200 chain links, has a floor at 200 —
+**with a named message** `expansion-depth-reached`. The engine says that it did not
+read, instead of silently finding less.
 
-**Die Gleichheit ist bewiesen, nicht behauptet:** der Stand `98f374d` in einem
-Nebenbaum, 92 echte ABAP-Quellen mal vier Lesungen — 368 Vergleiche, null
-Unterschiede; `tokenize` zusätzlich über 60.092 Eingaben. Der einzige Unterschied
-überhaupt ist der neue, gemeldete Boden. Noch nicht linear: doppelte Quelle kostet
-weiter etwa das Dreifache, und das steht im Test.
+**The equality is proven, not claimed:** the state `98f374d` in a
+side tree, 92 real ABAP sources times four readings — 368 comparisons, zero
+differences; `tokenize` additionally over 60,092 inputs. The only difference
+at all is the new, reported floor. Not yet linear: double the source still costs
+about three times as much, and that is in the test.
 
-### Eine Fehlermeldung kann kein Transformationsergebnis mehr werden
+### An error message can no longer become a Transformation result
 
-Antwortete das Modell nicht mit JSON — eine Ablehnung, eine Quota-Meldung, Fließtext
-—, wickelte der `catch`-Zweig den Text als Quelldatei ein und speicherte ihn mit
-`status: 'transformed'`. Kein Rennen, kein Sonderfall: es passierte, sooft das Modell
-einmal nicht im Format antwortete. Jetzt ist es ein Generierungsfehler, und das
-Vollständigkeitstor prüft den Pflichtsatz je Track — abgeleitet aus dem Prompt selbst.
+If the model did not answer with JSON — a refusal, a quota message, running text
+—, the `catch` branch wrapped the text as a source file and saved it with
+`status: 'transformed'`. No race, no special case: it happened whenever the model
+once did not answer in the format. Now it is a generation error, and the
+completeness gate checks the mandatory set per track — derived from the prompt itself.
 
-### Zwei Versprechen auf der Startseite, die der Code nicht einlöste
+### Two promises on the landing page that the code did not keep
 
-Das als „Real abapGit Package" beworbene Beispiel war **funktionslos**: die
-SELECT-Aliase trafen die Strukturkomponenten nicht, alle acht Felder blieben initial.
-Und die Transformations-Animation zeigte „Compiled — 0 errors" aus einem
-`setTimeout` — ohne Compiler, ohne Test, ohne Hinweis. Die Animation bleibt, sagt
-jetzt aber sichtbar, dass sie eine Illustration ist; bewusst in Slate statt Emerald,
-weil ein grüner Hinweis unter einem grünen Haken sich als dritter Haken liest.
+The example advertised as "Real abapGit Package" was **non-functional**: the
+SELECT aliases did not match the structure components, all eight fields stayed initial.
+And the transformation animation showed "Compiled — 0 errors" from a
+`setTimeout` — without a compiler, without a test, without a notice. The animation stays, but
+now says visibly that it is an illustration; deliberately in slate instead of emerald,
+because a green notice under a green check reads as a third check.
 
-### Routen und Oberfläche
+### Routes and interface
 
-Dreizehn Stellen gaben rohe Fehlermeldungen an den Aufrufer heraus. Die beiden
-ausgehenden Metadata-Routen bekommen ein Limit pro Konto — sie hatten keins, und die
-Middleware schließt `api` aus. Drei Routen ließen ein gesperrtes Konto weiterarbeiten;
-am schwersten wog der Lesezugriff auf die Leserliste, der Limit **und** Kontostatus
-übersprang. `DELETE /projects/{id}` war ein Existenz-Orakel und antwortet jetzt wie
-der GET darüber.
+Thirteen places handed raw error messages to the caller. The two
+outgoing metadata routes get a limit per account — they had none, and the
+middleware excludes `api`. Three routes let a suspended account keep working;
+the heaviest was the read access to the reader list, which skipped the limit **and** the account status.
+`DELETE /projects/{id}` was an existence oracle and now answers like
+the GET above it.
 
-`/api/health` prüft den Ed25519-Schlüssel mit: ein gesetzter, aber unbrauchbarer
-Schlüssel wurde bisher nur geloggt, während weiter ohne ihn signiert wurde. Der
-Deep-Probe bekommt bewusst **kein** Rate-Limit, sondern einen Cooldown — der Limiter
-führt selbst eine Firestore-Transaktion aus und hätte genau den Lesezugriff gekostet,
-den er ablehnt.
+`/api/health` checks the Ed25519 key as well: a key that was set but unusable
+was so far only logged, while signing carried on without it. The
+deep probe deliberately gets **no** rate limit but a cooldown — the limiter
+itself runs a Firestore transaction and would have cost exactly the read access
+that it refuses.
 
-Die Vertrauensseite versprach gehashte MFA-Backup-Codes, die es seit dem 16.09. nicht
-mehr gibt. Das Projektdokument wuchs unbegrenzt, weil jeder Export eine volle
-HTML-Kopie ablegte und nichts aufräumte. Und der Pepper des Ratenbegrenzers fiel auf
-ein Literal im Quelltext zurück — in einem öffentlichen Repository ist das kein
-Pepper.
+The trust page promised hashed MFA backup codes, which have not existed since 16.09.
+The project document grew without bound, because every export stored a full
+HTML copy and nothing cleaned up. And the pepper of the rate limiter fell back to
+a literal in the source code — in a public repository that is not a
+pepper.
 
-### Die Regeln sind ausgerollt
+### The rules are rolled out
 
-Commit `9d77219` hatte eine `delete`-Regel für `/abap_examples` eingebaut, ohne
-Deploy-Datensatz und Preservation-Register nachzuziehen — davon war die Pipeline seit
-dem 21.09. rot. Beide Register sind nachgetragen, und am 22.09. wurde auf alle sechs
-Datenbanken ausgerollt, mit `npm run rules:verify` als Gegenprobe. Der Löschen-Knopf
-im Dashboard lief vorher auf default-deny.
+Commit `9d77219` had added a `delete` rule for `/abap_examples` without
+updating the deploy record and the preservation register — that had kept the pipeline red since
+21.09. Both registers are updated, and on 22.09. the rules were rolled out to all six
+databases, with `npm run rules:verify` as the cross-check. The delete button
+in the dashboard ran into default-deny before.
 
-### Ein Fehlalarm mit echter Ursache
+### A false alarm with a real cause
 
-„Possible Google API key committed" stand bei **jedem** Push als kritischer Befund im
-Bericht, während `docs/QA-REVIEW-LOOP.md` daneben behauptete, er sei unterdrückt.
-Beides stimmte: die Unterdrückung vergleicht den *Pfad* eines Treffers, das letzte
-Netz vor dem Versand meldet unter `outgoing message`, und die Delta-Review filterte
-gar nicht. Jetzt wird zusätzlich der *Wert* verglichen. So überlebt ein Fehlalarm
-zwei Monate: die Prosa wurde geprüft und der Code nicht.
+"Possible Google API key committed" appeared in the report as a critical finding on **every** push,
+while `docs/QA-REVIEW-LOOP.md` next to it claimed it was suppressed.
+Both were true: the suppression compares the *path* of a hit, the last
+net before sending reports under `outgoing message`, and the delta review did not
+filter at all. Now the *value* is compared as well. This is how a false alarm survives
+two months: the prose was checked and the code was not.
 
 ### Roadmap
 
-Neu ist **§16**: die Auswertung eines SAP-Prozessbestands von 1.246 Diagrammen, aus
-der sieben Schritte folgen — 1.9 geschärft und vorgezogen, 2.15, 2.16 und 2.17 neu,
-dazu Ergänzungen an 2.4, 2.10, 2.14, 3.3 und 7.8. Der Bestand ist lizenzrechtlich
-gebunden; übernommen wurde nichts als Inhalt, nur als Erkenntnis. §16 nennt auch,
-was geprüft und **verworfen** wurde, und die sechs Fragen, die der Bestand nicht
-beantworten kann.
+New is **§16**: the evaluation of an SAP process collection of 1,246 diagrams, from
+which seven steps follow — 1.9 sharpened and brought forward, 2.15, 2.16 and 2.17 new,
+plus additions to 2.4, 2.10, 2.14, 3.3 and 7.8. The collection is bound by licence;
+nothing was taken over as content, only as insight. §16 also names
+what was checked and **rejected**, and the six questions the collection cannot
+answer.
 
-**§9 Nr. 20 entschieden:** Benennung und Provenienz werden getrennt. `sourceToken`
-bleibt unverändert und trägt den Anker, daneben ein freigegebenes `businessLabel`.
+**§9 No. 20 decided:** naming and provenance are separated. `sourceToken`
+stays unchanged and carries the anchor, next to it an approved `businessLabel`.
 
-### Werkzeug
+### Tooling
 
-`npm run lint` war lokal nicht mehr lauffähig — `eslint .` lief in die Arbeitskopien
-paralleler Sitzungen und starb am Speicher. CI sah das nie.
+`npm run lint` could no longer run locally — `eslint .` ran into the working copies
+of parallel sessions and died of memory. CI never saw that.
 
-Je Commit eine Zeile, neueste zuerst:
+One line per commit, newest first:
 
-- `9e4e25d` docs(agenten, roadmap): beide Posteingaenge geleert, die Regeln ausgerollt - und ein Fehlalarm, der eine echte Ursache hatte
-- `36b9a1b` sec(routen, engine, oberflaeche): 21 bestaetigte Befunde zweier Pruefagenten - und eine Engine, die tausendmal schneller ist
-- `98f374d` sec(routen, audit-pack): zwei fehlende Tore und ein Zaehler, der der behaupteten Anzahl glaubte
-- `b378e51` sec(audit-pack, evidence): zwei Nachzieher der QA-Pruefung - eine Schwaerzung an einer Stelle, und "ungezaehlt" heisst nicht "sauber"
-- `9d77219` sec(audit): drei Befunde des b88c77b-Audits, jeder am Code nachgeprueft - und die Namensaufloesung gemessen statt behauptet
-- `351e169` sec(audit-pack): ein Alias eines signierten Pfades zaehlt als derselbe Pfad
-- `c90fb65` chore(security): die Erlaubnisliste zitiert das Muster nicht mehr, das sie erklaert
-- `fce3464` fix(test): die schliessende Klammer, die der Merge verschluckt hat
-- `36a5463` sec(vertrauenskette): Bytes statt Text, ein Pfad statt zweier, und ein Widerruf, der ankommt
-- `875bb99` fix(engine): ein Literal ist Text, kein Code - und drei Schritte, die der Leser uebersah
-- `2af1890` fix(engine): der urteilende Teil sagt nicht mehr als er gefunden hat - zehn Defekte
-- `8680352` docs: vier Gegenreview-Befunde als behoben vermerkt, und ein toter Schluessel in der Vorgeschichte
-- `50ac4b6` chore(security): drei Fehlalarme des Volllaufs eingetragen, mit Begruendung je Eintrag
-- `4f18fc6` fix(gegenreview): CR-13, CR-14, CR-16 und CR-20 behoben, CR-09 bekommt seinen Zwischenschutz
-- `4770b77` docs(roadmap): Gegenreview c5085bb aufgenommen - 20 Befunde geprueft, elf Schritte, vier Entscheidungen
-- `c5085bb` docs(feierabend): Stand vom 18.09.2026 - drei Entscheidungen, die Vollpruefung, Unreleased
-- `acf09bb` docs(agents): drei Posteingaenge zu b88c77b entschieden - UX 16, Security 83, QA-Vollreview 49 kritische
-- `1db8523` sec(audit): fuenf mittlere Befunde aus b88c77b behoben - ein echter href, drei Bindungen, ein Ring
-- `1a90b06` fix(ux): sieben Befunde aus dem UX-Review zu b88c77b, jeder mit Waechter
-- `d6a2bfc` feat(7.6): Was sich fuer Nutzer aendert - vier Felder, jedes mit Stand und Quelle
-- `076bfcf` docs(security): Audit zu b88c77b entschieden - 16 hohe, einer echt
-- `f9f4ac1` sec(xss): eine Modell-URL erreicht einen Anker nur als http(s)
-- `ce7dd9c` feat(7.5): das Panel ist verdrahtet, gerendert geprueft, und die statischen Aufrufe belegt
-- `4ddc262` feat(7.5): Pruefauftraege statt Scheinwissen - drei Arten Nichtwissen werden Aufgaben
-- `43b7fab` docs(backlog): Beobachtung zur QA-Delta-Pruefung - ein mitgepushter Prosa-Diff galt als nicht enthalten
-- `13e474c` fix(mfa): ein fehlendes Profil ist eine Ablehnung, wo Einschreibung verlangt wird
-- `a650a09` docs(backlog): Scope Items - keine offizielle maschinenlesbare Quelle, zwei Wege bleiben
-- `14ab490` docs(security): SEC-2026-135/136/137 behoben in 7a5a6b0, Zeilen in ROADMAP Paragraph 12
-- `7a5a6b0` sec(mfa): Einschreibepflicht fuer S/4-Zugang und den eigenen Gemini-Schluessel
-- `e61f26c` chore(rules): ausgerollt - Produktion, Register und Arbeitskopie stimmen ueberein
+- `9e4e25d` docs(agents, roadmap): both inboxes emptied, the rules rolled out - and a false alarm that had a real cause
+- `36b9a1b` sec(routes, engine, interface): 21 confirmed findings from two review agents - and an engine that is a thousand times faster
+- `98f374d` sec(routes, audit-pack): two missing gates and a counter that believed the claimed count
+- `b378e51` sec(audit-pack, evidence): two follow-ups from the QA review - a redaction in one place, and "uncounted" does not mean "clean"
+- `9d77219` sec(audit): three findings from the b88c77b audit, each re-checked against the code - and the name resolution measured instead of claimed
+- `351e169` sec(audit-pack): an alias of a signed path counts as the same path
+- `c90fb65` chore(security): the allowlist no longer quotes the pattern it explains
+- `fce3464` fix(test): the closing bracket the merge swallowed
+- `36a5463` sec(trust-chain): bytes instead of text, one path instead of two, and a revocation that arrives
+- `875bb99` fix(engine): a literal is text, not code - and three steps the reader overlooked
+- `2af1890` fix(engine): the judging part no longer says more than it found - ten defects
+- `8680352` docs: four cross-review findings marked as fixed, and a dead key in the history
+- `50ac4b6` chore(security): three false alarms of the full run recorded, with a reason per entry
+- `4f18fc6` fix(cross-review): CR-13, CR-14, CR-16 and CR-20 fixed, CR-09 gets its interim protection
+- `4770b77` docs(roadmap): cross-review c5085bb taken in - 20 findings checked, eleven steps, four decisions
+- `c5085bb` docs(end-of-day): status of 18.09.2026 - three decisions, the full review, Unreleased
+- `acf09bb` docs(agents): three inboxes for b88c77b decided - UX 16, Security 83, QA full review 49 critical
+- `1db8523` sec(audit): five medium findings from b88c77b fixed - one real href, three bindings, one ring
+- `1a90b06` fix(ux): seven findings from the UX review of b88c77b, each with a guard
+- `d6a2bfc` feat(7.6): What changes for users - four fields, each with status and source
+- `076bfcf` docs(security): audit of b88c77b decided - 16 high, one real
+- `f9f4ac1` sec(xss): a model URL reaches an anchor only as http(s)
+- `ce7dd9c` feat(7.5): the panel is wired, checked rendered, and the static calls evidenced
+- `4ddc262` feat(7.5): check tasks instead of pseudo-knowledge - three kinds of not-knowing become tasks
+- `43b7fab` docs(backlog): observation on the QA delta review - a prose diff pushed along was treated as not included
+- `13e474c` fix(mfa): a missing profile is a refusal where enrolment is required
+- `a650a09` docs(backlog): scope items - no official machine-readable source, two ways remain
+- `14ab490` docs(security): SEC-2026-135/136/137 fixed in 7a5a6b0, rows in ROADMAP paragraph 12
+- `7a5a6b0` sec(mfa): mandatory enrolment for S/4 access and the own Gemini key
+- `e61f26c` chore(rules): rolled out - production, register and working copy match
 
 ## [v2.13.0] — 2026-09-18
 
-### Der Prozess kommt jetzt aus dem Code heraus — als BPMN, benannt, navigierbar, und mit einem statt vierundzwanzig Engine-Defekten
+### The process now comes out of the code — as BPMN, named, navigable, and with one engine defect instead of twenty-four
 
-**Phase 2 ist vollständig.** Elf Schritte, vier davon an diesem Tag: die fachliche
-Benennung, die BPMN-Ansicht, der Export und der erste Blick — dazu die Navigation
-großer Prozesse und die Arbeit an dem, was der Referenzkorpus an der Engine
-gefunden hat.
+**Phase 2 is complete.** Eleven steps, four of them on this day: the business
+naming, the BPMN view, the export and the first look — plus the navigation of
+large processes and the work on what the reference corpus found in the
+engine.
 
-**Große Prozesse navigieren (2.9).** Die Prozesskarte trägt jetzt Programme in der
-Größe echter Legacy-Reports. Die Übersicht öffnet mit eingeklappten Teilprozessen,
-jeder mit Zeilenbereich, Zählern (Entscheidungen · hard-coded · nicht bestimmt) und
-einer Problemzeile im Klartext; darunter Pfadzeile, Gliederungsbaum mit stabiler
-Nummer je Schritt, Minikarte über alle Ebenen, „Main path" und „Show paths to here",
-Overlays als Filter, Laufvarianten aus den Selektionsschaltern und eine Suche über
-alle Ebenen. Ebene und Auswahl stehen im URL-Fragment: ein geteilter Link öffnet
-dieselbe Stelle, Zurück und Vorwärts tun das Erwartbare. **Die Abnahme ist gemessen,
-über alle 65 Knoten einzeln statt an Stichproben:** am 1.000-Zeilen-Beispiel ist
-jeder Schritt mit der Maus in höchstens 2 und mit der Tastatur in genau 3 Aktionen
-erreichbar (`Ctrl+K`, Gliederungsnummer, `Enter`). Die Nummer gibt es, weil Namen
-nicht eindeutig sind — 65 Elemente tragen 42 verschiedene Labels.
+**Navigating large processes (2.9).** The process map now carries programs the
+size of real legacy reports. The overview opens with collapsed subprocesses,
+each with a line range, counters (decisions · hard-coded · not determined) and
+a problem line in plain language; below it a path line, an outline tree with a stable
+number per step, a minimap across all levels, "Main path" and "Show paths to here",
+overlays as filters, run variants from the selection switches and a search across
+all levels. Level and selection are in the URL fragment: a shared link opens
+the same place, Back and Forward do what is expected. **The acceptance is measured,
+across all 65 nodes individually instead of by samples:** on the 1,000-line example
+every step is reachable with the mouse in at most 2 and with the keyboard in exactly 3 actions
+(`Ctrl+K`, outline number, `Enter`). The number exists because names
+are not unique — 65 elements carry 42 different labels.
 
-Dabei fiel auf, dass **ein Wächter keine Verzweigung ist**: ein führendes
-`CHECK p_rfc = abap_true.` wird in der BPMN als bedingter Fluss ohne Umgehungskante
-gezeichnet. Wer ihm wie einer Verzweigung folgt, behauptet, das Programm ende am
-Schalter — „31 von 65 Schritten laufen nicht", wo es 59 sind. Die Navigation
-unterscheidet beides; die saubere Lösung in `lib/bpmn` ist als Nachzieher an 2.6
-vermerkt.
+Along the way it became clear that **a guard is not a branch**: a leading
+`CHECK p_rfc = abap_true.` is drawn in the BPMN as a conditional flow without a bypass edge.
+Whoever follows it like a branch claims the program ends at the
+switch — "31 of 65 steps do not run", where it is 59. The navigation
+distinguishes the two; the clean solution in `lib/bpmn` is noted as a follow-up to
+2.6.
 
-**BPMN-Export aus dem Skelett des signierten Laufs (2.6).** Der Export entsteht aus
-dem Code, nicht aus einem Modellfluss: gültiges XML mit Escaping, stabile IDs,
-Bedingungen an den Kanten, eigenes Layout, Anker und Zustand in einem eigenen
-Namensraum unter `extensionElements`
-(`https://clean-core.io/schema/bpmn/reconstruction/1`). Eingeklappte Teilprozesse
-sind echte BPMN-Teilprozesse, Fremdsysteme ein Pool mit Nachrichtenfluss. Die
-Schemaprüfung läuft im Test.
+**BPMN export from the skeleton of the signed run (2.6).** The export comes from
+the code, not from a model flow: valid XML with escaping, stable IDs,
+conditions on the edges, its own layout, anchor and state in a separate
+namespace under `extensionElements`
+(`https://clean-core.io/schema/bpmn/reconstruction/1`). Collapsed subprocesses
+are real BPMN subprocesses, external systems a pool with message flow. The
+schema check runs in the test.
 
-**Fachliche Benennung (2.4).** Das Modell bekommt Knoten-ID, Art, technisches Label,
-die Bedingungstexte der Kanten und die AUTHORITY-CHECK-Objekte — keinen Quelltext,
-keine Feldwerte — und darf genau zwei Dinge zurückgeben: Namen zu Knoten-IDs und
-Lane-Vorschläge. Was nicht passt, wird verworfen und gezählt, nicht repariert: 20
-Regeln, von „unbekannte ID" und „Knoten zweimal benannt" über „neue Knoten/Kanten"
-bis zur Lane namens „CFO". Der technische Name bleibt stehen, der fachliche daneben,
-der Anker bewegt sich nie, und ein Element ohne Anker heißt „Unanchored", auch mit
-schönem Namen. Lanes tragen den Satz *„Reconstructed from AUTHORITY-CHECK and
-naming, not an organisational statement"*. Gespeichert wird eine Benennung nur mit
-gültiger Quittung; ohne Schlüssel oder mit abgeschalteter Stufe erscheint das
-vollständige Skelett mit technischen Namen und einem Satz, der sagt warum.
+**Business naming (2.4).** The model gets node ID, kind, technical label,
+the condition texts of the edges and the AUTHORITY-CHECK objects — no source code,
+no field values — and may return exactly two things: names for node IDs and
+lane proposals. Whatever does not fit is discarded and counted, not repaired: 20
+rules, from "unknown ID" and "node named twice" through "new nodes/edges"
+to the lane named "CFO". The technical name stays, the business name next to it,
+the anchor never moves, and an element without an anchor is called "Unanchored", even with
+a nice name. Lanes carry the sentence *"Reconstructed from AUTHORITY-CHECK and
+naming, not an organisational statement"*. A naming is stored only with a
+valid receipt; without a key or with the stage switched off, the
+complete skeleton appears with technical names and a sentence that says why.
 
-**Abhängigkeiten, die die Engine nicht sah (2.11, Familie c).** Neun Korpusfälle, an
-denen nichts gemeldet wurde oder etwas Erfundenes. Das Stringtemplate eines
-ADBC-Aufrufs *ist* SQL; der Makroplatzhalter `&1` ist nie ein Objekt, die Wirkung
-steht an der Aufrufstelle; `(LC_TAB)` war nie ein Tabellenname, die Konstante daneben
-nennt KNA1; und `(P_TAB)` stand da, wo die Quelle überhaupt kein Ziel schließt — ein
-ungelöstes Ziel ist jetzt die Coverage-Klasse `dynamic-target` („Nicht bestimmt"),
-und der Wert daneben ein *mögliches* Ziel, markiert und nie als bekannt. `TABLES:`,
-`TYPE kna1`, `INCLUDE STRUCTURE`, `NODES`/`GET` und `ASSIGN ('(SAPMV45A)VBAK-VBELN')`
-sind Abhängigkeiten mit eigener Verwendung (`Reference`), kein Lesezugriff. Beide
-Engines lesen das aus **einer** Datei (`lib/abap/table-dependencies.ts`) statt aus
-zwei Kopien desselben Musters, und dieselbe Datei fragt die Deklarationen — weshalb
-`MODIFY gt_bp_data FROM gs_bp_data` keine erfundene Datenbankkopplung mehr ist.
+**Dependencies the engine did not see (2.11, family c).** Nine corpus cases in
+which nothing was reported or something invented. The string template of an
+ADBC call *is* SQL; the macro placeholder `&1` is never an object, the effect
+is at the call site; `(LC_TAB)` was never a table name, the constant next to it
+names KNA1; and `(P_TAB)` stood where the source does not determine any target at all — an
+unresolved target is now the coverage class `dynamic-target` ("Not determined"),
+and the value next to it a *possible* target, marked and never as known. `TABLES:`,
+`TYPE kna1`, `INCLUDE STRUCTURE`, `NODES`/`GET` and `ASSIGN ('(SAPMV45A)VBAK-VBELN')`
+are dependencies with their own usage (`Reference`), not a read access. Both
+engines read this from **one** file (`lib/abap/table-dependencies.ts`) instead of from
+two copies of the same pattern, and the same file queries the declarations — which is why
+`MODIFY gt_bp_data FROM gs_bp_data` is no longer an invented database coupling.
 
-**Die Grundlinie, nachgemessen.** 340 Paare, **205** Übereinstimmungen statt 178, **ein
-Engine-Defekt statt 24**. Nicht durch eine nachgiebigere Messung: die Vergleichsschicht
-hat genau *eine* neue Brücke bekommen, und zwar dort, wo die Engine die Aussage
-tatsächlich führt; vier Fälle sind von „nicht vergleichbar" zu einem sichtbaren Urteil
-gewandert, weil die Engine die Aussageklasse jetzt überhaupt produziert. Bewusst keine
-Brücke für R29, R15, R26, R12 und R13b: dort führt die Engine keine Befundmarke, und eine
-Brücke hätte „verfehlt" gezählt, wo nichts behauptet wird.
+**The baseline, re-measured.** 340 pairs, **205** matches instead of 178, **one
+engine defect instead of 24**. Not through a more lenient measurement: the comparison layer
+got exactly *one* new bridge, and that where the engine
+actually carries the statement; four cases moved from "not comparable" to a visible verdict,
+because the engine now produces the statement class at all. Deliberately no
+bridge for R29, R15, R26, R12 and R13b: there the engine carries no finding marker, and a
+bridge would have counted "missed" where nothing is claimed.
 
 ### Security
 
-**SEC-2026-025 — Dateileseloch in der Testlauf-Sandbox (kritisch nach Prüfung).**
-Der esbuild-Bundler im Elternprozess wies nur relative `.js`-Traversal ab. Zwei
-Plugins teilten sich die Fälle und ließen dazwischen eine Lücke: absolute Pfade und
-relative Importe jeder anderen Endung wurden unverändert an esbuilds Default-Resolver
-gereicht, der direkt vom Dateisystem liest. Ein eingereichter Test konnte damit
-Service-Account-JSON und Anwendungsquelltext ins Bundle ziehen und im Antwortfeld
-zurückbekommen; Voraussetzung war nur ein bestätigtes Eigentümerkonto. Jetzt besitzt
-ein einziges `onResolve`-Plugin die ganze Import-Fläche: alles Relative wie Absolute
-muss in `testDir` auflösen, bevor der Default-Resolver den Pfad überhaupt sieht. Die
-Ablehnung ist fest und pfadfrei, und der 500er-Zweig gibt keine internen
-Fehlermeldungen mehr preis.
+**SEC-2026-025 — file read hole in the test-run sandbox (critical after review).**
+The esbuild bundler in the parent process only rejected relative `.js` traversal. Two
+plugins split the cases between them and left a gap in between: absolute paths and
+relative imports of any other extension were passed unchanged to esbuild's default resolver,
+which reads directly from the file system. A submitted test could thereby pull
+service account JSON and application source code into the bundle and get it back
+in the response field; the only precondition was a confirmed owner account. Now
+a single `onResolve` plugin owns the whole import surface: everything relative or absolute
+must resolve within `testDir` before the default resolver even sees the path. The
+refusal is fixed and path-free, and the 500 branch no longer discloses internal
+error messages.
 
 ### UX
 
-**UX-102 — die How-to-Seite beschreibt das Produkt, das es gibt.** Sie führte zwei
-eigene Phasenlisten — eine fürs `HowTo`-JSON-LD, eine für den Rundgang — mit sechs
-statt sieben Phasen, Testing vor Documentation und Node.js/TypeScript/XSUAA auf
-beiden Tracks. Beide leiten Anzahl, Reihenfolge und Titel jetzt aus `PHASES` ab; die
-Texte stehen je `PhaseKey` in `lib/how-to-content.ts`, sodass eine achte Phase ohne
-Text nicht kompiliert. Entfernt statt umformuliert: die sechs Screenshots vom Juli
-samt ihrer Hotspots, der Sprechertext und die drei Konzeptkarten unter „SAP Verified
-Strategy" — ein korrigierter Satz neben einem widersprechenden Bild bleibt ein
-Widerspruch. Jede Folie verlinkt stattdessen dieselbe Phase im Demo-Projekt.
-Miterledigt: **UX-008** (Slideshow-Steuerung ohne Namen, gekaperte Pfeiltasten).
+**UX-102 — the how-to page describes the product that exists.** It kept two
+phase lists of its own — one for the `HowTo` JSON-LD, one for the tour — with six
+instead of seven phases, Testing before Documentation and Node.js/TypeScript/XSUAA on
+both tracks. Both now derive count, order and titles from `PHASES`; the
+texts sit per `PhaseKey` in `lib/how-to-content.ts`, so that an eighth phase without
+text does not compile. Removed instead of reworded: the six screenshots from July
+with their hotspots, the narrator text and the three concept cards under "SAP Verified
+Strategy" — a corrected sentence next to a contradicting picture remains a
+contradiction. Instead, every slide links to the same phase in the demo project.
+Done along the way: **UX-008** (slideshow controls without names, hijacked arrow keys).
 
 ### QA
 
-Vier als `high` gemeldete Befunde der Review von `13d1ffa` widerlegt — alle vier
-dieselbe Fehllesung: der Prüfer sah im Diff die gelöschte einzeilige Zusicherung und
-nicht die mehrzeilige schärfere, die an ihre Stelle trat. `expect(manifest.attested)`
-bindet seit `c69be3e` zusätzlich die SHA-256 der versiegelten Bytes; der
-Provenance-Satz lautet jetzt „user-attested — nobody vouches for what it says."
-statt „— not covered by the signature.", weil Manifestversion 3 die Bytes sehr wohl
-bindet und der alte Satz damit falsch geworden wäre.
+Four findings of the review of `13d1ffa` reported as `high` refuted — all four
+the same misreading: the reviewer saw in the diff the deleted one-line assertion and
+not the multi-line, stricter one that took its place. `expect(manifest.attested)`
+has additionally bound the SHA-256 of the sealed bytes since `c69be3e`; the
+provenance sentence now reads "user-attested — nobody vouches for what it says."
+instead of "— not covered by the signature.", because manifest version 3 does bind the bytes
+and the old sentence would thereby have become wrong.
 
 
-**Die letzte Wurzel von 2.11 Familie (a).** Eine DDIC-Typabhängigkeit (`TABLES`, `TYPE`,
-`INCLUDE STRUCTURE`, `SELECT-OPTIONS … FOR`) ist jetzt eine eigene Verwendung und wird
-nach dem Zustand des Objekts benotet: **C** für eine Tabelle, die SAP nicht freigibt,
-statt der Namensnote **D**, die dem Programm vorwarf, an der Anwendung vorbeizugreifen,
-obwohl es keine Zeile anfasst. Eine Typreferenz auf einen *eigenen* Namen bleibt bewusst
-`Unknown`. Dazu eine zweite Regelbrücke für das Lesen über eine logische Datenbank am
-`GET`-Ereignis. **Von 24 Engine-Defekten der Grundlinie vom 17.09. bleibt einer** —
-CC-050, und der ist kein Fehler der Objektnote, sondern die fehlende Antwort „Level je
-Artefakt": eine Produktentscheidung, kein Bugfix.
+**The last root of 2.11 family (a).** A DDIC type dependency (`TABLES`, `TYPE`,
+`INCLUDE STRUCTURE`, `SELECT-OPTIONS … FOR`) is now a usage of its own and is
+graded by the state of the object: **C** for a table that SAP does not release,
+instead of the name grade **D**, which accused the program of bypassing the application,
+although it does not touch a single row. A type reference to an *own* name deliberately stays
+`Unknown`. Plus a second rule bridge for reading via a logical database at the
+`GET` event. **Of 24 engine defects in the baseline of 17.09., one remains** —
+CC-050, and that is not an error of the object grade, but the missing answer "level per
+artefact": a product decision, not a bug fix.
 
-**Drei Stellen erzählten noch vom Produkt vom Juli (UX-015, UX-104).** Der Chatbot
-erzeugte seinen `/how-to`-Rundgang aus einer handgeschriebenen Liste mit sechs falschen
-Phasen und nannte Karten und Exporte, die es in Delivery, Documentation und Design nicht
-gibt — er liest jetzt dieselbe Quelle wie die Seite. Die Landingpage zeigte dieselben
-sechs Juli-Screenshots, die von `/how-to` geflogen sind; sie sind **gelöscht, nicht
-ersetzt** (handverlesene Bilder von heute sind im Januar wieder Juli-Bilder, und Roadmap
-3.0.6 besitzt diese Entscheidung bereits), an ihrer Stelle sieben Karten aus derselben
-Phasenquelle, jede mit Link ins Demo-Projekt, als Serverkomponente. Das Sitemap-Datum
-einer Route wird jetzt aus allem gelesen, was sie rendert — zwölf Routen meldeten ein
-Datum, das keine Inhaltsänderung bewegen konnte. Und elf öffentliche Seiten hatten vier
-Antworten auf die Frage nach dem Rückweg; eine davon, `router.back()`, tat für einen
-Leser aus der Suche gar nichts und schickte Abgemeldete hinter den Login.
+**Three places still told the story of the product from July (UX-015, UX-104).** The chatbot
+generated its `/how-to` tour from a handwritten list with six wrong
+phases and named cards and exports that do not exist in Delivery, Documentation and Design
+— it now reads the same source as the page. The landing page showed the same
+six July screenshots that were thrown out of `/how-to`; they are **deleted, not
+replaced** (hand-picked pictures from today are July pictures again in January, and roadmap
+3.0.6 already owns this decision), in their place seven cards from the same
+phase source, each with a link into the demo project, as a server component. The sitemap date
+of a route is now read from everything it renders — twelve routes reported a
+date that no content change could move. And eleven public pages had four
+answers to the question of the way back; one of them, `router.back()`, did nothing at all for a
+reader coming from search and sent signed-out users behind the login.
 
-**Der QA-Prüfer liest wieder vollständig.** Das Aufrufbudget einer Delta-Review steigt von
-vier auf zehn. Vier waren keine Grenze mehr, sondern eine Sackgasse: eine unvollständige
-Review lässt den Prüfpunkt auf ihrer Basis stehen, also kam das ungelesene Delta wieder —
-plus alles, was seither gepusht wurde. Geld war nie die bindende Grenze (0,1031 $ gegen
-eine Obergrenze von 0,50 $), und die Obergrenze bleibt echt: zehn volle Aufrufe schätzen
-auf 0,4983 $, der elfte wird abgewiesen.
+**The QA reviewer reads completely again.** The call budget of a delta review rises from
+four to ten. Four was no longer a limit but a dead end: an incomplete
+review leaves the checkpoint at its base, so the unread delta came back —
+plus everything pushed since. Money was never the binding limit ($0.1031 against
+a cap of $0.50), and the cap stays real: ten full calls are estimated
+at $0.4983, the eleventh is refused.
 
-**Die Vollprüfung von `a19945ef01dc` ist abgeschlossen triagiert.** Von 504 gemeldeten
-Befunden sind alle 30 kritischen und alle 94 hohen entschieden — bei den hohen: 15
-bekannt, 14 mit Beleg widerlegt, 62 bestätigt (39 eigenständige Defekte), 3 unklar. 21
-davon sind am laufenden Code nachgestellt. Das Muster hinter den Widerlegungen: **der
-Prüfer liest einen Rückwärtskompatibilitäts-Test als eingefrorenen Defekt** — sechs von
-vierzehn sind dieser eine Denkfehler.
+**The full review of `a19945ef01dc` is fully triaged.** Of 504 reported
+findings, all 30 critical and all 94 high ones are decided — of the high ones: 15
+known, 14 refuted with evidence, 62 confirmed (39 distinct defects), 3 unclear. 21
+of them were reproduced on the running code. The pattern behind the refutations: **the
+reviewer reads a backward-compatibility test as a frozen defect** — six of
+fourteen are this one fallacy.
 
-### Modellieren — Phase 3 vollständig
+### Modelling — Phase 3 complete
 
-**Editor (3.1).** Der Prozess lässt sich bearbeiten: derselbe Modeller hinter denselben
-Props wie die Lesekarte, mit einer Palette aus 19 benannten Schaltflächen für Pools,
-Lanes, Ereignisse, Gateways, alle Task-Typen, Teilprozess, Datenobjekt, Nachrichtenfluss
-und Anmerkung, dazu Umbenennen, Löschen, Undo und Redo. Bedienbar mit der Tastatur, weil
-derselbe Entwurf daneben als Liste steht — die Palette von bpmn-js ist mit Tab nicht
-erreichbar und kennt Task-Typen und das parallele Gateway gar nicht. **Das rekonstruierte
-Ist wird dabei nie geschrieben**: der Editor arbeitet auf einer Kopie, und der Test misst
-das an der Zeichnung der Lesekarte, nicht an der Absicht.
+**Editor (3.1).** The process can be edited: the same modeller behind the same
+props as the reading map, with a palette of 19 named buttons for pools,
+lanes, events, gateways, all task types, subprocess, data object, message flow
+and annotation, plus rename, delete, undo and redo. Operable with the keyboard, because
+the same draft sits next to it as a list — the bpmn-js palette is not reachable with Tab
+and does not know task types and the parallel gateway at all. **The reconstructed
+as-is is never written in the process**: the editor works on a copy, and the test measures
+that on the drawing of the reading map, not on the intention.
 
-**Revisionen (3.2).** Jedes Speichern legt eine unveränderliche Revision an, geschrieben
-nur vom Server über `DocumentReference.create()` — kein `set`, kein `update`, kein
-`merge`. Revision 1 ist das aus der signierten Quelle rekonstruierte Ist und kann von
-keinem Request gesetzt werden; der Lauf wird dafür geladen und seine Signatur geprüft,
-bevor rekonstruiert wird. Jede weitere Revision trägt Konto und Serveruhr. Zwei
-Revisionen lassen sich vergleichen, je Element über die stabilen Ids aus 2.6, sodass ein
-umbenannter Schritt als Umbenennung erscheint und nicht als ein verschwundener plus ein
-neuer. Zweimal dieselben Bytes legen keine zweite Revision an; hat jemand anderes
-inzwischen gespeichert, wird nichts überschrieben, und der Satz nennt die Revision, die
-zu öffnen ist.
+**Revisions (3.2).** Every save creates an immutable revision, written
+only by the server via `DocumentReference.create()` — no `set`, no `update`, no
+`merge`. Revision 1 is the as-is reconstructed from the signed source and cannot be set by
+any request; for that the run is loaded and its signature checked
+before reconstructing. Every further revision carries account and server clock. Two
+revisions can be compared, per element via the stable ids from 2.6, so that a
+renamed step appears as a rename and not as one that disappeared plus a
+new one. The same bytes twice do not create a second revision; if someone else has
+saved in the meantime, nothing is overwritten, and the sentence names the revision
+to open.
 
-**Prüfhinweise (3.3).** bpmnlints Standardregeln plus vier eigene — Task ohne Anker,
-Gateway ohne Bedingung, Lane nur rekonstruiert, Element weicht ohne Zustand vom Code ab.
-Am 1.000-Zeilen-Beispiel 28 Hinweise, zählbar, abschaltbar, jeder mit Sprung zum Element.
-**Kein Hinweis sperrt etwas.** Genau ein unbeschrifteter Zweig ist ein Default Flow und
-wird nie gemeldet.
+**Check hints (3.3).** bpmnlint's standard rules plus four of our own — task without anchor,
+gateway without condition, lane only reconstructed, element deviates from the code without a state.
+On the 1,000-line example 28 hints, countable, switchable off, each with a jump to the element.
+**No hint blocks anything.** Exactly one unlabelled branch is a default flow and
+is never reported.
 
-**Zustände je Element und Regel (3.5).** Beibehalten · bewusst ändern · entfallen ·
-klären, für jedes Prozesselement und jede Geschäftsregel `BR-nnn`. Eine Bestätigung ist
-eine **Bedarfsrevision** mit Konto und Serverzeit, unveränderlich in einer eigenen
-Unterkollektion — nicht in den Prozessrevisionen, weil deren Route auf unveränderte Bytes
-absichtlich ohne Schreibvorgang antwortet und Zustände dort genau diese Regel aufgeweicht
-hätten. **„Keep" heißt, dass das Geschäft die Sache weiterhin braucht; es konserviert
-keine ABAP-Zeile** — das steht über der Liste und an jeder Karte. Ändern und Entfallen
-verlangen eine Begründung. Unentschieden ist kein Zustand, sondern seine Abwesenheit, und
-wird als solche gezählt. Eine bestätigte Regel, die sich bewegt, markiert nur die
-Elemente, die aus ihr gezeichnet wurden.
+**States per element and rule (3.5).** Keep · change deliberately · drop ·
+clarify, for every process element and every business rule `BR-nnn`. A confirmation is
+a **requirement revision** with account and server time, immutable in its own
+subcollection — not in the process revisions, because their route deliberately answers unchanged bytes
+without a write, and states there would have softened exactly this rule.
+**"Keep" means that the business still needs the thing; it does not preserve
+an ABAP line** — that is stated above the list and on every card. Change and drop
+require a reason. Undecided is not a state but its absence, and
+is counted as such. A confirmed rule that moves marks only the
+elements that were drawn from it.
 
-**Ist und Soll (3.6).** Das Soll wird aus der rekonstruierten Karte und den Zuständen
-abgeleitet: Beibehaltenes bleibt, Entfallenes verschwindet daraus — behält im Vergleich
-aber seine Zeilen, weil belegt ist, dass es den Code gab —, bewusst Geändertes bleibt
-markiert, und „klären" wie „unentschieden" bleiben offen, getrennt gezählt. **Ein
-Element, das nur im Soll steht, hat keinen Anker und bekommt auch keinen**: die Funktion,
-die einen Bedarf ohne Code erzeugt, bekommt gar kein Element übergeben und hat nichts zu
-kopieren. Der Vergleich zählt so ein Element als hinzugekommen, nie als bestätigt. Ein
-Soll ist keine Aussage über den Code; es geht in kein signiertes Audit-Pack.
+**As-is and to-be (3.6).** The to-be is derived from the reconstructed map and the states:
+what is kept stays, what is dropped disappears from it — but
+keeps its lines in the comparison, because it is evidenced that the code existed —, what is deliberately changed stays
+marked, and "clarify" like "undecided" stay open, counted separately. **An
+element that exists only in the to-be has no anchor and does not get one either**: the function
+that creates a requirement without code is not handed an element at all and has nothing to
+copy. The comparison counts such an element as added, never as confirmed. A
+to-be is not a statement about the code; it goes into no signed audit pack.
 
-### Die Vertrauenskette
+### The trust chain
 
-**Ein Testergebnis ist eine Beobachtung des Servers, keine Behauptung des Browsers.**
-`/api/run-tests` führt die **gespeicherten** Artefakte aus — Code und Tests aus dem Body
-werden nicht mehr gelesen — und schreibt Verdikte und eine unveränderliche Quittung in
-einem Zug, gebunden an den signierten Lauf und an die Prüfsummen von Code, Suite und
-Fallliste. Testing und Delivery werden nur damit grün; ein selbst gesetztes „Passed"
-bleibt sichtbar und heißt **„Self-reported"**.
+**A test result is an observation by the server, not a claim by the browser.**
+`/api/run-tests` executes the **stored** artefacts — code and tests from the body
+are no longer read — and writes verdicts and an immutable receipt in
+one go, bound to the signed run and to the checksums of code, suite and
+case list. Testing and Delivery turn green only with that; a self-set "Passed"
+stays visible and is called **"Self-reported"**.
 
-**Die Signierroute nimmt keinen Nicht-ABAP-Text mehr** als abgeschlossene Analyse an, und
-sie prüft das, bevor ein Kontingent gebucht wird. Eine Architektenfreigabe entsteht in
-einer Transaktion und kann damit nicht an einen Lauf geraten, den niemand geprüft hat.
+**The signing route no longer accepts non-ABAP text** as a completed analysis, and
+it checks this before a quota is booked. An architect approval is created in
+a transaction and can therefore not end up on a run that nobody has checked.
 
-**`/.well-known/` veröffentlicht einen Schlüsselbund statt eines einzelnen Schlüssels.**
-Eine Beweismappe von gestern verifiziert auch nach einer Rotation. Ein nicht mehr
-geführter Schlüssel ergibt „konnte nicht prüfen", nie „fehlgeschlagen" — der Unterschied
-zwischen Unwissen und Urteil.
+**`/.well-known/` publishes a key ring instead of a single key.**
+An evidence pack from yesterday still verifies after a rotation. A key no longer
+listed yields "could not check", never "failed" — the difference
+between not knowing and a verdict.
 
 ### Security
 
-**Entzogene Rechte enden jetzt dort, wo sie gelten.** Ein Administrator exportiert kein
-fremdes Beweispaket mehr und signiert keinen Lauf in einem fremden Projekt; ein
-gesperrtes Konto erreicht keinen S/4-Mandanten mehr; ein zurückgenommener Admin-Anspruch
-wird dem Token entzogen statt nur auf den Admin-Routen geprüft; und eine Rechtevergabe,
-die nur halb durchging, lässt nichts Benutzbares zurück. Der Signierschlüssel der
-Vertrauenskette hat einen Boden von 32 Zeichen. Die vier Routen, die mit einem fremden
-S/4-Mandanten sprechen, lesen dessen Antwort durch einen gemeinsamen Helfer mit Zeit- und
-Größengrenze statt vier Mal unbegrenzt.
+**Revoked rights now end where they apply.** An administrator no longer exports
+someone else's evidence pack and no longer signs a run in someone else's project; a
+suspended account no longer reaches an S/4 client; a withdrawn admin claim
+is removed from the token instead of only being checked on the admin routes; and a rights grant
+that went through only halfway leaves nothing usable behind. The signing key of the
+trust chain has a floor of 32 characters. The four routes that talk to someone else's
+S/4 client read its response through a shared helper with a time and
+size limit instead of four times without limit.
 
 ### Engine
 
-**Text ist kein Code — die Regel steht jetzt einmal statt achtmal halb.** Dreizehn
-Engine-Defekte der Vollprüfung teilten eine Wurzel: jeder Detektor brachte sein eigenes
-halbes Maskieren mit, keiner kannte das Stringtemplate, zwei kannten auch Kommentare
-nicht. Sechs Detektoren lesen jetzt dieselbe Vorstufe; fünf eigene Literalkopien sind
-gelöscht. Das schließt elf Befunde, darunter die beiden schwersten — und beide erfanden
-nichts, sondern **löschten** etwas: eine auskommentierte Deklaration ließ den kritischen
-Schreibzugriff auf VBAK restlos verschwinden, und ein Wort in einem Stringtemplate machte
-aus einem echten Schreibzugriff eine interne Tabellenoperation.
+**Text is not code — the rule now exists once instead of eight times halfway.** Thirteen
+engine defects of the full review shared one root: every detector brought its own
+half masking, none knew the string template, two did not know comments
+either. Six detectors now read the same preliminary stage; five separate literal copies are
+deleted. That closes eleven findings, among them the two most serious — and neither invented
+anything, they **deleted** something: a commented-out declaration made the critical
+write access to VBAK disappear completely, and a word in a string template turned
+a real write access into an internal table operation.
 
-**Ein Wächter ist keine Verzweigung.** Neben jedem gefalteten Schalter trägt die BPMN
-jetzt eine Umgehungskante mit der negierten Bedingung. Damit sagt die Datei selbst, dass
-das Programm am Schalter nicht endet — auch in einem fremden Modellierwerkzeug. Am
-1.000-Zeilen-Beispiel: mit `p_rfc` aus ist genau ein Schritt nicht erreicht statt alles
-hinter dem Schalter.
+**A guard is not a branch.** Next to every folded switch the BPMN
+now carries a bypass edge with the negated condition. With that, the file itself says that
+the program does not end at the switch — even in someone else's modelling tool. On the
+1,000-line example: with `p_rfc` off, exactly one step is not reached instead of everything
+behind the switch.
 
-### Ehrliche Aussagen
+### Honest statements
 
-**Jede Antwort der laufenden Zufriedenheitsumfrage war unsichtbar.** Ein Punkt im
-Schlüssel ist bei Firestores `set()` kein Feldpfad, sondern ein Zeichen im Feldnamen: die
-Route meldete `ok`, die Seite zeigte Rückkehrern ein leeres Blatt, der Digest zählte
-niemanden. Dazu fünf Stellen, an denen das Produkt mehr behauptete, als es tut — die
-Landingpage nannte statische Beispiele kompiliert und getestet, das Whitepaper versprach
-ein kompiliertes Paket, SAP-HANA-Dienste bekamen die PostgreSQL-Anleitung, der
-Confluence-Export erfand Routing-Belege, wenn die Analyse keine lieferte, und das
-Auto-Heal ersetzte das ganze erzeugte Paket durch eine einzelne ungeprüfte Datei. **Wo
-ein Satz keine Mechanik hinter sich hatte, ist der Satz gegangen, nicht seine
-Formulierung.**
+**Every answer to the running satisfaction survey was invisible.** A dot in the
+key is not a field path in Firestore's `set()` but a character in the field name: the
+route reported `ok`, the page showed returning users a blank sheet, the digest counted
+nobody. Plus five places where the product claimed more than it does — the
+landing page called static examples compiled and tested, the whitepaper promised
+a compiled package, SAP HANA services got the PostgreSQL instructions, the
+Confluence export invented routing evidence when the analysis supplied none, and the
+auto-heal replaced the whole generated package with a single unchecked file. **Where
+a sentence had no mechanism behind it, the sentence went, not its
+wording.**
 
-**Die How-to-Seite und die Landingpage beschreiben das Produkt, das es gibt.** Beide
-führten Phasenlisten mit sechs statt sieben Phasen; die Landingpage zeigte dazu sechs
-Screenshots vom Juli mit „Upload" als eigener Stufe, ohne Economics, Testing vor
-Documentation, und Badges wie „AI Verified" und „92 % Estimated Coverage". Sie sind
-gelöscht, nicht übermalt, und an ihrer Stelle stehen sieben Karten aus derselben
-Phasenquelle, jede mit Link ins Demo-Projekt. Das Sitemap-Datum einer Route wird jetzt
-aus allem gelesen, was sie rendert — zwölf Routen meldeten ein Datum, das keine
-Inhaltsänderung bewegen konnte. Und elf öffentliche Seiten hatten vier Antworten auf die
-Frage nach dem Rückweg; eine davon schickte Abgemeldete hinter den Login.
+**The how-to page and the landing page describe the product that exists.** Both
+kept phase lists with six instead of seven phases; the landing page also showed six
+screenshots from July with "Upload" as a stage of its own, without Economics, Testing before
+Documentation, and badges like "AI Verified" and "92 % Estimated Coverage". They are
+deleted, not painted over, and in their place are seven cards from the same
+phase source, each with a link into the demo project. The sitemap date of a route is now
+read from everything it renders — twelve routes reported a date that no
+content change could move. And eleven public pages had four answers to the
+question of the way back; one of them sent signed-out users behind the login.
 
 ### QA
 
-Der Prüfpunkt der Delta-Review stand zwei Tage still, weil eine unvollständige Review ihn
-auf ihrer Basis stehen lässt und das ungelesene Delta mit jedem Push wuchs. Das
-Aufrufbudget steigt von vier auf zehn; die Kostenobergrenze von 0,50 $ bleibt und bleibt
-echt. Seither liest die Review wieder vollständig.
+The checkpoint of the delta review stood still for two days, because an incomplete review leaves it
+at its base and the unread delta grew with every push. The
+call budget rises from four to ten; the cost cap of $0.50 stays and stays
+real. Since then the review reads completely again.
 
-Von 504 gemeldeten Befunden der Vollprüfung sind **alle 30 kritischen und alle 94 hohen
-entschieden**. Bei den hohen: 15 bekannt, 14 mit Beleg widerlegt, 62 bestätigt (39
-eigenständige Defekte), 3 unklar. Das Muster hinter den Widerlegungen ist wertvoller als
-ihre Zahl: **der Prüfer liest einen Rückwärtskompatibilitäts-Test als eingefrorenen
-Defekt** — er sieht ein Manifest der Version 2.0 grün bleiben und schließt daraus, das
-Spec halte die Implementierung fest, ohne das Spec daneben zu öffnen, das für das heutige
-Ausgabeformat genau das Gegenteil verlangt.
+Of 504 reported findings of the full review, **all 30 critical and all 94 high ones are
+decided**. Of the high ones: 15 known, 14 refuted with evidence, 62 confirmed (39
+distinct defects), 3 unclear. The pattern behind the refutations is more valuable than
+their number: **the reviewer reads a backward-compatibility test as a frozen
+defect** — he sees a manifest of version 2.0 stay green and concludes from it that the
+spec pins the implementation, without opening the spec next to it, which demands exactly the opposite
+for today's output format.
 
 ## [v2.12.0] — 2026-09-17
 
-### Eine signierte Beweismappe war fälschbar. Der Referenzkorpus liegt jetzt im Repository und prüft die Engine. Und neun Versprechen, die nichts hielten, sind weg — vier davon ersatzlos
+### A signed evidence pack was forgeable. The reference corpus now lives in the repository and checks the engine. And nine promises that held nothing are gone — four of them without replacement
 
-**Das Wichtigste zuerst, weil es die Kernaussage des Produkts betraf:** Eine signierte
-Beweismappe ließ sich fälschen. Der Dateiname durfte das Trennzeichen der kanonischen Form
-tragen, also ließen sich zwei signierte Beweisdateien zu einer zusammenziehen — gleiche
-kanonische Bytes, gültige Signatur, eine Beweisdatei weniger im Archiv, und
-`scripts/verify-pack.mjs` antwortete „Verified." mit Exit 0. Nachgestellt, bevor irgendetwas
-repariert wurde: zwei verschiedene Dateilisten, byteidentische kanonische Zeichenkette.
-Dazu band die Prüfung der attestierten Dateien nur deren *Existenz*
-(`lib/audit-pack-verify.ts` fragte `!!zip.file(path)`): `07-user-attested.md` ließ sich von
-„sign-off: not given" auf eine erfundene Freigabe umschreiben, und beide Verifier blieben
-grün. Und Ausgabedatum wie Formatversion waren überhaupt nicht gebunden — ein auf 2019
-gesetztes Datum druckte das CLI als bestätigt.
+**The most important thing first, because it concerned the core claim of the product:** a signed
+evidence pack could be forged. The file name was allowed to carry the separator of the canonical form,
+so two signed evidence files could be merged into one — same
+canonical bytes, valid signature, one evidence file fewer in the archive, and
+`scripts/verify-pack.mjs` answered "Verified." with exit 0. Reproduced before anything
+was repaired: two different file lists, byte-identical canonical string.
+On top of that, the check of the attested files bound only their *existence*
+(`lib/audit-pack-verify.ts` asked `!!zip.file(path)`): `07-user-attested.md` could be rewritten from
+"sign-off: not given" to an invented sign-off, and both verifiers stayed
+green. And issue date and format version were not bound at all — a date set to 2019
+was printed by the CLI as confirmed.
 
-Behoben mit Format 3 der kanonischen Form: Eindeutigkeitsprüfung, ein Digest je attestierter
-Datei, der Ausgabeabschnitt vor dem Hash. **Alle bisher ausgelieferten Mappen verifizieren
-byte-identisch weiter** — ohne `version` oder unter Format 3 ist die kanonische Zeichenkette
-unverändert, und die Trennzeichenprüfung schließt das Loch rückwirkend auch auf ihnen. Eine
-Falle unterwegs, die zählt: die erste, breitere Regel hat die Ausstellerroute mit 500
-abgeschossen, weil der echte Katalogstand Doppelpunkt *und* Komma enthält und mit genau
-diesem Wert jede bisherige Mappe signiert ist. Die Laufbindungsfelder halten deshalb nur das
-Abschnittszeichen frei, ab Format 3 wird maskiert, und ein Spec hält den Livewert fest.
+Fixed with format 3 of the canonical form: a uniqueness check, one digest per attested
+file, the issue section before the hash. **All packs shipped so far keep verifying
+byte-identically** — without `version` or under format 3 the canonical string is
+unchanged, and the separator check closes the hole retroactively on them too. One
+trap along the way that matters: the first, broader rule took down the issuer route with a 500,
+because the real catalog status contains a colon *and* a comma and every previous pack is signed with exactly
+this value. The run-binding fields therefore keep only the section character
+free, from format 3 on it is masked, and a spec pins the live value.
 
-**Ein Administrator konnte jedes fremde Projekt löschen.** `DELETE /api/projects/{id}` ließ
-`decoded.admin === true` als Eigentümerschaft gelten, und die einzige weitere Hürde — der
-MFA-Gate — lässt jedes Token durch, wenn das Konto keinen zweiten Faktor *aktiviert* hat
-(`lib/mfa-gate.ts`: `if (!mfaEnabled) return null`). Ein Administrator ohne eingerichteten
-zweiten Faktor löschte damit aus einem gewöhnlichen ID-Token fremde Projekte samt signierter
-Runs — ohne Step-up, ohne Spiegelprüfung, ohne Journaleintrag. Jetzt: nur der Eigentümer.
-Niemand verliert eine Funktion, denn das *Lesen* fremder Projekte hat `firestore.rules` dem
-Betreiber am 16.09. bereits genommen.
+**An administrator could delete any project of someone else.** `DELETE /api/projects/{id}` accepted
+`decoded.admin === true` as ownership, and the only other hurdle — the
+MFA gate — lets every token through if the account has not *enabled* a second factor
+(`lib/mfa-gate.ts`: `if (!mfaEnabled) return null`). An administrator without a configured
+second factor could thus delete other people's projects including signed
+runs from an ordinary ID token — without step-up, without a mirror check, without a journal entry. Now: only the owner.
+Nobody loses a function, because `firestore.rules` already took *reading* other people's projects away from the
+operator on 16.09.
 
-- **Roadmap 2.10 — der Referenzkorpus liegt im Repository und prüft die Engine.**
-  `docs/korpus/referenzkorpus-v2.1.md` ist das Fallbuch (68 Fälle), `tests/korpus/cases/` das
-  daraus deterministisch erzeugte Bündel (209 Dateien, jede Quelldatei gegen den im Fallbuch
-  deklarierten Hash geprüft), `tests/korpus-engine.spec.ts` die Ratsche. Die Grundlinie sagt
-  zum ersten Mal in Zahlen, wie weit die Engine vom Korpus entfernt ist: 340 Fall-und-Klassen,
-  178 übereinstimmend, **24 Engine-Defekte**, 4 Fälle, in denen der Korpus selbst unrecht hat,
-  und 134 Aussageklassen, die die Engine noch gar nicht produziert. Die 134 sind keine
-  Schwäche des Korpus — das ist der gemessene Stand von Phase 2. Der teuerste Defekt: ein
-  `UPDATE KNA1` per ADBC ergibt genau einen Befund (`commit-work`), keine Datenkopplung, und
-  das Wort KNA1 kommt in der ganzen Ausgabe nicht vor. Die drei Defektfamilien stehen als
-  Schritt **2.11** in der Roadmap. Kein fremder Code im Repository: die Fundstellen tragen
-  Klasse, Zeilen und Hash, keinen Zeiger, und ein Test wird rot, sobald ein Hostname oder eine
-  vierzigstellige Commit-ID nach `docs/korpus/` gerät.
-- **Roadmap 2.3 — das Prozessskelett entsteht aus dem Code.** `lib/abap/process-skeleton.ts`
-  baut aus Verzweigungen und Aufrufen in *einer* Lesung Knoten, Kanten mit wörtlichem
-  Bedingungstext, Regionen und Einstiege in Laufzeitreihenfolge; Palette genau nach
-  `DESIGN.md` §5.8, ohne Modellaufruf. Jeder Knoten trägt einen Anker oder einen Grund, warum
-  nicht. Opake Aufrufe beenden den Fluss des Rufers nicht — außer `SUBMIT` ohne `AND RETURN`
-  und `LEAVE TO TRANSACTION`. Ereignisblöcke sind Einstiege, auch ohne `START-OF-SELECTION`.
-  `CHECK` bekommt drei verschiedene Kanten. `Z_ORDER_INTEGRITY_CHECK` bekommt **0 Knoten und
-  eine Notiz** statt eines erfundenen Starts: die Datei hat keinen Einstieg.
-- **Roadmap 2.8 — versteckte Geschäftsregeln.** `lib/abap/business-rules.ts` findet Literale
-  in Bedingungen als Regelkandidaten mit Anker: 140 auf den acht Beispielen. Die Preistoleranz
-  `lv_dev_pct > 5` in `Z_MM_PO_APPROVAL.abap:412` ist so ein Fall — eine Fünf im Code, die in
-  Wahrheit eine Geschäftsregel ist, die nie jemand aufgeschrieben hat. Wo eine Zahl nach
-  Geldgrenze aussieht, steht „Betrag, Währung nicht aus dem Code ableitbar" statt einer
-  Euro-Aussage. 66 Fehlalarme sind ausgeschlossen, jeder mit Grund im Auswurf statt
-  stillschweigend.
-- **Roadmap 0.2 — neun UX-Befunde, vier Versprechen ersatzlos entfernt.** Der
-  Remediation-Schalter schaltete Text, nie Code: der erzeugte Code war in beiden Stellungen
-  byte-gleich, der Prompt kannte den Modus gar nicht. Die drei „Transformation Insights" waren
-  für jedes Projekt dieselben und nannten Express und TypeORM auch im RAP-Track. Das
-  SAP-Build-Badge versprach einen Export, den es nicht gibt. Und das Forum meldete „Thread
-  Posted Successfully!", nachdem es in `useState` geschrieben hatte — die Schreibhälfte ist
-  weg, die Ankündigungen bleiben lesbar und sind als read-only benannt. Dazu: der grüne Haken
-  steht nur noch für Geprüftes, die Kompatibilitätsaussage trägt einen dauerhaft sichtbaren
-  Vorbehalt statt eines Hover-Tooltips, der Abbruch im Onboarding gibt niemandem die Schuld,
-  das Jira-Modal erfindet keine Epics und keine Boards, und der First-Run zitiert das
-  Kontingent wie der Header. **Schritt 0.2 ist damit nicht fertig** — Facts-Service und
-  Copy-CI stehen aus, und §14 plant rund dreißig QA-Befunde in denselben Schritt.
-- **Zwei Prüfungen über der Engine, die keine Sollantwort brauchen.** `@abaplint/core` liest
-  seit diesem Release als zweiter, fremder Parser mit; neun Abweichungen stehen mit Urteil und
-  Begründung im Register, und „wir haben recht" ist dort verboten. Dazu fünf metamorphe
-  Eigenschaften (98 Tests): Umbenennen ist unsichtbar, Formatieren verschiebt Anker und sonst
-  nichts, ein Kommentar ändert nichts, Aneinanderhängen ist Vereinigung, jeder Anker zeigt auf
-  sein Konstrukt. Beide haben am ersten Tag Defekte gefunden, die kein Testfall gesehen hätte:
-  `IF lv = |Status: ok|.` ließ ein Gateway aus dem Diagramm verschwinden, und `ENDIF. " done`
-  zählte nicht als Schließer — ein Programm galt als komplexer, weil es kommentiert war.
-- **Der QA-Agent liest wieder.** Das Korpus-Bündel hatte das aufgelaufene Delta auf 3,3 MB
-  getrieben, davon 80 % generierte Fixtures; der Checkpoint konnte nicht mehr vorrücken, und
-  das Review von `5f84bb2` machte **null Modellaufrufe** — und meldete trotzdem
-  `go_with_notes`. Ein grünes Häkchen über ungelesenem Code ist schlimmer als ein rotes.
-  `tests/korpus/cases/**` steht jetzt in derselben Ausschlussliste wie die anderen generierten
-  Pfade; Ratsche, Manifest, Spec und Konverter bleiben geprüft.
+- **Roadmap 2.10 — the reference corpus lives in the repository and checks the engine.**
+  `docs/korpus/referenzkorpus-v2.1.md` is the case book (68 cases), `tests/korpus/cases/` the
+  bundle generated deterministically from it (209 files, every source file checked against the hash
+  declared in the case book), `tests/korpus-engine.spec.ts` the ratchet. The baseline says
+  for the first time in numbers how far the engine is from the corpus: 340 case-and-classes,
+  178 matching, **24 engine defects**, 4 cases in which the corpus itself is wrong,
+  and 134 statement classes that the engine does not produce at all yet. The 134 are not a
+  weakness of the corpus — that is the measured status of Phase 2. The most expensive defect: an
+  `UPDATE KNA1` via ADBC yields exactly one finding (`commit-work`), no data coupling, and
+  the word KNA1 does not occur anywhere in the output. The three defect families are in the roadmap as
+  step **2.11**. No foreign code in the repository: the occurrences carry
+  class, lines and hash, no pointer, and a test turns red as soon as a hostname or a
+  forty-character commit ID gets into `docs/korpus/`.
+- **Roadmap 2.3 — the process skeleton is built from the code.** `lib/abap/process-skeleton.ts`
+  builds, from branches and calls in *one* reading, nodes, edges with literal
+  condition text, regions and entry points in runtime order; palette exactly per
+  `DESIGN.md` §5.8, without a model call. Every node carries an anchor or a reason why
+  not. Opaque calls do not end the caller's flow — except `SUBMIT` without `AND RETURN`
+  and `LEAVE TO TRANSACTION`. Event blocks are entry points, even without `START-OF-SELECTION`.
+  `CHECK` gets three different edges. `Z_ORDER_INTEGRITY_CHECK` gets **0 nodes and
+  a note** instead of an invented start: the file has no entry point.
+- **Roadmap 2.8 — hidden business rules.** `lib/abap/business-rules.ts` finds literals
+  in conditions as rule candidates with an anchor: 140 across the eight examples. The price tolerance
+  `lv_dev_pct > 5` in `Z_MM_PO_APPROVAL.abap:412` is such a case — a five in the code that in
+  truth is a business rule nobody ever wrote down. Where a number looks like a
+  monetary limit, it says "Amount, currency not derivable from the code" instead of a
+  euro statement. 66 false alarms are excluded, each with a reason in the output instead of
+  silently.
+- **Roadmap 0.2 — nine UX findings, four promises removed without replacement.** The
+  remediation switch switched text, never code: the generated code was byte-identical in both positions,
+  the prompt did not even know the mode. The three "Transformation Insights" were
+  the same for every project and named Express and TypeORM in the RAP track too. The
+  SAP Build badge promised an export that does not exist. And the forum reported "Thread
+  Posted Successfully!" after it had written to `useState` — the writing half is
+  gone, the announcements stay readable and are labelled as read-only. Also: the green check
+  now stands only for what was checked, the compatibility statement carries a permanently visible
+  caveat instead of a hover tooltip, cancelling the onboarding blames nobody,
+  the Jira modal invents no epics and no boards, and the first run quotes the
+  quota like the header does. **Step 0.2 is not finished with this** — facts service and
+  copy CI are outstanding, and §14 plans around thirty QA findings into the same step.
+- **Two checks above the engine that need no expected answer.** `@abaplint/core` reads along
+  since this release as a second, independent parser; nine deviations are in the register with a verdict and
+  reasoning, and "we are right" is forbidden there. Plus five metamorphic
+  properties (98 tests): renaming is invisible, formatting moves anchors and nothing
+  else, a comment changes nothing, concatenating is union, every anchor points to
+  its construct. Both found defects on day one that no test case would have seen:
+  `IF lv = |Status: ok|.` made a gateway disappear from the diagram, and `ENDIF. " done`
+  did not count as a closer — a program was considered more complex because it was commented.
+- **The QA agent reads again.** The corpus bundle had driven the accumulated delta to 3.3 MB,
+  80 % of it generated fixtures; the checkpoint could no longer advance, and
+  the review of `5f84bb2` made **zero model calls** — and still reported
+  `go_with_notes`. A green check over unread code is worse than a red one.
+  `tests/korpus/cases/**` is now on the same exclusion list as the other generated
+  paths; ratchet, manifest, spec and converter remain reviewed.
 
-**Die Vollprüfung von v2.11.1 ist abgeschlossen:** alle 30 kritischen Befunde entschieden —
-6 waren bekannt, 13 mit Beleg widerlegt, 11 bestätigt und behoben. Widerlegt wurden unter
-anderem `vercel.json` und zwei Survey-Workflows, die am geprüften Commit gar nicht
-existieren, und drei „secret-named literal"-Treffer, die den öffentlichen Verifier und einen
-dokumentierten Testschlüssel meinen.
+**The full review of v2.11.1 is complete:** all 30 critical findings decided —
+6 were known, 13 refuted with evidence, 11 confirmed and fixed. Refuted were, among
+others, `vercel.json` and two survey workflows that do not exist at all at the reviewed commit,
+and three "secret-named literal" hits that refer to the public verifier and a
+documented test key.
 
 ## [v2.11.1] — 2026-09-16
 
-### Phase 1 ist abgeschlossen, Phase 0 bis auf einen Schritt, Phase 2 beginnt — und vier Stellen, die einen Beleg behaupteten, den niemand geprüft hatte
+### Phase 1 is complete, Phase 0 except for one step, Phase 2 begins — and four places that claimed evidence nobody had checked
 
-**Was in Phase 0 offen bleibt, damit es nicht in einer Überschrift verschwindet:** Schritt **0.2**. Sein
-Signavio-Teil ging in v2.10.2 raus, der Rest nicht — das UX-Register führt neun bestätigte Befunde weiter
-dorthin, darunter UX-027 („grüner Haken für ungeprüften Code"), UX-037 („Transformation verspricht Node.js
-auch im RAP-Track") und UX-059 („Forum täuscht einen öffentlichen Post vor, speichert nur lokal"). Das ist
-dieselbe Gattung Unwahrheit, die dieses Release an vier anderen Stellen abräumt, und sie steht noch. Dazu
-bleibt aus 0.17 ein Punkt offen (`42a7d6a55d3b`): die Verlusttoleranz des Sicherheits-Agenten ist an seinen
-Bausteinen getestet, nicht am Einstiegspunkt — eine Änderung am Agenten selbst und damit ein eigener Schritt.
+**What stays open in Phase 0, so that it does not disappear in a heading:** step **0.2**. Its
+Signavio part went out in v2.10.2, the rest did not — the UX register still routes nine confirmed findings
+there, among them UX-027 ("green tick for unchecked code"), UX-037 ("Transformation promises Node.js
+in the RAP track too") and UX-059 ("forum pretends a public post, saves only locally"). That is
+the same kind of untruth this release clears away in four other places, and it still stands. In addition,
+one point from 0.17 stays open (`42a7d6a55d3b`): the security agent's loss tolerance is tested on its
+building blocks, not at the entry point — a change to the agent itself and therefore a step of its own.
 
-- **Roadmap 0.5 und 0.6 — ein Lauf sagt, woraus er gerechnet wurde, und ein altes Ergebnis bleibt daran
-  gebunden.** Ein Lauf nannte seine Eingaben in fünf unverbundenen Feldern, und verglichen hat nie jemand
-  mehr als den Quelltext-Digest: ein Katalog-Resync, ein anderes Regelwerk oder ein anderes Zielsystem
-  verschob die Befunde, und jedes frühere Ergebnis las sich weiter als aktuell. `lib/input-manifest.ts`
-  führt jetzt sechs Eingaben mit Datenklasse, Revision und Digest im signierten Payload, gespiegelt nach
-  `auditMetadata.inputManifest` und im Pack als `08-input-manifest.json`. `binding` sagt die Wahrheit über
-  den Hash — `value` heißt, die Bytes wurden gelesen, `reference` heißt, die Eingabe wurde unter Namen und
-  Revision gebunden, nie die Behauptung, fünf Megabyte Katalog seien gelesen worden. Die Frischeheuristik
-  fragte „beweist irgendetwas, dass das alt ist?" und fiel auf „aktuell" zurück, wenn nichts es bewies — ein
-  unlesbarer Fingerabdruck, eine leere Quelle, eine nie verglichene Eingabe. Jetzt wird andersherum gefragt:
-  welche Eingabe lässt sich noch als dieselbe zeigen? Die Datenklasse entscheidet die Folge — Quelle,
-  Katalog, Regelwerk und Zielsystem blockieren, Engine-Build und Narrativ-Modell melden nur, sonst
-  entwertete jedes Release jedes Projekt. Dazu W22-A06: eine Analyse, die auf Quelle A begann und
-  committet, nachdem das Projekt auf B gewechselt war, schrieb A samt `activeRunId` still über B; Lauf und
-  Projektstand gehen jetzt in einer Transaktion, die die Quelle neu liest, die Kontingenteinheit kommt
-  zurück, die Route antwortet 409. Die kanonische Form der Audit-Packs ist unangetastet — jedes zuvor
-  versiegelte Pack verifiziert Byte für Byte.
-- **Roadmap 0.7 — eine Freigabe entsteht auf dem Server oder gar nicht, und die Regeln haben einen
-  Deployment-Datensatz.** Sechs Felder verlassen die client-schreibbare Allowlist in `firestore.rules` — die
-  fünf Freigabefelder und der Nutzungsimport — und werden nur noch von
-  `POST /api/projects/{projectId}/commands` geschrieben. Der Browser bestimmte bis hierher selbst, welche
-  Adresse auf der Freigabe steht: er schickte `auth.currentUser.email`. Sie kommt jetzt aus dem verifizierten
-  ID-Token, der Zeitstempel von der Serveruhr, über die Route entscheidet das Eigentum und nicht das
-  Adminrecht, und jede angenommene Änderung schreibt ihre `audit_events`-Zeile im selben `WriteBatch` —
-  sonst steht nach einem gescheiterten zweiten Schreibvorgang eine aufgezeichnete Architekten-Freigabe da,
-  die nichts aufzeichnet. Schließt SEC-2026-008. **Der Regel-Deploy war der eigentliche Befund:** CI rollt
-  `firestore.rules` nie aus, und das erste Nachsehen über die Rules-API — es gab bis dahin keines — zeigte
-  in Produktion das Ruleset vom 20. August, einen Monat und drei Verschärfungen hinter dem Repository. Mit
-  Sonnys Go am 16.09. um 14:43:04Z ausgerollt und danach auf allen sechs Datenbanken nachgeprüft.
-  `docs/registers/rules-deployment.json` hält fest, welcher Text live ist, `npm run deploy:rules` rollt aus
-  *und* schreibt es auf, `npm run rules:verify` fragt die Produktion. **Dieses Release ändert die Regeln
-  erneut und braucht denselben Handgriff vor dem App-Deploy.**
-- **Der Administrator liest keine Projekte mehr** (Entscheidung Sonny, 16.09.2026). `firestore.rules`
-  gewährt bei `projects/{id}` und `projects/{id}/runs/{runId}` keinen Admin-Lesezugriff mehr, und das
-  pauschale Admin-`update` auf Projekte ist mit weg — Lesen war die Berechtigung, um die es ging, und ein
-  Betreiber, der fremde Evidenz bearbeitet, ist die schlechtere Hälfte derselben Sache. Die
-  Datenschutzerklärung nennt die eine Ausnahme beim Namen: eine glaubwürdige Meldung von Schadcode in einem
-  Upload wird serverseitig über das Admin-SDK behandelt, das die Regeln bauartbedingt umgeht — ein
-  bewusster Akt mit Protokoll, keine offenstehende Berechtigung. Dabei gefunden: der GDPR-Löschtest belegte
-  seine Kaskade, indem er sich als Administrator anmeldete und die Dokumente als Client las, also mit genau
-  der Berechtigung, die entfernt wurde; er prüft jetzt serverseitig.
-- **Roadmap 0.9, 0.10 und 0.11 — der erste Blick kostet nichts und verspricht nichts.** Ein neues Konto
-  musste den Weg zum ersten Ergebnis aus den fünf Läufen bezahlen, die es für den eigenen Code braucht: die
-  acht mitgelieferten Beispiele sind jetzt je einmal frei, serverseitig am Fingerabdruck des unveränderten
-  Quelltexts erkannt — ein Client-Flag würde Freiläufe drucken, und ein bearbeitetes Beispiel ist eigener
-  Code und kostet. Jeder weitere Start desselben Beispiels ist eine gewöhnliche Analyse, bewusst an der
-  Wiederholungsbefreiung vorbei, und der Bildschirm sagt das vor dem Klick. `/demo/{stage}` zeigt die sieben
-  Stufen an einem echten Engine-Lauf über `Z_MM_PO_APPROVAL` — 30 Befunde mit Zeilenankern, Clean Core
-  Score 43, jede Zahl zur Laufzeit gerechnet statt abgeschrieben. Aus der Vertrauenskette ist das Demo nicht
-  per Flag herausgehalten, sondern baulich: eigene Route, kein Projektdokument, kein Run, kein Pack, kein
-  Firestore-Schreibzugriff, dazu eine ausgeführte Invariante, die beim Bauen wirft, wenn je ein Feld der
-  Vertrauenskette darin auftaucht. Über dem Upload steht die Karte „Your code and your trust", und sie ist
-  keine Copy: jede Zeile ist ein Anspruch in `lib/trust-claims.ts` neben dem Satz aus Terms, Datenschutz
-  oder `SECURITY.md`, der ihn trägt — `tests/trust-card-guard.spec.ts` fällt um, wenn ein Beleg nicht
-  wörtlich im Dokument steht oder auf der gerenderten Seite nicht zu finden ist. Eine Zeile blieb weg, weil
-  nichts sie trägt: „Others see it only if you invite them" — Teilen gibt es noch nicht.
-- **Roadmap 0.3 — der Score sagt, was er ist, wessen er ist und wohin er zeigt.** Der Name bleibt „Clean
-  Core Score" (Entscheidung Sonny, 16.09.2026) und wird bekannt gemacht; `/clean-core-score` behält URL,
-  Canonical und Position. Die Seite versprach im Hero „predict your TCO savings", nannte die Reduktion von
-  Test- und Entwicklungskosten als eine der vier Säulen des Scores und lieferte „A high score dramatically
-  minimizes this testing effort" als schema.org-Antwort an Antwortmaschinen aus. Fünf solche Versprechen auf
-  vier Oberflächen sind weg — und der Guard, der sie hätte fangen müssen, fing bisher nur Beträge mit
-  Währungszeichen, nicht das Versprechen in Worten. `/method/levels` nennt die Version der Level-Regel, und
-  sie ist gemessen statt getippt: ein Fingerabdruck über alle 48 Eingaben, die die Ableitung unterscheiden
-  kann, dazu Release und Prüfsumme beider SAP-Dateien. Chatbot-Wissen, `/llms.txt` und die Score-Seite
-  grenzen den Score gegen SAPs `Technical Debt Score` ab, der in die andere Richtung zeigt (schließt
+- **Roadmap 0.5 and 0.6 — a run says what it was computed from, and an old result stays bound to
+  it.** A run named its inputs in five unconnected fields, and nobody ever compared
+  more than the source digest: a catalog resync, a different rule set or a different target system
+  shifted the findings, and every earlier result still read as current. `lib/input-manifest.ts`
+  now carries six inputs with data class, revision and digest in the signed payload, mirrored to
+  `auditMetadata.inputManifest` and in the pack as `08-input-manifest.json`. `binding` tells the truth about
+  the hash — `value` means the bytes were read, `reference` means the input was bound under name and
+  revision, never the claim that five megabytes of catalog were read. The freshness heuristic
+  asked "does anything prove this is old?" and fell back to "current" when nothing proved it — an
+  unreadable fingerprint, an empty source, an input never compared. Now the question is the other way round:
+  which input can still be shown to be the same? The data class decides the consequence — source,
+  catalog, rule set and target system block, engine build and narrative model only report, otherwise
+  every release would invalidate every project. Plus W22-A06: an analysis that started on source A and
+  committed after the project had switched to B silently wrote A, `activeRunId` included, over B; run and
+  project state now go in one transaction that re-reads the source, the quota unit comes
+  back, the route answers 409. The canonical form of the audit packs is untouched — every previously
+  sealed pack verifies byte for byte.
+- **Roadmap 0.7 — an approval is created on the server or not at all, and the rules have a
+  deployment record.** Six fields leave the client-writable allowlist in `firestore.rules` — the
+  five approval fields and the usage import — and are written only by
+  `POST /api/projects/{projectId}/commands`. Until now the browser decided itself which
+  address stood on the approval: it sent `auth.currentUser.email`. It now comes from the verified
+  ID token, the timestamp from the server clock, ownership and not admin rights decides over the route,
+  and every accepted change writes its `audit_events` line in the same `WriteBatch` —
+  otherwise, after a failed second write, there stands a recorded architect approval
+  that records nothing. Closes SEC-2026-008. **The rules deploy was the real finding:** CI never rolls out
+  `firestore.rules`, and the first look via the Rules API — there had been none until then — showed
+  the ruleset of 20 August in production, a month and three tightenings behind the repository. Rolled out
+  with Sonny's go on 16.09. at 14:43:04Z and then re-checked on all six databases.
+  `docs/registers/rules-deployment.json` records which text is live, `npm run deploy:rules` rolls out
+  *and* writes it down, `npm run rules:verify` asks production. **This release changes the rules
+  again and needs the same manual step before the app deploy.**
+- **The administrator no longer reads projects** (decision Sonny, 16.09.2026). `firestore.rules`
+  no longer grants admin read access on `projects/{id}` and `projects/{id}/runs/{runId}`, and the
+  blanket admin `update` on projects is gone too — reading was the permission at issue, and an
+  operator who edits someone else's evidence is the worse half of the same thing. The
+  Datenschutzerklärung names the one exception: a credible report of malicious code in an
+  upload is handled server-side via the Admin SDK, which bypasses the rules by design — a
+  deliberate act with a log, not a standing permission. Found along the way: the GDPR deletion test proved
+  its cascade by signing in as administrator and reading the documents as a client, that is, with exactly
+  the permission that was removed; it now checks server-side.
+- **Roadmap 0.9, 0.10 and 0.11 — the first look costs nothing and promises nothing.** A new account
+  had to pay for the way to its first result out of the five runs it needs for its own code: the
+  eight bundled examples are now free once each, recognised server-side by the fingerprint of the unchanged
+  source — a client flag would print free runs, and an edited example is your own
+  code and costs. Every further start of the same example is an ordinary analysis, deliberately past the
+  repeat exemption, and the screen says so before the click. `/demo/{stage}` shows the seven
+  stages on a real engine run over `Z_MM_PO_APPROVAL` — 30 findings with line anchors, Clean Core
+  Score 43, every number computed at runtime instead of copied. The demo is kept out of the trust chain not
+  by a flag but by construction: its own route, no project document, no run, no pack, no
+  Firestore write, plus an executed invariant that throws at build time if a trust-chain field ever
+  appears in it. Above the upload stands the card "Your code and your trust", and it is
+  not copy: every line is a claim in `lib/trust-claims.ts` next to the sentence from the Terms, privacy policy
+  or `SECURITY.md` that carries it — `tests/trust-card-guard.spec.ts` fails if a piece of evidence is not
+  verbatim in the document or cannot be found on the rendered page. One line was left out because
+  nothing carries it: "Others see it only if you invite them" — sharing does not exist yet.
+- **Roadmap 0.3 — the score says what it is, whose it is and which way it points.** The name stays "Clean
+  Core Score" (decision Sonny, 16.09.2026) and is made known; `/clean-core-score` keeps its URL,
+  canonical and position. The page promised "predict your TCO savings" in the hero, named the reduction of
+  test and development costs as one of the four pillars of the score, and served "A high score dramatically
+  minimizes this testing effort" as a schema.org answer to answer engines. Five such promises on
+  four surfaces are gone — and the guard that should have caught them so far only caught amounts with
+  currency symbols, not the promise in words. `/method/levels` names the version of the level rule, and
+  it is measured instead of typed: a fingerprint over all 48 inputs the derivation can
+  distinguish, plus release and checksum of both SAP files. Chatbot knowledge, `/llms.txt` and the score page
+  distinguish the score from SAP's `Technical Debt Score`, which points the other way (closes
   UX-088).
-- **Roadmap 0.17 und 0.18 — Prüfungen, die prüfen, und bekannte fachliche Fehler der Engine.** Ein
-  `rejects.not.toThrow('…')` ist für jeden Fehler erfüllt, der nicht genau dieser ist: die Trust-Chain-Suite
-  war grün, während die Audit-Pack-Erzeugung, soweit sie es sehen konnte, vollständig kaputt war. Sie läuft
-  jetzt gegen die Emulatoren — 422 ohne Lauf, ein Archiv, dessen Signatur der öffentliche
-  `/api/export/verify` annimmt und ein Byte Unterschied nicht, 409 für den nachträglich veränderten Lauf.
-  Dazu: der TCO-Guard rechnet dieselbe Funktion wie die Seite statt eine Kopie ihrer Arithmetik, die
-  MFA-Verweigerung ist auf allen Routen belegt, die auf den Faktor prüfen (der Katalog fand dabei drei
-  ungelistete: Kontolöschung, Jira-URL, Gemini-Schlüsseltest), die Referenzläufe werden zugeordnet statt
-  gezählt, und das Erhaltungsregister kennt den Griff vom Feldnamen zum sichtbaren Element. Aus der Engine:
-  eine interne Tabelle ist keine Datenbank — `INSERT ls_item INTO TABLE lt_items` erschien als
-  Medium-Kopplung an eine Tabelle namens LS_ITEM —, unbewertete Konstrukte drücken Score und Routing-Text,
-  statt „100 %, trivial" zu melden, ein SELECT in einem Textliteral ist keine Abfrage, und VBKD und LQUA
-  sind aus dem Katalog entfernt statt durch eine Vermutung ersetzt.
-- **Roadmap 1.1 und 1.2 — das Erhaltungsregister, und ein Lauf ohne Schlüssel.** Bevor umgebaut wird,
-  steht geschrieben, was funktioniert: die sieben Stufen mit Eingaben, Ausgaben, Voraussetzungen, Fehlern
-  und je einem Referenzfall, dazu Commit, Build und — weil CI sie nie ausrollt — `firestore.rules` samt
-  Schreib-Allowlist an ihrem Hash festgenagelt. Das Register ist Daten, keine Prosa, damit eine Maschine es
-  mit dem Code vergleichen kann: 25 Tests leiten jede Behauptung aus dem Quelltext neu ab und bauen die
-  sieben Referenzfälle im Emulator auf, ohne einen einzigen Modellaufruf. Neun Grenzen hat es beim
-  Schreiben gefunden und als Grenzen festgehalten, statt sie als Parität zu konservieren. — Ein Konto ohne
-  Gemini-Schlüssel bekam bisher 503 und endete *ohne jeden Lauf*: keine Belege, keine Signatur, nichts für
-  die nächste Stufe, obwohl jeder Befund dieser Seite vor jedem Modell gerechnet wird. Der Modellaufruf ist
-  jetzt ein Abschnitt der Analyse, der fehlen darf; der Lauf wird über den deterministischen Belegen
-  signiert und trägt `modelParticipation: 'none'`, statt `provider: google-gemini` und eine voreingestellte
-  Modell-ID in eine Signatur zu schreiben, die niemand geprüft hat. Fünf Modellstufen sind einzeln
-  zuschaltbar, und wo eine Narrative fehlt, steht „nicht erzeugt" statt eines leeren Kastens — vorher zeigte
-  die Analyse-Stufe bei einem signierten Lauf ohne Narrative wieder das Upload-Formular.
-- **Roadmap 1.5, 1.4 und 1.8 — die neue Oberfläche wächst hinter dem Schalter.** `DESIGN.md` als Code:
-  semantische Tokens statt zweier Farbdialekte, eine Herkunftsliste `lib/provenance.ts` mit neun Werten, aus
-  der `CcProvenanceChip` seine Beschriftung nimmt — ein falsches Badge lässt sich damit nicht mehr
-  schreiben, nur falsch werten, und das fängt TypeScript. Keine Komponente nimmt ein `className`; das ist
-  das Loch, durch das jeder Style-Guard ausläuft. `/project/{id}` hat noch nie etwas geliefert und liefert
-  jetzt die Arbeitsraum-Schale — für Administratoren mit eingeschalteter Vorschau, für alle anderen
-  unverändert nichts: Kopfzeile mit dem Input-Manifest aus 0.5 („not recorded" statt Gedankenstrich, wo
-  niemand etwas aufgeschrieben hat), sieben Status-Chips, deren Grün nur aus `proven` erreichbar ist,
-  Ebenenleiste und der Bereich „Not determined" mit Grund und Zeile. Zwei Chips sagen „not started" und
-  nennen, was fehlt, statt sich die Routing-Empfehlung zu leihen, die auf dem Projekt liegt. Dazu „My
-  workspace" als List Report: null ist nicht null Befunde — ein Projekt, das niemand analysiert hat, druckt
-  ein Wort und keine Zahl —, leer und „kein Treffer" sind zwei Komponenten mit zwei Sätzen, *Stale* steht
-  als Herkunfts-Chip neben dem Objektstatus und nicht als Status, und der Preis steht vor dem Klick.
-- **Roadmap 1.6 und 1.7 — kein Dark Mode, und Grün heißt belegt.** Was entfernt wurde, war nie ein Theme:
-  58 Zeilen `.dark`-Überschreibungen färbten mit `!important` eine handverlesene Liste von
-  Utility-Klassen um, und alles, was die Liste nicht nannte, blieb hell — die Dashboard-Tabelle behielt
-  ihren weißen Grund unter einem fast schwarzen Body, die Projektzeile verlor fast ihren ganzen Kontrast.
-  Die UX-Prüfung fand dasselbe von außen, ohne den Code zu lesen (UX-023, UX-044, UX-061, UX-062). Der
-  Guard hängt `class="dark"` an `<html>` und verlangt, dass sich an rund 600 Elementen keine einzige Farbe
-  bewegt; das Profilfeld `theme` bleibt als totes Feld stehen, weil es zu löschen eine Migration von
-  Kontodaten wäre. — Die Verification Rail malte die Phase, auf der der Leser stand, grün, bevor sie
-  irgendetwas anderes fragte, und fünf der sieben Grün standen für Arbeit, die nichts geprüft hat: ein
-  Design, das das Konto sich selbst freigegeben hat, Code, den das Modell geschrieben und niemand kompiliert
-  hat. `phaseTone` in `lib/workflow-steps.ts` ist jetzt die eine Regel für Stepper, Rail und
-  Dashboard-Zeile: grün genau dann, wenn ein signierter Lauf, ein ausgeführtes Urteil oder eine Übergabe
-  darauf steht. Der Sperrhinweis des Live-Testmodus stand dreimal auf einem Schirm, und keine der drei
-  Absagen sagte, wie man die Verbindung bekommt; jetzt steht er einmal, mit dem BYOT-Weg und dem Satz, dass
-  eine BYOT-Freigabe G0:R0 nicht aufhebt.
-- **Phase 2 hat begonnen: 2.1 und 2.2, beide deterministisch.** IF/ELSEIF/ELSE und CASE/WHEN kommen mit dem
-  Bedingungstext im Wortlaut der Quelle und je eigenem Zeilenbereich aus dem Code, die Verschachtelung
-  erhalten statt eingeebnet; dazu der FORM/PERFORM-Graph mit Rekursion und fehlenden Zielen,
-  Funktionsbausteine mit gekennzeichneten BAPIs, CALL TRANSACTION, SUBMIT mit Programmnamen,
-  AUTHORITY-CHECK mit Objekt und Feldern, und die Schreibzugriffe. Bisher folgte die Engine keinem einzigen
-  PERFORM und erfasste AUTHORITY-CHECK ohne Objekt und ohne Felder. Ein Name, der kein Literal ist, wird
-  nicht geraten: `CALL TRANSACTION c_tcode_va02` wird über die Konstante aufgelöst, steht dort eine
-  Variable, heißt der Aufruf `dynamic`. Erreichbarkeit ist nicht dasselbe wie „wird aufgerufen", und gibt
-  es ein `PERFORM (name)` im Quelltext, meldet `reachabilityCertain` false, weil die Liste dann eine Meinung
-  ist. Nichts davon geht in den signierten Lauf; das Prozessskelett kommt mit 2.3. **Die Phase ist damit
-  nicht fertig** — 2.3 bis 2.9 stehen aus, und die Roadmap führt sie weiter als offen.
-- **Ein eingerückter Stern ist Multiplikation oder Kommentar, je nachdem, was darüber steht.**
-  `declaration-parser.ts` und `select-parser.ts` warfen jede Zeile weg, die auf `^\s*\*` passt. In
-  `Z_MM_PO_APPROVAL.abap:411` ist das die zweite Zeile einer über zwei Zeilen geschriebenen Multiplikation:
-  die Zuweisung fand ihren Punkt nie und verschluckte die Anweisung darunter — `IF lv_dev_pct > 5.`, die
-  Preistoleranz-Prüfung. Die Engine verlor eine Verzweigung in einer Datei, die dieses Produkt als
-  Starterbeispiel ausliefert, lautlos, und jeder Leser dieser Beweise bekam gesagt, da sei nichts. Der
-  entgegengesetzte Fehler kostet genauso viel: `Z_SALES_ORDER_CREATOR.txt:70` hat einen eingerückten Stern
-  als echten Kommentar direkt über einem BAPI-Aufruf. Die Regel steht jetzt einmal, in
-  `statement-reader.ts`, und alle drei Parser lesen sie: Spalte 1 ist immer Kommentar, eingerückt nur dann,
-  wenn keine Anweisung offen ist. Über die acht ausgelieferten Beispiele ändert sich genau eine Zahl —
-  `Z_MM_PO_APPROVAL.abap` von 387 auf 388 Anweisungen und von 39 auf 40 IF; Score, Befundzahl,
-  Datenkopplung und Komplexität aller acht bleiben gleich — die wiedergefundene Verzweigung geht in
-  keine dieser Kennzahlen ein. Bei fremdem Code kann sie es, und das ist der Sinn der Sache.
-- **Das erste vollständige Audit des Security-Agenten: 247 gemeldete Befunde, 24 entschieden, die meisten
-  widerlegt.** Der Bericht sagt selbst, dass seine Verifikationsstufe nicht zurückkam — die Befunde sind
-  gemeldet, nicht geprüft. Die drei als kritisch gemeldeten halten alle drei nicht: ein „Geheimnis im
-  Code", das die öffentliche URL des öffentlichen Signaturschlüssels ist; eine „unauthentifizierte"
-  Seed-Route, die drei unabhängige Gates hat; und die Behauptung, `firestore.rules` sei nicht im Prüfumfang
-  gewesen — widerlegt von zwei Befunden desselben Berichts, die daraus Zeilennummern zitieren. Von 29 als
-  hoch gemeldeten sind 21 entschieden, vierzehn davon widerlegt; der größte widerlegte Block liest die
-  aufrufende Zeile und nicht die Funktion, die sie entgegennimmt. Behoben und ausgeliefert:
-  **SEC-2026-021** — `scripts/verify-export.ps1` endete auf jedem Pfad mit `Verification complete: SUCCESS.`
-  und Exit-Code 0, auch für ein Archiv ganz ohne Signatur und für eines, dessen Signatur mangels
-  Schlüssel niemand geprüft hatte; das Geschwisterskript `verify-pack.mjs` hatte die Regel die ganze Zeit
-  richtig (0 verifiziert, 1 fehlgeschlagen, 2 nicht prüfbar), und zwei Prüfer desselben Produkts dürfen
-  dieselbe Frage nicht gegensätzlich beantworten. **SEC-2026-023** — das Wiederherstellungsskript für einen
-  verlorenen Authenticator, die sicherheitsrelevanteste Handlung eines Administrators an einem fremden
-  Konto, schrieb nur einen `mfaResetAt`-Stempel: ein Feld, das der nächste Reset überschreibt und das
-  niemanden nennt, während die Datenschutzerklärung einen Eintrag mit handelndem Administrator, Konto und
-  Zeit verspricht. Es schreibt jetzt nach `audit_events` und verlangt dafür `--operator <mail>`.
-  **SEC-2026-024** — der `validate`-Job führt die ganze Playwright-Suite aus und bekam dabei
-  `S4_ENCRYPTION_KEY`, `MFA_BACKUP_CODE_PEPPER` und `PILOT_APPROVAL_SECRET` aus denselben
-  Repository-Secrets, mit denen der laufende Dienst ausgerollt wird; er bekommt jetzt kein
-  Produktionsgeheimnis mehr, und zwei Guards halten beide Hälften. **SEC-2026-014 und -015** — der
-  Confluence-Export der Analyse-Stufe escapt jede Einsetzung über einen Escaper an einer Stelle
-  (`lib/export-safety.ts`), und `sanitizeMermaidSvg` ist keine Kette regulärer Ausdrücke mehr, sondern
-  DOMPurify mit `HTML_INTEGRATION_POINTS: { foreignobject: true }` — sechs von zehn Formen, die in einem
-  Bild nichts zu suchen haben, kamen durch die alte Kette unverändert hindurch. Öffentlich stehen nur IDs
+- **Roadmap 0.17 and 0.18 — checks that check, and known domain errors of the engine.** A
+  `rejects.not.toThrow('…')` is satisfied by every error that is not exactly this one: the trust-chain suite
+  was green while audit-pack generation, as far as it could see, was completely broken. It now runs
+  against the emulators — 422 without a run, an archive whose signature the public
+  `/api/export/verify` accepts and a one-byte difference does not, 409 for the run altered after the fact.
+  Plus: the TCO guard computes the same function as the page instead of a copy of its arithmetic, the
+  MFA refusal is proven on all routes that check for the factor (the catalog found three
+  unlisted ones in doing so: account deletion, Jira URL, Gemini key test), the reference runs are matched instead of
+  counted, and the preservation register knows the path from field name to visible element. From the engine:
+  an internal table is not a database — `INSERT ls_item INTO TABLE lt_items` appeared as
+  medium coupling to a table named LS_ITEM —, unassessed constructs lower the score and routing text
+  instead of reporting "100 %, trivial", a SELECT in a text literal is not a query, and VBKD and LQUA
+  are removed from the catalog instead of being replaced by a guess.
+- **Roadmap 1.1 and 1.2 — the preservation register, and a run without a key.** Before rebuilding,
+  what works is written down: the seven stages with inputs, outputs, preconditions, errors
+  and one reference case each, plus commit, build and — because CI never rolls them out — `firestore.rules` together with
+  the write allowlist, pinned to their hash. The register is data, not prose, so that a machine can compare it
+  with the code: 25 tests re-derive every claim from the source and build the
+  seven reference cases in the emulator without a single model call. It found nine limits while being
+  written and recorded them as limits instead of preserving them as parity. — An account without a
+  Gemini key used to get 503 and ended *without any run*: no evidence, no signature, nothing for
+  the next stage, although every finding on this page is computed before any model. The model call is
+  now a section of the analysis that may be missing; the run is signed over the deterministic evidence
+  and carries `modelParticipation: 'none'`, instead of writing `provider: google-gemini` and a preset
+  model ID into a signature nobody checked. Five model stages can be switched on
+  individually, and where a narrative is missing it says "not generated" instead of an empty box — before, the
+  Analyze stage showed the upload form again for a signed run without a narrative.
+- **Roadmap 1.5, 1.4 and 1.8 — the new interface grows behind the switch.** `DESIGN.md` as code:
+  semantic tokens instead of two colour dialects, a provenance list `lib/provenance.ts` with nine values, from
+  which `CcProvenanceChip` takes its label — a wrong badge can no longer be
+  written, only valued wrongly, and TypeScript catches that. No component takes a `className`; that is
+  the hole through which every style guard leaks. `/project/{id}` has never delivered anything and now delivers
+  the workspace shell — for administrators with the preview switched on, for everyone else
+  unchanged nothing: header with the input manifest from 0.5 ("not recorded" instead of a dash, where
+  nobody wrote anything down), seven status chips whose green is reachable only from `proven`,
+  layer bar and the "Not determined" area with reason and line. Two chips say "not started" and
+  name what is missing instead of borrowing the routing recommendation that sits on the project. Plus "My
+  workspace" as a List Report: zero is not zero findings — a project nobody has analysed prints
+  a word and not a number —, empty and "no match" are two components with two sentences, *Stale* stands
+  as a provenance chip next to the object status and not as a status, and the price stands before the click.
+- **Roadmap 1.6 and 1.7 — no dark mode, and green means proven.** What was removed was never a theme:
+  58 lines of `.dark` overrides recoloured a hand-picked list of
+  utility classes with `!important`, and everything the list did not name stayed light — the dashboard table kept
+  its white background under an almost black body, the project row lost almost all its contrast.
+  The UX review found the same from outside, without reading the code (UX-023, UX-044, UX-061, UX-062). The
+  guard adds `class="dark"` to `<html>` and requires that not a single colour moves on around 600 elements;
+  the profile field `theme` stays as a dead field, because deleting it would be a migration of
+  account data. — The Verification Rail painted the phase the reader was on green before it asked
+  anything else, and five of the seven greens stood for work that checked nothing: a
+  design the account had approved itself, code the model wrote and nobody compiled.
+  `phaseTone` in `lib/workflow-steps.ts` is now the one rule for stepper, rail and
+  dashboard row: green exactly when a signed run, an executed verdict or a handover
+  stands on it. The lock notice of the live test mode stood three times on one screen, and none of the three
+  refusals said how to get the connection; now it stands once, with the BYOT path and the sentence that
+  a BYOT approval does not lift G0:R0.
+- **Phase 2 has begun: 2.1 and 2.2, both deterministic.** IF/ELSEIF/ELSE and CASE/WHEN come out of the code with the
+  condition text in the wording of the source and each with its own line range, the nesting
+  preserved instead of flattened; plus the FORM/PERFORM graph with recursion and missing targets,
+  function modules with BAPIs marked, CALL TRANSACTION, SUBMIT with program names,
+  AUTHORITY-CHECK with object and fields, and the write accesses. Until now the engine followed not a single
+  PERFORM and captured AUTHORITY-CHECK without object and without fields. A name that is not a literal is
+  not guessed: `CALL TRANSACTION c_tcode_va02` is resolved via the constant; if a
+  variable stands there, the call is called `dynamic`. Reachability is not the same as "is called", and if
+  there is a `PERFORM (name)` in the source, `reachabilityCertain` reports false, because the list is then an opinion.
+  None of this goes into the signed run; the process skeleton comes with 2.3. **The phase is
+  not finished with this** — 2.3 to 2.9 are outstanding, and the roadmap keeps them as open.
+- **An indented asterisk is multiplication or comment, depending on what stands above it.**
+  `declaration-parser.ts` and `select-parser.ts` threw away every line matching `^\s*\*`. In
+  `Z_MM_PO_APPROVAL.abap:411` that is the second line of a multiplication written over two lines:
+  the assignment never found its period and swallowed the statement below it — `IF lv_dev_pct > 5.`, the
+  price tolerance check. The engine silently lost a branch in a file this product ships as a
+  starter example, and every reader of this evidence was told there was nothing there. The
+  opposite error costs just as much: `Z_SALES_ORDER_CREATOR.txt:70` has an indented asterisk
+  as a real comment directly above a BAPI call. The rule now stands once, in
+  `statement-reader.ts`, and all three parsers read it: column 1 is always a comment, indented only
+  when no statement is open. Across the eight shipped examples exactly one number changes —
+  `Z_MM_PO_APPROVAL.abap` from 387 to 388 statements and from 39 to 40 IFs; score, finding count,
+  data coupling and complexity of all eight stay the same — the recovered branch goes into
+  none of these metrics. With someone else's code it can, and that is the point.
+- **The security agent's first complete audit: 247 reported findings, 24 decided, most of them
+  refuted.** The report itself says that its verification stage did not come back — the findings are
+  reported, not checked. Of the three reported as critical, not one holds: a "secret in the
+  code" that is the public URL of the public signing key; an "unauthenticated"
+  seed route that has three independent gates; and the claim that `firestore.rules` was not in the scope
+  of the audit — refuted by two findings of the same report that quote line numbers from it. Of 29 reported as
+  high, 21 are decided, fourteen of them refuted; the largest refuted block reads the
+  calling line and not the function that receives it. Fixed and shipped:
+  **SEC-2026-021** — `scripts/verify-export.ps1` ended on every path with `Verification complete: SUCCESS.`
+  and exit code 0, also for an archive with no signature at all and for one whose signature nobody
+  had checked for lack of a key; the sibling script `verify-pack.mjs` had the rule
+  right all along (0 verified, 1 failed, 2 not checkable), and two verifiers of the same product must not
+  answer the same question in opposite ways. **SEC-2026-023** — the recovery script for a
+  lost authenticator, an administrator's most security-relevant action on someone else's
+  account, wrote only a `mfaResetAt` stamp: a field that the next reset overwrites and that
+  names nobody, while the Datenschutzerklärung promises an entry with acting administrator, account and
+  time. It now writes to `audit_events` and requires `--operator <mail>` for it.
+  **SEC-2026-024** — the `validate` job runs the whole Playwright suite and in doing so received
+  `S4_ENCRYPTION_KEY`, `MFA_BACKUP_CODE_PEPPER` and `PILOT_APPROVAL_SECRET` from the same
+  repository secrets with which the running service is deployed; it now receives no
+  production secret any more, and two guards hold both halves. **SEC-2026-014 and -015** — the
+  Analyze stage's Confluence export escapes every insertion through an escaper in one place
+  (`lib/export-safety.ts`), and `sanitizeMermaidSvg` is no longer a chain of regular expressions but
+  DOMPurify with `HTML_INTEGRATION_POINTS: { foreignobject: true }` — six of ten forms that have no business in an
+  image passed through the old chain unchanged. Publicly only IDs stand
   (`docs/ROADMAP.md` §12).
-- **UX-Review und rund ein Dutzend QA-Runden.** Die Delta-Review von v2.11.0 brachte sieben entschiedene
-  Befunde, zwei davon widerlegt: die leere Blueprint-Seite bot Export von nichts an, weil der Aktionsbalken
-  eine andere Bedingung fragte als die Seite darunter; der Paket-Download scheiterte lautlos; zwei
-  Icon-Knöpfe der Nutzungsmatrix hatten keinen Namen; und der 2FA-Kopierknopf meldete „copied to
-  clipboard!", ohne das Ergebnis von `navigator.clipboard.writeText` abzuwarten — wo der Browser die
-  Zwischenablage verweigert, hatte der Leser danach nichts eingefügt und wusste es nicht. `docs/ROADMAP.md`
-  §13 wird seitdem aus dem Register erzeugt statt daneben gepflegt; die Tabelle war abgedriftet. Der
-  schwerste bestätigte QA-Befund: **das Audit-Pack schrieb dem Modell die Arbeit der Engine zu.** Unter
-  „Usage Context" stand in *jedem* Pack eine feste Liste von fünf Dingen, die „das KI-Modell getan hat",
-  zwei davon nie wahr — Clean-Core-Score und Extensibility-Route rechnet die deterministische Engine vor
-  jedem Modell, und ein signierter Lauf rechnet beide serverseitig nach. Ebenso stand „BYOK: No — platform
-  key" in Packs, deren eigenes Datenblatt sagt, dass gar kein Modell lief. `modelParticipation` bleibt aus
-  der einzigen Tatsache abgeleitet, die die Route prüfen kann — liegt eine Narrative im Request-Body —,
-  und das Datenblatt sagt das jetzt in einer eigenen Zeile, statt es dem Leser zu überlassen. Eine
-  serverseitig beobachtete Tatsache daraus zu machen braucht eine Quittung von `/api/gemini` und ist ein
-  eigener Schritt.
+- **UX review and around a dozen QA rounds.** The delta review of v2.11.0 brought seven decided
+  findings, two of them refuted: the empty Blueprint page offered export of nothing because the action bar
+  asked a different condition than the page below it; the package download failed silently; two
+  icon buttons of the usage matrix had no name; and the 2FA copy button reported "copied to
+  clipboard!" without awaiting the result of `navigator.clipboard.writeText` — where the browser refuses the
+  clipboard, the reader then had pasted nothing and did not know it. `docs/ROADMAP.md`
+  §13 has since been generated from the register instead of maintained beside it; the table had drifted. The
+  most serious confirmed QA finding: **the audit pack attributed the engine's work to the model.** Under
+  "Usage Context", *every* pack carried a fixed list of five things "the AI model did",
+  two of them never true — the deterministic engine computes the clean core score and extensibility route before
+  any model, and a signed run recomputes both server-side. Likewise "BYOK: No — platform
+  key" stood in packs whose own data sheet says that no model ran at all. `modelParticipation` remains derived from
+  the only fact the route can check — whether a narrative is in the request body —,
+  and the data sheet now says so in a line of its own instead of leaving it to the reader. Turning it into a
+  server-side observed fact needs a receipt from `/api/gemini` and is a
+  step of its own.
 
 ## [v2.11.0] — 2026-09-16
 
-### Der zweite Faktor ist Firebases eigener, und vier Schnitt-0-Schritte arbeiten die Vollprüfung ab
+### The second factor is Firebase's own, and four cut-0 steps work through the full review
 
-- **Roadmap 0.13 — der zweite Faktor gilt vor der Sitzung.** Der eigene TOTP-Apparat prüfte den Code
-  erst, als die Firebase-Sitzung längst stand: Passwort eingeben hieß angemeldet sein, die Abfrage war
-  ein React-Zustand davor. Jetzt ist der Faktor Firebases eigener (Identity Platform): Firebase gibt
-  vor dem Code kein ID-Token heraus, und das Token nennt den Faktor in
-  `firebase.sign_in_second_factor`, den die Server-Gates lesen (`lib/mfa-gate.ts`). Enrolment
-  passiert im Browser gegen Firebase Auth, `POST /api/mfa/enrolled` liest den Faktor zurück und setzt
-  das Flag, `POST /api/mfa/disable` entfernt ihn per Admin-SDK — den Faktor zuerst, das Flag danach,
-  damit jeder Fehlerzustand zu streng ist statt zu lasch; ein Flag ohne Faktor räumt dieselbe Route
-  ohne Step-up auf. Der alte Apparat (eigene Routen, `mfa_session`-Cookie, verschlüsselte
-  `mfa_secrets`, Backup-Codes) ist weg; Wiederherstellung läuft über den Admin
-  (`scripts/mfa-reset.ts`). **Nicht in CI prüfbar:** der Auth-Emulator kann kein TOTP — Gate-Logik und
-  Negativpfade sind getestet, Enrolment und Faktor-Login werden auf `dev` gegen das echte Auth geprüft.
-- **Roadmap 0.14 — Konto, Schlüssel und Rechte melden nur, was geschah.** Ein entzogener
-  Admin-Anspruch wirkte bis zum Ablauf des Tokens weiter, und der Anzeige-Spiegel `users.isAdmin` war
-  ein zweiter Weg zu Adminrechten. Jetzt gewährt nur der Anspruch, ein Entzug widerruft die
-  Refresh-Token, ein Token mit Anspruch wird gegen den Widerruf geprüft — und der Spiegel verweigert,
-  auch wenn der Widerruf der Token fehlschlug. Das Löschen eines gespeicherten Geheimnisses
-  verschluckte seinen eigenen Fehler und meldete `ok`; die Kontolöschung entfernte das Konto zuerst
-  und konnte den Rest stehen lassen. Dazu: Ratenlimit-Schlüssel aus dem letzten
-  `X-Forwarded-For`-Eintrag, Größen- und Zeitgrenze für S/4-Antworten, und ein Profil-Abruf einer
-  alten Sitzung überschreibt die neue nicht mehr.
-- **Roadmap 0.15 — Dashboard, Admin und die sieben Stufen sagen, was sie wissen.** Das Kontingent
-  sperrte genau die Konten, denen dieselbe Seite riet, einen eigenen Gemini-Schlüssel zu hinterlegen
-  — die Regel steht jetzt einmal in `lib/run-quota-rule.ts` und stimmt mit der des Servers überein.
-  „Ist das ABAP?" wurde mit „ist das Feld nicht leer?" beantwortet: eine eingefügte E-Mail ging ans
-  Modell, kostete eine Analyse und wurde als Legacy-Code signiert. Der Sicherheitsscan läuft jetzt im
-  Analyse-Start selbst, auf genau dem Text, der den Browser verlässt. Modellkopien der signierten
-  Kennzahlen werden vor dem Speichern verworfen, der Confluence-Export druckt den signierten Score
-  oder „not computed". Eine leere Modellantwort wird nicht mehr als fertige Transformation gespeichert,
-  und keine zweite Generierung startet neben der ersten. Der Jahr-1-ROI rechnet die Investition mit
-  (vorher stand „20 %" neben dem eigenen Jahr-1-Ergebnis von −80.000 €). Beide Confluence-Exporte
-  escapen jedes Modellwort, die Design-Vorschau öffnet nicht mehr im eigenen Origin. Dazu: 1 MB gilt,
-  „Suspended" heißt „Suspended", nicht zugestellte Admin-Mails sind Fehler, und das abapGit-Paket auf
-  der Landingpage lässt sich wirklich aktivieren.
-- **Roadmap 0.16 — Skripte und Workflows.** Der Review-Workflow lud ein unversioniertes Installer-Skript
-  aus dem Netz und führte es mit Modellschlüssel und PR-Schreibrecht daneben aus; er läuft jetzt auf
-  einem an SHA-256 gepinnten Artefakt, ohne diese Rechte im Schritt, der PR-Inhalt liest. Die
-  Migrationsprüfung erklärte Dokumente nach dem Vergleich von drei Metadatenfeldern für unversehrt —
-  sie vergleicht jetzt einen kanonischen Hash jedes Dokuments und rechnet jeden signierten Lauf nach.
-  Der Security-Agent prüft die Briefs mit, die er selbst als Prompt lädt; der UX-Agent sieht die
-  Textmodule und alle Mail-Renderer. Mail: die Community-Kampagne verschickte vor dem Protokollieren
-  (Outbox plus Idempotency-Key), fehlende Mail-Konfiguration in Produktion meldete Erfolg, ein
-  fehlgeschlagenes One-Click-Opt-out antwortete 200, und ein späterer Scanner-Event überschrieb den
-  Bounce-Grund.
-- **Der Security-Agent verliert keine Prüfung mehr an den letzten Aufruf.** Der CISO schrieb das Urteil über
-  jeden Befund und den ganzen Bericht darum in einer Antwort; drei Release-Prüfungen in Folge endeten ohne
-  Bericht, jedes Mal nachdem rund fünfzig Berater-Aufrufe bezahlt und gelesen waren. Jetzt zwei Aufrufe: erst
-  die Befunde mit dem Code darunter, dann die Prosa aus den Befunden, die übrig blieben — ohne Code. Fällt eine
-  Hälfte aus, liefert die Prüfung die andere und sagt im Bericht, welche fehlt.
-- **QA-Runden zu jedem Schritt.** Die Befunde der Delta-Prüfungen sind in denselben Schritten
-  behoben, widerlegte mit Beleg in `docs/qa/refuted-findings.enc.json` festgehalten (37 Einträge).
-  Offen und in 0.17 eingeplant: drei Guards, die Quelltext lesen, wo nur ein Laufzeitnachweis zählt.
+- **Roadmap 0.13 — the second factor applies before the session.** The in-house TOTP apparatus checked the code
+  only when the Firebase session was already established: entering the password meant being signed in, the prompt was
+  a React state in front of it. Now the factor is Firebase's own (Identity Platform): Firebase issues
+  no ID token before the code, and the token names the factor in
+  `firebase.sign_in_second_factor`, which the server gates read (`lib/mfa-gate.ts`). Enrolment
+  happens in the browser against Firebase Auth, `POST /api/mfa/enrolled` reads the factor back and sets
+  the flag, `POST /api/mfa/disable` removes it via the Admin SDK — the factor first, the flag after,
+  so that every error state is too strict rather than too lax; a flag without a factor is cleaned up by the same route
+  without step-up. The old apparatus (own routes, `mfa_session` cookie, encrypted
+  `mfa_secrets`, backup codes) is gone; recovery goes through the admin
+  (`scripts/mfa-reset.ts`). **Not checkable in CI:** the Auth emulator cannot do TOTP — gate logic and
+  negative paths are tested, enrolment and factor sign-in are checked on `dev` against the real Auth.
+- **Roadmap 0.14 — account, keys and rights report only what happened.** A revoked
+  admin claim kept working until the token expired, and the display mirror `users.isAdmin` was
+  a second path to admin rights. Now only the claim grants, a revocation revokes the
+  refresh tokens, a token with the claim is checked against the revocation — and the mirror refuses,
+  even if revoking the tokens failed. Deleting a stored secret
+  swallowed its own error and reported `ok`; account deletion removed the account first
+  and could leave the rest standing. Plus: rate-limit key from the last
+  `X-Forwarded-For` entry, size and time limit for S/4 responses, and a profile fetch from an
+  old session no longer overwrites the new one.
+- **Roadmap 0.15 — dashboard, admin and the seven stages say what they know.** The quota
+  locked exactly the accounts that the same page advised to store their own Gemini key
+  — the rule now stands once in `lib/run-quota-rule.ts` and matches the server's.
+  "Is this ABAP?" was answered with "is the field not empty?": a pasted e-mail went to the
+  model, cost an analysis and was signed as legacy code. The security scan now runs in the
+  analysis start itself, on exactly the text that leaves the browser. Model copies of the signed
+  metrics are discarded before saving, the Confluence export prints the signed score
+  or "not computed". An empty model response is no longer saved as a finished transformation,
+  and no second generation starts beside the first. The year-1 ROI includes the investment
+  (before, "20 %" stood next to its own year-1 result of −80,000 €). Both Confluence exports
+  escape every model word, the design preview no longer opens in its own origin. Plus: 1 MB applies,
+  "Suspended" means "Suspended", undelivered admin mails are errors, and the abapGit package on
+  the landing page can really be activated.
+- **Roadmap 0.16 — scripts and workflows.** The review workflow downloaded an unversioned installer script
+  from the net and ran it with the model key and PR write permission beside it; it now runs on
+  an artefact pinned to SHA-256, without these rights in the step that reads PR content. The
+  migration check declared documents intact after comparing three metadata fields —
+  it now compares a canonical hash of every document and recomputes every signed run.
+  The security agent also checks the briefs it loads as a prompt itself; the UX agent sees the
+  text modules and all mail renderers. Mail: the community campaign sent before logging
+  (outbox plus idempotency key), missing mail configuration in production reported success, a
+  failed one-click opt-out answered 200, and a later scanner event overwrote the
+  bounce reason.
+- **The security agent no longer loses an audit to the last call.** The CISO wrote the verdict on
+  every finding and the whole report around it in one response; three release audits in a row ended without a
+  report, each time after around fifty consultant calls had been paid for and read. Now two calls: first
+  the findings with the code beneath them, then the prose from the findings that remained — without code. If one
+  half fails, the audit delivers the other and says in the report which one is missing.
+- **QA rounds for every step.** The findings of the delta reviews are fixed in the same steps,
+  refuted ones recorded with evidence in `docs/qa/refuted-findings.enc.json` (37 entries).
+  Open and scheduled in 0.17: three guards that read source where only runtime evidence counts.
 
 ## [v2.10.8] — 2026-09-16
 
-### Signierte Exporte lesen nur aus dem Run, das Board-Deck besiegelt nichts mehr, die Vollprüfung ist abgearbeitet
+### Signed exports read only from the run, the board deck no longer seals anything, the full review is worked through
 
-- **Roadmap 0.12 — das Audit-Pack signiert nur, was der Server weiß.** Die Generatoren bekamen
-  bisher das ganze Projektdokument unter den Run gelegt, und alles, was der Besitzer im Browser
-  schreiben darf — Zielarchitektur, Sign-off, Freigebender, Begründung, Name —, landete in
-  gehashten, signierten Dateien: eine ins Formular getippte Freigabe kam als Server-Evidenz mit
-  Signatur heraus. Jetzt baut `lib/audit-pack-build.ts` die Eingabe der signierten Generatoren aus
-  einer benannten Liste von Run-Feldern; die Aussagen des Kontos stehen in `07-user-attested.md`,
-  das `manifest.json` unter `attested` führt — der Name ist in den signierten Hash gebunden, der
-  Inhalt bewusst nicht. Web- und Offline-Verifier zeigen die Datei als „user-attested · not covered by
-  the signature", weisen ein Pack ohne sie ab und lassen keine zweite nach dem Versiegeln zu; Packs von
-  vor dieser Version kanonisieren Byte für Byte wie bisher. Die Narrative-Gaps des Modells gehen nur
-  noch in die Projekt-Worklist, nie in den signierten Run. Ein Emulator-Test geht durch beide Routen
-  und vergleicht jede signierte Datei Feld für Feld mit dem gespeicherten Run.
-- **Roadmap 0.8 — null Befunde sind kein Urteil.** Das Board-Deck rollte eine leere Befundliste zu
-  „Fully Supported" hoch und druckte „Unconditional Go-Live Approved / LOW RISK" für eine Analyse, die
-  nichts zurückgegeben hatte. Jetzt sagt es „not determined" — ohne Level, Risiko und Empfehlung —,
-  und die Folien 2–5 sagen „coverage not established" statt grüner Zeilen. Kein „Approved" mehr aus
-  dem statischen Roll-up: der Sign-off wird gemeldet, wie er ist (recorded/self-attested/not
-  recorded), die Freigabe bleibt beim Architekten. „Resolved Objects" war Objektzahl minus Befundzahl
-  und heißt jetzt „Findings by Level". Die Delivery-Seite zeigt einen Detektorfehler statt ihn als
-  leere Liste durchzureichen.
-- **Die Vollprüfung von v2.10.7 ist abgearbeitet:** 144 Befunde, 130 bestätigt, 11 widerlegt mit Beleg,
-  2 unklar. Behoben: die Testkonto-Erkennung zählt nur noch die CI-Domain (ein Präfix wie
-  `security-user-` machte reale Adressen zu Löschkandidaten); der Delta-Sync der Migration
-  überschreibt kein Zieldokument, das nicht beweisbar älter ist; die Survey-Skripte drucken weder
-  Adressen noch den Digest ins öffentliche Actions-Log, beanspruchen jeden Empfänger transaktional
-  vor dem Provider-Aufruf und zählen Eingeladene aus den Records; der Offline-Verifier folgt keinem
-  `signingKeyUrl` aus dem Pack, weist nicht aufgeführte Archiv-Einträge ab und beendet ein
-  unsigniertes Pack mit 2 statt 0; `vercel.json` (jede Route öffentlich cachebar) ist weg. Die
-  übrigen bestätigten Befunde stehen mit Schritt und Status in `docs/ROADMAP.md` §14.
-- **Die QA-Schleife liefert die Review zuerst.** Eine Runde auf `dev` dauerte 14–17 Minuten, davon
-  8–125 Sekunden Modell; der Rest war das Deploy. `scripts/qa/await.mjs` druckt die Befunde, sobald
-  der Review-Job fertig ist, und wartet nur bei sauberer Review auf den Smoke-Check. Der
-  Security-Agent fragt einen abgeschnittenen CISO-Aufruf einmal nach und läuft mit Effort `medium`;
-  der OpenRouter-Client nennt bei ungültiger Antwort den Abbruchgrund und die Token-Zahlen.
-- **Roadmap:** Anpassungsoptionen zum Standard je Betriebsmodell in Prozesskarte, Prozesskette und
-  Standard-Fit-Tabellen (7.8); Repo-Texte und Mail-Zustellbarkeit mit 3.0 (3.0.8, 3.0.9); ein
-  schnelleres Cloud-Run-Deploy als Phase-0-Schritt daneben.
+- **Roadmap 0.12 — the audit pack signs only what the server knows.** Until now the generators were
+  given the whole project document under the run, and everything the owner may write in the
+  browser — target architecture, sign-off, approver, justification, name — ended up in
+  hashed, signed files: an approval typed into the form came out as server evidence with a
+  signature. Now `lib/audit-pack-build.ts` builds the input of the signed generators from
+  a named list of run fields; the account's statements are in `07-user-attested.md`,
+  which `manifest.json` lists under `attested` — the name is bound into the signed hash, the
+  content deliberately not. Web and offline verifiers show the file as "user-attested · not covered by
+  the signature", reject a pack without it and allow no second one after sealing; packs from
+  before this version canonicalise byte for byte as before. The model's narrative gaps go only
+  into the project worklist, never into the signed run. An emulator test goes through both routes
+  and compares every signed file field by field with the stored run.
+- **Roadmap 0.8 — zero findings are not a verdict.** The board deck rolled an empty finding list up to
+  "Fully Supported" and printed "Unconditional Go-Live Approved / LOW RISK" for an analysis that
+  had returned nothing. Now it says "not determined" — without level, risk and recommendation —,
+  and slides 2–5 say "coverage not established" instead of green rows. No more "Approved" from
+  the static roll-up: the sign-off is reported as it is (recorded/self-attested/not
+  recorded), the approval stays with the architect. "Resolved Objects" was object count minus finding count
+  and is now called "Findings by Level". The Delivery page shows a detector error instead of passing it on as
+  an empty list.
+- **The full review of v2.10.7 is worked through:** 144 findings, 130 confirmed, 11 refuted with evidence,
+  2 unclear. Fixed: test-account detection counts only the CI domain (a prefix like
+  `security-user-` made real addresses deletion candidates); the migration's delta sync
+  overwrites no target document that is not provably older; the survey scripts print neither
+  addresses nor the digest into the public Actions log, claim every recipient transactionally
+  before the provider call and count invitees from the records; the offline verifier follows no
+  `signingKeyUrl` from the pack, rejects unlisted archive entries and ends an
+  unsigned pack with 2 instead of 0; `vercel.json` (every route publicly cacheable) is gone. The
+  remaining confirmed findings stand with step and status in `docs/ROADMAP.md` §14.
+- **The QA loop delivers the review first.** A round on `dev` took 14–17 minutes, of which
+  8–125 seconds were model; the rest was the deploy. `scripts/qa/await.mjs` prints the findings as soon as
+  the review job is done, and waits for the smoke check only on a clean review. The
+  security agent asks a truncated CISO call once more and runs with effort `medium`;
+  the OpenRouter client names the stop reason and the token counts on an invalid response.
+- **Roadmap:** adaptation options to the standard per operating model in process map, process chain and
+  standard-fit tables (7.8); repo texts and mail deliverability with 3.0 (3.0.8, 3.0.9); a
+  faster Cloud Run deploy as a Phase 0 step alongside.
 
 ## [v2.10.7] — 2026-09-15
 
-### Zielbild 3.0 abgenommen, aktueller SAP-Katalog, ein achtes Beispiel
+### Target picture 3.0 accepted, current SAP catalog, an eighth example
 
-- **DESIGN.md und die Mockups 2.8 sind abgenommen.** `DESIGN.md` (Fassung 1.4.2) legt Aussehen,
-  Struktur und Verhalten der Oberfläche von 3.0 fest: SAP-Fiori-Muster im Look von
-  Clean-Core.io, Grün nur für Belegtes, feste Listen für Herkunft und Status, Business · IT ·
-  Management als Sichten, BPMN aus ABAP mit Navigation für große Prozesse, „New project" mit
-  Clean Core in drei Blicken, ein Demo-Projekt mit Tour und Vertrauen vor dem Hochladen. Die
-  44 Entscheidungen stehen mit Anlass in `docs/design/decisions.md`. Die 16 Screens der Mockups
-  und die ebenfalls abgenommene neue Landingpage (`docs/roadmap/clean-core-landing-v3_0.html`)
-  finden sich 1:1 in `docs/ROADMAP.md` §5 wieder; `tests/mockup-roadmap-guard.spec.ts` hält das.
-  Die neue Startseite gehört zu 3.0, mit echten Produktansichten statt Mockup-Bildern.
-- **Der SAP-Katalog ist aktuell.** Die Release-Datei des Cloudification Repository stammte vom
-  01.07.2026. Jetzt: 25.467 statt 23.696 Einträge, zusammen mit SAPs Objektklassifikation
-  33.864 klassifizierte Objekte statt 32.103, 404 mit Nachfolger statt 387. Die Katalogseiten und
-  die Katalog-Sitemap zeigen damit mehr Objekte.
-- **Ein achtes Starter-Beispiel: `Z_MM_PO_APPROVAL`** (Emergency purchase approval, 668 Zeilen,
-  fiktiv). Derselbe Fall wie in den Mockups und die Grundlage des künftigen Demo-Projekts; die
-  Zeilenanker, die `DESIGN.md` zitiert, sind seine echten Zeilen. Jedes Beispiel wird jetzt mit
-  Datei, Test-Zwilling, Zeilenzahl und Ladeweg geprüft.
-- **Seiten mit Suchreichweite bleiben.** Nach Google Search Console haben Katalog, Klassifikation,
-  Cloudification, Knowledge, Code-Analyse, Score, Feature-Seiten, How-to, Whitepaper, Lizenzen,
-  About und Trust Impressionen. `tests/seo-surface-guard.spec.ts` hält Routen, Canonicals,
-  Sitemaps und robots.txt, damit der Umbau zu 3.0 keine davon verliert.
-- **Das Sicherheitsaudit verliert seinen Bericht nicht mehr an ein Ratenlimit.** Zwei Selbsttests
-  scheiterten am letzten Aufruf mit HTTP 429 nach rund 100 Sekunden Wiederholungen. Der
-  Security-Agent wartet jetzt mit eigenen Pausen bis zu rund 12 Minuten je Aufruf; nennt der Anbieter
-  seine Wartezeit (bis 120 Sekunden je Versuch), können es bis zu 16 Minuten werden. Die Anbieter-Regel
-  (kein Fallback, kein Anbieter, der Prompts speichert) bleibt unverändert.
+- **DESIGN.md and the mockups 2.8 are accepted.** `DESIGN.md` (version 1.4.2) defines the look,
+  structure and behaviour of the 3.0 interface: SAP Fiori patterns in the look of
+  Clean-Core.io, green only for what is proven, fixed lists for provenance and status, Business · IT ·
+  Management as views, BPMN from ABAP with navigation for large processes, "New project" with
+  clean core at three glances, a demo project with a tour, and trust before the upload. The
+  44 decisions stand with their occasion in `docs/design/decisions.md`. The 16 screens of the mockups
+  and the likewise accepted new landing page (`docs/roadmap/clean-core-landing-v3_0.html`)
+  are found 1:1 in `docs/ROADMAP.md` §5; `tests/mockup-roadmap-guard.spec.ts` holds that.
+  The new start page belongs to 3.0, with real product views instead of mockup images.
+- **The SAP catalog is current.** The release file of the Cloudification Repository dated from
+  01.07.2026. Now: 25,467 instead of 23,696 entries, together with SAP's object classification
+  33,864 classified objects instead of 32,103, 404 with a successor instead of 387. The catalog pages and
+  the catalog sitemap thus show more objects.
+- **An eighth starter example: `Z_MM_PO_APPROVAL`** (Emergency purchase approval, 668 lines,
+  fictitious). The same case as in the mockups and the basis of the future demo project; the
+  line anchors that `DESIGN.md` quotes are its real lines. Every example is now checked with
+  file, test twin, line count and load path.
+- **Pages with search reach stay.** According to Google Search Console, catalog, classification,
+  Cloudification, Knowledge, code analysis, score, feature pages, how-to, whitepaper, licences,
+  About and Trust have impressions. `tests/seo-surface-guard.spec.ts` holds routes, canonicals,
+  sitemaps and robots.txt, so that the rebuild to 3.0 loses none of them.
+- **The security audit no longer loses its report to a rate limit.** Two self-tests
+  failed on the last call with HTTP 429 after around 100 seconds of retries. The
+  security agent now waits with its own pauses for up to around 12 minutes per call; if the provider names
+  its wait time (up to 120 seconds per attempt), it can be up to 16 minutes. The provider rule
+  (no fallback, no provider that stores prompts) stays unchanged.
 
 ## [v2.10.6] — 2026-09-15
 
-### QA-Review von bd0f380: die gespeicherte Suite läuft, Geld in Worten, keine KI-Kostenschätzung
+### QA review of bd0f380: the saved suite runs, money in words, no AI cost estimate
 
-- **Eine gespeicherte Testsuite startet ausgewählt.** Seit v2.10.5 erscheint die Suite nach
-  dem Neuladen. Ausgewählt war aber nichts, und „Run Selected" blieb gesperrt, ohne dass
-  etwas sagte, dass ein Haken fehlt. Die Deploy-Pipeline fiel genau daran:
-  `tests/full-pipeline.spec.ts` rechnete schon immer mit einer vorgeladenen Suite, die es
-  bis dahin nie gab. Jetzt ist eine gespeicherte Suite beim ersten Erscheinen ganz
-  ausgewählt, wie eine frisch erzeugte. Eine spätere Auswahl des Nutzers bleibt stehen.
-- **Beträge in Worten.** Die Maskierung aus v2.10.5 kannte Zeichen und Codes („€5,000",
-  „USD 40,000"), aber keine Wörter. „5,000 dollars" und „3 million euros" werden jetzt
-  ebenfalls ersetzt.
-- **Keine KI-Kostenschätzung.** Das Chatbot-Glossar versprach „AI-powered TCO estimation".
-  Economics ist ein Demonstrationsmodell auf den eigenen Zahlen des Nutzers, kein Modell
-  schätzt Kosten. Glossar und Grenzen-Abschnitt sind korrigiert. Ein Guard prüft alle
-  Seiten, Komponenten und Bibliotheken auf solche Behauptungen.
-- Acht Befunde des Reviews waren falsch und sind mit Beleg widerlegt:
-  - der ungültige Test-Token als „Geheimnis"
-  - die angeblich fehlenden Aufrufer von Vollreview und UX-Abruf, die im selben Delta stehen
-  - die angeblich gelöschten Guard-Assertions, die ersetzt und nicht gelöscht wurden
-  - die Batch-Grenze, die exakt stimmt
+- **A saved test suite starts selected.** Since v2.10.5 the suite appears after
+  reloading. But nothing was selected, and "Run Selected" stayed locked without
+  anything saying that a tick was missing. The deploy pipeline failed on exactly that:
+  `tests/full-pipeline.spec.ts` had always expected a preloaded suite, which until
+  then never existed. Now a saved suite is fully selected when it first appears,
+  like a freshly generated one. A later selection by the user stays.
+- **Amounts in words.** The masking from v2.10.5 knew symbols and codes ("€5,000",
+  "USD 40,000"), but no words. "5,000 dollars" and "3 million euros" are now
+  replaced as well.
+- **No AI cost estimate.** The chatbot glossary promised "AI-powered TCO estimation".
+  Economics is a demonstration model on the user's own numbers; no model
+  estimates costs. Glossary and limits section are corrected. A guard checks all
+  pages, components and libraries for such claims.
+- Eight findings of the review were wrong and are refuted with evidence:
+  - the invalid test token as a "secret"
+  - the supposedly missing callers of full review and UX fetch, which are in the same delta
+  - the supposedly deleted guard assertions, which were replaced and not deleted
+  - the batch limit, which is exactly right
 
 ## [v2.10.5] — 2026-09-15
 
-### QA-Review von a0c1085: der ganze Prompt, Geld in Prosa, die gespeicherte Testsuite
+### QA review of a0c1085: the whole prompt, money in prose, the stored test suite
 
-- **Der Analyse-Prompt als Ganzes.** Er steht jetzt in `lib/analysis-prompt.ts` statt inline
-  in der Seite. Ein Feldkommentar verlangte weiter `[F-id]`, obwohl der CITATIONS-Block
-  daneben richtig war; die Tests hatten nur den Block geprüft. Der Kommentar verweist jetzt
-  auf den Block. Ein Test prüft den zusammengesetzten Prompt, mit Befunden und ohne: Jedes
-  Zitierbeispiel darin muss der Parser annehmen.
-- **Kein Geldbetrag in Prosa (Schritt 0.4, zu Ende gebracht).** Ein Modell kann
-  „Projected annual savings: €5,000" in einen Value Driver schreiben. Eine vor 0.4
-  gespeicherte Analyse enthält solche Sätze bereits. Jeder Leser einer gespeicherten Analyse
-  geht jetzt durch `readStoredAnalysis` (`lib/money-honesty.ts`), der jeden Betrag durch
-  „(amount removed: no approved cost assumptions)" ersetzt:
-  - die Analyze-Stufe
-  - der Confluence-Export
-  - der Markdown-Bericht in Dashboard und Delivery-Bundle
-  - der Design-Prompt
+- **The analysis prompt as a whole.** It now lives in `lib/analysis-prompt.ts` instead of inline
+  in the page. A field comment still demanded `[F-id]`, although the CITATIONS block next to it
+  was correct; the tests had only checked the block. The comment now points to the block. A test
+  checks the assembled prompt, with findings and without: every citation example in it must be
+  accepted by the parser.
+- **No money amount in prose (step 0.4, finished).** A model can write
+  "Projected annual savings: €5,000" into a value driver. An analysis stored before 0.4
+  already contains such sentences. Every reader of a stored analysis now goes through
+  `readStoredAnalysis` (`lib/money-honesty.ts`), which replaces every amount with
+  "(amount removed: no approved cost assumptions)":
+  - the Analyze stage
+  - the Confluence export
+  - the Markdown report in the dashboard and the Delivery bundle
+  - the Design prompt
 
-  Der Prompt sagt es auch selbst. Ein Emulator-Test öffnet eine solche Analyse und lädt
-  ihren Export herunter: Die Beträge sind weg, der Ersatztext steht da.
-- **Die gespeicherte Testsuite nach dem Neuladen.** `useTestGeneration` las
-  `project.testCases` einmal beim ersten Rendern, als das Projekt noch lud. Wer die
-  Testing-Seite neu lud, sah „Generate Your Test Suite" statt seiner Tests. Jetzt kommen
-  die Tests aus dem Projekt. Damit prüft der Sperr-Test auch die Ausführung:
-  - Im Tenant-Tab mit ausgewähltem Test ist „Run Selected" gesperrt, und ein Klick
-    erreicht den Runner nicht.
-  - Im Mock-Tab ist dieselbe Auswahl ausführbar.
-- **UX-Agent, frühere Berichte.** Der Workflow suchte sie in einem Fenster von 40 Läufen.
-  Übersprungene dev-Pushes hinterlassen kein Artefakt, und 40 davon machten jeden früheren
-  Bericht unauffindbar. `scripts/ux/fetch-reports.mjs` sucht über die Artefakt-Liste, wie
-  der Sitzungsstart.
+  The prompt says so itself as well. An emulator test opens such an analysis and downloads
+  its export: the amounts are gone, the replacement text is there.
+- **The stored test suite after a reload.** `useTestGeneration` read
+  `project.testCases` once on the first render, while the project was still loading. Whoever
+  reloaded the Testing page saw "Generate Your Test Suite" instead of their tests. Now the
+  tests come from the project. With that, the lock test also checks execution:
+  - In the Tenant tab with a test selected, "Run Selected" is locked, and a click
+    does not reach the runner.
+  - In the Mock tab, the same selection can be run.
+- **UX agent, earlier reports.** The workflow searched for them in a window of 40 runs.
+  Skipped dev pushes leave no artifact, and 40 of them made every earlier report
+  impossible to find. `scripts/ux/fetch-reports.mjs` searches via the artifact list, like
+  the session start.
 
 ## [v2.10.4] — 2026-09-15
 
-### QA-Review von 7bdac5e: Klassen statt Einzelstellen
+### QA review of 7bdac5e: classes instead of single spots
 
-Das Review fand Stellen, die die Fixes von 0.1 und 1.3 übersehen hatten. Sie hatten nur
-einzelne Fundstellen repariert und die Tests nur die reparierten Dateien geprüft. Diese
-Runde behebt jeweils die ganze Klasse und prüft das Verhalten statt des Quelltexts.
+The review found spots that the fixes of 0.1 and 1.3 had missed. They had only repaired
+single occurrences, and the tests had only checked the repaired files. This round fixes the
+whole class each time and checks the behaviour instead of the source text.
 
-- **Gesperrter Live-Pfad (`G0:R0`).** `tests/locked-paths-guard.spec.ts` liest nicht mehr
-  vierzehn feste Dateien, sondern jede Datei unter `app/`, `components/`, `hooks/` und
-  `lib/` (Kommentare ausgenommen) plus README und die Whitepaper-Vorlage. Dazu kommen
-  Muster für Isolation, die der Runner nicht hat: „isolated sandbox", „secure sandbox",
-  „containerized", „code directly against your". Korrigiert wurden:
-  - das Knowledge-Panel und die Landing-Slideshow
-  - die Freigabe-Mail („Execute dynamic SAP Cloud SDK code directly against your … sandbox")
-  - die Entzugs-Mail („fallback-routed to localized mock engines")
-  - Chatbot, How-to und die Glossar-Box
+- **Locked live path (`G0:R0`).** `tests/locked-paths-guard.spec.ts` no longer reads
+  fourteen fixed files but every file under `app/`, `components/`, `hooks/` and
+  `lib/` (comments excluded) plus the README and the whitepaper template. Added to that are
+  patterns for isolation the runner does not have: "isolated sandbox", "secure sandbox",
+  "containerized", "code directly against your". Corrected were:
+  - the Knowledge panel and the landing slideshow
+  - the approval mail ("Execute dynamic SAP Cloud SDK code directly against your … sandbox")
+  - the revocation mail ("fallback-routed to localized mock engines")
+  - chatbot, How-to and the glossary box
 
-  Überall steht jetzt: Die Tests laufen gegen Mocks in einem eingeschränkten
-  Node.js-Prozess.
-- **Die Sperre, beobachtet.** `/api/run-tests` lehnt einen Live-Lauf direkt nach dem Lesen
-  des Bodys ab, noch vor Projekt-Lookup, Temp-Verzeichnis, Probe und Zugangsdaten. Neue
-  Emulator-Tests:
-  - Ein Live-Lauf erhält 403 mit dem Sperrhinweis und `locked: "G0:R0"`.
-  - Derselbe Aufruf auf Mocks erhält 200.
-  - Die Testing-Seite zeigt im Tenant-Tab Hinweis und „Check only" und sendet keinen Lauf.
-- **Anker (1.3).** Nicht-numerische erfundene IDs wie `[F-credit-limit]` gelten weiter als
-  erfunden. Die Anweisung für einen Bericht ohne Befunde zeigt keine Befund-ID. Ihr
-  Zeilenbeispiel liegt innerhalb der Datei.
-- **UX-Agent, Sitzungsstart.** Die Artefakt-Suche blättert nach der rohen Seitengröße.
-  Eine volle Seite mit einem abgelaufenen Artefakt galt vorher als letzte Seite. Endet die
-  Suche an ihrem Limit, sagt sie das, statt „nichts offen" zu melden.
-- Whitepaper- und Guide-PDF neu erzeugt.
+  Everywhere it now says: the tests run against mocks in a restricted
+  Node.js process.
+- **The lock, observed.** `/api/run-tests` rejects a live run directly after reading
+  the body, before the project lookup, temp directory, probe and credentials. New
+  emulator tests:
+  - A live run gets 403 with the lock notice and `locked: "G0:R0"`.
+  - The same call on mocks gets 200.
+  - The Testing page shows the notice and "Check only" in the Tenant tab and sends no run.
+- **Anchors (1.3).** Non-numeric invented IDs such as `[F-credit-limit]` still count as
+  invented. The instruction for a report without findings shows no finding ID. Its
+  line example lies within the file.
+- **UX agent, session start.** The artifact search pages by the raw page size.
+  A full page with an expired artifact used to count as the last page. If the
+  search ends at its limit, it says so instead of reporting "nothing open".
+- Whitepaper and guide PDF regenerated.
 
-Mitgefunden, nicht in dieser Runde: Die Testing-Seite zeigt eine gespeicherte Testsuite nach
-dem Neuladen nicht an (`hooks/useTestGeneration.ts:10` übernimmt `project.testCases` nur beim
-ersten Rendern, und da lädt das Projekt noch) — steht im BACKLOG.
+Found along the way, not in this round: the Testing page does not show a stored test suite after
+a reload (`hooks/useTestGeneration.ts:10` takes `project.testCases` only on the
+first render, and at that point the project is still loading) — it is in the BACKLOG.
 
 ## [v2.10.3] — 2026-09-15
 
-### Roadmap-Schritt 0.4: keine Geldwerte ohne freigegebene Annahmen
+### Roadmap step 0.4: no money values without approved assumptions
 
-Die Analyse bat das Modell um `estimatedMaintenanceCostRange` und eine `cloudRoiSummary`
-mit „projected savings of approximately $Y–$Z per year". Die Analyse-Stufe zeigte das als
-„Est. Maint. Cost: 3.000 €–8.000 €/yr" und „Estimated Cloud ROI". Der Confluence-Export
-trug es als „Estimated Annual Maintenance Cost" und „Expected Cloud ROI" zum Kunden. Hinter
-keiner dieser Zahlen stand eine Annahme, die jemand freigegeben hatte. Die Bitte um eine
-Spanne und einen Kalibrierungshinweis machte aus einer erfundenen Zahl nur eine
-vorsichtig formulierte.
+The analysis asked the model for `estimatedMaintenanceCostRange` and a `cloudRoiSummary`
+with "projected savings of approximately $Y–$Z per year". The Analyze stage showed that as
+"Est. Maint. Cost: 3.000 €–8.000 €/yr" and "Estimated Cloud ROI". The Confluence export
+carried it to the customer as "Estimated Annual Maintenance Cost" and "Expected Cloud ROI". Behind
+none of these numbers stood an assumption that anyone had approved. Asking for a
+range and a calibration note only turned an invented number into a
+cautiously worded one.
 
-**Jetzt:**
-- Der Prompt fragt nach keinem Geldwert mehr, und der Typ kennt keinen.
-- Die Analyse-Stufe und der Export sagen „not determined": Ein Kosten- oder ROI-Wert braucht
-  freigegebene Kostenannahmen, und die Analyse hat keine. Gerechnet wird nur in der
-  Economics-Stufe, mit den Zahlen, die der Nutzer selbst einträgt (seit v2.9.8).
-- Der Button heißt „Economics: model with your own figures" statt „C-Level TCO & ROI
+**Now:**
+- The prompt no longer asks for any money value, and the type knows none.
+- The Analyze stage and the export say "not determined": a cost or ROI value needs
+  approved cost assumptions, and the analysis has none. Calculations happen only in the
+  Economics stage, with the figures the user enters themselves (since v2.9.8).
+- The button is called "Economics: model with your own figures" instead of "C-Level TCO & ROI
   Calculator 📊".
-- Mitkorrigiert:
-  - „executive briefs with strategic ROI metrics" im Onboarding,
-  - „summarizing the transformation, ROI" auf der Übergabeseite (das Deck enthält keine
-    Einsparung),
-  - „TCO & ROI · Upgrade-impact calculator" im Whitepaper,
-  - der Chatbot, der noch eine „AI-Powered Estimation" der Kosten beschrieb.
+- Corrected along the way:
+  - "executive briefs with strategic ROI metrics" in the onboarding,
+  - "summarizing the transformation, ROI" on the handover page (the deck contains no
+    savings),
+  - "TCO & ROI · Upgrade-impact calculator" in the whitepaper,
+  - the chatbot, which still described an "AI-Powered Estimation" of the costs.
 
-**Abnahme** (V25-A06: „Analyze, Brief und Export ohne Annahmenrevision zeigen keinen
-Geldwert; der Prompt enthält keine monetären Felder"): `tests/money-honesty-guard.spec.ts`
-prüft:
-- den Prompt-Block,
-- den Typ,
-- „not determined" in Stufe und Export,
-- und dass außer der Economics-Seite keine Datei unter `app/`, `components/` und `lib/` einen
-  Geldbetrag formatiert.
+**Acceptance** (V25-A06: "Analyze, brief and export without an assumption revision show no
+money value; the prompt contains no monetary fields"): `tests/money-honesty-guard.spec.ts`
+checks:
+- the prompt block,
+- the type,
+- "not determined" in the stage and the export,
+- and that apart from the Economics page no file under `app/`, `components/` and `lib/`
+  formats a money amount.
 
-Ohne die Änderung scheitern alle vier Tests.
+Without the change, all four tests fail.
 
 ## [v2.10.2] — 2026-09-15
 
-### Roadmap-Schritt 0.2, erster Teil: kein Signavio-Import mehr versprochen, der nie geprüft wurde
+### Roadmap step 0.2, first part: no more promise of a Signavio import that was never checked
 
-Die Roadmap-Fassung 2.8 hat Schritt 0.2 einen Punkt hinzugefügt: Die Signavio-Aussagen
-gehen auf „BPMN 2.0 XML" zurück, bis Schritt 4.3 den Import mit einem echten Signavio
-belegt. Gefunden haben sich zwölf Stellen, darunter:
-- das Badge „Signavio-Importable" auf der Dokumentationsseite („designed for seamless
+Roadmap version 2.8 added a point to step 0.2: the Signavio statements
+go back to "BPMN 2.0 XML" until step 4.3 proves the import with a real Signavio.
+Twelve spots turned up, among them:
+- the badge "Signavio-Importable" on the documentation page ("designed for seamless
   import into SAP Signavio Process Manager"),
-- die Vergleichszeile der Startseite („hands the template to Signavio"),
-- der Alt-Text der Slideshow („validated for SAP Signavio and SAP Build"),
-- die Feature-Seite („SAP Signavio / SAP Build compatible"),
-- How-to („designed for direct import"), Whitepaper samt PDF („importable into SAP
-  Signavio"), Knowledge, Fähigkeiten-Guide samt PDF und die Wissensbasis des Chatbots.
+- the comparison line of the home page ("hands the template to Signavio"),
+- the alt text of the slideshow ("validated for SAP Signavio and SAP Build"),
+- the features page ("SAP Signavio / SAP Build compatible"),
+- How-to ("designed for direct import"), whitepaper including PDF ("importable into SAP
+  Signavio"), Knowledge, capabilities guide including PDF and the chatbot's knowledge base.
 
-Sie sagen jetzt „BPMN 2.0 XML". Wo Signavio genannt wird, steht dabei, dass der Import
-noch nicht geprüft ist. Signavio als eigenständiges SAP-Werkzeug zu nennen bleibt richtig.
-Ebenso bleibt der Hinweis, dass Clean-Core.io keine Signavio-Zertifizierung hat.
+They now say "BPMN 2.0 XML". Where Signavio is named, it says alongside that the import
+has not been checked yet. Naming Signavio as a standalone SAP tool remains correct.
+So does the note that Clean-Core.io has no Signavio certification.
 
-Und ehrlicherweise: Selbst „BPMN 2.0 XML" hält noch nicht jeder Eingabe stand. Das
-Escaping der Exportdatei ist fehlerhaft (CR-21) und wird in Schritt 2.6 behoben.
+And to be honest: even "BPMN 2.0 XML" does not yet hold up against every input. The
+escaping of the export file is faulty (CR-21) and will be fixed in step 2.6.
 
-**Abnahme** (Phase 0: „keine Seite und kein Badge mehr einen Signavio-Import verspricht"):
-`tests/signavio-claims-guard.spec.ts` liest jede Datei unter `app/` und `components/`
-sowie Features, Fähigkeiten, Chatbot, Whitepaper-Vorlage und README:
-- Keine der zehn Versprechensformen darf mehr vorkommen.
-- Jeder sichtbare Satz, der Signavio und „import" zusammen nennt, muss „nicht geprüft"
-  sagen.
+**Acceptance** (Phase 0: "no page and no badge promises a Signavio import any more"):
+`tests/signavio-claims-guard.spec.ts` reads every file under `app/` and `components/`
+as well as features, capabilities, chatbot, whitepaper template and README:
+- None of the ten forms of the promise may occur any more.
+- Every visible sentence that names Signavio and "import" together must say "not checked".
 
-Auf den alten Texten schlägt der Guard 12-mal an.
+The guard fires 12 times on the old texts.
 
-### QA-Runde 2 zum UX-Agenten, und ein Fehler, den der zweite Lauf zeigte
+### QA round 2 on the UX agent, and a bug the second run showed
 
-- **Der Berichtsabruf scheiterte an sich selbst.** In der Schleife stand `[ "$found" -ge 10 ] &&
-  break` als letzter Befehl. Solange weniger als zehn Berichte gefunden waren, wurde der
-  falsche Test zum Exit-Status des ganzen Schritts (Lauf 34952723977). Jetzt stehen dort
-  if-Anweisungen, und ein Guard verbietet das Muster.
-- **Die Baseline wandert mit** (`27096ea7fdbc`): Jeder Bericht nennt die vollständige
-  Vollreview, auf der er aufbaut. So fällt sie nicht aus dem Fenster der zehn zuletzt
-  geladenen Berichte, und es gibt keine zweite Vollreview aus Versehen.
-- **Sitzungsstart** (`006ed32a72cc`): Die Suche geht über die Review-Artefakte, nicht über
-  Läufe. Übersprungene Läufe haben keins, Selbsttests werden übergangen, egal wie viele es sind.
-- **Bilder zählen nur, wenn sie im Aufruf sind** (`115d8f705a0d`): Ein Screenshot, den das
-  Byte-Limit aussortiert, macht die Review unvollständig. Das gilt auch für die Synthese.
-- **Gelöschte Dateien ganz** (`a064a718fbb9`): kein stilles Kürzen mehr bei 40.000 Zeichen.
-  Übergröße erfasst das Batch-Limit und vermerkt sie.
+- **The report fetch failed on itself.** In the loop, `[ "$found" -ge 10 ] &&
+  break` was the last command. As long as fewer than ten reports had been found, the
+  false test became the exit status of the whole step (run 34952723977). Now there are
+  if statements there, and a guard forbids the pattern.
+- **The baseline travels along** (`27096ea7fdbc`): every report names the complete
+  full review it builds on. That way it does not drop out of the window of the ten most recently
+  loaded reports, and there is no second full review by accident.
+- **Session start** (`006ed32a72cc`): the search goes over the review artifacts, not over
+  runs. Skipped runs have none, self-tests are passed over, no matter how many there are.
+- **Images only count if they are in the call** (`115d8f705a0d`): a screenshot that the
+  byte limit sorts out makes the review incomplete. That also applies to the synthesis.
+- **Deleted files in full** (`a064a718fbb9`): no more silent truncation at 40,000 characters.
+  The batch limit captures oversize and notes it.
 
 ## [v2.10.1] — 2026-09-15
 
-### Roadmap-Schritt 1.3, vorgezogen: Zitate der Engine-IDs zählen endlich als belegt
+### Roadmap step 1.3, brought forward: citations of the engine IDs finally count as evidenced
 
-Die Analyse bittet das Modell, jeden Satz mit einem Anker zu belegen, und misst daraus
-die Traceability-Quote. Die Engine nummeriert ihre Befunde seit jeher `CC-001`; der Parser
-(`lib/abap/narrative-anchors.ts`) erkannte aber nur `[F-…]`. Die Folgen:
-- Ein korrektes Zitat `[CC-003]` passte auf nichts und zählte als „unbelegt".
-- Das Beispiel im Prompt, `[F-017]`, konnte nur eine Erfindung sein.
-- Der Test verwendete dieselben erfundenen `F-`-IDs und lief deshalb grün.
-- Die angezeigte Quote war kleiner, als das Modell tatsächlich belegt hatte.
+The analysis asks the model to back every sentence with an anchor and measures
+the traceability rate from that. The engine has always numbered its findings `CC-001`; the parser
+(`lib/abap/narrative-anchors.ts`), however, only recognised `[F-…]`. The consequences:
+- A correct citation `[CC-003]` matched nothing and counted as "unevidenced".
+- The example in the prompt, `[F-017]`, could only be an invention.
+- The test used the same invented `F-` IDs and therefore ran green.
+- The displayed rate was lower than what the model had actually evidenced.
 
-**Behoben.**
-- Der Parser liest jede ID der Form `XX-017` als Befundzitat und prüft sie gegen den
-  Bericht: Eine echte ID ist verankert, eine erfundene (auch `[F-017]`) wird als
-  erfunden gezählt, nicht ignoriert.
-- Das Prompt-Beispiel ist die erste echte ID des Berichts.
+**Fixed.**
+- The parser reads every ID of the form `XX-017` as a finding citation and checks it against the
+  report: a real ID is anchored, an invented one (including `[F-017]`) is counted as
+  invented, not ignored.
+- The prompt example is the first real ID of the report.
 
-**Abnahme:** „Test mit echten Engine-IDs". `tests/narrative-anchors.spec.ts` baut den
-Evidenzbericht mit `buildAbapEvidence` aus einem kleinen ABAP-Programm:
-- Die echte ID wird verankert.
-- Das Beispiel im erzeugten Prompt löst auf.
-- `[F-017]` gilt als erfunden.
+**Acceptance:** "Test with real engine IDs". `tests/narrative-anchors.spec.ts` builds the
+evidence report with `buildAbapEvidence` from a small ABAP program:
+- The real ID gets anchored.
+- The example in the generated prompt resolves.
+- `[F-017]` counts as invented.
 
-Die Fixtures nutzen jetzt die Form der Engine. Ohne den Fix scheitern 6 der 14 Tests.
+The fixtures now use the engine's form. Without the fix, 6 of the 14 tests fail.
 
 ## [v2.10.0] — 2026-09-15
 
-### Roadmap-Schritt 0.1 (`G0:R0`): Live-Tests gegen einen Tenant sind gesperrt — und jetzt steht das überall, wo es angeboten wurde
+### Roadmap step 0.1 (`G0:R0`): live tests against a tenant are locked — and now that is stated everywhere they were offered
 
-Der erste Schritt von Phase 0 „Belegt". Entschieden am 12.09. („Weg 2"): Ein bekannter
-Blocker wird behoben oder mit Grund gesperrt. Die Sperre bestand technisch schon, denn
-`deploy.yml` setzt `S4_TEST_RUNNER_EGRESS_ENFORCED` nie. Gesagt hat es aber niemand:
-`SECURITY.md` beschrieb den Live-Modus als „aus, solange nicht erzwungen", und rund 30
-sichtbare Texte boten Tests gegen den eigenen Tenant als Funktion an. Ein Live-Lauf aus
-der Testing-Seite endete in einem rohen HTTP 403, das als „Execution Error" im Terminal
-stand und an Gemini ging, um einen Fehler zu erklären, der eine Entscheidung war.
+The first step of Phase 0 "Evidenced". Decided on 12.09. ("Route 2"): a known
+blocker is fixed or locked with a reason. The lock already existed technically, because
+`deploy.yml` never sets `S4_TEST_RUNNER_EGRESS_ENFORCED`. But nobody said so:
+`SECURITY.md` described the live mode as "off unless enforced", and around 30
+visible texts offered tests against one's own tenant as a feature. A live run from
+the Testing page ended in a raw HTTP 403, which appeared as "Execution Error" in the terminal
+and went to Gemini to explain an error that was a decision.
 
-**Eine Definition.** `lib/locked-paths.ts` (`LIVE_TEST_EXECUTION`) hält die Sperre an
-einer Stelle fest:
-- **Grenze:** gesperrt ist `POST /api/run-tests` mit `s4Environment: "live"`. Offen
-  bleiben die Sandbox gegen Mocks, der Verbindungstest, das Lesen der Metadaten und ein
-  lesender OData-Aufruf.
-- **Grund:** generierter Code läuft als Kindprozess im API-Dienst. Die Schutzschichten
-  sind Defense in Depth, keine Isolationsgrenze, und der Dienst hat offenen Egress (CR-15).
-- **Wiedereröffnung, alle vier Bedingungen:**
-  1. ein eigener kurzlebiger Runner-Dienst mit minimalem Dienstkonto,
-  2. deny-by-default-Egress mit dem Tenant als einzigem Ziel, in CI bewiesen,
-  3. externer Review mit geschlossenen Befunden,
-  4. Sonnys Entscheidung.
-- **Hinweistext** für die Nutzer.
+**One definition.** `lib/locked-paths.ts` (`LIVE_TEST_EXECUTION`) holds the lock in
+one place:
+- **Boundary:** locked is `POST /api/run-tests` with `s4Environment: "live"`. Open
+  remain the sandbox against mocks, the connection test, reading the metadata and a
+  reading OData call.
+- **Reason:** generated code runs as a child process in the API service. The protection layers
+  are defense in depth, not an isolation boundary, and the service has open egress (CR-15).
+- **Reopening, all four conditions:**
+  1. a dedicated short-lived runner service with a minimal service account,
+  2. deny-by-default egress with the tenant as the only destination, proven in CI,
+  3. an external review with closed findings,
+  4. Sonny's decision.
+- **Notice text** for the users.
 
-**Die Route prüft zuerst die Sperre, dann erst misst sie.** Eine bestandene Egress-Probe
-öffnet nichts mehr, denn zwei Adressen sind eine Stichprobe, keine Grenze.
+**The route checks the lock first, and only then measures.** A passed egress probe
+no longer opens anything, because two addresses are a sample, not a boundary.
 
-**`SECURITY.md` v4.1, neuer §7.1.** Er enthält Grenze, Grund, Bedingungen und
-Hinweistext wortgleich aus der Definition. Die Kurzfassung, die Befundtabelle (F-02), das
-Ablaufdiagramm und die Variablentabelle sagen jetzt „gesperrt".
+**`SECURITY.md` v4.1, new §7.1.** It contains boundary, reason, conditions and
+notice text verbatim from the definition. The summary, the findings table (F-02), the
+flow diagram and the variables table now say "locked".
 
-**Die Oberfläche sagt es.**
-- Der Tenant-Tab heißt „Check only", das Panel nennt die Sperre.
-- „Run Selected" ist für CAP-Projekte im Tenant-Modus gesperrt, und der Hook schickt die
-  Anfrage gar nicht erst.
-- Der simulierte ABAP-Bericht verspricht kein „echtes Urteil" mehr durch einen Tenant.
+**The interface says so.**
+- The Tenant tab is called "Check only", the panel names the lock.
+- "Run Selected" is locked for CAP projects in tenant mode, and the hook does not even send the
+  request.
+- The simulated ABAP report no longer promises a "real verdict" through a tenant.
 
-**Texte korrigiert:**
-- Landing-Page: aus „Validated · Runs test suites against your S/4HANA sandbox" wird
-  „Sandbox + Connection Check".
-- Seiten Tenant Security, Knowledge, How-to (samt Hotspots), Whitepaper und die
-  Wissensbasis des Chatbots.
-- Freigabe-Mail für Tenant-Zugang, Fähigkeiten-Guide und README.
-- `ARCHITECTURE.md` und die Bridge-Doku. Deren Kopf markiert jetzt, dass die Abschnitte
-  zur Testausführung den gesperrten Pfad beschreiben.
-- Whitepaper-PDF und Guide-PDF sind neu erzeugt.
+**Texts corrected:**
+- Landing page: "Validated · Runs test suites against your S/4HANA sandbox" becomes
+  "Sandbox + Connection Check".
+- The pages Tenant Security, Knowledge, How-to (including hotspots), whitepaper and the
+  chatbot's knowledge base.
+- Approval mail for tenant access, capabilities guide and README.
+- `ARCHITECTURE.md` and the bridge docs. Their header now marks that the sections
+  on test execution describe the locked path.
+- Whitepaper PDF and guide PDF are regenerated.
 
-**Mitgefunden, gleiche Panels:** Zwei Sicherheitsaussagen stimmten nicht.
-- „Browser-side Encryption: … encrypted locally in the browser" ist falsch. Verschlüsselt
-  wird auf dem Server mit AES-256-GCM.
-- Einen „isolated BTP proxy channel" gibt es nicht. Die Aufrufe laufen serverseitig über
-  den SSRF-geprüften Fetch.
+**Found along the way, same panels:** two security statements were not true.
+- "Browser-side Encryption: … encrypted locally in the browser" is wrong. Encryption
+  happens on the server with AES-256-GCM.
+- An "isolated BTP proxy channel" does not exist. The calls run server-side via
+  the SSRF-checked fetch.
 
-**Abnahme** (`docs/roadmap/SCHNITT-0-UMFANG.md` §1): „Die Grenze steht in `SECURITY.md`",
-„Kein View, kein Text und kein Export stellt den gesperrten Pfad als verfügbar dar".
-`tests/locked-paths-guard.spec.ts`, 19 Tests:
-- `SECURITY.md` §7.1 gegen die Definition.
-- Route: Sperre vor Messung, 403 vor dem Laden der Zugangsdaten.
-- Hook: kein Request, kein Modellaufruf.
-- Seite: Hinweis und gesperrter Button.
-- 14 Oberflächen gegen die 16 Aussagen vom 15.09. Dazu die Regel: Jeder Satz über Tests
-  gegen einen Tenant muss „locked" enthalten.
+**Acceptance** (`docs/roadmap/SCHNITT-0-UMFANG.md` §1): "The boundary is in `SECURITY.md`",
+"No view, no text and no export presents the locked path as available".
+`tests/locked-paths-guard.spec.ts`, 19 tests:
+- `SECURITY.md` §7.1 against the definition.
+- Route: lock before measurement, 403 before loading the credentials.
+- Hook: no request, no model call.
+- Page: notice and locked button.
+- 14 surfaces against the 16 statements of 15.09. Plus the rule: every sentence about tests
+  against a tenant must contain "locked".
 
 ## [v2.9.17] — 2026-09-15
 
-### Der UX-Agent: jede Version auf main bekommt eine UX-Review — die erste nimmt sich das ganze Produkt vor
+### The UX agent: every version on main gets a UX review — the first one takes on the whole product
 
-Sonnys Auftrag vom 15.09.: ein Agent, der jeden `main`-Stand auf UX-Probleme prüft,
-Design-Entscheidungen hinterfragt, Verbesserungen liefert, neue Features aus Nutzersicht
-ansieht und Ende zu Ende prüft, ob Farben, Formen und Schriften stimmig sind — mit Muse
-Spark 1.3 über OpenRouter, selbständig, kostenoptimal, in Leitplanken. Und: Beim ersten Mal
-den ganzen Code in Richtung UX prüfen, mit einem möglichst präzisen Prompt.
+Sonny's assignment of 15.09.: an agent that checks every `main` state for UX problems,
+questions design decisions, delivers improvements, looks at new features from the user's perspective
+and checks end to end whether colours, shapes and fonts are consistent — with Muse
+Spark 1.3 via OpenRouter, autonomously, cost-optimised, within guardrails. And: the first time,
+check the whole code with respect to UX, with as precise a prompt as possible.
 
-**Der Prompt** (`docs/ux/ux-brief.md`): ein Principal Product Designer mit einem einzigen
-Ziel. Er kennt die Nutzer (ABAP-Entwickler, Architekt, Prozessverantwortliche, Management,
-Erstbesucher) und die Produktregeln als UX-Anforderung: fehlend bleibt fehlend,
-rekonstruiert ist nie bestätigt, und die Oberfläche muss das *sichtbar* unterscheiden. Die
-Mockups 2.7 sind das Zielbild. Er prüft in zehn Perspektiven, in dieser Reihenfolge:
-Journey, Orientierung, Rückmeldung, visuelle Konsistenz über alle Screens, Texte, WCAG 2.2
-AA, Telefon, Vertrauen, Design-Entscheidungen, neue Features. Schwere wird in Nutzerfolgen
-bemessen. Kein Befund ohne Zeile, Screenshot oder Scan-Zahl. Eigene Abschnitte gibt es für
-die Vollreview je Bereich, die End-to-End-Synthese und die Release-Review.
+**The prompt** (`docs/ux/ux-brief.md`): a principal product designer with a single
+goal. He knows the users (ABAP developer, architect, process owners, management,
+first-time visitors) and the product rules as a UX requirement: missing stays missing,
+reconstructed is never confirmed, and the interface must distinguish that *visibly*. The
+mockups 2.7 are the target picture. He checks from ten perspectives, in this order:
+journey, orientation, feedback, visual consistency across all screens, texts, WCAG 2.2
+AA, phone, trust, design decisions, new features. Severity is measured in consequences for users.
+No finding without a line, screenshot or scan figure. There are separate sections for
+the full review per area, the end-to-end synthesis and the release review.
 
-**Was er sieht.** Einen deterministischen Design-Scan des ganzen Produkts, ohne Token. Schon
-der erste Probelauf zählt 207 Farbtöne, 78 verschiedene Button-Stile bei 84 Buttons,
-883 Stellen mit Schrift unter 12 px, grau und slate sowie green und emerald nebeneinander und
-22 `dark:`-Varianten. Dazu Screenshots aus `tests/capture-screens.spec.ts`: ein geseedetes
-Demo-Projekt, 16 Screens auf Desktop und Telefon in Bildschirmhöhen statt unlesbarer
-Ganzseitenbilder, drei Screens im Dark Mode und die sechs Ansichten der Mockups. Den Code
-bekommt er je Journey gebündelt, aus dem Import-Graphen: Zugang, Wissen, Rahmen, Analyse,
-Entwurf, Nachweis, System.
+**What he sees.** A deterministic design scan of the whole product, without tokens. Even
+the first trial run counts 207 colour shades, 78 different button styles across 84 buttons,
+883 places with font size below 12 px, gray and slate as well as green and emerald side by side and
+22 `dark:` variants. Plus screenshots from `tests/capture-screens.spec.ts`: a seeded
+demo project, 16 screens on desktop and phone at screen heights instead of unreadable
+full-page images, three screens in dark mode and the six views of the mockups. He gets the code
+bundled per journey, from the import graph: access, knowledge, frame, analysis,
+draft, evidence, system.
 
-**Drei Jobs.** `scope` ohne Secrets; `capture` baut und fotografiert die App ohne jedes
-Secret, mit Wegwerf-Schlüsseln; `review` hält Modell- und Siegelschlüssel und führt kein
-`npm ci` aus. Screenshots werden nur als Bytes mit erwartetem Namen und JPEG-Signatur
-angenommen. Der Bericht ist versiegelt; das Log nennt Modus, Aufrufe und Kosten.
+**Three jobs.** `scope` without secrets; `capture` builds and photographs the app without any
+secret, with throwaway keys; `review` holds the model and seal keys and runs no
+`npm ci`. Screenshots are only accepted as bytes with the expected name and JPEG signature.
+The report is sealed; the log names mode, calls and cost.
 
-**Kosten.** Geschätzte Budgets je Modus, vor jedem Aufruf gegen tatsächliche Ausgaben plus
-eine konservative Schätzung geprüft: Vollreview 6 $, Release 1,50 $, Selbsttest 0,30 $; die harte
-Grenze ist das Kreditlimit des OpenRouter-Schlüssels. Keine geratene Basis — ohne Prüfstand und ohne vorherigen `main`-Stand bricht der Lauf ab.
+**Cost.** Estimated budgets per mode, checked before every call against actual spending plus
+a conservative estimate: full review $6, release $1.50, self-test $0.30; the hard
+limit is the credit limit of the OpenRouter key. No guessed base — without a checkpoint and without a previous `main` state, the run aborts.
 
-**Claudes Seite:** Skill `ux-review-intake`. Er holt den Bericht und die Screenshots
-(`scripts/ux/inbox.mjs`), prüft jeden Befund an Zeile und Bild, entscheidet
-(`scripts/ux/register.mjs`) und plant in die neue **Roadmap §13** ein. Beim Sitzungsstart
-meldet ein Hook unentschiedene Befunde; nach einem Push auf `main` erinnert der Post-Push-Hook.
+**Claude's side:** skill `ux-review-intake`. It fetches the report and the screenshots
+(`scripts/ux/inbox.mjs`), checks each finding against line and image, decides
+(`scripts/ux/register.mjs`) and schedules into the new **Roadmap §13**. At session start
+a hook reports undecided findings; after a push to `main`, the post-push hook reminds.
 
-**Mitgenommen:** Der OpenRouter-Transport des QA-Agenten nimmt jetzt Modell, Bildteile und
-Titel je Agent. Abgelehnte Aufrufe nennen eine feste Deutung des Statuscodes, etwa 403 =
-Modell für Konto oder Schlüssel nicht freigegeben. Genau das ist der Stand: **Muse Spark 1.3
-verlangt eine 18+-Bestätigung in den OpenRouter-Einstellungen, die nur Sonny geben kann.**
+**Taken along:** the QA agent's OpenRouter transport now takes model, image parts and
+title per agent. Rejected calls name a fixed interpretation of the status code, for instance 403 =
+model not enabled for account or key. That is exactly the current state: **Muse Spark 1.3
+requires an 18+ confirmation in the OpenRouter settings that only Sonny can give.**
 
-Widerruf: `UX_REVIEW_ENABLED=false`. Runbook: `docs/UX-REVIEW-AGENT.md`.
-`tests/ux-review-guard.spec.ts`, 23 Tests.
+Revoke: `UX_REVIEW_ENABLED=false`. Runbook: `docs/UX-REVIEW-AGENT.md`.
+`tests/ux-review-guard.spec.ts`, 23 tests.
 
-### QA-Runde 1 zum UX-Agenten — sieben Befunde behoben, und `dev` wieder grün
+### QA round 1 on the UX agent — seven findings fixed, and `dev` green again
 
-- **Die Pipeline auf `dev` war rot.** `npm run lint` erlaubt 661 Warnungen, der UX-Push
-  brachte 662: ein `catch (err: any)` im Capture-Test. Die Warnung ist entfernt, nicht das
-  Budget angehoben. Stand jetzt 660.
-- **Keine Release-Delta vor der Vollreview** (`e4b1d7916a95`): Scope entscheidet nur noch *ob*
-  ein Lauf stattfindet (`auto`); `review.mjs` öffnet die Berichte und macht jeden automatischen
-  Lauf zur Vollreview, solange keine vollständige existiert — auf `main` wie auf `dev`.
-- **Gelöschte Screens zählen** (`25c4ed925224`): Eine entfernte Datei geht mit ihrem letzten
-  Inhalt an den Reviewer; ein Release, das nur löscht, gilt nicht mehr als unsichtbar.
-- **Sitzungsstart** (`c3109a9fdfb1`): sucht die neueste echte Review hinter übersprungenen Läufen
-  und Selbsttests.
-- **Budget ehrlich benannt** (`504b555454c1`): geschätztes Budget, keine harte Grenze; die
-  Schätzung rechnet mit 2,5 statt 3,5 Zeichen je Token.
-- **Wieder aufgetretene Befunde bleiben offen** (`4875aa3e7409`): Eine Entscheidung schließt, was
-  vor ihr gemeldet wurde — nicht eine spätere Regression, auch über ein fremdes Release hinweg.
-- **Mockups** (`b255c3fc77a5`): Die Auswahl fragte nach `m3`, die Erfassung schreibt `m3-mockup`;
-  eine gemeinsame Konstante, getestet mit den echten Dateinamen.
-- **Screenshots je Screen** (`a553413f50d9`): Fehlt das Bild eines Screens, den ein Aufruf braucht,
-  ist die Review unvollständig — ein einzelnes anderes Bild genügt nicht mehr.
+- **The pipeline on `dev` was red.** `npm run lint` allows 661 warnings, the UX push
+  brought 662: a `catch (err: any)` in the capture test. The warning is removed, the
+  budget not raised. Now at 660.
+- **No release delta before the full review** (`e4b1d7916a95`): scope now only decides *whether*
+  a run takes place (`auto`); `review.mjs` opens the reports and makes every automatic
+  run a full review as long as no complete one exists — on `main` as on `dev`.
+- **Deleted screens count** (`25c4ed925224`): a removed file goes to the reviewer with its last
+  content; a release that only deletes no longer counts as invisible.
+- **Session start** (`c3109a9fdfb1`): looks for the newest real review behind skipped runs
+  and self-tests.
+- **Budget named honestly** (`504b555454c1`): estimated budget, not a hard limit; the
+  estimate calculates with 2.5 instead of 3.5 characters per token.
+- **Recurring findings stay open** (`4875aa3e7409`): a decision closes what was reported
+  before it — not a later regression, even across someone else's release.
+- **Mockups** (`b255c3fc77a5`): the selection asked for `m3`, the capture writes `m3-mockup`;
+  one shared constant, tested with the real file names.
+- **Screenshots per screen** (`a553413f50d9`): if the image of a screen that a call needs is missing,
+  the review is incomplete — a single other image is no longer enough.
 
-Und die dritte Runde zum Security-Agenten: flache Klone und git-Fehler verstecken keinen
-wieder aufgetretenen Befund mehr (`9068756162e7`); Ausschlüsse der Angriffsflächen-Karte nennen
-nur noch Dateitypen, nie ganze Verzeichnisse (`ffcb81ab61a8`).
+And the third round on the security agent: shallow clones and git errors no longer hide a
+recurring finding (`9068756162e7`); exclusions in the attack surface map now name
+only file types, never whole directories (`ffcb81ab61a8`).
 
-### Security-Selbsttest: die Ursache des HTTP 400 eingegrenzt
+### Security self-test: the cause of the HTTP 400 narrowed down
 
-Auch der dritte Selbsttest scheiterte im ersten Zug (0 $). Aus der festen Wortliste kam
-diesmal nur `workspace`. Das passt zur Anthropic-Meldung für ein erreichtes Nutzungs- oder
-Ausgabenlimit des Workspace. Diese Meldung ist jetzt eine eigene Klasse, und die Wortliste
-kennt die Wörter dazu (`limit`, `usage`, `spend`, `access` …). Der nächste Lauf bestätigt
-oder widerlegt die Vermutung. Zu prüfen ist das in der Anthropic Console beim Workspace des
-Schlüssels `SECURITY_AGENT`.
+The third self-test also failed in the first turn ($0). From the fixed word list, only
+`workspace` came this time. That fits the Anthropic message for a reached usage or
+spend limit of the workspace. This message is now a class of its own, and the word list
+knows the words for it (`limit`, `usage`, `spend`, `access` …). The next run confirms
+or refutes the hypothesis. It is to be checked in the Anthropic Console at the workspace of the
+key `SECURITY_AGENT`.
 
 ## [v2.9.16] — 2026-09-15
 
-### Kein „AI Studio" mehr im Repo — wo es ohne Wirkung auf den Code geht
+### No more "AI Studio" in the repo — where it is possible without effect on the code
 
-Sonnys Auftrag vom 15.09.: Das Projekt hat in Firebase AI Studio angefangen, das ist lange
-her, und „AI Studio" klingt nach Hobby. Entfernt wird alles, was sich ohne Verhaltensänderung
-umbenennen oder löschen lässt.
+Sonny's assignment of 15.09.: the project started in Firebase AI Studio, that was long
+ago, and "AI Studio" sounds like a hobby. Removed is everything that can be renamed or deleted
+without a change in behaviour.
 
-- **Paketname** `ai-studio-applet` → `clean-core-io` (`package.json`, beide Stellen in
-  `package-lock.json`; `npm ci --dry-run` mit Node 22/npm 11 geprüft).
-- **`firebase-applet-config.json` → `firebase-config.json`**, mit allen 14 Importen, dem
-  Quellexport, SECURITY.md und der Testdoku. Die gitleaks-Freigabe für den öffentlichen
-  Firebase-Web-Schlüssel gilt für den neuen Namen; der alte bleibt für den Scan der Historie.
-- **Gelöscht, weil nichts sie liest:** `metadata.json` (Applet-Beschreibung „Project
-  Platform"), `firebase-blueprint.json` (Entwurfsschema aus der Anlage), `.eslintrc.json.bak`.
-- **Kommentare und Doku** ohne AI-Studio-Bezug: `.env.example`, `next.config.mjs`,
-  `JiraIntegrationModal.tsx`, `firestore-oversized-fields.ts`, DATA-RETENTION, BACKLOG, der
-  Migrationsplan; `docs/SCREENING-AISTUDIO-ALTLASTEN.md` heißt jetzt `SCREENING-GCP-ALTLASTEN.md`.
+- **Package name** `ai-studio-applet` → `clean-core-io` (`package.json`, both places in
+  `package-lock.json`; checked with `npm ci --dry-run` on Node 22/npm 11).
+- **`firebase-applet-config.json` → `firebase-config.json`**, with all 14 imports, the
+  source export, SECURITY.md and the test docs. The gitleaks allowance for the public
+  Firebase web key applies to the new name; the old one stays for the scan of the history.
+- **Deleted, because nothing reads them:** `metadata.json` (applet description "Project
+  Platform"), `firebase-blueprint.json` (draft schema from the setup), `.eslintrc.json.bak`.
+- **Comments and docs** without AI Studio reference: `.env.example`, `next.config.mjs`,
+  `JiraIntegrationModal.tsx`, `firestore-oversized-fields.ts`, DATA-RETENTION, BACKLOG, the
+  migration plan; `docs/SCREENING-AISTUDIO-ALTLASTEN.md` is now called `SCREENING-GCP-ALTLASTEN.md`.
 
-**Bleibt, weil es echte Ressourcennamen sind:** die Firestore-Datenbank von `dev`
-(`ai-studio-030e1ee1…`, us-west1), die ausgemusterten `ai-studio-*`-Datenbanken und der
-Bucket in den Aufräumlisten. Umbenennen lässt sich eine Datenbank nicht, nur migrieren — so
-wie Produktion am 20.08. nach `clean-core-eu`. Das ist ein Infrastrukturschritt mit
-Sonnys Freigabe, kein Umbenennen.
+**Stays, because they are real resource names:** the Firestore database of `dev`
+(`ai-studio-030e1ee1…`, us-west1), the retired `ai-studio-*` databases and the
+bucket in the cleanup lists. A database cannot be renamed, only migrated — just
+as production was on 20.08. to `clean-core-eu`. That is an infrastructure step with
+Sonny's approval, not a rename.
 
-### QA-Runde 1 zum Security-Agenten — neun Befunde behoben, einer widerlegt
+### QA round 1 on the security agent — nine findings fixed, one refuted
 
-- **Kein Release ohne Audit:** Die Concurrency-Gruppe hielt nur einen wartenden Lauf; ein
-  dritter Push hätte den zweiten abgebrochen. Die Gruppe ist entfernt, jeder Lauf ist ohnehin
-  für sich (`0ea9860d60be`).
-- **Zustellung nach „Re-run failed jobs":** Der Artefaktname kommt jetzt als Ausgabe aus dem
-  Audit-Job, statt im Zustell-Job mit dessen neuer Versuchsnummer neu gebildet zu werden
-  (`566a50b8581a`). Die Inbox wählt das Artefakt ebenfalls nach Namen, nicht nach
-  Entpackzeit (`4fb3804a2d49`).
-- **Bericht erst lesen, wenn er geschrieben ist:** Das Ergebnis wird erst nach dem Flush beider
-  Ausgabedateien gelesen (`9755c9d18aa8`; lokal nicht reproduzierbar, das Warten ist mit Test
-  festgehalten).
-- **Wieder aufgetretene Befunde:** Ein als behoben markierter Befund, den ein Audit eines
-  Commits *mit* dem Fix erneut meldet, gilt wieder als offen (`cf4293a0d91a`).
-  `register.mjs` funktioniert in einem frischen Klon ohne Inbox (`def5abdae94c`).
-- **Ehrliche Abdeckung:** Ausgeschlossene Dateien stehen mit Grund und Anzahl in der Karte;
-  was ausgeliefert wird oder läuft (HTML in `public/`, SVG, Skripte), ist immer drin
-  (`b9dfa00d5649`). Ein `npm audit` ohne Ergebnis heißt „nicht gelaufen", nicht „sauber"
+- **No release without an audit:** the concurrency group held only one waiting run; a
+  third push would have cancelled the second. The group is removed, every run stands on its own
+  anyway (`0ea9860d60be`).
+- **Delivery after "Re-run failed jobs":** the artifact name now comes as an output from the
+  audit job, instead of being rebuilt in the delivery job with its new attempt number
+  (`566a50b8581a`). The inbox likewise picks the artifact by name, not by
+  extraction time (`4fb3804a2d49`).
+- **Read the report only once it is written:** the result is read only after the flush of both
+  output files (`9755c9d18aa8`; not reproducible locally, the waiting is pinned down with a
+  test).
+- **Recurring findings:** a finding marked as fixed that an audit of a
+  commit *with* the fix reports again counts as open again (`cf4293a0d91a`).
+  `register.mjs` works in a fresh clone without an inbox (`def5abdae94c`).
+- **Honest coverage:** excluded files appear with reason and count in the map;
+  whatever is shipped or runs (HTML in `public/`, SVG, scripts) is always included
+  (`b9dfa00d5649`). An `npm audit` without a result means "did not run", not "clean"
   (`5be8e955fc64`).
-- **Mail am Telefon:** Lange Wörter und URLs brechen in jeder Karte um, statt abgeschnitten
-  zu werden; der Test prüft jetzt jedes Element, nicht nur das Seiten-Scrollen (`73eba29aa463`).
-- **Widerlegt:** der „kritische" Fund in `envelope.mjs` ist der Pfad zum *öffentlichen*
-  Schlüssel, den das Namensmuster `…_KEY…` des Redaktors für einen Schlüssel hielt (`8e1761103200`).
+- **Mail on the phone:** long words and URLs wrap in every card instead of being cut
+  off; the test now checks every element, not only the page scrolling (`73eba29aa463`).
+- **Refuted:** the "critical" finding in `envelope.mjs` is the path to the *public*
+  key, which the redactor's name pattern `…_KEY…` took for a key (`8e1761103200`).
 
-Der erste Selbsttest scheiterte mit API-Fehler 400 im ersten Zug, 0 $. Das Log nennt jetzt
-eine Fehlerklasse aus einer festen Liste (z. B. „credit balance too low"), nie den Text.
+The first self-test failed with API error 400 in the first turn, $0. The log now names
+an error class from a fixed list (e.g. "credit balance too low"), never the text.
 
-### QA-Runde 2 zum Security-Agenten — drei Restfälle behoben, drei Fehlalarme widerlegt
+### QA round 2 on the security agent — three remaining cases fixed, three false alarms refuted
 
-- **Wieder aufgetretene Befunde, auch ohne vollständige Historie:** Fehlt dem Klon der Fix- oder
-  der geprüfte Commit, wird der Befund wieder gezeigt statt versteckt — ein gescheiterter
-  git-Befehl ist kein Beweis (`71baa4a01baa`). Eine gemeinsame Prüfung für beide Inboxen.
-- **Abdeckung:** Was laufen oder rendern kann (Skripte, JSX, Shell, HTML, SVG, YAML), ist nie
-  ausgeschlossen, egal in welchem Verzeichnis (`f9942b308569`). Der SAP-Katalog steht nicht mehr
-  als „vom Dependency-Audit abgedeckt" in der Karte — das gilt nur für die Lockfile (`bdd2bd0a760c`).
-- **Selbsttest-Diagnose:** Der zweite Lauf zeigte `hint=unrecognised`. Das Log nennt jetzt
-  zusätzlich, welche Wörter einer festen API-Vokabelliste im Fehler oder im stderr-Log vorkommen.
-- **Widerlegt:** der öffentliche Firebase-Web-Key nach der Umbenennung der Datei; der Pfad zum
-  öffentlichen Schlüssel (die Konstante heißt jetzt `AUDIT_PUBLIC_PEM`, damit das Namensmuster
-  nicht mehr greift); und ein Treffer im ausgehenden Prompt, den meine eigene
-  Widerlegungsbegründung ausgelöst hatte, weil sie die Zeile zitierte.
+- **Recurring findings, even without complete history:** if the clone lacks the fix or
+  the checked commit, the finding is shown again instead of hidden — a failed
+  git command is no proof (`71baa4a01baa`). One shared check for both inboxes.
+- **Coverage:** whatever can run or render (scripts, JSX, shell, HTML, SVG, YAML) is never
+  excluded, no matter which directory (`f9942b308569`). The SAP catalog no longer appears
+  as "covered by the dependency audit" in the map — that only applies to the lockfile (`bdd2bd0a760c`).
+- **Self-test diagnosis:** the second run showed `hint=unrecognised`. The log now additionally names
+  which words of a fixed API vocabulary list occur in the error or in the stderr log.
+- **Refuted:** the public Firebase web key after the file was renamed; the path to the
+  public key (the constant is now called `AUDIT_PUBLIC_PEM`, so the name pattern
+  no longer matches); and a hit in the outgoing prompt that my own
+  refutation reasoning had triggered, because it quoted the line.
 
 ## [v2.9.15] — 2026-09-15
 
-### Der Security-Agent: jede Version auf main bekommt ein Vollaudit — der Bericht kommt per Mail
+### The security agent: every version on main gets a full audit — the report comes by mail
 
-Sonnys Auftrag vom 15.09.: ein zweiter Agent, der wie ein CISO mit seinen Security
-Consultants arbeitet, aktuelle Angriffsmuster kennt, nach jedem neuen `main`-Stand den
-gesamten Code prüft und einen belegten, verständlichen Bericht auf Deutsch liefert —
-ohne selbst etwas zu ändern.
+Sonny's assignment of 15.09.: a second agent that works like a CISO with his security
+consultants, knows current attack patterns, checks the entire code after every new `main` state
+and delivers an evidenced, understandable report in German —
+without changing anything itself.
 
-**Wer prüft.** Claude Fable 5.1 in Claude Code, headless, mit Ultracode: ein CISO und
-fünf Consultants — API-Sicherheit, Identität und Kryptografie, Daten und Firestore-Regeln,
-Frontend und Lieferkette, CI/Cloud/LLM. Die CISO-Anweisung (`docs/security/ciso-brief.md`)
-nennt Methode, aktuelle Angriffsmuster (Next.js-Middleware-Bypass, Firebase-Regeln, OWASP
-API und LLM Top 10, Actions-Injection, Cloud-Metadaten), Schweregrade und Berichtsaufbau.
-Kein Befund ohne gelesene Zeile; Hypothesen stehen unter „Grenzen".
+**Who checks.** Claude Fable 5.1 in Claude Code, headless, with Ultracode: a CISO and
+five consultants — API security, identity and cryptography, data and Firestore rules,
+frontend and supply chain, CI/cloud/LLM. The CISO instruction (`docs/security/ciso-brief.md`)
+names method, current attack patterns (Next.js middleware bypass, Firebase rules, OWASP
+API and LLM Top 10, Actions injection, cloud metadata), severities and report structure.
+No finding without a line that was read; hypotheses go under "Limits".
 
-**Vollanalyse, sparsam.** Vor dem Modell entsteht eine Karte der Angriffsfläche — jede
-Datei mit ihrer Domäne, jede API-Route mit Auth-Markern, jede gefährliche Senke,
-Workflow-Rechte, Regelblöcke, CSP, `npm audit` — in zwei Sekunden und ohne Token. Die
-Consultants lesen von dort gezielt; jede Datei wird von mindestens einer Methode
-abgedeckt, und der Bericht nennt die Abdeckung. Harte Grenze: `--max-budget-usd 25`.
+**Full analysis, frugal.** Before the model, a map of the attack surface is built — every
+file with its domain, every API route with auth markers, every dangerous sink,
+workflow permissions, rule blocks, CSP, `npm audit` — in two seconds and without tokens. The
+consultants read from there in a targeted way; every file is covered by at least one method,
+and the report names the coverage. Hard limit: `--max-budget-usd 25`.
 
-**Nur lesend, technisch erzwungen.** Für den Agenten existieren genau Read, Grep, Glob,
-Agent und Workflow; Bash, PowerShell, Edit, Write, WebFetch und WebSearch sind zusätzlich
-verboten; `--restricted` und `--strict-mcp-config`. Die Consultants haben Read, Grep, Glob.
+**Read-only, technically enforced.** For the agent, exactly Read, Grep, Glob,
+Agent and Workflow exist; Bash, PowerShell, Edit, Write, WebFetch and WebSearch are additionally
+forbidden; `--restricted` and `--strict-mcp-config`. The consultants have Read, Grep, Glob.
 
-**Drei Jobs, drei Vertrauensstufen.** `scope` ohne Secrets; `audit` mit dem
-Anthropic-Schlüssel und dem **öffentlichen** Schlüssel — er kann versiegeln, aber keinen
-Bericht öffnen; `deliver` mit privatem Schlüssel und Resend — öffnet, rendert, mailt und
-führt kein Modell aus. Kein Fremdcode neben einem Schlüssel: die Karte ist eigener Code
-nur mit `node:`-Modulen, der Mail-Job läuft ohne `npm ci`.
+**Three jobs, three trust levels.** `scope` without secrets; `audit` with the
+Anthropic key and the **public** key — it can seal but cannot open a
+report; `deliver` with the private key and Resend — opens, renders, mails and
+runs no model. No third-party code next to a key: the map is our own code
+using only `node:` modules, the mail job runs without `npm ci`.
 
-**Nichts wird öffentlich.** Das CLI-Transkript geht in Dateien, nie ins Log; das Log trägt
-Statusfelder und Zahlen. Bericht und Register sind versiegelt (RSA-OAEP + AES-256-GCM). Die
-Roadmap bekommt §12 mit einer Tabelle, die nur ID, Schwere, Priorität, Schritt und Status
-zeigen darf.
+**Nothing becomes public.** The CLI transcript goes into files, never into the log; the log carries
+status fields and numbers. Report and register are sealed (RSA-OAEP + AES-256-GCM). The
+roadmap gets §12 with a table that may only show ID, severity, priority, step and status.
 
-**Die Mail** ist im Clean-Core.io-Look — dieselbe responsive Shell wie alle anderen Mails,
-ein Test hält sie zeichengleich —, liest sich bei 320 px ohne seitliches Scrollen (Test im
-Browser) und escaped jeden Modelltext. Sie enthält Gesamtrisiko, Kurzfazit, jeden Befund mit
-Fundstelle, Voraussetzung, Auswirkung, Beleg, Empfehlung und **Prüfen vor dem Fix**,
-Härtung, was gut ist, Umfang und Grenzen, und einen **Nachweis**: Version, Commit, Modell,
-Dauer, Kosten und der SHA-256 des versiegelten Berichts.
+**The mail** is in the Clean-Core.io look — the same responsive shell as all other mails,
+a test keeps it character-identical —, reads at 320 px without horizontal scrolling (test in the
+browser) and escapes every model text. It contains overall risk, short conclusion, every finding with
+location, precondition, impact, evidence, recommendation and **Check before the fix**,
+hardening, what is good, scope and limits, and an **evidence** section: version, commit, model,
+duration, cost and the SHA-256 of the sealed report.
 
-**Selbsttest.** Ändert sich der Agent selbst auf `dev`, läuft die ganze Kette einmal mit
-Haiku 4.5 und 1 $ Budget — bis zur echten Mail mit `[SELBSTTEST]` im Betreff. Ein
-lokaler Probelauf unter Windows war an der 8.191-Zeichen-Grenze von `cmd` gescheitert;
-geprüft wird deshalb der Weg, der tatsächlich läuft.
+**Self-test.** If the agent itself changes on `dev`, the whole chain runs once with
+Haiku 4.5 and a $1 budget — up to the real mail with `[SELBSTTEST]` in the subject. A
+local trial run under Windows had failed at the 8,191-character limit of `cmd`;
+what is checked is therefore the path that actually runs.
 
-**Claude Codes Seite:** Skill `security-audit-intake` — abholen (`scripts/security/inbox.mjs`),
-jeden Befund an der Fundstelle prüfen, im Register entscheiden (`register.mjs accept |
-refute | risk | fixed`), nach Priorität einplanen: kritisch sofort als eigener Schritt, hoch
-in die laufende Phase, mittel in den nächsten passenden Schritt. Beim Sitzungsstart meldet
-ein Hook unbewertete Befunde des letzten Audits.
+**Claude Code's side:** skill `security-audit-intake` — fetch (`scripts/security/inbox.mjs`),
+check every finding at its location, decide in the register (`register.mjs accept |
+refute | risk | fixed`), schedule by priority: critical immediately as a step of its own, high
+into the running phase, medium into the next fitting step. At session start
+a hook reports unassessed findings of the last audit.
 
-Widerruf: `SECURITY_AUDIT_ENABLED=false`. Runbook: `docs/SECURITY-AUDIT-AGENT.md`.
-`tests/security-audit-guard.spec.ts`, 18 Tests.
+Revoke: `SECURITY_AUDIT_ENABLED=false`. Runbook: `docs/SECURITY-AUDIT-AGENT.md`.
+`tests/security-audit-guard.spec.ts`, 18 tests.
 
-### QA-Runde 3 zu v2.9.14 — zwei Befunde behoben, vier mit Beleg widerlegt
+### QA round 3 on v2.9.14 — two findings fixed, four refuted with evidence
 
-Sieben Befunde, 0,91 $. **Behoben:** Ohne jede gemeinsame Historie mit `main` (verwaiste
-Historie, fehlender `main` im Klon) prüfte der Agent nur den letzten Commit und hielt das
-für vollständig — jetzt bricht der Lauf ab und verlangt eine Basis (`1b9c06bebe30`, damit
-auch der Restfall von `80cae7cd7d5a`). Der Schema-Validator ließ `constructor` und
-`__proto__` als erlaubte Felder durch, weil er die Prototyp-Kette mitlas (`8cc6caa6085a`).
-**Widerlegt:** vier Befunde zu Berichten im Format vor v2.9.14 — geprüft an allen
-gespeicherten Berichten: es gibt keine Widerlegung vor dieser Runde, keinen erneut erhobenen
-Befund und keinen Altbericht mit ungelesenem Code; die Fälle können nicht eintreten.
+Seven findings, $0.91. **Fixed:** without any shared history with `main` (orphaned
+history, missing `main` in the clone), the agent checked only the last commit and considered that
+complete — now the run aborts and demands a base (`1b9c06bebe30`, which also
+covers the remaining case of `80cae7cd7d5a`). The schema validator let `constructor` and
+`__proto__` through as allowed fields because it also read the prototype chain (`8cc6caa6085a`).
+**Refuted:** four findings about reports in the format before v2.9.14 — checked against all
+stored reports: there is no refutation before this round, no re-raised
+finding and no old report with unread code; the cases cannot occur.
 
-Und ein Fehlalarm in Security CI: gitleaks las einen Kommentar in `redact.mjs`, der die
-*Namen* der Schlüsselvariablen aufzählte, als Zuweisung. Kommentar umformuliert; der alte
-Commit steht mit Commit, Datei, Regel und Zeile in `.gitleaksignore` — kein Pfad, kein Muster.
+And a false alarm in Security CI: gitleaks read a comment in `redact.mjs` that listed the
+*names* of the key variables as an assignment. Comment reworded; the old
+commit is in `.gitleaksignore` with commit, file, rule and line — no path, no pattern.
 
 ## [v2.9.14] — 2026-09-15
 
-### QA-Runde 2: zehn Befunde des Agenten zu sich selbst — und ein Test, der nur hier grün war
+### QA round 2: ten findings by the agent about itself — and a test that was only green here
 
-**v2.9.13 kam nicht auf dev.** Der `validate`-Job scheiterte an einem neuen Test:
-„ohne Checkpoint alles, was nicht auf `main` ist" wurde gegen den lokalen Git-Stand
-geprüft. Die Pipeline checkt flach aus, dort gibt es kein `origin/main` — `null`
-statt eines Commits. Den roten Lauf hat der Smoke-Check des QA-Agenten gemeldet
-(„pipeline failure; new revision serving: no"), der Wochencheck ebenso. Die
-Bereichswahl ist jetzt eine reine Funktion mit eigenen Tests, und `mergeBaseWithMain`
-wird in einem eigens angelegten Git-Repository geprüft — unabhängig davon, wie der
-Test ausgecheckt ist.
+**v2.9.13 did not reach dev.** The `validate` job failed on a new test:
+"without a checkpoint, everything that is not on `main`" was checked against the local Git state.
+The pipeline checks out shallow, there is no `origin/main` there — `null`
+instead of a commit. The red run was reported by the QA agent's smoke check
+("pipeline failure; new revision serving: no"), and by the weekly check as well. The
+range selection is now a pure function with its own tests, and `mergeBaseWithMain`
+is checked in a Git repository created specifically for it — independent of how the
+test is checked out.
 
-Der Review von v2.9.13 (1,28 $) brachte drei hohe und sieben mittlere Befunde; jeder
-wurde gegen den Code geprüft, keiner war falsch:
+The review of v2.9.13 ($1.28) brought three high and seven medium findings; each
+was checked against the code, none was wrong:
 
-| Befund | Schwere | Was geändert ist |
+| Finding | Severity | What has changed |
 |---|---|---|
-| Gültiges JSON ohne Review-Felder (`{}`) wurde über Standardwerte zu „go" | hoch | die Antwort wird lokal gegen das Schema geprüft; die Fehlermeldung nennt nur den Pfad im Schema |
-| Eine alte Widerlegung ließ einen erneut erhobenen Befund beim übernächsten Push verschwinden | hoch | eine Widerlegung gilt nur für Erhebungen *vor* ihr; alles Spätere bleibt offen, bis es behoben oder neu widerlegt ist |
-| Ein Teil-Review bekam „go", und der Checkpoint sprang über ungelesenen Code | hoch | ungelesener oder abgeschnittener Code macht den Bericht **unvollständig**: kein sauberes „go", die Schleife bleibt offen, der Checkpoint bleibt stehen |
-| Ein GitHub-„Re-run" behält die Run-ID — Artefakte früherer Versuche konnten gelten | mittel | Artefaktnamen und Berichte tragen den Versuch; gelesen wird nur, was ein erfolgreicher Job genau dieses Versuchs erzeugt hat |
-| Das Kostenbudget wurde als harte Grenze beschrieben, ist aber eine Schätzung | mittel | Aussage korrigiert, Antwortschema eingerechnet; **die harte Grenze ist das Kreditlimit am OpenRouter-Schlüssel** |
-| Nicht lesbarer Pipeline-Zustand erschien als „alles grün" | mittel | abgelaufene Anmeldung, Rate-Limit, Netzfehler heißen `UNKNOWN` und halten den Check offen; nur ein bestätigtes „nicht vorhanden" ist ein Befund über das Repository |
-| Zehn Pushes konnten einen geplanten Workflow „eingeschlafen" aussehen lassen | mittel | der letzte geplante Lauf wird eigens abgefragt |
-| `finish_reason` ließ beliebige Kleinbuchstaben ins öffentliche Log | mittel | nur bekannte Werte werden genannt |
-| Die Schwärzung kannte `QA_REVIEW_KEY`, `AUDIT_SIGNING_KEY`, `S4_ENCRYPTION_KEY` nicht | mittel | Namen auf `…_KEY` werden erkannt |
-| Nach einem Force-Push mit unbrauchbarem Checkpoint wurde nur der letzte Commit geprüft | mittel | ohne brauchbaren Checkpoint gilt immer: alles, was nicht auf `main` ist; das `before` des Pushs wird nie genommen, nur ein manueller Lauf gibt eine Basis vor |
+| Valid JSON without review fields (`{}`) became "go" via default values | high | the answer is checked locally against the schema; the error message names only the path in the schema |
+| An old refutation made a re-raised finding disappear on the push after next | high | a refutation only applies to raisings *before* it; everything later stays open until it is fixed or refuted anew |
+| A partial review got "go", and the checkpoint jumped over unread code | high | unread or truncated code makes the report **incomplete**: no clean "go", the loop stays open, the checkpoint stays put |
+| A GitHub "Re-run" keeps the run ID — artifacts of earlier attempts could count | medium | artifact names and reports carry the attempt; only what a successful job of exactly this attempt produced is read |
+| The cost budget was described as a hard limit but is an estimate | medium | statement corrected, response schema included in the calculation; **the hard limit is the credit limit on the OpenRouter key** |
+| An unreadable pipeline state appeared as "all green" | medium | expired login, rate limit, network errors are called `UNKNOWN` and keep the check open; only a confirmed "does not exist" is a finding about the repository |
+| Ten pushes could make a scheduled workflow look "asleep" | medium | the last scheduled run is queried separately |
+| `finish_reason` let arbitrary lowercase letters into the public log | medium | only known values are named |
+| The redaction did not know `QA_REVIEW_KEY`, `AUDIT_SIGNING_KEY`, `S4_ENCRYPTION_KEY` | medium | names ending in `…_KEY` are recognised |
+| After a force push with an unusable checkpoint, only the last commit was checked | medium | without a usable checkpoint it always holds: everything that is not on `main`; the push's `before` is never taken, only a manual run sets a base |
 
-`tests/qa-review-guard.spec.ts`, jetzt 45 Tests.
+`tests/qa-review-guard.spec.ts`, now 45 tests.
 
 ## [v2.9.13] — 2026-09-15
 
-### Der QA-Agent hat sich selbst geprüft — neun Befunde, alle bestätigt, alle behoben
+### The QA agent reviewed itself — nine findings, all confirmed, all fixed
 
-Der erste echte Lauf auf `dev` kam ohne Bericht zurück: **„OpenRouter returned no
-review content"**. Bei Reasoning-Modellen zählen die Denk-Token zu `max_tokens`, und
-bei `effort: high` hatte GPT-6 Astra die 12.000 Token vollständig fürs Denken
-verbraucht. Das Budget liegt jetzt bei 32.000; die Fehlermeldung nennt künftig
-`finish_reason` und die Token-Zahlen — nur Zahlen, kein Inhalt. Nachgewiesen lokal an
-genau dem gescheiterten Bereich: ein Aufruf, **0,81 $** tatsächlich.
+The first real run on `dev` came back without a report: **"OpenRouter returned no
+review content"**. With reasoning models the thinking tokens count towards `max_tokens`, and
+at `effort: high` GPT-6 Astra had used up all 12,000 tokens on thinking.
+The budget is now 32,000; from now on the error message names
+`finish_reason` and the token counts — numbers only, no content. Proven locally on
+exactly the range that failed: one call, **$0.81** actual.
 
-Dieser Review galt v2.9.12, also dem Agenten selbst. Jeder Befund wurde vor dem Fix
-gegen den Code geprüft; keiner war falsch:
+This review was of v2.9.12, i.e. the agent itself. Every finding was checked against the
+code before the fix; none was wrong:
 
-| Befund | Schwere | Was geändert ist |
+| Finding | Severity | What changed |
 |---|---|---|
-| Commit-Betreffzeilen umgingen die Schwärzung auf dem Weg zu OpenRouter | kritisch | Betreffzeilen werden geschwärzt, und vor jedem Versand läuft ein letzter Schwärzungsdurchgang über die ganze Nachricht |
-| Ohne früheren Bericht ging ein abgebrochenes Delta verloren — beim nächsten Push wäre genau das passiert | hoch | ohne geprüften Stand deckt der Review alles ab, was noch nicht auf `main` ist; die Suche reicht 50 statt 15 Läufe zurück |
-| Eine Widerlegung unterdrückte denselben Befund für immer, auch nach einer echten Regression | hoch | ein erneut erhobener Befund bleibt stehen und ist markiert; nur der *Übertrag* widerlegter Befunde entfällt |
-| Ein veraltetes Artefakt konnte einen gescheiterten Neulauf grün aussehen lassen | mittel | frischer Ordner je Lauf; ein Bericht zählt nur für den Commit, für den er gemacht wurde |
-| Retries nach Timeout, Verbindungsabbruch oder 5xx konnten doppelt abrechnen — außerhalb des Deckels | mittel | wiederholt wird nur ein 429, eine Ablehnung vor jeder Generierung |
-| Eine kaputte 200-Antwort konnte über die `SyntaxError`-Meldung Text ins öffentliche Log bringen | mittel | alle Fehlermeldungen des Modellaufrufs sind fester Text plus Zahlen |
-| Ein späterer Batch überschrieb „behoben" mit „nicht berührt" | mittel | ein Urteil schlägt „nicht berührt"; zwischen „behoben" und „offen" gewinnt „offen" |
-| Gelöschte Dateien verloren ihren Diff und die Aufrufer-Analyse | mittel | Löschungen kommen mit Diff; entfernte Exporte werden bei ihren verbliebenen Aufrufern gesucht |
-| Fehlende Kostenangabe wurde als 0 $ berichtet | mittel | fehlt sie, steht dort „unknown"; für den Deckel zählt dann die Schätzung |
+| Commit subject lines bypassed redaction on the way to OpenRouter | critical | subject lines are redacted, and before every send a final redaction pass runs over the whole message |
+| Without an earlier report an aborted delta was lost — exactly that would have happened on the next push | high | without a reviewed state the review covers everything not yet on `main`; the search goes back 50 runs instead of 15 |
+| A refutation suppressed the same finding forever, even after a real regression | high | a finding raised again stays and is marked; only the *carry-over* of refuted findings is dropped |
+| A stale artefact could make a failed rerun look green | medium | fresh folder per run; a report counts only for the commit it was made for |
+| Retries after timeout, connection drop or 5xx could bill twice — outside the cap | medium | only a 429 is retried, a rejection before any generation |
+| A broken 200 response could bring text into the public log via the `SyntaxError` message | medium | all error messages of the model call are fixed text plus numbers |
+| A later batch overwrote "fixed" with "not touched" | medium | a verdict beats "not touched"; between "fixed" and "open", "open" wins |
+| Deleted files lost their diff and the caller analysis | medium | deletions come with a diff; removed exports are looked up at their remaining callers |
+| A missing cost figure was reported as $0 | medium | if it is missing, it says "unknown"; the cap then uses the estimate |
 
-**Der Kostendeckel rechnet jetzt ehrlich.** Er wurde vorher auf die volle
-Ausgabe-Obergrenze jedes Aufrufs geschätzt — mit 32.000 Token wäre ein zweiter Batch
-praktisch immer gestrichen worden. Jetzt wird vor jedem Aufruf geprüft:
-tatsächlich Ausgegebenes plus ungünstigste Schätzung für genau diesen Aufruf.
+**The cost cap now calculates honestly.** It used to be estimated at the full
+output limit of every call — with 32,000 tokens a second batch would
+practically always have been dropped. Now each call is preceded by a check:
+actual spend plus the worst-case estimate for exactly this call.
 
-### Wöchentlich: Pipeline-Gesundheit — und der Katalog-Sync ist nicht mehr rot
+### Weekly: pipeline health — and the catalog sync is no longer red
 
-Sonnys Auftrag vom 15.09.: Der QA-Agent schaut sich die Pipelines auch einmal pro
-Woche an. Anlass: **„Sync SAP Cloudification Repository" war am 7. und 14.09. rot.**
-Der Sync selbst hatte funktioniert — SAP hat neue Katalogdaten veröffentlicht, sie
-lagen auf `chore/sync-cloudification-repo` —, nur der letzte Schritt scheiterte:
-*„GitHub Actions is not permitted to create or approve pull requests."* Ein roter
-geplanter Lauf meldet sich bei niemandem; das Update lag eine Woche unbemerkt.
+Sonny's instruction of 15.09.: the QA agent also looks at the pipelines once a
+week. Occasion: **"Sync SAP Cloudification Repository" was red on 7 and 14.09.**
+The sync itself had worked — SAP had published new catalog data, it
+sat on `chore/sync-cloudification-repo` —, only the last step failed:
+*"GitHub Actions is not permitted to create or approve pull requests."* A red
+scheduled run reports to nobody; the update sat unnoticed for a week.
 
-- **Der Sync legt keinen Pull Request mehr an** (entschieden: Repo-Einstellung bleibt
-  aus). Er pusht den Branch, endet grün und schreibt in die Zusammenfassung, dass ein
-  Update bereitliegt; die PR-Befugnis ist aus dem Workflow entfernt.
-- **`qa-weekly-health.yml`**, montags 07:30 UTC nach den geplanten Jobs: je Workflow
-  das jüngste Ergebnis — rot (mit Job, Schritt und erster Fehlerzeile, geschwärzt),
-  eingeschlafen, ok — und Bot-Branches, die vor `main` liegen. Kein Modell, keine
-  Kosten, nur lesend, Ergebnis versiegelt.
-- **Beim Sitzungsstart** läuft derselbe Check (`scripts/qa/health.mjs --brief`) und
-  bringt Rotes und Offenes in Claudes Kontext, auch ohne Push. Scheitert er, sagt er
-  das — ein stiller Hook hätte beim ersten Test genau seinen eigenen Fehler verdeckt:
-  ein Workflow, der noch nicht auf `main` liegt, ließ den ganzen Check abbrechen. Das
-  ist behoben; ein nicht abfragbarer Workflow gilt als „unbekannt".
+- **The sync no longer opens a pull request** (decided: the repo setting stays
+  off). It pushes the branch, ends green and writes in the summary that an
+  update is ready; the PR permission is removed from the workflow.
+- **`qa-weekly-health.yml`**, Mondays 07:30 UTC after the scheduled jobs: per workflow
+  the latest result — red (with job, step and first error line, redacted),
+  dormant, ok — and bot branches that are ahead of `main`. No model, no
+  costs, read-only, result sealed.
+- **At session start** the same check runs (`scripts/qa/health.mjs --brief`) and
+  brings what is red and open into Claude's context, even without a push. If it fails, it says
+  so — a silent hook would have hidden exactly its own error in the first test:
+  a workflow not yet on `main` made the whole check abort. That
+  is fixed; a workflow that cannot be queried counts as "unknown".
 
-Das liegende Katalog-Update (18.708 Zeilen dazu, 9.751 weg, eine Datei) wird als
-eigener Schritt über `dev` geprüft und übernommen. Rot bleibt der Sync im Wochencheck,
-bis diese Workflow-Änderung auf `main` ist und er einmal gelaufen ist.
+The pending catalog update (18,708 lines added, 9,751 removed, one file) is checked and taken over as
+a separate step via `dev`. The sync stays red in the weekly check
+until this workflow change is on `main` and it has run once.
 
-`tests/qa-review-guard.spec.ts`, jetzt 38 Tests — neu: kein Retry nach möglicher
-Generierung, keine Antwortausschnitte in Fehlern, finaler Schwärzungsdurchgang,
-unbekannte Kosten, Checkpoint-Fallback, gelöschte Exporte, Artefakte je Lauf,
-Status-Zusammenführung über Batches, erneut erhobene Befunde, Wochen-Bewertung,
-Sync ohne PR.
+`tests/qa-review-guard.spec.ts`, now 38 tests — new: no retry after possible
+generation, no response excerpts in errors, final redaction pass,
+unknown costs, checkpoint fallback, deleted exports, artefacts per run,
+status merging across batches, findings raised again, weekly assessment,
+sync without PR.
 
 ## [v2.9.12] — 2026-09-15
 
-### Der QA-Agent: jeder Push auf dev wird geprüft — versiegelt, gedeckelt, nur das Delta
+### The QA agent: every push to dev is reviewed — sealed, capped, only the delta
 
-Entschieden von Sonny am 15.09.: ab sofort und bis zum Widerruf prüft ein QA-Agent
-jeden neuen Stand auf `dev`, selbstständig und in festen Leitplanken. Modell: GPT-6
-Astra über OpenRouter, fest eingestellt.
+Decided by Sonny on 15.09.: from now on and until revoked, a QA agent reviews
+every new state on `dev`, on its own and within fixed guardrails. Model: GPT-6
+Astra via OpenRouter, fixed.
 
-Zwei Jobs in `.github/workflows/qa-review.yml`:
+Two jobs in `.github/workflows/qa-review.yml`:
 
-- **Delta-Review.** Nur die Commits seit dem letzten *geprüften* Stand — ein
-  abgebrochener Lauf verliert also nichts. Vor dem Modell läuft eine Vorprüfung ohne
-  Token: Risiko-Tags je Datei, Signale für abgeschwächte Tests, zitierte
-  Abnahmekriterien aus dem CHANGELOG, Code ohne Test im selben Delta, und die
-  Aufrufer geänderter Funktionen außerhalb des Deltas. Das Modell prüft wie ein
-  QA-Engineer — Absicht und Abnahme, Korrektheit, Sicherheit, Trust-Chain,
-  Regression, Tests, Ehrlichkeit der Aussagen — und sucht **Vereinfachungen, aber nur
-  solche mit nachweislich gleichem Verhalten**. Offene Befunde werden in die nächste
-  Runde übernommen, bis ein Review sie als behoben meldet.
-- **Smoke-Check.** Wartet auf den Deploy desselben Commits, prüft, dass
-  `/api/health` genau diesen Commit meldet, dass die Kernseiten antworten und die
-  Security-Header gesetzt sind. Kein Modell, keine Kosten.
+- **Delta review.** Only the commits since the last *reviewed* state — so an
+  aborted run loses nothing. Before the model, a pre-check runs without
+  tokens: risk tags per file, signals of weakened tests, quoted
+  acceptance criteria from the CHANGELOG, code without a test in the same delta, and the
+  callers of changed functions outside the delta. The model reviews like a
+  QA engineer — intent and acceptance, correctness, security, trust chain,
+  regression, tests, honesty of the claims — and looks for **simplifications, but only
+  those with provably identical behaviour**. Open findings are carried into the next
+  round until a review reports them as fixed.
+- **Smoke check.** Waits for the deploy of the same commit, checks that
+  `/api/health` reports exactly this commit, that the core pages respond and the
+  security headers are set. No model, no costs.
 
-**Nichts Sicherheitsrelevantes wird öffentlich.** Das Repository und seine Logs sind
-öffentlich, die dev-Revision ist erreichbar. Beide Ergebnisse verlassen den Runner
-nur versiegelt (AES-256-GCM); das Log sagt, dass geprüft wurde und was es kostete —
-**kein Verdikt, keine Zahl je Schweregrad**. Schlüsselmuster im Delta werden vor dem
-Versand geschwärzt und als kritischer Befund gemeldet, ohne den Wert.
-Credential-Dateien werden nie gelesen. OpenRouter bekommt `data_collection: deny` und
-keine Fallback-Modelle.
+**Nothing security-relevant becomes public.** The repository and its logs are
+public, the dev revision is reachable. Both results leave the runner
+only sealed (AES-256-GCM); the log says that a review took place and what it cost —
+**no verdict, no count per severity**. Key patterns in the delta are redacted before
+sending and reported as a critical finding, without the value.
+Credential files are never read. OpenRouter gets `data_collection: deny` and
+no fallback models.
 
-**Der Agent kann nur lesen.** Token mit `contents: read` und `actions: read`, kein
-gespeichertes Checkout-Token, ein Modell ohne Tools. Er kommentiert nicht, legt keine
-Issues an, pusht nicht und deployt nicht. Widerruf mit einer Variablen:
+**The agent can only read.** Token with `contents: read` and `actions: read`, no
+stored checkout token, a model without tools. It does not comment, open
+issues, push or deploy. Revoke with one variable:
 `QA_REVIEW_ENABLED=false`.
 
-**Kosten gedeckelt.** Höchstens 2,50 $ je Review, geschätzt vor dem ersten Aufruf;
-Reasoning nur bei Sicherheit, Trust-Chain und CI auf `high`; reine Doku-Pushes
-kosten nichts. Was nicht ins Budget passt, steht im Bericht als „nicht geprüft".
-Im Trockenlauf: ein üblicher Schritt 0,65–0,70 $ geschätzt, 16 Commits auf einmal
-2,33 $ mit 26 benannten, nicht geprüften Dateien.
+**Costs capped.** At most $2.50 per review, estimated before the first call;
+reasoning at `high` only for security, trust chain and CI; pure docs pushes
+cost nothing. What does not fit the budget is listed in the report as "not reviewed".
+In the dry run: a typical step estimated at $0.65–0.70, 16 commits at once
+$2.33 with 26 named, unreviewed files.
 
-**Die Schleife.** `scripts/qa/await.mjs` holt beide Ergebnisse lokal ab und entsiegelt
-sie; ein Hook erinnert nach jedem Push auf `dev` daran. Jeder Befund wird geprüft,
-bevor Code geändert wird; bestätigte werden behoben, widerlegte mit Beleg abgelegt
-(`scripts/qa/refute.mjs`, ebenfalls versiegelt). Höchstens drei Runden je Schritt,
-`main` erst nach einer sauberen Runde und nur auf Sonnys Go. Arbeitsanweisung im
-Skill `qa-review-loop`, Runbook in `docs/QA-REVIEW-LOOP.md`.
+**The loop.** `scripts/qa/await.mjs` fetches both results locally and unseals
+them; a hook reminds of it after every push to `dev`. Every finding is checked
+before code is changed; confirmed ones are fixed, refuted ones filed with evidence
+(`scripts/qa/refute.mjs`, also sealed). At most three rounds per step,
+`main` only after a clean round and only on Sonny's go. Working instructions in the
+skill `qa-review-loop`, runbook in `docs/QA-REVIEW-LOOP.md`.
 
-Nebenbei: `/api/health` meldet jetzt auch den Commit der Revision (`COMMIT_SHA` aus
-`deploy.yml`). Das Repository ist öffentlich, der Wert verrät nichts Neues — aber nur
-so erkennt der Smoke-Check eine neue Revision, wenn ein Fix ohne Versionssprung
-ausgeliefert wird.
+In passing: `/api/health` now also reports the revision's commit (`COMMIT_SHA` from
+`deploy.yml`). The repository is public, the value reveals nothing new — but only
+this way can the smoke check recognise a new revision when a fix is shipped
+without a version bump.
 
-Der Trockenlauf hat vor dem ersten echten Einsatz einen Fehler im Agenten selbst
-gefunden: Die Prüfung „ist dieser Commit ein Vorgänger?" warf intern und wurde als
-„nein" gewertet — jedes Delta wäre auf einen einzigen Commit geschrumpft.
+Before its first real use, the dry run found a bug in the agent itself:
+the check "is this commit an ancestor?" threw internally and was treated as
+"no" — every delta would have shrunk to a single commit.
 
-`tests/qa-review-guard.spec.ts`, 24 Tests: Workflow-Rechte und gepinnte Actions,
-Secrets nur als Umgebung, Siegel mit Manipulationserkennung, öffentliche Zeile ohne
-Inhalt, Schwärzung, gesperrte Credential-Dateien, ein Modell ohne Tools und Fallbacks,
-Retry nur bei Rate-Limit, Kostendeckel und Risiko-Reihenfolge, Validierung der
-Workflow-Eingaben, Übertrag und Widerlegung von Befunden, der Post-Push-Hook, der
-Commit in `/api/health`.
+`tests/qa-review-guard.spec.ts`, 24 tests: workflow permissions and pinned actions,
+secrets only as environment, seal with tamper detection, public line without
+content, redaction, blocked credential files, a model without tools and fallbacks,
+retry only on rate limit, cost cap and risk order, validation of the
+workflow inputs, carry-over and refutation of findings, the post-push hook, the
+commit in `/api/health`.
 
 ## [v2.9.11] — 2026-09-11
 
-### Ein roter Scheduled-Run von Security CI erreicht jetzt den Admin — per Mail
+### A red scheduled run of Security CI now reaches the admin — by mail
 
-Offen seit dem 10.09., entschieden am 11.09.: **Mail an den Admin.**
+Open since 10.09., decided on 11.09.: **mail to the admin.**
 
-Am 7. September ging der Montagslauf von Security CI auf sechs High-Advisories
-rot und blieb es drei Tage lang, während ein kritisches Next.js-Advisory in
-Produktion lief. Ein fehlgeschlagener Scheduled-Run meldet sich bei niemandem,
-und in dieser Woche hat niemand gepusht. Der Deploy-Gate hätte es gefangen — beim
-nächsten Deploy.
+On 7 September the Monday run of Security CI went red on six high advisories
+and stayed that way for three days, while a critical Next.js advisory was running in
+production. A failed scheduled run reports to nobody,
+and that week nobody pushed. The deploy gate would have caught it — on the
+next deploy.
 
-Neuer Job `alert-admin` in `security-ci.yml`: läuft, wenn ein **geplanter** Lauf
-fehlschlägt (Push- und PR-Läufe nicht — wer gepusht hat, sieht sie ohnehin), nach
-allen drei Gates und auch dann, wenn einer davon rot ist (`always()`). Er schickt
-über Resend — denselben Schlüssel und Absender wie der Wochenbericht — eine Mail
-an den Admin: welcher Job, was das bedeutet und was zu tun ist, Link zum Lauf.
-Kein Firestore, kein Google Cloud. Scheitert der Versand, wird der Job rot:
-eine Warnung, die nicht zugestellt werden konnte, ist genau die Stille, die das
-hier beenden soll.
+New job `alert-admin` in `security-ci.yml`: runs when a **scheduled** run
+fails (push and PR runs do not — whoever pushed sees them anyway), after
+all three gates and also when one of them is red (`always()`). It sends
+a mail to the admin via Resend — the same key and sender as the weekly report —:
+which job, what it means and what to do, link to the run.
+No Firestore, no Google Cloud. If sending fails, the job turns red:
+a warning that could not be delivered is exactly the silence this
+is meant to end.
 
-**Kein GitHub-Issue, mit Absicht:** das Repository ist öffentlich, und ein Issue
-würde das offene Fenster allen ankündigen, bevor der Admin es gelesen hat. Ein
-Guard hält fest, dass der Workflow keine Issues anlegt.
+**No GitHub issue, on purpose:** the repository is public, and an issue
+would announce the open window to everyone before the admin has read it. A
+guard holds that the workflow opens no issues.
 
-Für die Prüfung des ganzen Wegs hat Security CI jetzt einen manuellen Auslöser
-mit `test_alert`; er schickt eine als **[TEST]** markierte Mail.
+To check the whole path, Security CI now has a manual trigger
+with `test_alert`; it sends a mail marked **[TEST]**.
 
-`lib/security-alert-email.ts` (rein, getestet), `scripts/send-security-alert.ts`,
-`tests/security-alert-guard.spec.ts`: Bedingung und Reihenfolge im Workflow, keine
-Issues, Kontext nur über Umgebungsvariablen, Zuordnung der fehlgeschlagenen Jobs,
-Inhalt der Mail, TEST-Kennzeichnung, und dass nichts aus dem Laufkontext als
-Markup gerendert wird.
+`lib/security-alert-email.ts` (pure, tested), `scripts/send-security-alert.ts`,
+`tests/security-alert-guard.spec.ts`: condition and order in the workflow, no
+issues, context only via environment variables, mapping of the failed jobs,
+content of the mail, TEST marking, and that nothing from the run context is
+rendered as markup.
 
 ## [v2.9.10] — 2026-09-11
 
-### Der Deploy wartet jetzt auch auf den Typecheck — über die Tests hinweg
+### The deploy now also waits for the typecheck — across the tests
 
-Roadmap E16-F01-US02, Release 2.9: **„Typecheck, Tests und erforderliche
-Fachfreigaben sind als Pflichtchecks hinterlegt."**
+Roadmap E16-F01-US02, release 2.9: **"Typecheck, tests and required
+business approvals are set up as mandatory checks."**
 
-`next build` prüft die Typen der Anwendung und hört dort auf. Über die Tests lief
-nie `tsc`, und zwei Typfehler in `tests/run-integrity-guard.spec.ts` standen seit
-dem 27. August unbemerkt da — Playwright transpiliert, ohne zu prüfen. Behoben
-(eine generische Signatur für den Test-Helfer, der Test prüft dasselbe wie
-vorher), und `npm run typecheck` — `tsc --noEmit` über die ganze tsconfig — ist
-jetzt ein Schritt im `validate`-Job, von dem der Deploy abhängt: nach dem Build,
-damit auch die dort erzeugten Routentypen geprüft werden, vor den E2E-Tests.
-`tests/quality-gate-guard.spec.ts` hält Skript, Reihenfolge, Abhängigkeit und die
-Abdeckung der Tests in der tsconfig fest.
+`next build` checks the application's types and stops there. `tsc` never ran
+over the tests, and two type errors in `tests/run-integrity-guard.spec.ts` had sat
+unnoticed since 27 August — Playwright transpiles without checking. Fixed
+(a generic signature for the test helper, the test checks the same as
+before), and `npm run typecheck` — `tsc --noEmit` over the whole tsconfig — is
+now a step in the `validate` job the deploy depends on: after the build,
+so that the route types generated there are checked too, before the E2E tests.
+`tests/quality-gate-guard.spec.ts` holds the script, order, dependency and the
+coverage of the tests in the tsconfig.
 
-Der zweite Teil derselben Story — ein High-Befund blockiert den Deploy ohne
-genehmigte, befristete Ausnahme — war schon strenger erfüllt als verlangt: der
-Deploy-Gate blockiert auf jeden High (`--audit-level=high`) und kennt gar keine
-Ausnahme. Das hält der Guard jetzt ebenfalls fest.
+The second part of the same story — a high finding blocks the deploy without an
+approved, time-limited exception — was already met more strictly than required: the
+deploy gate blocks on every high (`--audit-level=high`) and knows no
+exception at all. The guard now holds that as well.
 
-**Bewusst nicht in diesem Release:** die Benachrichtigung bei einem roten
-Scheduled-Run von Security CI. Der naheliegende Weg — ein Job, der ein GitHub-Issue
-öffnet — würde im öffentlichen Repository ankündigen, dass gerade eine bekannte
-Lücke offen ist. Das ist eine Abwägung für Sonny (Issue oder Mail an den Admin),
-nicht für den Code.
+**Deliberately not in this release:** the notification on a red
+scheduled run of Security CI. The obvious route — a job that opens a GitHub issue
+— would announce in the public repository that a known
+gap is currently open. That is a trade-off for Sonny (issue or mail to the admin),
+not for the code.
 
 ## [v2.9.9] — 2026-09-11
 
-### Passed nur aus einem zugeordneten Ergebnis — und jeder andere Ausgang mit Namen
+### Passed only from a mapped result — and every other outcome with a name
 
-Roadmap E07-F01, Release 2.9, P0, aus CR-12, CR-13 und CR-14. Die Abnahmen:
-**„Die Regressionen für TAP-SKIP/TODO liefern skipped bzw. todo."** und **„Der
-Mock-Pfad schreibt simulated, ein Metadatenaufruf connectivity. Delivery
-verwendet diese Typen unverändert und darf daraus kein AUnit-/Compliance-Badge
-erzeugen."** Dazu aus der Feature-Beschreibung: **„Stubs werden sichtbar."**
+Roadmap E07-F01, release 2.9, P0, from CR-12, CR-13 and CR-14. The acceptance criteria:
+**"The regressions for TAP SKIP/TODO yield skipped and todo respectively."** and **"The
+mock path writes simulated, a metadata call connectivity. Delivery
+uses these types unchanged and must not produce an AUnit/compliance badge
+from them."** Plus from the feature description: **"Stubs become visible."**
 
-Das Befundregister war hier zur Hälfte veraltet — `Simulated`, `Not run` und
-die exakte ID-Zuordnung gab es schon. Gemessen, was noch offen war:
+The finding register was half out of date here — `Simulated`, `Not run` and
+the exact ID mapping already existed. Measured what was still open:
 
-- **Der Live-ABAP-Pfad schrieb `Passed` für Dinge, die keine Tests sind.** Ein
-  „Live Tenant Validation Report" mit sechs Arten von Prüfung — Tenant
-  erreichbar, Login angenommen, `$metadata` lesbar, EntitySets im Schema
-  deklariert, ein OData-Read je Set, CSRF — alle als `Passed`. Keine davon führt
-  den generierten Code aus. Die CSRF-Zeile war `Passed`, sobald der Login ging,
-  mit der Meldung „CSRF token can be fetched"; eine x-csrf-token-Anfrage wurde nie
-  gestellt.
-- **SKIP und TODO wurden beide `Not run`** — ehrlich über den Pass, stumm über den
-  Grund. Ein bewusst übersprungener Test und einer, den noch niemand geschrieben
-  hat, verlangen verschiedene Handgriffe.
-- **Die Stubs waren unsichtbar.** Der Runner ersetzt jedes npm-Paket, das der
-  generierte Code importiert, durch einen leeren Proxy, damit das Modul lädt. Ein
-  Pass gegen ein gestubbtes `express` sagt, dass die Logik lief — nicht, dass sie
-  mit express läuft. Nichts sagte, welche Pakete ersetzt waren.
+- **The live ABAP path wrote `Passed` for things that are not tests.** A
+  "Live Tenant Validation Report" with six kinds of check — tenant
+  reachable, login accepted, `$metadata` readable, EntitySets declared in the
+  schema, one OData read per set, CSRF — all as `Passed`. None of them runs
+  the generated code. The CSRF line was `Passed` as soon as the login worked,
+  with the message "CSRF token can be fetched"; an x-csrf-token request was never
+  made.
+- **SKIP and TODO both became `Not run`** — honest about the pass, silent about the
+  reason. A deliberately skipped test and one that nobody has written yet
+  call for different actions.
+- **The stubs were invisible.** The runner replaces every npm package the
+  generated code imports with an empty proxy so that the module loads. A
+  pass against a stubbed `express` says that the logic ran — not that it runs
+  with express. Nothing said which packages were replaced.
 
-**Was jetzt gilt:** Neue Zustände `Skipped`, `Todo`, `Connectivity`, `Error`.
-Der TAP-Leser liegt in `lib/test-verdicts.ts` und wird von den Tests direkt
-aufgerufen. Die Live-Prüfungen schreiben `Connectivity` oder `Error`, CSRF heißt
-„Not checked", und der Bericht heißt jetzt „Live Tenant *Connectivity* Report"
-und sagt: „No test of the generated code was executed." `/api/run-tests` gibt
-`stubbedPackages` zurück; die Testing-Seite und der QA-Bericht nennen sie. Der
-Phasenvertrag zählt Connectivity getrennt, nie als Pass; Delivery nennt sie als
-„connectivity checks — not tests of the code".
+**What holds now:** new states `Skipped`, `Todo`, `Connectivity`, `Error`.
+The TAP reader lives in `lib/test-verdicts.ts` and is called directly by the tests.
+The live checks write `Connectivity` or `Error`, CSRF is called
+"Not checked", and the report is now called "Live Tenant *Connectivity* Report"
+and says: "No test of the generated code was executed." `/api/run-tests` returns
+`stubbedPackages`; the Testing page and the QA report name them. The
+phase contract counts connectivity separately, never as a pass; Delivery names them as
+"connectivity checks — not tests of the code".
 
-`tests/test-verdicts-guard.spec.ts`: der Leser über echte TAP-Zeilen (Pass,
-Fehler mit Meldung, SKIP mit Grund, TODO), der Live-Zweig ohne ein einziges
-`Passed`, CSRF nicht mehr aus dem Login abgeleitet — und **ein echter Lauf durch
-die Sandbox**: eine Suite, die `express` importiert, mit `test.skip` und
-`test.todo`, gegen `/api/run-tests` → `stubbedPackages: ['express']`, TC_01
-Passed, TC_02 Skipped, TC_03 Todo. `verdict-honesty-guard` prüft den Parser
-jetzt durch Aufruf statt durch Suchen nach den richtigen Wörtern.
+`tests/test-verdicts-guard.spec.ts`: the reader over real TAP lines (pass,
+failure with message, SKIP with reason, TODO), the live branch without a single
+`Passed`, CSRF no longer derived from the login — and **a real run through
+the sandbox**: a suite that imports `express`, with `test.skip` and
+`test.todo`, against `/api/run-tests` → `stubbedPackages: ['express']`, TC_01
+Passed, TC_02 Skipped, TC_03 Todo. `verdict-honesty-guard` now checks the parser
+by calling it instead of searching for the right words.
 
-**Was bleibt:** Verdikte werden weiter nicht gespeichert (siehe v2.9.5). Ein
-signierter, zuordenbarer Test-Receipt ist E07-F02 (3.0), ein echter ABAP-Unit-
-Lauf im Tenant ebenso.
+**What remains:** verdicts are still not stored (see v2.9.5). A
+signed, attributable test receipt is E07-F02 (3.0), as is a real ABAP Unit
+run in the tenant.
 
 ## [v2.9.8] — 2026-09-11
 
-### Keine Einsparprognose aus Zahlen, die niemand eingegeben hat
+### No savings forecast from numbers nobody entered
 
-Roadmap E12-F01-US02, Release 2.9, P0, ausgelöst von CR-23. Die Abnahme:
-**„Ohne geeignete Kosteneingaben wird keine Einsparprognose angezeigt. Bei
-negativen jährlichen Vorteilen steht keine negative Amortisationszeit, sondern
-‚keine Amortisation im Modell'."** Und aus der Feature-Beschreibung: Score→Euro und
-feste 85-%-Verbesserung werden entfernt **oder klar als nicht belastbares
-Demonstrationsmodell gesperrt**.
+Roadmap E12-F01-US02, release 2.9, P0, triggered by CR-23. The acceptance criterion:
+**"Without suitable cost inputs no savings forecast is shown. With
+negative annual benefits there is no negative payback period, but
+'no payback in the model'."** And from the feature description: score→euro and
+the fixed 85 % improvement are removed **or clearly locked as a non-reliable
+demonstration model**.
 
-**Der Befund:** Die Economics-Seite öffnete mit einem Entwicklertagessatz von
-900 €, einem Key-User-Satz von 650 € und einer Investition von 15.000 € — laut
-Kommentar „standard enterprise SAP guidelines", geliefert hat sie niemand — und
-zeigte darauf sofort Jahreseinsparung, Amortisation, ROI und ein
-Fünfjahresdiagramm. Der Druckknopf hieß „Print Business Case", die Fußzeile
-„Business Value Report", ein Abzeichen behauptete „Better Practice Mapped". Die
-Eingaben waren Schieberegler — und ein Schieberegler kann nicht leer sein.
+**The finding:** the Economics page opened with a developer day rate of
+€900, a key-user rate of €650 and an investment of €15,000 — according to the
+comment "standard enterprise SAP guidelines", nobody had supplied them — and
+immediately showed annual savings, payback, ROI and a
+five-year chart on that basis. The print button was called "Print Business Case", the footer
+"Business Value Report", a badge claimed "Better Practice Mapped". The
+inputs were sliders — and a slider cannot be empty.
 
-**Was jetzt gilt:**
+**What holds now:**
 
-- Die drei Kostenwerte sind **leere Zahlenfelder**. Solange einer fehlt, gibt es
-  keine Einsparung, keine Amortisation, kein ROI, kein Diagramm, sondern „No
-  savings forecast yet — Missing: …". Einen Wert zu löschen nimmt die Prognose
-  wieder weg.
-- Über der Prognose steht, **was davon Annahme bleibt**: Aufwand je 1.000 Zeilen
-  (2,5 / 0,8 / 1,8 / 0,6 Tage), 85 % weniger Regressionstest-Aufwand, Zielscore
-  95 — nichts davon aus beobachtetem Aufwand. „A demonstration model, not a
-  business case." Der Druckknopf heißt „Print Model Estimate", die gedruckte
-  Fußzeile sagt dasselbe, das Abzeichen heißt „Demonstration model".
-- Keine Amortisation: **„No payback in the model"**, nicht „Never" und nie eine
-  negative Zahl.
-- „Kein Baseline" bleibt eine eigene Seite nur noch für das, was keine Eingabe
-  ändern kann (kein signierter Score, Score ≥ 95). Ein zu kleiner Bestand wird
-  neben den Eingaben erklärt, die ihn ändern würden.
+- The three cost values are **empty number fields**. As long as one is missing, there is
+  no savings, no payback, no ROI, no chart, but "No
+  savings forecast yet — Missing: …". Deleting a value removes the forecast
+  again.
+- Above the forecast it says **what of it remains an assumption**: effort per 1,000 lines
+  (2.5 / 0.8 / 1.8 / 0.6 days), 85 % less regression test effort, target score
+  95 — none of it from observed effort. "A demonstration model, not a
+  business case." The print button is called "Print Model Estimate", the printed
+  footer says the same, the badge is called "Demonstration model".
+- No payback: **"No payback in the model"**, not "Never" and never a
+  negative number.
+- "No baseline" remains a page of its own only for what no input can
+  change (no signed score, score ≥ 95). An inventory that is too small is explained
+  next to the inputs that would change it.
 
-Die Schutzmechanismen aus v2.8.6/v2.9.4 (Wächter vor der Division, endliche
-Werte, ROI bei Investition 0) sind unverändert und weiter an ihrer Stelle
-festgehalten. Neun ungenutzte Imports der Seite sind entfernt; Lint-Budget
+The safeguards from v2.8.6/v2.9.4 (guard before the division, finite
+values, ROI at investment 0) are unchanged and still held in place
+where they are. Nine unused imports of the page are removed; lint budget
 671 → 662.
 
-`tests/tco-cost-inputs-guard.spec.ts`: die Kostenwerte starten leer, der Wächter
-steht vor dem Modell, die Formulierungen, und gerendert: keine Prognose ohne
-Werte, keine mit zwei von dreien, Prognose mit allen dreien, weg nach dem
-Löschen eines Werts.
+`tests/tco-cost-inputs-guard.spec.ts`: the cost values start empty, the guard
+sits before the model, the wording, and rendered: no forecast without
+values, none with two of three, forecast with all three, gone after
+deleting a value.
 
-**Was bleibt:** CR-23 im Kern. Die Koeffizienten sind jetzt als Annahme
-gekennzeichnet und gesperrt, nicht ersetzt. Eine Optionenrechnung auf belegten
-Kosten ist E12-F02 (2.10/2.11).
+**What remains:** CR-23 at its core. The coefficients are now marked
+and locked as an assumption, not replaced. An options calculation on evidenced
+costs is E12-F02 (2.10/2.11).
 
 ## [v2.9.7] — 2026-09-11
 
-### Ein Nutzungsimport, dem man glauben kann — und der überhaupt gespeichert wird
+### A usage import you can believe — and one that is stored at all
 
-Roadmap E03-F02, Release 2.9, P1, ausgelöst von CR-24. Die Abnahmen:
-**„Bei Locale de-DE wird 05.04.2026 als 5. April gespeichert. Der Messbeginn
-stammt aus deklarierter Erfassung, nicht aus erster beobachteter Ausführung;
-außerhalb liegende Saisonalität erzeugt einen Warnhinweis."** und **„Negative
-Aufrufe werden quarantänisiert. Leere Zähler bleiben unknown und unterscheiden
-sich von gemessenen Nullwerten; ST03N- und SCMON-Werte werden nicht ungeprüft
-addiert."**
+Roadmap E03-F02, release 2.9, P1, triggered by CR-24. The acceptance criteria:
+**"With locale de-DE, 05.04.2026 is stored as 5 April. The start of measurement
+comes from declared capture, not from the first observed execution;
+seasonality lying outside produces a warning."** and **"Negative
+calls are quarantined. Empty counters stay unknown and are distinct
+from measured zero values; ST03N and SCMON values are not added
+without checking."**
 
-Gestern fehlte der Punkt auf der 2.9-Exit-Liste. Heute reproduziert, und
-schlimmer als im Befundregister: `05.04.2026` wurde **3. Mai**. `new Date()` liest
-die Zeichenkette mit dem Monat zuerst (4. Mai), und `toISOString()` rechnet die
-Mitternacht nach UTC um und landet in jeder Zeitzone östlich von Greenwich einen
-Tag früher. Eine negative Aufrufzahl wurde als Messung übernommen. Der
-„Messzeitraum" war die Spanne zwischen erster und letzter Ausführung im Export —
-und ein Export über sechs Wochen machte aus einem Jahresabschluss-Programm mit
-null Aufrufen einen Stilllegungskandidaten.
+Yesterday this item was missing from the 2.9 exit list. Reproduced today, and
+worse than in the finding register: `05.04.2026` became **3 May**. `new Date()` reads
+the string month first (4 May), and `toISOString()` converts
+midnight to UTC and, in every time zone east of Greenwich, lands one
+day earlier. A negative call count was taken over as a measurement. The
+"measurement period" was the span between the first and last execution in the export —
+and an export over six weeks turned a year-end closing program with
+zero calls into a retirement candidate.
 
-**Dazu ein Fund, der schwerer wiegt als die Roadmap-Punkte:** der Import wurde
-**nie gespeichert**. Jeder Datensatz aus einem Export ohne Typspalte trug
-`objectType: undefined`; der Firestore-Client lehnt `undefined` ab, solange
-`ignoreUndefinedProperties` nicht gesetzt ist, und `getDb()` setzt es nicht. Die
-Ablehnung landete im `catch` der Analyze-Seite und wurde nur geloggt. Nachgeprüft,
-nicht vermutet: dieselbe Datenform an den Client übergeben ergibt
-`Unsupported field value: undefined`. Der Bericht existierte in einem Browser-Tab.
+**Plus a find that weighs more than the roadmap items:** the import was
+**never stored**. Every record from an export without a type column carried
+`objectType: undefined`; the Firestore client rejects `undefined` as long as
+`ignoreUndefinedProperties` is not set, and `getDb()` does not set it. The
+rejection landed in the `catch` of the Analyze page and was only logged. Verified,
+not assumed: passing the same data shape to the client yields
+`Unsupported field value: undefined`. The report existed in a browser tab.
 
-**Was jetzt gilt:**
+**What holds now:**
 
-- **Datumsformat wird deklariert, nicht erraten.** Auswahl de-DE / en-GB /
-  en-US / ISO. ISO und SAP-intern (`YYYYMMDD`) sind eindeutig und gehen immer.
-  Jedes andere Datum wird nach der deklarierten Reihenfolge gelesen — aus seinen
-  Teilen zusammengesetzt, ohne Datumsparser und ohne Zeitzone — oder mit Grund
-  abgewiesen: nicht deklariert, zweistellige Jahreszahl, 31.02.
-- **Das Überwachungsfenster wird deklariert.** Die beobachtete Spanne heißt
-  jetzt `observedFrom/observedTo` und bleibt davon getrennt; die alten Namen
-  `measuredFrom/To` tragen nur noch Berichte von vor v2.9.7 und werden als
-  beobachtet gelesen. Ein Fenster, das enden würde, bevor es beginnt, oder in der
-  Zukunft, wird vor dem Einlesen abgelehnt.
-- **Eine Null ist nur über 13 Monate ein Beleg.** Ohne deklariertes Fenster oder
-  bei einem kürzeren wird ein gemessener Nullwert zu „Not seen (short window)",
-  Quadrant *unknown*, nie *retire-candidate* — und der Import warnt, bei einem
-  Fenster ohne Jahreswechsel ausdrücklich mit „no year-end". Das betrifft auch
-  bestehende Berichte: Keiner hat ein deklariertes Fenster, also schlägt keiner
-  mehr eine Stilllegung auf eine Null vor.
-- **Quarantäne statt stiller Übernahme:** negative Zähler, Daten, die nicht zum
-  Format passen oder nicht existieren, Daten nach Fensterende oder nach dem
-  Importtag, Zeilen ohne Objektnamen. Jede mit Zeilennummer und Grund. Ein leerer
-  Zähler bleibt `null` (unknown), ein unlesbarer auch — mit Warnung, wie viele.
-- **Vorschau vor Übernahme.** Deklarieren → Datei → Vorschau mit allen
-  abgewiesenen Zeilen → „Import N objects". Eine geänderte Deklaration liest
-  sofort neu. Gespeichert wird erst beim Bestätigen.
-- **Keine Summe über Quellen hinweg.** Ein Bericht hat eine Quelle; der Join
-  verweigert Datensätze aus mehreren, statt ST03N-Transaktionsschritte und
-  SCMON-Aufrufe zu addieren. Der Aufruf liegt jetzt in der Komponente, damit eine
-  solche Weigerung im SectionBoundary landet und nicht die ganze Analyze-Seite
-  mitnimmt.
-- Der Bericht ist frei von `undefined` — er wird gespeichert.
+- **Date format is declared, not guessed.** Choice of de-DE / en-GB /
+  en-US / ISO. ISO and SAP-internal (`YYYYMMDD`) are unambiguous and always work.
+  Every other date is read in the declared order — assembled from its
+  parts, without a date parser and without a time zone — or rejected with a reason:
+  not declared, two-digit year, 31.02.
+- **The monitoring window is declared.** The observed span is now called
+  `observedFrom/observedTo` and stays separate from it; the old names
+  `measuredFrom/To` are only carried by reports from before v2.9.7 and are read as
+  observed. A window that would end before it begins, or in the
+  future, is rejected before reading in.
+- **A zero is evidence only over 13 months.** Without a declared window or
+  with a shorter one, a measured zero becomes "Not seen (short window)",
+  quadrant *unknown*, never *retire-candidate* — and the import warns, for a
+  window without a year-end, explicitly with "no year-end". This also affects
+  existing reports: none has a declared window, so none proposes
+  a retirement on a zero any more.
+- **Quarantine instead of silent take-over:** negative counters, dates that do not match the
+  format or do not exist, dates after the window end or after the
+  import day, rows without an object name. Each with row number and reason. An empty
+  counter stays `null` (unknown), an unreadable one too — with a warning of how many.
+- **Preview before take-over.** Declare → file → preview with all
+  rejected rows → "Import N objects". A changed declaration re-reads
+  immediately. Nothing is stored until confirmed.
+- **No sum across sources.** A report has one source; the join
+  refuses records from several instead of adding ST03N transaction steps and
+  SCMON calls. The call now lives in the component, so that such a
+  refusal lands in the SectionBoundary and does not take the whole Analyze page
+  down with it.
+- The report is free of `undefined` — it is stored.
 
-`tests/usage-import-guard.spec.ts`: die Abnahme wörtlich (`05.04.2026` → 5. April),
-alle Formate und Abweisungen, jede Quarantäne-Regel mit Zeile und Grund, Fenster
-gegen beobachtete Spanne, Null über 89 Tage (nicht retire) gegen Null über 426
-Tage (retire), gemischte Quellen, kein `undefined`, und **der ganze Weg im
-Browser**: Datei ohne deklariertes Format → deutsches Datum abgewiesen → de-DE
-wählen → neu gelesen → vor dem Bestätigen nichts in Firestore → bestätigen → im
-Dokument steht 5. April, 1234 Aufrufe, 89 Tage, eine abgewiesene Zeile.
-`tests/usage-unknown-guard.spec.ts` bekommt für „eine gemessene Null heißt
-dormant" das Fenster, das diese Aussage jetzt braucht, und ein Gegenstück ohne.
+`tests/usage-import-guard.spec.ts`: the acceptance criterion verbatim (`05.04.2026` → 5 April),
+all formats and rejections, every quarantine rule with row and reason, window
+against observed span, zero over 89 days (not retire) against zero over 426
+days (retire), mixed sources, no `undefined`, and **the whole path in the
+browser**: file without declared format → German date rejected → choose de-DE
+→ re-read → nothing in Firestore before confirming → confirm → the
+document says 5 April, 1234 calls, 89 days, one rejected row.
+`tests/usage-unknown-guard.spec.ts` gets, for "a measured zero means
+dormant", the window this statement now needs, and a counterpart without one.
 
-Lint-Budget 672 → 671.
+Lint budget 672 → 671.
 
 ## [v2.9.6] — 2026-09-11
 
-### Nach einer Quellenänderung gilt nichts Altes mehr als aktuell
+### After a source change nothing old counts as current any more
 
-Roadmap E01-F01-US02, Release 2.9, P0, der offene Rest von CR-11 und der
-2.9-Teil von CR-10. Die Abnahme: **„Wenn der Quell-Digest gegenüber dem
-verwendeten Analyseinput abweicht, werden Transformation und kontrolliertes
-Handover bis zur Neubewertung blockiert. Ein Client-Statuswechsel umgeht die
-Sperre nicht."**
+Roadmap E01-F01-US02, release 2.9, P0, the open remainder of CR-11 and the
+2.9 part of CR-10. The acceptance criterion: **"If the source digest differs from the
+analysis input used, Transformation and controlled
+handover are blocked until reassessment. A client status change does not bypass the
+block."**
 
-**Der Befund:** Ein neuer Analyse-Run mit anderem Quelltext ließ Design, Code,
-Tests, Dokumentation und die Architekten-Freigabe stehen — alles las sich weiter
-als aktuell. Die Transformation erzeugte aus dem alten Design neuen Code, und das
-signierte Audit-Pack trug eine Freigabe, die für einen Code gegeben worden war,
-der nicht mehr der geprüfte Code war. Genau das, was die User Story „keine fremde
-Revision freigeben" nennt.
+**The finding:** a new analysis run with different source code left design, code,
+tests, documentation and the architect sign-off standing — everything still read
+as current. Transformation generated new code from the old design, and the
+signed audit pack carried a sign-off that had been given for code
+that was no longer the reviewed code. Exactly what the user story calls "do not
+approve someone else's revision".
 
-**Wie die Sperre entsteht — ohne ein Feld, das der Client setzen kann:**
+**How the block comes about — without a field the client can set:**
 
-- `/api/runs/create` erkennt, dass sich der Quell-Digest ändert, und schreibt
-  **im selben Batch** wie den Wechsel des aktiven Runs die Digests von Design,
-  Code, Tests, Dokumentation und Freigabe, wie sie in diesem Moment standen
-  (`auditMetadata.sourceChange`). Nichts wird gelöscht; es ist die Arbeit des
-  Nutzers.
-- Alles, was danach noch denselben Digest trägt, wurde seitdem nicht neu erzeugt
-  und ist damit für die vorige Quelle gebaut: **stale**. Aufgehoben wird das nur,
-  indem man es neu erzeugt bzw. die Freigabe neu erteilt — es gibt keine Flagge
-  zum Umlegen, und `auditMetadata` steht nicht in der Client-Allowlist. `status`
-  spielt nirgends eine Rolle.
-- Tests werden **ohne ihre Verdikte** gehasht: eine veraltete Suite laufen zu
-  lassen, macht sie nicht aktuell.
-- Unabhängig davon vergleicht jede Ansicht SHA-256 des Quelltexts mit dem Digest,
-  den der Run signiert hat. Die Analyze-Seite schreibt nie das eine ohne das
-  andere; ein direkter Schreibzugriff könnte es, und dann ist die Analyse selbst
-  veraltet.
+- `/api/runs/create` recognises that the source digest changes, and writes,
+  **in the same batch** as the switch of the active run, the digests of design,
+  code, tests, documentation and sign-off as they stood at that moment
+  (`auditMetadata.sourceChange`). Nothing is deleted; it is the
+  user's work.
+- Everything that still carries the same digest afterwards has not been regenerated since
+  and is therefore built for the previous source: **stale**. That is lifted only
+  by regenerating it or giving the sign-off again — there is no flag
+  to flip, and `auditMetadata` is not in the client allowlist. `status`
+  plays no role anywhere.
+- Tests are hashed **without their verdicts**: running a stale suite
+  does not make it current.
+- Independently of that, every view compares SHA-256 of the source code with the digest
+  the run signed. The Analyze page never writes one without the
+  other; a direct write could, and then the analysis itself is
+  stale.
 
-**Wo gesperrt wird:** Transformation erzeugt nicht aus einem veralteten Design
-oder unter einer veralteten Freigabe (auch nicht der automatische Erstlauf beim
-Öffnen der Seite). Documentation und Testing erzeugen zusätzlich nicht aus
-veraltetem Code — sonst ließe sich ein veralteter Zustand in ein frisch
-aussehendes Artefakt waschen. Delivery sperrt Bundle und Audit-Pack-Knopf.
-Design lässt „Continue to Transformation" erst mit einer Freigabe für die
-aktuelle Quelle zu. Stepper, Rail und Dashboard zeigen `stale` rot, jede
-betroffene Seite sagt, was zuerst neu zu erzeugen ist.
+**Where it blocks:** Transformation does not generate from a stale design
+or under a stale sign-off (not even the automatic first run when
+the page opens). Documentation and Testing additionally do not generate from
+stale code — otherwise a stale state could be laundered into a fresh-looking
+artefact. Delivery blocks the bundle and the audit pack button.
+Design allows "Continue to Transformation" only with a sign-off for the
+current source. Stepper, rail and dashboard show `stale` in red, every
+affected page says what has to be regenerated first.
 
-**Serverseitig, weil ein Knopf keine Sperre ist:** `/api/audit-pack/create`
-antwortet mit **409** und einer maschinenlesbaren `blockers`-Liste, wenn
+**Server-side, because a button is not a block:** `/api/audit-pack/create`
+answers with **409** and a machine-readable `blockers` list if
 
-- der Quelltext des Projekts nicht der ist, den der Run analysiert hat
-  (`source-changed`), oder
-- die Freigabe, die das Pack in seinem Decision Record trägt, für eine vorige
-  Quelle gegeben wurde (`sign-off-stale`). Für Projekte, deren Quelle sich
-  *vor* diesem Release geändert hat und die deshalb keinen Eintrag haben, wird
-  aus der Run-Historie bestimmt, seit wann die aktuelle Quelle analysiert wird,
-  und die Freigabe muss danach liegen.
+- the project's source code is not the one the run analysed
+  (`source-changed`), or
+- the sign-off the pack carries in its decision record was given for a previous
+  source (`sign-off-stale`). For projects whose source changed
+  *before* this release and that therefore have no entry, the run history
+  determines since when the current source has been analysed,
+  and the sign-off must come after that.
 
-Das Delivery-Bundle entsteht im Browser; dort ist die Seite die Sperre, und das
-ist hier ausdrücklich gesagt.
+The Delivery bundle is created in the browser; there the page is the block, and
+that is said here explicitly.
 
-**Keine Änderung an `firestore.rules`.** Die Regeln werden nicht von CI deployt;
-eine Lösung, die neue Client-Felder bräuchte, hätte einen manuellen
-Produktions-Deploy vorausgesetzt und das Speichern von Designs gebrochen, falls
-die App zuerst live gegangen wäre. Der Datensatz wird mit dem Admin SDK
-geschrieben.
+**No change to `firestore.rules`.** The rules are not deployed by CI;
+a solution that needed new client fields would have required a manual
+production deploy and broken the saving of designs if
+the app had gone live first. The record is written with the Admin SDK.
 
-`lib/artefact-digest.ts` ist ein synchrones SHA-256 ohne Imports — der
-Phasenvertrag läuft während des Renderns, `crypto.subtle` kann nur Promises.
-Dieselbe Funktion importiert die Server-Route, die den Datensatz schreibt;
-Erzeuger und Leser können nicht verschieden hashen.
-`tests/source-change-guard.spec.ts` prüft sie gegen Node-crypto (Padding-Grenzen,
-Umlaute, Emoji, 3.000 Zeilen), den Vertrag in allen Übergängen und Ende-zu-Ende
-gegen den Emulator: gleicher Quelltext → kein Eintrag; neuer Quelltext → Eintrag
-mit den richtigen Digests; das Pack verweigert die alte Freigabe, **auch nachdem
-der Client `status: 'completed'` schreibt** (mit dem Token des Owners, unter den
-echten Regeln); die Seiten zeigen die Sperre, die Knöpfe sind aus;
-Neu-Erzeugen und Neu-Freigeben heben sie auf; ein am Run vorbei geschriebener
-Quelltext wird mit `source-changed` abgewiesen.
+`lib/artefact-digest.ts` is a synchronous SHA-256 without imports — the
+phase contract runs during rendering, `crypto.subtle` can only do promises.
+The server route that writes the record imports the same function;
+producer and reader cannot hash differently.
+`tests/source-change-guard.spec.ts` checks it against Node crypto (padding boundaries,
+umlauts, emoji, 3,000 lines), the contract in all transitions and end-to-end
+against the emulator: same source code → no entry; new source code → entry
+with the right digests; the pack refuses the old sign-off, **even after
+the client writes `status: 'completed'`** (with the owner's token, under the
+real rules); the pages show the block, the buttons are off;
+regenerating and signing off again lift it; source code written past the run
+is rejected with `source-changed`.
 
-**Was das nicht ist:** keine manipulationssichere Revisionskette. Wer ein Feld
-schreiben darf, kann seinen Digest ändern — geschützt wird gegen das
-Weiterverwenden von etwas, das seit der Quellenänderung niemand angefasst hat,
-nicht gegen Absicht. Abhängigkeiten über Stufen hinweg (Doku, die nach einem
-Code-Neulauf aus dem alten Code stammt) werden hier verhindert, indem die
-Erzeugung auf veraltetem Stand gesperrt ist, nicht nachträglich erkannt. Die
-unveränderliche, eltern-verkettete Revisionsablage ist E01-F02 in 2.10.
-Projekte, deren Quelle sich vor diesem Release geändert hat, zeigen ihre alten
-Artefakte in den Ansichten weiter als aktuell — nur die Freigabe prüft der
-Server für sie nach.
+**What this is not:** a tamper-proof revision chain. Whoever may
+write a field can change its digest — what is protected against is the
+reuse of something nobody has touched since the source change,
+not against intent. Dependencies across stages (docs that, after a
+code rerun, stem from the old code) are prevented here by blocking
+generation on a stale state, not detected afterwards. The
+immutable, parent-chained revision store is E01-F02 in 2.10.
+Projects whose source changed before this release still show their old
+artefacts in the views as current — only the sign-off is checked by the
+server for them.
 
 ## [v2.9.5] — 2026-09-11
 
-### Drei Ansichten, drei Fortschritte — jetzt ein Vertrag
+### Three views, three progress states — now one contract
 
-Roadmap E01-F01, Release 2.9, P0, ausgelöst von CR-11 (und CR-16 im selben
-Kasten). Die Abnahme zu US01: **„Gegeben sind generierte, aber nicht ausgeführte
-Tests. Wenn Dashboard, Stepper und Delivery laden, dann zeigen alle
-‚Testentwurf vorhanden', nicht ‚Testing abgeschlossen'; Economics erscheint als
-sechste Phase."**
+Roadmap E01-F01, release 2.9, P0, triggered by CR-11 (and CR-16 in the same
+box). The acceptance criterion for US01: **"Given generated but not executed
+tests. When dashboard, stepper and Delivery load, then all show
+'test draft present', not 'Testing complete'; Economics appears as the
+sixth phase."**
 
-Gemessen vorher, ein Projekt, drei Ansichten:
+Measured before, one project, three views:
 
 - **Stepper:** Upload · Analyze · Design · Transformation · Testing ·
-  Documentation · Delivery. Upload als eigene Phase, kein Economics — die
-  TCO-Seite zeigte sich deshalb als Schritt 1, weil sie keine eigene Nummer
-  hatte. Und abgehakt wurde nach **Position**: Wer Testing öffnete, sah Design und
-  Transformation als erledigt, egal ob etwas existierte.
-- **Rail:** Testing „done", sobald Testfälle *generiert* waren.
-- **Dashboard:** las `status` — ein Feld, das der Client schreibt. Beim
-  Generieren der Tests wird es auf `'testing'` gesetzt, das Dashboard machte
-  daraus „Testing & QA (85%)". Ein Projekt mit `status: 'completed'` war
-  „Completed (100%)", egal was darin lag.
+  Documentation · Delivery. Upload as a phase of its own, no Economics — the
+  TCO page therefore showed itself as step 1, because it had no number of its own.
+  And ticking off went by **position**: whoever opened Testing saw Design and
+  Transformation as done, whether anything existed or not.
+- **Rail:** Testing "done" as soon as test cases had been *generated*.
+- **Dashboard:** read `status` — a field the client writes. When
+  the tests are generated it is set to `'testing'`, the dashboard turned
+  that into "Testing & QA (85%)". A project with `status: 'completed'` was
+  "Completed (100%)", whatever was in it.
 
-**Und ein Fund, der nicht in der Roadmap stand:** der Projektbaum im Dashboard
-bot einen herunterladbaren „6. Quality Engineering Report" an. Ohne gespeicherten
-Bericht — also bei jedem Projekt, denn nichts speichert einen — wurde er
-*erfunden*: „All test cases compiled and executed successfully", „Database
-Persistency Sync: Verified via isolated PostgreSQL Mocking", eine
-Node-Laufzeitversion. Für eine Suite, die nur generiert worden war. Er zählt jetzt
-Verdikte und sagt, wenn kein Lauf vorliegt.
+**And a find that was not in the roadmap:** the project tree in the dashboard
+offered a downloadable "6. Quality Engineering Report". Without a stored
+report — so for every project, since nothing stores one — it was
+*invented*: "All test cases compiled and executed successfully", "Database
+Persistency Sync: Verified via isolated PostgreSQL Mocking", a
+Node runtime version. For a suite that had only been generated. It now counts
+verdicts and says when there is no run.
 
-**Was jetzt gilt:** `lib/workflow-steps.ts` ist der einzige Ort, der Phasen und
-ihren Zustand kennt. Stepper, Rail, Dashboard und Delivery rendern ihn; keine
-Ansicht hat mehr eine eigene Liste oder Zählung. Reihenfolge nach Roadmap §7.0:
-Analyze (mit Upload) · Design · Transformation · Documentation · Testing ·
-**Economics** · Delivery. Jede Phase ist `empty`, `partial` oder `done`:
+**What holds now:** `lib/workflow-steps.ts` is the only place that knows the phases and
+their state. Stepper, rail, dashboard and Delivery render it; no
+view has a list or count of its own any more. Order per roadmap §7.0:
+Analyze (with upload) · Design · Transformation · Documentation · Testing ·
+**Economics** · Delivery. Every phase is `empty`, `partial` or `done`:
 
-| Phase | `partial` heißt | `done` heißt |
+| Phase | `partial` means | `done` means |
 |---|---|---|
-| Analyze | Quelle liegt, kein signierter Run | signierter Run |
-| Design | generiert, Zielarchitektur nicht bestätigt | bestätigt (Selbsterklärung) |
-| Testing | **Testentwurf** — generiert, kein Lauf erfasst; oder teilweise/fehlgeschlagen | jeder Fall `Passed` |
-| Economics | Modellschätzung aus angenommenen Koeffizienten | — in 2.9 nicht erreichbar |
-| Delivery | nur Review-Material | Code, Doku und bestandener Testlauf erfasst |
+| Analyze | source present, no signed run | signed run |
+| Design | generated, target architecture not confirmed | confirmed (self-declaration) |
+| Testing | **test draft** — generated, no run recorded; or partial/failed | every case `Passed` |
+| Economics | model estimate from assumed coefficients | — not reachable in 2.9 |
+| Delivery | review material only | code, docs and a passed test run recorded |
 
-`status` wird nirgends mehr gelesen. Der Stepper zeigt Zustand statt Position,
-„Weiter" im Dashboard geht zur ersten offenen Phase (Economics ausgenommen —
-dort gibt es in diesem Release nichts abzuschließen, und ein Weiter-Knopf, der
-einen dort dauerhaft parkt, ist keiner).
+`status` is no longer read anywhere. The stepper shows state instead of position,
+"Continue" in the dashboard goes to the first open phase (Economics excepted —
+there is nothing to complete there in this release, and a continue button that
+parks you there permanently is not one).
 
-**Nebenbei behoben, weil es derselbe Befund in anderer Form war:**
+**Fixed in passing, because it was the same finding in another form:**
 
-- Die Rail wurde auf Design, Transformation, Documentation und Delivery **nur im
-  Ladezustand** gerendert — sie stand im frühen `return` und sonst nirgends, und
-  verschwand genau dann, wenn es etwas zu berichten gab.
-- Delivery eröffnete jedes Projekt mit „The transformation lifecycle is complete
-  … ready for deployment". Der QA-Status wurde bei generierten, nie gelaufenen
-  Tests grün („All artefacts present"). Das Häkchen der Testzeile ging auch
-  neben *simulierten* Fällen auf grün — die Bedingung prüfte auf Fehlschläge und
-  fehlende Verdikte, nicht auf Mocks.
-- Zwei Qualitätsunterzeilen behaupteten Compliance ohne Prüfung dahinter
-  („Restricted clean ABAP syntax check compliant", „Strongly-typed model
+- The rail was rendered on Design, Transformation, Documentation and Delivery **only in the
+  loading state** — it sat in the early `return` and nowhere else, and
+  disappeared exactly when there was something to report.
+- Delivery opened every project with "The transformation lifecycle is complete
+  … ready for deployment". The QA status turned green for generated, never-run
+  tests ("All artefacts present"). The tick of the test line also went green
+  next to *simulated* cases — the condition checked for failures and
+  missing verdicts, not for mocks.
+- Two quality sub-lines claimed compliance with no check behind them
+  ("Restricted clean ABAP syntax check compliant", "Strongly-typed model
   boundaries compliant") — CR-16.
-- Die Navigation folgt jetzt der kanonischen Reihenfolge (Transformation →
-  Documentation → Testing → Economics → Delivery). Die eigenen Texte des
-  Produkts nannten Documentation schon „stage 4"; nur die Knöpfe nicht.
-  First-Run-Guide und Willkommensmail nannten Analyze „stage 2".
+- Navigation now follows the canonical order (Transformation →
+  Documentation → Testing → Economics → Delivery). The product's own texts
+  already called Documentation "stage 4"; only the buttons did not.
+  The first-run guide and the welcome mail called Analyze "stage 2".
 
-**Was das für echte Projekte heißt, ausdrücklich:** Die Testing-Seite zeigt die
-Verdikte eines Laufs am Bildschirm, **speichert sie aber nicht**. Deshalb bleibt
-Testing — und damit Delivery — in der Praxis `partial`. Das ist die ehrliche
-Aussage über das, was erfasst ist; ein Lauf in einem Browser-Tab ist kein
-Nachweis, den die nächste Ansicht lesen kann. Die Lösung ist kein Client-Schreiben
-von `Passed`, sondern ein serverseitiger Test-Receipt (E07-F02).
+**What this means for real projects, explicitly:** the Testing page shows the
+verdicts of a run on screen, **but does not store them**. That is why
+Testing — and with it Delivery — stays `partial` in practice. That is the honest
+statement about what is recorded; a run in a browser tab is not
+evidence the next view can read. The solution is not a client write
+of `Passed`, but a server-side test receipt (E07-F02).
 
-`tests/workflow-phases-guard.spec.ts`: der Vertrag als Einheit (Reihenfolge,
-Testentwurf, Simulation ≠ Pass, `status` wird ignoriert, Economics nie done),
-Quellwächter (kein positionsgetriebener Stepper, jede Seite rendert Rail und
-Stepper gleich oft, Vorwärtsknöpfe in kanonischer Reihenfolge, kein erfundener
-Bericht) und die Abnahme gerendert: ein Projekt mit Testentwurf und
-`status: 'completed'`, Dashboard, Stepper und Delivery zeigen alle „Test draft",
-Economics ist der sechste Kreis.
+`tests/workflow-phases-guard.spec.ts`: the contract as a unit (order,
+test draft, simulation ≠ pass, `status` is ignored, Economics never done),
+source guards (no position-driven stepper, every page renders rail and
+stepper equally often, forward buttons in canonical order, no invented
+report) and the acceptance criterion rendered: a project with a test draft and
+`status: 'completed'`, dashboard, stepper and Delivery all show "Test draft",
+Economics is the sixth circle.
 
-**Noch offen aus E01-F01:** US02 — nach einer Quellenänderung Transformation und
-kontrolliertes Handover sperren, ohne dass ein Client-Statuswechsel die Sperre
-umgeht. Kommt als eigener Release.
+**Still open from E01-F01:** US02 — after a source change, block Transformation and
+controlled handover without a client status change bypassing the
+block. Comes as a separate release.
 
 ## [v2.9.4] — 2026-09-10
 
-### Die Division, die v2.8.6 übersehen hat, weil sie eine Zeile darüber stand
+### The division v2.8.6 missed because it stood one line above
 
-Roadmap E12-F01, Release 2.9, P0, ausgelöst von CR-22 und CR-23. Die Abnahme zu
-US01 nennt die Fälle beim Namen: **„Die Fälle Score 100, Score 99,
-Nullinvestition und fehlender Score liefern valide, klar bezeichnete Ergebnisse
-oder nicht berechenbar. Kein Diagramm erhält nicht endliche Zahlen."**
+Roadmap E12-F01, release 2.9, P0, triggered by CR-22 and CR-23. The acceptance for
+US01 names the cases: **"The cases score 100, score 99,
+zero investment and missing score deliver valid, clearly labelled results
+or not computable. No chart receives non-finite numbers."**
 
-v2.8.6 hat zwei ungeschützte Divisionen auf dieser Seite geschlossen — ROI bei
-Investition 0, Amortisation bei Einsparung 0. Die dritte stand eine Zeile
-darüber und blieb stehen:
+v2.8.6 closed two unguarded divisions on this page — ROI at
+investment 0, payback at savings 0. The third stood one line
+above and stayed:
 
 ```
 const factor = (100 - scoreAfter) / (100 - scoreBefore);
 ```
 
-Bei Score 100 ist der Divisor null. `factor` wird `Infinity`, und von dort
-wandert es weiter: ROI `-Infinity`, „Overhead-Reduktion" `-Infinity`, und das
-Fünfjahresdiagramm bekommt für jedes modernisierte Jahr `Infinity`. Genau das,
-was die Abnahme ausschließt. Die Wächter von v2.8.6 sitzen alle *unterhalb*
-dieser Stelle und greifen deshalb nicht.
+At score 100 the divisor is zero. `factor` becomes `Infinity`, and from there
+it travels on: ROI `-Infinity`, "overhead reduction" `-Infinity`, and the
+five-year chart gets `Infinity` for every modernised year. Exactly what
+the acceptance rules out. The guards from v2.8.6 all sit *below*
+this point and therefore do not catch it.
 
-**Der Fall Score 99 ist der unangenehmere.** Dort teilt nichts durch null, das
-Ergebnis ist endlich und sieht deswegen vertrauenswürdig aus: `factor` 5, das
-Modell behauptet, Modernisierung koste das 3,35-fache, ROI −749 %,
-„Overhead-Reduktion" −235 %. Eine Zahl, die offensichtlich kaputt ist, richtet
-weniger Schaden an als eine, die falsch ist und wie eine Aussage aussieht.
+**The score 99 case is the nastier one.** Nothing divides by zero there, the
+result is finite and therefore looks trustworthy: `factor` 5, the
+model claims modernisation costs 3.35 times as much, ROI −749 %,
+"overhead reduction" −235 %. A number that is obviously broken does
+less damage than one that is wrong and looks like a statement.
 
-Beides hat dieselbe Ursache, und sie ist keine Rechenschwäche: `scoreAfter` ist
-eine **feste Annahme von 95**. Code, der bereits bei 95 oder darüber liegt, hat
-in diesem Modell nichts zu verbessern — also rechnet das Modell dort nicht mehr,
-sondern lehnt ab. Ein negativer Business Case, der aus einem angenommenen
-Zielwert entsteht, ist keine Aussage über den Code des Kunden, sondern eine über
-die Annahme.
+Both have the same cause, and it is not a weakness in the arithmetic: `scoreAfter` is
+a **fixed assumption of 95**. Code that is already at 95 or above has
+nothing to improve in this model — so the model no longer calculates there
+but declines. A negative business case that arises from an assumed
+target value is not a statement about the customer's code but one about
+the assumption.
 
-Die Seite sagt das jetzt auch so, statt „kein Baseline" zu behaupten, was nicht
-stimmen würde: der Score ist ja da. Es steht dort, dass der Code den
-angenommenen Zielwert bereits erreicht, dass das Modell deshalb nichts zu
-bepreisen hat, und dass das eine Aussage über die Annahme ist.
+The page now says so too, instead of claiming "no baseline", which would not
+be true: the score is there after all. It states that the code already reaches the
+assumed target value, that the model therefore has nothing to
+price, and that this is a statement about the assumption.
 
-Dazu ein Auffangnetz, ausdrücklich nicht als primäre Verteidigung: bevor
-irgendeine Zahl zurückgegeben wird, prüft `everyFigureFinite` alle Kennzahlen
-und jeden Diagrammwert. Jeder bekannte Weg ist oben abgesichert; das hier fängt
-die nächste Eingabe, an die niemand gedacht hat — denn ein Diagramm ist die eine
-Stelle, an der eine nicht endliche Zahl klaglos gerendert wird.
+On top of that a safety net, explicitly not as the primary defence: before
+any number is returned, `everyFigureFinite` checks all figures
+and every chart value. Every known path is secured above; this catches
+the next input nobody thought of — because a chart is the one
+place where a non-finite number is rendered without complaint.
 
-`tests/tco-finite-guard.spec.ts` prüft alle vier von der Abnahme genannten Fälle
-plus acht Scores von 0 bis 100 auf Endlichkeit, und zusätzlich, dass der Wächter
-im Quelltext *vor* der Division steht, die er schützt. Das Modell liegt inline in
-der Seitenkomponente, deshalb bildet der Test seine Arithmetik nach statt sie zu
-importieren — eine echte Schwäche, die im Test benannt ist: wer das Modell nach
-`lib/` zieht, nimmt diese Spec mit.
+`tests/tco-finite-guard.spec.ts` checks all four cases named by the acceptance
+plus eight scores from 0 to 100 for finiteness, and additionally that the guard
+stands in the source *before* the division it protects. The model lives inline in
+the page component, so the test reproduces its arithmetic instead of
+importing it — a real weakness, named in the test: whoever moves the model to
+`lib/` takes this spec along.
 
-**Was damit nicht erledigt ist:** CR-23 im Kern. Die Aufwandskoeffizienten (2,5 /
-0,8 / 1,8 / 0,6 Tage je 1.000 Zeilen), die 85-%-Testautomatisierungsannahme und
-der Zielscore 95 sind weiterhin nicht aus beobachteten Aufwänden abgeleitet. Die
-Alternativenrechnung mit belegten Kosten ist E12-F02 und gehört zu 2.10.
+**What this does not settle:** CR-23 at its core. The effort coefficients (2.5 /
+0.8 / 1.8 / 0.6 days per 1,000 lines), the 85 % test automation assumption and
+the target score 95 are still not derived from observed effort. The
+alternatives calculation with evidenced costs is E12-F02 and belongs to 2.10.
 
 ## [v2.9.3] — 2026-09-10
 
-### Eine eigene Z-Tabelle war kein Grund, den Stack zu verlassen
+### A custom Z table was no reason to leave the stack
 
-Roadmap CR-04, P0, und in den Sofortmaßnahmen als „die automatische CAP-Pflicht
-entschärft" benannt. Die Behandlung dort: **„Keine Technologiewahl aus einem
-einzelnen Legacy-Symptom."**
+Roadmap CR-04, P0, and named in the immediate measures as "the automatic CAP
+obligation defused". The treatment there: **"No technology choice from a
+single legacy symptom."**
 
-Ein einziger Schreibzugriff auf eine eigene Z-Tabelle hat die Empfehlung auf
-Side-by-Side (BTP) gesetzt — in *beiden* Betriebsmodellen, mit der Begründung
-„Custom tables and side-effect logging require decoupled Side-by-Side
-architecture (CAP)". Dieselbe Aussage stand ein zweites Mal im Architekturpanel:
-RAP wurde unter `notFor` mit „Custom Z-table persistence" geführt, CAP unter
-`bestFor` mit „Custom data models (Z-tables)".
+A single write access to a custom Z table set the recommendation to
+Side-by-Side (BTP) — in *both* operating models, with the rationale
+"Custom tables and side-effect logging require decoupled Side-by-Side
+architecture (CAP)". The same statement stood a second time in the architecture panel:
+RAP was listed under `notFor` with "Custom Z-table persistence", CAP under
+`bestFor` with "Custom data models (Z-tables)".
 
-Für Private Edition / RISE ist das verkehrt herum. Eigene Persistenz im
-Kundennamensraum ist der Lehrbuchfall für Developer Extensibility: die Tabelle
-ist ein Dictionary-Objekt, darauf steht ein RAP-Business-Object, und das läuft
-on-stack. Eine Z-Tabelle ist keine Clean-Core-Verletzung — Schreiben in *SAP-*
-Tabellen ist eine. Das Produkt hat also für das häufigste Legacy-Muster
-überhaupt vom Stack weg auf BTP geschickt, und im selben Atemzug behauptet, RAP
-sei für genau das nicht gedacht, wofür RAP gedacht ist.
+For Private Edition / RISE this is the wrong way round. Custom persistence in the
+customer namespace is the textbook case for Developer Extensibility: the table
+is a dictionary object, a RAP business object sits on top of it, and that runs
+on-stack. A Z table is not a clean core violation — writing to *SAP*
+tables is. So for the most common legacy pattern of all, the product
+sent people off the stack to BTP, and in the same breath claimed that RAP
+was not meant for exactly what RAP is meant for.
 
-**Die Grenze verläuft am Betriebsmodell, nicht am Konstrukt** — und das ist der
-eigentliche Befund. In Public Edition bleibt der Custom-Write ein
-Side-by-Side-Auslöser, weil das strikte SaaS-Modell dort keinen On-Stack-Weg für
-eigene Persistenz anbietet. Also liest die Regel jetzt `deploymentModel` statt
-den Befund, und die beiden Modelle kommen bei derselben Quelle zu verschiedenen
-Ergebnissen. Vorher taten sie das nicht: das Deployment machte für dieses
-Konstrukt gar keinen Unterschied.
+**The boundary runs along the operating model, not the construct** — and that is the
+actual finding. In Public Edition the custom write remains a
+Side-by-Side trigger, because the strict SaaS model there offers no on-stack path for
+custom persistence. So the rule now reads `deploymentModel` instead of
+the finding, and the two models reach different results for the same source.
+Before, they did not: the deployment made no difference at all for this
+construct.
 
-Die SAP-Grenze wurde vor der Änderung mit dem Architekten geklärt, nicht aus dem
-Code erschlossen. Das ist bewusst so: v2.9.0 hat gezeigt, was passiert, wenn eine
-Ableitungsregel plausibel aussieht und trotzdem falsch gelesen wird.
+The SAP boundary was clarified with the architect before the change, not inferred from the
+code. That is deliberate: v2.9.0 showed what happens when a
+derivation rule looks plausible and is still read wrongly.
 
-Die Begründung sagt jetzt auch, *warum* — „writing to your own table is not a
-clean core violation, writing to SAP's is" steht im Rationale und wird von einem
-Test festgehalten. Ein Satz, der das nächste Review davon abhält, denselben
-Befund noch einmal zu schreiben, ist billiger als die Diskussion, die sonst
-folgt.
+The rationale now also says *why* — "writing to your own table is not a
+clean core violation, writing to SAP's is" stands in the rationale and is held by a
+test. A sentence that stops the next review from writing the same
+finding again is cheaper than the discussion that would otherwise
+follow.
 
-Was ausdrücklich unverändert bleibt: RFC, BDC, Native SQL und
-GUI-Dateizugriffe lösen weiterhin Side-by-Side aus, auch in Private Edition —
-eine Regel zu verengen darf die Nachbarregeln nicht stillschweigend mitverengen.
-`tests/extensibility-route-guard.spec.ts` prüft beides, und außerdem, dass Panel
-und Router nicht wieder auseinanderlaufen: zwei Oberflächen für eine Regel, und
-der Leser glaubt der, die er zuerst gesehen hat.
+What explicitly stays unchanged: RFC, BDC, Native SQL and
+GUI file access still trigger Side-by-Side, in Private Edition too —
+narrowing one rule must not silently narrow the neighbouring rules with it.
+`tests/extensibility-route-guard.spec.ts` checks both, and also that panel
+and router do not drift apart again: two surfaces for one rule, and
+the reader believes the one they saw first.
 
-Auch der Konfidenzwert war betroffen — er zählte Custom-Writes als Beleg für eine
-Entscheidung, die sie in Private Edition gar nicht mehr treffen. Er zählt sie nur
-noch dort, wo sie tatsächlich ausschlaggebend waren.
+The confidence value was affected as well — it counted custom writes as evidence for a
+decision they no longer make in Private Edition. It now counts them only
+where they were actually decisive.
 
 ## [v2.9.2] — 2026-09-10
 
-### „Keine Befunde" und „nichts zu finden" sind zwei verschiedene Sätze
+### "No findings" and "nothing to find" are two different sentences
 
-Aus der Roadmap, CR-06, P0, und aus den Sofortmaßnahmen in Abschnitt 3.4:
-**„Ungedeckte Syntax darf nicht als ‚100% clean' wirken."** Dazu die Abnahme aus
-E03-F04-US02: „Die UI zeigt den begrenzten Prüfumfang; **kein numerischer Score
-darf ihn als vollständig geprüft überdecken.**"
+From the roadmap, CR-06, P0, and from the immediate measures in section 3.4:
+**"Uncovered syntax must not come across as '100% clean'."** Plus the acceptance from
+E03-F04-US02: "The UI shows the limited scope of the check; **no numeric score
+may cover it up as fully checked.**"
 
-Vor dem ersten Handgriff nachgemessen, gegen die sieben mitgelieferten
-Starterbeispiele:
+Measured before the first change, against the seven bundled
+starter examples:
 
-| Beispiel | Befunde | was tatsächlich drinsteht |
+| Example | Findings | what is actually in it |
 |---|---|---|
-| `Z_SALES_ORDER_CREATOR` | **0** | drei lokale `CALL FUNCTION` (BAPIs) |
-| `Z_EMPLOYEE_EXPENSE_VAL` | **0** | fünf `WRITE`-Listenausgaben |
-| `Z_INVOICE_EXTRACTOR` | 2 | vier Dateizugriffe (`OPEN DATASET`/`TRANSFER`), keiner davon unter den Befunden |
+| `Z_SALES_ORDER_CREATOR` | **0** | three local `CALL FUNCTION` (BAPIs) |
+| `Z_EMPLOYEE_EXPENSE_VAL` | **0** | five `WRITE` list outputs |
+| `Z_INVOICE_EXTRACTOR` | 2 | four file accesses (`OPEN DATASET`/`TRANSFER`), none of them among the findings |
 
-Der RFC-Detektor greift nur bei `CALL FUNCTION ... DESTINATION`; ein lokaler
-Aufruf — der klassische BAPI — wird von keinem Detektor angesehen. Für
-Dateizugriffe gibt es keinen Detektor. Und die Klassik-UI-Detektoren decken
-Dynpro und klassisches ALV ab, nicht die reine `WRITE`-Liste, die es in ABAP for
-Cloud Development gar nicht gibt.
+The RFC detector only fires on `CALL FUNCTION ... DESTINATION`; a local
+call — the classic BAPI — is looked at by no detector. For
+file access there is no detector. And the classic UI detectors cover
+Dynpro and classic ALV, not the plain `WRITE` list, which does not even exist in ABAP for
+Cloud Development.
 
-Wer dieses Produkt zum ersten Mal öffnet, landet also mit hoher
-Wahrscheinlichkeit auf einem Legacy-Beispiel, das die Engine für tadellos hält.
+So whoever opens this product for the first time will very
+likely land on a legacy example that the engine considers flawless.
 
-**Der Fehler ist heute nicht der fehlende Detektor, sondern das Schweigen.** Die
-Detektoren selbst sind Release 2.10 (E03-F04, Größe L, mit Parser-Spike). Was
-sich jetzt korrigieren lässt, ist die Aussage: Die Engine sagt, worüber sie
-hinweggegangen ist.
+**The fault today is not the missing detector but the silence.** The
+detectors themselves are release 2.10 (E03-F04, size L, with a parser spike). What
+can be corrected now is the statement: the engine says what it
+passed over.
 
-`lib/abap/coverage.ts` führt einen Abdeckungsbericht neben den Befunden —
-ausdrücklich **nicht** darin. Ein nicht bewertetes Konstrukt ist kein Mangel;
-es als Befund zu führen würde einen falschen Freispruch gegen eine falsche
-Anschuldigung tauschen. Erfasst werden Dateizugriffe, lokale Funktionsaufrufe,
-dynamische Aufrufe und Feldzugriffe, klassische Listenausgabe, Makrodefinitionen
-und zur Laufzeit erzeugter Code — jeweils mit Zeilenanker, Statement und dem
-Grund, warum der Detektorsatz darüber nicht urteilen kann.
+`lib/abap/coverage.ts` keeps a coverage report next to the findings —
+explicitly **not** inside them. An unassessed construct is not a defect;
+listing it as a finding would trade a false acquittal for a false
+accusation. Recorded are file accesses, local function calls,
+dynamic calls and field accesses, classic list output, macro definitions
+and code generated at runtime — each with line anchor, statement and the
+reason why the detector set cannot judge it.
 
-Jeder Treffer läuft über `tokenize()`, das Kommentare entfernt und String- und
-Backtick-Literale respektiert. Damit gilt, was die Abnahme verlangt: „Kommentare,
-Stringliterale und `INSERT` in interne Tabellen erzeugen weiterhin keine falschen
-Treffer." Ebenso ausgenommen: `WRITE x TO y` ist Formatierung und keine
-Listenausgabe, und ein `CALL FUNCTION` mit `DESTINATION` bleibt beim
-RFC-Detektor, statt doppelt gezählt zu werden.
+Every hit runs through `tokenize()`, which removes comments and respects string and
+backtick literals. So what the acceptance demands holds: "Comments,
+string literals and `INSERT` into internal tables still produce no false
+hits." Likewise excluded: `WRITE x TO y` is formatting and not
+list output, and a `CALL FUNCTION` with `DESTINATION` stays with the
+RFC detector instead of being counted twice.
 
-Auf der Analyse-Seite steht das Ergebnis neben der Befundliste — bewusst grau
-und nicht rot, weil hier niemandem etwas vorgeworfen wird. Bei vollständiger
-Abdeckung erscheint **nichts**: „Wir haben alles geprüft" ist eine Behauptung mit
-eigener Beweislast, die diese Engine nicht tragen kann.
+On the analysis page the result stands next to the findings list — deliberately grey
+and not red, because nobody is being accused of anything here. With full
+coverage **nothing** appears: "We checked everything" is a claim with
+its own burden of proof that this engine cannot carry.
 
-`tests/coverage-honesty.spec.ts` hält den Kern fest, und zwar als Eigenschaft
-statt als Einzelfall: für **jedes** der sieben Beispiele gilt, dass null Befunde
-nur zusammen mit einem ausgewiesenen Prüfumfang zulässig sind. Ein Beispiel, das
-weder etwas findet noch sagt, was es nicht angesehen hat, lässt die Suite
-scheitern.
+`tests/coverage-honesty.spec.ts` holds the core, as a property
+rather than a single case: for **each** of the seven examples, zero findings
+are only permitted together with a stated scope of the check. An example that
+neither finds anything nor says what it did not look at makes the suite
+fail.
 
-Nebenbei aufgeräumt: `joinUsageWithEvidence` nahm den ganzen Evidenzbericht,
-obwohl es nur die Befunde liest. Das hätte jeden Aufrufer gezwungen, sich ein
-`coverage` auszudenken — und der plausible Wert für ein erfundenes ist „nichts
-übersprungen", also genau der falsche Freispruch, den dieser Release entfernt.
-Der Parameter ist jetzt so schmal wie das, was gelesen wird.
+Tidied up along the way: `joinUsageWithEvidence` took the whole evidence report,
+although it only reads the findings. That would have forced every caller to make up a
+`coverage` — and the plausible value for a made-up one is "nothing
+skipped", exactly the false acquittal this release removes.
+The parameter is now as narrow as what is read.
 
 ## [v2.9.1] — 2026-09-10
 
-### Eine Variable, die zwei Dinge tat — und keines davon prüfte
+### One variable that did two things — and checked neither
 
-Aus der Roadmap, Release 2.9, P0: **E08-F01 — harte Ausführungsgrenze oder
-sichere Abschaltung.** Die Abnahme zu US02 steht dort wörtlich: „Bei
-deaktiviertem oder nicht attestiertem Runner lehnt die API neue Ausführungen
-serverseitig ab. **Ein Frontend-Flag oder das bloße Setzen einer
-Egress-Umgebungsvariable aktiviert ihn nicht.**"
+From the roadmap, release 2.9, P0: **E08-F01 — hard execution limit or
+safe shutdown.** The acceptance for US02 is there verbatim: "With a
+deactivated or unattested runner the API rejects new executions
+server-side. **A frontend flag or merely setting an
+egress environment variable does not activate it.**"
 
-Genau das tat es. `S4_TEST_RUNNER_EGRESS_ENFORCED=true` war das ganze Tor, und
-es öffnete zwei auf einmal:
+That is exactly what it did. `S4_TEST_RUNNER_EGRESS_ENFORCED=true` was the whole gate, and
+it opened two at once:
 
-1. Es erlaubte den Live-Lauf gegen S/4HANA — entschlüsselte Mandanten-Zugangsdaten
-   wandern dabei in den Kindprozess.
-2. Es **löschte `__netguard.mjs`** — die einzige Verteidigung, die generierten
-   Testcode davon abhält, den Metadaten-Endpunkt `169.254.169.254` zu lesen und
-   damit das Laufzeit-Token des Dienstkontos abzuholen.
+1. It allowed the live run against S/4HANA — decrypted client credentials
+   pass into the child process in it.
+2. It **deleted `__netguard.mjs`** — the only defence that stops generated
+   test code from reading the metadata endpoint `169.254.169.254` and
+   thereby fetching the service account's runtime token.
 
-Die beiden Wirkungen sehen einander an der Aufrufstelle nicht. Wer die Variable
-setzt, weil er „Live-Modus einschalten" will, entfernt still den Netzschutz —
-und zwar für genau den Lauf, der als einziger echte Zugangsdaten trägt. Geprüft
-wurde nie, ob die Egress-Regel, die die Variable behauptet, überhaupt gilt.
+The two effects cannot see each other at the call site. Whoever sets the variable
+because they want to "switch on live mode" silently removes the network protection —
+and for exactly the run that is the only one carrying real credentials. It was
+never checked whether the egress rule the variable claims holds at all.
 
-**Eine Variable ist eine Behauptung. Jetzt wird gemessen.** Vor jedem Live-Lauf
-versucht die Laufzeit eine TCP-Verbindung zum Metadaten-Endpunkt und zu einer
-öffentlichen Adresse. Antwortet eine davon, ist Egress nicht eingeschränkt — der
-Lauf wird abgelehnt, mit der Angabe, was erreichbar war. Die Variable allein
-gewährt nichts mehr.
+**A variable is a claim. Now it is measured.** Before every live run
+the runtime attempts a TCP connection to the metadata endpoint and to a
+public address. If either answers, egress is not restricted — the
+run is rejected, stating what was reachable. The variable alone
+grants nothing any more.
 
-Die Details, die das Ergebnis tragen: Die öffentliche Probe nutzt eine
-IP-Literal-Adresse, kein Hostname — sonst prüft man DNS mit und ein Container
-ohne Resolver, aber mit offenem Egress, sähe geschlossen aus. `ECONNREFUSED`
-zählt **nicht** als blockiert: ein RST kommt von etwas, das das Paket bekommen
-hat, der Weg existiert also und nur der Port ist zu. Und jeder unbekannte Fehler
-zählt als erreichbar, damit nicht ausgerechnet eine Überraschung das Tor öffnet.
+The details that carry the result: the public probe uses an
+IP literal address, not a hostname — otherwise you test DNS along with it, and a container
+without a resolver but with open egress would look closed. `ECONNREFUSED`
+does **not** count as blocked: an RST comes from something that received the packet,
+so the path exists and only the port is closed. And every unknown error
+counts as reachable, so that it is not a surprise of all things that opens the gate.
 
-**Der Netzschutz wird nicht mehr entfernt, sondern verengt.** Er wird jetzt bei
-*jedem* Lauf vorgeladen. Ein attestierter Live-Lauf schaltet ihn nicht ab,
-sondern beschränkt TCP auf die Host-Suffixe aus `S4_HOST_ALLOWLIST`: der
-Mandanten-Aufruf geht durch, alles andere wirft weiter. Der Metadaten-Endpunkt
-ist eine IP-Literal-Adresse und passt auf kein Host-Suffix — er bleibt also auch
-auf diesem Pfad unerreichbar, und das ist die Eigenschaft, auf die es ankommt.
+**The network protection is no longer removed but narrowed.** It is now preloaded on
+*every* run. An attested live run does not switch it off but
+restricts TCP to the host suffixes from `S4_HOST_ALLOWLIST`: the
+client call goes through, everything else keeps throwing. The metadata endpoint
+is an IP literal address and matches no host suffix — so it stays unreachable
+on this path too, and that is the property that matters.
 
-Ehrlich zu den Grenzen, weil sonst dieselbe Art Fehler zurückkommt: Zwei
-Endpunkte sind eine Stichprobe, kein Beweis einer Deny-by-default-Regel — eine
-Politik, die genau diese zwei blockiert und einen dritten erlaubt, käme durch.
-Und auf dem verengten Pfad bleibt DNS verfügbar, weil der Mandanten-Host
-auflösbar sein muss; DNS-Tunneling ist dort also wieder möglich. Beides steht im
-Code an der Stelle, wo es passiert, nicht nur hier.
+Honest about the limits, because otherwise the same kind of error comes back: two
+endpoints are a sample, not proof of a deny-by-default rule — a
+policy that blocks exactly these two and allows a third would get through.
+And on the narrowed path DNS stays available, because the client host must be
+resolvable; DNS tunnelling is therefore possible again there. Both are stated in the
+code at the place where it happens, not only here.
 
-Was sich für die Produktion heute ändert: nichts. Die Variable ist in
-`deploy.yml` nicht gesetzt, der Live-Modus war und bleibt aus, der Sandbox-Lauf
-blockiert Netz, DNS und `fetch` vollständig wie bisher. Geschlossen wurde eine
-Falle, kein laufender Vorfall — der Weg von „gehärtet" zu „Mandanten-Zugangsdaten
-in einem Prozess mit offenem Egress" war eine einzige Zeile lang.
+What changes for production today: nothing. The variable is not set in
+`deploy.yml`, live mode was and stays off, the sandbox run
+blocks network, DNS and `fetch` completely as before. What was closed was a
+trap, not an ongoing incident — the path from "hardened" to "client credentials
+in a process with open egress" was a single line long.
 
-`tests/runner-egress-guard.spec.ts` hält beide Hälften fest, und die ausgeführte
-ist die, die zählt: drei der dreizehn Tests setzen die Variable auf dieser
-Maschine tatsächlich auf `true` und prüfen, dass der Live-Lauf trotzdem abgelehnt
-wird — weil hier Egress offen ist und die Behauptung damit falsch. Ein Test, der
-nur Quelltext liest, ließe sich von einem Refactor zufriedenstellen, das das
-Verhalten ändert.
+`tests/runner-egress-guard.spec.ts` holds both halves, and the executed one
+is the one that counts: three of the thirteen tests actually set the variable to `true` on this
+machine and check that the live run is rejected nonetheless
+— because egress is open here and the claim is therefore false. A test that
+only reads source code could be satisfied by a refactor that changes the
+behaviour.
 
-E08-F01-US01 — die echte Isolation: eigener Einmal-Runner, minimales Dienstkonto,
-nachgewiesene Egress-Regeln — bleibt offen und ist Infrastrukturarbeit in GCP.
+E08-F01-US01 — the real isolation: a dedicated one-off runner, minimal service account,
+proven egress rules — stays open and is infrastructure work in GCP.
 
 ## [v2.9.0] — 2026-09-10
 
-### Nachprüfbar durch jemanden, der nicht wir ist
+### Verifiable by someone who is not us
 
-Drei Behauptungen, die das Produkt gemacht hat und die bisher nur wir selbst
-prüfen konnten. Keine davon war ein Rechenfehler — die Zahlen stimmten. Was
-jedes Mal fehlte, war die Möglichkeit für jemanden von außen, das nachzuvollziehen.
+Three claims the product made that until now only we ourselves could
+check. None of them was a calculation error — the numbers were right. What
+was missing each time was the possibility for someone from outside to retrace it.
 
-**„Jeder kann das prüfen" stand auf der Seite, während jede Signatur HMAC-SHA256
-gegen `AUDIT_SIGNING_KEY` war.** HMAC ist symmetrisch: Wer eine Signatur prüfen
-kann, kann sie auch fälschen — die einzige Stelle auf der Welt, die ein
-Audit-Pack verifizieren konnte, war der Server, der es ausgestellt hat. Ein
-Prüfer hätte nichts prüfen können, ohne die Mittel zum Fälschen in die Hand
-gedrückt zu bekommen. Der Satz war über niemanden wahr.
+**"Anyone can check this" stood on the page while every signature was HMAC-SHA256
+against `AUDIT_SIGNING_KEY`.** HMAC is symmetric: whoever can check a signature
+can also forge it — the only place in the world that could verify an
+audit pack was the server that issued it. An
+auditor could not have checked anything without being handed the means to
+forge. The sentence was true of nobody.
 
-Ed25519 läuft jetzt **neben** dem HMAC, nie an seiner Stelle. Bereits
-ausgestellte Packs verifizieren weiter wie bisher; neue tragen beides, über exakt
-denselben String, damit die zwei nie uneinig darüber werden können, was signiert
-wurde. Der öffentliche Schlüssel liegt unauthentifiziert unter
-`/.well-known/clean-core-io-signing.json`, und `scripts/verify-pack.mjs` prüft
-ein Pack dagegen — ohne Konto, ohne Geheimnis und ohne Aufruf bei uns außer dem
-Abruf dieses Schlüssels. Jeder Hash wird aus dem ZIP neu abgeleitet, statt dem
-Manifest zu glauben, das ihn beschreibt.
+Ed25519 now runs **alongside** the HMAC, never in its place. Packs already
+issued keep verifying as before; new ones carry both, over exactly
+the same string, so that the two can never disagree about what was
+signed. The public key sits unauthenticated at
+`/.well-known/clean-core-io-signing.json`, and `scripts/verify-pack.mjs` checks
+a pack against it — without an account, without a secret and without any call to us apart from
+fetching that key. Every hash is re-derived from the ZIP instead of trusting the
+manifest that describes it.
 
-Der private Schlüssel ist absichtlich optional. Ohne `AUDIT_SIGNING_PRIVATE_KEY`
-ändert sich nichts: nur HMAC, kein `signatureEd25519`-Feld, und der
-Well-Known-Endpunkt antwortet mit 503 und sagt das — statt ein leeres
-Schlüsselset auszuliefern, das ein Prüfer als „widerrufen" lesen könnte. Das geht
-also aus, bevor irgendein Schlüssel existiert, und an dem Tag, an dem das Secret
-gesetzt wird, tragen Packs die zweite Signatur ohne Codeänderung.
+The private key is optional on purpose. Without `AUDIT_SIGNING_PRIVATE_KEY`
+nothing changes: HMAC only, no `signatureEd25519` field, and the
+well-known endpoint answers 503 and says so — instead of serving an empty
+key set that an auditor could read as "revoked". So this ships
+before any key exists, and on the day the secret is
+set, packs carry the second signature without a code change.
 
-Die Key-ID wird aus dem Schlüssel abgeleitet — sechzehn Hex aus SHA-256 über die
-rohen öffentlichen Bytes — im Aussteller, in der Verify-Route und im CLI
-gleichermaßen. Eine konfigurierte ID kann den falschen Schlüssel benennen, und
-eine ID, die über ihren Schlüssel lügt, ist schlimmer als gar keine. Sie macht
-außerdem Rotation sichtbar: ein neuer Schlüssel taucht als neue ID in jedem Pack
-auf.
+The key ID is derived from the key — sixteen hex from SHA-256 over the
+raw public bytes — in the issuer, in the verify route and in the CLI
+alike. A configured ID can name the wrong key, and
+an ID that lies about its key is worse than none at all. It also
+makes rotation visible: a new key shows up as a new ID in every pack.
 
-Ende zu Ende geprüft statt in Einzelteilen: ein echtes Pack verifiziert (Exit 0);
-dasselbe Pack mit einer geänderten Datei nennt diese Datei und scheitert
-(Exit 1); dasselbe Pack gegen einen fremden Schlüssel scheitert an der Signatur
-und warnt, dass die IDs auseinandergehen. Die erste Fassung des CLI warnte auch
-bei korrekter Prüfung vor einem ID-Konflikt — eine Warnung, die im Erfolgsfall
-feuert, bringt Leuten bei, Warnungen zu ignorieren.
+Checked end to end instead of in pieces: a real pack verifies (exit 0);
+the same pack with one changed file names that file and fails
+(exit 1); the same pack against a foreign key fails on the signature
+and warns that the IDs diverge. The first version of the CLI also warned
+about an ID conflict when the check was correct — a warning that fires on success
+teaches people to ignore warnings.
 
-**Zwei unabhängige Code-Reviews haben im September dieselbe Priorität-0-Meldung
-geschrieben, und beide lagen falsch.** SAPs Klassifikationsdatei nennt CL_BCS
-einen `classicAPI`, die Seite vergibt D — also müsse der Release-Status die
-Klassifikation zu Unrecht überstimmen. Die Begründung stand im Doc-Kommentar
-direkt über der Funktion, den keines der beiden Reviews geöffnet hat. Gegen die
-Artefakte nachgerechnet statt dem Kommentar geglaubt: 21 der 22 strittigen
-Objekte tragen einen expliziten Nachfolger, eines nicht — genau wie dort steht.
-Level B heißt „akzeptabel, wo es keinen A-Weg gibt"; wo SAP den A-Weg benennt,
-ist B die falsche Antwort.
+**Two independent code reviews wrote the same priority-0 report in September,
+and both were wrong.** SAP's classification file calls CL_BCS
+a `classicAPI`, the page assigns D — so the release status supposedly overrules the
+classification wrongly. The reasoning stood in the doc comment
+directly above the function, which neither of the two reviews opened. Recalculated against the
+artefacts instead of believing the comment: 21 of the 22 disputed
+objects carry an explicit successor, one does not — exactly as it says there.
+Level B means "acceptable where there is no A path"; where SAP names the A path,
+B is the wrong answer.
 
-An der Bewertung ändert sich also nichts. Was der Vorgang zeigt: die Regel ist
-aus ihrem Ergebnis nicht lesbar. Zwei sorgfältige Leser haben sie aus dem
-Quelltext rekonstruiert und beide falsch herum. Ein Agent, dem man eines der
-Reviews vorlegt, hätte vier Zeilen umsortiert und damit 22 Objekte still neu
-bewertet.
+So nothing changes in the grading. What the episode shows: the rule cannot be
+read from its result. Two careful readers reconstructed it from the
+source and both got it the wrong way round. An agent handed one of the
+reviews would have reordered four lines and thereby silently regraded 22
+objects.
 
-Also ist sie jetzt sichtbar. `GradedObject` trägt `cloudView` und `classicView`
-neben der Note — rein informativ, sie leiten nichts ab. Objektseiten zeigen eine
-zweispaltige Tafel, die jede der beiden SAP-Dateien benennt, was sie sagt und was
-das bedeutet; bei den 22 Objekten, wo sie sich widersprechen, erklärt eine Notiz,
-warum der Release-Status entscheidet. Und `/method/levels` veröffentlicht die
-Vorrangregel in der Reihenfolge, in der der Code sie prüft, jeden Zweig mit
-seinem Grund, den strittigen Fall an CL_BCS durchgerechnet statt behauptet. Die
-Seite sagt ausdrücklich, dass das eine Auslegung von SAPs Level-Definitionen ist
-und kein Zitat, und dass man das anders sehen kann — *versehentlich* anders sehen
-ist das, was hier aufhören soll.
+So it is now visible. `GradedObject` carries `cloudView` and `classicView`
+next to the grade — purely informative, they derive nothing. Object pages show a
+two-column panel that names each of the two SAP files, what it says and what
+that means; for the 22 objects where they contradict each other, a note explains
+why the release status decides. And `/method/levels` publishes the
+precedence rule in the order in which the code checks it, each branch with
+its reason, the disputed case worked through on CL_BCS instead of asserted. The
+page says explicitly that this is an interpretation of SAP's level definitions
+and not a quote, and that one can see it differently — seeing it differently *by accident*
+is what is supposed to stop here.
 
-Jede Zahl dort kommt aus `getLevelDerivationCensus()`, zur Build-Zeit über beide
-Artefakte gerechnet. Nichts ist eingetippt, damit ein Katalog-Sync die Seite
-nicht still falsch über ihre eigenen Daten machen kann. Darunter war ein Satz,
-der durch Arithmetik fast gelogen hätte: „21 der 22 tragen einen Nachfolger"
-stand als `total - 1` im Code — heute wahr, und beim ersten Datenstand, der sich
-bewegt, unverändert falsch auf der Seite.
+Every number there comes from `getLevelDerivationCensus()`, computed at build time over both
+artefacts. Nothing is typed in, so that a catalog sync cannot make the page
+silently wrong about its own data. Among them was a sentence
+that arithmetic nearly made a lie: "21 of the 22 carry a successor"
+stood as `total - 1` in the code — true today, and with the first data state that
+moves, unchanged and wrong on the page.
 
-**Die Analyse-Erzählung nennt jetzt Codezeilen — oder sagt, dass sie es nicht
-kann.** Beide Roadmaps dieses Produkts beginnen mit derselben Bedingung: eine
-Business-Narrative ohne Zeilenbezug ist eine LLM-Meinung, und LLM-Meinungen
-verkauft in diesem Markt bereits jede Beratung. Beide terminieren die Umsetzung
-dann auf Januar 2027, hinter zwei vollen Releases, geschätzt auf ein bis drei
-Wochen. Eine Vorbedingung, die man sechzehn Monate schiebt, ist keine.
+**The analysis narrative now names lines of code — or says that it
+cannot.** Both roadmaps of this product start with the same condition: a
+business narrative without line reference is an LLM opinion, and in this market every consultancy
+already sells LLM opinions. Both then schedule the implementation
+for January 2027, behind two full releases, estimated at one to three
+weeks. A precondition that is pushed back sixteen months is not one.
 
-Die Schätzung war teuer falsch in die billige Richtung: `EvidenceFinding` trägt
-`id`, `lineStart` und `lineEnd`, seit die Engine geschrieben wurde. Alles, worauf
-das Modell zeigen könnte, war längst da — es fehlte der Vertrag. Das Modell wird
-jetzt aufgefordert, jeden Satz über *dieses* Programm mit `[F-017]` oder
-`[L380-412]` zu beenden, und jede Angabe wird geprüft statt geglaubt: eine
-Finding-ID muss im übergebenen Evidenzbericht existieren, ein Zeilenbereich in
-die Datei fallen. Allgemeine Ratschläge bleiben absichtlich unbelegt, und das ist
-ein gültiges Ergebnis.
+The estimate was expensively wrong in the cheap direction: `EvidenceFinding` has carried
+`id`, `lineStart` and `lineEnd` since the engine was written. Everything
+the model could point to was long there — what was missing was the contract. The model is
+now asked to end every sentence about *this* program with `[F-017]` or
+`[L380-412]`, and every reference is checked instead of believed: a
+finding ID must exist in the evidence report passed in, a line range must fall
+within the file. General advice stays unevidenced on purpose, and that is
+a valid result.
 
-Der Unterschied, den der Parser hält, ist der zwischen *fehlend* und *erfunden*.
-Ein Satz ohne Beleg ist ehrlich unbelegt; ein Satz mit `[F-999]` trägt einen
-Beleg zur Schau, den er nicht hat. Beides zu „nicht verankert" zusammenzufassen
-würde den ernsten Fall im harmlosen verstecken — sie werden getrennt gezählt,
-verschieden eingefärbt, und die erfundene Angabe wird auf dem Bildschirm benannt.
+The difference the parser holds is the one between *missing* and *made up*.
+A sentence without evidence is honestly unevidenced; a sentence with `[F-999]` puts on show
+evidence it does not have. Merging both into "not anchored"
+would hide the serious case in the harmless one — they are counted separately,
+coloured differently, and the made-up reference is named on screen.
 
-Gelöscht wird nichts. Ein unbelegter Satz bleibt stehen, grau — ihn zu entfernen
-ließe Prosa zurück, die vollständig belegt aussieht und deren Lücken unsichtbar
-sind, also genau das Versagen, gegen das die Anker existieren. Und die Quote ist
-`null` über null Sätzen, nicht 100 %. Diese Art von Zahl ist die, die aus dieser
-Codebasis immer wieder heraus muss.
+Nothing is deleted. An unevidenced sentence stays, grey — removing it
+would leave prose that looks fully evidenced and whose gaps are
+invisible, that is, exactly the failure the anchors exist against. And the rate is
+`null` over zero sentences, not 100 %. This kind of number is the one that has to
+be got out of this codebase again and again.
 
-Die Prompt-Anweisung steht neben dem Parser, der sie durchsetzt, und ein Test
-schickt jedes Beispiel aus der Anweisung durch den Validator: ein Prompt, dessen
-eigene Beispiele der Validator ablehnt, erzieht jeden Nachfolger dazu, den
-Validator zu lockern.
+The prompt instruction stands next to the parser that enforces it, and a test
+sends every example from the instruction through the validator: a prompt whose
+own examples the validator rejects trains every successor to
+loosen the validator.
 
-**Und der Schlüssel wäre in Produktion nie angekommen.** `.env.example`
-dokumentiert `AUDIT_SIGNING_PRIVATE_KEY`, `.github/workflows/deploy.yml` hat ihn
-nicht durchgereicht. Der Satz „an dem Tag, an dem das Secret gesetzt wird, tragen
-Packs die zweite Signatur ohne Codeänderung" wäre also für genau die Umgebung
-falsch gewesen, für die er zählt: Cloud Run hätte die Variable nie gesehen, der
-Well-Known-Endpunkt hätte dauerhaft 503 geantwortet, und niemand hätte etwas
-prüfen können. Er wird jetzt durchgereicht — und bewusst *nicht* in „Assert
-Production Secrets Configured" aufgenommen, weil er optional bleibt. Ein Feature,
-das zum Aktivieren eine Workflow-Änderung braucht, ist nicht optional, sondern
-unerreichbar.
+**And the key would never have arrived in production.** `.env.example`
+documents `AUDIT_SIGNING_PRIVATE_KEY`, `.github/workflows/deploy.yml` did not
+pass it through. The sentence "on the day the secret is set,
+packs carry the second signature without a code change" would thus have been
+wrong for exactly the environment where it counts: Cloud Run would never have seen the variable, the
+well-known endpoint would have answered 503 permanently, and nobody could have
+checked anything. It is now passed through — and deliberately *not* added to "Assert
+Production Secrets Configured", because it stays optional. A feature
+that needs a workflow change to activate is not optional but
+unreachable.
 
-### Ein kritisches RCE, das seit Tagen in Produktion stand
+### A critical RCE that had been in production for days
 
-Der Push nach `dev` hat beide Sicherheits-Gates rot gemacht — und zwar zu Recht.
-Nichts davon kam aus diesem Release: an den Abhängigkeiten hat es nichts
-geändert. Es sind neue Advisories, und Security CI stand deshalb schon seit dem
-07.09. rot, ohne dass ein Push das sichtbar gemacht hätte.
+The push to `dev` turned both security gates red — and rightly so.
+None of it came from this release: it changed nothing in the
+dependencies. These are new advisories, and Security CI had therefore already been red since
+07.09. without a push making that visible.
 
-**Next.js selbst, kritisch, zwei unauthentifizierte RCEs**
-(`GHSA-p293-qw3h-jr36`, `GHSA-2xp9-vwfh-vxw4`). Der verwundbare Bereich reicht
-bis 15.5.23, festgenagelt war 15.5.22 — also mitten drin, und damit auch das,
-was auf clean-core.io lief. Eines der beiden betrifft nur Windows-Hosts und geht
-Cloud Run nichts an; das andere sitzt in der Image-Optimization-API und schon.
-Jetzt 15.5.25 aus der Backport-Linie: ein Patch-Schritt innerhalb 15.5, kein
-Sprung auf 16. `npm audit fix --force` hätte auf 15.5.25 „außerhalb des
-angegebenen Bereichs" *herabgestuft* — dieselbe Version, aber als Downgrade
-verkauft, weil die Pin exakt war.
+**Next.js itself, critical, two unauthenticated RCEs**
+(`GHSA-p293-qw3h-jr36`, `GHSA-2xp9-vwfh-vxw4`). The vulnerable range extends
+up to 15.5.23, pinned was 15.5.22 — right in the middle, and with it what
+was running on clean-core.io. One of the two affects only Windows hosts and is no concern of
+Cloud Run; the other sits in the image optimization API and is.
+Now 15.5.25 from the backport line: a patch step within 15.5, no
+jump to 16. `npm audit fix --force` would have *downgraded* to 15.5.25 "outside the
+stated range" — the same version, but sold as a downgrade,
+because the pin was exact.
 
-**Und zweimal derselbe Fehler wie bei `fast-uri` in v2.8.6: ein Override, dessen
-Untergrenze genau auf der Lücke sitzt.** `sharp` stand auf `^0.35.3`, verwundbar
-ist `<0.35.4` — die Grenze hielt die Lücke fest, statt sie auszuschließen, und
-`^` allein hebt nichts an, was den Bereich schon erfüllt. Ebenso `js-yaml` unter
-`firebase-tools` auf `^3.15.1` bei einem Advisory für `>=3.0.0 <3.15.2`. Beide
-Böden angehoben, beide lösen jetzt auf die geflickte Version auf. Dass dieselbe
-Form zum dritten Mal auftaucht, ist der eigentliche Befund: ein Caret über einer
-verwundbaren Version liest sich wie Pflege und ist keine.
+**And twice the same mistake as with `fast-uri` in v2.8.6: an override whose
+lower bound sits exactly on the hole.** `sharp` stood at `^0.35.3`, vulnerable
+is `<0.35.4` — the bound held the hole in place instead of excluding it, and
+`^` alone raises nothing that already satisfies the range. Likewise `js-yaml` under
+`firebase-tools` at `^3.15.1` with an advisory for `>=3.0.0 <3.15.2`. Both
+floors raised, both now resolve to the patched version. That the same
+form turns up for the third time is the actual finding: a caret over a
+vulnerable version reads like maintenance and is not.
 
-Das Lockfile wurde mit der passenden Toolchain erzeugt (`node@22` + `npm@11`,
-`--package-lock-only`) und mit `npm ci --dry-run` gegengeprüft, weil npm 10.5
-unter lokalem Node 20 verschachtelte Override-Einträge stillschweigend
-fallenlässt und der Deploy dann erst in Cloud Build stirbt. Beide verschachtelten
-`js-yaml`-Einträge sind nachweislich erhalten. Beide Gates laufen jetzt grün:
-`npm audit --omit=dev --audit-level=high` ohne Befund, `audit-ci` gegen die leere
-Allowlist bestanden. Die sieben verbliebenen Moderates (`mermaid`, `qs`/`express`,
-`protobufjs`) liegen unter der Schwelle und bleiben offen.
+The lockfile was generated with the matching toolchain (`node@22` + `npm@11`,
+`--package-lock-only`) and cross-checked with `npm ci --dry-run`, because npm 10.5
+under local Node 20 silently drops nested override entries
+and the deploy then only dies in Cloud Build. Both nested
+`js-yaml` entries are demonstrably preserved. Both gates now run green:
+`npm audit --omit=dev --audit-level=high` without findings, `audit-ci` against the empty
+allowlist passed. The seven remaining moderates (`mermaid`, `qs`/`express`,
+`protobufjs`) are below the threshold and stay open.
 
-### Drei Dinge, die dieses Release nicht durchgelassen hätte
+### Three things this release would not have let through
 
-**Das Lint-Gate stand bei 679 gegen ein Maximum von 677.** Zwei neue Warnungen
-aus v2.8.6, beide `(r: any)` in der Testing-Seite — überflüssig, denn
-`testResults` ist längst `TestCase[]`. Ohne die Annotation prüft TypeScript die
-Statusvergleiche gegen die Union, die v2.8.6 gerade erst eingeführt hat: ein
-`'passed'` mit kleinem p scheitert jetzt am Build, statt still null zu zählen.
-Sechs Warnungen weg, Stand 673, und die Obergrenze auf 673 nachgezogen — eine
-Grenze über dem tatsächlichen Stand erlaubt genau den Rückschritt, gegen den sie
-gesetzt wurde.
+**The lint gate stood at 679 against a maximum of 677.** Two new warnings
+from v2.8.6, both `(r: any)` in the Testing page — superfluous, because
+`testResults` has long been `TestCase[]`. Without the annotation TypeScript checks the
+status comparisons against the union v2.8.6 had only just introduced: a
+`'passed'` with a lower-case p now fails the build instead of silently counting zero.
+Six warnings gone, now at 673, and the ceiling pulled down to 673 — a
+limit above the actual count allows exactly the regression it was
+set against.
 
-**`/method/levels` stand in der Sitemap und fehlte in der Content-Datums-Karte.**
-`contentDate()` fällt für unbekannte Routen auf das Release-Datum zurück — die
-neue Seite hätte ihr `lastmod` also vom Deploy bekommen, was v2.7.2 gerade
-abgestellt hat.
+**`/method/levels` was in the sitemap and missing from the content date map.**
+`contentDate()` falls back to the release date for unknown routes — so the
+new page would have got its `lastmod` from the deploy, which v2.7.2 had just
+stopped.
 
-**Und die Karte selbst war seit v2.7.2 nicht neu erzeugt worden.** Beim Neubau
-rücken 22 weitere Routen auf den 31.08.2026: das ist der Tag, an dem v2.7.2
-`withTwitterCard()` über alle Seiten gezogen hat. Die Datei ist generiert und
-sagt das auch, von Hand zu ergänzen war also keine Option — und ein `lastmod`,
-das behauptet, `/about` habe sich zuletzt am 07.07. geändert, war vorher schon
-falsch.
+**And the map itself had not been regenerated since v2.7.2.** On rebuild
+22 more routes move to 31.08.2026: that is the day v2.7.2
+rolled `withTwitterCard()` out across all pages. The file is generated and
+says so, so adding to it by hand was not an option — and a `lastmod`
+claiming `/about` last changed on 07.07. was already
+wrong before.
 
 ## [v2.8.6] — 2026-09-08
 
-### Stillstellen
+### Standing still
 
-Kein neues Feature. Vier Stellen, an denen das Produkt etwas behauptet hat, das
-der Code nicht deckt — und eine Lizenz, ohne die eine fünfte Behauptung
-rechtlich leer war.
+No new feature. Four places where the product claimed something that
+the code does not back — and a licence without which a fifth claim was
+legally empty.
 
-**Der Testschritt hat „verified" zu Tests gesagt, die nie gelaufen sind.** Zwei
-Wege führten dorthin. Eine TAP-Zeile mit der Direktive `# SKIP` oder `# TODO`
-beginnt laut Protokoll mit `ok` — das ist die Schreibweise für „wurde nicht
-ausgeführt", nicht für „bestanden" —, und ein Parser, der nur auf das erste Wort
-schaut, hat sie als bestanden gelesen. Und ein Testfall, zu dem der Runner
-überhaupt nichts gemeldet hat, erbte seinen Status aus dem Exitcode des
-Gesamtlaufs, mit der Meldung „Verified by Node.js Test Runner". Beides trug bis
-auf die Delivery-Seite, wo neben einem grünen Haken „Clean AUnit local test
-doubles verified" stand — gesteuert allein von der Zahl *erzeugter* Testfälle.
+**The testing step said "verified" about tests that never ran.** Two
+paths led there. A TAP line with the directive `# SKIP` or `# TODO`
+begins with `ok` according to the protocol — that is the notation for "was not
+executed", not for "passed" — and a parser that only looks at the first word
+read it as passed. And a test case about which the runner
+reported nothing at all inherited its status from the exit code of the
+overall run, with the message "Verified by Node.js Test Runner". Both carried through
+to the Delivery page, where "Clean AUnit local test
+doubles verified" stood next to a green tick — driven solely by the number of *generated*
+test cases.
 
-Es gibt jetzt zwei weitere Zustände, `Not run` und `Simulated`, und nur `Passed`
-zählt als verifiziert. Der ABAP-Mock, der jeden ausgewählten Test auf `Passed`
-gesetzt und `[SIMULATED]` in die Meldung geschrieben hat, setzt jetzt den Status,
-den die Meldung schon sagte. Die Quote im QA-Dashboard rechnet über die Tests mit
-Urteil statt über alle, weil eine Bestehensquote über nie gelaufene Tests keine
-Quote ist, und Tests ohne Urteil bekommen eine eigene Farbe statt der roten für
-Fehlschlag — „wir wissen es nicht" ist keine bestandene und keine gescheiterte
-Prüfung.
+There are now two more states, `Not run` and `Simulated`, and only `Passed`
+counts as verified. The ABAP mock, which set every selected test to `Passed`
+and wrote `[SIMULATED]` into the message, now sets the status
+the message already stated. The rate in the QA dashboard is computed over the tests with
+a verdict instead of over all of them, because a pass rate over tests that never ran is no
+rate, and tests without a verdict get their own colour instead of the red for
+failure — "we don't know" is neither a passed nor a failed
+check.
 
-**Die TCO-Ansicht konnte `Infinity` anzeigen.** Zwei Divisionen ohne Wächter,
-beide von den Reglern der Seite aus erreichbar: eine Investition von 0 machte den
-ROI unendlich, und Code, der den Zielwert schon erreicht, spart nichts pro Jahr
-und machte die Amortisation unendlich. Beide liefern jetzt „kein Wert" mit einer
-Zeile, die sagt warum.
+**The TCO view could show `Infinity`.** Two divisions without a guard,
+both reachable from the page's sliders: an investment of 0 made the
+ROI infinite, and code that already reaches the target value saves nothing per year
+and made the payback infinite. Both now return "no value" with a
+line that says why.
 
-**Das Deploy-Gate war lockerer als das Security-CI.** Der Deploy blockierte nur
-bei `critical`, die Security-CI bei `high` — zwei Tore mit zwei Schwellen, von
-denen das strengere damit unverbindlich ist. Am 7. September war die Security-CI
-rot wegen sechs High-Advisories in `fast-uri` und `browserslist`, und ein Deploy
-desselben Commits wäre durchgelaufen. Eine Schwelle jetzt, und es ist die
-strengere.
+**The deploy gate was looser than the security CI.** The deploy only blocked
+on `critical`, the security CI on `high` — two gates with two thresholds,
+which makes the stricter one non-binding. On 7 September the security CI
+was red because of six high advisories in `fast-uri` and `browserslist`, and a deploy
+of the same commit would have gone through. One threshold now, and it is the
+stricter one.
 
-**Und eine `LICENSE`.** Es gab keine. Code ohne Lizenzdatei ist „alle Rechte
-vorbehalten", ganz gleich was eine Roadmap verspricht — das Self-Hosting-
-Versprechen war rechtlich nicht einlösbar. Das Repository steht jetzt unter
-Apache-2.0, mit `NOTICE` für die synchronisierten SAP-Artefakte und die
-nominative Markennutzung. Die README sagte bisher korrekt „proprietary — all
-rights reserved"; sie sagt jetzt, was gilt.
+**And a `LICENSE`.** There was none. Code without a licence file is "all rights
+reserved", whatever a roadmap promises — the self-hosting
+promise could not be honoured legally. The repository is now under
+Apache-2.0, with `NOTICE` for the synchronised SAP artefacts and the
+nominative trademark use. The README previously said, correctly, "proprietary — all
+rights reserved"; it now says what applies.
 
-### Die Umfrage hat Mail-Gateways befragt, nicht Menschen
+### The survey questioned mail gateways, not people
 
-Zwölf der dreizehn Antworten auf die Kampagne vom 2. September entstanden
-zwischen 07:13:39 und 07:15:01 — innerhalb der dreiundachtzig Sekunden, die der
-Versand an siebenunddreißig Empfänger gedauert hat. Vier bis zwölf Sekunden
-zwischen Linkabruf und Antwort, jede nur auf die Frage, die als Link in der Mail
-stand, keine auf die Fragen, die auf der Seite leben.
+Twelve of the thirteen answers to the campaign of 2 September came about
+between 07:13:39 and 07:15:01 — within the eighty-three seconds the
+sending to thirty-seven recipients took. Four to twelve seconds
+between link fetch and answer, each only to the question that was in the mail as a link,
+none to the questions that live on the page.
 
-Die Abwehr war gebaut und zielte auf die falsche Hälfte. Der Vote-Endpunkt ist
-bewusst POST, mit der Begründung, ein Gateway führe keine Skripte aus. Defender
-Safe Links, Proofpoint und Mimecast öffnen jeden Link in einem Headless-Browser
-und führen das JavaScript aus, um Phishing zu erkennen — und die Seite schickte
-die Antwort aus der Mail in einem `useEffect` beim Mounten ab, ohne jede
-Interaktion.
+The defence was built and aimed at the wrong half. The vote endpoint is
+deliberately POST, on the reasoning that a gateway does not execute scripts. Defender
+Safe Links, Proofpoint and Mimecast open every link in a headless browser
+and execute the JavaScript to detect phishing — and the page submitted
+the answer from the mail in a `useEffect` on mount, without any
+interaction.
 
-Der Effekt ist weg. Die getippte Antwort kommt als Vorauswahl an, sichtbar als
-solche und nicht mitgezählt, bis ein echter Druck sie bestätigt; jeder Druck wird
-auf `isTrusted` geprüft, was bei einem per Skript ausgelösten Ereignis falsch ist.
-Die Mail-Frage wird jetzt auf der Seite gerendert — vorher war sie ausschließlich
-über den Auto-POST beantwortbar. Zählung und Rückschau lesen aus einer eigenen
-Kopie dessen, was der Server tatsächlich hat, damit die Seite nichts als
-gespeichert ausweisen kann, bevor es das ist. Die Einladung sagte zweimal „One
-tap records it"; das stimmt so nicht mehr und steht auch nicht mehr da.
+The effect is gone. The tapped answer arrives as a preselection, visible as
+such and not counted until a real press confirms it; every press is
+checked for `isTrusted`, which is false for an event triggered by script.
+The mail question is now rendered on the page — before, it could only be answered
+via the auto-POST. Count and review read from their own
+copy of what the server actually has, so that the page cannot show anything as
+saved before it is. The invitation said "One
+tap records it" twice; that is no longer true like that and no longer stands there either.
 
-Zustellung war nie das Problem: alle 55 Ereignisse im Webhook stehen auf
-`email.delivered`, kein Bounce, keine Beschwerde. Was die Umfrage klären sollte —
-Posteingang oder Spam — ist weiterhin offen, denn sie fragt über denselben Kanal,
-den sie misst.
+Delivery was never the problem: all 55 events in the webhook are at
+`email.delivered`, no bounce, no complaint. What the survey was meant to settle —
+inbox or spam — is still open, because it asks over the same channel
+it measures.
 
-### Abhängigkeiten
+### Dependencies
 
-Sechs High-Advisories, die die Security-CI seit dem 7. September rot hielten.
-`fast-uri` stand bereits in `overrides`, gepinnt auf `^3.1.5` — und `3.0.0–3.1.5`
-ist genau der verwundbare Bereich, der Override hielt die Lücke fest. Boden jetzt
-auf `^3.1.6`, `browserslist` neu auf `^4.28.7`; beide Elternpakete akzeptierten
-die gepatchten Versionen ohnehin, es brauchte keinen Major-Bump.
+Six high advisories that had kept the security CI red since 7 September.
+`fast-uri` was already in `overrides`, pinned to `^3.1.5` — and `3.0.0–3.1.5`
+is exactly the vulnerable range, the override held the hole in place. Floor now
+at `^3.1.6`, `browserslist` newly at `^4.28.7`; both parent packages accepted
+the patched versions anyway, no major bump was needed.
 
-Dazu `dompurify` von 3.4.11 auf 3.4.15. Kein High und kein Gate-Blocker, aber es
-ist die XSS-Abwehr hinter `lib/sanitize-html.ts`, und eine der beiden Lücken
-lässt einen abgetrennten Teilbaum ausführbar zurück.
+Plus `dompurify` from 3.4.11 to 3.4.15. Not a high and not a gate blocker, but it
+is the XSS defence behind `lib/sanitize-html.ts`, and one of the two holes
+leaves a detached subtree executable.
 
 ## [v2.8.5] — 2026-09-01
 
-### Die Umfrage, einen Tag vor dem Versand
+### The survey, one day before sending
 
-Vier Änderungen, und keine davon ist ein Defekt. Drei sind Gestaltungsfehler, die
-erst auffallen, wenn ein Mensch die Sache benutzt, und eine ist eine Grenze beim
-Anbieter, die niemand gesehen hätte, weil sie lautlos Empfänger verschluckt.
+Four changes, and none of them is a defect. Three are design mistakes that
+only show once a person uses the thing, and one is a limit at the
+provider that nobody would have seen, because it silently swallows recipients.
 
-**Die Einladung bedankt sich jetzt zuerst.** Sie begann mit „vier Kandidaten
-stehen zur Wahl" — sachlich richtig und für eine Mail, die um einen Gefallen
-bittet, eine kalte erste Zeile. Davor steht jetzt ein Dank, und zwar einer, der
-für alle 36 Empfänger stimmt: *„Thank you for using Clean-Core.io — and if you
-have not got round to it yet, thank you for signing up anyway."* Die zweite
-Hälfte ist nicht Höflichkeit, sondern Genauigkeit. Ein Teil dieser Liste hat noch
-nie eine Analyse gestartet — das ist der Grund, aus dem die Umfrage überhaupt
-existiert —, und ein pauschales „danke, dass du es nutzt" wäre für genau diese
-Leser nachweislich falsch.
+**The invitation now says thank you first.** It began with "four candidates
+are up for a vote" — factually correct, and for a mail that asks
+a favour, a cold first line. Now a thank-you stands before it, and one that
+holds for all 36 recipients: *"Thank you for using Clean-Core.io — and if you
+have not got round to it yet, thank you for signing up anyway."* The second
+half is not politeness but accuracy. Part of this list has
+never started an analysis — that is the reason the survey exists at
+all — and a blanket "thanks for using it" would be demonstrably false for exactly these
+readers.
 
-**Der einzige Knopf auf der Seite sah aus wie „Absenden".** Jede Frage speichert
-beim Antippen, ohne Knopf und ohne Seitenwechsel. Nur das Freitextfeld kann das
-nicht, denn Getipptes muss absichtlich abgeschickt werden — also hat es einen
-Knopf. Der trug den dunklen Primärstil des Produkts, stand am Fuß eines
-Fragebogens und war ausgegraut, solange nichts getippt war. Das ist die
-Bildsprache von „hier wird das Formular abgeschickt", und wer alles beantwortet
-hatte, sah einen toten Absendeknopf und schloss daraus, dass nichts angekommen
-ist.
+**The only button on the page looked like "Submit".** Every question saves
+on tap, without a button and without a page change. Only the free-text field cannot
+do that, because typed text has to be sent on purpose — so it has a
+button. That button carried the product's dark primary style, stood at the foot of a
+questionnaire and was greyed out as long as nothing was typed. That is the
+visual language of "this is where the form gets submitted", and whoever had answered everything
+saw a dead submit button and concluded that nothing had arrived.
 
-Drei Änderungen, jede mit einer Aufgabe:
+Three changes, each with one job:
 
-1. **Sekundärer Stil statt Primärstil.** Weiß mit Rahmen. Damit hört er auf, die
-   Schlusshandlung der Seite zu sein.
-2. **Der Knopf sitzt in der Box.** Textfeld und Knopf teilen sich eine Umrandung,
-   damit sichtbar ist, wozu er gehört. Beschriftung „Send this note" statt „Send
-   it", und darüber eine Zeile, die es ausspricht: *„Everything above is already
+1. **Secondary style instead of primary style.** White with a border. With that it stops
+   being the page's closing action.
+2. **The button sits in the box.** Text field and button share one outline,
+   so it is visible what it belongs to. Label "Send this note" instead of "Send
+   it", and above it a line that spells it out: *"Everything above is already
    saved — this box is the only thing on the page with a button."*
-3. **Der ausgegraute Zustand schweigt nicht mehr.** Neben dem Knopf steht immer
-   eine der vier Wahrheiten: *nichts getippt, also nichts zu senden — deine
-   Antworten oben sind trotzdem gespeichert* · *noch nicht gesendet* · *gesendet,
-   danke* · *das ging schief*. Ein ausgegrauter Knopf, der sich erklärt, ist
-   nicht dasselbe Ding wie einer, der es nicht tut.
+3. **The greyed-out state is no longer silent.** Next to the button there is always
+   one of the four truths: *nothing typed, so nothing to send — your
+   answers above are saved anyway* · *not sent yet* · *sent,
+   thank you* · *that went wrong*. A greyed-out button that explains itself is
+   not the same thing as one that does not.
 
-Die Bedingung dahinter ist ebenfalls neu und ehrlicher: Der Knopf ist genau dann
-aktiv, wenn im Feld etwas steht, das noch nicht beim Server ist — `comment !==
-sentComment`. Vorher war er an „Feld nicht leer" gekoppelt, was nach dem
-Speichern weiterhin aktiv blieb und eine Korrektur nicht unterscheiden konnte.
+The condition behind it is also new and more honest: the button is active exactly
+when the field holds something that is not yet on the server — `comment !==
+sentComment`. Before, it was tied to "field not empty", which stayed
+active after saving and could not tell a correction apart.
 
-**Die Seite behauptete etwas über Leser, die nichts angetippt hatten.** „Your
-answer is saved" stimmt nur für den, der in der Mail eine Antwortfläche getroffen
-hat. Wer den nackten Link öffnet — eine Weiterleitung, ein zweiter Besuch, der
-Textteil — bekam einen ersten Satz über sich selbst, der nicht stattgefunden hat.
-Die Zeile richtet sich jetzt danach, ob `?q=…&a=…` überhaupt ankam.
+**The page claimed something about readers who had not tapped anything.** "Your
+answer is saved" is only true for someone who hit an answer area in the mail.
+Whoever opens the bare link — a forward, a second visit, the
+text part — got a first sentence about themselves that had not happened.
+The line now depends on whether `?q=…&a=…` arrived at all.
 
-### Der Versand überholte Resend
+### The sending outran Resend
 
-Resend erlaubt zwei Anfragen pro Sekunde. Die Schleife wartete eine Antwort ab und
-startete sofort die nächste, was von einem CI-Runner vier bis acht pro Sekunde
-sind. Ein Teil der 36 Nachrichten wäre mit `429` zurückgekommen — und die alte
-Schleife schrieb `FAILED` und ging weiter.
+Resend allows two requests per second. The loop waited for one response and
+immediately started the next, which from a CI runner is four to eight per second.
+Some of the 36 messages would have come back with `429` — and the old
+loop wrote `FAILED` and moved on.
 
-Was das heißt: Diese Leute werden nie gefragt, der Workflow meldet trotzdem
-Erfolg, und die Umfrage schließt nach sieben Tagen, bevor der nächste geplante
-Lauf sie einsammeln könnte. Derselbe Fehlertyp wie die `localhost`-Links von
-gestern — laut in der Wirkung, still im Protokoll.
+What that means: these people are never asked, the workflow still reports
+success, and the survey closes after seven days, before the next scheduled
+run could collect them. The same kind of error as yesterday's `localhost` links —
+loud in its effect, silent in the log.
 
-- **700 ms Pause** zwischen den Nachrichten. Bei 36 Empfängern kostet das 25
-  Sekunden.
-- **Drei Versuche** mit wachsender Wartezeit bei `429` und `5xx`. Ein anderes
-  `4xx` ist die Nachricht selbst und wird nicht wiederholt.
-- **`process.exitCode = 1`**, sobald jemand übrig bleibt. Ein Lauf, bei dem
-  Empfänger fehlen, darf nicht grün sein.
+- **700 ms pause** between messages. With 36 recipients that costs 25
+  seconds.
+- **Three attempts** with growing wait time on `429` and `5xx`. Any other
+  `4xx` is the message itself and is not retried.
+- **`process.exitCode = 1`** as soon as anyone is left over. A run in which
+  recipients are missing must not be green.
 
-### Zustellbarkeit, letzte Prüfung
+### Deliverability, final check
 
-Gegen `8.8.8.8` und gegen die Produktion nachgesehen, nicht aus dem Gedächtnis:
+Checked against `8.8.8.8` and against production, not from memory:
 
-| Prüfung | Stand |
+| Check | Status |
 |---|---|
 | SPF `clean-core.io` | `v=spf1 include:amazonses.com ~all` |
-| DKIM `resend._domainkey` | veröffentlicht, 1024 bit |
+| DKIM `resend._domainkey` | published, 1024 bit |
 | DMARC | `p=reject; rua=mailto:dmarc@clean-core.io; fo=1` |
-| Return-Path `send.clean-core.io` | eigener SPF + `feedback-smtp.eu-west-1.amazonses.com` → SPF-Ausrichtung |
-| `List-Unsubscribe` + One-Click | gesetzt; `POST /api/unsubscribe` antwortet live mit `200` |
-| Textteil | vorhanden |
-| Bilder, Anhänge, Zählpixel | keine |
-| Links | ausschließlich `clean-core.io` |
-| `GET /api/survey/vote` | `405` — ein Mail-Gateway kann nicht abstimmen |
+| Return-Path `send.clean-core.io` | own SPF + `feedback-smtp.eu-west-1.amazonses.com` → SPF alignment |
+| `List-Unsubscribe` + One-Click | set; `POST /api/unsubscribe` answers live with `200` |
+| Text part | present |
+| Images, attachments, tracking pixels | none |
+| Links | exclusively `clean-core.io` |
+| `GET /api/survey/vote` | `405` — a mail gateway cannot vote |
 
-Zwei Lücken standen noch offen, beide geschlossen:
+Two gaps were still open, both closed:
 
-**Die Einladung nannte keine Postanschrift.** `lib/welcome-email.ts` trägt sie
-seit dem ersten Versand, diese Vorlage nicht — und das ist herum verkehrt: Die
-Willkommensmail ist transaktional, die Umfrage ist Massenpost, und für Massenpost
-ist die Regel geschrieben. Ein benannter Mensch unter einer echten Anschrift ist
-außerdem eines der wenigen Dinge, die ein Filter einer so jungen Domain
-gutschreiben kann.
+**The invitation gave no postal address.** `lib/welcome-email.ts` has carried it
+since the first sending, this template did not — and that is the wrong way round: the
+welcome mail is transactional, the survey is bulk mail, and the rule is written for
+bulk mail. A named person at a real address is
+also one of the few things a filter can credit to such a young
+domain.
 
-**Der Textteil ließ die Abmeldung weg.** Er ist damit schlechter gewesen als der
-HTML-Teil, ausgerechnet für den Leser, der ihn am ehesten sieht — und ein Filter,
-der beide Teile vergleicht, hat keinen Grund, die Abweichung freundlich zu lesen.
-Anschrift und Abmeldelink stehen jetzt in beiden Teilen.
+**The text part left out the unsubscribe.** That made it worse than the
+HTML part, of all things for the reader most likely to see it — and a filter
+that compares both parts has no reason to read the discrepancy kindly.
+Address and unsubscribe link are now in both parts.
 
-**Nicht angefasst, mit Absicht:** Der DKIM-Schlüssel hat 1024 bit; 2048 wäre
-etwas stärker, aber eine Schlüsselrotation am Vorabend eines Versands ist eine
-DNS-Änderung, die morgen um 09:00 mitten in der Verbreitung stehen könnte. Danach,
-nicht davor.
+**Not touched, on purpose:** the DKIM key has 1024 bit; 2048 would be
+somewhat stronger, but a key rotation on the eve of a sending is a
+DNS change that could be in the middle of propagating tomorrow at 09:00. After,
+not before.
 
-### Sechs neue Guards
+### Six new guards
 
-`tests/survey-guard.spec.ts` (28 Prüfungen, alle grün): Anschrift in beiden
-Teilen, Abmeldelink in beiden Teilen, RFC-8058-Kopfzeilen im Versandskript, Pause
-zwischen den Nachrichten, Wiederholung statt Verwerfen bei `429`, roter Lauf bei
-verlorenen Empfängern — und für die Seite: Der Notizknopf trägt nicht
-`bg-gray-950`, und für jeden seiner Zustände existiert ein Text.
+`tests/survey-guard.spec.ts` (28 checks, all green): address in both
+parts, unsubscribe link in both parts, RFC 8058 headers in the send script, pause
+between messages, retry instead of discard on `429`, red run on
+lost recipients — and for the page: the note button does not carry
+`bg-gray-950`, and a text exists for each of its states.
 
 ## [v2.8.4] — 2026-08-31
 
-### Alle drei Testmails enthielten Links auf `localhost:3000`
+### All three test mails contained links to `localhost:3000`
 
-Deshalb ließ sich nicht abstimmen. Die Mail sah richtig aus, Resend nahm sie an,
-der Workflow meldete Erfolg — und jede Antwortfläche zeigte auf den Rechner des
-Lesers.
+That is why voting did not work. The mail looked right, Resend accepted it,
+the workflow reported success — and every answer surface pointed at the
+reader's own machine.
 
-**Warum es niemand sah.** `APP_BASE_URL` in `lib/constants.ts` liest
-`NEXT_PUBLIC_APP_URL` und fällt sonst auf `http://localhost:3000` zurück. Der
-Deploy setzt die Variable für die laufende Anwendung, deshalb sind Willkommens-
-und Admin-Mails aus Cloud Run in Ordnung. Ein Workflow-Schritt erbt davon nichts,
-und `survey-send.yml` setzte sie nicht.
+**Why nobody saw it.** `APP_BASE_URL` in `lib/constants.ts` reads
+`NEXT_PUBLIC_APP_URL` and otherwise falls back to `http://localhost:3000`. The
+deploy sets the variable for the running application, which is why welcome
+and admin mails from Cloud Run are fine. A workflow step inherits none of that,
+and `survey-send.yml` did not set it.
 
-An der Prüfseite lag es nicht: Einfachauswahl, Mehrfachauswahl, Fortschritt und
-Übersicht funktionierten in einem echten Browser gegen Produktion einwandfrei —
-ich hatte die *Seite* geprüft und nie die *Adresse in der Mail*.
+It was not the check page: single choice, multiple choice, progress and
+overview worked flawlessly in a real browser against production —
+I had checked the *page* and never the *address in the mail*.
 
-**Am Mittwoch hätte es alle 36 Empfänger getroffen**, und zwar lautlos: Der
-Versand meldet in beiden Fällen Erfolg. Eine Umfrage mit toten Links ist schlimmer
-als keine — sie verbraucht die eine Gelegenheit zu fragen.
+**On Wednesday it would have hit all 36 recipients**, and silently: the
+sending reports success in both cases. A survey with dead links is worse
+than none — it uses up the one opportunity to ask.
 
-### Drei Reparaturen, nicht eine
+### Three repairs, not one
 
-1. **`survey-send.yml` setzt `NEXT_PUBLIC_APP_URL`.** Behebt den Fall.
-2. **`scripts/send-survey.ts` verweigert den Dienst**, wenn die Basis-URL nicht mit
-   `https://` beginnt. Das ist die Absicherung, die zählt: Sie greift, egal welcher
-   Workflow die Variable künftig vergisst und egal, von wo das Skript läuft.
-3. **Zwei Guards** in `tests/survey-guard.spec.ts` — einer prüft, dass der Workflow
-   eine echte Basis-URL durchreicht, einer, dass die Verweigerung im Skript steht.
+1. **`survey-send.yml` sets `NEXT_PUBLIC_APP_URL`.** Fixes the case.
+2. **`scripts/send-survey.ts` refuses to run** if the base URL does not
+   start with `https://`. That is the safeguard that counts: it applies no matter which
+   workflow forgets the variable in future and no matter where the script runs from.
+3. **Two guards** in `tests/survey-guard.spec.ts` — one checks that the workflow
+   passes a real base URL through, one that the refusal is in the script.
 
-**Die Lehre, und sie ist unangenehm:** am Code war nichts falsch. Der Fehler lebte
-in der Lücke zwischen dem Vorgabewert eines Moduls und der Umgebung eines
-Workflows — genau dort, wo kein Unit-Test hinsieht. Alle Prüfungen dieser Sitzung
-zielten auf die gerenderte Seite und auf die Arithmetik; keine fragte, ob die
-Adresse in der Nachricht überhaupt irgendwohin führt.
+**The lesson, and it is an uncomfortable one:** nothing was wrong with the code. The error lived
+in the gap between a module's default value and a workflow's
+environment — exactly where no unit test looks. All checks in this session
+aimed at the rendered page and at the arithmetic; none asked whether the
+address in the message leads anywhere at all.
 
 ## [v2.8.3] — 2026-08-31
 
-### Die erste echte Benutzung hat zwei Fehler gefunden
+### The first real use found two errors
 
-Beide sind Gestaltungsfehler, keine Defekte — API und Speicherung antworteten die
-ganze Zeit mit `200`. Genau deshalb wären sie ohne einen Menschen an der Mail
-nicht aufgefallen.
+Both are design errors, not defects — API and storage answered with `200` the
+whole time. That is exactly why they would not have been noticed without a human at the mail.
 
-**Die Seite meldete Vollzug, bevor sie irgendetwas fragte.** Überschrift „Thank you
-— that is recorded", darunter ein grünes Bestätigungsfeld, darunter erst die
-Fragen. Das ist die Bildsprache eines Endzustands: auf dem Telefon endet der
-sichtbare Bereich hinter dem Feld, die drei Fragen darunter wirken wie ein Anhang,
-und wer gerade geantwortet hat, schließt daraus, fertig zu sein. Der erste Mensch,
-der es benutzt hat, sagte genau das.
+**The page reported completion before it asked anything.** Heading "Thank you
+— that is recorded", below it a green confirmation box, and only below that the
+questions. That is the visual language of an end state: on the phone the
+visible area ends behind the box, the three questions below look like an appendix,
+and someone who has just answered concludes they are done. The first person
+who used it said exactly that.
 
-Die Seite führt jetzt mit dem, was aussteht, statt mit dem, was erledigt ist:
-Überschrift **„The ballot for version 3.0"**, und an der Stelle des
-Bestätigungsfelds eine **Fortschrittsleiste** — „1 von 4 beantwortet", vier
-Segmente, und der gespeicherte Zustand als kleine Zeile daneben. Eine Zählung
-dessen, was fehlt, kann man nicht für ein Ende halten.
+The page now leads with what is outstanding instead of what is done:
+heading **"The ballot for version 3.0"**, and in place of the
+confirmation box a **progress bar** — "1 of 4 answered", four
+segments, and the saved state as a small line next to it. A count
+of what is missing cannot be mistaken for an end.
 
-**Und der Nutzer sah nirgends, was er insgesamt geantwortet hatte.** Die Auswahl
-war zwar markiert, aber der einzige Beleg für eine Stimme war ein grüner Rahmen
-irgendwo weiter oben. „Hat das gezählt?" ist eine berechtigte Frage, wenn man
-etwas antippt, das nirgendwohin navigiert.
+**And nowhere did the user see what they had answered overall.** The selection
+was marked, but the only proof of a vote was a green border
+somewhere further up. "Did that count?" is a fair question when you
+tap something that navigates nowhere.
 
-Am Seitenende steht jetzt **„Your answers"**: jede Frage mit der eigenen Antwort,
-Mehrfachauswahl mit allen Kreuzen, Unbeantwortetes als „not answered" statt als
-Lücke.
+At the end of the page there is now **"Your answers"**: every question with your own answer,
+multiple choice with all ticks, unanswered ones as "not answered" instead of as a
+gap.
 
-### Die Einladung, halbiert
+### The invitation, halved
 
-151 Wörter statt gut dem Doppelten. Raus sind der Absatz über die Grundlagenarbeit
-der letzten Monate, die Erklärung, warum geraten schlecht wäre, und das
-„What happens with it"-Feld. Was bleibt, sagt dasselbe in vier Blöcken: die
-Überschrift, ein Satz zur Lage, die Frage mit drei Flächen, und der Weg zum ersten
-Lauf. Der Rest ist eine Zeile über Frist und Antwortmöglichkeit.
+151 words instead of a good twice that. Out are the paragraph about the groundwork
+of recent months, the explanation of why guessing would be bad, and the
+"What happens with it" box. What remains says the same in four blocks: the
+heading, one sentence on the situation, the question with three surfaces, and the way to the first
+run. The rest is one line about the deadline and the option to reply.
 
-Die Begründung für die Kürze ist dieselbe wie für alles andere hier: eine Mail,
-die eine Minute Aufmerksamkeit erbittet, darf keine drei Minuten lang sein.
+The reason for the brevity is the same as for everything else here: a mail
+that asks for a minute of attention must not be three minutes long.
 
 ## [v2.8.2] — 2026-08-31
 
-### Die Einladung sagt jetzt, worauf das hier zuläuft
+### The invitation now says where this is heading
 
-Drei Takte statt zwei, und der dritte fehlte:
+Three beats instead of two, and the third was missing:
 
-1. **Auf dem Weg zu 3.0.** Die letzten Monate gingen in die Teile, nach denen
-   niemand namentlich fragt — Beweiskette, Objektkatalog, DSGVO-Löschkaskade, eine
-   lange Liste Korrekturen. Diese Grundlage steht. Die nächste große Fassung ist
-   eine Frage der Richtung, nicht der Reparatur.
-2. **Der Vote entscheidet mit.** Vier Kandidaten, alle belegt und ungebaut. „Ich
-   weiß, was jeder davon kostet. Ich weiß nicht, welchen du benutzen würdest."
-3. **Und ein Schubs, es tatsächlich zu benutzen.** Der Teil, der bisher fehlte.
+1. **On the way to 3.0.** The past months went into the parts that
+   nobody asks for by name — evidence chain, object catalog, GDPR deletion cascade, a
+   long list of corrections. This foundation stands. The next major version
+   is a question of direction, not of repair.
+2. **The vote has a say.** Four candidates, all documented and unbuilt. "I
+   know what each of them costs. I do not know which one you would use."
+3. **And a nudge to actually use it.** The part that was missing so far.
 
-### Wo die unangenehme Tatsache steht
+### Where the uncomfortable fact stands
 
-Dass etliche Konten nie eine Analyse gestartet haben, steht wieder in der Mail —
-aber **zwei Drittel unten, neben einem Link und einer Zeitangabe**, nicht im
-Eröffnungsabsatz als Geständnis.
+That quite a few accounts have never started an analysis is back in the mail —
+but **two thirds down, next to a link and a time estimate**, not in the
+opening paragraph as a confession.
 
-Der Unterschied ist nicht Kosmetik. „Die meisten von euch haben das nie benutzt"
-ist eine Tatsache über den Betreiber im Kostüm einer Tatsache über den Leser, und
-sie bittet um Mitwirkung, während sie erklärt, dass Mitwirkung selten ist. An der
-Stelle, an der sie jetzt steht, leistet derselbe Satz Arbeit: er benennt die
-wahrscheinliche Lage des Lesers, nennt den echten Grund — Anfangen sah nach
-Vorbereitung aus — und beantwortet ihn mit zwei Minuten und einem Knopf statt mit
-einem Argument.
+The difference is not cosmetic. "Most of you have never used this"
+is a fact about the operator dressed as a fact about the reader, and
+it asks for participation while declaring that participation is rare. In the
+place where it now stands, the same sentence does work: it names the reader's
+likely situation, names the real reason — getting started looked like
+preparation — and answers it with two minutes and a button instead of with
+an argument.
 
-Konkret: ein Feld „If you have not run one yet, it is shorter than it looks", mit
-dem Weg über die fertigen ABAP-Beispiele auf dem Dashboard — vollständiger
-Evidenzbericht, RAP- oder CAP-Entwurf und signiertes Audit-Paket in rund zwei
-Minuten, ohne SAP-Verbindung und ohne eigenen Code. Dazu der Verweis auf
-`/first-run` für die, die lieber erst lesen.
+Concretely: a box "If you have not run one yet, it is shorter than it looks", with
+the path via the ready-made ABAP examples on the dashboard — full
+evidence report, RAP or CAP design and signed audit pack in about two
+minutes, without an SAP connection and without your own code. Plus the pointer to
+`/first-run` for those who would rather read first.
 
-Der Betreff heißt jetzt **„On the way to v3.0 — your vote, and a two-minute first
-run"**: beide Gründe zu öffnen stehen darin, und keiner davon ist eine Bitte.
+The subject is now **"On the way to v3.0 — your vote, and a two-minute first
+run"**: both reasons to open it are in it, and neither of them is a request.
 
-Die Stimmzettelfrage heißt nicht mehr „welche davon würdest du nutzen", sondern
-**„Which of these should version 3.0 bring?"** — dieselbe Frage, aber mit der
-Konsequenz sichtbar daneben.
+The ballot question is no longer "which of these would you use" but
+**"Which of these should version 3.0 bring?"** — the same question, but with the
+consequence visible next to it.
 
 ## [v2.8.1] — 2026-08-31
 
-### Der Ton der Einladung, und eine Frage, die etwas zurückgibt
+### The tone of the invitation, and a question that gives something back
 
-**Was raus ist.** Die Einladung erklärte im zweiten Absatz, dass die meisten Konten
-nie eine Analyse gestartet haben. Das ist eine Tatsache über den Betreiber, nicht
-über den Leser — und sie jemandem vorzulegen, dessen Mitwirkung man erbittet, kauft
-nichts. Die Fragen messen es weiterhin genauso gut. Auch die Begründung unter der
-Zustellfrage („niemand hier weiß es, für jene Mails gibt es keine Ereignisse") ist
-einer Zeile gewichen, die dasselbe erfragt, ohne die eigene Blindstelle
-auszubreiten.
+**What is out.** The invitation explained in its second paragraph that most accounts
+had never started an analysis. That is a fact about the operator, not
+about the reader — and putting it before someone whose participation you are asking for buys
+nothing. The questions still measure it just as well. The reasoning under the
+delivery question ("nobody here knows, there are no events for those mails") has also
+given way to a line that asks the same without spreading out one's own
+blind spot.
 
-**Was dazugekommen ist:** eine vierte Frage, und sie ist die einzige, bei der die
-Befragten etwas bekommen statt nur zu geben. Vier Dinge, die auf der Liste stehen
-und nicht gebaut sind, als Mehrfachauswahl — der Vote entscheidet die Reihenfolge.
+**What has been added:** a fourth question, and it is the only one in which the
+respondents get something instead of only giving. Four things that are on the list
+and not built, as multiple choice — the vote decides the order.
 
-| Idee | Belegt in |
+| Idea | Documented in |
 |---|---|
-| Deutsche Fassung von Oberfläche und Doku | `docs/CONCEPT-DE-LOCALIZATION.md`, Backlog S-05 |
-| ATC-Ergebnisse importieren | `docs/CLEAN_CORE_ENRICHMENT_CONCEPT.md` §3 |
-| Modellwahl: Claude neben Gemini, eigener Schlüssel | `docs/ROADMAP-2.0.md` |
-| Der Vorher-Nachher-Vergleich auf dem Telefon | `docs/BACKLOG.md`, Runde 2 |
+| German version of interface and docs | `docs/CONCEPT-DE-LOCALIZATION.md`, backlog S-05 |
+| Import ATC results | `docs/CLEAN_CORE_ENRICHMENT_CONCEPT.md` §3 |
+| Model choice: Claude alongside Gemini, own key | `docs/ROADMAP-2.0.md` |
+| The before-after comparison on the phone | `docs/BACKLOG.md`, round 2 |
 
-**Und ein Guard dafür.** `tests/survey-guard.spec.ts` prüft, dass **jede** Option
-auf dem Stimmzettel in einem der Konzept- oder Backlog-Dokumente belegt ist. Eine
-Umfrage, die Funktionen anbietet, an die niemand gedacht hat, ist eine Umfrage,
-deren Gewinner nicht gebaut werden kann — und ein Versprechen an 36 Leute, das
-stillschweigend nicht gehalten wird.
+**And a guard for it.** `tests/survey-guard.spec.ts` checks that **every** option
+on the ballot is documented in one of the concept or backlog documents. A
+survey that offers features nobody has thought about is a survey
+whose winner cannot be built — and a promise to 36 people that
+is silently not kept.
 
-**Mehrfachauswahl heißt: Menschen zählen, nicht Kreuze.** Wer drei Dinge ankreuzt,
-ist eine Antwort und drei Zählungen. Durch die Kreuze zu teilen ließe jeden Anteil
-schrumpfen, je mehr Leute ankreuzen — und die eine Person, die nur eines wählt,
-erschiene mit 25 % statt mit 50 % der Antwortenden. Die Anteile summieren sich
-folglich auf über 100, und der Bericht **sagt das dazu**, statt den Leser einen
-Balken von 180 % für einen Fehler halten zu lassen.
+**Multiple choice means: count people, not ticks.** Someone who ticks three things
+is one answer and three counts. Dividing by the ticks would make every share
+shrink the more people tick — and the one person who picks only one
+would appear at 25 % instead of 50 % of respondents. The shares therefore add up
+to more than 100, and the report **says so**, instead of letting the reader take a
+bar of 180 % for an error.
 
-Das Kästchen ist eckig, wo mehrere Antworten erlaubt sind, und rund, wo genau eine
-gilt. Das ist das einzige Signal, das ein Leser vor dem Tippen hat.
+The box is square where several answers are allowed, and round where exactly one
+applies. That is the only signal a reader has before tapping.
 
 ## [v2.8.0] — 2026-08-31
 
-### Die Aktivierungsumfrage
+### The activation survey
 
-Versprochen war sie den dreißig Konten aus der Community-Aktivierung „in vierzehn
-Tagen", also zum 02.09. Sie geht am **Mittwoch, 09:00 Berliner Zeit** raus und
-läuft eine Woche.
+It was promised to the thirty accounts from the community activation "in fourteen
+days", so by 02.09. It goes out on **Wednesday, 09:00 Berlin time** and
+runs for a week.
 
-**Was sie herausfinden soll**, und warum es genau diese drei Fragen sind: die
-meisten Konten hier haben nie eine Analyse gestartet, und dafür gibt es zwei
-völlig verschiedene Erklärungen — ein Nutzungsproblem oder ein Zustellproblem.
-Das sind zwei getrennte Baustellen, und bisher ist unbekannt, welche es ist.
+**What it is meant to find out**, and why it is exactly these three questions: most
+accounts here have never started an analysis, and there are two
+completely different explanations for that — a usage problem or a delivery problem.
+Those are two separate work sites, and so far it is unknown which one it is.
 
-| Frage | Wo | Wofür |
+| Question | Where | What for |
 |---|---|---|
-| Hast du schon eine Analyse gestartet? | in der Mail | die Grundzahl |
-| Was würde dir am meisten helfen? | auf der Seite | die Frage, an der sich etwas ändert |
-| Ist die Willkommensmail je angekommen? | auf der Seite | die teuerste offene Frage über die Plattform |
+| Have you started an analysis yet? | in the mail | the base number |
+| What would help you most? | on the page | the question that changes something |
+| Did the welcome mail ever arrive? | on the page | the most expensive open question about the platform |
 
-Frage drei kostet eine Zeile und ist seit der Community-Aktivierung unbeantwortbar,
-weil jene dreißig Mails vor dem Resend-Webhook liegen und es für sie keine
-Zustellereignisse gibt und nie geben wird.
+Question three costs one line and has been unanswerable since the community activation,
+because those thirty mails predate the Resend webhook and there are no
+delivery events for them and never will be.
 
-### „Direkt in der Mail abstimmen" — was davon geht und was nicht
+### "Vote directly in the mail" — what of it works and what does not
 
-**Es gibt keine Möglichkeit, eine Antwort aus einer E-Mail heraus zu erfassen,
-ohne dass der Leser sie verlässt.** Mailprogramme führen keinen Code aus. Die
-einzige Ausnahme, AMP for Email, verlangt eine Absenderregistrierung bei Google
-und funktioniert allein in Gmail — die falsche Hälfte eines SAP-Publikums.
+**There is no way to capture an answer from inside an e-mail
+without the reader leaving it.** Mail programs do not run code. The
+only exception, AMP for Email, requires sender registration with Google
+and works only in Gmail — the wrong half of an SAP audience.
 
-Gebaut ist deshalb das, was dem am nächsten kommt: **ein Tipp, und das ist alles.**
-Kein Formular, kein Login, nichts zum Eintippen. Die Antwort ist erfasst, bevor die
-Seite fertig gezeichnet ist. Die zwei Folgefragen stehen auf ebenjener Seite,
-wieder ein Tipp pro Antwort — dort, wo ein Leser ist, der ohnehin schon mitmacht.
+What is built is therefore the closest thing to it: **one tap, and that is all.**
+No form, no login, nothing to type. The answer is captured before the
+page has finished drawing. The two follow-up questions are on that very page,
+again one tap per answer — where there is a reader who is already taking part anyway.
 
-**Und eine Falle, die die Zahlen wertlos gemacht hätte:** Konzern-Mailgateways
-rufen jeden Link in einer Nachricht ab, bevor ein Mensch sie sieht. Wäre ein Tipp
-auf „Noch nicht" ein GET, das eine Stimme schreibt, wäre das Ergebnis eine
-Volkszählung unter Sicherheitsappliances. Erfasst wird deshalb per **POST**, den
-die Seite selbst absetzt — ein Gateway führt keine Skripte aus und kommt nie so
-weit. Der Abruf selbst wird trotzdem vermerkt: „Link geholt, nie geantwortet"
-beschreibt eine Mail, die eine Organisation erreicht hat und an deren Rand
-liegengeblieben ist, und das ist genau eine der zwei Erklärungen, die zu trennen
-sind.
+**And a trap that would have made the numbers worthless:** corporate mail gateways
+fetch every link in a message before a human sees it. If a tap
+on "Not yet" were a GET that writes a vote, the result would be a
+census among security appliances. Capture is therefore done by a **POST** that
+the page itself sends — a gateway does not run scripts and never gets that
+far. The fetch itself is still noted: "link fetched, never answered"
+describes a mail that reached an organisation and got stuck at its edge,
+and that is exactly one of the two explanations that need to be
+separated.
 
-### Das tägliche Zwischenergebnis
+### The daily interim result
 
-Einmal am Tag, 09:00 Berliner Zeit, solange die Umfrage läuft. **Die Diagramme
-sind Tabellen** — jedes Mailprogramm rendert eine `<td>` mit Prozentbreite und
-Hintergrundfarbe, fast keines lädt ein externes Bild ungefragt, und ein Diagramm,
-das niemand sieht, ist schlechter als eine Zahl.
+Once a day, 09:00 Berlin time, while the survey is running. **The charts
+are tables** — every mail program renders a `<td>` with a percentage width and
+background colour, almost none loads an external image unasked, and a chart
+nobody sees is worse than a number.
 
-Was der Bericht nicht tut: eine Frage, die niemand beantwortet hat, zeigt eine
-Null und die Zahl der Eingeladenen — keine Prozentsätze über einem Nenner, der so
-lange geschrumpft wurde, bis er gesund aussah. Die Überschrift sagt „3 von 36",
-nie „8 %", solange die Zahlen zu klein sind, um einen Prozentsatz zu tragen. Das
-ist dieselbe Regel, die `no-fabricated-figures.spec.ts` im Produkt erzwingt, und
-eine Umfrage darüber, ob das Produkt benutzt wird, ist der letzte Ort, an dem man
-damit anfängt zu runden.
+What the report does not do: a question nobody has answered shows a
+zero and the number of invitees — no percentages over a denominator that was
+shrunk until it looked healthy. The heading says "3 of 36",
+never "8 %", as long as the numbers are too small to carry a percentage. That
+is the same rule that `no-fabricated-figures.spec.ts` enforces in the product, and
+a survey about whether the product is used is the last place to start
+rounding.
 
-Er schweigt, bevor die Einladung raus ist, und nach einem letzten Endstand einen
-Tag nach Schluss. Ein Cron, der jeden Morgen „0 von 0" schickt, erzieht seinen
-Leser dazu, ihn ungelesen zu löschen — und der eine Morgen, an dem es darauf
-ankommt, ist der, an dem er ungelesen gelöscht wird.
+It stays silent before the invitation is out, and after a final result one
+day after closing. A cron that sends "0 of 0" every morning trains its
+reader to delete it unread — and the one morning on which it
+matters is the one on which it gets deleted unread.
 
-### Die Absicherung
+### The safeguard
 
-`tests/survey-guard.spec.ts`, vierzehn Prüfungen, gegen die vier Arten, auf die
-eine Umfrage still ein falsches Ergebnis liefert:
+`tests/survey-guard.spec.ts`, fourteen checks, against the four ways in which
+a survey silently delivers a wrong result:
 
-- **Ein fälschbarer Link.** Manipulierte Nutzdaten, abgelaufene und unsinnige Token
-  werden abgewiesen; die Signatur trägt einen eigenen Namensraum und kann nie als
-  Freigabetoken durchgehen.
-- **Eine Frage, die ihre Antwort nahelegt.** Alle Antwortflächen der Mail werden
-  auf identischen Stil geprüft. Eine davon als dunkler Primärknopf wäre eine Art,
-  die Frage zu stellen und die Antwort gleich mitzuliefern.
-- **Arithmetik, die Stille in Zustimmung umrechnet.** Ohne Antworten keine
-  Prozentzeichen; ein Gateway-Abruf ist keine Stimme; eine unbeantwortete Frage
-  borgt sich die Antworten der anderen nicht aus.
-- **Eine Mail, die auf dem Telefon zerfällt.** Beide Nachrichten werden gerendert
-  und bei 320 Pixeln gemessen, und die Balken müssen in ihr Diagramm passen.
+- **A forgeable link.** Tampered payloads, expired and nonsensical tokens
+  are rejected; the signature carries its own namespace and can never pass as an
+  approval token.
+- **A question that suggests its answer.** All answer surfaces of the mail are
+  checked for identical style. One of them as a dark primary button would be a way
+  of asking the question and supplying the answer along with it.
+- **Arithmetic that converts silence into agreement.** No answers, no
+  percent signs; a gateway fetch is not a vote; an unanswered question
+  does not borrow the answers of the others.
+- **A mail that falls apart on the phone.** Both messages are rendered
+  and measured at 320 pixels, and the bars must fit in their chart.
 
-Versand und Zwischenbericht laufen über zwei Workflows, deren Slot-Auswahl am
-auslösenden Cron hängt und nicht an der Wanduhr — dieselbe Konstruktion, die den
-Wochenbericht heute Vormittag repariert hat.
+Sending and interim report run via two workflows whose slot selection depends on the
+triggering cron and not on the wall clock — the same construction that
+repaired the weekly report this morning.
 
 ## [v2.7.3] — 2026-08-31
 
-### N-02: die zwei Zeilen, an denen die Seite gegen sich selbst falsch lag
+### N-02: the two rows where the page was wrong against itself
 
-Die Vergleichstabelle führte zwei Fähigkeiten als **✕ Not Available** bei SAP:
+The comparison table listed two capabilities as **✕ Not Available** at SAP:
 
-| Zeile | Behauptung bis v2.7.2 |
+| Row | Claim up to v2.7.2 |
 |---|---|
-| Sandbox Verification (BYOT) | „Requires separate manual testing frameworks." |
-| Business Process Blueprinting | „No process flow visualization available." |
+| Sandbox Verification (BYOT) | "Requires separate manual testing frameworks." |
+| Business Process Blueprinting | "No process flow visualization available." |
 
-Beide sind falsch, und zwar nachprüfbar. SAP liefert ABAP Unit und das CDS Test
-Double Framework mit; SAP liefert Signavio und Cloud ALM für Prozessmodellierung.
-Dieselbe Seite schreibt zwei Abschnitte weiter, ihr eigener BPMN-Output werde **an
-Signavio übergeben** — und behauptet daneben, SAP habe keine Prozessvisualisierung.
+Both are wrong, and verifiably so. SAP ships ABAP Unit and the CDS Test
+Double Framework; SAP provides Signavio and Cloud ALM for process modelling.
+The same page writes two sections further on that its own BPMN output is **handed over to
+Signavio** — and claims right next to it that SAP has no process visualisation.
 
-Die anderen vier Zeilen nutzen die abgestufte Skala (`~`, `–`) längst korrekt. Nur
-diese beiden waren binär geblieben, und sie waren die einzige Stelle, an der eine
-Seite, deren ganzes Argument „belegt, nicht behauptet" lautet, selbst unbelegt
-behauptet hat. Ein SAP-Architekt braucht dafür keine Minute.
+The other four rows have long used the graded scale (`~`, `–`) correctly. Only
+these two had stayed binary, and they were the only place where a
+page whose whole argument is "evidenced, not claimed" itself claimed
+without evidence. An SAP architect needs less than a minute for that.
 
-Beide stehen jetzt auf `~` und benennen, was das Werkzeug tatsächlich hinzufügt
-statt eine Lücke zu erfinden — was die stärkere Aussage ist:
+Both are now at `~` and name what the tool actually adds
+instead of inventing a gap — which is the stronger statement:
 
-- **Sandbox Verification:** „ABAP Unit and the CDS Test Double Framework are on
+- **Sandbox Verification:** "ABAP Unit and the CDS Test Double Framework are on
   board; the test environment is assembled by hand."
-- **Business Process Blueprinting:** „Not in the ATC/ADT core scope — covered by
-  SAP Signavio and SAP Cloud ALM under their own licences." Und daneben, was
-  Clean-Core.io beiträgt: die BPMN-2.0-Vorlage direkt aus der Codeanalyse, an
-  Signavio übergeben.
+- **Business Process Blueprinting:** "Not in the ATC/ADT core scope — covered by
+  SAP Signavio and SAP Cloud ALM under their own licences." And next to it, what
+  Clean-Core.io contributes: the BPMN 2.0 draft directly from the code analysis, handed
+  over to Signavio.
 
-Damit ist der letzte offene Punkt aus Befund v3 geschlossen, den der Prüfer über
-drei Fassungen als Priorität 1 geführt hat.
+That closes the last open point from finding v3, which the reviewer had carried as
+priority 1 across three versions.
 
-### Der Wochenbericht ist am 28.08. nie verschickt worden
+### The weekly report was never sent on 28.08.
 
-GitHub startete den geplanten Lauf **vier Stunden zu spät** (14:01 statt 10:00
-UTC). Der Wächter, der entscheiden soll, welcher der zwei DST-Slots der richtige
-ist, fragte „ist es jetzt 12 Uhr in Berlin?" — und beantwortete damit versehentlich
-auch „hat GitHub pünktlich gestartet?". Beide Läufe verwarfen sich selbst, **beide
-meldeten `success`**, und nichts hat es gesagt.
+GitHub started the scheduled run **four hours late** (14:01 instead of 10:00
+UTC). The guard that is meant to decide which of the two DST slots is the right
+one asked "is it 12 o'clock in Berlin now?" — and thereby accidentally
+also answered "did GitHub start on time?". Both runs discarded themselves, **both
+reported `success`**, and nothing said so.
 
-Am 21.08. lief es nur, weil die Verzögerung acht Minuten betrug. GitHub sichert
-pünktliche Starts ausdrücklich nicht zu; die Prüfung hing also von Anfang an an
-etwas, das nicht zugesichert ist.
+On 21.08. it only ran because the delay was eight minutes. GitHub
+explicitly does not guarantee punctual starts; so the check depended from the start on
+something that is not guaranteed.
 
-Der Slot wird jetzt über `github.event.schedule` bestimmt — den auslösenden
-Cron-Ausdruck, der sich nicht verschiebt — kombiniert mit dem UTC-Offset für die
-Jahreszeit. Egal wie spät GitHub dran ist, genau einer der beiden Läufe geht durch.
-Der Bericht vom 28.08. wurde am 31.08. manuell nachgeholt.
+The slot is now determined via `github.event.schedule` — the triggering
+cron expression, which does not shift — combined with the UTC offset for the
+season. No matter how late GitHub is, exactly one of the two runs goes through.
+The report of 28.08. was caught up manually on 31.08.
 
-### Die vierte Überlauf-Ursache, und ein Guard, der nur in meiner Zeitzone stimmte
+### The fourth overflow cause, and a guard that was only right in my time zone
 
-Der Überlauf-Guard aus v2.7.1 fand auf dem Linux-Runner, was auf Windows passte:
-`PilotWarningBanner` setzt drei Links, zwei Trenner, einen Strich und den
-Dismiss-Knopf in **eine Reihe mit `shrink-0` und ohne `flex-wrap`** — 332px
-starrer Inhalt in einem 320px-Fenster. Linux rendert den Text breiter. Das ist die
-vierte Ursache für ein Symptom, von dem das Backlog eine kannte, und der Grund,
-warum der Guard die gerenderte Seite in CI misst statt sich auf einen Screenshot zu
-verlassen.
+The overflow guard from v2.7.1 found on the Linux runner what fit on Windows:
+`PilotWarningBanner` puts three links, two separators, a dash and the
+dismiss button into **one row with `shrink-0` and without `flex-wrap`** — 332px
+of rigid content in a 320px window. Linux renders the text wider. That is the
+fourth cause of a symptom of which the backlog knew one, and the reason
+why the guard measures the rendered page in CI instead of relying on a screenshot.
 
-Und ein Fehler im Sitemap-Guard von heute Vormittag: er verglich Zeitstempel gegen
-`new Date(APP_RELEASE_DATE)`, was **lokale** Mitternacht ergibt, während ein
-Inhaltsdatum als `…T00:00:00Z` gebaut wird. Auf UTC+2 verschiedene Momente, auf dem
-UTC-Runner derselbe — der Guard meldete die Startseite als datumslos, an dem Tag,
-an dem sich ihr Inhalt geändert hat. Er liest jetzt die `on('<route>')`-Aufrufe aus
-`app/sitemap.ts` und prüft die Schlüssel. Routenschlüssel kollidieren mit keiner
-Zeitzone.
+And an error in this morning's sitemap guard: it compared timestamps against
+`new Date(APP_RELEASE_DATE)`, which yields **local** midnight, while a
+content date is built as `…T00:00:00Z`. On UTC+2 these are different moments, on the
+UTC runner the same — the guard reported the start page as dateless, on the day
+its content changed. It now reads the `on('<route>')` calls from
+`app/sitemap.ts` and checks the keys. Route keys collide with no
+time zone.
 
 ## [v2.7.2] — 2026-08-31
 
-### V9 — der veröffentlichte Ersatzschlüssel ist weg
+### V9 — the published fallback key is gone
 
-In drei Produktionsrouten stand `process.env.AUDIT_SIGNING_KEY` mit einem `||` und
-einer festen Konstante dahinter. Das Repo ist öffentlich, die Konstante war es
-damit auch.
+In three production routes there was `process.env.AUDIT_SIGNING_KEY` with an `||` and
+a fixed constant behind it. The repo is public, so the constant was
+too.
 
-Der Wächter davor verlangte `NODE_ENV === 'production'` **und** ein
-abgeschaltetes Emulator-Flag, bevor er den Dienst ohne echten Schlüssel
-verweigerte. Alles, was an einer der beiden Hälften vorbeilief — ein
-Preview-Build, ein Container ohne gesetztes `NODE_ENV`, eine Revision außerhalb
-der Pipeline — signierte Runs und Audit-Packs mit einer Zeichenkette, die jeder
-nachschlagen kann. Und `/api/export/verify` prüfte gegen denselben Fallback: die
-Seite, deren einziger Zweck es ist zu sagen „dieses Paket ist echt", hätte das
-über ein gefälschtes gesagt.
+The guard in front of it required `NODE_ENV === 'production'` **and** a
+switched-off emulator flag before it refused to run without a real key.
+Everything that slipped past either half — a
+preview build, a container without `NODE_ENV` set, a revision outside
+the pipeline — signed runs and audit packs with a string that anyone can
+look up. And `/api/export/verify` verified against the same fallback: the
+page whose only purpose is to say "this pack is genuine" would have said so
+about a forged one.
 
-**Warum es fünf Releases überlebt hat**, und das ist der lehrreiche Teil: zwei
-Tests in `audit-compliance-v181.spec.ts` signierten ihre Testdaten mit derselben
-Konstante. Sie zu löschen färbte die Suite rot, und die Suite ist Pflichtstufe vor
-jedem Deploy. Die Notiz im Backlog schloss daraus, CI brauche ein eigenes
-GitHub-Secret. Braucht es nicht — der Testschlüssel signiert Testdaten gegen einen
-Testserver und schützt nichts. `playwright.config.ts` setzte für
-`PILOT_APPROVAL_SECRET` und `MFA_BACKUP_CODE_PEPPER` längst genau dieses Muster;
-es fehlte nur die dritte Zeile.
+**Why it survived five releases**, and that is the instructive part: two
+tests in `audit-compliance-v181.spec.ts` signed their test data with the same
+constant. Deleting it turned the suite red, and the suite is a mandatory stage before
+every deploy. The note in the backlog concluded from this that CI needed its own
+GitHub secret. It does not — the test key signs test data against a
+test server and protects nothing. `playwright.config.ts` had long set exactly this pattern
+for `PILOT_APPROVAL_SECRET` and `MFA_BACKUP_CODE_PEPPER`;
+only the third line was missing.
 
-Jetzt:
+Now:
 
-- `lib/audit-signing-key.ts` ist die einzige Stelle, die den Schlüssel liest.
-- Kein Fallback, in **keiner** Umgebung. Fehlt der Schlüssel, antworten die drei
-  Routen mit 500 — Produktion, Preview, CI und Laptop gleichermaßen.
-- `tests/signing-key-guard.spec.ts` schlägt an, wenn die Konstante zurückkommt,
-  wenn eine Route wieder direkt aus `process.env` liest, wenn ein
-  `isProduction`-Schlupfloch auftaucht — und prüft am laufenden Server, dass ein
-  mit dem alten Schlüssel gefälschtes Paket als ungültig zurückkommt.
-- `.env.example` sagt jetzt, dass der Schlüssel überall gebraucht wird.
+- `lib/audit-signing-key.ts` is the only place that reads the key.
+- No fallback, in **any** environment. If the key is missing, the three
+  routes answer with 500 — production, preview, CI and laptop alike.
+- `tests/signing-key-guard.spec.ts` fires if the constant comes back,
+  if a route reads directly from `process.env` again, if an
+  `isProduction` loophole appears — and checks on the running server that a
+  pack forged with the old key comes back as invalid.
+- `.env.example` now says that the key is needed everywhere.
 
-**Nicht rotiert, und das mit Absicht.** Der Produktionsschlüssel ist ein echtes
-Secret, `/api/health` bestätigt ihn auf Produktion und dev, und ein Wechsel würde
-jede bereits ausgestellte Run-Signatur und jedes ausgelieferte Audit-Pack
-entwerten. Die Konstante war das Problem, nicht der Schlüssel.
+**Not rotated, and on purpose.** The production key is a real
+secret, `/api/health` confirms it on production and dev, and a change would
+invalidate every run signature already issued and every audit pack delivered.
+The constant was the problem, not the key.
 
-### Befund v3: die belegten Punkte
+### Finding v3: the evidenced points
 
-Externe SEO/GEO-Prüfung vom 28.08. auf v2.7.0. Fünf Befunde nachgeprüft und
-abgearbeitet; zwei ihrer offenen Fragen beantwortet sich von innen.
+External SEO/GEO review of 28.08. on v2.7.0. Five findings re-checked and
+worked off; two of its open questions are answered from the inside.
 
-**S-08 — die Sitemap datierte Deploys, nicht Inhalte.** `app/sitemap.ts` stempelte
-`lastModified: new Date()` auf rund dreißig URLs. Der Kommentar daneben verteidigte
-das als „echtes Frischesignal"; es war das Gegenteil. Bei drei Releases in vier
-Tagen meldeten sämtliche Seiten tägliche Änderung, die Rechtstexte aus dem Juli
-eingeschlossen. Google erkennt das Muster und entwertet `lastmod` dann
-**domainweit** — der Schaden trifft also gerade die neuen Seiten, die das Signal
-brauchen.
+**S-08 — the sitemap dated deploys, not content.** `app/sitemap.ts` stamped
+`lastModified: new Date()` on around thirty URLs. The comment next to it defended
+this as a "real freshness signal"; it was the opposite. With three releases in four
+days, every page reported daily change, the legal texts from July
+included. Google recognises the pattern and then devalues `lastmod`
+**domain-wide** — so the damage hits precisely the new pages that need the signal.
 
-`lib/content-dates.ts` hält jetzt pro Route das Datum, an dem ihr Inhalt
-tatsächlich zuletzt geändert wurde, erzeugt aus der Git-Historie der Dateien, die
-die Route rendern (`npm run sync:content-dates`). **Zwölf verschiedene Daten über
-zwei Monate**, jedes davon wahr. `tests/sitemap-guard.spec.ts` verbietet jeden
-Zeitstempel nach dem Release — was ein Build-Stempel immer wäre.
+`lib/content-dates.ts` now holds per route the date on which its content
+was actually last changed, generated from the Git history of the files that
+render the route (`npm run sync:content-dates`). **Twelve different dates across
+two months**, each of them true. `tests/sitemap-guard.spec.ts` forbids any
+timestamp after the release — which a build stamp would always be.
 
-**S-09 — die Twitter-Card fiel auf die Domänenvorgabe zurück.** Der Befund fand es
-auf `/knowledge`; gemessen sind es 21 Seiten. 22 Seiten setzten `openGraph`, genau
-eine setzte `twitter`. Wer die Clean-Core-Erklärung teilte, bekam die Überschrift
-der Startseite. `lib/page-metadata.ts` spiegelt, was die Seite ohnehin schon
-erklärt hat; `tests/social-card-guard.spec.ts` vergleicht die **gerenderten**
-Tags, weil eine Hilfsfunktion eine Bequemlichkeit ist und keine Garantie.
+**S-09 — the Twitter card fell back to the domain default.** The finding found it
+on `/knowledge`; measured, it is 21 pages. 22 pages set `openGraph`, exactly
+one set `twitter`. Anyone who shared the clean core explainer got the heading
+of the start page. `lib/page-metadata.ts` mirrors what the page has already
+declared; `tests/social-card-guard.spec.ts` compares the **rendered**
+tags, because a helper function is a convenience and not a guarantee.
 
-**K-05 — zwei Namen für denselben SAP-Hub.** SAP hat den API Business Hub 2023 in
-Business Accelerator Hub umbenannt. Auf der Startseite stand zweimal der
-abgekündigte Name und einmal der aktuelle — im selben Abschnitt. Vereinheitlicht,
-auch in den ausgelieferten Markdown-Artefakten und in der Produktoberfläche. Die
-zwei verbliebenen Fundstellen in `lib/abap/` sind Quellenangaben und nennen die
-Quelle weiterhin so, wie sie damals hieß.
+**K-05 — two names for the same SAP hub.** SAP renamed the API Business Hub to
+Business Accelerator Hub in 2023. The start page had the discontinued
+name twice and the current one once — in the same section. Unified,
+also in the shipped Markdown artefacts and in the product interface. The
+two remaining occurrences in `lib/abap/` are source citations and still name the
+source as it was called at the time.
 
-**K-06 — das Konfidenz-Badge nahm die Prosa zurück.** Der BSEG-Fall im Showroom
-ist im Fließtext deutlich vorsichtiger als der VBAK-Fall — „Kandidat", und
-Währung, Berechtigungen und Mandantenbehandlung ausdrücklich als offen benannt.
-Darunter stand dasselbe grüne Badge wie beim sauberen Fall. Es gibt jetzt drei
-Stufen statt zwei: grün heißt aufgelöst, blau heißt Kandidat, gelb heißt die
-Engine hat sich geweigert zu raten.
+**K-06 — the confidence badge took back the prose.** The BSEG case in the showroom
+is clearly more cautious in its running text than the VBAK case — "candidate", and
+currency, authorisations and client handling explicitly named as open.
+Below it stood the same green badge as for the clean case. There are now three
+levels instead of two: green means resolved, blue means candidate, yellow means the
+engine refused to guess.
 
-**K-03 — die VBAK-Abweichung wird beim Namen genannt.** Der erklärende Satz unter
-der Objektliste war richtig und abstrakt. Er nennt den Fall jetzt: `VBAK` steht
-dort als `I_SALESDOCUMENT`, im Showroom als `I_SalesOrder`, und warum.
+**K-03 — the VBAK discrepancy is called by its name.** The explanatory sentence under
+the object list was correct and abstract. It now names the case: `VBAK` appears
+there as `I_SALESDOCUMENT`, in the showroom as `I_SalesOrder`, and why.
 
-**Zwei offene Fragen des Prüfers, von innen beantwortet:** `/catalog/[object]` ist
-statisch vorgerendert (`generateStaticParams`, ISR 24h, eigene
-`catalog-sitemap.xml`) — die Einzel-URLs je Objekt existieren also, was der Prüfer
-von außen nicht sehen konnte. Und `llms.txt` steht seit dem 26.08. unter
-`app/llms.txt/route.ts`.
+**Two of the reviewer's open questions, answered from the inside:** `/catalog/[object]` is
+statically pre-rendered (`generateStaticParams`, ISR 24h, its own
+`catalog-sitemap.xml`) — so the individual URLs per object exist, which the reviewer
+could not see from outside. And `llms.txt` has been at
+`app/llms.txt/route.ts` since 26.08.
 
-**Nicht angefasst, weil es Positionierung und keine Korrektur ist:** N-02, die
-beiden ✕-Zeilen der Vergleichstabelle. Und G-06, das Autorenprofil — das
-`Person`-Schema mit `sameAs` steht bereits in `app/page.tsx`, was fehlt, ist die
-Fachhistorie auf `/about`, und die kann nur ihr Autor schreiben.
+**Not touched, because it is positioning and not a correction:** N-02, the
+two ✕ rows of the comparison table. And G-06, the author profile — the
+`Person` schema with `sameAs` is already in `app/page.tsx`, what is missing is the
+professional history on `/about`, and only its author can write that.
 
 ## [v2.7.1] — 2026-08-31
 
-### Das Lint-Gate hat nie geprüft, wofür es gebaut war
+### The lint gate never checked what it was built for
 
-`eslint.config.mjs` importierte drei Plugins und aktivierte die Regeln von genau
-einem. `@typescript-eslint` und `eslint-plugin-react-hooks` waren registriert und
-für nichts eingeschaltet — der `rules`-Block spreizte ausschließlich die
-Next-Voreinstellungen. `npm run lint` ist eine Pflichtstufe der Deploy-Pipeline.
-Sie hat damit bei jedem Release einen grünen Haken für eine Prüfung gemeldet, die
-nicht stattfand.
+`eslint.config.mjs` imported three plugins and enabled the rules of exactly
+one. `@typescript-eslint` and `eslint-plugin-react-hooks` were registered and
+switched on for nothing — the `rules` block spread only the
+Next presets. `npm run lint` is a mandatory stage of the deploy pipeline.
+With every release it thus reported a green tick for a check that
+did not take place.
 
-Einschalten fördert **706 Probleme** zutage. Sie sind sortiert, nicht
-stummgeschaltet:
+Switching it on brings **706 problems** to light. They are sorted, not
+muted:
 
-| Klasse | Anzahl | Behandlung |
+| Class | Count | Treatment |
 |---|---|---|
-| `no-explicit-any` | 365 | geparkt als Warnung |
-| `no-unused-vars` | 274 | geparkt als Warnung |
-| `set-state-in-effect` | 25 | geparkt als Warnung |
-| `no-require-imports` | 24 | in `scripts/` und `tests/` abgeschaltet, in `lib/` einzeln begründet |
-| React-Hooks-Korrektheit | 13 | behoben |
-| übriges TypeScript | 5 | behoben |
+| `no-explicit-any` | 365 | parked as a warning |
+| `no-unused-vars` | 274 | parked as a warning |
+| `set-state-in-effect` | 25 | parked as a warning |
+| `no-require-imports` | 24 | switched off in `scripts/` and `tests/`, justified individually in `lib/` |
+| React Hooks correctness | 13 | fixed |
+| other TypeScript | 5 | fixed |
 
-Fehler stehen jetzt bei **null**. Die 677 verbleibenden Warnungen sind mit
-`eslint . --max-warnings 677` festgenagelt — eine Zahl im Rechenstand, die kleiner
-werden kann und nicht größer.
+Errors are now at **zero**. The 677 remaining warnings are pinned with
+`eslint . --max-warnings 677` — a number on record that can get smaller
+and not bigger.
 
-### Was durch das grüne Gate gegangen war
+### What had passed through the green gate
 
-**Ein Klick ohne Wirkung.** In `testing/page.tsx` stand nach der Zugangsanfrage
-`profile.s4TenantAccessRequested = true`, mit dem Kommentar „Force profile update
-trigger client-side". Eine Mutation am Rückgabewert eines Hooks rendert nichts neu
-— die Zeile tat exakt das Gegenteil dessen, was ihr Kommentar behauptete. Sie war
-zudem überflüssig: die Route schreibt das Flag ins Nutzerdokument, und
-`useUserProfile` hört darauf. Der Knopf schaltet also um, aber wegen des Servers,
-nicht wegen dieser Zeile.
+**A click without effect.** In `testing/page.tsx`, after the access request, there was
+`profile.s4TenantAccessRequested = true`, with the comment "Force profile update
+trigger client-side". A mutation of a hook's return value re-renders nothing
+— the line did exactly the opposite of what its comment claimed. It was
+also superfluous: the route writes the flag into the user document, and
+`useUserProfile` listens to it. So the button does toggle, but because of the server,
+not because of this line.
 
-**Ein Ref, in den während des Renderns geschrieben wird.** `EvidenceSweep.tsx`
-hielt seinen Fertig-Callback mit `onCompleteRef.current = onComplete` im
-Render-Körper aktuell. Unter StrictMode läuft der Render zweimal, und der
-verworfene Durchlauf schreibt in dasselbe Ref, das der überlebende liest. Jetzt
-im Effekt.
+**A ref written to during rendering.** `EvidenceSweep.tsx`
+kept its completion callback up to date with `onCompleteRef.current = onComplete` in the
+render body. Under StrictMode the render runs twice, and the
+discarded pass writes into the same ref that the surviving one reads. Now
+in the effect.
 
-**Vier Konstanten aus der temporalen Todeszone.** Zwei in `approve-tenant`, eine
-in `LandingModals`: ein Effekt rief Funktionen auf, die erst darunter als `const`
-deklariert wurden. Es funktioniert — aber nur, weil ein Effekt nach dem Render
-läuft, in dem die Konstante entsteht. Das ist ein Zufall, kein Versprechen.
-Deklaration und Aufruf stehen jetzt in der richtigen Reihenfolge.
+**Four constants from the temporal dead zone.** Two in `approve-tenant`, one
+in `LandingModals`: an effect called functions that were only declared below it as `const`.
+It works — but only because an effect runs after the render
+in which the constant comes into being. That is a coincidence, not a promise.
+Declaration and call are now in the right order.
 
-**Eine Kennzahl, die von der Renderzeit abhing.** `UsageQuotaPanel` berechnete
-„aktiv in 7 Tagen" mit `Date.now()` **innerhalb** zweier `useMemo`. Ein
-Uhrzeit-Aufruf ist ein verborgener Eingang, von dem das Memo nicht abhängt: für
-dieselben Daten kam eine andere Zahl heraus, je nachdem, wann React zuletzt neu
-gerendert hatte. Die Grenze hängt jetzt an `lastSync` — dem Moment, in dem die
-Daten ankamen.
+**A metric that depended on render time.** `UsageQuotaPanel` computed
+"active in 7 days" with `Date.now()` **inside** two `useMemo`. A
+clock call is a hidden input the memo does not depend on: for
+the same data a different number came out, depending on when React last
+re-rendered. The boundary now hangs on `lastSync` — the moment the
+data arrived.
 
-**Und eine ungeprüfte Krypto-Signatur.** `lib/totp.ts` holte Web Crypto über
-`require('crypto').webcrypto`, dreimal inline. Der Rückgabewert war `any`, also
-war der gesamte `subtle.importKey`-Aufruf ungetypt. Eine Funktion mit echtem
-`Crypto`-Rückgabetyp legte sofort frei, dass `base32ToBytes` ein
-`Uint8Array<ArrayBufferLike>` lieferte, wo `importKey` nur `ArrayBuffer`
-akzeptiert. Der Build bricht daran — er hat es nur nie gesehen.
+**And an unchecked crypto signature.** `lib/totp.ts` fetched Web Crypto via
+`require('crypto').webcrypto`, three times inline. The return value was `any`, so
+the whole `subtle.importKey` call was untyped. A function with a real
+`Crypto` return type immediately exposed that `base32ToBytes` returned a
+`Uint8Array<ArrayBufferLike>` where `importKey` only accepts `ArrayBuffer`.
+The build breaks on that — it just never saw it.
 
-### Die Seite rutschte auf dem Telefon seitwärts
+### The page slid sideways on the phone
 
-Bekannt war eine Ursache: das Label „S/4HANA Sandbox Connection — Security
-Profile", 340px breit, mit `whitespace-nowrap` zwischen zwei `flex-1`-Linien. Es
-konnte nicht schrumpfen und schob das Dokument breiter als das Fenster.
+One cause was known: the label "S/4HANA Sandbox Connection — Security
+Profile", 340px wide, with `whitespace-nowrap` between two `flex-1` lines. It
+could not shrink and pushed the document wider than the window.
 
-Der neue Guard fand zwei weitere, beide im Kopf der Seite: der Ladeplatzhalter des
-Anmeldeknopfs war mit `w-44` fest 176px breit, und das aufgelöste Label „Get Free
-Access or Login" passt bei 320px nicht neben den Schriftzug. Der Platzhalter ist
-unterhalb `sm` schmaler, das Label unterhalb `sm` „Get Free Access". **Ab `sm`
-aufwärts — jede Breite, bei der die Seite je begutachtet wurde — ändert sich
-nichts.**
+The new guard found two more, both in the page header: the loading placeholder of the
+sign-in button was a fixed 176px wide with `w-44`, and the resolved label "Get Free
+Access or Login" does not fit next to the wordmark at 320px. The placeholder is
+narrower below `sm`, the label below `sm` is "Get Free Access". **From `sm`
+upwards — every width at which the page was ever reviewed — nothing
+changes.**
 
-`tests/landing-style-guard.spec.ts` misst das jetzt bei 320, 390 und 768 Pixeln,
-und zwar **zweimal je Breite**: einmal während der Kopf noch lädt, einmal
-danach. Eine Seite, die eine halbe Sekunde seitwärts rutscht und sich dann fängt,
-ist eine Seite, die seitwärts gerutscht ist. Schlägt die Prüfung an, nennt sie die
-Elemente, die über den rechten Rand ragen — und überspringt alles, was in einem
-Scroll-Container sitzt, weil eine Snap-Leiste 700px breit sein *soll* und sonst
-fünf Unschuldige die Schuldige verdecken.
+`tests/landing-style-guard.spec.ts` now measures this at 320, 390 and 768 pixels,
+and **twice per width**: once while the header is still loading, once
+after. A page that slides sideways for half a second and then catches itself
+is a page that slid sideways. If the check fires, it names the
+elements that stick out past the right edge — and skips everything that sits in a
+scroll container, because a snap strip *should* be 700px wide and otherwise
+five innocents hide the culprit.
 
 
 
@@ -3493,548 +3486,547 @@ fünf Unschuldige die Schuldige verdecken.
 
 ## [v2.7.0] — 2026-08-28
 
-### Ein Stil, und er wird gemessen statt behauptet
+### One style, and it is measured instead of claimed
 
-Die Oberfläche hatte kein Stilproblem im Sinne von „falsche Farben gewählt". Sie
-hatte gar keine gewählten Farben — jede Seite trug ihre eigene Kopie der Klassen,
-und nichts verglich sie miteinander.
+The interface did not have a style problem in the sense of "chose the wrong colours". It
+had no chosen colours at all — every page carried its own copy of the classes,
+and nothing compared them with each other.
 
-**Auf der Landingpage:** drei Eyebrow-Varianten, vier Überschriftengrößen, ein
-Emoji auf einem Abschnitt, ein `h3` wo ein `h2` hingehört, und ein Abschnitt — die
-sieben Schritte — ganz ohne Kopf, sodass ausgerechnet der Schritt, der den Ablauf
-erklärt, wie ein Widget zwischen zwei Argumenten wirkte.
+**On the landing page:** three eyebrow variants, four heading sizes, an
+emoji on one section, an `h3` where an `h2` belongs, and one section — the
+seven steps — with no header at all, so that of all things the step that explains the flow
+looked like a widget between two arguments.
 
-**Im Workflow war es schlimmer.** Sieben Stufen, sieben Titel:
+**In the workflow it was worse.** Seven stages, seven titles:
 
-| Stufe | Größe | Stärke | Tinte | Schreibung |
+| Stage | Size | Weight | Ink | Case |
 |---|---|---|---|---|
-| analyze | `text-4xl` fix | extrabold | gray-900 | normal |
+| analyze | `text-4xl` fixed | extrabold | gray-900 | normal |
 | design | `text-2xl sm:text-3xl` | **bold** | gray-900 | normal |
-| transformation | `text-4xl` fix | black | gray-900 | normal |
+| transformation | `text-4xl` fixed | black | gray-900 | normal |
 | testing | `text-3xl md:text-4xl` | black | `#0b1c30` | normal |
-| documentation | `text-3xl md:text-4xl` | black | `#0b1c30` | **VERSAL** |
-| delivery | `text-3xl md:text-5xl` | black | gray-900 | **VERSAL** |
-| tco | `text-3xl md:text-4xl` | black | `#0b1c30` | **VERSAL** |
+| documentation | `text-3xl md:text-4xl` | black | `#0b1c30` | **UPPERCASE** |
+| delivery | `text-3xl md:text-5xl` | black | gray-900 | **UPPERCASE** |
+| tco | `text-3xl md:text-4xl` | black | `#0b1c30` | **UPPERCASE** |
 
-Drei Schriftstärken, vier Größen, zwei Tinten, zwei Schreibungen, und zwei Stufen
-ohne jede Responsive-Stufe. Der Titel sprang bei jedem Schritt in Größe, Gewicht
-und Farbe — genau das lässt einen siebenstufigen Ablauf wie sieben Werkzeuge
-wirken statt wie ein Produkt.
+Three font weights, four sizes, two inks, two letter cases, and two stages
+without any responsive step. The title jumped in size, weight
+and colour at every step — exactly that makes a seven-stage flow feel like seven tools
+instead of one product.
 
-**`components/SectionHeader.tsx`** und **`components/StageHeader.tsx`** besitzen
-das jetzt. `app/page.tsx` schreibt kein `<h2>` mehr, keine Stufe schreibt ihren
-eigenen Titel. Die Tinte ist in beiden `gray-950`, damit die zwei Hälften des
-Produkts übereinstimmen.
+**`components/SectionHeader.tsx`** and **`components/StageHeader.tsx`** own
+that now. `app/page.tsx` no longer writes an `<h2>`, no stage writes its
+own title. The ink is `gray-950` in both, so that the two halves of the
+product agree.
 
-**Und der Grund, warum sich nie etwas verwandt anfühlte:** 56 Farbstufen —
-`slate-650`, `gray-955`, `green-150`, `emerald-505`, `blue-105`, `amber-205` und
-fünfzig weitere — waren an 103 Stellen geschrieben, und **Tailwind hat für keine
-davon CSS erzeugt.** Keine ist eine Standardstufe, es gab keinen `@theme`-Block.
-Jedes dieser Elemente erbte seine Farbe stillschweigend.
+**And the reason nothing ever felt related:** 56 colour shades —
+`slate-650`, `gray-955`, `green-150`, `emerald-505`, `blue-105`, `amber-205` and
+fifty more — were written in 103 places, and **Tailwind generated no CSS for any
+of them.** None is a standard shade, there was no `@theme` block.
+Each of these elements silently inherited its colour.
 
-Es sah meistens nah genug aus, deshalb hat es überlebt. Aber zwei Überschriften
-nebeneinander, eine `text-gray-950` und eine `text-gray-955`, waren nie zwei
-Farbstufen auseinander: die eine war gestylt, die andere nicht, und die zweite
-bewegte sich mit dem, worin sie zufällig saß. Alle 56 sind jetzt deklariert,
-jeweils in oklch zwischen ihren beiden Nachbarn interpoliert.
+It mostly looked close enough, which is why it survived. But two headings
+side by side, one `text-gray-950` and one `text-gray-955`, were never two
+shades apart: one was styled, the other was not, and the second
+moved with whatever it happened to sit in. All 56 are now declared,
+each interpolated in oklch between its two neighbours.
 
-### Die Absicherung
+### The safeguard
 
-`tests/landing-style-guard.spec.ts` und `tests/workflow-style-guard.spec.ts`.
-Beide laden die **gerenderte Seite** und vergleichen berechnete Stile — Größe,
-Gewicht, Familie, Laufweite, Schreibung, Farbe. Das ist der Punkt: eine reine
-Quelltextprüfung ließe sich mit einer Komponente aushebeln, die still ein
-`className` durchreicht; berechneter Stil nicht. Dazu eine dritte Prüfung, die
-jede `.tsx` nach Farbklassen durchsucht, deren Stufe nirgends deklariert ist.
+`tests/landing-style-guard.spec.ts` and `tests/workflow-style-guard.spec.ts`.
+Both load the **rendered page** and compare computed styles — size,
+weight, family, letter-spacing, case, colour. That is the point: a pure
+source check could be defeated by a component that quietly passes through a
+`className`; computed style cannot. Plus a third check that searches
+every `.tsx` for colour classes whose shade is declared nowhere.
 
-### Die Landingpage inhaltlich
+### The landing page, content-wise
 
-Reihenfolge ist jetzt **Showroom → die sieben Schritte → Beweis → Rest.** Der
-Showroom stand vorher hinter Karussell, Fachbereichsargument und Tool-Matrix —
-der einzige nachprüfbare Beleg, vier Bildschirme unter der Behauptung, die er
-belegt. Grok 4.6, GPT-5.6-sol und GLM-5v schlugen unabhängig voneinander dasselbe
-vor.
+The order is now **Showroom → the seven steps → proof → the rest.** The
+Showroom used to sit behind the carousel, the business-department argument and the tool matrix —
+the only verifiable piece of evidence, four screens below the claim it
+proves. Grok 4.6, GPT-5.6-sol and GLM-5v independently proposed the same
+thing.
 
-Er trägt jetzt auch die Frage, die er ausgelassen hatte. `ProcessStrip` setzt den
-Ablauf zwischen „was ist es" und „was wird daraus" — in der BPMN-Sprache, die
-Stufe 4 tatsächlich ausgibt, je Beispiel aus dem ABAP im selben Reiter gelesen.
-Die Überschrift heißt „See a real ABAP program transformed" statt
-„Transformation Showroom": ein Name sagt niemandem, dass es Beispiele sind.
+It now also carries the question it had left out. `ProcessStrip` places the
+flow between "what is it" and "what becomes of it" — in the BPMN language that
+stage 4 actually outputs, read per example from the ABAP in the same tab.
+The heading reads "See a real ABAP program transformed" instead of
+"Transformation Showroom": a name tells nobody that these are examples.
 
-Ein gefüllter Knopf im Hero statt zwei. Die 21/17/4 als proportionale Leiste, in
-der jedes Segment seine eigene Zahl trägt. Die Scanleiste wurde gebaut und wieder
-entfernt — sie stiftete mehr Verwirrung als Orientierung.
+One filled button in the hero instead of two. The 21/17/4 as a proportional bar in
+which every segment carries its own number. The scan bar was built and then
+removed again — it caused more confusion than orientation.
 
-### Und die Benefit-Karte
+### And the benefit card
 
-Sie trug ihre Überschrift innen: das Argument des Abschnitts in den Kleidern einer
-Karte. Deshalb las sie sich als etwas anderes als alle anderen Abschnitte. Der
-Text ist wörtlich nach oben gewandert, die Karte wurde 80 Wörter kürzer.
+It carried its heading inside: the section's argument dressed as a
+card. That is why it read as something different from all the other sections. The
+text moved up word for word, and the card became 80 words shorter.
 
-Die linke Hälfte spiegelt jetzt die rechte — Etikett, das Erzeugte in
-Ergebnisgröße, Herkunft klein darunter. Vorher stand der Satz, um den es geht, in
-kleiner Kursive hinter einer Haarlinie, unter einem Vorbehalt, den man las, bevor
-man wusste, worauf er sich bezieht.
+The left half now mirrors the right — label, the generated output at
+result size, provenance small underneath. Before, the sentence that matters stood in
+small italics behind a hairline, under a caveat that you read before
+you knew what it referred to.
 
 ### Verification Rail
 
-`components/VerificationRail.tsx` hält „wo bin ich, was liegt hinter mir, was ist
-offen" auf dem Schirm, während der Stepper wegscrollt — dieselben Kreise, als
-Spalte am rechten Rand ab 1536 px, darunter ein Knopf mit derselben Liste als
-Sheet. Sie fügt nichts hinzu: `lib/workflow-steps.ts` leitet jeden Zustand aus
-einem vorhandenen Artefakt ab, meldet und entscheidet nie, und kann keinen
-Schritt als erledigt ausgeben, weil eine Seite geöffnet wurde.
+`components/VerificationRail.tsx` keeps "where am I, what lies behind me, what is
+open" on screen while the stepper scrolls away — the same circles, as a
+column at the right edge from 1536 px, below that a button with the same list as a
+sheet. It adds nothing: `lib/workflow-steps.ts` derives every state from
+an existing artefact, never reports and never decides, and cannot report a
+step as done because a page was opened.
 
-401 Tests, 399 grün, einer übersprungen.
+401 tests, 399 green, one skipped.
 
 ## [v2.6.2] — 2026-08-28
 
-### Ignorierte Optionen, unverdiente Zuversicht, vier Sätze zu viel
+### Ignored options, unearned confidence, four sentences too many
 
-Release 5 von fünf, der Abschluss des Umsetzungsplans.
+Release 5 of five, the conclusion of the implementation plan.
 
-**`unordered` stand in der Schnittstelle und wurde nie gelesen.** Jeder Vergleich
-in `result-diff.ts` war ein Mengenvergleich, also kam `[A, B]` gegen `[B, A]` als
-`equal: true` zurück — auch wenn der Aufrufer ausdrücklich `{ unordered: false }`
-übergab. Eine Option, die es gibt und die ignoriert wird, ist schlimmer als keine,
-weil Aufrufer sie schreiben und ihr glauben. Die Voreinstellung bleibt mengenbasiert
-— das verspricht der Docstring seit jeher, und ein ABAP-`SELECT` ohne `ORDER BY`
-hat keine garantierte Zeilenfolge —, aber `unordered: false` bedeutet jetzt, was
-dort steht.
+**`unordered` was in the interface and was never read.** Every comparison
+in `result-diff.ts` was a set comparison, so `[A, B]` against `[B, A]` came back as
+`equal: true` — even when the caller explicitly passed `{ unordered: false }`.
+An option that exists and is ignored is worse than none,
+because callers write it and believe it. The default stays set-based
+— the docstring has always promised that, and an ABAP `SELECT` without `ORDER BY`
+has no guaranteed row order —, but `unordered: false` now means what it
+says.
 
-**Eine übereinstimmende Tabellenmenge war 0.95 Zuversicht wert.** In etwas, das
-niemand geprüft hatte: Join-Bedingungen, Kardinalität, ausgewählte Felder und
-Filter sind für `matchCdsView` unsichtbar. `SELECT … FROM vbak CROSS JOIN vbap`
-hat dieselbe Tabellenmenge wie der Join, den `I_SalesOrderItem` modelliert, und
-bekam denselben Wert. Jetzt 0.6 für die exakte Menge, 0.35 für eine Obermenge —
-und die Empfehlung sagt „prüfen", nicht „ersetzen".
+**A matching table set was worth 0.95 confidence.** In something that
+nobody had checked: join conditions, cardinality, selected fields and
+filters are invisible to `matchCdsView`. `SELECT … FROM vbak CROSS JOIN vbap`
+has the same table set as the join that `I_SalesOrderItem` models, and
+got the same value. Now 0.6 for the exact set, 0.35 for a superset —
+and the recommendation says "check", not "replace".
 
-**`differentialVerified` ist weg.** Der Schalter wurde von niemandem gesetzt, aber
-seine Form war die Falle: **ein** Boolean für einen ganzen Lauf hätte, kombiniert
-mit `cds?.exact`, *jede* exakte Übereinstimmung als „fully verified" markiert — auf
-Grundlage eines einzigen Tests oder gar keines. Verifikation ist etwas pro Abfrage.
+**`differentialVerified` is gone.** Nobody set the flag, but
+its shape was the trap: **one** Boolean for a whole run would, combined
+with `cds?.exact`, have marked *every* exact match as "fully verified" — on
+the basis of a single test or none at all. Verification is a per-query thing.
 
-**Vier Sätze, die mehr behaupteten als sie konnten:**
+**Four sentences that claimed more than they could:**
 
-- Die Datenschutzerklärung beschrieb nur Google Sign-In. Der E-Mail/Passwort-Weg
-  existiert seit jeher und verarbeitet Daten; er steht jetzt dort.
-- Sie sagte „applicable terms", während das Whitepaper in seinem Kasten „Honest
-  boundary" ausdrücklich festhält, dass für Free-Tier-Schlüssel andere
-  Google-Bedingungen gelten. Von beiden Dokumenten ist die Datenschutzerklärung
-  das maßgebliche — der Vorbehalt gehört dorthin.
-- Die Katalog-Modulseiten zählten „N objects … carry a released successor",
-  während die Tabelle zwei Zeilen darunter für einzelne Objekte „no released
-  path" rendert. Sie zählt jetzt, was sie behauptet.
-- Die Referenzseite lädt zum Nachrechnen ein („you should see the same numbers")
-  und führte daneben die Analysezeit in Millisekunden — eine Wanduhrmessung auf
-  der Cloud-Run-Instanz, die die Anfrage gerade bediente, bei jedem Aufruf anders.
-  Jetzt als Größenordnung.
+- The Datenschutzerklärung described only Google Sign-In. The e-mail/password path
+  has always existed and processes data; it is in there now.
+- It said "applicable terms", while the whitepaper in its "Honest
+  boundary" box explicitly states that other Google terms apply to free-tier
+  keys. Of the two documents, the Datenschutzerklärung is
+  the authoritative one — the caveat belongs there.
+- The catalog module pages counted "N objects … carry a released successor",
+  while the table two rows below renders "no released
+  path" for individual objects. It now counts what it claims.
+- The reference page invites you to recompute ("you should see the same numbers")
+  and listed the analysis time in milliseconds next to it — a wall-clock measurement on
+  the Cloud Run instance that happened to serve the request, different on every call.
+  Now as an order of magnitude.
 
-### Und die rote Pipeline
+### And the red pipeline
 
-Der Tenant-Zugriffstest fiel auf CI durch, nicht lokal: Release 4 unterschied
-„nie versucht" von „abgelehnt" über `NODE_ENV` — aber CI baut produktiv und hat
-keinen `RESEND_API_KEY`, was dort keine Fehlkonfiguration ist. Das Kriterium ist
-jetzt die Emulator-Kennung, die der Rest des Codes für genau diese Unterscheidung
-schon benutzt (`lib/firebase-admin.ts`).
+The tenant access test failed on CI, not locally: release 4 distinguished
+"never attempted" from "rejected" via `NODE_ENV` — but CI builds for production and has
+no `RESEND_API_KEY`, which is not a misconfiguration there. The criterion is
+now the emulator marker that the rest of the code already uses for exactly this distinction
+(`lib/firebase-admin.ts`).
 
-Neu: `tests/engine-honesty-guard.spec.ts`, 12 Prüfungen. Zwei bestehende
-Zusicherungen in `abap-sql-joins.spec.ts` waren auf die alten Zuversichtswerte
-festgenagelt und wurden auf die Aussage umgeschrieben, die tatsächlich zählt:
-eine Obermenge liegt unter einer exakten Menge, und beide deutlich unter allem,
-was sich wie „verifiziert" liest.
+New: `tests/engine-honesty-guard.spec.ts`, 12 checks. Two existing
+assertions in `abap-sql-joins.spec.ts` were nailed to the old confidence values
+and were rewritten to the statement that actually matters:
+a superset lies below an exact set, and both well below anything
+that reads like "verified".
 
-388 Tests, 387 grün — der eine Fehlschlag ist ein `ECONNRESET` gegen die Seed-API.
+388 tests, 387 green — the one failure is an `ECONNRESET` against the seed API.
 
 ## [v2.6.1] — 2026-08-28
 
-### Sitzung, Zustellung, zweiter Faktor
+### Session, delivery, second factor
 
-Release 4 von fünf. Fünf Befunde mit derselben Form: **etwas meldet einen Erfolg,
-den es nicht festgestellt hat.**
+Release 4 of five. Five findings with the same shape: **something reports a success
+it has not established.**
 
-**Der QR-Code war Dekoration.** `MockQrCode` nahm die `value`-Eigenschaft entgegen
-und zeichnete ein handgemaltes, immer gleiches SVG — unter der Überschrift „1.
-Scan Authenticator QR". Das Scannen richtete nichts ein. Der dokumentierte
-Hauptweg in die Zwei-Faktor-Authentifizierung funktionierte also gar nicht; nur
-das manuelle Eintippen des Geheimnisses.
+**The QR code was decoration.** `MockQrCode` accepted the `value` property
+and drew a hand-drawn SVG that was always the same — under the heading "1.
+Scan Authenticator QR". Scanning set nothing up. So the documented
+main path into two-factor authentication did not work at all; only
+typing in the secret manually did.
 
-Ein echter QR-Code braucht einen geprüften Encoder, und eine neue Abhängigkeit
-bedeutet hier eine Neuerzeugung der Lockfile — laut `CLAUDE.md` ein eigenes
-Risiko. Bis das eine bewusste Entscheidung ist, stehen dort die beiden Wege, die
-tatsächlich funktionieren: die `otpauth://`-Adresse, die der Server ohnehin
-erzeugt, als Schaltfläche „Open in authenticator app", und der Schlüssel zum
-Abtippen.
+A real QR code needs a vetted encoder, and a new dependency
+means regenerating the lockfile here — according to `CLAUDE.md` a risk of its own. Until that is a deliberate decision, the two paths that
+actually work are there: the `otpauth://` address that the server generates
+anyway, as a button "Open in authenticator app", and the key for
+typing in.
 
-**Ein Backup-Code ließ sich zweimal einlösen.** Lesen, Prüfen und Zurückschreiben
-waren drei getrennte Schritte. Zwei gleichzeitige Anfragen mit demselben Code
-lasen dieselbe Liste, bestanden beide, und schrieben beide ihre eigene Restliste
-— die zweite überschrieb die erste. Ein Code, zwei Zwölf-Stunden-Sitzungen.
-Einmaligkeit ist das ganze Versprechen eines Backup-Codes; das ist eine
-Transaktion wert. Scheitert sie, wird keine Sitzung ausgestellt.
+**A backup code could be redeemed twice.** Reading, checking and writing back
+were three separate steps. Two concurrent requests with the same code
+read the same list, both passed, and both wrote their own remaining list
+— the second overwrote the first. One code, two twelve-hour sessions.
+Single use is the whole promise of a backup code; that is worth a
+transaction. If it fails, no session is issued.
 
-**Zwei Mailrouten sahen die Antwort des Anbieters nie an.**
-`send-tenant-approval-email` und `send-tenant-revoke-email` protokollierten
-„Success", was auch immer Resend antwortete. `send-approval-email` protokollierte
-den Fehler und meldete trotzdem `success: true`. Die Admin-Konsole berichtete
-damit, ein Kunde sei benachrichtigt worden, während keine Nachricht angenommen
-worden war. Alle drei prüfen jetzt, antworten bei einer Ablehnung mit 502, und
-halten die Message-ID fest — die Verbindung zu den Zustellereignissen aus v2.5.1.
+**Two mail routes never looked at the provider's answer.**
+`send-tenant-approval-email` and `send-tenant-revoke-email` logged
+"Success", whatever Resend answered. `send-approval-email` logged
+the error and reported `success: true` anyway. The admin console thus
+reported that a customer had been notified while no message had been
+accepted. All three now check, answer a rejection with 502, and
+record the message ID — the link to the delivery events from v2.5.1.
 
-**Tenant-Anfragen meldeten Erfolg ohne Benachrichtigung.** Der Antragsteller
-bekam „ist eingegangen", `s4TenantAccessRequested` wurde gesetzt, und niemand
-hielt einen Freigabe-Token. Die Anfrage wird weiterhin gespeichert — sie geht
-nicht verloren —, aber der Aufrufer wird nicht mehr belogen, und
-`s4TenantAccessNotified` macht eine unzugestellte Anfrage auffindbar. Fehlt der
-Schlüssel außerhalb der Produktion, ist die Konsolenausgabe der Zustellweg; in
-der Produktion ist ein fehlender Schlüssel derselbe Ausgang wie eine Ablehnung.
+**Tenant requests reported success without notification.** The requester
+got "has been received", `s4TenantAccessRequested` was set, and nobody
+held an approval token. The request is still stored — it is not
+lost —, but the caller is no longer lied to, and
+`s4TenantAccessNotified` makes an undelivered request findable. If the
+key is missing outside production, the console output is the delivery path; in
+production a missing key is the same outcome as a rejection.
 
-**Der Profil-Listener überlebte seinen Nutzer.**
-`return () => unsubscribeProfile();` stand im Rückgabewert des
-`onAuthStateChanged`-Callbacks — den Firebase verwirft. Der Snapshot-Listener des
-vorigen Kontos blieb aktiv und konnte `setProfile` mit fremden Daten aufrufen. Er
-wird jetzt beim Nutzerwechsel und beim Abräumen des Effekts freigegeben.
+**The profile listener outlived its user.**
+`return () => unsubscribeProfile();` stood in the return value of the
+`onAuthStateChanged` callback — which Firebase discards. The snapshot listener of the
+previous account stayed active and could call `setProfile` with someone else's data. It
+is now released on user change and on cleanup of the effect.
 
-Neu: `tests/session-delivery-guard.spec.ts`, 12 Prüfungen.
+New: `tests/session-delivery-guard.spec.ts`, 12 checks.
 
-376 Tests, 375 grün. `full-pipeline.spec.ts` fiel einmal durch, weil Gemini im
-Lauf defektes JSON lieferte, und läuft isoliert durch — die beiden Verwender von
-`getStats` sind beide abgesichert, die Änderung aus v2.6.0 kann es nicht
-auslösen.
+376 tests, 375 green. `full-pipeline.spec.ts` failed once because Gemini returned
+broken JSON during the run, and passes in isolation — the two users of
+`getStats` are both safeguarded, the change from v2.6.0 cannot
+trigger it.
 
 ## [v2.6.0] — 2026-08-28
 
-### Grüne Urteile, die niemand verdient hat
+### Green verdicts nobody earned
 
-Release 3 von fünf. Es ist die Fehlerklasse, für die in v2.5.0 der gefälschte
-Sandbox-Tester entfernt wurde und für die `docs/ARCHITECTURE.md` §5.7 die Regel
-formuliert — beide Reviews fanden sie an zehn Stellen zurück. Das Muster ist
-immer dasselbe: **ein Wert fehlt, und der Code setzt den bestmöglichen ein.**
+Release 3 of five. It is the class of defect for which the fake
+sandbox tester was removed in v2.5.0 and for which `docs/ARCHITECTURE.md` §5.7
+states the rule — both reviews found it again in ten places. The pattern is
+always the same: **a value is missing, and the code substitutes the best possible one.**
 
-**Der angezeigte Clean Core Score war nicht der signierte.** Die Oberfläche
-rechnete ihn im Browser neu: 60 % Konstrukt-Abdeckung + 30 % ein „standardFitBonus",
-per Regex `/high|medium|low/` aus der Gemini-Prosa gelesen und auf **80**
-voreingestellt, wenn nichts passte + 10 % der gespeicherte Wert. Eine
-Modellantwort „High" hob damit die Anzeige über das, was der unveränderliche Run
-und das Audit-Pack belegen können — unter dem Etikett, auf dem die ganze
-Vertrauenskette ruht. Gezeigt wird jetzt, was `/api/runs/create` signiert hat.
-Ohne Lauf steht dort ein Gedankenstrich, keine 80.
+**The displayed Clean Core Score was not the signed one.** The UI
+recomputed it in the browser: 60 % construct coverage + 30 % a "standardFitBonus",
+read from the Gemini prose via regex `/high|medium|low/` and defaulting to **80**
+when nothing matched + 10 % the stored value. A
+model answer "High" thus raised the display above what the immutable run
+and the audit pack can prove — under the label on which the whole
+trust chain rests. Shown now is what `/api/runs/create` signed.
+Without a run there is a dash, not an 80.
 
-**„Malicious Payload Check passed" für Code, den nichts geprüft hat.** Beim
-Upload war der Scan echt und blockierend. Beim **Einfügen** nicht: die Textfläche
-setzte `legacyCode` direkt aus `onChange`, und der Banner hing allein daran, dass
-überhaupt Code da war. Der Scan ist jetzt in `lib/staged-code-scan.ts` und läuft
-auf beiden Wegen; der Banner zeigt das Ergebnis, nicht die Anwesenheit von Text.
-Bei einem Treffer erscheint stattdessen ein roter Block mit dem Grund.
+**"Malicious Payload Check passed" for code that nothing checked.** On
+upload the scan was real and blocking. On **paste** it was not: the text area
+set `legacyCode` directly from `onChange`, and the banner depended only on
+there being any code at all. The scan now lives in `lib/staged-code-scan.ts` and runs
+on both paths; the banner shows the result, not the presence of text.
+On a hit a red block with the reason appears instead.
 
-**Die Lieferseite erklärte unfertige Projekte für fertig.** Das Laden der Seite
-schrieb `status: 'completed'` — ohne Code, Tests, Dokumentation oder Freigabe
-anzusehen. Direkt auf `/delivery` zu navigieren genügte. Daneben stand unbedingt
-**„Ready for Deployment"** mit pulsierendem grünen Punkt, und der
-Integritätsbericht vergab grüne Haken für Artefakte, die er nie ansah. Der
-Schreibvorgang ist weg; der Bericht prüft jetzt, worüber er berichtet, und der
-QA-Block benennt, was fehlt.
+**The delivery page declared unfinished projects finished.** Loading the page
+wrote `status: 'completed'` — without looking at code, tests, documentation or
+approval. Navigating directly to `/delivery` was enough. Next to it stood, unconditionally,
+**"Ready for Deployment"** with a pulsing green dot, and the
+integrity report handed out green ticks for artefacts it never looked at. The
+write is gone; the report now checks what it reports on, and the
+QA block names what is missing.
 
-**„AI Verified" ohne Validator.** Kein Compiler, kein Testlauf, keine
-deterministische Prüfung hat den erzeugten Code angesehen — der Pfad nimmt sogar
-beliebigen Nicht-JSON-Text an. Es heißt jetzt „AI Generated".
+**"AI Verified" without a validator.** No compiler, no test run, no
+deterministic check looked at the generated code — the path even accepts
+arbitrary non-JSON text. It now says "AI Generated".
 
-**Häkchen hoben die Compliance auf 100.** `signedOffIds.size / signOffFindings.length`
-zog den angezeigten Wert vom signierten 40 in Richtung 100. Die Häkchen sind
-Browserzustand: nicht gespeichert, an keine Person, keine Begründung und kein
-Prüfergebnis gebunden, und es entsteht kein neuer signierter Lauf. Angezeigt wird
-der signierte Wert; der Prüffortschritt bleibt als eigene Zeile.
+**Ticks raised compliance to 100.** `signedOffIds.size / signOffFindings.length`
+pulled the displayed value from the signed 40 towards 100. The ticks are
+browser state: not stored, bound to no person, no justification and no
+check result, and no new signed run is created. Displayed is
+the signed value; the review progress stays as a line of its own.
 
-**Die TCO-Seite erfand einen Geschäftsfall.** `scoreBefore = cleanCoreScore || 30`,
-`scoreAfter = 95` fest verdrahtet, und `setLoc(Math.max(1000, Math.min(lineCount * 10, 50000)))`
-machte aus zehn hochgeladenen Zeilen **tausend**. Daraus wurden „Annual Net
-Savings", Amortisationsmonate und ROI in Euro. Ohne signierten Score rendert die
-Seite jetzt gar kein Modell, sondern sagt, warum. Die Zeilenzahl ist die echte,
-und die Kennzahl heißt „Scenario".
+**The TCO page invented a business case.** `scoreBefore = cleanCoreScore || 30`,
+`scoreAfter = 95` hard-wired, and `setLoc(Math.max(1000, Math.min(lineCount * 10, 50000)))`
+turned ten uploaded lines into **a thousand**. From that came "Annual Net
+Savings", payback months and ROI in euros. Without a signed score the
+page now renders no model at all, but says why. The line count is the real one,
+and the figure is called "Scenario".
 
-**Vier weitere Substitutionen:** eine fehlende Abdeckungs-Zusammenfassung wurde
-zu „fully supported"; ein fehlendes Deployment-Ziel zu „Private Cloud (RISE)",
-einer konkreten Aussage über die Systemlandschaft des Kunden; null Findings zu
-„Pristine Codebase Detected", einem Urteil über Code, das aus dem Ausbleiben von
-Befunden nicht folgt; und `standardFit` zu **90 % / 50 % / 15 %** mit
-Fortschrittsbalken, wo das Modell eines von drei Wörtern liefert. Dazu `NaN%` als
-Bestehensquote bei leerem Testlauf.
+**Four more substitutions:** a missing coverage summary became
+"fully supported"; a missing deployment target became "Private Cloud (RISE)",
+a concrete statement about the customer's system landscape; zero findings became
+"Pristine Codebase Detected", a verdict on code that does not follow from the absence of
+findings; and `standardFit` became **90 % / 50 % / 15 %** with
+progress bars, where the model delivers one of three words. Plus `NaN%` as
+pass rate for an empty test run.
 
-Neu: `tests/unearned-verdicts-guard.spec.ts`, 19 Prüfungen. Sie lesen den
-kommentarfreien Stand, damit die Erklärungen über den Korrekturen nicht ihre
-eigenen Zusicherungen erfüllen.
+New: `tests/unearned-verdicts-guard.spec.ts`, 19 checks. They read the
+comment-free state, so that the explanations above the fixes do not satisfy their
+own assertions.
 
-364 Tests grün.
+364 tests green.
 
 ## [v2.5.5] — 2026-08-28
 
-### Die Engine erfindet keine Stilllegungskandidaten mehr
+### The engine no longer invents decommissioning candidates
 
-Release 2 von fünf aus dem Umsetzungsplan.
+Release 2 of five from the implementation plan.
 
-**Fehlende Nutzungsdaten waren null Aufrufe.** `usage-parser.ts` schrieb
-`callCount: callCount ?? 0`. `parseCallCount()` liefert `undefined`, wenn die
-Spalte fehlt oder unlesbar ist — und daraus wurde eine **0**.
+**Missing usage data was zero calls.** `usage-parser.ts` wrote
+`callCount: callCount ?? 0`. `parseCallCount()` returns `undefined` when the
+column is missing or unreadable — and that became a **0**.
 
-`usage-join.ts` trägt gegen genau diesen Fall einen ausdrücklichen Schutz, mit
-dem Kommentar „Missing data is not evidence of non-use". Der Schutz prüft, ob ein
-Datensatz *existiert*. Über dessen Inhalt sagt er nichts. Ein Datensatz mit einer
-erfundenen Null kam also durch, wurde `dormant`, und `dormant` ergibt bei jeder
-Machbarkeit den Quadranten `retire-candidate`.
+`usage-join.ts` carries an explicit protection against exactly this case, with
+the comment "Missing data is not evidence of non-use". The protection checks whether a
+record *exists*. It says nothing about its content. So a record with an
+invented zero got through, became `dormant`, and `dormant` yields the
+`retire-candidate` quadrant for any feasibility.
 
-Ein SCMON- oder UPL-Export, dessen Aufrufspalte anders heißt als erwartet, machte
-damit **jedes Objekt darin zum Stilllegungskandidaten** — eine Empfehlung,
-produktiven Code zu löschen, hergeleitet aus dem Fehlen von Daten.
+An SCMON or UPL export whose call column is named differently than expected thus made
+**every object in it a decommissioning candidate** — a recommendation
+to delete productive code, derived from the absence of data.
 
-`callCount` ist jetzt `number | null`; `null` wird zu `unknown`, vor jeder
-weiteren Prüfung. Ein *gemessenes* Null bleibt `dormant` — der Fix stumpft die
-Funktion nicht ab. Und der Import warnt jetzt, wenn keine Aufrufspalte erkannt
-wurde, statt eine Matrix voller „unknown" ohne Erklärung zu zeigen.
+`callCount` is now `number | null`; `null` becomes `unknown`, before any
+further check. A *measured* zero stays `dormant` — the fix does not blunt the
+function. And the import now warns when no call column was recognised,
+instead of showing a matrix full of "unknown" without explanation.
 
-**Ein Fund, den kein Modell gemeldet hat.** Beim Testen der Nachbarkorrektur fiel
-auf: `collectLocalDataObjects` behandelt den Namen nach **jedem** `INTO` als
-lokales Datenobjekt. Richtig für `LOOP AT it INTO wa` und `SELECT … INTO lt_x` —
-falsch für `INSERT INTO <dbtab>`, den normalen Open-SQL-Insert. Die Tabelle wurde
-als Variable registriert, `processTableAccess` brach ab, bevor es sie ansah, und
-**ein direkter Schreibzugriff auf eine SAP-Standardtabelle in der gängigsten
-Syntax erzeugte überhaupt kein Finding.** `INSERT INTO vbak VALUES @ls_order.`
-war unsichtbar. Für Standard- wie Kundentabellen.
+**A finding no model reported.** While testing the neighbouring fix it became
+apparent: `collectLocalDataObjects` treats the name after **every** `INTO` as a
+local data object. Right for `LOOP AT it INTO wa` and `SELECT … INTO lt_x` —
+wrong for `INSERT INTO <dbtab>`, the normal Open SQL insert. The table was
+registered as a variable, `processTableAccess` aborted before it looked at it, and
+**a direct write access to an SAP standard table in the most common
+syntax produced no finding at all.** `INSERT INTO vbak VALUES @ls_order.`
+was invisible. For standard as well as customer tables.
 
-**Und die Gegenrichtung:** `INSERT <wa> INTO <itab>` ist internes ABAP, wurde
-aber als Datenbankschreibzugriff gemeldet — ein **Critical**-Finding auf einer
-lokalen Variablen. Die beiden Schutzstufen dahinter (im Quelltext deklariert,
-oder `LS_`/`GS_`-Namenskonvention) greifen bei genau den Ausschnitten nicht, für
-die das Werkzeug benutzt wird. Unterschieden wird jetzt daran, wo `INTO` steht:
-nach einem Namen ist es die interne Form, direkt nach `INSERT` ist es Open SQL.
+**And the opposite direction:** `INSERT <wa> INTO <itab>` is internal ABAP, but was
+reported as a database write access — a **Critical** finding on a
+local variable. The two protection levels behind it (declared in the source,
+or `LS_`/`GS_` naming convention) do not apply to exactly the snippets
+the tool is used for. The distinction is now made by where `INTO` stands:
+after a name it is the internal form, directly after `INSERT` it is Open SQL.
 
-**Fehlende Vorfahren gelten nicht mehr als aufgelöst.** Fehlte eine Oberklasse im
-Upload, wurde sie nicht als fehlend vermerkt, sofern ihr Name mit `CL_`, `CX_`,
-`ZCL_` oder `ZCX_` begann. Bei SAPs eigenen Namensräumen ist das vertretbar — die
-Klassen existieren im System, nur nicht im Upload. Bei `ZCL_`/`ZCX_`/`ZIF_` nicht:
-das sind Kundenobjekte, und wenn sie fehlen, wurden sie nicht geparst.
-„Inheritance chain fully resolved" war eine Aussage über Code, den niemand
-gelesen hat.
+**Missing ancestors no longer count as resolved.** If a superclass was missing from the
+upload, it was not noted as missing as long as its name began with `CL_`, `CX_`,
+`ZCL_` or `ZCX_`. For SAP's own namespaces that is defensible — the
+classes exist in the system, just not in the upload. For `ZCL_`/`ZCX_`/`ZIF_` it is not:
+those are customer objects, and if they are missing, they were not parsed.
+"Inheritance chain fully resolved" was a statement about code nobody had
+read.
 
-**Der „Messzeitraum" war keiner.** Er wurde aus dem kleinsten und größten
-Ausführungsdatum gebildet: ein Jahresexport, in dem alles am 1. und 2. Juni lief,
-meldete ein **eintägiges** Messfenster — angezeigt als „📅 1-day measurement
-window". Ausführungszeitpunkte sind nicht das Beobachtungsfenster. Das Feld heißt
-jetzt `observedSpanDays` und die Oberfläche sagt „days of observed activity".
+**The "measurement period" was none.** It was formed from the earliest and latest
+execution date: a year's export in which everything ran on 1 and 2 June
+reported a **one-day** measurement window — displayed as "📅 1-day measurement
+window". Execution times are not the observation window. The field is now called
+`observedSpanDays` and the UI says "days of observed activity".
 
-Neu: `tests/usage-unknown-guard.spec.ts` (11) und
-`tests/abap-internal-insert-guard.spec.ts` (10). Die Nutzungstests fahren den
-echten Parser über echten CSV-Text, weil der Defekt in der Naht zwischen zwei
-Modulen lag, die einzeln beide richtig aussahen.
+New: `tests/usage-unknown-guard.spec.ts` (11) and
+`tests/abap-internal-insert-guard.spec.ts` (10). The usage tests run the
+real parser over real CSV text, because the defect lay in the seam between two
+modules that each looked right on their own.
 
-345 Tests grün.
+345 tests green.
 
 ## [v2.5.4] — 2026-08-28
 
-### Fünf Tests, die nichts geprüft haben
+### Five tests that checked nothing
 
-Release 1 von fünf aus dem Umsetzungsplan
-(`docs/reviews/2026-08-28-UMSETZUNGSPLAN.md`). Zuerst, weil davon abhängt, was
-alle folgenden Testläufe wert sind.
+Release 1 of five from the implementation plan
+(`docs/reviews/2026-08-28-UMSETZUNGSPLAN.md`). First, because what
+all following test runs are worth depends on it.
 
-Fünf Specs hüllten ihre gesamte Zusicherung in eine Bedingung auf die Existenz
-des Elements, das sie prüfen sollten — `if (await locator.count() > 0)`.
-Verschwindet das Element, besteht der Test still. Das ist schlechter als ein
-fehlender Test, weil er als Absicherung mitgezählt wird.
+Five specs wrapped their entire assertion in a condition on the existence
+of the element they were supposed to check — `if (await locator.count() > 0)`.
+If the element disappears, the test passes silently. That is worse than a
+missing test, because it is counted as a safeguard.
 
-**Drei davon suchten Dinge, die es gar nicht gibt:**
+**Three of them looked for things that do not exist at all:**
 
-- `"Free Community Tool"` kommt im gesamten Code nicht vor. Die Seite sagt
-  „Free Community Edition".
-- Der Titel `"Search S/4HANA Glossary"` existiert nicht. Der echte lautet
-  „Open Clean Core Glossary Guide".
-- Der Chatbot-Auslöser lebt im angemeldeten Shell-Layout, während die Tests die
-  öffentliche Startseite luden. Er war dort nie zu finden.
+- `"Free Community Tool"` does not occur anywhere in the code. The page says
+  "Free Community Edition".
+- The title `"Search S/4HANA Glossary"` does not exist. The real one is
+  "Open Clean Core Glossary Guide".
+- The chatbot trigger lives in the signed-in shell layout, while the tests loaded the
+  public start page. It was never to be found there.
 
-Alle drei bestanden monatelang, ohne etwas zu prüfen.
+All three passed for months without checking anything.
 
-**Was die Verschärfung zutage gefördert hat:** `GlossarySidebar` wird in
-`app/(app)/layout.tsx` importiert und **nie gerendert**. Nur der Chatbot hängt
-im Shell. Genau die Form, in der `UserOnboarding` gestern gefunden wurde — und
-der Test, der das hätte zeigen sollen, war der stillschweigend bestehende. Der
-Test prüft jetzt, was da ist; die tote Einbindung steht als Befund im Plan statt
-durch eine Zusicherung auf ein nicht vorhandenes Element überdeckt zu werden.
+**What the tightening brought to light:** `GlossarySidebar` is imported in
+`app/(app)/layout.tsx` and **never rendered**. Only the chatbot hangs
+in the shell. Exactly the shape in which `UserOnboarding` was found yesterday — and
+the test that should have shown it was the silently passing one. The
+test now checks what is there; the dead inclusion stands as a finding in the plan instead of
+being covered up by an assertion on a non-existent element.
 
-Der Glossar-Test heißt „toggle behavior" und schaltet jetzt auch um: öffnen,
-prüfen, schließen, prüfen.
+The glossary test is called "toggle behavior" and now also toggles: open,
+check, close, check.
 
-Neu: `tests/no-vacuous-tests.spec.ts`. Eine bewusst grobe, repo-weite Prüfung —
-keine Spec darf eine Zusicherung davon abhängig machen, dass das zugesicherte
-Element existiert.
+New: `tests/no-vacuous-tests.spec.ts`. A deliberately coarse, repo-wide check —
+no spec may make an assertion depend on the asserted
+element existing.
 
-324 Tests grün.
+324 tests green.
 
 ## [v2.5.3] — 2026-08-28
 
-### Zustellzahlen im Wochenbericht
+### Delivery figures in the weekly report
 
-Der Webhook aus v2.5.1 schreibt Zustellereignisse nach Firestore und setzt ein
-Abzeichen auf die Nutzerzeile. Was fehlte, war die Zusammenfassung: wie viel Mail
-ist rausgegangen, wie viel davon angekommen, und wenn nicht — bei wem und warum.
+The webhook from v2.5.1 writes delivery events to Firestore and puts a
+badge on the user row. What was missing was the summary: how much mail
+went out, how much of it arrived, and if not — for whom and why.
 
-Der Freitagsbericht hat jetzt einen Abschnitt **Mailzustellung**: versendet,
-zugestellt (davon geöffnet), verzögert, abgeprallt, als Spam gemeldet. Darunter,
-nur wenn es etwas zu zeigen gibt, ein roter Block **Nicht angekommen** mit
-Empfänger, Art der Mail, Zeitpunkt und dem Grund im Wortlaut des Providers.
+The Friday report now has a section **Mailzustellung** (mail delivery): sent,
+delivered (of which opened), delayed, bounced, reported as spam. Below it,
+only when there is something to show, a red block **Nicht angekommen** (not arrived) with
+recipient, type of mail, time and the reason in the provider's wording.
 
-Drei Entscheidungen darin:
+Three decisions in it:
 
-- **`email.sent` bekommt eine eigene Zeile „Ohne Rückmeldung"**, nicht 0 %
-  zugestellt. Vor dem Webhook stand jeder Datensatz für immer auf `sent`; wird
-  diese Zahl wieder hoch, während Mail rausgeht, sagt der Bericht ausdrücklich,
-  dass der Webhook nicht scharf ist — und nicht, dass die Zustellung kaputt sei.
-- **Nullwerte erzeugen keine Zeile.** Eine Woche ohne Bounces zeigt keinen
-  Bounce-Eintrag; der Abschnitt soll gelesen und nicht überflogen werden.
-- **Testkonten sind ausgenommen**, nach derselben Regel wie überall sonst im
-  Bericht. Die CI verschickt weit mehr Mail als echte Nutzer.
+- **`email.sent` gets its own line "Ohne Rückmeldung"** (no response), not 0 %
+  delivered. Before the webhook every record stayed at `sent` forever; if
+  this number goes up again while mail goes out, the report says explicitly
+  that the webhook is not live — and not that delivery is broken.
+- **Zero values produce no line.** A week without bounces shows no
+  bounce entry; the section is meant to be read, not skimmed.
+- **Test accounts are excluded**, by the same rule as everywhere else in the
+  report. CI sends far more mail than real users.
 
-### Die andere Hälfte des Wettrennens
+### The other half of the race
 
-`recordEmailSent` schützte seit v2.5.1 ein bereits eingetroffenes Urteil davor,
-von `email.sent` überschrieben zu werden. Die Spiegelung auf die Nutzerzeile war
-davon nicht gedeckt: `recordEmailEvent` liest `uid` und `kind` vom Dokument, und
-ein Ereignis, das vor dem Sendevermerk ankommt, findet beides nicht — der Bounce
-stand korrekt in `email_events`, das rote Abzeichen erschien nie. Ausgerechnet
-beim schnellsten Bounce. `recordEmailSent` spiegelt jetzt nach, wenn es ein
-Dokument vorfindet, dessen Status kein `sent` mehr ist.
+Since v2.5.1 `recordEmailSent` has protected a verdict that had already arrived from
+being overwritten by `email.sent`. The mirroring onto the user row was
+not covered by that: `recordEmailEvent` reads `uid` and `kind` from the document, and
+an event that arrives before the send record finds neither — the bounce
+stood correctly in `email_events`, the red badge never appeared. Of all things
+with the fastest bounce. `recordEmailSent` now mirrors after the fact when it finds a
+document whose status is no longer `sent`.
 
-### „Motivation / Use Case" ist wieder im Anmeldeformular
+### "Motivation / Use Case" is back in the sign-up form
 
-Der Google-Pfad hat nie aufgehört zu fragen. Der E-Mail/Passwort-Pfad schickte
-seit einem Umbau ein hartkodiertes `motivation: ''` — Backend, Firestore-Dokument
-und die Admin-Benachrichtigung konnten das Feld die ganze Zeit, nur gefragt hat
-es niemand mehr. Die Mail druckte eine Überschrift mit nichts darunter.
+The Google path never stopped asking. Since a rework, the e-mail/password path
+had sent a hard-coded `motivation: ''` — backend, Firestore document
+and the admin notification could handle the field all along, only nobody asked for
+it any more. The mail printed a heading with nothing underneath.
 
-Optional, 2000 Zeichen, kein `required`. Zwei Sätze zum Anwendungsfall sind der
-Unterschied zwischen einer Zeile in einer Liste und dem Wissen, wer da gekommen
-ist — aber daraus eine Hürde zu machen wäre das Gegenteil dessen, wofür in
-v2.4.2 die Freigabe abgeschafft wurde.
+Optional, 2000 characters, no `required`. Two sentences about the use case are the
+difference between a line in a list and knowing who has
+come — but making a hurdle of it would be the opposite of what
+the approval was abolished for in v2.4.2.
 
-### Betrieb
+### Operations
 
-Der Resend-Webhook ist scharfgeschaltet. Der GitHub-Secret allein genügt nicht:
-er wird beim Deploy als Umgebungsvariable injiziert, und bis dahin antwortete die
-Route jedem 503 — was in den Logs einer Live-Registrierung um 06:03 auch so zu
-sehen war, viermal in acht Sekunden.
+The Resend webhook is live. The GitHub secret alone is not enough:
+it is injected as an environment variable at deploy, and until then the
+route answered everyone with 503 — which could also be seen in the logs of a live sign-up at 06:03,
+four times in eight seconds.
 
-`CLAUDE.md` trägt jetzt die lokale Emulator-Falle: ohne `--project=cleancore-491216`
-fällt die CLI auf `demo-no-project` zurück, und das Admin SDK weist jedes Token mit
-`incorrect "aud" claim` ab. Das Symptom sind vier fehlschlagende auth-abhängige
-Specs bei sonst grüner Suite — es liest sich wie ein Regress und ist keiner.
+`CLAUDE.md` now carries the local emulator trap: without `--project=cleancore-491216`
+the CLI falls back to `demo-no-project`, and the Admin SDK rejects every token with
+`incorrect "aud" claim`. The symptom is four failing auth-dependent
+specs in an otherwise green suite — it reads like a regression and is not one.
 
-323 Tests grün.
+323 tests green.
 
 ## [v2.5.2] — 2026-08-27
 
-### Eine Seite, die aus Nachprüfbarkeit argumentiert, wird daran gemessen
+### A page that argues from verifiability is measured by it
 
-Ein externer Befund vom 27.08. (`docs/reviews/2026-08-27-EXTERNAL-AUDIT-V2.md`)
-fand vier Widersprüche auf der Startseite: zwei Objektzahlen, zwei Bezeichnungen
-für dieselbe Zelle, zwei Namen für dieselbe Zeile, zwei Datumsangaben. Drei davon
-hatten eine gemeinsame Ursache — **die Vergleichsmatrix stand zweimal wörtlich in
-derselben Datei**, einmal für die gestapelten Karten unter `md`, einmal für die
-Desktop-Zeilen, und die Kopien waren auseinandergelaufen.
+An external finding from 27.08. (`docs/reviews/2026-08-27-EXTERNAL-AUDIT-V2.md`)
+found four contradictions on the start page: two object counts, two labels
+for the same cell, two names for the same row, two dates. Three of them
+had a common cause — **the comparison matrix stood twice, verbatim, in
+the same file**, once for the stacked cards below `md`, once for the
+desktop rows, and the copies had drifted apart.
 
-Vier Werte anzugleichen hätte den Mechanismus stehen lassen, der sie erzeugt hat.
-Die Matrix ist deshalb jetzt **eine** Definition, zweimal gerendert. Die Objektzahl
-wird aus demselben `catalogStats` interpoliert, das zwei Zentimeter darüber schon
-die Live-Zahl anzeigt — sie stand als `23,000+` im Text, während der Trust-Balken
-32.103 rechnete. Und beide Renderer leiten ihre Darstellung aus `level` ab statt
-aus dem Badge-Text; genau dieser Vergleich hatte „Not Supported" und „Not
-Available" auseinanderdriften lassen, ohne dass eine Ansicht falsch aussah.
+Aligning four values would have left the mechanism standing that produced them.
+The matrix is therefore now **one** definition, rendered twice. The object count
+is interpolated from the same `catalogStats` that already shows the live number two centimetres
+above — it stood as `23,000+` in the text while the trust bar
+computed 32,103. And both renderers derive their presentation from `level` instead
+of from the badge text; exactly that comparison had let "Not Supported" and "Not
+Available" drift apart without either view looking wrong.
 
-Dieselbe Zahl war auf `/how-it-works` und `/abap-custom-code-analysis` ebenfalls
-eingetippt. Beide lesen sie jetzt.
+The same number was also typed in on `/how-it-works` and `/abap-custom-code-analysis`.
+Both read it now.
 
-### Datenschutz und Impressum waren hinter dem Login verlinkt
+### Privacy policy and Impressum were linked behind the login
 
-Der Hinweisbanner im App-Shell zeigte auf `/settings#privacy` und
-`/settings#legal`. Der Befund fand das auf `/knowledge`; tatsächlich wiegt es
-schwerer, denn dieses Layout umschließt auch `/how-to` und `/first-run` — also
-jede öffentliche Cluster-Seite, alle im Sitemap, alle ohne Anmeldung erreichbar.
-Datenschutzerklärung und Impressum müssen unmittelbar und ohne Registrierung
-verfügbar sein (§ 5 DDG, Art. 12/13 DSGVO). Sie zeigen jetzt auf `/datenschutz`
-und `/impressum`, wie der Fußbereich derselben Seite es immer schon tat.
+The notice banner in the app shell pointed to `/settings#privacy` and
+`/settings#legal`. The finding found that on `/knowledge`; in fact it weighs
+more heavily, because this layout also wraps `/how-to` and `/first-run` — that is,
+every public cluster page, all in the sitemap, all reachable without sign-in.
+Datenschutzerklärung and Impressum must be available directly and without registration
+(§ 5 DDG, Art. 12/13 GDPR). They now point to `/datenschutz`
+and `/impressum`, as the footer of the same page always did.
 
-Aus demselben Grund führt das Logo für nicht angemeldete Leser auf `/`. Ein harter
-Link auf `/dashboard` war eine Sackgasse für jeden, der über eine Suchanfrage auf
-`/knowledge` landete — und ein Signal, das den internen Linkgraph verzerrte.
+For the same reason the logo leads to `/` for readers who are not signed in. A hard
+link to `/dashboard` was a dead end for anyone who landed on
+`/knowledge` via a search query — and a signal that distorted the internal link graph.
 
-### Kleinere Korrekturen
+### Smaller fixes
 
-- `{APP_VERSION} · July 2026` im Showroom und im Beispielpaket: die eine Hälfte
-  aktualisierte sich mit jedem Release, die andere nicht. Beide kommen jetzt aus
+- `{APP_VERSION} · July 2026` in the Showroom and in the example pack: one half
+  updated with every release, the other did not. Both now come from
   `lib/version.ts`.
-- Die Objektliste auf der Benefit-Karte sagt jetzt, wessen Benennung sie zeigt.
-  Ohne diesen Satz liest sich `VBAK → I_SALESDOCUMENT` wie ein Fehler, wenn der
-  Lauf einem Entwickler `API_SALES_ORDER_SRV` in die Hand gibt. Beide sind
-  vertretbar, aber nur eine ist SAPs — und SAPs ist die Behauptung, die daneben
-  steht.
+- The object list on the benefit card now says whose naming it shows.
+  Without that sentence, `VBAK → I_SALESDOCUMENT` reads like an error when the
+  run hands a developer `API_SALES_ORDER_SRV`. Both are
+  defensible, but only one is SAP's — and SAP's is the claim that stands
+  next to it.
 
-Neu: `tests/landing-consistency-guard.spec.ts`, neun Prüfungen. Sie sichern den
-Mechanismus, nicht die Werte: dass die Matrix eine Definition hat, dass keine
-Zahl im Text steht, dass kein Datum eingefroren neben einer lebenden Version
-steht, dass die Rechtsseiten öffentlich verlinkt sind.
+New: `tests/landing-consistency-guard.spec.ts`, nine checks. They safeguard the
+mechanism, not the values: that the matrix has one definition, that no
+number stands in the text, that no date stands frozen next to a living version,
+that the legal pages are linked publicly.
 
-316 Tests grün.
+316 tests green.
 
 ## [v2.5.1] — 2026-08-27
 
-### Zustellung von Mails ist jetzt beobachtbar
+### Mail delivery is now observable
 
-Ein 200 von `POST https://api.resend.com/emails` heißt „in die Warteschlange
-gestellt" und sonst nichts. Die Plattform hat das als Erfolg protokolliert und
-danach nie wieder etwas erfahren — eine Willkommensmail in der Quarantäne eines
-Konzernfilters und eine im Posteingang sahen im Log identisch aus.
+A 200 from `POST https://api.resend.com/emails` means "put into the
+queue" and nothing else. The platform logged that as success and
+never learned anything again afterwards — a welcome mail in the quarantine of a
+corporate filter and one in the inbox looked identical in the log.
 
-Das wiegt schwerer, als es klingt: an dieser einen Nachricht hängt der komplette
-Registrierungsablauf. Sie trägt den First-Start-Guide und die Sicherheitsantworten,
-die jemand braucht, bevor er ABAP in das Werkzeug einfügt. Dreißig Konten aus der
-Community-Aktivierung wurden angelegt, ohne dass irgendwer sagen könnte, ob die
-Mail angekommen ist. Die geringe Nutzung der Plattform ist durch nicht gesehene
-Mails mindestens so gut erklärt wie durch irgendetwas am Produkt.
+That weighs more than it sounds: the entire registration flow hangs on this one
+message. It carries the First-Start Guide and the security answers
+someone needs before pasting ABAP into the tool. Thirty accounts from the
+community activation were created without anyone being able to say whether the
+mail arrived. The low usage of the platform is explained at least as well by unseen
+mails as by anything about the product.
 
-**Neu: `POST /api/webhooks/resend`.** Unauthentifiziert aus Notwendigkeit — Resend
-kann kein Firebase-Token tragen —, die Signatur *ist* die Authentifizierung:
-Svix-HMAC über `${svix-id}.${svix-timestamp}.${Rohtext}` mit fünf Minuten
-Replay-Fenster, in `lib/email-events.ts` selbst implementiert statt als Abhängigkeit
-gezogen. Ohne `RESEND_WEBHOOK_SECRET` antwortet die Route 503 und schreibt nichts.
-Für Nutzlasten, die sie nicht versteht, antwortet sie 2xx — ein Webhook, der einen
-Fehler zurückgibt, wird wiederholt.
+**New: `POST /api/webhooks/resend`.** Unauthenticated out of necessity — Resend
+cannot carry a Firebase token —, the signature *is* the authentication:
+Svix HMAC over `${svix-id}.${svix-timestamp}.${Rohtext}` with a five-minute
+replay window, implemented in `lib/email-events.ts` itself instead of pulled in as a dependency.
+Without `RESEND_WEBHOOK_SECRET` the route answers 503 and writes nothing.
+For payloads it does not understand it answers 2xx — a webhook that returns an
+error is retried.
 
-**Sichtbar wird es dort, wo ohnehin hingeschaut wird.** `email_events` ist
-server-only, weil die Dokumente Empfängeradressen tragen; die Admin-Konsole kann
-sie nicht lesen. Der Sendevermerk der Willkommensmail behält deshalb die `uid`, und
-ein Zustellereignis spiegelt seinen Status auf `registration_requests/{uid}`. Ein
-Konto, das angelegt und nie benutzt wurde, sieht jetzt anders aus als eines, dessen
-First-Start-Guide in einer Quarantäne lag. `email.sent` bekommt bewusst kein
-Abzeichen — das ist der Zustand, den die Plattform immer schon kannte, und genau
-der, der nichts wert war.
+**It becomes visible where people look anyway.** `email_events` is
+server-only, because the documents carry recipient addresses; the admin console cannot
+read them. The welcome mail's send record therefore keeps the `uid`, and
+a delivery event mirrors its status onto `registration_requests/{uid}`. An
+account that was created and never used now looks different from one whose
+First-Start Guide lay in a quarantine. `email.sent` deliberately gets no
+badge — that is the state the platform always knew, and exactly
+the one that was worth nothing.
 
-### Drei Dinge auf der Sendeseite
+### Three things on the sending side
 
-- Die Resend-Message-ID wird beim Versand festgehalten. Ohne sie lässt sich ein
-  später eintreffendes Ereignis keinem Versand zuordnen.
-- Jede Mail trägt jetzt einen Text-Teil, erzeugt aus demselben Markup, damit er
-  nicht abdriften kann. Beide Registrierungsmails waren reines HTML — ein seit
-  Jahren bekanntes Spam-Signal.
-- Jede Mail trägt `reply_to: info@clean-core.io`. `team@` und `system@` sind
-  Absenderidentitäten, keine Postfächer beim Provider — eine Antwort darauf ist
-  abgeprallt, während die Willkommensmail zum Antworten aufforderte. Die
-  Authentifizierung war davon nie betroffen (SPF und DKIM gelten für die Domain),
-  der Antwortweg war schlicht kaputt.
+- The Resend message ID is recorded at sending. Without it, an
+  event arriving later cannot be matched to a send.
+- Every mail now carries a text part, generated from the same markup so that it
+  cannot drift. Both registration mails were pure HTML — a spam signal known for
+  years.
+- Every mail carries `reply_to: info@clean-core.io`. `team@` and `system@` are
+  sender identities, not mailboxes at the provider — a reply to them
+  bounced, while the welcome mail asked people to reply. The
+  authentication was never affected by this (SPF and DKIM apply to the domain),
+  the reply path was simply broken.
 
-### Noch zu tun, und nur von Hand möglich
+### Still to do, and only possible by hand
 
-Den Webhook-Endpunkt im Resend-Dashboard anlegen und sein Signing-Secret als
-GitHub-Secret `RESEND_WEBHOOK_SECRET` hinterlegen. Die Pipeline reicht es bereits
-durch. Siehe `docs/BACKLOG.md`.
+Create the webhook endpoint in the Resend dashboard and store its signing secret as the
+GitHub secret `RESEND_WEBHOOK_SECRET`. The pipeline already passes it
+through. See `docs/BACKLOG.md`.
 
-307 Tests grün.
+307 tests green.
 
 ## [v2.5.0] — 2026-08-27
 
