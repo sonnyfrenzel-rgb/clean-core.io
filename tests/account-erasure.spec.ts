@@ -10,6 +10,9 @@ import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { deleteUserDataAndAccount } from '../lib/firebase-admin';
 import { suppressionId } from '../lib/unsubscribe-token';
+import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject } from '../lib/admin-signup-email';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Account erasure is complete or it has not happened (QA review of
@@ -213,4 +216,53 @@ test('the whole erasure, through the route: the survey answers and the sign-in g
   } finally {
     await cleanUp(uid, email);
   }
+});
+
+/**
+ * The operator's notification about a signup names the account in its subject
+ * and is addressed to the operator, so neither the uid query nor the address
+ * query of the cascade used to match its delivery record (codex code-mail-02).
+ * Both spellings are seeded: the record as the register route writes it now
+ * (with the uid) and as it wrote it before (without), and one about somebody
+ * else, which has to stay.
+ */
+test('the operator notification about the signup goes with the account, in both record shapes', async () => {
+  const db = adminDb();
+  const uid = `erasure-signup-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const email = `${uid}@cleancore-test.io`;
+  const name = `Erasure Signup ${uid}`;
+  const ids = { current: `${uid}-current`, legacy: `${uid}-legacy`, other: `${uid}-other` };
+  const operator = 'info@clean-core.io';
+  try {
+    await seedOwnedData(uid, email);
+    await db.collection('registration_requests').doc(uid).set({ email, name, status: 'approved' });
+    await db.collection('email_events').doc(ids.current).set({
+      messageId: ids.current, to: [operator], subject: buildAdminSignupSubject(name), kind: ADMIN_SIGNUP_MAIL_KIND, uid, status: 'email.delivered',
+    });
+    await db.collection('email_events').doc(ids.legacy).set({
+      messageId: ids.legacy, to: [operator], subject: buildAdminSignupSubject(name), kind: ADMIN_SIGNUP_MAIL_KIND, uid: null, status: 'email.delivered',
+    });
+    await db.collection('email_events').doc(ids.other).set({
+      messageId: ids.other, to: [operator], subject: buildAdminSignupSubject(`Somebody Else ${uid}`), kind: ADMIN_SIGNUP_MAIL_KIND, uid: null, status: 'email.delivered',
+    });
+
+    const auth = recordingAuth();
+    await expect(deleteUserDataAndAccount(uid, { db, auth: auth.client })).resolves.toBeUndefined();
+
+    expect((await db.collection('email_events').doc(ids.current).get()).exists, 'the notification written with the uid survived').toBe(false);
+    expect((await db.collection('email_events').doc(ids.legacy).get()).exists, 'the notification written before the uid survived').toBe(false);
+    expect((await db.collection('email_events').doc(ids.other).get()).exists, 'somebody else\'s notification went too').toBe(true);
+    expect((await db.collection('registration_requests').doc(uid).get()).exists).toBe(false);
+  } finally {
+    for (const id of Object.values(ids)) await db.collection('email_events').doc(id).delete().catch(() => {});
+    await db.collection('registration_requests').doc(uid).delete().catch(() => {});
+    await cleanUp(uid, email);
+  }
+});
+
+/** The register route passes the uid with the operator notification, so new records match the uid query. */
+test('the register route sends the operator notification with the account uid', () => {
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'app', 'api', 'account', 'register', 'route.ts'), 'utf8');
+  const call = src.slice(src.indexOf('label: ADMIN_SIGNUP_MAIL_KIND'));
+  expect(call.slice(0, call.indexOf('});')), 'the operator notification is recorded without the uid').toMatch(/\n\s*uid,/);
 });

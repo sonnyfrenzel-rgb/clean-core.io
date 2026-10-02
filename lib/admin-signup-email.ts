@@ -45,6 +45,13 @@ export interface AdminSignupEmailInput {
   signedUpAt: string;
 }
 
+/**
+ * The `kind` its delivery record carries in `email_events`. Account erasure
+ * finds the records written before they carried the account's uid by this kind
+ * and the subject below (codex code-mail-02).
+ */
+export const ADMIN_SIGNUP_MAIL_KIND = 'admin signup notification';
+
 export function buildAdminSignupSubject(name: string): string {
   return `New Clean-Core.io account: ${name}`;
 }
