@@ -227,10 +227,12 @@ export default function AnalyzePage() {
   const geminiResultRef = useRef<{ text: string; evidenceReport: any; computedRouteReport: any; codeToAnalyze: string } | null>(null);
   const sweepCompleteRef = useRef(false);
   /**
-   * Set when this page was opened by "Start analysis" on the own-code page.
-   * Such a project then continues where an example does: in the workspace,
-   * with the first look (owner decision 01.10.2026). Analyze stays reachable
-   * as a tool from there. Lives as long as the page; a reload ends it.
+   * Set for a project's first run — an example or own code started here, or
+   * handed over by the own-code page. Such a project then continues in the
+   * workspace with the first look, never on this tool (owner decisions
+   * 01.10.2026 and 02.10.2026: "an example always opens the workspace with the
+   * first look first, not Analyze"). A re-run stays here. Lives as long as the
+   * page; a reload ends it.
    */
   const openWorkspaceAfterRunRef = useRef(false);
 
@@ -340,6 +342,8 @@ export default function AnalyzePage() {
     deployment: 'public' | 'private' | null = targetDeployment,
   ) => {
     setError('');
+    // A project's first run continues in the workspace, with the first look.
+    if (!project?.activeRunId) openWorkspaceAfterRunRef.current = true;
     // The scan runs here, on exactly the text that is about to leave the
     // browser. The upload path scanned the file, and the screen scanned what
     // was staged — but the textarea can be edited after both, and this is the
@@ -576,8 +580,9 @@ export default function AnalyzePage() {
               } 
             : null
         );
-        // Own code from the import page: on to the workspace, like an example.
-        // Only once the run is signed — a failed run stays here with its error.
+        // A first run (an example, own code): on to the workspace with the
+        // first look. Only once the run is signed — a failed run stays here
+        // with its error.
         if (openWorkspaceAfterRunRef.current) {
           router.push(`/project/${projectId}?first=1`);
         }

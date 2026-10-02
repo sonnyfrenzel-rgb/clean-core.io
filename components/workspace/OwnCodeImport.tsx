@@ -212,7 +212,10 @@ export default function OwnCodeImport() {
         createdAt: serverTimestamp(),
       });
       leaveOwnCodeHandoff({ projectId: docRef.id, personalDataKey: hintKey });
-      router.push(`/project/${docRef.id}/analyze`);
+      // The workspace first, with the first look (owner 02.10.2026) — never
+      // the Analyze tool. The run starts from there (Next step), and Analyze
+      // takes the handoff above so nothing is asked twice in this session.
+      router.push(`/project/${docRef.id}?first=1`);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'projects');
       setError(err instanceof Error ? err.message : wt('ownCode.createFailed'));

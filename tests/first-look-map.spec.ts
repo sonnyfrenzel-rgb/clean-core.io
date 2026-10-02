@@ -37,7 +37,8 @@ const EMAIL = `first-look-map-${Date.now()}-${Math.random().toString(36).slice(2
 /** What stands in the first screen, at the top of the page. */
 async function firstScreen(page: Page) {
   await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(page.locator('[data-first-look="complete"]')).toBeVisible();
+  // Complete after the build-up; its end state on the visit after the run.
+  await expect(page.locator('[data-first-look="complete"], [data-first-look="end-state"]')).toBeVisible();
   // The process the build-up drew is still there, whole, in plain words.
   const picture = page.locator('[data-first-look-process="drawn"] svg[data-first-look-excerpt]');
   await expect(picture).toBeInViewport();
@@ -67,7 +68,7 @@ test.describe('a new project: the process stays with the first look', () => {
     });
   });
 
-  test('own code → run → first look: the process is on the first screen and still there 5 s later', async ({ page }) => {
+  test('own code → first look → run → workspace: the process is on the first screen and still there 5 s later', async ({ page }) => {
     test.setTimeout(400 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInViaLanding(page, EMAIL, PASSWORD);
@@ -81,19 +82,31 @@ test.describe('a new project: the process stays with the first look', () => {
     await expect(page.locator('[data-own-code-start]')).toBeEnabled({ timeout: 30000 });
     await page.click('[data-own-code-start]');
 
-    await page.waitForURL(/\/project\/[^/]+\/analyze/, { timeout: 90000 });
+    // The workspace first, with the first look — never the Analyze tool (owner
+    // 02.10.2026). The run starts from its Next step, in the same session, so
+    // Analyze takes the import's handoff and asks only the operating model.
+    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });
+    expect(page.url()).not.toContain('/analyze');
+    const projectId = new URL(page.url()).pathname.split('/')[2];
+    // The build-up runs on this first visit, and the process picture stands
+    // when it is done — before any run (ADR-059).
+    await expect(page.locator('[data-first-look="building"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-first-look="complete"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-first-look-process="drawn"] svg[data-first-look-excerpt]')).toBeVisible();
+    await page.locator(`[data-next-step] a[href*="/project/${projectId}/analyze"]`).first().click({ timeout: 60000 });
+    await page.waitForURL(new RegExp(`/project/${projectId}/analyze`), { timeout: 60000 });
     const dialog = page.getByRole('dialog');
     await expect(dialog).toContainText('Confirm Target Operating Model', { timeout: 60000 });
     await dialog.getByRole('radio', { name: /Public Cloud/ }).first().check();
     await dialog.getByRole('button', { name: /Confirm and start the analysis/ }).click();
     await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 180000 });
 
-    // The build-up runs, and the map's block is already on the page around it.
-    await expect(page.locator('[data-first-look="building"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-workspace-process-block]')).toHaveCount(1);
+    // Back in the workspace after the signed run: the map's block is on the page.
+    await expect(page.locator('[data-workspace-process-block]')).toHaveCount(1, { timeout: 60000 });
 
-    // After the build-up: the answer, the picture of the process, the map under it.
-    await expect(page.locator('[data-first-look="complete"]')).toBeVisible({ timeout: 30000 });
+    // The answer, the picture of the process, the map under it — the first
+    // look's end state now, since its build-up was seen before the run.
+    await expect(page.locator('[data-first-look="complete"], [data-first-look="end-state"]')).toBeVisible({ timeout: 30000 });
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
     await firstScreen(page);
 

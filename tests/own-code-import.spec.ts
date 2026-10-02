@@ -263,8 +263,16 @@ test.describe('own code: the handoff to Analyze', () => {
     expect(page).not.toContain('CcRadioGroup');
   });
 
-  test('Analyze opens the workspace after the run only for a project the import handed over', () => {
+  test('the import opens the workspace, and Analyze returns there after a project\'s first run', () => {
+    // Owner 02.10.2026: an example or own code always opens the workspace with
+    // the first look first, never the Analyze tool.
+    const importPage = read('components/workspace/OwnCodeImport.tsx');
+    expect(importPage).toContain('router.push(`/project/${docRef.id}?first=1`);');
+    expect(importPage).not.toContain('/analyze`');
     const analyze = read('app/(app)/project/[projectId]/analyze/page.tsx');
+    // A project's first run — whatever started it — continues in the workspace;
+    // a re-run stays on the tool.
+    expect(analyze).toContain('if (!project?.activeRunId) openWorkspaceAfterRunRef.current = true;');
     const set = analyze.indexOf('openWorkspaceAfterRunRef.current = true');
     const take = analyze.indexOf('const handoff = takeOwnCodeHandoff(projectId as string);');
     expect(set).toBeGreaterThan(take);
