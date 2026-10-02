@@ -57,7 +57,7 @@ export async function POST(req: Request) {
   }
   const grant = isAdmin;
   try {
-    await setAdminClaim(uid, grant);
+    await setAdminClaim(uid, grant, admin.uid);
     return NextResponse.json({ ok: true, uid, isAdmin: grant });
   } catch (e: any) {
     // `setAdminClaim` touches Firebase Auth and the profile mirror; its errors

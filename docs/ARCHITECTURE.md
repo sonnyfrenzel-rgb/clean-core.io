@@ -146,7 +146,7 @@ Full detail in `SECURITY.md`. Key points for day-to-day work:
 
 Required secrets: `GEMINI_API_KEY`, `RESEND_API_KEY`, `S4_ENCRYPTION_KEY`, `BYOK_ENCRYPTION_KEY` (own model keys, 3.0.13 — its own versioned AES-256-GCM key in `lib/byok-key.ts`, no fallback to and no read path through `S4_ENCRYPTION_KEY`; the deploy stops when it is missing or not 32 bytes), `PILOT_APPROVAL_SECRET`, `AUDIT_SIGNING_KEY`, `S4_HOST_ALLOWLIST`, `RATE_LIMIT_PEPPER` (no fallback; every rate-limited route fails without it), `RESEND_WEBHOOK_SECRET` (the delivery webhook answers 503 without it). Optional: `AUDIT_SIGNING_PRIVATE_KEY`, `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED`. The deploy job asserts only `AUDIT_SIGNING_KEY`, `S4_HOST_ALLOWLIST` and `BYOK_ENCRYPTION_KEY` (32 bytes).
 
-`MFA_BACKUP_CODE_PEPPER` stood in that list and is **not** required: since roadmap 0.13 no file under `lib/` or `app/` reads it. It is still deployed to the service and still set in `.env.example` and `playwright.config.ts`, and `tests/no-fabricated-figures.spec.ts` pins that it reaches production and not the test gate — so removing it from the environment is a separate, deliberate step, not a documentation edit.
+`MFA_BACKUP_CODE_PEPPER` stood in that list and is **not** required: since roadmap 0.13 no file under `lib/` or `app/` reads it. Since 02.10.2026 (owner decision) it is gone from the deploy, `.env.example`, `playwright.config.ts` and the UX review's throwaway keys too, and `tests/ui-hardening-b88c77b.spec.ts` fails if any of them names it again. The value still set on an already-deployed revision is inert; removing it from the service and the repository secret is an operator step.
 
 ---
 

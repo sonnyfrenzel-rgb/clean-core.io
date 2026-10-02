@@ -85,6 +85,16 @@ export interface AuditPackManifest {
   signed: boolean;
   signature: string;
   signatureError?: string;
+  /**
+   * The Ed25519 signature over the same `manifestHash` string the HMAC covers,
+   * base64, and the id of the key that made it (first 16 hex characters of
+   * SHA-256 over the raw public key). Present from manifest format 4.1 when the
+   * issuer has a key configured; absent otherwise — never empty.
+   */
+  signatureEd25519?: string;
+  signingKeyId?: string;
+  /** Informational only: no verifier follows it (the key document is fixed). */
+  signingKeyUrl?: string;
   runHash?: string;
 }
 

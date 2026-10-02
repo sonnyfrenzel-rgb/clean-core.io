@@ -27,7 +27,7 @@ import {
   type Invitation,
 } from '@/lib/invitations';
 import { isFirestoreId } from '@/lib/firestore-id';
-import { openInvitationsAsOwner, openInvitationsOf } from '@/lib/invitation-owner-gate';
+import { openInvitationsAsOwner, openInvitationsOf, INVITATION_SEND_RATE_LIMIT } from '@/lib/invitation-owner-gate';
 
 /**
  * Inviting one person to read one project — roadmap 5.2.
@@ -123,7 +123,7 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
   // The route sends mail to an address the caller types. Without a ceiling it is
   // a mailer.
   try {
-    await assertRateLimit(`invitations:${decodedToken.uid}:${getClientIp(req)}`, 20, 60 * 60 * 1000);
+    await assertRateLimit(`invitations:${decodedToken.uid}:${getClientIp(req)}`, INVITATION_SEND_RATE_LIMIT, 60 * 60 * 1000);
   } catch (rateErr: unknown) {
     const q = rateErr as { message?: string; status?: number };
     return {

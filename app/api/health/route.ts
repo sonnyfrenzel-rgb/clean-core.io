@@ -4,6 +4,7 @@ import { getAdminDb } from '@/lib/firebase-admin';
 import { getSigningKeypair } from '@/lib/audit-signing-keypair';
 import { singleFlight } from '@/lib/single-flight';
 import { byokEncryptionConfigured } from '@/lib/byok-key';
+import { getAuditSigningKey } from '@/lib/audit-signing-key';
 
 /**
  * Liveness / readiness probe for Cloud Run health checks and uptime monitoring.
@@ -76,7 +77,14 @@ async function probeFirestore(): Promise<boolean> {
 export async function GET(req: Request) {
   const deep = new URL(req.url).searchParams.get('deep') === '1';
 
-  const signingKeyOk = !!process.env.AUDIT_SIGNING_KEY;
+  // Usable, not merely present. A key shorter than the floor in
+  // `lib/audit-signing-key.ts` makes every signing and verifying route answer
+  // 500, so "set" was the wrong question: a 5-character placeholder reported
+  // healthy while the trust chain was down. Asked through the same function
+  // the routes use, so the probe and the routes cannot disagree on the floor.
+  // The answer stays aggregated — nothing here says which check failed, let
+  // alone the key's length.
+  const signingKeyOk = getAuditSigningKey() !== null;
   const geminiOk = !!process.env.GEMINI_API_KEY;
   // Roadmap 3.0.13 (g): without a usable `BYOK_ENCRYPTION_KEY` no account can
   // store its own key, and a key stored under it cannot be read. The save route

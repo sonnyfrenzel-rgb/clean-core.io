@@ -3,7 +3,15 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useCallback, useRef } from 'react';
-import { verifyAuditPack, signatureStateOf, verdictHeadline, type VerifyResult, type FileVerifyResult } from '@/lib/audit-pack-verify';
+import {
+  verifyAuditPack,
+  signatureStateOf,
+  verdictHeadline,
+  ed25519Label,
+  type VerifyResult,
+  type FileVerifyResult,
+  type Ed25519Result,
+} from '@/lib/audit-pack-verify';
 import { ShieldCheck, ShieldAlert, ShieldX, Upload, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import BackLink from '@/components/BackLink';
 import CcButton from '@/components/cc/Button';
@@ -77,23 +85,45 @@ export default function VerifyPackPage() {
     e.target.value = '';
   }, [handleFile]);
 
+  /**
+   * The Ed25519 line, said as it is (owner decision 02.10.2026): verified, not
+   * present, failed, or not checked — with the reason for the last two. The
+   * words come from `ed25519Label` in `lib/audit-pack-verify.ts`.
+   */
+  const ed25519Line = (ed: Ed25519Result) => {
+    const tone =
+      ed.state === 'verified' ? 'text-cc-success' : ed.state === 'failed' ? 'text-cc-error' : 'text-cc-warning';
+    const Icon = ed.state === 'verified' ? ShieldCheck : ed.state === 'failed' ? ShieldX : ShieldAlert;
+    return (
+      <div data-ed25519-state={ed.state}>
+        <div className={cn('flex items-center gap-2', tone)}>
+          <Icon size={16} className="shrink-0" aria-hidden="true" />
+          <span className="text-[13px] font-semibold">{ed25519Label(ed.state)}</span>
+        </div>
+        {ed.keyId && (
+          <p className="m-0 mt-1 break-all font-cc-mono text-[12px] text-cc-ink-muted">key {ed.keyId}</p>
+        )}
+      </div>
+    );
+  };
+
   const signatureBadge = (state: ReturnType<typeof signatureStateOf>) => {
     if (state === 'valid') return (
       <div className="flex items-center gap-2 text-cc-success">
         <ShieldCheck size={16} className="shrink-0" aria-hidden="true" />
-        <span className="text-[13px] font-semibold">Authenticity Confirmed</span>
+        <span className="text-[13px] font-semibold">HMAC: Authenticity Confirmed</span>
       </div>
     );
     if (state === 'invalid') return (
       <div className="flex items-center gap-2 text-cc-error">
         <ShieldX size={16} className="shrink-0" aria-hidden="true" />
-        <span className="text-[13px] font-semibold">Signature Invalid</span>
+        <span className="text-[13px] font-semibold">HMAC: Signature Invalid</span>
       </div>
     );
     return (
       <div className="flex items-center gap-2 text-cc-warning">
         <ShieldAlert size={16} className="shrink-0" aria-hidden="true" />
-        <span className="text-[13px] font-semibold">{state === 'unchecked' ? 'Signed / Not Checked' : 'Unsigned / Unverified'}</span>
+        <span className="text-[13px] font-semibold">{state === 'unchecked' ? 'HMAC: Signed / Not Checked' : 'HMAC: Unsigned / Unverified'}</span>
       </div>
     );
   };
@@ -109,7 +139,7 @@ export default function VerifyPackPage() {
       <div>
         <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">Verify an audit pack</h1>
         <p className="mt-1 text-[13px] font-medium text-cc-ink-muted">
-          Check that an exported audit pack is complete, unchanged and signed by Clean-Core.io. The files are checked in your browser; only the signature check asks our server.
+          Check that an exported audit pack is complete, unchanged and signed by Clean-Core.io. The files and the Ed25519 signature are checked in your browser against our published keys; only the HMAC check asks our server.
         </p>
       </div>
 
@@ -222,13 +252,16 @@ export default function VerifyPackPage() {
               </div>
 
               <div className="min-w-0">
-                <h3 className="m-0 mb-2 cc-text-label text-cc-ink-muted">Signature</h3>
+                <h3 className="m-0 mb-2 cc-text-label text-cc-ink-muted">Signatures</h3>
                 {signatureBadge(signatureStateOf(result))}
                 {result.manifest?.signature && (
                   <p className="m-0 mt-2 break-all font-cc-mono text-[12px] text-cc-ink-muted">
                     {result.manifest.signature.substring(0, 32)}...
                   </p>
                 )}
+                <div className="mt-3">
+                  {ed25519Line(result.ed25519 ?? { state: 'not-present', keyId: null, reason: null })}
+                </div>
               </div>
             </div>
           </CcCard>

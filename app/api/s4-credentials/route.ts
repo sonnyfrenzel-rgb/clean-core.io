@@ -30,6 +30,26 @@ export async function POST(req: Request) {
   if (!body?.url || typeof body.url !== 'string') {
     return NextResponse.json({ error: 'URL is required.' }, { status: 400 });
   }
+
+  // The OAuth token endpoint is checked here with the same validator every
+  // route applies before the token exchange (`isUrlSafe`, SECURITY.md SSRF
+  // table row 11). That check still runs at use time — it is the one that
+  // holds, since DNS can change after saving — but a token URL pointing at a
+  // private address, a metadata host or plain HTTP used to be stored without a
+  // word and refused only later, on every use (owner decision 02.10.2026).
+  if (body.tokenUrl !== undefined && body.tokenUrl !== null && body.tokenUrl !== '') {
+    if (typeof body.tokenUrl !== 'string') {
+      return NextResponse.json({ error: 'Token URL must be a string.' }, { status: 400 });
+    }
+    const tokenCheck = await isUrlSafe(body.tokenUrl);
+    if (!tokenCheck.safe) {
+      return NextResponse.json(
+        { error: `Token URL not allowed: ${tokenCheck.reason || 'URL not allowed.'}` },
+        { status: 403 },
+      );
+    }
+  }
+
   const check = await isUrlSafe(body.url);
   if (!check.safe) return NextResponse.json({ error: check.reason || 'URL not allowed.' }, { status: 403 });
 

@@ -17,9 +17,6 @@ if (!process.env.PILOT_APPROVAL_SECRET) {
 if (!process.env.RATE_LIMIT_PEPPER) {
   process.env.RATE_LIMIT_PEPPER = 'test-rate-limit-pepper-for-ci-test-runner-32';
 }
-if (!process.env.MFA_BACKUP_CODE_PEPPER) {
-  process.env.MFA_BACKUP_CODE_PEPPER = 'test-mfa-pepper-value-for-ci-test-runner-32';
-}
 // The signing and verification routes now fail closed without a key in every
 // environment, which is the whole point of removing the committed fallback. Set
 // here at module scope rather than in `webServer.env` so the specs sign with the
@@ -77,7 +74,6 @@ export default defineConfig({
       FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
       FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
       PILOT_APPROVAL_SECRET: process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345',
-      MFA_BACKUP_CODE_PEPPER: process.env.MFA_BACKUP_CODE_PEPPER || 'test-mfa-pepper-value-for-ci-test-runner-32',
       RATE_LIMIT_PEPPER: process.env.RATE_LIMIT_PEPPER || 'test-rate-limit-pepper-for-ci-test-runner-32',
       // Suppress real email dispatch during E2E tests — API routes check `if (resendApiKey)` and skip when empty
       RESEND_API_KEY: '',

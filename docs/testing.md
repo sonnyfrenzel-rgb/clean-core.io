@@ -109,7 +109,7 @@ server it starts:
 - `NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true`, `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099`,
   `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080`;
 - visibly-test values for `PILOT_APPROVAL_SECRET`, `RATE_LIMIT_PEPPER`,
-  `MFA_BACKUP_CODE_PEPPER`, `AUDIT_SIGNING_KEY` and `S4_ENCRYPTION_KEY`, unless the
+  `AUDIT_SIGNING_KEY`, `S4_ENCRYPTION_KEY` and `BYOK_ENCRYPTION_KEY`, unless the
   environment already has them. No production secret reaches a test run.
 
 In `webServer.env` it also sets `RESEND_API_KEY` to empty, so no mail leaves a

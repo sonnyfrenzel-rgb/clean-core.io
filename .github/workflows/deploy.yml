@@ -78,14 +78,14 @@ jobs:
           npx firebase emulators:start --only auth,firestore --project=cleancore-491216 &
           sleep 10
 
-      # No production secret reaches this job. `MFA_BACKUP_CODE_PEPPER`,
-      # `PILOT_APPROVAL_SECRET` and `S4_ENCRYPTION_KEY` used to be handed to the
-      # build and to Playwright from the same repository secrets the live
-      # service is deployed with — so every test run held the key that every
-      # stored S/4 credential is encrypted with, and the secret that signs
-      # approval tokens (security audit of v2.11.0, SEC-2026-024). The suite
-      # never needed those particular values: it needs *a* pepper, *a* approval
-      # secret and *a* 32-byte key, and `playwright.config.ts` sets all three to
+      # No production secret reaches this job. `PILOT_APPROVAL_SECRET` and
+      # `S4_ENCRYPTION_KEY` (and the since-retired MFA backup-code pepper) used
+      # to be handed to the build and to Playwright from the same repository
+      # secrets the live service is deployed with — so every test run held the
+      # key that every stored S/4 credential is encrypted with, and the secret
+      # that signs approval tokens (security audit of v2.11.0, SEC-2026-024).
+      # The suite never needed those particular values: it needs *a* approval
+      # secret and *a* 32-byte key, and `playwright.config.ts` sets both to
       # visibly-test values. The deploy job below keeps the real ones.
       - name: Build Next.js Application
         run: npm run build
@@ -482,7 +482,6 @@ jobs:
             AUDIT_SIGNING_KEY=${{ secrets.AUDIT_SIGNING_KEY }}
             AUDIT_SIGNING_PRIVATE_KEY=${{ secrets.AUDIT_SIGNING_PRIVATE_KEY }}
             AUDIT_SIGNING_PUBLIC_KEYS_RETIRED=${{ secrets.AUDIT_SIGNING_PUBLIC_KEYS_RETIRED }}
-            MFA_BACKUP_CODE_PEPPER=${{ secrets.MFA_BACKUP_CODE_PEPPER }}
             RATE_LIMIT_PEPPER=${{ secrets.RATE_LIMIT_PEPPER }}
             PILOT_APPROVAL_SECRET=${{ secrets.PILOT_APPROVAL_SECRET }}
             NODE_OPTIONS=--max-old-space-size=4096

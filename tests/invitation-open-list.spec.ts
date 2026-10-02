@@ -6,6 +6,8 @@ import { TERMS_VERSION } from '../lib/constants';
 import { adminGetDoc, adminSetDoc, adminSetEmailVerified } from './helpers/admin-seed';
 import { invitationCollectionPath, PROJECT_READERS_FIELD } from '../lib/invitations';
 import { openInvitationsOf } from '../lib/open-invitations';
+import { openInvitationsAsOwner, INVITATION_RATE_LIMITS, INVITATION_SEND_RATE_LIMIT } from '../lib/invitation-owner-gate';
+import { getAdminDb } from '../lib/firebase-admin';
 
 /**
  * Owner decision 01.10.2026 — while an invitation is unanswered, the person who
@@ -213,4 +215,40 @@ test('"Shared with me" names the project to its reader only — ids, through the
   // The owner's own project is never "shared with" the owner.
   expect(await read(OWNER)).not.toContain(PROJECT);
   expect((await request.get('/api/shared-projects')).status()).toBe(401);
+});
+
+/**
+ * Withdrawing is limited like inviting (owner decision 02.10.2026): 20 an hour
+ * per account. It used to share the reading budget of 60, so the 21st
+ * withdrawal in an hour still went through.
+ *
+ * The limiter is off while `NEXT_PUBLIC_USE_FIREBASE_EMULATOR` is `true`, so no
+ * route call can observe it. The gate both routes share is called here directly
+ * with the flag lifted for this test process only — `FIRESTORE_EMULATOR_HOST`
+ * stays set, so every read and write goes to the emulator (the pattern of
+ * `tests/byok-hardening.spec.ts`). A uid with no profile: every call inside the
+ * budget is refused by the account check behind the limiter, which is fine —
+ * what is counted is whether the limiter let it through to that check.
+ */
+test('withdrawing is rate-limited like inviting: the 21st call in an hour is refused', async () => {
+  expect(process.env.FIRESTORE_EMULATOR_HOST, 'no emulator host: this test would reach a real database').toBeTruthy();
+  await getAdminDb(); // initialised in emulator mode, before the flag is lifted
+  const uid = `withdraw-limit-${STAMP}-${Math.floor(Math.random() * 1e6)}`;
+  const saved = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR;
+  process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = 'false';
+  try {
+    for (let i = 0; i < 20; i += 1) {
+      const gate = await openInvitationsAsOwner(uid, PROJECT, 'invitations-withdraw');
+      expect(gate.ok).toBe(false);
+      if (!gate.ok) expect(gate.response.status, `withdrawal ${i + 1} of 20 is within the budget`).not.toBe(429);
+    }
+    const over = await openInvitationsAsOwner(uid, PROJECT, 'invitations-withdraw');
+    expect(over.ok).toBe(false);
+    if (!over.ok) expect(over.response.status, 'the 21st withdrawal in an hour went through').toBe(429);
+  } finally {
+    if (saved === undefined) delete process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR;
+    else process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = saved;
+  }
+  // And the budget is the inviting one by name, not a copy of its number.
+  expect(INVITATION_RATE_LIMITS['invitations-withdraw']).toBe(INVITATION_SEND_RATE_LIMIT);
 });

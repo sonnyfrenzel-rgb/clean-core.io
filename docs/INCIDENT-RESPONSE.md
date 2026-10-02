@@ -21,7 +21,7 @@ Documented procedure so security incidents are handled by plan, not improvisatio
 ## Runbooks
 
 ### R1 — Key / credential compromise (P0)
-Applies to `AUDIT_SIGNING_KEY`, `GEMINI_API_KEY`, `RESEND_API_KEY`, `S4_ENCRYPTION_KEY`, `MFA_BACKUP_CODE_PEPPER`, `PILOT_APPROVAL_SECRET`, Firebase service account.
+Applies to `AUDIT_SIGNING_KEY`, `GEMINI_API_KEY`, `RESEND_API_KEY`, `S4_ENCRYPTION_KEY`, `BYOK_ENCRYPTION_KEY`, `RATE_LIMIT_PEPPER`, `PILOT_APPROVAL_SECRET`, Firebase service account.
 1. **Rotate** the affected secret in the Cloud Run env (and provider console) immediately; redeploy.
 2. **Revoke** the old value at the provider (Google AI, Resend, Firebase).
 3. If `AUDIT_SIGNING_KEY` was exposed: all previously signed audit packs are now forgeable — **re-sign** active runs and publish a notice; treat old signatures as `integrity-only`.

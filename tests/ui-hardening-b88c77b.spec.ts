@@ -82,6 +82,25 @@ test.describe('the trust page promises only what the code does', () => {
     expect(readers, 'a backup-code pepper is read somewhere after all — verify before deleting the claim').toEqual([]);
   });
 
+  /**
+   * Nothing reads it, so nothing supplies it (owner decision 02.10.2026). The
+   * deploy kept passing the pepper to the service, `.env.example` asked every
+   * new environment to generate one, and the test config and the UX review
+   * minted throwaway values for it — four places keeping a retired secret
+   * alive, each one a reason for the next reader to believe it still matters.
+   */
+  test('nothing supplies the retired backup-code pepper either', () => {
+    const name = ['MFA', 'BACKUP', 'CODE', 'PEPPER'].join('_');
+    for (const rel of [
+      '.github/workflows/deploy.yml',
+      '.github/workflows/ux-review.yml',
+      '.env.example',
+      'playwright.config.ts',
+    ]) {
+      expect(read(rel), `${rel} still supplies ${name}`).not.toContain(name);
+    }
+  });
+
   test('the public page states the retirement instead of the retired scheme', () => {
     const page = rendered('app/(app)/trust/page.tsx');
     expect(page, 'the hashing promise is back').not.toMatch(/backup codes?[^.]{0,60}hashed/i);

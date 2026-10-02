@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminRequest, assertAdminStepUp } from '@/lib/firebase-admin';
+import { verifyAdminRequest, assertAdminStepUp, recordRunnerSelftest } from '@/lib/firebase-admin';
 import { logger, errMessage } from '@/lib/logger';
 import { callIsolatedRunner, describeFetchFailure, readRunnerConfig } from '@/lib/test-runner-client';
 import { fetchMetadataIdToken } from '@/lib/google-id-token';
@@ -106,6 +106,13 @@ export async function POST(req: NextRequest) {
       sandbox: sandboxVerdict.held,
       mockNetwork: mockNetwork.held,
       liveNetwork: liveNetwork ? liveNetwork.held : 'not-configured',
+    });
+    // Who ran the test and what it concluded, in `audit_events`. Awaited, so the
+    // verdict is not reported while its record is still unwritten; a failed
+    // write is logged and does not withhold the verdict — the test changed no
+    // state, and an administrator who cannot see its result reruns it.
+    await recordRunnerSelftest(decodedAdmin.uid, status).catch((auditErr: unknown) => {
+      logger.error('runner selftest audit row failed', { route: 'api/admin/runner-selftest', error: errMessage(auditErr) });
     });
     return NextResponse.json({
       held,
