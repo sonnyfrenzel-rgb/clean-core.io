@@ -8,6 +8,8 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
+import { spawnSync } from 'child_process';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8').replace(/\r\n/g, '\n');
@@ -170,4 +172,41 @@ test('the app never joins the runners network for its VPC egress', () => {
 test('an unset app subnet detaches the app from any VPC', () => {
   const deploy = read('.github/workflows/deploy.yml');
   expect(deploy).toContain('echo "app_network_flags=--clear-network" >> "$GITHUB_OUTPUT"');
+});
+
+// codex code-runner-07: the deploy step reads the flags, and the selection
+// itself, run for an unset, a valid and a forbidden network.
+test('the app deploy consumes the network flags the selection writes', () => {
+  const deploy = step(wf(), 'Deploy to Google Cloud Run');
+  const flags = deploy.slice(deploy.indexOf('flags: |'), deploy.indexOf('env_vars: |'));
+  expect(flags).toMatch(/\n\s+\$\{\{ steps\.env-ctx\.outputs\.app_network_flags \}\}\n/);
+
+  const src = wf();
+  const start = src.indexOf('          if [ -n "$APP_VPC_SUBNET" ]; then');
+  const clear = src.indexOf('app_network_flags=--clear-network', start);
+  const end = src.indexOf('\n          fi\n', clear);
+  expect(start, 'the network selection is not in deploy.yml').toBeGreaterThan(-1);
+  expect(clear).toBeGreaterThan(start);
+  const selection = src.slice(start, end + '\n          fi\n'.length);
+  const select = (env: Record<string, string>) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-netflags-'));
+    const out = path.join(dir, 'out');
+    fs.writeFileSync(out, '');
+    try {
+      const r = spawnSync('bash', ['-c', selection], {
+        env: { PATH: process.env.PATH ?? '', NODE_ENV: 'test', APP_VPC_SUBNET: '', APP_VPC_NETWORK: '', ...env, GITHUB_OUTPUT: out },
+        encoding: 'utf8',
+      });
+      return { status: r.status, output: fs.readFileSync(out, 'utf8').trim() };
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  };
+  expect(select({})).toEqual({ status: 0, output: 'app_network_flags=--clear-network' });
+  expect(select({ APP_VPC_SUBNET: 'app-egress', APP_VPC_NETWORK: 'app-net' })).toEqual({
+    status: 0,
+    output: 'app_network_flags=--network=app-net --subnet=app-egress --vpc-egress=private-ranges-only',
+  });
+  expect(select({ APP_VPC_SUBNET: 'app-egress', APP_VPC_NETWORK: 'runner-net' })).toEqual({ status: 1, output: '' });
+  expect(select({ APP_VPC_SUBNET: 'app-egress' })).toEqual({ status: 1, output: '' });
 });
