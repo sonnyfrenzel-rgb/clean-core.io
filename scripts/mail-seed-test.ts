@@ -184,14 +184,27 @@ async function main() {
     return;
   }
 
-  const key = readEnv('RESEND_API_KEY');
-  if (!key) throw new Error('RESEND_API_KEY is not set (environment or .env.local). Nothing was sent.');
-
   // Resumable: a re-run of the same id skips what the log says went out. The
   // Idempotency-Key covers the retry inside one run as well.
   const logPath = path.join(outDir, 'send-log.json');
   const log: LogEntry[] = fs.existsSync(logPath) ? JSON.parse(fs.readFileSync(logPath, 'utf8')) : [];
   const done = new Set(log.filter((e) => e.status === 'sent').map((e) => `${e.type}|${e.label}`));
+
+  // The daily budget, across every run id this machine has logged, checked
+  // before the key is even read (codex code-mail-04).
+  const toSend = plan.filter((m) => !done.has(`${m.type}|${m.label}`)).length;
+  const scratchDir = path.resolve('scratch');
+  const sentToday = fs.readdirSync(scratchDir)
+    .filter((d) => d.startsWith('mail-seed-'))
+    .map((d) => path.join(scratchDir, d, 'send-log.json'))
+    .filter((p) => fs.existsSync(p))
+    .reduce((n, p) => n + seed.sentInBudgetWindow(JSON.parse(fs.readFileSync(p, 'utf8')) as LogEntry[], new Date()), 0);
+  const refusal = seed.seedBudgetRefusal(toSend, sentToday);
+  if (refusal) throw new Error(refusal);
+  console.log(`budget    : ${toSend} to send, ${sentToday} sent in the last 24 hours, at most ${seed.SEED_DAILY_BUDGET}`);
+
+  const key = readEnv('RESEND_API_KEY');
+  if (!key) throw new Error('RESEND_API_KEY is not set (environment or .env.local). Nothing was sent.');
 
   let sent = 0;
   let failed = 0;

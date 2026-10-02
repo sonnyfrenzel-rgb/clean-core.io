@@ -697,3 +697,40 @@ export function placementCsv(types: SeedMailType[], recipients: SeedRecipient[])
 
 /** Allowed values of the `ordner` column. */
 export const PLACEMENT_FOLDERS = ['inbox', 'promotions', 'spam', 'quarantaene', 'nicht-angekommen'] as const;
+
+/* ------------------------------------------------------------ the budget */
+
+/**
+ * How many seed mails may go out in any 24 hours, across every run id.
+ *
+ * The seed sends through production's Resend account, so every seed mail is
+ * spent from the same daily allowance as the welcome, invitation and approval
+ * mails. On 24.09.2026 two runs (65 + 40 mails) used it up and real mail could
+ * not go out for the rest of the day; the re-measurement after that was set at
+ * twenty mails at most (docs/BACKLOG.md). Pacing limits how fast, not how many,
+ * so the ceiling is enforced here before the first provider call. Raising it is
+ * a code change, on purpose.
+ */
+export const SEED_DAILY_BUDGET = 20;
+export const SEED_BUDGET_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/** Seed mails a send log records as sent inside the 24 hours before `now`. */
+export function sentInBudgetWindow(entries: { status?: unknown; at?: unknown }[], now: Date): number {
+  const from = now.getTime() - SEED_BUDGET_WINDOW_MS;
+  return entries.filter((e) => {
+    if (e.status !== 'sent') return false;
+    const at = Date.parse(String(e.at));
+    // An unreadable time is counted: the budget errs towards sending less.
+    return !Number.isFinite(at) || (at > from && at <= now.getTime());
+  }).length;
+}
+
+/** Why a send must not start, or `null` when `toSend` more fit the budget. */
+export function seedBudgetRefusal(toSend: number, alreadySent: number, budget: number = SEED_DAILY_BUDGET): string | null {
+  if (toSend + alreadySent <= budget) return null;
+  return (
+    `seed budget exceeded: ${toSend} mail(s) planned, ${alreadySent} already sent in the last 24 hours, ` +
+    `at most ${budget} in any 24 hours (production's Resend allowance is shared). ` +
+    'Narrow the run with --only or fewer recipients, or wait. Nothing was sent.'
+  );
+}

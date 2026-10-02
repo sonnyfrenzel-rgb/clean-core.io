@@ -8,6 +8,9 @@ import {
   planSeed,
   placementCsv,
   seedIdempotencyKey,
+  seedBudgetRefusal,
+  sentInBudgetWindow,
+  SEED_DAILY_BUDGET,
   renderSourceTemplate,
   SEED_MAIL_TYPES,
   mailPolicyWarnings,
@@ -302,9 +305,15 @@ test.describe('every product mail keeps the rules of run 20260924-a', () => {
 const TSX = path.join(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs');
 const CLI = path.join(ROOT, 'scripts', 'mail-seed-test.ts');
 
-function runCli(args: string[], extraEnv: Record<string, string> = {}) {
+function runCli(
+  args: string[],
+  extraEnv: Record<string, string> = {},
+  seeds = '# test\ngmail seed-gmail@example.com\n',
+  prepare: (dir: string) => void = () => {},
+) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mail-seed-'));
-  fs.writeFileSync(path.join(dir, 'seeds.txt'), '# test\ngmail seed-gmail@example.com\n');
+  fs.writeFileSync(path.join(dir, 'seeds.txt'), seeds);
+  prepare(dir);
   const trapLog = path.join(dir, 'fetch-calls.jsonl');
   const trap = path.join(dir, 'trap.cjs');
   // Every fetch is recorded and answered locally — nothing leaves the machine.
@@ -392,6 +401,58 @@ test.describe('the command line', () => {
     expect(log[0]).toMatchObject({ type: 'survey', label: 'gmail', status: 'sent' });
     expect(log[0].messageId).toMatch(/^trap-/);
     expect(JSON.stringify(log), 'the send log holds an address').not.toContain('@');
+  });
+});
+
+/* ------------------------------------------------------------ the budget */
+
+test.describe('the daily budget (codex code-mail-04)', () => {
+  test.describe.configure({ timeout: 120_000 });
+
+  const priorRun = (dir: string, count: number, at: Date) => {
+    const out = path.join(dir, 'scratch', 'mail-seed-spec-earlier');
+    fs.mkdirSync(out, { recursive: true });
+    fs.writeFileSync(path.join(out, 'send-log.json'), JSON.stringify(Array.from({ length: count }, (_, i) => ({
+      type: 'welcome', label: `box${i}`, domain: 'example.com', status: 'sent', messageId: `m${i}`, detail: null, at: at.toISOString(),
+    }))));
+  };
+
+  test('the arithmetic: within the budget passes, one over is refused, old and failed sends do not count', () => {
+    const now = new Date('2026-10-02T12:00:00Z');
+    expect(SEED_DAILY_BUDGET).toBe(20);
+    expect(seedBudgetRefusal(20, 0)).toBeNull();
+    expect(seedBudgetRefusal(13, 7)).toBeNull();
+    expect(seedBudgetRefusal(13, 8)).toMatch(/budget exceeded.*Nothing was sent/);
+    expect(sentInBudgetWindow([
+      { status: 'sent', at: '2026-10-02T11:00:00Z' },
+      { status: 'sent', at: '2026-10-01T12:30:00Z' },
+      { status: 'failed', at: '2026-10-02T11:00:00Z' },
+      { status: 'sent', at: '2026-10-01T11:00:00Z' },
+      { status: 'sent', at: 'not a time' },
+    ], now)).toBe(3);
+  });
+
+  test('a plan larger than the budget is refused before any provider call', () => {
+    const fiveBoxes = ['a', 'b', 'c', 'd', 'e'].map((l) => `${l} seed-${l}@example.com`).join('\n');
+    const r = runCli(['--send', '--run-id', 'spec-big'], { MAIL_SEED_CONFIRM: 'spec-big' }, fiveBoxes);
+    expect(r.status, r.out).toBe(1);
+    expect(r.out).toMatch(/seed budget exceeded: 65 mail\(s\) planned/);
+    expect(r.calls, 'an oversized plan reached the network').toEqual([]);
+  });
+
+  test('a second run id the same day counts what the first one sent', () => {
+    const r = runCli(['--send', '--run-id', 'spec-again', '--only', 'welcome,survey'], { MAIL_SEED_CONFIRM: 'spec-again' }, undefined,
+      (dir) => priorRun(dir, 19, new Date(Date.now() - 60 * 60 * 1000)));
+    expect(r.status, r.out).toBe(1);
+    expect(r.out).toMatch(/2 mail\(s\) planned, 19 already sent/);
+    expect(r.calls).toEqual([]);
+  });
+
+  test('sends older than 24 hours no longer count', () => {
+    const r = runCli(['--send', '--run-id', 'spec-later', '--only', 'welcome,survey'], { MAIL_SEED_CONFIRM: 'spec-later' }, undefined,
+      (dir) => priorRun(dir, 19, new Date(Date.now() - 25 * 60 * 60 * 1000)));
+    expect(r.status, r.out).toBe(0);
+    expect(r.calls).toHaveLength(2);
   });
 });
 
