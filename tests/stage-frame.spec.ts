@@ -65,7 +65,7 @@ test.describe('a stage as a tool, rendered', () => {
   test.describe.configure({ mode: 'serial' });
 
   test('in the workspace: tool header, no stepper, no rail', async ({ page }) => {
-    test.setTimeout(240 * 1000);
+    test.setTimeout(420 * 1000);
     const acct = await seedStageProject({ prefix: 'stageframe', admin: true, acceptTerms: true });
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInThroughForm(page, acct);

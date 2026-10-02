@@ -1096,7 +1096,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
-| 1.8.2 | 02.10.2026 | Tools side by side from breakpoint L in every view, each with the stepper's mark for its phase, and the same bar under "Back to workspace" on every stage and demo stage (ADR-059, Sonny 02.10.2026): §2.3 item 3, the header per view, the navigation table, the header of a stage, §2.11 |
+| 1.8.1 | 02.10.2026 | Tools side by side from breakpoint L in every view, each with the stepper's mark for its phase, and the same bar under "Back to workspace" on every stage and demo stage (ADR-059, Sonny 02.10.2026): §2.3 item 3, the header per view, the navigation table, the header of a stage, §2.11 |
 | 1.8 (draft, for acceptance by Sonny) | 30.09.2026 | Block D completed (D.30): all guards apply to `app/**` and `components/**`, the exception lists are deleted, only named exceptions remain (§8); `--cc-warning-mark` `#d97706` for warning marks in bars and dots (§1.1, §1.8); generated Markdown text in `.cc-prose` on the scale §1.2 |
 | 1.7 | 27.09.2026 | Business statement as the model's proposal above the engine's sentence, contradiction as an edge stroke with words instead of a chip, requesting only via a button with a cost line (§5.10, ADR-055, roadmap 17.10) |
 | 1.6 | 27.09.2026 | Events in sub-processes and at early exits (ADR-054, Sonny 27.09.2026): every expandable sub-process begins in its layer at a start event on the `FORM`/`METHOD` line; `RETURN`, `EXIT` outside loops and `STOP` end on an end event of their own with the condition on the edge — directly before the end of the block it stays the normal end; a leaving `CHECK` stays a conditional flow to the normal end. Events nowhere count as a step, a premature end is called "End (early)" (§5.8) |

@@ -100,6 +100,10 @@ test.describe('the mark is the stepper\'s reading of the phase', () => {
 
 const PASSWORD = 'ToolbarInline123!';
 
+/** "Analyze (done and verified)" — the name and, in brackets, the mark's words. */
+const named = (label: string, key: keyof typeof WORKSPACE_MESSAGES) =>
+  new RegExp(`^${label}\\s*\\(${WORKSPACE_MESSAGES[key]}\\)$`);
+
 test.describe('the toolbar, rendered', () => {
   test.describe.configure({ mode: 'serial' });
 
@@ -175,7 +179,7 @@ test.describe('the toolbar, rendered', () => {
 
     // The tick is green — the token, not a near-green — and the words say why.
     const analyze = page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]');
-    await expect(analyze).toHaveAccessibleName(`Analyze, ${WORKSPACE_MESSAGES['tools.mark.proven']}`);
+    await expect(analyze).toHaveAccessibleName(named('Analyze', 'tools.mark.proven'));
     const [tick, success] = await analyze.evaluate((el) => [
       getComputedStyle(el.querySelector('[data-workspace-tool-mark="check"]') as Element).color,
       getComputedStyle(document.documentElement).getPropertyValue('--cc-success').trim(),
@@ -214,7 +218,7 @@ test.describe('the toolbar, rendered', () => {
     expect(marks.filter((m) => m.checks > 0).map((m) => m.key), 'a stale phase is never done').toEqual([]);
     const analyze = page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]');
     await expect(analyze.locator('[data-workspace-tool-mark="dot"]')).toHaveCount(1);
-    await expect(analyze).toHaveAccessibleName(`Analyze, ${WORKSPACE_MESSAGES['tools.mark.stale']}`);
+    await expect(analyze).toHaveAccessibleName(named('Analyze', 'tools.mark.stale'));
   });
 
   test('a phone at 390: the menu, no sideways scroll, and the tick travels into the menu', async ({ browser }) => {
@@ -232,9 +236,7 @@ test.describe('the toolbar, rendered', () => {
     await page.locator('[data-workspace-tools="menu"] button[aria-expanded]').click();
     const panel = page.locator('[data-workspace-tools-panel]');
     await expect(panel.locator('a[data-workspace-tool]')).toHaveCount(7);
-    await expect(panel.locator('a[data-workspace-tool="analyze"]')).toHaveAccessibleName(
-      `Analyze, ${WORKSPACE_MESSAGES['tools.mark.proven']}`,
-    );
+    await expect(panel.locator('a[data-workspace-tool="analyze"]')).toHaveAccessibleName(named('Analyze', 'tools.mark.proven'));
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow, 'the open menu pushes the page sideways').toBeLessThanOrEqual(0);
     await context.close();

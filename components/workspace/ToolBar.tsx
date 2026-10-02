@@ -47,7 +47,7 @@ function ToolMark({ tool }: { tool: WorkspaceTool }) {
       ) : (
         <span aria-hidden={true} data-workspace-tool-mark="dot" className={cn('inline-block h-2 w-2 rounded-full', paint.fill)} />
       )}
-      <span className="sr-only">, {words}</span>
+      <span className="sr-only">({words})</span>
     </>
   );
 }
