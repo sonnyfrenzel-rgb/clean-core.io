@@ -119,6 +119,8 @@ export interface LuwModel {
 
 const UPDATE_TASK = /\bIN\s+UPDATE\s+TASK\b/i;
 const SET_LOCAL = /^SET\s+UPDATE\s+TASK\s+LOCAL\b/i;
+/** A function call that runs in another session: synchronous, asynchronous or transactional RFC. */
+const REMOTE_CALL = /\bDESTINATION\b|\bSTARTING\s+NEW\s+TASK\b|\bIN\s+BACKGROUND\s+(?:TASK|UNIT)\b/i;
 /** Statements that never set `sy-subrc`, so a read after them still reads the one before. */
 const SUBRC_NEUTRAL = /^(?:(?:DATA|TYPES|CONSTANTS|STATICS|FIELD-SYMBOLS)\s+[\w/<]|(?:CLEAR|FREE)\s)/i;
 const FLOW = new Set(['if', 'case', 'loop', 'do', 'while', 'select', 'try', 'at', 'provide']);
@@ -137,8 +139,14 @@ function luwKind(statement: AbapStatement): LuwEventKind | null {
   if (/^ROLLBACK\s+WORK\b/i.test(text)) return 'rollback';
   // The two BAPIs issue COMMIT WORK / ROLLBACK WORK themselves — unless they
   // are themselves registered for the update, which would be a different thing.
-  if (/^CALL\s+FUNCTION\s+'BAPI_TRANSACTION_COMMIT'/i.test(text) && !UPDATE_TASK.test(text)) return 'commit';
-  if (/^CALL\s+FUNCTION\s+'BAPI_TRANSACTION_ROLLBACK'/i.test(text) && !UPDATE_TASK.test(text)) return 'rollback';
+  // Called remotely (`DESTINATION`, `STARTING NEW TASK`, `IN BACKGROUND TASK`)
+  // they end the LUW of another session, not this program's: the caller's
+  // registrations are still open after them (codex code-engine-03).
+  if (/^CALL\s+FUNCTION\s+'BAPI_TRANSACTION_(?:COMMIT|ROLLBACK)'/i.test(text)) {
+    const code = maskLiterals(text);
+    if (UPDATE_TASK.test(code) || REMOTE_CALL.test(code)) return null;
+    return /^CALL\s+FUNCTION\s+'BAPI_TRANSACTION_COMMIT'/i.test(text) ? 'commit' : 'rollback';
+  }
   return null;
 }
 
