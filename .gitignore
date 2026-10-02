@@ -39,3 +39,6 @@ pw.local.config.ts
 # (15.09.2026); a pattern here is cheaper than remembering.
 audit-events-purge-*.json
 survey-backup-*.json
+
+# Release acceptance runs (scripts/release/acceptance.mjs) — local evidence, not committed
+.release/
