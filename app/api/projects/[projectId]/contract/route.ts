@@ -12,6 +12,7 @@ import { checkGeneratedPackage, generationInputsOf, generationRevision, generati
 import type { DocumentReference, Timestamp, Transaction } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
+import { checkProjectWrite, projectTooLargeMessage, PROJECT_TOO_LARGE_CODE } from '@/lib/firestore-doc-size';
 
 /**
  * The architecture contract of one project, and what may be generated against
@@ -352,13 +353,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     // the write (QA review of 8adfa0e6db63), and of two interleaved generations
     // that both passed the token check the later would silently win.
     const projectRef: DocumentReference = db.collection('projects').doc(projectId);
-    const written = await db.runTransaction(async (tx: Transaction) => {
+    //
+    // Codex architecture-02: every field has a bound of its own, but they all
+    // share one document and Firestore refuses one over 1 MiB. The merged
+    // document is estimated from the transaction's own snapshot; a stand that
+    // would outgrow it is refused by name, with nothing written, instead of
+    // failing in the commit as a generic 500.
+    const outcome = await db.runTransaction(async (tx: Transaction) => {
       const fresh = await tx.get(projectRef);
-      if (!fresh.exists || !readAt || !fresh.updateTime || !fresh.updateTime.isEqual(readAt)) return false;
+      if (!fresh.exists || !readAt || !fresh.updateTime || !fresh.updateTime.isEqual(readAt)) return 'moved' as const;
+      const size = checkProjectWrite(fresh.data(), fields, projectRef.path, 'merge');
+      if (!size.ok) return size;
       tx.set(projectRef, fields, { merge: true });
-      return true;
+      return 'written' as const;
     });
-    if (!written) {
+    if (typeof outcome === 'object') {
+      logger.warn('generation store refused: the project would outgrow its document', {
+        route: 'api/projects/contract',
+        projectId,
+        bytes: outcome.bytes,
+        budget: outcome.budget,
+      });
+      return NextResponse.json(
+        {
+          error: projectTooLargeMessage(outcome, 'this generated package', true),
+          code: PROJECT_TOO_LARGE_CODE,
+          bytes: outcome.bytes,
+          budget: outcome.budget,
+          largest: outcome.largest,
+        },
+        { status: 413 },
+      );
+    }
+    if (outcome === 'moved') {
       return NextResponse.json(
         {
           error:

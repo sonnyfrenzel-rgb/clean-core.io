@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, runTransaction } from 'firebase/firestore';
+import { checkProjectWrite, projectTooLargeMessage } from '@/lib/firestore-doc-size';
 import { getAuth, getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -420,6 +421,11 @@ Structure the JSON exactly like this:
           throw new Error('The analysis or the documentation of this project changed while the business layer was being written, so nothing was saved. Reload the stage and generate it again.');
         }
         const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, 'docs/business-documentation.md', formatBusinessDocsToMarkdown(responseText));
+        // Codex architecture-02: the layer is written twice — as itself and
+        // into the package — so it is refused by name before the commit when
+        // the project would outgrow its 1 MiB document.
+        const size = checkProjectWrite(current, { businessDocumentation: responseText, generatedCode: merged }, projectDoc.path, 'update');
+        if (!size.ok) throw new Error(projectTooLargeMessage(size, 'this business documentation'));
         tx.update(projectDoc, { businessDocumentation: responseText, generatedCode: merged });
         return merged;
       });
@@ -558,6 +564,9 @@ Structure the JSON exactly like this:
           throw new Error('The analysis of this project changed while the documentation was being put together, so nothing was saved. Reload the stage and generate it again.');
         }
         const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, DOCUMENTATION_WORKSPACE_FILE, processDocumentationToMarkdown(built));
+        // Codex architecture-02, as for the business layer above.
+        const size = checkProjectWrite(current, { documentation: stored, generatedCode: merged }, projectDoc.path, 'update');
+        if (!size.ok) throw new Error(projectTooLargeMessage(size, 'this documentation'));
         tx.update(projectDoc, { documentation: stored, generatedCode: merged, status: 'documented' });
         return merged;
       });
