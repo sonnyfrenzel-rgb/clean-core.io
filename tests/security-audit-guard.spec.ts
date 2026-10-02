@@ -666,6 +666,15 @@ test.describe('the audit pipeline', () => {
     let payload = build(CAP - PREFIX.length);
     for (let attempt = 0; payload.length > CAP && attempt < 3; attempt++) payload = build(Math.max(1_000, CAP - PREFIX.length - (payload.length - CAP)));
     expect(payload.length, 'the built payload fits the cap').toBeLessThanOrEqual(CAP);
+    // The last resort, run: a message that still does not fit is cut so that text and notice fit together. The cut
+    // was a fixed 120 characters for a 128-character notice — 8 over the reserve (QA review of 1c4f24f3343f).
+    const { cutAtReserve, NARRATIVE_CUT_NOTICE } = await lib('pipeline.mjs');
+    expect(auditSource, 'the audit cuts through the helper').toContain('narrativeUser = cutAtReserve(narrativeUser, NARRATIVE_CAP);');
+    const cut = cutAtReserve('x'.repeat(CAP + 500), CAP);
+    expect(cut.length, 'the cut payload fits the cap, notice included').toBeLessThanOrEqual(CAP);
+    expect(cut.endsWith(NARRATIVE_CUT_NOTICE), 'and says it was cut').toBe(true);
+    expect(cutAtReserve('short', CAP), 'a message that fits is left alone').toBe('short');
+    expect(cutAtReserve('x'.repeat(500), 50).length, 'even a cap below the notice length holds').toBeLessThanOrEqual(50);
     // The counted coverage replaces whatever the model wrote.
     expect(withCountedCoverage({ coverage: { files_in_scope: 999, deep_read: 999, pattern_scanned_only: 0, notes: 'model' } }, coverage).coverage).toEqual({ files_in_scope: 10, deep_read: 7, pattern_scanned_only: 3, notes: 'counted model' });
   });

@@ -642,6 +642,17 @@ export function coerceConsultant(answer) {
 }
 
 /**
+ * The last resort when even a rebuilt narrative message does not fit its reserve: cut it so that the text *and* the
+ * notice saying so fit the cap together. The notice used to be appended after a cut of a fixed 120 characters while
+ * being 128 long, so the payload was 8 characters over the reserve it was priced at (QA review of 1c4f24f3343f).
+ */
+export const NARRATIVE_CUT_NOTICE = '\n\n(Cut here: the message did not fit the reserve for this call. Findings beyond this point are in the report and counted above.)';
+export function cutAtReserve(text, cap) {
+  if (text.length <= cap) return text;
+  return `${text.slice(0, Math.max(0, cap - NARRATIVE_CUT_NOTICE.length))}${NARRATIVE_CUT_NOTICE}`.slice(0, cap);
+}
+
+/**
  * What the second CISO call is shown: the findings that survived the first one,
  * in their own words and without a line of code, plus the map and the counted
  * coverage. It writes the report around them — summary, rating, hardening,

@@ -20,7 +20,7 @@ import { AUTO_MODEL } from '../qa/lib/config.mjs';
 import { callReviewer as openRouterReviewer, modelsOf } from '../qa/lib/openrouter.mjs';
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { AUDIT_PUBLIC_PEM, sealFor } from './lib/envelope.mjs';
-import { askAgainIfTruncated, coerceConsultant, coerceFindings, coerceNarrative, consultantMessage, dedupeCandidates, deepReadCoverage, failureReason, narrativeMessage, notVerifiedEntry, numbered, planBatches, planVerification, reportWithoutNarrative, runConsultants, runVerification, verificationLimitation, verificationMessage, withCountedCoverage } from './lib/pipeline.mjs';
+import { askAgainIfTruncated, coerceConsultant, coerceFindings, coerceNarrative, consultantMessage, cutAtReserve, dedupeCandidates, deepReadCoverage, failureReason, narrativeMessage, notVerifiedEntry, numbered, planBatches, planVerification, reportWithoutNarrative, runConsultants, runVerification, verificationLimitation, verificationMessage, withCountedCoverage } from './lib/pipeline.mjs';
 import { surfaceMap } from './lib/surface.mjs';
 import { AUDIT, CONSULTANTS, CONSULTANT_SCHEMA, FINDINGS_SCHEMA, NARRATIVE_SCHEMA } from './lib/team.mjs';
 
@@ -233,7 +233,7 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
   let narrativeTruncated = false;
   if (narrativeUser.length > NARRATIVE_CAP) {
     narrativeTruncated = true;
-    narrativeUser = `${narrativeUser.slice(0, NARRATIVE_CAP - 120)}\n\n(Cut here: the message did not fit the reserve for this call. Findings beyond this point are in the report and counted above.)`;
+    narrativeUser = cutAtReserve(narrativeUser, NARRATIVE_CAP);
   }
   let narrative = null;
   // The narrative's retry is paid like any call: the lost attempt at its reserve, the next one only if a second
