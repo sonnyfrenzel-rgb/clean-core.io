@@ -9,6 +9,7 @@ import { starterExampleForFingerprint } from './starter-example-fingerprints';
 import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } from './invitations';
 import { normaliseEmail, suppressionId } from './unsubscribe-token';
 import { withoutAccount } from './usage-snapshot-scrub';
+import { CAPABILITY_COLLECTION } from './s4-proxy-capability-store';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
@@ -657,7 +658,7 @@ export async function activateAccount(uid: string): Promise<{ activated: boolean
  * token issued before the withdrawal is refused by `verifyIdToken` and the
  * next sign-in mints one without the claim.
  */
-export async function setAdminClaim(uid: string, isAdmin: boolean): Promise<void> {
+export async function setAdminClaim(uid: string, isAdmin: boolean, actorUid: string): Promise<void> {
   const auth = (await ensureAuthModule()).getAuth();
   const { db, FieldValue } = await getAdminDb();
 
@@ -667,10 +668,24 @@ export async function setAdminClaim(uid: string, isAdmin: boolean): Promise<void
     if (isAdmin) claims.admin = true; else delete claims.admin;
     await auth.setCustomUserClaims(uid, claims);
   };
-  const writeMirror = () => db.collection('users').doc(uid).set(
-    { isAdmin, updatedAt: FieldValue.serverTimestamp() },
-    { merge: true },
-  );
+  // The mirror and the `audit_events` row in one batch, like the four console
+  // actions below (owner decision 02.10.2026): granting or withdrawing
+  // administrator rights is the most privileged act the console has, and it
+  // was the one that left no record of who did it. Committed before the claim,
+  // so a claim change never exists without its row; a failed claim write after
+  // it leaves a row for an attempt whose mirror denies, which is the honest
+  // half-state.
+  const auditRow = await auditEventRecord(db, actorUid, isAdmin ? 'GRANT_ADMIN' : 'REVOKE_ADMIN', uid);
+  const writeMirror = async () => {
+    const batch = db.batch();
+    batch.set(
+      db.collection('users').doc(uid),
+      { isAdmin, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true },
+    );
+    batch.set(db.collection('audit_events').doc(), auditRow);
+    await batch.commit();
+  };
 
   await writeMirror();
   await writeClaim();
@@ -829,6 +844,13 @@ export async function deleteUserDataAndAccount(
   //    message. Records written with the account's uid go here; records written
   //    for the address alone go in step 3c, once the address has been read.
   await deleteCollectionByUid('email_events', 'uid');
+  //    Proxy capabilities of the account's live test runs (`lib/s4-proxy-
+  //    capability-store.ts`): project id, uid, tenant host, run id. A run deletes
+  //    its own when it returns; one a crashed run left behind waits for the TTL
+  //    on `expiresAt`. Erasure does not wait for either (owner decision
+  //    02.10.2026) — and a capability whose document is gone admits nothing, so
+  //    a run still in flight for an erased account loses its tenant access too.
+  await deleteCollectionByUid(CAPABILITY_COLLECTION, 'uid');
 
   // 3. Delete single documents keyed by uid. F-07: do NOT silently swallow
   //    failures — tolerate an idempotent "not found" but collect any real error
@@ -1100,6 +1122,19 @@ export async function approveTenantWithToken(
 
   const { db } = await getAdminDb();
 
+  // The decision and its `audit_events` row commit in the same transaction
+  // (owner decision 02.10.2026). The console's grant and revoke always wrote
+  // one; the same decision made through the mailed link wrote none, so the
+  // record of who gave an account tenant access depended on which button was
+  // pressed. Resolved before the transaction: the actor's address is a read of
+  // another document and has no business inside the retry loop.
+  const auditRow = await auditEventRecord(
+    db,
+    adminUid,
+    action === 'approve' ? 'GRANT_S4_LINK' : 'REJECT_S4_LINK',
+    uid,
+  );
+
   // UX-152 (Sonny, 24.09.2026, option B): one use per request, for both links.
   //
   // The token carries the nonce `/api/request-tenant-access` stored for this
@@ -1151,6 +1186,7 @@ export async function approveTenantWithToken(
         s4TenantAccessRequested: false
       }, { merge: true });
       tx.set(requestRef, { status: 'approved' }, { merge: true });
+      tx.set(db.collection('audit_events').doc(), auditRow);
       consume();
     });
   } else if (action === 'reject') {
@@ -1173,6 +1209,7 @@ export async function approveTenantWithToken(
       }, { merge: true });
       // Delete tenant access request document
       tx.delete(requestRef);
+      tx.set(db.collection('audit_events').doc(), auditRow);
       consume();
     });
   }
@@ -1284,6 +1321,23 @@ async function auditEventRecord(db: any, actorUid: string, action: string, targe
 
 export async function logAuditEvent(db: any, actorUid: string, action: string, targetUid: string) {
   await db.collection('audit_events').add(await auditEventRecord(db, actorUid, action, targetUid));
+}
+
+/**
+ * The record of one runner self-test (roadmap 8.9; owner decision 02.10.2026).
+ *
+ * The self-test changes no state, but it makes the app send code to the
+ * isolated runners and asks them to probe their network — an administrator's
+ * act on infrastructure, and until now the one admin route that left no row.
+ * The row says who ran it and what it concluded (`held`, `not-held` or
+ * `incomplete`, from `combineSelftest`); the probe details stay in the response
+ * and the log. The target is the administrator's own uid, as for the owner's
+ * commands: there is no account on the other end.
+ */
+export async function recordRunnerSelftest(adminUid: string, status: string): Promise<void> {
+  const { db } = await getAdminDb();
+  const outcome = /^[a-z-]{1,20}$/.test(status) ? status : 'unknown';
+  await logAuditEvent(db, adminUid, `RUNNER_SELFTEST:${outcome}`, adminUid);
 }
 
 // The four governance actions below write their Firestore state and their

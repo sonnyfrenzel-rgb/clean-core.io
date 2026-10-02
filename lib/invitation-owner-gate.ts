@@ -32,13 +32,30 @@ export type OwnerGate =
   | { ok: true; uid: string; projectId: string; db: AdminDb }
   | { ok: false; response: NextResponse };
 
+/**
+ * The budget per account and hour, per route.
+ *
+ * Withdrawing writes to an invitation and to the journal, so it gets the budget
+ * inviting has (`POST /api/projects/{id}/invitations`: 20 an hour) rather than
+ * the reading budget it used to share the number with — a withdrawal is the
+ * other half of the same act, and SECURITY.md §3.7 names both halves as limited
+ * (owner decision 02.10.2026). Reading the list keeps its own, larger budget, so
+ * looking never uses up what a withdrawal needs.
+ */
+export const INVITATION_SEND_RATE_LIMIT = 20;
+
+export const INVITATION_RATE_LIMITS = {
+  'invitations-list': 60,
+  'invitations-withdraw': INVITATION_SEND_RATE_LIMIT,
+} as const;
+
 export async function openInvitationsAsOwner(
   uid: string,
   rawProjectId: unknown,
-  rateKey: 'invitations-list' | 'invitations-withdraw',
+  rateKey: keyof typeof INVITATION_RATE_LIMITS,
 ): Promise<OwnerGate> {
   try {
-    await assertRateLimit(`${rateKey}:${uid}`, 60, 60 * 60 * 1000);
+    await assertRateLimit(`${rateKey}:${uid}`, INVITATION_RATE_LIMITS[rateKey], 60 * 60 * 1000);
   } catch (rateErr: unknown) {
     const q = rateErr as { message?: string; status?: number };
     return {

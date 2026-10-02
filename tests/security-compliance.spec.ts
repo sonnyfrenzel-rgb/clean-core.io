@@ -530,6 +530,13 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     await adminSetDoc('s4_credentials', tempUid, { userId: tempUid, encrypted: 'x' });
     await adminSetDoc('mfa_secrets', tempUid, { userId: tempUid, secret: 'x' });
     await adminSetDoc('mfa_pending', tempUid, { userId: tempUid, secret: 'x' });
+    // A proxy capability a crashed live run left behind (owner decision
+    // 02.10.2026): project id, uid, tenant host — the account's, so it goes
+    // with the account rather than waiting for its TTL.
+    await adminSetDoc('s4_proxy_capabilities', `cap-${tempUid}`, {
+      pid: `proj-${tempUid}`, uid: tempUid, host: 'tenant.example.com', run: `run-${tempUid}`,
+      exp: Date.now() + 600_000, requests: 0, expiresAt: new Date(Date.now() + 600_000),
+    });
 
     // 3. Call secure deletion API
     const deleteResponse = await request.post('/api/account/delete', {
@@ -557,6 +564,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     expect(await adminDocExists('s4_credentials', tempUid)).toBe(false);
     expect(await adminDocExists('mfa_secrets', tempUid)).toBe(false);
     expect(await adminDocExists('mfa_pending', tempUid)).toBe(false);
+    expect(await adminDocExists('s4_proxy_capabilities', `cap-${tempUid}`), 'a proxy capability outlived the account').toBe(false);
   });
 
   /**

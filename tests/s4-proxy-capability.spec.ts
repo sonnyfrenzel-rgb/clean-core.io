@@ -126,4 +126,16 @@ test.describe('one run, one capability', () => {
     await registerCapability(db, claims);
     expect(Object.keys(docs.get(`${CAPABILITY_COLLECTION}/${claims.cid}`)!).sort()).toEqual(['exp', 'expiresAt', 'host', 'pid', 'requests', 'run', 'uid']);
   });
+
+  test('expiresAt is a timestamp a Firestore TTL policy can sweep, at the capability\'s own expiry', async () => {
+    // A TTL policy deletes only on a Timestamp/Date field; a number or a string
+    // is skipped for good. `uid` is what the account-erasure cascade queries.
+    const { db, docs } = memoryDb();
+    const { claims } = mintCapability(CLAIMS, KEY, NOW);
+    await registerCapability(db, claims);
+    const stored = docs.get(`${CAPABILITY_COLLECTION}/${claims.cid}`)!;
+    expect(stored.expiresAt).toBeInstanceOf(Date);
+    expect((stored.expiresAt as Date).getTime()).toBe(claims.exp);
+    expect(stored.uid).toBe(claims.uid);
+  });
 });

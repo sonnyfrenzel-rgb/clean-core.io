@@ -3,7 +3,8 @@
  *
  * Validates the integrity and authenticity of exported Audit Pack ZIP files.
  * Checks file SHA-256 hashes against the manifest, verifies the manifest hash,
- * and optionally validates the HMAC-SHA256 signature via the server.
+ * validates the HMAC-SHA256 signature via the server, and checks the Ed25519
+ * signature locally against the published public keys.
  */
 
 import JSZip from 'jszip';
@@ -249,6 +250,160 @@ export interface CoverageResult {
   ref: string;
 }
 
+/**
+ * The Ed25519 half of the verdict, checked in the browser against the public
+ * keys this instance publishes (owner decision 02.10.2026).
+ *
+ *  - `verified`    — the pack's Ed25519 signature verifies over the manifest
+ *                    hash rebuilt from the archive, with a published key;
+ *  - `not-present` — the pack carries no Ed25519 signature (HMAC-only packs,
+ *                    format 4.0 and older);
+ *  - `failed`      — it carries one and it does not verify with the key it names;
+ *  - `unchecked`   — it carries one and it could not be checked: the key
+ *                    document did not answer, the key it names is not published
+ *                    (withdrawn, or never ours), or the browser has no Ed25519.
+ *                    Not a statement about the signature.
+ */
+export type Ed25519State = 'verified' | 'not-present' | 'failed' | 'unchecked';
+
+export interface Ed25519Result {
+  state: Ed25519State;
+  /** The id of the key the signature was checked against, derived from the key itself. */
+  keyId: string | null;
+  /** Why it is `unchecked` or `failed`; null otherwise. */
+  reason: string | null;
+}
+
+/**
+ * Where the public keys are read from: this instance's own well-known document,
+ * same origin as the page. Never the address a pack names for itself
+ * (`signingKeyUrl`): a pack does not get to choose its own trust root — the
+ * rule `scripts/verify-pack.mjs` holds too.
+ */
+export const SIGNING_KEY_DOCUMENT_PATH = '/.well-known/clean-core-io-signing.json';
+
+export interface VerifyOptions {
+  /**
+   * Returns the parsed key document. Defaults to fetching
+   * `SIGNING_KEY_DOCUMENT_PATH`; a test hands in its own.
+   */
+  fetchKeyDocument?: () => Promise<unknown>;
+}
+
+function base64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function defaultKeyDocument(): Promise<unknown> {
+  const res = await fetch(SIGNING_KEY_DOCUMENT_PATH, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`the key document answered HTTP ${res.status}`);
+  return res.json();
+}
+
+/**
+ * The key the pack names, out of everything the document publishes — the same
+ * selection `scripts/verify-pack.mjs` makes (`keyFromDocument`): the id is
+ * derived from each published key, never taken from the label beside it; a pack
+ * naming a key the document does not publish is not checked (that is what a
+ * withdrawn key looks like from outside); a pack naming none — the shape packs
+ * had before the id existed — is checked against the active key. Retired keys
+ * stay in the document so packs they signed before a rotation still verify.
+ */
+async function selectPublishedKey(
+  doc: unknown,
+  wanted: string | null,
+): Promise<{ raw: Uint8Array; keyId: string } | { error: string }> {
+  const entries = Array.isArray((doc as { keys?: unknown })?.keys) ? ((doc as { keys: unknown[] }).keys) : [];
+  const usable: Array<{ raw: Uint8Array; keyId: string; status: unknown }> = [];
+  for (const entry of entries) {
+    const e = entry as { publicKey?: unknown; status?: unknown };
+    if (typeof e?.publicKey !== 'string') continue;
+    try {
+      const raw = base64ToBytes(e.publicKey);
+      if (raw.length !== 32) continue;
+      usable.push({ raw, keyId: (await sha256(raw)).slice(0, 16), status: e.status });
+    } catch {
+      /* an unreadable entry is not a reason to abandon the readable ones */
+    }
+  }
+  if (usable.length === 0) return { error: 'the key document publishes no usable Ed25519 key' };
+  if (wanted) {
+    const match = usable.find((u) => u.keyId === wanted);
+    if (match) return { raw: match.raw, keyId: match.keyId };
+    return {
+      error: `the pack was signed with key ${wanted}, which this instance does not publish (it publishes ${usable
+        .map((u) => u.keyId)
+        .join(', ')}); the key may have been withdrawn`,
+    };
+  }
+  const active = usable.find((u) => u.status === 'active') ?? usable[0];
+  return { raw: active.raw, keyId: active.keyId };
+}
+
+/**
+ * Checks the pack's Ed25519 signature over `manifestHash` — the hash rebuilt
+ * from the archive, not the one the manifest states, so a valid signature means
+ * the sealed contents are the contents in hand.
+ */
+async function checkEd25519(
+  manifest: AuditPackManifest,
+  manifestHash: string | null,
+  fetchKeyDocument: () => Promise<unknown>,
+): Promise<Ed25519Result> {
+  const signature = typeof manifest.signatureEd25519 === 'string' ? manifest.signatureEd25519 : '';
+  if (!signature) return { state: 'not-present', keyId: null, reason: null };
+  if (manifestHash === null) {
+    return { state: 'unchecked', keyId: null, reason: 'the manifest has no canonical form to check the signature over' };
+  }
+  const wanted = /^[0-9a-f]{16}$/.test(String(manifest.signingKeyId ?? '')) ? String(manifest.signingKeyId) : null;
+
+  let doc: unknown;
+  try {
+    doc = await fetchKeyDocument();
+  } catch (err: unknown) {
+    return {
+      state: 'unchecked',
+      keyId: null,
+      reason: `the public keys could not be read (${err instanceof Error ? err.message : String(err)})`,
+    };
+  }
+  const selected = await selectPublishedKey(doc, wanted);
+  if ('error' in selected) return { state: 'unchecked', keyId: null, reason: selected.error };
+
+  let sigBytes: Uint8Array;
+  try {
+    sigBytes = base64ToBytes(signature);
+  } catch {
+    return { state: 'failed', keyId: selected.keyId, reason: 'the signature is not valid base64' };
+  }
+  if (sigBytes.length !== 64) {
+    return { state: 'failed', keyId: selected.keyId, reason: `an Ed25519 signature is 64 bytes, this one is ${sigBytes.length}` };
+  }
+
+  let key: CryptoKey;
+  try {
+    key = await crypto.subtle.importKey('raw', new Uint8Array(selected.raw), { name: 'Ed25519' }, false, ['verify']);
+  } catch {
+    return {
+      state: 'unchecked',
+      keyId: selected.keyId,
+      reason: 'this browser cannot check Ed25519 signatures; scripts/verify-pack.mjs can',
+    };
+  }
+  const ok = await crypto.subtle.verify(
+    { name: 'Ed25519' },
+    key,
+    new Uint8Array(sigBytes),
+    new TextEncoder().encode(manifestHash),
+  );
+  return ok
+    ? { state: 'verified', keyId: selected.keyId, reason: null }
+    : { state: 'failed', keyId: selected.keyId, reason: `the signature does not verify against key ${selected.keyId}` };
+}
+
 export interface VerifyResult {
   /**
    * True only for a pack this platform actually signed.
@@ -270,7 +425,13 @@ export interface VerifyResult {
   status: 'authentic' | 'integrity-only' | 'failed';
   fileIntegrity: FileVerifyResult[];
   manifestHashValid: boolean;
-  signatureValid: boolean | null; // null = unsigned or verification skipped
+  signatureValid: boolean | null; // the HMAC, checked by the issuer; null = unsigned or verification skipped
+  /**
+   * The Ed25519 signature, checked here against the published keys. Optional
+   * so a result built without a pack (the page's own error path) need not
+   * invent one; every result `verifyAuditPack` returns carries it.
+   */
+  ed25519?: Ed25519Result;
   manifest: AuditPackManifest | null;
   /**
    * The handover chain's coverage, or `null` for a pack sealed in a format that
@@ -287,6 +448,8 @@ export interface VerifyResult {
  * 2. Verifies SHA-256 hashes of all listed files
  * 3. Verifies the manifest hash (canonical string)
  * 4. Optionally verifies the HMAC signature via /api/export/verify
+ * 5. Verifies the Ed25519 signature, when the pack carries one, against the
+ *    public keys at /.well-known/clean-core-io-signing.json
  */
 /**
  * How the verdict is named. A pack whose manifest is signed but whose signature
@@ -300,6 +463,20 @@ export function signatureStateOf(result: Pick<VerifyResult, 'signatureValid' | '
   return result.manifest?.signed === true ? 'unchecked' : 'unsigned';
 }
 
+/** The words the page shows for the Ed25519 line — one place, so a test can hold them. */
+export function ed25519Label(state: Ed25519State): string {
+  switch (state) {
+    case 'verified':
+      return 'Ed25519: verified';
+    case 'failed':
+      return 'Ed25519: failed';
+    case 'unchecked':
+      return 'Ed25519: present, not checked';
+    default:
+      return 'Ed25519: not present';
+  }
+}
+
 export function verdictHeadline(result: Pick<VerifyResult, 'status' | 'signatureValid' | 'manifest'>): string {
   if (result.status === 'authentic') return 'Authenticity & Integrity Verified';
   if (result.status === 'failed') return 'Verification Failed';
@@ -308,8 +485,10 @@ export function verdictHeadline(result: Pick<VerifyResult, 'status' | 'signature
     : 'Integrity Verified (Unsigned)';
 }
 
-export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Promise<VerifyResult> {
+export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array, options: VerifyOptions = {}): Promise<VerifyResult> {
   const errors: string[] = [];
+  const NOT_PRESENT: Ed25519Result = { state: 'not-present', keyId: null, reason: null };
+  let ed25519: Ed25519Result = NOT_PRESENT;
   const fileResults: FileVerifyResult[] = [];
   let manifest: AuditPackManifest | null = null;
   let manifestHashValid = false;
@@ -347,6 +526,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
         fileIntegrity: [],
         manifestHashValid: false,
         signatureValid: null,
+        ed25519,
         manifest: null,
         errors: ['manifest.json not found in ZIP. This may be an Audit Pack v1 (pre-v1.17) without integrity verification.'],
       };
@@ -363,6 +543,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
         fileIntegrity: [],
         manifestHashValid: false,
         signatureValid: null,
+        ed25519,
         manifest: null,
         errors: ['manifest.json contains invalid JSON.'],
       };
@@ -500,8 +681,9 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       errors.push(err?.message || 'This manifest has no unambiguous canonical form.');
     }
 
+    let computedManifestHash: string | null = null;
     if (canonicalManifest !== null) {
-      const computedManifestHash = await sha256(canonicalManifest);
+      computedManifestHash = await sha256(canonicalManifest);
       manifestHashValid = computedManifestHash === manifest.manifestHash;
 
       if (!manifestHashValid) {
@@ -555,6 +737,17 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       }
     }
 
+    // 6. The Ed25519 signature, checked here rather than by the issuer: the
+    // public keys are published, so the browser needs nobody's secret. It
+    // covers the same manifest-hash string as the HMAC (`/api/audit-pack/
+    // create`), and it is checked over the hash rebuilt from the archive.
+    ed25519 = await checkEd25519(manifest, computedManifestHash, options.fetchKeyDocument ?? defaultKeyDocument);
+    if (ed25519.state === 'failed') {
+      errors.push(`Ed25519 signature verification failed: ${ed25519.reason}. The manifest may have been tampered with.`);
+    } else if (ed25519.state === 'unchecked') {
+      errors.push(`The pack carries an Ed25519 signature that could not be checked here: ${ed25519.reason}. This is not a statement about the signature.`);
+    }
+
     // The handover chain, once the hash above has established that these rows
     // are the sealed ones. A link the signature does not stand behind is said
     // out loud here for the same reason an attested file is: a verdict that
@@ -580,13 +773,14 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
     const allFilesValid = fileResults.every(f => f.valid);
     const integrityValid = allFilesValid && manifestHashValid && entryNames.counted && entryNames.duplicates.length === 0;
 
+    // Either signature that was checked and did not verify fails the pack; one
+    // that verified, with none failing, makes it authentic. A signature that
+    // could not be checked counts for nothing in either direction.
+    const signatureFailed = signatureValid === false || ed25519.state === 'failed';
+    const signatureVerified = signatureValid === true || ed25519.state === 'verified';
     let status: 'authentic' | 'integrity-only' | 'failed' = 'failed';
-    if (integrityValid) {
-      if (signatureValid === true) {
-        status = 'authentic';
-      } else if (signatureValid === null) {
-        status = 'integrity-only';
-      }
+    if (integrityValid && !signatureFailed) {
+      status = signatureVerified ? 'authentic' : 'integrity-only';
     }
 
     const success = status === 'authentic' && !attestedUnbound;
@@ -598,6 +792,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       fileIntegrity: fileResults,
       manifestHashValid,
       signatureValid,
+      ed25519,
       manifest,
       covers,
       errors,
@@ -610,6 +805,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       fileIntegrity: fileResults,
       manifestHashValid: false,
       signatureValid: null,
+      ed25519,
       manifest,
       errors: [`Verification failed: ${err.message}`],
     };

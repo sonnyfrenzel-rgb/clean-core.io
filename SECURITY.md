@@ -90,7 +90,7 @@ This document describes the security architecture and hardening measures impleme
 
 ### 3.6 Admin Governance & Logging
 - **Console API Routes**: All administrative tasks (user approval/revocation, S/4 HANA access grant/revocation, profile deletion) are routed through secure, server-side APIs (such as `/api/admin/console-action`), preventing direct client-side writes to Firestore.
-- **Audit Logging**: The console actions — approve, suspend, grant and revoke S/4 access, delete an account — write an `audit_events` row (actor UID/email, action type, target UID, timestamp), the state changes in the same batch as their row. Granting or withdrawing the admin claim, approving a tenant through the mailed link, the runner self-test and the admin mail routes write no row today. Owner actions are logged too: own-key changes, sign-off commands, reader removal, invitation revocation and repair drafts.
+- **Audit Logging**: The console actions — approve, suspend, grant and revoke S/4 access, delete an account — write an `audit_events` row (actor UID/email, action type, target UID, timestamp), the state changes in the same batch as their row. Since 02.10.2026 so do granting and withdrawing the admin claim (`GRANT_ADMIN` / `REVOKE_ADMIN`, in the same batch as the profile mirror and before the claim changes), deciding a tenant request through the mailed link (`GRANT_S4_LINK` / `REJECT_S4_LINK`, in the transaction that consumes the link) and the runner self-test (`RUNNER_SELFTEST:<verdict>`), all in the same row shape (`tests/admin-audit-rows.spec.ts`). The admin mail routes write no row today. Owner actions are logged too: own-key changes, sign-off commands, reader removal, invitation revocation and repair drafts.
 - **Admin Verification**: Access requires valid admin credentials, recent re-auth (< 5 min), and the second factor on the ID token (`assertAdminStepUp`).
 
 ### 3.7 Who May Read a Project (roadmap 5, sharing)
@@ -107,7 +107,7 @@ Properties this rests on, each enforced rather than asked for:
 - **`readers` is not client-writable.** A browser that could write it could invite itself, which is the whole grant. The field is absent from the project update allowlist, and `tests/invitation-flow.spec.ts` reads the rules file to prove it.
 - **The invitation subcollection is server-only, out loud.** `allow read, write: if false` — written down rather than left to default-deny, because an invitation carries the e-mail address of the person it was sent to, and a project's invitation list is therefore a list of other people's addresses. The owner's overview is answered by `GET /api/projects/{projectId}/readers`, which returns the accepted readers and never the pending addresses.
 - **Nothing on an invitation comes from the caller.** Both timestamps are the server's clock, `invitedBy` is the verified token, `status` is `pending` because this route is the only thing that creates one, and a requested lifetime outside 1–90 days collapses to the default of 14 rather than being honoured. Documents are written with `create()`, never `set()`, and the id is 24 random bytes.
-- **Inviting and revoking sit behind the second factor**, like every other route that touches a project's code; inviting, previewing and accepting are also rate-limited. A project may hold at most **three** open invitations at once (`INVITATION_MAX_OPEN`, decided 18.09.2026): the rate limit caps how fast invitations go out and cannot cap how many stand open, and a route that mails an address its caller typed needs both halves.
+- **Inviting and revoking sit behind the second factor**, like every other route that touches a project's code; inviting, previewing, accepting and withdrawing are also rate-limited — withdrawing on the same budget as inviting, 20 an hour per account (`INVITATION_SEND_RATE_LIMIT`, `lib/invitation-owner-gate.ts`, since 02.10.2026). A project may hold at most **three** open invitations at once (`INVITATION_MAX_OPEN`, decided 18.09.2026): the rate limit caps how fast invitations go out and cannot cap how many stand open, and a route that mails an address its caller typed needs both halves.
 - **An invitation nobody was told about is not left behind.** If the mail provider refuses, the invitation is withdrawn in the same request and the owner is told nothing went out.
 - **Reading is all it grants.** Analysing, confirming, signing and exporting remain with the owner; every one of those routes still answers on `userId`.
 
@@ -166,7 +166,7 @@ Firestore
 | 8 | Full IPv6 blocking (::1, ULA fc00::/7, link-local fe80::/10, IPv4-mapped, NAT64, multicast) | `isBlockedV6()` |
 | 9 | IP pinning via undici Agent (anti DNS-rebinding between check and connect) | `safeFetch()` |
 | 10 | Manual redirect following with re-validation per hop (max 3 hops) | `safeFetch()` |
-| 11 | `tokenUrl` validated before OAuth token exchange | All S4 routes |
+| 11 | `tokenUrl` validated before OAuth token exchange, and with the same validator when credentials are saved | All S4 routes; `POST /api/s4-credentials` |
 
 ### Host Allowlist
 - Configured via `S4_HOST_ALLOWLIST` env var (comma-separated suffixes).
@@ -206,6 +206,7 @@ App (API route, public service)
   │       live: RUNNER_LIVE_URL + RUNNER_SERVICE_ACCOUNT + S4_PROXY_BASE_URL + key → live runner · else 403
   │  5. (live) assertS4TenantAccess → capability {project, account, tenant host, run, ≤10 min},
   │     registered in s4_proxy_capabilities, deleted when the run returns
+  │     (expiresAt for a TTL sweep of crashed runs; erased with the account)
   │  6. POST <runner>/run with the app's Google ID token (audience = runner URL),
   │     sent through the app's own VPC egress (below) — internal ingress admits nothing else
   │  7. check the report: SHA-256 of every file and of the suite = what was sent, mode = asked for
@@ -329,7 +330,7 @@ proven on the deployed profile.
 | `RESEND_API_KEY` | Yes | Transactional email sending (approval/revoke mails) |
 | `NEXT_PUBLIC_APP_URL` | Yes | Self-referential URLs (prevents Host header injection) |
 | `S4_ENCRYPTION_KEY` | Yes (if S4 features used) | AES-256-GCM key for credential encryption; also the HKDF source of the proxy capability signing key |
-| `AUDIT_SIGNING_KEY` | Yes | HMAC key for runs and audit packs, at least 32 characters, no fallback (`lib/audit-signing-key.ts`); asserted by the deploy |
+| `AUDIT_SIGNING_KEY` | Yes | HMAC key for runs and audit packs, at least 32 characters, no fallback (`lib/audit-signing-key.ts`); asserted by the deploy; a key below the floor turns `/api/health` degraded |
 | `AUDIT_SIGNING_PRIVATE_KEY` | No | Ed25519 key for audit packs; unset = HMAC-only packs and the well-known key document answers 503 |
 | `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED` | No | Retired Ed25519 public keys still published, so packs from before a rotation verify |
 | `RATE_LIMIT_PEPPER` | Yes | HMAC pepper for rate-limit document ids; no fallback, rate-limited routes fail without it |
@@ -377,7 +378,7 @@ proven on the deployed profile.
 - [ ] All API routes use `verifyRequestAuth()` or `verifyAdminRequest()`
 - [ ] No user-supplied URLs are fetched without `await isUrlSafe()` validation
 - [ ] All outgoing fetches to user-controlled URLs use `safeFetch()` (not raw `fetch()`)
-- [ ] `tokenUrl` is validated before any OAuth token exchange
+- [ ] `tokenUrl` is validated before any OAuth token exchange, and when it is stored
 - [ ] No credentials are stored in client-readable Firestore collections
 - [ ] No generated or user-supplied code is executed outside the isolated runner (§7)
 - [ ] Quota-affecting operations use atomic server-side transactions
@@ -476,7 +477,7 @@ The platform's core assurance is that an analysis result cannot be silently alte
 
 ### 14.3 Audit Pack verification
 - Audit packs carry a SHA-256 **manifest**, an HMAC **signature** and, where configured, an Ed25519 signature (`lib/audit-pack.ts` / `lib/audit-pack-verify.ts`).
-- **In the browser** (`/verify-pack`, reachable without an account): the ZIP is opened locally, every file's SHA-256 is recomputed, unlisted or duplicate entries and attested digests are checked and the canonical manifest is rebuilt. The archive is never uploaded; only the canonical manifest and the HMAC signature go to `POST /api/export/verify`, because an HMAC can be checked only by the holder of the key.
+- **In the browser** (`/verify-pack`, reachable without an account): the ZIP is opened locally, every file's SHA-256 is recomputed, unlisted or duplicate entries and attested digests are checked and the canonical manifest is rebuilt. The archive is never uploaded; only the canonical manifest and the HMAC signature go to `POST /api/export/verify`, because an HMAC can be checked only by the holder of the key. The Ed25519 signature is checked **in the browser** (since 02.10.2026), over the rebuilt manifest hash, against the keys published at `/.well-known/clean-core-io-signing.json` on the same origin — the key the pack names, matched on the id derived from each published key, retired keys honoured, the pack's own `signingKeyUrl` never followed (the selection `scripts/verify-pack.mjs` makes). The page shows it on its own line: verified, not present, failed, or present but not checked with the reason (key withdrawn, key document unreachable, no Ed25519 in the browser). Either signature failing fails the pack; either verifying, with none failing, makes it authentic (`tests/verify-pack-ed25519.spec.ts`).
 - **The verify endpoint** is public, rate-limited per IP, accepts a canonical manifest of at most 32 KB and either a 64-character hex HMAC (compared with `timingSafeEqual`) or an Ed25519 signature, which it checks against this instance's own key. It reads and writes nothing in the database.
 - **Offline, without the issuer:** `node scripts/verify-pack.mjs <pack.zip> [--key …]` recomputes every file hash and the manifest hash and verifies the Ed25519 signature against the key published at `https://clean-core.io/.well-known/clean-core-io-signing.json` (or a key given explicitly; a URL inside the pack is ignored). A pack with only an HMAC signature is reported as not checkable offline (exit code 2), never as verified.
 - Verification is reported in **three honest tiers**: `authentic` → `integrity-only` (unsigned but hash-consistent) → `failed`. A green "authentic" state is never shown without a valid signature.
@@ -493,7 +494,7 @@ The platform's core assurance is that an analysis result cannot be silently alte
 
 ## 15. Operational Readiness
 
-- **Health probe:** `GET /api/health` (liveness + config presence; `?deep=1` adds a Firestore ping) for Cloud Run checks and uptime monitoring. Returns 503 when misconfigured; response is minimal (no per-check disclosure).
+- **Health probe:** `GET /api/health` (liveness + config presence; `?deep=1` adds a Firestore ping) for Cloud Run checks and uptime monitoring. Returns 503 when misconfigured — including an `AUDIT_SIGNING_KEY` below the 32-character floor, asked through the same `getAuditSigningKey()` the signing routes use (since 02.10.2026); response is minimal (no per-check disclosure, nothing about the key).
 - **GDPR Art. 17 erasure:** `deleteUserDataAndAccount()` purges every collection in `docs/DATA-RETENTION.md`, including the `runs` subcollection and encrypted BYOK keys (`user_secrets`) via `recursiveDelete`. The cascade also removes the account's uid from other projects' `readers` and deletes every invitation addressed to it; if any step fails, the profile and the sign-in are kept so the erasure can be retried. Tested in `tests/security-compliance.spec.ts` and `tests/account-erasure.spec.ts`.
 - **Known gap, scheduled after 3.0 (owner decision 01.10.2026):** an ID token issued before the deletion stays valid for up to an hour; a server-written marker that the rules check will close that window (`docs/ROADMAP.md` §7). The welcome mail is sent at sign-up before the address is confirmed, and this stays as it is — confirming the address at sign-up would change sign-up, which is kept unchanged (`docs/ROADMAP.md` §9).
 - **Data retention & residency:** documented per-collection in `docs/DATA-RETENTION.md`; all data in Firestore **europe-west1 (EU)**. Public transparency page at `/trust`.

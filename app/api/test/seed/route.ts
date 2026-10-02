@@ -45,7 +45,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'setCustomClaim') {
-      await setAdminClaim(uid, claims.admin === true);
+      // The journal row names the seed as the actor: in a test run nobody
+      // granted it, and a row naming a real account would say somebody did.
+      await setAdminClaim(uid, claims.admin === true, 'test-seed');
       return NextResponse.json({ success: true });
     }
 

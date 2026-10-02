@@ -131,7 +131,7 @@ jobs:
       # secret: nothing here may be worth stealing to the dependencies it runs.
       - name: Generate throwaway keys
         run: |
-          for name in S4_ENCRYPTION_KEY MFA_BACKUP_CODE_PEPPER PILOT_APPROVAL_SECRET AUDIT_SIGNING_KEY; do
+          for name in S4_ENCRYPTION_KEY PILOT_APPROVAL_SECRET AUDIT_SIGNING_KEY; do
             value=$(openssl rand -base64 32)
             echo "::add-mask::$value"
             echo "$name=$value" >> "$GITHUB_ENV"

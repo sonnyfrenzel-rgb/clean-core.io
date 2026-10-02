@@ -34,6 +34,7 @@ import fs from 'fs';
 import path from 'path';
 import { GET as healthGET } from '../app/api/health/route';
 import { resetSigningKeypairCache } from '../lib/audit-signing-keypair';
+import { MIN_SIGNING_KEY_LENGTH } from '../lib/audit-signing-key';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -472,5 +473,39 @@ test('the probe goes red when the Ed25519 key is set but unusable', async () => 
     if (savedGemini === undefined) delete process.env.GEMINI_API_KEY;
     else process.env.GEMINI_API_KEY = savedGemini;
     resetSigningKeypairCache();
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/* 8 — an HMAC key below the floor is a visible failure (harden-30)     */
+/* ------------------------------------------------------------------ */
+
+// `/api/health` asked only whether `AUDIT_SIGNING_KEY` was set. A key shorter
+// than `MIN_SIGNING_KEY_LENGTH` is refused by `getAuditSigningKey()`, so every
+// signing and verifying route answers 500 — and the probe said "ok". The probe
+// now asks the same function the routes ask.
+test('the probe goes red when the HMAC signing key is below the floor', async () => {
+  const savedKey = process.env.AUDIT_SIGNING_KEY;
+  const savedGemini = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = savedGemini || 'health-spec-placeholder';
+  try {
+    process.env.AUDIT_SIGNING_KEY = 'x'.repeat(MIN_SIGNING_KEY_LENGTH);
+    expect((await probe()).status, 'a key at the floor is refused').toBe(200);
+
+    process.env.AUDIT_SIGNING_KEY = 'x'.repeat(MIN_SIGNING_KEY_LENGTH - 1);
+    const weak = await probe();
+    expect(weak.status, 'a key one character below the floor reports healthy').toBe(503);
+    expect(weak.body.status).toBe('degraded');
+    // Aggregated, as before: nothing names the key, let alone its length.
+    expect(Object.keys(weak.body).sort()).toEqual(['commit', 'status', 'time', 'version']);
+    expect(JSON.stringify(weak.body)).not.toMatch(/signing|length|floor/i);
+
+    delete process.env.AUDIT_SIGNING_KEY;
+    expect((await probe()).status, 'a missing key reports healthy').toBe(503);
+  } finally {
+    if (savedKey === undefined) delete process.env.AUDIT_SIGNING_KEY;
+    else process.env.AUDIT_SIGNING_KEY = savedKey;
+    if (savedGemini === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = savedGemini;
   }
 });
