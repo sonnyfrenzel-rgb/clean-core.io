@@ -3,7 +3,7 @@
     "path": "docs/korpus/referenzkorpus-v2.1.md",
     "sha256": "910c62dce72232a0f866b71ad22c4f2dc1e8c72e790b6ad06945f45ebda9fd6c"
   },
-  "written": "2026-10-01",
+  "written": "2026-10-02",
   "entries": [
     {
       "case": "CC-001",
@@ -8665,7 +8665,7 @@
           "note": "Ein Sollbefund ist vergleichbar, wenn eine Regelbrücke greift und die Anweisung am Anker ihr Konstrukt trägt."
         }
       ],
-      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: source.abap:13 standard-table-write. Ohne Gegenstück: CC-059-F01 R03@1.0.0 (Profil 1) / R31@v2-vorl. (Profil 2)@source.abap:1 (scope=artefact) — keine Brücke für R03, CC-059-S01 R28@v2-vorl.@source.abap:13+4 (Token IN LOCAL MODE; Sekundäranker: source.abap:9+4 für den READ) — R28 ohne Gegenstück an „MODIFY ENTITIES OF zi_order IN LOCAL MODE ENTITY\"."
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-059-F01 R03@1.0.0 (Profil 1) / R31@v2-vorl. (Profil 2)@source.abap:1 (scope=artefact) — keine Brücke für R03, CC-059-S01 R28@v2-vorl.@source.abap:13+4 (Token IN LOCAL MODE; Sekundäranker: source.abap:9+4 für den READ) — R28 ohne Gegenstück an „MODIFY ENTITIES OF zi_order IN LOCAL MODE ENTITY\"."
     },
     {
       "case": "CC-059",
@@ -8685,7 +8685,7 @@
           "note": "Vergleichbar nur, wenn der Fall ein einzelnes Level nennt und die Engine überhaupt ein Objekt gesehen hat."
         }
       ],
-      "reason": "Korpus (Paar) · Engine (schlechteste Katalognote über 1 Objekt(e)) C. Fallpaar: die Antwort hängt am Zielprofil, und der Evidenzbericht der Engine trägt kein Profil im Schlüssel (R31)."
+      "reason": "Korpus (Paar) · Engine (schlechteste Katalognote über 0 Objekt(e)) A. Fallpaar: die Antwort hängt am Zielprofil, und der Evidenzbericht der Engine trägt kein Profil im Schlüssel (R31)."
     },
     {
       "case": "CC-059",

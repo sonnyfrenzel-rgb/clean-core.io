@@ -70,6 +70,7 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'it.allKinds': 'All kinds',
   'it.allLevels': 'All levels',
   'it.levelPrefix': 'Level',
+  'it.levelOwn': 'on its own',
   'it.levelUnknown': 'Unknown — not in SAP’s lists',
   'it.levelNone': 'Not determined — no object',
   'it.filterTarget': 'Target',

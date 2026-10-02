@@ -89,6 +89,14 @@ export interface ItFindingRow {
   /** The clean core level, or `null` when the finding names no object to ask about. */
   level: CloudReadinessGrade | null;
   /**
+   * The object's own level, where the code's use moved `level` away from it —
+   * a direct write to an SAP table is D whatever the table is on its own
+   * (codex code-engine-05, ADR-062), and a read of a table SAP will not release
+   * is C where the table is D. Optional: absent where the two agree, and on a
+   * row built before it existed.
+   */
+  objectLevel?: CloudReadinessGrade | null;
+  /**
    * The two SAP files, kept apart — `GradedObject.cloudView` / `classicView`,
    * already turned into the labels of `CLOUD_VIEW_META` / `CLASSIC_VIEW_META`.
    * `null` together with `level`.

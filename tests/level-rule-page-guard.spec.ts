@@ -83,6 +83,12 @@ test.describe('the published rule matches the code it describes', () => {
       { row: 'notToBeReleased, read', states: { releaseState: 'notToBeReleased', hasSuccessor: true, isSapObject: true }, use: 'read', grade: 'C' },
       { row: 'notToBeReleased, written', states: { releaseState: 'notToBeReleased', hasSuccessor: true, isSapObject: true }, use: 'write', grade: 'D' },
       { row: 'notToBeReleased, referenced as a type', states: { releaseState: 'notToBeReleased', hasSuccessor: true, isSapObject: true }, use: 'reference', grade: 'C' },
+      // Codex code-engine-05: an SAP object written directly is D whatever its
+      // own level — run for every object level the row overrides.
+      { row: 'SAP object, written directly', states: { isSapObject: true }, use: 'write', grade: 'D' },
+      { row: 'SAP object, written directly', states: { releaseState: 'released', isSapObject: true }, use: 'write', grade: 'D' },
+      { row: 'SAP object, written directly', states: { classificationState: 'classicAPI', isSapObject: true }, use: 'write', grade: 'D' },
+      { row: 'SAP object, written directly', states: { releaseState: 'deprecated', hasSuccessor: true, isSapObject: true }, use: 'write', grade: 'D' },
       { row: 'customer table, read or written', states: { isSapObject: false, isCustomerObject: true }, use: 'read', grade: 'B' },
       { row: 'customer table, read or written', states: { isSapObject: false, isCustomerObject: true }, use: 'write', grade: 'B' },
     ];
@@ -104,6 +110,14 @@ test.describe('the published rule matches the code it describes', () => {
         `"${row}" grades the same as the object's own name, so the row states no rule`,
       ).not.toBe(gradeFromSapStates(c.states).grade);
     }
+    // The direct-write row moves every one of its cases away from the object's
+    // own level, and keeps that level beside the D (the page says so).
+    for (const c of cases.filter((entry) => entry.row === 'SAP object, written directly')) {
+      const own = gradeFromSapStates(c.states).grade;
+      expect(own, `"${JSON.stringify(c.states)}" is D on its own, so the row would state no rule for it`).not.toBe('D');
+      expect(gradeFromSapStatesForUse(c.states, c.use).objectGrade).toBe(own);
+    }
+    expect(source).toContain('The object’s own level is kept beside the D.');
     // And the page's grade letters for those rows are the ones stated.
     for (const c of cases) {
       expect(source).toMatch(new RegExp(`use: '${c.row}',\\s*grade: '${c.grade}'`));
@@ -229,6 +243,18 @@ test.describe('the rule page carries the version of the rule', () => {
       }),
     );
     expect(withoutUse, 'the fingerprint does not see how the code uses an object').not.toBe(real);
+
+    // And the direct-write row (codex code-engine-05): the rule before it let a
+    // written SAP object keep its own level. Restoring that has to move it too.
+    const withoutDirectWrite = fingerprintLevelRule(
+      enumerateLevelRule({
+        grade: (s, use) =>
+          use === 'write' && s.isSapObject && (s.releaseState || '').toLowerCase() !== 'nottobereleased'
+            ? { ...gradeFromSapStates(s) }
+            : gradeFromSapStatesForUse(s, use),
+      }),
+    );
+    expect(withoutDirectWrite, 'the fingerprint does not see the direct-write row').not.toBe(real);
   });
 
   test('the fingerprint does not move when only the order does', () => {

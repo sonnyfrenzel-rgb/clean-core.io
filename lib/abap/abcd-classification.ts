@@ -231,6 +231,20 @@ export function objectUseFromAccess(accessType?: string | null): ObjectUse | nul
 }
 
 /**
+ * The use a data-coupling row is graded for.
+ *
+ * A name that is only a possible target of a dynamic statement (R26: a DEFAULT
+ * or an assignment the source shows, not the resolved target) is not known to
+ * be written. Grading it "written directly → D" (codex code-engine-05) would
+ * turn a candidate into a finding, so a possible-only write is graded by the
+ * object's name — the answer it had before that rule. Reads stay as they were.
+ */
+export function couplingUse(c: { accessType?: string | null; possibleTargetOf?: readonly string[] }): ObjectUse | null {
+  const use = objectUseFromAccess(c.accessType);
+  return use === 'write' && c.possibleTargetOf?.length ? null : use;
+}
+
+/**
  * The key a batch of graded objects is looked up by. A plain name for an object
  * whose use is not known — the shape `/api/abcd-classify` has always answered
  * with — and `NAME@use` where the use is part of the question.
@@ -403,7 +417,7 @@ export function gradeFromSapStates(s: SapObjectStates): GradedObject {
 }
 
 /**
- * Grade one *use* of an object: the object's own grade, and then the two places
+ * Grade one *use* of an object: the object's own grade, and then the three places
  * where how the code touches it changes the answer.
  *
  *   1. A table SAP will not release, and that the classic file does not name —
@@ -428,6 +442,14 @@ export function gradeFromSapStates(s: SapObjectStates): GradedObject {
  *      whole dependency" — the premise of the B — does not hold, and the answer
  *      stays Unknown.
  *
+ *   3. Any SAP object written directly (codex code-engine-05, ADR-062): D,
+ *      with the object's own grade in `objectGrade` — residual C, released A,
+ *      classicAPI B alike. A `write` is a direct database statement and only
+ *      that (`readTableDependencies`: INSERT / UPDATE / MODIFY / DELETE, FROM
+ *      TABLE, a resolved dynamic name, ADBC); EML, a BAPI or a released class
+ *      never reaches this function as one. A namespaced object SAP does not
+ *      list is not known to be SAP's and keeps Unknown.
+ *
  * Without a use this is `gradeFromSapStates` unchanged, so the catalog pages and
  * the published census keep the answer for the name.
  */
@@ -444,6 +466,17 @@ export function gradeFromSapStatesForUse(s: SapObjectStates, use: ObjectUse | nu
   }
   if (release === 'nottobereleased' && !classification && (use === 'read' || use === 'reference')) {
     return { ...object, grade: 'C', use, objectGrade: object.grade };
+  }
+  // Row 3 (codex code-engine-05): an SAP object written directly is D, whatever
+  // the object is on its own. The object's grade answers "may this object be
+  // used"; a direct INSERT / UPDATE / MODIFY / DELETE answers "the application
+  // that owns these rows was bypassed", and no release state permits that — a
+  // released view or table is released for reading, and SAP's write path is the
+  // business object (EML), a BAPI or a released class, none of which is a
+  // `write` here. The object grade is kept beside it, so "C on its own, written
+  // directly → D" stays readable and nothing the catalog said is lost.
+  if (use === 'write' && s.isSapObject && object.grade !== 'D') {
+    return { ...object, grade: 'D', use, objectGrade: object.grade };
   }
   return { ...object, use };
 }
