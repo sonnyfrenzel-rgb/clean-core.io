@@ -80,19 +80,14 @@ function isPlainMap(value: unknown): value is Record<string, unknown> {
 /** The stored size of one field value. Unknown shapes are counted as their JSON text, never as zero. */
 export function valueSize(value: unknown): number {
   if (value === null || value === undefined) return 1;
-  switch (typeof value) {
-    case 'string':
-      return stringSize(value);
-    case 'boolean':
-      return 1;
-    case 'number':
-    case 'bigint':
-      return 8;
-    case 'object':
-      break;
-    default:
-      return 1;
-  }
+  // Plain `if`s, not a `switch` with `case 'object': break;` — the production
+  // minifier (SWC, Next 15) compiled that form into a function that returned
+  // `undefined` for every object, so every project size came out NaN and
+  // `/api/runs/create` refused every analysis as too large. Seen on the
+  // production build of 02.10.2026; `next dev` does not minify and hid it.
+  if (typeof value === 'string') return stringSize(value);
+  if (typeof value === 'number' || typeof value === 'bigint') return 8;
+  if (typeof value !== 'object') return 1;
   if (Array.isArray(value)) return value.reduce<number>((sum, v) => sum + valueSize(v), 0);
   if (value instanceof Date) return 8;
   if (value instanceof Uint8Array) return value.byteLength;
