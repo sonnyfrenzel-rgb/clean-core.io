@@ -285,7 +285,7 @@ function StackBar({ parts }: { parts: readonly SeverityPart[] }) {
 /**
  * The text on a level's block. The blocks are filled with the level's chart
  * colour at full strength, so the letter is white on A, B and D (6.5–7.6 : 1)
- * and ink on C, whose mark `#d97706` holds white at only 3.2 : 1 but ink at
+ * and ink on C, whose warning mark holds white at only 3.2 : 1 but ink at
  * 5.4 : 1 (DESIGN.md §1.1, warning marks).
  */
 const LEVEL_TEXT: Record<'B' | 'A' | 'C' | 'D', string> = {
