@@ -30,3 +30,12 @@ test('usp-06: no public line says read access expires after acceptance', () => {
   }
 });
 
+test('usp-09: a stored run is not described as Ed25519-signed', () => {
+  // /api/runs/create signs a run with HMAC only; Ed25519 signs the audit pack.
+  const runs = read('app/api/runs/create/route.ts');
+  expect(runs).not.toMatch(/signEd25519/);
+  expect(flat(read('README.md'))).not.toMatch(/stored as an immutable run, signed with HMAC and Ed25519/);
+  expect(read('app/page.tsx')).not.toContain('signed run (HMAC and Ed25519)');
+  expect(read('app/llms-full.txt/route.ts')).not.toContain('signed by the Clean-Core.io server (HMAC and Ed25519)');
+});
+

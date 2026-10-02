@@ -73,8 +73,10 @@ Model proposal.
   on the signed run, and the code's plan names every finding at its line; the test
   scenarios run against the generated code in an isolated runner, against mocks, and the
   server records what ran on which code; the handover pack is signed over the run.
-- **Signed runs.** Every completed analysis is stored as an immutable run, signed with
-  HMAC and Ed25519, and a signed export can be verified against it.
+- **Signed runs.** Every completed analysis is stored as an immutable run, signed by the
+  server with HMAC. The audit pack exported from it is signed over the run, with HMAC
+  and Ed25519, and the Ed25519 signature can be verified offline against the published
+  public key.
 - **A process editor, and BPMN 2.0 XML both ways.** The reconstructed process opens in a
   BPMN editor; every save is an immutable revision, the reconstruction stays revision 1,
   and two revisions can be compared. The model leaves as a BPMN 2.0 XML file and a file

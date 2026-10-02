@@ -431,7 +431,7 @@ export default function Home() {
           'Clean Core Score, 0–100, higher is better, in four bands — published by Clean-Core.io, not an SAP metric',
           'Business, IT and Management views of the same project',
           'Target design, transformed RAP or CAP code draft and test scenarios, run in an isolated runner against mocks',
-          'Every completed analysis sealed as a signed run (HMAC and Ed25519); signed audit pack for handover',
+          'Every completed analysis sealed as a signed run (HMAC); audit pack for handover signed over the run with HMAC and Ed25519',
           'Read access by invitation, bound to one confirmed e-mail address, until it is withdrawn; an invitation link nobody accepts expires',
           'Demo project with a guided tour',
           'Stored in the EU; no analytics, advertising or tracking cookies',

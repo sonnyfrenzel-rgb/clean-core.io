@@ -32,7 +32,7 @@ const GLOSSARY: Array<[string, string]> = [
   [`${BAIP_NAME} (${BAIP})`, `The platform portfolio SAP presented at Sapphire 2026, ${BAIP_FORMERLY}, together with Business Data Cloud and Business Transformation Management. Services whose SAP name still carries the former name — the ${SAP_BTP_ABAP_ENVIRONMENT}, for one — keep it.`],
   ['RAP and CAP', 'The ABAP RESTful Application Programming Model (in-app, ABAP Cloud) and the SAP Cloud Application Programming Model (side-by-side, Node.js or Java). Clean-Core.io drafts code for either route; a draft is for a person to review.'],
   ['ABAP Test Cockpit (ATC)', 'SAP’s in-system check tool, the authoritative check for clean core violations. Clean-Core.io does not replace it.'],
-  ['Signed analysis run', 'An immutable record of one completed analysis, signed by the Clean-Core.io server (HMAC and Ed25519). A signature proves origin and integrity, not correctness.'],
+  ['Signed analysis run', 'An immutable record of one completed analysis, signed by the Clean-Core.io server with HMAC; the audit pack exported from it also carries an Ed25519 signature. A signature proves origin and integrity, not correctness.'],
 ];
 
 export async function GET() {
