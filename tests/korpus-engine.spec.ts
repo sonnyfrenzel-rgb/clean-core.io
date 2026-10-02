@@ -117,6 +117,36 @@ test.describe('die Ratsche', () => {
     ).toEqual('');
   });
 
+  test('keine Abweichung wird still tiefer', () => {
+    // Zustand, Urteil und Nenner allein lassen eine bestehende Abweichung
+    // wachsen: verliert CC-048 eine weitere getroffene Kante, bleibt die
+    // Facette `disagree` · `engine-defekt` mit 8 von 15 verglichenen Kanten —
+    // nur aus "5 getroffen, 2 fehlend" wird "4 getroffen, 3 fehlend". Der
+    // Grund in der Baseline ist der Befund des Vergleichers, wie
+    // `tests/helpers/korpus-baseline-write.ts` ihn geschrieben hat; er nennt
+    // jede fehlende Kante und jeden fehlenden Knoten beim Namen. Weicht der
+    // Befund ab, hat sich innerhalb der Abweichung etwas bewegt — lesen,
+    // entscheiden, Baseline neu schreiben.
+    const moved: string[] = [];
+    for (const result of LIVE) {
+      const recorded = BASE_BY_ID.get(resultId(result));
+      if (!recorded || recorded.state !== 'disagree' || result.state !== 'disagree') continue;
+      const scopeMoved =
+        recorded.scope.compared !== result.scope.compared || recorded.scope.total !== result.scope.total;
+      if (scopeMoved || recorded.reason !== result.evidence) {
+        moved.push(
+          `  ${result.case} [${result.class}]\n      festgehalten: ${recorded.reason}\n      jetzt:         ${result.evidence}`,
+        );
+      }
+    }
+    expect(
+      moved.join('\n'),
+      'Die Abweichung besteht weiter, aber ihr Befund hat sich verändert — eine weitere Aussage kann verloren ' +
+        'gegangen sein, ohne dass Zustand oder Urteil kippen. Lesen Sie den Unterschied; ist er gewollt, ' +
+        'schreiben Sie die Baseline mit tests/helpers/korpus-baseline-write.ts neu.',
+    ).toEqual('');
+  });
+
   test('jede Fall-und-Klasse steht in der Baseline', () => {
     const missing = LIVE.filter((result) => !BASE_BY_ID.has(resultId(result))).map(describe);
     const orphaned = BASELINE.entries
