@@ -12,7 +12,8 @@
  *     second time here, so the chart and the identifier beside it cannot drift.
  *   - **Every other chart** — buckets, modules, runs over time — takes the
  *     categorical palette `--cc-chart-1 … 5`, or the sequential indigo
- *     `--cc-seq-1 … 4` for amounts (the score's bands: `--cc-score-1 … 4`), and **never a state colour**: a bar in
+ *     `--cc-seq-1 … 4` for amounts, and **never a state colour** (the one
+ *     exception is the score's bands, `--cc-score-1 … 4`, by owner decision): a bar in
  *     `--cc-error` says "wrong" about a category that is only a category.
  *
  * **No chart is ever green.** `success` is not in any table below and cannot be
@@ -147,17 +148,18 @@ export const SEQUENTIAL_CHART_COLORS: readonly ChartColor[] = Object.freeze([
 
 /**
  * The four bands of the Clean Core Score (`SCORE_BANDS`), `--cc-score-1 … 4` —
- * DESIGN.md §1.8. The score is an amount on one axis, so its bands take a
- * sequential scale and no state colour: a band is a reading of a grade, not a
- * verdict of *wrong* (error) or *proven* (success), and a state colour per band
- * mixed red, amber, slate and blue into an order nobody could read.
+ * DESIGN.md §1.8, owner decision 02.10.2026 (ADR-057, amended). Along the
+ * axis: the error red for the lowest band (`far`), the warning amber for the
+ * next (`heavy`), indigo (`some`) and deep indigo for the highest (`light`).
+ * The first two are tokens pointing at `--cc-error` and `--cc-warning-mark`,
+ * not a second red and amber. **Never green** — green
+ * means *proven*, and a band is a reading of a grade, not a proof.
  *
- * One hue, light to dark from far to close, the way the axis runs — the
- * further along, the deeper the colour. Each step clears 3 : 1 against the
- * surface (WCAG 1.4.11), unlike `--cc-seq-1/2`, because here the bar *is* the
- * chart and every band has to be seen, not only the one the score is in. The
- * band the score is in is told by the marker and the band's words, never by
- * fading the others.
+ * Each step clears 3 : 1 against the card and the page (WCAG 1.4.11), because
+ * here the bar *is* the chart and every band has to be seen, not only the one
+ * the score is in. Every band is drawn at full strength; the band the score is
+ * in is told by the marker, the band's words and its card, never by colour
+ * alone and never by fading the others.
  *
  * Every surface that draws a band reads it here: the score tile and section of
  * Analyze (real and demo), the band cards, the score dialog, the score page.
