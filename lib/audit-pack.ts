@@ -33,6 +33,7 @@ import { escapeHtml } from '@/lib/export-safety';
 // issued before this change still verifies.
 import { EXPORT_WORD_CSS } from '@/lib/export-style';
 import { BAIP, BAIP_FIRST, routeLabel } from '@/lib/sap-naming';
+import { recommendedArchitecture } from '@/lib/project-commands';
 
 interface ManifestFile {
   path: string;
@@ -897,7 +898,12 @@ export function generateUserAttestations(
 ): string {
   const arch = a.targetArchitecture ? ARCH_LABELS[a.targetArchitecture] || a.targetArchitecture : 'Not chosen';
   const recommended = bound.engineRecommendation ? ARCH_LABELS[bound.engineRecommendation] || bound.engineRecommendation : '—';
-  const overridden = !!a.targetArchitecture && !!bound.engineRecommendation && a.targetArchitecture !== bound.engineRecommendation;
+  // One vocabulary before comparing: the run stores the router's route name
+  // ('In-App (ABAP Cloud)'), the sign-off an architecture code ('rap'). The
+  // translation is the one `approve-architecture` applies; an unknown
+  // recommendation is not an override.
+  const recommendedCode = recommendedArchitecture({ originalRecommendation: bound.engineRecommendation });
+  const overridden = !!a.targetArchitecture && recommendedCode !== null && a.targetArchitecture !== recommendedCode;
   let signOffAt = '—';
   if (a.architectSignOffAt) {
     const ms =

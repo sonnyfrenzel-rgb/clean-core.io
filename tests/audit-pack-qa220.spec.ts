@@ -105,3 +105,19 @@ test('a run that recorded no model participation does not credit a model in the 
   // An attested run still says what the model did.
   expect(generateModelCard(project({ participation: 'narrative-attested' }))).toContain('The model was used for written text');
 });
+
+// Codex code-trust-08: the run stores the router's route name, the sign-off an
+// architecture code. Following the recommendation is not an override.
+test('following the engine recommendation is not exported as an override', () => {
+  const OVERRIDE = "overrides the engine's recommendation";
+  const attest = (targetArchitecture: string, engineRecommendation?: string) =>
+    generateUserAttestations({ targetArchitecture }, { projectId: 'p-1', runId: 'r-1', engineRecommendation });
+  expect(attest('rap', 'In-App (ABAP Cloud)')).not.toContain(OVERRIDE);
+  expect(attest('cap', 'Side-by-Side (SAP BTP)')).not.toContain(OVERRIDE);
+  expect(attest('rap', 'rap')).not.toContain(OVERRIDE);
+  // A real departure still says so; an unknown recommendation never does.
+  expect(attest('cap', 'In-App (ABAP Cloud)')).toContain(OVERRIDE);
+  expect(attest('retire', 'Side-by-Side (SAP BTP)')).toContain(OVERRIDE);
+  expect(attest('rap', 'Something the router never says')).not.toContain(OVERRIDE);
+  expect(attest('rap')).not.toContain(OVERRIDE);
+});
