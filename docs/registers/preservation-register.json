@@ -659,6 +659,7 @@
           {
             "field": "originalRecommendation",
             "from": "run",
+            "via": "storedRouteOf",
             "why": "what the engine recommended, shown beside the override"
           },
           {
