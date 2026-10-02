@@ -7,6 +7,7 @@ import {
   type RunnerReport,
   type RunRequest,
 } from './test-sandbox/protocol';
+import { logger } from './logger';
 
 /**
  * Where a test run executes, decided on the server (roadmap 8.9, CR-09).
@@ -96,6 +97,27 @@ export function proxyBaseFor(cfg: RunnerConfig): string {
 
 export const RUNNER_CALL_TIMEOUT_MS = 100_000;
 
+/**
+ * Why a fetch to a runner threw, in words that can be logged and shown to an
+ * administrator. Node's fetch throws `TypeError: fetch failed` for every
+ * network failure and keeps the reason in `cause` (undici: `ENOTFOUND`,
+ * `ECONNREFUSED`, `UND_ERR_CONNECT_TIMEOUT`, a TLS code, ...). Without it a DNS
+ * failure and a refused connection read the same (02.10.2026: the dev app's
+ * self-test said only "fetch failed"). Code and message only — the cause of
+ * a connect error carries host, address and port, never request headers, so
+ * the bearer token cannot reach the log through it.
+ */
+export function describeFetchFailure(err: unknown): { code: string | null; message: string } {
+  const top = err instanceof Error ? err : null;
+  const cause = top && (top as { cause?: unknown }).cause;
+  const source = cause && typeof cause === 'object' ? (cause as { code?: unknown; message?: unknown; name?: unknown }) : null;
+  const rawCode = source?.code ?? (top as { code?: unknown } | null)?.code ?? (top?.name === 'AbortError' ? 'ABORTED' : null);
+  const code = typeof rawCode === 'string' && /^[A-Z0-9_]{1,40}$/i.test(rawCode) ? rawCode : null;
+  const detail = typeof source?.message === 'string' ? source.message : '';
+  const message = [top ? top.message : String(err), detail].filter(Boolean).join(': ').slice(0, 200);
+  return { code, message };
+}
+
 export type RunnerCallResult =
   | { ok: true; report: RunnerReport; filesDigest: string }
   | { ok: false; status: number; reason: string };
@@ -140,9 +162,15 @@ export async function callIsolatedRunner(
       signal: controller.signal,
       redirect: 'error',
     });
-  } catch {
+  } catch (err: unknown) {
     clearTimeout(timer);
-    return { ok: false, status: 502, reason: 'The test runner could not be reached.' };
+    const failure = describeFetchFailure(err);
+    logger.warn('runner unreachable', { runner: url, code: failure.code, cause: failure.message });
+    return {
+      ok: false,
+      status: 502,
+      reason: `The test runner could not be reached${failure.code ? ` (${failure.code})` : ''}.`,
+    };
   }
   let json: unknown = null;
   try {
