@@ -31,3 +31,10 @@ tests/korpus/** text eol=lf
 # keeps one from appearing in the first place, which is also what makes the file
 # a reader opens byte-for-byte the file the digest names.
 docs/terms/** text eol=lf
+
+# The process benchmark is frozen by hashes: `frozen-*.json` carries the SHA-256
+# of every case's `expected.json` and source, taken over the LF form, and
+# `validate.py` compares the working copy against them. A CRLF checkout made all
+# 300 cases report drift (1,992 errors) while nothing had changed. Same cure as
+# the corpus above; the cases themselves are never edited.
+tests/prozess-benchmark/** text eol=lf
