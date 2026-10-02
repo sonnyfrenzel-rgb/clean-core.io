@@ -21,10 +21,14 @@ is not affiliated with or endorsed by SAP SE.
 [clean-core.io](https://clean-core.io) · source: [github.com/sonnyfrenzel-rgb/clean-core.io](https://github.com/sonnyfrenzel-rgb/clean-core.io) ·
 Apache License 2.0 · release notes: [`CHANGELOG.md`](CHANGELOG.md)
 
-![The Business view of the demo project Z_MM_PO_APPROVAL: the process, its rules hard-coded in the program with their line anchors, and what could not be determined](public/landing/view-business.jpg)
+![The Documentation tool of the demo project Z_MM_PO_APPROVAL: the business process reconstructed from the code as BPMN, every element with its line anchor, and the first chapter beside it](public/landing/stage-documentation.jpg)
 
-*The Business view of the demo project `Z_MM_PO_APPROVAL`, captured from the workspace by
+*The demo project `Z_MM_PO_APPROVAL` (fictitious code): the process the program runs, read
+from the code and drawn as BPMN. Captured from the workspace by
 `tests/capture-screens.spec.ts` (`CAPTURE_LANDING=1`). No mockup images.*
+
+Read more: [the whitepaper](https://clean-core.io/whitepaper) (also as PDF) · [how it works,
+and its limits](https://clean-core.io/how-it-works).
 
 ---
 
@@ -48,7 +52,14 @@ Model proposal.
   Standard fit · Costs & assumptions · Architecture & dependencies · Evidence & controls ·
   Changes & commitments.
 - **The seven stages as tools.** Analyze · Design · Transformation · Documentation ·
-  Testing · Economics · Delivery stay available as tools from the workspace toolbar.
+  Testing · Economics · Delivery open from the workspace toolbar. Since 3.0 they follow
+  SAP Fiori patterns — object pages with key figures on top and details in tabs, Design
+  and Documentation canvas-first — as an independent design, not affiliated with SAP.
+- **A Clean Core Score that says what it means.** Analyze puts one figure on the code,
+  5–100, higher is better, in four published bands (from *far from clean core* to *close
+  to clean core*), with the deductions that moved it. A grade, not a compliance
+  percentage, and not an SAP measure. A map shows where in the program each finding sits;
+  a click opens the code at that line.
 - **Clean Core Level A–D.** Every SAP object the code uses is graded Level A–D from SAP's
   published Cloudification Repository and object classification, with the rule version
   that produced it. The level is an orientation, not an ATC result, and is not part of
@@ -64,8 +75,12 @@ Model proposal.
   server records what ran on which code; the handover pack is signed over the run.
 - **Signed runs.** Every completed analysis is stored as an immutable run, signed with
   HMAC and Ed25519, and a signed export can be verified against it.
-- **BPMN 2.0 XML export.** The process model leaves as a BPMN 2.0 XML file. There is no
-  connection to a Signavio workspace or the Signavio API; the file is yours to take along.
+- **A process editor, and BPMN 2.0 XML both ways.** The reconstructed process opens in a
+  BPMN editor; every save is an immutable revision, the reconstruction stays revision 1,
+  and two revisions can be compared. The model leaves as a BPMN 2.0 XML file and a file
+  can be brought back in as a proposal for the next revision. There is no connection to a
+  Signavio workspace or the Signavio API, and import into SAP Signavio has not been
+  verified; the file is yours to take along.
 - **Read access by invitation.** A project is shared with one confirmed e-mail address,
   including its source code, with expiry and revocation.
 - **Costs only as simulation.** Economics calculates on your own assumptions; any amount
