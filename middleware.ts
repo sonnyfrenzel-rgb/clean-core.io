@@ -5,12 +5,18 @@ import { NextRequest, NextResponse } from 'next/server';
  *
  * Injects a CSP header into every HTML response.
  *
- * NOTE: Next.js does not propagate middleware-generated nonces to its <script>
- * tags without the experimental `contentSecurityPolicy` config. Therefore we
- * use 'self' + 'unsafe-inline' instead of nonce-based strict-dynamic.
+ * 'unsafe-inline' in script-src is a deliberate trade-off, not a framework
+ * limit. Next.js can apply a per-request nonce set here (read from the request
+ * header) to its own scripts, but only on dynamically rendered pages: a nonce
+ * has to be new on every request, so every page would lose static rendering
+ * and caching — the public pages, catalog and landing included. Firebase /
+ * Google sign-in (firebaseapp.com, apis.google.com) also has to keep working
+ * under whatever replaces it. A nonce-based policy is planned as a
+ * report-only trial after 3.0, before anything is enforced.
  *
- * This CSP still provides significant hardening:
- *  - Blocks external script injection (only 'self' scripts allowed)
+ * What this CSP does and does not do:
+ *  - Scripts load only from 'self' and the two Google sign-in origins; inline
+ *    script is NOT blocked (that is the trade-off above)
  *  - Prevents clickjacking (frame-ancestors 'none')
  *  - Blocks Flash / plugin-based attacks (object-src 'none')
  *  - Restricts form targets (form-action 'self')
