@@ -6,6 +6,7 @@ import { CleanCore30v3b, CC30V3B_DURATION } from './CleanCore30v3b';
 import { CleanCore30v3c, CC30V3C_DURATION } from './CleanCore30v3c';
 import { CleanCore30v3d, CC30V3D_DURATION } from './CleanCore30v3d';
 import { CleanCore30v3e, CC30V3E_DURATION } from './CleanCore30v3e';
+import { CleanCore30v3f, CC30V3F_DURATION } from './CleanCore30v3f';
 
 const FPS = 30;
 const DURATION = 43 * FPS; // 43 seconds — v2.0 full cut (hook → morph → features → security → limits → proof → CTA); features scene held longer for readability
@@ -30,6 +31,8 @@ export const RemotionRoot: React.FC = () => {
       <Composition id="CleanCore30v3d" component={CleanCore30v3d} durationInFrames={CC30V3D_DURATION} fps={FPS} width={1080} height={1080} />
       {/* v3e - v3d with current figures (33,877 objects; 25 findings at 31 places). */}
       <Composition id="CleanCore30v3e" component={CleanCore30v3e} durationInFrames={CC30V3E_DURATION} fps={FPS} width={1080} height={1080} />
+      {/* v3f - v3e with the full-screen BPMN editor. */}
+      <Composition id="CleanCore30v3f" component={CleanCore30v3f} durationInFrames={CC30V3F_DURATION} fps={FPS} width={1080} height={1080} />
       <Composition id="CleanCore30v3Wide" component={CleanCore30v3} durationInFrames={CC30V3_DURATION} fps={FPS} width={1920} height={1080} />
       {/* 35s — full v2.0 narrative. LinkedIn feed, square (highest completion). */}
       <Composition
