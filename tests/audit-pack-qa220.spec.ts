@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import {
   generateArchitectureDecisionRecord,
   generateExecutiveSummary,
+  generateFindingsCsv,
   generateModelCard,
   generateProvenanceManifest,
   generateUserAttestations,
@@ -120,4 +121,22 @@ test('following the engine recommendation is not exported as an override', () =>
   expect(attest('retire', 'Side-by-Side (SAP BTP)')).toContain(OVERRIDE);
   expect(attest('rap', 'Something the router never says')).not.toContain(OVERRIDE);
   expect(attest('rap')).not.toContain(OVERRIDE);
+});
+
+// Codex code-trust-02: the signed run's worklist carries the engine's levels.
+test('an engine finding without a table reaches the findings file and the ADR', () => {
+  const p = {
+    ...project({ participation: 'none' }),
+    dataCoupling: [],
+    worklist: [
+      { id: 'finding-CALL_TRANSACTION-0', title: 'CALL TRANSACTION', category: 'Finding', level: 'not-supported', severity: 'High', location: 'z_tx.abap:12', recommendation: 'Replace with a released API.', status: 'open', effort: 'Medium' },
+      { id: 'finding-OTHER-1', title: 'Obsolete statement', category: 'Finding', level: 'partial', severity: 'Low', location: 'z_tx.abap:3', recommendation: 'Modernise.', status: 'open', effort: 'Low' },
+    ],
+  } as unknown as Project;
+  const csv = generateFindingsCsv(p);
+  expect(csv).toContain('"Engine finding","CALL TRANSACTION","High","z_tx.abap:12"');
+  expect(csv).toContain('"Engine finding","Obsolete statement","Low","z_tx.abap:3"');
+  const adr = generateArchitectureDecisionRecord(p);
+  expect(adr).toContain('Needs expert review — 2');
+  expect(adr).toContain('**CALL TRANSACTION** (High)');
 });
