@@ -32,7 +32,7 @@ export const dynamic = 'force-dynamic';
 
 const NETWORK_TIMEOUT_MS = 30_000;
 
-async function networkProbe(url: string): Promise<{ ok: boolean; held: boolean; reason: string | null; detail: unknown }> {
+async function networkProbe(url: string, mode: 'mock' | 'live'): Promise<{ ok: boolean; held: boolean; reason: string | null; detail: unknown }> {
   try {
     const token = await fetchMetadataIdToken(url);
     const controller = new AbortController();
@@ -52,7 +52,7 @@ async function networkProbe(url: string): Promise<{ ok: boolean; held: boolean; 
     } finally {
       clearTimeout(timer);
     }
-    const verdict = evaluateNetworkProbe(body);
+    const verdict = evaluateNetworkProbe(body, mode);
     return { ok: true, held: verdict.held, reason: verdict.reason, detail: body };
   } catch (err: unknown) {
     // `fetch failed` alone hides whether DNS, the route or TLS broke; the cause says which.
@@ -96,8 +96,16 @@ export async function POST(req: NextRequest) {
       ? evaluateSelftest(sandbox.report)
       : { held: false, probes: [], reason: `The runner did not answer: ${sandbox.reason}` };
 
-    const mockNetwork = await networkProbe(new URL(cfg.runnerUrl).origin);
-    const liveNetwork = cfg.runnerLiveUrl ? await networkProbe(new URL(cfg.runnerLiveUrl).origin) : null;
+    const mockOrigin = new URL(cfg.runnerUrl).origin;
+    const liveOrigin = cfg.runnerLiveUrl ? new URL(cfg.runnerLiveUrl).origin : null;
+    const mockNetwork = await networkProbe(mockOrigin, 'mock');
+    // One service asked twice is not two runners tested (codex code-runner-06).
+    const liveNetwork =
+      liveOrigin === null
+        ? null
+        : liveOrigin === mockOrigin
+          ? { ok: false, held: false, reason: 'RUNNER_LIVE_URL names the mock runner, so the live runner was not tested.', detail: null }
+          : await networkProbe(liveOrigin, 'live');
 
     const { status, held } = combineSelftest({ sandbox: sandboxVerdict, mockNetwork, liveNetwork });
     logger.info('runner selftest', {

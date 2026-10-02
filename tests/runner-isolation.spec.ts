@@ -82,40 +82,55 @@ test.describe('the verdict reads only what was reported', () => {
 
 test.describe('the network verdict reads the whole expected probe set', () => {
   const answer = (probes: Array<{ target: string; reached: boolean }>) => ({ mode: 'mock', revision: 'r', probes });
+  const probe = (body: unknown) => evaluateNetworkProbe(body, 'mock');
   const allUnreached = () => RUNNER_NETWORK_PROBES.map((p) => ({ target: p.label as string, reached: false }));
 
   test('every expected target, explicitly unreached: held', () => {
-    expect(evaluateNetworkProbe(answer(allUnreached()))).toEqual({ held: true, reason: null });
+    expect(probe(answer(allUnreached()))).toEqual({ held: true, reason: null });
   });
 
   test('a missing probe is not held, even if the rest are unreached', () => {
-    const v = evaluateNetworkProbe(answer(allUnreached().slice(1)));
+    const v = probe(answer(allUnreached().slice(1)));
     expect(v.held).toBe(false);
     expect(v.reason).toContain(RUNNER_NETWORK_PROBES[0].label);
   });
 
   test('a single unreached probe is not the set', () => {
-    expect(evaluateNetworkProbe(answer([{ target: 'anything', reached: false }])).held).toBe(false);
+    expect(probe(answer([{ target: 'anything', reached: false }])).held).toBe(false);
   });
 
   test('an extra or repeated target is not held', () => {
-    expect(evaluateNetworkProbe(answer([...allUnreached(), { target: 'other', reached: false }])).held).toBe(false);
+    expect(probe(answer([...allUnreached(), { target: 'other', reached: false }])).held).toBe(false);
     const rep = allUnreached();
     rep[1] = { ...rep[0] };
-    expect(evaluateNetworkProbe(answer(rep)).held).toBe(false);
+    expect(probe(answer(rep)).held).toBe(false);
   });
 
   test('a reached probe, or one without an explicit false, is not held', () => {
     const r = allUnreached();
     r[2] = { ...r[2], reached: true };
-    expect(evaluateNetworkProbe(answer(r)).held).toBe(false);
+    expect(probe(answer(r)).held).toBe(false);
     const u = allUnreached().map((p, i) => (i === 0 ? { target: p.target } : p));
-    expect(evaluateNetworkProbe({ probes: u }).held).toBe(false);
+    expect(probe({ probes: u }).held).toBe(false);
   });
 
   test('no probe list is not held', () => {
-    expect(evaluateNetworkProbe({}).held).toBe(false);
-    expect(evaluateNetworkProbe(null).held).toBe(false);
+    expect(probe({}).held).toBe(false);
+    expect(probe(null).held).toBe(false);
+  });
+
+  // codex code-runner-06
+  test('an answer from a runner of the other mode, or of no mode, is not held', () => {
+    expect(evaluateNetworkProbe(answer(allUnreached()), 'live')).toMatchObject({ held: false });
+    expect(evaluateNetworkProbe({ mode: 'live', revision: 'r', probes: allUnreached() }, 'live')).toEqual({ held: true, reason: null });
+    expect(probe({ revision: 'r', probes: allUnreached() }).held).toBe(false);
+  });
+
+  test('the admin route asks each runner for its own mode and refuses one service named twice', () => {
+    const route = fs.readFileSync(path.join(process.cwd(), 'app/api/admin/runner-selftest/route.ts'), 'utf8');
+    expect(route).toContain("networkProbe(mockOrigin, 'mock')");
+    expect(route).toContain("networkProbe(liveOrigin, 'live')");
+    expect(route).toMatch(/liveOrigin === mockOrigin\s*\?\s*\{ ok: false, held: false,/);
   });
 
   test('the runner server probes exactly the shared list', () => {
@@ -146,7 +161,7 @@ test.describe('the overall result', () => {
 
   test('the admin route decides with these functions', () => {
     const route = fs.readFileSync(path.join(process.cwd(), 'app/api/admin/runner-selftest/route.ts'), 'utf8');
-    expect(route).toContain('evaluateNetworkProbe(body)');
+    expect(route).toContain('evaluateNetworkProbe(body, mode)');
     expect(route).toContain('combineSelftest(');
     expect(route).not.toMatch(/liveNetwork === null \|\|/);
   });
