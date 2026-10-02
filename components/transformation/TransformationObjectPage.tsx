@@ -506,10 +506,11 @@ export default function TransformationObjectPage({
               files === null
                 ? 'In a real run the model writes the package against the plan below. The demo makes no model call, so it has none.'
                 : track === 'in-app'
-                  // An ABAP run is simulated: the Testing tool marks it so and
-                  // says your own system gives the verdict (carried QA finding
-                  // 4aa2e074b134).
-                  ? 'Written by the model against the plan below. Not compiled and not run here; the Testing tool simulates a run of its ABAP Unit stubs — your own system gives them a verdict.'
+                  // ABAP Unit does not run here at all: the Testing tool writes
+                  // the class and says your own system gives the verdict
+                  // (carried QA finding 4aa2e074b134; the browser-side
+                  // "simulated run" is gone since 02.10.2026).
+                  ? 'Written by the model against the plan below. Not compiled and not run here; the Testing tool writes ABAP Unit scenarios for it, which run only in your own system — that gives them a verdict.'
                   : 'Written by the model against the plan below. Not compiled and not run here; the Testing tool runs it against mocks.'
             }
           >

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { getAuth, getDb } from '@/lib/firebase';
 import { callGemini } from '@/lib/gemini';
-import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase } from '@/lib/types';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { parseGeneratedPackage, replaceFileContent, repairTarget } from '@/lib/generated-package';
@@ -10,6 +9,7 @@ import { applyRunnerVerdicts } from '@/lib/test-verdicts';
 import type { TestRunReceipt } from '@/lib/test-receipt';
 import { candidateDigests, storedSuiteSource, type RepairDraftTarget } from '@/lib/repair-draft';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { isAbapUnitRoute, ABAP_UNIT_NOT_RUNNABLE } from '@/lib/test-runnability';
 
 export const useTestExecution = (projectId: string, project: Project | null, setProject?: React.Dispatch<React.SetStateAction<Project | null>>) => {
   const [isRunning, setIsRunning] = useState(false);
@@ -22,7 +22,14 @@ export const useTestExecution = (projectId: string, project: Project | null, set
    * logic ran, not that it works with those libraries — so they are named.
    */
   const [stubbedPackages, setStubbedPackages] = useState<string[]>([]);
-  const { profile } = useUserProfile();
+  /**
+   * Why the last run produced no verdict at all, in words for the page — a
+   * refused request, a runner that is not there, code that did not compile, a
+   * suite whose tests the runner never reported. Null when the run gave at
+   * least one verdict, or none has been asked for. The reason used to reach
+   * only the folded console, and the page showed a wall of "Not determined".
+   */
+  const [runError, setRunError] = useState<string | null>(null);
 
   const generateQAReport = (results: TestCase[], stubs: string[] = []) => {
     // "everything that did not pass, failed" stops being true the moment a status
@@ -63,6 +70,12 @@ export const useTestExecution = (projectId: string, project: Project | null, set
     report += `\n==================================================\n`;
     report += `End of Report\n`;
     return report;
+  };
+
+  /** The first non-empty line of a runner's error text, cut to a sentence's length. */
+  const firstLine = (text: string | undefined): string => {
+    const line = (text || '').split('\n').map((l) => l.trim()).find(Boolean) || '';
+    return line.length > 240 ? `${line.slice(0, 239)}…` : line;
   };
 
   const stripCodeFences = (s: string) =>
@@ -341,330 +354,29 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
     setTestResults(null);
     setStubbedPackages([]);
     setAiExplanation(null);
+    setRunError(null);
 
-    const isAbapCloud = (project?.extensibilityRoute || '').includes('ABAP Cloud');
-    if (isAbapCloud) {
-      try {
-        const isLiveMode = project?.s4Environment === 'live' && project?.s4Config?.url;
-
-        if (isLiveMode) {
-          // ── LIVE TENANT VALIDATION ──────────────────────────────
-          // Generate real validation test cases based on what we can actually verify
-          setSandboxOutput('Initializing S/4HANA Live Tenant Validation...\n');
-          await new Promise(resolve => setTimeout(resolve, 400));
-
-          const liveResults: TestCase[] = [];
-          const tenantUrl = project.s4Config!.url;
-
-          // ── TC_CONN: Endpoint Reachability ──
-          setSandboxOutput(prev => prev + `\n[TC_CONN] Testing endpoint reachability: ${tenantUrl}\n`);
-          let connectionResult: { status: string; message: string; httpStatus?: number };
-          try {
-            const token = await (await import('@/lib/firebase')).getAuth().currentUser?.getIdToken();
-            const connResponse = await fetch('/api/test-s4-connection', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-              },
-              body: JSON.stringify({
-                useStoredCredentials: true,
-              })
-            });
-            connectionResult = await connResponse.json();
-          } catch (err) {
-            connectionResult = { status: 'failed', message: err instanceof Error ? err.message : 'Network error' };
-          }
-
-          const tenantReachable = connectionResult.status === 'connected';
-          const httpStatus = connectionResult.httpStatus || 0;
-          const isAuthFailed = httpStatus === 401 || httpStatus === 403;
-          const isFullyConnected = tenantReachable && !isAuthFailed;
-
-          // Every check below reaches the tenant; none of them runs the generated
-          // code. They report `Connectivity` or `Error`, never `Passed` (E07-F01-
-          // US02: "a metadata call writes connectivity"). They used to write
-          // `Passed`, and a tenant that answered its login page produced a row of
-          // green verdicts in a "Live Tenant Validation Report".
-          liveResults.push({
-            id: 'TC_CONN',
-            name: 'Endpoint Reachability',
-            description: 'Verifies that the S/4HANA tenant URL is reachable via HTTPS',
-            category: 'Connectivity',
-            priority: 'Critical' as any,
-            status: tenantReachable ? 'Connectivity' : 'Error',
-            message: tenantReachable
-              ? `Endpoint responded (HTTP ${httpStatus})`
-              : `Unreachable: ${connectionResult.message}`
-          });
-
-          setSandboxOutput(prev => prev + `  → ${tenantReachable ? '🔌 REACHED' : '❌ ERROR'}: ${connectionResult.message}\n`);
-
-          // ── TC_AUTH: Authentication Validation ──
-          setSandboxOutput(prev => prev + `\n[TC_AUTH] Validating ${project.s4Meta?.authType || project.s4Config?.authType || 'basic'} authentication...\n`);
-          liveResults.push({
-            id: 'TC_AUTH',
-            name: `${(project.s4Meta?.authType || project.s4Config?.authType || 'basic').toUpperCase()} Authentication`,
-            description: 'Validates that the provided credentials are accepted by the tenant',
-            category: 'Security',
-            priority: 'Critical' as any,
-            status: isFullyConnected ? 'Connectivity' : 'Error',
-            message: isAuthFailed
-              ? `Credentials rejected (HTTP ${httpStatus}) — verify username/password`
-              : !tenantReachable
-                ? 'Skipped — endpoint unreachable'
-                : `Authenticated successfully (HTTP ${httpStatus})`
-          });
-
-          setSandboxOutput(prev => prev + `  → ${isFullyConnected ? '🔌 LOGGED IN' : '❌ ERROR'}: ${isAuthFailed ? 'HTTP ' + httpStatus + ' — credentials rejected' : isFullyConnected ? 'HTTP ' + httpStatus : 'Skipped'}\n`);
-
-          // ── TC_META: OData $metadata Accessibility ──
-          let metadataServices: { name: string; type: string }[] = [];
-
-          if (isFullyConnected) {
-            setSandboxOutput(prev => prev + `\n[TC_META] Fetching OData $metadata...\n`);
-            await new Promise(resolve => setTimeout(resolve, 300));
-
-            try {
-              const metaToken = await getAuth().currentUser?.getIdToken();
-              const metaResponse = await fetch('/api/fetch-s4-metadata', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  ...(metaToken ? { 'Authorization': `Bearer ${metaToken}` } : {}),
-                },
-                body: JSON.stringify({
-                  useStoredCredentials: true,
-                  servicePath: '/sap/opu/odata/sap/API_BUSINESS_PARTNER'
-                })
-              });
-              const metaResult = await metaResponse.json();
-
-              if (metaResult.status === 'success' && metaResult.services) {
-                metadataServices = metaResult.services;
-              }
-            } catch (metaErr) {
-              // metadata fetch failed
-            }
-
-            const hasMetadata = metadataServices.length > 0;
-            const entitySets = metadataServices.filter(s => s.type === 'EntitySet');
-            const entityTypes = metadataServices.filter(s => s.type === 'EntityType');
-
-            liveResults.push({
-              id: 'TC_META',
-              name: 'OData $metadata Accessibility',
-              description: 'Fetches the OData $metadata document to discover available EntitySets and types',
-              category: 'Functional',
-              priority: 'High' as any,
-              status: hasMetadata ? 'Connectivity' : 'Error',
-              message: hasMetadata
-                ? `${entityTypes.length} EntityTypes, ${entitySets.length} EntitySets discovered`
-                : 'OData $metadata not accessible — the API service path may be incorrect or requires additional permissions'
-            });
-
-            setSandboxOutput(prev => prev + `  → ${hasMetadata ? '🔌 READ' : '❌ ERROR'}: ${hasMetadata ? entitySets.length + ' EntitySets found' : 'Metadata unavailable'}\n`);
-
-            // ── TC_ENTITY_*: Individual EntitySet Schema Availability ──
-            if (hasMetadata && entitySets.length > 0) {
-              setSandboxOutput(prev => prev + `\n[TC_ENTITY] Validating discovered OData EntitySets...\n`);
-              const maxSchemaEntities = Math.min(entitySets.length, 8);
-              for (let i = 0; i < maxSchemaEntities; i++) {
-                const es = entitySets[i];
-                liveResults.push({
-                  id: `TC_ES_${String(i + 1).padStart(2, '0')}`,
-                  name: `EntitySet: ${es.name}`,
-                  description: `Verifies that EntitySet ${es.name} is declared in the OData schema`,
-                  category: 'Functional',
-                  priority: 'Medium' as any,
-                  status: 'Connectivity',
-                  message: `EntitySet "${es.name}" declared in the $metadata schema`
-                });
-                setSandboxOutput(prev => prev + `  → 🔌 ${es.name}\n`);
-              }
-              if (entitySets.length > maxSchemaEntities) {
-                setSandboxOutput(prev => prev + `  ... and ${entitySets.length - maxSchemaEntities} more EntitySets available\n`);
-              }
-
-              // ── TC_READ_*: Live OData GET Reads ──
-              setSandboxOutput(prev => prev + `\n[TC_READ] Executing live OData GET reads against tenant...\n`);
-              const maxReadTests = Math.min(entitySets.length, 5);
-              for (let i = 0; i < maxReadTests; i++) {
-                const es = entitySets[i];
-                setSandboxOutput(prev => prev + `  [${i + 1}/${maxReadTests}] GET ${es.name}?$top=1 ...`);
-
-                try {
-                  const readToken = await getAuth().currentUser?.getIdToken();
-                  const readResp = await fetch('/api/test-s4-odata-read', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      ...(readToken ? { 'Authorization': `Bearer ${readToken}` } : {}),
-                    },
-                    body: JSON.stringify({
-                      useStoredCredentials: true,
-                      servicePath: '/sap/opu/odata/sap/API_BUSINESS_PARTNER',
-                      entitySet: es.name,
-                    })
-                  });
-                  const readResult = await readResp.json();
-
-                  const readPassed = readResult.status === 'success';
-                  liveResults.push({
-                    id: `TC_RD_${String(i + 1).padStart(2, '0')}`,
-                    name: `OData Read: ${es.name}`,
-                    description: `Executes GET ${es.name}?$top=1 to verify data accessibility`,
-                    category: 'Connectivity',
-                    priority: 'High' as any,
-                    status: readPassed ? 'Connectivity' : 'Error',
-                    message: readPassed
-                      ? `${readResult.recordCount} record(s), fields: [${(readResult.sampleFields || []).join(', ')}]`
-                      : readResult.message || 'OData read failed'
-                  });
-                  setSandboxOutput(prev => prev + ` ${readPassed ? '✅' : '❌'} ${readResult.message}\n`);
-                } catch (readErr) {
-                  liveResults.push({
-                    id: `TC_RD_${String(i + 1).padStart(2, '0')}`,
-                    name: `OData Read: ${es.name}`,
-                    description: `Executes GET ${es.name}?$top=1 to verify data accessibility`,
-                    category: 'Connectivity',
-                    priority: 'High' as any,
-                    status: 'Error',
-                    message: `Network error: ${readErr instanceof Error ? readErr.message : 'Unknown'}`
-                  });
-                  setSandboxOutput(prev => prev + ` ❌ Network error\n`);
-                }
-              }
-            }
-          } else {
-            // Auth failed or unreachable — skip metadata tests
-            liveResults.push({
-              id: 'TC_META',
-              name: 'OData $metadata Accessibility',
-              description: 'Fetches the OData $metadata document to discover available EntitySets and types',
-              category: 'Functional',
-              priority: 'High' as any,
-              status: 'Not run',
-              message: isAuthFailed
-                ? 'Not run — authentication failed, cannot access $metadata'
-                : 'Not run — endpoint unreachable'
-            });
-            setSandboxOutput(prev => prev + `\n[TC_META] Skipped — ${isAuthFailed ? 'authentication failed' : 'endpoint unreachable'}\n`);
-          }
-
-          // ── TC_CSRF ──
-          // This used to be `Passed` whenever the login worked, with the message
-          // "CSRF token can be fetched" — and no x-csrf-token request was ever
-          // made. It is reported as what it is: not checked.
-          liveResults.push({
-            id: 'TC_CSRF',
-            name: 'CSRF Token Handling',
-            description: 'Would verify that the tenant issues an x-csrf-token for write operations',
-            category: 'Security',
-            priority: 'Medium' as any,
-            status: 'Not run',
-            message: 'Not checked — no x-csrf-token request is made by this validation.'
-          });
-
-          setTestResults(liveResults);
-
-          // ── Build Report ──
-          const reached = liveResults.filter(r => r.status === 'Connectivity').length;
-          const errors = liveResults.filter(r => r.status === 'Error').length;
-          const notRun = liveResults.filter(r => r.status === 'Not run').length;
-          const timestamp = new Date().toLocaleString();
-
-          let finalReport = `==================================================\n`;
-          finalReport += `S/4HANA LIVE TENANT CONNECTIVITY REPORT - ${timestamp}\n`;
-          finalReport += `==================================================\n\n`;
-          finalReport += `Tenant: ${tenantUrl}\n`;
-          finalReport += `Auth Method: ${project.s4Meta?.authType || project.s4Config?.authType || 'basic'}\n`;
-          finalReport += `Connectivity: ${tenantReachable ? 'CONNECTED' : 'FAILED'}\n`;
-          finalReport += `Auth Status: ${isAuthFailed ? 'REJECTED (HTTP ' + httpStatus + ')' : isFullyConnected ? 'OK (HTTP ' + httpStatus + ')' : 'N/A'}\n`;
-
-          const entitySets = metadataServices.filter(s => s.type === 'EntitySet');
-          if (metadataServices.length > 0) {
-            const entityTypes = metadataServices.filter(s => s.type === 'EntityType');
-            finalReport += `OData Metadata: READABLE (${entityTypes.length} EntityTypes, ${entitySets.length} EntitySets)\n`;
-          } else if (isFullyConnected) {
-            finalReport += `OData Metadata: NOT AVAILABLE\n`;
-          }
-
-          finalReport += `\nSummary:\n`;
-          finalReport += `- Connectivity checks: ${liveResults.length}\n`;
-          finalReport += `- Reached:     ${reached}\n`;
-          finalReport += `- Errors:      ${errors}\n`;
-          if (notRun > 0) finalReport += `- Not run:     ${notRun}\n`;
-          finalReport += `\nNo test of the generated code was executed. These checks show that the\n`;
-          finalReport += `tenant can be reached, logged into and read — not that the transformed\n`;
-          finalReport += `code works. An ABAP Unit run in the tenant is what would show that.\n\n`;
-          finalReport += `Detailed Results:\n`;
-          liveResults.forEach((r, i) => {
-            finalReport += `${i + 1}. [${r.status!.toUpperCase()}] ${r.id}: ${r.name}\n`;
-            if (r.message) finalReport += `   → ${r.message}\n`;
-          });
-          finalReport += `\n==================================================\n`;
-          finalReport += `End of Live Tenant Connectivity Report\n`;
-
-          setSandboxOutput(finalReport);
-          return liveResults;
-        } else {
-          // Mock mode: simulated ABAP Unit execution
-          setSandboxOutput('[SIMULATED] Initializing SAP ADT Test Cockpit Environment...\n');
-          await new Promise(resolve => setTimeout(resolve, 600));
-
-          setSandboxOutput(prev => prev + '[SIMULATED] Registering SQL Test Double Framework local stubs...\n');
-          await new Promise(resolve => setTimeout(resolve, 500));
-
-          setSandboxOutput(prev => prev + '[SIMULATED] Executing ABAP Unit Test Class ZCL_DEMO_RAP_TEST...\n\n');
-          await new Promise(resolve => setTimeout(resolve, 700));
-
-          // A mock run is not a pass. The message said `[SIMULATED]` and the status
-          // said `Passed`, and everything downstream — the report arithmetic, the
-          // delivery page's "tests verified" line — reads the status.
-          const results = selectedTestCases.map((tc) => {
-            return {
-              ...tc,
-              status: 'Simulated' as const,
-              message: `[SIMULATED] CL_AUNIT_ASSERT=>ASSERT_EQUALS passed in mock context — nothing was executed against an SAP system. A connected tenant can check the connection, but running tests against it is locked.`
-            };
-          });
-
-          setTestResults(results);
-
-          const timestamp = new Date().toLocaleString();
-          let finalReport = `==================================================\n`;
-          finalReport += `SIMULATED ABAP UNIT TEST REPORT - ${timestamp}\n`;
-          finalReport += `==================================================\n`;
-          finalReport += `⚠️  These results are SIMULATED. No S/4HANA tenant was contacted.\n`;
-          finalReport += `    Running tests against a connected tenant is locked (${LIVE_TEST_EXECUTION.id}); the tenant tab only checks the connection.\n\n`;
-          finalReport += `Summary:\n`;
-          finalReport += `- Total Tests: ${results.length}\n`;
-          finalReport += `- Simulated Passed: ${results.length}\n\n`;
-          finalReport += `Detailed Results:\n`;
-          results.forEach((r, i) => {
-            finalReport += `${i + 1}. [SIMULATED PASS] ${r.id}: ${r.name}\n`;
-          });
-          finalReport += `\n==================================================\n`;
-          finalReport += `End of Simulated Report — no real ABAP Unit verdict exists for this code yet.\n`;
-
-          setSandboxOutput(finalReport);
-          return results;
-        }
-      } catch (err) {
-        console.error('Test execution failed:', err);
-        setSandboxOutput(prev => prev + `\n\nExecution Error: ${err instanceof Error ? err.message : String(err)}`);
-        return null;
-      } finally {
-        setIsRunning(false);
-      }
+    // An ABAP Cloud suite is an ABAP Unit class. The isolated runner executes
+    // node:test over JavaScript and TypeScript and nothing else, so there is no
+    // run of it here — and none is made up. This branch used to write a
+    // simulated ABAP Unit report and mark every selected case `Simulated` without
+    // calling any server: the page then showed "10 of 10 produced no result",
+    // which reads as a runner that failed, when no runner was ever asked
+    // (owner report 02.10.2026). The page offers no run for this route; if a
+    // caller asks anyway, it is told why and nothing is written.
+    if (isAbapUnitRoute(project)) {
+      setRunError(ABAP_UNIT_NOT_RUNNABLE);
+      setSandboxOutput(`No run: ${ABAP_UNIT_NOT_RUNNABLE}\n`);
+      setIsRunning(false);
+      return null;
     }
-    
+
     // A locked path is not attempted and not explained by a model: the server would
     // refuse it (403), and the refusal used to reach the terminal as an "Execution
     // Error" and go to Gemini for an explanation of a failure that was a decision.
     if (project?.s4Environment === 'live' && LIVE_TEST_EXECUTION.locked) {
-      setSandboxOutput(`Live test execution is locked (${LIVE_TEST_EXECUTION.id}).\n\n${LIVE_TEST_EXECUTION.userNotice}\n\nSwitch to the Mock Environment to run the tests in the sandbox.`);
+      setSandboxOutput(`Live test execution is locked (${LIVE_TEST_EXECUTION.id}).\n\n${LIVE_TEST_EXECUTION.userNotice}\n\nThe scenarios run against mocks.`);
+      setRunError(LIVE_TEST_EXECUTION.userNotice);
       setIsRunning(false);
       return null;
     }
@@ -696,6 +408,20 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
       const results = applyRunnerVerdicts(selectedTestCases, reported, result.exitCode) as TestCase[];
       setTestResults(results);
 
+      // A run in which no scenario got a verdict says why, on the page. Each
+      // case already carries its own "Not run" message; this is the one
+      // sentence for the run as a whole.
+      if (!results.some((r) => r.status === 'Passed' || r.status === 'Failed')) {
+        const detail = firstLine(result.error);
+        setRunError(
+          result.buildError
+            ? `The generated code did not compile in the runner, so no scenario ran${detail ? `: ${detail}` : '.'}`
+            : reported.length === 0
+              ? `The runner finished without a result for any selected scenario${detail ? `: ${detail}` : ' — the suite may not contain tests with these names.'}`
+              : 'The runner reported on the scenarios, but none of them passed or failed — the run output says why for each.',
+        );
+      }
+
       // The project in this page's state, brought up to what the server just
       // wrote: the verdicts of this run and the receipt that attests to it. It is
       // a mirror, not a write — `/api/run-tests` stored both with the Admin SDK
@@ -726,6 +452,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
       const message = err instanceof Error ? err.message : String(err);
       console.error('Test Runner failed:', err);
       setSandboxOutput(prev => prev + `\n\nExecution Error:\n${message}`);
+      setRunError(message || 'The run could not be started.');
       await explainTestFailure('', message);
       return null;
     } finally {
@@ -733,5 +460,5 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
     }
   };
 
-  return { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases, stubbedPackages };
+  return { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases, stubbedPackages, runError };
 };

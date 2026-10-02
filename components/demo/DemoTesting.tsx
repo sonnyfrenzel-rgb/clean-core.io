@@ -2,27 +2,25 @@
 
 import React from 'react';
 import CcCard from '@/components/cc/Card';
-import TestingHeader, { TestingMetaLine } from '@/components/testing/TestingHeader';
-import SectionAnchorBar from '@/components/testing/SectionAnchorBar';
+import { TestingMetaLine } from '@/components/testing/TestingHeader';
 import ToolSection from '@/components/testing/ToolSection';
-import TestPipeline from '@/components/testing/TestPipeline';
 import HandChecks, { type HandCheckGap } from '@/components/testing/HandChecks';
-import TabExplainer from '@/components/testing/TabExplainer';
-import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
 import type { DemoProject } from '@/lib/demo-project';
 
 /**
- * The demo's Testing stage in the tool's own layout — proposal A, owner
- * decision 01.10.2026 — so the demo and a project read the same way.
+ * The demo's Testing stage in the tool's own layout — the guided flow of the
+ * real tool (owner 02.10.2026): write the scenarios, run them against mocks,
+ * check by hand — so the demo and a project read the same way.
  *
  * Everything is the demo's engine run (`lib/demo-project.ts`): the coverage
  * report, the findings, the routines. What a project would add — scenarios a
  * model wrote, a run against mocks, a tenant connection — the demo has none
- * of, and every place that would show it says so instead of showing a figure.
- * There is no run button: the demo has no runner, and a button that cannot run
- * is a promise it cannot keep.
+ * of, and each step that would show it says so instead of showing a figure.
+ * There is no button: the demo has no model and no runner, and a button that
+ * cannot act is a promise it cannot keep. No facet tiles either — like an
+ * empty project, the demo has nothing to report on until step 3.
  */
 export default function DemoTesting({ demo }: { demo: DemoProject }) {
   const coverage = demo.analyze.coverage;
@@ -47,57 +45,46 @@ export default function DemoTesting({ demo }: { demo: DemoProject }) {
           { label: 'snapshot', value: demo.catalogSnapshot },
         ]}
       />
-      <TestingHeader
-        scenarios={{
-          count: demo.testing.verdicts.total,
-          rejected: false,
-          emptyReason: 'The demo writes none — in a project the testing model writes them from the generated code',
-        }}
-        run={{ kind: 'none' }}
-        blocked={false}
-        isAbapCloud={false}
-        handChecks={{ count: gaps.length, lines: gaps.map((g) => g.firstLine) }}
-        tenantLocked={LIVE_TEST_EXECUTION.locked}
-        status={[
-          { label: 'Suite', value: 'none in the demo', tone: 'plain' },
-          { label: 'Runner', value: 'none in the demo', tone: 'plain' },
-          { label: 'Tenant', value: 'connection check only', tone: 'plain' },
-        ]}
-      />
 
-      <SectionAnchorBar
-        items={[
-          { id: 'testing-verified', label: 'From written to verified' },
-          { id: 'testing-scenarios', label: 'Scenarios', count: demo.testing.verdicts.total },
-          { id: 'testing-hand', label: 'Check by hand', count: gaps.length },
-        ]}
-      />
-
-      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div data-testing-flow="" className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-5">
           <ToolSection
-            id="testing-verified"
-            title="From written to verified"
-            lead="Nothing here has run. In a project the scenarios run in the restricted test runner, against mocks; running tests on a tenant is locked. The demo has neither scenarios nor a runner."
+            id="testing-write"
+            data-testing-step="write"
+            step={{ n: 1, state: 'unavailable', word: 'Not in the demo' }}
+            title="Write the scenarios"
+            lead="In a project the testing model writes them from the target code, with one button here. They stay its proposal until a run gives them a verdict."
           >
-            <TestPipeline written={demo.testing.verdicts.total} run={{ kind: 'none' }} />
-          </ToolSection>
-
-          <ToolSection id="testing-scenarios" title="Scenarios">
             <p
               data-not-determined=""
               className="m-0 rounded-cc-row border border-dashed border-cc-field-border bg-cc-surface-muted px-3 py-3 cc-text-cell text-cc-ink-muted"
             >
-              The demo writes no scenarios. In a project the testing model writes them from the generated code — they are
-              listed here one row each, marked as its proposal, with their last verdict.
+              The demo writes no scenarios — it calls no model.
+            </p>
+          </ToolSection>
+
+          <ToolSection
+            id="testing-verified"
+            data-testing-step="run"
+            step={{ n: 2, state: 'unavailable', word: 'Not in the demo' }}
+            title="Run them against mocks"
+            lead="In a project the scenarios run in an isolated runner against SAP mocks — not in your S/4HANA system. Running tests on a tenant is locked."
+          >
+            <p
+              data-not-determined=""
+              className="m-0 rounded-cc-row border border-dashed border-cc-field-border bg-cc-surface-muted px-3 py-3 cc-text-cell text-cc-ink-muted"
+            >
+              Nothing has run: the demo has neither scenarios nor a runner, so there are no results to count.
             </p>
           </ToolSection>
 
           <ToolSection
             id="testing-hand"
-            title="What a tester checks by hand"
+            data-testing-step="hand"
+            step={{ n: 3, state: 'open' }}
+            title="Check by hand"
             aside={gaps.length}
-            lead="Straight from the engine’s coverage report: every construct it did not judge."
+            lead="What no generated test covers: every construct the engine did not judge, with the line it starts on."
           >
             <div data-testid="demo-manual-areas">
               <HandChecks
@@ -114,15 +101,7 @@ export default function DemoTesting({ demo }: { demo: DemoProject }) {
           </ToolSection>
         </div>
 
-        <aside aria-label="About running tests" className="flex min-w-0 flex-col gap-4">
-          <TabExplainer
-            items={[
-              { text: 'Runs the generated suite in a restricted Node.js process' },
-              { text: 'Uses SAP mocks, not your system' },
-              { text: 'Does not run generated tests on a tenant', not: true },
-            ]}
-            note="In a project. The demo runs nothing."
-          />
+        <aside aria-label="About this tool" className="flex min-w-0 flex-col gap-4">
           <CcCard title="Tenant connection" level={2}>
             <p className="m-0 cc-text-cell text-cc-ink">
               In a project, bring your own tenant (BYOT) opens a connection check, a metadata read and one read-only OData

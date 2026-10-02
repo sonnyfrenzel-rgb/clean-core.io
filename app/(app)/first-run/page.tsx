@@ -101,7 +101,7 @@ const STEPS: Step[] = [
     where: 'Stages 2 to 7',
     action: 'Walk the rest of the workflow with the stepper',
     detail:
-      'Design drafts the target architecture against released APIs. Transformation generates the RAP or CAP implementation next to the original. Documentation produces BPMN 2.0 and the business-facing procedures. Testing generates test cases and runs them where a runner exists — a simulation is labelled as one. Economics models the upgrade cost on assumptions it shows you. Delivery hands you the package.',
+      'Design drafts the target architecture against released APIs. Transformation generates the RAP or CAP implementation next to the original. Documentation produces BPMN 2.0 and the business-facing procedures. Testing generates test cases and runs them where a runner exists — against mocks, never in your system. Economics models the upgrade cost on assumptions it shows you. Delivery hands you the package.',
     see: 'The numbered stepper at the top of every stage, from Analyze through to Delivery — a tick where a phase is done, amber where something exists that is not yet its evidence.',
   },
   {

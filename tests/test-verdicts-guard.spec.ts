@@ -106,32 +106,36 @@ test.describe('a run laid over the cases it reported on', () => {
   });
 });
 
-test.describe('the live tenant path reports connectivity, not passes', () => {
-  const liveBranch = () => {
-    const src = read('hooks/useTestExecution.ts');
-    const start = src.indexOf('if (isLiveMode) {');
-    const end = src.indexOf('// Mock mode: simulated ABAP Unit execution');
-    expect(start, 'live branch not found').toBeGreaterThan(-1);
-    expect(end, 'mock branch not found').toBeGreaterThan(start);
-    return src.slice(start, end).replace(/^\s*\/\/.*$/gm, '');
-  };
+test.describe('the run button runs nothing but the runner', () => {
+  // The hook had two ABAP Cloud branches that answered "Run" without a server:
+  // a "[SIMULATED]" mock, and a tenant connectivity report written up as test
+  // rows (it once wrote `Passed`, then `Connectivity`). Both are gone since
+  // 02.10.2026 — the connection check lives in the tenant section, and an
+  // ABAP Unit class is refused with a reason (lib/test-runnability.ts). What
+  // is held: no client-side branch fabricates rows of any status.
+  const hook = () => read('hooks/useTestExecution.ts');
 
-  test('no check in it writes Passed', () => {
-    const live = liveBranch();
-    expect(live).not.toMatch(/status:\s*'Passed'/);
-    expect(live).not.toMatch(/\?\s*'Passed'/);
-    expect(live).toContain("'Connectivity'");
+  test('no verdict, connectivity row or simulated row is written in the browser', () => {
+    const src = hook().replace(/^\s*\/\/.*$/gm, '');
+    for (const status of ['Passed', 'Simulated', 'Connectivity', 'Error']) {
+      expect(src, `the hook writes '${status}' itself`).not.toMatch(new RegExp(`status:\\s*'${status}'`));
+    }
+    expect(src).not.toContain('isLiveMode');
+    expect(src).not.toContain('liveResults');
   });
 
-  test('the CSRF row is not asserted from the login', () => {
-    const live = liveBranch();
-    const csrf = live.slice(live.indexOf("id: 'TC_CSRF'"), live.indexOf('setTestResults(liveResults)'));
-    expect(csrf).toContain("status: 'Not run'");
-    expect(csrf).not.toContain('isFullyConnected');
-  });
-
-  test('the report says no test of the code ran', () => {
-    expect(liveBranch()).toContain('No test of the generated code was executed.');
+  test('every run that is not refused goes to /api/run-tests', () => {
+    const src = hook();
+    const run = src.slice(src.indexOf('const runTestCases = async'));
+    expect(run.indexOf('await executeWithHealing(payload)')).toBeGreaterThan(-1);
+    // The two refusals before it write a reason and no result.
+    for (const guard of ['if (isAbapUnitRoute(project)) {', "if (project?.s4Environment === 'live' && LIVE_TEST_EXECUTION.locked) {"]) {
+      const at = run.indexOf(guard);
+      expect(at, guard).toBeGreaterThan(-1);
+      const branch = run.slice(at, run.indexOf('return null;', at));
+      expect(branch).toContain('setRunError(');
+      expect(branch).not.toContain('setTestResults(');
+    }
   });
 });
 

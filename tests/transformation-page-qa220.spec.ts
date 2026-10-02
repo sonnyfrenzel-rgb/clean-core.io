@@ -104,11 +104,13 @@ test('604c2ded57e3 · "copied" is said only after the clipboard answered', () =>
 });
 
 test('4aa2e074b134 · the package lead does not say an ABAP Cloud package runs against mocks', () => {
-  // The Testing tool simulates an ABAP run and says so; the lead above the
-  // generated package said "runs it against mocks" for every track.
+  // The lead above the generated package said "runs it against mocks" for
+  // every track. An ABAP package's tests do not run here at all — not even as
+  // the simulation the Testing tool made up until 02.10.2026.
   const page = readFileSync('components/transformation/TransformationObjectPage.tsx', 'utf8');
   const lead = page.slice(page.indexOf('id="tf-package"'), page.indexOf('{files === null ? ('));
-  expect(lead).toMatch(/track === 'in-app'[\s\S]*simulates a run[\s\S]*runs it against mocks/);
+  expect(lead).toMatch(/track === 'in-app'[\s\S]*run only in your own system[\s\S]*runs it against mocks/);
+  expect(lead.replace(/^\s*\/\/.*$/gm, ''), 'the lead says a run is simulated again').not.toMatch(/simulat/i);
 });
 
 test('7abe866543dd · the loading line names no track before the project has loaded', () => {

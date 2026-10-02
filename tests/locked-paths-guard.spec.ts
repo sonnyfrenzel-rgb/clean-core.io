@@ -77,7 +77,13 @@ test.describe('the lock holds in code', () => {
     // itself. The run is still refused; what changed is how often it is said.
     expect((src.match(/data-live-test-lock/g) || []).length).toBe(1);
     expect(src).toContain('{LIVE_TEST_EXECUTION.userNotice}');
-    expect(src).toMatch(/disabled=\{[^}]*activeEnvTab === 'live' && !isAbapCloud && LIVE_TEST_EXECUTION\.locked/);
+    // Since 02.10.2026 the tenant is a section of the tool, not a mode of it:
+    // the page never asks for a live run. Whatever environment an earlier
+    // build stored, the run it sends is against mocks, and nothing on the page
+    // writes 'live' any more.
+    expect(src).toContain("project && project.s4Environment === 'live' ? { ...project, s4Environment: 'mock' } : project");
+    expect(src).toMatch(/useTestExecution\(projectId as string, runProject, setProject\)/);
+    expect(src).not.toMatch(/s4Environment:\s*(env|activeEnvTab|'live')\b/);
     expect(src).not.toContain('>Admin-Gated</span>');
     // The way out, named: BYOT is what opens the connection check.
     expect(src).toMatch(/Bring your own tenant \(BYOT\)/);
@@ -147,52 +153,43 @@ test.describe('the lock holds when used', () => {
     expect((await mock.json()).locked).toBeUndefined();
   });
 
-  test('the testing page on the tenant tab shows the lock and sends no run', async ({ page }) => {
+  test('the testing page shows the lock once, and its run never asks for the tenant', async ({ page }) => {
     test.setTimeout(180 * 1000);
-    const runRequests: string[] = [];
-    page.on('request', (r) => { if (r.url().includes('/api/run-tests')) runRequests.push(r.method()); });
+    const runBodies: Array<Record<string, unknown>> = [];
+    page.on('request', (r) => {
+      if (r.url().includes('/api/run-tests') && r.method() === 'POST') runBodies.push(r.postDataJSON());
+    });
 
     await signInViaLanding(page, EMAIL, PASSWORD);
 
+    // The fixture is a project an earlier build left on the tenant tab
+    // (`s4Environment: 'live'`). Since 02.10.2026 the tenant is a folded
+    // section of the tool, not a mode: it opens where the reader was, the
+    // notice stands in it exactly once — with the way to open the connection
+    // itself (roadmap 1.7 / ADR-004) — and the run beside it is against mocks.
     await page.goto(`/project/${PROJECT_ID}/testing`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(LIVE_TEST_EXECUTION.userNotice).first()).toBeVisible({ timeout: 30000 });
     await expect(page.getByText('Tests against a tenant are locked')).toBeVisible();
-
-    // Roadmap 1.7 / ADR-004: the tab is named after what it does, and the notice
-    // stands exactly once on this screen — with the way to open the connection
-    // itself, so the reader is turned away from one thing rather than from all
-    // of them.
-    // A tab of the stage since the mockup s8 rebuild (a `role="tab"` in a tab
-    // list, DESIGN.md §2), no longer a segment of an environment switch — same
-    // name, same place, same `s4Environment` underneath.
-    const tab = page.getByRole('tab', { name: /^Check tenant connection$/ });
-    await expect(tab).toBeVisible();
-    await expect(tab).toHaveAttribute('aria-selected', 'true');
-    await expect(tab).not.toContainText('Check only');
+    await expect(page.getByRole('tablist')).toHaveCount(0);
     const notice = page.locator('[data-live-test-lock]');
     await expect(notice).toHaveCount(1);
     await expect(notice).toBeVisible();
     await expect(notice).toContainText('Bring your own tenant (BYOT)');
     await expect(notice).toContainText('an administrator reviews it by hand');
-
-    // The saved suite is listed after a reload (it was not until the QA review of a0c108513165), so the run itself
-    // can be tried: on the tenant tab the run is not offered — the suite sits in the other tab's panel, the button
-    // there is disabled by the tab, the rail says where the suite runs, and a click reaches nothing.
     await expect(page.locator('[data-live-test-hint]')).toContainText('against mocks', { timeout: 30000 });
-    // The run button of the mock tab (proposal A: "Run tests against mocks" in its "From written to verified" section).
-    const run = page.locator('[data-testing-panel="mock"] #testing-verified button', { hasText: 'Run tests against mocks' });
-    await expect(run).toBeHidden();
-    await expect(run).toBeDisabled();
-    await run.dispatchEvent('click');
-    await page.waitForTimeout(1500);
-    expect(runRequests, 'the tenant tab must not reach the runner').toEqual([]);
 
-    // The same selection on the mock tab can run — reached from the rail's own button.
-    await page.locator('aside').getByRole('button', { name: 'Run tests against mocks' }).click();
-    await expect(page.getByRole('tab', { name: /^Run tests against mocks/ })).toHaveAttribute('aria-selected', 'true');
-    // A saved suite opens selected, as a generated one does — so the button was disabled by the tab, not by an empty selection.
-    await expect(page.getByRole('checkbox').first()).toBeChecked();
+    // The run is offered — a saved suite opens selected — and what it sends is
+    // a run against mocks, whatever the stored environment says. The route
+    // still refuses 'live' (the test above); the page no longer asks for it.
+    const run = page.locator('[data-testing-step="run"]').getByRole('button', { name: 'Run tests against mocks' });
+    await expect(page.getByRole('checkbox').first()).toBeChecked({ timeout: 30000 });
     await expect(run).toBeEnabled({ timeout: 10000 });
+    const answered = page.waitForResponse((r) => r.url().includes('/api/run-tests') && r.request().method() === 'POST', { timeout: 120000 });
+    await run.click();
+    const response = await answered;
+    expect(runBodies).toHaveLength(1);
+    expect(runBodies[0].s4Environment, 'the page asked for a live run').toBe('mock');
+    expect(response.status(), 'the run against mocks was refused').not.toBe(403);
   });
 });
 

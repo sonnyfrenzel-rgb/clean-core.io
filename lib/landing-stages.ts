@@ -82,7 +82,7 @@ export const LANDING_STAGE_TEXT: Readonly<Record<PhaseKey, LandingStageText>> = 
   testing: {
     lines: [
       'A model writes test scenarios for the generated code; on the CAP track they run against mocks in an isolated test runner, never on your system. The engine lists what a tester has to check by hand, with the lines.',
-      'On the RAP track the ABAP Unit run is only simulated, and a pass never means the code works in SAP.',
+      'On the RAP track the scenarios are an ABAP Unit class that runs only in your own system, so nothing is run here, and a pass against mocks never means the code works in SAP.',
     ],
     worker: 'model',
     provenance: ['proposed', 'demonstrated-mock'],

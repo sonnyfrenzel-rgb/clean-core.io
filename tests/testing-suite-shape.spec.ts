@@ -260,7 +260,7 @@ test.describe('the check runs before the write', () => {
     // Found by its words, not by an attribute this change introduced: the
     // counter-check has to run the old page far enough to store the answer,
     // which is the behaviour under test.
-    const generate = page.getByRole('button', { name: /Generate Test Suite/i });
+    const generate = page.getByRole('button', { name: /^Generate scenarios$/ });
     await expect(generate).toBeVisible({ timeout: 30000 });
     await generate.click({ timeout: 15000 });
 
@@ -291,7 +291,7 @@ test.describe('the check runs before the write', () => {
     await expect(notice).toContainText('Generating again replaces it');
 
     // The whole point of the finding: the button survives.
-    await expect(page.getByRole('button', { name: /Generate Test Suite/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Generate scenarios$/ })).toBeVisible();
     await expect(page.locator('[data-stage-title]').first()).toBeVisible();
     // And the root boundary never fired — the stage is on the screen, not a crash card.
     await expect(page.locator('[data-testing-error-boundary]')).toHaveCount(0);
