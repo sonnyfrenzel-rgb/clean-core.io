@@ -580,7 +580,13 @@ ${responseText.substring(0, 4000)}`;
       : []),
     ...(stale.signOff ? [`The sign-off below was given for ${previousBasis(project)}. Unlock it and confirm the target architecture again.`] : []),
   ];
-  const signOffCurrent = project?.approvedByArchitect === true && !stale.signOff && !designStale;
+  // The sign-off is current when it was given for the code under review —
+  // `stale.signOff` says when it was not (a source or profile change after it).
+  // A design document older than the analysis is the document's state and is
+  // named above; it used to void a sign-off given *after* the analysis moved
+  // on as well, so "Confirm & Lock" landed on the server (Transformation ran
+  // against the contract) while this page kept saying "Not confirmed".
+  const signOffCurrent = project?.approvedByArchitect === true && !stale.signOff;
 
   const regenerate = () => {
     if (stale.sourceChanged) {
@@ -988,7 +994,9 @@ ${responseText.substring(0, 4000)}`;
           signOffCurrent
             ? 'Continue to Transformation'
             : project?.approvedByArchitect
-              ? 'Regenerate and re-confirm to proceed'
+              ? designStale
+                ? 'Regenerate and re-confirm to proceed'
+                : 'Re-confirm to proceed'
               : 'Confirm architecture to proceed'
         }
       />
