@@ -13,7 +13,8 @@ import { TERMS_VERSION } from '../lib/constants';
 /**
  * The real "start from an example" path, end to end: a project written with
  * exactly the six fields the example gallery writes, a run started from the
- * Analyze page, and what the signed run and the page then say. Found on a
+ * Analyze page (which returns a first run to the workspace, 3.0.1), and what
+ * the signed run and the Analyze tool then say. Found on a
  * capture of Z_MM_PO_APPROVAL (01.10.2026):
  *
  *   1. the run was signed, and the page headed, as `manual-input.abap`;
@@ -96,6 +97,14 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
   if (await ack.count()) await ack.check();
   await page.getByRole('button', { name: /Start Analysis/ }).click();
   await page.getByRole('button', { name: /Confirm and start the analysis/ }).click();
+
+  // A project's first run continues in the workspace with the first look
+  // (owner 02.10.2026, roadmap 3.0.1); the report is read on the Analyze tool,
+  // opened from the workspace's tools bar.
+  await page.waitForURL(new RegExp(`/project/${PROJECT_ID}\\?first=1`), { timeout: 180000 });
+  await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 90000 });
+  await page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]').click({ timeout: 60000 });
+  await page.waitForURL(new RegExp(`/project/${PROJECT_ID}/analyze`), { timeout: 60000 });
 
   const report = page.locator('[data-evidence-only-report]');
   await expect(report).toBeVisible({ timeout: 180000 });
