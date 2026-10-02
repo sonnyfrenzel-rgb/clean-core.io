@@ -394,8 +394,8 @@ test.describe('no model call — proven from the source, not just claimed in a c
 /* ====================================================== a source for every SAP term */
 
 /**
- * Roadmap 6.6 and `DESIGN.md` §6.1: *„Glossar zum Start … SAP- und
- * Produktbegriffe, **Quelle je SAP-Begriff**"*.
+ * Roadmap 6.6 and `DESIGN.md` §6.1: *"glossary at launch … SAP and product
+ * terms, **a source per SAP term**"*.
  *
  * The requirement has two halves and the second is the one that bites. A
  * source where one exists is easy. A term where none has been recorded must
@@ -466,7 +466,7 @@ test.describe('a source for every SAP term — and an honest blank where there i
   });
 
   test("this product's own terms are marked as its own and cite nobody else", () => {
-    // `DESIGN.md` §6.1 group B — "niemand kann sie anderswo nachschlagen".
+    // `DESIGN.md` §6.1 group B — "nobody can look them up anywhere else".
     // Claiming an SAP source for one of these would be the same fabrication as
     // inventing a URL, just pointed the other way.
     for (const key of [
@@ -807,9 +807,9 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
 /* ================================== the Fachwort popover, in a browser */
 
 /**
- * Roadmap 6.6 / `DESIGN.md` §6.1: *„Fachwörter in Antworten tragen dieselbe
- * Unterstreichung und dasselbe Popover"*, and the explanation is *„per
- * Tastatur erreichbar"*.
+ * Roadmap 6.6 / `DESIGN.md` §6.1: *"technical terms in answers carry the same
+ * underline and the same popover"*, and the explanation is *"reachable by
+ * keyboard"*.
  *
  * Only a browser can show that. The three things checked here are the three a
  * source guard cannot see: that the word is a real tab stop rather than a

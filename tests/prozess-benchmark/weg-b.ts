@@ -1,19 +1,19 @@
 /**
- * Weg B (Roadmap 17.8) über den Prozess-Benchmark: das Modell erzeugt die Fachsätze.
+ * Path B (roadmap 17.8) over the process benchmark: the model writes the business statements.
  *
- *   npx tsx tests/prozess-benchmark/weg-b.ts --out <ordner> [--range 1-200] [--parallel 4]
+ *   npx tsx tests/prozess-benchmark/weg-b.ts --out <folder> [--range 1-200] [--parallel 4]
  *
- * Genau die Bausteine des Produkts: `buildStatementContext`, `buildStatementPrompt`,
- * `validateStatementAnswer` aus `lib/business-statement-prompt.ts`, das Produktmodell
- * `PRODUCT_GEMINI_MODEL` und JSON-Antwort wie `/api/gemini`. Nur der Weg dorthin ist ein
- * anderer: der Aufruf geht direkt an die Gemini-API (Schlüssel `GEMINI_API_KEY` aus der
- * Umgebung oder `.env.local`), ohne Anmeldung und ohne Quittung — gemessen wird der Satz,
- * nicht der Transport.
+ * Exactly the product's building blocks: `buildStatementContext`, `buildStatementPrompt`,
+ * `validateStatementAnswer` from `lib/business-statement-prompt.ts`, the product model
+ * `PRODUCT_GEMINI_MODEL` and a JSON answer as with `/api/gemini`. Only the route there
+ * differs: the call goes straight to the Gemini API (key `GEMINI_API_KEY` from the
+ * environment or `.env.local`), without sign-in and without a receipt — what is measured
+ * is the sentence, not the transport.
  *
- * Mehrdateifälle werden wie in `evaluate.ts` (BM_CONCAT=1) zu einer Quelle zusammengefügt,
- * weil das Produkt genau eine Quelle annimmt. Je Fall entsteht `<ordner>/BM-nnn.json` mit
- * Rohantwort, geprüften Sätzen, Verwerfungen und Tokenzahlen; vorhandene Dateien werden
- * übersprungen, der Lauf lässt sich also fortsetzen.
+ * Multi-file cases are joined into one source as in `evaluate.ts` (BM_CONCAT=1), because
+ * the product takes exactly one source. Each case yields `<folder>/BM-nnn.json` with the
+ * raw answer, the checked sentences, the discards and the token counts; existing files are
+ * skipped, so a run can be resumed.
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
@@ -38,11 +38,11 @@ function apiKey(): string {
   if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
   const line = readFileSync('.env.local', 'utf8').split(/\r?\n/).find((l) => l.startsWith('GEMINI_API_KEY='));
   const value = line?.slice('GEMINI_API_KEY='.length).trim().replace(/^["']|["']$/g, '');
-  if (!value) throw new Error('GEMINI_API_KEY fehlt');
+  if (!value) throw new Error('GEMINI_API_KEY is missing');
   return value;
 }
 
-/** Dieselbe Zusammenfügung wie `concatenate` in evaluate.ts. */
+/** The same joining as `concatenate` in evaluate.ts. */
 function source(id: string): { name: string; code: string } {
   const dir = join(ROOT, id);
   const files = readdirSync(dir).filter((f) => f.endsWith('.abap')).sort();
@@ -117,7 +117,7 @@ async function one(id: string): Promise<void> {
     ),
   );
   done += 1;
-  console.log(`${id} ${validated.statements.length} Sätze, ${validated.discarded.total} verworfen${error ? `, Fehler: ${error}` : ''} (${done}/${ids.length})`);
+  console.log(`${id} ${validated.statements.length} sentences, ${validated.discarded.total} discarded${error ? `, error: ${error}` : ''} (${done}/${ids.length})`);
 }
 
 (async () => {
@@ -127,5 +127,5 @@ async function one(id: string): Promise<void> {
       while (queue.length) await one(queue.shift() as string);
     }),
   );
-  console.log(`Tokens: Eingabe ${tokensIn}, Ausgabe inkl. Denken ${tokensOut}`);
+  console.log(`Tokens: input ${tokensIn}, output incl. thinking ${tokensOut}`);
 })();

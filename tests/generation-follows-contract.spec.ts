@@ -18,8 +18,8 @@ import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 
 /**
- * Roadmap 8.3 — *"Generierung folgt dem Vertrag; eine Abweichung von der
- * Empfehlung wird festgehalten und angewendet."*
+ * Roadmap 8.3 — *"Generation follows the contract; a deviation from the
+ * recommendation is recorded and applied."*
  *
  * Pure: no browser, no emulator, no server. The judgement is a plain function
  * set so that exactly this suite can drive every branch of it, and the two

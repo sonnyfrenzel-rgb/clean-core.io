@@ -3,10 +3,10 @@ import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { adminGetDoc, adminMergeDoc } from './helpers/admin-seed';
 
 /**
- * Owner, 02.10.2026, on the Design stage:
+ * Owner, 02.10.2026, on the Design stage (translated):
  *
- *   "die buttons ins design funktionieren nicht richtig, vollbild geht hier
- *   nicht auf, achte darauf dass sich alles sauber navigieren lassen muss"
+ *   "the buttons in design don't work properly, full screen doesn't open here,
+ *   make sure everything can be navigated cleanly"
  *
  * The ⤢ under the canvas looked like full screen and was "Fit", which at a
  * column narrower than the drawing changed nothing; there was no full screen.
@@ -15,8 +15,8 @@ import { adminGetDoc, adminMergeDoc } from './helpers/admin-seed';
  * screen — and full screen is the card filling the window, left by Escape or
  * by its own button, with the focus handed back.
  *
- *   "wenn ich in design confirm target drücke muss eine kleine dialog box
- *   aufgehen, dass ich das bestätige, sonst kann man sich schnell verklicken"
+ *   "when I press confirm target in design, a small dialog box has to open
+ *   so that I confirm it, otherwise it is easy to click by mistake"
  *
  * "Confirm target" asks first. Cancel and Escape write nothing; only the box's
  * own "Confirm target" signs off, with the command it always used.

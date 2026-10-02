@@ -27,13 +27,13 @@ import {
 } from '../lib/input-manifest';
 
 /**
- * Roadmap 7.10 — "Zielprofil als Eingabe" (CR-02).
+ * Roadmap 7.10 — "target profile as an input" (CR-02).
  *
- * *"Edition, Sprachversion je Objekt, Release-/Komponentenstand,
- * Katalogsnapshot und Regelversion als versioniertes `AssessmentProfile` …
- * nicht abgedeckte Profile werden sichtbar abgelehnt oder als unbestätigt
- * geführt; ein Profilwechsel ändert den Subject-Hash und entwertet abhängige
- * Freigaben; ein Latest-Eintrag ersetzt keinen älteren Release-Snapshot still."*
+ * *"Edition, language version per object, release/component level, catalogue
+ * snapshot and rule version as a versioned `AssessmentProfile` … profiles not
+ * covered are visibly refused or carried as unconfirmed; a profile change
+ * alters the subject hash and invalidates dependent sign-offs; a latest entry
+ * does not silently replace an older release snapshot."*
  *
  * Pure: no browser, no emulator, no server. The module is a plain function set
  * so that exactly this suite can drive every branch of it.

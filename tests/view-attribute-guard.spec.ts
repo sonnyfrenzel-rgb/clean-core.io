@@ -25,12 +25,11 @@ function keysPresent(keys: readonly string[], forbidden: readonly string[]): str
 
 /**
  * Phase 6's acceptance line, and the one roadmap step 6.1 is the first to be
- * measured against (`docs/ROADMAP.md` §Phase 6, "Fertig, wenn"):
+ * measured against (`docs/ROADMAP.md` §Phase 6, "done when"):
  *
- *   > ein Wechsel erhält Element, Revision und Auswahl und erzeugt keine neue
- *   > Hypothese; ein Wechsel löst keinen Modellaufruf aus; und ein Guard
- *   > belegt, dass kein gespeichertes Artefakt, kein Run und kein Pack ein
- *   > Sichtattribut trägt.
+ *   > a switch keeps element, revision and selection and creates no new
+ *   > hypothesis; a switch triggers no model call; and a guard proves that
+ *   > no stored artefact, no run and no pack carries a view attribute.
  *
  * `lib/workspace-model.ts` keeps the view in `?view=` and nowhere else (the IT
  * focus that once lived in `?focus=` is gone, ADR-058 — the plants of an
@@ -350,8 +349,8 @@ test.describe('the audit-pack allowlist keeps a planted view off every generated
  * Sections A–C would all still pass on a product that saved the reader's view
  * to their profile through a server route — the rules never see it, the run
  * route never gets it, the pack never reads it. The roadmap line is stricter
- * than that: *„Management, Business und IT sind Sichten — niemals gespeichert
- * auf einem Artefakt, einem Run, einer Signatur oder einem Audit-Pack"*, and
+ * than that: *"Management, Business and IT are views — never stored on an
+ * artefact, a run, a signature or an audit pack"*, and
  * the honest reading of it is that changing a view is a free act that leaves
  * no trace anywhere.
  *
@@ -481,7 +480,7 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
-    // The reload is also the "gehalten in URL und Browser" check: the view and
+    // The reload is also the "kept in URL and browser" check: the view and
     // the layer come back because the address carried them, not because
     // anything remembered them for the account.
     await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Changes & commitments', {
@@ -587,7 +586,7 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     // Nothing in the browser either. Only this product's own namespace is
     // examined — Firebase's own auth entry carries the test address, which
     // happens to contain the word. `cc.newProject.introSeen` is allowed: it is
-    // *„beim ersten Mal offen; danach eine Zeile … gemerkt im Browser"*
+    // *"open the first time; after that one line … remembered in the browser"*
     // (§6.1.1) and says nothing about a view.
     const stored = await page.evaluate(() => {
       const out: Record<string, string> = {};

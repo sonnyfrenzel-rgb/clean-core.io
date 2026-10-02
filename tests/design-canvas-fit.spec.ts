@@ -5,8 +5,8 @@ import { seedStageProject, signInThroughForm, type SeededProject } from './helpe
 /**
  * The Design stage keeps the page's proportions at every width.
  *
- * Owner, 02.10.2026, on a ~3400 px window: "hier stimmen die Größen/Proportionen
- * überhaupt nicht". The stage ran edge to edge out of the page column and the
+ * Owner, 02.10.2026, on a ~3400 px window (translated): "the sizes/proportions
+ * are not right here at all". The stage ran edge to edge out of the page column and the
  * architecture SVG was `width="100%"` of that, so its viewBox scaled with the
  * window: box titles near 30 px beside a 15 px page, the Decision panel a thin
  * strip at the far right, its "Confirm target" below the fold. The stage now

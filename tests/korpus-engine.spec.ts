@@ -17,40 +17,39 @@ import {
 } from './helpers/korpus-comparison';
 
 /**
- * Der Referenzkorpus gegen die Engine (Roadmap 2.10).
+ * The reference corpus against the engine (roadmap 2.10).
  *
- * Das Fallbuch `docs/korpus/referenzkorpus-v2.1.md` hält für 68 ABAP-Fälle die
- * richtige Antwort fest, bevor die Engine gefragt wird.
- * `scripts/korpus/build-bundle.mjs` übersetzt es nach `tests/korpus/`, und
- * dieser Spec lässt `lib/abap/` über jeden Fall laufen und vergleicht — je
- * Aussageklasse getrennt, weil der Korpus und die Engine nicht dieselben
- * Aussagen führen.
+ * The case book `docs/korpus/referenzkorpus-v2.1.md` records the right answer
+ * for 68 ABAP cases before the engine is asked.
+ * `scripts/korpus/build-bundle.mjs` translates it into `tests/korpus/`, and
+ * this spec runs `lib/abap/` over every case and compares — separately per
+ * statement class, because the corpus and the engine do not carry the same
+ * statements.
  *
- * **Die Ratsche.** `tests/korpus/baseline.json` hält den Stand jeder
- * Fall-und-Klasse fest: `agree`, oder `disagree` mit Urteil und Grund. Der Lauf
- * fällt, wenn
+ * **The ratchet.** `tests/korpus/baseline.json` records the state of every
+ * case-and-class: `agree`, or `disagree` with a verdict and a reason. The run
+ * fails when
  *
- *   (a) ein `agree` zu `disagree` wird — eine Übereinstimmung ist verloren
- *       gegangen,
- *   (b) eine `disagree` verschwindet, ohne dass der Eintrag gestrichen wurde —
- *       gute Nachrichten, und sie gehören aufgeschrieben,
- *   (c) sich das Urteil zu einer Abweichung ändert, ohne dass die Baseline
- *       nachgezogen wurde,
- *   (d) das Bündel nicht mehr zum Fallbuch passt,
- *   (e) `manifest.json` einen anderen Fallbuch-Hash trägt als die Datei in
+ *   (a) an `agree` turns into `disagree` — an agreement has been lost,
+ *   (b) a `disagree` disappears without its entry being struck — good news,
+ *       and it belongs on record,
+ *   (c) the verdict on a disagreement changes without the baseline being
+ *       updated,
+ *   (d) the bundle no longer matches the case book,
+ *   (e) `manifest.json` carries a different case-book hash than the file in
  *       `docs/korpus/`.
  *
- * Was die Ratsche **nicht** ist: eine Erlaubnisliste. Jede `disagree` trägt ein
- * Urteil aus genau drei Möglichkeiten und einen Grund mit Substanz, und ein
- * Test weiter unten besteht darauf. `engine-defekt` heißt: der Fall hat recht
- * und die Engine nicht — das ist ein Punkt für Phase 2, hier wird er gezählt
- * und benannt, nicht behoben. `korpus-offen` heißt: die Sollantwort selbst ist
- * fraglich; sie wird trotzdem nicht geändert, sondern geht als Frage an die
- * Fallautoren zurück. `nicht-vergleichbar` heißt: die Engine führt diese
- * Aussage nicht — keine Schwäche des Korpus, sondern eine Aussage über den
- * Stand von Phase 2.
+ * What the ratchet is **not**: an allowlist. Every `disagree` carries a
+ * verdict from exactly three options and a reason with substance, and a test
+ * further down insists on it. `engine-defekt` means: the case is right and the
+ * engine is not — that is an item for Phase 2; here it is counted and named,
+ * not fixed. `korpus-offen` means: the expected answer itself is
+ * questionable; it is still not changed, but goes back to the case authors as
+ * a question. `nicht-vergleichbar` means: the engine does not carry this
+ * statement — not a weakness of the corpus, but a statement about where
+ * Phase 2 stands.
  *
- * Ohne Server, ohne Emulator, ohne Modell: reine Funktionen über Text.
+ * No server, no emulator, no model: pure functions over text.
  */
 
 const BASELINE = readBaseline();
@@ -69,64 +68,63 @@ function describeEntry(entry: BaselineEntry): string {
 }
 
 // ---------------------------------------------------------------------------
-// Die Ratsche
+// The ratchet
 // ---------------------------------------------------------------------------
 
-test.describe('die Ratsche', () => {
-  test('keine Übereinstimmung ist verloren gegangen', () => {
+test.describe('the ratchet', () => {
+  test('no agreement has been lost', () => {
     const lost = LIVE.filter((result) => {
       const recorded = BASE_BY_ID.get(resultId(result));
       return recorded != null && recorded.state === 'agree' && result.state === 'disagree';
     });
     expect(
       lost.map(describe).join('\n'),
-      'Diese Fälle stimmten mit dem Korpus überein und tun es nicht mehr. Entweder hat eine Änderung an ' +
-        'lib/abap/ eine Aussage gekippt — dann ist das die Regression, die dieser Korpus fangen soll —, oder ' +
-        'das Fallbuch hat die Sollantwort geändert. Beides wird hier entschieden, nicht in der Baseline nachgezogen.',
+      'These cases agreed with the corpus and no longer do. Either a change to ' +
+        'lib/abap/ flipped a statement — then this is the regression this corpus exists to catch — or ' +
+        'the case book changed the expected answer. Both are decided here, not patched over in the baseline.',
     ).toEqual('');
   });
 
-  test('keine Abweichung verschwindet still', () => {
+  test('no disagreement disappears silently', () => {
     const resolved = BASELINE.entries.filter((entry) => {
       const live = LIVE_BY_ID.get(resultId(entry));
       return entry.state === 'disagree' && live != null && live.state === 'agree';
     });
     expect(
       resolved.map(describeEntry).join('\n'),
-      'Diese Abweichungen gibt es nicht mehr. Das ist eine gute Nachricht und sie gehört aufgeschrieben: ' +
-        'streichen Sie die Einträge aus tests/korpus/baseline.json, damit die Ratsche den neuen Stand hält ' +
-        'und nicht auf den alten zurückfallen kann.',
+      'These disagreements no longer exist. That is good news and it belongs on record: ' +
+        'strike the entries from tests/korpus/baseline.json so the ratchet holds the new state ' +
+        'and cannot fall back to the old one.',
     ).toEqual('');
   });
 
-  test('kein Urteil ändert sich unbemerkt', () => {
+  test('no verdict changes unnoticed', () => {
     const changed: string[] = [];
     for (const result of LIVE) {
       const recorded = BASE_BY_ID.get(resultId(result));
       if (!recorded || recorded.state !== 'disagree' || result.state !== 'disagree') continue;
       if (recorded.verdict !== result.verdict) {
         changed.push(
-          `  ${result.case} [${result.class}]\n      festgehalten: ${recorded.verdict}\n      jetzt:         ${result.verdict}\n      ${result.evidence}`,
+          `  ${result.case} [${result.class}]\n      recorded: ${recorded.verdict}\n      now:      ${result.verdict}\n      ${result.evidence}`,
         );
       }
     }
     expect(
       changed.join('\n'),
-      'Die Abweichung besteht, aber ihre Art hat sich geändert — aus einer nicht vergleichbaren Klasse ist ein ' +
-        'Defekt geworden oder umgekehrt. Lesen Sie den Grund, entscheiden Sie neu und ziehen Sie die Baseline nach.',
+      'The disagreement persists, but its kind has changed — a non-comparable class has become a ' +
+        'defect or the other way round. Read the reason, decide again and update the baseline.',
     ).toEqual('');
   });
 
-  test('keine Abweichung wird still tiefer', () => {
-    // Zustand, Urteil und Nenner allein lassen eine bestehende Abweichung
-    // wachsen: verliert CC-048 eine weitere getroffene Kante, bleibt die
-    // Facette `disagree` · `engine-defekt` mit 8 von 15 verglichenen Kanten —
-    // nur aus "5 getroffen, 2 fehlend" wird "4 getroffen, 3 fehlend". Der
-    // Grund in der Baseline ist der Befund des Vergleichers, wie
-    // `tests/helpers/korpus-baseline-write.ts` ihn geschrieben hat; er nennt
-    // jede fehlende Kante und jeden fehlenden Knoten beim Namen. Weicht der
-    // Befund ab, hat sich innerhalb der Abweichung etwas bewegt — lesen,
-    // entscheiden, Baseline neu schreiben.
+  test('no disagreement silently deepens', () => {
+    // State, verdict and denominator alone let an existing disagreement
+    // grow: if CC-048 loses another matched edge, the facet stays
+    // `disagree` · `engine-defekt` with 8 of 15 compared edges — only
+    // "5 matched, 2 missing" becomes "4 matched, 3 missing". The reason in
+    // the baseline is the comparator's finding as
+    // `tests/helpers/korpus-baseline-write.ts` wrote it; it names every
+    // missing edge and every missing node. If the finding differs, something
+    // has moved inside the disagreement — read, decide, rewrite the baseline.
     const moved: string[] = [];
     for (const result of LIVE) {
       const recorded = BASE_BY_ID.get(resultId(result));
@@ -135,95 +133,95 @@ test.describe('die Ratsche', () => {
         recorded.scope.compared !== result.scope.compared || recorded.scope.total !== result.scope.total;
       if (scopeMoved || recorded.reason !== result.evidence) {
         moved.push(
-          `  ${result.case} [${result.class}]\n      festgehalten: ${recorded.reason}\n      jetzt:         ${result.evidence}`,
+          `  ${result.case} [${result.class}]\n      recorded: ${recorded.reason}\n      now:      ${result.evidence}`,
         );
       }
     }
     expect(
       moved.join('\n'),
-      'Die Abweichung besteht weiter, aber ihr Befund hat sich verändert — eine weitere Aussage kann verloren ' +
-        'gegangen sein, ohne dass Zustand oder Urteil kippen. Lesen Sie den Unterschied; ist er gewollt, ' +
-        'schreiben Sie die Baseline mit tests/helpers/korpus-baseline-write.ts neu.',
+      'The disagreement persists, but its finding has changed — another statement may have been lost ' +
+        'without state or verdict flipping. Read the difference; if it is intended, ' +
+        'rewrite the baseline with tests/helpers/korpus-baseline-write.ts.',
     ).toEqual('');
   });
 
-  test('jede Fall-und-Klasse steht in der Baseline', () => {
+  test('every case-and-class is in the baseline', () => {
     const missing = LIVE.filter((result) => !BASE_BY_ID.has(resultId(result))).map(describe);
     const orphaned = BASELINE.entries
       .filter((entry) => !LIVE_BY_ID.has(resultId(entry)))
-      .map((entry) => `  ${entry.case} [${entry.class}] steht in der Baseline, kommt im Lauf nicht vor`);
+      .map((entry) => `  ${entry.case} [${entry.class}] is in the baseline but does not occur in the run`);
     expect(
       [...missing, ...orphaned].join('\n'),
-      'Das Fallbuch und die Baseline sind auseinandergelaufen. Neue Fälle brauchen einen Eintrag je ' +
-        'Aussageklasse mit Urteil und Grund; entfallene Fälle gehören aus der Baseline gestrichen.',
+      'The case book and the baseline have drifted apart. New cases need one entry per ' +
+        'statement class with a verdict and a reason; dropped cases belong struck from the baseline.',
     ).toEqual('');
   });
 });
 
 // ---------------------------------------------------------------------------
-// Die Baseline als Register, nicht als Erlaubnisliste
+// The baseline as a register, not as an allowlist
 // ---------------------------------------------------------------------------
 
-test.describe('die Baseline trägt Substanz', () => {
-  test('jede Abweichung hat ein Urteil und einen Grund', () => {
-    // Eine Baseline, deren Einträge nichts sagen, ist eine Erlaubnisliste, und
-    // eine Erlaubnisliste ist, wie ein Befund zur Tatsache des Lebens wird.
+test.describe('the baseline carries substance', () => {
+  test('every disagreement has a verdict and a reason', () => {
+    // A baseline whose entries say nothing is an allowlist, and an allowlist
+    // is how a finding becomes a fact of life.
     expect(BASELINE.entries.length).toBeGreaterThan(0);
     const thin: string[] = [];
     for (const entry of BASELINE.entries) {
       if (entry.state === 'agree') {
-        if (entry.verdict !== null) thin.push(`  ${entry.case} [${entry.class}]: agree mit Urteil ${entry.verdict}`);
+        if (entry.verdict !== null) thin.push(`  ${entry.case} [${entry.class}]: agree with verdict ${entry.verdict}`);
         continue;
       }
       if (!VERDICTS.includes(entry.verdict as (typeof VERDICTS)[number])) {
-        thin.push(`  ${entry.case} [${entry.class}]: Urteil „${entry.verdict}" ist keines der drei`);
+        thin.push(`  ${entry.case} [${entry.class}]: verdict "${entry.verdict}" is none of the three`);
       }
       if ((entry.reason ?? '').length < 40) {
-        thin.push(`  ${entry.case} [${entry.class}]: Grund zu dünn (${(entry.reason ?? '').length} Zeichen)`);
+        thin.push(`  ${entry.case} [${entry.class}]: reason too thin (${(entry.reason ?? '').length} characters)`);
       }
     }
-    expect(thin.join('\n'), 'Ohne Urteil und Grund ist ein Baselineeintrag ein Achselzucken.').toEqual('');
+    expect(thin.join('\n'), 'Without a verdict and a reason, a baseline entry is a shrug.').toEqual('');
   });
 
-  test('die Baseline ist nicht leer und nicht einfarbig', () => {
+  test('the baseline is neither empty nor uniform', () => {
     const disagreements = BASELINE.entries.filter((entry) => entry.state === 'disagree');
     const agreements = BASELINE.entries.filter((entry) => entry.state === 'agree');
-    expect(disagreements.length, 'eine Baseline ohne Abweichung hätte nichts gemessen').toBeGreaterThan(0);
-    expect(agreements.length, 'eine Baseline ohne Übereinstimmung hätte nichts verglichen').toBeGreaterThan(0);
+    expect(disagreements.length, 'a baseline without a disagreement would have measured nothing').toBeGreaterThan(0);
+    expect(agreements.length, 'a baseline without an agreement would have compared nothing').toBeGreaterThan(0);
     const byVerdict = new Map<string, number>();
     for (const entry of disagreements) byVerdict.set(entry.verdict ?? '?', (byVerdict.get(entry.verdict ?? '?') ?? 0) + 1);
     expect(
       byVerdict.get('engine-defekt') ?? 0,
-      'kein einziger Engine-Defekt über 68 Fälle — das wäre der Moment, den Vergleich zu misstrauen, nicht die Engine zu loben',
+      'not a single engine defect across 68 cases — that would be the moment to distrust the comparison, not to praise the engine',
     ).toBeGreaterThan(0);
     expect(
       byVerdict.get('nicht-vergleichbar') ?? 0,
-      'keine einzige nicht vergleichbare Klasse — dann vergleicht der Lauf etwas anderes als das, was der Korpus behauptet',
+      'not a single non-comparable class — then the run compares something other than what the corpus claims',
     ).toBeGreaterThan(0);
   });
 });
 
 // ---------------------------------------------------------------------------
-// Ein Lauf, der nichts liest, meldet auch nichts — das ist der Unterschied
+// A run that reads nothing reports nothing either — that is the difference
 // ---------------------------------------------------------------------------
 
-test.describe('der Vergleich liest wirklich', () => {
-  test('jeder Fall liefert Quelltext, und die Engine liest ihn', () => {
+test.describe('the comparison really reads', () => {
+  test('every case supplies source code, and the engine reads it', () => {
     const cases = readCases();
-    expect(cases.length, 'das Bündel ist leer oder unvollständig').toBeGreaterThanOrEqual(60);
+    expect(cases.length, 'the bundle is empty or incomplete').toBeGreaterThanOrEqual(60);
     const empty: string[] = [];
     for (const korpusCase of cases) {
-      expect(korpusCase.sources.length, `${korpusCase.id} hat keine Quelldatei`).toBeGreaterThan(0);
+      expect(korpusCase.sources.length, `${korpusCase.id} has no source file`).toBeGreaterThan(0);
       const reading = readWithEngine(korpusCase);
       for (const entry of reading.perFile) {
-        if (entry.statements.length === 0) empty.push(`${korpusCase.id}/${entry.file}: 0 Anweisungen gelesen`);
+        if (entry.statements.length === 0) empty.push(`${korpusCase.id}/${entry.file}: 0 statements read`);
       }
-      if (reading.routeCount === 0) empty.push(`${korpusCase.id}: routeExtensibility lieferte keine Prüfpunkte`);
+      if (reading.routeCount === 0) empty.push(`${korpusCase.id}: routeExtensibility returned no checkpoints`);
     }
-    expect(empty.join('\n'), 'Ein Leser, der nichts liest, widerspricht nie.').toEqual('');
+    expect(empty.join('\n'), 'A reader that reads nothing never disagrees.').toEqual('');
   });
 
-  test('jede Aussageklasse kommt für jeden Fall genau einmal vor', () => {
+  test('every statement class occurs exactly once per case', () => {
     const counts = new Map<string, number>();
     for (const result of LIVE) counts.set(resultId(result), (counts.get(resultId(result)) ?? 0) + 1);
     const wrong = [...counts.entries()].filter(([, count]) => count !== 1);
@@ -231,23 +229,23 @@ test.describe('der Vergleich liest wirklich', () => {
     expect(LIVE.length).toBe(readManifest().cases.length * STATEMENT_CLASSES.length);
   });
 
-  test('jede Regelbrücke nennt ein Konstrukt und eine Begründung', () => {
-    // Die Brücken sind die einzige Auslegung in diesem Vergleich. Eine ohne
-    // Begründung wäre eine Zuordnung, die niemand nachlesen kann.
+  test('every rule bridge names a construct and a justification', () => {
+    // The bridges are the only interpretation in this comparison. One without
+    // a justification would be a mapping nobody can look up.
     for (const bridge of RULE_BRIDGES) {
-      expect(bridge.kinds.length, `${bridge.rule} ohne Befundmarke`).toBeGreaterThan(0);
-      expect(bridge.why.length, `${bridge.rule} ohne Begründung`).toBeGreaterThan(40);
-      expect(bridge.construct.source.length, `${bridge.rule} ohne Konstrukt`).toBeGreaterThan(2);
+      expect(bridge.kinds.length, `${bridge.rule} without a finding kind`).toBeGreaterThan(0);
+      expect(bridge.why.length, `${bridge.rule} without a justification`).toBeGreaterThan(40);
+      expect(bridge.construct.source.length, `${bridge.rule} without a construct`).toBeGreaterThan(2);
     }
   });
 });
 
 // ---------------------------------------------------------------------------
-// Bündel, Fallbuch und Hashes
+// Bundle, case book and hashes
 // ---------------------------------------------------------------------------
 
-test.describe('das Bündel steht zum Fallbuch', () => {
-  test('ein erneuter Lauf des Konverters erzeugt keine Änderung', () => {
+test.describe('the bundle matches the case book', () => {
+  test('re-running the converter produces no change', () => {
     const manifest = readManifest();
     const out = execFileSync(
       process.execPath,
@@ -257,17 +255,17 @@ test.describe('das Bündel steht zum Fallbuch', () => {
     expect(out).toContain('0 abweichend');
   });
 
-  test('der Fallbuch-Hash im Manifest ist der Hash der Datei in docs/korpus/', () => {
+  test('the case-book hash in the manifest is the hash of the file in docs/korpus/', () => {
     const manifest = readManifest();
     const book = readFileSync(join(process.cwd(), manifest.book.path), 'utf8').replace(/\r\n/g, '\n');
     expect(
       createHash('sha256').update(book, 'utf8').digest('hex'),
-      `${manifest.book.path} ist nicht mehr die Datei, aus der tests/korpus/ gebaut wurde`,
+      `${manifest.book.path} is no longer the file tests/korpus/ was built from`,
     ).toBe(manifest.book.sha256);
-    expect(BASELINE.book.sha256, 'die Baseline wurde gegen ein anderes Fallbuch geschrieben').toBe(manifest.book.sha256);
+    expect(BASELINE.book.sha256, 'the baseline was written against a different case book').toBe(manifest.book.sha256);
   });
 
-  test('jede Quelldatei trägt den Hash, den das Fallbuch für sie nennt', () => {
+  test('every source file carries the hash the case book names for it', () => {
     const manifest = readManifest();
     const wrong: string[] = [];
     for (const entry of manifest.cases) {
@@ -277,7 +275,7 @@ test.describe('das Bündel steht zum Fallbuch', () => {
           '\n',
         );
         const digest = createHash('sha256').update(body, 'utf8').digest('hex');
-        if (digest !== file.sha256) wrong.push(`  ${entry.id}/${file.name}: ${digest} statt ${file.sha256}`);
+        if (digest !== file.sha256) wrong.push(`  ${entry.id}/${file.name}: ${digest} instead of ${file.sha256}`);
       }
     }
     expect(wrong.join('\n')).toEqual('');
@@ -285,18 +283,18 @@ test.describe('das Bündel steht zum Fallbuch', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Kein Zeiger auf fremden Code
+// No pointer to third-party code
 // ---------------------------------------------------------------------------
 
 /**
- * Eine Git-Quelle jenseits der drei großen Hoster: ein SSH-Remote (`git@host:`),
- * ein URL auf `.git`, ein Host, der mit `git.` beginnt, oder ein bekannter
- * selbst betriebener Dienst.
+ * A Git source beyond the three big hosts: an SSH remote (`git@host:`), a URL
+ * ending in `.git`, a host starting with `git.`, or a known self-hosted
+ * service.
  */
 const GIT_POINTER =
   /\bgit@[\w.-]+:|\b(?:https?|ssh|git):\/\/[^\s"'<>)]+?\.git\b|\b(?:https?:\/\/)?git\.[a-z0-9-]+(?:\.[a-z0-9-]+)+|\b(?:codeberg\.org|sr\.ht|gitea\.|forgejo\.|gogs\.|gerrit\.)/i;
 
-test('der Git-Zeiger-Test erkennt selbst betriebene Hoster und Remotes', () => {
+test('the Git pointer test recognises self-hosted hosts and remotes', () => {
   for (const pointer of [
     'git@git.corp.example:team/repo.git',
     'https://git.corp.example/team/repo',
@@ -311,14 +309,14 @@ test('der Git-Zeiger-Test erkennt selbst betriebene Hoster und Remotes', () => {
   }
 });
 
-test('docs/korpus/ und tests/korpus/ tragen keinen Zeiger auf ein fremdes Repository', () => {
-  // Neun Fälle sind an echtem Produktivcode belegt, und vierzehn der fünfzehn
-  // Quellen tragen keine Lizenz; die tragenden sind nach allen Indizien
-  // unautorisiert hochgeladene Arbeitgeberbestände. Dieses Repository ist
-  // öffentlich, und Git vergisst nichts: ein URL mit Commit und Zeilennummer
-  // wäre ein dauerhafter, indizierter Zeiger auf eine fremde Offenlegung —
-  // auch nachdem jemand ihn wieder herausnimmt. Die Fundstellen sind deshalb
-  // nur als Hash belegt; der vollständige Nachweis liegt außerhalb.
+test('docs/korpus/ and tests/korpus/ carry no pointer to a third-party repository', () => {
+  // Nine cases are evidenced in real production code, and fourteen of the
+  // fifteen sources carry no licence; by every indication the load-bearing
+  // ones are employer assets uploaded without authorisation. This repository
+  // is public, and Git forgets nothing: a URL with commit and line number
+  // would be a permanent, indexed pointer to someone else's disclosure —
+  // even after someone takes it out again. The locations are therefore
+  // evidenced only as a hash; the full proof lives outside.
   // Carried QA finding 338ce6c1f72f: the cases under tests/korpus/ are corpus
   // too, and a self-hosted Git server is as much a pointer as github.com.
   const roots = ['docs/korpus', 'tests/korpus'].map((r) => join(process.cwd(), r));
@@ -334,19 +332,19 @@ test('docs/korpus/ und tests/korpus/ tragen keinen Zeiger auf ein fremdes Reposi
       const body = readFileSync(abs, 'utf8');
       const rel = relative(process.cwd(), abs).replace(/\\/g, '/');
       const host = body.match(/\b(?:github|gitlab|bitbucket)\.com\b/i);
-      if (host) offenders.push(`  ${rel}: nennt ${host[0]}`);
+      if (host) offenders.push(`  ${rel}: names ${host[0]}`);
       const remote = body.match(GIT_POINTER);
-      if (remote) offenders.push(`  ${rel}: nennt eine Git-Quelle (${remote[0]})`);
-      // Die Quellenhashes des Korpus sind 64-stellig; ein 40-stelliger
-      // Hex-String ist eine Git-Commit-ID und damit ein Zeiger.
+      if (remote) offenders.push(`  ${rel}: names a Git source (${remote[0]})`);
+      // The corpus's source hashes are 64 hex digits; a 40-digit hex
+      // string is a Git commit ID and therefore a pointer.
       const commit = body.match(/(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])/);
-      if (commit) offenders.push(`  ${rel}: trägt eine 40-stellige Commit-ID (${commit[0].slice(0, 12)}…)`);
+      if (commit) offenders.push(`  ${rel}: carries a 40-digit commit ID (${commit[0].slice(0, 12)}…)`);
     }
   };
   for (const root of roots) walk(root);
   expect(
     offenders.join('\n'),
-    'Kein Zeiger auf fremden Code in docs/korpus/ — weder Host noch Commit-ID. Der Beleg einer Fundstelle ist ' +
-      'der SHA-256 des Ausschnitts; die Quelle wird einem Prüfer außerhalb des Repositories gezeigt.',
+    'No pointer to third-party code in docs/korpus/ — neither host nor commit ID. The evidence for a location is ' +
+      'the SHA-256 of the excerpt; the source is shown to a reviewer outside the repository.',
   ).toEqual('');
 });

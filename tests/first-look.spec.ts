@@ -30,8 +30,8 @@ import { signInViaLanding } from './helpers/sign-in';
 /**
  * Roadmap 2.7 — the first look, and the one rule the row states twice:
  *
- *   > **Jede Zahl aus dem Run.** Keine Animation, die eine Zahl zeigt, die nicht
- *   > aus der Analyse stammt … Wenn eine Etappe nichts zu zeigen hat, sagt sie das.
+ *   > **Every number from the run.** No animation that shows a number that does
+ *   > not come from the analysis … If a stage has nothing to show, it says so.
  *
  * Everything below is measured against that. The figures are not pinned to
  * engine output — `tests/korpus-engine.spec.ts` is the ratchet for what the
@@ -538,7 +538,7 @@ test.describe('the first look on screen', () => {
     const condition = question.replace(/^What happens when /, '').replace(/\?$/, '');
     expect(BRANCHING.toUpperCase()).toContain(condition.split(' ')[0].toUpperCase());
 
-    // Both halves of "ohne Modellaufruf und ohne das Kontingent anzutasten".
+    // Both halves of "without a model call and without touching the quota".
     const note = (await page.locator('[data-ask-no-model]').textContent()) || '';
     expect(note).toContain('No model call');
     expect(note).toContain('Not counted');
@@ -653,7 +653,7 @@ test.describe('"New project" explains before it starts', () => {
     // And no sync date is written into the copy: the module that holds the words
     // has no date in it at all.
     const copy = fs.readFileSync(path.join(ROOT, 'lib/new-project-content.ts'), 'utf8');
-    expect(copy, 'a date was typed into the copy — DESIGN.md §6.1.1: "nie fest im Text"').not.toMatch(
+    expect(copy, 'a date was typed into the copy — DESIGN.md §6.1.1: "never fixed in the text"').not.toMatch(
       /\b20\d{2}-\d{2}-\d{2}\b/,
     );
   });

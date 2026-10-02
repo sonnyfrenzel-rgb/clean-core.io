@@ -17,9 +17,9 @@ import { signInViaLanding } from './helpers/sign-in';
  * Roadmap step 0.4 (`UX-E13-F01:R0`): no module shows an amount that no approved
  * assumption carries.
  *
- * Acceptance (docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md §4, V25-A06): "Analyze, Brief und
- * Export ohne Annahmenrevision zeigen keinen Geldwert; der Prompt enthält keine
- * monetären Felder."
+ * Acceptance (docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md §4, V25-A06): "Analyze, brief
+ * and export without an assumption revision show no money value; the prompt
+ * contains no monetary fields."
  *
  * Before: the analysis prompt asked the model for `estimatedMaintenanceCostRange`
  * and a `cloudRoiSummary` with "projected savings of approximately $Y–$Z per

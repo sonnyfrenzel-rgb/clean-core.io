@@ -43,9 +43,9 @@ import { evidenceDigest } from '../lib/run-evidence-digest';
 import { validateProjectCommand, type ProjectCommandState } from '../lib/project-commands';
 
 /**
- * Roadmap 8.4 — *"Entscheidung: bindet Bedarf, Option, Kostenrevision und
- * Vertrag; Bedingungen mit Status; Zeitleiste; umkehrbar ja/nein. Bestätigt vom
- * Konto — Selbstauskunft, kein organisatorisches Mandat."*
+ * Roadmap 8.4 — *"Decision: binds need, option, cost revision and contract;
+ * conditions with status; timeline; reversible yes/no. Confirmed by the
+ * account — a self-declaration, not an organisational mandate."*
  *
  * Pure, except the last block: no browser, no emulator, no server. Every branch
  * of the model and of the two new commands is reachable from a function call,

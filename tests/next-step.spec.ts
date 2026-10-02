@@ -12,8 +12,8 @@ import type { Project, TestCase } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
- * Roadmap 6.5 — "Nächster Schritt": *"regelbasiert der nächste offene Punkt mit
- * Grund, ohne Modellaufruf"*. Three things are checked here, and each is the
+ * Roadmap 6.5 — "next step": *"rule-based, the next open point with a reason,
+ * without a model call"*. Three things are checked here, and each is the
  * reason the row exists rather than an incidental property of the code:
  *
  *   - **`nextOpenPoint` invents no second idea of "open".** It is a thin read

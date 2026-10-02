@@ -11,7 +11,7 @@ import {
 /**
  * MFA is required for S/4HANA access - enrolled, not merely honoured.
  *
- * Decided by Sonny on 18.09.2026 ("MFA-Zwang für S/4-Zugang, ja") after two
+ * Decided by Sonny on 18.09.2026 ("mandatory MFA for S/4 access, yes") after two
  * security audits (bc2f786, def8262) described the gap accurately: the
  * conditional gate `mfaSatisfied` lets an account that never enrolled a factor
  * through with any token, so on the six routes that reach a customer's tenant

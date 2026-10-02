@@ -29,12 +29,12 @@ import { resolveApi } from '../lib/abap/catalog-service';
  * Three sentences stand in the roadmap row, and each of them is a way this
  * product could be caught lying:
  *
- *   1. *ein Kataloglink ergibt höchstens E1* — that SAP's catalogue names a
+ *   1. *a catalogue link yields at most E1* — that SAP's catalogue names a
  *      successor for a table says a successor exists for the table. It says
  *      nothing about the decision the custom code makes with it.
- *   2. *ein Scope Item ist eine zu prüfende ID* — an ID printed on its own reads
+ *   2. *a scope item is an ID to be checked* — an ID printed on its own reads
  *      as an answer; it is an address.
- *   3. *ein fehlender Katalogtreffer beweist nichts* — the catalogue lists what
+ *   3. *a missing catalogue hit proves nothing* — the catalogue lists what
  *      SAP has published, not what exists. A gap in it is a gap in the list, and
  *      reading it as "not supported" is the defect
  *      `tests/unearned-verdicts-guard.spec.ts` was written about.

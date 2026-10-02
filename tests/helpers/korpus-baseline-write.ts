@@ -1,18 +1,17 @@
 /**
- * Die Baseline neu schreiben — `npx tsx tests/helpers/korpus-baseline-write.ts`.
+ * Rewrite the baseline — `npx tsx tests/helpers/korpus-baseline-write.ts`.
  *
- * Bis zur Schärfung des Vergleichers (Roadmap 1.9) gab es dieses Werkzeug
- * nicht: `tests/korpus/baseline.json` war von Hand geführt. Das ging, solange
- * ein Eintrag aus vier Feldern bestand; mit Zähler, Nenner und fünf
- * Teilprüfungen je Facette geht es nicht mehr, und eine von Hand gepflegte
- * Zahl ist ohnehin keine Messung.
+ * Until the comparer was sharpened (roadmap 1.9) this tool did not exist:
+ * `tests/korpus/baseline.json` was maintained by hand. That worked while an
+ * entry had four fields; with a numerator, a denominator and five sub-checks
+ * per facet it no longer does, and a number maintained by hand is not a
+ * measurement anyway.
  *
- * **Das Werkzeug entscheidet nichts.** Es schreibt auf, was der Vergleich
- * gerade sagt. Ob ein Fall, der von `agree` auf `disagree` fällt, ein Defekt
- * der Engine oder eine offene Frage an die Fallautoren ist, steht im `verdict`,
- * das `compareCase` vergibt — und die Ratsche in `tests/korpus-engine.spec.ts`
- * besteht darauf, dass jemand diesen Unterschied gelesen hat, bevor die Datei
- * neu geschrieben wird.
+ * **The tool decides nothing.** It writes down what the comparison says right
+ * now. Whether a case that drops from `agree` to `disagree` is an engine defect
+ * or an open question for the case authors is in the `verdict` that
+ * `compareCase` assigns — and the ratchet in `tests/korpus-engine.spec.ts`
+ * insists that someone has read that difference before the file is rewritten.
  */
 import { writeFileSync } from 'fs';
 import { compareAll, readManifest, baselinePath, type Baseline } from './korpus-comparison';
@@ -39,6 +38,6 @@ writeFileSync(baselinePath(), `${JSON.stringify(baseline, null, 2)}\n`, 'utf8');
 const byState = new Map<string, number>();
 for (const entry of baseline.entries) byState.set(entry.state, (byState.get(entry.state) ?? 0) + 1);
 process.stdout.write(
-  `${baselinePath()} geschrieben: ${baseline.entries.length} Einträge, ` +
+  `${baselinePath()} written: ${baseline.entries.length} entries, ` +
     `${byState.get('agree') ?? 0} agree, ${byState.get('disagree') ?? 0} disagree.\n`,
 );

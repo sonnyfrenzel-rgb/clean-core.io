@@ -114,7 +114,7 @@ const CONFIG: RunnerConfig = {
   emulator: false,
 };
 
-test.describe('dort oder gar nicht', () => {
+test.describe('there or not at all', () => {
   test('a deployed build without RUNNER_URL refuses; only an emulator build runs locally, and never live', () => {
     expect(resolveRunnerTarget('mock', CONFIG)).toEqual({ kind: 'unavailable', status: 503, reason: MOCK_RUNNER_UNAVAILABLE });
     expect(resolveRunnerTarget('mock', { ...CONFIG, runnerUrl: 'not a url' }).kind).toBe('unavailable');

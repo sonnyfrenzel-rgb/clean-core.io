@@ -16,7 +16,7 @@ import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 6.2 — the six layers, and the one rule that outranks the rest of the
- * step: *„Eine Ebene ohne Inhalt sagt das, statt etwas zu erfinden" (W22-A03)*.
+ * step: *"A layer without content says so, instead of inventing something" (W22-A03)*.
  *
  * Until this step the Anchor Bar was a navigation to nothing. It named six
  * layers, marked one of them, and the page underneath it did not change — and
@@ -105,7 +105,7 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
       expect(layer.count, `${layer.key} claims content on an empty project`).toBeNull();
       expect(layer.missing.trim().length, `${layer.key} is empty and does not say why`).toBeGreaterThan(10);
       // Absence has a vocabulary and it is `lib/provenance.ts`'s, not this
-      // module's: "not determined — konnte nicht bestimmt werden, mit Grund".
+      // module's: "not determined — could not be determined, with a reason".
       expect(layer.provenance, `${layer.key} dressed its emptiness up as something else`).toBe(
         'not-determined',
       );
