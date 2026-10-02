@@ -61,6 +61,16 @@ export function fitArchitectureScale(available: number): number {
   if (!(available > 0)) return 1;
   return Math.max(ARCHITECTURE_ZOOM.min, Math.min(1, available / W));
 }
+/**
+ * The scale "Fit" picks in full screen: the whole drawing in a box of
+ * `width` × `height` px, centred, from 0.8 up to the largest step — the
+ * labels then still stay under 20 px (14 px × 1.4).
+ */
+export function fitArchitectureToBox(width: number, height: number, drawingHeight: number): number {
+  if (!(width > 0) || !(height > 0) || !(drawingHeight > 0)) return fitArchitectureScale(width);
+  const scale = Math.min(width / W, height / drawingHeight);
+  return Math.max(ARCHITECTURE_ZOOM.min, Math.min(ARCHITECTURE_ZOOM.max, Math.floor(scale * 100) / 100));
+}
 const MAX_SUCCESSORS = 12;
 const MAX_GAPS = 9;
 const MAX_TABLES = 8;

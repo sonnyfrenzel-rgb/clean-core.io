@@ -276,9 +276,10 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
 
     // Confirm target architecture sign-off
     console.log('Confirming target architecture sign-off...');
-    // The sign-off opens as a dialog from "Confirm target" (owner decision 01.10.2026).
+    // "Confirm target" asks first, in a small box whose own button confirms
+    // the recommendation (owner 02.10.2026).
     await page.locator('[data-design-confirm]').click();
-    const lockBtn = page.locator('[data-design-signoff-dialog] button:has-text("Confirm & Lock Architecture")');
+    const lockBtn = page.locator('[data-cc-message-box] button:has-text("Confirm target")');
     await lockBtn.scrollIntoViewIfNeeded();
     await page.waitForTimeout(1000); // Allow any animations/renders to settle
     

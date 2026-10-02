@@ -152,14 +152,17 @@ test.describe('the demo Design stage on screen', () => {
     await page.getByTestId('demo-reset').click();
     await expect(page.locator('[data-design-confirm]')).toHaveText(/Confirm target/);
 
+    // "Confirm target" asks first, as on a real project (owner 02.10.2026),
+    // in the demo's own words; only the box's button confirms.
     await page.locator('[data-design-confirm]').click();
+    const ask = page.locator('[data-design-confirm-ask]');
+    await expect(ask).toContainText(label);
+    await expect(ask).toContainText('bound to the signed run. In the demo it is a switch in this browser.');
+    await expect(ask).not.toContainText('bound to the run this page shows');
+    // The demo has one target to confirm; there is no other to choose.
+    await expect(page.locator('[data-design-confirm-other]')).toHaveCount(0);
+    await page.locator('[data-cc-message-box] button:has-text("Confirm target")').click();
     const dialog = page.locator('[data-design-signoff-dialog]');
-    await expect(dialog).toContainText('bound to the signed run. In the demo it is a switch in this browser.');
-    await expect(dialog).not.toContainText('bound to the run this page shows');
-    const confirm = dialog.getByTestId('demo-confirm-target');
-    await expect(confirm).toHaveAttribute('aria-pressed', 'false');
-    await expect(confirm).toHaveText(`Confirm ${label}`);
-    await confirm.click();
 
     // Confirmed: the dialog closes on the lock, the card names the target, attributed to nobody.
     await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible();
@@ -235,7 +238,12 @@ test.describe('the demo wording stays in the demo', () => {
     await expect(signOff).toContainText(REAL_OPEN);
     await expect(signOff).not.toContainText('In the demo');
 
+    // The question first (owner 02.10.2026), in the real wording.
     await page.locator('[data-design-confirm]').click();
+    const ask = page.locator('[data-design-confirm-ask]');
+    await expect(ask).toContainText(REAL_DIALOG_LEAD);
+    await expect(ask).not.toContainText('In the demo');
+    await page.locator('[data-design-confirm-other]').click();
     const dialog = page.locator('[data-design-signoff-dialog]');
     await expect(dialog).toContainText(REAL_DIALOG_LEAD);
     await expect(dialog).not.toContainText('In the demo');

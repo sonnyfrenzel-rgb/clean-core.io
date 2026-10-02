@@ -39,7 +39,10 @@ test('Confirm target opens the sign-off as a dialog, and a confirmation closes i
   // One architecture picture — the engine's — and no model-drawn diagram.
   await expect(page.locator('text=Target Architecture Diagram')).toHaveCount(0);
 
+  // "Confirm target" asks first (owner 02.10.2026); another target is one
+  // step further, in the full sign-off.
   await page.locator('[data-design-confirm]').click();
+  await page.locator('[data-design-confirm-other]').click();
   const dialog = page.locator('[data-design-signoff-dialog]');
   await expect(dialog.getByRole('dialog')).toBeVisible();
   await expect(dialog.locator('[data-architect-signoff="open"]')).toBeVisible();
@@ -50,6 +53,7 @@ test('Confirm target opens the sign-off as a dialog, and a confirmation closes i
   await expect(page.locator('[data-design-answer="recommended"]')).toBeVisible();
 
   await page.locator('[data-design-confirm]').click();
+  await page.locator('[data-design-confirm-other]').click();
   await page.locator('[data-design-signoff-dialog] button:has-text("Confirm & Lock Architecture")').click();
   await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('[data-design-signoff-dialog]')).toHaveCount(0);
@@ -80,7 +84,10 @@ test('the dialog recommends the contract’s route, not a route switch the brows
   await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
   await expect(page.locator('#design-answer')).toHaveText('Developer Extensibility (RAP / ABAP Cloud)');
 
+  // The question names the same route the card and the panel name.
   await page.locator('[data-design-confirm]').click();
+  await expect(page.locator('[data-design-confirm-ask]')).toContainText('Developer Extensibility (RAP / ABAP Cloud)');
+  await page.locator('[data-design-confirm-other]').click();
   const panel = page.locator('[data-design-signoff-dialog] [data-architect-signoff="open"]');
   await expect(panel).toBeVisible();
   await expect(panel.locator('h3').first()).toHaveText('Developer Extensibility (RAP / ABAP Cloud)');

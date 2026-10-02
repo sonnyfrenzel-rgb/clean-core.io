@@ -60,8 +60,9 @@ async function confirmAndCheck(page: import('@playwright/test').Page, seeded: { 
   await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
   await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
 
+  // "Confirm target" asks first (owner 02.10.2026); its own button confirms.
   await page.locator('[data-design-confirm]').click();
-  await page.locator('[data-design-signoff-dialog] button:has-text("Confirm & Lock Architecture")').click();
+  await page.locator('[data-cc-message-box] button:has-text("Confirm target")').click();
   await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('[data-design-kpi="Sign-off"]')).toContainText('Confirmed');
   expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect).toBe(true);
@@ -108,8 +109,9 @@ test('after Confirm & Lock on a real run, the Design page says confirmed — and
   await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
   await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
 
+  // "Confirm target" asks first (owner 02.10.2026); its own button confirms.
   await page.locator('[data-design-confirm]').click();
-  await page.locator('[data-design-signoff-dialog] button:has-text("Confirm & Lock Architecture")').click();
+  await page.locator('[data-cc-message-box] button:has-text("Confirm target")').click();
   await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('[data-design-kpi="Sign-off"]')).toContainText('Confirmed');
   expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect).toBe(true);
