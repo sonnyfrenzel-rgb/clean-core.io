@@ -423,7 +423,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
             </div>
             <div className="pcard">
               <h3>The four levels</h3>
-              <p className="sub2">SAP&apos;s clean core level for every SAP object the code touches, with a real SAP object on each level.</p>
+              <p className="sub2">The clean core level of every SAP object the code touches, derived from the states SAP publishes, with a real SAP object on each level.</p>
               <ul className="wp-ladder" data-wp-ladder="">
                 {ladder.map((l) => (
                   <li key={l.level}>

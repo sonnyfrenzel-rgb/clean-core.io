@@ -81,7 +81,7 @@ export const LANDING_FAQ: LandingFaq[] = [
   },
   {
     q: 'What is the SAP Cloudification Repository viewer?',
-    a: 'The SAP object catalog on Clean-Core.io shows SAP’s published Cloudification Repository and object classification: for each SAP object its release state, clean core level and, where SAP names one, its successor — synced from SAP’s public repository. It needs no account.',
+    a: 'The SAP object catalog on Clean-Core.io shows SAP’s published Cloudification Repository and object classification: for each SAP object its release state, the clean core level Clean-Core.io derives from it and, where SAP names one, its successor — synced from SAP’s public repository. It needs no account.',
     more: { href: '/catalog', label: 'Open the SAP object catalog' },
   },
   {
