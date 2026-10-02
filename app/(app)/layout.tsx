@@ -133,15 +133,14 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
    * quietest form there is — no colour, no icon. It used to be five coloured
    * pills at 10 px, one red "Admin" among them, which read as a warning.
    */
-  const planLabel = (tier: string = 'basic'): string => {
-    if (profile?.isAdmin) return 'Admin';
-    switch (tier) {
-      case 'enterprise': return 'Admin';
-      case 'unlimited': return 'Community BYOK';
-      case 'premium': return 'Community Pro';
-      case 'starter': return 'Community Standard';
-      default: return 'Community Basic';
-    }
+  // There are no plans (owner 02.10.2026): the product is free for everyone,
+  // and names like "Community Standard" or "Community Pro" suggested tiers that
+  // do not exist. Only what changes behaviour is named — an administrator, or
+  // runs on the reader's own model key; everyone else gets no tag.
+  const planLabel = (tier: string = 'basic'): string | null => {
+    if (profile?.isAdmin || tier === 'enterprise') return 'Admin';
+    if (tier === 'unlimited') return 'Own model key';
+    return null;
   };
 
   /**
@@ -291,7 +290,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
               <div className="flex flex-col items-end leading-tight">
                 <div className="hidden items-center gap-2 md:flex">
                   <span className="text-[13px] font-semibold text-cc-ink">{profile.firstName} {profile.lastName}</span>
-                  <CcTag>{planLabel(profile.tier)}</CcTag>
+                  {planLabel(profile.tier) ? <CcTag>{planLabel(profile.tier)}</CcTag> : null}
                 </div>
                 <div data-shell-quota="" className="whitespace-nowrap text-[12px] font-semibold text-cc-ink-muted">
                   {runsAreSelfFunded(profile) || profile.transformationsLimit > 900
@@ -421,21 +420,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
         onConfirm={handleLogout}
         onCancel={() => setShowLogoutConfirm(false)}
       >
-        {profile?.tier === 'pilot' ? (
-          <>
-            <p className="m-0">
-              You are currently using the <b className="font-semibold">Community Standard</b> plan.
-            </p>
-            <ul className="m-0 mt-2 list-disc pl-5 text-cc-ink-muted">
-              <li>Up to 5 App transformations</li>
-              <li>Community Feedback access</li>
-              <li>Free to use — review outputs before production</li>
-            </ul>
-            <p className="m-0 mt-2">Are you sure you want to sign out?</p>
-          </>
-        ) : (
-          <p className="m-0">Are you sure you want to sign out of your workspace? All running processes will continue.</p>
-        )}
+        <p className="m-0">Your projects and results are saved with your account. Sign out of your workspace?</p>
       </CcMessageBox>
 
       {/* Asked once per Terms version, and it blocks: every protected route

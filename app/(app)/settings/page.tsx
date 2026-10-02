@@ -1093,7 +1093,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">Profile settings</h1>
         <p className="mt-1 text-[13px] font-medium text-cc-ink-muted">
-          Your profile, sign-in security, use of the AI model and your plan. Changes here apply to your account only.
+          Your profile, sign-in security, use of the AI model and your free analysis runs. Changes here apply to your account only.
         </p>
       </div>
 
@@ -1164,7 +1164,7 @@ export default function SettingsPage() {
           )}
         </dl>
         <p className="m-0 mt-4 cc-text-cell text-cc-ink-muted">
-          Questions about your plan? Write to <a href="mailto:info@clean-core.io" className={TEXT_LINK}>info@clean-core.io</a>.
+          Questions about your account? Write to <a href="mailto:info@clean-core.io" className={TEXT_LINK}>info@clean-core.io</a>.
         </p>
       </CcCard>
 

@@ -950,10 +950,10 @@ export default function LandingModals() {
           <form onSubmit={handleEmailSignIn}>
             {/* Incident notice — self-expiring, see components/MaintenanceNotice.tsx */}
             <MaintenanceNotice />
-            <div className="mb-5 flex items-center justify-between gap-3 rounded-cc-card border border-cc-line bg-cc-brand-surface p-4">
+            <div className="mb-5 flex items-center justify-between gap-3 rounded-cc-card border-2 border-cc-brand-strong border-l-[6px] bg-cc-brand-surface p-4">
               <div>
-                <p className="m-0 mb-1 cc-text-label text-cc-ink-muted">New to Clean-Core.io?</p>
-                <p className="m-0 cc-text-cell text-cc-ink">Join our free community program</p>
+                <p className="m-0 mb-1 cc-text-label text-cc-brand-strong">New to Clean-Core.io?</p>
+                <p className="m-0 cc-text-cell font-semibold text-cc-ink">Join our free community program</p>
               </div>
               <CcButton
                 variant="secondary"
