@@ -2,13 +2,13 @@
 
 **Version 1.0 · Clean-Core.io**
 
-Single source of truth for what data Clean-Core.io stores, where, for how long, and how it is deleted and backed up. Retention is verified by the automated GDPR Art. 17 test (`tests/security-compliance.spec.ts`) which asserts the deletion cascade covers every collection listed here. The claims this file makes about *infrastructure* — backup schedules, the `rate_limits` TTL policy, log retention, point-in-time recovery — are checked against the live project by **`npm run retention:verify`**; see Backups below for why that command exists.
+Single source of truth for what data Clean-Core.io stores, where, for how long, and how it is deleted and backed up. The deletion cascade is exercised by the automated GDPR Art. 17 tests (`tests/security-compliance.spec.ts` for the owner and the invited-reader cascades, `tests/account-erasure.spec.ts` for the all-or-nothing order); they seed the collections that hold secrets, code and runs, not every row of the registry below. The claims this file makes about *infrastructure* — backup schedules, the `rate_limits` TTL policy, log retention, point-in-time recovery — are checked against the live project by **`npm run retention:verify`**; see Backups below for why that command exists.
 
 ## Storage location
 
 Production data lives in **Google Cloud Firestore**, project `cleancore-491216`, database `clean-core-eu`, region **europe-west1 (Belgium, EU)**.
 
-The non-production databases have not moved yet: test (`…39b46c45…`) and dev (`…030e1ee1…`) are still in **us-west1**, a leftover from the original prototype provisioning that also applied to production until the migration on 2026-08-20. They hold test data only; migrating them is tracked in `docs/BACKLOG.md`.
+The non-production databases have not moved yet: dev (`…030e1ee1…`) is still in **us-west1**, a leftover from the original prototype provisioning that also applied to production until the migration on 2026-08-20; so is the database of the retired test lane (`…39b46c45…`), which no service has used since `clean-core-test` was deleted on 2026-08-31 (checked with `gcloud firestore databases list` on 2026-10-02). They hold test data only; migrating them is tracked in `docs/BACKLOG.md`.
 
 Two sub-processors receive data in transit for the features that require them — the **Google Gemini API** (your ABAP source, for analysis and transformation) and **Resend** (email address, for transactional mail) — and may process it outside the EU under their own terms; neither is used as a persistent store.
 
@@ -23,20 +23,25 @@ Two sub-processors receive data in transit for the features that require them �
 | `abap_examples/{id}` | User-saved ABAP snippets | `userId` | Life of account | ✅ query delete |
 | `support_tickets/{id}` | Support messages | `userId` | Life of account | ✅ query delete |
 | `files/{id}` | Uploaded file metadata | `userId` | Life of account | ✅ query delete |
-| `user_secrets/{uid}/providers/*` | **Encrypted BYOK Gemini keys** (AES-256-GCM) | uid | Life of account | ✅ recursiveDelete |
+| `user_secrets/{uid}/providers/*` | **Encrypted BYOK Gemini keys** (AES-256-GCM under `BYOK_ENCRYPTION_KEY`, key version recorded and bound with uid and provider into the additional data; never `S4_ENCRYPTION_KEY`) | uid | Life of account | ✅ recursiveDelete |
 | `s4_credentials/{uid}` | **Encrypted S/4HANA creds** (AES-256-GCM) | uid | Life of account | ✅ direct |
 | `mfa_secrets/{uid}` | **Legacy** (until roadmap 0.13): application-level TOTP secret + hashed backup codes — no longer written; emptied by enrolment, disablement, `scripts/mfa-reset.ts` and deletion | uid | Until the account enrols Firebase's factor or is deleted | ✅ direct |
 | `mfa_pending/{uid}` | **Legacy** in-flight enrolment of the application-level TOTP — no longer written | uid | Until emptied | ✅ direct |
 | Firebase Auth multi-factor enrolment | TOTP factor (secret held by Firebase Authentication, never by this app) | uid | Life of account; removed by `/api/mfa/disable`, `scripts/mfa-reset.ts` or account deletion | ✅ deleted with the Auth user |
+| `projects/{id}/process_revisions/{n}`, `process_states/{id}`, `repairDrafts/{id}` | Saved BPMN revisions, process states and repair drafts of the project | parent project `userId` | Life of the project | ✅ via project recursiveDelete |
+| `consent_events/{id}` | Append-only Terms/Privacy acceptance: uid, email, terms version, content hash, locale, source, server time (`lib/consent.ts`) | `userId` | Life of account | ✅ query delete |
 | `registration_requests/{uid}` | Pilot access requests | uid | Life of account | ✅ direct |
 | `tenant_access_requests/{uid}` | BYOT access requests | uid | Life of account | ✅ direct |
+| `tenant_access_nonces/{uid}` | One-time nonce of a pending tenant-approval link | uid | Until used or replaced | ✅ direct |
+| `s4_proxy_capabilities/{id}` | Capability of one live test run: project id, uid, tenant host, run id, request counter, expiry — never a credential (`lib/s4-proxy-capability-store.ts`) | `uid` | Deleted when the run returns; written only by the live test path, which is locked (`SECURITY.md` §7.1). Its `expiresAt` field has no TTL policy yet (checked 2026-10-02), so a capability left by a crashed run would stay | ❌ not in the cascade |
+| `survey_campaigns/{campaign}` | Campaign metadata: name, send and close dates, invitation count — no address | none | Kept for the campaign record | — (no personal data) |
 | `survey_responses/{campaign}__{uid}` | Survey answers and the free-text comment beside them | `uid` | Life of account | ✅ query delete |
 | `email_sends/{campaign}__{uid}` | Bulk-mail outbox: recipient address, uid, send state per campaign | `uid` | Life of account | ✅ query delete |
 | `email_events/{messageId}` | Delivery log per sent mail: recipient address, subject, kind, delivery status | `uid` where the sender passed one; recipient address in `to` | Life of account | ✅ query delete, by uid and by address |
 | `email_suppressions/{sha256(address)}` | Opt-out list for community mail: the normalised address, list, source, time | hash of the address (document id); `uid` where an entry carries one | Until the address opts in again or its account is erased | ✅ by the hashed address, by the stored address and by uid (since 2026-09-30) |
 | `usage_reports/{id}` | Weekly admin report snapshot. **Since 2026-09-30 figures only** — counts, analyses per newly activated account, failed mails per kind; no name, address, uid or recipient (`usageReportSnapshot`, `lib/usage-report.ts`). Older snapshots listed accounts by name and address | none (figures); older snapshots: address inside the lists | Kept for the trend | ✅ the account's entries are removed from older snapshots, by address; everybody else's stay (see note) |
 | `audit_events/{id}` | Admin/security audit log | server | **24 months** from the recorded action, then deleted (see note) | ❌ intentionally kept |
-| `rate_limits/{key}` | Sliding-window counters. The document id is an HMAC-SHA256 of `gemini:<uid>:<ip>` under `RATE_LIMIT_PEPPER`, so no address is stored in readable form | composite (hashed) | Self-expiring: `expiresAt` drives a Firestore TTL policy, **created 2026-09-18** | ❌ no durable PII, auto-expires |
+| `rate_limits/{key}` | Sliding-window counters. The document id is an HMAC-SHA256 under `RATE_LIMIT_PEPPER` of the route-scoped key (`<route>:<uid and/or ip>`, e.g. `gemini:<uid>:<ip>`), so no address is stored in readable form | composite (hashed) | Self-expiring: `expiresAt` drives a Firestore TTL policy, **created 2026-09-18** | ❌ no durable PII, auto-expires |
 
 **`rate_limits` note:** `lib/rate-limit.ts` has written `expiresAt` since F-10 and its
 comment said the field "drives a Firestore TTL policy … so windows self-delete instead
@@ -77,7 +82,7 @@ It is run by hand today because nothing can be 24 months old yet: the first reco
 
 ## GDPR Art. 17 (Right to Erasure)
 
-Account deletion runs the server-side cascade `deleteUserDataAndAccount(uid)` (`lib/firebase-admin.ts`), which purges every ✅ collection above (subcollections via `recursiveDelete`) and the Firebase Auth user. The cascade's completeness is enforced by an automated test that seeds every collection and asserts it is gone.
+Account deletion runs the server-side cascade `deleteUserDataAndAccount(uid)` (`lib/firebase-admin.ts`), which purges every ✅ collection above (subcollections via `recursiveDelete`) and the Firebase Auth user. The cascade is exercised by `tests/security-compliance.spec.ts` and `tests/account-erasure.spec.ts`, which seed the collections that hold secrets, code and runs and assert they are gone.
 
 The cascade is all-or-nothing in one direction: the profile (`users/{uid}`) and the Auth user are deleted only after everything else is gone. If any step is refused, both are kept, the error names what is still stored, and the person can retry from a signed-in account (`tests/account-erasure.spec.ts`). The alternative — account gone, credentials left — cannot be retried, because the deletion endpoint requires a recent sign-in.
 

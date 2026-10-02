@@ -1,6 +1,8 @@
 # Security Architecture — Clean-Core.io Platform
 
-> **Version:** 4.1 · **Date:** 2026-09-15 · **Classification:** Internal
+> **Version:** 5.0 · **Date:** 2026-10-02 · **Classification:** Internal
+
+> **v5.0 changes (the 3.0 state):** the app's own VPC network and how it reaches the internal runners, with the runners' deployment status (§7, §7.2); audit packs signed with HMAC and Ed25519, the canonical manifest, browser and offline verification, what the signature covers — the Clean Core Score yes, the level A–D no (§14); owner-only reads incl. runs and suspended accounts (§3.3); headers and the `'unsafe-inline'` gap (§13.6); supply-chain gate and the three review agents (§15); the public surface — content pages, crawlers, demo, invitation pages, unauthenticated routes (§16). Corrected against the code: admin routes and audit logging (§3.2, §3.6), the tenant-link nonce (§3.4), run quota (§6), environment variables (§8), BPMN parsing in place of Mermaid (§10). English throughout.
 
 > **v4.1 changes:** live test execution against a connected tenant is a documented, locked path (§7.1, roadmap gate `G0:R0`): boundary, reason and the conditions for reopening, read from the same definition the route and the interface use.
 
@@ -10,7 +12,7 @@
 
 ## 1. Executive Summary
 
-This document describes the security architecture and hardening measures implemented in the Clean-Core.io platform following a comprehensive security audit (Code Review 2026-06). Most critical and high-severity findings (P0/P1) have been remediated; the ones that remain **mitigated rather than closed** are called out below and in the code. Since roadmap 8.9 generated tests no longer execute inside the API service: they run in an **isolated runner service** (own Cloud Run service, service account without roles, no secrets, internal ingress, egress through a VPC without NAT — §7), and a deployed app without that runner runs no tests at all. The Node-level guards inside the runner remain defense in depth, not a boundary of their own (see F-02), and the audit-pack signature still covers some client-editable fields. **Live test execution against a connected S/4HANA tenant is locked** (§7.1, gate `G0:R0`): the route refuses it before any measurement, and the interface says so wherever the path would otherwise be offered. It reopens only under the conditions listed there — a measurement passing is not one of them.
+This document describes the security architecture and hardening measures implemented in the Clean-Core.io platform following a comprehensive security audit (Code Review 2026-06). Most critical and high-severity findings (P0/P1) have been remediated; the ones that remain **mitigated rather than closed** are called out below and in the code. Since roadmap 8.9 generated tests no longer execute inside the API service: they run in an **isolated runner service** (own Cloud Run service, service account without roles, no secrets, internal ingress, egress through a VPC without NAT — §7), and a deployed app without that runner runs no tests at all. The Node-level guards inside the runner remain defense in depth, not a boundary of their own (see F-02), and the isolation is configured but not yet proven on the deployed profile (§7.2). The signed files of an audit pack are generated from the signed run only; what the account holder states travels in a separately labelled file outside the signature (§14.3). **Live test execution against a connected S/4HANA tenant is locked** (§7.1, gate `G0:R0`): the route refuses it before any measurement, and the interface says so wherever the path would otherwise be offered. It reopens only under the conditions listed there — a measurement passing is not one of them.
 
 ---
 
@@ -39,29 +41,30 @@ This document describes the security architecture and hardening measures impleme
 ## 3. Authentication & Authorization Model
 
 ### 3.1 Firebase Auth
-- All API routes require a valid Firebase ID Token via `Authorization: Bearer <token>`.
+- Every API route requires a valid Firebase ID Token via `Authorization: Bearer <token>`, except the few listed with their own gate in §16.
 - Token verification uses Firebase Admin SDK (`verifyRequestAuth()`).
 
 ### 3.2 Admin Gating (F-04)
 - Admin routes use `verifyAdminRequest()` which checks:
   1. Valid Firebase ID token, and
   2. The `admin` **custom claim** (`decoded.admin === true`) — the sole authority in production.
-  - Emulator/CI only: a Firestore `users/{uid}.isAdmin` fallback is allowed (never in production).
+  - The `users/{uid}.isAdmin` mirror grants nothing — the former emulator-only fallback to it is gone — but `isAdmin == false` on the profile strips the claim in `verifyRequestAuth`, which makes a withdrawal hold before the old token expires.
   - Firestore rules mirror this: `isAdmin()` reads `request.auth.token.admin` (custom claim) only.
   - Privileged admin actions additionally require recent auth + MFA step-up (`assertAdminStepUp`).
-- Protected admin routes: `/api/admin/console-action`, `/api/send-approval-email`, `/api/send-tenant-approval-email`, `/api/send-tenant-revoke-email`
+- Protected admin routes: `/api/admin/console-action`, `/api/admin/approve-tenant`, `/api/admin/set-admin-claim`, `/api/admin/runner-selftest`, `/api/send-approval-email` (the welcome mail on demand, e.g. after reinstating an account), `/api/send-tenant-approval-email`, `/api/send-tenant-revoke-email` — each with `verifyAdminRequest` and `assertAdminStepUp`
 - Non-admin tokens receive **403** (not 401) — fail-closed.
-- Recipient email addresses are format-validated (defense-in-depth).
+- Mail recipients are read from the target account (Firebase Auth), not taken from the request body.
 
 ### 3.3 Firestore Security Rules
 - All collections enforce `isAuthenticated()` for reads.
-- **Hardened Onboarding (F-06 Härtung)**: Direct creation of profiles in `/users/{userId}` is permitted but strictly gated:
+- **Hardened Onboarding (F-06 hardening)**: Direct creation of profiles in `/users/{userId}` is permitted but strictly gated:
   - Non-admin users are restricted to a strict keys allowlist (`userClientCreateKeys()`) and safe default values (`tier == 'pilot'`, `status == 'pending'`, `isAdmin == false`, `transformationsUsed == 0`, `transformationsLimit == 5`, `maxTeamMembers == 1`, `s4TenantAccessAllowed == false`, `mfaEnabled == false`).
   - **V14 (v2.4.2)**: `termsVersionAccepted` and `termsAcceptedAt` were removed from that allowlist. A client could previously assert its own Terms acceptance, timestamp included, with no `consent_events` row behind it. Consent is now written exclusively by the Admin SDK through `lib/consent.ts` (`POST /api/consent`, `POST /api/account/register`).
   - `status` stays server-authoritative even though signup no longer needs an approval: the create rule pins it to `pending`, and only `activateAccount()` — reached through `POST /api/account/register` — moves it to `approved`, once per account and never from `suspended`.
   - Creation requires `orgId == null` to prevent unauthorized tenant assignments.
 - **Field-Level Protection**: Client-side updates to user profiles are restricted to an allowlist of uncritical fields (`userClientUpdateKeys()`: firstName, lastName, theme, defaultView, etc.). Modifying status, tier, transformationsLimit, s4 access, or mfaEnabled directly from the client is blocked.
-- **Project Isolation**: Direct creation and updates of `/projects/{projectId}` are restricted to `projectAllowedKeys()`. The `orgId` on projects is validated to match the user's profile `orgId`, preventing cross-tenant project modifications.
+- **Project Isolation**: A project is created with a fixed key set whose `userId` must be the caller; updates are open to the owner only, restricted to an allowlist of draft fields (`userId` and `createdAt` are not on it, nor are the server-written sign-off fields and `readers` — §3.7, §14.3). The administrator can neither read nor write a project through the rules. Deleting a project is server-only (`DELETE /api/projects/{projectId}`, `recursiveDelete`), so the immutable runs are never orphaned.
+- **Suspended accounts lose their data at the rules** (roadmap 3.0.12): every owner and invited-reader grant also asks `accountActive()`, which reads the caller's own profile and refuses `status` `suspended` or `deleted`, `disabled == true`, or a missing profile — so a token issued before the suspension stops reading at once rather than when it expires. The server-side twin is `assertAccountActive`.
 - **No Existential Leakage**: Read rules across collections do not permit `resource == null` checks, preventing unauthenticated clients from probing for document existence.
 - **Server-Only Credentials**:
   - `s4_credentials/{uid}`: `allow read, write: if false;` — exclusively accessed via Admin SDK.
@@ -70,7 +73,7 @@ This document describes the security architecture and hardening measures impleme
 ### 3.4 Onboarding Link Cryptography (F-09)
 - Applies to **live-tenant (BYOT) access only**. The pilot equivalent — two one-click links in the administrator's signup mail — was removed in v2.4.2 along with the approval gate itself: an emailed link that changes account state is not worth keeping for a decision nobody makes any more. Account state is changed in the admin console, behind a login and `assertAdminStepUp`.
 - Action-bound approval/rejection links (sent via Resend) are protected by a cryptographically signed HMAC token.
-- Tokens are bound to the specific `uid`, `requestType` (`tenant`), and `action` (e.g. approve, reject), and carry a 7-day expiration time (`exp`).
+- Tokens are bound to the specific `uid`, `requestType` (`tenant`), and `action` (e.g. approve, reject), carry a 7-day expiration time (`exp`) and a one-time nonce stored server-side in `tenant_access_nonces/{uid}`: using either link consumes it, and a new request replaces it, so a replayed or earlier link is refused.
 - Signature verification uses Node's `crypto.createHmac('sha256')` with `timingSafeEqual` comparison to eliminate timing side-channel attacks.
 - Fail-closed behavior is enforced: if `PILOT_APPROVAL_SECRET` is missing or less than 16 characters, token creation/verification fails immediately.
  
@@ -87,15 +90,15 @@ This document describes the security architecture and hardening measures impleme
 
 ### 3.6 Admin Governance & Logging
 - **Console API Routes**: All administrative tasks (user approval/revocation, S/4 HANA access grant/revocation, profile deletion) are routed through secure, server-side APIs (such as `/api/admin/console-action`), preventing direct client-side writes to Firestore.
-- **Audit Logging**: Every administrative action is automatically logged to the `audit_events` collection, capturing the actor's UID/email, action type, target UID, and timestamp.
+- **Audit Logging**: The console actions — approve, suspend, grant and revoke S/4 access, delete an account — write an `audit_events` row (actor UID/email, action type, target UID, timestamp), the state changes in the same batch as their row. Granting or withdrawing the admin claim, approving a tenant through the mailed link, the runner self-test and the admin mail routes write no row today. Owner actions are logged too: own-key changes, sign-off commands, reader removal, invitation revocation and repair drafts.
 - **Admin Verification**: Access requires valid admin credentials, recent re-auth (< 5 min), and the second factor on the ID token (`assertAdminStepUp`).
 
-### 3.7 Who May Read a Project (roadmap 5, "Teilen")
+### 3.7 Who May Read a Project (roadmap 5, sharing)
 
 A project carries uploaded ABAP, so who may read it is stated here in full. There are **two** read paths from a browser and one deliberate server-side act; there is no third.
 
 - **The owner.** `firestore.rules` grants `resource.data.userId == request.auth.uid`.
-- **An invited account that accepted.** The owner invites one e-mail address; the server creates an invitation at `projects/{projectId}/invitations/{invitationId}` and mails a link. Accepting requires a signed-in account whose **own, confirmed** e-mail address equals the invited one — Google sign-in counts as confirmed, a password account is sent a confirmation first. Only then is the accepting uid written into the `readers` array on the project document, and only then does the rule answer. A forwarded link therefore opens nothing: the link names the invitation, the account is what is checked.
+- **An invited account that accepted.** The owner invites one e-mail address; the server creates an invitation at `projects/{projectId}/invitations/{invitationId}` and mails a link. Accepting requires a signed-in account whose **own, confirmed** e-mail address equals the invited one — Google sign-in counts as confirmed, a password account is sent a confirmation first. The invitation page is `noindex` and shows a signed-out visitor nothing of the project (§16). Only then is the accepting uid written into the `readers` array on the project document, and only then does the rule answer. A forwarded link therefore opens nothing: the link names the invitation, the account is what is checked.
 - **The administrator has no read.** It was removed on 16.09.2026 and did not come back with sharing. An emergency — a credible report of malicious code in an upload — is handled server-side through the Admin SDK, which bypasses the rules by design; that is a deliberate act with a record, not a standing permission.
 
 Properties this rests on, each enforced rather than asked for:
@@ -104,7 +107,7 @@ Properties this rests on, each enforced rather than asked for:
 - **`readers` is not client-writable.** A browser that could write it could invite itself, which is the whole grant. The field is absent from the project update allowlist, and `tests/invitation-flow.spec.ts` reads the rules file to prove it.
 - **The invitation subcollection is server-only, out loud.** `allow read, write: if false` — written down rather than left to default-deny, because an invitation carries the e-mail address of the person it was sent to, and a project's invitation list is therefore a list of other people's addresses. The owner's overview is answered by `GET /api/projects/{projectId}/readers`, which returns the accepted readers and never the pending addresses.
 - **Nothing on an invitation comes from the caller.** Both timestamps are the server's clock, `invitedBy` is the verified token, `status` is `pending` because this route is the only thing that creates one, and a requested lifetime outside 1–90 days collapses to the default of 14 rather than being honoured. Documents are written with `create()`, never `set()`, and the id is 24 random bytes.
-- **Inviting and revoking sit behind the second factor**, like every other route that touches a project's code, and behind a rate limit. A project may hold at most **three** open invitations at once (`INVITATION_MAX_OPEN`, decided 18.09.2026): the rate limit caps how fast invitations go out and cannot cap how many stand open, and a route that mails an address its caller typed needs both halves.
+- **Inviting and revoking sit behind the second factor**, like every other route that touches a project's code; inviting, previewing and accepting are also rate-limited. A project may hold at most **three** open invitations at once (`INVITATION_MAX_OPEN`, decided 18.09.2026): the rate limit caps how fast invitations go out and cannot cap how many stand open, and a route that mails an address its caller typed needs both halves.
 - **An invitation nobody was told about is not left behind.** If the mail provider refuses, the invitation is withdrawn in the same request and the owner is told nothing went out.
 - **Reading is all it grants.** Analysing, confirming, signing and exporting remain with the owner; every one of those routes still answers on `userId`.
 
@@ -172,19 +175,16 @@ Firestore
 
 ### Residual Risk
 - `safeFetch` pins the validated IP for each hop, but TLS SNI uses the hostname (correct behavior).
-- Network egress filtering on the Cloud Run service is recommended as additional defense (documented Restrisiko).
+- The app's public egress is not filtered at the network level: its VPC attachment (§7) carries private ranges only, so tenant calls leave directly and rely on the checks above. Egress filtering for the app service remains a documented residual risk.
 
 ---
 
 ## 6. Quota Enforcement (F-06)
 
-- **Server-side**: `reserveTransformationQuota(uid)` in `lib/firebase-admin.ts` performs an atomic Firestore transaction:
-  1. Read `transformationsUsed` and `transformationsLimit`
-  2. If `used < limit`: increment atomically and return success
-  3. If `used >= limit`: throw `QuotaError(403)`
-- **Enterprise/Admin bypass**: Enterprise tier users and hardcoded super-admins have unlimited quota (no metering).
-- **Refund**: `refundTransformationQuota(uid)` decrements on AI call failure (best-effort, never goes below 0).
-- **Client**: `incrementTransformations()` in `useUserProfile.ts` is a **no-op** — quota is only enforced server-side.
+- **Server-side**: `reserveRunQuota(uid, inputHash)` in `lib/firebase-admin.ts` performs an atomic Firestore transaction: an account that is not approved gets 403; otherwise one analysis run is reserved against `transformationsUsed` / `transformationsLimit`, and a full quota throws `QuotaError(403)`.
+- **Not metered**: re-analysing the same input fingerprint, the first run of each starter example, enterprise-tier accounts and accounts using their own model key (BYOK). There are no hardcoded super-admins.
+- **Refund**: `refundRunQuota(…)` gives the reservation back when the run fails (best-effort, never below 0, a failure is logged).
+- **Client**: there is no client-side counter any more — quota is only enforced server-side.
 - **Prerequisite**: Cloud Run service account needs `Cloud Datastore User` role for Firestore write access.
 
 ---
@@ -206,13 +206,16 @@ App (API route, public service)
   │       live: RUNNER_LIVE_URL + RUNNER_SERVICE_ACCOUNT + S4_PROXY_BASE_URL + key → live runner · else 403
   │  5. (live) assertS4TenantAccess → capability {project, account, tenant host, run, ≤10 min},
   │     registered in s4_proxy_capabilities, deleted when the run returns
-  │  6. POST <runner>/run with the app's Google ID token (audience = runner URL)
+  │  6. POST <runner>/run with the app's Google ID token (audience = runner URL),
+  │     sent through the app's own VPC egress (below) — internal ingress admits nothing else
   │  7. check the report: SHA-256 of every file and of the suite = what was sent, mode = asked for
   │  8. verdicts + receipt (runner kind, self-reported K_REVISION, files digest) — mock runs only
   ▼
 Runner service (clean-core-runner / clean-core-runner-live, one image)
-     SA without roles · no secrets · ingress internal · run.invoker: the app only
-     egress: VPC runner-net without NAT (mock: nothing; live: the app via Private Google Access)
+     SA without roles · no secrets · ingress internal · run.invoker: the app's service account only
+     egress: all traffic into VPC runner-net, no Cloud NAT; egress firewall by network tag —
+       mock: deny all · live: tcp/443 to private.googleapis.com (199.36.153.8/30) only,
+       which is how it reaches the app's run.app URL (private DNS zone run.app → private.googleapis.com)
      concurrency 1 · fresh temp dir per run, removed afterwards
      child: node --permission --allow-fs-read/write=<run dir> --no-experimental-sqlite
             --import __netguard.mjs --import __modguard.mjs   (defense in depth)
@@ -228,7 +231,8 @@ App credential proxy (GET|HEAD /api/s4-proxy/{capability}/sap/…)
 
 ### Security Properties
 - **The boundary is the service, not the process.** The runner's service account has no roles; the image contains Node, the bundled runner and esbuild — no app code, no `.env`, no secrets (`runner/Dockerfile`, `runner/Dockerfile.dockerignore`). A generated test that got past every Node-level guard would find no credential in its environment or file system and no network path out of the mock runner. The metadata server stays reachable from any Cloud Run instance; the token it hands out belongs to an account that may do nothing.
-- **"Dort oder gar nicht".** Without `RUNNER_URL` a deployed app refuses to run tests (HTTP 503). The local path exists only when the build itself was made for the Firebase emulator, and is named `local-emulator` wherever its result appears.
+- **How the app reaches the runner.** A runner with internal ingress answers only requests that leave a VPC network of this project. The app therefore has a network of its own, `app-net` with the subnet `app-run-egress` (10.20.0.0/24, Private Google Access) and a private DNS zone that resolves `*.run.app` to `private.googleapis.com`; it is attached with `--vpc-egress=private-ranges-only`, so the app's public egress (Gemini, mail, tenants) does not change. The deploy reads network and subnet from `APP_VPC_NETWORK` / `APP_VPC_SUBNET`, refuses `runner-net` for the app (its private `googleapis.com` zone made every sign-in check fail on 01.10.2026), and detaches the app with `--clear-network` when the subnet is unset, because a deploy without network flags keeps the previous revision's network (`.github/workflows/deploy.yml`, held by `tests/runner-deploy-guard.spec.ts`). Admission is the ID token: Cloud Run checks its audience and the `run.invoker` binding, which on all four runner services names only the app's service account `clean-core-run`. The runners stay on `runner-net` without NAT. The app's own ingress is public, as it has to be for its users; that is also the path the live runner's credential relay takes.
+- **There or not at all.** Without `RUNNER_URL` a deployed app refuses to run tests (HTTP 503). The local path exists only when the build itself was made for the Firebase emulator, and is named `local-emulator` wherever its result appears.
 - **What ran is what was sent.** The runner reports the SHA-256 of every file and of the suite plus its `K_REVISION`; the app refuses a report whose hashes do not match what it sent and writes the digest and the revision into the receipt (`lib/test-receipt.ts`, `runner`). The revision is self-reported: the app checks only its shape, because it has no independent source to compare it with.
 - **No credential ever reaches a runner.** A live run carries a capability; the credential proxy adds the credentials per request, for one host, one run, ten minutes at most, read-only methods.
 - **Node-level layers, kept as defense in depth.** Bundler with one resolver (imports must stay inside the run directory, bare packages become a stub), Permission Model (file system scoped to the run directory; no child processes, workers or addons), `--no-experimental-sqlite`, the module guard (`lib/sandbox-module-guard.ts`) and the network guard (`lib/test-sandbox/net-guard.ts`: closed on mock runs; on live runs exactly one loopback port, DNS closed on both). None of these is claimed as a boundary.
@@ -240,7 +244,7 @@ App credential proxy (GET|HEAD /api/s4-proxy/{capability}/sap/…)
 
 ### 7.1 Locked path: live test execution (`G0:R0`)
 
-Decided 12.09.2026 (roadmap step 0.1, `docs/roadmap/SCHNITT-0-UMFANG.md` §1, "Weg 2"): a known blocker is
+Decided 12.09.2026 (roadmap step 0.1, `docs/roadmap/SCHNITT-0-UMFANG.md` §1, option 2): a known blocker is
 either fixed or locked with its reason named. This one is locked. The definition lives in
 `lib/locked-paths.ts` (`LIVE_TEST_EXECUTION`); `tests/locked-paths-guard.spec.ts` fails when this section and
 that definition say different things.
@@ -296,8 +300,12 @@ the time of the run. What it cannot prove: that no other destination is reachabl
 egress boundary is the runner VPC without NAT and its firewall, and that has to be checked where it is
 configured. Nor the metadata server (below).
 
-**Status: not run yet.** The runners are being deployed for the first time; `run.invoker` and the runner URLs
-on the app are not configured yet. No result of this test exists.
+**Status (02.10.2026): deployed and wired, no result recorded.** All four runner services (`clean-core-runner`,
+`clean-core-runner-live` and their `-dev` twins) are deployed with internal ingress; `run.invoker` on each names
+the app's service account only; the runner URLs are set as deploy variables for both lanes. The `dev` app runs on
+`app-net`; the production app receives the network with its next deploy from `main`. The gcloud check below was
+read on 02.10.2026: `clean-core-runner` held no role in the project. No result of the probe run is recorded in
+the repository yet, so the isolation counts as configured, not proven.
 
 How the owner runs it, after the runners are deployed and `RUNNER_URL` is set:
 
@@ -320,7 +328,13 @@ proven on the deployed profile.
 | `GEMINI_API_KEY` | Yes | Server-side Gemini API calls |
 | `RESEND_API_KEY` | Yes | Transactional email sending (approval/revoke mails) |
 | `NEXT_PUBLIC_APP_URL` | Yes | Self-referential URLs (prevents Host header injection) |
-| `S4_ENCRYPTION_KEY` | Yes (if S4 features used) | AES-256-GCM key for credential encryption |
+| `S4_ENCRYPTION_KEY` | Yes (if S4 features used) | AES-256-GCM key for credential encryption; also the HKDF source of the proxy capability signing key |
+| `AUDIT_SIGNING_KEY` | Yes | HMAC key for runs and audit packs, at least 32 characters, no fallback (`lib/audit-signing-key.ts`); asserted by the deploy |
+| `AUDIT_SIGNING_PRIVATE_KEY` | No | Ed25519 key for audit packs; unset = HMAC-only packs and the well-known key document answers 503 |
+| `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED` | No | Retired Ed25519 public keys still published, so packs from before a rotation verify |
+| `RATE_LIMIT_PEPPER` | Yes | HMAC pepper for rate-limit document ids; no fallback, rate-limited routes fail without it |
+| `PILOT_APPROVAL_SECRET` | Yes | HMAC key of the tenant approval links (at least 16 characters, §3.4) |
+| `RESEND_WEBHOOK_SECRET` | Yes, for delivery events | Svix signature of the mail provider's webhook; unset = the webhook answers 503 |
 | `BYOK_ENCRYPTION_KEY` | Yes | AES-256-GCM key for stored own model keys (BYOK), version 1 (`lib/byok-key.ts`). Unset or not 32 bytes = the production deploy stops before deploying; on a running revision, storing a key is refused and `/api/health` reports degraded. Never falls back to `S4_ENCRYPTION_KEY` |
 | `S4_HOST_ALLOWLIST` | Recommended | Comma-separated SAP host suffixes for SSRF allowlist |
 | `RUNNER_URL` | Yes, for test execution | URL of the isolated mock runner (`clean-core-runner`). Unset = a deployed app runs no tests (fail closed) |
@@ -340,19 +354,21 @@ proven on the deployed profile.
 |-------------|-------|--------|
 | Node.js | >= 22.8 | Permission Model inside the isolated runner (F-02) |
 | CI Runner | Node 22 | `deploy.yml` uses `node-version: 22` |
-| Cloud Run SA | `Cloud Datastore User` | Firestore writes for quota enforcement (F-06) |
+| Cloud Run SA (app) | `clean-core-run`: `Cloud Datastore User`, `Firebase Authentication Admin`, `Logs Writer` (read 02.10.2026) | Firestore writes for quota enforcement (F-06), MFA and account administration, structured logs |
+| Cloud Run SA (runners) | `clean-core-runner`: no project role | The token its metadata server hands out may do nothing (§7) |
 
 ---
 
 ## 10. XSS & Content Sanitization
 - **Safe Markdown Rendering**: AI chatbot tables, answers, and project process documentation are parsed using `marked` and sanitized client-side using `DOMPurify` (via the wrapper `renderMarkdownSafe`). This protects against HTML injection and cross-site scripting (XSS) from unverified model outputs.
-- **Mermaid Sandbox Rules**: Interactively rendered BPMN 2.0 flowcharts configure Mermaid to run with `securityLevel: 'strict'` and `htmlLabels: false`, preventing arbitrary JavaScript execution in inline SVG elements.
+- **BPMN diagrams** are rendered with bpmn-js (viewer and modeler); names and documentation are shown as text only. An uploaded BPMN 2.0 XML file is parsed in the browser with bpmn-moddle (`lib/bpmn/import.ts`) and refused when it is empty or larger than 800,000 characters, carries a `DOCTYPE` or `ENTITY` declaration, is not BPMN definitions, uses unknown elements, references other files (`bpmn:import`), has more than 5,000 flow nodes or no diagram layout. Every `cc:*` claim in the file is dropped — line anchors and proof states are never taken from a file but re-derived from the reconstruction — and names and documentation are length-capped with control and bidi characters stripped. Stored revisions are parsed on the server with saxen, without DTDs or entities (`lib/process-revisions.ts`).
+- **Mermaid**: `components/MermaidDiagram.tsx` is no longer imported anywhere; the `mermaid` package remains a dependency until it is removed.
 
 ---
 
 ## 11. Evidentiary Board Presentation & Rollup Safety
 - **Deterministic Presentation Builder**: Replaced dynamic Gemini-based slide generation with a local, deterministic deck builder (`lib/board-deck.ts`) to prevent prompt injection and LLM hallucinations.
-- **Worst-Case Rollup Safety**: The overall project recommendation is evaluated using a strict rollup function. If a project contains any `not-supported` findings, Slide 1 recommendation is automatically downgraded to "Core Redesign Required" (Hold / Rejection) to prevent false positives.
+- **Worst-Case Rollup Safety**: The overall project recommendation is evaluated using a strict rollup function. If a project contains any `not-supported` finding, the recommendation is "Redesign needed before release"; any `partial` finding gives "Release only with architect sign-off"; no findings at all gives no verdict, because coverage is not established.
 
 ---
 
@@ -363,9 +379,9 @@ proven on the deployed profile.
 - [ ] All outgoing fetches to user-controlled URLs use `safeFetch()` (not raw `fetch()`)
 - [ ] `tokenUrl` is validated before any OAuth token exchange
 - [ ] No credentials are stored in client-readable Firestore collections
-- [ ] No user-supplied code is executed without Node Permission Model sandbox
+- [ ] No generated or user-supplied code is executed outside the isolated runner (§7)
 - [ ] Quota-affecting operations use atomic server-side transactions
-- [ ] Admin-only operations check `verifyAdminRequest()` + email format validation
+- [ ] Admin-only operations check `verifyAdminRequest()` + `assertAdminStepUp` and write an `audit_events` row
 - [ ] New env vars are documented in `.env.example` (without values)
 - [ ] New dependencies are added to `serverExternalPackages` if they use native bindings
 - [ ] **CSP changes tested against Google Sign-In** (see Section 13 below)
@@ -433,6 +449,11 @@ Before deploying any CSP modification:
 5. **Check browser console** — NO `auth/internal-error` or CSP violations
 6. If the popup doesn't open, check the console for `Refused to load` or `Refused to execute` errors — these indicate a CSP block
 
+### 13.6 Other headers and a known gap
+
+- `middleware.ts` sets the page CSP only in production builds (none under `npm run dev`); besides the directives above it pins `default-src 'self'`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'` and `object-src 'none'`. API responses get their own policy from `next.config.mjs` (`default-src 'none'; frame-ancestors 'none'; base-uri 'none'`), and every response carries HSTS (two years, `includeSubDomains; preload`), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin` and a `Permissions-Policy` that turns off camera, microphone and geolocation.
+- **Known gap, scheduled after 3.0:** `script-src` and `style-src` still carry `'unsafe-inline'`, so the CSP does not stop an injected inline script on its own; output sanitizing (§10) is what does. Moving to nonces is a step of its own with a measurement against the real Google sign-in, because a wrong CSP here locks people out silently (§13.4). Tracked under SEC-2026-016 and related IDs in `docs/ROADMAP.md` §12.
+
 ---
 
 ## 14. Evidence Trust Chain (Run Immutability & Audit Pack Cryptography)
@@ -442,20 +463,25 @@ The platform's core assurance is that an analysis result cannot be silently alte
 ### 14.1 Immutable, signed Runs
 - Every successful analysis is persisted as a **Run** document at `projects/{id}/runs/{runId}` by `app/api/runs/create/route.ts`.
 - The server **recomputes** the deterministic evidence, scores, and extensibility routing (it does not trust client-supplied scores).
-- A canonical (key-sorted) JSON serialization of the run payload is hashed with **SHA-256 → `runHash`**, then signed with **HMAC-SHA256** using `AUDIT_SIGNING_KEY` → `signature`.
-- Runs are **immutable to clients**: `firestore.rules` sets `allow write: if false` on the `runs` subcollection; only the Admin SDK writes them. Read is owner/admin-scoped.
+- A canonical (key-sorted) JSON serialization of the run payload is hashed with **SHA-256 → `runHash`**, then signed with **HMAC-SHA256** using `AUDIT_SIGNING_KEY` → `signature` (`lib/run-signature.ts`). The AI narrative (`analysis`) is outside the hash by design. A run is signed with HMAC only; Ed25519 applies to the audit pack (§14.2). Without a signing key of at least 32 characters (`lib/audit-signing-key.ts`, no fallback) the route refuses with HTTP 500 and no run is written.
+- The **Clean Core Score** is computed by the deterministic router before any model runs and is part of the signed run payload (`cleanCoreScore`, `lib/clean-core-score.ts`); the bands are a fixed reading of that number, not a second measurement. The **clean-core level A–D** is not: it comes from SAP's classification file, is looked up for display (`gradeSapObject`, `/api/abcd-classify`) and never appears in a signed pack file (§14.3).
+- Runs are **immutable to clients**: `firestore.rules` sets `allow write: if false` on the `runs` subcollection; only the Admin SDK writes them. Read is owner-only — the administrator has no read, and an invited reader receives a run's contents only through `GET /api/projects/{projectId}` (§3.7).
 
 ### 14.2 Server-authoritative audit packs
 - `enforceActiveRun()` gates every downstream page (Design, Transformation, Documentation, Testing, TCO, Delivery); a missing run redirects to Analyze.
-- Audit packs are generated by `/api/audit-pack/create`: the **server** selects the project's active run (the client cannot request a stale/foreign run — **HTTP 422** if none), requires a valid `runHash` (**HTTP 422** otherwise), generates the evidence files, hashes them, HMAC-signs the manifest, and streams the ZIP. The client never supplies file content or hashes for signing, so a valid signature attests to server-generated content.
+- Audit packs are generated by `/api/audit-pack/create` for the project's owner only (an administrator does not qualify): the **server** selects the project's active run (the client cannot request a stale/foreign run — **HTTP 422** if none), requires a valid `runHash` (**HTTP 422** otherwise), re-checks the run's own hash and HMAC (`verifyRunIntegrity`, **HTTP 409** on a mismatch), generates the evidence files, hashes them, signs the manifest, and streams the ZIP.
+- **Two signatures over one hash.** The manifest is reduced to a canonical string (`lib/audit-pack-canonical.ts`: the files as `<path>:<sha256>` sorted by path, then project, run, `runHash`, engine and catalog versions, the attested file names and digests, the issue time and the coverage rows, with separators refused inside values) and hashed with SHA-256 → `manifestHash`. That hash is signed with **HMAC-SHA256** (`AUDIT_SIGNING_KEY`) and, when `AUDIT_SIGNING_PRIVATE_KEY` is configured, also with **Ed25519** (`signatureEd25519`, `signingKeyId`, manifest version 4.1; without the key the pack is HMAC-only, version 4.0). The public keys are published unauthenticated at `/.well-known/clean-core-io-signing.json` (active key plus the retired keys listed in `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED`, so packs from before a rotation still verify; removing a key from that list is how a compromised key is revoked). With no Ed25519 key configured that document answers 503.
+- **Known gap, accepted until after 3.0 (owner decision 01.10.2026):** the deploy asserts that `AUDIT_SIGNING_KEY` is set but not its length; the running app refuses a key shorter than 32 characters, so a short key stops signing rather than signing weakly. The length check in the deploy returns together with a key history for the HMAC key (verification against a list of keys), because forcing a rotation without one would leave every issued pack unverifiable (`docs/ROADMAP.md` §7, `tests/signing-key-guard.spec.ts`). The client never supplies file content or hashes for signing, so a valid signature attests to server-generated content.
 - The legacy `/api/export/sign` endpoint — which signed *client-supplied* file hashes — is **retired (HTTP 410)**. This closes the gap where an authenticated owner could obtain a valid signature for arbitrary, non-server-generated content. Verification of previously issued packs is unaffected.
 
 ### 14.3 Audit Pack verification
-- Audit packs carry a SHA-256 **manifest** and an HMAC **signature** (`lib/audit-pack.ts` / `lib/audit-pack-verify.ts`).
-- The verify endpoint hardens input (64-char hex signature, ≤32 KB canonical manifest) and compares with `timingSafeEqual`.
+- Audit packs carry a SHA-256 **manifest**, an HMAC **signature** and, where configured, an Ed25519 signature (`lib/audit-pack.ts` / `lib/audit-pack-verify.ts`).
+- **In the browser** (`/verify-pack`, reachable without an account): the ZIP is opened locally, every file's SHA-256 is recomputed, unlisted or duplicate entries and attested digests are checked and the canonical manifest is rebuilt. The archive is never uploaded; only the canonical manifest and the HMAC signature go to `POST /api/export/verify`, because an HMAC can be checked only by the holder of the key.
+- **The verify endpoint** is public, rate-limited per IP, accepts a canonical manifest of at most 32 KB and either a 64-character hex HMAC (compared with `timingSafeEqual`) or an Ed25519 signature, which it checks against this instance's own key. It reads and writes nothing in the database.
+- **Offline, without the issuer:** `node scripts/verify-pack.mjs <pack.zip> [--key …]` recomputes every file hash and the manifest hash and verifies the Ed25519 signature against the key published at `https://clean-core.io/.well-known/clean-core-io-signing.json` (or a key given explicitly; a URL inside the pack is ignored). A pack with only an HMAC signature is reported as not checkable offline (exit code 2), never as verified.
 - Verification is reported in **three honest tiers**: `authentic` → `integrity-only` (unsigned but hash-consistent) → `failed`. A green "authentic" state is never shown without a valid signature.
 - The AI narrative is **not** part of the signed run payload — it is referenced by a separate `responseHash` and stored unsigned, so deterministic evidence and free-text narrative are cleanly separated. The narrative's `gaps` are narrative too: since roadmap 0.12 (2026-09-16) they go to the project's interactive worklist and never into the run's signed `worklist`.
-- **Signed files read the run only** (roadmap 0.12). The generators' input is a named list of run fields (`lib/audit-pack-build.ts`); nothing from the client-writable project document reaches a hashed file. What the account holder stated — project name, chosen target architecture, architect sign-off, approver, override reason, workflow status — is written to `07-user-attested.md`, listed under `attested` in `manifest.json`. Its **name** is bound into the manifest hash (`lib/audit-pack-canonical.ts`), so it cannot be added, removed or joined by a second such file after sealing; its **contents** carry no digest and no signature, and both verifiers label it "user-attested · not covered by the signature". Since roadmap 0.7 those fields are written by the server rather than by the browser — see below — and they stay in the attested file all the same: a record the server wrote down faithfully is still the account holder's own statement. Architect sign-off recorded in the pack is **self-attested** (from the signed-in user's own session), not a formally governed organizational approval.
+- **Signed files read the run only** (roadmap 0.12). The generators' input is a named list of run fields (`lib/audit-pack-build.ts`); nothing from the client-writable project document reaches a hashed file. The Clean Core Score is among those fields; the clean-core level A–D is not, and the tests keep it out (`tests/pce-derived-displays.spec.ts`, `tests/assessment-profile-wiring.spec.ts`); the Delivery handover names it under what the signature does not cover (`NOT_SIGNED`, `lib/handover.ts`). What the account holder stated — project name, chosen target architecture, architect sign-off, approver, override reason, workflow status — is written to `07-user-attested.md`, listed under `attested` in `manifest.json`. Its **name** is bound into the manifest hash (`lib/audit-pack-canonical.ts`), so it cannot be added, removed or joined by a second such file after sealing; its **contents** carry no digest and no signature, and both verifiers label it "user-attested · not covered by the signature". Since roadmap 0.7 those fields are written by the server rather than by the browser — see below — and they stay in the attested file all the same: a record the server wrote down faithfully is still the account holder's own statement. Architect sign-off recorded in the pack is **self-attested** (from the signed-in user's own session), not a formally governed organizational approval.
 
 **Sign-off is written by the server (roadmap 0.7, 2026-09-16).** The five release fields — `targetArchitecture`, `approvedByArchitect`, `architectJustifiedOverride`, `architectSignOffAt`, `approvedBy` — and the usage import `usageReport` left the client-writable allowlist in `firestore.rules`. The only writer is `POST /api/projects/{projectId}/commands`, which requires a verified ID token, the second factor when the account carries one, an unsuspended account and **ownership of the project** (an administrator does not qualify; an operator recording somebody else's sign-off is the worse half of an operator reading their code). The transition is validated in `lib/project-commands.ts`: a sign-off needs a signed run to be about, the architecture is one of five named values, departing from the engine's recommendation needs a written reason, and a withdrawal needs something to withdraw. What is recorded is the server's answer, not the browser's: `approvedBy` is the address on the ID token — the page used to send `auth.currentUser.email`, i.e. the browser chose whose name went on the sign-off — and `architectSignOffAt` is the server clock. Every accepted command writes an `audit_events` row through the Admin SDK. `usageReport` was validated in the rules as `is map` and nothing else; the route holds it to the key set of `lib/abap/usage-model.ts` and a row ceiling. Proof: `tests/project-command-boundary.spec.ts` refuses each of the six against the live emulator rules with the real client SDK, then performs an allowed write on the same document so the refusal is the rule and not a broken fixture.
 
@@ -468,8 +494,28 @@ The platform's core assurance is that an analysis result cannot be silently alte
 ## 15. Operational Readiness
 
 - **Health probe:** `GET /api/health` (liveness + config presence; `?deep=1` adds a Firestore ping) for Cloud Run checks and uptime monitoring. Returns 503 when misconfigured; response is minimal (no per-check disclosure).
-- **GDPR Art. 17 erasure:** `deleteUserDataAndAccount()` purges every collection in `docs/DATA-RETENTION.md`, including the `runs` subcollection and encrypted BYOK keys (`user_secrets`) via `recursiveDelete`. Completeness is enforced by an automated test (`tests/security-compliance.spec.ts`).
+- **GDPR Art. 17 erasure:** `deleteUserDataAndAccount()` purges every collection in `docs/DATA-RETENTION.md`, including the `runs` subcollection and encrypted BYOK keys (`user_secrets`) via `recursiveDelete`. The cascade also removes the account's uid from other projects' `readers` and deletes every invitation addressed to it; if any step fails, the profile and the sign-in are kept so the erasure can be retried. Tested in `tests/security-compliance.spec.ts` and `tests/account-erasure.spec.ts`.
+- **Known gap, scheduled after 3.0 (owner decision 01.10.2026):** an ID token issued before the deletion stays valid for up to an hour; a server-written marker that the rules check will close that window (`docs/ROADMAP.md` §7). The welcome mail is sent at sign-up before the address is confirmed, and this stays as it is — confirming the address at sign-up would change sign-up, which is kept unchanged (`docs/ROADMAP.md` §9).
 - **Data retention & residency:** documented per-collection in `docs/DATA-RETENTION.md`; all data in Firestore **europe-west1 (EU)**. Public transparency page at `/trust`.
 - **Incident response:** `docs/INCIDENT-RESPONSE.md` — severity classes, key-compromise / data-breach (GDPR 72h) / exposed-seed runbooks, blameless post-mortem.
-- **Supply-chain hygiene (CI):** `.github/workflows/security-ci.yml` runs secret scanning (gitleaks), dependency audit (`npm audit --audit-level=high`, blocking), and a CycloneDX SBOM on PRs, deploy-branch pushes, and weekly.
+- **Supply-chain hygiene (CI):** `.github/workflows/security-ci.yml` runs secret scanning (gitleaks, full history), a dependency gate (`audit-ci` at high and critical over a dependency tree installed with `--ignore-scripts`; `audit-ci.jsonc` holds an empty allowlist) and a CycloneDX SBOM on every pull request, on pushes to the deploy branches and weekly; a red scheduled run mails the administrator. The deploy itself waits for its own production audit (`npm audit --omit=dev --audit-level=high`, job `security` in `deploy.yml`). Vulnerable transitive versions are pinned through `overrides` in `package.json` — for example `basic-ftp` under `get-uri` at `^6.2.1`, which the lock file resolves to 6.2.1 (a development dependency). There is no Dependabot; `package-lock.json` is regenerated only with the CI toolchain (npm 11 on Node 22).
+- **Review agents (read-only, sealed).** Three model-based reviewers run in GitHub Actions; none of them gates a deploy, writes to the repository or receives an application secret, and every report is sealed before it is stored as a workflow artifact, so nothing they find appears in a public log.
+  - *QA agent* (`.github/workflows/qa-review.yml`): a delta review of every push to `dev` plus a smoke check of the deployed revision, and a full review of every release on `main`. Model: OpenRouter's Auto Router (`openrouter/auto`) with a price ceiling per tier; a delta review is capped at an estimated USD 6.50 and 96,000 output tokens, a full review at USD 10 (`scripts/qa/lib/config.mjs`); the hard ceiling is the credit limit on the key. It reads a checkout without `.env*` or key files, redacted before sending; the model has no tools and the job runs no `npm ci`. Reports are sealed with AES-256-GCM under `QA_REVIEW_KEY`. Findings verified as wrong go into a sealed refuted list (`docs/qa/refuted-findings.enc.json`) that the next review receives, so a refuted finding returns only when the code invalidates the reason.
+  - *Security audit agent* (`.github/workflows/security-audit.yml`): a full audit of every release on `main` by a CISO and five consultants — model calls without tools through the Auto Router, budget USD 20. The model job holds only the OpenRouter key and seals with the public key `docs/security/audit-public-key.pem` (fresh AES-256-GCM key per report, wrapped with RSA-OAEP), so it cannot open its own report; a separate job without a model decrypts it and mails it to the owner. Decisions live in the sealed register `docs/security/register.enc.json`; public files carry finding IDs only (`docs/ROADMAP.md` §12).
+  - *UX agent* (`.github/workflows/ux-review.yml`): reviews source and screenshots of a seeded demo project; the screenshots are taken in a job without secrets, the model job (Auto Router, image-capable models only) runs no `npm ci` and seals with `UX_REVIEW_KEY`.
+  - Each has a kill switch (`QA_REVIEW_ENABLED`, `SECURITY_AUDIT_ENABLED`, `UX_REVIEW_ENABLED`), and a weekly health check (`qa-weekly-health.yml`, no model) reports red or stale workflows. Runbooks: `docs/QA-REVIEW-LOOP.md`, `docs/SECURITY-AUDIT-AGENT.md`, `docs/UX-REVIEW-AGENT.md`.
 
+
+---
+
+## 16. Public Surface
+
+What a visitor reaches without an account, and what it can and cannot see. The app shell (`app/(app)/layout.tsx`) does not gate pages by sign-in; protection rests on the API checks (§3) and the Firestore rules, so a page that loads signed out holds no private data unless an authenticated call fetches it.
+
+- **Content pages and machine-readable texts.** The landing page, the knowledge and method pages, `/trust`, `/tenant-security`, the whitepaper (`/whitepaper`, its print view `/whitepaper-print` — `noindex` — and the PDFs under `public/` with a `.sha256` beside each), `/llms.txt`, `/llms-full.txt`, `/facts`, `/facts.json` and the sitemaps are generated from code, the bundled SAP catalog and fixed texts. None of them reads Firestore or an account.
+- **Crawlers.** `app/robots.ts` allows named AI crawlers and answer fetchers (OpenAI, Anthropic, Perplexity, Google-Extended, Applebot-Extended) on the public pages and disallows `/admin/`, `/project/`, `/dashboard/`, `/settings/`, `/api/` and `/invitation/` for every agent. `htmlLimitedBots` in `next.config.mjs` only makes Next.js put the page metadata into `<head>` for those bots; it is not a security control.
+- **Share card.** A static image rendered offline from the fictitious demo program and labelled as a demo; no route generates it from user data.
+- **Demo** (`/demo/{stage}`, `noindex`). Built at render time from a bundled example program run through the deterministic engine. It calls no API route, writes nothing, calls no model and creates no run: `assertNoTrustChain` (`lib/demo-project.ts`) throws if the demo object carries a signature or an account field, the run is labelled "unsigned", and the Delivery stage states that a demo produces no audit pack and no signed export. Reader state stays in the browser's `localStorage`. `/demo/workspace` answers 404 unless the account is an administrator with the workspace switch on.
+- **Invitation page** (`/invitation/{projectId}/{invitationId}`, `noindex`, disallowed in `robots.txt`). Signed out it shows fixed text and a sign-in link and makes no API call; signed in, it learns only who invited and when the invitation expires, and the project name appears only after acceptance succeeded (§3.7).
+- **Verification.** `/verify-pack`, `POST /api/export/verify` and `/.well-known/clean-core-io-signing.json` are public by design (§14.3).
+- **API routes without a Firebase ID token**, each with its own gate: `/api/health` (status, version, short commit, time — nothing per check; the deep probe is rate-capped per instance), `/api/export/verify` (rate limit per IP), `/api/export/sign` (always 410), `/api/unsubscribe` (HMAC token from the mail), `/api/survey/vote` (signed survey token, rate limit per IP), `/api/webhooks/resend` (Svix signature under `RESEND_WEBHOOK_SECRET`, 503 without it), `/api/auth/jira/callback` (404 unless the integration is switched on; OAuth `state` bound to an httpOnly cookie), `/api/s4-proxy/…` (the runner's Google ID token plus a per-run capability, §7) and `/api/test/seed` (404 outside an emulator build, §2 F-15). Every other route verifies the ID token.
