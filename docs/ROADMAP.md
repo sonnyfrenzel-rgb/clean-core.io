@@ -910,7 +910,7 @@ this roadmap does not touch the account.
 | 3 | Path B (Gemini business statements) is measured as well; afterwards: B as proposal, A as evidence beneath it, contradiction marked | Roadmap **17.10**, ADR-055, DESIGN.md §5.10 |
 | 4 | Design change for ≥ 80 %, "super user-friendly": start event per expandable subprocess, own end per `RETURN` | **ADR-054**, DESIGN.md §5.8; `CHECK` stays a conditional flow (coordinator, covered by §5.8) |
 | 5 | Bodies of multi-loops that §5.8 draws as their own level also get a start event | **open, next step** (after v2.20.0) |
-| 6 | Block D is the next session | Plan `docs/design/block-d-plan.md` |
+| 6 | Block D is the next session | Plan `docs/archiv/roadmap-2.8/block-d-plan.md` (archived 02.10.2026, closed with D.30) |
 | 7 | Release v2.20.0 on `main` only once the findings from wave 3 are incorporated | fulfilled on 28.09.2026 |
 
 **Open after 28.09.2026:** (a) wave 3 below 80 % — polymorphic calls with an open target

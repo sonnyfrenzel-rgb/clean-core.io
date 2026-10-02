@@ -110,7 +110,7 @@ language of the generated sentences (ADR-009) · BM-232 cluster ID · `process-s
 
 **Held back for 3.0:** branch `feat/3.0.6-landing` — landing page with timeline and real captures, showroom and banner cut, public texts (3.0.8, about half done).
 
-**Block D after that, in this order:** D.10b–D.19 (tools), D.7/D.8/D.20–D.21/D.22a–c (frame, account, admin, dashboard and demo rebuilt), D.2, D.29, D.23–D.28 (public pages, partly after the landing merge), D.30 (everything to zero). Addenda per step are in the plan (`luecken-und-plan.md`, scratchpad of the session; copy at `docs/design/block-d-plan.md`).
+**Block D after that, in this order:** D.10b–D.19 (tools), D.7/D.8/D.20–D.21/D.22a–c (frame, account, admin, dashboard and demo rebuilt), D.2, D.29, D.23–D.28 (public pages, partly after the landing merge), D.30 (everything to zero). Addenda per step are in the plan (`luecken-und-plan.md`, scratchpad of the session; copy at `docs/archiv/roadmap-2.8/block-d-plan.md`, archived 02.10.2026).
 
 **Small, later:** type check `uploadedFileName` in `runs/create`; example flag settable by the client (own consent only); mail webhook can create an empty status entry after deletion; security steps C (sanitizer) and F (hardening); 2 carried-over critical QA findings on `usage-report.yml`.
 

@@ -134,7 +134,7 @@
       "id": "clean-core-level",
       "concept": "SAP's clean core level A to D of an object",
       "source": "lib/abap/abcd-classification.ts, DESIGN.md §4.1",
-      "en": "Level A–D (einzeln: Level A)",
+      "en": "Level A–D (singular: Level A)",
       "de": "Level A–D (einzeln: Level A)",
       "variants": [
         {
@@ -193,7 +193,7 @@
       "id": "provenance-not-determined",
       "concept": "provenance value not-determined",
       "source": "lib/provenance.ts, DESIGN.md §4",
-      "en": "Not determined (im Satz: not determined)",
+      "en": "Not determined (in a sentence: not determined)",
       "de": "nicht bestimmt",
       "variants": [
         {

@@ -1,6 +1,6 @@
 # Security agent — full audit of every `main` version
 
-**As of 24.09.2026 (verification in batches) · introduced with v2.9.15 · since 01.10.2026 with the OpenRouter Auto Router (previously DeepSeek V4.1 Flash) · runs on every push to `main` until Sonny revokes it**
+**As of 24.09.2026 (verification in batches), reviewed for 3.0 on 02.10.2026 · introduced with v2.9.15 · since 01.10.2026 with the OpenRouter Auto Router (previously DeepSeek V4.1 Flash) · runs on every push to `main` until Sonny revokes it**
 
 Every new version on `main` gets a complete security audit: a CISO and
 five security consultants, **OpenRouter Auto Router (cost tier high)**, as a chain of
