@@ -144,7 +144,8 @@ test.describe('a stage as a tool, rendered', () => {
     await page.goto(`/project/${acct.projectId}/documentation`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-stage-title]', { timeout: 60000 });
     await expect(page.locator('[data-stage-back]')).toHaveAttribute('href', `/project/${acct.projectId}`, { timeout: 30000 });
-    await expect(page.locator('[data-stage-tool]')).toContainText('Tool ·');
+    // The eyebrow names the project once it is read; the way back does not wait for it.
+    await expect(page.locator('[data-stage-tool]')).toContainText('Tool ·', { timeout: 60000 });
     const bar = page.locator('[data-stage-tools="open"]');
     await expect(bar).toBeVisible({ timeout: 30000 });
     await expect(bar.locator('a[data-workspace-tool]')).toHaveCount(7);
