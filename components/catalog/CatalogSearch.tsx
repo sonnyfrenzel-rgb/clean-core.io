@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
-import { objectToSlug } from '@/lib/abap/catalog-index';
+import { objectToSlug } from '@/lib/abap/catalog-slug';
 
 interface CatalogSearchProps {
   /** Slim list of object names, passed from the server index page. */

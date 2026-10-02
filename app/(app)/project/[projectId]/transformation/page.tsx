@@ -39,7 +39,9 @@ import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import CcLinkButton from '@/components/cc/LinkButton';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
-import { buildAbapEvidence } from '@/lib/abap/evidence-model';
+// The engine reads the ~4.5 MB SAP catalog; it is fetched once the project
+// has a source, not with the page's own code (external audit PERF-01).
+import { useEvidenceEngine } from '@/hooks/useEvidenceEngine';
 import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
 // Roadmap 8.3 — the generation follows the architecture contract, not a field
@@ -174,15 +176,23 @@ export default function TransformationPage() {
    * stage shows, recomputed from the stored source the same way it does. The
    * Object Page counts its facets, flow and plan from these and nothing else.
    */
+  const { engine: evidenceEngine, failed: evidenceEngineFailed } = useEvidenceEngine(Boolean(project?.legacyCode));
   const evidence = useMemo(() => {
-    if (!project?.legacyCode) return null;
+    if (!project?.legacyCode || !evidenceEngine) return null;
     try {
-      return buildAbapEvidence(project.legacyCode, 'main.abap', project.s4Deployment);
+      return evidenceEngine.buildAbapEvidence(project.legacyCode, 'main.abap', project.s4Deployment);
     } catch (e) {
       console.error('Error building the evidence for the plan:', e);
       return null;
     }
-  }, [project?.legacyCode, project?.s4Deployment]);
+  }, [project?.legacyCode, project?.s4Deployment, evidenceEngine]);
+  /**
+   * The engine has not arrived yet. The facets are counted from its findings,
+   * and drawn without them they would say "0 findings" for a program that has
+   * some, so the stage stays in its opening state for that moment. A failed
+   * load falls through to the page with no findings, as a throw above does.
+   */
+  const evidencePending = Boolean(project?.legacyCode) && !evidenceEngine && !evidenceEngineFailed;
 
   const toggleSignOff = (findingId: string) => {
     setSignedOffIds(prev => {
@@ -1050,6 +1060,17 @@ CMD ["node", "srv/service.js"]`
           <CcSkeleton shape="text" label="transformed code" count={6} />
         </div>
       </section>
+    </StageFrame>
+  );
+
+  if (evidencePending) return (
+    <StageFrame stage="transformation">
+      <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} projectName={project?.name}>
+        <span data-evidence-loading>Opening the project…</span>
+      </StageHeader>
+      <div className="mt-6">
+        <CcSkeleton shape="text" label="the engine's findings" count={6} />
+      </div>
     </StageFrame>
   );
 

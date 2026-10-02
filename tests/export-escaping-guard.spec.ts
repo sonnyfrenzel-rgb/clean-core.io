@@ -90,7 +90,8 @@ test('the analysis and design stages build their Confluence pages only through t
   // a page must not grow a template of its own again beside them, one that the
   // checks in this file would not read.
   const analyze = read(ANALYZE_PAGE);
-  expect(analyze).toContain("from '@/lib/analysis-export'");
+  // Loaded on the export click since PERF-01 (it imports the engine and the catalog).
+  expect(analyze).toContain("await import('@/lib/analysis-export')");
   expect(analyze).toContain('buildAnalysisExportHtml(');
   const design = read(DESIGN);
   expect(design).toContain("from '@/lib/design-export'");

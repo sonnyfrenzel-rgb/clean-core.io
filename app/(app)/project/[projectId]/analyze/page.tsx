@@ -25,7 +25,6 @@ import CcCheckbox from '@/components/cc/Checkbox';
 import { STATE_CLASSES } from '@/components/cc/state';
 import type { SemanticState } from '@/lib/provenance';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
-import { buildAnalysisExportHtml, analysisExportFileName } from '@/lib/analysis-export';
 import { callGeminiWithReceipt } from '@/lib/gemini';
 import type { ModelReceipt } from '@/lib/model-receipt';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
@@ -36,7 +35,6 @@ import { absenceFromError, modelAbsenceReason, type ModelAbsence } from '@/lib/m
 import GlossaryTerm from '@/components/GlossaryTerm';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
-import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { buildAnalysisPrompt } from '@/lib/analysis-prompt';
 /**
  * The deterministic half of the initial worklist. It used to be a function in
@@ -45,11 +43,13 @@ import { buildAnalysisPrompt } from '@/lib/analysis-prompt';
  * row produce a different worklist from one started here, which is the sort of
  * difference nobody would look for.
  */
-import { findingsWorklist } from '@/lib/analysis-run';
+// Read from its own module, which `lib/analysis-run.ts` re-exports: the run
+// module imports the evidence engine and with it the SAP catalog, and this page
+// loads the engine only when it has a source (external audit PERF-01).
+import { findingsWorklist } from '@/lib/findings-worklist';
 import { PASTED_SOURCE_NAME, sourceFileName } from '@/lib/source-file-name';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
 import AnchoredNarrative from '@/components/analyze/AnchoredNarrative';
-import { getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import { APP_VERSION } from '@/lib/version';
@@ -103,6 +103,9 @@ import ObjectSection from '@/components/analyze/ObjectSection';
 import FoldedSection, { FoldedPart } from '@/components/analyze/FoldedSection';
 import NotDeterminedSide, { type OpenItem } from '@/components/analyze/NotDeterminedSide';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
+// The engine reads the ~4.5 MB SAP catalog; it is fetched when this page has
+// a source to read, not with the page's own code (external audit PERF-01).
+import { loadEvidenceEngine, useEvidenceEngine } from '@/hooks/useEvidenceEngine';
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import { accessUseOfKind, findingRows, processStepBands, SEVERITY_ORDER } from '@/lib/findings-view';
 import { scoreBreakdown } from '@/lib/clean-core-score';
@@ -374,7 +377,9 @@ export default function AnalyzePage() {
     geminiResultRef.current = null;
 
     try {
-      // 1. Gather deterministic evidence and perform extensibility routing (instant)
+      // 1. Gather deterministic evidence and perform extensibility routing (instant
+      //    once the engine is here; it is usually loaded while the source was staged)
+      const { buildAbapEvidence } = await loadEvidenceEngine();
       const evidenceReport = buildAbapEvidence(codeToAnalyze, uploadedFileName || 'main.abap', deployment as 'public' | 'private');
       const computedRouteReport = routeExtensibility(evidenceReport, deployment || 'private');
       setRouteReport(computedRouteReport);
@@ -614,6 +619,9 @@ export default function AnalyzePage() {
    */
   const exportToConfluence = async () => {
     if (!project?.analysis) return;
+    // Loaded on the click: the export recomputes the evidence, so it imports
+    // the engine and the SAP catalog with it (external audit PERF-01).
+    const { buildAnalysisExportHtml, analysisExportFileName } = await import('@/lib/analysis-export');
     const htmlContent = buildAnalysisExportHtml({ project, routeReport, legacyCode, uploadedFileName, targetDeployment });
     if (htmlContent === null) return;
 
@@ -676,10 +684,11 @@ export default function AnalyzePage() {
   // The whole report is kept, not just the findings. `coverage` is what the
   // detectors did not judge, and dropping it here is how an empty finding list
   // came to look like a clean program.
+  const { engine: evidenceEngine, failed: evidenceEngineFailed } = useEvidenceEngine(Boolean(legacyCode));
   const evidenceReport = useMemo(() => {
-    if (!legacyCode) return null;
-    return buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private');
-  }, [legacyCode, uploadedFileName, targetDeployment]);
+    if (!legacyCode || !evidenceEngine) return null;
+    return evidenceEngine.buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private');
+  }, [legacyCode, uploadedFileName, targetDeployment, evidenceEngine]);
 
   const evidenceFindings = useMemo(() => evidenceReport?.findings ?? [], [evidenceReport]);
 
@@ -1468,7 +1477,12 @@ export default function AnalyzePage() {
   /** The run's report is on screen rather than the upload form. */
   const hasResults = !!(project?.analysis || project?.activeRunId);
 
-  if (loading && !project) return (
+  // The report is drawn from the engine's findings; until the engine has
+  // arrived it would draw an empty report for a program that has findings, so
+  // the page keeps its loading state for that moment instead.
+  const evidencePending = hasResults && Boolean(legacyCode) && !evidenceEngine && !evidenceEngineFailed;
+
+  if ((loading && !project) || evidencePending) return (
     <div className="h-[60vh] flex flex-col items-center justify-center">
         <div className="motion-safe:animate-spin rounded-full h-12 w-12 border-2 border-cc-line border-b-cc-ink mb-4"></div>
         <p className="cc-text-body text-cc-ink-muted">Loading project data...</p>
@@ -1520,6 +1534,14 @@ export default function AnalyzePage() {
         <div className="mb-8">
           <CcMessageStrip state="error" announce>
             {error}
+          </CcMessageStrip>
+        </div>
+      )}
+
+      {evidenceEngineFailed && (
+        <div className="mb-8" data-analyze-engine-failed="">
+          <CcMessageStrip state="error" announce>
+            The evidence engine could not be loaded, so the findings of this code are not shown. Reload the page to try again.
           </CcMessageStrip>
         </div>
       )}

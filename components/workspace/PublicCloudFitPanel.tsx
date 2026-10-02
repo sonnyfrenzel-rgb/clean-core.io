@@ -8,7 +8,6 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcButton from '@/components/cc/Button';
 import CcTable from '@/components/cc/Table';
 import { CcTag } from '@/components/cc/Tag';
-import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { resolvePublicCloudFit, publicCloudFitLookupObjects } from '@/lib/abap/public-cloud-fit-resolver';
 import { gradeKey } from '@/lib/abap/abcd-classification';
 import {
@@ -24,6 +23,7 @@ import {
   type PublicCloudFitRule,
 } from '@/lib/abap/public-cloud-fit';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
+import { useEvidenceEngine } from '@/hooks/useEvidenceEngine';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import type { Project } from '@/lib/types';
 import { wt, cloudFitDetailLabel, cloudFitNotAssigned, cloudFitTargetPlatform, type WorkspaceMessageKey } from '@/lib/workspace-messages';
@@ -47,7 +47,11 @@ import { wt, cloudFitDetailLabel, cloudFitNotAssigned, cloudFitTargetPlatform, t
  * Evidence is computed client-side from `project.legacyCode`, mirroring the
  * analyze page's own `buildAbapEvidence(...)` call (`app/(app)/project/
  * [projectId]/analyze/page.tsx`) rather than inventing a second way to reach
- * the same findings.
+ * the same findings. The engine arrives through `useEvidenceEngine`, a dynamic
+ * import, so the catalog it reads is fetched when this card has a source to
+ * sort and not with every workspace page (external audit PERF-01). Until it is
+ * here the card shows its loading state; if it cannot be fetched, its error
+ * state — never the "no source" card for a project that has one.
  *
  * **ADR-029 — the answer before the number.** The headline sentence
  * (`publicCloudFitHeadline`) is the first thing on the card, the shape DESIGN.md
@@ -119,11 +123,13 @@ function useCatalogBasis(): CatalogSnapshot[] | null {
 
 export default function PublicCloudFitPanel({ project }: { project: Project | null }) {
   const catalogBasis = useCatalogBasis();
+  const hasSource = Boolean(project?.legacyCode?.trim());
+  const { engine, failed: engineFailed } = useEvidenceEngine(hasSource);
   const findings = useMemo(() => {
     const code = project?.legacyCode?.trim();
-    if (!code || !project) return null;
-    return buildAbapEvidence(code, 'main.abap', project.s4Deployment).findings;
-  }, [project]);
+    if (!code || !project || !engine) return null;
+    return engine.buildAbapEvidence(code, 'main.abap', project.s4Deployment).findings;
+  }, [project, engine]);
 
   const lookupObjects = useMemo(() => (findings ? publicCloudFitLookupObjects(findings) : []), [findings]);
   // Graded under the project's target profile (owner decision 30.09.2026).
@@ -145,7 +151,7 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
     );
   }, [findings, project, lookup.status, lookup.grades, lookup.noPath, catalogBasis]);
 
-  if (!project?.legacyCode?.trim() || !findings) {
+  if (!hasSource) {
     return (
       <div className="cc" id="public-cloud-fit" data-public-cloud-fit-panel="empty">
         <CcCard title={wt('cloudFit.title')} meta={<CcProvenanceChip value="not-determined" />}>
@@ -159,7 +165,7 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
 
   // Visible "not loaded yet" state — the resolver has not run, so there is
   // nothing to render below but a placeholder, never a matrix of guesses.
-  if (lookup.status === 'loading') {
+  if (!engineFailed && (!findings || lookup.status === 'loading')) {
     return (
       <div className="cc" id="public-cloud-fit" data-public-cloud-fit-panel="loading">
         <CcCard title={wt('cloudFit.title')} meta={<CcProvenanceChip value="not-determined" />}>
@@ -172,7 +178,7 @@ export default function PublicCloudFitPanel({ project }: { project: Project | nu
   }
 
   // Visible "the lookup failed" state — never silently defaulted to "has a path".
-  if (lookup.status === 'error' || !result) {
+  if (engineFailed || lookup.status === 'error' || !result) {
     return (
       <div className="cc" id="public-cloud-fit" data-public-cloud-fit-panel="error">
         <CcCard title={wt('cloudFit.title')} meta={<CcProvenanceChip value="not-determined" />}>
