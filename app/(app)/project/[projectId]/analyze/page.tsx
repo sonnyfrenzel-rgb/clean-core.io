@@ -1836,7 +1836,10 @@ export default function AnalyzePage() {
         )
       ) : (
         <div id="analysis-report" className="motion-safe:animate-in slide-in-from-bottom-6">
-          {renderAnalysisContent()}
+          {/* Without the engine every figure below would be drawn from no
+              findings — "found nothing" for a program that has them. The
+              strip above says the engine failed; the report waits for it. */}
+          {evidenceEngineFailed && legacyCode ? null : renderAnalysisContent()}
 
           <StageFooter />
         </div>
