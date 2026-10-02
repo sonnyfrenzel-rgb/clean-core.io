@@ -10,6 +10,7 @@ import { buildClassModel } from '../lib/abap/class-model-resolver';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { collectLocalDataObjects } from '../lib/abap/table-dependencies';
 import { extractCodeInventory, extractDataCoupling, recommendArchitecture } from '../lib/abap/code-assessment';
+import { buildBpmnExportFromSource } from '../lib/bpmn/export';
 
 /**
  * A comment is not code, and neither is the inside of a literal.
@@ -373,5 +374,35 @@ test.describe('a literal inside a template expression is text there too', () => 
 
   test('the masked text keeps the outer delimiters and hides the expression', () => {
     expect(maskLiterals("x = |a{ '}' }b|. y.")).toBe('x = |         |. y.');
+  });
+});
+
+test.describe('whitespace inside a literal is its value (codex code-engine-02)', () => {
+  // Folding every run of whitespace turned `'A  B'` into `'A B'` — a different
+  // ABAP value carried on the original line anchor, into the rule and the BPMN.
+  const PROGRAM = [
+    'REPORT z_lit.',
+    'START-OF-SELECTION.',
+    '  SELECT SINGLE * FROM eban INTO @DATA(ls_eban) WHERE banfn = @gv_banfn.',
+    "  IF ls_eban-frgkz   =   'A  B'.",
+    "    UPDATE eban SET frgkz = 'X' WHERE banfn = gv_banfn.",
+    '  ELSE.',
+    "    UPDATE eban SET frgkz = 'Y' WHERE banfn = gv_banfn.",
+    '  ENDIF.',
+    '  WRITE: / `x  y`, |a  { lv_x   }  b|.',
+  ].join('\n');
+
+  test('the statement keeps it, the code around it is still folded', () => {
+    const texts = readStatements(PROGRAM).map((s) => s.text);
+    expect(texts).toContain("IF ls_eban-frgkz = 'A  B'");
+    // A chain part is joined to its head without folding a second time.
+    expect(texts).toContain('WRITE / `x  y`');
+    expect(texts).toContain('WRITE |a  { lv_x }  b|');
+  });
+
+  test('and so does the condition the BPMN export writes', () => {
+    const { xml } = buildBpmnExportFromSource(PROGRAM, { processName: 'Literal', sourceFileName: 'z_lit.abap' });
+    expect(xml).toContain("ls_eban-frgkz = &apos;A  B&apos;");
+    expect(xml).not.toContain("&apos;A B&apos;");
   });
 });
