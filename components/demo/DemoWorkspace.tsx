@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { RotateCcw, ArrowRight } from 'lucide-react';
 import StageHeader from '@/components/StageHeader';
+import StageFrame from '@/components/StageFrame';
 import DemoTesting from '@/components/demo/DemoTesting';
 import DemoAnalyze from '@/components/demo/DemoAnalyze';
 import CcButton from '@/components/cc/Button';
@@ -141,7 +142,7 @@ export default function DemoWorkspace({
     // that clicks earlier is testing the wrong thing.
     // The width of a real stage: the shell's own column, no narrower one of
     // the demo's (the stages are compared side by side with a project's).
-    <div className="cc w-full pb-24" data-demo-ready={hydrated ? 'true' : 'false'}>
+    <StageFrame stage={stage} className="cc pb-24" data-demo-ready={hydrated ? 'true' : 'false'}>
       <DemoStrip onReset={reset} />
 
       {/* `stage` for the header's identity, `title` because the demo's title
@@ -183,7 +184,7 @@ export default function DemoWorkspace({
         )}
         {stage === 'delivery' && <Delivery demo={demo} state={state} patch={patch} />}
       </div>
-    </div>
+    </StageFrame>
   );
 }
 

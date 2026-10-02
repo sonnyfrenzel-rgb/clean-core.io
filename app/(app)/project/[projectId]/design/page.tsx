@@ -55,6 +55,7 @@ import { detectFindings, summarize } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { SourceFile } from '@/lib/abap/findings-detector';
 import StageHeader from '@/components/StageHeader';
+import StageFrame from '@/components/StageFrame';
 import { workflowSteps, staleness, previousBasis } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { buildDesignExportHtml, designExportFileName } from '@/lib/design-export';
@@ -614,7 +615,7 @@ ${responseText.substring(0, 4000)}`;
   };
 
   if (loading && !design) return (
-    <div className="min-h-screen">
+    <StageFrame stage="design" className="min-h-screen">
       {/* Where am I, what is behind me, what is still open — kept on
           screen while the stepper scrolls away. Both read the same contract;
           neither decides anything. */}
@@ -635,7 +636,7 @@ ${responseText.substring(0, 4000)}`;
           <CcSkeleton shape="text" label="the technical design" count={6} />
         </div>
       </div>
-    </div>
+    </StageFrame>
   );
 
   // Built after the loading return: the markdown renderer needs a DOM, and
@@ -898,7 +899,7 @@ ${responseText.substring(0, 4000)}`;
       : 'Edition not determined · target not bound by the run';
 
   return (
-    <div className="min-h-screen">
+    <StageFrame stage="design" className="min-h-screen">
       {/* The rail used to render only while the page was loading: it sat in the
           early return and nowhere else, so it vanished the moment there was
           something to report on. */}
@@ -1013,7 +1014,7 @@ ${responseText.substring(0, 4000)}`;
               : 'Confirm architecture to proceed'
         }
       />
-    </div>
+    </StageFrame>
   );
 }
 
