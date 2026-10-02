@@ -406,7 +406,27 @@ export interface ProjectCommandState {
    * approve an answer to a different question.
    */
   profileDrift?: { recorded: string; now: string } | null;
+  /**
+   * Owner decision 02.10.2026 — the architecture contract's recommendation,
+   * derived by the caller on the server from the project's source and its
+   * catalog snapshot (`recommendationOfProject()` in `lib/contract-build.ts`,
+   * the derivation `GET /api/projects/{id}/contract` makes), inside the same
+   * transaction that reads the project.
+   *
+   * `approve-architecture` checks a departure against this, and against
+   * nothing the browser can write: `extensibilityRoute` is on the client
+   * allowlist of `firestore.rules`, so a recommendation read from it was the
+   * approver's own to set. `null`/absent when no contract could be derived —
+   * then, and only then, the stored value decides, and the answer says so.
+   */
+  contractRecommendation?: TargetArchitectureCode | null;
 }
+
+/**
+ * What a sign-off's "recommended" was read from: the architecture contract, or
+ * — when none could be derived — the value stored on the project.
+ */
+export type RecommendationBasis = 'contract' | 'stored' | 'none';
 
 /** Facts only the server knows. Never taken from the request body. */
 export interface ProjectCommandActor {
@@ -431,6 +451,8 @@ export interface ProjectCommandRefusal {
   details?: EvidenceChange[];
   /** The run the project actually stands on, when that is the disagreement. */
   activeRunId?: string;
+  /** `override-needs-reason` only: where the recommendation came from. */
+  recommendationBasis?: RecommendationBasis;
 }
 
 export interface ProjectCommandWrite {
@@ -439,6 +461,10 @@ export interface ProjectCommandWrite {
   action: string;
   /** The exact field/value pairs to merge onto the project document. */
   fields: Record<string, unknown>;
+  /** `approve-architecture` only: where the recommendation it checked against came from. */
+  recommendationBasis?: RecommendationBasis;
+  /** A sentence for the reader when the check did not stand on the contract. */
+  notice?: string;
 }
 
 export type ProjectCommandResult = ProjectCommandWrite | ProjectCommandRefusal;
@@ -617,16 +643,38 @@ export function validateProjectCommand(
     // The browser enforced this and could equally well not have. Unknown
     // recommendation, no requirement — an override is only claimed when both
     // routes are known (`lib/route-override.ts`, same conservatism).
-    const recommended = recommendedArchitecture(state);
+    //
+    // The recommendation is the architecture contract's (owner decision
+    // 02.10.2026) — the route the Design stage shows — and not the project's
+    // `originalRecommendation`/`extensibilityRoute`, the second of which the
+    // browser writes: with it, an approver could make any route "the
+    // recommended one" and sign it off without a reason. Only when no contract
+    // could be derived does the stored value decide, as before, and the answer
+    // says so rather than passing it off as the contract's.
+    const fromContract = isTargetArchitecture(state.contractRecommendation) ? state.contractRecommendation : null;
+    const recommended = fromContract ?? recommendedArchitecture(state);
+    const basis: RecommendationBasis = fromContract ? 'contract' : recommended !== null ? 'stored' : 'none';
     if (recommended !== null && recommended !== target && justification.length === 0) {
-      return refuse(
-        400,
-        'override-needs-reason',
-        'Choosing an architecture other than the recommended one needs a written reason.',
-      );
+      return {
+        ...refuse(
+          400,
+          'override-needs-reason',
+          'Choosing an architecture other than the recommended one needs a written reason.',
+        ),
+        recommendationBasis: basis,
+      };
     }
     return {
       ok: true,
+      recommendationBasis: basis,
+      ...(basis === 'contract'
+        ? {}
+        : {
+            notice:
+              basis === 'stored'
+                ? 'No architecture contract could be derived for this project, so the departure check used the recommendation stored on the project.'
+                : 'No architecture contract could be derived and no recommendation is stored on this project, so no departure check applied.',
+          }),
       action: 'PROJECT_ARCHITECTURE_APPROVED',
       fields: {
         targetArchitecture: target,

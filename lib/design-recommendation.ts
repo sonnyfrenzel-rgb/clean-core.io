@@ -90,3 +90,21 @@ export function designAnswer(args: {
   if (stored) return { kind: 'stored', code: stored.code, storedDiffers: null };
   return { kind: 'none', code: null, storedDiffers: null };
 }
+
+/**
+ * What the sign-off dialog names as the recommendation — owner decision
+ * 02.10.2026: the contract's route, the same one the card above it shows and
+ * the one `approve-architecture` now checks a departure against on the server
+ * (`recommendationOfProject()` in `lib/contract-build.ts`). The dialog used to
+ * receive the stored value on purpose, because the server compared against it;
+ * now both read the contract, and the stored value is used only where no
+ * contract could be read — which is also when the server falls back to it.
+ */
+export function signOffRecommendation(
+  contractRoute: { recommended: TargetRoute } | null,
+  stored: StoredRoute | null,
+): { code: TargetArchitectureCode; basis: 'contract' | 'stored' | 'default' } {
+  if (contractRoute) return { code: ARCHITECTURE_OF_ROUTE[contractRoute.recommended], basis: 'contract' };
+  if (stored) return { code: stored.code, basis: 'stored' };
+  return { code: 'rap', basis: 'default' };
+}
