@@ -82,7 +82,8 @@ Model proposal.
   Signavio workspace or the Signavio API; the file is yours to take along.
   Whether SAP Signavio opens the file has not been verified.
 - **Read access by invitation.** A project is shared with one confirmed e-mail address,
-  including its source code, with expiry and revocation.
+  including its source code, until the owner withdraws it; an invitation link nobody
+  accepts expires.
 - **Costs only as simulation.** Economics calculates on your own assumptions; any amount
   shown elsewhere carries the *Simulation* label and the assumption revision.
 - **A demo project for every account.** The fully worked demo `Z_MM_PO_APPROVAL`, with a

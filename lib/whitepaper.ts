@@ -240,7 +240,7 @@ export const WORKSPACE_FACTS = [
   },
   {
     t: 'Share by invitation',
-    d: 'Only the account that created a project, and anyone that account invites, can open it. An invitation is bound to one confirmed e-mail address, gives read access including the source code, expires, and can be revoked at any time. There are no public links.',
+    d: 'Only the account that created a project, and anyone that account invites, can open it. An invitation is bound to one confirmed e-mail address and gives read access including the source code until it is withdrawn, which can happen at any time. Its link expires if nobody accepts it. There are no public links.',
   },
   {
     t: 'A print sheet per project',

@@ -75,7 +75,8 @@ Version: ${facts.engineVersion} (${facts.engineReleaseDate})
   Delivery. Their layout is oriented on SAP Fiori patterns; it is not an SAP Fiori app
   and not endorsed by SAP.
 - Read access by invitation: a link bound to one confirmed e-mail address, including
-  the source code, with expiry and revocation. No public links.
+  the source code, until the owner withdraws it; a link nobody accepts expires. No
+  public links.
 - A demo project with a guided tour in every account.
 - Free, with no paid tier. Stored in the EU (Google Cloud, Belgium). No analytics,
   advertising or tracking cookies.

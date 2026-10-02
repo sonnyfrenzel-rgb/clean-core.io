@@ -86,7 +86,7 @@ export const LANDING_FAQ: LandingFaq[] = [
   },
   {
     q: 'Who can see my projects?',
-    a: 'Only the account that created a project, and anyone that account invites. An invitation is bound to one confirmed e-mail address, gives read access including the source code, expires, and can be revoked at any time. There are no public links.',
+    a: 'Only the account that created a project, and anyone that account invites. An invitation is bound to one confirmed e-mail address and gives read access including the source code until it is withdrawn, which can happen at any time. Its link expires if nobody accepts it. There are no public links.',
   },
   {
     q: 'Where is my data stored?',
