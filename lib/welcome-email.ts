@@ -41,12 +41,12 @@ const FIRST_RUN_STEPS: string[] = [
 
 /** The block people forward to their security officer. Every line is implemented. */
 const SECURITY_POINTS: string[] = [
-  '<strong>Stored in the EU.</strong> Hosting and the Firestore database run in Google Cloud europe-west1 (Belgium); the sign-in, Firebase Authentication, is not tied to a region.',
-  "<strong>Model training depends on the key.</strong> With our community key, Google does not use your code to train its models &mdash; the paid Gemini API terms apply. With your own key, your Google account&rsquo;s terms apply.",
+  '<strong>Stored in the EU.</strong> Hosting and Firestore run in europe-west1 (Belgium); sign-in (Firebase Authentication) is not tied to a region.',
+  "<strong>Model training depends on the key.</strong> With our community key, Google does not train on your code (paid Gemini API terms); with your own key, your account&rsquo;s terms apply.",
   '<strong>Keys never reach the browser.</strong> Every model call goes through a server-side proxy; a BYOK key is encrypted at rest with AES-256-GCM in a server-only store.',
-  '<strong>Evidence you can re-verify.</strong> Each analysis is an immutable, HMAC-signed Run, and the audit pack you download can be checked independently.',
-  '<strong>Multi-factor authentication.</strong> Recommended for every account, and required before you connect a live S/4HANA tenant or store your own Gemini key. Set it up under Settings &rarr; Security with a TOTP authenticator app; from then on the factor is checked server-side on every sensitive request.',
-  '<strong>Live SAP connections stay opt-in.</strong> Connecting a non-production sandbox is a separate, admin-reviewed request; read-only, and production endpoints are blocked.',
+  '<strong>Evidence you can re-verify.</strong> Each analysis is an immutable, HMAC-signed Run, and its audit pack can be checked independently.',
+  '<strong>Multi-factor authentication.</strong> Recommended for every account; required before you connect a live S/4HANA tenant or store your own key. Set it up under Settings &rarr; Security with a TOTP app; the factor is then checked server-side on every sensitive request.',
+  '<strong>Live SAP connections stay opt-in.</strong> A non-production sandbox is a separate, admin-reviewed, read-only request; production endpoints are blocked.',
   '<strong>Erasure is self-service.</strong> Settings &rarr; Danger Zone deletes your profile, projects, runs, secrets and login (GDPR Art. 17).',
 ];
 
