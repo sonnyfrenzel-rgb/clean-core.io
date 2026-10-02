@@ -255,7 +255,7 @@ test('the effective version, the constant and the new obligations are one change
 
   // The document states a version of its own, and it is the one the gate uses.
   expect(terms, 'the Terms no longer state an effective version').toMatch(
-    /effective\s+6\s+October\s+2026\s+\(v2\.2\.0\)/,
+    /effective\s+3\s+October\s+2026\s+\(v2\.2\.0\)/,
   );
   expect(TERMS_VERSION, 'the constant and the document disagree about which version is current').toBe('2026-10-03');
 
