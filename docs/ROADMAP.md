@@ -1765,8 +1765,9 @@ Sonny decided all three on 30.09.2026; built on `decide/terms-30` (from `integra
 With it, consent: every existing account must accept v2.2.0 at its next sign-in with 3.0 — no mails, no census
 (Sonny, 30.09.2026). `TERMS_VERSIONS_IN_FORCE` holds the current version alone (`122d9275`); this sets aside
 § 10.1 (six weeks' notice by mail) and § 10.3 (carry on under the accepted Terms; ending that takes 30 days'
-notice) of the Terms those accounts accepted, on the owner's decision. The effective date is 6 October 2026,
-the agreed 3.0 release day (it replaced the placeholder 15 October 2026 before anything was published).
+notice) of the Terms those accounts accepted, on the owner's decision. The effective date is 3 October 2026,
+the 3.0 release day, the day of the main deploy (it replaced 6 October 2026 on 02.10.2026 and the placeholder
+15 October 2026 before anything was published).
 
 ### Full review of 3131afa (v2.14.0), triaged on 23.09.2026
 
