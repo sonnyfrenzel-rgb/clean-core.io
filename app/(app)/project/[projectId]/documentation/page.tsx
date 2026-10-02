@@ -883,7 +883,7 @@ Structure the JSON exactly like this:
           neither decides anything. */}
 
       <StageProgress steps={phases} current="documentation" projectId={projectId as string} />
-      <StageHeader tools={{ steps: phases, current: 'documentation' }} stage="documentation" projectName={project?.name} />
+      <StageHeader stage="documentation" tools={{ steps: phases, current: 'documentation' }} projectName={project?.name} />
       <CcSkeleton shape="cards" label="documentation" count={2} />
     </div>
   );
