@@ -15,11 +15,15 @@ import {
 import {
   CATEGORICAL_CHART_COLORS,
   SEQUENTIAL_CHART_COLORS,
+  SCORE_BAND_CHART_COLORS,
   STATE_CHART_COLORS,
   categoricalChartColor,
   levelChartColor,
+  scoreBandChartColor,
   severityChartColor,
+  severityChartMark,
 } from '../lib/chart-colors';
+import { SCORE_BANDS } from '../lib/clean-core-score';
 import type { ItFindingRow } from '../lib/it-findings';
 import type { EvidenceFinding } from '../lib/abap/evidence-model';
 
@@ -117,15 +121,58 @@ test.describe('the chart palettes are tokens, and never green', () => {
     const design = read('DESIGN.md');
     const section = design.slice(design.indexOf('### 1.8 Charts'), design.indexOf('## 2. Structure'));
     const hexes = (s: string) => [...s.matchAll(/`(#[0-9a-f]{6})`/gi)].map((m) => m[1].toLowerCase());
-    const [categorical, sequential] = [
+    // Each palette is read from its own bullet: up to the next one, not to the end of the section.
+    const bullet = (from: number) => {
+      const end = section.indexOf('\n- ', from);
+      return section.slice(from, end === -1 ? undefined : end);
+    };
+    const [categorical, sequential, score] = [
       hexes(section.slice(0, section.indexOf('Sequential'))),
-      hexes(section.slice(section.indexOf('Sequential'))),
+      hexes(bullet(section.indexOf('Sequential'))),
+      hexes(bullet(section.indexOf("The Clean Core Score's bands"))),
     ];
+    expect(score, 'DESIGN.md §1.8 names the score bands').toHaveLength(SCORE_BANDS.length);
+    expect(SCORE_BANDS.map((b) => tokens.get(scoreBandChartColor(b.key).token)?.toLowerCase())).toEqual(score);
     expect(CATEGORICAL_CHART_COLORS.map((c) => tokens.get(c.token)?.toLowerCase())).toEqual(categorical);
     expect(SEQUENTIAL_CHART_COLORS.map((c) => tokens.get(c.token)?.toLowerCase())).toEqual(sequential);
     expect(categoricalChartColor(0).token).toBe('--cc-chart-1');
     expect(categoricalChartColor(5).token, 'the sixth series wraps to the first').toBe('--cc-chart-1');
     expect(() => categoricalChartColor(-1)).toThrow();
+  });
+
+  test('the score bands are one ordered scale, every band seen against the surface', () => {
+    // Owner, 02.10.2026: "Analysis Farben sehen zu blass aus" — state colours faded to 40 %.
+    const tokens = declaredTokens();
+    const hex = SCORE_BANDS.map((b) => tokens.get(scoreBandChartColor(b.key).token) || '');
+    const states = new Set(Object.values(STATE_CHART_COLORS).map((c) => (tokens.get(c.token) || '').toLowerCase()));
+    let previous = Infinity;
+    for (const [i, value] of hex.entries()) {
+      expect(value, `${SCORE_BANDS[i].key} has no colour`).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(states.has(value.toLowerCase()), `${SCORE_BANDS[i].key} is a state colour`).toBe(false);
+      const ratio = ratioOf(value, '#ffffff')!;
+      expect(ratio, `${SCORE_BANDS[i].key} below 3 : 1 against the surface`).toBeGreaterThanOrEqual(3);
+      // Light to dark, far to close: each band deeper than the one before.
+      expect(ratio, `${SCORE_BANDS[i].key} is not deeper than the band before`).toBeGreaterThan(previous === Infinity ? 0 : previous);
+      previous = ratio;
+    }
+    expect(Object.keys(SCORE_BAND_CHART_COLORS).sort()).toEqual(SCORE_BANDS.map((b) => b.key).sort());
+    // Every surface that draws a band reads it from the module, and none fades a band.
+    for (const rel of [
+      'components/analyze/CleanCoreScoreSection.tsx',
+      'components/analyze/CleanCoreScoreDialog.tsx',
+      'app/(app)/clean-core-score/page.tsx',
+    ]) {
+      expect(read(rel), `${rel} paints a band without scoreBandChartColor`).toContain('scoreBandChartColor(');
+    }
+    expect(read('components/analyze/CleanCoreScoreSection.tsx'), 'a band faded with opacity').not.toMatch(/opacity-\d/);
+  });
+
+  test('a severity mark is its state colour at full strength', () => {
+    for (const value of ['Critical', 'High', 'Medium', 'Low', 'Info'] as const) {
+      const mark = severityChartMark(value, 'bg');
+      expect(mark, `${value} mark`).toBe(severityChartColor(value).bg);
+      expect(mark, `${value} is tinted`).not.toMatch(/opacity/);
+    }
   });
 
   test('every colour names a declared token, a Tailwind colour and its var()', () => {
@@ -135,6 +182,7 @@ test.describe('the chart palettes are tokens, and never green', () => {
       ...Object.values(STATE_CHART_COLORS),
       ...CATEGORICAL_CHART_COLORS,
       ...SEQUENTIAL_CHART_COLORS,
+      ...Object.values(SCORE_BAND_CHART_COLORS),
     ];
     for (const c of all) {
       expect(tokens.has(c.token), `${c.token} is not declared in app/globals.css`).toBe(true);

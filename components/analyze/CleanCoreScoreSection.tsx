@@ -5,10 +5,8 @@ import Link from 'next/link';
 import { HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcIconButton from '@/components/cc/IconButton';
-import { STATE_CLASSES } from '@/components/cc/state';
-import { stateChartColor } from '@/lib/chart-colors';
-import type { SemanticState } from '@/lib/provenance';
-import { SCORE_BANDS, SCORE_BANDS_SOURCE, SCORE_NATURE, scoreBand, type ScoreBand, type ScoreBandKey, type ScoreBreakdown } from '@/lib/clean-core-score';
+import { scoreBandChartColor } from '@/lib/chart-colors';
+import { SCORE_BANDS, SCORE_BANDS_SOURCE, SCORE_NATURE, scoreBand, type ScoreBand, type ScoreBreakdown } from '@/lib/clean-core-score';
 import ObjectSection from './ObjectSection';
 
 /**
@@ -27,15 +25,17 @@ import ObjectSection from './ObjectSection';
  * score itself is the signed run's; the breakdown is recomputed from the
  * findings on this page with the same table and is shown only beside a score
  * it adds up to.
+ *
+ * The bands are coloured from one sequential scale (`scoreBandChartColor`,
+ * DESIGN.md §1.8), every band at full strength; the band the score is in is
+ * told by the marker, its words and its card, not by fading the others.
  */
-export const BAND_STATE: Record<ScoreBandKey, Exclude<SemanticState, 'success'>> = {
-  far: 'error',
-  heavy: 'warning',
-  some: 'neutral',
-  light: 'information',
-};
 
-/** The scale itself — four bands and a marker. `compact` is the facet's micro chart. */
+/**
+ * The scale itself — four bands and a marker. `compact` is the facet's micro
+ * chart. The marker's white ring keeps it apart from the deepest band, which
+ * is nearly as dark as the ink.
+ */
 export function ScoreScale({ score, compact = false }: { score: number; compact?: boolean }) {
   const at = Math.max(0, Math.min(100, score));
   const band = scoreBand(score);
@@ -46,7 +46,7 @@ export function ScoreScale({ score, compact = false }: { score: number; compact?
       data-score-scale={compact ? 'compact' : 'full'}
       className="relative w-full"
     >
-      <div className={cn('flex w-full gap-px overflow-hidden rounded-cc-row', compact ? 'h-2' : 'h-3')}>
+      <div className={cn('flex w-full gap-0.5 overflow-hidden rounded-cc-row', compact ? 'h-2' : 'h-3')}>
         {SCORE_BANDS.map((b) => {
           // Boundaries halfway between the integers, so the marker at `score`% lands in its band.
           const width = b.key === 'far' ? b.to + 0.5 : b.key === 'light' ? 100.5 - b.from : b.to - b.from + 1;
@@ -54,7 +54,8 @@ export function ScoreScale({ score, compact = false }: { score: number; compact?
             <span
               key={b.key}
               data-chart-segment=""
-              className={cn('h-full', stateChartColor(BAND_STATE[b.key]).bg, b.key !== band.key && 'opacity-40')}
+              data-score-segment={b.key}
+              className={cn('h-full', scoreBandChartColor(b.key).bg)}
               style={{ flex: `${width} 0 0` }}
             />
           );
@@ -62,7 +63,8 @@ export function ScoreScale({ score, compact = false }: { score: number; compact?
       </div>
       <span
         aria-hidden={true}
-        className={cn('absolute -translate-x-1/2 rounded-full bg-cc-ink', compact ? '-top-1 h-4 w-1' : '-top-1 h-5 w-1')}
+        data-score-marker=""
+        className={cn('absolute -translate-x-1/2 rounded-full bg-cc-ink ring-2 ring-cc-surface', compact ? '-top-1 h-4 w-1' : '-top-1 h-5 w-1')}
         style={{ left: `${at}%` }}
       />
     </div>
@@ -80,7 +82,7 @@ function BandCard({ band, current }: { band: ScoreBand; current: boolean }) {
       )}
     >
       <span className="flex flex-wrap items-center gap-2">
-        <span aria-hidden={true} className={cn('h-2 w-3 shrink-0 rounded-cc-row', stateChartColor(BAND_STATE[band.key]).bg)} />
+        <span aria-hidden={true} data-score-swatch={band.key} className={cn('h-2 w-3 shrink-0 rounded-cc-row', scoreBandChartColor(band.key).bg)} />
         <span className="font-cc-mono cc-text-meta text-cc-ink tabular-nums">
           {band.from}–{band.to}
         </span>
@@ -105,7 +107,6 @@ export default function CleanCoreScoreSection({
   onExplain: () => void;
 }) {
   const band = score !== null ? scoreBand(score) : null;
-  const state = band ? STATE_CLASSES[BAND_STATE[band.key]] : null;
   const addsUp = breakdown !== null && score !== null && breakdown.score === score;
   const maxPoints = Math.max(1, ...(breakdown?.lines.map((l) => l.points) ?? [1]), breakdown?.unassessedPoints ?? 0);
 
@@ -123,7 +124,7 @@ export default function CleanCoreScoreSection({
       }
       right={<span className="cc-text-meta text-cc-ink-muted">A grade, not a compliance percentage · higher is better</span>}
     >
-      {score === null || band === null || state === null ? (
+      {score === null || band === null ? (
         <p className="m-0 cc-text-cell text-cc-ink-muted">
           This run computed no score, so none is shown — a missing figure is not filled in.
         </p>
@@ -138,7 +139,7 @@ export default function CleanCoreScoreSection({
                 </span>
                 <span className="cc-text-cell text-cc-ink-muted">of 100</span>
               </p>
-              <p className={cn('m-0 mt-1 cc-text-identifier', state.text)} data-analyze-score-band={band.key}>
+              <p className="m-0 mt-1 cc-text-identifier text-cc-ink" data-analyze-score-band={band.key}>
                 {band.from}–{band.to} · {band.label}
               </p>
             </div>

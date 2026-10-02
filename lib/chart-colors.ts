@@ -12,7 +12,7 @@
  *     second time here, so the chart and the identifier beside it cannot drift.
  *   - **Every other chart** — buckets, modules, runs over time — takes the
  *     categorical palette `--cc-chart-1 … 5`, or the sequential indigo
- *     `--cc-seq-1 … 4` for amounts, and **never a state colour**: a bar in
+ *     `--cc-seq-1 … 4` for amounts (the score's bands: `--cc-score-1 … 4`), and **never a state colour**: a bar in
  *     `--cc-error` says "wrong" about a category that is only a category.
  *
  * **No chart is ever green.** `success` is not in any table below and cannot be
@@ -35,6 +35,7 @@
 import type { SemanticState } from './provenance';
 import { cleanCoreLevel, type CleanCoreLevelValue } from './clean-core-level';
 import { severity, type SeverityValue } from './severity';
+import type { ScoreBandKey } from './clean-core-score';
 
 /** A state a chart may paint. `success` is left out on purpose — see above. */
 export type ChartState = Exclude<SemanticState, 'success'>;
@@ -88,17 +89,18 @@ export function severityChartColor(value: SeverityValue): ChartColor {
 
 /**
  * The classes of one severity mark in a chart — a bar segment, a donut arc, a
- * legend swatch, a dot. Critical and High share the error colour (ADR-049), so
- * High is drawn lighter to keep the two apart; the word beside the mark is
- * still the carrier. A value the engine did not name is neutral.
+ * legend swatch, a dot. Every mark is its state colour at full strength:
+ * Critical and High share the error colour (ADR-049) and are told apart by
+ * the word beside the mark and the gap between segments, never by a tint — a
+ * High drawn at 70 % read as a pale, washed-out red (owner, 02.10.2026). A
+ * value the engine did not name is neutral.
  *
  * Here and not at the call site: a component that spells a severity word next
  * to a colour class is painting a severity freehand (DESIGN.md §4.1).
  */
 export function severityChartMark(value: SeverityValue | null | undefined, part: 'bg' | 'fill' | 'stroke'): string {
   if (!value) return STATE_CHART_COLORS.neutral[part];
-  const mark = severityChartColor(value)[part];
-  return value === 'High' ? `${mark} opacity-70` : mark;
+  return severityChartColor(value)[part];
 }
 
 /**
@@ -140,6 +142,38 @@ export const SEQUENTIAL_CHART_COLORS: readonly ChartColor[] = Object.freeze([
   color('--cc-seq-3', 'bg-cc-seq-3', 'fill-cc-seq-3', 'stroke-cc-seq-3'),
   color('--cc-seq-4', 'bg-cc-seq-4', 'fill-cc-seq-4', 'stroke-cc-seq-4'),
 ]);
+
+/* ------------------------------------------------------ the score's bands */
+
+/**
+ * The four bands of the Clean Core Score (`SCORE_BANDS`), `--cc-score-1 … 4` —
+ * DESIGN.md §1.8. The score is an amount on one axis, so its bands take a
+ * sequential scale and no state colour: a band is a reading of a grade, not a
+ * verdict of *wrong* (error) or *proven* (success), and a state colour per band
+ * mixed red, amber, slate and blue into an order nobody could read.
+ *
+ * One hue, light to dark from far to close, the way the axis runs — the
+ * further along, the deeper the colour. Each step clears 3 : 1 against the
+ * surface (WCAG 1.4.11), unlike `--cc-seq-1/2`, because here the bar *is* the
+ * chart and every band has to be seen, not only the one the score is in. The
+ * band the score is in is told by the marker and the band's words, never by
+ * fading the others.
+ *
+ * Every surface that draws a band reads it here: the score tile and section of
+ * Analyze (real and demo), the band cards, the score dialog, the score page.
+ */
+export const SCORE_BAND_CHART_COLORS: Readonly<Record<ScoreBandKey, ChartColor>> = Object.freeze({
+  far: color('--cc-score-1', 'bg-cc-score-1', 'fill-cc-score-1', 'stroke-cc-score-1'),
+  heavy: color('--cc-score-2', 'bg-cc-score-2', 'fill-cc-score-2', 'stroke-cc-score-2'),
+  some: color('--cc-score-3', 'bg-cc-score-3', 'fill-cc-score-3', 'stroke-cc-score-3'),
+  light: color('--cc-score-4', 'bg-cc-score-4', 'fill-cc-score-4', 'stroke-cc-score-4'),
+});
+
+export function scoreBandChartColor(key: ScoreBandKey): ChartColor {
+  const entry = SCORE_BAND_CHART_COLORS[key];
+  if (!entry) throw new Error(`No chart colour for score band: ${String(key)}`);
+  return entry;
+}
 
 /* ------------------------------------------------- the area that is no category */
 

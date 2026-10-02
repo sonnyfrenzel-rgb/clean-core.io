@@ -8,6 +8,7 @@ import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/versi
 import { publicButton } from '@/components/landing/public-button';
 import CcTable from '@/components/cc/Table';
 import { BAIP_FIRST } from '@/lib/sap-naming';
+import { scoreBandChartColor } from '@/lib/chart-colors';
 import {
   SCORE_BANDS,
   SCORE_BANDS_SOURCE,
@@ -380,7 +381,10 @@ export default function CleanCoreScorePage() {
             <ol className="grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2">
               {[...SCORE_BANDS].reverse().map((band) => (
                 <li key={band.key} data-score-band={band.key} className={PILLAR}>
-                  <p className="m-0 font-cc-mono text-sm font-bold text-cc-ink">{bandRange(band)}</p>
+                  <p className="m-0 flex items-center gap-2 font-cc-mono text-sm font-bold text-cc-ink">
+                    <span aria-hidden={true} data-score-swatch={band.key} className={`h-2 w-4 rounded-cc-row ${scoreBandChartColor(band.key).bg}`} />
+                    {bandRange(band)}
+                  </p>
                   <h3 className="m-0 text-base font-bold text-cc-ink">{band.label}</h3>
                   <p className={PILLAR_TEXT}>{band.meaning}</p>
                   <p className="m-0 text-xs font-medium leading-relaxed text-cc-ink-muted">{band.because}</p>

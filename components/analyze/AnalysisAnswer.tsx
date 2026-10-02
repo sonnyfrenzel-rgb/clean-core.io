@@ -6,12 +6,11 @@ import { cn } from '@/lib/utils';
 import CcIconButton from '@/components/cc/IconButton';
 import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
-import { severityChartMark, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
+import { severityChartMark, levelChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
 import { scoreBand } from '@/lib/clean-core-score';
-import { STATE_CLASSES } from '@/components/cc/state';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import type { AnalysisAnswerText, FindingCounts } from './analysis-answer';
-import { BAND_STATE, ScoreScale } from './CleanCoreScoreSection';
+import { ScoreScale } from './CleanCoreScoreSection';
 
 /**
  * The head of the Analyze object page (proposal A, owner decision 01.10.2026):
@@ -158,7 +157,7 @@ export default function AnalysisAnswer({
               <ScoreScale score={score} compact />
               <a
                 href="#analyze-score"
-                className={cn('mt-2 inline-block cc-text-meta underline underline-offset-2', STATE_CLASSES[BAND_STATE[band.key]].text)}
+                className="mt-2 inline-block cc-text-meta text-cc-ink underline underline-offset-2"
               >
                 {band.from}–{band.to} · {band.label}
               </a>
@@ -265,7 +264,7 @@ function StackBar({ parts }: { parts: readonly SeverityPart[] }) {
     <div
       role="img"
       aria-label={`By severity: ${parts.map((p) => `${p.count} ${p.key.toLowerCase()}`).join(', ')}.`}
-      className="flex h-2 w-full gap-px overflow-hidden rounded-cc-row bg-cc-surface-muted"
+      className="flex h-2 w-full gap-0.5 overflow-hidden rounded-cc-row bg-cc-surface-muted"
     >
       {total > 0
         ? parts
@@ -283,11 +282,17 @@ function StackBar({ parts }: { parts: readonly SeverityPart[] }) {
   );
 }
 
+/**
+ * The text on a level's block. The blocks are filled with the level's chart
+ * colour at full strength, so the letter is white on A, B and D (6.5–7.6 : 1)
+ * and ink on C, whose mark `#d97706` holds white at only 3.2 : 1 but ink at
+ * 5.4 : 1 (DESIGN.md §1.1, warning marks).
+ */
 const LEVEL_TEXT: Record<'B' | 'A' | 'C' | 'D', string> = {
-  A: 'text-cc-information',
-  B: 'text-cc-ink',
-  C: 'text-cc-warning',
-  D: 'text-cc-error',
+  A: 'text-cc-on-dark',
+  B: 'text-cc-on-dark',
+  C: 'text-cc-ink',
+  D: 'text-cc-on-dark',
 };
 
 /** Findings per clean core level as labelled blocks: `B 6 · C 19 · D 2 · ? 4`. */
@@ -305,7 +310,8 @@ function LevelBar({ levels }: { levels: LevelFacet }) {
         <span
           key={g}
           data-chart-segment=""
-          className={cn('grid min-w-9 place-items-center rounded-cc-row border cc-text-meta', levelBlock(g), LEVEL_TEXT[g])}
+          data-level-block={g}
+          className={cn('grid min-w-9 place-items-center rounded-cc-row cc-text-meta font-semibold', levelChartColor(g).bg, LEVEL_TEXT[g])}
           style={{ flex: `${levels.dist[g]} 0 0` }}
         >
           {g} {levels.dist[g]}
@@ -323,15 +329,4 @@ function LevelBar({ levels }: { levels: LevelFacet }) {
       ) : null}
     </div>
   );
-}
-
-function levelBlock(g: 'A' | 'B' | 'C' | 'D'): string {
-  // The pale surface of the level's state (lib/chart-colors.ts: A information, B neutral, C warning, D error).
-  return g === 'A'
-    ? 'bg-cc-information-bg border-cc-information-border'
-    : g === 'B'
-      ? 'bg-cc-neutral-bg border-cc-neutral-border'
-      : g === 'C'
-        ? 'bg-cc-warning-bg border-cc-warning-border'
-        : 'bg-cc-error-bg border-cc-error-border';
 }

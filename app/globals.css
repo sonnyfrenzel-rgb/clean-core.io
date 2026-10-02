@@ -261,6 +261,14 @@
   --cc-seq-2: #a5b4fc;
   --cc-seq-3: #6366f1;
   --cc-seq-4: #3730a3;
+  /* The Clean Core Score's four bands, §1.8 — the sequential indigo again, but
+     every step at 3 : 1 or more against the surface (WCAG 1.4.11): the bar is
+     the chart, so no band may fade into the card. Light to dark from "far from
+     clean core" to "close to clean core", the way the axis runs. */
+  --cc-score-1: #7578f0;
+  --cc-score-2: #4f46e5;
+  --cc-score-3: #3730a3;
+  --cc-score-4: #1e1b4b;
 }
 
 @theme {
@@ -315,6 +323,10 @@
   --color-cc-seq-2: var(--cc-seq-2);
   --color-cc-seq-3: var(--cc-seq-3);
   --color-cc-seq-4: var(--cc-seq-4);
+  --color-cc-score-1: var(--cc-score-1);
+  --color-cc-score-2: var(--cc-score-2);
+  --color-cc-score-3: var(--cc-score-3);
+  --color-cc-score-4: var(--cc-score-4);
 
   --radius-cc-card: var(--cc-radius-card);
   --radius-cc-row: var(--cc-radius-row);
