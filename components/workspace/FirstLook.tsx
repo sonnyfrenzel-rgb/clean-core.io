@@ -10,9 +10,10 @@ import CcDisclosure from '@/components/cc/Disclosure';
 import CcSwitch from '@/components/cc/Switch';
 import { CcRulePropertyTag } from '@/components/cc/Tag';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
-import FirstLookBuildUp from './FirstLookBuildUp';
+import FirstLookBuildUp, { ExcerptSvg } from './FirstLookBuildUp';
 import { requestRuleEditing, useIsOwner } from './BusinessRulesEditor';
 import { BUILD_UP_BUDGET } from '@/lib/first-look-buildup';
+import { firstLookExcerpt } from '@/lib/first-look-excerpt';
 import { rulesConfirmed, stepStrip, type StepChip } from '@/lib/rules-editor';
 import { tokenizeAbapLine } from '@/lib/process-map';
 import { useProcessStates } from '@/hooks/useProcessStates';
@@ -198,6 +199,7 @@ export default function FirstLook({
   onReading,
   namingFrom = 'project',
   proposedName = null,
+  onOpenMap,
 }: {
   project: Project | null;
   projectId: string;
@@ -225,6 +227,11 @@ export default function FirstLook({
    * it. Without one, the program's name is the title.
    */
   proposedName?: string | null;
+  /**
+   * Scrolls to the full process map, where the screen has one (Business). The
+   * picture in this card is the main line only; this is the way to the rest.
+   */
+  onOpenMap?: () => void;
 }) {
   const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
   const hasSource = source.trim().length > 0;
@@ -359,6 +366,17 @@ export default function FirstLook({
   );
 
   const complete = !hasSource || result !== null;
+
+  /**
+   * The process the build-up drew, kept in the end state (owner, 02.10.2026:
+   * "Der Prozess muss immer angezeigt werden … mit erster Blick — der Prozess
+   * war kurz da und dann verschwunden"). The build-up grows this drawing beside
+   * the code; the end state used to drop it for the step strip, so the one
+   * picture of the process on the first screen vanished after ~2.4 s. Same
+   * skeleton, same layout, plain names, every node with its line — nothing is
+   * added (`lib/first-look-excerpt.ts`).
+   */
+  const drawing = useMemo(() => firstLookExcerpt(process?.skeleton ?? null, source), [process, source]);
 
   useEffect(() => {
     if (!process || !rules || tables === null) return;
@@ -541,17 +559,16 @@ export default function FirstLook({
           }
         >
           {result ? (
-            <div
-              className={
-                sourceOpen ? 'grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)]' : undefined
-              }
-            >
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
               <EndState result={result} proposedName={proposedName} confirmed={confirmed} owner={owner} />
-              {sourceOpen ? (
-                <div data-first-look-source="" className="min-w-0">
-                  <CcCodeSurface lines={sourceListing} label={wt('firstLook.sourceLabel')} />
-                </div>
-              ) : null}
+              <div className="flex min-w-0 flex-col gap-4">
+                <FirstLookProcess drawing={drawing} onOpenMap={onOpenMap} />
+                {sourceOpen ? (
+                  <div data-first-look-source="" className="min-w-0">
+                    <CcCodeSurface lines={sourceListing} label={wt('firstLook.sourceLabel')} />
+                  </div>
+                ) : null}
+              </div>
             </div>
           ) : (
             <p data-first-look-result="none" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
@@ -593,6 +610,42 @@ export default function FirstLook({
 }
 
 /* ------------------------------------------------------- the end state, parts */
+
+/**
+ * The picture of the process in the end state — the drawing the build-up
+ * grew, whole and with plain names. A source the engine could not draw says
+ * so in one sentence; it never leaves an empty frame.
+ */
+function FirstLookProcess({
+  drawing,
+  onOpenMap,
+}: {
+  drawing: ReturnType<typeof firstLookExcerpt>;
+  onOpenMap?: () => void;
+}) {
+  if (drawing.nodes.length === 0) {
+    return (
+      <p data-first-look-process="none" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
+        {wt('firstLook.processNone')}
+      </p>
+    );
+  }
+  return (
+    <figure data-first-look-process="drawn" className="m-0 flex min-w-0 flex-col gap-2 rounded-cc-card border border-cc-line p-3">
+      <figcaption className="text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+        {wt('firstLook.processTitle')}
+      </figcaption>
+      <ExcerptSvg drawing={drawing} grown={drawing.nodes.length} named fit label={wt('firstLook.processLabel')} />
+      {onOpenMap ? (
+        <span className="cc-no-print">
+          <CcButton variant="ghost" onClick={onOpenMap} data-first-look-open-map="">
+            {wt('firstLook.openMap')}
+          </CcButton>
+        </span>
+      ) : null}
+    </figure>
+  );
+}
 
 /** A line anchor chip, labelled for a screen reader. */
 function Anchor({ anchor }: { anchor: string | null }) {

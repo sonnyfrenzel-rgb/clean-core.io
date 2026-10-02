@@ -126,7 +126,31 @@ function ExcerptShape({ node, named, newest }: { node: ExcerptNode; named: boole
 /** How tall the window onto the growing excerpt is; the drawing keeps its own scale inside it. */
 const EXCERPT_VIEW = 440;
 
-function ExcerptSvg({ drawing, grown, named }: { drawing: ExcerptDrawing; grown: number; named: boolean }) {
+/**
+ * The drawing itself — also the process picture of the end state
+ * (`FirstLook.tsx`), so the process a reader watched grow is the one that stays.
+ */
+export function ExcerptSvg({
+  drawing,
+  grown,
+  named,
+  label = wt('buildUp.processLabel'),
+  fit = false,
+}: {
+  drawing: ExcerptDrawing;
+  grown: number;
+  named: boolean;
+  label?: string;
+  /**
+   * The whole drawing, scaled down to the window if it is taller — for the end
+   * state, where nothing grows any more and a cut-off end event would hide how
+   * the process ends. The build-up scrolls the window instead.
+   */
+  fit?: boolean;
+}) {
+  // Its own marker id: an id shared by two drawings on one page points the
+  // second drawing's arrows at the first one's marker.
+  const arrow = `fl-arrow-${React.useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const visible = new Set(drawing.nodes.slice(0, grown).map((n) => n.id));
   const newestNode = drawing.nodes[grown - 1] ?? null;
   const newest = newestNode?.id ?? null;
@@ -135,21 +159,22 @@ function ExcerptSvg({ drawing, grown, named }: { drawing: ExcerptDrawing; grown:
   // follows the newest node down the page as the process grows.
   const bottom = newestNode ? newestNode.box.y + newestNode.box.height + 48 - frame.y : 0;
   // In moment 3 the whole process is there and the reader starts at its top.
-  const offset = named ? 0 : Math.max(0, Math.min(bottom - EXCERPT_VIEW, frame.height - EXCERPT_VIEW));
+  const offset = named || fit ? 0 : Math.max(0, Math.min(bottom - EXCERPT_VIEW, frame.height - EXCERPT_VIEW));
+  const scale = fit ? Math.min(1, EXCERPT_VIEW / Math.max(1, frame.height)) : 1;
   return (
     <div className="overflow-hidden" style={{ maxHeight: EXCERPT_VIEW }}>
       <svg
         data-first-look-excerpt=""
         viewBox={`${frame.x} ${frame.y} ${frame.width} ${frame.height}`}
-        width={frame.width}
-        height={frame.height}
+        width={Math.round(frame.width * scale)}
+        height={Math.round(frame.height * scale)}
         role="img"
-        aria-label={wt('buildUp.processLabel')}
+        aria-label={label}
         className="mx-auto block h-auto max-w-full motion-safe:transition-transform motion-safe:duration-300"
         style={{ transform: `translateY(${-offset}px)` }}
       >
         <defs>
-          <marker id="fl-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <marker id={arrow} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M0 0 L10 5 L0 10 Z" className="fill-cc-ink-muted" />
           </marker>
         </defs>
@@ -161,7 +186,7 @@ function ExcerptSvg({ drawing, grown, named }: { drawing: ExcerptDrawing; grown:
                 points={f.points.map((p) => `${p.x},${p.y}`).join(' ')}
                 fill="none"
                 strokeWidth={1.5}
-                markerEnd="url(#fl-arrow)"
+                markerEnd={`url(#${arrow})`}
                 className="stroke-cc-ink-muted"
               />
               {named && f.label

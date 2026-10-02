@@ -608,6 +608,7 @@ visit has no build-up, and the end state never waits for a model (`lib/first-loo
 - **Content, at the top:** the card "Next step" — "Confirm the 7 rules — about 10 minutes", one click to the first rule.
 - **Head of the content:** process name, plain-language sentence, reveal line, *Not determined* (§5.1).
 - **Middle:** the process map; click or Enter on a step opens the source column with marked lines.
+- **The process stays in sight** (ADR-059): the drawing that grew in the build-up stays in the head of the content, whole and in plain names, with a way to the full map; in Business the map follows directly under the head and *Next step*.
 - **Side column, "What this process does":** five sentences, each with an anchor; unproven ones grey (like `AnchoredNarrative`).
 - **Side column, "Not determined":** every open spot with a reason and the next way — dynamic call, missing include,
   usage unknown (never "unused"). This column is intentional: it is the reason to trust a result.
