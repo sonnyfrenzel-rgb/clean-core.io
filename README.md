@@ -79,8 +79,8 @@ Model proposal.
   BPMN editor; every save is an immutable revision, the reconstruction stays revision 1,
   and two revisions can be compared. The model leaves as a BPMN 2.0 XML file and a file
   can be brought back in as a proposal for the next revision. There is no connection to a
-  Signavio workspace or the Signavio API, and import into SAP Signavio has not been
-  verified; the file is yours to take along.
+  Signavio workspace or the Signavio API; the file is yours to take along.
+  Import into SAP Signavio has not been verified.
 - **Read access by invitation.** A project is shared with one confirmed e-mail address,
   including its source code, with expiry and revocation.
 - **Costs only as simulation.** Economics calculates on your own assumptions; any amount
