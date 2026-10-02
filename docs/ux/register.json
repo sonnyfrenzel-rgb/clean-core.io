@@ -4,7 +4,7 @@
     {
       "id": "UX-001",
       "fingerprint": "29e1d6c0013f",
-      "title": "Er fundene 95%- und 80%-Balken ohne Messung",
+      "title": "Invented 95% and 80% bars without measurement",
       "severity": "high",
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -18,7 +18,7 @@
     {
       "id": "UX-002",
       "fingerprint": "b394509860fa",
-      "title": "Null Befunde als Fully Supported besiegelt",
+      "title": "Zero findings sealed as Fully Supported",
       "severity": "critical",
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -31,7 +31,7 @@
     {
       "id": "UX-003",
       "fingerprint": "07882b7eb23f",
-      "title": "Verify-Pack-Upload ist per Tastatur nicht bedienbar",
+      "title": "Verify pack upload cannot be operated by keyboard",
       "severity": "high",
       "area": "wissen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -45,7 +45,7 @@
     {
       "id": "UX-004",
       "fingerprint": "2909836967a8",
-      "title": "Confluence-Export erfindet fehlende Bewertungen",
+      "title": "Confluence export invents missing ratings",
       "severity": "high",
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -57,7 +57,7 @@
     {
       "id": "UX-005",
       "fingerprint": "830a6caf8fff",
-      "title": "Routenwechsel ohne Bestätigung und Undo",
+      "title": "Route change without confirmation and undo",
       "severity": "medium",
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -70,7 +70,7 @@
     {
       "id": "UX-006",
       "fingerprint": "2f1f7a9dbb07",
-      "title": "Von Befund kein Weg in den Code",
+      "title": "No way from a finding into the code",
       "severity": "medium",
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -83,7 +83,7 @@
     {
       "id": "UX-007",
       "fingerprint": "52a31e85201e",
-      "title": "Zielwahl und Dialoge nicht tastaturbedienbar",
+      "title": "Target choice and dialogs not keyboard-operable",
       "severity": "high",
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -95,7 +95,7 @@
     {
       "id": "UX-008",
       "fingerprint": "c5f3cfdc4f29",
-      "title": "Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert",
+      "title": "Slideshow controls without names, arrow keys hijacked",
       "severity": "low",
       "area": "wissen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -109,7 +109,7 @@
     {
       "id": "UX-009",
       "fingerprint": "844be1703de8",
-      "title": "How-to-Hotspots geben mobil keine Antwort",
+      "title": "How-to hotspots give no answer on mobile",
       "severity": "high",
       "area": "wissen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -121,7 +121,7 @@
     {
       "id": "UX-010",
       "fingerprint": "fca9efee3af1",
-      "title": "Wissensbereich ohne Dark-Mode-Parität",
+      "title": "Knowledge area without dark mode parity",
       "severity": "high",
       "area": "wissen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -133,7 +133,7 @@
     {
       "id": "UX-011",
       "fingerprint": "82c6eee6abbe",
-      "title": "Wirre Befund-Begriffe und Sprachmix",
+      "title": "Confusing finding terms and language mix",
       "severity": "low",
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -146,7 +146,7 @@
     {
       "id": "UX-012",
       "fingerprint": "8e4309ba4e6c",
-      "title": "Sticky-Header und Tabs verdecken Inhalt auf Phone",
+      "title": "Sticky header and tabs cover content on phone",
       "severity": "medium",
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -158,7 +158,7 @@
     {
       "id": "UX-013",
       "fingerprint": "e0e1a51c9784",
-      "title": "Vorschau widerspricht Editierbarkeit, Start irreführend",
+      "title": "Preview contradicts editability, start misleading",
       "severity": "low",
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -171,7 +171,7 @@
     {
       "id": "UX-014",
       "fingerprint": "e23211679bce",
-      "title": "Heatmap trägt Risiko nur über Farbe",
+      "title": "Heatmap conveys risk only through colour",
       "severity": "medium",
       "area": "analyse",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -183,7 +183,7 @@
     {
       "id": "UX-015",
       "fingerprint": "b81153379b94",
-      "title": "Zurück-Navigation verhält sich je Seite anders",
+      "title": "Back navigation behaves differently per page",
       "severity": "low",
       "area": "wissen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -197,7 +197,7 @@
     {
       "id": "UX-016",
       "fingerprint": "d11b860b81a8",
-      "title": "Katalog verliert den Workspace-Kontext",
+      "title": "Catalog loses the workspace context",
       "severity": "low",
       "area": "wissen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -210,7 +210,7 @@
     {
       "id": "UX-017",
       "fingerprint": "cc3edbcfc202",
-      "title": "Sehr kleine Schrift erschwert das Lesen",
+      "title": "Very small type makes reading harder",
       "severity": "medium",
       "area": "wissen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -222,7 +222,7 @@
     {
       "id": "UX-018",
       "fingerprint": "a26a18454988",
-      "title": "Weitere Nachfolger sind nicht klickbar",
+      "title": "Further successors are not clickable",
       "severity": "medium",
       "area": "wissen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -234,7 +234,7 @@
     {
       "id": "UX-019",
       "fingerprint": "b625af54135f",
-      "title": "Zustände stärker gezeigt als belegt – Balken, Haken, Exporte",
+      "title": "States shown more strongly than evidenced – bars, ticks, exports",
       "severity": "high",
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -247,7 +247,7 @@
     {
       "id": "UX-020",
       "fingerprint": "04ddd686e7c6",
-      "title": "Kernpfade per Tastatur und Screenreader blockiert",
+      "title": "Core paths blocked for keyboard and screen reader",
       "severity": "high",
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -260,7 +260,7 @@
     {
       "id": "UX-021",
       "fingerprint": "68e8843fcb39",
-      "title": "Testauswahl per Tastatur wirkungslos",
+      "title": "Test selection by keyboard has no effect",
       "severity": "critical",
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -272,7 +272,7 @@
     {
       "id": "UX-022",
       "fingerprint": "b94043f56b6d",
-      "title": "78 Button-Stile statt einer gemeinsamen Sprache",
+      "title": "78 button styles instead of one shared language",
       "severity": "medium",
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -285,7 +285,7 @@
     {
       "id": "UX-023",
       "fingerprint": "c2d366141cc7",
-      "title": "Dark Mode bricht an zentralen Flächen",
+      "title": "Dark mode breaks on central surfaces",
       "severity": "high",
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -298,7 +298,7 @@
     {
       "id": "UX-024",
       "fingerprint": "5287a2c3c44e",
-      "title": "Orientierung bricht zwischen den Bereichen",
+      "title": "Orientation breaks between the areas",
       "severity": "high",
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -310,7 +310,7 @@
     {
       "id": "UX-025",
       "fingerprint": "030dda9a4357",
-      "title": "Generierung und Fehler ohne Ausweg und Undo",
+      "title": "Generation and errors without a way out and undo",
       "severity": "medium",
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -323,7 +323,7 @@
     {
       "id": "UX-026",
       "fingerprint": "4a33facf1809",
-      "title": "Begriffe und Versprechen wechseln je Stufe",
+      "title": "Terms and promises change per stage",
       "severity": "low",
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -337,7 +337,7 @@
     {
       "id": "UX-027",
       "fingerprint": "894d4815e4ed",
-      "title": "Grüner Haken für ungeprüften Code",
+      "title": "Green tick for unchecked code",
       "severity": "medium",
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -351,7 +351,7 @@
     {
       "id": "UX-028",
       "fingerprint": "74abfda1dce9",
-      "title": "LoC-Regler kann echten Wert nicht abbilden",
+      "title": "LoC slider cannot represent the real value",
       "severity": "low",
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -364,7 +364,7 @@
     {
       "id": "UX-029",
       "fingerprint": "0b1ced7802e4",
-      "title": "Kompatibilität behauptet, aber nicht belegt",
+      "title": "Compatibility claimed but not evidenced",
       "severity": "medium",
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -378,7 +378,7 @@
     {
       "id": "UX-030",
       "fingerprint": "2f326d53c5ba",
-      "title": "Phone verdeckt Inhalt und schluckt Aktionen",
+      "title": "Phone covers content and swallows actions",
       "severity": "medium",
       "area": "gesamt",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -390,7 +390,7 @@
     {
       "id": "UX-031",
       "fingerprint": "981064222943",
-      "title": "SOP-Weiterweg nur im Hover-Tooltip",
+      "title": "SOP next step only in a hover tooltip",
       "severity": "low",
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -403,7 +403,7 @@
     {
       "id": "UX-032",
       "fingerprint": "864f0c87f193",
-      "title": "Ausdruck ohne eigene Kostenfiguren",
+      "title": "Printout without its own cost figures",
       "severity": "medium",
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -415,7 +415,7 @@
     {
       "id": "UX-033",
       "fingerprint": "ae2fa8715188",
-      "title": "Folienschalter ohne Namen",
+      "title": "Slide switch without names",
       "severity": "low",
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -428,7 +428,7 @@
     {
       "id": "UX-034",
       "fingerprint": "179d438df717",
-      "title": "Task-Drawer fängt Tastatur nicht ein",
+      "title": "Task drawer does not trap the keyboard",
       "severity": "medium",
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -440,7 +440,7 @@
     {
       "id": "UX-035",
       "fingerprint": "043fefa542cf",
-      "title": "Lange Generierung ohne Abbruch",
+      "title": "Long generation without cancel",
       "severity": "low",
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -453,7 +453,7 @@
     {
       "id": "UX-036",
       "fingerprint": "201fa8286fc3",
-      "title": "Systematische Kleinschrift unter 12px",
+      "title": "Systematic small type below 12px",
       "severity": "medium",
       "area": "nachweis",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -465,7 +465,7 @@
     {
       "id": "UX-037",
       "fingerprint": "69fdcf3f139f",
-      "title": "Transformation verspricht Node.js auch im RAP-Track",
+      "title": "Transformation promises Node.js in the RAP track too",
       "severity": "high",
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -478,7 +478,7 @@
     {
       "id": "UX-038",
       "fingerprint": "3d119fa8e5b7",
-      "title": "Remediation-Modus schaltet nur Text, nicht Code",
+      "title": "Remediation mode switches only text, not code",
       "severity": "high",
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -491,7 +491,7 @@
     {
       "id": "UX-039",
       "fingerprint": "6f88705e906c",
-      "title": "Audit-Abhaken geht bei Reload verloren",
+      "title": "Audit check-offs are lost on reload",
       "severity": "medium",
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -504,7 +504,7 @@
     {
       "id": "UX-040",
       "fingerprint": "59e4c9caff2f",
-      "title": "Transformation Insights sind statisch und track-falsch",
+      "title": "Transformation Insights are static and wrong for the track",
       "severity": "high",
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -517,7 +517,7 @@
     {
       "id": "UX-041",
       "fingerprint": "682c8e731720",
-      "title": "Karten und Minimap nicht tastaturbedienbar",
+      "title": "Cards and minimap not keyboard-operable",
       "severity": "medium",
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -530,7 +530,7 @@
     {
       "id": "UX-042",
       "fingerprint": "be8790161a0a",
-      "title": "Buttons haben 78 Stile statt einer gemeinsamen Sprache",
+      "title": "Buttons have 78 styles instead of one shared language",
       "severity": "medium",
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -543,7 +543,7 @@
     {
       "id": "UX-043",
       "fingerprint": "722d0cc0ede8",
-      "title": "Massig Text unter 12px schwächt Lesbarkeit und Kontrast",
+      "title": "Lots of text below 12px weakens readability and contrast",
       "severity": "medium",
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -556,7 +556,7 @@
     {
       "id": "UX-044",
       "fingerprint": "24bbf9f87d14",
-      "title": "Dark Mode bricht an Projektzeile und Stepper",
+      "title": "Dark mode breaks at the project row and stepper",
       "severity": "high",
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -568,7 +568,7 @@
     {
       "id": "UX-045",
       "fingerprint": "d7f2f7f0176c",
-      "title": "Glossar und Overlays nicht tastatur- und screenreaderfähig",
+      "title": "Glossary and overlays not usable by keyboard and screen reader",
       "severity": "medium",
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -581,7 +581,7 @@
     {
       "id": "UX-046",
       "fingerprint": "ef257311978f",
-      "title": "Prozessdoku nutzt eigenes Farbsystem und N/A-Wüste",
+      "title": "Process documentation uses its own colour system and an N/A desert",
       "severity": "high",
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -593,7 +593,7 @@
     {
       "id": "UX-047",
       "fingerprint": "6eafc39ec9d4",
-      "title": "Design-Fehler spricht von API-Key statt nächster Aktion",
+      "title": "Design error talks about an API key instead of the next action",
       "severity": "medium",
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -605,7 +605,7 @@
     {
       "id": "UX-048",
       "fingerprint": "133ace2460cf",
-      "title": "Blockiertes Weiter ohne Grund",
+      "title": "Blocked Next without a reason",
       "severity": "medium",
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -617,7 +617,7 @@
     {
       "id": "UX-049",
       "fingerprint": "b447271a1d53",
-      "title": "Fehlende Design-Sektionen verschwinden still",
+      "title": "Missing design sections disappear silently",
       "severity": "medium",
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -629,7 +629,7 @@
     {
       "id": "UX-050",
       "fingerprint": "1aee5869eadd",
-      "title": "Winzige Labels und Status nur über Farbe",
+      "title": "Tiny labels and status only through colour",
       "severity": "low",
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -642,7 +642,7 @@
     {
       "id": "UX-051",
       "fingerprint": "eaf62e425b76",
-      "title": "Architektur-Zustimmung vorausgewählt",
+      "title": "Architecture consent preselected",
       "severity": "medium",
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -654,7 +654,7 @@
     {
       "id": "UX-052",
       "fingerprint": "29c36d1e8aa9",
-      "title": "FileUpload mit Browser-alert fällt aus jedem Muster",
+      "title": "FileUpload with a browser alert falls outside every pattern",
       "severity": "medium",
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -666,7 +666,7 @@
     {
       "id": "UX-053",
       "fingerprint": "59c81cab0fd8",
-      "title": "Fehler- und 404-Seiten sprechen drei Sprachen",
+      "title": "Error and 404 pages speak three languages",
       "severity": "low",
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -679,7 +679,7 @@
     {
       "id": "UX-054",
       "fingerprint": "adfe941cbd53",
-      "title": "Jira-Modal verspricht Sync, der nichts schreiben kann",
+      "title": "Jira modal promises a sync that cannot write anything",
       "severity": "medium",
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -691,7 +691,7 @@
     {
       "id": "UX-055",
       "fingerprint": "231415566dc3",
-      "title": "Stepper verliert auf Phone sechs von sieben Namen",
+      "title": "Stepper loses six of seven names on phone",
       "severity": "medium",
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -703,7 +703,7 @@
     {
       "id": "UX-056",
       "fingerprint": "f206969ba817",
-      "title": "Stepper und Rail kodieren Fertig unterschiedlich",
+      "title": "Stepper and rail encode done differently",
       "severity": "medium",
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -715,7 +715,7 @@
     {
       "id": "UX-057",
       "fingerprint": "f33cdad36a7f",
-      "title": "Grounded Grounding Audit doppelt und uneinheitlich",
+      "title": "Grounded Grounding Audit duplicated and inconsistent",
       "severity": "low",
       "area": "entwurf",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -727,7 +727,7 @@
     {
       "id": "UX-058",
       "fingerprint": "87994ea13271",
-      "title": "QuickAnswer meldet offen, obwohl zugeklappt",
+      "title": "QuickAnswer reports open although collapsed",
       "severity": "low",
       "area": "system",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -739,7 +739,7 @@
     {
       "id": "UX-059",
       "fingerprint": "5e510438718b",
-      "title": "Forum täuscht öffentlichen Post vor, speichert nur lokal",
+      "title": "Forum pretends a public post, saves only locally",
       "severity": "high",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -752,7 +752,7 @@
     {
       "id": "UX-060",
       "fingerprint": "d9cc21cd6df8",
-      "title": "Projektzeile und Icon-Aktionen nicht tastaturbedienbar",
+      "title": "Project row and icon actions not keyboard-operable",
       "severity": "low",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -765,7 +765,7 @@
     {
       "id": "UX-061",
       "fingerprint": "e7b208bac314",
-      "title": "Dashboard ohne Dark-Parität, Projektzeile kaum lesbar",
+      "title": "Dashboard without dark parity, project row barely readable",
       "severity": "high",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -777,7 +777,7 @@
     {
       "id": "UX-062",
       "fingerprint": "5b620e0be242",
-      "title": "Dashboard-Tabelle bleibt im Dark Mode weiß",
+      "title": "Dashboard table stays white in dark mode",
       "severity": "high",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -789,7 +789,7 @@
     {
       "id": "UX-063",
       "fingerprint": "2cf6bb463ace",
-      "title": "Zwei Beispiel-Bibliotheken konkurrieren auf dem Dashboard",
+      "title": "Two example libraries compete on the dashboard",
       "severity": "medium",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -802,7 +802,7 @@
     {
       "id": "UX-064",
       "fingerprint": "7e92e152aa65",
-      "title": "Jede Sektion erfindet eigenen Primär-Button",
+      "title": "Every section invents its own primary button",
       "severity": "medium",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -815,7 +815,7 @@
     {
       "id": "UX-065",
       "fingerprint": "d6846f8877b9",
-      "title": "Toggles ohne Switch-Semantik für Screenreader",
+      "title": "Toggles without switch semantics for screen readers",
       "severity": "medium",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -828,7 +828,7 @@
     {
       "id": "UX-066",
       "fingerprint": "05b725624023",
-      "title": "2FA-Button behauptet Scan ohne QR-Code",
+      "title": "2FA button claims a scan without a QR code",
       "severity": "low",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -841,7 +841,7 @@
     {
       "id": "UX-067",
       "fingerprint": "4cd4b63d5a79",
-      "title": "Kritische Aktionen in nativen Browser-Dialogen",
+      "title": "Critical actions in native browser dialogs",
       "severity": "medium",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -854,7 +854,7 @@
     {
       "id": "UX-068",
       "fingerprint": "7b959281ae08",
-      "title": "Slideshow-Steuerung ohne Fokus und zu kleine Trefferfläche",
+      "title": "Slideshow controls without focus and too small a hit area",
       "severity": "medium",
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -867,7 +867,7 @@
     {
       "id": "UX-069",
       "fingerprint": "4f62a52f9101",
-      "title": "Modal-Icon-Buttons ohne Namen für Screenreader",
+      "title": "Modal icon buttons without names for screen readers",
       "severity": "medium",
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -880,7 +880,7 @@
     {
       "id": "UX-070",
       "fingerprint": "1eda54b9d239",
-      "title": "Kleinstschrift an tragenden Stellen kaum lesbar",
+      "title": "Tiniest type in load-bearing places barely readable",
       "severity": "medium",
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -893,7 +893,7 @@
     {
       "id": "UX-071",
       "fingerprint": "d9c3e89448bc",
-      "title": "Erstellungsdatum als N/A ohne Erklärung",
+      "title": "Creation date as N/A without explanation",
       "severity": "medium",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -905,7 +905,7 @@
     {
       "id": "UX-072",
       "fingerprint": "33fe7f658f8d",
-      "title": "Admin nutzt native confirm/alert statt Produktmustern",
+      "title": "Admin uses native confirm/alert instead of product patterns",
       "severity": "low",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -918,7 +918,7 @@
     {
       "id": "UX-073",
       "fingerprint": "5577ebac25bb",
-      "title": "Kleinstschrift 9-10px für Badges und Banner",
+      "title": "Tiniest type 9-10px for badges and banners",
       "severity": "medium",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -930,7 +930,7 @@
     {
       "id": "UX-074",
       "fingerprint": "035d483b8efe",
-      "title": "Settings-Karten mit beliebigem Farbstreifen",
+      "title": "Settings cards with arbitrary colour stripe",
       "severity": "low",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -943,7 +943,7 @@
     {
       "id": "UX-075",
       "fingerprint": "0607b81d642f",
-      "title": "Auge-Buttons ohne zugänglichen Namen",
+      "title": "Eye buttons without an accessible name",
       "severity": "medium",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -955,7 +955,7 @@
     {
       "id": "UX-076",
       "fingerprint": "8926bb513175",
-      "title": "Onboarding-Abbruch mit Schuld-Formulierung",
+      "title": "Onboarding cancellation with blaming wording",
       "severity": "medium",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -968,7 +968,7 @@
     {
       "id": "UX-077",
       "fingerprint": "c226b0a237da",
-      "title": "Schwebende Hilfe-Buttons verdecken Inhalt",
+      "title": "Floating help buttons cover content",
       "severity": "medium",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -980,7 +980,7 @@
     {
       "id": "UX-078",
       "fingerprint": "fa68546b6a52",
-      "title": "Admin-Zeilen ohne erweiterten Zustand",
+      "title": "Admin rows without expanded state",
       "severity": "low",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -993,7 +993,7 @@
     {
       "id": "UX-079",
       "fingerprint": "277886bee0fa",
-      "title": "Deaktivierter Register-Button erklärt sich nicht",
+      "title": "Disabled register button does not explain itself",
       "severity": "low",
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -1006,7 +1006,7 @@
     {
       "id": "UX-080",
       "fingerprint": "f58e81a4c02e",
-      "title": "Showroom-Tabs ohne sichtbaren Tastaturfokus",
+      "title": "Showroom tabs without visible keyboard focus",
       "severity": "low",
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -1020,7 +1020,7 @@
     {
       "id": "UX-081",
       "fingerprint": "0d150c4b135f",
-      "title": "Autoplay ignoriert reduzierte Bewegung",
+      "title": "Autoplay ignores reduced motion",
       "severity": "low",
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -1033,7 +1033,7 @@
     {
       "id": "UX-082",
       "fingerprint": "656b82a946d1",
-      "title": "Zwei Header-Muster auf öffentlichen Seiten",
+      "title": "Two header patterns on public pages",
       "severity": "low",
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -1046,7 +1046,7 @@
     {
       "id": "UX-083",
       "fingerprint": "612e2cf68c21",
-      "title": "Download-Fehler bleibt unsichtbar",
+      "title": "Download error stays invisible",
       "severity": "low",
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -1059,7 +1059,7 @@
     {
       "id": "UX-084",
       "fingerprint": "5e181e12773f",
-      "title": "First-Run nennt Quote anders als der Header",
+      "title": "First run names the quota differently from the header",
       "severity": "low",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -1072,7 +1072,7 @@
     {
       "id": "UX-085",
       "fingerprint": "efc9e1fdc1c5",
-      "title": "Kleinstlabels in 10px Kapitälchen",
+      "title": "Tiniest labels in 10px small caps",
       "severity": "low",
       "area": "rahmen",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -1084,7 +1084,7 @@
     {
       "id": "UX-086",
       "fingerprint": "f3e1952d7f42",
-      "title": "Prozessband auf Phone ohne Scroll-Hinweis",
+      "title": "Process band on phone without a scroll hint",
       "severity": "low",
       "area": "zugang",
       "firstSeenHead": "7bdac5e3b79cfe3fbd1a7ac96baebb8df9e07632",
@@ -1096,7 +1096,7 @@
     {
       "id": "UX-087",
       "fingerprint": "176c1d07d349",
-      "title": "Fehlender Debt-Status erscheint in Erfolgsgrün statt neutral",
+      "title": "Missing debt status appears in success green instead of neutral",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "33471220d6e9acd45e6e02bda4168352c5a93c56",
@@ -1108,7 +1108,7 @@
     {
       "id": "UX-088",
       "fingerprint": "d60ea92cb3ad",
-      "title": "Clean Core Score ohne Abgrenzung zu SAPs gegenläufigem Score",
+      "title": "Clean Core Score without distinction from SAP's opposing score",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "33471220d6e9acd45e6e02bda4168352c5a93c56",
@@ -1120,7 +1120,7 @@
     {
       "id": "UX-089",
       "fingerprint": "d321cfa64fd4",
-      "title": "Vier Begriffe für einen Wert: Audit, Valuation, Asset Value, IP Score",
+      "title": "Four terms for one value: Audit, Valuation, Asset Value, IP Score",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "33471220d6e9acd45e6e02bda4168352c5a93c56",
@@ -1132,7 +1132,7 @@
     {
       "id": "UX-090",
       "fingerprint": "33a920d6be30",
-      "title": "Deck-Fehler zeigt Roh-Techniktext ohne nächsten Schritt",
+      "title": "Deck error shows raw technical text without a next step",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "44f3efb8b007ba067da68fd3db61a618cba46e41",
@@ -1145,7 +1145,7 @@
     {
       "id": "UX-091",
       "fingerprint": "5bbc640bc39f",
-      "title": "Mail-Warnung verspricht erneuten Versand, Zeile kann ihn nicht",
+      "title": "Mail warning promises resending, the row cannot do it",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
@@ -1157,7 +1157,7 @@
     {
       "id": "UX-092",
       "fingerprint": "f9f396ab3b44",
-      "title": "Start-Button durch Scan blockiert ohne Grund am Button",
+      "title": "Start button blocked by scan without a reason at the button",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
@@ -1169,7 +1169,7 @@
     {
       "id": "UX-093",
       "fingerprint": "1b84676d685d",
-      "title": "Ungespeichert meldet sich als fehlgeschlagene Verbindung",
+      "title": "Unsaved reports itself as a failed connection",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
@@ -1181,43 +1181,43 @@
     {
       "id": "UX-094",
       "fingerprint": "d5f35cf138c5",
-      "title": "Alte Backup-Codes werden ohne Übergang abgewiesen",
+      "title": "Old backup codes are rejected without a transition",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
       "createdAt": "2026-09-16T12:35:26.735Z",
       "status": "zurückgestellt",
-      "reason": "0.13 hat die Backup-Codes entfernt; der Uebergangstext fuer alte CC-Codes gehoert in denselben Schritt wie die MFA-Oberflaeche und wird dort gebaut.",
+      "reason": "0.13 removed the backup codes; the transition text for old CC codes belongs in the same step as the MFA interface and is built there.",
       "updatedAt": "2026-09-16T12:35:26.735Z"
     },
     {
       "id": "UX-095",
       "fingerprint": "a3b94729039a",
-      "title": "Einmaliges Violet ohne System in Evidence-Bar",
+      "title": "One-off violet without a system in the evidence bar",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
       "createdAt": "2026-09-16T15:22:34.351Z",
       "status": "widerlegt",
-      "reason": "Violet ist hier kein Drift, und der Bericht widerspricht sich selbst: seine eigene Abdeckungsnotiz sagt 'violet-400 1/1 in SamplePackageDownload.tsx:334 ist bewusst als vierte Dateityp-Farbe neben emerald/blue/slate, kein Drift'. Der Scan-Treffer violet-400 steht genau dort und nicht in der Evidence-Bar. Die Evidence-Bar in app/(app)/project/[projectId]/analyze/page.tsx:1287 verwendet 'from-indigo-50/80 to-violet-50/80' mit 'border-indigo-100/60' -- ein Verlaufspartner innerhalb des Indigo-Tons, keine vierte Kategorie und kein neuer Akzent.",
+      "reason": "Violet is not drift here, and the report contradicts itself: its own coverage note says 'violet-400 1/1 in SamplePackageDownload.tsx:334 ist bewusst als vierte Dateityp-Farbe neben emerald/blue/slate, kein Drift'. The scan hit violet-400 is exactly there and not in the evidence bar. The evidence bar in app/(app)/project/[projectId]/analyze/page.tsx:1287 uses 'from-indigo-50/80 to-violet-50/80' with 'border-indigo-100/60' -- a gradient partner within the indigo tone, not a fourth category and not a new accent.",
       "updatedAt": "2026-09-16T15:22:34.351Z"
     },
     {
       "id": "UX-096",
       "fingerprint": "7cba0d1e8856",
-      "title": "Neues Violett ohne Rolle im Farbsystem",
+      "title": "New violet without a role in the colour system",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
       "createdAt": "2026-09-16T15:22:45.638Z",
       "status": "widerlegt",
-      "reason": "Dasselbe violet-400 wie UX-095, aus derselben Zeile: components/SamplePackageDownload.tsx:334 gibt der vierten Dateiart im abapGit-Paket ihre Farbe, neben emerald, blue und slate fuer die anderen drei. Das ist die Rolle im System, nicht ihr Fehlen -- und die Abdeckungsnotiz desselben Berichts sagt genau das. Sonst gibt es im Produkt violet nur als Verlaufspartner von Indigo (TransformationShowroom, Evidence-Bar).",
+      "reason": "The same violet-400 as UX-095, from the same line: components/SamplePackageDownload.tsx:334 gives the fourth file type in the abapGit package its colour, next to emerald, blue and slate for the other three. That is its role in the system, not its absence -- and the coverage note of the same report says exactly that. Otherwise violet exists in the product only as a gradient partner of indigo (TransformationShowroom, evidence bar).",
       "updatedAt": "2026-09-16T15:22:45.638Z"
     },
     {
       "id": "UX-097",
       "fingerprint": "5bf7552894e5",
-      "title": "Leere Blueprint-Seite bietet Export von Nichts an",
+      "title": "Empty blueprint page offers an export of nothing",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
@@ -1230,7 +1230,7 @@
     {
       "id": "UX-098",
       "fingerprint": "8e93fa4d6bfe",
-      "title": "Paket-Download scheitert lautlos ohne Hinweis",
+      "title": "Package download fails silently without a notice",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
@@ -1243,7 +1243,7 @@
     {
       "id": "UX-099",
       "fingerprint": "f320972178fb",
-      "title": "Matrix-Close-Buttons ohne Namen für Screenreader",
+      "title": "Matrix close buttons without names for screen readers",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
@@ -1256,7 +1256,7 @@
     {
       "id": "UX-100",
       "fingerprint": "0cac41894022",
-      "title": "Filtereintrag mischt Deutsch und Englisch",
+      "title": "Filter entry mixes German and English",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
@@ -1269,7 +1269,7 @@
     {
       "id": "UX-101",
       "fingerprint": "1b363262f915",
-      "title": "2FA-Schlüssel lässt sich nicht kopieren",
+      "title": "2FA key cannot be copied",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "52f171091948edc12384992f877e2be864c589d3",
@@ -1283,7 +1283,7 @@
     {
       "id": "UX-102",
       "fingerprint": "c4bcf61cc90e",
-      "title": "How-to nennt 6 Phasen, Produkt hat 7 Stufen",
+      "title": "How-to names 6 phases, the product has 7 stages",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
@@ -1296,19 +1296,19 @@
     {
       "id": "UX-103",
       "fingerprint": "882bcffbe208",
-      "title": "Leere Ankündigungs-Filter ohne Leerzustand",
+      "title": "Empty announcement filters without an empty state",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
       "createdAt": "2026-09-17T06:38:58.414Z",
       "status": "widerlegt",
-      "reason": "Trifft nicht zu: der Leerzustand existiert. app/(app)/dashboard/page.tsx:1597-1603 rendert bei filteredForumPosts.length === 0 die Karte 'No discussions found' mit Icon und Hinweistext; die Filterleiste (Zeile 1544-1547) traegt ausserdem sichtbare Zaehler, 'General' steht vor dem Klick auf 0. Der Befund belegt sich mit 'kein Leerzustand im Renderpfad nach Filterung' - das ist am Code widerlegt. (Nebenbefund fuer Sonny, nicht Teil dieses Befunds: die Leerzustands-Kopie sagt noch 'or start a new thread!', obwohl die Schreibhaelfte des Forums in 5f84bb2 entfernt wurde.)",
+      "reason": "Does not apply: the empty state exists. app/(app)/dashboard/page.tsx:1597-1603 renders the card 'No discussions found' with icon and hint text when filteredForumPosts.length === 0; the filter bar (line 1544-1547) also carries visible counters, 'General' shows 0 before the click. The finding bases itself on 'kein Leerzustand im Renderpfad nach Filterung' - that is refuted by the code. (Side finding for Sonny, not part of this finding: the empty-state copy still says 'or start a new thread!', although the writing half of the forum was removed in 5f84bb2.)",
       "updatedAt": "2026-09-17T06:38:58.414Z"
     },
     {
       "id": "UX-104",
       "fingerprint": "266c0f17241e",
-      "title": "First-Run-Rücksprung führt Abgemeldete hinter Login",
+      "title": "First-run return leads signed-out users behind the login",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
@@ -1321,7 +1321,7 @@
     {
       "id": "UX-105",
       "fingerprint": "efc09714771a",
-      "title": "Dark-Entfernung ohne Hinweis an Bestandskonten",
+      "title": "Dark removal without a notice to existing accounts",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
@@ -1334,7 +1334,7 @@
     {
       "id": "UX-106",
       "fingerprint": "d414caf1bc2d",
-      "title": "NotGenerated nennt Settings, führt aber nicht dorthin",
+      "title": "NotGenerated names Settings but does not lead there",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
@@ -1346,7 +1346,7 @@
     {
       "id": "UX-107",
       "fingerprint": "740ff72a6894",
-      "title": "Admin-Button meldet ab statt an",
+      "title": "Admin button signs out instead of in",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
@@ -1359,31 +1359,31 @@
     {
       "id": "UX-108",
       "fingerprint": "2e7ad417a776",
-      "title": "Blockierter Start erklärt sich nur per Tooltip",
+      "title": "Blocked start explains itself only by tooltip",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
       "createdAt": "2026-09-17T06:39:24.631Z",
       "status": "widerlegt",
-      "reason": "Trifft nicht zu: der Grund steht sichtbar, nicht nur im Tooltip. app/(app)/project/[projectId]/analyze/page.tsx:2110-2116 rendert bei stagedScanBlock eine rote Box 'Malicious Payload Check failed: ... Remove the flagged content before analysing.' in derselben Karte 'Security Scan & Terms Agreement' oberhalb des Buttons (Zeile 2255); das title-Attribut ist die Zugabe, nicht die einzige Quelle. Der Befund belegt sich mit 'kein sichtbarer Text, kein Inline-Fehler vor Klick' - am Code widerlegt. Ausserdem Dublette zu UX-092 (ROADMAP §13, Status behoben).",
+      "reason": "Does not apply: the reason is visible, not only in the tooltip. app/(app)/project/[projectId]/analyze/page.tsx:2110-2116 renders, when stagedScanBlock is set, a red box 'Malicious Payload Check failed: ... Remove the flagged content before analysing.' in the same card 'Security Scan & Terms Agreement' above the button (line 2255); the title attribute is the extra, not the only source. The finding bases itself on 'kein sichtbarer Text, kein Inline-Fehler vor Klick' - refuted by the code. Also a duplicate of UX-092 (ROADMAP §13, status behoben).",
       "updatedAt": "2026-09-17T06:39:24.631Z"
     },
     {
       "id": "UX-109",
       "fingerprint": "4d63414c900f",
-      "title": "Nicht-erzeugt-Hinweis führt zu nicht sichtbarer Einstellung",
+      "title": "Not-generated notice leads to a setting that is not visible",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
       "createdAt": "2026-09-17T06:39:32.075Z",
       "status": "widerlegt",
-      "reason": "Dublette zu [d414caf1bc2d] / UX-106 - derselbe fehlende Tiefenlink aus NotGenerated nach Settings, hier nur von der Screenshot-Seite beschrieben; eingeplant wird er einmal in 1.5. Der Zusatzbeleg traegt nicht: dass in 11-settings-desktop-s1 kein Key-Feld zu sehen ist, ist ein Scroll-Artefakt der Aufnahme - das Feld steht in app/(app)/settings/page.tsx:1346-1370 weiter unten auf derselben Seite, es fehlt nicht, nur der Anker dorthin.",
+      "reason": "Duplicate of [d414caf1bc2d] / UX-106 - the same missing deep link from NotGenerated to Settings, here only described from the screenshot side; it is scheduled once, in 1.5. The additional evidence does not hold: that no key field is visible in 11-settings-desktop-s1 is a scroll artefact of the capture - the field is in app/(app)/settings/page.tsx:1346-1370 further down on the same page, it is not missing, only the anchor to it.",
       "updatedAt": "2026-09-17T06:39:32.075Z"
     },
     {
       "id": "UX-110",
       "fingerprint": "99dfedc2fc8d",
-      "title": "Badge-Detail nur im Hover-Titel versteckt",
+      "title": "Badge detail hidden only in the hover title",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
@@ -1395,43 +1395,43 @@
     {
       "id": "UX-111",
       "fingerprint": "774b8eb5bbac",
-      "title": "Neue Einzelwerte für Schrift und Form ohne System",
+      "title": "New one-off values for type and shape without a system",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
       "createdAt": "2026-09-17T06:39:47.390Z",
       "status": "widerlegt",
-      "reason": "Trifft nicht zu: die genannten Werte sind die beschlossene Skala, kein Drift. DESIGN.md §1.2 legt fuer den Arbeitsraum 22px/800/-0.02em (Projekttitel), 15px/700 (Abschnittstitel h2), 14px/700, 13px/500 und 11px/600 fest - text-[22px] (components/workspace/WorkspaceShell.tsx:110, WorkspaceListReport.tsx:378, app/(app)/admin/design-system/page.tsx:173) und text-[15px] (WorkspaceListReport.tsx:238, design-system/page.tsx:163) setzen genau das um. DESIGN.md §1.5 schreibt 'Hoehe 32px compact, 40px cozy' - das sind min-h-[32px]/min-h-[40px] in components/cc/Button.tsx:45-46 und Field.tsx:63. text-[0.85em] (components/PresentationViewer.tsx:49) ist Inline-Code, der bewusst mit der Elternschrift skaliert. Der Bericht widerlegt sich hier selbst: seine coverage_notes nennen dieselben Tokens 'bewusstes neues Vokabular fuer 1.5, kein Drift'. Einziger echter Rest: text-[16px] in components/cc/MessageBox.tsx:126 steht nicht in der Skala von §1.2 - das gehoert in den Style-Guard von 1.5, nicht in einen eigenen Befund.",
+      "reason": "Does not apply: the values named are the decided scale, not drift. DESIGN.md §1.2 sets for the workspace 22px/800/-0.02em (project title), 15px/700 (section title h2), 14px/700, 13px/500 and 11px/600 - text-[22px] (components/workspace/WorkspaceShell.tsx:110, WorkspaceListReport.tsx:378, app/(app)/admin/design-system/page.tsx:173) and text-[15px] (WorkspaceListReport.tsx:238, design-system/page.tsx:163) implement exactly that. DESIGN.md §1.5 says 'height 32px compact, 40px cozy' - that is min-h-[32px]/min-h-[40px] in components/cc/Button.tsx:45-46 and Field.tsx:63. text-[0.85em] (components/PresentationViewer.tsx:49) is inline code that deliberately scales with the parent type. The report refutes itself here: its coverage_notes call the same tokens 'bewusstes neues Vokabular fuer 1.5, kein Drift'. The only real remainder: text-[16px] in components/cc/MessageBox.tsx:126 is not in the scale of §1.2 - that belongs in the style guard of 1.5, not in a finding of its own.",
       "updatedAt": "2026-09-17T06:39:47.390Z"
     },
     {
       "id": "UX-112",
       "fingerprint": "76fa16657ade",
-      "title": "Neue Einzel-Tokens ohne Systemanschluss",
+      "title": "New one-off tokens without a connection to the system",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
       "createdAt": "2026-09-17T06:39:55.924Z",
       "status": "widerlegt",
-      "reason": "Dublette zu [774b8eb5bbac] / UX-111 und aus demselben Grund widerlegt: dieselbe Token-Liste aus dem Design-Scan, nur als 'consistency' statt 'typography' gemeldet. Die Werte stehen in DESIGN.md §1.2 (22/15/14/13/11 px) und §1.5 (32/40 px Buttonhoehe) und leben in der admin-gegateten cc-Bibliothek (components/cc/*, components/workspace/*, app/(app)/admin/design-system/page.tsx); shadow-[inset_3px_0_0_var(--cc-code-hl-bar)] in components/cc/CodeSurface.tsx:68 nutzt die in app/globals.css:195 deklarierte Variable und ist DESIGN.md §1.1 'links 3px #93c5fd, markierte Zeile'.",
+      "reason": "Duplicate of [774b8eb5bbac] / UX-111 and refuted for the same reason: the same token list from the design scan, only reported as 'consistency' instead of 'typography'. The values are in DESIGN.md §1.2 (22/15/14/13/11 px) and §1.5 (32/40 px button height) and live in the admin-gated cc library (components/cc/*, components/workspace/*, app/(app)/admin/design-system/page.tsx); shadow-[inset_3px_0_0_var(--cc-code-hl-bar)] in components/cc/CodeSurface.tsx:68 uses the variable declared in app/globals.css:195 and is DESIGN.md §1.1 'left 3px #93c5fd, marked line'.",
       "updatedAt": "2026-09-17T06:39:55.924Z"
     },
     {
       "id": "UX-113",
       "fingerprint": "7d404a43b6d4",
-      "title": "Neue Arbitrary-Fontgrößen ohne Skalenbindung",
+      "title": "New arbitrary font sizes without binding to the scale",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "e3817cedd3da052d40f49142c029a699e758f6b4",
       "createdAt": "2026-09-17T06:40:03.892Z",
       "status": "widerlegt",
-      "reason": "Dublette zu [774b8eb5bbac] / UX-111 und [76fa16657ade] / UX-112 - dieselben vier Schriftgroessen ein drittes Mal. Widerlegt wie dort: text-[22px] und text-[15px] sind die in DESIGN.md §1.2 beschlossene Arbeitsraum-Skala, text-[0.85em] ist bewusst em-relativer Inline-Code (components/PresentationViewer.tsx:49). Der Befund raeumt violet-400 bereits als bewusst ein und haette denselben Schluss auch fuer die uebrigen Werte ziehen koennen; die coverage_notes desselben Berichts tun es.",
+      "reason": "Duplicate of [774b8eb5bbac] / UX-111 and [76fa16657ade] / UX-112 - the same four type sizes a third time. Refuted as there: text-[22px] and text-[15px] are the workspace scale decided in DESIGN.md §1.2, text-[0.85em] is deliberately em-relative inline code (components/PresentationViewer.tsx:49). The finding already concedes violet-400 as deliberate and could have drawn the same conclusion for the remaining values; the coverage_notes of the same report do.",
       "updatedAt": "2026-09-17T06:40:03.892Z"
     },
     {
       "id": "UX-114",
       "fingerprint": "e93a7029a670",
-      "title": "Dark-Bestand ohne Rückweg nach Entfernung des Schalters",
+      "title": "Existing dark setting without a way back after the switch was removed",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "a19945ef01dcf402d3c4083855f839fb2b96d8d5",
@@ -1443,7 +1443,7 @@
     {
       "id": "UX-115",
       "fingerprint": "3ccb3a03cdd2",
-      "title": "Demo verspricht sieben Stufen ohne Mitnahme",
+      "title": "Demo promises seven stages without taking the user along",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "a19945ef01dcf402d3c4083855f839fb2b96d8d5",
@@ -1456,7 +1456,7 @@
     {
       "id": "UX-116",
       "fingerprint": "4c23ab0eef56",
-      "title": "FREE-Badge verschweigt Erstlauf-Begrenzung",
+      "title": "FREE badge conceals the first-run limit",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "a19945ef01dcf402d3c4083855f839fb2b96d8d5",
@@ -1469,7 +1469,7 @@
     {
       "id": "UX-117",
       "fingerprint": "3c6adfe9fc0d",
-      "title": "Read-only-Board lädt noch zum Fragen unten ein",
+      "title": "Read-only board still invites questions at the bottom",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
@@ -1481,7 +1481,7 @@
     {
       "id": "UX-118",
       "fingerprint": "a09f4055a34c",
-      "title": "Rücksprung heißt dreimal anders",
+      "title": "Return has three different names",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
@@ -1493,7 +1493,7 @@
     {
       "id": "UX-119",
       "fingerprint": "be8878957d67",
-      "title": "Leerer Dokumentationsrahmen mit viel Leerfläche",
+      "title": "Empty documentation frame with a lot of empty space",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
@@ -1505,7 +1505,7 @@
     {
       "id": "UX-120",
       "fingerprint": "a9e2802b4cb5",
-      "title": "Neue Radien und Schriftgrößen ohne Systemanschluss",
+      "title": "New radii and type sizes without a connection to the system",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "a7c9e7120bde7610ae9833cd7501ee461c5bf341",
@@ -1517,7 +1517,7 @@
     {
       "id": "UX-121",
       "fingerprint": "586175c4018f",
-      "title": "Einladen-Icon ohne Namen — nur Titel, kein Label",
+      "title": "Invite icon without a name — only a title, no label",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
@@ -1530,7 +1530,7 @@
     {
       "id": "UX-122",
       "fingerprint": "e90eeac3b67c",
-      "title": "ToS-Hinweis verdrängt auf allen Routen den Inhalt",
+      "title": "ToS notice pushes out the content on all routes",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
@@ -1543,7 +1543,7 @@
     {
       "id": "UX-123",
       "fingerprint": "14e74858bf15",
-      "title": "ToS-Karte verdrängt Arbeitsinhalt auf jeder Route",
+      "title": "ToS card pushes out work content on every route",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
@@ -1556,7 +1556,7 @@
     {
       "id": "UX-124",
       "fingerprint": "a20d5c99485e",
-      "title": "ToS-Gate verdrängt Aufgabe aus erstem Viewport",
+      "title": "ToS gate pushes the task out of the first viewport",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
@@ -1569,7 +1569,7 @@
     {
       "id": "UX-125",
       "fingerprint": "3a377eb805ab",
-      "title": "Mail erneut senden angeleitet, aber nicht möglich",
+      "title": "Resending the mail is instructed but not possible",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
@@ -1582,7 +1582,7 @@
     {
       "id": "UX-126",
       "fingerprint": "25defbd52658",
-      "title": "Filter versprechen Diskussion, Board ist read-only",
+      "title": "Filters promise discussion, the board is read-only",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
@@ -1595,7 +1595,7 @@
     {
       "id": "UX-127",
       "fingerprint": "afa299544364",
-      "title": "Deaktivierter Start nennt Personen-Daten-Grund nicht",
+      "title": "Disabled start does not name the personal-data reason",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
@@ -1608,7 +1608,7 @@
     {
       "id": "UX-128",
       "fingerprint": "9592aa6b4af3",
-      "title": "Neue Radien und Einzelmaße ohne Systemanschluss",
+      "title": "New radii and one-off measures without a connection to the system",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "bc2f7863464cebba881d61dbd8fd091b8ffd1c53",
@@ -1620,7 +1620,7 @@
     {
       "id": "UX-129",
       "fingerprint": "11568f20ad9d",
-      "title": "ToS-Karte verdrängt Arbeitsinhalt auf allen Screens",
+      "title": "ToS card pushes out work content on all screens",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1632,7 +1632,7 @@
     {
       "id": "UX-130",
       "fingerprint": "bcde9066fa82",
-      "title": "ToS-Box verdrängt Arbeitsinhalt unter die Falz",
+      "title": "ToS box pushes work content below the fold",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1644,7 +1644,7 @@
     {
       "id": "UX-131",
       "fingerprint": "03db87076058",
-      "title": "ToS-Hinweis verdrängt Arbeitsbereich im ersten Viewport",
+      "title": "ToS notice pushes out the work area in the first viewport",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1656,7 +1656,7 @@
     {
       "id": "UX-132",
       "fingerprint": "60bec8beb119",
-      "title": "TCO-Titel zeigt HTML-Entity statt &-Zeichen",
+      "title": "TCO title shows an HTML entity instead of the & character",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1668,7 +1668,7 @@
     {
       "id": "UX-133",
       "fingerprint": "002f48c92726",
-      "title": "Neue Radien ohne Systemanschluss",
+      "title": "New radii without a connection to the system",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1680,7 +1680,7 @@
     {
       "id": "UX-134",
       "fingerprint": "97be0609ed76",
-      "title": "Blockierter Start erklärt sich nur per Hover-Titel",
+      "title": "Blocked start explains itself only by hover title",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1693,7 +1693,7 @@
     {
       "id": "UX-135",
       "fingerprint": "2d122c81ad43",
-      "title": "Kontingent-Stopp im nativen alert statt im Produktdialog",
+      "title": "Quota stop in a native alert instead of the product dialog",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1705,7 +1705,7 @@
     {
       "id": "UX-136",
       "fingerprint": "2609221bcf8d",
-      "title": "Fünf Icon-Buttons ohne Text – Einladen kaum entdeckbar",
+      "title": "Five icon buttons without text – invite barely discoverable",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1717,7 +1717,7 @@
     {
       "id": "UX-137",
       "fingerprint": "61f117244a15",
-      "title": "Neue Einzel-Radien und Schriften ohne Skalenbindung",
+      "title": "New one-off radii and type without binding to the scale",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1729,7 +1729,7 @@
     {
       "id": "UX-138",
       "fingerprint": "fc15ffd1018a",
-      "title": "Integrity-Grün bedeutet mal Existenz, mal Prüfung",
+      "title": "Integrity green means sometimes existence, sometimes a check",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1742,7 +1742,7 @@
     {
       "id": "UX-139",
       "fingerprint": "5f2464ea333c",
-      "title": "Verweigertes Bundle ohne direkten Weg zur Transformation",
+      "title": "Refused bundle without a direct way to Transformation",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1755,7 +1755,7 @@
     {
       "id": "UX-140",
       "fingerprint": "b160d0d08a81",
-      "title": "Bestätigung verfällt nach Edit ohne Erklärung",
+      "title": "Confirmation expires after an edit without explanation",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1768,7 +1768,7 @@
     {
       "id": "UX-141",
       "fingerprint": "bf1f24d23759",
-      "title": "Suche verspricht Diskussionen auf read-only Ankündigungen",
+      "title": "Search promises discussions on read-only announcements",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1781,7 +1781,7 @@
     {
       "id": "UX-142",
       "fingerprint": "d2de43f14113",
-      "title": "Optionale Importe mit uneinheitlichem Versions-Label",
+      "title": "Optional imports with an inconsistent version label",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1794,7 +1794,7 @@
     {
       "id": "UX-143",
       "fingerprint": "4fa28decede3",
-      "title": "Labels ohne Feld auf Freigabeseite",
+      "title": "Labels without a field on the approval page",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1807,7 +1807,7 @@
     {
       "id": "UX-144",
       "fingerprint": "3e936f9d57f8",
-      "title": "Workspace-Gate lädt stumm für Screenreader",
+      "title": "Workspace gate loads silently for screen readers",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "b88c77b4b5d12311ec7f76084ade991f961463ac",
@@ -1820,7 +1820,7 @@
     {
       "id": "UX-145",
       "fingerprint": "2a1d51bc6d0b",
-      "title": "Tab „suspended“ zeigt auch Pending und Deleted",
+      "title": "Tab \"suspended\" also shows Pending and Deleted",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
@@ -1832,7 +1832,7 @@
     {
       "id": "UX-146",
       "fingerprint": "515659f55a5a",
-      "title": "Welcome-Mail-Detail nur per Hover-Titel lesbar",
+      "title": "Welcome mail detail readable only by hover title",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
@@ -1844,7 +1844,7 @@
     {
       "id": "UX-147",
       "fingerprint": "7191463adc56",
-      "title": "Read-only-Board verspricht weiter Diskussion",
+      "title": "Read-only board still promises discussion",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
@@ -1856,20 +1856,20 @@
     {
       "id": "UX-148",
       "fingerprint": "caaa8e3e7d73",
-      "title": "Einladung ohne Kontext erzwingt blindes Annehmen",
+      "title": "Invitation without context forces blind acceptance",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:13.369Z",
       "status": "eingeplant",
-      "reason": "Produktentscheidung fuer Sonny: die Seite zeigt vor der Annahme bewusst nichts ueber das Projekt (Link an eine bestaetigte Adresse gebunden, Name erst nach POST accept, invitation page:67/89); die Mail nennt den Einladenden (lib/invitation-email.ts:85). Was vorher sichtbar sein darf, ist eine Abwaegung gegen Leck bei weitergeleiteten Links.",
+      "reason": "Product decision for Sonny: before acceptance the page deliberately shows nothing about the project (link bound to a confirmed address, name only after POST accept, invitation page:67/89); the mail names the inviter (lib/invitation-email.ts:85). What may be visible beforehand is a trade-off against leaks through forwarded links.",
       "updatedAt": "2026-09-24T08:26:00.389Z",
       "step": "sofort"
     },
     {
       "id": "UX-149",
       "fingerprint": "d12e19eafc8f",
-      "title": "Fehlergrenze zeigt Roh-Fehlermeldung offen statt eingeklappt",
+      "title": "Error boundary shows the raw error message open instead of collapsed",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
@@ -1881,68 +1881,68 @@
     {
       "id": "UX-150",
       "fingerprint": "33d6818753b6",
-      "title": "Zwei Assistent-Einstiege ohne erkennbaren Unterschied",
+      "title": "Two assistant entry points without a recognisable difference",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:14.456Z",
       "status": "widerlegt",
-      "reason": "Es gibt keinen zweiten Assistenten: Header-Knopf (app/(app)/layout.tsx:197) und schwebende Pille (components/GlossaryChatbot.tsx:441-455) oeffnen denselben Dialog ueber das Ereignis open-chatbot, mit demselben Label (layout.tsx:70 = GlossaryChatbot.tsx:159); 'Ask AI' steht nirgends mehr (Screenshot 03-analyze-desktop-s1 zeigt 'Ask this case' zweimal). Die Doppelung des Einstiegs ist eine Designfrage, kein Unterschied ohne Erklaerung.",
+      "reason": "There is no second assistant: the header button (app/(app)/layout.tsx:197) and the floating pill (components/GlossaryChatbot.tsx:441-455) open the same dialog via the open-chatbot event, with the same label (layout.tsx:70 = GlossaryChatbot.tsx:159); 'Ask AI' appears nowhere any more (screenshot 03-analyze-desktop-s1 shows 'Ask this case' twice). The duplicated entry point is a design question, not a difference without explanation.",
       "updatedAt": "2026-09-24T07:21:14.456Z"
     },
     {
       "id": "UX-151",
       "fingerprint": "90339736e17b",
-      "title": "Zwei KI-Einstiege ohne Abgrenzung auf jedem Screen",
+      "title": "Two AI entry points without distinction on every screen",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:15.003Z",
       "status": "widerlegt",
-      "reason": "Wie 33d6818753b6: beide Einstiege oeffnen denselben Assistenten mit demselben Label (app/(app)/layout.tsx:70/197, components/GlossaryChatbot.tsx:159/441); 'Ask AI' gibt es nicht mehr (Screenshot 03-analyze-desktop-s1).",
+      "reason": "As 33d6818753b6: both entry points open the same assistant with the same label (app/(app)/layout.tsx:70/197, components/GlossaryChatbot.tsx:159/441); 'Ask AI' no longer exists (screenshot 03-analyze-desktop-s1).",
       "updatedAt": "2026-09-24T07:21:15.003Z"
     },
     {
       "id": "UX-152",
       "fingerprint": "08b60b523dfe",
-      "title": "Automatische Genehmigung läuft ohne Abbruchmöglichkeit",
+      "title": "Automatic approval runs without a way to cancel",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:15.604Z",
       "status": "eingeplant",
-      "reason": "Sicherheitsrelevant, verlaesst den UX-Fluss: GET-ausgeloeste Freigabe/Ablehnung per Mail-Link (app/api/request-tenant-access/route.ts:73-74 erzeugt auto=true und action=reject, approve-tenant/page.tsx:176-187 fuehrt sie aus), bereits im Grok-Review 26.08. benannt. Gehoert ins Security-Register.",
+      "reason": "Security-relevant, leaves the UX flow: GET-triggered approval/rejection via mail link (app/api/request-tenant-access/route.ts:73-74 creates auto=true and action=reject, approve-tenant/page.tsx:176-187 executes them), already named in the Grok review 26.08. Belongs in the security register.",
       "updatedAt": "2026-09-24T08:26:00.607Z",
       "step": "sofort"
     },
     {
       "id": "UX-153",
       "fingerprint": "af59a797c06e",
-      "title": "Eingeladene Leser landen auf Analyse-Start",
+      "title": "Invited readers land on the analysis start",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:16.109Z",
       "status": "zurückgestellt",
-      "reason": "3.0.1 ersetzt das Ziel: jedes Projekt oeffnet dann im Arbeitsraum statt auf /analyze; bis dahin zeigt /analyze bei vorhandener Analyse den Bericht, und ein Lauf verlangt serverseitig Eigentum.",
+      "reason": "3.0.1 replaces the target: every project then opens in the workspace instead of on /analyze; until then /analyze shows the report when an analysis exists, and a run requires ownership server-side.",
       "updatedAt": "2026-09-24T07:21:16.109Z"
     },
     {
       "id": "UX-154",
       "fingerprint": "adc094f4894d",
-      "title": "Einmaliges blue-105 ohne Systemanschluss",
+      "title": "One-off blue-105 without a connection to the system",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:16.821Z",
       "status": "widerlegt",
-      "reason": "blue-105 ist bewusst deklariert (app/globals.css:32, @theme-Halbschritt nach CLAUDE.md 'Colour shades must be declared') und genau einmal als Hover-Ton genutzt (components/design/ApiBusinessHubMapping.tsx:58); tests/landing-style-guard haelt die Deklarationspflicht.",
+      "reason": "blue-105 is deliberately declared (app/globals.css:32, @theme half step per CLAUDE.md 'Colour shades must be declared') and used exactly once as a hover tone (components/design/ApiBusinessHubMapping.tsx:58); tests/landing-style-guard holds the declaration requirement.",
       "updatedAt": "2026-09-24T07:21:16.821Z"
     },
     {
       "id": "UX-155",
       "fingerprint": "94fb5ccd8914",
-      "title": "Workspace-Laden für Sehende leer, nur sr-only-Text",
+      "title": "Workspace loading empty for sighted users, only sr-only text",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
@@ -1954,7 +1954,7 @@
     {
       "id": "UX-156",
       "fingerprint": "e3b075f596b5",
-      "title": "Rücksprung in zwei Großschreibungen",
+      "title": "Return in two capitalisations",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
@@ -1966,19 +1966,19 @@
     {
       "id": "UX-157",
       "fingerprint": "5476ad0b67d7",
-      "title": "Genehmigungsseite: Gegenentscheidung nur über zweiten Mail-Link",
+      "title": "Approval page: counter-decision only via a second mail link",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
       "createdAt": "2026-09-24T12:35:02.449Z",
       "status": "zurückgestellt",
-      "reason": "Ein Button je Link ist die Entscheidung UX-152 B (Sonny, 24.09.): Token ist an eine Aktion gebunden. Gegenaktion auf derselben Seite braucht eine neue Produktentscheidung; nur der Hinweis text-xs slate-400 (approve-tenant/page.tsx:307) waere klein zu verbessern.",
+      "reason": "One button per link is the decision UX-152 B (Sonny, 24.09.): the token is bound to one action. A counter-action on the same page needs a new product decision; only the hint text-xs slate-400 (approve-tenant/page.tsx:307) could be improved a little.",
       "updatedAt": "2026-09-24T12:35:02.449Z"
     },
     {
       "id": "UX-158",
       "fingerprint": "2abc5bc1e7ae",
-      "title": "Einladen nur als Icon ohne sichtbaren Namen schwer findbar",
+      "title": "Invite only as an icon without a visible name, hard to find",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
@@ -1990,7 +1990,7 @@
     {
       "id": "UX-159",
       "fingerprint": "558bb33a88af",
-      "title": "Workspace-Laden zeigt Sehenden leere Seite",
+      "title": "Workspace loading shows sighted users an empty page",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
@@ -2002,7 +2002,7 @@
     {
       "id": "UX-160",
       "fingerprint": "b6b0724c964b",
-      "title": "Importfehler ohne Rückmeldung an Nutzer",
+      "title": "Import error without feedback to the user",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
@@ -2014,7 +2014,7 @@
     {
       "id": "UX-161",
       "fingerprint": "ecffab93644a",
-      "title": "Export ohne sichtbare Bestätigung",
+      "title": "Export without visible confirmation",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
@@ -2026,31 +2026,31 @@
     {
       "id": "UX-162",
       "fingerprint": "35ee32b7b9c9",
-      "title": "Vor-Analyse überfrachtet den Start",
+      "title": "Pre-analysis overloads the start",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
       "createdAt": "2026-09-24T12:35:03.741Z",
       "status": "zurückgestellt",
-      "reason": "Der Analyse-Start wird im 3.0-Umbau nach den Mockups 2.8 ersetzt; ein Akkordeon im alten Screen waere Wegwerfarbeit.",
+      "reason": "The analysis start is replaced in the 3.0 rebuild per the mockups 2.8; an accordion in the old screen would be throwaway work.",
       "updatedAt": "2026-09-24T12:35:03.741Z"
     },
     {
       "id": "UX-163",
       "fingerprint": "83e6dd1c0712",
-      "title": "Eine dark:-Variante bleibt ohne Dark Mode zurück",
+      "title": "One dark: variant remains without dark mode",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
       "createdAt": "2026-09-24T12:35:03.994Z",
       "status": "widerlegt",
-      "reason": "Die einzige Fundstelle ist components/cc/Button.tsx:41, der Schluessel der Button-Variante 'dark', keine Tailwind-Variante dark:. Es gibt keine Stelle mit einem Dark-Mode-Rest.",
+      "reason": "The only occurrence is components/cc/Button.tsx:41, the key of the button variant 'dark', not a Tailwind variant dark:. There is no place with a dark mode remnant.",
       "updatedAt": "2026-09-24T12:35:03.994Z"
     },
     {
       "id": "UX-164",
       "fingerprint": "96782481156f",
-      "title": "Rücksprung in zwei Schreibweisen",
+      "title": "Return in two spellings",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
@@ -2062,7 +2062,7 @@
     {
       "id": "UX-165",
       "fingerprint": "66f595214b27",
-      "title": "Blockierter Start nur per Tooltip erklärt, für Tastatur unsichtbar",
+      "title": "Blocked start explained only by tooltip, invisible to keyboard",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
@@ -2074,7 +2074,7 @@
     {
       "id": "UX-166",
       "fingerprint": "c77eb1940438",
-      "title": "Dokumentation zeigt gespeicherten und fehlenden Stand zugleich",
+      "title": "Documentation shows the saved and the missing state at once",
       "severity": "high",
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
@@ -2086,7 +2086,7 @@
     {
       "id": "UX-167",
       "fingerprint": "81c5b0d50197",
-      "title": "Gegenentscheidung-Hinweis klein und kontrastarm",
+      "title": "Counter-decision hint small and low in contrast",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
@@ -2098,7 +2098,7 @@
     {
       "id": "UX-168",
       "fingerprint": "d59ba6981893",
-      "title": "Technik-Ankündigung lädt zum Fragen ein ohne Antwortweg",
+      "title": "Technical announcement invites questions without a way to answer",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
@@ -2110,7 +2110,7 @@
     {
       "id": "UX-169",
       "fingerprint": "f616f38320f0",
-      "title": "Dokumentation heißt anders als die Stufe selbst",
+      "title": "Documentation is named differently from the stage itself",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
@@ -2122,7 +2122,7 @@
     {
       "id": "UX-170",
       "fingerprint": "0b960df7d37e",
-      "title": "Bestätigungsseite ohne Ausweg bei ungültigem Link",
+      "title": "Confirmation page without a way out for an invalid link",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
@@ -2134,43 +2134,43 @@
     {
       "id": "UX-171",
       "fingerprint": "376a24af33df",
-      "title": "Rechtstext im Overlay vermutlich kontrastarm",
+      "title": "Legal text in the overlay presumably low in contrast",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
       "createdAt": "2026-09-24T18:18:12.862Z",
       "status": "widerlegt",
-      "reason": "Gemessen statt geschaetzt: #003D7C mit 70 % Deckkraft auf Weiss mischt zu etwa rgb(77,119,163), relative Luminanz 0,174, Kontrast (1,05/0,224) = 4,69:1 >= 4,5:1 fuer Fliesstext (app/components/LegalOverlay.tsx:43).",
+      "reason": "Measured instead of estimated: #003D7C at 70 % opacity on white mixes to about rgb(77,119,163), relative luminance 0.174, contrast (1.05/0.224) = 4.69:1 >= 4.5:1 for body text (app/components/LegalOverlay.tsx:43).",
       "updatedAt": "2026-09-24T18:18:12.862Z"
     },
     {
       "id": "UX-172",
       "fingerprint": "d678782f0dc4",
-      "title": "Ersatz-Button wirkt deaktiviert, ist aber einzige Aktion",
+      "title": "Replacement button looks disabled but is the only action",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "fc787674705fe7011dd7fa1f97da3d18bb45fca5",
       "createdAt": "2026-09-28T06:18:30.611Z",
       "status": "widerlegt",
-      "reason": "Der Button ist deaktiviert, solange keine signierte Quelle existiert (app/(app)/project/[projectId]/documentation/page.tsx:1752 disabled={!signedSource || ...}); Grund und naechster Schritt stehen direkt darunter (Zeile 1758: 'There is no source here that the active run signed. Run the analysis in stage 1 first.'). Genau die Empfehlung des Befunds.",
+      "reason": "The button is disabled as long as no signed source exists (app/(app)/project/[projectId]/documentation/page.tsx:1752 disabled={!signedSource || ...}); the reason and next step are directly below it (line 1758: 'There is no source here that the active run signed. Run the analysis in stage 1 first.'). Exactly the recommendation of the finding.",
       "updatedAt": "2026-09-28T06:18:30.611Z"
     },
     {
       "id": "UX-173",
       "fingerprint": "98e2571a6cd3",
-      "title": "Druck gibt Modellschätzung ohne Vorbehalt weiter",
+      "title": "Print passes on the model estimate without a caveat",
       "severity": "low",
       "area": "release",
       "firstSeenHead": "fc787674705fe7011dd7fa1f97da3d18bb45fca5",
       "createdAt": "2026-09-28T06:18:30.812Z",
       "status": "widerlegt",
-      "reason": "Der Ausdruck traegt den Vorbehalt dreifach: StageHeader mit 'Demonstration model' und 'Not a business case' (tco/page.tsx:214-220, nicht print:hidden), der Hinweiskasten data-tco-model-notice (Zeile 329, nicht print:hidden) und eine eigene Druck-Fusszeile mit allen Annahmen (Zeile 536, hidden print:block).",
+      "reason": "The printout carries the caveat three times: StageHeader with 'Demonstration model' and 'Not a business case' (tco/page.tsx:214-220, not print:hidden), the notice box data-tco-model-notice (line 329, not print:hidden) and a print footer of its own with all assumptions (line 536, hidden print:block).",
       "updatedAt": "2026-09-28T06:18:30.812Z"
     },
     {
       "id": "UX-174",
       "fingerprint": "3586549a5a7c",
-      "title": "Neue Einmal-Tokens für Größen und Abstände ohne System",
+      "title": "New one-off tokens for sizes and spacing without a system",
       "severity": "medium",
       "area": "release",
       "firstSeenHead": "fc787674705fe7011dd7fa1f97da3d18bb45fca5",

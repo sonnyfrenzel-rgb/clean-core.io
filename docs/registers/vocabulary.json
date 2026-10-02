@@ -2,64 +2,64 @@
   "schemaVersion": 1,
   "id": "vocabulary",
   "roadmapStep": "3.0.8",
-  "purpose": "Die Kernbegriffe der oeffentlichen Texte mit genau einer Schreibweise je Sprache, und die Liste dessen, was 3.0 entfernt hat und keine oeffentliche Datei mehr nennen darf. Quelle der Begriffe ist der Code (lib/provenance.ts, lib/workspace-model.ts, lib/abap/abcd-classification.ts) und DESIGN.md; diese Datei erfindet keinen Begriff, sie legt nur die Schreibweise fest. Gehalten von tests/public-texts-guard.spec.ts, Pruefung (a) retired und (b) terms.",
+  "purpose": "The core terms of the public texts with exactly one spelling per language, and the list of what 3.0 has removed and no public file may name any more. The source of the terms is the code (lib/provenance.ts, lib/workspace-model.ts, lib/abap/abcd-classification.ts) and DESIGN.md; this file invents no term, it only fixes the spelling. Held by tests/public-texts-guard.spec.ts, check (a) retired and (b) terms.",
   "schema": {
     "terms[]": {
-      "id": "stabiler Schluessel",
-      "concept": "was der Begriff bezeichnet",
-      "source": "wo der Begriff im Code oder in DESIGN.md festgelegt ist",
-      "en": "die eine englische Schreibweise (Oberflaeche, README, alles Englische)",
-      "de": "die eine deutsche Schreibweise (DESIGN.md, ROADMAP.md, deutsche Runbooks); null, wo der englische Begriff auch im Deutschen gilt",
-      "variants[]": "Abweichungen, die der Guard zaehlt: pattern (JavaScript-RegExp-Quelle), flags, note",
-      "baseline": "Zahl der Treffer je Variante am Stichtag, ueber alle Dateien, fuer die die Inventur guard.terms = check setzt"
+      "id": "stable key",
+      "concept": "what the term denotes",
+      "source": "where the term is defined in the code or in DESIGN.md",
+      "en": "the one English spelling (interface, README, everything English)",
+      "de": "the one German spelling (DESIGN.md, ROADMAP.md, German runbooks); null where the English term also applies in German",
+      "variants[]": "deviations the guard counts: pattern (JavaScript RegExp source), flags, note",
+      "baseline": "number of hits per variant on the reference date, over all files for which the inventory sets guard.terms = check"
     },
     "retired[]": {
-      "id": "stabiler Schluessel",
-      "what": "was 3.0 entfernt oder nie baut",
-      "source": "Roadmap-Stelle der Streichung (3.0.5, §8, 1.6, 0.2/4.3, 3.0.6)",
-      "patterns[]": "RegExp-Quellen; ein Treffer ist ein Verstoss, ausser die Zeile trifft allowIfLine oder den globalen negationLine",
-      "allowIfLine": "optional: RegExp-Quelle, die die Zeile freigibt (z. B. 'als Werkzeuge' bei den sieben Stufen)",
-      "samples": "hit/allowed: Beispielzeilen, an denen der Guard seine eigenen Ausdruecke prueft (Selbsttest, laeuft ab sofort)",
-      "baseline": "Zahl der Treffer am Stichtag, ueber alle Dateien mit guard.removed = check",
-      "decided": "optional: eine Entscheidung zur Lesart der Streichung, mit Datum"
+      "id": "stable key",
+      "what": "what 3.0 removes or never builds",
+      "source": "roadmap location of the removal (3.0.5, §8, 1.6, 0.2/4.3, 3.0.6)",
+      "patterns[]": "RegExp sources; a hit is a violation unless the line matches allowIfLine or the global negationLine",
+      "allowIfLine": "optional: RegExp source that clears the line (e.g. 'als Werkzeuge' for the seven stages)",
+      "samples": "hit/allowed: sample lines on which the guard checks its own expressions (self-test, runs from now on)",
+      "baseline": "number of hits on the reference date, over all files with guard.removed = check",
+      "decided": "optional: a decision on the reading of the removal, with date"
     },
-    "negationLine": "Eine Zeile, die das Entfernte ausdruecklich als entfernt oder nicht gebaut nennt, ist kein Verstoss — sie beschreibt den 3.0-Stand. Geprueft wird die Zeile zusammen mit ihrer Vorgaengerzeile, weil Markdown Saetze umbricht ('Deliberately not built: tenants, SSO,' / 'ALM adapters, portfolio steering.'). Heuristik, bewusst eng gehalten."
+    "negationLine": "A line that explicitly names the removed thing as removed or not built is not a violation — it describes the 3.0 state. The line is checked together with its preceding line, because Markdown wraps sentences ('Deliberately not built: tenants, SSO,' / 'ALM adapters, portfolio steering.'). Heuristic, deliberately kept narrow."
   },
   "negationLine": "(not built|nicht gebaut|deliberately not|bewusst nicht|entf(ae|ä)llt|removed|entfernt|gestrichen|no longer|nicht mehr|retired|dropped|there is no|no connection to|keine Anbindung|gibt es nicht|❌|kein(e|en|er)? (Dark Mode|dark mode|SSO|Signavio-API)|no (dark mode|SSO|Signavio API))",
   "terms": [
     {
       "id": "product-name",
-      "concept": "Name des Produkts",
-      "source": "CLAUDE.md Kopf, README.md Titel, package.json name clean-core-io",
+      "concept": "name of the product",
+      "source": "CLAUDE.md header, README.md title, package.json name clean-core-io",
       "en": "Clean-Core.io",
       "de": null,
       "variants": [
         {
           "pattern": "\\bCleanCore\\.io\\b",
           "flags": "",
-          "note": "ohne Bindestrich"
+          "note": "without hyphen"
         },
         {
           "pattern": "\\bClean Core\\.io\\b",
           "flags": "",
-          "note": "Leerzeichen statt Bindestrich"
+          "note": "space instead of hyphen"
         },
         {
           "pattern": "\\bClean-core\\.io\\b|\\bCleancore\\.io\\b",
           "flags": "",
-          "note": "Grossschreibung gemischt"
+          "note": "mixed capitalisation"
         },
         {
           "pattern": "\\bClean-Core\\.IO\\b|\\bClean-Core IO\\b",
           "flags": "",
-          "note": "IO gross"
+          "note": "IO in capitals"
         }
       ],
-      "exceptions": "Kleingeschrieben `clean-core.io` ist die Domain und bleibt in URLs und Mailadressen erlaubt."
+      "exceptions": "Lower-case `clean-core.io` is the domain and stays allowed in URLs and mail addresses."
     },
     {
       "id": "clean-core-concept",
-      "concept": "SAPs Clean-Core-Paradigma (nicht das Produkt)",
+      "concept": "SAP's clean core paradigm (not the product)",
       "source": "README.md, CLAUDE.md 'aligned with SAP's Clean Core Extensibility paradigm'",
       "en": "Clean Core",
       "de": "Clean Core",
@@ -67,19 +67,19 @@
         {
           "pattern": "\\bClean-Core\\b(?!\\.io|-|\\/)",
           "flags": "",
-          "note": "mit Bindestrich, aber ohne .io — liest sich wie der Produktname"
+          "note": "hyphenated but without .io — reads like the product name"
         },
         {
           "pattern": "\\bCleanCore\\b(?!\\.io)",
           "flags": "",
-          "note": "zusammengeschrieben"
+          "note": "written as one word"
         }
       ],
-      "exceptions": "Zusammensetzungen im Deutschen ('Clean-Core-Level', 'Clean-Core-Paradigma') sind Durchkopplung und kein Verstoss; das Muster schliesst sie ueber (?!-) aus."
+      "exceptions": "German compounds ('Clean-Core-Level', 'Clean-Core-Paradigma') are hyphenated compounds and not a violation; the pattern excludes them via (?!-)."
     },
     {
       "id": "views",
-      "concept": "die drei Sichten des Arbeitsraums — nur Sichten, nie gespeichert",
+      "concept": "the three views of the workspace — views only, never stored",
       "source": "lib/workspace-model.ts VIEW_LABELS, DESIGN.md §2.3",
       "en": "Business view · IT view · Management view (Plural: views)",
       "de": "Business-Sicht · IT-Sicht · Management-Sicht (Plural: Sichten)",
@@ -87,29 +87,29 @@
         {
           "pattern": "\\b(Business|Management) View\\b|\\bIT View\\b",
           "flags": "",
-          "note": "View gross"
+          "note": "View in capitals"
         },
         {
           "pattern": "\\b(Business|Management|IT) Sicht\\b",
           "flags": "",
-          "note": "deutsch ohne Bindestrich"
+          "note": "German without hyphen"
         },
         {
           "pattern": "\\b(Business|Management|IT)-View\\b|\\bBusinesssicht\\b",
           "flags": "",
-          "note": "Mischform"
+          "note": "mixed form"
         },
         {
           "pattern": "\\b(Management|Business|IT)[- ](role|Rolle)\\b",
           "flags": "",
-          "note": "als Rolle bezeichnet — Sichten sind keine Rollen (CLAUDE.md, ROADMAP §8)"
+          "note": "called a role — views are not roles (CLAUDE.md, ROADMAP §8)"
         }
       ]
     },
     {
       "id": "layers",
-      "concept": "die sechs Ebenen der Anchor Bar",
-      "source": "lib/workspace-model.ts LAYERS, DESIGN.md §2.3 Punkt 4",
+      "concept": "the six layers of the Anchor Bar",
+      "source": "lib/workspace-model.ts LAYERS, DESIGN.md §2.3 point 4",
       "en": "layers: Need & process · Standard fit · Costs & assumptions · Architecture & dependencies · Evidence & controls · Changes & commitments",
       "de": "Ebenen (die Namen bleiben englisch, wie in der Oberflaeche)",
       "variants": [
@@ -126,13 +126,13 @@
         {
           "pattern": "\\bCosts and assumptions\\b|\\bEvidence and controls\\b|\\bChanges and commitments\\b|\\bArchitecture and dependencies\\b",
           "flags": "",
-          "note": "and statt &"
+          "note": "and instead of &"
         }
       ]
     },
     {
       "id": "clean-core-level",
-      "concept": "SAPs Clean-Core-Level A bis D eines Objekts",
+      "concept": "SAP's clean core level A to D of an object",
       "source": "lib/abap/abcd-classification.ts, DESIGN.md §4.1",
       "en": "Level A–D (einzeln: Level A)",
       "de": "Level A–D (einzeln: Level A)",
@@ -140,34 +140,34 @@
         {
           "pattern": "\\b[Ll]evels? A-D\\b",
           "flags": "",
-          "note": "ASCII-Bindestrich statt Halbgeviertstrich"
+          "note": "ASCII hyphen instead of en dash"
         },
         {
           "pattern": "\\b[Ll]evels A[–-]D\\b",
           "flags": "",
-          "note": "Plural — die Kennung heisst Level"
+          "note": "plural — the identifier is Level"
         },
         {
           "pattern": "\\bA[–-]D (classification|level|grade)s?\\b",
           "flags": "i",
-          "note": "nachgestellt"
+          "note": "placed after"
         },
         {
           "pattern": "\\bABCD\\b",
           "flags": "",
-          "note": "zusammengezogen (Code-Bezeichner in Backticks ausgenommen)"
+          "note": "contracted (code identifiers in backticks excepted)"
         },
         {
           "pattern": "\\b(Stufe|Klasse|Kategorie)n? A[–-]D\\b",
           "flags": "",
-          "note": "deutsche Umbenennung"
+          "note": "German renaming"
         }
       ],
-      "exceptions": "Bezeichner in Backticks (`abcd-classification.ts`, `/api/abcd-classify`) sind Code und kein Text."
+      "exceptions": "Identifiers in backticks (`abcd-classification.ts`, `/api/abcd-classify`) are code and not text."
     },
     {
       "id": "provenance-model-proposal",
-      "concept": "Herkunftswert proposed",
+      "concept": "provenance value proposed",
       "source": "lib/provenance.ts",
       "en": "Model proposal",
       "de": "Model proposal (Oberflaechentext, bleibt englisch)",
@@ -175,12 +175,12 @@
         {
           "pattern": "\\bAI[- ][Gg]enerated\\b",
           "flags": "",
-          "note": "alter Badge-Text"
+          "note": "old badge text"
         },
         {
           "pattern": "\\bModel Proposal\\b",
           "flags": "",
-          "note": "Proposal gross"
+          "note": "Proposal in capitals"
         },
         {
           "pattern": "\\bKI-generiert\\b",
@@ -191,7 +191,7 @@
     },
     {
       "id": "provenance-not-determined",
-      "concept": "Herkunftswert not-determined",
+      "concept": "provenance value not-determined",
       "source": "lib/provenance.ts, DESIGN.md §4",
       "en": "Not determined (im Satz: not determined)",
       "de": "nicht bestimmt",
@@ -199,12 +199,12 @@
         {
           "pattern": "\\bnot computed\\b",
           "flags": "i",
-          "note": "alter Text"
+          "note": "old text"
         },
         {
           "pattern": "\\bNo verdict\\b",
           "flags": "",
-          "note": "alter Text"
+          "note": "old text"
         },
         {
           "pattern": "\\bundetermined\\b",
@@ -214,18 +214,18 @@
         {
           "pattern": "\\bNot Determined\\b",
           "flags": "",
-          "note": "Determined gross"
+          "note": "Determined in capitals"
         },
         {
           "pattern": "\\bnicht ermittelt(bar)?\\b|\\bunbestimmt\\b",
           "flags": "i",
-          "note": "deutsche Nebenform"
+          "note": "German variant form"
         }
       ]
     },
     {
       "id": "provenance-other",
-      "concept": "die uebrigen Herkunftswerte",
+      "concept": "the remaining provenance values",
       "source": "lib/provenance.ts",
       "en": "Proven · Confirmed · Reconstructed · Imported · Simulation · Demonstrated · mock · Stale",
       "de": "wie englisch (Oberflaechentext)",
@@ -233,81 +233,81 @@
         {
           "pattern": "\\bSigned[- ]off\\b",
           "flags": "i",
-          "note": "alter Text fuer Confirmed"
+          "note": "old text for Confirmed"
         },
         {
           "pattern": "\\bStale-Notice\\b|\\bCatalog Match\\b",
           "flags": "",
-          "note": "alte Badges"
+          "note": "old badges"
         },
         {
           "pattern": "\\bModel estimate\\b",
           "flags": "i",
-          "note": "alter Text fuer Simulation"
+          "note": "old text for Simulation"
         },
         {
           "pattern": "\\bDemonstrated \\(mock\\)|\\bDemonstrated - mock\\b",
           "flags": "",
-          "note": "Trenner ist ·"
+          "note": "separator is ·"
         }
       ]
     },
     {
       "id": "self-declaration",
-      "concept": "der Satz zur Selbstauskunft — Verantwortung liegt beim angemeldeten Konto",
-      "source": "DESIGN.md §4 (Confirmed) und §9 Glossar, lib/architecture-contract.ts",
+      "concept": "the self-declaration sentence — responsibility lies with the signed-in account",
+      "source": "DESIGN.md §4 (Confirmed) and §9 glossary, lib/architecture-contract.ts",
       "en": "a self-declaration, not a mandate",
       "de": "eine Selbstauskunft, kein Mandat",
       "variants": [
         {
           "pattern": "self-declaration, not an organi[sz]ational (mandate|approval)",
           "flags": "i",
-          "note": "Langform"
+          "note": "long form"
         },
         {
           "pattern": "\\bself declaration\\b",
           "flags": "i",
-          "note": "ohne Bindestrich"
+          "note": "without hyphen"
         },
         {
           "pattern": "\\bSelbsterkl(ae|ä)rung\\b",
           "flags": "i",
-          "note": "deutsches Synonym"
+          "note": "German synonym"
         },
         {
           "pattern": "Selbstauskunft, kein (Organisationsmandat|organisatorisches Mandat)",
           "flags": "i",
-          "note": "Langform deutsch"
+          "note": "long form German"
         }
       ]
     },
     {
       "id": "stages-as-tools",
-      "concept": "die sieben Stufen — ab 3.0.1 Werkzeuge des Arbeitsraums, nicht das Produkt",
-      "source": "lib/workflow-steps.ts, DESIGN.md §2.3 Punkt 3, ROADMAP 3.0.1",
+      "concept": "the seven stages — from 3.0.1 tools of the workspace, not the product",
+      "source": "lib/workflow-steps.ts, DESIGN.md §2.3 point 3, ROADMAP 3.0.1",
       "en": "the seven stages as tools: Analyze · Design · Transformation · Documentation · Testing · Economics · Delivery",
       "de": "die sieben Stufen als Werkzeuge (Namen englisch)",
       "variants": [
         {
           "pattern": "\\bTCO (stage|step|page)\\b|\\bTCO-(Stufe|Seite)\\b|\\bStufe TCO\\b",
           "flags": "i",
-          "note": "die Stufe heisst Economics; TCO ist nur der Ordner"
+          "note": "the stage is called Economics; TCO is only the folder"
         },
         {
           "pattern": "\\bAnalyse (stage|step)\\b",
           "flags": "",
-          "note": "britische Schreibweise — die Stufe heisst Analyze"
+          "note": "British spelling — the stage is called Analyze"
         },
         {
           "pattern": "\\b(Handover|Übergabe) stage\\b",
           "flags": "i",
-          "note": "die Stufe heisst Delivery"
+          "note": "the stage is called Delivery"
         }
       ]
     },
     {
       "id": "workspace",
-      "concept": "der Arbeitsraum eines Projekts",
+      "concept": "the workspace of a project",
       "source": "DESIGN.md §2.3, components/workspace",
       "en": "workspace",
       "de": "Arbeitsraum",
@@ -320,18 +320,18 @@
         {
           "pattern": "\\bwork space\\b",
           "flags": "i",
-          "note": "getrennt"
+          "note": "separated"
         },
         {
           "pattern": "\\bArbeitsbereich\\b",
           "flags": "",
-          "note": "deutsches Synonym"
+          "note": "German synonym"
         }
       ]
     },
     {
       "id": "sharing",
-      "concept": "Teilen = Einsicht per Einladung an eine bestaetigte E-Mail-Adresse",
+      "concept": "sharing = read access by invitation to a confirmed e-mail address",
       "source": "CLAUDE.md, ROADMAP Phase 5, docs/archiv/konzepte/CONCEPT-EINSICHT-PER-EINLADUNG.md",
       "en": "read access by invitation",
       "de": "Einsicht per Einladung",
@@ -339,7 +339,7 @@
         {
           "pattern": "\\b(public|open|shareable) (share )?link\\b",
           "flags": "i",
-          "note": "offene Links gibt es nicht (§8)"
+          "note": "open links do not exist (§8)"
         },
         {
           "pattern": "\\bread-only access by invite\\b|\\bview access by invitation\\b",
@@ -350,7 +350,7 @@
     },
     {
       "id": "bpmn-format",
-      "concept": "das Austauschformat mit SAP Signavio",
+      "concept": "the exchange format with SAP Signavio",
       "source": "ROADMAP §6, tests/signavio-claims-guard.spec.ts",
       "en": "BPMN 2.0 XML",
       "de": "BPMN 2.0 XML",
@@ -366,8 +366,8 @@
   "retired": [
     {
       "id": "seven-stages-as-product",
-      "what": "die sieben Stufen als das Produkt ('7-stage workflow', 'siebenstufiger Ablauf') — ab 3.0.1 sind sie Werkzeuge im Arbeitsraum. Dass es sieben Stufen gibt, bleibt wahr; falsch wird nur, sie als den Weg durch das Produkt zu beschreiben.",
-      "source": "ROADMAP 3.0.1, 3.0.8 'nirgends mehr die sieben Stufen als Produkt'",
+      "what": "the seven stages as the product ('7-stage workflow', 'siebenstufiger Ablauf') — from 3.0.1 they are tools in the workspace. That there are seven stages stays true; it only becomes wrong to describe them as the path through the product.",
+      "source": "ROADMAP 3.0.1, 3.0.8 'nowhere any more the seven stages as the product'",
       "patterns": [
         "\\b(7|seven)[- ]stages?[- ](workflow|flow|process|pipeline|journey|product)\\b",
         "\\bthrough (a|the) (7|seven)[- ]stage",
@@ -384,7 +384,7 @@
     },
     {
       "id": "dark-mode",
-      "what": "Dark Mode, Theme-Schalter, `.dark`-Ueberschreibungen",
+      "what": "dark mode, theme switch, `.dark` overrides",
       "source": "ROADMAP 1.6, §9 (15.09.2026)",
       "patterns": [
         "\\bdark[- ]mode\\b",
@@ -399,9 +399,9 @@
     },
     {
       "id": "signavio-unverified",
-      "what": "Signavio-Import und BPMN-Import (die Rueckrichtung wartet bis nach 3.0, ROADMAP Phase 4), Signavio-Aussagen als geprueft oder zugesagt, Signavio-API-Anbindung — bis 4.3 protokolliert ist, gilt nur der Export als 'BPMN 2.0 XML'",
-      "source": "ROADMAP 0.2, Phase 4 (nur Ausgangsrichtung, 18.09.2026), 4.3, §8, Abschluss 3.0",
-      "decided": "Entscheidung Sonny 24.09.2026: die Lesart ist richtig - ein Import zurueck aus Signavio kommt, wenn ueberhaupt, erst nach 3.0. Bis dahin nennt kein oeffentlicher Text einen Signavio- oder BPMN-Import.",
+      "what": "Signavio import and BPMN import (the return direction waits until after 3.0, ROADMAP Phase 4), Signavio statements as checked or promised, Signavio API connection — until 4.3 is logged, only the export counts as 'BPMN 2.0 XML'",
+      "source": "ROADMAP 0.2, Phase 4 (outbound direction only, 18.09.2026), 4.3, §8, completion 3.0",
+      "decided": "Decision Sonny 24.09.2026: the reading is correct - an import back from Signavio comes, if at all, only after 3.0. Until then no public text names a Signavio or BPMN import.",
       "patterns": [
         "Signavio[- ]importable",
         "importable into (SAP )?Signavio",
@@ -419,7 +419,7 @@
     },
     {
       "id": "documentation-generator",
-      "what": "der alte 1.000-Zeichen-Dokumentationsgenerator mit erfundenen Rollen, KPIs und Dauer; components/ProcessDocumentation.tsx",
+      "what": "the old 1,000-character documentation generator with invented roles, KPIs and duration; components/ProcessDocumentation.tsx",
       "source": "ROADMAP 3.0.5 (Weg C)",
       "patterns": [
         "\\bProcessDocumentation(\\.tsx)?\\b",
@@ -433,8 +433,8 @@
     },
     {
       "id": "pilot-banner",
-      "what": "Pilot-Banner und KI-Werbeetiketten",
-      "source": "ROADMAP 3.0.6, DESIGN.md §3.1 Blockliste",
+      "what": "pilot banner and AI advertising labels",
+      "source": "ROADMAP 3.0.6, DESIGN.md §3.1 block list",
       "patterns": [
         "Powered by Generative AI",
         "\\bAI[- ]powered\\b",
@@ -447,7 +447,7 @@
     },
     {
       "id": "not-built-tenancy",
-      "what": "Tenants, Organisationskonten, SSO, Self-Hosted Edition",
+      "what": "tenants, organisation accounts, SSO, self-hosted edition",
       "source": "ROADMAP §8",
       "patterns": [
         "\\bmulti[- ]?tenan(t|cy)\\b",
@@ -464,7 +464,7 @@
     },
     {
       "id": "not-built-roles",
-      "what": "Rollen an Beitraegen, 'Playing as', Self-Play, Rollen-Mandate, Rechtestufen, Gaeste, offene Links, Decision Request",
+      "what": "roles on contributions, 'Playing as', self-play, role mandates, permission levels, guests, open links, Decision Request",
       "source": "ROADMAP §8",
       "patterns": [
         "\\bPlaying as\\b",
@@ -481,7 +481,7 @@
     },
     {
       "id": "not-built-portfolio",
-      "what": "ALM-Adapter, Portfolio-Steuerung, Wellen- und Kapazitaetsplanung, Process Mining, Prozess-Repository, schreibende MCP-Tools",
+      "what": "ALM adapters, portfolio steering, wave and capacity planning, process mining, process repository, writing MCP tools",
       "source": "ROADMAP §8",
       "patterns": [
         "\\bALM[- ]adapters?\\b",

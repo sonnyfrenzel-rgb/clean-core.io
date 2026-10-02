@@ -1,164 +1,164 @@
-# Prozess-Benchmark — wie genau rekonstruiert Clean-Core.io den Prozess aus ABAP?
+# Process benchmark — how accurately does Clean-Core.io reconstruct the process from ABAP?
 
-Stand 28.09.2026 · Grundlage: `tests/prozess-benchmark/` (Fälle, Sollantworten, Messwerkzeuge, Richterurteile)
+As of 28.09.2026 · Basis: `tests/prozess-benchmark/` (cases, expected answers, measuring tools, judge verdicts)
 
-## Ergebnis in fünf Sätzen
+## The result in five sentences
 
-1. Auf 200 realistischen, blind geschriebenen und gegengeprüften ABAP-Fällen trifft das rekonstruierte
-   Prozessskelett jetzt **81,1 %** der vergleichbaren Sollknoten — heute Morgen waren es **61,3 %**.
-2. Die verdeckte Prüfhälfte, an der nie entwickelt wurde, liegt mit **82,1 %** sogar über der Lernhälfte;
-   die Verbesserungen sind nicht auf die Beispiele zugeschnitten.
-3. Eine dritte, bewusst schwere Welle (objektorientiert, mehrdateig, RAP/OData/Web Dynpro, Dialog) steigt
-   von **39,5 %** auf **72,3 %**, ihre verdeckte Hälfte auf **70,4 %** — hier liegt die nächste Arbeit.
-4. Die Fachsätze der Business-Sicht sagen fast nichts Falsches mehr (Aussagen, die dem Code widersprechen:
-   236 → 11 von 2.273), bleiben aber technisch; das Modell (Weg B) trifft den fachlichen Sinn in **86,5 %**
-   und ist deshalb jetzt — als Vorschlag mit Beleg und Widerspruchsmarkierung — in der Business-Sicht.
-5. Das Ergebnis von Roadmap 17.8 („B schlägt A nicht“) war ein Messfehler des Wortmaßes; inhaltlich
-   gemessen schlägt B A deutlich.
+1. On 200 realistic, blind-written and cross-checked ABAP cases, the reconstructed
+   process skeleton now hits **81.1 %** of the comparable expected nodes — this morning it was **61.3 %**.
+2. The hidden test half, on which no development was ever done, is at **82.1 %**, even above the learning half;
+   the improvements are not tailored to the examples.
+3. A third, deliberately hard wave (object-oriented, multi-file, RAP/OData/Web Dynpro, dialog) rises
+   from **39.5 %** to **72.3 %**, its hidden half to **70.4 %** — this is where the next work lies.
+4. The business statements of the Business view say almost nothing wrong any more (statements that contradict the code:
+   236 → 11 of 2,273), but they stay technical; the model (Path B) hits the business meaning in **86.5 %**
+   and is therefore now — as a proposal with evidence and a contradiction marker — in the Business view.
+5. The result of roadmap 17.8 ("B does not beat A") was a measurement error of the word measure; measured
+   by content, B clearly beats A.
 
-## 1. Wie gemessen wurde
+## 1. How it was measured
 
-**300 Fälle in drei Wellen**, je 20er-Paket fünf einfache bis sehr komplexe Fälle (Welle 3: 2/4/7/7):
+**300 cases in three waves**, each package of 20 with five simple to very complex cases (wave 3: 2/4/7/7):
 
-| Welle | Inhalt | Fälle | Zeilen ABAP | Sollknoten | Fachsätze |
+| Wave | Content | Cases | Lines of ABAP | Expected nodes | Business statements |
 |---|---|---|---|---|---|
-| 1 | Kernmodule: SD, MM/Lager, FI/CO, PP/PM/QM, Querschnitt | 100 | 19.500 | 4.049 | 1.126 |
-| 2 | Randmodule mit ≥ 2 Grenzfällen je Fall: PM/CS/EHS, PS/RE-FX/PSM/FSCM/TRM, HCM, Branchen, Technik | 100 | 20.800 | 4.133 | 1.147 |
-| 3 | verdeckte Prüfmenge, Schwerpunkt schwer: OO SD/MM, Mehrdatei FI/CO/HR, Gateway/RAP/BOPF/Web Dynpro/AMDP, Schnittstellen, Dialog | 100 | 25.400 | 5.051 | 1.142 |
+| 1 | Core modules: SD, MM/warehouse, FI/CO, PP/PM/QM, cross-application | 100 | 19,500 | 4,049 | 1,126 |
+| 2 | Peripheral modules with ≥ 2 edge cases per case: PM/CS/EHS, PS/RE-FX/PSM/FSCM/TRM, HCM, industries, technology | 100 | 20,800 | 4,133 | 1,147 |
+| 3 | hidden test set, focus on hard: OO SD/MM, multi-file FI/CO/HR, Gateway/RAP/BOPF/Web Dynpro/AMDP, interfaces, dialog | 100 | 25,400 | 5,051 | 1,142 |
 
-**Blind und gegengeprüft.** Jeder Fall wurde von einem Autor-Agenten geschrieben, der die Engine weder las
-noch ausführte, und von einem zweiten, unabhängigen Prüfer gegen die ABAP-Semantik geprüft (Protokoll je
-Fall in `review.json`). Kein Fall wurde verworfen; die Prüfer korrigierten vor allem Struktur (fehlende
-Blockenden, doppelt verdrahtete Aufrufe, Knoten auf reinen Zuweisungen) und fanden 13 echte fachliche oder
-syntaktische Fehler (z. B. `VBUK-ABSTA` gibt es nicht; `BAPI_PO_GETDETAIL1` kennt `ITEMS` nicht;
-`GET peras` gibt es nur in PNPCE).
+**Blind and cross-checked.** Each case was written by an author agent that neither read
+nor ran the engine, and checked against ABAP semantics by a second, independent reviewer (a record per
+case in `review.json`). No case was discarded; the reviewers corrected mainly structure (missing
+block ends, calls wired twice, nodes on pure assignments) and found 13 real business or
+syntactic errors (e.g. `VBUK-ABSTA` does not exist; `BAPI_PO_GETDETAIL1` does not know `ITEMS`;
+`GET peras` exists only in PNPCE).
 
-**Eingefroren, bevor die Engine sie sah.** `frozen-*.json` hält die SHA-256 jeder Sollantwort und
-Quelle; `validate.py` prüft sie bei jedem Lauf (eine geänderte Sollantwort macht den Lauf rot).
+**Frozen before the engine saw them.** `frozen-*.json` holds the SHA-256 of every expected answer and
+source; `validate.py` checks them on every run (a changed expected answer turns the run red).
 
-**Lern- und Prüfhälften**, per Hash festgelegt, bevor ein Einzelergebnis angesehen wurde
-(`split.json`). Entwickelt wurde nur an Lernfällen; Prüfhälften wurden als Summe gemessen, die
-Welle-3-Prüfhälfte genau einmal am Ende.
+**Learning and test halves**, fixed by hash before any individual result was looked at
+(`split.json`). Development was done only on learning cases; test halves were measured as a total, the
+wave 3 test half exactly once at the end.
 
-**Derselbe Vergleicher wie beim Referenzkorpus** (`tests/helpers/korpus-comparison.ts`; gegen die
-Korpus-Baseline 0 Abweichungen bei 340 Urteilen). Gemessen wird so, wie ein Nutzer ein Programm mit
-Includes ins Produkt einfügt: alle Dateien eines Falls als eine Quelle.
+**The same comparator as for the reference corpus** (`tests/helpers/korpus-comparison.ts`; against the
+corpus baseline 0 deviations across 340 verdicts). It measures the way a user pastes a program with
+includes into the product: all files of a case as one source.
 
-## 2. Das Prozessskelett
+## 2. The process skeleton
 
-### Gesamt (Knoten-Treffer über die vergleichbaren Sollknoten)
+### Overall (node hits over the comparable expected nodes)
 
-| Gruppe | Morgen | **Engine jetzt** | mit korrigiertem Vergleicher¹ |
+| Group | Morning | **Engine now** | with corrected comparator¹ |
 |---|---|---|---|
-| Welle 1+2, Lernhälfte | 60,6 % | **80,0 %** | 81,4 % |
-| Welle 1+2, Prüfhälfte (verdeckt) | 61,9 % | **82,1 %** | 83,5 % |
-| **Welle 1+2** | **61,3 %** | **81,1 %** | 82,5 % |
-| Welle 3, Lernhälfte | 40,3 % | 74,3 % | 74,9 % |
-| **Welle 3, Prüfhälfte (verdeckt, einmal gemessen)** | 38,8 % | **70,4 %** | 70,0 % |
-| Welle 3 | 39,5 % | 72,3 % | 72,5 % |
-| alle 300 | — | 77,9 % | 78,7 % |
-| *Referenzkorpus (68, zum Vergleich, Morgen)* | *79,9 %* | | |
+| Wave 1+2, learning half | 60.6 % | **80.0 %** | 81.4 % |
+| Wave 1+2, test half (hidden) | 61.9 % | **82.1 %** | 83.5 % |
+| **Wave 1+2** | **61.3 %** | **81.1 %** | 82.5 % |
+| Wave 3, learning half | 40.3 % | 74.3 % | 74.9 % |
+| **Wave 3, test half (hidden, measured once)** | 38.8 % | **70.4 %** | 70.0 % |
+| Wave 3 | 39.5 % | 72.3 % | 72.5 % |
+| all 300 | — | 77.9 % | 78.7 % |
+| *Reference corpus (68, for comparison, morning)* | *79.9 %* | | |
 
-¹ Zwei Versäumnisse im Vergleicher, die älter sind als die heutigen Engine-Änderungen: ein Aufruf, den die
-Engine genauer als *Versand* erkennt, und eine kleine Routine, die §5.8 nach ihrer Wirkung benennt, galten
-als „falsche Art“; funktionale Methodensyntax (`obj->m( )`) war nicht vergleichbar. Getrennt ausgewiesen,
-damit keine Messkorrektur als Engine-Fortschritt erscheint.
+¹ Two omissions in the comparator that are older than today's engine changes: a call that the
+engine recognises more precisely as *shipping*, and a small routine that §5.8 names after its effect, counted
+as "wrong kind"; functional method syntax (`obj->m( )`) was not comparable. Shown separately,
+so that no measurement correction appears as engine progress.
 
-**Kanten:** Die Quote fällt von 72,5 % auf 68,2 %, obwohl absolut deutlich mehr Kanten treffen — weil jetzt
-viel mehr Knoten aufgelöst werden, werden 900+ Sollkanten überhaupt erst vergleichbar.
+**Edges:** the rate falls from 72.5 % to 68.2 %, although clearly more edges hit in absolute terms — because now
+many more nodes are resolved, 900+ expected edges become comparable in the first place.
 
-### Wo es gut und wo es schwer ist (Engine jetzt)
+### Where it is good and where it is hard (engine now)
 
-| | Knoten-Treffer |
+| | Node hits |
 |---|---|
-| einfach · mittel · komplex · sehr komplex | 89,4 % · 86,5 % · 77,1 % · 75,9 % |
-| eine Datei · 2–3 Dateien · 4+ Dateien | 87,4 % · 79,5 % · 75,0 % |
-| stärkste Pakete | W2 PM/CS/EHS 84,0 % · W2 Branchen 84,0 % · MM/Lager 83,6 % |
-| schwächste Pakete | W3 OO-Geschäftsanwendungen 64,9 % · W3 Dialog 70,4 % · W2 HCM 74,1 % |
+| simple · medium · complex · very complex | 89.4 % · 86.5 % · 77.1 % · 75.9 % |
+| one file · 2–3 files · 4+ files | 87.4 % · 79.5 % · 75.0 % |
+| strongest packages | W2 PM/CS/EHS 84.0 % · W2 industries 84.0 % · MM/warehouse 83.6 % |
+| weakest packages | W3 OO business applications 64.9 % · W3 dialog 70.4 % · W2 HCM 74.1 % |
 
-| Soll-Knotenart | Treffer | | Soll-Knotenart | Treffer |
+| Expected node kind | Hits | | Expected node kind | Hits |
 |---|---|---|---|---|
-| Sperre | 100 % | | Ende | 85,0 % |
-| Schleife | 92,1 % | | Verzweigung | 71,8 % |
-| Lesen | 92,0 % | | Ausgabe | 69,6 % |
-| opaker Aufruf | 91,8 % | | Start | 68,0 % |
-| Schreiben | 91,6 % | | Aufruf in den Fall | 65,1 % |
+| Lock | 100 % | | End | 85.0 % |
+| Loop | 92.1 % | | Branch | 71.8 % |
+| Read | 92.0 % | | Output | 69.6 % |
+| opaque call | 91.8 % | | Start | 68.0 % |
+| Write | 91.6 % | | Call into the case | 65.1 % |
 
-## 3. Was geändert wurde — und warum es allgemein ist
+## 3. What was changed — and why it is general
 
-Jede Änderung ist aus ABAP-Semantik und `DESIGN.md` §5.8 begründet, trägt einen Guard-Test mit **neu
-geschriebenem** Minimal-ABAP, und keine verliert eine Übereinstimmung im Referenzkorpus (die Ratsche hält
-jetzt 128 statt 122 Übereinstimmungen).
+Every change is justified from ABAP semantics and `DESIGN.md` §5.8, carries a guard test with **newly
+written** minimal ABAP, and none loses a match in the reference corpus (the ratchet now holds
+128 instead of 122 matches).
 
-| # | Befund | Änderung | Wirkung |
+| # | Finding | Change | Effect |
 |---|---|---|---|
-| D1 | Dynpro-Module und Funktionsbausteine fielen weg, sobald ein Ereignisblock existierte | Einstiege neben den Ereignissen | Modulpools vollständig |
-| D2 | Methodenaufrufe erzeugten **keinen** Knoten | Teilprozess, wo die Quelle die Methode implementiert, sonst Aufruf; Auflösung über Klasse, Oberklassen, Interface (`lib/abap/method-resolution.ts`) | OO-Code sichtbar |
-| D3 | Gerufene FORMs erschienen zusätzlich als Start | nur nie gerufene FORMs sind Einstieg | keine Doppelungen |
-| D4 | `MESSAGE TYPE 'I'` (Popup) fehlte | User-Task | §5.8 umgesetzt |
-| ADR-054 | Teilprozesse ohne sichtbaren Anfang; frühe Ausstiege liefen still ins gemeinsame Ende | Start je aufklappbarer Ebene; eigenes Ende je `RETURN`/`EXIT`/`STOP`, als „End (early)“ erkennbar; Ereignisse zählen nie als Schritt; `CHECK` bleibt bedingter Fluss | +9,3 pp |
-| | `RAISE EVENT` galt als Fehler-Ende und schnitt den Ablauf ab | Aufruf der gebundenen Behandler (über `SET HANDLER`) | |
-| | Nach `LEAVE TO SCREEN` lief der Fluss weiter | Dialogschritt endet | |
-| | Callbacks (`ON END OF TASK`), ALV-Ereignisbehandler, BAdI-Methoden (`intf~meth`), `REDEFINITION`en ohne Oberklasse im Upload galten als „nicht erreicht“ | Einstiege, Trigger vermerkt, nicht geraten | W3 +8 pp |
+| D1 | Dynpro modules and function modules were dropped as soon as an event block existed | Entry points alongside the events | Module pools complete |
+| D2 | Method calls produced **no** node | Subprocess where the source implements the method, otherwise a call; resolution via class, superclasses, interface (`lib/abap/method-resolution.ts`) | OO code visible |
+| D3 | Called FORMs also appeared as a start | only FORMs that are never called are entry points | no duplicates |
+| D4 | `MESSAGE TYPE 'I'` (popup) was missing | User task | §5.8 implemented |
+| ADR-054 | Subprocesses without a visible beginning; early exits ran silently into the shared end | Start per expandable level; own end per `RETURN`/`EXIT`/`STOP`, recognisable as "End (early)"; events never count as a step; `CHECK` stays conditional flow | +9.3 pp |
+| | `RAISE EVENT` counted as an error end and cut off the flow | Call of the bound handlers (via `SET HANDLER`) | |
+| | After `LEAVE TO SCREEN` the flow continued | Dialog step ends | |
+| | Callbacks (`ON END OF TASK`), ALV event handlers, BAdI methods (`intf~meth`), `REDEFINITION`s without a superclass in the upload counted as "not reached" | Entry points, trigger noted, not guessed | W3 +8 pp |
 
-**Bewusst nicht geändert** (Designentscheidungen, im Bericht als Konventionsunterschied ausgewiesen):
-`IF sy-subrc` als Fehler-Randereignis (2.15, 284 Sollknoten „andere Art“); kleine Routinen als ein Schritt;
-technische Helfer; `MESSAGE` S/W ohne Element; `AUTHORITY-CHECK` als Lane statt Schritt; polymorphe
-Aufrufe mit offenem Ziel bleiben opak (D2: nicht raten).
+**Deliberately not changed** (design decisions, shown in the report as a convention difference):
+`IF sy-subrc` as an error boundary event (2.15, 284 expected nodes "other kind"); small routines as one step;
+technical helpers; `MESSAGE` S/W without an element; `AUTHORITY-CHECK` as a lane instead of a step; polymorphic
+calls with an open target stay opaque (D2: do not guess).
 
-## 4. Die Fachsätze (Business-Sicht)
+## 4. The business statements (Business view)
 
-Fünf unabhängige Richter bewerteten alle 2.273 Sollsätze **inhaltlich** — je Sollsatz drei Varianten
-nebeneinander, je Fall zufällig als X/Y/Z beschriftet; die Zuordnung wurde erst nach allen Urteilen
-geöffnet (`judge/schluss/zuordnung.json`).
+Five independent judges rated all 2,273 expected statements **by content** — per expected statement three variants
+side by side, labelled X/Y/Z at random per case; the mapping was only opened after all verdicts
+(`judge/schluss/zuordnung.json`).
 
-| | gleich | teilweise | abweichend | fehlt | widerspricht dem Code | verbotene Schlüsse |
+| | same | partial | deviating | missing | contradicts the code | forbidden inferences |
 |---|---|---|---|---|---|---|
-| Weg A vorher (deterministisch) | 3,3 % | 80,4 % | 2,0 % | 14,2 % | 236 | 9 |
-| **Weg A nachher** | 10,3 % | 76,6 % | **0,1 %** | 12,9 % | **11** | **4** |
-| **Weg B (Gemini)** | **86,5 %** | 7,1 % | 0,3 % | 6,1 % | 39 | 19 |
+| Path A before (deterministic) | 3.3 % | 80.4 % | 2.0 % | 14.2 % | 236 | 9 |
+| **Path A after** | 10.3 % | 76.6 % | **0.1 %** | 12.9 % | **11** | **4** |
+| **Path B (Gemini)** | **86.5 %** | 7.1 % | 0.3 % | 6.1 % | 39 | 19 |
 
-Prüfhälfte: A nachher 9,3 % gleich, B 87,2 % — dasselbe Bild.
+Test half: A after 9.3 % same, B 87.2 % — the same picture.
 
-**Weg A** wurde von zwölf allgemeinen Fehlmustern befreit, die alle fünf Richter unabhängig fanden (u. a.
-`CHECK` erfand „kleinere werden übersprungen“, jedes `sy-subrc` hieß „Treffer“, `GET PARAMETER` wurde zur
-logischen Datenbank, jede Transaktion zur „Anlage“, `MESSAGE … INTO` zur Ausgabe). Er ist jetzt
-verlässlich, bleibt aber technisch — ein Satzbaukasten kann `faksp` nicht in „Fakturasperre“ übersetzen,
-ohne zu raten (eine allgemeine Liste von SAP-Standardbegriffen hilft, ersetzt das nicht).
+**Path A** was freed of twelve general error patterns that all five judges found independently (among others,
+`CHECK` invented "smaller ones are skipped", every `sy-subrc` was called "hit", `GET PARAMETER` became a
+logical database, every transaction became a "creation", `MESSAGE … INTO` became output). It is now
+reliable, but stays technical — a sentence construction kit cannot translate `faksp` into "Fakturasperre" (billing block)
+without guessing (a general list of SAP standard terms helps, but does not replace that).
 
-**Weg B** ist seit Roadmap **17.10** in der Business-Sicht: auf Knopfdruck ein Modellvorschlag (Herkunft
-„Vorschlag“), darunter der Satz aus A als Beleg, und eine deterministische Widerspruchsmarkierung. Die
-Markierung ist ein **Sicherheitsnetz, keine Garantie**: Sie findet auf der Prüfhälfte 2 von 14 falschen
-Modellaussagen bei 0,3 % Fehlalarmen. Nichts davon geht in Signatur, Lauf oder Audit-Pack; die
-Modellquittung ist an ihre Stufe gebunden.
+**Path B** has been in the Business view since roadmap **17.10**: at the push of a button a Model proposal (provenance
+"proposal"), below it the sentence from A as evidence, and a deterministic contradiction marker. The
+marker is a **safety net, not a guarantee**: on the test half it finds 2 of 14 wrong
+model statements at 0.3 % false alarms. None of it goes into the signature, run or audit pack; the
+model receipt is bound to its stage.
 
 ## 5. Lessons Learned
 
-1. **Ein Maß, das auf ein Fallbuch kalibriert ist, generalisiert nicht.** Weg A traf im Referenzkorpus 41 %
-   der Fachsätze nach Wortüberlappung, im unabhängig geschriebenen Benchmark 1 %. Inhaltlich gemessen war
-   der Unterschied viel kleiner — das Wortmaß hat Stil gemessen, nicht Inhalt.
-2. **Messen, wie der Nutzer arbeitet.** Einzeln gelesene Dateien verdeckten, dass Methodenaufrufe und
-   Dynpro-Module im zusammengefügten Programm verschwanden (61 % statt 73 %).
-3. **Ein fremder, schwerer Datensatz findet, was der eigene nicht findet.** Welle 3 legte Framework-Einstiege
-   (Redefinitionen, ALV-Behandler) offen, die in Welle 1+2 kaum vorkamen.
-4. **Eine verdeckte Prüfmenge ist nur einmal verdeckt.** Nach dem ersten Blick auf Welle 3 wurde sie
-   halbiert; nur die Lernhälfte floss in die Arbeit.
-5. **Vorschläge, die nur einem Fall helfen, weglassen** — auch wenn sie die Zielzahl allein erreicht hätten
-   (eine Einstiegsregel hätte 80,8 % gebracht, half aber nur einem zusammengesetzten Fall).
-6. **Sollantworten brauchen einen Gegencheck.** 70 % der Autorenantworten wurden korrigiert; ohne Prüfer
-   wären Autorenfehler als Engine-Fehler gezählt worden.
+1. **A measure calibrated on one case book does not generalise.** Path A hit 41 % of the business statements
+   in the reference corpus by word overlap, 1 % in the independently written benchmark. Measured by content, the
+   difference was much smaller — the word measure measured style, not content.
+2. **Measure the way the user works.** Files read one at a time hid the fact that method calls and
+   Dynpro modules disappeared in the assembled program (61 % instead of 73 %).
+3. **An outside, hard data set finds what your own does not.** Wave 3 exposed framework entry points
+   (redefinitions, ALV handlers) that hardly occurred in waves 1+2.
+4. **A hidden test set is hidden only once.** After the first look at wave 3 it was
+   halved; only the learning half went into the work.
+5. **Leave out proposals that help only one case** — even if they alone would have reached the target number
+   (one entry-point rule would have brought 80.8 %, but helped only one composite case).
+6. **Expected answers need a cross-check.** 70 % of the author answers were corrected; without reviewers,
+   author errors would have been counted as engine errors.
 
-## 6. Offen
+## 6. Open
 
-- **Welle 3 unter 80 %**: polymorphe Aufrufe mit offenem Ziel (nicht raten vs. alle Kandidaten zeigen),
-  kleine Methoden als ein Schritt, RAP/OData-Framework-Dispatch — Designfragen für Sonny.
-- **Schleifenebenen mit eigenem Start** (entschieden 27.09., nächster Schritt).
-- **Sprache der erzeugten Sätze** (deutsch) gegen ADR-009 (englisch).
-- **Widerspruchsmarkierung** schärfen, gemessen an der Prüfhälfte.
-- **Test-Suite**: Audit vom 27.09. — Laufzeit 26 min, davon ~12 min feste Pausen; Freigabe der Stufen offen.
+- **Wave 3 below 80 %**: polymorphic calls with an open target (do not guess vs. show all candidates),
+  small methods as one step, RAP/OData framework dispatch — design questions for Sonny.
+- **Loop levels with their own start** (decided 27.09., next step).
+- **Language of the generated sentences** (German) versus ADR-009 (English).
+- Sharpen the **contradiction marker**, measured on the test half.
+- **Test suite**: audit of 27.09. — runtime 26 min, of which ~12 min fixed pauses; approval of the stages open.
 
-## Werkzeuge
+## Tools
 
-`evaluate.ts` (Messung; `BM_CONCAT=1` wie im Produkt, `BM_RANGE=a-b`), `report.py` (Aufschlüsselung),
-`validate.py` (Struktur, Anker, eingefrorene Hashes), `weg-b.ts` (Modellsätze mit den Bausteinen des
-Produkts), `judge/` (Richter-Briefe, Eingaben, Urteile), `split.json`, `frozen-*.json`.
+`evaluate.ts` (measurement; `BM_CONCAT=1` as in the product, `BM_RANGE=a-b`), `report.py` (breakdown),
+`validate.py` (structure, anchors, frozen hashes), `weg-b.ts` (model sentences with the building blocks of the
+product), `judge/` (judge briefs, inputs, verdicts), `split.json`, `frozen-*.json`.

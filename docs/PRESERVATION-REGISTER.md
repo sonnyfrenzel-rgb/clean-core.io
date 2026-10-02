@@ -1,6 +1,6 @@
-# Erhaltungsregister — the preservation register
+# Preservation register
 
-**Roadmap step 1.1 · Phase 1 „Gerüst" · acceptance QA24-A04, W22-A04**
+**Roadmap step 1.1 · Phase 1 "Scaffold" · acceptance QA24-A04, W22-A04**
 
 Before anything is rebuilt, what works is written down. This document is the half
 a person reads; [`docs/registers/preservation-register.json`](registers/preservation-register.json)
@@ -16,9 +16,9 @@ is the test that checks it.
 
 ## 1. Why this exists, and what would make it worthless
 
-`docs/ROADMAP.md` 1.1: *„die sieben Stufen mit Eingaben, Ausgaben,
-Voraussetzungen, Fehlern und je einem Referenzfall; Commit, Build und Rules
-fixiert. Nichts geht im Umbau unbemerkt verloren."*
+`docs/ROADMAP.md` 1.1: *"the seven stages with inputs, outputs, preconditions,
+errors and one reference case each; commit, build and rules pinned. Nothing gets
+lost unnoticed in the rebuild."*
 
 The 3.0 rebuild replaces the workspace around these seven stages. The risk is not
 that a stage disappears — that would be noticed. The risk is that a *field*, a
@@ -105,9 +105,8 @@ writes nothing at all**: opening it used to set `status: 'completed'`, which mea
 
 ## 4. What the fixed baseline means
 
-`Commit, Build und Rules fixiert` (QA24-A04: *„Review gegen einen Build
-wiederholen — Commit, Schema, Rules, Katalog und Deploymentbezug explizit
-erfasst."*) is not decoration. It is what makes a later re-review repeatable.
+"Commit, build and rules pinned" (QA24-A04: *"Repeat the review against a build —
+commit, schema, rules, catalog and deployment reference recorded explicitly."*) is not decoration. It is what makes a later re-review repeatable.
 
 - **Commit** — `9edb37f366525a104598be8c0d7168ffe119df44`. The register describes
   that tree and no other. The guard requires this file and the JSON to name the
@@ -231,8 +230,8 @@ contract:
 
 ## 7. What is locked, and why (inherited from `G0:R0`)
 
-`docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §1: *„Die Grenze steht in `SECURITY.md`; das
-Erhaltungsregister erbt sie in v2.11."* It does, by reference rather than by
+`docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §1: *"The boundary is in `SECURITY.md`; the
+preservation register inherits it in v2.11."* It does, by reference rather than by
 copy — `lib/locked-paths.ts` is the single source, and the guard checks that the
 register still points at it and that the lock is still closed.
 

@@ -190,7 +190,7 @@ test.describe('öffentliche Texte aus einem Guss (3.0.8)', () => {
       if (!e) { problems.push(`${file}: steht in CHRONICLE, aber nicht in der Inventur`); continue; }
       if (!fs.existsSync(path.resolve(ROOT, file))) problems.push(`${file}: steht in CHRONICLE, gibt es aber nicht`);
       if (e.guard.removed !== 'exempt' || e.guard.terms !== 'exempt') problems.push(`${file}: Chronik, in der Inventur aber nicht von (a) und (b) ausgenommen`);
-      if (!/Chronik/.test(e.guard.why ?? '')) problems.push(`${file}: guard.why nennt die Chronik nicht`);
+      if (!/chronicle/i.test(e.guard.why ?? '')) problems.push(`${file}: guard.why nennt die Chronik nicht`);
       if (!why.trim()) problems.push(`${file}: ohne Begründung in CHRONICLE`);
     }
     // Die Liste ist geschlossen: jede andere Ausnahme ist kein Prosatext über das Produkt.
@@ -290,5 +290,75 @@ test.describe('öffentliche Texte aus einem Guss (3.0.8)', () => {
       }
     }
     expect(open).toEqual([]);
+  });
+});
+
+/**
+ * Roadmap 3.0.14 — everything public is English, and only English (decision
+ * Sonny 30.09.2026). The named exceptions of the roadmap are `docs/archiv/`
+ * (history) and the German privacy notice `app/datenschutz/de`; neither is in
+ * `trackedTexts()`. `docs/korpus/` is outside the scope of the inventory as well.
+ *
+ * What is measured is German *prose*: a sentence with three or more distinct
+ * German function words, after inline code, fenced code, link targets and
+ * quoted strings are removed. A German string the text is about — a mail
+ * subject the pipeline sends, a label of the German privacy page, a corpus
+ * sentence — stays quotable; a German sentence that explains something does not.
+ */
+const GERMAN_PENDING: Record<string, string> = {
+  // Benchmark fixtures, not documentation: the judge reads these prompts, and the
+  // benchmark is frozen (docs/prozess-benchmark/BERICHT.md). Translating them
+  // changes the measurement — that is Sonny's decision, not a text edit.
+  'tests/prozess-benchmark/judge/richter-brief.md': 'judge prompt of the frozen process benchmark — decision Sonny pending',
+  'tests/prozess-benchmark/judge/richter-brief-schluss.md': 'judge prompt of the frozen process benchmark — decision Sonny pending',
+};
+
+const GERMAN_WORDS = /(?<![\p{L}])(und|nicht|wird|werden|wurde|oder|dass|keine?n?|sind|auch|noch|wenn|eine[nmrs]?|für|über|bleibt|steht|kein|nach|beim|zum|zur|vom|sich|schon|nur|weil|jede[rsn]?|diese[rsnm]?|dem|des|ohne|gegen|seit|ein|im|auf|aus|bei|mit|von|der|das|hat|haben|kann|muss|soll|statt|heute|damit|dann|aber|doch|sondern)(?![\p{L}])/giu;
+
+/** German sentences in a Markdown/text file, outside code and quotes. */
+function germanSentences(text: string): string[] {
+  const paragraphs: string[] = [];
+  let fence = false;
+  let current: string[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    if (/^\s*```/.test(line)) { fence = !fence; continue; }
+    if (fence) continue;
+    if (!line.trim()) { paragraphs.push(current.join(' ')); current = []; continue; }
+    current.push(line);
+  }
+  paragraphs.push(current.join(' '));
+  const found: string[] = [];
+  for (const p of paragraphs) {
+    const prose = p
+      .replace(/`[^`]*`/g, ' ')
+      .replace(/\]\([^)]*\)/g, ']')
+      .replace(/https?:\/\/\S+/g, ' ')
+      .replace(/"[^"]*"/g, ' ')
+      .replace(/„[^“"]*[“"]/g, ' ')
+      .replace(/‚[^‘']*[‘']/g, ' ');
+    for (const sentence of prose.split(/(?<=[.!?;:|])\s+/)) {
+      const words = new Set((sentence.match(GERMAN_WORDS) || []).map((w) => w.toLowerCase()));
+      if (words.size >= 3) found.push(sentence.trim().slice(0, 160));
+    }
+  }
+  return found;
+}
+
+test.describe('everything public is English (3.0.14)', () => {
+  test('the measure finds German prose and lets quoted German and English pass', () => {
+    expect(germanSentences('Die Engine baut kein Prozessskelett, wenn der Code fehlt.')).toHaveLength(1);
+    expect(germanSentences('The subject reads "nicht vollständig geprüft: X von Y Kandidaten verifiziert" when calls fail.')).toEqual([]);
+    expect(germanSentences('Run `node scripts/qa/refute.mjs <fp> "<reason>"` — the die is cast, as in the docs.')).toEqual([]);
+    expect(germanSentences('```\n# wird nicht gelesen und bleibt hier\n```')).toEqual([]);
+  });
+
+  test('no public text file outside the named exceptions has German prose', () => {
+    const files = trackedTexts();
+    expect(files.length).toBeGreaterThan(30);
+    for (const pending of Object.keys(GERMAN_PENDING)) expect(files, `${pending} is listed as pending but not tracked`).toContain(pending);
+    const found = files
+      .filter((f) => !(f in GERMAN_PENDING))
+      .flatMap((f) => germanSentences(read(f)).map((s) => `${f}: ${s}`));
+    expect(found, 'German prose in a public file — translate it, or quote the German string the text is about').toEqual([]);
   });
 });

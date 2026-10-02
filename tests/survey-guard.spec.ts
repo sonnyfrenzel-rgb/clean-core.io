@@ -395,7 +395,7 @@ test.describe('the vote offers real, unbuilt work', () => {
 
     // One phrase per option that must appear in the written record.
     const evidence: Record<string, string> = {
-      german: 'deutsche',
+      german: 'german version',
       atc_import: 'atc',
       model_choice: 'claude',
       mobile_diff: 'segmented control',
