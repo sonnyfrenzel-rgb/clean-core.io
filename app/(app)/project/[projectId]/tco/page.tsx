@@ -49,6 +49,7 @@ import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
+import BusinessValuePlan from '@/components/tco/BusinessValuePlan';
 
 /**
  * The card of this stage, as the workspace draws one (DESIGN.md §1.4): 12 px,
@@ -404,6 +405,7 @@ export default function TcoCalculatorPage() {
           { id: 'economics-options', label: 'Options', count: assumptions.options.length },
           ...(proposal ? [{ id: 'economics-proposal', label: 'Proposal from the code size' }] : []),
           { id: 'economics-forecast', label: 'Savings forecast' },
+          { id: 'economics-business-value', label: 'Business value' },
         ]}
       />
 
@@ -810,6 +812,11 @@ export default function TcoCalculatorPage() {
               )}
             </div>
           </EconomicsSection>
+
+          {/* The model's view of what the code is worth and what to do first,
+              moved here from Analyze (owner decision 02.10.2026). Folded and
+              marked as the model's; it prices nothing. */}
+          <BusinessValuePlan analysis={project?.analysis} route={project?.extensibilityRoute} />
 
           {/* Printed with the estimate, so a copy cannot leave without it. */}
           <div className="hidden print:block border-t border-cc-line pt-8 mt-12 text-center cc-text-meta text-cc-ink-muted">

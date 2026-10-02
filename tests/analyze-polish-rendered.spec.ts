@@ -146,11 +146,13 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
   expect(placed.map((p) => p.label)).toEqual(placed.map((_, i) => i + 1));
   await expect(page.locator('[data-program-map-caption]')).toContainText('The program runs them in this order: 3 → 1 → 2 → 4');
 
-  // 4, without a narrative: the evidence is the engine's; no summary was written.
+  // 4, without a narrative: the evidence is the engine's; no summary was written,
+  // and the folded "Model summary" says so (Evidence · Run · Route, 02.10.2026).
   const status = page.locator('[data-analysis-status]');
   await expect(status).toContainText('engine only, no model');
-  await expect(status).toContainText('none for this run');
+  await expect(status).not.toContainText(/Summary|Successors/);
   await expect(status).not.toContainText('with a model narrative');
+  await expect(page.locator('#analyze-summary [data-not-generated="Analysis narrative"]')).toHaveCount(1);
 });
 
 test('with a model narrative stored, the head says which part is the proposal', async ({ page }) => {
@@ -172,10 +174,15 @@ test('with a model narrative stored, the head says which part is the proposal', 
   await shot(page, 'head-narrative', '[data-analysis-answer]');
 
   await expect(head).toContainText('without a model');
-  await expect(head).toContainText('The Summary further down was written by a model: a proposal, marked as such, and not part of this evidence.');
+  await expect(head).toContainText('The Model summary further down was written by a model: a proposal, marked as such, and not part of this evidence.');
   const status = page.locator('[data-analysis-status]');
   await expect(status).toContainText('engine only, no model');
-  await expect(status).toContainText('model proposal, not evidence');
+  await expect(status).not.toContainText(/Summary|Successors/);
   await expect(status).not.toContainText('with a model narrative');
-  await expect(page.locator('#analyze-summary')).toContainText('Model proposal');
+  // The proposal is marked where it stands, while it is still folded.
+  const summary = page.locator('#analyze-summary');
+  await expect(summary).toContainText('Model proposal');
+  await expect(summary.locator('[data-cc-disclosure-trigger]').first()).toHaveAttribute('aria-expanded', 'false');
+  await summary.locator('[data-cc-disclosure-trigger]').first().click();
+  await expect(summary).toContainText('writes their status back to EBAN');
 });

@@ -16,8 +16,8 @@
  *
  * **What "link to it" means today.** An element and a rule are read from the
  * process reading that `documentation` renders (`ProcessMap`, the business
- * rules panel); a finding is read from the worklist `analyze` renders
- * (`GapsWorklist`). Neither of those pages yet carries a per-row DOM anchor a
+ * rules panel); a finding is read from the stored worklist and opens the
+ * `analyze` stage, whose findings list draws it. Neither of those pages yet carries a per-row DOM anchor a
  * URL fragment could land on — that is a gap this step surfaces rather than
  * papers over with an `href` that only looks like it goes somewhere — so a hit
  * links to the *page* that lists it. A source line is the one kind with an

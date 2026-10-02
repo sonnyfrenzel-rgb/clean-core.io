@@ -757,8 +757,9 @@ test.describe('the panel a reader actually meets', () => {
     await page.goto(`/project/${RENDER_PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
     // Open tasks are listed with everything else this analysis could not
-    // determine — one folded section, one action deeper (§2.11).
-    await page.getByRole('button', { name: /could not determine/ }).click({ timeout: 60000 });
+    // determine — the side card "Not determined", the panel one action
+    // deeper under the entry's "Details" (§2.11; one place since 02.10.2026).
+    await page.locator('[data-not-determined-detail="check-tasks"] [data-cc-disclosure-trigger]').click({ timeout: 60000 });
 
     const panel = page.locator('[data-review-tasks]');
     await expect(panel, 'the analyze stage does not show the check tasks').toBeVisible({ timeout: 30000 });

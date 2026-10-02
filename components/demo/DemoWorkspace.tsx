@@ -53,7 +53,11 @@ import {
  */
 
 interface DemoState {
-  /** The Analyze worklist as the reader moved it; null until they move an item. */
+  /**
+   * The Analyze worklist as the reader moved it. Analyze no longer draws the
+   * worklist (owner decision 02.10.2026); the field stays so a demo state
+   * stored by an earlier version still reads.
+   */
   worklist: WorklistItem[] | null;
   targetConfirmed: boolean;
   /** Assumptions for the Economics stage. Null means nobody entered one. */
@@ -163,7 +167,7 @@ export default function DemoWorkspace({
 
       <div data-testid={`demo-stage-${stage}`} className="space-y-6">
         {stage === 'analyze' && (
-          <DemoAnalyze demo={demo} worklist={state.worklist} onWorklist={(worklist) => patch({ worklist })} />
+          <DemoAnalyze demo={demo} />
         )}
         {stage === 'design' && <Design demo={demo} data={design} state={state} patch={patch} />}
         {stage === 'transformation' && <Transformation demo={demo} />}

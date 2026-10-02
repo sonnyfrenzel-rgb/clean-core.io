@@ -261,14 +261,12 @@ test.describe('the demo is operable, and its state never leaves the browser', ()
     await expect(panel).toBeVisible();
     await expect(panel).toContainText(demo.sourceFile);
 
-    // The worklist a run stores — one item per finding — operable, and kept in this browser only.
-    const statuses = page.locator('[data-worklist-status]');
-    await expect(statuses.first()).toBeVisible();
+    // The worklist a run stores — one item per finding — is still built, but
+    // Analyze no longer draws it (owner decision 02.10.2026): the findings
+    // list above is that same list, at its lines.
     expect(demo.analyze.worklist).toHaveLength(demo.analyze.distinctFindings);
-    await statuses.first().selectOption('in_review');
-    await expect
-      .poll(() => page.evaluate((key) => window.localStorage.getItem(key), DEMO_STORAGE_KEY))
-      .toContain('"status":"in_review"');
+    await expect(page.locator('[data-worklist-status]')).toHaveCount(0);
+    await expect(page.locator('[data-analysis-not-determined]')).toHaveCount(1);
   });
 
   test('Economics shows no output until the assumptions are the reader’s', async ({ page }) => {

@@ -69,19 +69,15 @@ import DataCouplingTable from '@/components/analyze/DataCouplingTable';
 import ComplianceReviewHints from '@/components/ComplianceReviewHints';
 import ReviewTasks, { reviewTasksTitle } from '@/components/ReviewTasks';
 import { deriveReviewTasks } from '@/lib/abap/review-tasks';
-import BusinessValueAudit from '@/components/analyze/BusinessValueAudit';
-import PlainEnglishGuide from '@/components/analyze/PlainEnglishGuide';
 import ExtensibilityDecisionMatrix from '@/components/analyze/ExtensibilityDecisionMatrix';
 import TargetScopeMapping from '@/components/analyze/TargetScopeMapping';
 import ModernizationStrategy from '@/components/analyze/ModernizationStrategy';
 import CoverageVerdict from '@/components/analyze/CoverageVerdict';
 import ConstructFindings from '@/components/analyze/ConstructFindings';
 import UnassessedConstructs from '@/components/analyze/UnassessedConstructs';
-import GapsWorklist from '@/components/analyze/GapsWorklist';
 import MissingDependencyPrompt from '@/components/analyze/MissingDependencyPrompt';
 import PreAnalysisPreview from '@/components/analyze/PreAnalysisPreview';
 import EvidenceSweep from '@/components/analyze/EvidenceSweep';
-import { modelActionPlan } from '@/lib/action-plan';
 import UsageUpload from '@/components/analyze/UsageUpload';
 import { UsageRiskMatrixFor } from '@/components/analyze/UsageRiskMatrix';
 import AtcUpload from '@/components/analyze/AtcUpload';
@@ -106,7 +102,8 @@ import { BAIP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE, isSideBySideRoute, routeLabel, 
 import CleanCoreScoreSection from '@/components/analyze/CleanCoreScoreSection';
 import CleanCoreScoreDialog from '@/components/analyze/CleanCoreScoreDialog';
 import ObjectSection from '@/components/analyze/ObjectSection';
-import CcAnchor from '@/components/cc/Anchor';
+import FoldedSection, { FoldedPart } from '@/components/analyze/FoldedSection';
+import NotDeterminedSide, { type OpenItem } from '@/components/analyze/NotDeterminedSide';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import { accessUseOfKind, findingRows, processStepBands, SEVERITY_ORDER } from '@/lib/findings-view';
@@ -179,16 +176,6 @@ export default function AnalyzePage() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const handleUpdateWorklist = async (updatedWorklist: any[]) => {
-    try {
-      const docRef = doc(getDb(), 'projects', projectId as string);
-      await updateDoc(docRef, { worklist: updatedWorklist });
-      setProject((prev: any) => prev ? { ...prev, worklist: updatedWorklist } : prev);
-    } catch (err) {
-      console.error('Failed to update project worklist:', err);
-    }
-  };
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -682,32 +669,6 @@ export default function AnalyzePage() {
     }
   };
 
-  const categorizeGaps = (gaps: any[]) => {
-    const categories = {
-      quickWins: [] as any[],
-      complexStandard: [] as any[],
-      strategic: [] as any[],
-      retire: [] as any[]
-    };
-
-    gaps.forEach(gap => {
-      const strategyLower = (gap.strategy || '').toLowerCase();
-      const titleLower = (gap.title || '').toLowerCase();
-      
-      if (strategyLower.includes('decommission') || strategyLower.includes('retire') || strategyLower.includes('obsolete') || titleLower.includes('decommission') || titleLower.includes('retire')) {
-        categories.retire.push(gap);
-      } else if (gap.complexity === 'Low' && gap.severity === 'Low') {
-        categories.quickWins.push(gap);
-      } else if (gap.complexity === 'High' && (strategyLower.includes('standard') || strategyLower.includes('key-user') || strategyLower.includes('extensibility'))) {
-        categories.complexStandard.push(gap);
-      } else {
-        categories.strategic.push(gap);
-      }
-    });
-
-    return categories;
-  };
-
   // Re-derive static findings from the stored legacy code for the Evidence tab
   const { findings, findingsSummary, missingDeps } = useMemo(() => {
     if (!legacyCode) return { findings: [] as SupportFinding[], findingsSummary: null, missingDeps: [] as import('@/lib/abap/class-model').MissingDependency[] };
@@ -901,13 +862,15 @@ export default function AnalyzePage() {
   // the worklist — and everything else one action deeper, folded with a count,
   // never removed. All that "could not be determined" is gathered in one place
   // with its reason, instead of a paragraph wherever it happened to arise.
-  const [notDeterminedOpen, setNotDeterminedOpen] = useState(false);
   // The route switch writes the project; a refused or lost write is said next to
   // the button instead of leaving the route silently unchanged (QA review of
   // a88149856dcc).
   const [routeSwitch, setRouteSwitch] = useState<{ busy: boolean; error: string }>({ busy: false, error: '' });
+  // Which optional import is open in its dialog — usage data or ATC results.
+  const [importDialog, setImportDialog] = useState<'usage' | 'atc' | null>(null);
+  // The one list of what is not determined is the side card; "Show the list"
+  // on the facet brings it into view.
   const showNotDetermined = () => {
-    setNotDeterminedOpen(true);
     window.requestAnimationFrame(() =>
       document.getElementById('analysis-not-determined')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
     );
@@ -915,39 +878,10 @@ export default function AnalyzePage() {
   const findingCounts = useMemo(() => countFindings(groupEvidenceFindings(evidenceFindings)), [evidenceFindings]);
   const sourceLines = legacyCode ? legacyCode.split('\n').length : 0;
 
-  /** The one section of things not determined, each with its reason — folded, never dropped. */
-  const renderNotDetermined = (items: readonly OpenItem[]) =>
-    items.length === 0 ? null : (
-      <section
-        id="analysis-not-determined"
-        data-analysis-not-determined={items.length}
-        className="scroll-mt-24 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc px-4 py-2 sm:px-6"
-      >
-        <CcDisclosure
-          level={2}
-          density="cozy"
-          title={`${items.length} ${items.length === 1 ? 'thing' : 'things'} this analysis could not determine`}
-          open={notDeterminedOpen}
-          onOpenChange={setNotDeterminedOpen}
-        >
-          <ul className="m-0 p-0 list-none divide-y divide-cc-line">
-            {items.map((item) => (
-              <li key={item.key} data-not-determined-item={item.key} className="py-4 first:pt-2 last:pb-0">
-                <h3 className="m-0 cc-text-h3 text-cc-ink">{item.title}</h3>
-                <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted max-w-3xl">{item.reason}</p>
-                {item.body ? <div className="mt-3">{item.body}</div> : null}
-              </li>
-            ))}
-          </ul>
-        </CcDisclosure>
-      </section>
-    );
-
   /** The head's facets and status line, the same in both kinds of report. */
   const answerFacts = (route: string | null | undefined) => {
     const catalogRaw = project?.auditMetadata?.modelCard?.catalogVersion;
     const catalog = catalogRaw ? catalogForReader(catalogRaw) : null;
-    const withSuccessor = evidenceRows.filter((r) => r.finding.sapReplacement?.objectName).length;
     return {
       severities: SEVERITY_ORDER.map((key) => ({ key, count: evidenceRows.filter((r) => r.finding.severity === key).length })),
       levels: levelFacet,
@@ -967,11 +901,12 @@ export default function AnalyzePage() {
         // Two entries, not one: one entry naming the engine and a model narrative under a head
         // that says "without a model" read as a contradiction. The evidence is
         // the engine's alone; the narrative, when there is one, is a proposal.
+        // Evidence · Run · Route (owner decision 02.10.2026). The model's
+        // summary says what it is where it stands, folded below, and the
+        // successors are counted in the findings list itself.
         { key: 'evidence', label: 'Evidence', value: 'engine only, no model', dot: 'bg-cc-information' },
-        { key: 'narrative', label: 'Summary', value: project?.analysis ? 'model proposal, not evidence' : 'none for this run', dot: 'bg-cc-neutral' },
-        { key: 'route', label: 'Route', value: plainRoute(route) ?? 'not determined', dot: 'bg-cc-chart-2' },
         { key: 'run', label: 'Run', value: project?.activeRunId ? 'signed' : 'no signed run', dot: 'bg-cc-neutral' },
-        { key: 'successors', label: 'Successors', value: `${withSuccessor} of ${evidenceRows.length} named`, dot: 'bg-cc-warning-mark' },
+        { key: 'route', label: 'Route', value: plainRoute(route) ?? 'not determined', dot: 'bg-cc-chart-2' },
       ],
     };
   };
@@ -979,36 +914,6 @@ export default function AnalyzePage() {
   /** The Clean Core Score section, first in the main column. */
   const scoreSection = (
     <CleanCoreScoreSection score={signedCleanCoreScore} breakdown={scoreParts} onExplain={() => setShowScoreModal(true)} />
-  );
-
-  /** "Not determined" in the side column: the constructs not assessed, and the way to the full list. */
-  const renderNotDeterminedSide = (openCount: number) => (
-    <ObjectSection side title="Not determined" right={<span className="cc-text-meta text-cc-ink-muted">{openCount}</span>}>
-      {notAssessedItems.length ? (
-        <ul className="m-0 grid list-none gap-2 p-0">
-          {notAssessedItems.map((g) => (
-            <li key={g.label} className="flex items-start gap-2 cc-text-cell text-cc-ink">
-              <span aria-hidden={true} className="mt-1 h-3 w-3 shrink-0 rounded-full border border-dashed border-cc-ink-muted" />
-              <span>
-                {g.count} × {g.label.toLowerCase()} — from <CcAnchor label={`Source line ${g.firstLine}`}>{`L${g.firstLine}`}</CcAnchor>
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="m-0 cc-text-cell text-cc-ink-muted">Every construct read was within the engine’s checks.</p>
-      )}
-      <p className="m-0 mt-3 cc-text-meta font-medium text-cc-ink-muted">
-        A result covers what the engine checks, which is not the whole program.
-      </p>
-      {openCount > 0 ? (
-        <div className="mt-2">
-          <CcButton variant="ghost" density="compact" onClick={showNotDetermined}>
-            All {openCount} with their reasons
-          </CcButton>
-        </div>
-      ) : null}
-    </ObjectSection>
   );
 
   /** What the engine could not settle in the source itself — the same three in both kinds of report. */
@@ -1041,12 +946,12 @@ export default function AnalyzePage() {
     return items;
   };
 
-  /** Inventory, data access, the levels A–D and the review hints — one fold in both kinds of report. */
-  const renderInventory = () => {
+  /** Complexity and criticality on the engine's 1–10 scale — part of the technical detail. */
+  const renderMeters = () => {
     // Recomputed from the code on the page, on the 1–10 scale.
     const liveComplexity = legacyCode ? computeComplexityScore(legacyCode) : project?.complexityScore;
     const liveCriticality = legacyCode ? computeCriticalityScore(legacyCode) : project?.criticalityScore;
-    if (!project) return null;
+    if (liveComplexity === undefined && liveCriticality === undefined) return null;
     return (
       <>
         {(liveComplexity !== undefined || liveCriticality !== undefined) && (
@@ -1071,6 +976,15 @@ export default function AnalyzePage() {
             )}
           </div>
         )}
+      </>
+    );
+  };
+
+  /** Inventory, data access, the levels A–D and the review hints. */
+  const renderInventory = () => {
+    if (!project) return null;
+    return (
+      <>
         <CodeInventoryTable codeInventory={project.codeInventory || []} />
         <ModuleHeatmap codeInventory={project.codeInventory || []} />
         <DataCouplingTable dataCoupling={project.dataCoupling || []} />
@@ -1095,7 +1009,7 @@ export default function AnalyzePage() {
     const showUsage = !!usage && evidenceFindings.length > 0 && !!routeReport;
     if (!showUsage && !atc) return null;
     return (
-      <Folded title="Imported usage and ATC results" count={(showUsage ? 1 : 0) + (atc ? 1 : 0)}>
+      <FoldedPart title="Imported usage and ATC results" data-analysis-imports={(showUsage ? 1 : 0) + (atc ? 1 : 0)}>
         {/* v1.22: Usage × Evidence Risk Matrix */}
         {(usageReport || project?.usageReport) && evidenceFindings.length > 0 && routeReport && (
           <SectionBoundary name="Usage Risk Matrix">
@@ -1117,7 +1031,37 @@ export default function AnalyzePage() {
             />
           </SectionBoundary>
         )}
-      </Folded>
+      </FoldedPart>
+    );
+  };
+
+  /**
+   * "Technical detail" — one section at the bottom, folded (owner decision
+   * 02.10.2026). It gathers what used to be four: complexity and criticality,
+   * the language constructs the engine resolved, the code inventory with data
+   * access and the levels A–D, and the imported usage and ATC results. Each
+   * keeps its own heading inside; nothing in it was removed.
+   */
+  const renderTechnicalDetail = (extra?: React.ReactNode) => {
+    const meters = renderMeters();
+    return (
+      <FoldedSection id="analyze-technical-detail" data-analysis-technical-detail="" title="Technical detail">
+        {meters ? <FoldedPart title="Complexity and criticality">{meters}</FoldedPart> : null}
+        <FoldedPart title="Language constructs the engine resolved" data-analysis-constructs={findings.length}>
+          {/* Coverage verdict and the construct checklist, with its Confirm. */}
+          <CoverageVerdict findings={findings} summary={findingsSummary} />
+          <ConstructFindings findings={findings} />
+        </FoldedPart>
+        <FoldedPart title="Code inventory, data access and clean core levels A–D">
+          <SectionBoundary name="Assessment & Value">
+            <div className="space-y-8">
+              {renderInventory()}
+              {extra}
+            </div>
+          </SectionBoundary>
+        </FoldedPart>
+        {renderImports()}
+      </FoldedSection>
     );
   };
 
@@ -1133,12 +1077,8 @@ export default function AnalyzePage() {
       if (!project?.activeRunId) return null;
       const openItems: OpenItem[] = [
         ...sourceOpenItems(),
-        {
-          key: 'business-value',
-          title: 'Business value assessment',
-          reason: 'Asset score, value drivers and the plain-English action plan come from the narrative, which this run does not have.',
-          body: <NotGenerated what="Business value assessment" absence={narrativeAbsence} why={narrativeAbsenceWhy} stage="analyze" />,
-        },
+        // The business value assessment is on Economics since 02.10.2026, and
+        // says there that this run has none.
         {
           key: 'strategy',
           title: 'Modernisation strategy',
@@ -1164,14 +1104,6 @@ export default function AnalyzePage() {
             onExplainScore={() => setShowScoreModal(true)}
             onShowNotDetermined={showNotDetermined}
             {...answerFacts(evidenceRoute)}
-          />
-
-          <NotGenerated
-            what="Analysis narrative"
-            absence={narrativeAbsence}
-            why={narrativeAbsenceWhy}
-            stage="analyze"
-            hint="Everything on this page was computed by the evidence engine and is covered by this run's signature. Re-run the analysis once a model is available to add the narrative."
           />
 
           <EvidenceFindingsTable
@@ -1201,31 +1133,21 @@ export default function AnalyzePage() {
                 </div>
               </ObjectSection>
             }
-            sideBottom={renderNotDeterminedSide(openItems.length)}
+            sideBottom={<NotDeterminedSide items={openItems} />}
           />
 
-          <GapsWorklist
-            projectId={projectId as string}
-            project={project}
-            findings={findings}
-            analysisGaps={[]}
-            showHelpMode={false}
-            onUpdateWorklist={handleUpdateWorklist}
-          />
+          {/* Where the model's summary would stand: folded, saying it is not there. */}
+          <FoldedSection id="analyze-summary" data-analysis-summary="not-generated" title="Model summary">
+            <NotGenerated
+              what="Analysis narrative"
+              absence={narrativeAbsence}
+              why={narrativeAbsenceWhy}
+              stage="analyze"
+              hint="Everything on this page was computed by the evidence engine and is covered by this run's signature. Re-run the analysis once a model is available to add the narrative."
+            />
+          </FoldedSection>
 
-          {renderNotDetermined(openItems)}
-
-          <Folded title="Language constructs the engine resolved" count={findings.length}>
-            <CoverageVerdict findings={findings} summary={findingsSummary} />
-            <ConstructFindings findings={findings} />
-          </Folded>
-
-          <Folded title="Code inventory, data access and clean core levels A–D">
-            {renderInventory()}
-            <WhyScorePanel project={project} />
-          </Folded>
-
-          {renderImports()}
+          {renderTechnicalDetail(<WhyScorePanel project={project} />)}
         </div>
       );
     }
@@ -1233,8 +1155,6 @@ export default function AnalyzePage() {
     // The one reader of a stored analysis: every stored shape, amounts of money masked (lib/money-honesty.ts).
     // Not JSON → null, and the markdown fallback below masks its text the same way.
     const analysisData = readStoredAnalysis<AnalysisData>(project.analysis);
-    // The narrative's gaps, one reading for the worklist (`lib/model-gaps.ts`).
-    const analysisGapsReading = readModelGaps(analysisData?.gaps);
 
     /**
      * The stored route differs from the one that was recommended — an architect
@@ -1247,28 +1167,8 @@ export default function AnalyzePage() {
     const routeIsOverridden = routeWasOverridden(recommendedRoute, project?.extensibilityRoute);
 
     if (analysisData) {
-      // Deliberately not overwritten any more. This line used to replace the
-      // stored, signed score with the browser's recomputed one, so even the
-      // object handed to the renderer disagreed with the Run.
-      // Only `plainEnglishActionPlan` is rendered from this object (see
-      // PlainEnglishGuide below), and it is generic guidance rather than a
-      // measurement. The four invented figures that used to sit here alongside it
-      // — asset score, maintenance cost, value drivers, a "~40%" ROI line — were
-      // computed and never displayed, so they were pure liability: the next person
-      // to render this object would have shipped them.
-      const bizFallback = {
-        legacyAssetScore: analysisData.businessValueAnalysis?.legacyAssetScore ?? null,
-        // The model's own level, or none. A level read off the score with
-        // thresholds of its own (< 50 high, < 75 medium) was a second reading
-        // of the score beside Clean-Core.io's bands (lib/clean-core-score.ts).
-        technicalDebtLevel: analysisData.businessValueAnalysis?.technicalDebtLevel ?? null,
-        valueDrivers: analysisData.businessValueAnalysis?.valueDrivers ?? null,
-        plainEnglishActionPlan: modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) ?? [
-          "1. Align redundant custom code logic with native S/4HANA Standard processes via S/4HANA Best Practice configuration.",
-          "2. Decommission custom data workarounds and obsolete validation routines that are fully standard in S/4HANA.",
-          `3. Decouple unique, high-value custom intellectual property into a modern, upgrade-stable ${routeLabel(analysisData.extensibilityRouting?.recommendedRoute || 'decoupled')} architecture.`
-        ]
-      };
+      // The business value assessment and the action plan are read on
+      // Economics since 02.10.2026 (components/tco/BusinessValuePlan.tsx).
       const checkpoints = analysisData.extensibilityRouting?.decisionTreeCheckpoints;
       const comparative = analysisData.extensibilityRouting?.comparativeAnalysis;
       const shownRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || null;
@@ -1276,29 +1176,6 @@ export default function AnalyzePage() {
       const isBtp = isSideBySideRoute(routeForCards);
       const storedRationale = analysisData.extensibilityRouting?.rationale;
       const rationale = storedRationale ? sapNamesForDisplay(storedRationale) : storedRationale;
-      const planIsModel = modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) !== null;
-
-      // The action plan, with the line that says whose it is (D.10b, from
-      // D.13): the model's, marked as a proposal — or the page's generic
-      // guidance, which is the same for every run and is said to be.
-      const actionPlan = (
-        <div className="space-y-3">
-          <div data-action-plan-origin={modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) ? 'model' : 'generic'} className="flex flex-wrap items-center gap-2">
-            <span className="cc-text-label text-cc-ink-muted">Action plan</span>
-            {modelActionPlan(analysisData.businessValueAnalysis?.plainEnglishActionPlan) ? (
-              <CcProvenanceChip value="proposed" />
-            ) : (
-              <span className="cc-text-meta text-cc-ink-muted">
-                Generic guidance — no action plan was returned for this run.
-              </span>
-            )}
-          </div>
-          <PlainEnglishGuide
-            plainEnglishActionPlan={bizFallback.plainEnglishActionPlan}
-            extensibilityRoute={routeLabel(project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || 'Decoupled Extension')}
-          />
-        </div>
-      );
 
       const openItems: OpenItem[] = [...sourceOpenItems()];
       if (!routeIsOverridden && signedRouteConfidence === null) {
@@ -1320,14 +1197,6 @@ export default function AnalyzePage() {
           key: 'standard-fit',
           title: 'How much of it the SAP standard covers',
           reason: 'The narrative named no standard fit for this code.',
-        });
-      }
-      if (!planIsModel) {
-        openItems.push({
-          key: 'action-plan',
-          title: 'An action plan for this code',
-          reason: 'No action plan was returned for this run. The steps below are generic guidance, the same for every analysis — not derived from this code.',
-          body: actionPlan,
         });
       }
 
@@ -1363,7 +1232,7 @@ export default function AnalyzePage() {
             notAssessed={notAssessedItems}
             scoreSection={scoreSection}
             fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
-            sideBottom={renderNotDeterminedSide(openItems.length)}
+            sideBottom={<NotDeterminedSide items={openItems} />}
             sideTop={
               /* The route, as the rules recommended it or as the reader chose it. */
               <ObjectSection
@@ -1426,191 +1295,167 @@ export default function AnalyzePage() {
                   Target system: {(project.s4Deployment || 'public') === 'public' ? 'S/4HANA Public Cloud' : 'Private Cloud / RISE'}
                 </p>
 
-                {/* ── The evidence behind the route, while the run that computed it is on screen ── */}
-                {routeReport && (
-                  <div className="mt-3 rounded-cc-row bg-cc-surface-muted px-3 py-2 border border-cc-line flex flex-wrap items-center gap-x-4 gap-y-1">
-                    <span className="cc-text-meta text-cc-ink-muted">
-                      Confidence{' '}
-                      <span className={STATE_CLASSES[scoreState(routeReport.confidenceScore, 'higher-is-better')].text}>{routeReport.confidenceScore}%</span>
-                    </span>
-                    <span className="cc-text-meta text-cc-ink">
-                      {/* The router counts the engine's entries — places in the code, not findings. */}
-                      Based on {routeReport.evidenceCounts.totalFindings} {routeReport.evidenceCounts.totalFindings === 1 ? 'place' : 'places'} in the code
-                      {routeReport.evidenceCounts.criticalFindings > 0 && (
-                        <span className="text-cc-error ml-1">({routeReport.evidenceCounts.criticalFindings} critical)</span>
-                      )}
-                    </span>
-                    <span className="cc-text-meta text-cc-ink">{routeReport.evidenceCounts.supportingFindings} {routeReport.evidenceCounts.supportingFindings === 1 ? 'place in the code drives' : 'places in the code drive'} the route</span>
-                    {routeReport.assumptions.length > 0 && (
-                      <CcDisclosure title="Assumptions" count={routeReport.assumptions.length}>
-                        <ul className="mt-1 space-y-1 pl-2">
-                          {routeReport.assumptions.map((a, i) => (
-                            <li key={i} className="cc-text-cell text-cc-ink-muted">• {a}</li>
-                          ))}
-                        </ul>
-                      </CcDisclosure>
-                    )}
-                  </div>
-                )}
-
-                {/* Interactive override: the reader's choice, marked as theirs above. */}
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="mt-3">
                   <CcButton variant="secondary" density="compact" onClick={() => router.push(`/project/${projectId}/design`)}>
                     Open Design
                   </CcButton>
-                  <CcButton
-                    variant="ghost"
-                    density="compact"
-                    title="Not the route you want? Choose the other one; it is then marked as your choice."
-                    icon={<RefreshCw size={16} aria-hidden="true" />}
-                    busy={routeSwitch.busy}
-                    data-route-switch
-                    onClick={async () => {
-                      if (routeSwitch.busy) return;
-                      const currentRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || SIDE_BY_SIDE_ROUTE;
-                      const nextRoute = isSideBySideRoute(currentRoute) ? IN_APP_ROUTE : SIDE_BY_SIDE_ROUTE;
-
-                      setRouteSwitch({ busy: true, error: '' });
-                      try {
-                        const docRef = doc(getDb(), 'projects', projectId as string);
-                        await updateDoc(docRef, { extensibilityRoute: nextRoute });
-                        setProject((prev: any) => prev ? { ...prev, extensibilityRoute: nextRoute } : prev);
-                        setRouteSwitch({ busy: false, error: '' });
-                      } catch {
-                        setRouteSwitch({ busy: false, error: 'The route could not be changed. Nothing was saved; check your connection and try again.' });
-                      }
-                    }}
-                  >
-                    {isBtp ? 'Switch to ABAP Cloud' : `Switch to ${BAIP}`}
-                  </CcButton>
                 </div>
-                {routeSwitch.error && (
-                  <div className="mt-2" data-route-switch-error>
-                    <CcMessageStrip state="error" announce>
-                      {routeSwitch.error}
-                    </CcMessageStrip>
-                  </div>
-                )}
+
+                {/* "Why this route" — the decision path, the standard fit, the
+                    evidence and assumptions behind the route, and the way to
+                    choose the other one. It was a section of its own further
+                    down the page; since 02.10.2026 it is here, with the route
+                    it explains, one action deeper (owner decision). */}
+                <div className="mt-3 border-t border-cc-line pt-1" data-route-why="">
+                  <CcDisclosure title="Why this route">
+                    <div className="space-y-5">
+                      {/* ── The evidence behind the route, while the run that computed it is on screen ── */}
+                      {routeReport && (
+                        <div className="mt-3 rounded-cc-row bg-cc-surface-muted px-3 py-2 border border-cc-line flex flex-wrap items-center gap-x-4 gap-y-1">
+                          <span className="cc-text-meta text-cc-ink-muted">
+                            Confidence{' '}
+                            <span className={STATE_CLASSES[scoreState(routeReport.confidenceScore, 'higher-is-better')].text}>{routeReport.confidenceScore}%</span>
+                          </span>
+                          <span className="cc-text-meta text-cc-ink">
+                            {/* The router counts the engine's entries — places in the code, not findings. */}
+                            Based on {routeReport.evidenceCounts.totalFindings} {routeReport.evidenceCounts.totalFindings === 1 ? 'place' : 'places'} in the code
+                            {routeReport.evidenceCounts.criticalFindings > 0 && (
+                              <span className="text-cc-error ml-1">({routeReport.evidenceCounts.criticalFindings} critical)</span>
+                            )}
+                          </span>
+                          <span className="cc-text-meta text-cc-ink">{routeReport.evidenceCounts.supportingFindings} {routeReport.evidenceCounts.supportingFindings === 1 ? 'place in the code drives' : 'places in the code drive'} the route</span>
+                          {routeReport.assumptions.length > 0 && (
+                            <CcDisclosure title="Assumptions" count={routeReport.assumptions.length}>
+                              <ul className="mt-1 space-y-1 pl-2">
+                                {routeReport.assumptions.map((a, i) => (
+                                  <li key={i} className="cc-text-cell text-cc-ink-muted">• {a}</li>
+                                ))}
+                              </ul>
+                            </CcDisclosure>
+                          )}
+                        </div>
+                      )}
+
+                  <SectionBoundary name="Modernization Strategy">
+                    <div className="space-y-8">
+                      {/* Decision matrix pathway */}
+                      <ExtensibilityDecisionMatrix
+                        extensibilityRoute={routeForCards}
+                        decisionTreeCheckpoints={checkpoints}
+                        comparativeAnalysis={comparative}
+                      />
+
+                      {/* S/4HANA Standard Fit */}
+                      <TargetScopeMapping
+                        showHelpMode={false}
+                        standardFit={analysisData.standardFit}
+                      />
+
+                      {/* Core Clean recommendations — reconciled to avoid contradictions */}
+                      {(() => {
+                        const recs = analysisData.recommendations;
+                        if (!recs) return null;
+                        const reconciledRecs = { ...recs };
+
+                        // Reconcile: if decommissioning says "retire" but cloudReadiness says "rewrite", fix cloudReadiness
+                        const isRetire = /\b(retire|retired|decommission|removed|delete|obsolete)\b/i.test(recs.decommissioning || '');
+                        const isRewrite = /\b(rewrit|rewrite|rewritten|must be rewritten)\b/i.test(recs.cloudReadiness || '');
+
+                        if (isRetire && isRewrite) {
+                          // Extract the standard replacement from keepCoreClean if available
+                          const standardMatch = (recs.keepCoreClean || '').match(/(?:released|standard|use)\s+(?:CDS\s+view\s+)?([A-Z_][A-Z0-9_]*)/i);
+                          const standardObj = standardMatch ? standardMatch[1] : 'the released standard object';
+                          reconciledRecs.cloudReadiness = `No rewrite needed. Since the function module is being retired and replaced by ${standardObj}, no ABAP Cloud migration of the legacy code is required. Simply adopt the standard replacement and remove the custom object.`;
+                        }
+
+                        return (
+                          <ModernizationStrategy
+                            showHelpMode={false}
+                            recommendations={reconciledRecs}
+                          />
+                        );
+                      })()}
+                    </div>
+                  </SectionBoundary>
+
+                      {/* Interactive override: the reader's choice, marked as theirs above. */}
+                      <div data-route-override="" className="border-t border-cc-line pt-3">
+                        <p className="m-0 cc-text-cell font-semibold text-cc-ink">Not the route you want?</p>
+                        <p className="m-0 mt-1 cc-text-meta font-medium text-cc-ink-muted">
+                          Choose the other one; it is then marked as your choice, and the recommendation stays on record beside it.
+                        </p>
+                        <div className="mt-2">
+                          <CcButton
+                            variant="ghost"
+                            density="compact"
+                            title="Not the route you want? Choose the other one; it is then marked as your choice."
+                            icon={<RefreshCw size={16} aria-hidden="true" />}
+                            busy={routeSwitch.busy}
+                            data-route-switch
+                            onClick={async () => {
+                              if (routeSwitch.busy) return;
+                              const currentRoute = project.extensibilityRoute || analysisData.extensibilityRouting?.recommendedRoute || SIDE_BY_SIDE_ROUTE;
+                              const nextRoute = isSideBySideRoute(currentRoute) ? IN_APP_ROUTE : SIDE_BY_SIDE_ROUTE;
+
+                              setRouteSwitch({ busy: true, error: '' });
+                              try {
+                                const docRef = doc(getDb(), 'projects', projectId as string);
+                                await updateDoc(docRef, { extensibilityRoute: nextRoute });
+                                setProject((prev: any) => prev ? { ...prev, extensibilityRoute: nextRoute } : prev);
+                                setRouteSwitch({ busy: false, error: '' });
+                              } catch {
+                                setRouteSwitch({ busy: false, error: 'The route could not be changed. Nothing was saved; check your connection and try again.' });
+                              }
+                            }}
+                          >
+                            {isBtp ? 'Switch to ABAP Cloud' : `Switch to ${BAIP}`}
+                          </CcButton>
+                        </div>
+                        {routeSwitch.error && (
+                          <div className="mt-2" data-route-switch-error>
+                            <CcMessageStrip state="error" announce>
+                              {routeSwitch.error}
+                            </CcMessageStrip>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CcDisclosure>
+                </div>
               </ObjectSection>
             }
           />
 
           {/* What the model wrote about this code — outside the signature by
-              design, so marked as a proposal. */}
-          <ObjectSection id="analyze-summary" title={<>Summary <CcProvenanceChip value="proposed" /></>}>
-                <div className="min-w-0">
-                  {/*
-                    The summary is the one narrative field a reader treats as
-                    the report's conclusion, and it is outside the signature by
-                    design. It shows which of its sentences point at a line
-                    of the program and which do not.
-                  */}
-                  {analysisData.summary ? (
-                    <AnchoredNarrative
-                      text={analysisData.summary}
-                      findings={evidenceFindings}
-                      totalLines={sourceLines}
-                    />
-                  ) : (
-                    <p className="m-0 cc-text-cell text-cc-ink-muted">The narrative has no summary.</p>
-                  )}
-                  <dl className="m-0 mt-4 pt-3 border-t border-cc-line grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <dt className="cc-text-label text-cc-ink-muted">Standard fit</dt>
-                      <dd className="m-0 mt-1 flex items-center gap-2">
-                        {/* The model's estimate: the word carries it and the dot
-                            stays neutral — green would claim a proof (ADR-007). */}
-                        <span aria-hidden="true" className="w-2 h-2 rounded-full bg-cc-neutral"></span>
-                        <span className="cc-text-meta text-cc-ink">{analysisData.standardFit?.potential || 'Not determined'}</span>
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="cc-text-label text-cc-ink-muted">Closest standard process</dt>
-                      <dd className="m-0 mt-1 cc-text-meta text-cc-ink">{analysisData.standardFit?.targetStandardProcess || 'Not named'}</dd>
-                    </div>
-                  </dl>
-                </div>
-          </ObjectSection>
-
-          {/* The worklist: every finding and every gap as a task. */}
-          <SectionBoundary name="Gaps Backlog">
-            <div data-stage-output="worklist">
-              <GapsWorklist
-                projectId={projectId as string}
-                project={project}
-                findings={findings}
-                analysisGaps={analysisGapsReading.gaps as AnalysisData['gaps']}
-                gapsUnreadable={analysisGapsReading.unreadable}
-                showHelpMode={false}
-                onUpdateWorklist={handleUpdateWorklist}
-              />
+              design, so folded and marked as a proposal (owner decision
+              02.10.2026). The standard fit it used to repeat is under "Why
+              this route", with the route it explains. */}
+          <FoldedSection
+            id="analyze-summary"
+            data-analysis-summary="model"
+            title="Model summary"
+            aside={<CcProvenanceChip value="proposed" />}
+          >
+            <div className="min-w-0">
+              {/*
+                The summary is the one narrative field a reader treats as
+                the report's conclusion, and it is outside the signature by
+                design. It shows which of its sentences point at a line
+                of the program and which do not.
+              */}
+              {analysisData.summary ? (
+                <AnchoredNarrative
+                  text={analysisData.summary}
+                  findings={evidenceFindings}
+                  totalLines={sourceLines}
+                />
+              ) : (
+                <p className="m-0 cc-text-cell text-cc-ink-muted">The narrative has no summary.</p>
+              )}
             </div>
-          </SectionBoundary>
+          </FoldedSection>
 
-          {renderNotDetermined(openItems)}
-
-          <Folded title="Why this route — decision path and standard fit">
-            <SectionBoundary name="Modernization Strategy">
-              <div className="space-y-8">
-                {/* Decision matrix pathway */}
-                <ExtensibilityDecisionMatrix
-                  extensibilityRoute={routeForCards}
-                  decisionTreeCheckpoints={checkpoints}
-                  comparativeAnalysis={comparative}
-                />
-
-                {/* S/4HANA Standard Fit */}
-                <TargetScopeMapping
-                  showHelpMode={false}
-                  standardFit={analysisData.standardFit}
-                />
-
-                {/* Core Clean recommendations — reconciled to avoid contradictions */}
-                {(() => {
-                  const recs = analysisData.recommendations;
-                  if (!recs) return null;
-                  const reconciledRecs = { ...recs };
-
-                  // Reconcile: if decommissioning says "retire" but cloudReadiness says "rewrite", fix cloudReadiness
-                  const isRetire = /\b(retire|retired|decommission|removed|delete|obsolete)\b/i.test(recs.decommissioning || '');
-                  const isRewrite = /\b(rewrit|rewrite|rewritten|must be rewritten)\b/i.test(recs.cloudReadiness || '');
-
-                  if (isRetire && isRewrite) {
-                    // Extract the standard replacement from keepCoreClean if available
-                    const standardMatch = (recs.keepCoreClean || '').match(/(?:released|standard|use)\s+(?:CDS\s+view\s+)?([A-Z_][A-Z0-9_]*)/i);
-                    const standardObj = standardMatch ? standardMatch[1] : 'the released standard object';
-                    reconciledRecs.cloudReadiness = `No rewrite needed. Since the function module is being retired and replaced by ${standardObj}, no ABAP Cloud migration of the legacy code is required. Simply adopt the standard replacement and remove the custom object.`;
-                  }
-
-                  return (
-                    <ModernizationStrategy
-                      showHelpMode={false}
-                      recommendations={reconciledRecs}
-                    />
-                  );
-                })()}
-              </div>
-            </SectionBoundary>
-          </Folded>
-
-          <Folded title="Language constructs the engine resolved" count={findings.length}>
-            {/* Coverage verdict and the construct checklist, with its Confirm. */}
-            <CoverageVerdict findings={findings} summary={findingsSummary} />
-            <ConstructFindings findings={findings} />
-          </Folded>
-
-          <Folded title="Code inventory, data access and clean core levels A–D">
-            <SectionBoundary name="Assessment & Value">
-              <div className="space-y-8">{renderInventory()}</div>
-            </SectionBoundary>
-          </Folded>
-
-          <Folded title={planIsModel ? 'Business value and action plan' : 'Business value'}>
-            <BusinessValueAudit projectId={projectId as string} bizFallback={bizFallback} />
-            {planIsModel && actionPlan}
-          </Folded>
-
-          {renderImports()}
+          {renderTechnicalDetail()}
         </div>
       );
     }
@@ -1700,14 +1545,31 @@ export default function AnalyzePage() {
         projectName={project?.name}
         stage="analyze"
         actions={
-          hasResults && project?.analysis ? (
-            <CcButton
-              variant="secondary"
-              icon={<FileCode2 size={16} aria-hidden="true" />}
-              onClick={() => exportToConfluence()}
-            >
-              Export Confluence
-            </CcButton>
+          legacyCode || (hasResults && project?.analysis) ? (
+            <div className="flex flex-wrap items-center gap-2" data-analyze-header-actions="">
+              {/* Two optional imports as small actions (owner decision
+                  02.10.2026); each opens the upload it always had, in a
+                  dialog, instead of two large panels on the page. */}
+              {legacyCode ? (
+                <>
+                  <CcButton variant="ghost" data-analyze-add-usage="" onClick={() => setImportDialog('usage')}>
+                    Add usage data
+                  </CcButton>
+                  <CcButton variant="ghost" data-analyze-add-atc="" onClick={() => setImportDialog('atc')}>
+                    Add ATC results
+                  </CcButton>
+                </>
+              ) : null}
+              {hasResults && project?.analysis ? (
+                <CcButton
+                  variant="secondary"
+                  icon={<FileCode2 size={16} aria-hidden="true" />}
+                  onClick={() => exportToConfluence()}
+                >
+                  Export Confluence
+                </CcButton>
+              ) : null}
+            </div>
           ) : undefined
         }
       >
@@ -1894,60 +1756,6 @@ export default function AnalyzePage() {
               onAcknowledge={(next) => setPersonalDataAckFor(next ? personalDataKey : '')}
             />
 
-            {/* v1.22: Optional usage data upload */}
-            {legacyCode && (
-              <div className="bg-cc-surface rounded-cc-card p-6 border border-cc-line shadow-cc space-y-4 mb-8">
-                <div>
-                  <span className="cc-text-label text-cc-ink-muted">Optional</span>
-                  <h2 className="cc-text-h2 text-cc-ink mt-1">Add Usage Data</h2>
-                  <p className="cc-text-cell text-cc-ink-muted mt-1">Upload SAP usage exports (SCMON, UPL, ST03N) to enable usage-weighted risk prioritization. This is optional — analysis works without it.</p>
-                </div>
-                <UsageUpload
-                  onImport={async (report) => {
-                    // Roadmap 0.7: `usageReport` left the client-writable
-                    // allowlist. The server holds it to the key set of
-                    // lib/abap/usage-model.ts and to a row ceiling — the rules
-                    // could only ever say `is map` — and stores what it kept.
-                    // A refusal throws into UsageUpload, which keeps the
-                    // preview and says it was not saved.
-                    const stored = await runProjectCommand(projectId as string, {
-                      command: 'record-usage-report',
-                      usageReport: report,
-                    });
-                    setUsageReport(report);
-                    setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
-                  }}
-                  existingReport={usageReport}
-                />
-              </div>
-            )}
-
-            {/* Roadmap 7.1: Optional ATC import, next to the usage import above. */}
-            {legacyCode && (
-              <div className="bg-cc-surface rounded-cc-card p-6 border border-cc-line shadow-cc space-y-4 mb-8">
-                <div>
-                  <span className="cc-text-label text-cc-ink-muted">Optional</span>
-                  <h2 className="cc-text-h2 text-cc-ink mt-1">Add ATC Results</h2>
-                  <p className="cc-text-cell text-cc-ink-muted mt-1">Upload an ABAP Test Cockpit worklist export to compare its findings with this engine's evidence. This is optional — analysis works without it.</p>
-                </div>
-                <AtcUpload
-                  onImport={async (report) => {
-                    // Same boundary as `usageReport` above and for the same
-                    // reason: server-only, held to the model's key set and a
-                    // row ceiling — see lib/project-commands.ts. Shown as
-                    // imported only once stored (carried QA finding 0817087d54b5).
-                    const stored = await runProjectCommand(projectId as string, {
-                      command: 'record-atc-report',
-                      atcReport: report,
-                    });
-                    setAtcReport(report);
-                    setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
-                  }}
-                  existingReport={atcReport}
-                />
-              </div>
-            )}
-
             {legacyCode && (
               <div className="bg-cc-surface rounded-cc-card shadow-cc border border-cc-line p-6">
                 {/* Editable, and labelled so. It used to say "Read-Only Preview"
@@ -2081,6 +1889,72 @@ export default function AnalyzePage() {
 
       {/* Clean Core Score explanation — the one dialog the demo shows too. */}
       <CleanCoreScoreDialog open={showScoreModal} onClose={() => setShowScoreModal(false)} />
+
+      {/* The optional imports, each the upload it always was, in a dialog. */}
+      <CcDialog
+        open={importDialog === 'usage'}
+        size="wide"
+        title="Add usage data"
+        lead="Upload SAP usage exports (SCMON, UPL, ST03N) to enable usage-weighted risk prioritization. This is optional — analysis works without it."
+        onClose={() => setImportDialog(null)}
+        actions={
+          <CcButton variant="ghost" onClick={() => setImportDialog(null)}>
+            Close
+          </CcButton>
+        }
+      >
+        <div data-analyze-usage-dialog="">
+          <UsageUpload
+            onImport={async (report) => {
+              // Roadmap 0.7: `usageReport` left the client-writable
+              // allowlist. The server holds it to the key set of
+              // lib/abap/usage-model.ts and to a row ceiling — the rules
+              // could only ever say `is map` — and stores what it kept.
+              // A refusal throws into UsageUpload, which keeps the
+              // preview and says it was not saved.
+              const stored = await runProjectCommand(projectId as string, {
+                command: 'record-usage-report',
+                usageReport: report,
+              });
+              setUsageReport(report);
+              setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
+            }}
+            existingReport={usageReport}
+          />
+        </div>
+      </CcDialog>
+
+      <CcDialog
+        open={importDialog === 'atc'}
+        size="wide"
+        title="Add ATC results"
+        lead="Upload an ABAP Test Cockpit worklist export to compare its findings with this engine's evidence. This is optional — analysis works without it."
+        onClose={() => setImportDialog(null)}
+        actions={
+          <CcButton variant="ghost" onClick={() => setImportDialog(null)}>
+            Close
+          </CcButton>
+        }
+      >
+        <div data-analyze-atc-dialog="">
+          {/* Roadmap 7.1: Optional ATC import, next to the usage import. */}
+          <AtcUpload
+            onImport={async (report) => {
+              // Same boundary as `usageReport` above and for the same
+              // reason: server-only, held to the model's key set and a
+              // row ceiling — see lib/project-commands.ts. Shown as
+              // imported only once stored (carried QA finding 0817087d54b5).
+              const stored = await runProjectCommand(projectId as string, {
+                command: 'record-atc-report',
+                atcReport: report,
+              });
+              setAtcReport(report);
+              setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
+            }}
+            existingReport={atcReport}
+          />
+        </div>
+      </CcDialog>
 
       {/* Target Operating Model concept question — a CcDialog (D.10b). */}
       <CcDialog
@@ -2292,29 +2166,6 @@ function DeploymentChoice({
 function scoreState(value: number, direction: 'higher-is-better' | 'lower-is-better'): SemanticState {
   if (direction === 'higher-is-better') return value >= 85 ? 'neutral' : value >= 70 ? 'warning' : 'error';
   return value >= 7 ? 'error' : value >= 4 ? 'warning' : 'neutral';
-}
-
-/** One entry of "could not determine": what, why, and the panel that holds its detail. */
-interface OpenItem {
-  /** A stable id for the entry — a data attribute, never shown. */
-  key: string;
-  title: string;
-  reason: string;
-  body?: React.ReactNode;
-}
-
-/**
- * A section folded with its count (§2.11: "Business rules (7) · Show"). The
- * content stays in the document and prints; it is only not shown first.
- */
-function Folded({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
-  return (
-    <section className="rounded-cc-card border border-cc-line bg-cc-surface shadow-cc px-4 py-2 sm:px-6">
-      <CcDisclosure level={2} density="cozy" title={title} count={count}>
-        <div className="space-y-8 pt-2">{children}</div>
-      </CcDisclosure>
-    </section>
-  );
 }
 
 /** Complexity or criticality on the 1–10 scale, with its bar. */

@@ -139,6 +139,10 @@ test('a route switch the database refuses says so next to the button and changes
   await adminMergeDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, { recommendationConfidence: 88 });
   await openAnalyze(page);
 
+  // The override sits in the route card's "Why this route" (owner decision 02.10.2026).
+  await expect(page.locator('[data-route-switch]')).toBeHidden();
+  await page.locator('[data-route-why] [data-cc-disclosure-trigger]').first().click();
+  await expect(page.locator('[data-route-override]')).toContainText('Not the route you want?');
   await page.locator('[data-route-switch]').click();
   await expect(page.locator('[data-route-switch-error]')).toContainText('The route could not be changed. Nothing was saved');
   await expect(page.locator('[data-route-switch]')).toHaveText(/Switch to ABAP Cloud/);

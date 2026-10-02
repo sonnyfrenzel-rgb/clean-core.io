@@ -1,14 +1,11 @@
 'use client';
 
-import { BarChart3 } from 'lucide-react';
-import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
 import { SEQUENTIAL_CHART_COLORS } from '@/lib/chart-colors';
 
 interface BusinessValueAuditProps {
-  projectId: string;
   /**
    * Null means the analysis did not produce it. The page used to substitute — an
    * asset score of 82/55/35 picked by a string comparison, a maintenance cost
@@ -25,7 +22,7 @@ interface BusinessValueAuditProps {
 /** An amount, not a state: the darkest step of the sequential palette (§1.8), never green. */
 const SCORE_BAR = SEQUENTIAL_CHART_COLORS[SEQUENTIAL_CHART_COLORS.length - 1].bg;
 
-export default function BusinessValueAudit({ projectId, bizFallback }: BusinessValueAuditProps) {
+export default function BusinessValueAudit({ bizFallback }: BusinessValueAuditProps) {
   return (
     <div className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc flex flex-col justify-between">
       <div className="space-y-6">
@@ -92,24 +89,13 @@ export default function BusinessValueAudit({ projectId, bizFallback }: BusinessV
           </div>
         </div>
 
-        {/* Economics CTA: the only place that prices anything, from the user's own figures */}
-        <div className="border-t border-cc-line pt-4">
-          <CcLinkButton
-            href={`/project/${projectId}/tco`}
-            variant="secondary"
-            density="cozy"
-            icon={<BarChart3 size={16} aria-hidden="true" />}
-          >
-            Economics: model with your own figures
-          </CcLinkButton>
-        </div>
       </div>
 
       {/* cost and ROI: stated as not determined */}
       <div className="mt-6">
         <CcMessageStrip state="neutral" headline="Cost and ROI">
           <span data-money-not-determined>
-            Not determined. A cost or ROI figure needs approved cost assumptions, and this analysis has none — the Economics stage models costs only from figures you enter.
+            Not determined. A cost or ROI figure needs approved cost assumptions, and this analysis has none — this stage models costs only from the figures you enter above.
           </span>
         </CcMessageStrip>
       </div>

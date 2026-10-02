@@ -24,21 +24,30 @@ test.describe('modelActionPlan', () => {
 
 // QA 44adc3b1d5b0: the helper only protects the page if the page asks it — for the
 // fallback, for the origin line and for the chip, and nowhere a plain `||` or truthiness.
-test('the Analyze page decides the plan and its origin through modelActionPlan', () => {
+// Since 02.10.2026 the plan is shown on Economics (components/tco/BusinessValuePlan.tsx),
+// which decides it once and reads that one decision for all three; Analyze no longer reads it.
+test('the plan and its origin are decided through modelActionPlan wherever it is shown', () => {
   const read = (...p: string[]) => fs.readFileSync(path.join(__dirname, '..', ...p), 'utf8');
-  // The Confluence export moved to lib/analysis-export.ts in D.28 and takes one of
-  // the reads with it; page and export are checked together, each on its own.
-  const pageOnly = read('app', '(app)', 'project', '[projectId]', 'analyze', 'page.tsx');
+  const analyzePage = read('app', '(app)', 'project', '[projectId]', 'analyze', 'page.tsx');
+  expect(analyzePage, 'Analyze reads the action plan again').not.toMatch(/plainEnglishActionPlan/);
+  // The Confluence export moved to lib/analysis-export.ts in D.28.
+  const planModule = read('components', 'tco', 'BusinessValuePlan.tsx');
   const exportModule = read('lib', 'analysis-export.ts');
-  for (const [name, source] of [['analyze/page.tsx', pageOnly], ['lib/analysis-export.ts', exportModule]]) {
+  for (const [name, source] of [['components/tco/BusinessValuePlan.tsx', planModule], ['lib/analysis-export.ts', exportModule]]) {
     expect(source, `${name} does not import modelActionPlan`).toContain("import { modelActionPlan } from '@/lib/action-plan';");
   }
-  expect(pageOnly.match(/modelActionPlan\(\s*[a-zA-Z]+\.businessValueAnalysis\?\.plainEnglishActionPlan\s*\)/g)?.length ?? 0, 'the page: fallback, origin line and chip').toBeGreaterThanOrEqual(3);
-  expect(exportModule.match(/modelActionPlan\(\s*[a-zA-Z]+\.businessValueAnalysis\?\.plainEnglishActionPlan\s*\)/g)?.length ?? 0, 'the export: its fallback').toBeGreaterThanOrEqual(1);
-  const page = `${pageOnly}\n${exportModule}`;
+  const GUARDED = /modelActionPlan\(\s*[a-zA-Z]+\.businessValueAnalysis\?\.plainEnglishActionPlan\s*\)/g;
+  expect(planModule.match(GUARDED)?.length ?? 0, 'Economics: one decision').toBe(1);
+  // The fallback, the origin line and the chip all read that one decision.
+  expect(planModule).toMatch(/const steps = plan \?\? \[/);
+  expect(planModule).toMatch(/data-action-plan-origin=\{plan \? 'model' : 'generic'\}/);
+  expect(planModule).toMatch(/\{plan \? \(\s*<CcProvenanceChip value="proposed" \/>/);
+  expect(exportModule.match(GUARDED)?.length ?? 0, 'the export: its fallback').toBeGreaterThanOrEqual(1);
+  const page = `${planModule}
+${exportModule}`;
   // Every read of the plan goes through the helper — no `&&`, ternary, `!!` or
   // `||` on the raw field can decide the fallback or the origin (QA f0cde36e47bf).
   const reads = page.match(/businessValueAnalysis\?\.plainEnglishActionPlan/g)?.length ?? 0;
-  const guarded = page.match(/modelActionPlan\(\s*[a-zA-Z]+\.businessValueAnalysis\?\.plainEnglishActionPlan\s*\)/g)?.length ?? 0;
+  const guarded = page.match(GUARDED)?.length ?? 0;
   expect(reads, 'the plan is read somewhere without modelActionPlan').toBe(guarded);
 });
