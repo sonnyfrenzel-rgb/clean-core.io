@@ -64,6 +64,28 @@ function declaredTokens(): Map<string, string> {
   return out;
 }
 
+/** A declared token's colour, following `var(--cc-…)` to the token it points at. */
+function tokenValue(tokens: Map<string, string>, name: string): string {
+  let value = tokens.get(name) ?? '';
+  for (let hops = 0; hops < 5; hops++) {
+    const ref = /^var\((--cc-[\w-]+)\)$/.exec(value);
+    if (!ref) break;
+    value = tokens.get(ref[1]) ?? '';
+  }
+  return value.toLowerCase();
+}
+
+/** Hue in degrees of a `#rrggbb`, and its saturation (0 for a grey). */
+function hueOf(hex: string): { hue: number; sat: number } {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  if (d === 0) return { hue: 0, sat: 0 };
+  const hue = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { hue: (hue * 60 + 360) % 360, sat: d / max };
+}
+
 test.describe('the list is the engine’s list', () => {
   test('the same five words, in the order of severity', () => {
     expect(itRowIsTheList && engineIsTheList).toBe(true);
@@ -132,7 +154,7 @@ test.describe('the chart palettes are tokens, and never green', () => {
       hexes(bullet(section.indexOf("The Clean Core Score's bands"))),
     ];
     expect(score, 'DESIGN.md §1.8 names the score bands').toHaveLength(SCORE_BANDS.length);
-    expect(SCORE_BANDS.map((b) => tokens.get(scoreBandChartColor(b.key).token)?.toLowerCase())).toEqual(score);
+    expect(SCORE_BANDS.map((b) => tokenValue(tokens, scoreBandChartColor(b.key).token))).toEqual(score);
     expect(CATEGORICAL_CHART_COLORS.map((c) => tokens.get(c.token)?.toLowerCase())).toEqual(categorical);
     expect(SEQUENTIAL_CHART_COLORS.map((c) => tokens.get(c.token)?.toLowerCase())).toEqual(sequential);
     expect(categoricalChartColor(0).token).toBe('--cc-chart-1');
@@ -140,21 +162,40 @@ test.describe('the chart palettes are tokens, and never green', () => {
     expect(() => categoricalChartColor(-1)).toThrow();
   });
 
-  test('the score bands are one ordered scale, every band seen against the surface', () => {
+  test('the score bands run from the error red to deep indigo, every band seen on card and page', () => {
     // Owner, 02.10.2026: "Analysis Farben sehen zu blass aus" — state colours faded to 40 %.
+    // Owner, 02.10.2026 (ADR-057, amended): far from clean core is red; amber, then indigo; never green.
     const tokens = declaredTokens();
-    const hex = SCORE_BANDS.map((b) => tokens.get(scoreBandChartColor(b.key).token) || '');
-    const states = new Set(Object.values(STATE_CHART_COLORS).map((c) => (tokens.get(c.token) || '').toLowerCase()));
-    let previous = Infinity;
+    // Ordered by meaning: far and significant rework *are* the error and warning-mark tokens, not copies.
+    expect(SCORE_BANDS.map((b) => b.key)).toEqual(['far', 'heavy', 'some', 'light']);
+    expect(SCORE_BANDS.map((b) => tokens.get(scoreBandChartColor(b.key).token))).toEqual([
+      `var(${STATE_CHART_COLORS.error.token})`,
+      `var(${STATE_CHART_COLORS.warning.token})`,
+      '#4f46e5',
+      '#1e1b4b',
+    ]);
+    expect(STATE_CHART_COLORS.error.token).toBe('--cc-error');
+    expect(STATE_CHART_COLORS.warning.token).toBe('--cc-warning-mark');
+    const hex = SCORE_BANDS.map((b) => tokenValue(tokens, scoreBandChartColor(b.key).token));
+    expect(hex).toEqual(['#b91c1c', '#d97706', '#4f46e5', '#1e1b4b']);
+    const surfaces = { card: tokenValue(tokens, '--cc-surface'), page: tokenValue(tokens, '--cc-page') };
     for (const [i, value] of hex.entries()) {
-      expect(value, `${SCORE_BANDS[i].key} has no colour`).toMatch(/^#[0-9a-f]{6}$/i);
-      expect(states.has(value.toLowerCase()), `${SCORE_BANDS[i].key} is a state colour`).toBe(false);
-      const ratio = ratioOf(value, '#ffffff')!;
-      expect(ratio, `${SCORE_BANDS[i].key} below 3 : 1 against the surface`).toBeGreaterThanOrEqual(3);
-      // Light to dark, far to close: each band deeper than the one before.
-      expect(ratio, `${SCORE_BANDS[i].key} is not deeper than the band before`).toBeGreaterThan(previous === Infinity ? 0 : previous);
-      previous = ratio;
+      const key = SCORE_BANDS[i].key;
+      expect(value, `${key} has no colour`).toMatch(/^#[0-9a-f]{6}$/);
+      for (const [where, bg] of Object.entries(surfaces)) {
+        expect(bg, `--cc-${where === 'card' ? 'surface' : 'page'} has no colour`).toMatch(/^#[0-9a-f]{6}$/);
+        // WCAG 1.4.11: the bar is the chart, so no band may fade into the card or the page.
+        expect(ratioOf(value, bg)!, `${key} below 3 : 1 against the ${where}`).toBeGreaterThanOrEqual(3);
+      }
+      // No green: green means proven (ADR-007), and a band is a reading of a grade.
+      const { hue, sat } = hueOf(value);
+      expect(sat > 0.2 && hue >= 75 && hue <= 175, `${key} is green (hue ${Math.round(hue)}°)`).toBe(false);
     }
+    // Red, then amber, then the indigo deepening towards close.
+    expect(hueOf(hex[0]).hue < 15 || hueOf(hex[0]).hue > 345, 'far is not red').toBe(true);
+    expect(hueOf(hex[1]).hue, 'significant rework is not amber').toBeGreaterThan(25);
+    expect(hueOf(hex[1]).hue, 'significant rework is not amber').toBeLessThan(50);
+    expect(ratioOf(hex[3], '#ffffff')!, 'close is not deeper than some rework').toBeGreaterThan(ratioOf(hex[2], '#ffffff')!);
     expect(Object.keys(SCORE_BAND_CHART_COLORS).sort()).toEqual(SCORE_BANDS.map((b) => b.key).sort());
     // Every surface that draws a band reads it from the module, and none fades a band.
     for (const rel of [
@@ -199,7 +240,7 @@ test.describe('the chart palettes are tokens, and never green', () => {
     );
     for (const c of all) {
       expect(c.token, 'a chart colour is a success token').not.toMatch(/success/);
-      expect(success.has((tokens.get(c.token) || '').toLowerCase()), `${c.token} has the value of green`).toBe(false);
+      expect(success.has(tokenValue(tokens, c.token)), `${c.token} has the value of green`).toBe(false);
     }
     // And the module cannot hand out a hex of its own.
     expect(read('lib/chart-colors.ts').replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/#[0-9a-f]{3,8}\b/i);

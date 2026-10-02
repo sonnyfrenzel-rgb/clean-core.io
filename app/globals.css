@@ -261,13 +261,15 @@
   --cc-seq-2: #a5b4fc;
   --cc-seq-3: #6366f1;
   --cc-seq-4: #3730a3;
-  /* The Clean Core Score's four bands, §1.8 — the sequential indigo again, but
-     every step at 3 : 1 or more against the surface (WCAG 1.4.11): the bar is
-     the chart, so no band may fade into the card. Light to dark from "far from
-     clean core" to "close to clean core", the way the axis runs. */
-  --cc-score-1: #7578f0;
-  --cc-score-2: #4f46e5;
-  --cc-score-3: #3730a3;
+  /* The Clean Core Score's four bands, §1.8 — owner decision 02.10.2026 (ADR-057,
+     amended): from the error red for "far from clean core" through the warning
+     amber to indigo for "close". Far and significant rework reuse the state
+     tokens rather than a second red and amber; green stays reserved for proven
+     and is never a band. Every step at 3 : 1 or more against the card and the
+     page (WCAG 1.4.11): the bar is the chart, so no band may fade into either. */
+  --cc-score-1: var(--cc-error);
+  --cc-score-2: var(--cc-warning-mark);
+  --cc-score-3: #4f46e5;
   --cc-score-4: #1e1b4b;
 }
 
