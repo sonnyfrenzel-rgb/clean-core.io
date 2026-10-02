@@ -20,12 +20,9 @@ import type { CloudificationArtifact } from './cloudification-repo';
 /** Only plain object names are routable as clean slugs (namespaced /NS/OBJ excluded). */
 const ROUTABLE = /^[A-Z0-9_]+$/;
 
-export function objectToSlug(name: string): string {
-  return name.toLowerCase();
-}
-export function slugToObject(slug: string): string {
-  return (slug || '').toUpperCase();
-}
+// The slugs live in a module without the catalog, so a client component can
+// link an object without importing this file (external audit PERF-01).
+export { objectToSlug, slugToObject } from './catalog-slug';
 
 /** Union of mapped objects and honest no-path objects, sorted, routable only. */
 export function getAllCatalogObjectNames(): string[] {

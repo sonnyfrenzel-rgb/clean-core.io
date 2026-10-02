@@ -49,7 +49,10 @@ import {
 import { ROW_LEVELS, rowHasLevel, type RowFacts, type RowLevels } from '@/lib/workspace-row-facts';
 import { projectProgress, PROJECT_STAGE_LABEL } from '@/lib/project-progress';
 import ProjectProgressCell from '@/components/ProjectProgress';
-import { AnalysisRunCancelled, runAnalysis, runScope, type AnalysisRunStage } from '@/lib/analysis-run';
+// The run itself (and the evidence engine and SAP catalog it imports) is
+// fetched when Run is pressed, not with the list (external audit PERF-01).
+import { AnalysisRunCancelled, runScope } from '@/lib/analysis-run-basics';
+import type { AnalysisRunStage } from '@/lib/analysis-run';
 import { sourceFileName } from '@/lib/source-file-name';
 import { declaredTargetOf } from '@/lib/assessment-target';
 import type { Project } from '@/lib/types';
@@ -390,6 +393,7 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
       const owns = () => controllers.current[row.id] === controller;
       setRuns((prev) => ({ ...prev, [row.id]: { phase: 'running', stages: [] } }));
       try {
+        const { runAnalysis } = await import('@/lib/analysis-run');
         await runAnalysis({
           projectId: row.id,
           legacyCode: project.legacyCode,

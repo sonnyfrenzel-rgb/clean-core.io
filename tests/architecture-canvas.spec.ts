@@ -95,7 +95,9 @@ test('the canvas does not pull the catalog into the browser', () => {
   // `routeDrivers` is the router's rule; the router takes nothing but types from the engine.
   const router = read('lib/abap/extensibility-router.ts');
   const engineImports = [...router.matchAll(/^import ([^;]*) from ['"]\.\/evidence-model['"]/gm)].map((m) => m[1]);
-  expect(engineImports).toEqual(['{ AbapEvidenceReport, EvidenceKind }']);
+  // Type-only, so the compiler erases it: the walk in
+  // tests/client-catalog-boundary.spec.ts reads it as no edge at all (PERF-01).
+  expect(engineImports).toEqual(['type { AbapEvidenceReport, EvidenceKind }']);
 });
 
 test('the canvas hands the router its findings as they are, not cast into a report', () => {

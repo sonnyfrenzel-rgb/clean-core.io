@@ -1,4 +1,4 @@
-import { AbapEvidenceReport, EvidenceKind } from './evidence-model';
+import type { AbapEvidenceReport, EvidenceKind } from './evidence-model';
 import { scoreFromFindings, scoreWithUnassessed } from '../clean-core-score';
 import { BAIP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE } from '../sap-naming';
 

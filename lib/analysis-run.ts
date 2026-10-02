@@ -4,6 +4,7 @@ import type { ModelReceipt } from '@/lib/model-receipt';
 import { buildAnalysisPrompt } from '@/lib/analysis-prompt';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { findingsWorklist } from '@/lib/findings-worklist';
+import { AnalysisRunCancelled } from './analysis-run-basics';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import {
   extractCodeInventory,
@@ -106,25 +107,19 @@ export interface AnalysisRunResult {
   narrativeAbsence: ModelAbsence;
 }
 
-/** Thrown when the caller's `AbortSignal` fired. Not an error to report as one. */
-export class AnalysisRunCancelled extends Error {
-  constructor() {
-    super('The analysis was cancelled in this browser.');
-    this.name = 'AnalysisRunCancelled';
-  }
-}
+/**
+ * The cancellation class and the scope sentence live in
+ * `lib/analysis-run-basics.ts`, which imports nothing, so the workspace list
+ * can show them without loading the engine this module imports (external
+ * audit PERF-01). Re-exported here unchanged.
+ */
+export { AnalysisRunCancelled, runScope } from './analysis-run-basics';
 
 /**
  * The deterministic half of the initial worklist — in `lib/findings-worklist.ts`
  * since the demo builds the same worklist without a path to this module's run.
  */
 export { findingsWorklist } from './findings-worklist';
-
-/** "1 program, 668 lines" — the scope sentence §2.8 asks for before a long run. */
-export function runScope(legacyCode: string): string {
-  const lines = legacyCode.split(/\r?\n/).length;
-  return `Reading 1 program, ${new Intl.NumberFormat('en').format(lines)} lines`;
-}
 
 function stagesFor(callModel: boolean): AnalysisRunStage[] {
   const ids: AnalysisRunStageId[] = callModel

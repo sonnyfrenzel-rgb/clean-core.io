@@ -297,15 +297,11 @@ test.describe('the facts service never reaches the browser', () => {
   /**
    * `lib/abap/catalog-service.ts` is server-only by convention (CLAUDE.md), not
    * by a package: this repo has no `server-only` npm dependency to enforce it
-   * (see the comment in lib/facts.ts on why one was not added), and it is
-   * already broken in two places `docs/BACKLOG.md` tracks under "Der
-   * SAP-Katalog liegt im Browser-Bundle" (`components/analyze/UsageRiskMatrix.tsx`
-   * and the workspace's Public-Cloud-Fit panel). That backlog item is its own,
-   * separate fix — three other agents are working in `components/workspace/`
-   * while this file is being written, so a repo-wide sweep here would fail on
-   * code outside this task's scope. What this guards is narrower and squarely
-   * this task's own responsibility: the new facts surfaces must not be the
-   * third place that regresses it.
+   * (see the comment in lib/facts.ts on why one was not added). The repo-wide
+   * check — no client module reaches `lib/abap/generated/*.json` through a
+   * static import — is `tests/client-catalog-boundary.spec.ts` since the
+   * external audit's PERF-01 (02.10.2026). What this block guards is narrower:
+   * the facts surfaces themselves stay server code.
    */
   test('lib/facts.ts carries no client directive', () => {
     const src = read('lib/facts.ts').trimStart();
