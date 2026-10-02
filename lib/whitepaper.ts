@@ -115,7 +115,7 @@ export const FROM_LANDING = {
     'Business, IT and Management look at the same facts. Each view answers its own question — Do I still need this? What exactly, where to? What do I risk, what do I decide? — and none of them changes a result.',
   views: [
     { key: 'business', name: 'Business', q: 'Do I still need this, and what changes for me?', a: 'Opens with the process, its business rules — the hard-coded ones too — standard fit, and what could not be determined.' },
-    { key: 'it', name: 'IT', q: 'What exactly, where to, and is it right?', a: 'Opens with the findings at their line, the successor SAP names, and the chain from requirement to anchor, finding and target draft.' },
+    { key: 'it', name: 'IT', q: 'What exactly, where to, and is it right?', a: 'Opens with the findings at their line, the successor named and who names it, and the chain from requirement to anchor, finding and target draft.' },
     { key: 'management', name: 'Management', q: 'What do I risk, what do I decide?', a: 'Opens with what is backed by evidence, what stands in the way of a decision, the four buckets and the open decision — costs only as a simulation.' },
   ],
   /** The demo rule in three views — the landing's stage card. */
