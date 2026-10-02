@@ -176,6 +176,35 @@ test.describe('the handover reads what is on record', () => {
     expect(handoverTimeline(p).map((e) => e.sentence)).toContain('Target architecture confirmed: Side-by-Side BAIP (CAP)');
   });
 
+  // Codex code-trust-03: confirm for run A, then run B becomes the active run.
+  test('a decision confirmed for a previous run is history, not the current decision', () => {
+    const decision = buildProjectDecision({
+      summary: 'Build this object as Side-by-Side BTP (CAP), as the signed-off target architecture says.',
+      runId: 'run-0001', evidenceDigest: 'digest', contract: null, assumptions: null, comparison: null,
+      chosenOptionId: null, need: { revision: null, confirmedDrops: 0, undecided: null }, handedOver: false,
+      timeline: { draftedAt: '2026-09-17T09:00:00.000Z' },
+    });
+    const confirmed = { ...decision, status: 'confirmed', confirmation: { account: 'lead@example.com', at: '2026-09-17T10:00:00.000Z', selfDeclaration: SELF_DECLARATION } };
+    const onRunA = project({ decision: confirmed });
+    const onRunB = project({ decision: confirmed, activeRunId: 'run-0002' });
+    // Every phase finished, so only the decision can still be open.
+    const allDone = (p: HandoverProject) => workflowSteps(p).map((s) => ({ ...s, state: 'done' as const, done: true, proven: true }));
+
+    const current = buildHandoverChain(onRunA, workflowSteps(onRunA));
+    expect(current.find((l) => l.key === 'decision')!.provenance).toBe('confirmed');
+    expect(handoverNextStep(onRunA, allDone(onRunA), [], current, 'p1').kind).toBe('none');
+
+    const chain = buildHandoverChain(onRunB, workflowSteps(onRunB));
+    const link = chain.find((l) => l.key === 'decision')!;
+    expect(link.provenance).toBe('stale');
+    expect(link.state).toBe('stale');
+    expect(link.missing).toContain('previous analysis run');
+    expect(handoverStillNeeded(onRunB, chain, { blockers: [], exportedAt: null }).map((n) => n.key)).toContain('decision');
+    const next = handoverNextStep(onRunB, allDone(onRunB), [], chain, 'p1');
+    expect(next.kind).toBe('open');
+    expect(next.headline).toBe('Confirm the decision');
+  });
+
   test('the next step blocks first, then names the first missing phase', () => {
     const changed = project({ legacyCode: `${SOURCE}* changed\n`, generatedCode: 'x' });
     const phases = workflowSteps(changed);
