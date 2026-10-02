@@ -162,7 +162,7 @@ test.describe('the page, rendered in the workspace', () => {
     }
     const details = open.locator('[data-not-determined-detail]');
     if ((await details.count()) > 0) {
-      const trigger = details.first().locator('[data-cc-disclosure-trigger]');
+      const trigger = details.first().locator('[data-cc-disclosure-trigger]').first();
       await expect(trigger).toHaveAttribute('aria-expanded', 'false');
       await trigger.click();
       await expect(trigger).toHaveAttribute('aria-expanded', 'true');

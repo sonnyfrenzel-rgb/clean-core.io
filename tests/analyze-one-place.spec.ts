@@ -78,7 +78,12 @@ async function expectOnePlaceEach(page: Page) {
   await expect(page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]').first()).toContainText('Technical detail');
 
   // Opened, the technical detail holds the parts it gathered.
-  await page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]').first().click();
+  // Clicked until it says it is open: the demo renders before it hydrates.
+  const detailTrigger = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]').first();
+  await expect(async () => {
+    await detailTrigger.click();
+    await expect(detailTrigger).toHaveAttribute('aria-expanded', 'true', { timeout: 2000 });
+  }).toPass({ timeout: 30000 });
   const detail = page.locator('#analyze-technical-detail');
   for (const part of ['Complexity and criticality', 'Language constructs the engine resolved']) {
     await expect(detail.getByRole('heading', { level: 3, name: part })).toBeVisible();

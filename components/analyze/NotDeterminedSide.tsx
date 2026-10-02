@@ -22,7 +22,7 @@ export interface OpenItem {
  * the panel behind it (the statements, the missing objects, the check tasks)
  * one action deeper under "Details" — moved, never dropped.
  *
- * `id="analysis-not-determined"` is where "Show the list" on the facet lands.
+ * Its id, `analysis-not-determined`, is where "Show the list" on the facet lands.
  */
 export default function NotDeterminedSide({ items }: { items: readonly OpenItem[] }) {
   return (
