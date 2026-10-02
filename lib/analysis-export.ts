@@ -31,6 +31,7 @@ import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { SCORE_BANDS_SOURCE, scoreWithBand } from '@/lib/clean-core-score';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
 import { APP_VERSION } from '@/lib/version';
+import { successorSource, successorSourceNote } from '@/lib/successor-source';
 import { BTP, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
 import { modelActionPlan } from '@/lib/action-plan';
 import { EXPORT_CSS, severityClass, toneClass } from '@/lib/export-style';
@@ -403,7 +404,9 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
               const sorted = Array.from(grp.values()).sort((a, b) => (sevOrd[a.f.severity] ?? 9) - (sevOrd[b.f.severity] ?? 9));
               const rows = sorted.map(({ f, lines, snippets }) => {
                 const sevClass = severityClass(f.severity);
-                const confClass = (f.sapReplacement?.confidence === 'Catalog Match' || f.sapReplacement?.confidence === 'Verified') ? 'tag tone-success' : f.sapReplacement?.confidence === 'Candidate' ? 'tag tone-warning' : 'tag tone-error';
+                // Who names the successor, in words (PRV-01): SAP's catalog data, or Clean-Core.io's curated mapping.
+                const replSource = successorSource(f.sapReplacement?.confidence);
+                const confClass = replSource === 'sap' ? 'tag tone-success' : replSource === 'curated' ? 'tag tone-neutral' : f.sapReplacement?.confidence === 'Candidate' ? 'tag tone-warning' : 'tag tone-error';
                 const srcClass = toneClass('neutral');
                 const srcLabel = f.source === 'static-parser' ? 'Parser' : f.source === 'catalog-match' ? 'Catalog' : 'LLM';
                 return `<tr>
@@ -412,7 +415,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
                   <td><code>${esc(snippets[0] || '—')}</code></td>
                   <td><span class="${sevClass}">${esc(f.severity)}</span></td>
                   <td><span class="${srcClass}">${srcLabel}</span></td>
-                  <td>${f.sapReplacement ? `${esc(f.sapReplacement.objectName)}<br/><span class="${confClass}">${esc(f.sapReplacement.confidence)}</span>` : '—'}</td>
+                  <td>${f.sapReplacement ? `${esc(f.sapReplacement.objectName)}<br/><span class="${confClass}">${esc(successorSourceNote(f.sapReplacement.confidence))}</span>` : '—'}</td>
                   <td>${esc((f.targetOptions || []).slice(0, 2).join(', ') || '—')}</td>
                 </tr>`;
               }).join('');
@@ -427,7 +430,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
                     <th>Snippet</th>
                     <th>Severity</th>
                     <th>Source</th>
-                    <th>SAP Replacement</th>
+                    <th>Successor</th>
                     <th>Target</th>
                   </tr>
                 </thead>

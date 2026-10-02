@@ -235,7 +235,7 @@ export function fitDroppedLine(ids: readonly string[]): string {
 /** The counts under the table. */
 export function fitCountsLine(withCandidate: number, notDetermined: number, consulted: boolean): string {
   if (!consulted) return 'No catalog was consulted, so no candidate is shown.';
-  return `Counts: ${withCandidate} ${withCandidate === 1 ? 'capability has' : 'capabilities have'} a candidate from SAP's catalog; the fit of ${notDetermined} is not determined.`;
+  return `Counts: ${withCandidate} ${withCandidate === 1 ? 'capability has' : 'capabilities have'} a candidate from the catalog (SAP's data or Clean-Core.io's curated mapping); the fit of ${notDetermined} is not determined.`;
 }
 
 /** Why the table could not be built. */

@@ -51,7 +51,10 @@ export interface CanvasSuccessor {
   replaces: string[];
   lines: number[];
   findingIds: string[];
-  /** Every use was named `Verified` by the catalog. Otherwise the weakest word is kept. */
+  /**
+   * The engine's confidence word for the group: `Verified` (Clean-Core.io's curated
+   * mapping) only when every use carries it, otherwise the weakest word is kept.
+   */
   confidence: string | null;
 }
 

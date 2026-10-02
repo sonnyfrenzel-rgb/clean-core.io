@@ -200,3 +200,8 @@ if freeze:
     path = os.path.join(os.path.dirname(ROOT), f'frozen-{lo:03d}-{hi:03d}.json')
     json.dump(frozen, open(path, 'w', encoding='utf-8'), indent=1, sort_keys=True)
     print(f'eingefroren: {len(frozen)} Fälle → {path}')
+
+# A failed check fails the process: a caller (a person, a script, CI) that only
+# reads the exit code must not see "passed" over hash drift or broken cases.
+if errors > 0:
+    sys.exit(1)

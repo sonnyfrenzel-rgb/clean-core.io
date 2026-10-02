@@ -103,7 +103,7 @@ export interface ItFindingRow {
    */
   releaseView: string | null;
   classificationView: string | null;
-  /** The successor SAP publishes, where one is published. */
+  /** The successor named for the object (SAP's catalog or the curated mapping, see `successorConfidence`). */
   successor: string | null;
   /**
    * What kind of object the successor is (`OData API`, `CDS View` …) and how

@@ -32,6 +32,7 @@ import {
   type TargetKind,
 } from '@/lib/transformation-view';
 import TransformationFlowChart, { TARGET_COLOUR } from './TransformationFlow';
+import { successorSourceNote } from '@/lib/successor-source';
 
 /**
  * The Transformation tool as a Fiori Object Page — proposal A of 01.10.2026,
@@ -193,7 +194,7 @@ function TargetBox({ target }: { target: FindingTarget }) {
       <div className="mt-1 cc-text-cell text-cc-ink-muted">{target.sub}</div>
       {target.kind === 'successor' ? (
         <div className="mt-2">
-          <CcProvenanceChip value="imported" note={`${target.successorType} · ${String(target.successorConfidence).toLowerCase()}`} />
+          <CcProvenanceChip value="imported" note={`${target.successorType} · ${successorSourceNote(target.successorConfidence)}`} />
         </div>
       ) : target.kind === 'route-other' ? (
         <div className="mt-2">
@@ -401,7 +402,7 @@ export default function TransformationObjectPage({
         />
         <Facet
           label="Released successors"
-          why={{ provenance: 'imported', basis: 'Successors named by the SAP catalog for the objects your code uses.' }}
+          why={{ provenance: 'imported', basis: "Successors named for the objects your code uses, by SAP's catalog or Clean-Core.io's curated mapping." }}
           figure={figures.successorNamed}
           unit={`of ${figures.findings} named`}
           sub={`${figures.successorDistinct} distinct ${figures.successorDistinct === 1 ? 'API or CDS view' : 'APIs and CDS views'}`}

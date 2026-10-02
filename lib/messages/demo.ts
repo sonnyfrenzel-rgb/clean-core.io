@@ -9,6 +9,8 @@
  * The marks of the demo (`lib/demo-marks.ts`) and the stations of the tour
  * (`lib/demo-tour.ts`) are not in here: they are data with their own guards.
  */
+import { successorSourceNote } from '@/lib/successor-source';
+
 export const DEMO_WORKSPACE_MESSAGES = {
   // DemoWorkspaceShell — header
   'demo.loading': 'Loading the demo…',
@@ -32,8 +34,8 @@ export const DEMO_WORKSPACE_MESSAGES = {
   'demo.confirm': 'Confirm',
   'demo.standardFit': 'Standard fit',
   'demo.standardFitLead':
-    'Successors SAP names for objects this code uses, with the evidence level the catalog gives them.',
-  'demo.evidence': 'evidence:',
+    "Successors named for objects this code uses, each with its source: SAP's catalog or Clean-Core.io's curated mapping.",
+  'demo.evidence': 'source:',
   'demo.notStated': 'not stated',
   'demo.firstFiveOf': 'The first 5 of',
   'demo.allInPlan': 'All of them in the transformation plan',
@@ -104,9 +106,13 @@ export function demoSourceLineLabel(line: number | string): string {
   return `${m('demo.sourceLine')} ${line}`;
 }
 
-/** "evidence: high" — or "evidence: not stated" when the catalog gives none. */
+/**
+ * "source: SAP catalog", "source: Clean-Core.io curated mapping" — or "source:
+ * not stated" when the engine recorded none. A curated pairing is never read as
+ * SAP's (`lib/successor-source.ts`, external audit PRV-01).
+ */
 export function demoEvidence(provenance: string | null | undefined): string {
-  return `${m('demo.evidence')} ${provenance ?? m('demo.notStated')}`;
+  return `${m('demo.evidence')} ${provenance ? successorSourceNote(provenance) : m('demo.notStated')}`;
 }
 
 /** "The first 5 of 12." under a shortened list. */

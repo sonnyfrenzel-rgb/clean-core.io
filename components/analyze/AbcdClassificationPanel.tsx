@@ -23,7 +23,7 @@ import {
  * superseded the older Tier 1/2/3 wording.
  *
  * Three tiers, and the difference is visible per row. Where SAP has published a
- * state for an object, the grade is a lookup against the Cloudification
+ * state for an object, the grade follows by a versioned rule from the Cloudification
  * Repository and SAP's classicAPI/noAPI file — for a table, for the access the
  * code makes: reading KNA1 is C, writing to it is D. Your own Z/Y tables are
  * graded as your own data (B). Everything else SAP has not classified falls

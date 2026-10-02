@@ -5,6 +5,7 @@ import { ArrowDown } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import type { ArchitectureCanvasModel, CanvasSuccessor } from '@/lib/architecture-canvas';
 import { BTP, BUSINESS_AI_PLATFORM } from '@/lib/sap-naming';
+import { successorSource } from '@/lib/successor-source';
 
 /**
  * The target architecture as one picture — proposal B "Canvas first" of the
@@ -172,6 +173,15 @@ function WideCanvas({ model, targetLine, selected, onSelect, description, zoom =
 
   /* ---------- left: S/4HANA ---------- */
   const succ = model.successors.slice(0, MAX_SUCCESSORS);
+  // Who names the successors (PRV-01): SAP's catalog, Clean-Core.io's curated
+  // mapping, or both — a curated pairing is never captioned as SAP's.
+  const anyCurated = model.successors.some((s) => successorSource(s.confidence) === 'curated');
+  const allCurated = anyCurated && model.successors.every((s) => successorSource(s.confidence) === 'curated');
+  const successorOrigin = allCurated
+    ? "Imported from Clean-Core.io's curated mapping"
+    : anyCurated
+      ? 'Imported from the SAP catalog, curated ones marked'
+      : 'Imported from the SAP catalog';
   const succMore = model.successors.length - succ.length;
   const succRows = Math.max(1, Math.ceil(succ.length / 2));
   const bTop = 56;
@@ -263,7 +273,7 @@ function WideCanvas({ model, targetLine, selected, onSelect, description, zoom =
         </text>
         <text x={48} y={bTop + 51} fontFamily={SANS} fontSize={12} fill={C.muted}>
           {model.successors.length
-            ? `${model.successors.length} successor${model.successors.length === 1 ? '' : 's'} for ${model.successorUses} use${model.successorUses === 1 ? '' : 's'} in the code · Imported from the SAP catalog`
+            ? `${model.successors.length} successor${model.successors.length === 1 ? '' : 's'} for ${model.successorUses} use${model.successorUses === 1 ? '' : 's'} in the code · ${successorOrigin}`
             : 'The catalog names no released successor for this code'}
         </text>
       </Pick>
@@ -279,7 +289,8 @@ function WideCanvas({ model, targetLine, selected, onSelect, description, zoom =
         const tagEdge = s.tag === 'odata' ? C.odata : s.tag === 'cds' ? C.cds : C.line;
         const tag = tagLabel(s);
         const tagW = tag.length * 7 + 12;
-        const note = s.confidence && s.confidence !== 'Verified' ? ` · ${s.confidence.toLowerCase()}` : '';
+        const source = successorSource(s.confidence);
+        const note = source === 'curated' ? ' · curated' : s.confidence && source === 'unconfirmed' ? ` · ${s.confidence.toLowerCase()}` : '';
         return (
           <Pick key={s.key} k={s.key} label={`${s.name}, replaces ${s.replaces.join(', ')}`} selected={selected} onSelect={onSelect}>
             <rect x={x} y={y} width={286} height={46} rx={8} fill={fill} stroke={sel(s.key) ? C.focus : line} strokeWidth={sel(s.key) ? 2 : 1} />

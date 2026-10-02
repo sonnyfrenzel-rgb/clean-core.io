@@ -98,7 +98,7 @@ export const TOUR_STATIONS: readonly TourStation[] = Object.freeze([
     place: 'standard-fit',
     view: 'business',
     title: 'Standard fit',
-    body: 'Where SAP names a successor for an object the code uses, it is listed with its evidence level. A name without evidence is not a fit.',
+    body: "Where a successor is named for an object the code uses, it is listed with its source: SAP's catalog or Clean-Core.io's curated mapping. A name without evidence is not a fit.",
   },
   {
     place: 'it-chain',

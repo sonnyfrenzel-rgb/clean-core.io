@@ -198,7 +198,7 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'print.decisionNotRead': 'Not read for this printout',
   'print.notDeterminedNoSource': 'Not determined — nothing was staged to assess',
   'print.levelsNote':
-    'Clean core level per SAP object, read from SAP’s released-object lists for this project’s target. Orientation only — the level is not part of the signed run.',
+    'Clean core level per SAP object, derived by a versioned rule from SAP’s released-object lists for this project’s target. Orientation only — the level is not part of the signed run.',
   'print.noObjects': 'This code names no SAP object.',
   'print.colObject': 'SAP object',
   'print.colUse': 'Use',

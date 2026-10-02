@@ -36,8 +36,8 @@ could not determine.
 
 In detail: a deterministic ABAP static code analysis reads the program, reconstructs its
 business process as BPMN with a line anchor on every element, or the reason it has none, lists the business rules
-hard-coded in the program, grades each SAP object it uses Level A–D from SAP's published
-Cloudification Repository, and names what it could not determine. From that evidence it
+hard-coded in the program, grades each SAP object it uses Level A–D under a versioned rule
+from the states SAP publishes in its Cloudification Repository, and names what it could not determine. From that evidence it
 drafts the target design, the transformed code, documentation and test scenarios for a
 person to review; on the CAP track the test scenarios run against the generated code in
 an isolated runner, against mocks — they do not show that the code runs in a real SAP
@@ -132,8 +132,8 @@ SAP's own figures in this field, and which way each points:
 - Clean Core Share (SAP, SAP Cloud ALM): higher is better — how much of the landscape
   already follows the clean core approach. A different unit and scope from our score.
 - Clean Core Level A–D (SAP, Cloudification Repository, per object): A is best, D is
-  worst. Clean-Core.io reproduces this one, derived from SAP's published files; the
-  rule and its version are at ${baseUrl}/method/levels.
+  worst. Clean-Core.io derives it from the states SAP publishes, under its own versioned
+  rule (${baseUrl}/method/levels): an orientation; ABAP Test Cockpit stays the authority.
 
 What a score means — ${SCORE_BANDS_SOURCE}, not an SAP measure:
 ${scoreBandsBullets()}

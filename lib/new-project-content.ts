@@ -123,7 +123,7 @@ export function cleanCoreLadder(): CleanCoreLevelEntry[] {
 
 /**
  * The sentence under the ladder — §6.1.1. It names both sources a level can
- * have: an SAP object's level is read from SAP's data, but the customer's own
+ * have: an SAP object's level is derived from SAP's data, but the customer's own
  * objects are not in that data and are graded from the code (`own-object`,
  * `heuristic` in `lib/abap/abcd-classification.ts`), labelled as such where
  * they appear. Calling every level "our reading of SAP's published data" told
