@@ -430,7 +430,7 @@ export default function Home() {
           'SAP clean core level A–D for every SAP object the code uses, read from SAP’s published Cloudification Repository',
           'Clean Core Score, 0–100, higher is better, in four bands — published by Clean-Core.io, not an SAP metric',
           'Business, IT and Management views of the same project',
-          'Target design, transformed RAP or CAP code draft and test scenarios, run in an isolated runner against mocks',
+          'Target design, transformed RAP or CAP code draft and test scenarios — for CAP run against mocks in an isolated runner, for RAP an ABAP Unit class that runs only in your own system',
           'Every completed analysis sealed as a signed run (HMAC); audit pack for handover signed over the run with HMAC and Ed25519',
           'Read access by invitation, bound to one confirmed e-mail address, until it is withdrawn; an invitation link nobody accepts expires',
           'Demo project with a guided tour',

@@ -47,3 +47,17 @@ test('usp-03: the summary does not promise a signed record of the draft and its 
   expect(wp).toContain('a signed record of the analysis they rest on');
 });
 
+test('usp-01: no public line says RAP tests run against mocks here', () => {
+  // A RAP suite is an ABAP Unit class; the Testing stage marks it Simulated and
+  // never calls the runner (hooks/useTestExecution.ts, ABAP_UNIT_NOT_RUNNABLE).
+  for (const file of PUBLIC_COPY) {
+    const text = flat(read(file));
+    for (const sentence of text.split(/(?<=[.;])\s/)) {
+      if (!/\bRAP\b/.test(sentence) || !/against mocks/.test(sentence)) continue;
+      expect(sentence, `${file} puts RAP beside a run against mocks without naming the track`).toMatch(/RAP track|for RAP\b/);
+    }
+  }
+  const faq = flat(read('lib/landing-faq.ts'));
+  expect(faq).toContain('on the RAP track they are an ABAP Unit class that runs only in your own system, and nothing is run here');
+});
+

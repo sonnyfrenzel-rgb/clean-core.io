@@ -39,9 +39,10 @@ business process as BPMN with a line anchor on every element, or the reason it h
 hard-coded in the program, grades each SAP object it uses Level A–D from SAP's published
 Cloudification Repository, and names what it could not determine. From that evidence it
 drafts the target design, the transformed code, documentation and test scenarios for a
-person to review; the test scenarios run against the generated code in an isolated
-runner, against mocks — they do not show that the code runs in a real SAP S/4HANA
-system. Economics calculates on the user's own figures. Every completed analysis is
+person to review; on the CAP track the test scenarios run against the generated code in
+an isolated runner, against mocks — they do not show that the code runs in a real SAP
+S/4HANA system; on the RAP track they are an ABAP Unit class that runs only in the
+user's own system, and nothing is run here. Economics calculates on the user's own figures. Every completed analysis is
 sealed as an immutable, signed run, and the handover pack is signed over it.
 
 One workspace, three views of the same facts: the Business view ("Do I still need this,
@@ -146,8 +147,9 @@ product. It is a measure of code structure, not of money.
 
 - It does not replace SAP ABAP Test Cockpit (ATC), SAP ABAP Development Tools (ADT),
   Joule for Developers or SAP's Custom Code Migration Agent.
-- Its tests check the generated code against test scenarios in an isolated runner; they
-  do not show that the code runs in a real SAP S/4HANA system.
+- Its tests check generated CAP code against test scenarios in an isolated runner; they
+  do not show that the code runs in a real SAP S/4HANA system. Generated ABAP Unit
+  classes for the RAP track are not run here at all.
 - It does not claim SAP certification, endorsement, or affiliation.
 - Its Level A–D is a derived orientation, not an authoritative SAP ATC classification,
   and is deliberately excluded from the signed audit pack.
