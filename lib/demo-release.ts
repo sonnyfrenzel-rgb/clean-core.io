@@ -7,8 +7,8 @@ import { TOUR_STATIONS, type TourPlace } from '@/lib/demo-tour';
 
 /**
  * Which engine and which rule version the demo was last regenerated for —
- * roadmap 3.0.7, `DESIGN.md` §6.1.2: *„ändert sich Engine oder Regelversion,
- * wird die Demo mit dem Release neu erzeugt"*.
+ * roadmap 3.0.7, `DESIGN.md` §6.1.2: *"if the engine or rule version changes,
+ * the demo is regenerated with the release"*.
  *
  * **How the demo is produced today.** It is not stored. `lib/demo-project.ts`
  * and `lib/demo-workspace.ts` run the engine of the deployed release over

@@ -16,7 +16,7 @@ import type { Project } from '@/lib/types';
 /**
  * The query the build-up of `DESIGN.md` §5.2 answers to.
  *
- * *"Nach Code-Import oder Beispiel"* — so the build-up is not what every visit
+ * *"After a code import or an example"* — so the build-up is not what every visit
  * to a workspace does; it is what the screen that started the analysis asks for
  * when it sends the reader here ("New project", roadmap 2.7). Without it the
  * first look goes straight to its end state, which is also what a second visit

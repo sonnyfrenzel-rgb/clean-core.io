@@ -19,33 +19,37 @@
  *      docs/registers/public-texts.json — the rule of guard (c).
  *
  * No network, no model, no writes outside docs/release/ (and only with --write).
+ *
+ * The measure is exported (`germanSentences`, `scanCode`, `isCodeInScope`) so the
+ * 3.0.14 guard in tests/public-texts-guard.spec.ts reads comments and test titles
+ * with exactly this lexer; importing the module runs nothing.
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const args = new Set(process.argv.slice(2));
 
 // Same word list as tests/public-texts-guard.spec.ts (GERMAN_WORDS) — keep them in step.
-const GERMAN_WORDS = /(?<![\p{L}])(und|nicht|wird|werden|wurde|oder|dass|keine?n?|sind|auch|noch|wenn|eine[nmrs]?|für|über|bleibt|steht|kein|nach|beim|zum|zur|vom|sich|schon|nur|weil|jede[rsn]?|diese[rsnm]?|dem|des|ohne|gegen|seit|ein|im|auf|aus|bei|mit|von|der|das|hat|haben|kann|muss|soll|statt|heute|damit|dann|aber|doch|sondern)(?![\p{L}])/giu;
+export const GERMAN_WORDS = /(?<![\p{L}])(und|nicht|wird|werden|wurde|oder|dass|keine?n?|sind|auch|noch|wenn|eine[nmrs]?|für|über|bleibt|steht|kein|nach|beim|zum|zur|vom|sich|schon|nur|weil|jede[rsn]?|diese[rsnm]?|dem|des|ohne|gegen|seit|ein|im|auf|aus|bei|mit|von|der|das|hat|haben|kann|muss|soll|statt|heute|damit|dann|aber|doch|sondern)(?![\p{L}])/giu;
 
-const EXCEPTIONS = [/^docs\/archiv\//, /^docs\/korpus\//, /^app\/datenschutz\/de\//];
+export const EXCEPTIONS = [/^docs\/archiv\//, /^docs\/korpus\//, /^app\/datenschutz\/de\//];
 const PROSE_EXT = /\.(md|mdx|txt)$/i;
-const CODE_EXT = /\.(ts|tsx|js|jsx|mjs|cjs)$/i;
+export const CODE_EXT = /\.(ts|tsx|js|jsx|mjs|cjs)$/i;
 const DATA_EXT = /\.(json|ya?ml)$/i;
 const SKIP = [/^package-lock\.json$/, /\.min\.js$/];
-// Named exceptions already recorded in the 3.0.14 guard (GERMAN_PENDING).
+// Named exceptions recorded in the 3.0.14 guard (GERMAN_FROZEN, decision Sonny 02.10.2026).
 const PENDING = new Set([
   'tests/prozess-benchmark/judge/richter-brief.md',
   'tests/prozess-benchmark/judge/richter-brief-schluss.md',
 ]);
 
-const germanCount = (s) => new Set((s.match(GERMAN_WORDS) || []).map((w) => w.toLowerCase())).size;
+export const germanCount = (s) => new Set((s.match(GERMAN_WORDS) || []).map((w) => w.toLowerCase())).size;
 
 /** Port of germanSentences() from the guard. */
-function germanSentences(text) {
+export function germanSentences(text) {
   const paragraphs = [];
   let fence = false;
   let current = [];
@@ -146,7 +150,7 @@ function commentBlocks(comments) {
   return blocks;
 }
 
-function scanCode(rel, src) {
+export function scanCode(rel, src) {
   const lx = lex(src);
   const hit = { comments: [], titles: [], strings: [], jsx: [] };
   for (const b of commentBlocks(lx.comments)) {
@@ -262,7 +266,7 @@ function fixtureDirs(r) {
 
 function toMarkdown(r) {
   const s = r.summary;
-  const row = (f) => `| \`${f.file}\` | ${f.kind}${f.pending ? ' (pending)' : ''} | ${f.prose || ''} | ${f.comments || ''} | ${f.titles || ''} | ${f.strings || ''} | ${f.jsx || ''} | ${f.total} |`;
+  const row = (f) => `| \`${f.file}\` | ${f.kind}${f.pending ? ' (frozen)' : ''} | ${f.prose || ''} | ${f.comments || ''} | ${f.titles || ''} | ${f.strings || ''} | ${f.jsx || ''} | ${f.total} |`;
   const head = '| File | Kind | Prose sentences | Comment sentences | Test titles | String literals | JSX text | Total |\n|---|---|---:|---:|---:|---:|---:|---:|';
   const group = (title, pred) => {
     const list = r.files.filter(pred);
@@ -278,7 +282,7 @@ function toMarkdown(r) {
 | Files scanned (tracked, outside \`docs/archiv/\`, \`docs/korpus/\`, \`app/datenschutz/de/\`) | ${s.scannedFiles} |
 | Files with any German hit (outside frozen fixtures) | ${s.filesWithGermanExclFixtures} |
 | German prose sentences in .md/.mdx/.txt (what the 3.0.14 guard reads) | ${s.proseSentences} in ${s.proseFiles} files |
-| … of which outside the guard's named pending exceptions | ${s.proseSentencesExclPending} |
+| … of which outside the guard's named frozen exceptions | ${s.proseSentencesExclPending} |
 | German comment sentences in code and tests | ${s.codeComments} |
 | German test titles (first argument of \`test\`/\`describe\`/\`it\`) | ${s.testTitles} |
 | German string literals in code (UI copy, messages, fixtures) | ${s.stringLiterals} |
@@ -297,9 +301,11 @@ estimate for the 3.0.14 step, not a verdict: an ABAP sample, a German test fixtu
 (\`'Die Engine baut …'\` as input to the measure itself) or a mail subject the product
 sends in German can be legitimate and needs a decision, not a translation.
 
-**What the guard covers today.** The 3.0.14 test in \`tests/public-texts-guard.spec.ts\`
-reads only .md/.mdx/.txt. Comments, test titles and strings in code are in the roadmap's
-scope ("code comments and test descriptions that are public") but no guard reads them yet.
+**What the guard covers.** The 3.0.14 tests in \`tests/public-texts-guard.spec.ts\` read
+.md/.mdx/.txt (prose) and, with this module's lexer, every comment and test title in
+tracked code outside the named exceptions. German string literals (model prompts, the
+German reports mailed to the owner, fixtures that feed the measures) are counted here
+but not guarded: they are data, and each needs a decision, not a translation.
 
 ## Inventory gaps (guard (c))
 
@@ -317,16 +323,21 @@ ${fixtureDirs(r)}
 `;
 }
 
-const result = main();
-if (args.has('--json')) console.log(JSON.stringify(result, null, 2));
-else {
+/** A tracked file the code half of the 3.0.14 guard reads: code, outside the named exceptions. */
+export const isCodeInScope = (rel) => CODE_EXT.test(rel) && !EXCEPTIONS.some((r) => r.test(rel)) && !SKIP.some((r) => r.test(rel));
+
+// Imported by the guard, the module only measures; run as a script, it scans the tree.
+const isMain = Boolean(process.argv[1]) && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+const result = isMain ? main() : null;
+if (isMain && args.has('--json')) console.log(JSON.stringify(result, null, 2));
+else if (isMain) {
   const s = result.summary;
   console.log(`text-scan @ ${result.sha}: ${s.filesWithGermanExclFixtures} files with German text outside fixtures (${s.filesWithGerman} with them) of ${s.scannedFiles}`);
-  console.log(`  prose sentences (.md/.txt): ${s.proseSentences} in ${s.proseFiles} files (${s.proseSentencesExclPending} outside pending)`);
+  console.log(`  prose sentences (.md/.txt): ${s.proseSentences} in ${s.proseFiles} files (${s.proseSentencesExclPending} outside the frozen judge briefs)`);
   console.log(`  code: ${s.codeComments} comment sentences, ${s.testTitles} test titles, ${s.stringLiterals} strings, ${s.jsxText} JSX lines; data: ${s.dataStrings}; fixtures: ${s.fixtureStrings} in ${s.fixtureFiles} files`);
   console.log(`  inventory: ${s.inventoryEntries} entries, ${s.inventoryMissing} missing, ${s.inventoryVanished} vanished`);
 }
-if (args.has('--write')) {
+if (isMain && args.has('--write')) {
   // Everything below MARKER is hand-written (the armed-guard run) and survives a rewrite.
   const MARKER = '<!-- manual section: kept by text-scan.mjs --write -->';
   const out = path.join(ROOT, 'docs/release/3.0-text-scan.md');

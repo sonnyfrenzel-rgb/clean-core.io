@@ -601,8 +601,8 @@ const SELECTION_KEYWORD = /^(PARAMETERS|SELECT-OPTIONS)\b/i;
 /**
  * The selection-screen switches of a source, and only those a flow names.
  *
- * `DESIGN.md` §5.9 item 7: *"Nur Schalter, deren Bedingung im Code wörtlich
- * steht."* A switch that decides nothing the map draws cannot change the run
+ * `DESIGN.md` §5.9 item 7: *"Only switches whose condition is written verbatim
+ * in the code."* A switch that decides nothing the map draws cannot change the run
  * the map shows, and offering it as a toggle would promise an effect that is
  * not there.
  *

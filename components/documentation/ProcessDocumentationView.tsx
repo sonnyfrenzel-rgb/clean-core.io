@@ -35,7 +35,7 @@ const STEP_COLUMNS: readonly CcTableColumn[] = [
 ];
 
 /**
- * Stage 4's document as the engine wrote it — roadmap 3.0.5, Weg C.
+ * Stage 4's document as the engine wrote it — roadmap 3.0.5, Path C.
  *
  * It renders `lib/process-documentation.ts` and decides nothing: every line on
  * this screen is a field of the stored document, every anchor is the one the

@@ -14,8 +14,8 @@ import {
  * "New project" — `DESIGN.md` §6.1.1, roadmap 2.7.
  *
  * **Why this is a server component.** §6.1.1 asks for the SAP catalog to be
- * shown *„mit Anzahl und Stand des letzten Abgleichs aus dem Katalog, nie fest
- * im Text"*. Those figures live in `lib/abap/generated/` — 4.3 MB of JSON that
+ * shown *"with count and date of the last sync from the catalog, never fixed
+ * in the text"*. Those figures live in `lib/abap/generated/` — 4.3 MB of JSON that
  * `getLevelRuleVersion()` reads — and there are only two honest ways to get them
  * onto a page: ship the catalog to the browser, or read it here. Typing the
  * numbers into the copy is the third way and is the thing the sentence forbids,
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
  * The fact the three views carry — `DESIGN.md` §6.1.1, roadmap 6.1.
  *
  * Read here for the same reason the catalog figures are: §6.1.1 asks for
- * *„alle Inhalte aus dem echten Lauf des Beispiels"*, and the two honest ways
+ * *"all content from the real run of the example"*, and the two honest ways
  * to get them are to run the engine over the example in the browser or to run
  * it here. Here is cheaper — the example is on this disk already, the reading
  * is the same deterministic one either way, and the intro page does not have to

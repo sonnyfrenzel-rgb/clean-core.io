@@ -2,9 +2,9 @@
  * The architecture contract — what is built, against which target, on which
  * inputs, **and which alternatives were rejected on what.**
  *
- * Roadmap 8.2 (`docs/ROADMAP.md` §Phase 8): *"Architekturvertrag als Dokument:
- * Zielkontext, Laufzeit, Persistenz, APIs, gebundene Eingaben — und warum die
- * Alternativen verworfen wurden."* Mockup screen 4, card "Architecture contract
+ * Roadmap 8.2 (`docs/ROADMAP.md` §Phase 8): *"Architecture contract as a document:
+ * target context, runtime, persistence, APIs, bound inputs — and why the
+ * alternatives were rejected."* Mockup screen 4, card "Architecture contract
  * AC-1" (`docs/roadmap/clean-core-mockups-v2_8.html:1244`): a draft with seven
  * fields, one headline sentence, and "Until confirmed, generation follows the
  * recommended route."
@@ -276,7 +276,7 @@ export interface ContractAlternative {
 /** A route that differs from the router's recommendation, and why (roadmap 8.3). */
 export interface ContractDeviation {
   chosen: TargetRoute;
-  /** Recorded, not optional: "eine Abweichung wird festgehalten und angewendet". */
+  /** Recorded, not optional: "a deviation is recorded and applied". */
   reason: string;
 }
 

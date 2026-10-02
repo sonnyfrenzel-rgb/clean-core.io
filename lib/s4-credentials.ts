@@ -1,9 +1,9 @@
 import crypto from 'crypto';
 import { FIRESTORE_DB_ID } from '@/lib/constants';
 
-// ── Envelope-/symmetrische Verschlüsselung (AES-256-GCM) ────────────────────
-// Schlüssel als 32-Byte base64 in S4_ENCRYPTION_KEY (Secret Manager / Env).
-// Erzeugen: `openssl rand -base64 32`  oder  node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+// ── Envelope/symmetric encryption (AES-256-GCM) ─────────────────────────────
+// Key as 32-byte base64 in S4_ENCRYPTION_KEY (Secret Manager / env).
+// Generate: `openssl rand -base64 32`  or  node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 const ALGO = 'aes-256-gcm';
 const IV_LENGTH = 12;
 const TAG_LENGTH = 16;
@@ -88,10 +88,10 @@ export interface S4ConfigInput {
   btpDestinationJson?: string;
 }
 
-/** Vollständige Config inkl. entschlüsselter Secrets — NUR serverseitig verwenden. */
+/** Full config including decrypted secrets — use ONLY on the server. */
 export type S4ConfigResolved = S4ConfigInput;
 
-/** Nicht-geheime Metadaten für UI/Profil. */
+/** Non-secret metadata for UI/profile. */
 export interface S4Meta {
   configured: boolean;
   url: string;
@@ -100,7 +100,7 @@ export interface S4Meta {
   tokenUrl: string;
 }
 
-// ── Speichern (verschlüsselt, server-only Collection) ───────────────────────
+// ── Save (encrypted, server-only collection) ────────────────────────────────
 export async function saveS4Credentials(uid: string, cfg: S4ConfigInput): Promise<S4Meta> {
   if (!cfg.url || !/^https:\/\//i.test(cfg.url)) {
     throw new Error('S/4HANA URL must use HTTPS.');
@@ -125,7 +125,7 @@ export async function saveS4Credentials(uid: string, cfg: S4ConfigInput): Promis
     updatedAt: FieldValue.serverTimestamp(),
   });
 
-  // Nur nicht-geheime Metadaten ins (client-lesbare) Profil; Klartext-Feld entfernen.
+  // Only non-secret metadata into the (client-readable) profile; remove the plaintext field.
   batch.set(
     db.collection('users').doc(uid),
     {
@@ -152,7 +152,7 @@ export async function saveS4Credentials(uid: string, cfg: S4ConfigInput): Promis
   };
 }
 
-/** Server-seitiges Laden inkl. Entschlüsselung. Gibt null zurück, wenn nicht konfiguriert. */
+/** Server-side load including decryption. Returns null when not configured. */
 export async function loadS4ConfigForUser(uid: string): Promise<S4ConfigResolved | null> {
   const { db } = await getAdminDb();
   const snap = await db.collection('s4_credentials').doc(uid).get();
@@ -178,7 +178,7 @@ export async function loadS4ConfigForUser(uid: string): Promise<S4ConfigResolved
 }
 
 /**
- * Löschen (GDPR-Erasure / Disconnect): the vault document first, then the
+ * Delete (GDPR erasure / disconnect): the vault document first, then the
  * profile metadata that describes it.
  *
  * Both writes swallowed their errors, so a delete the database refused left

@@ -56,8 +56,8 @@ import { artefactDigest, sha256Hex } from './artefact-digest';
  *     always thrown it away after painting one banner on one screen; roadmap 7.3
  *     puts it in the record, because a run against a mock of `@sap/xssec` and a
  *     run against `@sap/xssec` are two different facts and only the receipt
- *     outlives the banner (UX-E08-F02-US02: *Umgebung und ersetzte
- *     Abhängigkeiten sind am Ergebnis sichtbar*).
+ *     outlives the banner (UX-E08-F02-US02: *environment and replaced
+ *     dependencies are visible on the result*).
  *
  * **What a verified receipt does and does not prove.** It proves that this
  * server ran this suite against this code for this account and saw these

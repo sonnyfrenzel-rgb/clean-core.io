@@ -1,8 +1,8 @@
 /**
  * The release fields of a project, and the only commands that write them.
  *
- * Roadmap 0.7 (`docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §8, package 1): *„Eine
- * Freigabe entsteht auf dem Server oder gar nicht."* Until this module existed,
+ * Roadmap 0.7 (`docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §8, package 1): *"An
+ * approval is created on the server or not at all."* Until this module existed,
  * `firestore.rules` carried five release fields in the client-writable
  * allowlist — `targetArchitecture`, `approvedByArchitect`,
  * `architectJustifiedOverride`, `architectSignOffAt`, `approvedBy` — and the

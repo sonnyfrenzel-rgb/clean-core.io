@@ -25,9 +25,9 @@ import type { ProvenanceValue } from '../provenance';
 /**
  * What changes for the people who use the step — roadmap 7.6, mockup screen `s3`.
  *
- * The roadmap row, verbatim: *welche Transaktion oder App den Schritt heute
- * trägt und künftig, was anders aussieht, wo Schulung nötig ist — als
- * Evidenzstufe wie 7.2, nie als Behauptung.* Four fields, and the last five
+ * The roadmap row, verbatim: *which transaction or app carries the step today
+ * and in future, what looks different, where training is needed — as an
+ * evidence level like 7.2, never as a claim.* Four fields, and the last five
  * words are the whole step: each field either carries what it rests on, or it
  * is *Not determined* with a reason. There is no sentence in this file that a
  * reader cannot check against a line of their own code or a row of SAP's
@@ -57,8 +57,8 @@ import type { ProvenanceValue } from '../provenance';
  * non-existent.
  *
  * A capability of roadmap 7.2 that no carrier step and no program declaration
- * covers becomes a record of its own — *"oder Fähigkeit, wenn kein Schritt
- * zuzuordnen ist"*. Its carrier is *Not determined*, which is the honest answer
+ * covers becomes a record of its own — *"or capability, if no step can be
+ * assigned"*. Its carrier is *Not determined*, which is the honest answer
  * and a useful one: it names the decisions this source gives no carrier for.
  *
  * ## Where the levels come from — 7.2's ladder, not a second one
@@ -989,7 +989,7 @@ function userChangeFrom(
     });
   });
 
-  // "oder Fähigkeit, wenn kein Schritt zuzuordnen ist": a decision that no
+  // "or capability, if no step can be assigned": a decision that no
   // carrier and no program declaration covers is still a decision somebody
   // made, and it is named rather than dropped.
   for (const capability of coverage.capabilities) {

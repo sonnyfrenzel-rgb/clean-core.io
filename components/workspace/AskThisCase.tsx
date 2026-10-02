@@ -12,10 +12,10 @@ import type { PreAnswered } from '@/lib/ask-this-case';
 /**
  * "Ask this case", already answered once — `DESIGN.md` §5.3, §6.2, roadmap 2.7.
  *
- *   > *Eine Frage ist schon beantwortet. „Ask this case" zeigt beim ersten
- *   > Öffnen eine gestellte Frage mit Antwort und Ankern — abgeleitet aus den
- *   > Verzweigungen des Codes (Chip Reconstructed), **ohne Modellaufruf und ohne
- *   > das Kontingent des Nutzers anzutasten**.*
+ *   > *One question is already answered. "Ask this case" shows, when first
+ *   > opened, an asked question with answer and anchors — derived from the
+ *   > branches of the code (chip Reconstructed), **without a model call and
+ *   > without touching the user's quota**.*
  *
  * Both halves of that last clause are visible on the card and neither is a
  * promise this component makes on its own: the question and the branches come
@@ -33,9 +33,9 @@ import type { PreAnswered } from '@/lib/ask-this-case';
  * **No branch means no question.** The card then says that, rather than
  * offering a general invitation dressed as an answer.
  *
- * **Fachwörter carry the glossary with them** (roadmap 6.6, `DESIGN.md` §6.1:
- * "Fachwörter in Antworten tragen dieselbe Unterstreichung und dasselbe
- * Popover"). Every string this card shows that a reader might not know a word
+ * **Technical terms carry the glossary with them** (roadmap 6.6, `DESIGN.md` §6.1:
+ * "Technical terms in answers carry the same underline and the same
+ * popover"). Every string this card shows that a reader might not know a word
  * in — the question, each branch target, each rule label, and the sentence
  * that explains why there is no question — goes through `GlossaryText`, which
  * underlines the terms it recognises and nothing else. It changes no text: a

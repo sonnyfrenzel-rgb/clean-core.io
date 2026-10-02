@@ -52,7 +52,7 @@ export function joinUsageWithEvidence(
   // Taken as an input rather than imported: this module is loaded by a client
   // component (`UsageRiskMatrix.tsx`), and importing the ~4 MB catalog
   // artifacts here would ship them to the browser again — exactly what
-  // roadmap "SAP-Katalog im Browser-Bundle" removes. The client caller batches
+  // roadmap "SAP catalog in the browser bundle" removes. The client caller batches
   // the same question through `/api/abcd-classify` first and passes a lookup
   // over the answer; the two specs that call this function directly pass a
   // stub, since neither exercises feasibility.

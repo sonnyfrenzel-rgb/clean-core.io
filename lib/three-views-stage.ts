@@ -1,12 +1,12 @@
 /**
  * The three views in motion — `DESIGN.md` §6.1.1, roadmap step 6.1.
  *
- *   > *Eine Tatsache wandert durch drei Sichten. … Der Anker bleibt fest an
- *   > seinem Platz — er ist das Zeichen, dass es dieselbe Tatsache ist —, nur
- *   > der Inhalt um ihn wechselt.*
+ *   > *One fact travels through three views. … The anchor stays fixed in its
+ *   > place — it is the sign that it is the same fact —, only the content
+ *   > around it changes.*
  *
  * `components/workspace/NewProject.tsx` said in its own header that this was
- * deliberately missing, and why: *„building it from anything other than a real
+ * deliberately missing, and why: *"building it from anything other than a real
  * run of the example would be the staged marketing picture the same section
  * forbids two paragraphs later"*. So this module does not hold the three
  * panels — it **derives** them, from the same deterministic engine that reads a
@@ -21,7 +21,7 @@
  * recorded decision, a cost — the panel says so with the *Not determined* chip.
  *
  * **What §6.1.1 sketches and this does not print.** The section's Management
- * column reads *„Rebuild — part of decision DEC-1"*. There is no DEC-1: an
+ * column reads *"Rebuild — part of decision DEC-1"*. There is no DEC-1: an
  * example that nobody has decided anything about has no decision, and the four
  * buckets of §5.6 put an object with no catalog entry and no level under *not
  * assigned*, not under Rebuild. Printing the sketch would make the one screen
@@ -68,7 +68,7 @@ export interface TravellingFact {
   anchor: string;
   /** The table the check reads. Upper-cased, as the engine reports it. */
   table: string;
-  /** *„Example · … · fictitious code"* — §6.1.1, last bullet. */
+  /** *"Example · … · fictitious code"* — §6.1.1, last bullet. */
   label: string;
   /** Business, IT, Management — in the one order of ADR-044. */
   panels: StagePanel[];
@@ -230,7 +230,7 @@ export function travellingFactFrom(source: string, reading: SourceReading): Trav
 }
 
 /**
- * The example §6.1.1 names — *„Aus dem Beispiel „Emergency purchase approval""*.
+ * The example §6.1.1 names — *"From the example 'Emergency purchase approval'"*.
  *
  * Named once, here, because the route that reads it off disk and the spec that
  * checks what it derives must not be able to drift onto two different files.
@@ -250,7 +250,7 @@ export function travellingFact(source: string): TravellingFact | null {
 /* ------------------------------------------------------------- the timings */
 
 /**
- * *„je 200 ms"*, *„jede Sicht steht 3,5 s"*, **ein** Durchlauf — §6.1.1.
+ * *"200 ms each"*, *"each view stays 3.5 s"*, **one** pass — §6.1.1.
  *
  * Numbers, not a schedule: the component owns the timer, and a test that has to
  * wait 10.5 s for three panels is a test nobody runs. Exported so the spec

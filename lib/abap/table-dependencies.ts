@@ -33,7 +33,7 @@ import { readConstantDeclarations } from './business-rules';
  *   - **Program-global fields** (CC-040, R13b b). `ASSIGN
  *     ('(SAPMV45A)VBAK-VBELN') TO <fs>` reaches into another program's memory
  *     by a name written in a literal.
- *   - **Local names** (Fallbuch §8, metamorphic P1). `MODIFY gt_bp_data FROM
+ *   - **Local names** (case book §8, metamorphic P1). `MODIFY gt_bp_data FROM
  *     gs_bp_data` in `Z_BUSINESS_PARTNER_SYNC` is internal-table work on a
  *     variable declared twelve lines above; the evidence engine knew and
  *     suppressed it, the data coupling reported a database write.
@@ -171,7 +171,7 @@ const SYSTEM_STRUCTURES = new Set(['SY', 'SYST', 'SCREEN', 'TEXT']);
  * the Critical count, depress the Clean Core Score and can flip the routing
  * decision to side-by-side. It lived in `evidence-model.ts` and the data
  * coupling did not ask it, which is how `MODIFY gt_bp_data FROM gs_bp_data`
- * stayed a database write there (Fallbuch §8).
+ * stayed a database write there (case book §8).
  *
  * Approximate by design: an unknown name is still treated as a table, so a real
  * database write is never missed. What this removes is the noise.

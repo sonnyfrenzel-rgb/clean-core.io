@@ -45,7 +45,7 @@ export interface GlossarySource {
  * `lib/abap/cloudification-repo.ts`. Deliberately without a date: the date of
  * the last sync lives in those files' own `meta.fetchedAt` and belongs to
  * whatever screen reads them, never hard-coded in prose (`DESIGN.md` §6.1.1:
- * "Stand des letzten Abgleichs aus dem Katalog, nie fest im Text").
+ * "date of the last sync from the catalog, never fixed in the text").
  */
 export const SAP_CATALOG_SOURCE: GlossarySource = {
   origin: 'sap-catalog',

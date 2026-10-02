@@ -1,15 +1,15 @@
 /**
  * The three coach marks of the first workspace — `DESIGN.md` §6.2, roadmap 2.7.
  *
- *   > *„Drei Coach Marks beim ersten Arbeitsraum — „Select the decision", „This
- *   > is what we could not determine", „Your next step". Abweisbar, gemerkt
- *   > **nur im Browser** — nie im Konto, nie in der Datenbank, kein
- *   > Nutzungsprotokoll (ADR-036). „Show tips again" im Hilfe-Menü holt sie
- *   > zurück."*
+ *   > *"Three coach marks on the first workspace — "Select the decision", "This
+ *   > is what we could not determine", "Your next step". Dismissible, remembered
+ *   > **only in the browser** — never in the account, never in the database, no
+ *   > usage log (ADR-036). "Show tips again" in the help menu brings them
+ *   > back."*
  *
  * **Where the state lives, and why it is not the account.** ADR-036 is a
  * decision, not an implementation detail: Sonny's words in the register are
- * *„Coach im Browser, keine Daten sammeln in der DB"*, and the consequence is
+ * *"coach in the browser, don't collect data in the DB"*, and the consequence is
  * spelled out there too — a second device shows the three tips once more, which
  * costs one click. So this is `localStorage`, and there is deliberately no
  * profile field, no API route and no Firestore write anywhere in this file.
@@ -125,7 +125,7 @@ export function clearDismissedMarks(): void {
   }
 }
 
-/** The one mark to show now — never two at once (§6.1.2: *immer nur eine*). */
+/** The one mark to show now — never two at once (§6.1.2: *only ever one*). */
 export function nextCoachMark(
   available: readonly CoachMark[],
   dismissed: readonly CoachMarkId[],

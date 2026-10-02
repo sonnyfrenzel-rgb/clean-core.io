@@ -2,62 +2,62 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { execFileSync } from 'child_process';
+import { pathToFileURL } from 'url';
 
 /**
- * Alles Öffentliche aus einem Guss — Roadmap-Schritt 3.0.8.
+ * Everything public of a piece — roadmap step 3.0.8.
  *
- * Das Repository ist öffentlich; jede eingecheckte Textdatei ist damit
- * Produktkommunikation. Am 24.09.2026 waren es 99 Dateien außerhalb von
- * `docs/archiv/` und `docs/korpus/`, und sie beschrieben fünf verschiedene
- * Produkte: den Modernisierungsassistenten von v1.9 (README), den
- * 7-Stufen-Workflow (CLAUDE.md, ARCHITECTURE.md, die Briefs der Agenten), den
- * Pilot mit Freischaltung (S4-Doku), das Zielbild 2.8 (DESIGN.md) und eine
- * Dunkel-Oberfläche, die es seit 1.6 nicht mehr gibt. Keiner dieser Texte war
- * falsch, als er geschrieben wurde. Nichts hat sie verglichen.
+ * The repository is public; every checked-in text file is therefore product
+ * communication. On 24.09.2026 there were 99 files outside `docs/archiv/` and
+ * `docs/korpus/`, and they described five different products: the
+ * modernisation assistant of v1.9 (README), the seven stages as the product
+ * (CLAUDE.md, ARCHITECTURE.md, the agents' briefs), the pilot with activation
+ * (S4 documentation), the target picture 2.8 (DESIGN.md) and a dark surface
+ * that has not existed since 1.6. None of these texts was wrong when it was
+ * written. Nothing compared them.
  *
- * Drei Prüfungen, wie die Roadmap sie verlangt:
+ * Three checks, as the roadmap asks for them:
  *
- *   (a) keine öffentliche Datei nennt, was 3.0 entfernt hat (Liste
- *       `retired` in `docs/registers/vocabulary.json`, aus 3.0.5 und §8);
- *   (b) jeder Kernbegriff hat genau eine Schreibweise (Liste `terms`);
- *   (c) jede Datei außerhalb von Archiv und Korpus steht in der Inventur
- *       `docs/registers/public-texts.json`, mit ihrer Entscheidung.
+ *   (a) no public file names what 3.0 removed (list `retired` in
+ *       `docs/registers/vocabulary.json`, from 3.0.5 and §8);
+ *   (b) every core term has exactly one spelling (list `terms`);
+ *   (c) every file outside archive and corpus stands in the inventory
+ *       `docs/registers/public-texts.json`, with its decision.
  *
- * **Die Texte werden mit 3.0 umgestellt, nicht vorher** — bis dahin beschreiben
- * sie, was ausgeliefert ist. Deshalb gilt heute nur (c) und der Selbsttest der
- * Ausdrücke. (a), (b) und der Vollzug der Entscheidungen hängen an einem
- * Schalter, `PUBLIC_TEXTS_ARMED`, der mit 3.0.1 auf `true` geht; bis dahin
- * laufen sie als `test.fixme`. Der Ausgangswert steht in der Inventur unter
- * `baseline` (am 24.09.2026: 30 Verstöße gegen (a), 39 gegen (b)); der Test
- * „Ausgangswert" misst ihn bei jedem Lauf neu und urteilt nicht.
+ * **The texts were switched with 3.0, not before** — until then they described
+ * what was shipped. (a), (b) and the execution of the decisions hang on a
+ * switch, `PUBLIC_TEXTS_ARMED`, armed with the 3.0.8 text step on 02.10.2026
+ * (after 3.0.1); before that they ran as `test.fixme`. The starting value is in
+ * the inventory under `baseline` (on 24.09.2026: 30 violations of (a), 39 of
+ * (b)); the "baseline" test measures it again on every run and does not judge.
  *
- * Warum ein Schalter statt einer Sperrklinke, die heute schon keine neuen
- * Verstöße zulässt: `docs/BACKLOG.md` und die Runbooks wachsen täglich und
- * dürfen bis 3.0 das Ausgelieferte beschreiben — auch den 7-Stufen-Workflow.
- * Eine Sperrklinke würde diese ehrlichen Einträge rot machen.
+ * Why a switch rather than a ratchet that allowed no new violations from the
+ * start: `docs/BACKLOG.md` and the runbooks grew daily and were allowed to
+ * describe what was shipped until 3.0 — the seven stages as the product
+ * included. A ratchet would have turned those honest entries red.
  */
 
-/** Mit 3.0.1 auf `true` — dann gelten (a), (b) und der Vollzug der Entscheidungen. */
-const PUBLIC_TEXTS_ARMED = false;
+/** Armed with the 3.0.8 text step (02.10.2026): (a), (b) and the execution of the decisions apply. */
+const PUBLIC_TEXTS_ARMED = true;
 
 /**
- * Die Chronik — von (a) und (b) ausgenommen, ausdrücklich und hier, nicht nur in
- * der Inventur (Entscheidung Sonny 24.09.2026). Diese Dateien sind Geschichte
- * oder legen die Streichungen fest: ein datierter Eintrag, der den
- * 7-Stufen-Workflow oder Dark Mode nennt, beschreibt richtig, was damals galt,
- * und die Roadmap muss das Gestrichene nennen, um es zu streichen. Umschreiben
- * hieße, die Geschichte zu fälschen. Die Liste ist geschlossen: eine weitere
- * Ausnahme für Prosa verlangt einen Eintrag hier, mit Begründung.
+ * The chronicle — exempt from (a) and (b), explicitly and here, not only in the
+ * inventory (decision Sonny 24.09.2026). These files are history or fix the
+ * removals: a dated entry that names the seven stages as the product, or dark
+ * mode, describes correctly what applied then, and the roadmap has to name what
+ * it removes in order to remove it. Rewriting them would falsify history. The
+ * list is closed: a further exception for prose needs an entry here, with a
+ * reason.
  */
 const CHRONICLE: Record<string, string> = {
-  'CHANGELOG.md': 'Versionshistorie — jeder Eintrag beschreibt das Produkt seines Datums.',
-  'docs/BACKLOG.md': 'Arbeitsprotokoll — datierte Abschnitte; die abgeschlossenen vor 3.0 werden mit 3.0 archiviert.',
-  'DESIGN.md': 'Legt 3.0 und die Streichungen fest — nennt das Entfernte, um es zu verbieten.',
-  'docs/ROADMAP.md': 'Die verbindliche Roadmap — Quelle der Streichliste und datierter Entscheidungen.',
-  'docs/design/decisions.md': 'ADR-Log — Einträge werden nie geändert, nur ersetzt.',
+  'CHANGELOG.md': 'Version history — every entry describes the product of its date.',
+  'docs/BACKLOG.md': 'Work log — dated sections; the ones completed before 3.0 are archived with 3.0.',
+  'DESIGN.md': 'Fixes 3.0 and the removals — names what was removed in order to forbid it.',
+  'docs/ROADMAP.md': 'The binding roadmap — source of the removal list and of dated decisions.',
+  'docs/design/decisions.md': 'ADR log — entries are never changed, only superseded.',
 };
 
-/** Ausnahmen, die keine Prosa über das Produkt sind: Rechtstexte und ABAP-Quelltext. */
+/** Exceptions that are not prose about the product: legal texts and ABAP source. */
 const NOT_PROSE_KINDS = ['legal', 'abap-sample'];
 
 const ROOT = path.resolve(__dirname, '..');
@@ -77,7 +77,7 @@ interface Entry {
   reason: string;
   effort: 'none' | 'XS' | 'S' | 'M' | 'L';
   guard: Guard;
-  /** Datum, an dem die Entscheidung vollzogen wurde (update, archive oder delete). */
+  /** Date on which the decision was executed (update, archive or delete). */
   executed?: string;
 }
 interface Retired { id: string; patterns: string[]; allowIfLine?: string; samples: { hit: string; allowed: string } }
@@ -87,22 +87,25 @@ const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 const register = () => JSON.parse(read(REGISTER)) as { files: Entry[]; served: { path: string; decision: string }[]; baseline: unknown };
 const vocabulary = () => JSON.parse(read(VOCABULARY)) as { negationLine: string; terms: Term[]; retired: Retired[] };
 
-/** Der Umfang von (c): dieselbe Regel wie `schema.scope` in der Inventur. */
+/** The scope of (c): the same rule as `schema.scope` in the inventory. */
 const inScope = (f: string) =>
   (/\.(md|mdx|txt)$/i.test(f) || /^(LICENSE|NOTICE)$/.test(f)) && !/^docs\/(archiv|korpus)\//.test(f);
 
-function trackedTexts(): string[] {
+function trackedFiles(): string[] {
   return execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' })
     .split('\n')
     .map((l) => l.trim())
-    .filter(Boolean)
-    .filter(inScope);
+    .filter(Boolean);
+}
+
+function trackedTexts(): string[] {
+  return trackedFiles().filter(inScope);
 }
 
 /**
- * Eine Zeile verstößt gegen (a), wenn ein Muster trifft und weder die Zeile noch
- * ihre Vorgängerin das Entfernte ausdrücklich als entfernt nennt — Markdown
- * bricht „Deliberately not built: tenants, SSO," über zwei Zeilen um.
+ * A line violates (a) when a pattern matches and neither the line nor the one
+ * before it names the removed item explicitly as removed — Markdown wraps
+ * "Deliberately not built: tenants, SSO," over two lines.
  */
 function retiredHits(text: string, v: ReturnType<typeof vocabulary>) {
   const neg = new RegExp(v.negationLine, 'i');
@@ -120,7 +123,7 @@ function retiredHits(text: string, v: ReturnType<typeof vocabulary>) {
   return hits;
 }
 
-/** (b): Bezeichner in Backticks sind Code, kein Text (`abcd-classification.ts`). */
+/** (b): identifiers in backticks are code, not text (`abcd-classification.ts`). */
 function termHits(text: string, v: ReturnType<typeof vocabulary>) {
   const hits: { id: string; line: number; text: string }[] = [];
   text.split(/\r?\n/).forEach((line, i) => {
@@ -128,7 +131,7 @@ function termHits(text: string, v: ReturnType<typeof vocabulary>) {
     for (const t of v.terms) {
       t.variants.forEach((variant) => {
         if (new RegExp(variant.pattern, variant.flags).test(prose)) {
-          hits.push({ id: `${t.id}: "${variant.note || variant.pattern}" statt "${t.en}"`, line: i + 1, text: line.trim().slice(0, 140) });
+          hits.push({ id: `${t.id}: "${variant.note || variant.pattern}" instead of "${t.en}"`, line: i + 1, text: line.trim().slice(0, 140) });
         }
       });
     }
@@ -136,105 +139,105 @@ function termHits(text: string, v: ReturnType<typeof vocabulary>) {
   return hits;
 }
 
-/** Was (a) und (b) lesen: Dateien der Inventur, die es gibt und die nicht ausgenommen sind. */
+/** What (a) and (b) read: inventory files that exist and are not exempt. */
 function checkedFiles(kind: 'removed' | 'terms') {
   return register().files.filter((e) => !(e.path in CHRONICLE) && e.guard[kind] === 'check' && fs.existsSync(path.resolve(ROOT, e.path)));
 }
 
 const armed = PUBLIC_TEXTS_ARMED ? test : test.fixme;
 
-test.describe('öffentliche Texte aus einem Guss (3.0.8)', () => {
-  test('(c) jede Textdatei außerhalb von Archiv und Korpus steht in der Inventur', () => {
+test.describe('public texts of a piece (3.0.8)', () => {
+  test('(c) every text file outside archive and corpus stands in the inventory', () => {
     const entries = register().files;
     const listed = new Set(entries.map((e) => e.path));
     const tracked = trackedTexts();
-    // Die Probe gegen einen leeren Umfang: ohne git ls-files wäre (c) grün und leer.
-    // Am 02.10.2026, nach dem Vollzug der Archiv-Entscheidungen, sind es 43 Dateien.
-    expect(tracked.length, 'git ls-files liefert keine Textdateien — der Umfang ist kaputt, nicht leer').toBeGreaterThan(30);
+    // The probe against an empty scope: without git ls-files, (c) would be green and empty.
+    // On 02.10.2026, after the archive decisions were executed, there are 43 files.
+    expect(tracked.length, 'git ls-files returns no text files — the scope is broken, not empty').toBeGreaterThan(30);
 
     const missing = tracked.filter((f) => !listed.has(f));
-    expect(missing, `ohne Eintrag in ${REGISTER} — Zweck, Zielgruppe und Entscheidung nachtragen`).toEqual([]);
+    expect(missing, `no entry in ${REGISTER} — add purpose, audience and decision`).toEqual([]);
 
-    // Ein Eintrag, der bleiben soll, dessen Datei aber fehlt, ist eine Inventur, die lügt.
+    // An entry that is meant to stay but whose file is missing is an inventory that lies.
     const vanished = entries.filter((e) => (e.decision === 'update' || e.decision === 'keep') && !fs.existsSync(path.resolve(ROOT, e.path)));
-    expect(vanished.map((e) => e.path), 'in der Inventur als bleibend geführt, aber nicht mehr da').toEqual([]);
+    expect(vanished.map((e) => e.path), 'listed in the inventory as staying, but no longer there').toEqual([]);
 
     const dupes = entries.map((e) => e.path).filter((p, i, a) => a.indexOf(p) !== i);
-    expect(dupes, 'doppelte Einträge').toEqual([]);
+    expect(dupes, 'duplicate entries').toEqual([]);
   });
 
-  test('(c) jede Entscheidung ist vollständig und begründet', () => {
+  test('(c) every decision is complete and has a reason', () => {
     const bad: string[] = [];
     for (const e of register().files) {
-      if (!['update', 'archive', 'delete', 'keep'].includes(e.decision)) bad.push(`${e.path}: Entscheidung "${e.decision}"`);
-      if (!['none', 'XS', 'S', 'M', 'L'].includes(e.effort)) bad.push(`${e.path}: Aufwand "${e.effort}"`);
-      for (const k of ['purpose', 'audience', 'saysToday', 'reason'] as const) if (!e[k]?.trim()) bad.push(`${e.path}: ${k} leer`);
-      if (!Array.isArray(e.wrongWith30)) bad.push(`${e.path}: wrongWith30 fehlt`);
-      if (e.decision === 'archive' && !e.archiveTarget?.startsWith('docs/archiv/')) bad.push(`${e.path}: archiveTarget muss unter docs/archiv/ liegen`);
-      if (e.decision !== 'archive' && e.archiveTarget) bad.push(`${e.path}: archiveTarget ohne Entscheidung archive`);
+      if (!['update', 'archive', 'delete', 'keep'].includes(e.decision)) bad.push(`${e.path}: decision "${e.decision}"`);
+      if (!['none', 'XS', 'S', 'M', 'L'].includes(e.effort)) bad.push(`${e.path}: effort "${e.effort}"`);
+      for (const k of ['purpose', 'audience', 'saysToday', 'reason'] as const) if (!e[k]?.trim()) bad.push(`${e.path}: ${k} empty`);
+      if (!Array.isArray(e.wrongWith30)) bad.push(`${e.path}: wrongWith30 missing`);
+      if (e.decision === 'archive' && !e.archiveTarget?.startsWith('docs/archiv/')) bad.push(`${e.path}: archiveTarget must lie under docs/archiv/`);
+      if (e.decision !== 'archive' && e.archiveTarget) bad.push(`${e.path}: archiveTarget without decision archive`);
       for (const k of ['removed', 'terms'] as const) {
         if (!['check', 'exempt'].includes(e.guard?.[k])) bad.push(`${e.path}: guard.${k}`);
       }
-      if ((e.guard?.removed === 'exempt' || e.guard?.terms === 'exempt') && !e.guard.why?.trim()) bad.push(`${e.path}: Ausnahme ohne Begründung`);
-      // Wer umgestellt werden muss, sagt, was falsch wird; wer bleibt, wie er ist, braucht es nicht.
-      if (e.decision === 'update' && e.wrongWith30.length === 0) bad.push(`${e.path}: update ohne einen Punkt in wrongWith30`);
+      if ((e.guard?.removed === 'exempt' || e.guard?.terms === 'exempt') && !e.guard.why?.trim()) bad.push(`${e.path}: exemption without a reason`);
+      // A file that has to be switched says what becomes wrong; one that stays as it is does not need to.
+      if (e.decision === 'update' && e.wrongWith30.length === 0) bad.push(`${e.path}: update without a point in wrongWith30`);
     }
     expect(bad).toEqual([]);
   });
 
-  test('die Chronik ist von (a) und (b) ausgenommen, ausdrücklich und begründet — und nichts sonst ohne Grund', () => {
+  test('the chronicle is exempt from (a) and (b), explicitly and with a reason — and nothing else without one', () => {
     const entries = register().files;
     const problems: string[] = [];
     for (const [file, why] of Object.entries(CHRONICLE)) {
       const e = entries.find((x) => x.path === file);
-      if (!e) { problems.push(`${file}: steht in CHRONICLE, aber nicht in der Inventur`); continue; }
-      if (!fs.existsSync(path.resolve(ROOT, file))) problems.push(`${file}: steht in CHRONICLE, gibt es aber nicht`);
-      if (e.guard.removed !== 'exempt' || e.guard.terms !== 'exempt') problems.push(`${file}: Chronik, in der Inventur aber nicht von (a) und (b) ausgenommen`);
-      if (!/chronicle/i.test(e.guard.why ?? '')) problems.push(`${file}: guard.why nennt die Chronik nicht`);
-      if (!why.trim()) problems.push(`${file}: ohne Begründung in CHRONICLE`);
+      if (!e) { problems.push(`${file}: in CHRONICLE, but not in the inventory`); continue; }
+      if (!fs.existsSync(path.resolve(ROOT, file))) problems.push(`${file}: in CHRONICLE, but does not exist`);
+      if (e.guard.removed !== 'exempt' || e.guard.terms !== 'exempt') problems.push(`${file}: chronicle, but not exempt from (a) and (b) in the inventory`);
+      if (!/chronicle/i.test(e.guard.why ?? '')) problems.push(`${file}: guard.why does not name the chronicle`);
+      if (!why.trim()) problems.push(`${file}: no reason in CHRONICLE`);
     }
-    // Die Liste ist geschlossen: jede andere Ausnahme ist kein Prosatext über das Produkt.
+    // The list is closed: every other exemption is something that is not prose about the product.
     for (const e of entries) {
       const exempt = e.guard.removed === 'exempt' || e.guard.terms === 'exempt';
       if (exempt && !(e.path in CHRONICLE) && !NOT_PROSE_KINDS.includes(e.kind)) {
-        problems.push(`${e.path}: von (a)/(b) ausgenommen, aber weder Chronik noch ${NOT_PROSE_KINDS.join('/')}`);
+        problems.push(`${e.path}: exempt from (a)/(b), but neither chronicle nor ${NOT_PROSE_KINDS.join('/')}`);
       }
     }
     expect(problems).toEqual([]);
   });
 
-  test('die ausgelieferten Texte der Inventur zeigen auf Quellen, die es gibt', () => {
+  test('the served texts of the inventory point to sources that exist', () => {
     const missing = register().served.map((s) => s.path.split('#')[0]).filter((p) => !fs.existsSync(path.resolve(ROOT, p)));
     expect(missing).toEqual([]);
   });
 
-  test('die Ausdrücke des Vokabulars treffen ihre Beispiele und nur sie', () => {
+  test('the vocabulary expressions match their samples and only them', () => {
     const v = vocabulary();
     const problems: string[] = [];
-    // Ein Muster, das nicht kompiliert, würde sonst erst mit 3.0.1 auffallen.
+    // A pattern that does not compile would otherwise surface only in an armed check.
     for (const t of v.terms) for (const x of t.variants) {
       try { new RegExp(x.pattern, x.flags); } catch (err) { problems.push(`${t.id}: ${String(err)}`); }
     }
     for (const r of v.retired) {
-      if (retiredHits(r.samples.hit, v).every((h) => h.id !== r.id)) problems.push(`${r.id}: trifft sein Beispiel nicht — "${r.samples.hit}"`);
-      if (retiredHits(r.samples.allowed, v).length) problems.push(`${r.id}: meldet die erlaubte Zeile — "${r.samples.allowed}"`);
+      if (retiredHits(r.samples.hit, v).every((h) => h.id !== r.id)) problems.push(`${r.id}: does not match its sample — "${r.samples.hit}"`);
+      if (retiredHits(r.samples.allowed, v).length) problems.push(`${r.id}: reports the allowed line — "${r.samples.allowed}"`);
     }
     const ids = [...v.terms.map((t) => t.id), ...v.retired.map((r) => r.id)];
-    ids.filter((id, i) => ids.indexOf(id) !== i).forEach((id) => problems.push(`doppelte ID ${id}`));
-    // Die kanonische Schreibweise darf von keiner eigenen Variante getroffen werden —
-    // sonst verlangt (b) etwas, das es selbst verbietet.
+    ids.filter((id, i) => ids.indexOf(id) !== i).forEach((id) => problems.push(`duplicate ID ${id}`));
+    // The canonical spelling must not be matched by any of its own variants —
+    // otherwise (b) demands something it forbids itself.
     for (const t of v.terms) for (const x of t.variants) {
-      if (new RegExp(x.pattern, x.flags).test(t.en)) problems.push(`${t.id}: Variante "${x.pattern}" trifft die kanonische Form "${t.en}"`);
+      if (new RegExp(x.pattern, x.flags).test(t.en)) problems.push(`${t.id}: variant "${x.pattern}" matches the canonical form "${t.en}"`);
     }
     expect(problems).toEqual([]);
   });
 
-  test('die umgestellten Texte halten (a) und (b) schon heute', () => {
-    // Was mit 3.0.8 umgestellt ist, soll nicht erst mit dem Schalter gegen den
-    // Guard laufen. Die README war bis dahin der Entwurf docs/drafts/README-3.0.md;
-    // er ist mit der Umstellung zur README.md geworden und geloescht. Jede Datei,
-    // deren Umstellung die Inventur als vollzogen fuehrt (`executed` bei
-    // update), wird hier sofort gemessen.
+  test('the switched texts hold (a) and (b)', () => {
+    // What 3.0.8 switched was measured against the guard as soon as it was
+    // switched, before the switch above was armed. The README was the draft
+    // docs/drafts/README-3.0.md until then; with the switch it became README.md
+    // and the draft was deleted. Every file whose switch the inventory records
+    // as executed (`executed` on an update) is measured here.
     const v = vocabulary();
     const done = register().files.filter((e) => e.decision === 'update' && e.executed && !(e.path in CHRONICLE));
     expect(done.map((e) => e.path)).toContain('README.md');
@@ -244,48 +247,48 @@ test.describe('öffentliche Texte aus einem Guss (3.0.8)', () => {
     }
   });
 
-  test('die README selbst', () => {
+  test('the README itself', () => {
     const v = vocabulary();
     const text = read('README.md');
     expect(retiredHits(text, v)).toEqual([]);
     expect(termHits(text, v)).toEqual([]);
   });
 
-  test('Ausgangswert: misst (a) und (b), ohne zu urteilen', () => {
+  test('baseline: measures (a) and (b) without judging', () => {
     const v = vocabulary();
     const a = checkedFiles('removed').flatMap((e) => retiredHits(read(e.path), v));
     const b = checkedFiles('terms').flatMap((e) => termHits(read(e.path), v));
     test.info().annotations.push(
-      { type: '3.0.8 (a) Verstöße heute', description: String(a.length) },
-      { type: '3.0.8 (b) Verstöße heute', description: String(b.length) },
+      { type: '3.0.8 (a) violations today', description: String(a.length) },
+      { type: '3.0.8 (b) violations today', description: String(b.length) },
     );
-    // Kein Urteil über die Zahl — nur, dass gemessen wurde.
+    // No judgement on the number — only that it was measured.
     expect(checkedFiles('removed').length).toBeGreaterThan(0);
   });
 
-  armed('(a) keine öffentliche Datei nennt, was 3.0 entfernt hat', () => {
+  armed('(a) no public file names what 3.0 removed', () => {
     const v = vocabulary();
     const found = checkedFiles('removed').flatMap((e) => retiredHits(read(e.path), v).map((h) => `${e.path}:${h.line} [${h.id}] ${h.text}`));
-    expect(found, 'nennt Entferntes — umschreiben, archivieren oder als entfernt benennen').toEqual([]);
+    expect(found, 'names a removed item — rewrite it, archive the file, or name the item as removed').toEqual([]);
   });
 
-  armed('(b) jeder Kernbegriff hat genau eine Schreibweise', () => {
+  armed('(b) every core term has exactly one spelling', () => {
     const v = vocabulary();
     const found = checkedFiles('terms').flatMap((e) => termHits(read(e.path), v).map((h) => `${e.path}:${h.line} ${h.id}`));
-    expect(found, 'Abweichung vom Vokabular').toEqual([]);
+    expect(found, 'deviation from the vocabulary').toEqual([]);
   });
 
-  armed('(c) die Entscheidungen der Inventur sind vollzogen', () => {
+  armed('(c) the decisions of the inventory are executed', () => {
     const archiveIndex = read('docs/archiv/README.md');
     const open: string[] = [];
     for (const e of register().files) {
       const here = fs.existsSync(path.resolve(ROOT, e.path));
-      if ((e.decision === 'archive' || e.decision === 'delete') && here) open.push(`${e.path}: ${e.decision} nicht vollzogen`);
+      if ((e.decision === 'archive' || e.decision === 'delete') && here) open.push(`${e.path}: ${e.decision} not executed`);
       if (e.decision === 'archive') {
         const moved = path.posix.join(e.archiveTarget!, path.posix.basename(e.path));
-        if (!fs.existsSync(path.resolve(ROOT, moved))) open.push(`${e.path}: fehlt unter ${moved}`);
+        if (!fs.existsSync(path.resolve(ROOT, moved))) open.push(`${e.path}: missing under ${moved}`);
         if (!archiveIndex.includes(path.posix.basename(e.path)) && !archiveIndex.includes(e.archiveTarget!.replace(/^docs\/archiv\//, ''))) {
-          open.push(`${e.path}: kein Eintrag im Archiv-Index`);
+          open.push(`${e.path}: no entry in the archive index`);
         }
       }
     }
@@ -295,9 +298,18 @@ test.describe('öffentliche Texte aus einem Guss (3.0.8)', () => {
 
 /**
  * Roadmap 3.0.14 — everything public is English, and only English (decision
- * Sonny 30.09.2026). The named exceptions of the roadmap are `docs/archiv/`
- * (history) and the German privacy notice `app/datenschutz/de`; neither is in
- * `trackedTexts()`. `docs/korpus/` is outside the scope of the inventory as well.
+ * Sonny 30.09.2026). The named exceptions, and nothing else:
+ *
+ * - `docs/archiv/` (history) and the German privacy notice `app/datenschutz/de`
+ *   (a legal text whose German version prevails, E-7); `docs/korpus/` is the
+ *   domain source and outside the inventory's scope as well;
+ * - decided by Sonny on 02.10.2026, the frozen measurement material: the corpus
+ *   and benchmark cases (`tests/korpus/`, `tests/prozess-benchmark/` — data, not
+ *   code, so the code half below never reads them) and the two judge briefs
+ *   (`GERMAN_FROZEN` below), because translating them would mean measuring
+ *   again; and the security and UX reports mailed to the owner, which are
+ *   sealed, not public — their German is in string literals, which the code
+ *   half does not read.
  *
  * What is measured is German *prose*: a sentence with three or more distinct
  * German function words, after inline code, fenced code, link targets and
@@ -305,12 +317,12 @@ test.describe('öffentliche Texte aus einem Guss (3.0.8)', () => {
  * subject the pipeline sends, a label of the German privacy page, a corpus
  * sentence — stays quotable; a German sentence that explains something does not.
  */
-const GERMAN_PENDING: Record<string, string> = {
+const GERMAN_FROZEN: Record<string, string> = {
   // Benchmark fixtures, not documentation: the judge reads these prompts, and the
   // benchmark is frozen (docs/prozess-benchmark/BERICHT.md). Translating them
-  // changes the measurement — that is Sonny's decision, not a text edit.
-  'tests/prozess-benchmark/judge/richter-brief.md': 'judge prompt of the frozen process benchmark — decision Sonny pending',
-  'tests/prozess-benchmark/judge/richter-brief-schluss.md': 'judge prompt of the frozen process benchmark — decision Sonny pending',
+  // would change the measurement (decision Sonny 02.10.2026: they stay German).
+  'tests/prozess-benchmark/judge/richter-brief.md': 'judge prompt of the frozen process benchmark — stays German (Sonny, 02.10.2026)',
+  'tests/prozess-benchmark/judge/richter-brief-schluss.md': 'judge prompt of the frozen process benchmark — stays German (Sonny, 02.10.2026)',
 };
 
 const GERMAN_WORDS = /(?<![\p{L}])(und|nicht|wird|werden|wurde|oder|dass|keine?n?|sind|auch|noch|wenn|eine[nmrs]?|für|über|bleibt|steht|kein|nach|beim|zum|zur|vom|sich|schon|nur|weil|jede[rsn]?|diese[rsnm]?|dem|des|ohne|gegen|seit|ein|im|auf|aus|bei|mit|von|der|das|hat|haben|kann|muss|soll|statt|heute|damit|dann|aber|doch|sondern)(?![\p{L}])/giu;
@@ -344,6 +356,18 @@ function germanSentences(text: string): string[] {
   return found;
 }
 
+/**
+ * The code half reads with the release scan's own lexer (`scripts/release/text-scan.mjs`),
+ * so the guard and the measure in `docs/release/3.0-text-scan.md` cannot drift apart.
+ */
+type CodeHit = { line: number; text: string };
+interface TextScan {
+  GERMAN_WORDS: RegExp;
+  isCodeInScope: (rel: string) => boolean;
+  scanCode: (rel: string, src: string) => { comments: CodeHit[]; titles: CodeHit[]; strings: CodeHit[]; jsx: CodeHit[] };
+}
+const textScan = () => import(pathToFileURL(path.resolve(ROOT, 'scripts/release/text-scan.mjs')).href) as Promise<TextScan>;
+
 test.describe('everything public is English (3.0.14)', () => {
   test('the measure finds German prose and lets quoted German and English pass', () => {
     expect(germanSentences('Die Engine baut kein Prozessskelett, wenn der Code fehlt.')).toHaveLength(1);
@@ -355,10 +379,46 @@ test.describe('everything public is English (3.0.14)', () => {
   test('no public text file outside the named exceptions has German prose', () => {
     const files = trackedTexts();
     expect(files.length).toBeGreaterThan(30);
-    for (const pending of Object.keys(GERMAN_PENDING)) expect(files, `${pending} is listed as pending but not tracked`).toContain(pending);
+    for (const frozen of Object.keys(GERMAN_FROZEN)) expect(files, `${frozen} is listed as frozen but not tracked`).toContain(frozen);
     const found = files
-      .filter((f) => !(f in GERMAN_PENDING))
+      .filter((f) => !(f in GERMAN_FROZEN))
       .flatMap((f) => germanSentences(read(f)).map((s) => `${f}: ${s}`));
     expect(found, 'German prose in a public file — translate it, or quote the German string the text is about').toEqual([]);
+  });
+
+  test('the code measure finds German comments and titles and lets German data pass', async () => {
+    const scan = await textScan();
+    // Same word list as the prose measure — one measure, two readers.
+    expect(scan.GERMAN_WORDS.source).toBe(GERMAN_WORDS.source);
+    const sample = [
+      '// Die Engine baut kein Skelett, wenn der Code fehlt.',
+      "test('der Fachsatz bleibt stehen, wenn die Regel fehlt', () => {",
+      "  const prompt = 'Du bist ein Prüfer und schreibst auf Deutsch, weil der Bericht an den Owner geht.';",
+      '  // A quoted German output stays: "nicht bestimmt, weil der Code fehlt".',
+      '});',
+    ].join('\n');
+    const hit = scan.scanCode('tests/sample.spec.ts', sample);
+    expect(hit.comments.map((h) => h.line)).toEqual([1]);
+    expect(hit.titles.map((h) => h.line)).toEqual([2]);
+    // A German string literal — a prompt, a mail to the owner, a fixture — is data: counted, not guarded.
+    expect(hit.strings).toHaveLength(1);
+    expect(scan.isCodeInScope('lib/abap/business-statement.ts')).toBe(true);
+    expect(scan.isCodeInScope('docs/archiv/old.ts')).toBe(false);
+  });
+
+  test('no comment or test title in code outside the named exceptions is German', async () => {
+    // This half reads tests/ as well: it is green only once lib/, app/, components/,
+    // hooks/, scripts/ and tests/ are all English (3.0.14, both halves of 02.10.2026).
+    const scan = await textScan();
+    const files = trackedFiles().filter(scan.isCodeInScope);
+    // The probe against an empty scope.
+    expect(files.length, 'git ls-files returns no code files — the scope is broken, not empty').toBeGreaterThan(500);
+    const found: string[] = [];
+    for (const f of files) {
+      const hit = scan.scanCode(f, read(f));
+      for (const h of hit.comments) found.push(`${f}:${h.line} comment: ${h.text}`);
+      for (const h of hit.titles) found.push(`${f}:${h.line} title: ${h.text}`);
+    }
+    expect(found, 'German comment or test title in code — translate it; a German string the code is about stays quoted').toEqual([]);
   });
 });

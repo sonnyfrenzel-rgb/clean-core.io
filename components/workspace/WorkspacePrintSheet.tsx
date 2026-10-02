@@ -43,8 +43,8 @@ import type { TableDependency } from '@/lib/abap/table-dependencies';
  *   5. the SAP objects the code names, each with SAP's clean core level A–D
  *      as the IT view shows it — read under the project's target profile
  *      (`catalogLookupTargetOf` → `/api/abcd-classify`), with a short legend.
- *      Owner decision 01.10.2026 ("Clean core level anzeigen ja auf dem
- *      Druckblatt"). The level is orientation: it is not part of the signed
+ *      Owner decision 01.10.2026 ("show the clean core level, yes, on the
+ *      print sheet"). The level is orientation: it is not part of the signed
  *      run or the audit pack, and the sheet says so. An object without a
  *      grade prints "not determined", and a lookup that has not answered
  *      prints that, never a guessed letter;

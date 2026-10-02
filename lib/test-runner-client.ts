@@ -12,7 +12,7 @@ import { logger } from './logger';
 /**
  * Where a test run executes, decided on the server (roadmap 8.9, CR-09).
  *
- * "Dort oder gar nicht": generated tests execute in the isolated runner
+ * "There or not at all": generated tests execute in the isolated runner
  * service, or they do not execute. The one exception is the Firebase emulator
  * — local development and CI, where no runner is deployed — and it is named:
  * the response and the receipt say `local-emulator`, so nobody mistakes it for

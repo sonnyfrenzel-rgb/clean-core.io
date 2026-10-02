@@ -10,7 +10,7 @@ import { logger, errMessage } from '@/lib/logger';
  * DELETE /api/s4-credentials — Delete stored credentials (GDPR erasure).
  */
 
-// Speichern (verschlüsselt). Body: { url, username, password, authType, tokenUrl, btpDestinationJson }
+// Save (encrypted). Body: { url, username, password, authType, tokenUrl, btpDestinationJson }
 export async function POST(req: Request) {
   const decoded = await verifyRequestAuth(req);
   if (!decoded) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   }
 }
 
-// Status (ohne Secrets, maskiert).
+// Status (without secrets, masked).
 export async function GET(req: Request) {
   const decoded = await verifyRequestAuth(req);
   if (!decoded) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
@@ -98,7 +98,7 @@ export async function GET(req: Request) {
   });
 }
 
-// Löschen.
+// Delete.
 export async function DELETE(req: Request) {
   const decoded = await verifyRequestAuth(req);
   if (!decoded) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });

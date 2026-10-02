@@ -9,7 +9,7 @@ import { editorZoomLabel, wt } from '@/lib/workspace-messages';
  * Zoom out, the zoom in per cent, zoom in, fit — and the full-screen toggle.
  * The editor's controls, drawn by the editor and by the reading map alike, so
  * the two canvases a reader meets are moved the same way (owner 02.10.2026:
- * "ich brauche auch hier + - und vollbild wie auch sonst").
+ * "I need + - and full screen here too, like everywhere else").
  *
  * `scope` only names the `data-*` hooks (`data-editor-zoom-in`,
  * `data-map-zoom-in`, …): the specs of each canvas find their own buttons.

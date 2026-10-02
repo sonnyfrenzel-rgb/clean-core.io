@@ -1,7 +1,7 @@
 /**
- * Documentation's long lists — owner feedback 02.10.2026: "die langen Listen
- * standardmäßig eingeklappt lassen, das sind Details die die meisten User nicht
- * benötigen aber da sein sollten".
+ * Documentation's long lists — owner feedback 02.10.2026: "keep the long lists
+ * collapsed by default, those are details most users do not need but that
+ * should be there".
  *
  * One rule for the whole stage, real project and demo alike: a list of more
  * than {@link LONG_LIST_ROWS} rows starts folded behind its heading, its count

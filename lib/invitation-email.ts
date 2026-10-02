@@ -107,7 +107,7 @@ export const ADDRESS_CONFIRMATION_SUBJECT = 'Confirm your email address for Clea
  *
  * **Registration is untouched.** Nothing about signing up changes; an account
  * that never opens an invitation is never asked to confirm anything, exactly as
- * before (`docs/ROADMAP.md`: "Anmeldung und Konto bleiben, wie sie sind"). What
+ * before (`docs/ROADMAP.md`: "Sign-up and account stay as they are"). What
  * changes is what an *unconfirmed* address is worth: it gets no insight into
  * anybody else's source code, because "the account says it is this address" and
  * "this address let it in" are different claims, and an invitation is bound to

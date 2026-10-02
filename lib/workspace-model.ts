@@ -8,7 +8,7 @@
  * not work out. Every one of them is a place to be dishonest cheaply, and the
  * roadmap row is blunt about the one that matters:
  *
- *   > sieben Status-Chips — jeder ehrlich, „nicht begonnen", solange nichts da ist
+ *   > seven status chips — each honest, "not started" as long as nothing is there
  *
  * A tick, a colour or a percentage for a phase nobody ran is the defect this
  * phase of the roadmap exists to remove. So the derivation lives here, in one
@@ -29,8 +29,8 @@
  * with the process model, and a standard candidate only carries an evidence
  * level from roadmap 7.2. They could borrow a number — the routing
  * recommendation is right there on the project — and that is precisely what
- * `DESIGN.md` §5.3 forbids: *nie „deckt der Standard ab", solange die Stufe das
- * nicht trägt*. They read "not started" and name the artefact that is missing.
+ * `DESIGN.md` §5.3 forbids: *never "the standard covers it" as long as the level does
+ * not carry that*. They read "not started" and name the artefact that is missing.
  * That one of them cannot move yet is the honest result, not an oversight.
  */
 
@@ -791,7 +791,7 @@ export interface NotDetermined {
 /**
  * What the engine could not work out — `DESIGN.md` §5.1, §5.5.
  *
- * *"Der Zweifel wird sofort beantwortet."* This area is the reason to trust the
+ * *"The doubt is answered at once."* This area is the reason to trust the
  * rest of the screen, so it is a thing with its own place and not an absence.
  *
  * The source is `assessCoverage`, which already answers exactly this question:

@@ -7,9 +7,9 @@
  * derived in pure functions so that the one rule of the roadmap row is
  * checkable in one place:
  *
- *   > **Jede Zahl aus dem Run.** Keine Animation, die eine Zahl zeigt, die nicht
- *   > aus der Analyse stammt; keine Etappe, die Fortschritt behauptet, den es
- *   > nicht gibt. Wenn eine Etappe nichts zu zeigen hat, sagt sie das.
+ *   > **Every number from the run.** No animation that shows a number that does
+ *   > not come from the analysis; no stage that claims progress that does not
+ *   > exist. If a stage has nothing to show, it says so.
  *
  * So every figure below has a named origin, and a stage with nothing to show is
  * a first-class state rather than a zero:
@@ -23,8 +23,8 @@
  *
  * **Four stages, four separate pieces of work.** They are exported one by one
  * rather than as one call, because `DESIGN.md` §5.4 forbids an artificial
- * minimum duration and §5.1 asks for *"die echten Ereignisse der Engine in ihrer
- * Reihenfolge"*. A build-up on a timer would be the six seconds of the old
+ * minimum duration and §5.1 asks for *"the engine's real events in their
+ * order"*. A build-up on a timer would be the six seconds of the old
  * evidence scanner with four labels on it. The screen runs the four calls in
  * order and reveals each stage on the return of its own call; on a small source
  * all four land in one frame, and that is the correct outcome.
@@ -62,7 +62,7 @@ import type { Project } from './types';
 /* ------------------------------------------------------- the second visit */
 
 /**
- * *„Ein zweiter Besuch hat keinen Aufbau"* — `DESIGN.md` §5.2.
+ * *"A second visit has no build-up"* — `DESIGN.md` §5.2.
  *
  * In the browser and only in the browser, for the same reason the coach marks
  * are (ADR-036, `lib/coach-marks.ts`): what a person has already seen is not a
@@ -391,7 +391,7 @@ export function processStage(skeleton: ProcessSkeleton): FirstLookStage {
  * Stage 3 — *In business language*.
  *
  * `DESIGN.md` §5.2: without a model call the stage falls away and the skeleton
- * keeps its technical names — *ein gültiges Ergebnis*. `applyNaming` already
+ * keeps its technical names — *a valid result*. `applyNaming` already
  * writes that sentence, including the reason for the absence, so it is used
  * rather than restated: two surfaces with two explanations for the same absence
  * is how a reader learns to trust neither.

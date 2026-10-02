@@ -36,9 +36,9 @@ interface Message {
   timestamp: string;
   /**
    * Set when this message was answered from the glossary rather than a model
-   * call — roadmap 6.6, `DESIGN.md` §6.1: *"eine Frage „What is …?" zu einem
-   * Glossarbegriff beantwortet der Eintrag selbst … die Antwort nennt, wenn sie
-   * aus dem Glossar kommt"*. Undefined on every other message, including the
+   * call — roadmap 6.6, `DESIGN.md` §6.1: *"a question 'What is …?' about a
+   * glossary term is answered by the entry itself … the answer states when it
+   * comes from the glossary"*. Undefined on every other message, including the
    * greeting, so the badge appears only where it is true.
    */
   source?: 'glossary';
@@ -128,7 +128,7 @@ async function loadCaseContext(projectId: string): Promise<CaseContext> {
  */
 /**
  * The time a message was written, on the reader's clock, 24-hour and with the
- * zone — `DESIGN.md` §3 ("Uhrzeiten mit Zeitzone"), e.g. "14:05 GMT+2". It used
+ * zone — `DESIGN.md` §3 ("times with time zone"), e.g. "14:05 GMT+2". It used
  * to be `toLocaleTimeString([])`, which printed whatever the browser's locale
  * chose and no zone at all.
  */
@@ -615,7 +615,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
           data-chatbot-toggle=""
           icon={isOpen ? <X size={16} aria-hidden /> : <MessageSquare size={16} aria-hidden />}
         >
-          {/* `DESIGN.md` §3.1, in so many words: „Ask AI" heißt „Ask this case".
+          {/* `DESIGN.md` §3.1, in so many words: "Ask AI" is called "Ask this case".
               It travels with the path, like the header trigger and the panel:
               outside a project there is no case, and the assistant answers from
               the general knowledge base. On a phone the label is the accessible

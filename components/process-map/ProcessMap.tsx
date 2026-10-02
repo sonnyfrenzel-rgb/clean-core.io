@@ -109,7 +109,7 @@ const BpmnEditor = dynamic(() => import('./BpmnEditor'), { ssr: false });
  * is the point of the paragraph above.
  *
  * The draft lives **here**, in `draft`, and never in `model`. Phase 3's
- * acceptance says the Ist revision is unchanged after editing, so the one way to
+ * acceptance says the as-is revision is unchanged after editing, so the one way to
  * be sure of it is that nothing writes to the model at all: the editor is handed
  * a string and hands a string back, *Discard* forgets the string, and the map
  * beside it goes on drawing `model.xml`. Whether a draft becomes a revision is
@@ -307,7 +307,7 @@ export default function ProcessMap({
    * `session` is what *Discard* bumps: the editor is keyed on it, so throwing a
    * draft away is a fresh modeller over the reconstruction rather than a
    * modeller talked into forgetting. Neither of the two ever touches `model` —
-   * the Ist revision after editing is the Ist revision before it.
+   * the as-is revision after editing is the as-is revision before it.
    */
   const [editing, setEditing] = useState(false);
   const [session, setSession] = useState(0);
@@ -334,8 +334,8 @@ export default function ProcessMap({
    * simply not this process's draft, and no clearing step has to remember to
    * run. The editor is keyed on the source as well as on `session`, so a new
    * source builds a new modeller rather than leaving one alive with the old
-   * drawing inside it. `model` is untouched either way — the Ist revision after
-   * editing is the Ist revision before it.
+   * drawing inside it. `model` is untouched either way — the as-is revision after
+   * editing is the as-is revision before it.
    */
   const [ownDraft] = useState(createDraftHolder);
   const drafts = draftHolder ?? ownDraft;

@@ -4,27 +4,26 @@ import Link from 'next/link';
 import { APP_VERSION, APP_RELEASE_DATE_DE } from '@/lib/version';
 
 /**
- * Die deutsche Fassung der Datenschutzerklärung.
+ * The German version of the privacy policy.
  *
- * Warum es sie gibt: Art. 12 Abs. 1 DSGVO verlangt die Information „in
- * präziser, transparenter, verständlicher und leicht zugänglicher Form, in
- * klarer und einfacher Sprache". Verantwortlicher, Aufsichtsbehörde und der
- * überwiegende Teil der Community sind deutschsprachig; eine ausschließlich
- * englische Erklärung mit deutschem Titel ist an dieser Stelle angreifbar
- * (Rechtsprüfung 18.09.2026).
+ * Why it exists: Art. 12(1) GDPR requires the information "in a concise,
+ * transparent, intelligible and easily accessible form, using clear and plain
+ * language". The controller, the supervisory authority and most of the
+ * community are German-speaking; a policy only in English with a German title
+ * is open to challenge at this point (legal review 18.09.2026).
  *
- * Warum die englische Fassung unter `/datenschutz` bleibt und diese hier unter
- * `/datenschutz/de` liegt: an der englischen Adresse hängen die kanonische URL,
- * jeder Verweis im Produkt und die Vertrauenskarte vor dem Hochladen, die ihre
- * Aussagen wörtlich aus `app/datenschutz/page.tsx` belegt
- * (`tests/trust-card-guard.spec.ts`). Die Adresse zu tauschen hätte all das
- * gleichzeitig bewegt, ohne dass ein Leser etwas davon hat, das ein
- * Sprachumschalter nicht auch gibt.
+ * Why the English version stays at `/datenschutz` and this one sits at
+ * `/datenschutz/de`: the English address carries the canonical URL, every
+ * link in the product and the trust card before the upload, which quotes its
+ * statements verbatim from `app/datenschutz/page.tsx`
+ * (`tests/trust-card-guard.spec.ts`). Swapping the addresses would have moved
+ * all of that at once, without giving a reader anything a language switcher
+ * does not give as well.
  *
- * **Beide Fassungen sind gleichrangig.** Keine ist eine Zusammenfassung der
- * anderen: `tests/privacy-policy-parity.spec.ts` vergleicht Abschnittszahl,
- * Nummerierung und Anker und wird rot, sobald eine Fassung einen Abschnitt hat,
- * den die andere nicht hat. Wer hier etwas ändert, ändert es drüben mit.
+ * **Both versions have equal standing.** Neither is a summary of the other:
+ * `tests/privacy-policy-parity.spec.ts` compares section count, numbering and
+ * anchors and turns red as soon as one version has a section the other does
+ * not. Whoever changes something here changes it over there as well.
  */
 
 export const metadata: Metadata = withTwitterCard({

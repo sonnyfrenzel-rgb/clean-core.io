@@ -6,8 +6,8 @@ import type { SemanticState } from '@/lib/provenance';
 import { STATE_CLASSES } from './state';
 
 /**
- * A state in words, with a dot — `DESIGN.md` §2.4 "Status als Text mit Punkt —
- * nie nur Farbe", for a state that is not on one of the fixed lists.
+ * A state in words, with a dot — `DESIGN.md` §2.4 "Status as text with a dot —
+ * never colour alone", for a state that is not on one of the fixed lists.
  *
  * `CcObjectStatus` is the same shape for *how far a piece of work has got*, and
  * it takes its value from `lib/object-status.ts`, so its word and its colour

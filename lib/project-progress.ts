@@ -6,9 +6,9 @@ import type { Project } from '@/lib/types';
  * the Status cell of "My workspace" (`DESIGN.md` §2.4: status as text with a
  * dot; mockup s7: one status and one line under it).
  *
- * Owner feedback, twice: on 01.10.2026 *"Ich verstehe hier den Status, Zahlen
- * und Farben-Logik nicht"*, and on 02.10.2026 *"der Farbcode für die Status
- * sieht viel zu verwirrend und komplex aus"*. The row then carried a seven-
+ * Owner feedback, twice: on 01.10.2026 *"I don't understand the status,
+ * numbers and colour logic here"*, and on 02.10.2026 *"the colour code for the
+ * statuses looks far too confusing and complex"*. The row then carried a seven-
  * segment bar in five looks with a legend above the list, and on projects from
  * before the trust chain it said "Not analysed yet" over "2 of 7 steps done" —
  * the bar counted a design and code that no signed analysis stands behind

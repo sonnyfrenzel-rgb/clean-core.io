@@ -5,7 +5,7 @@ import { kindWord, parseBpmn, type ParsedBpmn } from './process-map';
  * Revisions of a project's process model — roadmap 3.2.
  *
  * Every save is a revision of its own and nothing rewrites one that exists.
- * Revision 1 is the **reconstructed Ist**: it is built on the server from the
+ * Revision 1 is the **reconstructed as-is process**: it is built on the server from the
  * skeleton of the source the active run signed (`buildBpmnExport`), never from
  * an edit, and it stays what it was after any amount of modelling. Every later
  * revision carries the account that saved it and the time it was saved, read
@@ -179,7 +179,7 @@ export function isProcessRevisionRecord(value: unknown): value is ProcessRevisio
 /**
  * The line a revision carries wherever it is named.
  *
- * "Revision 1 · reconstructed from Z_MM_PO_APPROVAL.abap" for the Ist, and
+ * "Revision 1 · reconstructed from Z_MM_PO_APPROVAL.abap" for the as-is process, and
  * "Revision 2 · saved by Sonny Frenzel" for an edit. What it never says is that
  * the revision is right.
  */

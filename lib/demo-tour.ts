@@ -1,13 +1,13 @@
 /**
  * The tour through the demo workspace — roadmap 3.0.7, `DESIGN.md` §6.1.2.
  *
- *   > *„rund zwölf Stationen entlang des Wegs — Enthüllung · Not determined ·
- *   > Prozesskarte und Quellspalte · Ebenen eines großen Prozesses · eine Regel
- *   > bestätigen · Standard-Fit · IT-Kette · Management-Sicht · vier Töpfe ·
- *   > Kosten als Simulation · Entscheidung · Übergabe (Sichten in der Reihenfolge
- *   > Business · IT · Management, ADR-044). Eine Station erscheint erst, wenn man
- *   > an ihrem Ort ankommt; immer nur eine; „3 of 12" als Text; „Next", „Pause
- *   > tour", „End tour". Fortschritt nur im Browser (ADR-036)."*
+ *   > *"around twelve stations along the way — reveal · Not determined ·
+ *   > process map and source column · layers of a large process · confirming a
+ *   > rule · standard fit · IT chain · Management view · four buckets ·
+ *   > costs as simulation · decision · handover (views in the order
+ *   > Business · IT · Management, ADR-044). A station appears only when one
+ *   > arrives at its place; only ever one; "3 of 12" as text; "Next", "Pause
+ *   > tour", "End tour". Progress only in the browser (ADR-036)."*
  *
  * Pure, apart from the three storage functions at the bottom — so the order,
  * the one-at-a-time rule and the invitation rhythm are tested without a
@@ -144,7 +144,7 @@ export const TOUR_INVITATION_ACTION = 'New project';
 /** Where "New project" leads — the screen of roadmap 2.7 (§6.1.1). */
 export const TOUR_INVITATION_HREF = '/admin/new-project';
 
-/** *„3 of 12"* as text — never a progress bar (§3.1: no bar for what is not progress). */
+/** *"3 of 12"* as text — never a progress bar (§3.1: no bar for what is not progress). */
 export function tourPositionLabel(index: number, total: number = TOUR_STATIONS.length): string {
   return `${index + 1} of ${total}`;
 }
@@ -208,7 +208,7 @@ export type TourSlot =
  * The one thing a slot shows — or nothing.
  *
  * At most one slot on a screen answers non-null, because a station has one
- * place and the progress names one station: that is *„immer nur eine"* as a
+ * place and the progress names one station: that is *"only ever one"* as a
  * property of the function rather than of the page that calls it. The
  * invitation stands where the station it follows stood, so the reader finds it
  * where they pressed "Next".

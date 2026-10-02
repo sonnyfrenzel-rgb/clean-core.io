@@ -740,7 +740,7 @@ export async function assertS4TenantAccess(
   }
 
   // A second factor has to be *enrolled*, not merely honoured when present
-  // (Sonny, 18.09.2026: MFA-Zwang für S/4-Zugang). Every S/4 route also calls
+  // (Sonny, 18.09.2026: MFA mandatory for S/4 access). Every S/4 route also calls
   // `assertMfaSatisfied`, which for an enrolled account demands the factor on
   // the token; for an account that never enrolled it demands nothing, and that
   // gap was the finding both audits described. This closes it on the one path

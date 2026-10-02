@@ -1,38 +1,38 @@
 #!/usr/bin/env node
 /**
- * Referenzkorpus -> maschinenlesbares Bündel (Roadmap 2.10).
+ * Reference corpus -> machine-readable bundle (roadmap 2.10).
  *
- * Das Fallbuch ist Prosa mit einem festen Satz von Abschnitten je Fall. Dieses
- * Skript liest es und schreibt daraus `tests/korpus/cases/CC-nnn/` mit
- * `source.abap` (je Quelldatei des Falls), `profile.json` und `expected.json`,
- * plus `tests/korpus/manifest.json`.
+ * The case book is prose with a fixed set of sections per case. This script
+ * reads it and writes `tests/korpus/cases/CC-nnn/` from it, with
+ * `source.abap` (per source file of the case), `profile.json` and
+ * `expected.json`, plus `tests/korpus/manifest.json`.
  *
- * Drei Eigenschaften, an denen alles hängt:
+ * Three properties everything depends on:
  *
- *   Deterministisch — zweimal bauen ergibt byteidentische Dateien. Alle Objekte
- *   werden mit sortierten Schlüsseln geschrieben, jede Datei mit LF und genau
- *   einer abschließenden neuen Zeile. `tests/korpus-engine.spec.ts` baut im
- *   Speicher neu und vergleicht; ein Bündel, das nicht mehr zum Fallbuch passt,
- *   macht den Lauf rot.
+ *   Deterministic — building twice gives byte-identical files. Every object is
+ *   written with sorted keys, every file with LF and exactly one trailing
+ *   newline. `tests/korpus-engine.spec.ts` rebuilds in memory and compares;
+ *   a bundle that no longer matches the case book turns the run red.
  *
- *   Nichts erfunden — wo das Fallbuch eine Angabe nicht hergibt, steht `null`.
- *   Die Sollantworten werden nicht interpretiert, nur übersetzt. Der einzige
- *   Wert, der nicht wörtlich im Fall steht, ist das Zielprofil der v1-Fälle:
- *   das erklärt der Vorspann von Teil A einmal für alle 25, und `profile.json`
- *   trägt dann `declared_in: "teil-a-vorspann"` statt `"fall"`.
+ *   Nothing invented — where the case book does not give a value, it is
+ *   `null`. The expected answers are not interpreted, only translated. The
+ *   only value that is not literally in the case is the target profile of the
+ *   v1 cases: the preamble of part A explains it once for all 25, and
+ *   `profile.json` then carries `declared_in: "teil-a-vorspann"` instead of
+ *   `"fall"`.
  *
- *   Nichts verschluckt — ein Abschnitt, den dieses Skript nicht kennt, ist kein
- *   Abbruch und kein stilles Überlesen: er wird gezählt und im Bericht
- *   (`--report`) mit Fall und Überschrift genannt. Fassung 2.1 bringt Abschnitte
- *   mit, die es hier noch nicht gibt; sie sollen den Bau nicht anhalten, aber
- *   auch nicht unbemerkt bleiben.
+ *   Nothing swallowed — a section this script does not know is neither an
+ *   abort nor silently skipped: it is counted and named in the report
+ *   (`--report`) with case and heading. Version 2.1 brings sections that do
+ *   not exist here yet; they should not stop the build, but should not go
+ *   unnoticed either.
  *
- * Aufruf:
+ * Usage:
  *   node scripts/korpus/build-bundle.mjs
  *   node scripts/korpus/build-bundle.mjs --book docs/korpus/referenzkorpus-v2.1.md
- *   node scripts/korpus/build-bundle.mjs --import <quelle.md>   (redigiert + kopiert, dann baut)
- *   node scripts/korpus/build-bundle.mjs --check                (baut nichts, meldet Abweichungen)
- *   node scripts/korpus/build-bundle.mjs --report <datei.json>
+ *   node scripts/korpus/build-bundle.mjs --import <source.md>   (redacts + copies, then builds)
+ *   node scripts/korpus/build-bundle.mjs --check                (builds nothing, reports differences)
+ *   node scripts/korpus/build-bundle.mjs --report <file.json>
  */
 
 import fs from 'node:fs';
@@ -47,10 +47,10 @@ const DEFAULT_BOOK = 'docs/korpus/referenzkorpus-v2.1.md';
 const DEFAULT_OUT = 'tests/korpus';
 
 // ---------------------------------------------------------------------------
-// Kleinwerkzeug
+// Small tools
 // ---------------------------------------------------------------------------
 
-/** LF, genau eine abschließende neue Zeile — die Form, in der alles gehasht wird. */
+/** LF, exactly one trailing newline — the form everything is hashed in. */
 export function normaliseText(raw) {
   return raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
@@ -60,15 +60,15 @@ export function sha256(text) {
 }
 
 /**
- * Die kanonische Form eines Quelltextblocks: LF, kein Leerraum am Ende, genau
- * eine abschließende neue Zeile. Gegen diese Form prüfen die `Quellenhash:`-
- * Angaben des Fallbuchs — nachgerechnet an CC-001, CC-026, CC-057 und CC-060.
+ * The canonical form of a source block: LF, no trailing whitespace, exactly
+ * one trailing newline. The case book's `Quellenhash:` entries check against
+ * this form — recomputed on CC-001, CC-026, CC-057 and CC-060.
  */
 export function canonicalSource(lines) {
   return `${lines.join('\n').replace(/\s+$/, '')}\n`;
 }
 
-/** JSON mit sortierten Schlüsseln — sonst hinge die Byteidentität an der Einlesereihenfolge. */
+/** JSON with sorted keys — otherwise byte identity would depend on the read order. */
 function sortValue(value) {
   if (Array.isArray(value)) return value.map(sortValue);
   if (value && typeof value === 'object') {
@@ -83,7 +83,7 @@ export function stableJson(value) {
   return `${JSON.stringify(sortValue(value), null, 2)}\n`;
 }
 
-/** Markdown-Betonung weg, Backticks weg, Leerraum normalisiert. */
+/** Markdown emphasis removed, backticks removed, whitespace normalised. */
 function plain(text) {
   if (text == null) return null;
   const out = text
@@ -96,8 +96,8 @@ function plain(text) {
 }
 
 /**
- * Die Unabhängigkeitsstufen sind ein geschlossener Satz (Fallbuch §2). Die
- * Zeile am Fall nennt sie mit Erläuterung in Klammern; hier zählt der Bezeichner.
+ * The independence levels are a closed set (case book §2). The line on the
+ * case names them with an explanation in brackets; here the identifier counts.
  */
 const INDEPENDENCE_LEVELS = [
   'modellreview',
@@ -115,23 +115,23 @@ function parseIndependence(raw) {
   return INDEPENDENCE_LEVELS.filter((level) => new RegExp(`\\b${level}\\b`).test(text));
 }
 
-/** Der erste Backtick-Wert hinter einem Stichwort, z. B. Verwendung `read`. */
+/** The first backtick value after a keyword, e.g. Verwendung `read`. */
 function backtickValues(text) {
   return [...text.matchAll(/`([^`]*)`/g)].map((m) => m[1]);
 }
 
 /**
- * Ein Anker des Fallbuchs: `source.abap:5`, `source.abap:10+4`,
- * `zcl_route_service.clas.abap:11`, oder — in Aufzählungen — die verkürzte
- * Form `:13`, die die Datei des Vorgängers erbt.
+ * An anchor of the case book: `source.abap:5`, `source.abap:10+4`,
+ * `zcl_route_service.clas.abap:11`, or — in lists — the short form `:13`,
+ * which inherits the file of the previous one.
  */
 export function parseAnchor(raw, inheritFile = null) {
   if (raw == null) return null;
   const text = raw.replace(/`/g, '').trim();
-  // `datei.abap:12`, `:12` (Datei vom Vorgänger), jeweils optional mit
-  // Tokenoffset `+4` und — neu in v2.1 — einem Ausdruckspfad `#cond`, `#arm1`,
-  // `#e1`. Der Ausdruckspfad ist ein Vorschlag der Fallautoren und noch nicht
-  // vereinheitlicht; er wird getragen, nicht gedeutet.
+  // `file.abap:12`, `:12` (file of the previous one), each optionally with a
+  // token offset `+4` and — new in v2.1 — an expression path `#cond`, `#arm1`,
+  // `#e1`. The expression path is a proposal by the case authors and not yet
+  // unified; it is carried, not interpreted.
   const tail = '(?:\\s*\\+\\s*(\\d+))?(?:\\s*#\\s*([A-Za-z0-9_]+))?';
   const withFile = new RegExp(`^([A-Za-z0-9_.\\-]+\\.abap)\\s*:\\s*(\\d+)${tail}`).exec(text);
   if (withFile) {
@@ -156,7 +156,7 @@ export function parseAnchor(raw, inheritFile = null) {
   return { file: null, line: null, token: null, expressionPath: null, raw: text };
 }
 
-/** Kommas trennen, aber nicht innerhalb von Klammern — „:18 (Sekundäranker, Bedingungszeile)". */
+/** Split on commas, but not inside brackets — ":18 (Sekundäranker, Bedingungszeile)". */
 function splitTopLevel(text, separator) {
   const out = [];
   let depth = 0;
@@ -175,7 +175,7 @@ function splitTopLevel(text, separator) {
   return out;
 }
 
-/** Eine Ankerliste wie „source.abap:11, :13, source.abap:14–17". */
+/** An anchor list such as "source.abap:11, :13, source.abap:14–17". */
 export function parseAnchorList(raw) {
   if (raw == null) return [];
   const body = raw.replace(/\.\s*$/, '');
@@ -190,7 +190,7 @@ export function parseAnchorList(raw) {
   return out;
 }
 
-/** Eine Markdown-Tabelle ab `startIdx` (die Kopfzeile). Liefert Kopf + Zeilen. */
+/** A Markdown table from `startIdx` (the header row). Returns header + rows. */
 function readTable(lines, startIdx) {
   const rows = [];
   let i = startIdx;
@@ -212,7 +212,7 @@ function readTable(lines, startIdx) {
   return { header, rows: body, next: i };
 }
 
-/** Aufzählungspunkte („- …" oder „1. …") eines Blocks, ohne Fließtext dazwischen. */
+/** List items ("- …" or "1. …") of a block, without running text in between. */
 function bulletList(lines) {
   const out = [];
   for (const line of lines) {
@@ -223,14 +223,14 @@ function bulletList(lines) {
 }
 
 // ---------------------------------------------------------------------------
-// Das Fallbuch in Fälle und Abschnitte zerlegen
+// Split the case book into cases and sections
 // ---------------------------------------------------------------------------
 
 const CASE_HEAD = /^##\s+(CC-\d{3})\s*(?:—|-|–)\s*(.*)$/;
 
 /**
- * Zerlegt einen Fall in Kopfblock und `###`-Abschnitte. Codezäune werden
- * übersprungen, damit ein `###` in einem Kommentar keinen Abschnitt öffnet.
+ * Splits a case into a header block and `###` sections. Code fences are
+ * skipped so that a `###` in a comment does not open a section.
  */
 function splitSections(lines) {
   const sections = [];
@@ -258,7 +258,7 @@ function splitSections(lines) {
   return sections;
 }
 
-/** Alle ```-Blöcke einer Sprache aus einem Abschnitt. */
+/** All ``` blocks of one language from a section. */
 function fencedBlocks(lines, language) {
   const out = [];
   let open = false;
@@ -284,7 +284,7 @@ function fencedBlocks(lines, language) {
 }
 
 // ---------------------------------------------------------------------------
-// Kopfblock: Klassen, Level, Profil, Hashes
+// Header block: classes, level, profile, hashes
 // ---------------------------------------------------------------------------
 
 const PROFILE_FIELDS = [
@@ -296,13 +296,13 @@ const PROFILE_FIELDS = [
   'runtime_context',
 ];
 
-/** „edition=onpremise-s4 · abap_language_version=standard · …" */
+/** "edition=onpremise-s4 · abap_language_version=standard · …" */
 export function parseProfileValue(raw) {
   const profile = {};
   for (const field of PROFILE_FIELDS) profile[field] = null;
-  // Ein Profil darf mehr sagen als die sechs Pflichtfelder — v2.1 führt
-  // `update_mode` und `db_connection` ein. Sie werden getragen, nicht
-  // verworfen: ein weggeworfenes Profilfeld ist ein stiller Kontextverlust.
+  // A profile may say more than the six required fields — v2.1 introduces
+  // `update_mode` and `db_connection`. They are carried, not dropped: a
+  // discarded profile field is a silent loss of context.
   profile.extra = {};
   if (!raw) return { profile, unknownFields: [] };
   const unknown = [];
@@ -320,7 +320,7 @@ export function parseProfileValue(raw) {
   return { profile, unknownFields: unknown };
 }
 
-/** Alle `**Schlüssel:** Wert`-Paare eines Kopfblocks, auch mehrere auf einer Zeile. */
+/** All `**key:** value` pairs of a header block, including several on one line. */
 function parseHeaderKeys(lines) {
   const keys = new Map();
   for (const line of lines) {
@@ -332,8 +332,8 @@ function parseHeaderKeys(lines) {
         .slice(start, end)
         .replace(/\s*·\s*$/, '')
         .trim();
-      // v2.1 schreibt manche Schlüssel als Code: `**\`known_worst_level\`:**`
-      // neben `**known_worst_level:**`. Das ist derselbe Schlüssel.
+      // v2.1 writes some keys as code: `**\`known_worst_level\`:**`
+      // next to `**known_worst_level:**`. That is the same key.
       const key = markers[i][1].replace(/`/g, '').trim();
       if (!keys.has(key)) keys.set(key, value);
     }
@@ -341,7 +341,7 @@ function parseHeaderKeys(lines) {
   return keys;
 }
 
-/** „Unknown (`known_worst_level`: B)" -> { level: 'Unknown', knownWorst: 'B' } */
+/** "Unknown (`known_worst_level`: B)" -> { level: 'Unknown', knownWorst: 'B' } */
 function parseClassicLevel(raw) {
   if (!raw) return { level: null, knownWorst: null };
   const text = raw.replace(/\s+$/, '');
@@ -354,16 +354,16 @@ function parseClassicLevel(raw) {
 }
 
 // ---------------------------------------------------------------------------
-// Die einzelnen Abschnitte
+// The individual sections
 // ---------------------------------------------------------------------------
 
 const SOURCE_HEAD = /^Quelltext\s+`([^`]+)`/;
 
 /**
- * Felder, die v2.1 in Sollantworten einführt. Sie stehen als `**feld:** wert`
- * im Fall und werden unverändert durchgereicht — gedeutet werden sie hier
- * nicht, weil die Engine sie heute ohnehin nicht kennt. Wo ein Fall eines
- * dieser Felder nicht nennt, steht es nicht in `expected.json`.
+ * Fields that v2.1 introduces in expected answers. They appear as
+ * `**field:** value` in the case and are passed through unchanged — they are
+ * not interpreted here, because the engine does not know them today anyway.
+ * Where a case does not name one of these fields, it is not in `expected.json`.
  */
 const V21_ANSWER_FIELDS = [
   'known_worst_level',
@@ -392,9 +392,9 @@ function parseSourceSection(section) {
 }
 
 /**
- * Der Name aus der Überschrift wird ein Dateiname unter `tests/korpus/cases/…`
- * und mit `path.join` geschrieben. Ein Name mit Pfadteilen (`../../package.json`)
- * schriebe aus dem Ausgabeordner heraus — darum nur ein schlichter Dateiname
+ * The name from the heading becomes a file name under `tests/korpus/cases/…`
+ * and is written with `path.join`. A name with path parts (`../../package.json`)
+ * would write outside the output folder — hence only a plain file name
  * (carried QA finding 537a326d624e).
  */
 export function assertPlainSourceName(name) {
@@ -405,8 +405,8 @@ export function assertPlainSourceName(name) {
 }
 
 /**
- * Welche Profile eine Befundtabelle betrifft — die Überschrift sagt es:
- * „Sollbefunde", „Sollbefunde — Profil 1", „— beide Profile", „— nur Profil 2".
+ * Which profiles a findings table applies to — the heading says so:
+ * "Sollbefunde", "Sollbefunde — Profil 1", "— beide Profile", "— nur Profil 2".
  */
 function findingScopeFromHeading(heading) {
   const tail = heading.replace(/^Sollbefunde\s*(?:—|-|–)?\s*/, '').trim();
@@ -433,7 +433,7 @@ function parseFindingTable(section, caseId) {
     const id = iId >= 0 ? plain(row[iId]) : null;
     if (!id || !id.startsWith(caseId)) continue;
     const ruleRaw = iRule >= 0 ? row[iRule].trim() : '';
-    // R13 ist in v2 zweigeteilt: R13a und R13b tragen den Buchstaben im Namen.
+    // R13 is split in two in v2: R13a and R13b carry the letter in the name.
     const ruleMatch = /^\s*`?(R\d+[a-z]?)`?\s*@\s*([^\s(/]+)/.exec(ruleRaw.replace(/\*\*/g, ''));
     findings.push({
       id,
@@ -585,10 +585,10 @@ function parseSkeleton(section) {
 }
 
 /**
- * Die Tabelle „Sollantwort je Profil" — erste Spalte ist das Feld, `Datei` und
- * `Scope` sind weitere Kennspalten, jede übrige Spalte eine Antwortspalte.
- * v2.1 bringt neben „Profil 1/2" auch „Variante 1/2" und eine Scope-Spalte;
- * deshalb wird die Spaltenüberschrift gelesen und nicht auf „Profil" geprüft.
+ * The table "Sollantwort je Profil" — the first column is the field, `Datei`
+ * and `Scope` are further key columns, every other column is an answer
+ * column. Besides "Profil 1/2", v2.1 brings "Variante 1/2" and a Scope column;
+ * that is why the column heading is read and not checked for "Profil".
  */
 const QUALIFIER_COLUMNS = ['Datei', 'Scope'];
 
@@ -643,14 +643,14 @@ function parseForbiddenConclusions(sections) {
 }
 
 // ---------------------------------------------------------------------------
-// Abschnitte, die dieses Skript kennt
+// Sections this script knows
 // ---------------------------------------------------------------------------
 
 const KNOWN_SECTIONS = [
   { test: (h) => SOURCE_HEAD.test(h), kind: 'quelltext' },
   { test: (h) => /^Sollbefunde\b/.test(h), kind: 'sollbefunde' },
-  // „Sollantwort je Profil", „… je Variante", „… je Profil und Scope" — alle
-  // dieselbe Tabelle mit einer Feldspalte und je einer Spalte pro Antwort.
+  // "Sollantwort je Profil", "… je Variante", "… je Profil und Scope" — all the
+  // same table with one field column and one column per answer.
   { test: (h) => /^Sollantwort je\b/.test(h), kind: 'sollantwort-je-profil' },
   { test: (h) => /^SAP-\/Repository-Objekte/.test(h), kind: 'objekte' },
   { test: (h) => /^Fachliche Ground-Truth-Kandidaten\b/.test(h), kind: 'fachsaetze' },
@@ -658,7 +658,7 @@ const KNOWN_SECTIONS = [
   { test: (h) => /^(?:Offene\s+)?Prüferfragen\s*$/.test(h), kind: 'pruefferfragen' },
   { test: (h) => /^Konkrete Handarbeit und Schätzgrenze\b/.test(h), kind: 'handarbeit' },
   { test: (h) => /^Zusätzliche fachliche Prüfeingaben\b/.test(h), kind: 'pruefeingaben' },
-  // Fassung 2.1: bekannt, aber ohne Feld im Bündel — bewusst übergangen, nicht unbekannt.
+  // Version 2.1: known, but without a field in the bundle — deliberately skipped, not unknown.
   { test: (h) => /^Korrekturen v2\.1\b/.test(h), kind: 'korrekturen-v2.1' },
   { test: (h) => /^Fundstelle in einem öffentlichen Repository\b/.test(h), kind: 'fundstelle' },
   { test: (h) => /^(?:Offene\s+)?Prüferfragen\s*(?:—|-|–)/.test(h), kind: 'pruefferfragen-beantwortet' },
@@ -680,10 +680,10 @@ function classifySection(heading) {
 }
 
 // ---------------------------------------------------------------------------
-// Ein Fall
+// One case
 // ---------------------------------------------------------------------------
 
-/** Die v2.1-Antwortfelder, wo immer im Fall sie stehen. */
+/** The v2.1 answer fields, wherever they stand in the case. */
 function collectAnswerFields(lines) {
   const found = {};
   const all = parseHeaderKeys(lines.filter((line) => !/^\s*\|/.test(line)));
@@ -727,9 +727,9 @@ function parseCase(caseId, title, lines, defaults, report) {
       }
       case 'sollbefunde': {
         const parsedFindings = parseFindingTable(section, caseId);
-        // Fünf Fälle sind Negativkontrollen: der Abschnitt sagt in Worten, dass
-        // es keinen Befund gibt. Das festzuhalten ist der Unterschied zwischen
-        // „der Korpus erwartet nichts" und „der Leser hat die Tabelle verloren".
+        // Five cases are negative controls: the section says in words that there
+        // is no finding. Recording that is the difference between "the corpus
+        // expects nothing" and "the reader lost the table".
         if (parsedFindings.length === 0 && section.lines.some((l) => /Keine Findings/i.test(l))) {
           declaredEmpty.findings = true;
         }
@@ -763,9 +763,9 @@ function parseCase(caseId, title, lines, defaults, report) {
     }
   }
 
-  // --- Quellenhashes ----------------------------------------------------
-  // Drei Schreibweisen kommen vor: `Quellenhash: <h>` (eine Datei),
-  // ``Quellenhash `datei`: <h>`` und — neu in v2.1 — `Quellenhash (datei): <h>`.
+  // --- Source hashes ----------------------------------------------------
+  // Three spellings occur: `Quellenhash: <h>` (one file),
+  // ``Quellenhash `datei`: <h>`` and — new in v2.1 — `Quellenhash (datei): <h>`.
   const sourceHashes = new Map();
   let singleHash = null;
   for (const line of header.lines) {
@@ -778,7 +778,7 @@ function parseCase(caseId, title, lines, defaults, report) {
     if (plainHash) singleHash = plainHash[1];
   }
 
-  // --- Profil(e) --------------------------------------------------------
+  // --- Profile(s) -------------------------------------------------------
   const profilePair = keys.has('Zielprofil 1') || keys.has('Zielprofil 2');
   let profileDoc;
   if (profilePair) {
@@ -817,7 +817,7 @@ function parseCase(caseId, title, lines, defaults, report) {
     profileDoc = { ...empty, raw: null, declared_in: null, second_profile: null };
   }
 
-  // --- Level und Oberfläche --------------------------------------------
+  // --- Level and surface ----------------------------------------------
   const classic = parseClassicLevel(keys.get('Classic') ?? keys.get('Classic (Profil 1)') ?? null);
   const beleggrad = plain(keys.get('Beleggrad') ?? defaults.beleggrad ?? null);
   const independenceRaw = keys.get('Unabhängigkeit') ?? defaults.independence ?? null;
@@ -859,7 +859,7 @@ function parseCase(caseId, title, lines, defaults, report) {
     }
   }
 
-  // Befunde, die weder -Fnn noch -Snn sind, dürfen nicht lautlos verschwinden.
+  // Findings that are neither -Fnn nor -Snn must not disappear silently.
   const classified = new Set([...expected.findings, ...expected.securityFindings].map((f) => f.id));
   for (const finding of findings) {
     if (!classified.has(finding.id)) {
@@ -886,7 +886,7 @@ function parseCase(caseId, title, lines, defaults, report) {
 }
 
 // ---------------------------------------------------------------------------
-// Vorspann von Teil A: das Zielprofil der 25 v1-Fälle
+// Preamble of part A: the target profile of the 25 v1 cases
 // ---------------------------------------------------------------------------
 
 function parsePartADefaults(lines) {
@@ -907,13 +907,13 @@ function parsePartADefaults(lines) {
 }
 
 // ---------------------------------------------------------------------------
-// Fundstellen redigieren — kein fremder Code ins Repository
+// Redact occurrences — no third-party code into the repository
 // ---------------------------------------------------------------------------
 
 /**
- * Ersetzt in den Abschnitten „### Fundstelle in einem öffentlichen Repository"
- * jedes wörtliche ```abap-Zitat durch eine Hashzeile. Die Quelle bleibt über
- * URL, Commit und Hash nachprüfbar; der Code selbst wird nicht abgedruckt.
+ * In the sections "### Fundstelle in einem öffentlichen Repository", replaces
+ * every literal ```abap quote with a hash line. The source stays verifiable via
+ * URL, commit and hash; the code itself is not reproduced.
  */
 export function redactFundstellen(text) {
   const lines = normaliseText(text).split('\n');
@@ -961,10 +961,10 @@ export function redactFundstellen(text) {
 }
 
 // ---------------------------------------------------------------------------
-// Bauen
+// Build
 // ---------------------------------------------------------------------------
 
-/** Baut das gesamte Bündel im Speicher: Pfad -> Dateiinhalt. */
+/** Builds the whole bundle in memory: path -> file content. */
 export function buildBundle(bookText, bookPath) {
   const report = {
     unknownSections: [],
@@ -977,11 +977,11 @@ export function buildBundle(bookText, bookPath) {
   const normalised = normaliseText(bookText);
   const lines = normalised.split('\n');
 
-  // Ein Fall endet an der nächsten Überschrift der Ebene 1 oder 2 — nicht erst
-  // am nächsten Fall. Zwischen CC-025 und CC-026 stehen der Anhang zur
-  // Qualitätssicherung und die Vorbemerkungen der Fallautoren; ohne diese
-  // Schranke landeten sie im Rumpf von CC-025 und meldeten sich als sechs
-  // unbekannte Abschnitte eines Falls, der sie nicht hat.
+  // A case ends at the next heading of level 1 or 2 — not only at the next
+  // case. Between CC-025 and CC-026 stand the quality-assurance appendix and
+  // the case authors' preliminary notes; without this barrier they would land
+  // in the body of CC-025 and show up as six unknown sections of a case that
+  // does not have them.
   const starts = [];
   const breaks = [];
   let fence = null;
@@ -1024,11 +1024,11 @@ export function buildBundle(bookText, bookPath) {
     for (const source of parsed.sources) {
       const body = canonicalSource(source.lines);
       const digest = sha256(body);
-      // Ein Fall mit mehreren Dateien und nur einem unbenannten `Quellenhash:`
-      // meint damit `source.abap`, wo es eine gibt — nachgerechnet an CC-009,
-      // dessen Hash weder über die Verkettung noch über eine der beiden anderen
-      // Dateien stimmt —, sonst die einzige Datei ohne eigene Hashzeile
-      // (CC-065: `caller.abap` neben `Quellenhash (child.abap):`).
+      // A case with several files and only one unnamed `Quellenhash:` means
+      // `source.abap` by it where there is one — recomputed on CC-009, whose hash
+      // matches neither the concatenation nor either of the two other files —,
+      // otherwise the only file without a hash line of its own
+      // (CC-065: `caller.abap` next to `Quellenhash (child.abap):`).
       const unnamed = parsed.sources.filter((s) => !parsed.sourceHashes.has(s.name));
       const single =
         parsed.sources.length === 1 ||
@@ -1051,9 +1051,9 @@ export function buildBundle(bookText, bookPath) {
     files.set(`${dir}/profile.json`, stableJson(parsed.profileDoc));
     files.set(`${dir}/expected.json`, stableJson(parsed.expected));
 
-    // Welche Ankerformen vorkommen. v2.1 schlägt einen Ausdruckspfad vor
-    // (`:16#cond`), der noch nicht vereinheitlicht ist; gezählt wird er hier,
-    // damit die Frage im Bericht steht und nicht in einer Regex verschwindet.
+    // Which anchor forms occur. v2.1 proposes an expression path (`:16#cond`)
+    // that is not yet unified; it is counted here so that the question stands in
+    // the report and does not disappear in a regex.
     countAnchorForms(parsed.expected, report);
 
     manifestCases.push({

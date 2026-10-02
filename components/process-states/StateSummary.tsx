@@ -19,7 +19,7 @@ import { ELEMENT_STATES, STATE_LABELS, statesSentence, type ProcessStates } from
 
 export interface StateSummaryProps {
   states: ProcessStates;
-  /** The Bedarfsrevision these counts are as of. 0 when nothing has been confirmed. */
+  /** The need revision these counts are as of. 0 when nothing has been confirmed. */
   revision: number;
 }
 

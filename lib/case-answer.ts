@@ -1,5 +1,5 @@
 /**
- * „Ask this case" — an answer that comes out of *this* project's evidence, or
+ * "Ask this case" — an answer that comes out of *this* project's evidence, or
  * no answer at all. Roadmap 6.8, owner decision of 15.09.2026.
  *
  * That decision settled two things, and this module exists because of both:
@@ -188,7 +188,7 @@ export function anchorsOf(facts: readonly CaseFact[]): string[] {
 
 /**
  * Roadmap 2.7 — the question the workspace answers before anybody asks it,
- * "aus den Verzweigungen des Codes, ohne Modellaufruf".
+ * "from the branches of the code, without a model call".
  *
  * The decisions come from the skeleton's gateways, which `lib/first-look.ts`
  * has already read for the first-look build-up; reading them a second time

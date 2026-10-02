@@ -28,7 +28,7 @@ export interface LockedPath {
 }
 
 /**
- * Roadmap 8.9 (Sonny, 24.09.2026: "der Live-Pfad kommt vor 3.0 zurück") built the
+ * Roadmap 8.9 (Sonny, 24.09.2026: "the live path comes back before 3.0") built the
  * path behind this lock: the isolated live runner, which never holds a tenant
  * credential, and the app's credential proxy, which adds the credentials per
  * request for one run and one host. The old switch — `S4_TEST_RUNNER_EGRESS_ENFORCED`

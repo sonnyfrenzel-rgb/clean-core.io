@@ -5,12 +5,12 @@ import { findGlossaryMentions, glossaryAnswerText } from '@/lib/glossary-lookup'
 import { glossarySourceText, type GlossaryItem } from '@/lib/glossary';
 
 /**
- * The underlined Fachwort and its popover — `DESIGN.md` §6.1 ("Glossar im
- * Text" and "Glossar in „Ask this case‟", ADR-034), roadmap 6.6.
+ * The underlined technical term and its popover — `DESIGN.md` §6.1 ("Glossary
+ * in the text" and "Glossary in 'Ask this case'", ADR-034), roadmap 6.6.
  *
- *   > *unterstrichenes Fachwort, Erklärung per Tastatur erreichbar: höchstens
- *   > zwei Sätze, „What it means for your decision", bei SAP-Begriffen die
- *   > Quelle*
+ *   > *underlined technical term, explanation reachable by keyboard: at most
+ *   > two sentences, "What it means for your decision", for SAP terms the
+ *   > source*
  *
  * **Keyboard reachable is the whole point, so the trigger is a button.** The
  * product already had a glossary tooltip (`components/GlossaryTerm.tsx`), but

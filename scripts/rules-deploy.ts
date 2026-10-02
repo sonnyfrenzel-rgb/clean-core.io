@@ -200,7 +200,7 @@ function recordPending(reason: string): number {
     removesFromClient: [...deployed].filter((f) => !now.includes(f)).sort(),
     projectDocumentReadRule: parseProjectReadRule(rules),
     note: record.pending?.note
-      ?? 'Bis zum Deploy sind die alten Regeln live. `npm run deploy:rules` rollt aus und loescht diesen Block.',
+      ?? 'Until the deploy, the old rules are live. `npm run deploy:rules` rolls out and deletes this block.',
   };
   writeRecord(record);
   console.log(`Recorded as pending: ${hash.slice(0, 12)}… — ${reason}`);

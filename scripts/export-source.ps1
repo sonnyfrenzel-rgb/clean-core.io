@@ -1,34 +1,33 @@
 ﻿<#
 .SYNOPSIS
-    Exportiert die Clean-Core.io Codebase als secret-freies, gehashtes ZIP.
+    Exports the Clean-Core.io code base as a secret-free, hashed ZIP.
 
 .DESCRIPTION
-    Quelle ist ausschliesslich "git archive HEAD" — also nur versionierte
-    Dateien. Alles, was .gitignore schuetzt (.env*, .claude/, node_modules/,
-    scratch/, migration/, Logs), kann damit gar nicht erst in das Archiv
-    geraten. Das ist der entscheidende Unterschied zur frueheren Fassung, die
-    das Dateisystem gelaufen ist und sich auf eine handgepflegte
-    Ausschlussliste verlassen musste.
+    The only source is "git archive HEAD" — that is, only versioned files.
+    Anything .gitignore protects (.env*, .claude/, node_modules/, scratch/,
+    migration/, logs) therefore cannot get into the archive in the first
+    place. That is the decisive difference from the earlier version, which
+    walked the file system and had to rely on a hand-maintained exclusion
+    list.
 
-    Danach drei Schutzschichten:
-      1. Deny-Liste  — loescht Schluesseldateien, falls je eine committed wurde.
-      2. Secret-Scan — Regex ueber jede Textdatei; ein Treffer bricht ab und
-                       es entsteht KEIN ZIP (fail closed). Zwei bekannte,
-                       nachweislich harmlose Treffer sind namentlich mit
-                       Begruendung allowlistet und werden immer mitprotokolliert.
-      3. Manifest    — SHA-256 je Datei, Gesamt-Digest, optional HMAC-signiert.
+    Then three layers of protection:
+      1. Deny list   — deletes key files, in case one was ever committed.
+      2. Secret scan — regex over every text file; a hit aborts and NO ZIP
+                       is produced (fail closed). Two known hits, proven
+                       harmless, are allowlisted by name with a reason and
+                       are always logged.
+      3. Manifest    — SHA-256 per file, overall digest, optionally HMAC-signed.
 
 .PARAMETER WorkingTree
-    Exportiert die Arbeitskopie statt HEAD, ohne dafuer committen zu muessen:
-    "git stash create" macht einen wegwerfbaren Snapshot der getrackten
-    Aenderungen, aus dem dann archiviert wird. Unversionierte Dateien bleiben
-    aussen vor — git kennt sie nicht, und genau das ist auch der Grund, warum
-    kein Secret hineinrutschen kann.
+    Exports the working copy instead of HEAD, without having to commit:
+    "git stash create" makes a throwaway snapshot of the tracked changes,
+    which is then archived. Untracked files stay out — git does not know
+    them, and that is exactly why no secret can slip in.
 
 .PARAMETER AllowDirty
-    Exportiert HEAD, obwohl das Arbeitsverzeichnis unsauber ist. Ohne einen
-    der beiden Schalter bricht das Skript ab, denn sonst zeigt das Archiv
-    stillschweigend etwas anderes als die Arbeitskopie.
+    Exports HEAD although the working directory is dirty. Without one of the
+    two switches the script aborts, because otherwise the archive would
+    silently show something other than the working copy.
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File scripts\export-source.ps1
@@ -47,20 +46,20 @@ function Write-Ok($msg)   { Write-Host "    [OK] $msg" -ForegroundColor Green }
 function Write-Warn($msg) { Write-Host "    [!]  $msg" -ForegroundColor Yellow }
 function Write-Bad($msg)  { Write-Host "    [X]  $msg" -ForegroundColor Red }
 
-# ---------------------------------------------------------------- 0. Kontext
+# ---------------------------------------------------------------- 0. Context
 if (-not $SourceDir) {
     $SourceDir = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 }
 $SourceDir = $SourceDir.TrimEnd('\')
 
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "git nicht gefunden." }
-if (-not (Get-Command tar -ErrorAction SilentlyContinue)) { throw "tar nicht gefunden." }
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "git not found." }
+if (-not (Get-Command tar -ErrorAction SilentlyContinue)) { throw "tar not found." }
 
-Write-Step "Repository pruefen: $SourceDir"
+Write-Step "Checking repository: $SourceDir"
 
 $inside = & git -C $SourceDir rev-parse --is-inside-work-tree
 if ($LASTEXITCODE -ne 0 -or "$inside".Trim() -ne 'true') {
-    throw "$SourceDir ist kein Git-Arbeitsverzeichnis. Der Export braucht Git als Quelle der Wahrheit."
+    throw "$SourceDir is not a Git working directory. The export needs Git as the source of truth."
 }
 
 $commit      = "$(& git -C $SourceDir rev-parse HEAD)".Trim()
@@ -69,42 +68,42 @@ $branch      = "$(& git -C $SourceDir rev-parse --abbrev-ref HEAD)".Trim()
 $dirtyLines  = @(& git -C $SourceDir status --porcelain)
 $treeClean   = ($dirtyLines.Count -eq 0)
 
-Write-Ok "HEAD $shortCommit auf '$branch'"
+Write-Ok "HEAD $shortCommit on '$branch'"
 
 $archiveRef = "HEAD"
 $sourceDesc = "git archive HEAD"
 
 if (-not $treeClean) {
-    # -like waere hier falsch: '?' ist dort ein Wildcard und matcht jede Zeile.
+    # -like would be wrong here: '?' is a wildcard there and matches every line.
     $untracked = @($dirtyLines | Where-Object { $_.StartsWith('??') })
 
     if ($WorkingTree) {
         $snap = "$(& git -C $SourceDir stash create)".Trim()
-        if ($LASTEXITCODE -ne 0) { throw "git stash create fehlgeschlagen (Exit $LASTEXITCODE)." }
+        if ($LASTEXITCODE -ne 0) { throw "git stash create failed (exit $LASTEXITCODE)." }
         if ($snap) {
             $archiveRef = $snap
-            $sourceDesc = "git archive (Arbeitskopie-Snapshot ueber $shortCommit)"
-            Write-Warn "Unsauberer Baum: exportiert wird die Arbeitskopie, Snapshot $($snap.Substring(0,7)) ($($dirtyLines.Count) Aenderungen gegenueber HEAD)."
+            $sourceDesc = "git archive (working-copy snapshot on top of $shortCommit)"
+            Write-Warn "Dirty tree: exporting the working copy, snapshot $($snap.Substring(0,7)) ($($dirtyLines.Count) changes against HEAD)."
         } else {
-            Write-Warn "Unsauberer Baum, aber keine getrackten Aenderungen zu snapshotten -- exportiert wird HEAD."
+            Write-Warn "Dirty tree, but no tracked changes to snapshot -- exporting HEAD."
         }
         if ($untracked.Count -gt 0) {
-            Write-Warn "$($untracked.Count) unversionierte Datei(en) bleiben aussen vor:"
+            Write-Warn "$($untracked.Count) untracked file(s) left out:"
             $untracked | Select-Object -First 10 | ForEach-Object { Write-Host "         $_" }
         }
     }
     elseif ($AllowDirty) {
-        Write-Warn "Unsauberer Baum, -AllowDirty gesetzt: exportiert wird trotzdem HEAD ($($dirtyLines.Count) Aenderungen fehlen im ZIP)."
+        Write-Warn "Dirty tree, -AllowDirty set: exporting HEAD anyway ($($dirtyLines.Count) changes are missing from the ZIP)."
     }
     else {
-        Write-Bad "Arbeitsverzeichnis ist nicht sauber ($($dirtyLines.Count) Aenderungen):"
+        Write-Bad "Working directory is not clean ($($dirtyLines.Count) changes):"
         $dirtyLines | Select-Object -First 25 | ForEach-Object { Write-Host "         $_" }
-        if ($dirtyLines.Count -gt 25) { Write-Host "         ... und $($dirtyLines.Count - 25) weitere" }
+        if ($dirtyLines.Count -gt 25) { Write-Host "         ... and $($dirtyLines.Count - 25) more" }
         Write-Host ""
-        Write-Host "    Ohne Schalter bildet der Export HEAD ab. Diese Aenderungen waeren NICHT im ZIP," -ForegroundColor Yellow
-        Write-Host "    das Archiv wuerde also stillschweigend etwas anderes zeigen als deine Arbeitskopie." -ForegroundColor Yellow
-        Write-Host "      -WorkingTree  exportiert die Arbeitskopie (empfohlen)" -ForegroundColor Yellow
-        Write-Host "      -AllowDirty   exportiert bewusst HEAD" -ForegroundColor Yellow
+        Write-Host "    Without a switch the export reflects HEAD. These changes would NOT be in the ZIP," -ForegroundColor Yellow
+        Write-Host "    so the archive would silently show something different from your working copy." -ForegroundColor Yellow
+        Write-Host "      -WorkingTree  exports the working copy (recommended)" -ForegroundColor Yellow
+        Write-Host "      -AllowDirty   deliberately exports HEAD" -ForegroundColor Yellow
         exit 1
     }
 }
@@ -115,19 +114,19 @@ $staging = Join-Path $work "src"
 New-Item -ItemType Directory -Path $staging -Force | Out-Null
 
 try {
-    Write-Step "Versionierte Dateien extrahieren ($sourceDesc)"
+    Write-Step "Extracting versioned files ($sourceDesc)"
     $tarPath = Join-Path $work "head.tar"
     & git -C $SourceDir archive --format=tar -o $tarPath $archiveRef
-    if ($LASTEXITCODE -ne 0) { throw "git archive fehlgeschlagen (Exit $LASTEXITCODE)." }
+    if ($LASTEXITCODE -ne 0) { throw "git archive failed (exit $LASTEXITCODE)." }
     & tar -xf $tarPath -C $staging
-    if ($LASTEXITCODE -ne 0) { throw "tar-Extraktion fehlgeschlagen (Exit $LASTEXITCODE)." }
+    if ($LASTEXITCODE -ne 0) { throw "tar extraction failed (exit $LASTEXITCODE)." }
     Remove-Item -LiteralPath $tarPath -Force
 
     $staged = @(Get-ChildItem -LiteralPath $staging -Recurse -File)
-    Write-Ok "$($staged.Count) versionierte Dateien uebernommen (nichts aus .gitignore)"
+    Write-Ok "$($staged.Count) versioned files taken over (nothing from .gitignore)"
 
-    # ------------------------------------------- 2. Deny-Liste, in der Tiefe
-    Write-Step "Deny-Liste anwenden (falls je Schluesselmaterial committed wurde)"
+    # ------------------------------------------- 2. Deny list, in depth
+    Write-Step "Applying deny list (in case key material was ever committed)"
     $denyGlobs = @(
         '.env', '.env.*', '*.pem', '*.key', '*.p12', '*.pfx', '*.jks',
         '*.keystore', 'id_rsa*', 'id_ed25519*', '*serviceAccount*.json',
@@ -148,13 +147,13 @@ try {
         }
     }
     if ($removed.Count -eq 0) {
-        Write-Ok "Nichts zu entfernen — im Git-Tree liegt kein Schluesselmaterial."
+        Write-Ok "Nothing to remove — there is no key material in the Git tree."
     } else {
-        foreach ($r in $removed) { Write-Warn "entfernt: $r" }
+        foreach ($r in $removed) { Write-Warn "removed: $r" }
     }
 
-    # ------------------------------------------------------ 3. Secret-Scan
-    Write-Step "Secret-Scan ueber jede Textdatei"
+    # ------------------------------------------------------ 3. Secret scan
+    Write-Step "Secret scan over every text file"
 
     $patterns = @(
         @{ Name = 'GoogleApiKey';      Regex = 'AIza[0-9A-Za-z_\-]{30,}' }
@@ -174,18 +173,18 @@ try {
         @{ Name = 'GcpPrivateKeyId';   Regex = '"private_key_id"\s*:\s*"[^"]+"' }
     )
 
-    # Treffer, die geprueft und nachweislich harmlos sind. Sie werden NICHT
-    # verschwiegen, sondern bei jedem Lauf mit Begruendung ausgegeben.
+    # Hits that have been checked and are proven harmless. They are NOT
+    # hidden, but printed with their reason on every run.
     $allowlist = @(
         @{
             Path    = 'firebase-config.json'
             Pattern = 'GoogleApiKey'
-            Reason  = 'Firebase Web-API-Key — kein Geheimnis. Oeffentliche Projektkennung, wird in jedes Client-Bundle kompiliert und an jeden Browser ausgeliefert; die Absicherung leisten Firestore-Rules und App Check. lib/firebase.ts importiert die Datei, ein Entfernen braeche den Build.'
+            Reason  = 'Firebase web API key — not a secret. A public project identifier, compiled into every client bundle and shipped to every browser; protection comes from the Firestore rules and App Check. lib/firebase.ts imports the file, so removing it would break the build.'
         }
         @{
             Path    = 'tests/unearned-verdicts-guard.spec.ts'
             Pattern = 'PrivateKeyBlock'
-            Reason  = 'Literaler Eingabestring eines Guard-Specs, der prueft, dass der Scanner PEM-Bloecke blockt. Kein Schluesselmaterial, nur die Kopfzeile.'
+            Reason  = 'Literal input string of a guard spec that checks the scanner blocks PEM blocks. No key material, only the header line.'
         }
     )
 
@@ -204,12 +203,12 @@ try {
         if ($binaryExt -contains $f.Extension.ToLower()) { continue }
 
         $text = [System.IO.File]::ReadAllText($f.FullName)
-        if ($text.IndexOf([char]0) -ge 0) { continue }   # Binaerdatei ohne bekannte Endung
+        if ($text.IndexOf([char]0) -ge 0) { continue }   # binary file without a known extension
         $scanned++
 
-        # .env-artige Dateien duerfen keinen gefuellten Wert tragen
+        # .env-like files must not carry a filled-in value
         if ($f.Name -like '.env*' -and $f.Name -ne '.env.example') {
-            $blocking += [PSCustomObject]@{ Path = $rel; Pattern = 'EnvFile'; Excerpt = '(gesamte Datei)' }
+            $blocking += [PSCustomObject]@{ Path = $rel; Pattern = 'EnvFile'; Excerpt = '(whole file)' }
         }
 
         foreach ($p in $patterns) {
@@ -229,28 +228,28 @@ try {
         }
     }
 
-    Write-Ok "$scanned Textdateien gescannt, $($patterns.Count) Musterklassen"
+    Write-Ok "$scanned text files scanned, $($patterns.Count) pattern classes"
 
     foreach ($a in $allowed) {
-        Write-Warn "bekannt und geprueft: $($a.Path):$($a.Line) [$($a.Pattern)]"
+        Write-Warn "known and checked: $($a.Path):$($a.Line) [$($a.Pattern)]"
         Write-Host "         $($a.Reason)" -ForegroundColor DarkGray
     }
 
     if ($blocking.Count -gt 0) {
         Write-Host ""
-        Write-Bad "ABBRUCH — moegliche Secrets im Export. Es wurde KEIN ZIP geschrieben:"
+        Write-Bad "ABORTED — possible secrets in the export. NO ZIP was written:"
         foreach ($b in $blocking) {
             Write-Host "         $($b.Path)  [$($b.Pattern)]  $($b.Excerpt)" -ForegroundColor Red
         }
         Write-Host ""
-        Write-Host "    Pruefen, aus dem Git-Verlauf entfernen und den Schluessel rotieren," -ForegroundColor Yellow
-        Write-Host "    oder — falls nachweislich harmlos — in der Allowlist mit Begruendung eintragen." -ForegroundColor Yellow
+        Write-Host "    Check it, remove it from the Git history and rotate the key," -ForegroundColor Yellow
+        Write-Host "    or — if demonstrably harmless — add it to the allowlist with a reason." -ForegroundColor Yellow
         exit 2
     }
-    Write-Ok "Keine unbekannten Secret-Muster."
+    Write-Ok "No unknown secret patterns."
 
     # ---------------------------------------------------------- 4. Manifest
-    Write-Step "Manifest bauen (SHA-256 je Datei)"
+    Write-Step "Building manifest (SHA-256 per file)"
 
     $platformVersion = "v0.0.0"
     $pkgPath = Join-Path $staging "package.json"
@@ -313,11 +312,11 @@ try {
         files           = $manifestFiles
     } | ConvertTo-Json -Depth 10 | Out-File -FilePath (Join-Path $staging "manifest.json") -Encoding utf8
 
-    Write-Ok "$($manifestFiles.Count) Dateien, Digest $($manifestHash.Substring(0,16))..."
+    Write-Ok "$($manifestFiles.Count) files, digest $($manifestHash.Substring(0,16))..."
     if ($signed) {
-        Write-Ok "HMAC-signiert mit AUDIT_SIGNING_KEY"
+        Write-Ok "HMAC-signed with AUDIT_SIGNING_KEY"
     } else {
-        Write-Warn "Unsigniert (AUDIT_SIGNING_KEY nicht in der Umgebung) — die Hashes sind trotzdem pruefbar."
+        Write-Warn "Unsigned (AUDIT_SIGNING_KEY not in the environment) — the hashes can still be verified."
     }
 
     # --------------------------------------------------------------- 5. ZIP
@@ -325,13 +324,13 @@ try {
         $desktop   = [Environment]::GetFolderPath('Desktop')
         $OutputZip = Join-Path $desktop "clean-core-src-$platformVersion-$shortCommit.zip"
     }
-    Write-Step "Archiv schreiben: $OutputZip"
+    Write-Step "Writing archive: $OutputZip"
     if (Test-Path -LiteralPath $OutputZip) { Remove-Item -LiteralPath $OutputZip -Force }
 
-    # Bewusst nicht ZipFile::CreateFromDirectory: das .NET Framework schreibt dort
-    # Backslashes als Pfadtrenner. Windows-Entpacker verzeihen das, die ZIP-Spec
-    # kennt aber nur '/', und auf macOS/Linux entstehen dann Dateien, die woertlich
-    # "app\page.tsx" heissen statt in einem Ordner zu liegen.
+    # Deliberately not ZipFile::CreateFromDirectory: the .NET Framework writes
+    # backslashes as path separators there. Windows unzippers forgive that, but
+    # the ZIP spec knows only '/', and on macOS/Linux this produces files that
+    # are literally named "app\page.tsx" instead of sitting in a folder.
     Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -359,14 +358,14 @@ try {
     $zipHash = (Get-FileHash -LiteralPath $OutputZip -Algorithm SHA256).Hash.ToLower()
 
     Write-Host ""
-    Write-Host "Export fertig." -ForegroundColor Green
-    Write-Host "  Datei    : $OutputZip"
-    Write-Host "  Groesse  : $([math]::Round($zipInfo.Length / 1MB, 2)) MB"
-    Write-Host "  Dateien  : $($manifestFiles.Count)"
-    Write-Host "  Stand    : $platformVersion @ $shortCommit ($branch)"
+    Write-Host "Export done." -ForegroundColor Green
+    Write-Host "  File     : $OutputZip"
+    Write-Host "  Size     : $([math]::Round($zipInfo.Length / 1MB, 2)) MB"
+    Write-Host "  Files    : $($manifestFiles.Count)"
+    Write-Host "  Version  : $platformVersion @ $shortCommit ($branch)"
     Write-Host "  SHA-256  : $zipHash"
     Write-Host ""
-    Write-Host "  Pruefen mit:" -ForegroundColor Cyan
+    Write-Host "  Verify with:" -ForegroundColor Cyan
     Write-Host "    powershell -ExecutionPolicy Bypass -File scripts\verify-export.ps1 -ZipPath `"$OutputZip`""
 }
 finally {

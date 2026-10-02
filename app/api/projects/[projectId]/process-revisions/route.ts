@@ -37,11 +37,11 @@ import { isFirestoreId } from '@/lib/firestore-id';
  * Three properties, and all three are enforced here rather than asked of the
  * caller:
  *
- *   1. **Revision 1 is the reconstructed Ist.** It is built on this server from
+ *   1. **Revision 1 is the reconstructed as-is process.** It is built on this server from
  *      the skeleton of the source the active run signed (`buildBpmnExport`) and
  *      never from a body. A browser cannot post revision 1, cannot replace it,
  *      and an edit arriving at an empty history reconstructs it first and lands
- *      as revision 2. So "the Ist is unchanged after modelling" is not a
+ *      as revision 2. So "the as-is process is unchanged after modelling" is not a
  *      discipline anybody has to keep — there is no code path that changes it.
  *      **"The source the active run signed" is read out of the run itself**, and
  *      that is a correction rather than a description: this route used to take
@@ -565,7 +565,7 @@ export async function POST(
     const baseline = await ensureBaseline(db, gate);
     if ('refusal' in baseline) return baseline.refusal;
 
-    // No model in the body: the caller wanted the Ist to exist, and now it does.
+    // No model in the body: the caller wanted the as-is process to exist, and now it does.
     if (!body || body.xml === undefined || !checked) {
       return NextResponse.json({ record: baseline.record, created: baseline.created }, { status: baseline.created ? 201 : 200 });
     }

@@ -7,7 +7,7 @@ import { CC_CONTROL_HEIGHT, CcFieldHelp, CcFieldMessage, CcRequiredMark, describ
 import { STATE_CLASSES } from './state';
 
 /**
- * Radio group — `DESIGN.md` §2.7: "Radio-Gruppe mit Legende".
+ * Radio group — `DESIGN.md` §2.7: "radio group with legend".
  *
  * A `<fieldset>` with a `<legend>`, and native radios sharing one `name`. That
  * is the whole keyboard contract, and the browser already keeps it: Tab reaches

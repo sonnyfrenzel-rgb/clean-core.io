@@ -11,8 +11,8 @@ import ObjectSection from './ObjectSection';
 
 /**
  * The Clean Core Score as the central figure of Analyze (owner, 01.10.2026:
- * "der Clean Core Score muss zentral sein, und es muss klar sein, was ein guter
- * oder schlechter Score ist und wann").
+ * "the Clean Core Score has to be central, and it has to be clear what a good
+ * or a bad score is, and when").
  *
  * Four things, top to bottom: where this project sits on a 0–100 scale cut into
  * four bands; what each band means in plain words, this project's band marked;

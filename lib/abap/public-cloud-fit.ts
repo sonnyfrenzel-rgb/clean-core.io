@@ -54,15 +54,15 @@
  *
  *   - **The bucket depends on the target platform.** The same level-B object is
  *     Keep in the Private Edition and Rebuild-or-no-path in the Public Edition
- *     (DESIGN.md §5.6: "Dasselbe B-Objekt ist in der Private Edition Keep, in
- *     der Public Edition Rebuild oder Blocked by SAP"). Rather than hard-coding
+ *     (DESIGN.md §5.6: "The same B object is Keep in the Private Edition, and
+ *     Rebuild or Blocked by SAP in the Public Edition"). Rather than hard-coding
  *     "C or D" as the threshold — which would be silently wrong for that exact
  *     B-on-Public-Edition case the design doc calls out by name — this module
  *     derives it from `isKeepEligible()`: whatever does not clear Keep's bar for
  *     the chosen platform is what the path question then splits.
  *   - **A modification or an own write to an SAP table is Rebuild even where the
  *     catalog names no path, and even where the level would qualify for Keep**,
- *     because the roadmap states the precedence explicitly ("Modifikationen sind
+ *     because the roadmap states the precedence explicitly ("modifications are
  *     Rebuild") and because the fourth bucket exists to separate what nobody has
  *     answered yet from the project's own unfinished work — a modification is
  *     always the latter. The checked order is therefore **Retire · own work ·
@@ -273,7 +273,7 @@ export interface PublicCloudFitAssignment {
   /** `null` means "not assigned" — never a default bucket standing in for missing evidence. */
   bucket: PublicCloudFitBucket | null;
   rule: PublicCloudFitRule | null;
-  /** Present exactly when `bucket` is not null — the "Beleg am Objekt" column of ADR-033, as a sentence. */
+  /** Present exactly when `bucket` is not null — the "evidence on the object" column of ADR-033, as a sentence. */
   evidence: string | null;
   /** Present exactly when `bucket` is null. */
   reason: PublicCloudFitReason | null;
@@ -290,8 +290,8 @@ export interface PublicCloudFitAssignment {
   catalogListed: boolean;
   /**
    * A usage-derived caveat shown alongside whatever bucket was concluded —
-   * never a bucket by itself. DESIGN.md §5.6: "Weniger als 13 Monate ergeben
-   * nie Retire, sondern 'Usage window too short: 4 months — needs 13.'" A
+   * never a bucket by itself. DESIGN.md §5.6: "Less than 13 months never yields
+   * Retire, but 'Usage window too short: 4 months — needs 13.'" A
    * short window does not block Keep/Rebuild/no-path from being concluded on
    * other grounds; it only explains why usage did not, by itself, retire it.
    */
@@ -443,8 +443,8 @@ export function assignPublicCloudFit(
   // of v2.20.0, ceb59bbace90).
   //
   // The rule table above says a modification and an own write access to an SAP
-  // table are Rebuild, full stop: "das ist die Arbeit des Projekts, nie die von
-  // SAP". This stood after `isKeepEligible`, so a level-A object the project had
+  // table are Rebuild, full stop: "that is the project's work, never
+  // SAP's". This stood after `isKeepEligible`, so a level-A object the project had
   // modified came back as Keep — "nothing to do" for code that carries a
   // modification, the one sentence this module may never say (QA full review,
   // f9695d22d124). Being permitted for the platform says what SAP allows; it
@@ -566,7 +566,7 @@ export interface PublicCloudFitSummary {
   counts: Record<PublicCloudFitBucket, number> & { notAssigned: number };
   /** Object names in 'no-catalogued-path' — listed, because ADR-033 states this as a per-object fact, never a threshold. */
   objectsWithoutCataloguedPath: string[];
-  /** True as soon as one object has no catalogued path: "ein Objekt ... blockiert die Public-Cloud-Entscheidung" (DESIGN.md §5.6) — no percentage. */
+  /** True as soon as one object has no catalogued path: "one object ... blocks the Public Cloud decision" (DESIGN.md §5.6) — no percentage. */
   decisionBlocked: boolean;
   /** How many assignments are open questions rather than settled answers (CR-17, CR-18). A count of objects, not a share. */
   openCheckCount: number;
@@ -647,8 +647,8 @@ export function summarizePublicCloudFit(
 }
 
 /**
- * The answer sentence a card leads with (ADR-029: "erst die Antwort, dann die
- * Zahl") — e.g. "4 objects have no catalogued path." Never a percentage: the
+ * The answer sentence a card leads with (ADR-029: "first the answer, then the
+ * number") — e.g. "4 objects have no catalogued path." Never a percentage: the
  * design doc is explicit that this statement needs no threshold.
  *
  * It names the open question rather than pronouncing a blockage on the code
