@@ -39,3 +39,11 @@ test('usp-09: a stored run is not described as Ed25519-signed', () => {
   expect(read('app/llms-full.txt/route.ts')).not.toContain('signed by the Clean-Core.io server (HMAC and Ed25519)');
 });
 
+test('usp-03: the summary does not promise a signed record of the draft and its tests', () => {
+  // The audit pack carries no generated code and no test receipt
+  // (lib/evidence-chain.ts, "This pack carries no delivery artefact").
+  const wp = flat(read('lib/whitepaper.ts'));
+  expect(wp).not.toContain('a signed record of all of it');
+  expect(wp).toContain('a signed record of the analysis they rest on');
+});
+

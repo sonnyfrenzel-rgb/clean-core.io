@@ -192,7 +192,7 @@ export const SUMMARY_CARDS = [
   {
     k: 'What you get',
     t: 'The process, the rules and SAP’s view of every object',
-    d: 'The process the program runs, drawn as BPMN in plain language. The business rules hard-coded in it, each with its line. SAP’s clean core level for every SAP object it touches. Then a target design, a code draft and tests on the same evidence — and a signed record of all of it.',
+    d: 'The process the program runs, drawn as BPMN in plain language. The business rules hard-coded in it, each with its line. SAP’s clean core level for every SAP object it touches. Then a target design, a code draft and tests on the same evidence — and a signed record of the analysis they rest on.',
   },
   {
     k: 'What stays with you',
