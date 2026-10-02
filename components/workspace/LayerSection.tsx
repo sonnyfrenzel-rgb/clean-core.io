@@ -30,7 +30,7 @@ import { wt, layerSectionShowing } from '@/lib/workspace-messages';
  * never a zero.
  *
  * The section carries `id={layer.key}` so `#evidence` is a real anchor as well
- * as a selection — ADR-018's *„springt zu einem Abschnitt der Seite"* — and the
+ * as a selection — ADR-018's *"jumps to a section of the page"* — and the
  * heading is an `h2`, because the project title is the `h1` and no level is
  * skipped (§2.3).
  */

@@ -1,7 +1,7 @@
 /**
  * The first look's build-up — mockup screen `s0`, `DESIGN.md` §5.1–5.2, ADR-013.
  *
- * *"Der Wow ist ein Inhalt mit Zeilenanker, keine Bewegung."* The code speaks
+ * *"The wow is content with a line anchor, not motion."* The code speaks
  * first: a line lights up where the engine set a process node (or touched a
  * table), every counter rises only with such a line, and the process grows
  * beside the code out of the lines that were lit. At the end the code steps

@@ -48,7 +48,7 @@ import { isFirestoreId } from '@/lib/firestore-id';
  *      purpose. Confirming a rule changes no bytes, so storing a confirmation
  *      there would mean weakening that rule — which is the one thing that stops
  *      a retried save from becoming a second revision.
- *   3. revision 1 is the reconstructed Ist and nothing may change it. Sharing
+ *   3. revision 1 is the reconstructed as-is process and nothing may change it. Sharing
  *      the collection would leave only two ways to record the first
  *      confirmation: write into revision 1, which is forbidden, or create a
  *      revision 2 that is a byte-for-byte copy of a drawing nobody drew.
@@ -70,7 +70,7 @@ import { isFirestoreId } from '@/lib/firestore-id';
  * subcollection, named or not.
  *
  * **What the subjects are, and why they are pinned to revision 1.** The need is
- * stated about the Ist — what the program does today — so the elements are the
+ * stated about the as-is process — what the program does today — so the elements are the
  * elements of the reconstructed revision 1 and the rules are derived from the
  * source that revision 1 was reconstructed from. Revision 1 descends from a run
  * that was loaded and verified (`process-revisions`), so this route inherits
@@ -268,7 +268,7 @@ async function latestStates(db: AdminDb, projectId: string): Promise<StoredState
 }
 
 /* ------------------------------------------------------------------ *
- * The subjects: the elements of the Ist and the rules of its source.
+ * The subjects: the elements of the as-is process and the rules of its source.
  * ------------------------------------------------------------------ */
 
 /** "line 5", "lines 5 to 9", or null — the wording `lib/process-map.ts` uses. */

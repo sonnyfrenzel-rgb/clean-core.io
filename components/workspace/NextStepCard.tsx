@@ -14,7 +14,7 @@ import { openStageLabel, wt } from '@/lib/workspace-messages';
  * "Next step" — `DESIGN.md` §2.3 item 5, §5.5, roadmap step 6.5.
  *
  * A card, not a bar (§2.3), and the one place on the screen that carries the
- * page's `primary` button: *"die Hauptaktion der Seite steht in „Next step""*
+ * page's `primary` button: *"the page's main action is in 'Next step'"*
  * (§1.5). It renders exactly what `lib/next-step.ts` hands it and decides
  * nothing itself — the same split `NotDeterminedCard` and
  * `WorkspaceStatusLine` already use, so the one thing that can go wrong here

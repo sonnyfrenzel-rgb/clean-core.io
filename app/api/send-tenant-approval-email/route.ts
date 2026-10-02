@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     const adminToken = await verifyAdminRequest(request);
     if (!adminToken) {
-      // Bewusst 403 (nicht 401): Token kann gültig sein, aber ohne Admin-Recht.
+      // Deliberately 403 (not 401): the token may be valid, but without admin rights.
       return NextResponse.json(
         { error: 'Forbidden: administrator privileges required.' },
         { status: 403 },

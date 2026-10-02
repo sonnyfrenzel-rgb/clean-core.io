@@ -81,3 +81,4 @@ The inventory `docs/registers/public-texts.json` decided "archive" for these fil
 | [`2026-08-28-ux-round2-gpt-5.6-sol.md`](reviews-2026-08/2026-08-28-ux-round2-gpt-5.6-sol.md) | `docs/reviews/2026-08-28-ux-round2-gpt-5.6-sol.md` | `reviews-2026-08/` | Model review / triage (raw) |
 | [`2026-08-28-ux-round2-grok-4.6.md`](reviews-2026-08/2026-08-28-ux-round2-grok-4.6.md) | `docs/reviews/2026-08-28-ux-round2-grok-4.6.md` | `reviews-2026-08/` | Model review / triage (raw) |
 | [`SCHNITT-0-UMFANG.md`](roadmap-2.8/SCHNITT-0-UMFANG.md) | `docs/roadmap/SCHNITT-0-UMFANG.md` | `roadmap-2.8/` | Phase 0 work packages |
+| [`block-d-plan.md`](roadmap-2.8/block-d-plan.md) | `docs/design/block-d-plan.md` | `roadmap-2.8/` | Plan (Block D, closed with D.30 on 30.09.2026) |

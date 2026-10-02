@@ -55,8 +55,8 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
  * Where "not now" is remembered.
  *
  * Session storage, and keyed by the version being declined: closing the browser
- * asks again, which is what Sonny asked for (18.09.2026, "der user muss bei neu
- * login erneut zustimmen") and what § 10.1's notice regime expects. A *later*
+ * asks again, which is what Sonny asked for (18.09.2026, "the user has to agree
+ * again at a new login") and what § 10.1's notice regime expects. A *later*
  * amendment gets its own key and is therefore asked about on its own merits —
  * declining v2 must not silently decline v3.
  *

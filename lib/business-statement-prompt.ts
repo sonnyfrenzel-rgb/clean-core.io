@@ -4,54 +4,55 @@ import { inspectModelText } from './model-text';
 import type { ProvenanceValue } from './provenance';
 
 /**
- * Der Fachsatz vom Modell — Roadmap 17.8, Weg B.
+ * The business statement from the model — roadmap 17.8, Path B.
  *
- * Weg A (`lib/abap/business-statement.ts`) bildet den Fachsatz deterministisch
- * aus dem Quelltext und setzt die Untergrenze. Dieses Modul ist der zweite
- * Erzeuger: ein Prompt, der **verankerte Einzelsätze** je ABAP-Anweisung und
- * BPMN-Element bestellt — nicht die Executive Summary, die
- * `lib/analysis-prompt.ts` bestellt und die dort bleibt, wie sie ist.
+ * Path A (`lib/abap/business-statement.ts`) builds the business statement
+ * deterministically from the source and sets the floor. This module is the
+ * second producer: a prompt that orders **anchored single sentences** per ABAP
+ * statement and BPMN element — not the executive summary, which
+ * `lib/analysis-prompt.ts` orders and which stays there as it is.
  *
- * Die ganze Konstruktion folgt `lib/process-naming.ts`:
+ * The whole construction follows `lib/process-naming.ts`:
  *
- *   - **Der Prompt ist nicht die Verteidigung.** Was hält, ist
- *     `validateStatementAnswer`: ein Anker, der auf keine Zeile mit einer
- *     ABAP-Anweisung zeigt, eine Datei, die es nicht gibt, ein Element, das das
- *     Skelett nicht hat oder das nicht an der Ankerzeile steht — der Satz wird
- *     verworfen und **gezählt**, nie repariert. Was das Modell sagt, fügt keinen
- *     Anker und keine Zeile hinzu, die der Quelltext nicht hat.
- *   - **Herkunft `proposed`** (`lib/provenance.ts`, *Model proposal*), und der
- *     Typ unten lässt nichts anderes zu. Ein offener Rest hängt als Vorbehalt
- *     **an** dem Satz, mit `not-determined` — nie an seiner Stelle
- *     (Forderung 3 aus 17.6: erst auflösen, dann ausweisen).
- *   - **Außerhalb jeder Signatur.** Wie jedes Narrativ: `runs/create` signiert
- *     `Omit<…, 'analysis'>`, und ein Fachsatz ist eine Lesart, deren Wortlaut
- *     sich ändern darf, ohne dass eine Quittung bricht.
+ *   - **The prompt is not the defence.** What holds is
+ *     `validateStatementAnswer`: an anchor that points at no line with an
+ *     ABAP statement, a file that does not exist, an element the skeleton
+ *     does not have or that does not sit at the anchor line — the sentence is
+ *     discarded and **counted**, never repaired. Nothing the model says adds
+ *     an anchor or a line the source does not have.
+ *   - **Provenance `proposed`** (`lib/provenance.ts`, *Model proposal*), and
+ *     the type below allows nothing else. An open remainder hangs as a caveat
+ *     **on** the sentence, with `not-determined` — never in its place
+ *     (requirement 3 of 17.6: resolve first, then disclose).
+ *   - **Outside every signature.** Like every narrative: `runs/create` signs
+ *     `Omit<…, 'analysis'>`, and a business statement is a reading whose
+ *     wording may change without breaking a receipt.
  *
- * **Verdrahtet seit 17.10** (Sonny, 27.09.2026): `lib/statement-proposal.ts`
- * bestellt den Satz über `/api/gemini`, den einzigen Weg nach außen, und
- * `app/api/projects/[projectId]/statement-proposal/route.ts` prüft und
- * speichert ihn — auf Knopfdruck, nie aus `/api/runs/create`. In der
- * Business-Sicht steht er über dem Satz aus Weg A, der als Beleg bleibt.
+ * **Wired since 17.10** (Sonny, 27.09.2026): `lib/statement-proposal.ts`
+ * orders the sentence via `/api/gemini`, the only way out, and
+ * `app/api/projects/[projectId]/statement-proposal/route.ts` checks and
+ * stores it — at the press of a button, never from `/api/runs/create`. In the
+ * Business view it stands above the sentence from Path A, which stays as
+ * evidence.
  *
- * Rein: keine Netzaufrufe, kein Schlüssel, kein Zustand.
+ * Pure: no network calls, no key, no state.
  */
 
 /**
  * 2 since 01.10.2026: the statements are ordered in English (owner decision
- * "alles Englisch"). The version is part of the digest
+ * "everything in English"). The version is part of the digest
  * (`lib/statement-proposal.ts`), so a German proposal saved under 1 no longer
  * matches and is not shown; the reader can request an English one.
  */
 export const STATEMENT_PROMPT_FORMAT_VERSION = 2;
 
-/** Ein Satz, der länger ist, sagt mehr als eine Sache. */
+/** A sentence longer than this says more than one thing. */
 export const STATEMENT_MAX_LENGTH = 400;
-/** Ein Vorbehalt ist ein Nebensatz, keine zweite Aussage. */
+/** A caveat is a subordinate clause, not a second statement. */
 export const UNCERTAINTY_MAX_LENGTH = 240;
-/** Mehr Sätze, als ein Ausschnitt Anweisungen hat, sind kein Fachsatz je Anweisung mehr. */
+/** More sentences than an excerpt has statements are no longer one business statement per statement. */
 export const MAX_STATEMENTS = 80;
-/** Größer wird die Antwort nicht gelesen. */
+/** An answer larger than this is not read. */
 export const MAX_ANSWER_LENGTH = 100_000;
 
 export interface StatementSource {
@@ -59,9 +60,9 @@ export interface StatementSource {
   code: string;
 }
 
-/** Ein BPMN-Element, wie der Prompt es nennt: der Knoten des Skeletts. */
+/** A BPMN element as the prompt names it: the skeleton's node. */
 export interface StatementElement {
-  /** Die Id im Prompt: die Knoten-Id, bei mehreren Dateien `datei/knoten`. */
+  /** The id in the prompt: the node id, with several files `file/node`. */
   id: string;
   file: string;
   nodeId: string;
@@ -75,7 +76,7 @@ export interface StatementContext {
   elements: Map<string, StatementElement>;
 }
 
-/** Den Kontext einmal bilden — Prompt und Prüfung lesen denselben. */
+/** Build the context once — prompt and check read the same one. */
 export function buildStatementContext(sources: readonly StatementSource[]): StatementContext {
   const multi = sources.length > 1;
   const elements = new Map<string, StatementElement>();
@@ -100,10 +101,10 @@ export function buildStatementContext(sources: readonly StatementSource[]): Stat
 }
 
 /**
- * Der Prompt. Er bestellt Einzelsätze, keine Zusammenfassung, und er sagt,
- * wie ein Fachsatz aussieht — die drei Forderungen aus 17.6 in Anweisungen
- * übersetzt. Das Beispiel ist erfunden und stammt aus keinem Korpusfall; ein
- * Sollsatz im Prompt wäre ein abgeschriebenes Ergebnis.
+ * The prompt. It orders single sentences, not a summary, and it says what a
+ * business statement looks like — the three requirements of 17.6 translated
+ * into instructions. The example is invented and comes from no corpus case; an
+ * expected sentence in the prompt would be a copied result.
  */
 export function buildStatementPrompt(context: StatementContext): string {
   const lines: string[] = [

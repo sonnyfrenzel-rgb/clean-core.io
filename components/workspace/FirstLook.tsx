@@ -204,7 +204,7 @@ export default function FirstLook({
   project: Project | null;
   projectId: string;
   /**
-   * False on a second visit — *„Ein zweiter Besuch hat keinen Aufbau"* (§5.2).
+   * False on a second visit — *"A second visit has no build-up"* (§5.2).
    * The four calls still run in the same order; only the staged reveal is gone,
    * which is the same thing `prefers-reduced-motion` and "Skip" ask for.
    */
@@ -309,7 +309,7 @@ export default function FirstLook({
   }, [source, hasSource, process]);
 
   /**
-   * "Das Modell hält nicht auf" (mockup s0, DESIGN.md §5.2): the stored naming
+   * "The model does not hold up the build-up" (mockup s0, DESIGN.md §5.2): the stored naming
    * is one network read, and once the build-up's budget is spent — or the reader
    * skipped — the end state does not wait for it. The process stands with the
    * names it has; a naming that arrives later changes them once.
@@ -369,8 +369,8 @@ export default function FirstLook({
 
   /**
    * The process the build-up drew, kept in the end state (owner, 02.10.2026:
-   * "Der Prozess muss immer angezeigt werden … mit erster Blick — der Prozess
-   * war kurz da und dann verschwunden"). The build-up grows this drawing beside
+   * "The process always has to be shown … with first look — the process was
+   * there briefly and then gone"). The build-up grows this drawing beside
    * the code; the end state used to drop it for the step strip, so the one
    * picture of the process on the first screen vanished after ~2.4 s. Same
    * skeleton, same layout, plain names, every node with its line — nothing is
@@ -706,7 +706,7 @@ function EndState({
 }: {
   result: Result;
   proposedName: string | null;
-  /** "Rules confirmed x of n" from the Bedarfsrevision, or null when it could not be read. */
+  /** "Rules confirmed x of n" from the need revision, or null when it could not be read. */
   confirmed: { confirmed: number; total: number } | null;
   /** Only the owner confirms; a reader is offered to review. */
   owner: boolean;
@@ -768,8 +768,8 @@ function EndState({
         ) : null}
       </div>
 
-      {/* Found in the code, and beside it what is not determined (§5.1: "Der
-          Zweifel wird sofort beantwortet"). Stacked on a phone. */}
+      {/* Found in the code, and beside it what is not determined (§5.1: "The
+          doubt is answered at once"). Stacked on a phone. */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div
           data-first-look-reveal=""

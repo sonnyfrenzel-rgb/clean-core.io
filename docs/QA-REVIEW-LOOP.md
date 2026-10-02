@@ -1,6 +1,6 @@
 # QA agent — the review loop on `dev`
 
-**as of 15.09.2026 · introduced with v2.9.12 · runs from now on with every push to `dev`, until Sonny revokes it**
+**as of 15.09.2026, reviewed for 3.0 on 02.10.2026 · introduced with v2.9.12 · runs from now on with every push to `dev`, until Sonny revokes it**
 
 Every new state on `dev` gets two checks, without anyone triggering them:
 a **delta review** through OpenRouter's Auto Router (since 01.10.2026; before, a pinned

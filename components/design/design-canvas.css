@@ -1,6 +1,6 @@
 /*
- * The Design canvas in full screen (owner, 02.10.2026: "vollbild geht hier
- * nicht auf").
+ * The Design canvas in full screen (owner, 02.10.2026: "full screen does not
+ * open here").
  *
  * The same rule as the BPMN editor's `.cc-editor-fullscreen`
  * (`components/process-map/process-map.css`): it is the canvas card itself

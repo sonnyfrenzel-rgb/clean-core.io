@@ -80,6 +80,11 @@ without marketing and without alarmism.
 - **Cloud Run / GCP:** over-privileged service accounts, metadata endpoint reach
   from code execution paths, unauthenticated services that should not be.
 - **Privacy:** personal data in logs, exports and mails; deletion completeness.
+- **Read access by invitation (3.0):** every project opens in a workspace, and sharing is
+  read access by invitation — a link bound to one confirmed e-mail address, including
+  source code, with expiry and revocation. Check that a link cannot be redeemed by
+  another address, outlives revocation or expiry, or reaches a write path; Business,
+  IT and Management are views only and must never decide what is authorised.
 
 ## Severity (map to CVSS 3.1 thinking, report in German words)
 

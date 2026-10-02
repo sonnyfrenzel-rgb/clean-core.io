@@ -10,14 +10,15 @@ Guide for working in this repo. Deeper reference: `docs/ARCHITECTURE.md` (archit
 roadmap. Publicly there is one jump: **3.0 is the UX rebuild along
 `docs/roadmap/clean-core-mockups-v2_8.html`**, built to `DESIGN.md` (look, structure and
 behaviour; decisions in `docs/design/decisions.md`), reached in phases of small steps
-(v2.10–v2.18); new UI grows behind an admin-only switch until 3.0. The Business view
-leads: the process is reconstructed from the ABAP code as BPMN (line anchors on
+(v2.10–v2.20). Since 3.0.1 every account opens its projects in the workspace — three
+views, six layers, and the seven stages as tools in its tool bar; the admin-only switch
+is gone. The Business view leads: the process is reconstructed from the ABAP code as BPMN (line anchors on
 every element), editable, exchanged with SAP Signavio via BPMN 2.0 XML files — no
 Signavio API connection. Rules that hold everywhere:
 - **Sign-up and account stay unchanged.** No handle, no field removal, no migration.
 - **Management/Business/IT are views only** — never stored on an artefact, run,
   signature or audit pack. Accountability is the signed-in account (a
-  self-declaration, not an organisational mandate).
+  self-declaration, not a mandate).
 - **Sharing = read access by invitation**: a link bound to one confirmed e-mail
   address, including source code, with expiry and revocation.
 Deliberately not built: tenants, SSO, guests, role mandates, a self-hosted edition,
@@ -38,7 +39,7 @@ npm start            # serve production build
 npm run lint         # eslint
 npx playwright test  # E2E/integration tests (need Firebase emulators running)
 npm run sync:catalog # refresh SAP cloudification catalog (latest)
-npm run sync:catalog:all # refresh every registry entry incl. the A-D classification file
+npm run sync:catalog:all # refresh every registry entry incl. the classification file behind Level A–D
 ```
 
 Emulators for tests: `firebase emulators:start --only auth,firestore --project=cleancore-491216`
@@ -53,7 +54,8 @@ else passes, which reads like a code regression and is not one. CI passes the fl
 ## Layout
 
 - `app/` — App Router. `app/(app)/` = authenticated product shell; public/legal pages + `api/` at top level.
-- `app/(app)/project/[projectId]/` — the **7-stage workflow**, one page each: `analyze` → `design` → `transformation` → `documentation` → `testing` → `tco` (Economics) → `delivery`. Order and per-phase state come only from `lib/workflow-steps.ts` — stepper, rail, dashboard and delivery all read it, and none reads `project.status` (see `docs/ARCHITECTURE.md` §2).
+- `app/(app)/project/[projectId]/page.tsx` — the **workspace** of a project (`components/workspace/WorkspaceShell.tsx`, model in `lib/workspace-model.ts`): Business, IT and Management view, the six layers, and the tool bar. Every project opens here (3.0.1).
+- `app/(app)/project/[projectId]/<stage>/` — the seven stages as tools of the workspace, one page each: `analyze` → `design` → `transformation` → `documentation` → `testing` → `tco` (Economics) → `delivery`. Order and per-phase state come only from `lib/workflow-steps.ts` — tool bar, rail, dashboard and delivery all read it, and none reads `project.status` (see `docs/ARCHITECTURE.md` §2).
 - `app/api/*/route.ts` — ~38 route handlers (gemini proxy, runs/create, mfa, admin, export sign/verify, s4 connectivity, email, abcd-classify).
 - `components/` — shared `.tsx`; feature subfolders `components/analyze/`, `components/design/`.
 - `lib/` — non-UI logic. `lib/abap/` is the deterministic evidence/grounding engine (~24 files).
@@ -63,7 +65,7 @@ else passes, which reads like a code regression and is not one. CI passes the fl
 - Auth/DB: `lib/firebase.ts` (client, `getDb`/`getAuth`), `lib/firebase-admin.ts` (`verifyRequestAuth`, `getAdminDb`).
 - Trust chain: `app/api/runs/create/route.ts` (immutable HMAC-signed runs), `lib/run-guard.ts` (`enforceActiveRun`), `lib/project-loader.ts` (`loadProjectAndHydrate`), `lib/audit-pack.ts` / `lib/audit-pack-verify.ts`.
 - ABAP engine: `lib/abap/evidence-model.ts` (`buildAbapEvidence`), `code-assessment.ts`, `extensibility-router.ts`, catalog layer (`catalog-service.ts`, `sap-api-catalog.ts`).
-- Clean core levels A–D: `lib/abap/abcd-classification.ts` (pure, no imports — the consuming panel is a client component), lookup via `gradeSapObject()` in `catalog-service.ts` (server-only), batch lookup for clients via `/api/abcd-classify`. Two synced SAP artifacts back it; see `docs/ARCHITECTURE.md` §4.1–4.3. The grade is **never** part of the signed audit pack.
+- Clean core Level A–D: `lib/abap/abcd-classification.ts` (pure, no imports — the consuming panel is a client component), lookup via `gradeSapObject()` in `catalog-service.ts` (server-only), batch lookup for clients via `/api/abcd-classify`. Two synced SAP artifacts back it; see `docs/ARCHITECTURE.md` §4.1–4.3. The grade is **never** part of the signed audit pack.
 - Crypto/secrets: `lib/s4-credentials.ts` (AES-256-GCM), `lib/mfa.ts`, `lib/approval-token.ts`, `lib/audit-signing-key.ts` (the only reader of `AUDIT_SIGNING_KEY` — **no fallback**, the signing/verify routes 500 without it in every environment; `.env.local` needs it for `npm run dev`).
 
 ## Conventions
@@ -71,7 +73,7 @@ else passes, which reads like a code regression and is not one. CI passes the fl
 - Path alias `@/*` → repo root (e.g. `@/lib/...`, `@/components/...`).
 - **No global state library and no React Context** — component-local `useState`/`useEffect` + Firestore as source of truth via `getDb()` and the `useUserProfile` hook.
 - Naming: components `PascalCase.tsx`, hooks `useX.ts`, lib modules kebab-case, route handlers always `route.ts`, pages `page.tsx`, stage folders lowercase verbs.
-- Styling: Tailwind v4 + `clsx`/`tailwind-merge` (`lib/utils.ts`), dark mode via `dark` class from profile. Icons `lucide-react`, diagrams `mermaid`/`@xyflow/react`, charts `recharts`, animation `motion`.
+- Styling: Tailwind v4 + `clsx`/`tailwind-merge` (`lib/utils.ts`), light theme only (there is no dark mode since 1.6; `tests/dark-mode-guard.spec.ts`). Icons `lucide-react`, diagrams `mermaid`/`@xyflow/react`, charts `recharts`, animation `motion`.
 - Security: Gemini keys **never** reach the client — always proxy through `/api/gemini`. Mutating API routes require a verified Firebase ID token. CSP is set in `middleware.ts`; HTML sanitized via `lib/sanitize-html.ts`.
 
 ## Deploy — Cloud Run via GitHub Actions
@@ -190,7 +192,7 @@ shades apart but one styled and one not. Inventing a shade is fine; inventing it
 silently is not, and the same spec fails the suite on any colour class naming an
 undeclared shade.
 
-## Workflow stages — one style, enforced
+## Stage tools — one style, enforced
 
 Same rule as the landing page, one layer down. No stage writes its own title;
 they all come from `components/StageHeader.tsx` (`title`, `eyebrow`, `icon`,
@@ -199,8 +201,8 @@ they all come from `components/StageHeader.tsx` (`title`, `eyebrow`, `icon`,
 
 What it replaced, measured: three font weights, four size scales, two inks, two
 letter cases, and two stages with no responsive step at all — the title jumped
-size, weight and colour as the reader moved from one step to the next, which is
-what makes a seven-stage flow feel like seven tools.
+size, weight and colour as the reader moved from one tool to the next, which is
+what makes seven tools of one workspace feel like seven different products.
 
 `tests/workflow-style-guard.spec.ts` seeds one populated project, walks all six
 project stages signed in, and compares the computed size, weight, family,
@@ -213,7 +215,7 @@ The `h1` overrides inside the markdown renderers (`{...props}`) are for generate
 
 ## Gotchas
 
-- **Node version:** package.json requires `>=22.8`; the local machine currently runs **v20.12.2**. `npm run dev`/`build` may warn or fail on engine checks — bump Node to 22 LTS for parity with CI/Cloud Run.
+- **Node version:** package.json requires `>=22.8`; the local machine runs **v20.12.2** (checked 02.10.2026). `npm run dev`/`build` may warn or fail on engine checks — bump Node to 22 LTS for parity with CI/Cloud Run.
 - **Never regenerate `package-lock.json` on local Node 20.** npm 10.5 resolves the `overrides` block differently from the npm 11 in the Cloud Run buildpack: it silently drops nested entries (e.g. `@apidevtools/json-schema-ref-parser/node_modules/js-yaml`), CI's `npm ci` still passes, and the deploy then dies in Cloud Build with `npm ci can only install packages when your package.json and package-lock.json are in sync`. Use the matching toolchain — `npx --yes --package=node@22 --package=npm@11 -- npm install --package-lock-only` — and validate with the same prefix plus `npm ci --dry-run` before pushing.
 - **A test that waits for a window will be green here and red in CI.** The local
   dev server compiles as it goes; CI runs `npm start` on a production build and is

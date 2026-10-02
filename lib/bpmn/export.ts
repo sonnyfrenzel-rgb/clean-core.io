@@ -353,7 +353,7 @@ function nodeTrace(node: SkeletonNode, file: string, extra: Record<string, strin
  * laid out here would be a layout decision taken twice.
  *
  * An `authority` lane carries no `flowNodeRef` on purpose — `DESIGN.md` §5.8
- * calls that actor *"Prüfer (außerhalb des Programms)"*, and the checker
+ * calls that actor *"reviewer (outside the program)"*, and the checker
  * executes none of this program's statements.
  */
 function laneSet(model: ExportModel, options: BpmnExportOptions): XmlElement[] {

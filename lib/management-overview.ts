@@ -26,7 +26,7 @@ import { sapNamesForDisplay } from './sap-naming';
 /**
  * The Management overview — roadmap 3.0.10.
  *
- * *„Die Management-Sicht wird lesbar in Sekunden."* One sentence that answers
+ * *"The Management view becomes readable in seconds."* One sentence that answers
  * the view's question (*What do I risk, what do I decide?*), and under it at
  * most six cards, each opening with its own answer sentence as its title
  * (ADR-029). Five are built, one per point of the roadmap line:

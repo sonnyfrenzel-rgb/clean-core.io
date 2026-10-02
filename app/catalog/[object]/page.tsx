@@ -346,8 +346,8 @@ export default async function CatalogObjectPage({
           )}
 
           {/*
-            Roadmap 7.9, verbatim: "`deprecated` ohne Nachfolger ist eine
-            Prüfung, kein automatisches D". 183 of the 259 deprecated objects in
+            Roadmap 7.9, verbatim: "`deprecated` without a successor is a
+            review, not an automatic D". 183 of the 259 deprecated objects in
             the release file name no replacement. The level stays D — the rule in
             abcd-classification.ts is unchanged and deliberately strict — but a
             D that rests on a missing sentence is a thing to check, and saying so

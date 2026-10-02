@@ -3,12 +3,12 @@
  * component level, the ABAP language version each object is written in, the
  * catalog snapshot that was looked up and the rule version that graded it.
  *
- * Roadmap 7.10 (`docs/ROADMAP.md` §Phase 7, CR-02): *"Edition, Sprachversion je
- * Objekt, Release-/Komponentenstand, Katalogsnapshot und Regelversion als
- * versioniertes `AssessmentProfile` … nicht abgedeckte Profile werden sichtbar
- * abgelehnt oder als unbestätigt geführt; ein Profilwechsel ändert den
- * Subject-Hash und entwertet abhängige Freigaben; ein Latest-Eintrag ersetzt
- * keinen älteren Release-Snapshot still."*
+ * Roadmap 7.10 (`docs/ROADMAP.md` §Phase 7, CR-02): *"Edition, language version per
+ * object, release/component level, catalog snapshot and rule version as a
+ * versioned `AssessmentProfile` … profiles not covered are visibly rejected or
+ * carried as unconfirmed; a profile change changes the subject hash and
+ * invalidates dependent approvals; a latest entry does not silently replace an
+ * older release snapshot."*
  *
  * Why this is a module and not a field: today the target is a single string,
  * `project.s4Deployment` (`lib/types.ts:90`, `'public' | 'private'`), and the
@@ -386,7 +386,7 @@ export function profileCoverage(profile: AssessmentProfile | null | undefined): 
     );
   }
 
-  // "Ein Latest-Eintrag ersetzt keinen älteren Release-Snapshot still": the
+  // "A latest entry does not silently replace an older release snapshot": the
   // profile names a release, a snapshot for that release exists, and the one
   // that was read is the moving entry instead.
   if (key && isMovingKey(key) && profile.release && known && RELEASE_PINNED_EDITIONS.has(edition)) {

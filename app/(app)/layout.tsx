@@ -102,9 +102,9 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
    * value: a `/project/<id>` path gives it a project, and it then answers only
    * from that project's evidence, with anchors; anywhere else it answers
    * product and SAP questions out of `lib/chatbot-knowledge.ts`. A single
-   * label cannot be true for both — „Ask this case" on the workspace overview
+   * label cannot be true for both — "Ask this case" on the workspace overview
    * would name a case that does not exist — so the trigger says which of the
-   * two will open. „Ask AI" is what it may not say (`DESIGN.md` §3.1).
+   * two will open. "Ask AI" is what it may not say (`DESIGN.md` §3.1).
    *
    * The test is `tests/assistant-label.spec.ts`: it clicks this button in both
    * places and reads the panel that opens.
@@ -152,7 +152,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
 
   /**
    * Where the reader stands, for the path in the shell bar (§2.1: "Workspace ›
-   * Projekt"). The workspace is the root; a stage names itself from `PHASES`
+   * Project"). The workspace is the root; a stage names itself from `PHASES`
    * (`lib/workflow-steps.ts`), the list the stepper and the stage title read.
    *
    * The project's name is not fetched here — that would be one more read of a

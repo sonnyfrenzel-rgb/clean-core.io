@@ -1,6 +1,6 @@
 # Security Architecture — Clean-Core.io Platform
 
-> **Version:** 5.0 · **Date:** 2026-10-02 · **Classification:** Internal
+> **Version:** 5.0 · **Date:** 2026-10-02 · **Classification:** Public (the repository is public)
 
 > **v5.0 changes (the 3.0 state):** the app's own VPC network and how it reaches the internal runners, with the runners' deployment status (§7, §7.2); audit packs signed with HMAC and Ed25519, the canonical manifest, browser and offline verification, what the signature covers — the Clean Core Score yes, the level A–D no (§14); owner-only reads incl. runs and suspended accounts (§3.3); headers and the `'unsafe-inline'` gap (§13.6); supply-chain gate and the three review agents (§15); the public surface — content pages, crawlers, demo, invitation pages, unauthenticated routes (§16). Corrected against the code: admin routes and audit logging (§3.2, §3.6), the tenant-link nonce (§3.4), run quota (§6), environment variables (§8), BPMN parsing in place of Mermaid (§10). English throughout.
 
@@ -372,8 +372,9 @@ proven on the deployed profile.
 
 ---
 
-## 11. Evidentiary Board Presentation & Rollup Safety
+## 11. Evidentiary Board Presentation, Steering One-Pager & Rollup Safety
 - **Deterministic Presentation Builder**: Replaced dynamic Gemini-based slide generation with a local, deterministic deck builder (`lib/board-deck.ts`) to prevent prompt injection and LLM hallucinations.
+- **Steering one-pager (Management view, 3.0)**: `lib/steering-one-pager.ts` is pure — no model call, no Firestore, no `fetch`; it only sorts figures that other modules already derived, each with its coverage and a "not determined" column, so the page cannot carry a number the analysis did not produce.
 - **Worst-Case Rollup Safety**: The overall project recommendation is evaluated using a strict rollup function. If a project contains any `not-supported` finding, the recommendation is "Redesign needed before release"; any `partial` finding gives "Release only with architect sign-off"; no findings at all gives no verdict, because coverage is not established.
 
 ---

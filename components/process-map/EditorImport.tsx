@@ -12,7 +12,7 @@ import { editorImportCount, editorImportRead, editorMore, wt } from '@/lib/works
  * What an imported file would change, before anything is kept — the diff
  * summary the owner asked for. Two ways out besides Cancel: open the file in
  * the editor to work on it, or save it as the next revision straight away.
- * Neither touches the reconstructed Ist.
+ * Neither touches the reconstructed as-is process.
  */
 
 export interface EditorImportProps {

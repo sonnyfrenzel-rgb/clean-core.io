@@ -69,7 +69,7 @@ export const NARROW_MIN_SCALE = 0.4;
 
 /**
  * The whole level in the canvas — what the Documentation map opens with (owner
- * 02.10.2026: "den ganzen Prozess sehen"), and the same overview the editor's
+ * 02.10.2026: "see the whole process"), and the same overview the editor's
  * *Fit* gives. Never above 100 %; the + button is there for reading the names
  * of a wide process. On a phone-wide canvas it never goes below 40 % (owner:
  * navigable, and 20 % is not readable): a level that does not fit then opens

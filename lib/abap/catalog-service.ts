@@ -322,8 +322,8 @@ export class CatalogSnapshotNotShipped extends Error {
  *
  * Omitted, the lookup reads the one release file this build ships, as it
  * always has. Named, it must be that file: `pce-2023-3` asked for and `latest`
- * answered would be exactly the silent substitution 7.10 forbids ("ein
- * Latest-Eintrag ersetzt keinen älteren Release-Snapshot still").
+ * answered would be exactly the silent substitution 7.10 forbids ("a
+ * latest entry does not silently replace an older release snapshot").
  */
 export function assertSnapshot(snapshot: string | undefined): void {
   releaseArtifact(snapshot);

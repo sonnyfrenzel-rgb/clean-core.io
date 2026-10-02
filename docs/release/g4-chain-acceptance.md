@@ -95,7 +95,7 @@ An RFC with a dynamic destination — `UPDATE zcc_decision`, `CALL FUNCTION … 
 | Step | What the spec proves |
 |---|---|
 | Analyze | signed run; engine route Side-by-Side; contract `side-by-side-cap` |
-| Design | CAP signed off with no departure (`recommendationBasis: contract`) |
+| Design | CAP with the account's sign-off and no departure (`recommendationBasis: contract`) |
 | Transformation | a CAP package (service, CDS schema, package.json, Dockerfile, ERP-side publisher class) stored through the generation store with its token; `generationBinding` names the contract fingerprint; the handover calls it *proposed*, never proven |
 | Documentation | read out of the signed source by the Documentation stage in the browser (*reconstructed*) |
 | Testing | three node:test cases run in the sandbox runner; receipt `environment: mock`, `runner.kind: local-emulator`, all three *Passed*; Testing badge *Passed · mock*; the handover's tests link, quality facet and receipt group are **Demonstrated · mock**; the only *proven* links in the whole chain are the signed run and its analysis; Delivery *Ready · mock tests* |
@@ -123,8 +123,8 @@ A logical-database report that reads KNA1 without a SELECT — `NODES kna1`, `GE
 |---|---|
 | Analyze | signed run |
 | Usage | an SCMON import recorded through `record-usage-report`; the Analyze stage's join (`joinUsageWithEvidence`) makes ZCC_REF_047 a **Retire candidate** for zero calls over a 396-day window, described as "retire after business owner confirmation" |
-| Candidate ≠ decision | with nothing signed off the decision picks nothing; confirming it → 409 `decision-blocked`; the handover does not read it as confirmed |
-| Design | Retire signed off with the usage evidence as the reason |
+| Candidate ≠ decision | with no sign-off on record the decision picks nothing; confirming it → 409 `decision-blocked`; the handover does not read it as confirmed |
+| Design | Retire with the account's sign-off, the usage evidence as the reason |
 | Decision | drafted, *Derived by rules, not confirmed*, still needed; cost binding not determined (G4-F3); then **confirmed by the account** on the run and the sign-off (G4-F1 fix) |
 | Delivery | pack authentic against run A; after a new run of the same source the export of run A no longer counts, the confirmed decision is *stale*, the usage evidence still only makes a candidate; the confirmation prepared on run A is refused (409 `run-moved`); withdraw, redraft and confirm give revision 3 bound to run B (the sign-off stands: same source), and a new pack is sealed against run B; the Delivery page shows the decision *confirmed* |
 
@@ -143,7 +143,7 @@ zcc_ref_021_rules`, which was not supplied.
 | Step | What the spec proves |
 |---|---|
 | Analyze | signed run; what the engine says is recorded, not endorsed (see G4-F2) |
-| Decision | the draft says "No target architecture is signed off yet, so this decision picks nothing", option not determined; it can be drafted and **cannot be confirmed** (409 `decision-blocked`), stays *draft* |
+| Decision | the draft says `No target architecture is signed off yet, so this decision picks nothing.` (`lib/decision-draft.ts`), option not determined; it can be drafted and **cannot be confirmed** (409 `decision-blocked`), stays *draft* |
 | Delivery | pack authentic; attested file "Target architecture chosen: Not chosen", "Architect sign-off: not given"; handover: decision *draft, not confirmed* and "picks nothing", design *proposed*, architecture facet *Pending*, design and decision still needed, **no link in the chain reads as confirmed** |
 | Pages | Design: the answer is *Recommended*, never confirmed; Delivery: *draft, not confirmed*, decision box not confirmed, "decision" in the still-needed list |
 

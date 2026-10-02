@@ -89,7 +89,7 @@ export type SaveRevisionRefusal =
   /**
    * The project points at a run, and that run could not be shown to be the run
    * that signed its source: no such document, one that names another project,
-   * or one whose HMAC does not check out. Revision 1 is the Ist of a signed run
+   * or one whose HMAC does not check out. Revision 1 is the as-is process of a signed run
    * or it is nothing, so no reconstruction is written.
    */
   | 'run-unverified'
@@ -116,7 +116,7 @@ export type SaveRevisionOutcome =
 /**
  * Reconstruct revision 1 if the project has none, and return it.
  *
- * The Ist is built on the server out of the source the active run signed; this
+ * The as-is process is built on the server out of the source the active run signed; this
  * call only asks for it to exist. It is safe to call on every open — a project
  * that already has revision 1 is not reconstructed again.
  */

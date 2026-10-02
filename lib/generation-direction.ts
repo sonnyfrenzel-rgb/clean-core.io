@@ -1,7 +1,7 @@
 /**
  * Where the generation takes its direction from — roadmap 8.3
- * (`docs/ROADMAP.md` §Phase 8): *"Generierung folgt dem Vertrag; eine Abweichung
- * von der Empfehlung wird festgehalten und angewendet."*
+ * (`docs/ROADMAP.md` §Phase 8): *"Generation follows the contract; a deviation
+ * from the recommendation is recorded and applied."*
  *
  * ## What it replaced, and why it is a module
  *

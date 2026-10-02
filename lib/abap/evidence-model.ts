@@ -134,7 +134,7 @@ const LOCAL_NAME_PREFIX = /^(?:L[TSVORXD]_|G[TSVOR]_|[EIC][TSV]_|R[TSV]_|ME_|MO_
  * One sentence on how the table was reached, where it was not written in an
  * ABAP SQL statement. The finding is the same finding — a direct read is a
  * direct read whether a macro, a constant or a logical database carries it
- * (R02: "der Schreibweg ändert den Effekt nicht") — but a reader looking for
+ * (R02: "the way it is written does not change the effect") — but a reader looking for
  * `SELECT … FROM kna1` in the quoted line would not find it without this.
  */
 const ROUTE_NOTE: Partial<Record<DependencyRoute, string>> = {

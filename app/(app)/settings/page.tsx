@@ -55,7 +55,7 @@ const TEXT_LINK = 'font-semibold text-cc-brand-strong underline underline-offset
 
 /**
  * A state in words with its dot — the shape of `CcObjectStatus` (§2.4, "Status
- * als Text mit Punkt — nie nur Farbe") for the account states this page has
+ * as text with a dot — never colour alone") for the account states this page has
  * and the object-status vocabulary does not: 2FA on or off, the own key, the
  * tenant request, the password strength.
  */

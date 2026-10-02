@@ -1,9 +1,9 @@
 /**
  * Which stages may call a model — and what a section says when none did.
  *
- * Roadmap 1.2 (`docs/ROADMAP.md` §Phase 1): *"Zero-LLM-Sperrpfad: Run ohne
- * API-Key bis zum signierten Evidenzstand; Modellstufen einzeln zuschaltbar;
- * 'nicht erzeugt' statt leer (V25-A12)"*.
+ * Roadmap 1.2 (`docs/ROADMAP.md` §Phase 1): *"Zero-LLM locked path: run without
+ * an API key up to the signed evidence state; model stages switchable one by
+ * one; 'not generated' instead of empty (V25-A12)"*.
  *
  * Three facts live here, and nothing else does:
  *

@@ -49,8 +49,8 @@ import type { ProvenanceValue } from './provenance';
  *
  * Without a key, or with the stage switched off, `applyNaming` returns the
  * whole skeleton with its technical names and one honest sentence saying that
- * nothing was named — no error, no empty map (V25-A12, Phase 2 "Fertig, wenn":
- * *"ohne API-Key das Skelett mit technischen Namen"*).
+ * nothing was named — no error, no empty map (V25-A12, Phase 2 "Done when":
+ * *"without an API key the skeleton appears with technical names"*).
  *
  * Pure: the browser builds the prompt and applies a naming, the server route
  * validates and stores one, and both read this file. Nothing here reaches the
@@ -66,12 +66,12 @@ export const NAMING_FORMAT_VERSION = 1;
 
 /**
  * The sentence every lane carries — the mockup's, in the interface language.
- * `docs/ROADMAP.md` 2.4: *"rekonstruiert aus AUTHORITY-CHECK und Benennung,
- * keine organisatorische Aussage"*.
+ * `docs/ROADMAP.md` 2.4: *"reconstructed from AUTHORITY-CHECK and naming, no
+ * organisational statement"*.
  */
 export const LANE_STATEMENT = 'Reconstructed from AUTHORITY-CHECK and naming, not an organisational statement.';
 
-/** What an element without a line anchor is called, however it is named. Roadmap 2.4: „unbelegt“. */
+/** What an element without a line anchor is called, however it is named. Roadmap 2.4: "unevidenced". */
 export const UNANCHORED = 'Unanchored';
 
 /** One spelling for what the reader keeps when there are no business names. */

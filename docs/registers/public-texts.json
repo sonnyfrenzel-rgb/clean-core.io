@@ -101,7 +101,8 @@
       ],
       "measured": {
         "lines": 119
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": ".claude/skills/security-audit-intake/SKILL.md",
@@ -226,11 +227,11 @@
         },
         {
           "lines": "41",
-          "what": "Guard (b) clean-core-level: deviation \"placed after\" instead of \"Level A–D (einzeln: Level A)\""
+          "what": "Guard (b) clean-core-level: deviation \"placed after\" instead of \"Level A–D (singular: Level A)\""
         },
         {
           "lines": "66",
-          "what": "Guard (b) clean-core-level: deviation \"plural — the identifier is Level\" instead of \"Level A–D (einzeln: Level A)\""
+          "what": "Guard (b) clean-core-level: deviation \"plural — the identifier is Level\" instead of \"Level A–D (singular: Level A)\""
         }
       ],
       "decision": "update",
@@ -267,7 +268,8 @@
       ],
       "measured": {
         "lines": 237
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "DESIGN.md",
@@ -434,7 +436,8 @@
       ],
       "measured": {
         "lines": 1009
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "LICENSE",
@@ -807,15 +810,15 @@
         },
         {
           "lines": "99",
-          "what": "Guard (b) clean-core-level: deviation \"plural — the identifier is Level\" instead of \"Level A–D (einzeln: Level A)\""
+          "what": "Guard (b) clean-core-level: deviation \"plural — the identifier is Level\" instead of \"Level A–D (singular: Level A)\""
         },
         {
           "lines": "120",
-          "what": "Guard (b) clean-core-level: deviation \"placed after\" instead of \"Level A–D (einzeln: Level A)\""
+          "what": "Guard (b) clean-core-level: deviation \"placed after\" instead of \"Level A–D (singular: Level A)\""
         },
         {
           "lines": "417",
-          "what": "Guard (b) provenance-not-determined: deviation \"old text\" instead of \"Not determined (im Satz: not determined)\""
+          "what": "Guard (b) provenance-not-determined: deviation \"old text\" instead of \"Not determined (in a sentence: not determined)\""
         }
       ],
       "decision": "update",
@@ -835,7 +838,8 @@
       ],
       "measured": {
         "lines": 549
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/BACKLOG.md",
@@ -1069,7 +1073,8 @@
       ],
       "measured": {
         "lines": 123
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/INCIDENT-RESPONSE.md",
@@ -1157,7 +1162,8 @@
       },
       "measured": {
         "lines": 75
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/PLAN-FIRESTORE-MIGRATION.md",
@@ -1223,7 +1229,8 @@
       ],
       "measured": {
         "lines": 257
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/QA-REVIEW-LOOP.md",
@@ -1256,7 +1263,8 @@
       ],
       "measured": {
         "lines": 306
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/ROADMAP.md",
@@ -1361,7 +1369,8 @@
       },
       "measured": {
         "lines": 525
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/SCREENING-GCP-ALTLASTEN.md",
@@ -1408,7 +1417,8 @@
       },
       "measured": {
         "lines": 121
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/SECURITY-AUDIT-AGENT.md",
@@ -1437,7 +1447,8 @@
       ],
       "measured": {
         "lines": 191
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/SECURITY-BACKLOG.md",
@@ -1477,7 +1488,7 @@
         },
         {
           "lines": "83",
-          "what": "Guard (b) clean-core-level: deviation \"plural — the identifier is Level\" instead of \"Level A–D (einzeln: Level A)\""
+          "what": "Guard (b) clean-core-level: deviation \"plural — the identifier is Level\" instead of \"Level A–D (singular: Level A)\""
         }
       ],
       "decision": "archive",
@@ -1526,7 +1537,8 @@
       ],
       "measured": {
         "lines": 161
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/WEEK2_AUDIT_INTEGRITY_PLAN.md",
@@ -1726,7 +1738,8 @@
       ],
       "measured": {
         "lines": 111
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-26-BENEFIT-NEXT-STEPS.md",
@@ -1844,7 +1857,7 @@
         },
         {
           "lines": "89",
-          "what": "Guard (b) clean-core-level: deviation \"placed after\" instead of \"Level A–D (einzeln: Level A)\""
+          "what": "Guard (b) clean-core-level: deviation \"placed after\" instead of \"Level A–D (singular: Level A)\""
         }
       ],
       "decision": "archive",
@@ -2492,7 +2505,7 @@
         },
         {
           "lines": "49, 71",
-          "what": "Guard (b) provenance-not-determined: deviation \"old text\" instead of \"Not determined (im Satz: not determined)\""
+          "what": "Guard (b) provenance-not-determined: deviation \"old text\" instead of \"Not determined (in a sentence: not determined)\""
         }
       ],
       "decision": "archive",
@@ -2681,7 +2694,7 @@
         },
         {
           "lines": "48, 52, 133",
-          "what": "Guard (b) provenance-not-determined: deviation \"old text\" instead of \"Not determined (im Satz: not determined)\""
+          "what": "Guard (b) provenance-not-determined: deviation \"old text\" instead of \"Not determined (in a sentence: not determined)\""
         }
       ],
       "decision": "archive",
@@ -2809,7 +2822,7 @@
         },
         {
           "lines": "169",
-          "what": "Guard (b) provenance-not-determined: deviation \"German variant form\" instead of \"Not determined (im Satz: not determined)\""
+          "what": "Guard (b) provenance-not-determined: deviation \"German variant form\" instead of \"Not determined (in a sentence: not determined)\""
         },
         {
           "lines": "246",
@@ -2868,7 +2881,8 @@
       ],
       "measured": {
         "lines": 103
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/terms/2026-10-06.md",
@@ -2957,7 +2971,8 @@
       },
       "measured": {
         "lines": 243
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/release/3.0-text-scan.md",
@@ -3056,7 +3071,7 @@
         },
         {
           "lines": "52",
-          "what": "Guard (b) clean-core-level: deviation \"plural — the identifier is Level\" instead of \"Level A–D (einzeln: Level A)\""
+          "what": "Guard (b) clean-core-level: deviation \"plural — the identifier is Level\" instead of \"Level A–D (singular: Level A)\""
         },
         {
           "lines": "64",
@@ -3078,7 +3093,8 @@
       ],
       "measured": {
         "lines": 222
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "public/starter-examples/Z_BUSINESS_PARTNER_SYNC.txt",
@@ -3203,10 +3219,16 @@
       "purpose": "Work plan Block D (before 3.0): gap list against DESIGN.md per section and reduction in steps D.1-D.30 with file sets, guard ratchet and addenda per step",
       "audience": "Sonny, agents",
       "saysToday": "As of 24.09.2026: D.1, D.3, D.4, D.5a-d, D.9, D.10a done; D.6 started; the coordinator's addenda at the end.",
-      "wrongWith30": [],
-      "decision": "keep",
-      "reason": "Working document of Block D; is closed with D.30 and then archived.",
-      "effort": "none",
+      "wrongWith30": [
+        {
+          "lines": "whole file",
+          "what": "Block D is closed (D.30, 30.09.2026); the plan describes work that is done."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/roadmap-2.8/",
+      "reason": "Block D closed with D.30 on 30.09.2026; a finished plan is archived, not rewritten (3.0.8). References in docs/ROADMAP.md and docs/BACKLOG.md point to the archive path.",
+      "effort": "XS",
       "guard": {
         "removed": "check",
         "terms": "check"
@@ -3217,7 +3239,8 @@
       ],
       "measured": {
         "lines": 656
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/prozess-benchmark/BERICHT.md",

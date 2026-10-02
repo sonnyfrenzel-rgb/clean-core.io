@@ -42,7 +42,7 @@ import { wrapText } from '@/lib/bpmn/text-metrics';
  */
 
 export interface BpmnCanvasNode {
-  /** Art, Titel, Anker und Herkunft — what a screen reader announces. */
+  /** Kind, title, anchor and origin — what a screen reader announces. */
   accessibleName: string;
   /** True when the element carries no line range. */
   unanchored: boolean;

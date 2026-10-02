@@ -1,28 +1,27 @@
 #!/usr/bin/env node
 /**
- * Wo stehen wir? — abgeleitet, nicht gepflegt.
+ * Where do we stand? — derived, not maintained.
  *
- * `docs/ROADMAP.md` führt 86 Schritte und **keinen Status**: die letzte Spalte
- * jeder Zeile ist eine Größenschätzung (S/M/L). `docs/BACKLOG.md` sind zweitausend
- * Zeilen Fließtext über offene Punkte. Die Frage „wie weit sind wir bis 3.0" hatte
- * deshalb am 23.09.2026 keine Antwort, obwohl 3.0 der eine öffentliche Sprung ist.
+ * `docs/ROADMAP.md` lists 86 steps and **no status**: the last column of each
+ * row is a size estimate (S/M/L). `docs/BACKLOG.md` is two thousand lines of
+ * running text about open points. So on 23.09.2026 the question "how far are we
+ * from 3.0" had no answer, although 3.0 is the one public jump.
  *
- * Eine Statusspalte von Hand wäre die falsche Antwort gewesen: sie driftet, wie die
- * Abschnittsüberschriften der Landingpage gedriftet sind, und aus demselben Grund —
- * niemand vergleicht sie mit der Wirklichkeit. Dieses Skript liest den Stand aus den
- * beiden Quellen, die ohnehin gepflegt werden, und nennt für jeden Schritt, **woher**
- * er ihn hat:
+ * A status column kept by hand would have been the wrong answer: it drifts, as
+ * the landing page's section headings drifted, and for the same reason — nobody
+ * compares it with reality. This script reads the state from the two sources
+ * that are maintained anyway, and names for every step **where** it got it from:
  *
- *   belegt     ein Commit nennt den Schritt im Betreff — `feat(2.15): …`
- *   behauptet  die Roadmap-Zeile sagt selbst „Gebaut", aber kein Commit nennt sie
- *   offen      keines von beidem
+ *   belegt     (evidenced) a commit names the step in its subject — `feat(2.15): …`
+ *   behauptet  (claimed) the roadmap row itself says "Built", but no commit names it
+ *   offen      (open) neither
  *
- * Der Unterschied zwischen den ersten beiden ist der eigentliche Zweck. „Behauptet"
- * ist keine Schuldzuweisung: die meisten dieser Zeilen stammen aus einer Zeit vor der
- * Marker-Konvention. Aber es ist genau die Menge, bei der Planung wild wird, weil zwei
- * Leser sie verschieden lesen.
+ * The difference between the first two is the actual purpose. "Claimed" is not
+ * a reproach: most of these rows date from before the marker convention. But it
+ * is exactly the set where planning goes wild, because two readers read it
+ * differently.
  *
- * Aufruf: `npm run roadmap:status` · `--json` für die Rohdaten · `--offen` nur das Offene.
+ * Usage: `npm run roadmap:status` · `--json` for the raw data · `--offen` only what is open.
  */
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -31,7 +30,7 @@ import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-/** Jede Tabellenzeile, die mit einer Schrittnummer beginnt, samt ihrer Überschrift. */
+/** Every table row that starts with a step number, together with its heading. */
 export function readSteps(markdown) {
   const steps = [];
   let section = '(ohne Abschnitt)';
@@ -49,11 +48,10 @@ export function readSteps(markdown) {
       const chapter = /^## (\d+)\. (.+)$/.exec(line);
       if (chapter) section = `§${chapter[1]} ${chapter[2].split('(')[0].trim()}`;
     }
-    // Zwei ODER drei Zahlenteile. Die zehn Schritte 3.0.1–3.0.10 (der öffentliche
-    // Relaunch) waren bis zum 23.09.2026 für dieses Instrument unsichtbar: die
-    // Regel verlangte genau zwei, und „3.0.6" traf sie nicht. Es meldete 98
-    // Schritte, wo es 108 sind — und der fehlende Block war ausgerechnet der,
-    // der 3.0 ausmacht.
+    // Two OR three number parts. Until 23.09.2026 the ten steps 3.0.1–3.0.10 (the
+    // public relaunch) were invisible to this instrument: the rule required exactly
+    // two, and "3.0.6" did not match it. It reported 98 steps where there are 108 —
+    // and the missing block was precisely the one that makes up 3.0.
     const row = /^\|\s*(\d+(?:\.\d+){1,2})\s*\|(.*)$/.exec(line);
     if (!row) continue;
     steps.push({ id: row[1], section, text: row[2] });
@@ -62,10 +60,11 @@ export function readSteps(markdown) {
 }
 
 /**
- * Sagt die Zeile selbst, sie sei gebaut?
+ * Does the row itself say it is built?
  *
- * Bewusst eng: „gebaut wird" und „gebaut nach" sind Absichten, keine Meldungen, und
- * `behoben` gehört zu den Befundtabellen in §12–§14, nicht zu einem Schritt.
+ * Deliberately narrow: "gebaut wird" (is being built) and "gebaut nach" (built
+ * to) are intentions, not reports, and `behoben` (fixed) belongs to the
+ * finding tables in §12–§14, not to a step.
  *
  * Since the roadmap is English (3.0.14, 02.10.2026) a row reports "**Built",
  * "**Shipped" or "**Fully built"; the German forms stay accepted. "to be built"
@@ -75,16 +74,15 @@ export const claimsBuilt = (text) =>
   /\*\*(Gebaut|Ausgeliefert|Fertig gebaut|Built|Shipped|Fully built)\b/.test(text) ||
   /\b(Gebaut|Built) (in v[\d.]+|\d{2}\.\d{2}\.\d{4})/.test(text);
 
-/** Die Schrittnummern, die ein Commit-Betreff nennt: `feat(2.15)`, `fix(1.9, 7.8, 3.3)`. */
+/** The step numbers a commit subject names: `feat(2.15)`, `fix(1.9, 7.8, 3.3)`. */
 export function idsFromSubjects(subjects) {
   const found = new Map();
   for (const subject of subjects) {
     const marker = /^[a-z]+\(([^)]*)\)/.exec(subject);
-    // Eine Versionsnummer im Scope ist kein Schritt. `release(v2.12.0): …` hat
-    // Schritt 2.12 jahrelang als gebaut ausgewiesen, weil die alte Regel aus
-    // „v2.12.0" die ersten zwei Zahlenteile nahm — ein Release, das mit dem
-    // Schritt nichts zu tun hatte. Gefunden am 23.09.2026 beim Ausweiten der
-    // Regel auf drei Teile.
+    // A version number in the scope is not a step. `release(v2.12.0): …` reported
+    // step 2.12 as built for ages, because the old rule took the first two number
+    // parts from "v2.12.0" — a release that had nothing to do with the step. Found
+    // on 23.09.2026 while widening the rule to three parts.
     if (marker && /^v\d/.test(marker[1].trim())) continue;
     if (!marker) continue;
     for (const id of marker[1].match(/\d+(?:\.\d+){1,2}/g) || []) {
@@ -126,7 +124,7 @@ function main() {
   const count = (list, state) => list.filter((s) => s.state === state).length;
 
   if (!args.includes('--offen')) {
-    console.log('Abschnitt                          belegt  behauptet  offen   gesamt');
+    console.log('Section                            belegt  behauptet  offen    total');
     console.log('─'.repeat(70));
     for (const section of sections) {
       const list = steps.filter((s) => s.section === section);
@@ -140,19 +138,19 @@ function main() {
     }
     console.log('─'.repeat(70));
     console.log(
-      'gesamt'.padEnd(34) +
+      'total'.padEnd(34) +
         String(count(steps, 'belegt')).padStart(6) +
         String(count(steps, 'behauptet')).padStart(11) +
         String(count(steps, 'offen')).padStart(7) +
         String(steps.length).padStart(9),
     );
     console.log(
-      '\nbelegt = ein Commit nennt den Schritt · behauptet = die Zeile sagt es, kein Commit nennt sie · offen = keines von beidem',
+      '\nbelegt = a commit names the step · behauptet = the row says so, no commit names it · offen = neither',
     );
   }
 
   const open = steps.filter((s) => s.state === 'offen');
-  console.log(`\nOffen (${open.length}):`);
+  console.log(`\nOpen — offen (${open.length}):`);
   for (const section of sections) {
     const ids = open.filter((s) => s.section === section).map((s) => s.id);
     if (ids.length) console.log(`  ${section.padEnd(32)} ${ids.join(' ')}`);
@@ -160,7 +158,7 @@ function main() {
 
   const claimed = steps.filter((s) => s.state === 'behauptet');
   if (claimed.length) {
-    console.log(`\nBehauptet, aber von keinem Commit belegt (${claimed.length}) — hier lesen zwei Leser verschieden:`);
+    console.log(`\nClaimed (behauptet), but no commit names it (${claimed.length}) — here two readers read differently:`);
     for (const s of claimed) console.log(`  ${s.id.padEnd(6)} ${s.section}`);
   }
 }

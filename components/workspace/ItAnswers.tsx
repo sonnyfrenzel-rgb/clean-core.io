@@ -56,7 +56,7 @@ import ItRail from './ItRail';
 /**
  * The IT view — roadmap step 8.1, rebuilt to mockup v2.8 `s4` (gap audit row 6).
  *
- * The order is the view's question, *„What exactly, where to, and is it
+ * The order is the view's question, *"What exactly, where to, and is it
  * right?"*, answered top down: the answer line and the facet tiles, the next
  * step, the chain of the chosen finding, then the findings with a live filter
  * bar beside a side column holding the target profile, the route and the
@@ -71,7 +71,7 @@ import ItRail from './ItRail';
  *
  * **ADR-029 is the shape of the chain.** The chain sits *above* the table, it
  * names the finding it belongs to, the table marks that finding's row, and the
- * coverage — *„Chain complete for 31 of 42 findings"* — stands beside the chain
+ * coverage — *"Chain complete for 31 of 42 findings"* — stands beside the chain
  * rather than in a popover. A click on a link filters the table to the findings
  * whose chain says the same thing at that link.
  *

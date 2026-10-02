@@ -1,60 +1,59 @@
 /**
- * Welche Implementierung ein Methodenaufruf erreicht — an einer Stelle, für
- * das Skelett und den Fachsatz.
+ * Which implementation a method call reaches — in one place, for the
+ * skeleton and the business statement.
  *
- * `process-skeleton.ts` hat diese Auflösung zuerst gebaut (D2, 27.09.2026);
- * `business-statement.ts` brauchte dieselbe, als die QA (b7e191a72212) zeigte,
- * dass ein `lo_external->save( )` die Wirkung der zufällig gleichnamigen
- * lokalen Methode `save` zugeschrieben bekam. Zwei Auflösungen hätten sich
- * früher oder später widersprochen; deshalb steht die Regel hier, und beide
- * rufen sie.
+ * `process-skeleton.ts` built this resolution first (D2, 27.09.2026);
+ * `business-statement.ts` needed the same one when QA (b7e191a72212) showed
+ * that a `lo_external->save( )` was credited with the effect of the local
+ * method `save` that happened to share its name. Two resolutions would have
+ * contradicted each other sooner or later; that is why the rule lives here,
+ * and both call it.
  *
- * **Die Klasse kommt aus dem Aufruf, nie aus einer Vermutung.** `cls=>m`
- * nennt sie; `me->m` und ein bloßes `m` meinen die Klasse, in der der Aufruf
- * steht; `lo->m` meint die Klasse, mit der `lo` deklariert ist, wenn der
- * Quelltext genau eine nennt; `super->m` die Oberklasse der eigenen. Von dort
- * geht es die Vererbungskette hinauf, die der Quelltext schreibt. Nennt der
- * Aufruf keine Klasse, entscheidet der Name allein nur, wenn der Aufrufer das
- * ausdrücklich zulässt (`byNameAlone`) — das Skelett tut es und zeichnet einen
- * mehrdeutigen Aufruf undurchsichtig; der Fachsatz tut es nicht, weil er sonst
- * einer fremden Methode eine lokale Wirkung zuschreibt.
+ * **The class comes from the call, never from a guess.** `cls=>m` names it;
+ * `me->m` and a bare `m` mean the class the call sits in; `lo->m` means the
+ * class `lo` is declared with, if the source names exactly one; `super->m`
+ * the superclass of the own class. From there it goes up the inheritance
+ * chain the source writes. If the call names no class, the name alone decides
+ * only when the caller explicitly allows it (`byNameAlone`) — the skeleton
+ * does and draws an ambiguous call as opaque; the business statement does
+ * not, because it would otherwise credit a foreign method with a local effect.
  *
- * Dieses Modul kennt weder das Skelett noch den Fachsatz.
+ * This module knows neither the skeleton nor the business statement.
  */
 
 import { maskLiterals, type AbapStatement } from './statement-reader';
 
-/** Eine Methode, die der Quelltext implementiert. */
+/** A method the source implements. */
 export interface MethodTarget {
-  /** `CLASS=>METHOD`, groß geschrieben — der Schlüssel der Routine. */
+  /** `CLASS=>METHOD`, upper case — the routine's key. */
   key: string;
   cls: string;
-  /** Wie die Implementierung ihn schreibt, groß: `RUN`, `ZIF_X~RUN`. */
+  /** As the implementation writes it, upper case: `RUN`, `ZIF_X~RUN`. */
   name: string;
-  /** Der Teil hinter `~`, oder der Name selbst. */
+  /** The part after `~`, or the name itself. */
   short: string;
 }
 
 export interface ClassModel {
   impls: readonly MethodTarget[];
-  /** `CLASS x DEFINITION INHERITING FROM y`, groß geschrieben. */
+  /** `CLASS x DEFINITION INHERITING FROM y`, upper case. */
   superOf: ReadonlyMap<string, string>;
-  /** Die Klassen, mit denen eine Referenzvariable deklariert ist, groß geschrieben. */
+  /** The classes a reference variable is declared with, upper case. */
   refTypes: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 export interface MethodResolution {
   key: string | null;
   ambiguous: boolean;
-  /** Ob die Klasse aus dem Aufruf feststand — nicht nur aus dem Namen erraten. */
+  /** Whether the class was fixed by the call — not merely guessed from the name. */
   byClass: boolean;
 }
 
 /**
- * Welche Klasse eine Referenzvariable hält, soweit der Quelltext es wörtlich
- * sagt: `TYPE REF TO`, `DATA(x) = NEW cls( )`, `x = NEW cls( )`,
- * `CREATE OBJECT x TYPE cls`, `CAST cls( … )`. Ein Name mit zwei
- * verschiedenen Typen (zwei Geltungsbereiche) bleibt ungelöst.
+ * Which class a reference variable holds, as far as the source says so
+ * literally: `TYPE REF TO`, `DATA(x) = NEW cls( )`, `x = NEW cls( )`,
+ * `CREATE OBJECT x TYPE cls`, `CAST cls( … )`. A name with two different
+ * types (two scopes) stays unresolved.
  */
 export function readReferenceTypes(statements: readonly AbapStatement[]): Map<string, Set<string>> {
   const refTypes = new Map<string, Set<string>>();
@@ -79,11 +78,11 @@ export function readReferenceTypes(statements: readonly AbapStatement[]): Map<st
 }
 
 /**
- * Die Implementierung, die ein Aufruf erreicht, oder warum es keine gibt.
+ * The implementation a call reaches, or why there is none.
  *
- * `qualifier` ist, was vor dem letzten Pfeil steht (`)` für ein Objekt, das
- * sich nicht benennen lässt), `ownClass` die Klasse, in deren
- * `IMPLEMENTATION` der Aufruf steht.
+ * `qualifier` is what stands before the last arrow (`)` for an object that
+ * cannot be named), `ownClass` the class in whose `IMPLEMENTATION` the call
+ * sits.
  */
 export function resolveMethodTarget(
   model: ClassModel,
@@ -101,7 +100,7 @@ export function resolveMethodTarget(
       : { key: null, ambiguous: found.length > 1, byClass };
 
   let cls: string | null = null;
-  // Ob die Klasse der deklarierte Typ einer Referenzvariablen ist.
+  // Whether the class is the declared type of a reference variable.
   let fromReference = false;
   const q = qualifier?.toUpperCase() ?? null;
   if (op === '=>' && q) cls = q;
@@ -116,10 +115,10 @@ export function resolveMethodTarget(
 
   if (q === 'SUPER') cls = ownClass ? model.superOf.get(ownClass) ?? null : null;
 
-  // Der deklarierte Typ ist nicht der Laufzeittyp: `lo TYPE REF TO lcl_base`
-  // kann eine Instanz von `lcl_sub` halten, und `lo->run( )` erreicht dann
-  // dessen Redefinition. Redefiniert eine Unterklasse, die der Quelltext
-  // schreibt, die Methode, ist das Ziel nicht eindeutig (QA full review of
+  // The declared type is not the runtime type: `lo TYPE REF TO lcl_base`
+  // can hold an instance of `lcl_sub`, and `lo->run( )` then reaches its
+  // redefinition. If a subclass the source writes redefines the method, the
+  // target is not unique (QA full review of
   // v2.20.0, 5b0e06b9c4ea).
   if (cls && fromReference) {
     const base = cls;
@@ -137,11 +136,11 @@ export function resolveMethodTarget(
   }
 
   if (cls) {
-    // Die Kette hinauf, die der Quelltext schreibt: eine geerbte Methode ist
-    // weiter die Methode der Klasse. Der Qualifier fällt nie weg — eine
-    // bekannte Klasse, die unter diesem Namen nichts implementiert, heißt
-    // „nicht hier", nicht „die gleichnamige Methode einer anderen Klasse"
-    // (QA-Review be3f06343260, 045fbec9b5a4).
+    // Up the chain the source writes: an inherited method is still the
+    // class's method. The qualifier is never dropped — a known class that
+    // implements nothing under this name means "not here", not "the
+    // same-named method of another class"
+    // (QA review be3f06343260, 045fbec9b5a4).
     const seen = new Set<string>();
     for (let at: string | undefined = cls; at && !seen.has(at); at = model.superOf.get(at)) {
       seen.add(at);
@@ -150,7 +149,7 @@ export function resolveMethodTarget(
       const alias = model.impls.filter((impl) => impl.cls === at && byName(impl));
       if (alias.length) return unique(alias, true);
     }
-    // Eine Schnittstellenreferenz: die Implementierungen schreiben `lif_x~m`.
+    // An interface reference: the implementations write `lif_x~m`.
     const viaInterface = model.impls.filter((impl) => impl.name === `${cls}~${wanted}`);
     if (viaInterface.length) return unique(viaInterface, true);
     return { key: null, ambiguous: false, byClass: true };

@@ -1,17 +1,17 @@
 /**
  * "New project" — what it is, before it starts. `DESIGN.md` §6.1.1, roadmap 2.7.
  *
- *   > *Wer in „My workspace" auf „New project" klickt, bekommt zuerst in wenigen
- *   > Sekunden, was Clean-Core.io ist und was es anders macht … Eine Seite, zwei
- *   > Teile, kein Wizard mit Fortschrittsbalken.*
+ *   > *Whoever clicks "New project" in "My workspace" first gets, in a few
+ *   > seconds, what Clean-Core.io is and what it does differently … One page,
+ *   > two parts, no wizard with a progress bar.*
  *
  * The copy lives here rather than in the component for the reason
  * `lib/cc-messages.ts` gives: the German interface comes after 3.0 and a
  * catalogue added later is a rewrite of every component that shipped before it.
  * It is also the only way the one figure on this page that is not copy — the
- * state of the catalog sync — can be kept out of the text: §6.1.1 says *„mit
- * Anzahl und **Stand des letzten Abgleichs** aus dem Katalog, nie fest im
- * Text"*, so the evidence flow is a function of what the catalog reports and
+ * state of the catalog sync — can be kept out of the text: §6.1.1 says *"with
+ * count and **date of the last sync** from the catalog, never fixed in the
+ * text"*, so the evidence flow is a function of what the catalog reports and
  * never a sentence with a date typed into it.
  *
  * The catalog figures are read on the server (`getLevelRuleVersion()` in
@@ -23,7 +23,7 @@ import { CLEAN_CORE_LEVEL_VALUES, cleanCoreLevel, type CleanCoreLevelEntry } fro
 import type { ProvenanceValue } from './provenance';
 import { BTP, BTP_FIRST } from './sap-naming';
 
-/** *Ein Satz Kern* — §6.1.1, first bullet. */
+/** *One core sentence* — §6.1.1, first bullet. */
 export const NEW_PROJECT_CORE =
   'Understand a piece of custom ABAP and decide what happens to it — every statement tied to a line of your code.';
 
@@ -35,7 +35,7 @@ export interface DifferenceLine {
 }
 
 /**
- * *Drei Zeilen, was anders ist* — §6.1.1, second bullet, word for word.
+ * *Three lines on what is different* — §6.1.1, second bullet, word for word.
  *
  * None of the three says the product is good; each says what it does and what
  * it refuses to do. That is the difference §3.1 is about.

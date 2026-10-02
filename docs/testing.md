@@ -215,8 +215,8 @@ retries, and refuse to reuse a running server.
 - **No conditional assertions.** `if (await x.count() > 0) { expect(...) }` makes the
   assertion optional; three specs asserted nothing for months that way.
   `tests/no-vacuous-tests.spec.ts` rejects the shape repo-wide.
-- **Titles say what is checked.** A test named after a workflow stage opens that
-  stage. The public-page smoke checks live in `tests/public-pages-smoke.spec.ts`,
+- **Titles say what is checked.** A test named after a stage tool opens that
+  tool. The public-page smoke checks live in `tests/public-pages-smoke.spec.ts`,
   which replaced five May specs whose titles named stages they never visited.
 - **Seed through the helpers**, not the client SDK against security rules:
   `admin-seed.ts` for Firestore, `emulator-guard.ts` for Auth.

@@ -28,8 +28,8 @@ import type { Project } from '@/lib/types';
 /**
  * ⌘K — search in the project, roadmap 6.6.
  *
- * *"Suche im Projekt (⌘K) über Elemente, Regeln, Findings, Zeilen und
- * Glossar."* The index itself is built in `lib/workspace-search.ts`, kept pure
+ * *"Search in the project (⌘K) across elements, rules, findings, lines and
+ * glossary."* The index itself is built in `lib/workspace-search.ts`, kept pure
  * and framework-free so the categories it covers can be tested without a
  * browser; this component is only the dialog around it.
  *

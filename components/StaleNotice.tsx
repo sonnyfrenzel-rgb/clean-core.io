@@ -10,7 +10,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
  * cannot disagree about *what* is out of date.
  *
  * A `warning` Message Strip since Block D (D.9), not a rose alert box: stale
- * means "rebuild", not "wrong" (`DESIGN.md` §1.1, "Veraltet ist nicht falsch"),
+ * means "rebuild", not "wrong" (`DESIGN.md` §1.1, "Outdated is not wrong"),
  * and a notice that is on the page from the first paint is a status, not an
  * alert that interrupts a screen reader.
  */

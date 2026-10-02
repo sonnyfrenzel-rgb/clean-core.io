@@ -9,8 +9,8 @@ import CcButton from '@/components/cc/Button';
  * The check hints of the editing footer — roadmap 3.3, `DESIGN.md` §2.6.
  *
  * A **Message Popover**, which in this design system means exactly one thing:
- * *"gesammelte Prüfhinweise in der Bearbeitungs-Fußleiste, mit Sprung zum
- * Element"*. So: a count in the footer, a list behind it, and every row jumps to
+ * *"collected check notes in the edit footer, with a jump to the
+ * element"*. So: a count in the footer, a list behind it, and every row jumps to
  * the element it is about.
  *
  * The four properties roadmap 3.3 asks a hint for, one per feature here:

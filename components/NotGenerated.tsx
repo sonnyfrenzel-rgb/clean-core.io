@@ -6,7 +6,7 @@ import { NOT_GENERATED, modelAbsenceReason, type ModelAbsence, type ModelStage }
 /**
  * A section that has no model output, saying so.
  *
- * Roadmap 1.2, acceptance V25-A12: *"'nicht erzeugt' statt leer"*. The failure
+ * Roadmap 1.2, acceptance V25-A12: *"'not generated' instead of empty"*. The failure
  * this replaces is not a crash — it is a screen that renders nothing where an
  * answer belongs, or worse, renders a zero, a dash or an empty card that a
  * reader takes for a measurement. A missing answer is a state, and a state has

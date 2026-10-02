@@ -2,9 +2,9 @@
  * The handover chain of an audit pack — *Requirement → Decision → Receipt →
  * Delivery artefact* — and what the pack's signature does and does not cover.
  *
- * Roadmap 8.5: *„Nachweiskette und Übergabepaket: Anforderung → Entscheidung →
- * Receipt → Lieferartefakt; das Signaturmanifest nennt `covers[]`; der
- * vorhandene Offline-Verifier prüft es."*
+ * Roadmap 8.5: *"Evidence chain and handover package: requirement → decision →
+ * receipt → delivery artefact; the signature manifest names `covers[]`; the
+ * existing offline verifier checks it."*
  *
  * Two things this module refuses to do, and they are the whole point.
  *

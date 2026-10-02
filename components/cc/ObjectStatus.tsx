@@ -15,8 +15,8 @@ import { CcStateDot } from './StateText';
  * line of a workspace shows seven of the first kind next to several of the
  * second.
  *
- * The dot is never the only cue — the word is always there (§2.4, "Status als
- * Text mit Punkt — nie nur Farbe"). "not started" and "open" get a hollow dot,
+ * The dot is never the only cue — the word is always there (§2.4, "Status as
+ * text with a dot — never colour alone"). "not started" and "open" get a hollow dot,
  * because a filled dot reads as a result and neither of them is one.
  *
  * The dot is `CcStateDot`, shared with `CcStateText` — the same shape for a

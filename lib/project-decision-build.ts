@@ -61,8 +61,8 @@ import {
  * roadmap 7.4 left for 8.4.**
  *
  * 7.4 built `costAssumptionsManifestInput()` and did not wire it, because the
- * analysis run it would have been wired into never read a day rate: *"Die Naht
- * gehört zu dem Schritt, der eine Optionsrechnung signiert (8.4)."* A decision
+ * analysis run it would have been wired into never read a day rate: *"The seam
+ * belongs to the step that signs an option calculation (8.4)."* A decision
  * *is* that step — it binds a cost revision by name — so the assumptions become
  * a signed input here and nowhere earlier.
  *

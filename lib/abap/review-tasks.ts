@@ -4,8 +4,8 @@ import { RETIREMENT_WINDOW_DAYS, type UsageReport } from './usage-model';
 import type { AbapStatement } from './statement-reader';
 
 /**
- * Roadmap 7.5 — *Prüfaufträge statt Scheinwissen*: "zu kurzes Nutzungsfenster,
- * fehlendes Include, dynamischer Aufruf werden Aufgaben, keine Urteile."
+ * Roadmap 7.5 — *Review tasks instead of sham knowledge*: "a usage window that
+ * is too short, a missing include, a dynamic call become tasks, not verdicts."
  *
  * Three places where this product knows, on purpose, that it does not know
  * enough — and where the absence has a habit of turning into its most flattering
@@ -34,7 +34,7 @@ import type { AbapStatement } from './statement-reader';
  * reason next to the sentence a reader gets. A third form for the same idea is
  * how a product ends up with three "not determined" columns that cannot be
  * compared, so this is the second copy of that shape, not a new one. Roadmap 7.8
- * consumes a task as exactly the *Not determined mit Grund* it asks for.
+ * consumes a task as exactly the *Not determined with a reason* it asks for.
  *
  * Deterministic: no model, no network, no key. Everything is read out of the
  * statement list `process-facts.ts` produces, the coverage report the evidence

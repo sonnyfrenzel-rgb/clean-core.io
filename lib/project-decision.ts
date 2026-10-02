@@ -2,10 +2,10 @@
  * The decision — what was decided, on what it stands, what is still open, and
  * whether it can be taken back.
  *
- * Roadmap 8.4 (`docs/ROADMAP.md` §Phase 8): *"Entscheidung: bindet Bedarf,
- * Option, Kostenrevision und Vertrag; Bedingungen mit Status; Zeitleiste;
- * umkehrbar ja/nein. Bestätigt vom Konto — „Selbstauskunft, kein
- * organisatorisches Mandat"."* Mockup screen 5, card "Open decision"
+ * Roadmap 8.4 (`docs/ROADMAP.md` §Phase 8): *"Decision: binds need, option,
+ * cost revision and contract; conditions with status; timeline; reversible
+ * yes/no. Confirmed by the account — 'self-declaration, not an
+ * organisational mandate'."* Mockup screen 5, card "Open decision"
  * (`docs/roadmap/clean-core-mockups-v2_8.html:1349`).
  *
  * ## Why a record and not a flag
@@ -52,8 +52,8 @@
  * ## The seam into the cost assumptions (roadmap 7.4)
  *
  * 7.4 built `costAssumptionsManifestInput()` and deliberately left it unwired,
- * with the note that *"die Naht gehört zu dem Schritt, der eine Optionsrechnung
- * signiert (8.4)"*. This is that step, and the seam is live here:
+ * with the note that *"the seam belongs to the step that signs an option
+ * calculation (8.4)"*. This is that step, and the seam is live here:
  * `decisionManifestInputs()` in `lib/project-decision-build.ts` returns the
  * decision, the architecture contract and the cost assumptions as three entries
  * of one signed input manifest. It is

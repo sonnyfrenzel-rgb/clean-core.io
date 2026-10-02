@@ -293,7 +293,7 @@ export default function FirstLookBuildUp({
         </span>
       </div>
 
-      {/* The counters — each a count of lit lines (ADR-013: "Zähler nur mit echten Ereignissen"). */}
+      {/* The counters — each a count of lit lines (ADR-013: "counters only with real events"). */}
       <p
         data-first-look-counters=""
         className="m-0 flex flex-wrap gap-x-4 gap-y-1 border-y border-cc-line py-2 text-[12px] font-medium text-cc-ink-muted"

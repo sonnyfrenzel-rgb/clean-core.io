@@ -1,6 +1,6 @@
 # Operations & Monitoring
 
-**Version 2.0.0 · Clean-Core.io**
+**Clean-Core.io · reviewed for 3.0 on 02.10.2026** (the app version is `lib/version.ts`)
 
 Operational runbook for running Clean-Core.io in production (Google Cloud Run, project `cleancore-491216`, region `europe-west1`). Complements `SECURITY.md`, `docs/DATA-RETENTION.md`, and `docs/INCIDENT-RESPONSE.md`.
 

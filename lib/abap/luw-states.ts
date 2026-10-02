@@ -3,7 +3,7 @@ import { type Block } from './block-structure';
 import { type ProcessFacts } from './process-facts';
 
 /**
- * Wirkungsstatus im Grundmodell — roadmap 2.12 (CR-06, decision §9 no. 15).
+ * Effect status in the core model — roadmap 2.12 (CR-06, decision §9 no. 15).
  *
  * Until 2.12 the canonical model knew `CALL FUNCTION … IN UPDATE TASK` only as
  * a service task with `inUpdateTask: true`, and `COMMIT WORK`/`ROLLBACK WORK`

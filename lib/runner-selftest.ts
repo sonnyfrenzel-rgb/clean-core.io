@@ -1,8 +1,8 @@
 /**
  * The authorized negative test of the isolated test runner — roadmap 8.9.
  *
- * *„Ein autorisierter Negativtest auf dem Deploymentprofil erreicht weder fremde
- * Dateien noch Zugangsdaten."* The runners take requests only from the app
+ * *"An authorised negative test on the deployment profile reaches neither
+ * foreign files nor credentials."* The runners take requests only from the app
  * (`ingress=internal`, `run.invoker` for the app's service account), so the test
  * travels the way generated code travels: the app sends a suite to the runner,
  * the runner executes it in its sandbox, the report comes back. The suite is

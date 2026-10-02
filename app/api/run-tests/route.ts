@@ -29,7 +29,7 @@ import { isFirestoreId } from '@/lib/firestore-id';
  *   IN : { projectId, selectedTestIds, s4Environment, draftId? }
  *   OUT: { output, error, exitCode, testResults, stubbedPackages, runner, receipt }
  *
- * WHERE IT RUNS (roadmap 8.9, CR-09 — "dort oder gar nicht"):
+ * WHERE IT RUNS (roadmap 8.9, CR-09 — "there or not at all"):
  *   Generated code is untrusted and does not execute in this service. It runs
  *   in the isolated runner (`runner/`, a Cloud Run service with a service
  *   account without roles, no secrets, ingress internal, egress through a VPC

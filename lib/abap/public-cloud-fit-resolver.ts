@@ -3,8 +3,8 @@
  * Repository lookup into `public-cloud-fit.ts`'s pure rule table — roadmap 6.7.
  *
  * This file does NOT import `catalog-service.ts` (~5 MB of generated catalog
- * JSON, read at module load) — it used to, before roadmap "SAP-Katalog im
- * Browser-Bundle" found that `components/workspace/PublicCloudFitPanel.tsx`,
+ * JSON, read at module load) — it used to, before roadmap "SAP catalog in the
+ * browser bundle" found that `components/workspace/PublicCloudFitPanel.tsx`,
  * a client component, was shipping that JSON to the browser through exactly
  * this file. The grading and no-path lookups are `deps`, a REQUIRED
  * parameter with no default: the one real-catalog implementation lives at the
@@ -70,7 +70,7 @@ export interface PublicCloudFitResolverInput {
   dropDecisions?: Record<string, ObjectDropDecision>;
   /**
    * The synced SAP repository files behind every path statement, for the
-   * "Datenbasis und Datum" roadmap 6.7 asks the fourth bucket to carry.
+   * "data basis and date" roadmap 6.7 asks the fourth bucket to carry.
    * Omitted rather than filled with a plausible date when the caller does not
    * have it — `summarizePublicCloudFit` then says the date is not available
    * here instead of printing one nobody measured.
