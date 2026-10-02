@@ -21,7 +21,7 @@ export default function CleanCoreScoreDialog({ open, onClose }: { open: boolean;
     <CcDialog
       open={open}
       title="Understanding Clean Core"
-      lead="The Clean Core Score is our own grade for this one piece of code, 0–100, higher is better — a grade, not a compliance percentage, and not an SAP figure. It is computed by fixed rules from the findings, before any model runs."
+      lead="The Clean Core Score is our own grade for this one piece of code, 5–100, higher is better — a grade, not a compliance percentage, and not an SAP figure. It is computed by fixed rules from the findings, before any model runs."
       onClose={onClose}
     >
       <div className="space-y-3">

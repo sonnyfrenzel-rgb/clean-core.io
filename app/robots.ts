@@ -4,7 +4,7 @@ import { MetadataRoute } from 'next';
  * Private areas: the signed-in product, the admin, the API, and invitation
  * links (each bound to one confirmed e-mail address — never a search result).
  */
-const PRIVATE = ['/admin/', '/project/', '/dashboard/', '/settings/', '/api/', '/invitation/'];
+const PRIVATE = ['/admin', '/project/', '/dashboard', '/settings', '/api/', '/invitation'];
 
 /**
  * Answer engines and AI crawlers, named so the allow-list is a decision and not

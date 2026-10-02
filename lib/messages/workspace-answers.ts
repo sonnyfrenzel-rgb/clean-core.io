@@ -148,7 +148,7 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'mgmt.trendCaption': 'Clean Core Score of each run on this rule version',
   'mgmt.colDate': 'Date',
   'mgmt.colRun': 'Run',
-  'mgmt.colScore': 'Score (0–100)',
+  'mgmt.colScore': 'Score (5–100)',
   'mgmt.notRecorded': 'not recorded',
   'mgmt.notDeterminedLabel': 'Not determined:',
   'mgmt.run': 'run',

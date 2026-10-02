@@ -58,14 +58,14 @@ export const metadata: Metadata = withTwitterCard({
   // 157 characters: long enough to carry the distinction, short enough that
   // Google shows the second half of it.
   description:
-    "Our 0–100 score for how far custom ABAP is decoupled from the SAP standard core. Higher is better — not SAP's Technical Debt Score, which runs the other way.",
+    "Our 5–100 score for how far custom ABAP is decoupled from the SAP standard core. Higher is better — not SAP's Technical Debt Score, which runs the other way.",
   alternates: {
     canonical: CANONICAL,
   },
   openGraph: {
     title: 'SAP Clean Core Score: what it measures | Clean-Core.io',
     description:
-      "Our 0–100 measure of how far custom ABAP is decoupled from the SAP standard core. Higher is better — and it is not SAP's Technical Debt Score, which points the other way.",
+      "Our 5–100 measure of how far custom ABAP is decoupled from the SAP standard core. Higher is better — and it is not SAP's Technical Debt Score, which points the other way.",
     url: CANONICAL,
     type: 'article',
   }
@@ -90,7 +90,7 @@ const faqs = [
   },
   {
     question: "Is the Clean Core Score the same as SAP's Technical Debt Score?",
-    answer: "No, and the two point in opposite directions. The Clean Core Score is published by Clean-Core.io and runs from 0 to 100 where a higher number is better. SAP's Technical Debt Score, shown in the RISE with SAP methodology dashboard in SAP Cloud ALM, runs the other way: SAP describes it as a higher score indicating greater technical debt. Reading one as if it were the other inverts the answer."
+    answer: "No, and the two point in opposite directions. The Clean Core Score is published by Clean-Core.io and runs from 5 to 100 where a higher number is better. SAP's Technical Debt Score, shown in the RISE with SAP methodology dashboard in SAP Cloud ALM, runs the other way: SAP describes it as a higher score indicating greater technical debt. Reading one as if it were the other inverts the answer."
   },
   {
     question: "Does SAP publish a Clean Core Score?",
@@ -112,7 +112,7 @@ const FIGURES = [
     figure: 'Clean Core Score',
     who: 'Clean-Core.io (this site)',
     direction: 'Higher is better',
-    scale: '0–100',
+    scale: '5–100',
     says: 'How far the analysed custom ABAP is decoupled from the SAP standard core.',
     ours: true,
   },
@@ -206,7 +206,7 @@ export default function CleanCoreScorePage() {
         "@id": `${CANONICAL}#article`,
         "headline": "SAP Clean Core Score: what it measures",
         "description":
-          "The Clean Core Score is Clean-Core.io's own 0–100 measure of how far custom ABAP is decoupled from the SAP standard core. Higher is better. It is not SAP's Technical Debt Score, which points the other way.",
+          "The Clean Core Score is Clean-Core.io's own 5–100 measure of how far custom ABAP is decoupled from the SAP standard core. Higher is better. It is not SAP's Technical Debt Score, which points the other way.",
         "url": CANONICAL,
         "dateModified": APP_RELEASE_DATE_ISO,
         "inLanguage": "en",
@@ -216,7 +216,7 @@ export default function CleanCoreScorePage() {
           "url": "https://clean-core.io"
         },
         "about": [
-          { "@type": "DefinedTerm", "name": "Clean Core Score", "description": "A 0–100 measure, published by Clean-Core.io, of how far custom ABAP is decoupled from the SAP standard core. Higher is better." },
+          { "@type": "DefinedTerm", "name": "Clean Core Score", "description": "A 5–100 measure, published by Clean-Core.io, of how far custom ABAP is decoupled from the SAP standard core. Higher is better." },
           { "@type": "Thing", "name": "SAP Clean Core" },
           { "@type": "Thing", "name": "ABAP custom code" }
         ],
@@ -277,7 +277,7 @@ export default function CleanCoreScorePage() {
       <div data-speakable>
         <QuickAnswer
           question="What is the SAP Clean Core Score, and is it an SAP figure?"
-          answer="The Clean Core Score is Clean-Core.io's own 0–100 measure of how far custom ABAP is decoupled from the SAP standard core. Higher is better. It is computed by deterministic static analysis of the code and its data dependencies, weighting direct database modifications, calls to unreleased APIs, and key-user extensibility. SAP does not publish a Clean Core Score. SAP's own figures are the Technical Debt Score and Clean Core Share in SAP Cloud ALM and the Clean Core Level A–D per object — and the Technical Debt Score runs the other way, where a higher score means more technical debt."
+          answer="The Clean Core Score is Clean-Core.io's own 5–100 measure of how far custom ABAP is decoupled from the SAP standard core. Higher is better. It is computed by deterministic static analysis of the code and its data dependencies, weighting direct database modifications, calls to unreleased APIs, and key-user extensibility. SAP does not publish a Clean Core Score. SAP's own figures are the Technical Debt Score and Clean Core Share in SAP Cloud ALM and the Clean Core Level A–D per object — and the Technical Debt Score runs the other way, where a higher score means more technical debt."
         />
       </div>
 

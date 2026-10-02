@@ -429,7 +429,7 @@ export default function Home() {
           'Business process reconstructed from ABAP as BPMN 2.0, with a line anchor on every element or the reason it has none',
           'BPMN editor with revisions; BPMN 2.0 XML export and import (no SAP Signavio connection; import into SAP Signavio not verified)',
           'SAP clean core level A–D for every SAP object the code uses, read from SAP’s published Cloudification Repository',
-          'Clean Core Score, 0–100, higher is better, in four bands — published by Clean-Core.io, not an SAP metric',
+          'Clean Core Score, 5–100, higher is better, in four bands — published by Clean-Core.io, not an SAP metric',
           'Business, IT and Management views of the same project',
           'Target design, transformed RAP or CAP code draft and test scenarios — for CAP run against mocks in an isolated runner, for RAP an ABAP Unit class that runs only in your own system',
           'Every completed analysis sealed as a signed run (HMAC); audit pack for handover signed over the run with HMAC and Ed25519',

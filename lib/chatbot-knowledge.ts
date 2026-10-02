@@ -368,7 +368,7 @@ export const SECURITY_AND_PRIVACY = `
 export const SCORE_NAMING_AND_SAP_FIGURES = `
 ## THE CLEAN CORE SCORE AND SAP'S OWN FIGURES (never conflate these)
 
-**Our figure.** The **Clean Core Score** is published by Clean-Core.io, runs 0–100, and **higher is better**. It measures how far the analysed custom ABAP is decoupled from the SAP standard core, computed deterministically before any AI runs. It is a measure of code structure — no cost, saving or ROI figure is derived from it anywhere in the product.
+**Our figure.** The **Clean Core Score** is published by Clean-Core.io, runs 5–100, and **higher is better**. It measures how far the analysed custom ABAP is decoupled from the SAP standard core, computed deterministically before any AI runs. It is a measure of code structure — no cost, saving or ROI figure is derived from it anywhere in the product.
 
 **What a score means** (${SCORE_BANDS_SOURCE}; a grade, not a compliance percentage, and not an SAP measure): ${scoreBandsProse()} How it is computed: ${scoreDeductionsProse()}
 

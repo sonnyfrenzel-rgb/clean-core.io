@@ -76,7 +76,7 @@ export const LANDING_FAQ: LandingFaq[] = [
   },
   {
     q: 'What is the Clean Core Score?',
-    a: `The Clean Core Score is a 0–100 measure, published by Clean-Core.io, of how far the analysed custom ABAP is decoupled from the SAP standard core; higher is better. It falls into four bands: ${bandLabels}. SAP publishes no metric of that name, and it is not SAP’s Technical Debt Score, which runs the other way.`,
+    a: `The Clean Core Score is a 5–100 measure, published by Clean-Core.io, of how far the analysed custom ABAP is decoupled from the SAP standard core; higher is better. It falls into four bands: ${bandLabels}. SAP publishes no metric of that name, and it is not SAP’s Technical Debt Score, which runs the other way.`,
     more: { href: '/clean-core-score', label: 'What the Clean Core Score measures' },
   },
   {

@@ -70,7 +70,7 @@ Version: ${facts.engineVersion} (${facts.engineReleaseDate})
   is never overwritten. The process leaves and comes back as a BPMN 2.0 XML file. There
   is no connection to SAP Signavio, and import into SAP Signavio has not been verified.
 - SAP's clean core level A–D for every SAP object the code touches, and the Clean Core
-  Score (0–100, higher is better) in four bands.
+  Score (5–100, higher is better) in four bands.
 - Business, IT and Management views of the same facts.
 - Seven tools: Analyze, Design, Transformation, Documentation, Testing, Economics,
   Delivery. Their layout is oriented on SAP Fiori patterns; it is not an SAP Fiori app
@@ -119,7 +119,7 @@ Apache-2.0. Normalized and enriched by Clean-Core.io.
 
 ## Naming — the Clean Core Score is not an SAP figure
 
-The "Clean Core Score" is published by Clean-Core.io, runs 0–100, and higher is
+The "Clean Core Score" is published by Clean-Core.io, runs 5–100, and higher is
 better. It measures how far the analysed custom ABAP is decoupled from the SAP
 standard core. SAP publishes no metric of that name and has not endorsed,
 certified or reviewed this one. Do not attribute it to SAP.
