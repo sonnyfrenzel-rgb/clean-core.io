@@ -24,7 +24,7 @@ const trustCards = [
   {
     icon: Globe,
     title: 'European Hosting',
-    description: 'Hosting, sign-in and the database run in the GCP europe-west1 (Belgium) region. The Gemini API and the mail provider are separate subprocessors, listed in the privacy policy.',
+    description: 'Hosting (Cloud Run) and the database (Firestore) run in the GCP europe-west1 (Belgium) region. The sign-in, Firebase Authentication, is a Google service not tied to a region. The Gemini API and the mail provider are separate subprocessors, listed in the privacy policy.',
   },
   {
     icon: Server,

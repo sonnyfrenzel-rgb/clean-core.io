@@ -8,6 +8,14 @@
  */
 
 import { BAIP_FIRST } from './sap-naming';
+import { TRUST_CLAIMS } from './trust-claims';
+
+/**
+ * The trust card's training sentence, word for word: Google's training terms
+ * depend on the key that makes the request, and the privacy policy promises
+ * no training only for the community key (codex code-public-01).
+ */
+export const TRAINING_CLAIM = TRUST_CLAIMS.find((c) => c.id === 'training')!.text;
 
 export interface Capability {
   stage: string;
@@ -119,7 +127,7 @@ export const HONEST_SCOPE: { claim: string; reality: string }[] = [
   {
     claim: 'What happens to my source code?',
     reality:
-      'It is processed by the Google Gemini API for the AI stages and is not used to train Google\'s models under those terms. Your data is stored in the EU (europe-west1, Belgium). Bring your own Gemini key and it is used exclusively through a server-side proxy, encrypted at rest with AES-256-GCM, never exposed to the browser.',
+      `It is processed by the Google Gemini API for the AI stages. ${TRAINING_CLAIM} Your profile and your projects are stored in the EU (Firestore, europe-west1, Belgium); sign-in runs on Firebase Authentication, which is not tied to a region. Bring your own Gemini key and it is used exclusively through a server-side proxy, encrypted at rest with AES-256-GCM, never exposed to the browser.`,
   },
   {
     claim: 'What does it cost?',

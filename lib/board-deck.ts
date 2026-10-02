@@ -318,12 +318,12 @@ export function buildBoardDeck(input: {
     type: 'bullets',
     subtitle: 'Stateless processing and credential isolation boundaries',
     content: [
-      '**Deterministic Evidence Analysis**: Code parsing and evidence extraction run server-side. Source code is stored only in your encrypted, access-controlled project workspace and is not used for model training.',
+      '**Deterministic Evidence Analysis**: Code parsing and evidence extraction run server-side. Source code is stored only in your encrypted, access-controlled project workspace. With the community key, Google does not use it to train its models (paid Gemini API terms); with your own key, your Google account\'s terms apply.',
       '**Credential Isolation**: Optional ERP connectivity credentials are encrypted at rest (AES-256-GCM), stored server-side only and never returned to the browser.',
       '**GDPR-aligned & EU-hosted**: Application storage and primary processing run in the EU region (europe-west1). AI and transactional-email subprocessors are disclosed and process data under their own terms.',
       '**Cryptographic Integrity Checks**: The audit pack manifest is hashed and HMAC-signed server-side. Fingerprints are stored in the Audit Pack.'
     ],
-    speakerNotes: 'SAP credentials are encrypted at rest and never returned to the browser; standard data is not used for model training. Application storage and primary processing run in the EU.'
+    speakerNotes: 'SAP credentials are encrypted at rest and never returned to the browser. Model training follows the key: paid Gemini API terms with the community key, your own Google account\'s terms with your own key. Application storage and primary processing run in the EU.'
   };
 
   // Slide 7: Risk Register & Quality Gates (risk slide)
