@@ -202,6 +202,17 @@ radius like the element. Never `outline: none` without this substitute. The focu
 - The warning colour of a mark in a chart is `--cc-warning-mark` (§1.1), not the text colour.
 - **All other charts** use the categorical palette and never a state colour: `#334155`, `#4f46e5`,
   `#0d9488`, `#9333ea`, `#c026d3`. Sequential (quantities, progression): indigo `#e0e7ff` → `#a5b4fc` → `#6366f1` → `#3730a3`.
+- **The Clean Core Score's bands** are one amount on one axis, so they take a sequential scale and never a state
+  colour — a band is a reading of a grade, neither *wrong* nor *proven*: `--cc-score-1 … 4`, light to dark from
+  *far from clean core* to *close to clean core*, the way the axis runs: `#7578f0` → `#4f46e5` → `#3730a3` → `#1e1b4b`.
+  The same indigo as the sequential palette, shifted so that every band has ≥ 3 : 1 against the surface
+  (3.7, 6.3, 9.9 and 16.0 : 1 on white; WCAG 1.4.11) — the bar is the chart, so no band may fade into the card.
+  Every band is drawn at full strength; the band the score is in is told by the marker (ink with a white ring), its
+  range and its label, never by fading the others (ADR-057). One source for every surface that draws a band:
+  `scoreBandChartColor` in `lib/chart-colors.ts`.
+- **Data marks are drawn at full strength** — no opacity tint on a bar segment, arc or block. Critical and High
+  share the error colour; the word and the gap between segments keep them apart. A level block in a chart is filled
+  with its level's chart colour, its letter white on A, B and D and ink on C (`#d97706`: ink 5.4 : 1, white 3.2 : 1).
 - Every number in a chart is also reachable as text (table or `aria-label`).
 
 ---
