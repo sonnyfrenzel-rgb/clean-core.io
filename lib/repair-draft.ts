@@ -125,9 +125,21 @@ export function storedSuiteSource(testSuite: unknown): string {
   return '';
 }
 
-/** The revision of a project as a draft names it. */
+/**
+ * The revision of a project as a draft names it.
+ *
+ * The suite is bound by the source the runner executes — `code`, or `spec`
+ * when there is no `code` — not by the receipt's `code`-only digest: a parent
+ * holding a spec-only suite otherwise names no suite at all, and a newer spec
+ * written after the draft was cut would be overwritten on adoption (codex
+ * code-trust-06). For a suite with `code` the two digests are the same, so
+ * drafts already on record keep their parent; a draft cut from a spec-only
+ * suite before this change named none and is refused as moved.
+ */
 export function projectRevision(project: Record<string, unknown>): RepairDraftParent {
-  return testRunSubject(project);
+  const subject = testRunSubject(project);
+  const source = storedSuiteSource(project.testSuite);
+  return { ...subject, suiteDigest: source.trim() ? candidateDigests('', source).suiteDigest : null };
 }
 
 /** The digests of a candidate, computed exactly as the receipt computes them. */

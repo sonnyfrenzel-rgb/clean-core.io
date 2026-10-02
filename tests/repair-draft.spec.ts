@@ -12,6 +12,7 @@ import {
   isIntactRepairDraft,
   projectRevision,
   repairBaseDigests,
+  storedSuiteSource,
   type RepairDraft,
   type RepairDraftExecution,
 } from '../lib/repair-draft';
@@ -48,7 +49,7 @@ const project = (over: Record<string, unknown> = {}): Record<string, unknown> =>
 
 const baseFrom = (p: Record<string, unknown>) => ({
   code: p.generatedCode as string,
-  suite: (p.testSuite as { code: string }).code,
+  suite: storedSuiteSource(p.testSuite),
   parent: projectRevision(p),
   parentDraftId: null,
   depth: 0,
@@ -192,6 +193,21 @@ test.describe('adoption is a compare-and-swap', () => {
     const newRun = project({ activeRunId: 'run-2' });
     expect(decideAdoption({ draftId: d.draftId, expectedDraftDigest: d.draftDigest }, newRun, { draft: d, execution: exec, adoptedAt: undefined }))
       .toMatchObject({ ok: false, code: 'parent-moved' });
+  });
+
+  // Codex code-trust-06: the runner executes `spec` when a suite has no `code`,
+  // so a parent with a spec-only suite has to bind that spec.
+  test('a spec-only suite changed since the draft was cut refuses adoption', () => {
+    const SPEC = "test('TC_001', () => {});";
+    const p = project({ testSuite: { spec: SPEC, framework: 'node:test' } });
+    const d = cut(p, { target: { kind: 'test' }, content: SPEC + ' // repaired' });
+    expect(d.parent.suiteDigest, 'the spec-only parent names its suite').not.toBeNull();
+    const exec = execution(p, d);
+    const newerSpec = project({ testSuite: { spec: SPEC + ' // newer, from another tab', framework: 'node:test' } });
+    const out = decideAdoption({ draftId: d.draftId, expectedDraftDigest: d.draftDigest }, newerSpec, { draft: d, execution: exec, adoptedAt: undefined });
+    expect(out).toMatchObject({ ok: false, status: 409, code: 'parent-moved' });
+    // Unchanged spec: adopted as before.
+    expect(decideAdoption({ draftId: d.draftId, expectedDraftDigest: d.draftDigest }, p, { draft: d, execution: exec, adoptedAt: undefined }).ok).toBe(true);
   });
 
   test('a receipt that did not execute this draft is not carried over', () => {
