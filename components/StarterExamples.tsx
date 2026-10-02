@@ -464,7 +464,7 @@ export default function StarterExamples({
             </li>
             <li>
               <strong>Understand the target architecture:</strong> see how legacy ABAP is structured into a modern
-              service, complete with CDS schemas and BAIP service bindings.
+              service, complete with CDS schemas and SAP BTP service bindings.
             </li>
             <li>
               <strong>Try sandbox testing:</strong> run the generated tests in a restricted runner with live logs.

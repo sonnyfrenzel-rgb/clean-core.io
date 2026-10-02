@@ -85,8 +85,8 @@ import '@/components/landing/landing.css';
  *   - **One header.** Every section title comes from `SectionHeader`
  *     (`tests/landing-style-guard.spec.ts`).
  *
- * SAP BTP is called "SAP Business AI Platform (formerly SAP BTP)" at its first
- * mention and "BAIP" after it (roadmap 3.0.15). A quote of the engine's own
+ * SAP BTP is called "SAP BTP, part of the SAP Business AI Platform" at its
+ * first mention and "SAP BTP" after it (roadmap 3.0.15, ADR-064). A quote of the engine's own
  * recommendation keeps the words the engine wrote.
  */
 export const revalidate = 300;
@@ -723,15 +723,15 @@ export default function Home() {
           <div className="wrap">
             <SectionHeader eyebrow="SAP S/4HANA clean core" title="What does clean core mean?" titleId="cc-title">
               Clean core keeps SAP S/4HANA standard. Clean core extensibility means extensions use only released,
-              upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP Business AI Platform (formerly
-              SAP BTP).
+              upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP, part of the SAP
+              Business AI Platform.
             </SectionHeader>
             <div className="cc2">
               <div className="pcard">
                 <h3>What clean core means</h3>
                 <p className="t">
                   Keep the SAP core standard: extensions use only released, upgrade-stable interfaces — in-app with ABAP
-                  Cloud or side-by-side on BAIP.
+                  Cloud or side-by-side on SAP BTP.
                 </p>
                 <CleanCoreSchema />
                 <p className="linkrow">

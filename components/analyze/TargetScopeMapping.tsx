@@ -90,7 +90,7 @@ export default function TargetScopeMapping({ showHelpMode, standardFit, recommen
               <Layers size={16} aria-hidden="true" className="shrink-0" />
               <span className="cc-text-label">Modern Extension</span>
             </div>
-            <h4 className="cc-text-h3 text-cc-ink">Side-by-Side BAIP / Node.js</h4>
+            <h4 className="cc-text-h3 text-cc-ink">Side-by-Side SAP BTP / Node.js</h4>
             <p className="cc-text-cell text-cc-ink">{recommendations?.cloudReadiness || 'Custom API layers and microservices completely transformed from standard core.'}</p>
           </div>
           {/* "Cloud Readiness 95 %" and the bar under it were a number and a

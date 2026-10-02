@@ -14,7 +14,7 @@
  */
 
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
-import { BAIP, BAIP_FIRST, isSideBySideRoute } from '@/lib/sap-naming';
+import { BTP, BTP_FIRST, isSideBySideRoute } from '@/lib/sap-naming';
 
 export type SeverityKey = 'Critical' | 'High' | 'Medium' | 'Low';
 
@@ -80,7 +80,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
  */
 export function plainRoute(route: string | null | undefined, first = false): string | null {
   if (!route) return null;
-  if (isSideBySideRoute(route)) return `a side-by-side extension on ${first ? BAIP_FIRST : BAIP}`;
+  if (isSideBySideRoute(route)) return `a side-by-side extension on ${first ? BTP_FIRST : BTP}`;
   if (route.includes('ABAP Cloud') || route.includes('RAP')) return 'on-stack ABAP Cloud inside S/4HANA';
   return null;
 }
@@ -88,7 +88,7 @@ export function plainRoute(route: string | null | undefined, first = false): str
 /** The short form for a figure tile. */
 export function shortRoute(route: string | null | undefined): string | null {
   if (!route) return null;
-  if (isSideBySideRoute(route)) return `${BAIP} side-by-side`;
+  if (isSideBySideRoute(route)) return `${BTP} side-by-side`;
   if (route.includes('ABAP Cloud') || route.includes('RAP')) return 'ABAP Cloud on-stack';
   return null;
 }

@@ -1,6 +1,6 @@
 import type { ProvenanceValue } from './provenance';
 import { PHASES, type PhaseKey } from './workflow-steps';
-import { BAIP_FIRST } from './sap-naming';
+import { BTP_FIRST } from './sap-naming';
 
 /**
  * The seven stages as the landing page's timeline shows them — roadmap 3.0.6
@@ -54,7 +54,7 @@ export const LANDING_STAGE_TEXT: Readonly<Record<PhaseKey, LandingStageText>> = 
   },
   design: {
     lines: [
-      `The target architecture as a canvas, drawn from the run: what stays inside SAP S/4HANA behind the clean core boundary, which released API replaces which lines, what has no released successor, and on the side-by-side track what runs on ${BAIP_FIRST}.`,
+      `The target architecture as a canvas, drawn from the run: what stays inside SAP S/4HANA behind the clean core boundary, which released API replaces which lines, what has no released successor, and on the side-by-side track what runs on ${BTP_FIRST}.`,
       'A model writes the design document beside it; you record which target you accept — a self-declaration, not a mandate.',
     ],
     worker: 'model',

@@ -4,7 +4,7 @@ WEBVTT
 Modifikationen des ERP-Kerns sind das größte Hindernis für S/4HANA-Upgrades.
 
 00:07.500 --> 00:16.000
-Willkommen bei Clean-Core.io – dem automatisierten Tool zur Entkopplung von Legacy-ABAP in moderne Cloud-Services auf der SAP Business AI Platform (BAIP).
+Willkommen bei Clean-Core.io – dem automatisierten Tool zur Entkopplung von Legacy-ABAP in moderne Cloud-Services auf SAP BTP, Teil der SAP Business AI Platform.
 
 00:16.000 --> 00:25.000
 Unsere Plattform ermöglicht es IT-Architekten, den digitalen SAP-Kern sauber zu halten und gleichzeitig die Cloud-Transformation zu beschleunigen.
@@ -25,7 +25,7 @@ Als Nächstes trennt unsere Scoring-Engine veralteten Code von aktiven Anforderu
 Standard-SAP-Funktionen werden nativ zugeordnet, um unnötige Neuentwicklungen zu vermeiden.
 
 01:15.000 --> 01:25.000
-Nur die verbleibenden, kundenspezifischen Delta-Anforderungen werden für die side-by-side Entkopplung auf BAIP vorbereitet.
+Nur die verbleibenden, kundenspezifischen Delta-Anforderungen werden für die side-by-side Entkopplung auf SAP BTP vorbereitet.
 
 01:25.000 --> 01:35.000
 Nun navigieren wir zum Target Architecture Blueprint. Hier entwerfen wir das moderne, cloud-native Schema.

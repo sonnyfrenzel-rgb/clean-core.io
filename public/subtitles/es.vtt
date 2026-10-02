@@ -4,7 +4,7 @@ WEBVTT
 Las modificaciones del núcleo de ERP son el mayor obstáculo para las actualizaciones de S/4HANA.
 
 00:07.500 --> 00:16.000
-Bienvenido a Clean-Core.io, la herramienta automatizada para desacoplar el código ABAP heredado en modernos servicios en la nube en SAP Business AI Platform (BAIP).
+Bienvenido a Clean-Core.io, la herramienta automatizada para desacoplar el código ABAP heredado en modernos servicios en la nube en SAP BTP, parte de SAP Business AI Platform.
 
 00:16.000 --> 00:25.000
 Nuestra plataforma permite a los arquitectos de TI mantener limpio el núcleo digital de SAP y acelerar la transformación en la nube.
@@ -25,7 +25,7 @@ Luego, nuestro motor de puntuación separa el código obsoleto de los requisitos
 Las funciones estándar de SAP se mapean de forma nativa para evitar desarrollos redundantes.
 
 01:15.000 --> 01:25.000
-Solo los requisitos personalizados restantes se encapsulan para el desacoplamiento side-by-side en BAIP.
+Solo los requisitos personalizados restantes se encapsulan para el desacoplamiento side-by-side en SAP BTP.
 
 01:25.000 --> 01:35.000
 Ahora navegamos al Target Architecture Blueprint. Aquí diseñamos el esquema nativo de la nube de destino.

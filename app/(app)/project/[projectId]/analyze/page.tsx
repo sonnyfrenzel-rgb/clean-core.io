@@ -96,7 +96,7 @@ import { coverageCaveat } from '@/lib/abap/coverage';
 import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
 import EvidenceFindingsTable from '@/components/analyze/EvidenceFindingsTable';
 import { analysisAnswer, countFindings, groupEvidenceFindings, plainRoute } from '@/components/analyze/analysis-answer';
-import { BAIP, IN_APP_ROUTE, SIDE_BY_SIDE_ROUTE, isSideBySideRoute, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
+import { BTP, IN_APP_ROUTE, SIDE_BY_SIDE_LABEL, SIDE_BY_SIDE_ROUTE, isSideBySideRoute, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
 import CleanCoreScoreSection from '@/components/analyze/CleanCoreScoreSection';
 import CleanCoreScoreDialog from '@/components/analyze/CleanCoreScoreDialog';
 import ObjectSection from '@/components/analyze/ObjectSection';
@@ -1253,7 +1253,7 @@ export default function AnalyzePage() {
                       docs/registers/preservation-register.json. */}
                   <span data-stage-output="extensibilityRoute" className={ROUTE_TAG_CLASS}>
                     {isBtp
-                      ? <GlossaryTerm termKey="BAIP" className="border-b-0 text-cc-ink">{`${BAIP} Side-by-Side`}</GlossaryTerm>
+                      ? <GlossaryTerm termKey="SAP BTP" className="border-b-0 text-cc-ink">{SIDE_BY_SIDE_LABEL}</GlossaryTerm>
                       : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">ABAP Cloud (RAP)</GlossaryTerm>}
                   </span>
                   <span className="cc-text-meta text-cc-ink-muted">
@@ -1268,7 +1268,7 @@ export default function AnalyzePage() {
                   {/* After a switch, the recommended route's artefact is not the target
                       (QA full review of fc787674705f, 08fd882e60b3). */}
                   Target: {(!routeIsOverridden && analysisData.extensibilityRouting?.targetArtifact) || (isBtp
-                    ? <GlossaryTerm termKey="CAP" className="border-b-0 text-cc-ink">{`${BAIP} Node.js App (CAP)`}</GlossaryTerm>
+                    ? <GlossaryTerm termKey="CAP" className="border-b-0 text-cc-ink">{`${BTP} Node.js App (CAP)`}</GlossaryTerm>
                     : <GlossaryTerm termKey="RAP" className="border-b-0 text-cc-ink">RAP Business Object</GlossaryTerm>)}
                 </p>
                   </div>
@@ -1410,7 +1410,7 @@ export default function AnalyzePage() {
                               }
                             }}
                           >
-                            {isBtp ? 'Switch to ABAP Cloud' : `Switch to ${BAIP}`}
+                            {isBtp ? 'Switch to ABAP Cloud' : `Switch to ${BTP}`}
                           </CcButton>
                         </div>
                         {routeSwitch.error && (
@@ -1986,7 +1986,7 @@ export default function AnalyzePage() {
                       </p>
                       <ul className="list-disc pl-4 space-y-1">
                         <li><strong>Unreleased APIs Forbidden:</strong> Any legacy unreleased SAP tables/functions used by your custom logic are unreachable.</li>
-                        <li><strong>Strict Clean Core Compliance:</strong> The analysis will prioritize <strong>{`${BAIP} Side-by-Side (CAP)`}</strong> or <strong>In-App RAP</strong> using strictly released APIs. You must plan to decommission or completely rewrite outdated custom logic.</li>
+                        <li><strong>Strict Clean Core Compliance:</strong> The analysis will prioritize <strong>{`${BTP} Side-by-Side (CAP)`}</strong> or <strong>In-App RAP</strong> using strictly released APIs. You must plan to decommission or completely rewrite outdated custom logic.</li>
                       </ul>
                     </>
                   ) : (

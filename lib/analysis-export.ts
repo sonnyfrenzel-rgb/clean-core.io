@@ -31,7 +31,7 @@ import { buildAbapEvidence } from '@/lib/abap/evidence-model';
 import { SCORE_BANDS_SOURCE, scoreWithBand } from '@/lib/clean-core-score';
 import { readStoredAnalysis, withoutUnapprovedMoney } from '@/lib/money-honesty';
 import { APP_VERSION } from '@/lib/version';
-import { BAIP, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
+import { BTP, routeLabel, sapNamesForDisplay } from '@/lib/sap-naming';
 import { modelActionPlan } from '@/lib/action-plan';
 import { EXPORT_CSS, severityClass, toneClass } from '@/lib/export-style';
 
@@ -265,7 +265,7 @@ export function buildAnalysisExportHtml(input: AnalysisExportInput): string | nu
                 </ul>
               </div>
               <div class="card">
-                <div class="card-title">Side-by-Side ${BAIP} (CAP) Track</div>
+                <div class="card-title">Side-by-Side ${BTP} (CAP) Track</div>
                 <p class="meta">Feasibility: ${esc(comparative.sideBySideBTP.technicalFeasibility)}</p>
                 <p>${esc(sapNamesForDisplay(comparative.sideBySideBTP.fitDetails))}</p>
                 <div><strong>Technical Pros:</strong></div>

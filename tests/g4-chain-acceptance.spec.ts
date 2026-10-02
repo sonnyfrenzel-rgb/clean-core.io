@@ -707,7 +707,7 @@ test.describe('G4 path 2 — targeted extension (CC-031: side-by-side CAP, sandb
   test('design: the CAP target is signed off without a departure; a sign-off on another run is refused', async ({ request }) => {
     const a = api(request, owner);
     await updateDoc(doc(owner.db, 'projects', projectId), {
-      solutionDesign: designFixture('A CAP service on the SAP Business AI Platform records the route of a case and notifies; the ERP side publishes an event.'),
+      solutionDesign: designFixture('A CAP service on SAP BTP records the route of a case and notifies; the ERP side publishes an event.'),
     });
     const read = await readDecision(a, projectId);
     const otherRun = await a.command(projectId, {

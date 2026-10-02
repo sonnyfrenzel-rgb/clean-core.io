@@ -4,7 +4,7 @@ WEBVTT
 Enterprise core modifications are the single greatest barrier to S/4HANA upgrades.
 
 00:07.500 --> 00:16.000
-Welcome to Clean-Core.io—the free community assistant designed to help decouple legacy ABAP logic into modern, side-by-side cloud services on SAP Business AI Platform (formerly SAP BTP).
+Welcome to Clean-Core.io—the free community assistant designed to help decouple legacy ABAP logic into modern, side-by-side cloud services on SAP BTP, part of the SAP Business AI Platform.
 
 00:16.000 --> 00:25.000
 Our platform enables enterprise architects to keep the SAP digital core clean while accelerating cloud transformation.
@@ -25,7 +25,7 @@ Next, our rule-based scoring engine separates obsolete code from active requirem
 Standard capabilities are mapped to native, standard SAP cloud features, avoiding redundant development.
 
 01:15.000 --> 01:25.000
-Only the custom delta requirements are scoped and packaged for a side-by-side extension on BAIP.
+Only the custom delta requirements are scoped and packaged for a side-by-side extension on SAP BTP.
 
 01:25.000 --> 01:35.000
 Now, we navigate to the Target Architecture Blueprint. Here, we design the modern target cloud-native schema.
@@ -34,7 +34,7 @@ Now, we navigate to the Target Architecture Blueprint. Here, we design the moder
 Using secure, stateless Gemini API proxying, your legacy code structures are parsed and converted into a modular Node.js folder structure.
 
 01:47.000 --> 02:00.000
-The visual console displays generated cds schemas, TypeScript controllers, Dockerfiles, and destination manager bindings for BAIP.
+The visual console displays generated cds schemas, TypeScript controllers, Dockerfiles, and destination manager bindings for SAP BTP.
 
 02:00.000 --> 02:10.000
 Under the Code Transformation workspace, you can review the side-by-side conversion in detail.

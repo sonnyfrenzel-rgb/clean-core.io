@@ -104,8 +104,8 @@ import type { ProvenanceValue } from './provenance';
 import type { AbapEvidenceReport, EvidenceFinding } from './abap/evidence-model';
 import { routeDrivers, type ExtensibilityRouteReport, type RouteDriver } from './abap/extensibility-router';
 import {
-  FINGERPRINTED_FORMER_NAME as FORMER_NAME,
-  FINGERPRINTED_FORMER_SHORT as FORMER_SHORT,
+  FINGERPRINTED_PLATFORM_NAME as FORMER_NAME,
+  FINGERPRINTED_PLATFORM_SHORT as FORMER_SHORT,
   SIDE_BY_SIDE_ROUTE,
   sapNamesForDisplay,
 } from './sap-naming';
@@ -427,7 +427,7 @@ export function contractFingerprint(contract: ArchitectureContract): string {
 /**
  * The contract as a screen shows it (roadmap 3.0.15): the platform's former
  * name in the summary, the statements, the alternatives' labels and reasons
- * reads as BAIP. Display only — the fingerprint stays the one of the stored
+ * reads as SAP BTP. Display only — the fingerprint stays the one of the stored
  * bytes, so nothing that binds the contract may be handed this copy.
  */
 export function contractForDisplay(contract: ArchitectureContract): ArchitectureContract {

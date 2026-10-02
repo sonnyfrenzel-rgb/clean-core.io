@@ -7,7 +7,7 @@
  * claimed — and a capability list without limits is a claim.
  */
 
-import { BAIP_FIRST } from './sap-naming';
+import { BTP_FIRST } from './sap-naming';
 import { TRUST_CLAIMS } from './trust-claims';
 
 /**
@@ -45,7 +45,7 @@ export const CAPABILITIES: Capability[] = [
     stage: 'Stage 2',
     title: 'Extensibility routing',
     output:
-      `A recommended route — in-app ABAP Cloud (RAP) or side-by-side CAP on ${BAIP_FIRST} — with a confidence score and the reasoning that produced it.`,
+      `A recommended route — in-app ABAP Cloud (RAP) or side-by-side CAP on ${BTP_FIRST} — with a confidence score and the reasoning that produced it.`,
     benefit:
       'The RAP-or-CAP argument, resolved per object with stated criteria instead of preference. The reasoning is inspectable, so it survives a review rather than only a demo.',
     effort: 'Included in the analysis. No extra step, no extra unit.',

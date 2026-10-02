@@ -18,7 +18,7 @@
  * because it reads as evidence.
  */
 
-import { BAIP, BAIP_FIRST, BAIP_NAME, FORMER_PLATFORM_NAMES } from './sap-naming';
+import { BTP, BTP_FIRST, PLATFORM_ALIASES } from './sap-naming';
 
 /** Where a term's definition comes from — `origin` and `absentReason` after `lib/first-look.ts`. */
 export type GlossarySourceOrigin =
@@ -125,8 +125,8 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     category: 'Side-by-side Extension',
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
-    definition: `An open and opinionated framework of languages, libraries, and tools for building enterprise-grade cloud services and microservices on ${BAIP_FIRST}. It supports both Node.js (TypeScript) and Java.`,
-    cleanCoreImplication: `CAP is the ideal framework for Side-by-Side Extensibility on ${BAIP}, keeping custom extensions completely separate from the S/4HANA core systems.`
+    definition: `An open and opinionated framework of languages, libraries, and tools for building enterprise-grade cloud services and microservices on ${BTP_FIRST}. It supports both Node.js (TypeScript) and Java.`,
+    cleanCoreImplication: `CAP is the ideal framework for Side-by-Side Extensibility on ${BTP}, keeping custom extensions completely separate from the S/4HANA core systems.`
   },
   'SAP LUW': {
     term: 'SAP Logical Unit of Work',
@@ -171,7 +171,7 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
     definition: 'An open standard, REST-based protocol for building and consuming APIs. SAP standard interfaces, RAP business objects, and CAP applications expose services primarily as OData v2 or v4 feeds.',
-    cleanCoreImplication: `Standardizing integrations on OData ensures seamless connectivity between SAP core, ${BAIP} extensions, and external third-party portals.`
+    cleanCoreImplication: `Standardizing integrations on OData ensures seamless connectivity between SAP core, ${BTP} extensions, and external third-party portals.`
   },
   abapGit: {
     term: 'abapGit Client',
@@ -188,8 +188,8 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     category: 'Side-by-side Extension',
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
-    definition: `A fully managed, event-driven messaging service on ${BAIP_FIRST}. It allows applications to communicate asynchronously via lightweight events (e.g. document created) using message queues.`,
-    cleanCoreImplication: `Using an Event Mesh enables absolute side-by-side decoupling, notifying ${BAIP} extensions of core ERP updates asynchronously without blocking ERP user threads.`
+    definition: `A fully managed, event-driven messaging service on ${BTP_FIRST}. It allows applications to communicate asynchronously via lightweight events (e.g. document created) using message queues.`,
+    cleanCoreImplication: `Using an Event Mesh enables absolute side-by-side decoupling, notifying ${BTP} extensions of core ERP updates asynchronously without blocking ERP user threads.`
   },
   Destination: {
     term: 'SAP Destination service',
@@ -197,8 +197,8 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     category: 'Integration',
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
-    definition: `A secure cloud registry on ${BAIP_FIRST} used to define connection credentials, authentication certificates, and URLs to target systems (e.g. standard ERP, external SaaS APIs).`,
-    cleanCoreImplication: `Destinations externalize connection endpoints from extension source code, shielding ${BAIP} microservices from specific ERP landscape adjustments.`
+    definition: `A secure cloud registry on ${BTP_FIRST} used to define connection credentials, authentication certificates, and URLs to target systems (e.g. standard ERP, external SaaS APIs).`,
+    cleanCoreImplication: `Destinations externalize connection endpoints from extension source code, shielding ${BTP} microservices from specific ERP landscape adjustments.`
   },
   'Released Interface': {
     term: 'Released Stable SAP Interface',
@@ -210,17 +210,18 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     cleanCoreImplication: 'Using only released stable interfaces protects custom extensions from breaking during automatic cloud system upgrades, as SAP guarantees their backward compatibility.'
   },
   // One entry for the platform (roadmap 3.0.15; `DESIGN.md` §6.1 had marked the
-  // two former entries for merging). A reader who types the former name still
-  // finds it through `aliases`.
-  BAIP: {
-    term: BAIP_FIRST,
-    shortName: BAIP,
-    aliases: [BAIP_NAME, ...FORMER_PLATFORM_NAMES],
+  // two former entries for merging). SAP BTP keeps its name and is part of the
+  // SAP Business AI Platform (ADR-064); a reader who types the spelled-out name
+  // or the portfolio's name still finds it through `aliases`.
+  'SAP BTP': {
+    term: BTP_FIRST,
+    shortName: BTP,
+    aliases: [...PLATFORM_ALIASES],
     category: 'Side-by-side Extension',
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
-    definition: 'SAP\'s unified cloud platform bringing together application development, data and analytics, integration, automation, and AI capabilities in a single environment.',
-    cleanCoreImplication: `${BAIP} is the designated environment for hosting Side-by-Side extensions, keeping the digital ERP core system clean and stable.`
+    definition: 'SAP\'s cloud platform bringing together application development, data and analytics, integration, automation, and AI capabilities in a single environment.',
+    cleanCoreImplication: `${BTP} is the designated environment for hosting Side-by-Side extensions, keeping the digital ERP core system clean and stable.`
   },
 
   /* ------------------------------------- A . SAP and Clean Core (DESIGN.md 6.1) */
@@ -298,12 +299,12 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     cleanCoreImplication: 'It is the clean-core route for logic that must run inside the standard transaction and cannot wait for an asynchronous call.',
   },
   'Side-by-side extensibility': {
-    term: `Side-by-side extensibility (${BAIP})`,
+    term: `Side-by-side extensibility (${BTP})`,
     shortName: 'Side-by-side extensibility',
     category: 'Side-by-side Extension',
     kind: 'sap',
     sourceRef: noSource(NOT_CITED),
-    definition: `Running the extension outside the ERP system, on ${BAIP_FIRST}, and reaching the core only through released APIs and events.`,
+    definition: `Running the extension outside the ERP system, on ${BTP_FIRST}, and reaching the core only through released APIs and events.`,
     cleanCoreImplication: 'It keeps the core untouched entirely, at the price of a network hop - so it does not suit logic that must block the standard transaction.',
   },
   Modification: {

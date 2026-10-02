@@ -338,7 +338,7 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     }
     const attested = await after.zip.file(USER_ATTESTED_FILE)!.async('string');
     expect(attested).toContain('someone-else@example.com');
-    expect(attested).toContain('Side-by-Side BAIP (CAP)');
+    expect(attested).toContain('Side-by-Side SAP BTP (CAP)');
     expect(attested).toContain('FORGED-SECOND');
     // The previous approver is gone, not merely joined by the new one: one
     // address in the file, and it is the current one.

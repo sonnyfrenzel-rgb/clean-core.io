@@ -11,7 +11,7 @@ import { publicButton } from '@/components/landing/public-button';
 import { formatNumber } from '@/lib/format';
 import { CONTACT_EMAIL } from '@/lib/constants';
 import { STARTER_EXAMPLES } from '@/lib/starter-examples';
-import { BAIP_FIRST } from '@/lib/sap-naming';
+import { BTP_FIRST } from '@/lib/sap-naming';
 
 export const metadata: Metadata = withTwitterCard({
   title: 'Your First Run — Step by Step | Clean-Core.io',
@@ -85,7 +85,7 @@ const STEPS: Step[] = [
     action: 'Start the analysis',
     detail:
       'The deterministic engine parses the source first — findings, database coupling, code inventory, complexity and criticality — and only then does the AI write the narrative around that evidence. Takes a minute or two.',
-    see: `A Clean Core Score, a findings list with line numbers, and a recommended route: in-app ABAP Cloud (RAP) or side-by-side CAP on ${BAIP_FIRST}.`,
+    see: `A Clean Core Score, a findings list with line numbers, and a recommended route: in-app ABAP Cloud (RAP) or side-by-side CAP on ${BTP_FIRST}.`,
     note: 'This is the one step that costs a transformation — except the starter examples, which are free the first time you run each of them. Everything after it is included, and re-running the analysis on the same source is free; starting the same example a second time is an ordinary analysis, counted once it completes.',
   },
   {

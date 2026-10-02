@@ -1,94 +1,95 @@
 /**
- * SAP naming — roadmap 3.0.15 (decision Sonny, 30.09.2026).
+ * SAP naming — roadmap 3.0.15 (decision Sonny, 02.10.2026, ADR-064; replaces
+ * his decision of 30.09.2026).
  *
- * SAP presented the SAP Business AI Platform (BAIP) at Sapphire 2026 as the
- * portfolio that contains SAP BTP. Visible copy names the platform
- * "SAP Business AI Platform (formerly SAP BTP)" at its first mention and
- * "BAIP" after that. This module is the one place that spells either form, the
- * SAP service names that still carry BTP, and the stored route value that
- * contains the letters — `tests/sap-naming-guard.spec.ts` fails on a bare
- * "BTP" anywhere else in visible source.
+ * SAP BTP keeps its name. The SAP Business AI Platform is the portfolio SAP
+ * built around it — SAP BTP, AI Foundation, SAP Business Data Cloud and SAP
+ * HANA Cloud — not a new name for it (external audit finding CNT-03). Visible
+ * copy therefore says "SAP BTP, part of the SAP Business AI Platform" at the
+ * platform's first mention on a page or in a document and "SAP BTP" after
+ * that. This module is the one place that spells those forms, the SAP service
+ * names that carry BTP, and the stored route value —
+ * `tests/sap-naming-guard.spec.ts` fails on a bare "BTP" (without "SAP"), on
+ * "BAIP", on "formerly SAP BTP" and on the spelled-out "Business Technology
+ * Platform" anywhere else in visible source.
  *
  * What "first mention" means here, because labels are reused across a page:
  *
  *   - **Prose** (a public page, an export, a mail, the assistant's knowledge,
  *     a summary sentence): the first mention in that page or document is
- *     `BAIP_FIRST`, every later one `BAIP`. An FAQ answer, a glossary entry
- *     and a JSON-LD answer are read on their own (a tooltip, a search result),
- *     so each counts as its own document.
+ *     `BTP_FIRST`, every later one `BTP`. An FAQ answer, a glossary entry and
+ *     a JSON-LD answer are read on their own (a tooltip, a search result), so
+ *     each counts as its own document.
  *   - **Labels** (route names, chips, tiles, table cells, chart rows, diagram
- *     boxes): always `BAIP`. A label is read next to the page's own lead or
- *     summary, which carries `BAIP_FIRST` where the platform is introduced.
- *   - **SAP's own names** that still carry BTP keep SAP's spelling
- *     (`SAP_NAMES_WITH_BTP`); catalog and engine data from SAP sources
- *     (`lib/abap/generated/`) are SAP's words and stay as SAP wrote them.
+ *     boxes): always `BTP`. A label is read next to the page's own lead or
+ *     summary, which carries `BTP_FIRST` where the platform is introduced.
+ *   - **SAP's own service names** that carry BTP keep SAP's spelling
+ *     (`SAP_BTP_ABAP_ENVIRONMENT`, `SAP_BTP_COCKPIT`); catalog and engine data
+ *     from SAP sources (`lib/abap/generated/`) are SAP's words and stay as SAP
+ *     wrote them.
  *
  * The stored route value `SIDE_BY_SIDE_ROUTE` is a data contract — projects,
- * runs and signed packs carry it — so it keeps its old spelling and is never
- * shown as it is: `routeLabel()` turns it into the visible name.
+ * runs and signed packs carry it — so it keeps its spelling; screens show it
+ * through `routeLabel()`.
  */
 
-/** The former name, as the first mention carries it. */
-export const BAIP_FORMERLY = 'formerly SAP BTP';
+/** Every mention after the first, and every compact label. */
+export const BTP = 'SAP BTP';
 
-/**
- * The former name with its abbreviation spelled out, for a glossary that
- * explains what BTP stood for. The one place the spelled-out former name may
- * stand; `tests/sap-naming-guard.spec.ts` fails on it anywhere else.
- */
-export const BAIP_FORMERLY_SPELLED = `${BAIP_FORMERLY} (Business Technology Platform)`;
+/** The portfolio SAP BTP belongs to. Named on its own only where the portfolio itself is meant. */
+export const BUSINESS_AI_PLATFORM = 'SAP Business AI Platform';
+
+/** What the portfolio bundles, for the one glossary entry that explains it. */
+export const BUSINESS_AI_PLATFORM_PARTS = `${BTP}, AI Foundation, SAP Business Data Cloud and SAP HANA Cloud`;
 
 /** First mention of the platform on a page or in a document. */
-export const BAIP_FIRST = `SAP Business AI Platform (${BAIP_FORMERLY})`;
+export const BTP_FIRST = `${BTP}, part of the ${BUSINESS_AI_PLATFORM}`;
 
-/** Every later mention, and every compact label. */
-export const BAIP = 'BAIP';
-
-/** The platform's full name without the former name, for a sentence that already introduced it. */
-export const BAIP_NAME = 'SAP Business AI Platform';
-
-/** SAP's own product name for the ABAP environment; SAP still names it with BTP. */
+/** SAP's own product name for the ABAP environment. */
 export const SAP_BTP_ABAP_ENVIRONMENT = 'SAP BTP, ABAP environment';
 
 /** SAP's own name for the administration UI of a subaccount. */
 export const SAP_BTP_COCKPIT = 'SAP BTP cockpit';
 
 /**
- * Names SAP itself still uses with BTP. They are SAP's names, not ours to
- * rename; the guard accepts exactly these spellings and nothing else.
+ * Names a reader may type when asking what the platform is. Matching input
+ * only — never displayed.
  */
-export const SAP_NAMES_WITH_BTP = [
-  SAP_BTP_ABAP_ENVIRONMENT,
-  'SAP BTP ABAP environment',
-  SAP_BTP_COCKPIT,
+export const PLATFORM_ALIASES = [
+  'BTP',
+  'SAP Business Technology Platform',
+  'Business Technology Platform',
+  BUSINESS_AI_PLATFORM,
+  'BAIP',
 ] as const;
 
 /**
- * Names a reader may still type when asking what the platform is. Matching
- * input only — never displayed.
+ * The platform's name inside text whose bytes are fingerprinted: the
+ * architecture contract hashes its summary, field statements and alternative
+ * reasons, and generated code and decisions are bound to that hash, so
+ * rewording them would unbind every existing project; a decision's summary
+ * and option binding are hashed the same way (`lib/decision-draft.ts`). Only
+ * those two modules may use these (the guard checks it); every screen shows
+ * that text through `sapNamesForDisplay()`, which turns the bare short form
+ * into `BTP`.
  */
-export const FORMER_PLATFORM_NAMES = ['SAP BTP', 'BTP', 'SAP Business Technology Platform'] as const;
+export const FINGERPRINTED_PLATFORM_NAME = 'SAP BTP';
+export const FINGERPRINTED_PLATFORM_SHORT = 'BTP';
 
-/**
- * The former name inside text whose bytes are fingerprinted: the architecture
- * contract hashes its summary, field statements and alternative reasons, and
- * generated code and decisions are bound to that hash, so rewording them would
- * unbind every existing project; a decision's summary and option binding are
- * hashed the same way (`lib/decision-draft.ts`). Only those two modules may use
- * these (the guard checks it); every screen shows that text through
- * `sapNamesForDisplay()`.
- */
-export const FINGERPRINTED_FORMER_NAME = 'SAP BTP';
-export const FINGERPRINTED_FORMER_SHORT = 'BTP';
-
-/** The stored side-by-side route value (data contract — never displayed as is). */
+/** The stored side-by-side route value (data contract). */
 export const SIDE_BY_SIDE_ROUTE = 'Side-by-Side (SAP BTP)' as const;
 
 /** The stored in-app route value. */
 export const IN_APP_ROUTE = 'In-App (ABAP Cloud)' as const;
 
-/** The visible name of the side-by-side route. */
-export const SIDE_BY_SIDE_LABEL = `Side-by-Side (${BAIP})`;
+/**
+ * The visible name of the side-by-side route, everywhere a label stands — the
+ * compact form of `routeLabelFirst()`'s "Side-by-Side on SAP BTP, part of the
+ * SAP Business AI Platform", and the words the Transformation flow uses. It is
+ * deliberately not the stored value, so a screen that shows the stored value
+ * as it is, past `routeLabel()`, is caught.
+ */
+export const SIDE_BY_SIDE_LABEL = `Side-by-Side on ${BTP}`;
 
 /**
  * Whether a stored route names the side-by-side track. The test is the one
@@ -100,28 +101,32 @@ export function isSideBySideRoute(route: string | null | undefined): boolean {
 }
 
 /**
- * A text written before 3.0.15 that has to keep its bytes — a stored route, a
- * sentence inside a fingerprinted contract (`lib/architecture-contract.ts`
- * hashes its summary, statements and reasons, and generated code and decisions
- * are bound to that hash) — as the reader sees it: the former platform name
- * reads as `BAIP`; SAP's own names and the prescribed first mention stay.
+ * A text that has to keep its bytes — a stored route, a sentence inside a
+ * fingerprinted contract, a model draft or summary stored before 02.10.2026 —
+ * as the reader sees it now: a bare "BTP" reads "SAP BTP"; the spelled-out
+ * former expansion, the 30.09 first mention "SAP Business AI Platform
+ * (formerly SAP BTP)" and its "BAIP" read as today's forms. SAP's service
+ * names stay.
  */
 export function sapNamesForDisplay(text: string): string {
-  const kept = [BAIP_FORMERLY, ...SAP_NAMES_WITH_BTP];
-  const parts: string[] = [];
-  // A model draft written before 3.0.15 spells the platform out; it reads as the first mention.
-  const spelled = text.replace(/SAP BTP \(Business Technology Platform\)|SAP Business Technology Platform(?: \(BTP\))?/g, BAIP_FIRST);
-  const masked = kept.reduce((acc, name) => acc.split(name).join(`\u0000${parts.push(name) - 1}\u0000`), spelled);
-  return masked
-    .replace(/\bSAP BTP\b/g, BAIP)
-    .replace(/\bBTP\b/g, BAIP)
-    .replace(/\u0000(\d+)\u0000/g, (_, i: string) => parts[Number(i)]);
+  return (
+    text
+      // The 30.09 first mention and its variants (landing FAQ, glossary, stored drafts).
+      .replace(/SAP Business AI Platform \((?:BAIP, )?formerly SAP BTP(?: \(Business Technology Platform\))?\)/g, BTP_FIRST)
+      // A model draft that spells the platform out.
+      .replace(/SAP BTP \(Business Technology Platform\)|SAP Business Technology Platform(?: \(BTP\))?/g, BTP_FIRST)
+      // "a BTP runtime" becomes "an SAP BTP runtime", not "a SAP BTP runtime".
+      .replace(/\b([Aa]) (?=(?:BAIP|BTP)\b)/g, '$1n ')
+      .replace(/\bBAIP\b/g, BTP)
+      // A bare "BTP" that is not already part of "SAP BTP".
+      .replace(/(?<!SAP )\bBTP\b/g, BTP)
+  );
 }
 
 /**
  * The visible name of a stored route value. Any other value — a reader's own
- * wording, an in-app route — is returned as it is, apart from the former
- * platform name (`sapNamesForDisplay`).
+ * wording, an in-app route — is returned as it is, apart from the platform
+ * name (`sapNamesForDisplay`).
  */
 export function routeLabel(route: string): string {
   if (route === SIDE_BY_SIDE_ROUTE) return SIDE_BY_SIDE_LABEL;
@@ -133,6 +138,6 @@ export function routeLabel(route: string): string {
  * that names the route once, a document's first line about it.
  */
 export function routeLabelFirst(route: string): string {
-  if (route === SIDE_BY_SIDE_ROUTE) return `Side-by-Side on ${BAIP_FIRST}`;
+  if (route === SIDE_BY_SIDE_ROUTE) return `Side-by-Side on ${BTP_FIRST}`;
   return sapNamesForDisplay(route);
 }

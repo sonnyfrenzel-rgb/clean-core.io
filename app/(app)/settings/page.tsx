@@ -1588,7 +1588,7 @@ export default function SettingsPage() {
                       value={s4TokenUrl}
                       onChange={setS4TokenUrl}
                       placeholder="https://mysubaccount.authentication.eu10.hana.ondemand.com/oauth/token"
-                      help={<>The XSUAA or IAS token endpoint of your BAIP subaccount, used for <span className="font-bold">grant_type=client_credentials</span>.</>}
+                      help={<>The XSUAA or IAS token endpoint of your SAP BTP subaccount, used for <span className="font-bold">grant_type=client_credentials</span>.</>}
                     />
                   </div>
                 )}

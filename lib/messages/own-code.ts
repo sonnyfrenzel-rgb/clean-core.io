@@ -86,7 +86,7 @@ export const OWN_CODE_MESSAGES = {
   'coreDiagram.inApp': 'in-app',
   'coreDiagram.abapCloud': 'ABAP Cloud',
   'coreDiagram.sideBySide': 'side-by-side',
-  'coreDiagram.btp': 'BAIP',
+  'coreDiagram.btp': 'SAP BTP',
   'coreDiagram.api': 'API',
   'coreDiagram.modification': 'modification',
   'coreDiagram.changesCode': 'changes SAP code',

@@ -6,49 +6,50 @@ import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { adminMergeDoc } from './helpers/admin-seed';
 import { pageSettled, STAGES } from './helpers/design-rendered';
 import {
-  BAIP,
-  BAIP_FIRST,
-  BAIP_FORMERLY,
-  BAIP_FORMERLY_SPELLED,
+  BTP,
+  BTP_FIRST,
+  BUSINESS_AI_PLATFORM,
   IN_APP_ROUTE,
-  SAP_NAMES_WITH_BTP,
+  SAP_BTP_ABAP_ENVIRONMENT,
+  SAP_BTP_COCKPIT,
   SIDE_BY_SIDE_LABEL,
   SIDE_BY_SIDE_ROUTE,
   isSideBySideRoute,
   routeLabel,
+  routeLabelFirst,
   sapNamesForDisplay,
 } from '../lib/sap-naming';
 import { FEATURE_SLUGS } from '../lib/features-content';
 
 /**
- * SAP naming — roadmap 3.0.15.
+ * SAP naming — roadmap 3.0.15 (owner decision 02.10.2026, ADR-064).
  *
- * SAP BTP is now named as the SAP Business AI Platform: "SAP Business AI
- * Platform (formerly SAP BTP)" at the first mention, "BAIP" after it. A service
- * SAP itself still names with BTP keeps SAP's name; catalog data from SAP
- * sources stays as SAP wrote it.
+ * SAP BTP keeps its name; it is part of the SAP Business AI Platform, the
+ * portfolio that bundles SAP BTP, AI Foundation, SAP Business Data Cloud and
+ * SAP HANA Cloud. Visible copy says "SAP BTP, part of the SAP Business AI
+ * Platform" at the first mention and "SAP BTP" after it. A service SAP names
+ * with BTP keeps SAP's name; catalog data from SAP sources stays as SAP wrote it.
  *
  * Zero tolerance. Every text the product can show — each string literal,
  * template text and JSX text of `app/`, `components/`, `lib/` and `hooks/`, and
- * every static file under `public/` — is read, and a "BTP" in it fails the
- * suite unless it is part of:
+ * every static file under `public/` — is read, and it fails the suite on:
  *
- *   - one of SAP's own names that still carry BTP (`SAP_NAMES_WITH_BTP`), or
- *   - the prescribed first mention itself — "(formerly SAP BTP)" after the
- *     platform's name, `BAIP_FIRST`, also where a diagram sets the two words on
- *     two lines (`BAIP_FORMERLY`).
+ *   - a bare "BTP" — the letters without "SAP " in front of them (SAP's own
+ *     service names, "SAP BTP, ABAP environment" and "SAP BTP cockpit", start
+ *     with "SAP BTP" and pass on that alone);
+ *   - "BAIP", which is not SAP's abbreviation and is not used;
+ *   - the 30.09 wording that renamed SAP BTP: "formerly SAP BTP" (or "formerly
+ *     BTP"), and "SAP Business AI Platform (…)" with a former name in brackets;
+ *   - the portfolio's name used as the place an extension runs ("on the SAP
+ *     Business AI Platform") — an extension runs on SAP BTP;
+ *   - the spelled-out "Business Technology Platform", anywhere: one spelling.
  *
  * Nothing else is excused. `lib/sap-naming.ts` is not read: it is the one place
- * that spells the former name — the first-mention constant, the lookup aliases a
- * reader may still type, and the stored route value `SIDE_BY_SIDE_ROUTE`, a data
- * contract that projects, runs and signed packs carry and that is never shown
- * as it is. `lib/abap/generated/` is not read either: it is SAP's catalog,
- * synced from SAP's repository, and the roadmap keeps it unchanged. Comments are
- * not read — they are not shown.
- *
- * A JSON data file may carry the stored route value as the value of a route
- * field, because that is the data contract and not a label; any other "BTP" in
- * it fails like everywhere else.
+ * that spells the forms, the lookup aliases a reader may still type, and the
+ * stored route value `SIDE_BY_SIDE_ROUTE`, a data contract that projects, runs
+ * and signed packs carry. `lib/abap/generated/` is not read either: it is SAP's
+ * catalog, synced from SAP's repository, and the roadmap keeps it unchanged.
+ * Comments are not read — they are not shown.
  */
 
 const ROOT = path.resolve(__dirname, '..');
@@ -68,24 +69,29 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-/** What is left of a text once SAP's own names and the prescribed first mention are taken out. */
-function bareBtp(text: string): string[] {
+/** What visible copy must not say about the platform's name. */
+const WRONG_NAMING: readonly RegExp[] = [
+  // A bare "BTP": the letters without "SAP " in front of them.
+  /(?<!\bSAP )\bBTP\b/g,
+  /\bBAIP\b/g,
+  /\bformerly (?:SAP )?BTP\b/gi,
+  /\bSAP Business AI Platform \((?:formerly|BAIP|SAP BTP|BTP)/g,
+  /\bon (?:the )?SAP Business AI Platform\b/gi,
+  // The former name spelled out (codex code-public-06: "Side-by-Side on SAP
+  // Business Technology Platform" passed a guard that only looked for the letters).
+  /\b[Bb]usiness [Tt]echnology [Pp]latform\b/g,
+];
+
+/** Every place a text names the platform the wrong way, with some context. */
+function wrongNaming(text: string): string[] {
   // JSX text keeps its line breaks; "formerly\n   SAP BTP" is the same words.
-  // The former name spelled out is the former name too (codex code-public-06:
-  // "Side-by-Side on SAP Business Technology Platform" passed a guard that only
-  // looked for the three letters). The one place it may stand is right after
-  // the prescribed "formerly SAP BTP", expanding the abbreviation.
-  let rest = text
-    .replace(/\s+/g, ' ')
-    .split(BAIP_FORMERLY_SPELLED)
-    .join(' ')
-    .split(BAIP_FORMERLY)
-    .join(' ');
-  for (const name of SAP_NAMES_WITH_BTP) rest = rest.split(name).join(' ');
+  const flat = text.replace(/\s+/g, ' ');
   const hits: string[] = [];
-  const re = /\bBTP\b|\b[Bb]usiness [Tt]echnology [Pp]latform\b/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(rest))) hits.push(rest.slice(Math.max(0, m.index - 40), m.index + 40).replace(/\s+/g, ' '));
+  for (const re of WRONG_NAMING) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(flat))) hits.push(flat.slice(Math.max(0, m.index - 40), m.index + 40));
+  }
   return hits;
 }
 
@@ -117,7 +123,7 @@ function textsOf(file: string): { line: number; text: string }[] {
 }
 
 test.describe('SAP naming (roadmap 3.0.15) — source', () => {
-  test('no bare "BTP" in any text of app/, components/, lib/ or hooks/', () => {
+  test('no bare "BTP", "BAIP", "formerly SAP BTP" or spelled-out name in any text of app/, components/, lib/ or hooks/', () => {
     const hits: string[] = [];
     let files = 0;
     for (const dir of SOURCE_DIRS) {
@@ -127,24 +133,23 @@ test.describe('SAP naming (roadmap 3.0.15) — source', () => {
         if (/\.(tsx?|mjs|js)$/.test(rel)) {
           files++;
           for (const { line, text } of textsOf(full)) {
-            for (const h of bareBtp(text)) hits.push(`${rel}:${line} … ${h} …`);
+            for (const h of wrongNaming(text)) hits.push(`${rel}:${line} … ${h} …`);
           }
         } else if (TEXT_EXT.test(rel)) {
           files++;
-          let text = fs.readFileSync(full, 'utf8');
-          // The stored route value is a data contract in a data file, never a label.
-          if (rel.endsWith('.json')) text = text.split(`"${SIDE_BY_SIDE_ROUTE}"`).join('""');
+          // No exception for data files: the stored route value names SAP BTP in full.
+          const text = fs.readFileSync(full, 'utf8');
           text.split(/\r?\n/).forEach((l, i) => {
-            for (const h of bareBtp(l)) hits.push(`${rel}:${i + 1} … ${h} …`);
+            for (const h of wrongNaming(l)) hits.push(`${rel}:${i + 1} … ${h} …`);
           });
         }
       }
     }
     expect(files, 'the guard read the source tree').toBeGreaterThan(500);
-    expect(hits, `bare "BTP" in visible copy — use lib/sap-naming.ts:\n${hits.join('\n')}`).toEqual([]);
+    expect(hits, `wrong platform naming in visible copy — use lib/sap-naming.ts:\n${hits.join('\n')}`).toEqual([]);
   });
 
-  test('no bare "BTP" in the static files under public/', () => {
+  test('no wrong platform naming in the static files under public/', () => {
     const hits: string[] = [];
     let files = 0;
     for (const full of walk(path.join(ROOT, 'public'))) {
@@ -153,15 +158,15 @@ test.describe('SAP naming (roadmap 3.0.15) — source', () => {
       files++;
       const text = fs.readFileSync(full, 'utf8').replace(/<!--[\s\S]*?-->/g, '');
       text.split(/\r?\n/).forEach((l, i) => {
-        for (const h of bareBtp(l)) hits.push(`${rel}:${i + 1} … ${h} …`);
+        for (const h of wrongNaming(l)) hits.push(`${rel}:${i + 1} … ${h} …`);
       });
     }
     expect(files, 'the guard read the public folder').toBeGreaterThan(0);
-    expect(hits, `bare "BTP" in a public file:\n${hits.join('\n')}`).toEqual([]);
+    expect(hits, `wrong platform naming in a public file:\n${hits.join('\n')}`).toEqual([]);
   });
 
-  test('the former name inside fingerprinted text is used only where bytes are fingerprinted', () => {
-    // `FINGERPRINTED_FORMER_*` keep the bytes of the architecture contract and of
+  test('the bare short name inside fingerprinted text is used only where bytes are fingerprinted', () => {
+    // `FINGERPRINTED_PLATFORM_*` keep the bytes of the architecture contract and of
     // a decision's summary, which are hashed and bound; anywhere else they would
     // be a way round this guard.
     const allowed = new Set([path.join('lib', 'architecture-contract.ts'), path.join('lib', 'decision-draft.ts')]);
@@ -170,33 +175,45 @@ test.describe('SAP naming (roadmap 3.0.15) — source', () => {
       for (const full of walk(path.join(ROOT, dir))) {
         const rel = path.relative(ROOT, full);
         if (rel === HELPER || !/\.(tsx?|mjs|js)$/.test(rel)) continue;
-        if (/FINGERPRINTED_FORMER_(NAME|SHORT)/.test(fs.readFileSync(full, 'utf8'))) users.push(rel);
+        if (/FINGERPRINTED_PLATFORM_(NAME|SHORT)/.test(fs.readFileSync(full, 'utf8'))) users.push(rel);
       }
     }
     expect(users.sort()).toEqual([...allowed].sort());
   });
 
   test('the guard catches what it is for, and lets SAP keep its own names', () => {
-    expect(bareBtp('a side-by-side extension on SAP BTP')).toHaveLength(1);
-    expect(bareBtp('BTP Side-by-Side')).toHaveLength(1);
-    expect(bareBtp(`side-by-side on ${BAIP_FIRST}`)).toHaveLength(0);
-    expect(bareBtp('Released for the SAP BTP, ABAP environment')).toHaveLength(0);
-    expect(bareBtp('Open the SAP BTP cockpit')).toHaveLength(0);
-    expect(bareBtp('btp-latest, isBtp, objectReleaseInfo_BTPLatest')).toHaveLength(0);
-    // The former name spelled out (codex code-public-06), and its one allowed place.
-    expect(bareBtp('or Side-by-Side on SAP Business Technology Platform (CAP).')).toHaveLength(1);
-    expect(bareBtp('a business technology platform')).toHaveLength(1);
-    expect(bareBtp(`SAP's cloud platform, ${BAIP_FORMERLY_SPELLED}.`)).toHaveLength(0);
+    // A bare short name.
+    expect(wrongNaming('BTP Side-by-Side')).toHaveLength(1);
+    expect(wrongNaming('a separate BTP runtime')).toHaveLength(1);
+    // The 30.09 wording.
+    expect(wrongNaming('side-by-side on BAIP')).toHaveLength(1);
+    expect(wrongNaming('SAP Business AI Platform (formerly SAP BTP)')).toHaveLength(2);
+    expect(wrongNaming('SAP Business AI Platform (BAIP)')).toHaveLength(2);
+    expect(wrongNaming('formerly\n   SAP BTP')).toHaveLength(1);
+    expect(wrongNaming('a CAP service on the SAP Business AI Platform')).toHaveLength(1);
+    // The spelled-out name (codex code-public-06) — no place left where it may stand.
+    expect(wrongNaming('or Side-by-Side on SAP Business Technology Platform (CAP).')).toHaveLength(1);
+    expect(wrongNaming('a business technology platform')).toHaveLength(1);
+    expect(wrongNaming('SAP BTP (Business Technology Platform)')).toHaveLength(1);
+    // What is right.
+    expect(wrongNaming(`side-by-side on ${BTP_FIRST}`)).toHaveLength(0);
+    expect(wrongNaming(`a side-by-side extension on ${BTP}`)).toHaveLength(0);
+    expect(wrongNaming(`the portfolio ${BUSINESS_AI_PLATFORM} bundles SAP BTP`)).toHaveLength(0);
+    expect(wrongNaming(SIDE_BY_SIDE_LABEL)).toHaveLength(0);
+    expect(wrongNaming(`Released for the ${SAP_BTP_ABAP_ENVIRONMENT}`)).toHaveLength(0);
+    expect(wrongNaming(`Open the ${SAP_BTP_COCKPIT}`)).toHaveLength(0);
+    expect(wrongNaming('btp-latest, isBtp, objectReleaseInfo_BTPLatest')).toHaveLength(0);
   });
 });
 
 test.describe('SAP naming (roadmap 3.0.15) — the helper', () => {
-  test('the stored route keeps its value and is shown by its new name', () => {
+  test('the stored route keeps its value and is shown as Side-by-Side on SAP BTP', () => {
     expect(SIDE_BY_SIDE_ROUTE).toBe('Side-by-Side (SAP BTP)');
     expect(routeLabel(SIDE_BY_SIDE_ROUTE)).toBe(SIDE_BY_SIDE_LABEL);
-    expect(routeLabel(SIDE_BY_SIDE_ROUTE)).toBe(`Side-by-Side (${BAIP})`);
+    expect(routeLabel(SIDE_BY_SIDE_ROUTE)).toBe(`Side-by-Side on ${BTP}`);
+    expect(SIDE_BY_SIDE_LABEL, 'a screen that shows the stored value as it is stays detectable').not.toBe(SIDE_BY_SIDE_ROUTE);
     expect(routeLabel(IN_APP_ROUTE)).toBe(IN_APP_ROUTE);
-    expect(bareBtp(routeLabel('Side-by-Side (BTP CAP)'))).toHaveLength(0);
+    expect(wrongNaming(routeLabel('Side-by-Side (BTP CAP)'))).toHaveLength(0);
   });
 
   test('the track test is the one stored projects were routed by', () => {
@@ -206,13 +223,27 @@ test.describe('SAP naming (roadmap 3.0.15) — the helper', () => {
     expect(isSideBySideRoute(undefined)).toBe(false);
   });
 
-  test('display text loses the former name and keeps SAP\'s own', () => {
-    expect(sapNamesForDisplay('Side-by-side on SAP BTP — CAP')).toBe(`Side-by-side on ${BAIP} — CAP`);
-    expect(sapNamesForDisplay('a separate BTP runtime')).toBe(`a separate ${BAIP} runtime`);
+  test('the first mention names the route on SAP BTP, part of the portfolio', () => {
+    expect(BTP_FIRST).toBe('SAP BTP, part of the SAP Business AI Platform');
+    expect(routeLabelFirst(SIDE_BY_SIDE_ROUTE)).toBe(`Side-by-Side on ${BTP_FIRST}`);
+    expect(wrongNaming(routeLabelFirst(SIDE_BY_SIDE_ROUTE))).toHaveLength(0);
+  });
+
+  test('display text written before 02.10.2026 reads by today\'s names and keeps SAP\'s own', () => {
+    expect(sapNamesForDisplay('Side-by-side on SAP BTP — CAP')).toBe(`Side-by-side on ${BTP} — CAP`);
+    expect(sapNamesForDisplay('a separate BTP runtime')).toBe(`a separate ${BTP} runtime`);
+    expect(sapNamesForDisplay('needs a BTP runtime')).toBe(`needs an ${BTP} runtime`);
+    expect(sapNamesForDisplay('side-by-side on BAIP')).toBe(`side-by-side on ${BTP}`);
+    expect(sapNamesForDisplay('on SAP Business AI Platform (formerly SAP BTP)')).toBe(`on ${BTP_FIRST}`);
+    expect(sapNamesForDisplay('on SAP Business AI Platform (BAIP, formerly SAP BTP)')).toBe(`on ${BTP_FIRST}`);
+    expect(sapNamesForDisplay('SAP BTP (Business Technology Platform)')).toBe(BTP_FIRST);
     expect(sapNamesForDisplay('the SAP BTP, ABAP environment and the SAP BTP cockpit')).toBe(
       'the SAP BTP, ABAP environment and the SAP BTP cockpit',
     );
-    expect(sapNamesForDisplay(`on ${BAIP_FIRST}`)).toBe(`on ${BAIP_FIRST}`);
+    expect(sapNamesForDisplay(`on ${BTP_FIRST}`)).toBe(`on ${BTP_FIRST}`);
+    for (const t of ['a BTP runtime', 'BAIP', 'SAP Business AI Platform (formerly SAP BTP)', 'SAP Business Technology Platform (BTP)']) {
+      expect(wrongNaming(sapNamesForDisplay(t)), t).toHaveLength(0);
+    }
   });
 });
 
@@ -252,7 +283,7 @@ async function readPage(page: Page, url: string, ready: string): Promise<string>
 test.describe('SAP naming (roadmap 3.0.15) — rendered', () => {
   test.describe.configure({ mode: 'serial' });
 
-  test('the public pages name the platform by its new name', async ({ page }) => {
+  test('the public pages name the platform SAP BTP, part of the SAP Business AI Platform', async ({ page }) => {
     test.setTimeout(10 * 60 * 1000);
     const routes = [
       '/',
@@ -273,17 +304,17 @@ test.describe('SAP naming (roadmap 3.0.15) — rendered', () => {
     const hits: string[] = [];
     for (const url of routes) {
       const text = await readPage(page, url, 'h1');
-      for (const h of bareBtp(text)) hits.push(`${url} … ${h} …`);
+      for (const h of wrongNaming(text)) hits.push(`${url} … ${h} …`);
     }
     for (const url of ['/llms.txt', '/llms-full.txt']) {
       const res = await page.request.get(url);
       expect(res.ok(), url).toBe(true);
-      for (const h of bareBtp(await res.text())) hits.push(`${url} … ${h} …`);
+      for (const h of wrongNaming(await res.text())) hits.push(`${url} … ${h} …`);
     }
-    expect(hits, `bare "BTP" on a public page:\n${hits.join('\n')}`).toEqual([]);
+    expect(hits, `wrong platform naming on a public page:\n${hits.join('\n')}`).toEqual([]);
   });
 
-  test('a side-by-side project shows its route by the new name in every view and stage', async ({ page }) => {
+  test('a side-by-side project shows its route as SAP BTP in every view and stage', async ({ page }) => {
     test.setTimeout(20 * 60 * 1000);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const acct = await seedStageProject({ prefix: 'sap-naming', admin: true, acceptTerms: true, rich: true });
@@ -309,9 +340,9 @@ test.describe('SAP naming (roadmap 3.0.15) — rendered', () => {
     for (const r of routes) {
       const text = await readPage(page, r.url, r.ready);
       read += text.length;
-      for (const h of bareBtp(text)) hits.push(`${r.url.replace(acct.projectId, '{project}')} … ${h} …`);
+      for (const h of wrongNaming(text)) hits.push(`${r.url.replace(acct.projectId, '{project}')} … ${h} …`);
     }
     expect(read, 'the walk read text').toBeGreaterThan(5000);
-    expect(hits, `bare "BTP" on screen:\n${hits.join('\n')}`).toEqual([]);
+    expect(hits, `wrong platform naming on screen:\n${hits.join('\n')}`).toEqual([]);
   });
 });

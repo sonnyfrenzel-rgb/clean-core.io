@@ -445,7 +445,7 @@ test.describe('a bound revision, as the reader is told it', () => {
   test('a contract key says which contract, on which route, in what state — without the key', () => {
     // What the 3.0 gap audit read on the decision card.
     const shown = bindingShown('contract', 'blocked:qualified:AC-1/side-by-side-cap+592e7a6c667f');
-    expect(shown).toBe('AC-1, Side-by-side on BAIP — CAP — blocked by a limit');
+    expect(shown).toBe('AC-1, Side-by-side on SAP BTP — CAP — blocked by a limit');
     expect(bindingShown('contract', 'AC-2/in-app-rap+deviation+0123456789ab')).toContain('deviating from the route');
     expect(bindingShown('contract', 'qualified:AC-3/in-app-rap+0123456789ab')).toContain('draft with open limits');
   });
