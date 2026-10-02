@@ -103,9 +103,10 @@ import ObjectSection from '@/components/analyze/ObjectSection';
 import FoldedSection, { FoldedPart } from '@/components/analyze/FoldedSection';
 import NotDeterminedSide, { type OpenItem } from '@/components/analyze/NotDeterminedSide';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
-// The engine reads the ~4.5 MB SAP catalog; it is fetched when this page has
-// a source to read, not with the page's own code (external audit PERF-01).
-import { loadEvidenceEngine, useEvidenceEngine } from '@/hooks/useEvidenceEngine';
+// The engine's evidence comes from the server, computed with the catalog
+// snapshot the signed run reads; neither the engine nor a catalog is
+// downloaded by this page (owner decision 30.09.2026, external audit PERF-01).
+import { EVIDENCE_UNREAD, previewRunEvidence, useProjectEvidence } from '@/hooks/useProjectEvidence';
 import { gradeKey, type CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import { accessUseOfKind, findingRows, processStepBands, SEVERITY_ORDER } from '@/lib/findings-view';
 import { scoreBreakdown } from '@/lib/clean-core-score';
@@ -377,10 +378,17 @@ export default function AnalyzePage() {
     geminiResultRef.current = null;
 
     try {
-      // 1. Gather deterministic evidence and perform extensibility routing (instant
-      //    once the engine is here; it is usually loaded while the source was staged)
-      const { buildAbapEvidence } = await loadEvidenceEngine();
-      const evidenceReport = buildAbapEvidence(codeToAnalyze, uploadedFileName || 'main.abap', deployment as 'public' | 'private');
+      // 1. Gather deterministic evidence and perform extensibility routing. The
+      //    evidence is computed on the server with the inputs the run route
+      //    reads for this same request — the edition, the declared release and
+      //    so the catalog snapshot, the file name — so the prompt, the sweep
+      //    and the report below are about what the run then signs.
+      const evidenceReport = await previewRunEvidence(projectId as string, {
+        source: codeToAnalyze,
+        fileName: uploadedFileName,
+        deployment,
+        targetProfile: assessmentTarget,
+      });
       const computedRouteReport = routeExtensibility(evidenceReport, deployment || 'private');
       setRouteReport(computedRouteReport);
 
@@ -680,15 +688,23 @@ export default function AnalyzePage() {
     return { findings: detected, findingsSummary: summary, missingDeps: realModel.missing };
   }, [legacyCode, uploadedFileName]);
 
-  // Re-derive evidence findings (with snippets, targetOptions, sapReplacement) for the Evidence table
+  // The evidence findings (with snippets, targetOptions, sapReplacement) for the
+  // report, read from the server: computed from the stored source with the
+  // file name the run signed and the catalog snapshot of the project's target
+  // profile — the run's own inputs. Computing it here with the default catalog
+  // showed a Private Edition project findings its run never signed.
   // The whole report is kept, not just the findings. `coverage` is what the
   // detectors did not judge, and dropping it here is how an empty finding list
   // came to look like a clean program.
-  const { engine: evidenceEngine, failed: evidenceEngineFailed } = useEvidenceEngine(Boolean(legacyCode));
-  const evidenceReport = useMemo(() => {
-    if (!legacyCode || !evidenceEngine) return null;
-    return evidenceEngine.buildAbapEvidence(legacyCode, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private');
-  }, [legacyCode, uploadedFileName, targetDeployment, evidenceEngine]);
+  // Only the report of a run reads it: the upload form shows none.
+  const hasStoredResults = !!(project?.analysis || project?.activeRunId);
+  const projectEvidence = useProjectEvidence(
+    projectId as string,
+    hasStoredResults && Boolean(project?.legacyCode),
+    project?.activeRunId ?? '',
+  );
+  const evidenceFailed = projectEvidence.state === 'failed' ? projectEvidence.reason : null;
+  const evidenceReport = projectEvidence.state === 'ready' ? projectEvidence.value.evidence : null;
 
   const evidenceFindings = useMemo(() => evidenceReport?.findings ?? [], [evidenceReport]);
 
@@ -1069,7 +1085,7 @@ export default function AnalyzePage() {
 
   const renderAnalysisContent = () => {
     if (!project?.analysis) {
-      // Roadmap 1.2, acceptance V25-A12: *"'nicht erzeugt' statt leer"*.
+      // Roadmap 1.2, acceptance V25-A12: *"'not generated' instead of empty"*.
       //
       // Before this, `return null` was the whole answer, and the screen fell
       // back to the upload form — a signed run existed, its evidence was in the
@@ -1475,12 +1491,14 @@ export default function AnalyzePage() {
 
   const phases = workflowSteps(project);
   /** The run's report is on screen rather than the upload form. */
-  const hasResults = !!(project?.analysis || project?.activeRunId);
+  const hasResults = hasStoredResults;
 
-  // The report is drawn from the engine's findings; until the engine has
-  // arrived it would draw an empty report for a program that has findings, so
+  // The report is drawn from the engine's findings; until the server has
+  // answered it would draw an empty report for a program that has findings, so
   // the page keeps its loading state for that moment instead.
-  const evidencePending = hasResults && Boolean(legacyCode) && !evidenceEngine && !evidenceEngineFailed;
+  const evidencePending = hasResults && Boolean(project?.legacyCode) && projectEvidence.state === 'loading';
+  // Said only where a report would otherwise be drawn without its findings.
+  const evidenceUnread = hasResults && Boolean(project?.legacyCode) ? evidenceFailed : null;
 
   if ((loading && !project) || evidencePending) return (
     <div className="h-[60vh] flex flex-col items-center justify-center">
@@ -1538,10 +1556,11 @@ export default function AnalyzePage() {
         </div>
       )}
 
-      {evidenceEngineFailed && (
-        <div className="mb-8" data-analyze-engine-failed="">
+      {evidenceUnread && (
+        <div className="mb-8" data-analyze-evidence-failed="">
           <CcMessageStrip state="error" announce>
-            The evidence engine could not be loaded, so the findings of this code are not shown. Reload the page to try again.
+            The evidence for this code could not be read, so its findings are not shown. Reload the page to try again.
+            {evidenceUnread !== EVIDENCE_UNREAD ? ` ${evidenceUnread}` : null}
           </CcMessageStrip>
         </div>
       )}
@@ -1836,10 +1855,10 @@ export default function AnalyzePage() {
         )
       ) : (
         <div id="analysis-report" className="motion-safe:animate-in slide-in-from-bottom-6">
-          {/* Without the engine every figure below would be drawn from no
+          {/* Without the evidence every figure below would be drawn from no
               findings — "found nothing" for a program that has them. The
-              strip above says the engine failed; the report waits for it. */}
-          {evidenceEngineFailed && legacyCode ? null : renderAnalysisContent()}
+              strip above says the read failed; the report waits for it. */}
+          {evidenceUnread ? null : renderAnalysisContent()}
 
           <StageFooter />
         </div>

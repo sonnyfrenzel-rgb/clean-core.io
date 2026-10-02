@@ -11,8 +11,8 @@ import type { Project, TestCase } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
- * Roadmap 6.5, the half that was missing: *"der nächste offene Punkt **mit
- * Grund**"* — and, because every statement in this product has to say where it
+ * Roadmap 6.5, the half that was missing: *"the next open point **with a
+ * reason**"* — and, because every statement in this product has to say where it
  * comes from (`DESIGN.md` §4), with its provenance.
  *
  * `tests/next-step.spec.ts` already proves the module picks the right phase

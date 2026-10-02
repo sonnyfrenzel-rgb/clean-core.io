@@ -1059,7 +1059,7 @@ test.describe('roadmap 2.16 — lanes in the exported file', () => {
     expect(traceOf(checker)?.kind).toBe('authority');
     // Both checks travel, so a reader can go back to either statement.
     expect(traceOf(checker)?.evidence).toBe('authority:V_VBAK_VKO@197 authority:V_VBAK_VKO@205');
-    // §5.8 calls this actor "Prüfer (außerhalb des Programms)": the lane holds
+    // §5.8 calls this actor "checker (outside the program)": the lane holds
     // no flow node, because the checker runs none of this program's statements.
     expect(list(checker.flowNodeRefs)).toHaveLength(0);
   });

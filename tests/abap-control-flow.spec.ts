@@ -11,8 +11,8 @@ import { readCallGraph } from '../lib/abap/call-graph';
  *
  * The engine used to count `IF` and `CASE` for a nesting-depth number and nothing
  * else (`docs/ROADMAP.md` §3), which is why the BPMN it produced carried gateways
- * without conditions. Phase 2 is accepted only when "jeder Task, jedes Gateway und
- * jede Lane einen Zeilenanker trägt oder sichtbar unbelegt ist", so every branch
+ * without conditions. Phase 2 is accepted only when "every task, every gateway and
+ * every lane carries a line anchor or is visibly unevidenced", so every branch
  * here is measured against the two ABAP programs this product ships, not against
  * snippets written to suit the parser.
  *

@@ -27,9 +27,9 @@ import { routeDrivers, routeExtensibility } from '../lib/abap/extensibility-rout
 import type { AbapEvidenceReport, EvidenceFinding } from '../lib/abap/evidence-model';
 
 /**
- * Roadmap 8.2 — "Architekturvertrag als Dokument: Zielkontext, Laufzeit,
- * Persistenz, APIs, gebundene Eingaben — **und warum die Alternativen verworfen
- * wurden**."
+ * Roadmap 8.2 — "architecture contract as a document: target context, runtime,
+ * persistence, APIs, bound inputs — **and why the alternatives were
+ * rejected**."
  *
  * Pure: no browser, no emulator, no server. The module is a plain function set
  * so that exactly this suite can drive every branch of it.

@@ -125,7 +125,7 @@ test('without a signed run nothing can have been confirmed, and the sheet says s
 });
 
 /*
- * Owner decision 01.10.2026 ("Clean core level anzeigen ja auf dem Druckblatt"):
+ * Owner decision 01.10.2026 ("show the clean core level on the print sheet, yes"):
  * the sheet prints SAP's clean core level A–D per SAP object, read under the
  * project's target profile, with a legend — and "not determined" where there
  * is no grade. Never a letter before the lookup has answered.

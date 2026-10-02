@@ -331,7 +331,7 @@ test.describe('capture', () => {
  * The product views on the public landing page — roadmap 3.0.6.
  *
  * The landing page shows the workspace, and the workspace it shows has to be the
- * real one: "kein Mockup-Bild auf einer öffentlichen Seite". So the pictures are
+ * real one: "no mockup image on a public page". So the pictures are
  * taken here, from the demo project `Z_MM_PO_APPROVAL` in `/demo/workspace` —
  * the same engine run every account opens — and committed under
  * `public/landing/`. Run it with every release that changes the workspace or the

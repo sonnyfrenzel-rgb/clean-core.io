@@ -34,7 +34,7 @@ import {
 /**
  * What changes for users — roadmap 7.6.
  *
- * The roadmap row ends *„als Evidenzstufe wie 7.2, **nie als Behauptung**"*,
+ * The roadmap row ends *"as an evidence level like 7.2, **never as a claim**"*,
  * and that is the whole step. Four fields per step, and each one is a sentence
  * a reader could be handed in a steering meeting:
  *
@@ -376,7 +376,7 @@ test.describe('every field carries its standing and its source, or is Not determ
   });
 
   test('a decision that no carrier and no report covers becomes its own record', () => {
-    // "oder Fähigkeit, wenn kein Schritt zuzuordnen ist" — the pasted fragment
+    // "or capability, when no step can be assigned" — the pasted fragment
     // declares no report, so nothing in it says what anybody opens.
     const report = deriveUserChange(FRAGMENT, { catalog: REAL_CATALOG });
     expect(report.records.map((r) => r.subject.kind)).toEqual(['capability']);

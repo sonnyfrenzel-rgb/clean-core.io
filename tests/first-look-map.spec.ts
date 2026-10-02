@@ -11,9 +11,9 @@ import { signInViaLanding } from './helpers/sign-in';
 /**
  * A new project shows its process with the first look, and keeps showing it.
  *
- * Owner, 02.10.2026: "Der Prozess muss immer angezeigt werden, wenn ich ein
- * neues Projekt starte, mit erster Blick — der Prozess war kurz da und dann
- * verschwunden; man muss sich aber erst einmal orientieren können."
+ * Owner, 02.10.2026 (translated): "The process must always be shown when I
+ * start a new project, with the first look — the process was there briefly
+ * and then disappeared; but you have to be able to find your bearings first."
  *
  * What he saw: the build-up drew the process beside the code, and when it
  * ended (~2.4 s) the card turned into the answer without it, while the BPMN

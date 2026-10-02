@@ -28,8 +28,8 @@ import {
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
- * Roadmap 7.5 — *Prüfaufträge statt Scheinwissen*, and V25-A05: "ein zu kurzes
- * Fenster erzeugt einen Prüfauftrag."
+ * Roadmap 7.5 — *review tasks instead of sham knowledge*, and V25-A05: "a window
+ * that is too short creates a review task."
  *
  * Three absences the product knows about on purpose, and the same failure
  * waiting behind each of them: the absence gets filled with its most flattering

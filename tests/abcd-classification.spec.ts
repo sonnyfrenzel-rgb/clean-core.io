@@ -211,7 +211,7 @@ test.describe('catalog-backed A/B/C/D grading (SAP published data)', () => {
  * as a *type* — TABLES, SELECT-OPTIONS … FOR, INCLUDE STRUCTURE, DATA … TYPE —
  * and never reads a row; the grade knew only read and write, found neither, and
  * fell back to the name: D, where the corpus answers C. R29 settles it — a type
- * dependency is "eine Abhängigkeit, noch kein Level", and the level then follows
+ * dependency is "a dependency, not yet a level", and the level then follows
  * the object's state in the target profile (R01, internal, C).
  */
 test.describe('the level of a use: read, write, type reference, own table', () => {
@@ -236,7 +236,7 @@ test.describe('the level of a use: read, write, type reference, own table', () =
     // Corpus CC-045: `TABLES: kna1`, `SELECT-OPTIONS … FOR kna1-kunnr`,
     // `INCLUDE STRUCTURE kna1`, `DATA … TYPE kna1`. Nothing is read and nothing
     // is written, and the corpus answers C. R29 puts it plainly: a type
-    // dependency is "eine Abhängigkeit, noch kein Level" and the level then
+    // dependency is "a dependency, not yet a level" and the level then
     // follows the object's state in the target profile — R01, internal, C.
     // Before this the access was unknown to the grade, so it fell back to the
     // name and published D: "you bypassed the application that owns the rows"

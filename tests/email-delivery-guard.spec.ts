@@ -143,7 +143,7 @@ test.describe('a send is traceable to its delivery', () => {
    * write somebody else's address into your own row, and an approving
    * administrator sends a clean-core.io mail to them.
    *
-   * The route did have a check — "F-04: Empfängeradresse validieren" — and it
+   * The route did have a check — "F-04: validate the recipient address" — and it
    * passed, because it validated the *shape* of the address and never its
    * *binding* to the account. That is the distinction this test pins, and it is
    * why a stricter regex on the address would not have helped.

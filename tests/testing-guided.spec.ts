@@ -8,9 +8,9 @@ import { ABAP_UNIT_NOT_RUNNABLE } from '../lib/test-runnability';
 import { receiptFor } from './helpers/test-receipt';
 
 /**
- * The Testing tool as one guided flow (owner 02.10.2026: "Man verliert sich
- * hier in den Menüs und weiß nicht, was man machen soll … es ist ja eigentlich
- * ein Tool und kein Tab").
+ * The Testing tool as one guided flow (owner 02.10.2026, translated: "You get
+ * lost in the menus here and don't know what to do … it is really a tool and
+ * not a tab").
  *
  * It replaced two tabs with a segmented switch inside the first and cards
  * inside that, with the one thing to do — generate the scenarios — at the

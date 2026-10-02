@@ -16,27 +16,27 @@ import {
 import type { SkeletonEdge, SkeletonNode, ProcessSkeleton } from '../lib/abap/process-skeleton';
 
 /**
- * Empfindlichkeitsprobe des Korpus-Vergleichers (Roadmap 1.9).
+ * Sensitivity probe of the corpus comparator (roadmap 1.9).
  *
- * Ein Vergleicher, der bei verfälschter Engine-Antwort grün bleibt, misst
- * nichts — und genau das war der Zustand bis zum 22.09.2026: `compareSkeleton`
- * rief `buildProcessFacts` und verglich zeilenweise gegen Verzweigungen und
- * Blöcke, weder Knotenart noch Kante. Eine Änderung am Skelett konnte dort
- * nicht rot werden.
+ * A comparator that stays green when the engine's answer is falsified measures
+ * nothing — and that is exactly how things stood until 22.09.2026:
+ * `compareSkeleton` called `buildProcessFacts` and compared line by line
+ * against branches and blocks, neither node kind nor edge. A change to the
+ * skeleton could not turn red there.
  *
- * Diese Datei dreht die Frage um: sie verfälscht **das Gelesene**, nicht die
- * Engine (`lib/` wird nicht angefasst), und besteht darauf, dass jede
- * Verfälschung in der Facette `skelett` rot wird. Fällt einer dieser Tests, ist
- * nicht die Engine kaputt, sondern der Vergleicher blind geworden.
+ * This file turns the question around: it falsifies **what was read**, not
+ * the engine (`lib/` is not touched), and insists that every falsification
+ * turns red in the `skelett` facet. If one of these tests fails, it is not the
+ * engine that is broken, but the comparator that has gone blind.
  *
- * **Was diese Proben nicht sind.** Die Roadmap 1.9 nennt „die sechs Mutanten
- * M01–M06 des Gegenreviews". Die liegen im privaten Prüfpaket
- * `clean-core-review-c5085bb.zip` (§15) und **nicht in diesem Repository**;
- * eine Suche über `tests/`, `docs/` und `scripts/` findet sie nirgends. Sie
- * hier nach Gutdünken nachzubauen hieße, sechs erfundene Proben unter ihrem
- * Namen zu führen und die Abnahme an der eigenen Erfindung zu messen. Die
- * sieben Proben unten sind deshalb eigene, benannte Verfälschungen; M01–M06
- * bleiben offen, bis das Prüfpaket vorliegt.
+ * **What these probes are not.** Roadmap 1.9 names "the six mutants M01–M06
+ * of the counter-review". They sit in the private review package
+ * `clean-core-review-c5085bb.zip` (§15) and **not in this repository**; a
+ * search over `tests/`, `docs/` and `scripts/` finds them nowhere. Rebuilding
+ * them here at our own discretion would mean carrying six invented probes
+ * under their name and measuring acceptance against our own invention. The
+ * seven probes below are therefore our own, named falsifications; M01–M06
+ * stay open until the review package is available.
  */
 
 type Probe = {
@@ -44,11 +44,11 @@ type Probe = {
   why: string;
   mutate: SkeletonMutation;
   /**
-   * Auf `false`, wenn die Verfälschung keinen übereinstimmenden Fall mehr zum
-   * Fallen bringen **kann**, weil keiner der grünen Fälle das Konstrukt noch
-   * enthält. Die Probe misst dann, dass der Vergleicher die Verfälschung
-   * überhaupt sieht — schwächer, und mit einer Begründung an der Probe, die
-   * sagt warum.
+   * Set to `false` when the falsification **can** no longer bring down an
+   * agreeing case, because none of the green cases still contains the
+   * construct. The probe then measures that the comparator sees the
+   * falsification at all — weaker, and with a justification on the probe
+   * that says why.
    */
   green?: false;
 };
@@ -58,21 +58,20 @@ const withEdges = (skeleton: ProcessSkeleton, edges: SkeletonEdge[]): ProcessSke
 
 const PROBES: Probe[] = [
   {
-    name: 'S1 — die Rücksprungkante wird eine gewöhnliche Sequenz',
-    why: 'Ohne `loop-back` ist eine Schleife im Export ein Faden, der zurückzeigt, und kein Zyklus (2.17 b).',
-    // **Seit Roadmap 2.17 (b) kann diese Probe keinen grünen Fall mehr fällen,
-    // und das ist gemessen, nicht vermutet.** Ein `LOOP AT` über eine Tabelle,
-    // dessen Körper den Block nicht verlässt, ist keine Schleife mit
-    // Rücksprungkante mehr, sondern eine Mehrfach-Instanz-Aktivität, die ihren
-    // Körper enthält. Im Korpus bleiben genau vier `loop-back`-Kanten übrig, in
-    // CC-030 und CC-048 — beide stimmen in der Facette `skelett` ohnehin nicht
-    // überein. Von den 16 grünen Fällen trägt **keiner** noch einen
-    // Schleifenknoten; der einzige, der einen trug, war CC-007, und der ist mit
-    // 2.17 (b) selbst auf `disagree` gegangen (siehe `tests/korpus/baseline.json`).
-    // Die Probe misst deshalb, dass der Vergleicher die Verfälschung überhaupt
-    // noch sieht. Sie hier grün zu machen, indem man eine andere Verfälschung
-    // unter denselben Namen setzt, wäre die Empfindlichkeitsprobe an der eigenen
-    // Erfindung gemessen — genau das, was der Kopf dieser Datei verbietet.
+    name: 'S1 — the loop-back edge becomes an ordinary sequence',
+    why: 'Without `loop-back`, a loop in the export is a thread that points backwards, not a cycle (2.17 b).',
+    // **Since roadmap 2.17 (b) this probe can no longer bring down a green
+    // case, and that is measured, not assumed.** A `LOOP AT` over a table
+    // whose body does not leave the block is no longer a loop with a loop-back
+    // edge but a multi-instance activity that contains its body. Exactly four
+    // `loop-back` edges remain in the corpus, in CC-030 and CC-048 — neither
+    // agrees in the `skelett` facet anyway. Of the 16 green cases, **none**
+    // still carries a loop node; the only one that did was CC-007, and it
+    // went to `disagree` itself with 2.17 (b) (see `tests/korpus/baseline.json`).
+    // The probe therefore measures that the comparator still sees the
+    // falsification at all. Making it green here by putting a different
+    // falsification under the same name would measure the sensitivity probe
+    // against our own invention — exactly what the head of this file forbids.
     green: false,
     mutate: (skeleton) =>
       withEdges(
@@ -81,8 +80,8 @@ const PROBES: Probe[] = [
       ),
   },
   {
-    name: 'S2 — jedes Gateway wird eine Aktivität',
-    why: 'Genau die Änderung, die 2.15 an technischen Gateways vornimmt: sie muss am Korpus sichtbar werden.',
+    name: 'S2 — every gateway becomes an activity',
+    why: 'Exactly the change 2.15 makes to technical gateways: it has to become visible in the corpus.',
     mutate: (skeleton) =>
       withNodes(
         skeleton,
@@ -90,13 +89,13 @@ const PROBES: Probe[] = [
       ),
   },
   {
-    name: 'S3 — der Leseknoten entfällt',
-    why: 'Ein verschwundener Datenspeicher ist die Art Verlust, die eine Ampel melden muss.',
+    name: 'S3 — the read node disappears',
+    why: 'A vanished data store is the kind of loss a traffic light has to report.',
     mutate: (skeleton) => withNodes(skeleton, skeleton.nodes.filter((node) => node.kind !== 'read')),
   },
   {
-    name: 'S4 — die bedingte Kante verliert ihre Bedingung',
-    why: 'Eine Entscheidung ohne bedingte Ausgänge ist keine Entscheidung mehr.',
+    name: 'S4 — the conditional edge loses its condition',
+    why: 'A decision without conditional outgoing flows is no longer a decision.',
     mutate: (skeleton) =>
       withEdges(
         skeleton,
@@ -104,8 +103,8 @@ const PROBES: Probe[] = [
       ),
   },
   {
-    name: 'S5 — jeder Anker verrutscht um drei Zeilen',
-    why: 'Der Anker ist die halbe Identität eines Knotens (Regel 7); ein verrutschter Anker ist ein falscher Beleg.',
+    name: 'S5 — every anchor slips by three lines',
+    why: 'The anchor is half of a node\'s identity (rule 7); a slipped anchor is false evidence.',
     mutate: (skeleton) =>
       withNodes(
         skeleton,
@@ -117,13 +116,13 @@ const PROBES: Probe[] = [
       ),
   },
   {
-    name: 'S6 — eine Kante fehlt',
-    why: 'Der Fluss ist die Aussage des Skeletts; ein fehlender Fluss zerlegt den Prozess still in Teile.',
+    name: 'S6 — an edge is missing',
+    why: 'The flow is what the skeleton says; a missing flow silently breaks the process into pieces.',
     mutate: (skeleton) => withEdges(skeleton, skeleton.edges.slice(1)),
   },
   {
-    name: 'S7 — der Endknoten entfällt',
-    why: 'Ein Prozess ohne Ende ist in BPMN kein Prozess, und der Korpus zeichnet je Abbruch ein Ende.',
+    name: 'S7 — the end node disappears',
+    why: 'A process without an end is no process in BPMN, and the corpus draws an end for every termination.',
     mutate: (skeleton) => withNodes(skeleton, skeleton.nodes.filter((node) => node.kind !== 'end')),
   },
 ];
@@ -131,28 +130,28 @@ const PROBES: Probe[] = [
 const BASE = compareAll().filter((result) => result.class === 'skelett');
 const GREEN = new Set(BASE.filter((result) => result.state === 'agree').map((result) => result.case));
 
-test('der ungestörte Lauf hat überhaupt etwas Grünes, an dem sich rot werden lässt', () => {
-  expect(GREEN.size, 'ohne einen einzigen übereinstimmenden Fall misst diese Probe nichts').toBeGreaterThan(5);
+test('the undisturbed run has something green at all that can turn red', () => {
+  expect(GREEN.size, 'without a single agreeing case this probe measures nothing').toBeGreaterThan(5);
 });
 
 const BASE_BY_CASE = new Map(BASE.map((result) => [result.case, result]));
 
 for (const probe of PROBES) {
-  test(`${probe.name} wird in der Facette skelett rot`, () => {
+  test(`${probe.name} turns red in the skelett facet`, () => {
     const mutated = compareAll(probe.mutate).filter((result) => result.class === 'skelett');
 
     if (probe.green === false) {
-      // Kein grüner Fall trägt das Konstrukt mehr. Gemessen wird, dass der
-      // Vergleicher die Verfälschung sieht: mindestens ein Fall berichtet nach
-      // der Verfälschung etwas anderes als davor.
+      // No green case carries the construct any more. What is measured is that
+      // the comparator sees the falsification: at least one case reports
+      // something different after the falsification than before.
       const moved = mutated.filter((result) => {
         const before = BASE_BY_CASE.get(result.case);
         return before != null && (before.state !== result.state || before.evidence !== result.evidence);
       });
       expect(
         moved.map((result) => result.case),
-        `${probe.why}\nDer Vergleicher sieht diese Verfälschung an keinem einzigen Fall mehr — weder an ` +
-          `einem übereinstimmenden noch an einem abweichenden. Dann misst diese Probe nichts.`,
+        `${probe.why}\nThe comparator no longer sees this falsification in a single case — neither in ` +
+          `an agreeing one nor in a disagreeing one. Then this probe measures nothing.`,
       ).not.toEqual([]);
       return;
     }
@@ -160,33 +159,34 @@ for (const probe of PROBES) {
     const fell = mutated.filter((result) => GREEN.has(result.case) && result.state === 'disagree');
     expect(
       fell.length,
-      `${probe.why}\nKein einziger übereinstimmender Fall ist gefallen — der Vergleicher sieht diese ` +
-        `Verfälschung nicht. Das ist ein Defekt in tests/helpers/korpus-comparison.ts, nicht in lib/abap/.`,
+      `${probe.why}\nNot a single agreeing case has fallen — the comparator does not see this ` +
+        `falsification. That is a defect in tests/helpers/korpus-comparison.ts, not in lib/abap/.`,
     ).toBeGreaterThan(0);
   });
 }
 
 // ---------------------------------------------------------------------------
-// Dieselbe Frage an die Facette `fachsaetze` (Roadmap 17.5)
+// The same question to the `fachsaetze` facet (roadmap 17.5)
 // ---------------------------------------------------------------------------
 
 /**
- * Die Facette `fachsaetze` hatte bis zum 23.09.2026 dasselbe Problem wie
- * `skelett` vor 1.9 — schlimmer sogar: sie war hart auf `disagree` verdrahtet
- * und verglich den Inhalt überhaupt nicht. „0 agree / 68 disagree" hieß deshalb
- * nicht „das Produkt versagt", sondern „es wurde nichts verglichen".
+ * Until 23.09.2026 the `fachsaetze` facet had the same problem as `skelett`
+ * before 1.9 — worse, in fact: it was hard-wired to `disagree` and did not
+ * compare the content at all. "0 agree / 68 disagree" therefore did not mean
+ * "the product fails" but "nothing was compared".
  *
- * Diese Proben beantworten die Abnahmefrage aus 17.5: **bewegt sich die Zahl,
- * wenn man den Erzeuger ändert, und wird die Facette rot, wenn er schlechter
- * wird?** Der Erzeuger der Proben ist `PROBE_PRODUCERS.echo` — er schreibt das
- * Fallbuch ab und ist ausdrücklich kein Erzeuger des Produkts; ohne ihn gäbe es
- * nichts, an dem sich rot werden ließe, weil heute niemand Fachsätze erzeugt.
+ * These probes answer the acceptance question from 17.5: **does the number
+ * move when the producer is changed, and does the facet turn red when it gets
+ * worse?** The probes' producer is `PROBE_PRODUCERS.echo` — it copies the case
+ * book and is explicitly not a producer of the product; without it there would
+ * be nothing that could turn red, because today nobody produces business
+ * statements.
  */
 type StatementProbe = {
   name: string;
   why: string;
   producer: StatementProducer;
-  /** Auf `true`, wenn diese Probe absichtlich **nicht** rot werden darf. */
+  /** Set to `true` when this probe must deliberately **not** turn red. */
   stayGreen?: true;
 };
 
@@ -194,22 +194,22 @@ const drop = (text: string) => text.split(' ').slice(0, -2).join(' ');
 
 const STATEMENT_PROBES: StatementProbe[] = [
   {
-    name: 'F0 — derselbe Satz, um zwei Wörter gekürzt (Gegenprobe, muss grün bleiben)',
-    why: 'Ein Maß, das jede Umformulierung bestraft, misst die Wortwahl und nicht die Aussage.',
+    name: 'F0 — the same statement, shortened by two words (counter-probe, must stay green)',
+    why: 'A measure that penalises every rewording measures the word choice, not the statement.',
     producer: PROBE_PRODUCERS.echo(drop),
     stayGreen: true,
   },
   {
-    name: 'F1 — jeder Satz wandert drei Zeilen weiter',
-    why: 'Der Anker ist der Schlüssel; ein Satz an der falschen Anweisung ist ein falscher Beleg, egal wie gut er klingt.',
+    name: 'F1 — every statement moves three lines on',
+    why: 'The anchor is the key; a statement at the wrong ABAP statement is false evidence, however good it sounds.',
     producer: PROBE_PRODUCERS.echo(undefined, 3),
   },
   {
-    name: 'F2 — der Satz des Nachbarn steht am eigenen Anker',
-    why: 'Richtig verankert, falsch gesagt: genau der Fehler, den ein reiner Ankercheck nie gesehen hat.',
+    name: 'F2 — the neighbour\'s statement sits at its own anchor',
+    why: 'Correctly anchored, wrongly said: exactly the error a pure anchor check never saw.',
     producer: {
       name: 'probe:nachbarsatz',
-      note: 'Empfindlichkeitsprobe — verschiebt die Texte gegen die Anker.',
+      note: 'Sensitivity probe — shifts the texts against the anchors.',
       produce: (korpusCase) => {
         const statements = korpusCase.expected.businessStatements;
         return statements.map((statement, index) => ({
@@ -221,15 +221,15 @@ const STATEMENT_PROBES: StatementProbe[] = [
     },
   },
   {
-    name: 'F3 — jeder zweite Satz entfällt',
-    why: 'Ein Erzeuger, der die Hälfte still auslässt, hat nicht zugestimmt — er hat geschwiegen.',
+    name: 'F3 — every second statement is dropped',
+    why: 'A producer that silently leaves out half has not agreed — it has kept silent.',
     producer: PROBE_PRODUCERS.echo(undefined, 0, (index) => index % 2 === 0),
   },
   {
-    name: 'F4 — aus jedem Satz wird die Executive Summary',
+    name: 'F4 — every statement becomes the executive summary',
     why:
-      'Das ist, was `lib/analysis-prompt.ts` heute beim Modell bestellt: eine „business executive summary" statt ' +
-      'der verankerten Einzelaussage. Diese Probe misst den Unterschied, um den es in 17.6 geht.',
+      'That is what `lib/analysis-prompt.ts` orders from the model today: a "business executive summary" instead of ' +
+      'the anchored single statement. This probe measures the difference 17.6 is about.',
     producer: PROBE_PRODUCERS.echo(() => 'Das Programm verarbeitet Daten und gibt ein Ergebnis aus.'),
   },
 ];
@@ -240,23 +240,23 @@ const compared = (results: ClassResult[]) => fachsaetze(results).reduce((sum, r)
 const hits = (results: ClassResult[]) =>
   fachsaetze(results).reduce((sum, r) => sum + (r.aspects.find((a) => a.name === 'fachsatzinhalt')?.compared ?? 0), 0);
 
-// **Seit 17.7 ist die Vorgabe der Engine-Erzeuger.** Der leere Stand wird
-// deshalb ausdrücklich angefordert: er ist weiter der Nullpunkt, gegen den
-// diese Probe misst, aber nicht mehr der Normallauf.
+// **Since 17.7 the default is the engine producer.** The empty state is
+// therefore requested explicitly: it is still the zero point this probe
+// measures against, but no longer the normal run.
 const NO_PRODUCER_RUN = compareAll(undefined, NO_PRODUCER);
 const ECHO_RUN = compareAll(undefined, PROBE_PRODUCERS.echo());
 
-test('die Zahl bewegt sich, wenn man den Erzeuger ändert', () => {
-  // Die Abnahmebedingung aus 17.5, als Messung: ohne Erzeuger null, mit dem
-  // Soll-Echo die Obergrenze. Seit 17.7 steht dazwischen der gemessene Stand
-  // der Engine in `tests/korpus/baseline.json`.
-  expect(compared(NO_PRODUCER_RUN), 'ohne Erzeuger darf nichts als verglichen gelten').toBe(0);
-  expect(hits(NO_PRODUCER_RUN), 'ohne Erzeuger darf es keinen Treffer geben').toBe(0);
-  expect(green(NO_PRODUCER_RUN).size, 'ohne Erzeuger darf kein Fall grün sein').toBe(0);
+test('the number moves when the producer is changed', () => {
+  // The acceptance condition from 17.5, as a measurement: zero without a
+  // producer, the upper bound with the expected-answer echo. Since 17.7 the
+  // engine's measured state sits in between, in `tests/korpus/baseline.json`.
+  expect(compared(NO_PRODUCER_RUN), 'without a producer nothing may count as compared').toBe(0);
+  expect(hits(NO_PRODUCER_RUN), 'without a producer there may be no hit').toBe(0);
+  expect(green(NO_PRODUCER_RUN).size, 'without a producer no case may be green').toBe(0);
 
-  expect(compared(ECHO_RUN), 'mit einem Erzeuger muss die Zahl sich bewegen').toBeGreaterThan(150);
+  expect(compared(ECHO_RUN), 'with a producer the number has to move').toBeGreaterThan(150);
   expect(hits(ECHO_RUN)).toBe(compared(ECHO_RUN));
-  expect(green(ECHO_RUN).size, 'ein perfekter Erzeuger muss grün werden können').toBeGreaterThan(60);
+  expect(green(ECHO_RUN).size, 'a perfect producer has to be able to turn green').toBeGreaterThan(60);
 });
 
 for (const probe of STATEMENT_PROBES) {
@@ -269,7 +269,7 @@ for (const probe of STATEMENT_PROBES) {
       const lost = [...before].filter((id) => !after.has(id));
       expect(
         lost.join(', '),
-        `${probe.why}\nDiese Fälle sind gefallen, obwohl die Aussage dieselbe geblieben ist.`,
+        `${probe.why}\nThese cases have fallen although the statement stayed the same.`,
       ).toEqual('');
       return;
     }
@@ -277,44 +277,44 @@ for (const probe of STATEMENT_PROBES) {
     const fell = [...before].filter((id) => !after.has(id));
     expect(
       fell.length,
-      `${probe.why}\nKein einziger übereinstimmender Fall ist gefallen — die Facette sieht diese ` +
-        `Verschlechterung nicht. Das ist ein Defekt in tests/helpers/korpus-comparison.ts.`,
+      `${probe.why}\nNot a single agreeing case has fallen — the facet does not see this ` +
+        `deterioration. That is a defect in tests/helpers/korpus-comparison.ts.`,
     ).toBeGreaterThan(0);
   });
 }
 
 // ---------------------------------------------------------------------------
-// Verbotene Aussagen: die Halluzinationsmessung (Roadmap 17.9)
+// Forbidden statements: the hallucination measurement (roadmap 17.9)
 // ---------------------------------------------------------------------------
 
 /**
- * Dieselbe Frage ein drittes Mal, und diesmal gegen **Erfindung**: sieht die
- * Facette es, wenn ein Erzeuger genau das sagt, was der Fall ausdrücklich
- * verbietet?
+ * The same question a third time, and this time against **invention**: does
+ * the facet see it when a producer says exactly what the case explicitly
+ * forbids?
  *
- * Der Korpus führt in 47 von 68 Fällen 197 verbotene Aussagen. Die Probe
- * `PROBE_PRODUCERS.forbidden` schreibt erst das Fallbuch ab — Abdeckung und
- * Inhalt bleiben damit heil, und was fällt, fällt wirklich wegen der
- * verbotenen Aussage — und sagt dann zusätzlich jeden ableitbaren Kern an
- * dessen eigenem Anker.
+ * The corpus carries 197 forbidden statements in 47 of 68 cases. The probe
+ * `PROBE_PRODUCERS.forbidden` first copies the case book — coverage and
+ * content thus stay intact, and whatever falls really falls because of the
+ * forbidden statement — and then additionally says every derivable core at
+ * its own anchor.
  */
 const FORBIDDEN_RUN = compareAll(undefined, PROBE_PRODUCERS.forbidden());
 
 const forbiddenAspect = (result: ClassResult) => result.aspects.find((a) => a.name === 'verbotene-aussagen');
 
-test('V1 — ein Erzeuger, der eine verbotene Aussage sagt, macht die Facette rot', () => {
+test('V1 — a producer that says a forbidden statement turns the facet red', () => {
   const before = green(ECHO_RUN);
   const after = green(FORBIDDEN_RUN);
   const fell = [...before].filter((id) => !after.has(id));
   expect(
     fell.length,
-    'Kein einziger übereinstimmender Fall ist gefallen, obwohl der Erzeuger wörtlich sagt, was der Fall ' +
-      'verbietet. Dann misst die Teilprüfung „verbotene-aussagen" nichts.',
+    'Not a single agreeing case has fallen, although the producer says verbatim what the case ' +
+      'forbids. Then the sub-check "verbotene-aussagen" measures nothing.',
   ).toBeGreaterThan(20);
 
-  // Und zwar **wegen** der verbotenen Aussage: Abdeckung und Inhalt sind in
-  // dieser Probe unverändert, weil sie die Sollsätze mitliefert.
-  expect(hits(FORBIDDEN_RUN), 'die Probe hat den Inhalt beschädigt — dann beweist ihr Rot nichts').toBe(
+  // And **because of** the forbidden statement: coverage and content are
+  // unchanged in this probe, because it supplies the expected statements too.
+  expect(hits(FORBIDDEN_RUN), 'the probe damaged the content — then its red proves nothing').toBe(
     hits(ECHO_RUN),
   );
   const stillPassing = fachsaetze(FORBIDDEN_RUN).filter((result) => {
@@ -323,31 +323,32 @@ test('V1 — ein Erzeuger, der eine verbotene Aussage sagt, macht die Facette ro
   });
   expect(
     stillPassing.map((r) => `${r.case}: ${forbiddenAspect(r)?.compared}/${forbiddenAspect(r)?.total}`).join('\n'),
-    'Jede vergleichbare verbotene Aussage wurde wörtlich gesagt; keine darf als eingehalten gelten.',
+    'Every comparable forbidden statement was said verbatim; none may count as observed.',
   ).toEqual('');
 });
 
-test('V2 — das Fallbuch verletzt sich nicht selbst (die Kalibrierung der Kernbildung)', () => {
-  // Die Gegenprobe zu der Regel, die den **Kern** einer verbotenen Aussage
-  // bildet (`forbiddenCores`): wäre sie zu weitherzig, träfe sie die
-  // Sollsätze desselben Falls — die sprechen über dieselben Zeilen, mit
-  // denselben Bezeichnern, über dasselbe Thema. Der Soll-Echo-Erzeuger sagt
-  // genau die 173 Sollsätze; keine einzige verbotene Aussage darf anschlagen.
+test('V2 — the case book does not violate itself (the calibration of core extraction)', () => {
+  // The counter-probe to the rule that forms the **core** of a forbidden
+  // statement (`forbiddenCores`): if it were too lenient, it would hit the
+  // expected statements of the same case — they speak about the same lines,
+  // with the same identifiers, about the same topic. The expected-answer
+  // echo producer says exactly the 173 expected statements; not a single
+  // forbidden statement may trigger.
   const violated = fachsaetze(ECHO_RUN).filter((result) => {
     const aspect = forbiddenAspect(result);
     return aspect != null && aspect.status === 'compared' && aspect.compared < aspect.total;
   });
   expect(
     violated.map((result) => `  ${result.case}: ${result.evidence}`).join('\n'),
-    'Ein Sollsatz des Fallbuchs schlägt gegen eine verbotene Aussage desselben Falls an. Entweder ist die ' +
-      'Kernbildung in forbiddenCores zu weitherzig — dann wird sie enger begründet, nicht die Schwelle ' +
-      'verschoben — oder das Fallbuch widerspricht sich.',
+    'An expected statement of the case book triggers against a forbidden statement of the same case. Either the ' +
+      'core extraction in forbiddenCores is too lenient — then it is justified more narrowly, the threshold is not ' +
+      'moved — or the case book contradicts itself.',
   ).toEqual('');
 });
 
-test('V4 — die Probe sagt jeden Kern einer verbotenen Aussage, nicht nur den ersten', () => {
-  // QA-Review von 4b4586aff273: die Probe sagte nur `cores[0]`, und eine
-  // Regression, die einen späteren Kern nicht mehr erkennt, blieb unbemerkt.
+test('V4 — the probe says every core of a forbidden statement, not just the first', () => {
+  // QA review of 4b4586aff273: the probe said only `cores[0]`, and a
+  // regression that no longer recognises a later core went unnoticed.
   const probe = PROBE_PRODUCERS.forbidden();
   let multiCore = 0;
   for (const korpusCase of readCases()) {
@@ -357,23 +358,24 @@ test('V4 — die Probe sagt jeden Kern einer verbotenen Aussage, nicht nur den e
     multiCore += conclusions.filter((entry) => entry.cores.length > 1).length;
     const cores = conclusions.flatMap((entry) => entry.cores);
     expect(said.map((statement) => statement.text), korpusCase.id).toEqual(cores);
-    // Jeder einzelne Kern schlägt für sich an, an seinem eigenen Satz.
+    // Every single core triggers on its own, at its own statement.
     const violations = forbiddenViolations(conclusions, reading);
     for (const statement of said) {
       expect(
         violations.some((v) => v.statementId === statement.id && v.core === statement.text),
-        `${korpusCase.id}: der Kern «${statement.text}» wurde gesagt und nicht erkannt`,
+        `${korpusCase.id}: the core «${statement.text}» was said and not recognised`,
       ).toBe(true);
     }
   }
-  expect(multiCore, 'kein Fall hat eine verbotene Aussage mit mehr als einem Kern — dann prüft V4 nichts').toBeGreaterThan(0);
+  expect(multiCore, 'no case has a forbidden statement with more than one core — then V4 checks nothing').toBeGreaterThan(0);
 });
 
-test('V5 — auch ein Fall ohne Sollfachsatz wird gegen seine verbotenen Aussagen gemessen', () => {
-  // QA-Review von 4b4586aff273: der Zweig ohne Sollfachsatz kehrte vor der
-  // Prüfung zurück, und eine gesagte verbotene Aussage blieb ungeprüft.
+test('V5 — a case without an expected business statement is also measured against its forbidden statements', () => {
+  // QA review of 4b4586aff273: the branch without an expected business
+  // statement returned before the check, and a forbidden statement that was
+  // said stayed unchecked.
   const korpusCase = readCases().find((c) => readForbiddenConclusions(c).some((entry) => entry.cores.length > 0));
-  expect(korpusCase, 'kein Fall mit vergleichbarer verbotener Aussage').toBeTruthy();
+  expect(korpusCase, 'no case with a comparable forbidden statement').toBeTruthy();
   if (!korpusCase) return;
   const withoutStatements = { ...korpusCase, expected: { ...korpusCase.expected, businessStatements: [] } };
   const result = compareCase(withoutStatements, readWithEngine(withoutStatements, undefined, PROBE_PRODUCERS.forbidden()))
@@ -381,34 +383,34 @@ test('V5 — auch ein Fall ohne Sollfachsatz wird gegen seine verbotenen Aussage
   const aspect = result ? forbiddenAspect(result) : undefined;
   expect(aspect?.status).toBe('compared');
   expect(aspect?.total).toBeGreaterThan(0);
-  expect(aspect?.compared, 'jede verbotene Aussage wurde gesagt; keine darf als eingehalten gelten').toBe(0);
+  expect(aspect?.compared, 'every forbidden statement was said; none may count as observed').toBe(0);
   expect(result?.verdict).toBe('engine-defekt');
 });
 
-test('V3 — der Erzeuger des Produkts nennt seine Zahl', () => {
-  // Keine Abnahmeschwelle, sondern eine Ratsche: die Zahl wird **berichtet**
-  // und steht je Fall in `tests/korpus/baseline.json`. Steigt sie, ist das ein
-  // Befund am Erzeuger — und kein Grund, die Schranke oder die Schwelle zu
-  // verschieben (Roadmap 17.9).
+test('V3 — the product\'s producer states its number', () => {
+  // Not an acceptance threshold but a ratchet: the number is **reported**
+  // and recorded per case in `tests/korpus/baseline.json`. If it rises, that
+  // is a finding against the producer — and no reason to move the bound or
+  // the threshold (roadmap 17.9).
   const run = compareAll(undefined, ENGINE_PRODUCER);
   const aspects = fachsaetze(run).map(forbiddenAspect);
   const total = aspects.reduce((sum, a) => sum + (a?.total ?? 0), 0);
   const kept = aspects.reduce((sum, a) => sum + (a?.compared ?? 0), 0);
   const checked = aspects.filter((a) => a?.status === 'compared').length;
-  expect(total, 'der Korpus führt keine vergleichbaren verbotenen Aussagen mehr').toBeGreaterThan(150);
-  expect(checked, 'in keinem Fall wurde gegen eine verbotene Aussage gemessen').toBeGreaterThan(40);
+  expect(total, 'the corpus no longer carries comparable forbidden statements').toBeGreaterThan(150);
+  expect(checked, 'not a single case was measured against a forbidden statement').toBeGreaterThan(40);
   expect(
     total - kept,
-    `Der Engine-Erzeuger verletzt ${total - kept} von ${total} vergleichbaren verbotenen Aussagen.`,
+    `The engine producer violates ${total - kept} of ${total} comparable forbidden statements.`,
   ).toBeLessThanOrEqual(4);
 });
 
-test('die vier anderen Facetten bewegen sich nicht, wenn nur der Erzeuger wechselt', () => {
-  // Ein Erzeuger für Fachsätze darf an `befunde`, `level`, `objekte` und
-  // `skelett` nichts ändern; täte er es, wäre die Naht undicht.
+test('the four other facets do not move when only the producer changes', () => {
+  // A producer for business statements must change nothing in `befunde`,
+  // `level`, `objekte` and `skelett`; if it did, the seam would leak.
   const key = (result: ClassResult) => `${result.case}|${result.class}|${result.state}|${result.verdict}`;
   const other = (results: ClassResult[]) => results.filter((r) => r.class !== 'fachsaetze').map(key);
   expect(other(ECHO_RUN)).toEqual(other(NO_PRODUCER_RUN));
-  // Auch die Halluzinationsprobe aus 17.9 darf an den vier anderen nichts rühren.
+  // The hallucination probe from 17.9 must not touch the four others either.
   expect(other(FORBIDDEN_RUN)).toEqual(other(NO_PRODUCER_RUN));
 });

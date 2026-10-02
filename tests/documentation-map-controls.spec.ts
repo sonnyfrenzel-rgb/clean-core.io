@@ -11,10 +11,10 @@ import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
 
 /**
- * Owner 02.10.2026 on the Documentation stage: "auch in docu muss ich den
- * ganzen prozess sehen und navigieren können der hier aufgeschrieben wurde,
- * ich brauche auch hier + - und vollbild wie auch sonst, saubere
- * Navigationsmöglichkeit". The map was cut off on the right with no control
+ * Owner 02.10.2026 on the Documentation stage (translated): "in docu too I
+ * have to be able to see and navigate the whole process written down here, I
+ * need + - and full screen here as well, as elsewhere, a clean way to
+ * navigate". The map was cut off on the right with no control
  * but the bpmn.io mark.
  *
  * Now the map opens with the whole process in view, and carries the editor's

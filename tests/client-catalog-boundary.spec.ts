@@ -40,10 +40,10 @@ const CATALOG = /^lib\/abap\/generated\/[^/]+\.json$/;
 
 /** `importer ~> imported` — each a deliberate, on-demand load of the engine. */
 const DYNAMIC_ALLOWED: Record<string, string> = {
-  // The engine for the screens that compute findings from a source in the
-  // browser: the Analyze report, the Transformation facets, the Public-Cloud-Fit
-  // card. Fetched once a source is there, held for the rest of the visit.
-  'hooks/useEvidenceEngine.ts ~> lib/abap/evidence-model.ts': 'loads the engine when a screen has a source',
+  // (The Analyze report, the Transformation facets and the Public-Cloud-Fit
+  // card used to load the engine here too; since 02.10.2026 they read the
+  // project's evidence from `GET /api/projects/{id}/evidence`, computed with
+  // the catalog snapshot the signed run reads.)
   // The workspace list starts a run from a row; the run module is fetched on Run.
   'components/workspace/WorkspaceListReport.tsx ~> lib/analysis-run.ts': 'loads the run when Run is pressed',
   // The Confluence export recomputes the evidence; fetched on the export click.
