@@ -186,7 +186,35 @@ export function hasNoReleasedApiPath(objectName: string, snapshot?: string): boo
   return Boolean(classification && classificationEntryHasNoPath(classification));
 }
 
-export const MERGED_CATALOG_SIZE = Object.keys(MERGED_TABLE_MAP).length;
+/** Who names a successor: SAP's release file, or Clean-Core.io's curated layer. */
+export type SuccessorProvenance = 'sap' | 'curated';
+
+export interface PrimarySuccessor {
+  name: string;
+  type: SapApiObjectType;
+  source: SuccessorProvenance;
+}
+
+/**
+ * The successor a public page leads with, and who names it.
+ *
+ * SAP's own successor wins when the release file names one. Otherwise a curated
+ * mapping (`SAP_API_CATALOG`) may still name a target — KONV → I_PricingElement,
+ * where SAP's file carries only a state. That target is Clean-Core.io's field
+ * knowledge, not SAP's statement, and a page that printed it "per the SAP
+ * Cloudification Repository" put our words in SAP's mouth (codex code-public-03).
+ * The type follows the name it describes: a curated entry's type belongs to the
+ * curated view, not to SAP's successor.
+ */
+export function primarySuccessor(objectName: string): PrimarySuccessor | undefined {
+  const entry = resolveApi(objectName);
+  const sap = entry?.successors?.[0];
+  if (sap?.name) return { name: sap.name, type: tadirToType(sap.tadir), source: 'sap' };
+  if (entry?.view) return { name: entry.view, type: entry.type, source: 'curated' };
+  return undefined;
+}
+
+export const MERGED_CATALOG_SIZE =Object.keys(MERGED_TABLE_MAP).length;
 
 /**
  * Lightweight stats for the public surfaces.

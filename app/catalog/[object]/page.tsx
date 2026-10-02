@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { resolveApi, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses, getObjectDimensions } from '@/lib/abap/catalog-service';
+import { resolveApi, primarySuccessor, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses, getObjectDimensions } from '@/lib/abap/catalog-service';
 import { ABCD_META, CLOUD_VIEW_META, CLASSIC_VIEW_META } from '@/lib/abap/abcd-classification';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import CcTag from '@/components/cc/Tag';
@@ -44,14 +44,20 @@ export async function generateStaticParams() {
 function facts(name: string) {
   const entry = resolveApi(name);
   const noPath = hasNoReleasedApiPath(name);
-  const successor = entry?.successors?.[0]?.name || entry?.view;
-  const successorType = entry?.type;
+  // The successor and who names it: SAP's release file, or our curated layer
+  // (codex code-public-03). Every sentence below that names SAP as the source
+  // reads `curated` first.
+  const primary = primarySuccessor(name);
+  const successor = primary?.name;
+  const successorType = primary?.type;
+  const curated = primary?.source === 'curated';
   const allSuccessors = entry?.successors?.map((s) => s.name) ?? (successor ? [successor] : []);
   return {
     entry,
     noPath,
     successor,
     successorType,
+    curated,
     allSuccessors,
     graded: gradeSapObject(name),
     // Roadmap 7.9 (CR-01): the object's two dimensions — classic release status
@@ -71,7 +77,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { object } = await params;
   const name = slugToObject(object);
-  const { entry, noPath, successor } = facts(name);
+  const { entry, noPath, successor, curated } = facts(name);
   if (!entry && !noPath) return { title: 'Object not found | Clean-Core.io' };
 
   const title = successor
@@ -85,7 +91,9 @@ export async function generateMetadata({
       ? ''
       : ` Clean core level ${graded.grade}${statePhrase}.`;
   const description = successor
-    ? `${name} maps to the released S/4HANA successor ${successor}.${levelPhrase} Clean Core readiness reference from the SAP Cloudification Repository.`
+    ? curated
+      ? `${name} maps to the released S/4HANA successor ${successor} in Clean-Core.io's curated mapping, not from SAP's Cloudification Repository.${levelPhrase}`
+      : `${name} maps to the released S/4HANA successor ${successor}.${levelPhrase} Clean Core readiness reference from the SAP Cloudification Repository.`
     : `${name} has no released API successor in the SAP Cloudification Repository — it requires re-architecture for a Clean Core target.${levelPhrase}`;
 
   return withTwitterCard({
@@ -105,7 +113,7 @@ export default async function CatalogObjectPage({
 }) {
   const { object } = await params;
   const name = slugToObject(object);
-  const { entry, noPath, successor, successorType, allSuccessors, graded, byUse, dimensions } = facts(name);
+  const { entry, noPath, successor, successorType, curated, allSuccessors, graded, byUse, dimensions } = facts(name);
 
   if (!entry && !noPath) notFound();
 
@@ -142,7 +150,7 @@ export default async function CatalogObjectPage({
         '@type': 'DefinedTerm',
         name,
         description: successor
-          ? `Released S/4HANA API successor: ${successor}`
+          ? `Released S/4HANA API successor: ${successor}${curated ? ' (Clean-Core.io curated mapping)' : ''}`
           : 'No released API successor — requires re-architecture for Clean Core.',
         inDefinedTermSet: `${BASE}/catalog`,
         url: `${BASE}/catalog/${object}`,
@@ -156,7 +164,7 @@ export default async function CatalogObjectPage({
             acceptedAnswer: {
               '@type': 'Answer',
               text: successor
-                ? `${name} maps to the released successor ${successor}${successorType ? ` (${successorType})` : ''}, per the SAP Cloudification Repository.`
+                ? `${name} maps to the released successor ${successor}${successorType ? ` (${successorType})` : ''}, ${curated ? "per Clean-Core.io's curated mapping, not SAP's Cloudification Repository" : 'per the SAP Cloudification Repository'}.`
                 : `${name} has no released API successor in the SAP Cloudification Repository and requires re-architecture rather than a direct replacement.`,
             },
           },
@@ -233,8 +241,13 @@ export default async function CatalogObjectPage({
             uses an internal SAP object: level {byUse.read.grade}, with a check against SAP&apos;s
             changelog before each upgrade. Writing to it directly is level {byUse.write.grade}.
             {successor && (
-              <> SAP names <span className="font-cc-mono">{successor}</span> as its successor; that says
-              where to look, not that it is a drop-in replacement.</>
+              curated ? (
+                <> Clean-Core.io&apos;s curated mapping points to <span className="font-cc-mono">{successor}</span>;
+                that is our mapping, not SAP&apos;s. It says where to look, not that it is a drop-in replacement.</>
+              ) : (
+                <> SAP names <span className="font-cc-mono">{successor}</span> as its successor; that says
+                where to look, not that it is a drop-in replacement.</>
+              )
             )}
           </p>
         </div>
@@ -393,11 +406,9 @@ export default async function CatalogObjectPage({
             {entry?.releaseState && (
               <p className="text-xs text-cc-ink-muted mt-3">Repository state: {entry.releaseState}</p>
             )}
-            {entry?.confidence && (
-              <p className="text-xs text-cc-ink-muted mt-1">
-                Source: {entry.confidence === 'curated' ? 'Clean-Core.io curated (field-level)' : 'SAP official (Cloudification Repository)'}
-              </p>
-            )}
+            <p className="text-xs text-cc-ink-muted mt-1" data-successor-source={curated ? 'curated' : 'sap'}>
+              Source: {curated ? "Clean-Core.io curated (field-level), not SAP's Cloudification Repository" : 'SAP official (Cloudification Repository)'}
+            </p>
             {entry?.conceptNote && (
               <p className="text-sm text-cc-ink-muted mt-3">Note: {entry.conceptNote}</p>
             )}

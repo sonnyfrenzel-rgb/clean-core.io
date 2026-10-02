@@ -28,7 +28,10 @@ import {
   hasNoReleasedApiPath,
   resolveApi,
   NO_PATH_OBJECTS,
+  MERGED_TABLE_MAP,
+  primarySuccessor,
 } from '../lib/abap/catalog-service';
+import { generateMetadata as objectMetadata } from '../app/catalog/[object]/page';
 import { joinUsageWithEvidence } from '../lib/abap/usage-join';
 
 type Entry = {
@@ -192,5 +195,51 @@ test.describe('20fe6d7b4308 — the classification file is part of "no released 
       'no-released-api-path',
     );
     expect(after.quadrant).toBe('danger');
+  });
+});
+
+/**
+ * Codex review code-public-03 (02.10.2026). The object page led with
+ * `successors[0] || view` and closed the answer "per the SAP Cloudification
+ * Repository" either way, so a curated mapping — KONV -> I_PricingElement, where
+ * SAP's release file carries only a state — was printed as SAP's statement in
+ * the visible text, the meta description and the FAQ JSON-LD. The successor now
+ * travels with its source.
+ */
+test.describe('a curated successor is never attributed to SAP', () => {
+  test('KONV: SAP lists a state and no successor; the target is our curated mapping', () => {
+    expect(RELEASE.KONV, 'KONV is in the release file').toBeTruthy();
+    expect(RELEASE.KONV.successors ?? [], 'SAP names no successor for KONV').toEqual([]);
+    expect(primarySuccessor('KONV')).toEqual({ name: 'I_PricingElement', type: 'CDS View', source: 'curated' });
+  });
+
+  test('the source is "sap" exactly when the release file names the successor', () => {
+    let curated = 0;
+    for (const name of Object.keys(MERGED_TABLE_MAP)) {
+      const p = primarySuccessor(name);
+      if (!p) continue;
+      const sap = RELEASE[name]?.successors?.[0]?.name;
+      if (p.source === 'sap') expect(p.name, name).toBe(sap);
+      else {
+        curated++;
+        expect(sap, `${name}: SAP names ${sap}, yet the page would call it curated`).toBeUndefined();
+      }
+    }
+    expect(curated, 'the curated layer still contributes successors').toBeGreaterThan(0);
+  });
+
+  test('the KONV page says whose mapping it is, in text, metadata and JSON-LD', async ({ request }) => {
+    test.setTimeout(240_000);
+    const meta = await objectMetadata({ params: Promise.resolve({ object: 'konv' }) });
+    expect(String(meta.description)).toContain("Clean-Core.io's curated mapping");
+    expect(String(meta.description)).not.toContain('reference from the SAP Cloudification Repository');
+
+    const res = await request.get('/catalog/konv', { timeout: 200_000 });
+    expect(res.status()).toBe(200);
+    const html = (await res.text()).replace(/&#x27;|&apos;|&#39;/g, "'");
+    expect(html).not.toContain('per the SAP Cloudification Repository');
+    expect(html).not.toMatch(/SAP names <span[^>]*>I_PricingElement/);
+    expect(html).toContain("per Clean-Core.io's curated mapping, not SAP's Cloudification Repository");
+    expect(html).toContain('data-successor-source="curated"');
   });
 });
