@@ -130,6 +130,38 @@ test.describe('the decision panel', () => {
     expect(general - withoutTarget).toBe(noPathPrivate);
   });
 
+  test('an unread source is never an all-clear, even when nothing was found in the way (code-ui-01)', () => {
+    const p = project();
+    const hasRun = true;
+    const decision = ready({ draft: emptyProjectDecision(), stored: null });
+    for (const fit of [{ state: 'absent', reason: 'The lookup failed.' }, { state: 'loading' }] as Loaded<FitByPlatform>[]) {
+      const overview = managementOverview(
+        { view: managementAnswers(p, [entry({ runId: 'run-2' })], null), fit, findings: ready(FINDINGS), decision },
+        { hasSource: true, hasRun },
+      );
+      expect(overview.blockers.state).toBe('ready');
+      if (overview.blockers.state !== 'ready') continue;
+      expect(overview.blockers.unread.length).toBe(1);
+      // An otherwise unobstructed draft: nothing found, one source unread.
+      const e = managementExecutive({
+        subject: 'Z_MM_PO_APPROVAL',
+        mode: 'project',
+        hasSource: true,
+        hasRun,
+        steps: workflowSteps(p),
+        overview: { ...overview, blockers: { ...overview.blockers, rows: [] } },
+        fit,
+        costs: costsFromDecision(decision),
+      });
+      expect(e.blockerCount).toBe(0);
+      expect(e.unread).toEqual(overview.blockers.unread);
+      expect(e.answer).not.toMatch(/nothing blocks/i);
+      expect(e.answer).toContain('not every source could be read');
+      expect(e.next?.label).not.toMatch(/confirm/i);
+      expect(e.next?.target).toEqual({ kind: 'anchor', id: 'public-cloud-fit' });
+    }
+  });
+
   test('four figures, and a figure nobody measured is a word with its reason — never a 0', () => {
     const e = exec(project(), { fit: { state: 'absent', reason: 'The lookup failed.' } });
     expect(e.figures.map((f) => f.key)).toEqual(['objects', 'no-path', 'costs', 'evidence']);

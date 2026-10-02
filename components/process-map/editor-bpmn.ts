@@ -141,6 +141,23 @@ export interface ModelerLike {
 }
 
 /* ------------------------------------------------------------------ *
+ * The element list beside the canvas.
+ * ------------------------------------------------------------------ */
+
+/**
+ * The one row of the element list that Tab reaches (a roving tab stop).
+ *
+ * The selected element when the list has a row for it, the first row
+ * otherwise. The canvas can select what the list does not carry — a pool, a
+ * lane, a connection — and a stop tied only to the selection then left every
+ * row at -1, so Tab skipped the list (Codex code-ui-04, WCAG 2.1.1).
+ */
+export function elementListTabStop(rowIds: readonly string[], current: string | null): string | null {
+  if (current !== null && rowIds.includes(current)) return current;
+  return rowIds[0] ?? null;
+}
+
+/* ------------------------------------------------------------------ *
  * One level of the draft.
  * ------------------------------------------------------------------ */
 

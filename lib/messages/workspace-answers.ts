@@ -177,6 +177,7 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'exec.inTheWay': 'What stands in the way',
   'exec.nothingInTheWay': 'Nothing stands in the way of confirming it.',
   'exec.notYetRead': 'Still being read.',
+  'exec.nothingFoundNotAllRead': 'Nothing found in the way, but not every source could be read.',
   'exec.moreLead': 'and',
   'exec.moreTail': 'more, each with its evidence, under the figures',
   'exec.nextStep': 'Next step for the decision',

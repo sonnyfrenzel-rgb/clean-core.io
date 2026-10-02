@@ -116,6 +116,11 @@ export interface ExecutiveSummary {
   /** What stands in the way of confirming it — at most three lines here. */
   blockers: ExecutiveBlocker[];
   blockerCount: number | null;
+  /**
+   * Sources the blockers card could not read, by name. Non-empty means an
+   * empty blocker list is "nothing found", never "nothing blocks".
+   */
+  unread: string[];
   /** Rows beyond the three shown. */
   moreBlockers: number;
   /** Objects that would block only a Public Edition decision, when the target is not Public. */
@@ -216,6 +221,7 @@ export function managementExecutive(src: ExecutiveSource): ExecutiveSummary {
   let rows: Array<{ key: string; label: string; provenance: ProvenanceValue }> = [];
   let platformOnly: string | null = null;
   let blockerCount: number | null = null;
+  const unread = blockers.state === 'ready' ? blockers.unread : [];
   if (blockers.state === 'ready') {
     // What blocks *this* decision: everything not tied to an edition, and —
     // when a target platform is set — every object without a catalogued path
@@ -275,13 +281,23 @@ export function managementExecutive(src: ExecutiveSource): ExecutiveSummary {
         blockerCount === null
           ? `Decision ${id} is open.`
           : blockerCount === 0
-            ? `Decision ${id} is open, and nothing blocks confirming it.`
+            ? unread.length > 0
+              ? `Decision ${id} is open. Nothing found blocks confirming it, but not every source could be read.`
+              : `Decision ${id} is open, and nothing blocks confirming it.`
             : `Decision ${id} is open. ${plural(blockerCount, 'thing blocks', 'things block')} confirming it.`;
     } else {
       answer = decision.title.endsWith('.') ? decision.title : `${decision.title}.`;
     }
     if (rows.length > 0) next = actionFor(rows[0].key, rows[0].label, src);
-    else if (decision.status === 'draft') {
+    else if (decision.status === 'draft' && unread.length > 0) {
+      // With the decision record read, the only source left unread is the
+      // Public Edition buckets (`blockersCard`) — an unread source is not an all-clear.
+      next = {
+        label: 'See what could not be read',
+        reason: unread[0],
+        target: { kind: 'anchor', id: 'public-cloud-fit' },
+      };
+    } else if (decision.status === 'draft') {
       next = {
         label: 'Review and confirm the decision',
         reason: 'Nothing blocks it. Confirming is a self-declaration by your account.',
@@ -397,6 +413,7 @@ export function managementExecutive(src: ExecutiveSource): ExecutiveSummary {
     status,
     blockers: shown,
     blockerCount,
+    unread,
     moreBlockers: Math.max(0, rows.length - shown.length),
     platformOnly,
     next,

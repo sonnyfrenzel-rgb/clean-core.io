@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getAuth } from '@/lib/firebase';
-import { createStandProbe, standMoved, type RevisionStand } from '@/lib/workspace-revision';
+import { createStandProbe, standMoved, standNoticeUp, type RevisionStand } from '@/lib/workspace-revision';
 
 /**
  * The workspace's Stand, and the two exits when it has moved — roadmap 6.9,
@@ -107,6 +107,8 @@ export function useWorkspaceRevision(
 
   const [held, setHeld] = useState<number | null | undefined>(undefined);
   const [seen, setSeen] = useState<number | null | undefined>(undefined);
+  /** The newest Stand the reader answered with *keep* — it silences the notice, never the badge. */
+  const [kept, setKept] = useState<number | null | undefined>(undefined);
 
   // One probe per project, for the life of the screen. Created in a `useMemo`
   // rather than in the effect below, because the "before a write" check is
@@ -156,9 +158,10 @@ export function useWorkspaceRevision(
   }, [projectId, check]);
 
   const keep = useCallback(() => {
-    // The reader chose the screen they have. Holding what was seen is what
-    // makes the notice stay away until the Stand moves *again*.
-    setHeld(seen);
+    // The reader chose the screen they have. The screen still holds the old
+    // Stand — the badge says so — and only the notice for *this* move goes; it
+    // comes back when the Stand moves again or before a write.
+    setKept(seen);
   }, [seen]);
 
   const refresh = useCallback(() => {
@@ -179,7 +182,11 @@ export function useWorkspaceRevision(
     // blocked because the network hiccuped, and the route will refuse it on
     // `baseRevision` if it really is stale.
     if (latest === undefined) return true;
-    return !standMoved(held, latest);
+    if (!standMoved(held, latest)) return true;
+    // A kept old Stand is still an old Stand: the write is held back and the
+    // notice is up again, with its two exits.
+    setKept(undefined);
+    return false;
   }, [check, held]);
 
   const adopt = useCallback(
@@ -195,7 +202,7 @@ export function useWorkspaceRevision(
   return {
     held,
     seen,
-    moved: standMoved(held, seen),
+    moved: standNoticeUp(held, seen, kept),
     keep,
     refresh,
     checkBeforeWrite,

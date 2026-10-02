@@ -196,7 +196,11 @@ export default function ManagementExecutive({
               </ol>
             ) : (
               <p className="m-0 mt-2 text-[13px] font-medium text-cc-ink">
-                {s.blockerCount === null ? wt('exec.notYetRead') : wt('exec.nothingInTheWay')}
+                {s.blockerCount === null
+                  ? wt('exec.notYetRead')
+                  : s.unread.length > 0
+                    ? wt('exec.nothingFoundNotAllRead')
+                    : wt('exec.nothingInTheWay')}
               </p>
             )}
             {s.moreBlockers > 0 ? (

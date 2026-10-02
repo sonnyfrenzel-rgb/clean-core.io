@@ -15,6 +15,7 @@ import {
   createStandProbe,
   revisionBadge,
   standMoved,
+  standNoticeUp,
   type RevisionStand,
 } from '../lib/workspace-revision';
 import { signInViaLanding } from './helpers/sign-in';
@@ -171,6 +172,24 @@ test.describe('what counts as a move (CR-15)', () => {
     expect(standMoved(2, 3)).toBe(true);
     expect(standMoved(3, 3)).toBe(false);
     expect(standMoved(null, null)).toBe(false);
+  });
+
+  test('keeping the old Stand silences the notice, never the badge or the write check (code-ui-02)', () => {
+    // Tab A shows revision 1, tab B wrote revision 2, tab A chose "keep".
+    const held = 1;
+    const seen = 2;
+    expect(standNoticeUp(held, seen, undefined)).toBe(true);
+    expect(standNoticeUp(held, seen, seen), 'keep did not dismiss the notice').toBe(false);
+    expect(revisionBadge(held), 'the kept screen is relabelled as the newer revision').toBe('Revision 1');
+    expect(standMoved(held, seen), 'a kept old Stand passes the check before a write').toBe(true);
+    expect(standNoticeUp(held, 3, seen), 'a further move stayed silent after keep').toBe(true);
+
+    const hook = read('hooks/useWorkspaceRevision.ts');
+    const keep = hook.slice(hook.indexOf('const keep = useCallback'), hook.indexOf('const refresh = useCallback'));
+    expect(keep, 'keep moves the Stand the screen holds — the badge then names content it is not showing').not.toContain(
+      'setHeld',
+    );
+    expect(hook).toContain('moved: standNoticeUp(held, seen, kept)');
   });
 
   test('one wording for the Stand, and no invented revision 0', () => {

@@ -91,6 +91,22 @@ export function standMoved(held: number | null | undefined, seen: number | null 
 }
 
 /**
+ * Is the "the Stand has moved" notice up?
+ *
+ * `kept` is the newest Stand the reader already answered with *keep*. Keeping
+ * dismisses the notice for that Stand only — it does not change what the
+ * screen holds, so the badge keeps naming the revision the screen was drawn
+ * from and a move further on raises the notice again (CR-15).
+ */
+export function standNoticeUp(
+  held: number | null | undefined,
+  seen: number | null | undefined,
+  kept: number | null | undefined,
+): boolean {
+  return standMoved(held, seen) && (kept === undefined || seen !== kept);
+}
+
+/**
  * One read per window, under any concurrency.
  *
  * `read` is the actual call; `now` is injected so a spec can move the clock

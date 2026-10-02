@@ -28,6 +28,7 @@ import WorkspacePrintSheet from './WorkspacePrintSheet';
 import WorkspaceHeadActions, { ReadAccessLine } from './HeadActions';
 import { useCoachMarks } from '@/hooks/useCoachMarks';
 import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
+import { createDraftHolder } from '@/lib/process-map-draft';
 import { preAnsweredQuestion, type PreAnswered } from '@/lib/ask-this-case';
 import type { SourceReading } from '@/lib/first-look';
 import { nextOpenPoint } from '@/lib/next-step';
@@ -238,6 +239,13 @@ export default function WorkspaceShell({
    */
   const stand = useWorkspaceRevision(projectId);
 
+  /**
+   * The map's unsaved drawing, held here because the map is not: it is dropped
+   * when the reader switches to IT or Management and remounted across the phone
+   * breakpoint, and either would otherwise discard the drawing unasked.
+   */
+  const [processDraft] = useState(createDraftHolder);
+
   const meta = useMemo(() => metaLine(project, projectId), [project, projectId]);
   const eyebrow = useMemo(() => workspaceEyebrow(project), [project]);
   const statuses = useMemo(() => workspaceStatusLine(project), [project]);
@@ -444,6 +452,7 @@ export default function WorkspaceShell({
             notDetermined={open}
             beforeWrite={stand.checkBeforeWrite}
             onWritten={stand.adopt}
+            draftHolder={processDraft}
           />
         </div>
       ) : null,
