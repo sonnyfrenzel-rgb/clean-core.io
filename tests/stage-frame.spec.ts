@@ -10,7 +10,9 @@ import {
   workspaceBackHref,
   WORKSPACE_RETURN,
 } from '../lib/workspace-back-href';
-import { LAYERS, workspaceLayers } from '../lib/workspace-model';
+import { LAYERS, toolMark, workspaceLayers } from '../lib/workspace-model';
+import { buildDemoProject } from '../lib/demo-project';
+import type { PhaseState } from '../lib/workflow-steps';
 
 /**
  * The seven stages are tools of the workspace (ADR-008, ADR-050, mockup s8).
@@ -24,6 +26,7 @@ import { LAYERS, workspaceLayers } from '../lib/workspace-model';
  */
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
+const DEMO_RAIL = buildDemoProject().rail;
 const STAGES = ['analyze', 'design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'];
 
 test.describe('the way back names the view and the layer', () => {
@@ -101,10 +104,29 @@ test.describe('a stage as a tool, rendered', () => {
       );
       // One project, one reading: every stage shows the same marks.
       const reading = await tools.evaluateAll((els) =>
-        els.map((el) => `${el.getAttribute('data-workspace-tool')}:${el.getAttribute('data-phase-state')}:${el.getAttribute('data-phase-tone')}`),
+        els.map((el) =>
+          [
+            el.getAttribute('data-workspace-tool'),
+            el.getAttribute('data-phase-state'),
+            el.getAttribute('data-workspace-tool-mark-meaning'),
+            el.querySelectorAll('[data-workspace-tool-mark="check"]').length,
+            el.querySelectorAll('[data-workspace-tool-mark="dot"]').length,
+          ].join(':'),
+        ),
       );
       marks ??= reading;
       expect(reading, `${st}: the bar reads the project differently here`).toEqual(marks);
+      // Each mark is the tools-bar rule (ADR-060, owner 02.10.2026): a check
+      // where the tool was used, a dot where it is out of date, nothing else.
+      for (const r of reading) {
+        const [key, state, meaning, checks, dots] = r.split(':');
+        const want = toolMark({ state: state as PhaseState });
+        expect(`${key}:${meaning}:${checks}:${dots}`, `${st}: ${key}`).toBe(
+          `${key}:${want.meaning}:${want.kind === 'check' ? 1 : 0}:${want.kind === 'dot' ? 1 : 0}`,
+        );
+      }
+      // The legend stands beside "Tools" on every stage.
+      await expect(bar.locator('[data-tools-legend="bar"]'), `${st}: the legend`).toBeVisible();
     }
 
     // And a link to another tool goes there, with the way back intact.
@@ -138,6 +160,16 @@ test.describe('a stage as a tool, rendered', () => {
       await expect(bar.locator('a[data-workspace-tool]')).toHaveCount(7);
       await expect(bar.locator(`a[data-workspace-tool="${st}"]`)).toHaveAttribute('aria-current', 'page');
       await expect(page.locator('nav[aria-label="Workflow phases"]'), `demo ${st}: a second navigation`).toHaveCount(0);
+      // The same rule on the demo's own rail: a check where it has something on
+      // record, a dot where it is out of date, nothing else — and the legend.
+      await expect(bar.locator('[data-tools-legend="bar"]'), `demo ${st}: the legend`).toBeVisible();
+      for (const step of DEMO_RAIL) {
+        const link = bar.locator(`a[data-workspace-tool="${step.key}"]`);
+        const want = toolMark(step);
+        await expect(link.locator('[data-workspace-tool-mark="check"]'), `demo ${st}: ${step.key} check`).toHaveCount(want.kind === 'check' ? 1 : 0);
+        await expect(link.locator('[data-workspace-tool-mark="dot"]'), `demo ${st}: ${step.key} dot`).toHaveCount(want.kind === 'dot' ? 1 : 0);
+        await expect(link, `demo ${st}: ${step.key} claims proof`).not.toHaveAccessibleName(/prove|proof|verif/i);
+      }
     }
     await page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]').click();
     await page.waitForURL('**/demo/design', { timeout: 60000 });
