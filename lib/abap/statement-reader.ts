@@ -149,6 +149,11 @@ export interface LiteralScanner {
   (ch: string): boolean;
   /** True while the characters read so far leave a template's `{ … }` open. */
   embedded(): boolean;
+  /**
+   * True while the characters read so far stand inside a literal's text — a
+   * quoted or backtick literal, or a template outside its `{ … }`.
+   */
+  inText(): boolean;
 }
 
 export function createLiteralScanner(): LiteralScanner {
@@ -200,6 +205,10 @@ export function createLiteralScanner(): LiteralScanner {
     }
   }) as LiteralScanner;
   scan.embedded = () => stack.includes('expr');
+  scan.inText = () => {
+    const top = stack[stack.length - 1];
+    return top === 'quote' || top === 'tick' || top === 'template';
+  };
   return scan;
 }
 
@@ -353,8 +362,29 @@ function trimRange(chars: string[], from: number, to: number): [number, number] 
   return a < b ? [a, b] : null;
 }
 
+/**
+ * The statement's text with runs of whitespace in the *code* folded to one
+ * space. Whitespace inside a literal is the literal's value — `'A  B'` is not
+ * `'A B'` — and is kept as written (codex code-engine-02). The range always
+ * starts in code: at a statement's start, after a chain colon or after a
+ * top-level comma.
+ */
 function sliceText(chars: string[], from: number, to: number): string {
-  return chars.slice(from, to).join('').replace(/\s+/g, ' ').trim();
+  const scan = createLiteralScanner();
+  let out = '';
+  let gap = false;
+  for (let p = from; p < to; p++) {
+    const ch = chars[p];
+    scan(ch);
+    if (/\s/.test(ch) && !scan.inText()) {
+      gap = true;
+      continue;
+    }
+    if (gap && out) out += ' ';
+    gap = false;
+    out += ch;
+  }
+  return out;
 }
 
 /**
@@ -410,7 +440,9 @@ function push(
   if (!range) return;
   const [a, b] = range;
   const body = sliceText(scanned.chars, a, b);
-  const text = chainHead ? `${chainHead.text} ${body}`.replace(/\s+/g, ' ').trim() : body;
+  // Head and part are each folded already; joining them must not fold a
+  // literal's whitespace a second time (codex code-engine-02).
+  const text = chainHead ? `${chainHead.text} ${body}` : body;
   if (!text) return;
   out.push({
     text,

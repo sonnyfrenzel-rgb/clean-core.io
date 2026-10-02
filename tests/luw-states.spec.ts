@@ -247,3 +247,34 @@ test('an IF without ELSE leaves the other path unresolved', () => {
   // The whole report is here and nothing else can commit: the other path orphans.
   expect(registration.unresolved?.state).toBe('orphaned');
 });
+
+test('a BAPI transaction call in another session does not end this program\'s LUW (codex code-engine-03)', () => {
+  // BAPI_TRANSACTION_COMMIT DESTINATION 'NONE' commits the RFC session's LUW.
+  // The registration below is still open after it, and the local ROLLBACK is
+  // what decides it — before the fix the model said "dispatched" at line 4 and
+  // stopped scanning.
+  const body = (remote: string, local: string) => luw([
+    'REPORT z_remote.',
+    'START-OF-SELECTION.',
+    "  CALL FUNCTION 'Z_POST_UPD' IN UPDATE TASK EXPORTING iv = lv.",
+    `  CALL FUNCTION ${remote}.`,
+    `  ${local}.`,
+  ].join('\n'));
+
+  for (const remote of [
+    "'BAPI_TRANSACTION_COMMIT' DESTINATION 'NONE' EXPORTING wait = 'X'",
+    "'BAPI_TRANSACTION_COMMIT' STARTING NEW TASK 'T1'",
+    "'BAPI_TRANSACTION_COMMIT' IN BACKGROUND TASK",
+  ]) {
+    const model = body(remote, 'ROLLBACK WORK');
+    expect(model.registrations[0].outcomes.map((o) => [o.state, o.lineStart]), remote).toEqual([['discarded', 5]]);
+    expect(model.events.map((e) => e.kind), remote).toEqual(['rollback']);
+  }
+
+  const inverse = body("'BAPI_TRANSACTION_ROLLBACK' DESTINATION lv_dest", 'COMMIT WORK');
+  expect(inverse.registrations[0].outcomes.map((o) => [o.state, o.lineStart])).toEqual([['dispatched', 5]]);
+
+  // The local call is still the boundary it always was.
+  const local = body("'BAPI_TRANSACTION_COMMIT' EXPORTING wait = 'X'", 'ROLLBACK WORK');
+  expect(local.registrations[0].outcomes.map((o) => [o.state, o.lineStart])).toEqual([['dispatched', 4]]);
+});

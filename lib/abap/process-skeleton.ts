@@ -3143,8 +3143,22 @@ class SkeletonBuilder {
       }
       const to = (handlers[h + 1] ?? block.closeIndex) - 1;
       this.registeredInWalk = new Set(registered);
-      out.push(...this.walkRange(handlers[h] + 1, to, ctx,
-        [{ from: boundary.id, condition: '', kind: 'sequence' }]));
+      const handled = this.walkRange(handlers[h] + 1, to, ctx,
+        [{ from: boundary.id, condition: '', kind: 'sequence' }]);
+      if (header.keyword !== 'CLEANUP') {
+        out.push(...handled);
+        continue;
+      }
+      // A CLEANUP runs while an exception this TRY does not catch passes on to
+      // an outer handler. When it is done the exception goes on propagating:
+      // the statement after ENDTRY is never next (codex code-engine-04). Its
+      // end is an error end on the CLEANUP itself, not the normal flow.
+      if (handled.length) {
+        const passOn = this.addNode('end-error', 'CLEANUP', anchorOf(header), ctx.region, ctx.container, {
+          detail: { propagates: true },
+        });
+        this.connect(handled, passOn.id);
+      }
     }
     return out;
   }

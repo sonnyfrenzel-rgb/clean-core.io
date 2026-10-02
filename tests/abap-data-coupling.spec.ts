@@ -134,3 +134,14 @@ test.describe('ABAP Data Coupling Analyzer Tests', () => {
   });
 
 });
+
+test('a write to the customer\'s own table is not told it requires Side-by-Side (codex code-engine-06)', () => {
+  // Developer extensibility keeps custom persistence on-stack (CR-03/CR-04,
+  // CHANGELOG v2.9.3). The router already reads the edition; this advice is
+  // shown and signed beside it and must not contradict it.
+  const [entry] = extractDataCoupling("UPDATE zcc_order_log SET status = 'X' WHERE id = lv_id.");
+  expect(entry.tableName).toBe('ZCC_ORDER_LOG');
+  expect(entry.recommendation).not.toMatch(/requires side-by-side/i);
+  expect(entry.recommendation).toMatch(/on-stack with developer extensibility/i);
+  expect(entry.recommendation).toMatch(/Side-by-Side/);
+});

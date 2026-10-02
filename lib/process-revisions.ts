@@ -269,14 +269,20 @@ function labelOf(element: Element): string {
  */
 function outgoing(id: string, flows: Flow[], byId: Map<string, Element>): { key: string; text: string } {
   const mine = flows.filter((f) => f.sourceRef === id);
-  const key = mine.map((f) => `${f.condition}\u0000${f.targetRef}`).join('\u0001');
+  // The expression is part of the key: a condition changed in the editor or in
+  // an imported file lives there, while the trace keeps the code's condition
+  // (codex code-engine-01).
+  const key = mine.map((f) => `${f.condition}\u0000${f.expression ?? '\u0002'}\u0000${f.targetRef}`).join('\u0001');
   const text = mine.length === 0
     ? 'none'
     : mine
       .map((f) => {
         const target = byId.get(f.targetRef);
         const name = target ? labelOf(target) : f.targetRef;
-        return f.condition ? `${f.condition} → ${name}` : `→ ${name}`;
+        const tested = f.expression !== null && f.expression !== f.condition
+          ? `${f.condition ? `${f.condition} ` : ''}[tests: ${f.expression || 'nothing'}]`
+          : f.condition;
+        return tested ? `${tested} → ${name}` : `→ ${name}`;
       })
       .join('; ');
   return { key, text };
