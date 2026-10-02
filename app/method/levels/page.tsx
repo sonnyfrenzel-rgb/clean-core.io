@@ -261,7 +261,8 @@ export default function LevelDerivationPage() {
           The table above grades an object by its name. An analysis also knows what the code does
           with a table — reads it, writes to it, or depends on its type without touching a row —
           and in the cases below that decides the level it shows. Everywhere else the access
-          changes nothing, and the object keeps the level above. These rows are part of the rule
+          changes nothing, and the object keeps the level above. Where a row moves the level, the
+          object&rsquo;s own level is still shown beside it. These rows are part of the rule
           version at the top of this page.
         </p>
 
@@ -526,6 +527,11 @@ const USE_RULES: { use: string; grade: CloudReadinessGrade; why: string }[] = [
     use: 'notToBeReleased, referenced as a type',
     grade: 'C',
     why: 'TABLES kna1, DATA … TYPE kna1, INCLUDE STRUCTURE kna1, SELECT-OPTIONS … FOR kna1-kunnr: the code depends on SAP’s internal structure without reading or writing a row. That is the same dependency on an internal object a read has, so it is the same level — not D, which says the application that owns the rows was bypassed. The read successor is no answer here: a CDS view does not replace a structure type.',
+  },
+  {
+    use: 'SAP object, written directly',
+    grade: 'D',
+    why: 'INSERT, UPDATE, MODIFY or DELETE on an SAP table or view — FROM TABLE included, and a dynamic name once the source resolves it — bypasses the application that owns the rows. That is level D whatever the object is on its own: a release is permission to use the object, not to change its rows behind the application, and an internal object is no cleaner for being written than for being read. The object’s own level is kept beside the D. Writing through SAP’s own path — EML on a business object, a BAPI, a released class — is not a direct write and keeps the level of what it calls.',
   },
   {
     use: 'customer table, read or written',

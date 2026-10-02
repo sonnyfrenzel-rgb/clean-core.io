@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, runTransaction } from 'firebase/firestore';
+import { checkProjectWrite, projectTooLargeMessage } from '@/lib/firestore-doc-size';
 import { getAuth, getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -35,6 +36,7 @@ import { useProcessHandbook } from '@/hooks/useProcessHandbook';
 import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { saveAs } from '@/lib/fileSaver';
 import StageHeader from '@/components/StageHeader';
+import StageFrame from '@/components/StageFrame';
 import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { sha256Hex } from '@/lib/artefact-digest';
@@ -416,6 +418,11 @@ Structure the JSON exactly like this:
           throw new Error('The analysis or the documentation of this project changed while the business layer was being written, so nothing was saved. Reload the stage and generate it again.');
         }
         const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, 'docs/business-documentation.md', formatBusinessDocsToMarkdown(responseText));
+        // Codex architecture-02: the layer is written twice — as itself and
+        // into the package — so it is refused by name before the commit when
+        // the project would outgrow its 1 MiB document.
+        const size = checkProjectWrite(current, { businessDocumentation: responseText, generatedCode: merged }, projectDoc.path, 'update');
+        if (!size.ok) throw new Error(projectTooLargeMessage(size, 'this business documentation'));
         tx.update(projectDoc, { businessDocumentation: responseText, generatedCode: merged });
         return merged;
       });
@@ -553,6 +560,9 @@ Structure the JSON exactly like this:
           throw new Error('The analysis of this project changed while the documentation was being put together, so nothing was saved. Reload the stage and generate it again.');
         }
         const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, DOCUMENTATION_WORKSPACE_FILE, processDocumentationToMarkdown(built));
+        // Codex architecture-02, as for the business layer above.
+        const size = checkProjectWrite(current, { documentation: stored, generatedCode: merged }, projectDoc.path, 'update');
+        if (!size.ok) throw new Error(projectTooLargeMessage(size, 'this documentation'));
         tx.update(projectDoc, { documentation: stored, generatedCode: merged, status: 'documented' });
         return merged;
       });
@@ -872,22 +882,24 @@ Structure the JSON exactly like this:
   };
 
   if (loading) return (
-    <div>
+    <StageFrame stage="documentation">
       <StageHeader stage="documentation" tools={{ steps: phases, current: 'documentation' }} projectName={project?.name} />
       <CcSkeleton shape="cards" label="documentation" count={2} />
-    </div>
+    </StageFrame>
   );
 
   if (loadError) return (
-    <div className="p-8 max-w-xl">
-      <CcMessageStrip
-        state="error"
-        headline="This stage could not be opened"
-        actions={<CcButton onClick={() => window.location.reload()}>Try again</CcButton>}
-      >
-        <span data-load-error>{loadError}</span>
-      </CcMessageStrip>
-    </div>
+    <StageFrame stage="documentation">
+      <div className="max-w-xl">
+        <CcMessageStrip
+          state="error"
+          headline="This stage could not be opened"
+          actions={<CcButton onClick={() => window.location.reload()}>Try again</CcButton>}
+        >
+          <span data-load-error>{loadError}</span>
+        </CcMessageStrip>
+      </div>
+    </StageFrame>
   );
 
   /**
@@ -1287,7 +1299,7 @@ Structure the JSON exactly like this:
   );
 
   return (
-    <div className="min-h-screen">
+    <StageFrame stage="documentation" className="min-h-screen">
       <StaleNotice
         title={`Built for ${previousBasis(project)}`}
         reasons={[
@@ -1706,6 +1718,6 @@ Structure the JSON exactly like this:
       </CcDialog>
 
       <StageFooter />
-    </div>
+    </StageFrame>
   );
 }

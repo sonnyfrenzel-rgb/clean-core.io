@@ -29,6 +29,7 @@ import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { generateAuditPack } from '@/lib/audit-pack';
 import { APP_VERSION } from '@/lib/version';
 import StageHeader from '@/components/StageHeader';
+import StageFrame from '@/components/StageFrame';
 import { workflowSteps, testEvidence, handoverBlockers, PHASES, previousBasis } from '@/lib/workflow-steps';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -611,14 +612,14 @@ jobs:
   };
 
   if (loading || (!project && !loadFailed)) return (
-    <div>
+    <StageFrame stage="delivery">
       <StageHeader stage="delivery" tools={{ steps: phases, current: 'delivery' }} projectName={project?.name} />
       <CcSkeleton shape="cards" label="Finalizing delivery package..." count={4} />
-    </div>
+    </StageFrame>
   );
 
   if (!project) return (
-    <div className="max-w-7xl mx-auto px-4 md:px-0">
+    <StageFrame stage="delivery">
       <StageHeader stage="delivery" tools={{ steps: phases, current: 'delivery' }} />
       <div data-delivery-load-failed>
         <CcMessageStrip
@@ -630,7 +631,7 @@ jobs:
           Nothing on this page can be exported until it is.
         </CcMessageStrip>
       </div>
-    </div>
+    </StageFrame>
   );
 
   // The handover, read off the same contract as the stepper (`lib/handover.ts`).
@@ -676,7 +677,7 @@ jobs:
     stage === 'management' ? 'Management view' : PHASES.find((p) => p.key === stage)?.label ?? stage;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-0">
+    <StageFrame stage="delivery">
       {/* The lead used to read "The transformation lifecycle is complete … ready
           for deployment" on every project, including one with nothing but an
           analysis run behind it. Block D, D.19: the title is the stage's name
@@ -1358,7 +1359,7 @@ jobs:
       )}
 
       <CcToast open={toast !== null} onDismiss={closeToast}>{toast}</CcToast>
-    </div>
+    </StageFrame>
   );
 }
 

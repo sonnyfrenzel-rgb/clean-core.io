@@ -208,8 +208,12 @@ function receiptStep(src: EvidenceChainSource): ChainStep {
     ref: '',
     value: null,
     reason:
-      `${why} A test-run receipt would be the other candidate, and it sits on the project document where the browser ` +
-      'can write it, so it is outside the signed half of every pack until the isolated test runner issues one.',
+      // Until 02.10.2026 this said the browser could write the test-run receipt;
+      // `firestore.rules` refuses that, and the G4 acceptance proves the refusal.
+      // Packs sealed before keep the old sentence — it is inside their signed
+      // bytes, and no verifier recomputes this file.
+      `${why} A test-run receipt would be the other candidate. Only the server writes one, when the test runner has ` +
+      'run the suite — the browser cannot — but this pack does not carry it, so it is outside the signed half of every pack.',
     scope:
       'A receipt is `proven` only where something outside the account checked it. Nothing in this pack claims that here.',
   };

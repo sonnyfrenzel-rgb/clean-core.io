@@ -158,6 +158,9 @@ export default function DemoDesign({
         hasDocument={false}
         canSignOff={Boolean(code)}
         signOffPanel={signOffPanel}
+        // The same question first as on a real project (owner 02.10.2026);
+        // withdrawing stays in the panel behind "Change target".
+        confirmTarget={code ? { label, onConfirm: () => onConfirm(true) } : undefined}
         locked={confirmed}
         onRegenerate={() => undefined}
         regenerateDisabled

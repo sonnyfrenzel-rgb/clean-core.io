@@ -8,13 +8,8 @@ import {
   Keyboard,
   LayoutGrid,
   Map as MapIcon,
-  Maximize2,
-  Minimize2,
   Redo2,
-  Scan,
   Undo2,
-  ZoomIn,
-  ZoomOut,
 } from 'lucide-react';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import { saveDraft } from './draft-save';
@@ -41,6 +36,8 @@ import ProcessHints from './ProcessHints';
 import EditorProperties, { type ElementOrigin } from './EditorProperties';
 import EditorMinimap from './EditorMinimap';
 import EditorImport from './EditorImport';
+import { CanvasFullscreenToggle, CanvasZoomControls } from './CanvasViewControls';
+import { useCanvasFullscreen } from './useCanvasFullscreen';
 import {
   elementListTabStop,
   overlapsOnLevel,
@@ -64,7 +61,6 @@ import {
   editorEditingRevision,
   editorNewerRevision,
   editorOverlaps,
-  editorZoomLabel,
   mapEditorCannotGoThere,
   mapEditorCanvasLabel,
   mapEditorMessageFlowRefused,
@@ -475,10 +471,6 @@ export default function BpmnEditor({
   const [zoom, setZoom] = useState(100);
   const [comparing, setComparing] = useState(false);
   const [minimap, setMinimap] = useState(true);
-  /** The browser's own full screen (Fullscreen API) holds the editor. */
-  const [fullscreen, setFullscreen] = useState(false);
-  /** The browser refused full screen (or has none): the editor covers the window instead. */
-  const [overlay, setOverlay] = useState(false);
   const [overlaps, setOverlaps] = useState(0);
   /** The revision the draft was opened from, when it is not the reconstruction. */
   const [startedFrom, setStartedFrom] = useState<OpenedRevision | null>(null);
@@ -1010,55 +1002,15 @@ export default function BpmnEditor({
     }
   }, [baseXml, fileName, importing, load, outsideOf, save]);
 
-  useEffect(() => {
-    const onChange = () => {
-      setFullscreen(document.fullscreenElement === rootRef.current && rootRef.current !== null);
-    };
-    document.addEventListener('fullscreenchange', onChange);
-    return () => document.removeEventListener('fullscreenchange', onChange);
-  }, []);
-  /** Full screen either way — what the layout reads. */
-  const filled = fullscreen || overlay;
+  /** Full screen — the mechanism the reading map shares (`useCanvasFullscreen`). */
+  const { fullscreen, overlay, filled, toggle: toggleFullscreen, toggleRef: fullscreenToggleRef } = useCanvasFullscreen({
+    rootRef,
+    escapeInside: hostRef,
+  });
   useEffect(() => {
     // The canvas measures its box; after the box changed it has to measure again.
     modeler?.get<CanvasService>('canvas').resized();
   }, [filled, modeler]);
-  const toggleFullscreen = useCallback(() => {
-    if (document.fullscreenElement) {
-      void document.exitFullscreen();
-      return;
-    }
-    if (overlay) {
-      setOverlay(false);
-      return;
-    }
-    const root = rootRef.current;
-    // An embedded page, an iPhone or a refused request has no element full
-    // screen; the editor then covers the window, with the same layout.
-    if (root && typeof root.requestFullscreen === 'function') {
-      root.requestFullscreen().catch(() => setOverlay(true));
-    } else {
-      setOverlay(true);
-    }
-  }, [overlay]);
-  useEffect(() => {
-    if (!overlay) return;
-    // The page behind does not scroll under the editor, and Escape leaves it —
-    // unless the keystroke belongs to the canvas, where Escape ends a tool.
-    const html = document.documentElement;
-    const was = html.style.overflow;
-    html.style.overflow = 'hidden';
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || event.defaultPrevented) return;
-      if (hostRef.current?.contains(event.target as Node | null)) return;
-      setOverlay(false);
-    };
-    document.addEventListener('keydown', onKey);
-    return () => {
-      html.style.overflow = was;
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [overlay]);
 
   /* ---------------- saving ---------------- */
 
@@ -1139,18 +1091,7 @@ export default function BpmnEditor({
           <Redo2 size={16} aria-hidden={true} />
         </CcIconButton>
         <span aria-hidden={true} className="h-6 border-l border-cc-line" />
-        <CcIconButton data-editor-zoom-out="" label={wt('editor.zoomOut')} onClick={() => zoomBy(1 / 1.2)}>
-          <ZoomOut size={16} aria-hidden={true} />
-        </CcIconButton>
-        <span data-editor-zoom="" className="min-w-12 text-center text-[12px] font-semibold text-cc-ink-muted tabular-nums">
-          {editorZoomLabel(zoom)}
-        </span>
-        <CcIconButton data-editor-zoom-in="" label={wt('editor.zoomIn')} onClick={() => zoomBy(1.2)}>
-          <ZoomIn size={16} aria-hidden={true} />
-        </CcIconButton>
-        <CcIconButton data-editor-fit="" label={wt('editor.fit')} onClick={fit}>
-          <Scan size={16} aria-hidden={true} />
-        </CcIconButton>
+        <CanvasZoomControls scope="editor" zoom={zoom} onZoomBy={zoomBy} onFit={fit} />
         <span aria-hidden={true} className="h-6 border-l border-cc-line" />
         <CcButton data-editor-tidy="" icon={<LayoutGrid size={16} aria-hidden={true} />} onClick={tidy}>
           {wt('editor.tidy')}
@@ -1200,14 +1141,7 @@ export default function BpmnEditor({
           </>
         ) : null}
         <span className="ml-auto" />
-        <CcIconButton
-          data-editor-fullscreen-toggle=""
-          label={filled ? wt('editor.exitFullscreen') : wt('editor.fullscreen')}
-          aria-pressed={filled}
-          onClick={toggleFullscreen}
-        >
-          {filled ? <Minimize2 size={16} aria-hidden={true} /> : <Maximize2 size={16} aria-hidden={true} />}
-        </CcIconButton>
+        <CanvasFullscreenToggle scope="editor" filled={filled} onToggle={toggleFullscreen} buttonRef={fullscreenToggleRef} />
       </div>
 
       {newer ? (

@@ -12,6 +12,14 @@ import {
 } from '@/lib/process-documentation';
 import { pairWithEvidence, proposalAt } from '@/lib/statement-proposal';
 import {
+  effectsSummary,
+  gapsSummary,
+  lanesSummary,
+  statementsSummary,
+  stepsSummary,
+} from '@/lib/documentation-lists';
+import { FoldedListSection } from '@/components/documentation/FoldedList';
+import {
   ProposedStatementLine,
   StatementPair,
   StatementProposalPanel,
@@ -67,8 +75,17 @@ export default function ProcessDocumentationView({
         <p className="mt-4 text-xs text-cc-ink-muted max-w-3xl">{doc.disclaimer}</p>
       </section>
 
-      <section data-doc-steps className="rounded-cc-card border border-cc-line bg-cc-surface p-6 md:p-8 shadow-cc">
-        <h4 className="cc-text-h2 text-cc-ink mb-4">The process, element by element</h4>
+      {/* Owner 02.10.2026: a list of more than five rows starts folded with
+          its count and one line (`lib/documentation-lists.ts`); opened, it is
+          the list as it was. */}
+      <FoldedListSection
+        name="steps"
+        data-doc-steps=""
+        level={4}
+        title="The process, element by element"
+        rows={doc.steps.length}
+        summary={stepsSummary(doc.steps)}
+      >
         <CcTable
           caption="The process, element by element"
           columns={STEP_COLUMNS}
@@ -113,10 +130,16 @@ export default function ProcessDocumentationView({
             };
           })}
         />
-      </section>
+      </FoldedListSection>
 
-      <section data-doc-statements className="rounded-cc-card border border-cc-line bg-cc-surface p-6 md:p-8 shadow-cc">
-        <h4 className="cc-text-h2 text-cc-ink mb-1">Business statements, across the whole program</h4>
+      <FoldedListSection
+        name="statements"
+        data-doc-statements=""
+        level={4}
+        title="Business statements, across the whole program"
+        rows={doc.statements.length}
+        summary={statementsSummary(doc.statements)}
+      >
         <p className="text-xs text-cc-ink-muted mb-4">
           {doc.statements.length === 0
             ? 'The engine formed no business statement from this source.'
@@ -148,10 +171,16 @@ export default function ProcessDocumentationView({
                 <StatementRow key={statement.id} text={statement.text} anchors={statement.anchors} />
               ))}
         </ul>
-      </section>
+      </FoldedListSection>
 
-      <section data-doc-effects className="rounded-cc-card border border-cc-line bg-cc-surface p-6 md:p-8 shadow-cc">
-        <h4 className="cc-text-h2 text-cc-ink mb-3">Update task and commit</h4>
+      <FoldedListSection
+        name="effects"
+        data-doc-effects=""
+        level={4}
+        title="Update task and commit"
+        rows={doc.effects.registrations.length + doc.effects.events.length}
+        summary={effectsSummary(doc.effects)}
+      >
         {doc.effects.registrations.length === 0 && doc.effects.events.length === 0 ? (
           <p className="text-sm text-cc-ink-muted">The source registers no update module and issues no COMMIT WORK or ROLLBACK WORK.</p>
         ) : (
@@ -180,10 +209,16 @@ export default function ProcessDocumentationView({
             ))}
           </ul>
         )}
-      </section>
+      </FoldedListSection>
 
-      <section data-doc-lanes className="rounded-cc-card border border-cc-line bg-cc-surface p-6 md:p-8 shadow-cc">
-        <h4 className="cc-text-h2 text-cc-ink mb-1">Lanes</h4>
+      <FoldedListSection
+        name="lanes"
+        data-doc-lanes=""
+        level={4}
+        title="Lanes"
+        rows={doc.lanes.length + doc.proposedLanes.length}
+        summary={lanesSummary(doc)}
+      >
         <p className="text-xs text-cc-ink-muted mb-3">A lane is the token the source writes, never a job title.</p>
         <ul className="space-y-1 text-sm text-cc-ink">
           {doc.lanes.map((lane, i) => (
@@ -204,10 +239,16 @@ export default function ProcessDocumentationView({
             </li>
           ))}
         </ul>
-      </section>
+      </FoldedListSection>
 
-      <section data-doc-gaps className="rounded-cc-card border border-cc-line bg-cc-surface p-6 md:p-8 shadow-cc">
-        <h4 className="cc-text-h2 text-cc-ink mb-3">Not determined from the code</h4>
+      <FoldedListSection
+        name="gaps"
+        data-doc-gaps=""
+        level={4}
+        title="Not determined from the code"
+        rows={doc.notDetermined.length}
+        summary={gapsSummary(doc.notDetermined)}
+      >
         <ul className="space-y-2 text-sm text-cc-ink">
           {doc.notDetermined.map((gap) => (
             <li key={gap.subject} className="flex flex-col gap-1 md:flex-row md:items-start md:gap-3">
@@ -219,7 +260,7 @@ export default function ProcessDocumentationView({
             </li>
           ))}
         </ul>
-      </section>
+      </FoldedListSection>
     </div>
   );
 }

@@ -90,6 +90,7 @@ import type { UsageReport as UsageReportType } from '@/lib/abap/usage-model';
 import type { AtcReport as AtcReportType } from '@/lib/abap/atc-model';
 
 import StageHeader from '@/components/StageHeader';
+import StageFrame from '@/components/StageFrame';
 import StageFooter from '@/components/StageFooter';
 import { coverageCaveat } from '@/lib/abap/coverage';
 import AnalysisAnswer from '@/components/analyze/AnalysisAnswer';
@@ -1470,14 +1471,9 @@ export default function AnalyzePage() {
   );
 
   return (
-    <div
-      className={clsx(
-        'motion-safe:animate-in fade-in duration-500',
-        // The results use the full width of the app, as the other stages and
-        // the workspace do; the upload form keeps its reading width.
-        hasResults ? 'w-full' : 'max-w-5xl mx-auto',
-      )}
-    >
+    // One frame for every stage (ADR-063): the results use its full width;
+    // the upload form below keeps its reading width, left-aligned to it.
+    <StageFrame stage="analyze" className="motion-safe:animate-in fade-in duration-500">
       <StageHeader tools={{ steps: phases, current: 'analyze' }}
         projectName={project?.name}
         stage="analyze"
@@ -1539,7 +1535,7 @@ export default function AnalyzePage() {
           existed has a narrative and no run, and still opens its report. */}
       {!project?.analysis && !project?.activeRunId ? (
         loading ? (
-          <div className="space-y-6">
+          <div className="space-y-6 max-w-5xl">
             <div className="bg-cc-surface rounded-cc-card p-4 sm:p-6 border border-cc-line shadow-cc flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-cc-row bg-cc-surface-muted flex items-center justify-center text-cc-ink-muted">
@@ -1569,7 +1565,7 @@ export default function AnalyzePage() {
             )}
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-8 max-w-5xl">
             {/* The drop area takes a dragged file; the button in it is the way
                 in for everyone else — a keyboard never reached the clickable
                 area this used to be (D.10b). */}
@@ -1980,7 +1976,7 @@ export default function AnalyzePage() {
 
         </div>
       </CcDialog>
-    </div>
+    </StageFrame>
   );
 }
 

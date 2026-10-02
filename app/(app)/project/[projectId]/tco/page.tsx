@@ -7,6 +7,7 @@ import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import type { Project } from '@/lib/types';
 import StageHeader from '@/components/StageHeader';
+import StageFrame from '@/components/StageFrame';
 import StageFooter from '@/components/StageFooter';
 import { workflowSteps, staleness } from '@/lib/workflow-steps';
 import { ShieldCheck, Printer, BarChart3, AlertCircle } from 'lucide-react';
@@ -227,14 +228,14 @@ export default function TcoCalculatorPage() {
 
   if (loading) {
     return (
-      <div className="cc min-h-screen">
+      <StageFrame stage="tco" className="cc min-h-screen">
         <CcSkeleton shape="cards" label="the economics model" count={3} />
-      </div>
+      </StageFrame>
     );
   }
 
   if (loadError) return (
-    <div className="cc min-h-screen">
+    <StageFrame stage="tco" className="cc min-h-screen">
       <div className="max-w-xl" data-tco-load-error="">
         <CcMessageStrip
           state="error"
@@ -245,7 +246,7 @@ export default function TcoCalculatorPage() {
           nothing about whether a signed score exists.
         </CcMessageStrip>
       </div>
-    </div>
+    </StageFrame>
   );
 
   // The savings forecast needs a baseline nothing any input could fix: a signed
@@ -302,7 +303,7 @@ export default function TcoCalculatorPage() {
     // `.cc` puts the stage under the workspace's focus ring (§1.6) and its
     // print rule (§7.1). The way back to the workspace does not print either;
     // `StageHeader` marks it `cc-no-print` for every stage.
-    <div className="cc min-h-screen print:p-0" data-economics="">
+    <StageFrame stage="tco" className="cc min-h-screen print:p-0" data-economics="">
       <StageHeader tools={{ steps: phases, current: 'tco' }} projectName={project?.name} stage="tco" eyebrow={<CcProvenanceChip value="simulation" />}>
         What keeping, changing or retiring this code would cost — priced only from figures you state.
       </StageHeader>
@@ -877,7 +878,7 @@ export default function TcoCalculatorPage() {
       <div className="mt-6 print:hidden">
         <StageFooter />
       </div>
-    </div>
+    </StageFrame>
   );
 }
 

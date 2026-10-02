@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, deleteField, runTransaction } from 'firebase/firestore';
+import { checkProjectWrite, projectTooLargeMessage } from '@/lib/firestore-doc-size';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -17,7 +18,7 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import NotGenerated from '@/components/NotGenerated';
 import { saveAs } from '@/lib/fileSaver';
 import GlossaryTerm from '@/components/GlossaryTerm';
-import ArchitectSignOff, { architectureOptionLabel } from '@/components/ArchitectSignOff';
+import ArchitectSignOff, { architectureOptionLabel, type TargetArchitecture } from '@/components/ArchitectSignOff';
 import { recommendedArchitecture } from '@/lib/project-commands';
 import { signOffRecommendation, storedRouteOf } from '@/lib/design-recommendation';
 import { runProjectCommand } from '@/lib/project-command-client';
@@ -54,6 +55,7 @@ import { detectFindings, summarize } from '@/lib/abap/findings-detector';
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { SourceFile } from '@/lib/abap/findings-detector';
 import StageHeader from '@/components/StageHeader';
+import StageFrame from '@/components/StageFrame';
 import { workflowSteps, staleness, previousBasis } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { buildDesignExportHtml, designExportFileName } from '@/lib/design-export';
@@ -364,6 +366,15 @@ ${responseText.substring(0, 4000)}`;
         if ((snap.data()?.activeRunId ?? null) !== writtenFromRun) {
           throw new DesignGenerationError('The analysis of this project changed while the design was being generated, so nothing was saved. Reload the stage and generate it again.');
         }
+        // Codex architecture-02: refused by name before the commit rather than
+        // failing in it, when the design would push the project past 1 MiB.
+        const size = checkProjectWrite(
+          snap.data(),
+          { solutionDesign: responseText, nonFunctionalRequirements: nfrForDesign ?? deleteField() },
+          projectDoc.path,
+          'update',
+        );
+        if (!size.ok) throw new DesignGenerationError(projectTooLargeMessage(size, 'this solution design'));
         tx.update(projectDoc, {
           solutionDesign: responseText,
           status: 'designed',
@@ -613,7 +624,7 @@ ${responseText.substring(0, 4000)}`;
   };
 
   if (loading && !design) return (
-    <div className="min-h-screen">
+    <StageFrame stage="design" className="min-h-screen">
       <StageHeader stage="design" tools={{ steps: phases, current: 'design' }} projectName={project?.name}>Where this code should run after the change, and the design that gets it there.</StageHeader>
 
       <div className="overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc">
@@ -628,7 +639,7 @@ ${responseText.substring(0, 4000)}`;
           <CcSkeleton shape="text" label="the technical design" count={6} />
         </div>
       </div>
-    </div>
+    </StageFrame>
   );
 
   // Built after the loading return: the markdown renderer needs a DOM, and
@@ -824,6 +835,28 @@ ${responseText.substring(0, 4000)}`;
           : `Based on the code analysis, the ${recommendation === 'cap' ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`;
   const canSignOff = Boolean(design) && designIsStructured(design);
 
+  // The sign-off command, one place for both ways to it: the panel's
+  // "Confirm & Lock" and the question "Confirm target" asks first.
+  const lockArchitecture = async (architecture: TargetArchitecture, justification: string) => {
+    const stored = await runProjectCommand(projectId as string, {
+      command: 'approve-architecture',
+      targetArchitecture: architecture,
+      justification: justification || '',
+      // Roadmap 8.8 — which run this page rendered, and what it
+      // said. `loadProjectAndHydrate` spreads the run over the
+      // project (`lib/project-loader.ts:14-22`), so every fact
+      // `evidenceDigest` reads here is the run's own; the three
+      // keys the project keeps on merge are deliberately not
+      // among them. If the server's active run has moved since,
+      // the command comes back 409 with the diff instead of
+      // silently binding the sign-off to a run nobody read.
+      expectedRunId: String(project?.activeRunId || ''),
+      expectedEvidenceDigest: evidenceDigest(project as unknown as Record<string, unknown>),
+    });
+    setProject((prev: Project | null) => prev ? { ...prev, ...stored } as Project : null);
+    setEvidenceVersion((v) => v + 1);
+  };
+
   // The sign-off, unchanged: the same panel, the same commands, the same
   // run binding (roadmap 0.7, 8.8). It sits in the Decision tab now.
   const signOffPanel = canSignOff ? (
@@ -845,25 +878,7 @@ ${responseText.substring(0, 4000)}`;
       // stored — including the address it read off the ID token and
       // the timestamp off its own clock, neither of which this page
       // is entitled to invent.
-      onLock={async (architecture, justification) => {
-        const stored = await runProjectCommand(projectId as string, {
-          command: 'approve-architecture',
-          targetArchitecture: architecture,
-          justification: justification || '',
-          // Roadmap 8.8 — which run this page rendered, and what it
-          // said. `loadProjectAndHydrate` spreads the run over the
-          // project (`lib/project-loader.ts:14-22`), so every fact
-          // `evidenceDigest` reads here is the run's own; the three
-          // keys the project keeps on merge are deliberately not
-          // among them. If the server's active run has moved since,
-          // the command comes back 409 with the diff instead of
-          // silently binding the sign-off to a run nobody read.
-          expectedRunId: String(project?.activeRunId || ''),
-          expectedEvidenceDigest: evidenceDigest(project as unknown as Record<string, unknown>),
-        });
-        setProject((prev: Project | null) => prev ? { ...prev, ...stored } as Project : null);
-        setEvidenceVersion((v) => v + 1);
-      }}
+      onLock={lockArchitecture}
       onUnlock={async () => {
         const stored = await runProjectCommand(projectId as string, { command: 'revoke-architecture' });
         setProject((prev: Project | null) => prev ? {
@@ -891,7 +906,7 @@ ${responseText.substring(0, 4000)}`;
       : 'Edition not determined · target not bound by the run';
 
   return (
-    <div className="min-h-screen">
+    <StageFrame stage="design" className="min-h-screen">
       <StaleNotice title={`Built for ${previousBasis(project)}`} reasons={staleNotes} />
 
       <StageHeader tools={{ steps: phases, current: 'design' }} projectName={project?.name}
@@ -962,6 +977,18 @@ ${responseText.substring(0, 4000)}`;
           hasDocument={Boolean(design)}
           canSignOff={canSignOff}
           signOffPanel={signOffPanel}
+          // "Confirm target" asks first and then confirms the recommendation
+          // the panel would (owner 02.10.2026); another target goes through
+          // the panel.
+          confirmTarget={
+            canSignOff
+              ? {
+                  label: architectureOptionLabel(recommendation) ?? recommendation,
+                  onConfirm: () => lockArchitecture(recommendation, ''),
+                  chooseOther: true,
+                }
+              : undefined
+          }
           locked={project?.approvedByArchitect === true}
           onRegenerate={regenerate}
           regenerateDisabled={!designAvailable || stale.sourceChanged}
@@ -987,7 +1014,7 @@ ${responseText.substring(0, 4000)}`;
       </div>
 
       <StageFooter />
-    </div>
+    </StageFrame>
   );
 }
 

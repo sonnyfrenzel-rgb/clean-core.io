@@ -1,6 +1,6 @@
 import { tokenize } from './declaration-parser';
 import { createLiteralScanner, maskNonCode } from './statement-reader';
-import { databaseWriteIn, isInternalTableOperation } from './open-sql-discrimination';
+import { databaseWriteIn, isDatasetDeletion, isEntityManipulation, isInternalTableOperation } from './open-sql-discrimination';
 import { readConstantDeclarations } from './business-rules';
 
 /**
@@ -808,7 +808,10 @@ function readStatement(text: string, at: Anchor, sink: Sink, ctx: Context, depth
   // clause of an UPDATE or a DELETE, which ABAP SQL allows a subquery in too.
   for (const part of embeddedSelects(text, code)) readSelect(part, at, sink);
 
-  const write = databaseWriteIn(text.trim());
+  // EML is a write through the business object and DELETE DATASET removes a
+  // file: neither touches a table, so neither is a dependency on one called
+  // ENTITIES or DATASET (codex code-engine-05).
+  const write = isEntityManipulation(text) || isDatasetDeletion(text) ? null : databaseWriteIn(text.trim());
   if (write) sink.table(at, write.table, 'write', 'open-sql');
   readDynamicWrite(text, code, at, sink);
 

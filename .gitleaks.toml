@@ -41,3 +41,57 @@ regexes = [
   '''test-approval-secret-key-\d+''',
   '''test-mfa-pepper-[a-z0-9-]+''',
 ]
+
+# -- Rule-scoped exceptions for test fixtures ---------------------------------
+# Each block names ONE built-in rule, the exact file(s) it may be silenced in,
+# and the shape of the fixture line; condition = "AND" means path AND shape must
+# both match. A real key pasted anywhere else, or in these files in any other
+# shape, is still reported. This replaces per-commit fingerprints, which a
+# full-history scan outruns: every rewrite of a fixture is a new commit and a new
+# fingerprint. Verified 02.10.2026 with gitleaks 8.24.3 (the version
+# gitleaks-action pins); every matched value was checked against the real keys.
+
+[[rules]]
+id = "generic-api-key"
+[[rules.allowlists]]
+description = "Redaction fixtures: a JS assignment quoted inside a string literal is input text for the QA redactor, not a credential."
+condition = "AND"
+paths = ['''^tests/qa-review-guard\.spec\.ts$''']
+regexTarget = "line"
+regexes = ['''^\s*"(const [A-Z_]+|[A-Z_]+) = '[^'\s]+';",?\s*$''']
+[[rules.allowlists]]
+description = "BYOK fixtures: a fake key literal carrying an obvious placeholder marker (abcd, 1234, gold)."
+condition = "AND"
+paths = ['''^tests/byok-hardening\.spec\.ts$''']
+regexTarget = "line"
+regexes = ['''^\s*const (KEY|key) = '[^']*(abcd|1234|gold)[^']*';\s*$''']
+[[rules.allowlists]]
+description = "Wiring checks that list secret NAMES (upper-case identifiers only, never a value) and assert they reach the workflow."
+condition = "AND"
+paths = ['''^tests/no-fabricated-figures\.spec\.ts$''']
+regexTarget = "line"
+regexes = ['''^\s*for \(const name of \[\s*'[A-Z][A-Z0-9_]*'(\s*,\s*'[A-Z][A-Z0-9_]*')*\s*\]\) \{\s*$''']
+[[rules.allowlists]]
+description = "Reference corpus: a case's objectKey is an ABAP customer-namespace object name (Z, then upper case, digits, underscore)."
+condition = "AND"
+paths = ['''^tests/korpus/cases/[^/]+/expected\.json$''', '''^docs/korpus/referenzkorpus-v[0-9.]+\.md$''']
+regexTarget = "match"
+regexes = ['''objectKey["':\s]+Z[A-Z0-9_]+["']?$''']
+
+[[rules]]
+id = "jwt"
+[[rules.allowlists]]
+description = "Redaction fixtures: the jwt.io sample token (payload sub 1234567890) as redactor input."
+condition = "AND"
+paths = ['''^tests/qa-review-guard\.spec\.ts$''', '''^tests/hardening-v220-cf\.spec\.ts$''']
+regexTarget = "line"
+regexes = ['''^\s*const jwt = 'eyJ[A-Za-z0-9_.-]+';\s*$''', '''^\s*"const SESSION_TOKEN = 'eyJ[A-Za-z0-9_.-]+';",?\s*$''']
+
+[[rules]]
+id = "atlassian-api-token"
+[[rules.allowlists]]
+description = "Design guard: a list of React component names (FileList, FileUpload, Jira...), not a token."
+condition = "AND"
+paths = ['''^tests/helpers/design-rules\.ts$''']
+regexTarget = "line"
+regexes = ['''^\s*\['FileList', 'FileUpload', ('[A-Za-z]+',?\s*)+\]''']

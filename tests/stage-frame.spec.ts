@@ -11,7 +11,9 @@ import {
   workspaceBackHref,
   WORKSPACE_RETURN,
 } from '../lib/workspace-back-href';
-import { LAYERS, workspaceLayers } from '../lib/workspace-model';
+import { LAYERS, toolMark, workspaceLayers } from '../lib/workspace-model';
+import { buildDemoProject } from '../lib/demo-project';
+import type { PhaseState } from '../lib/workflow-steps';
 
 /**
  * The seven stages are tools of the workspace (ADR-008, ADR-050, mockup s8).
@@ -28,6 +30,7 @@ import { LAYERS, workspaceLayers } from '../lib/workspace-model';
  */
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
+const DEMO_RAIL = buildDemoProject().rail;
 const STAGES = ['analyze', 'design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'];
 
 test.describe('the way back names the view and the layer', () => {
@@ -121,10 +124,29 @@ test.describe('a stage as a tool, rendered', () => {
       );
       // One project, one reading: every stage shows the same marks.
       const reading = await tools.evaluateAll((els) =>
-        els.map((el) => `${el.getAttribute('data-workspace-tool')}:${el.getAttribute('data-phase-state')}:${el.getAttribute('data-phase-tone')}`),
+        els.map((el) =>
+          [
+            el.getAttribute('data-workspace-tool'),
+            el.getAttribute('data-phase-state'),
+            el.getAttribute('data-workspace-tool-mark-meaning'),
+            el.querySelectorAll('[data-workspace-tool-mark="check"]').length,
+            el.querySelectorAll('[data-workspace-tool-mark="dot"]').length,
+          ].join(':'),
+        ),
       );
       marks ??= reading;
       expect(reading, `${st}: the bar reads the project differently here`).toEqual(marks);
+      // Each mark is the tools-bar rule (ADR-060, owner 02.10.2026): a check
+      // where the tool was used, a dot where it is out of date, nothing else.
+      for (const r of reading) {
+        const [key, state, meaning, checks, dots] = r.split(':');
+        const want = toolMark({ state: state as PhaseState });
+        expect(`${key}:${meaning}:${checks}:${dots}`, `${st}: ${key}`).toBe(
+          `${key}:${want.meaning}:${want.kind === 'check' ? 1 : 0}:${want.kind === 'dot' ? 1 : 0}`,
+        );
+      }
+      // The legend stands beside "Tools" on every stage.
+      await expect(bar.locator('[data-tools-legend="bar"]'), `${st}: the legend`).toBeVisible();
     }
 
     // And a link to another tool goes there, with the way back intact.
@@ -169,6 +191,16 @@ test.describe('a stage as a tool, rendered', () => {
       await expect(bar.locator('a[data-workspace-tool]')).toHaveCount(7);
       await expect(bar.locator(`a[data-workspace-tool="${st}"]`)).toHaveAttribute('aria-current', 'page');
       await expect(page.locator('nav[aria-label="Workflow phases"]'), `demo ${st}: a second navigation`).toHaveCount(0);
+      // The same rule on the demo's own rail: a check where it has something on
+      // record, a dot where it is out of date, nothing else — and the legend.
+      await expect(bar.locator('[data-tools-legend="bar"]'), `demo ${st}: the legend`).toBeVisible();
+      for (const step of DEMO_RAIL) {
+        const link = bar.locator(`a[data-workspace-tool="${step.key}"]`);
+        const want = toolMark(step);
+        await expect(link.locator('[data-workspace-tool-mark="check"]'), `demo ${st}: ${step.key} check`).toHaveCount(want.kind === 'check' ? 1 : 0);
+        await expect(link.locator('[data-workspace-tool-mark="dot"]'), `demo ${st}: ${step.key} dot`).toHaveCount(want.kind === 'dot' ? 1 : 0);
+        await expect(link, `demo ${st}: ${step.key} claims proof`).not.toHaveAccessibleName(/prove|proof|verif/i);
+      }
       // The way back, above the tools, as on a project's stage (owner 02.10.2026).
       const back = page.locator('[data-stage-back]');
       await expect(back, `demo ${st}: the way back`).toHaveCount(1);
@@ -211,5 +243,101 @@ test.describe('a stage as a tool, rendered', () => {
     await back.click();
     await page.waitForURL(/\/demo\/workspace\?view=it/, { timeout: 60000 });
     await expect(page.locator('[data-demo-workspace="it"]')).toBeAttached({ timeout: 90000 });
+  });
+});
+
+/**
+ * One frame for every stage (owner 02.10.2026: "wenn ich von analyze zu design
+ * schalte ist der ganze bildschirm nach links gerückt, alle screens müssen je
+ * nach formfaktor sich gleich anfühlen"; ADR-063).
+ *
+ * Each stage used to pick its own container — Analyze `max-w-5xl mx-auto`,
+ * Transformation and Delivery `max-w-7xl mx-auto`, Design and Documentation the
+ * shell's wide frame, the rest the shell's narrow one — so the way back, the
+ * tools bar, the title and the content started at a different x on every tool,
+ * and switching tools moved the whole page sideways. Now every stage renders
+ * inside `StageFrame` (`[data-stage-frame]`) and the shell gives every stage the
+ * same width. Checked on the rendered page, signed in and in the demo, at the
+ * five form factors: the left edge of the frame, the way back, the tools bar
+ * and the title line, and the frame's width, are the same on all fourteen
+ * pages to the pixel. The title is measured by its line (the `h1` and the
+ * neutral icon some stages set before it), because the icon belongs to the
+ * title, not to its own column.
+ */
+test.describe('one frame for every stage, rendered', () => {
+  test.describe.configure({ mode: 'serial' });
+  const WIDTHS = [390, 768, 1024, 1440, 1920];
+
+  type Box = { left: number; width: number } | null;
+  type Measure = { frame: Box; header: Box; back: Box; bar: Box; title: Box };
+
+  async function measure(page: import('@playwright/test').Page): Promise<Measure> {
+    return page.evaluate(() => {
+      const box = (el: Element | null | undefined) => {
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return r.width === 0 && r.height === 0 ? null : { left: Math.round(r.left), width: Math.round(r.width) };
+      };
+      return {
+        frame: box(document.querySelector('[data-stage-frame]')),
+        header: box(document.querySelector('[data-stage-header]')),
+        back: box(document.querySelector('[data-stage-back]')),
+        bar: box(document.querySelector('[data-stage-toolbar]')),
+        title: box(document.querySelector('[data-stage-title]')?.parentElement),
+      };
+    });
+  }
+
+  test('every stage and every demo stage stands in the same frame at every width', async ({ page }) => {
+    test.setTimeout(900 * 1000);
+    const acct = await seedStageProject({ prefix: 'stageframe-x', admin: true, acceptTerms: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signInThroughForm(page, acct);
+
+    const pages = [
+      ...STAGES.map((st) => ({ name: st, url: `/project/${acct.projectId}/${st}?view=business&from=workspace-tools&layer=need`, demo: false })),
+      ...STAGES.map((st) => ({ name: `demo ${st}`, url: `/demo/${st}`, demo: true })),
+    ];
+    const seen: Record<number, Array<{ name: string; m: Measure }>> = {};
+    for (const p of pages) {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto(p.url, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector('[data-stage-title]', { timeout: 60000 });
+      if (p.demo) await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
+      else await expect(page.locator('[data-stage-back]'), `${p.name}: the way back`).toBeVisible({ timeout: 90000 });
+      // The page settled: the tools bar drawn and, in the product, the project read
+      // (the eyebrow names it) — a stage still loading has a header of its own.
+      await expect(page.locator('[data-stage-toolbar]'), `${p.name}: the tools bar`).toBeVisible({ timeout: 90000 });
+      if (!p.demo) await expect(page.locator('[data-stage-tool]'), `${p.name}: the project read`).toContainText('Tool ·', { timeout: 60000 });
+      for (const w of WIDTHS) {
+        await page.setViewportSize({ width: w, height: 900 });
+        // Let the layout follow the new width before reading it.
+        await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+        (seen[w] ??= []).push({ name: p.name, m: await measure(page) });
+      }
+    }
+
+    // Soft, so one run names every page that is out of line, not only the first.
+    const near = (a: number | undefined, b: number | undefined) => (a === undefined || b === undefined ? Infinity : Math.abs(a - b));
+    for (const w of WIDTHS) {
+      const rows = seen[w];
+      const first = rows[0];
+      for (const { name, m } of rows) {
+        const at = `${name} at ${w}px`;
+        // Across pages: the header block at the same x as on the first stage.
+        expect.soft(near(m.title?.left, first.m.title?.left), `${at}: title x vs ${first.name}`).toBeLessThanOrEqual(1);
+        expect.soft(near(m.bar?.left, first.m.bar?.left), `${at}: tools bar x vs ${first.name}`).toBeLessThanOrEqual(1);
+        if (m.back && first.m.back) expect.soft(near(m.back.left, first.m.back.left), `${at}: way back x vs ${first.name}`).toBeLessThanOrEqual(1);
+        // The content: one frame, the same x and the same width everywhere.
+        expect.soft(m.frame, `${at}: no [data-stage-frame]`).not.toBeNull();
+        expect.soft(near(m.frame?.left, first.m.frame?.left), `${at}: frame x vs ${first.name}`).toBeLessThanOrEqual(1);
+        expect.soft(near(m.frame?.width, first.m.frame?.width), `${at}: frame width vs ${first.name}`).toBeLessThanOrEqual(1);
+        // Inside one page: the header block starts where the content starts.
+        expect.soft(near(m.header?.left, m.frame?.left), `${at}: header vs frame`).toBeLessThanOrEqual(1);
+        expect.soft(near(m.title?.left, m.frame?.left), `${at}: title vs frame`).toBeLessThanOrEqual(1);
+        expect.soft(near(m.bar?.left, m.frame?.left), `${at}: tools bar vs frame`).toBeLessThanOrEqual(1);
+        if (m.back) expect.soft(near(m.back.left, m.frame?.left), `${at}: way back vs frame`).toBeLessThanOrEqual(1);
+      }
+    }
   });
 });

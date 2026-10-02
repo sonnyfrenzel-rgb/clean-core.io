@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { RotateCcw, ArrowRight } from 'lucide-react';
 import StageHeader from '@/components/StageHeader';
+import StageFrame from '@/components/StageFrame';
 import DemoTesting from '@/components/demo/DemoTesting';
 import DemoAnalyze from '@/components/demo/DemoAnalyze';
 import CcButton from '@/components/cc/Button';
-import CcCard from '@/components/cc/Card';
 import CcAnchor from '@/components/cc/Anchor';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcTable from '@/components/cc/Table';
@@ -20,6 +20,8 @@ import DemoDelivery from '@/components/delivery/DemoDelivery';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
 import { trackOfRoute } from '@/lib/transformation-view';
 import DemoDocumentation from './DemoDocumentation';
+import { FoldedListSection } from '@/components/documentation/FoldedList';
+import { couplingSummary, inventorySummary } from '@/lib/documentation-lists';
 import DemoDesign from './DemoDesign';
 import type { DemoDesignData } from '@/lib/demo-design';
 import {
@@ -141,7 +143,7 @@ export default function DemoWorkspace({
     // that clicks earlier is testing the wrong thing.
     // The width of a real stage: the shell's own column, no narrower one of
     // the demo's (the stages are compared side by side with a project's).
-    <div className="cc w-full pb-24" data-demo-ready={hydrated ? 'true' : 'false'}>
+    <StageFrame stage={stage} className="cc pb-24" data-demo-ready={hydrated ? 'true' : 'false'}>
       <DemoStrip onReset={reset} />
 
       {/* `stage` for the header's identity, `title` because the demo's title
@@ -183,7 +185,7 @@ export default function DemoWorkspace({
         )}
         {stage === 'delivery' && <Delivery demo={demo} state={state} patch={patch} />}
       </div>
-    </div>
+    </StageFrame>
   );
 }
 
@@ -291,7 +293,14 @@ function Documentation({ demo }: { demo: DemoProject }) {
           chapters below. The inventory and the coupled tables follow. */}
       <DemoDocumentation process={demo.documentation.process} />
 
-      <CcCard level={2} title="Object inventory" count={demo.documentation.inventory.length}>
+      {/* Owner 02.10.2026: the long lists start folded with their count and
+          one line computed from the same rows (`lib/documentation-lists.ts`). */}
+      <FoldedListSection
+        name="inventory"
+        title="Object inventory"
+        rows={demo.documentation.inventory.length}
+        summary={inventorySummary(demo.documentation.inventory)}
+      >
         <p className={lead}>
           {demo.documentation.inventory.length} objects parsed out of the source, each with the lines it occupies
           — the anchors every later statement hangs on.
@@ -323,9 +332,14 @@ function Documentation({ demo }: { demo: DemoProject }) {
             }))}
           />
         </div>
-      </CcCard>
+      </FoldedListSection>
 
-      <CcCard level={2} title="Tables this program is coupled to" count={demo.documentation.coupling.length}>
+      <FoldedListSection
+        name="coupling"
+        title="Tables this program is coupled to"
+        rows={demo.documentation.coupling.length}
+        summary={couplingSummary(demo.documentation.coupling)}
+      >
         <p className={lead}>{demo.documentation.coupling.length} tables, read or written directly.</p>
         <ul className="m-0 grid list-none grid-cols-1 gap-2 p-0 sm:grid-cols-2">
           {demo.documentation.coupling.map((t) => (
@@ -335,7 +349,7 @@ function Documentation({ demo }: { demo: DemoProject }) {
             </li>
           ))}
         </ul>
-      </CcCard>
+      </FoldedListSection>
 
       <ModelHalfNotice what="The business SOP and RACI layer on top of this handbook" />
     </>

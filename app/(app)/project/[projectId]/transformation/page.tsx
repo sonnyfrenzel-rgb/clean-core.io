@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
-import { Code2, ArrowRight, RefreshCw, FileCode2, Terminal, CheckCircle2, Folder, Lock, Unlock, Layers } from 'lucide-react';
+import { Code2, ArrowRight, RefreshCw, FileCode2, Terminal, CheckCircle2, Folder, Lock, Unlock, Layers, Download } from 'lucide-react';
 import clsx from 'clsx';
 import StageFooter from '@/components/StageFooter';
 import CodeHighlighter from '@/components/CodeHighlighter';
@@ -36,6 +36,7 @@ import { duplicatePaths } from './duplicate-paths';
 import { matchCdsView } from '@/lib/abap/cds-catalog';
 import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
 import StageHeader from '@/components/StageHeader';
+import StageFrame from '@/components/StageFrame';
 import CcLinkButton from '@/components/cc/LinkButton';
 import TransformationObjectPage from '@/components/transformation/TransformationObjectPage';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
@@ -45,6 +46,7 @@ import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
 // on the project document. See `lib/generation-direction.ts` for what it
 // replaced and why.
 import { fetchGenerationDecision, storeGeneration } from '@/lib/generation-contract-client';
+import { PROJECT_TOO_LARGE_CODE } from '@/lib/firestore-doc-size';
 import { CommandAnswerLostError } from '@/lib/project-command-client';
 import type { GenerationRefusal } from '@/lib/generation-direction';
 import StaleNotice from '@/components/StaleNotice';
@@ -121,6 +123,13 @@ export default function TransformationPage() {
   const [transformedCode, setTransformedCode] = useState('');
   const [transformationLog, setTransformationLog] = useState<string[]>([]);
   const [error, setError] = useState('');
+  /**
+   * Codex architecture-02 — a generated package the server refused because the
+   * project document would outgrow Firestore's 1 MiB. Nothing was stored, but
+   * the reader paid for the generation: the draft stays on screen, marked as
+   * unsaved, with a download, until the next generation or a reload.
+   */
+  const [unsavedDraft, setUnsavedDraft] = useState<string | null>(null);
   /**
    * Why nothing was generated, when the contract said so (roadmap 8.3). Its own
    * state rather than `error`: a blocked contract is not a failure of this
@@ -519,6 +528,17 @@ CMD ["node", "srv/service.js"]`
    * pane and the sign-off drawer are what this stage actually knows.
    */
 
+  /** The unsaved draft as the file list it is, for the reader to keep (architecture-02). */
+  const downloadUnsavedDraft = () => {
+    if (!unsavedDraft) return;
+    const url = URL.createObjectURL(new Blob([unsavedDraft], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transformation-draft-${String(projectId)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   /**
    * What this project's track is called wherever the stage names it (UX-037).
    *
@@ -536,6 +556,7 @@ CMD ["node", "srv/service.js"]`
     setLoading(true);
     setProgress(0);
     setError('');
+    setUnsavedDraft(null);
     
     try {
       // Roadmap 8.3. The direction is the contract's `route.chosen`, which is
@@ -791,6 +812,15 @@ CMD ["node", "srv/service.js"]`
           expectedContractFingerprint: generatedAgainst,
           generationToken,
         });
+        if (!answer.ok && answer.code === PROJECT_TOO_LARGE_CODE) {
+          // The one refusal where the package itself is fine: kept on screen
+          // as an unsaved draft rather than thrown away with the error. The
+          // server's sentence already says that nothing was saved.
+          setFiles(filesArray);
+          setSelectedFilePath(filesArray[0]?.path || '');
+          setUnsavedDraft(packaged);
+          throw new Error(answer.error);
+        }
         if (!answer.ok) {
           throw new Error(`${answer.error} Nothing was saved — the previous version is untouched.`);
         }
@@ -965,7 +995,7 @@ CMD ["node", "srv/service.js"]`
   const openSignOffs = findings.filter(f => f.requiresSignOff && !signedOffIds.has(`${f.construct}-${f.location?.line}`)).length;
 
   if (busy && !transformedCode) return (
-    <div>
+    <StageFrame stage="transformation">
       <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} projectName={project?.name}>
         {/* Before the project has loaded its track is unknown, and the
             default copy named the side-by-side track for an ABAP Cloud
@@ -1020,11 +1050,11 @@ CMD ["node", "srv/service.js"]`
           <CcSkeleton shape="text" label="transformed code" count={6} />
         </div>
       </section>
-    </div>
+    </StageFrame>
   );
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <StageFrame stage="transformation">
       {/* The quota used to be stated a third time here, as "Free
           Transformations: 4 / 5". The header carries it once. Proposal A
           (owner decision 01.10.2026): the title row carries the stage's two
@@ -1104,10 +1134,25 @@ CMD ["node", "srv/service.js"]`
         </div>
       )}
 
+      {unsavedDraft && (
+        <div className="mb-6" data-unsaved-draft>
+          <CcMessageStrip state="warning" headline="Unsaved draft — this package is not stored on the project.">
+            <span className="block">
+              The code below is the generation the project could not hold. It is gone once you leave or reload this page.
+            </span>
+            <span className="mt-2 block">
+              <CcButton icon={<Download size={16} aria-hidden="true" />} onClick={downloadUnsavedDraft}>
+                Download draft (JSON)
+              </CcButton>
+            </span>
+          </CcMessageStrip>
+        </div>
+      )}
+
       {/* The stage's answer, before the code (ADR-050): the facets, the status
           line and the sections of proposal A, every figure counted from the
           engine's findings or the stored package. */}
-      <div data-transformation-answer={files.length > 0 ? 'generated' : 'none'}>
+      <div data-transformation-answer={unsavedDraft ? 'unsaved-draft' : files.length > 0 ? 'generated' : 'none'}>
         <TransformationObjectPage
           findings={evidence?.findings ?? []}
           coverage={evidence?.coverage ?? null}
@@ -1448,6 +1493,6 @@ CMD ["node", "srv/service.js"]`
       </CcDialog>
 
       <StageFooter />
-    </div>
+    </StageFrame>
   );
 }

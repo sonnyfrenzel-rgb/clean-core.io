@@ -112,6 +112,16 @@ Two things about the second file are easy to get wrong:
 
 The `catalog-residual` case is not a guess: "SAP internal objects, not classified or intended for customer use" is what the clean core level concept defines level C to be.
 
+**The use moves the level in three places** (`gradeFromSapStatesForUse`, published as the access table on `/method/levels`, held by `tests/level-rule-page-guard.spec.ts`). The table above answers for the *name*; the analysis also knows how the code touches a data object:
+
+| Object and use | Level |
+|---|---|
+| `notToBeReleased` (classic file silent), read or referenced as a type | C |
+| SAP object, written directly (INSERT / UPDATE / MODIFY / DELETE, `FROM TABLE`, a resolved dynamic name, ADBC) | D, whatever the object's own level (ADR-062, codex code-engine-05) |
+| customer Z/Y table, read or written | B (`own-object`) |
+
+Where the use moves the letter, `objectGrade` keeps the object's own level beside it ("written directly, which makes it D; the object on its own is C"). A `write` reaches the rule only from a direct database statement (`readTableDependencies`): EML (`MODIFY ENTITIES`) and `DELETE DATASET` are not table writes, a BAPI or class is a call graded by its name, and a possible-only dynamic target (R26) is graded by its name (`couplingUse`). The rule fingerprint (`level-rule-version.ts`) is a hash over every input the rule distinguishes, so this change moved it by itself; the demo release record carries it.
+
 Client surfaces receive resolved grades, never the maps:
 
 - Server components (`/catalog/[object]`, `/sap-clean-core-object-classification`) call `gradeSapObject()` / `getPublishedGradeDistribution()` directly.
@@ -438,6 +448,16 @@ tier's 5 transformations) are configuration and are fine.
 2. **deploy-runner** (only when `RUNNER_DEPLOY_ENABLED` is `true`) — one runner image, deployed as `clean-core-runner[-dev]` and `clean-core-runner-live[-dev]`: `--ingress=internal`, service account `clean-core-runner` without roles, network `runner-net` (subnets `runner-mock` / `runner-live`, no NAT), no secrets (SECURITY.md §7).
 3. **deploy** — OIDC Workload Identity to GCP `cleancore-491216`, `gcloud run deploy` from source (`europe-west1`, 2 GiB / 2 CPU, service account `clean-core-run`). With `APP_VPC_SUBNET` set the app is attached to its own network (`APP_VPC_NETWORK`, today `app-net` / `app-run-egress`) with `--vpc-egress=private-ranges-only` so it can reach the internal runners; `runner-net` is refused, and without the subnet the deploy passes `--clear-network`. Guards assert the emulator flag never leaks and required secrets exist.
 4. **Newest commit wins** — each push runs the pipeline on its own, so a run whose validate job is slower could reach its deploy after a newer commit shipped. As the last step before every Cloud Run deploy (both runners and the app) the job reads the branch head from the remote and deploys only if it is still its own commit; a superseded run skips the deploy with a notice and stays green, an unreadable head stops the job. There is deliberately no `concurrency:` group: GitHub keeps one pending run per group and cancels it when a later one queues — by queue time, not by commit — so an older run could cancel a newer one's waiting deploy. Rollback is `gcloud run services update-traffic` to an earlier revision, not a re-run of an old workflow run (the check refuses that). `tests/deploy-order-guard.spec.ts` pins both.
+5. **smoke-production** (main only, and only when this run deployed) — `node scripts/qa/smoke.mjs --target production` checks the revision just put live with the dev smoke's checks (`scripts/qa/lib/smoke.mjs`): `/api/health` reports the pushed commit and its deep probe is ok, landing, sign-in (`/?auth=signin`) and the public pages answer with their security headers and build assets, and `/.well-known/clean-core-io-signing.json` holds one active Ed25519 key. GETs only — no sign-in, write, mail or model call. Not checked: the runner self-test (admin with step-up only) and the rendered sign-in dialog (no browser). The result is sealed (`QA_REVIEW_KEY`, artifact `prod-smoke-<sha>-<attempt>`); a failure turns the run red and the summary names the rollback below. It never rolls back itself and holds no Google credential. Details: `docs/QA-REVIEW-LOOP.md` §11.
+
+**Rollback (production).** A decision, never automatic. Read the sealed smoke result first (`gh run download <run-id> -n prod-smoke-<sha>-<attempt> -D .qa-review/prod`, then `node scripts/qa/smoke.mjs --open .qa-review/prod/prod-smoke.enc.json`), then:
+
+```bash
+gcloud run revisions list --service=clean-core --region=europe-west1 --project=cleancore-491216 --limit=5
+gcloud run services update-traffic clean-core --to-revisions=<previous>=100 --region=europe-west1 --project=cleancore-491216
+```
+
+After the fix ships, confirm traffic follows the new revision (`gcloud run services describe clean-core …`) and lift the pin with `--to-latest` if it does not. For dev, the same with `clean-core-dev`.
 
 | Branch | Service | URL |
 |--------|---------|-----|

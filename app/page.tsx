@@ -217,6 +217,7 @@ export default function Home() {
       label: CLEAN_CORE_LEVEL[level].label,
       detail: example ? (
         <>
+          <p className="ex-label">Example</p>
           <div className="obj">
             <CcCleanCoreLevel value={level} />
             {withPage.has(example.name) ? (
@@ -740,7 +741,7 @@ export default function Home() {
               </div>
               <div className="pcard">
                 <h3>The four levels</h3>
-                <p className="sub2">Select a level to see what it means and a real SAP object on it.</p>
+                <p className="sub2">Select a level to see what it means and an example: a real SAP object on that level.</p>
                 <div data-landing-ladder="">
                   <LevelLadder items={ladder} />
                 </div>

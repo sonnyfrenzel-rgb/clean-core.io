@@ -99,6 +99,7 @@ export default function DemoDocumentation({
             onActiveChange={setActive}
             focusToken={focusToken}
             onKeyDown={onKeyDown}
+            controls
           />
         }
       />

@@ -36,6 +36,13 @@ export interface CcDisclosureProps {
   title: string;
   /** How many items are inside — "(7)". */
   count?: number;
+  /**
+   * One line under the trigger that stays visible while the block is closed and
+   * answers the main question without opening it ("3 written, 23 read · 3 high
+   * risk"). Computed by the caller from the same rows the block holds; the
+   * trigger names it as its description.
+   */
+  summary?: React.ReactNode;
   /** Open on first render (uncontrolled). */
   defaultOpen?: boolean;
   /** Controlled open state; pass with `onOpenChange`. */
@@ -55,6 +62,7 @@ const HEIGHT: Record<CcDensity, string> = {
 export default function CcDisclosure({
   title,
   count,
+  summary,
   defaultOpen = false,
   open: openProp,
   onOpenChange,
@@ -66,6 +74,7 @@ export default function CcDisclosure({
   const buttonId = `${id}-button`;
   const regionId = `${id}-region`;
   const titleId = `${id}-title`;
+  const summaryId = `${id}-summary`;
   const [openState, setOpenState] = useState(defaultOpen);
   const open = openProp ?? openState;
 
@@ -81,6 +90,7 @@ export default function CcDisclosure({
       type="button"
       aria-expanded={open}
       aria-controls={regionId}
+      aria-describedby={summary ? summaryId : undefined}
       data-cc-disclosure-trigger=""
       onClick={toggle}
       className={cn(
@@ -112,6 +122,11 @@ export default function CcDisclosure({
   return (
     <div data-cc-disclosure={open ? 'open' : 'closed'} className="flex min-w-0 flex-col">
       {Heading ? <Heading className="m-0 text-[13px] font-semibold">{trigger}</Heading> : trigger}
+      {summary ? (
+        <p id={summaryId} data-cc-disclosure-summary="" className="m-0 pl-5 cc-text-meta font-medium text-cc-ink-muted">
+          {summary}
+        </p>
+      ) : null}
       <div
         id={regionId}
         role="region"

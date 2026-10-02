@@ -260,8 +260,58 @@ test.describe('the level of a use: read, write, type reference, own table', () =
       gradeFromSapStatesForUse({ releaseState: 'notToBeReleased', classificationState: 'classicAPI', isSapObject: true }, 'read').grade,
     ).toBe('D');
     expect(gradeFromSapStatesForUse({ classificationState: 'noAPI', isSapObject: true }, 'read').grade).toBe('D');
-    expect(gradeFromSapStatesForUse({ releaseState: 'released', isSapObject: true }, 'write').grade).toBe('A');
+    // Read, a released object keeps its A. Written directly it no longer does —
+    // that expectation stood here as `write → A` until codex code-engine-05 and
+    // is the rule change, not a regression; see the next test.
+    expect(gradeFromSapStatesForUse({ releaseState: 'released', isSapObject: true }, 'read').grade).toBe('A');
     expect(gradeFromSapStatesForUse({ isSapObject: true }, 'read')).toMatchObject({ grade: 'C', provenance: 'catalog-residual' });
+  });
+
+  test('an SAP object written directly is D, and its own grade stays beside it (codex code-engine-05)', () => {
+    // A direct INSERT / UPDATE / MODIFY / DELETE on SAP's rows bypasses the
+    // application that owns them. The object's grade answers a different
+    // question — may it be used — and used to be the whole answer: USR02
+    // written was C (listed nowhere), a released object written was A, while
+    // the evidence model called the same statement a Critical direct write.
+    const cases: { states: Parameters<typeof gradeFromSapStatesForUse>[0]; own: string; provenance: string }[] = [
+      { states: { isSapObject: true }, own: 'C', provenance: 'catalog-residual' },
+      { states: { releaseState: 'released', isSapObject: true }, own: 'A', provenance: 'catalog' },
+      { states: { classificationState: 'classicAPI', isSapObject: true }, own: 'B', provenance: 'catalog' },
+      { states: { releaseState: 'deprecated', hasSuccessor: true, isSapObject: true }, own: 'C', provenance: 'catalog' },
+    ];
+    for (const c of cases) {
+      expect(gradeFromSapStates(c.states).grade).toBe(c.own);
+      expect(gradeFromSapStatesForUse(c.states, 'write'), JSON.stringify(c.states)).toMatchObject({
+        grade: 'D',
+        use: 'write',
+        objectGrade: c.own,
+        provenance: c.provenance,
+      });
+      // Nothing else moves: the read and the type reference keep the object's grade.
+      expect(gradeFromSapStatesForUse(c.states, 'read').grade).toBe(c.own);
+      expect(gradeFromSapStatesForUse(c.states, 'reference').grade).toBe(c.own);
+      expect(gradeFromSapStatesForUse(c.states, null).grade).toBe(c.own);
+    }
+    // Already D on its own: D, with no second letter to show.
+    const kna1 = { releaseState: 'notToBeReleased', hasSuccessor: true, isSapObject: true };
+    expect(gradeFromSapStatesForUse(kna1, 'write')).toMatchObject({ grade: 'D' });
+    expect(gradeFromSapStatesForUse(kna1, 'write').objectGrade).toBeUndefined();
+    // Not SAP's: the customer's own table keeps B, and a namespaced name nobody
+    // lists is not assumed to be SAP's and is not graded D.
+    expect(gradeFromSapStatesForUse({ isSapObject: false, isCustomerObject: true }, 'write')).toMatchObject({ grade: 'B', provenance: 'own-object' });
+    expect(gradeFromSapStatesForUse({ isSapObject: false, isCustomerObject: false }, 'write').grade).toBe('Unknown');
+  });
+
+  test('real SAP objects written directly, against the synced artifacts', () => {
+    // USR02 is in neither file: residual C to read, D to write directly.
+    expect(gradeSapObjectUse('USR02', 'read')).toMatchObject({ grade: 'C', provenance: 'catalog-residual' });
+    expect(gradeSapObjectUse('USR02', 'write')).toMatchObject({ grade: 'D', provenance: 'catalog-residual', objectGrade: 'C' });
+    // I_PRODUCT is released: A to read, D written directly — released for use, not for writing its rows.
+    expect(gradeSapObjectUse('I_PRODUCT', 'read')).toMatchObject({ grade: 'A', state: 'released' });
+    expect(gradeSapObjectUse('I_PRODUCT', 'write')).toMatchObject({ grade: 'D', state: 'released', objectGrade: 'A' });
+    // A BAPI is called, not written: graded by name, and the write rule never reaches it.
+    expect(gradeSapObjectUse('BAPI_SALESORDER_CHANGE', null)).toMatchObject({ grade: 'B', state: 'classicAPI' });
+    expect(gradeSapObjectUse('ZCC_DECISION', 'write')).toMatchObject({ grade: 'B', provenance: 'own-object' });
   });
 
   test("the customer's own table is B when the code reads or writes it, and nothing else is", () => {
@@ -296,6 +346,10 @@ test.describe('the level of a use: read, write, type reference, own table', () =
     // A released view, a class in the contested overlap, and a class SAP will not
     // release: one answer each, because reading and writing do not apply or do not matter.
     expect(gradeSapObjectUses('I_CUSTOMER')).toBeNull();
+    // Nor a released view whose direct write is D since code-engine-05: that D
+    // is the general rule on /method/levels, not a fact about the object, and
+    // ABAP SQL cannot write a CDS view at all.
+    expect(gradeSapObjectUses('I_PRODUCT')).toBeNull();
     expect(gradeSapObjectUses('CL_BCS')).toBeNull();
     expect(gradeSapObjectUses('CL_HTTP_CLIENT')).toBeNull();
   });

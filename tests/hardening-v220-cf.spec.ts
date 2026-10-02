@@ -496,6 +496,27 @@ test.describe('the secret-scan exception list', () => {
     // Not vacuous: the file does hold fingerprints.
     expect(lines.filter((l) => /^[0-9a-f]{40}:/.test(l)).length).toBeGreaterThan(0);
   });
+
+  // A rule-scoped exception is safe only while it needs both halves: one exact
+  // file AND the shape of the fixture line. A block without `condition = "AND"`
+  // would silence the rule for the whole file (or for that shape everywhere).
+  test('every rule-scoped exception in .gitleaks.toml is bound to exact files and a shape', () => {
+    const toml = read('.gitleaks.toml');
+    const blocks = toml.split(/^\[\[rules\.allowlists\]\]\s*$/m).slice(1).map((b) => b.split(/^\[/m)[0]);
+    expect(blocks.length, 'no rule-scoped exceptions found - this guard would be vacuous').toBeGreaterThan(0);
+    for (const block of blocks) {
+      const name = block.match(/description = "([^"]{0,60})/)?.[1] ?? block.slice(0, 60);
+      expect(block, `${name}: not AND-bound`).toMatch(/^condition = "AND"$/m);
+      expect(block, `${name}: no shape`).toMatch(/^regexes = \[/m);
+      const paths = block.match(/^paths = \[(.*)\]$/m)?.[1];
+      expect(paths, `${name}: no path`).toBeTruthy();
+      for (const p of (paths ?? '').match(/'''([^']+)'''/g) ?? []) {
+        expect(p, `${name}: path ${p} is not anchored at both ends`).toMatch(/^'''\^.*\$'''$/);
+      }
+    }
+    // The leaked-and-deleted key's transcript is excepted by fingerprint only.
+    expect(toml).not.toContain('.antigravity');
+  });
 });
 
 // QA eb6d5e633dcb, f11deb425925: a read budget follows the account, not the address it

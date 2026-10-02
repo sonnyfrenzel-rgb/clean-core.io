@@ -13,6 +13,7 @@ import {
   DECISION_BINDINGS,
   SELF_DECLARATION,
   decisionCoverage,
+  noContractBasis,
   type ConditionStatus,
   type DecisionBindingKey,
   type DecisionCondition,
@@ -119,7 +120,15 @@ export function bindingShown(key: DecisionBindingKey, revision: string): string 
     return need ? `revision ${need[1]}` : revision;
   }
   if (key === 'contract') {
-    const c = /^(blocked:)?(qualified:)?([^/]+)\/([a-z-]+?)(\+deviation)?\+[0-9a-f]+$/.exec(revision);
+    // An option that generates nothing binds no contract; it rests on the sign-off (G4-F1).
+    const basis = noContractBasis(revision);
+    if (basis) {
+      const when = basis.signOffAt ? `the sign-off of ${basis.signOffAt.slice(0, 10)}` : 'a sign-off whose time cannot be read';
+      return basis.current
+        ? `none required — nothing is generated; rests on the analysis run and ${when}`
+        : `none required — nothing is generated; ${when} is not current`;
+    }
+    const c =/^(blocked:)?(qualified:)?([^/]+)\/([a-z-]+?)(\+deviation)?\+[0-9a-f]+$/.exec(revision);
     if (!c) return revision;
     const [, blocked, qualified, id, route, deviation] = c;
     const routeLabel = alternativeLabelForDisplay(route) ?? route.replace(/-/g, ' ');

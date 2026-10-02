@@ -48,6 +48,7 @@ const TestingBarChart = nextDynamic(() => import('@/components/TestingCharts').t
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { saveAs } from '@/lib/fileSaver';
 import StageHeader from '@/components/StageHeader';
+import StageFrame from '@/components/StageFrame';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
@@ -1031,21 +1032,23 @@ export default function TestingSandboxPage() {
     );
   const STEP = 'bg-cc-ink text-cc-on-dark cc-text-meta w-6 h-6 rounded-cc-row flex items-center justify-center shrink-0';
 
-  if (loading) return <div className="p-8 cc-text-body text-cc-ink-muted">Loading...</div>;
+  if (loading) return <StageFrame stage="testing" className="cc-text-body text-cc-ink-muted">Loading...</StageFrame>;
   if (loadError) return (
-    <div className="p-8 max-w-xl">
-      <CcMessageStrip
-        state="error"
-        headline="This stage could not be opened"
-        actions={<CcButton onClick={() => window.location.reload()}>Try again</CcButton>}
-      >
-        {loadError}
-      </CcMessageStrip>
-    </div>
+    <StageFrame stage="testing">
+      <div className="max-w-xl">
+        <CcMessageStrip
+          state="error"
+          headline="This stage could not be opened"
+          actions={<CcButton onClick={() => window.location.reload()}>Try again</CcButton>}
+        >
+          {loadError}
+        </CcMessageStrip>
+      </div>
+    </StageFrame>
   );
 
   return (
-    <div className="min-h-screen">
+    <StageFrame stage="testing" className="min-h-screen">
       <StaleNotice
         title={`Built for ${previousBasis(project)}`}
         reasons={[
@@ -2617,6 +2620,6 @@ export default function TestingSandboxPage() {
       </CcMessageBox>
 
       <StageFooter />
-    </div>
+    </StageFrame>
   );
 }

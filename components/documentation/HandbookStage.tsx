@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -19,6 +19,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcTabs from '@/components/cc/Tabs';
 import { CcTag } from '@/components/cc/Tag';
 import ProcessCodeCard from '@/components/process-map/ProcessCodeCard';
+import { MAP_REVEAL_EVENT } from '@/components/process-map/bpmn-view';
 import type { ProcessMapElement, ProcessMapModel } from '@/lib/process-map';
 import type {
   HandbookAnchor,
@@ -27,6 +28,8 @@ import type {
   ProcessHandbook,
 } from '@/lib/process-handbook';
 import { cn } from '@/lib/utils';
+import { inputsSummary, outputsSummary } from '@/lib/documentation-lists';
+import FoldedList from './FoldedList';
 import './handbook.css';
 
 /**
@@ -150,8 +153,25 @@ export default function HandbookStage({
 
   const counts = handbook?.counts;
 
+  /**
+   * A step chosen on the map in full screen closes full screen (`BpmnCanvas`)
+   * and the chapter it belongs to is brought on screen — beside the map from
+   * L, under it below.
+   */
+  const stageRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const reveal = () => {
+      stage.querySelector<HTMLElement>('[data-handbook-panel]')?.scrollIntoView({ block: 'nearest' });
+    };
+    stage.addEventListener(MAP_REVEAL_EVENT, reveal);
+    return () => stage.removeEventListener(MAP_REVEAL_EVENT, reveal);
+  }, []);
+
   return (
     <section
+      ref={stageRef}
       data-handbook-stage=""
       aria-label="Process map and handbook"
       className={cn(
@@ -247,10 +267,14 @@ export function InputsOutputs({ handbook }: { handbook: ProcessHandbook }) {
   return (
     <div data-handbook-io="" className="mt-4 grid grid-cols-1 gap-4 border-t border-cc-line pt-4 md:grid-cols-2">
       <div className="min-w-0">
-        <p className="m-0 mb-1 cc-text-label text-cc-ink-muted">In · selection screen</p>
         {handbook.inputs.length === 0 ? (
-          <p className="m-0 cc-text-cell text-cc-ink-muted">The program declares no selection screen.</p>
+          <>
+            <p className="m-0 mb-1 cc-text-label text-cc-ink-muted">In · selection screen</p>
+            <p className="m-0 cc-text-cell text-cc-ink-muted">The program declares no selection screen.</p>
+          </>
         ) : (
+          // Owner 02.10.2026: more than five rows start folded (`lib/documentation-lists.ts`).
+          <FoldedList name="inputs" title="In · selection screen" rows={handbook.inputs.length} summary={inputsSummary(handbook.inputs)}>
           <ul className="m-0 list-none p-0">
             {handbook.inputs.map((input) => (
               <li key={input.name} className="flex flex-wrap items-center gap-2 border-b border-dashed border-cc-line py-1 cc-text-cell text-cc-ink">
@@ -261,13 +285,17 @@ export function InputsOutputs({ handbook }: { handbook: ProcessHandbook }) {
               </li>
             ))}
           </ul>
+          </FoldedList>
         )}
       </div>
       <div className="min-w-0">
-        <p className="m-0 mb-1 cc-text-label text-cc-ink-muted">Out · what changes</p>
         {outs.length === 0 ? (
-          <p className="m-0 cc-text-cell text-cc-ink-muted">The program writes no table and calls nothing by name.</p>
+          <>
+            <p className="m-0 mb-1 cc-text-label text-cc-ink-muted">Out · what changes</p>
+            <p className="m-0 cc-text-cell text-cc-ink-muted">The program writes no table and calls nothing by name.</p>
+          </>
         ) : (
+          <FoldedList name="outputs" title="Out · what changes" rows={outs.length} summary={outputsSummary(handbook.writes, handbook.calls)}>
           <ul className="m-0 list-none p-0">
             {outs.map(({ o, write }) => (
               <li
@@ -286,6 +314,7 @@ export function InputsOutputs({ handbook }: { handbook: ProcessHandbook }) {
               </li>
             ))}
           </ul>
+          </FoldedList>
         )}
       </div>
     </div>

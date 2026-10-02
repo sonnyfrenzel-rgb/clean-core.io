@@ -807,6 +807,9 @@ export default function ProcessMap({
               onKeyDown={handleKeyDown}
               lit={lit}
               excluded={variant.excluded}
+              /* Documentation (owner 02.10.2026): the whole process on open,
+                 zoom, fit and full screen — the editor's controls. */
+              controls={stage}
             />
           ) : (
             <ProcessStepList

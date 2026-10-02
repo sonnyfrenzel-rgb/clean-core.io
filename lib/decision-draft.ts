@@ -31,11 +31,14 @@
  *     one.
  *   - **need** — the newest confirmed need revision (roadmap 3.5), counted
  *     against the subjects of the reconstructed process by the route.
+ *   - **contract** — the architecture contract of the run; for an option that
+ *     generates nothing (Retire) there is none, and the binding names the
+ *     sign-off the decision rests on instead (G4-F1, `noContractBasis()`).
  */
 
 import type { ArchitectureContract } from './architecture-contract';
 import type { OptionKind } from './cost-assumptions';
-import { buildProjectDecision } from './project-decision-build';
+import { buildProjectDecision, type SignOffBasis } from './project-decision-build';
 import { FINGERPRINTED_FORMER_SHORT as FORMER_SHORT } from './sap-naming';
 import {
   normaliseProjectDecision,
@@ -63,6 +66,12 @@ export interface DecisionDraftFacts {
   contract: ArchitectureContract | null;
   /** `targetArchitecture` — only when `approvedByArchitect` is true. */
   signedOffArchitecture: string | null;
+  /**
+   * The sign-off itself — who, when, why, and whether it is still current
+   * (`lib/decision-facts.ts`). An option that generates nothing has no
+   * contract and rests on this instead (G4-F1). `null` when nothing is signed off.
+   */
+  signOff: SignOffBasis | null;
   need: { revision: number | null; confirmedDrops: number; undecided: number | null };
   /** An audit pack has been exported for this project (roadmap 8.5). */
   handedOver: boolean;
@@ -136,6 +145,7 @@ function draftAt(facts: DecisionDraftFacts, revision: number, draftedAt: string)
     chosenOptionKind: option ? option.kind : null,
     need: facts.need,
     handedOver: facts.handedOver,
+    signOff: facts.signOff,
     timeline: {
       runSignedAt: facts.runSignedAt,
       draftedAt,

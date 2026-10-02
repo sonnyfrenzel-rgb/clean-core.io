@@ -66,6 +66,7 @@ function rowOf(
     lineEnd: typeof finding.lineEnd === 'number' ? finding.lineEnd : null,
     routine,
     level: graded ? graded.grade : null,
+    objectLevel: graded?.objectGrade ?? null,
     releaseView: graded?.cloudView ? CLOUD_VIEW_META[graded.cloudView].label : null,
     classificationView: graded?.classicView ? CLASSIC_VIEW_META[graded.classicView].label : null,
     successor: finding.sapReplacement?.objectName ?? null,

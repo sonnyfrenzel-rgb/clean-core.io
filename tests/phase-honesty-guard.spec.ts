@@ -219,7 +219,7 @@ test.describe('what green is allowed to mean', () => {
 });
 
 // ── The two surfaces, measured on the screen ──────────────────────────────────
-test.describe('the stepper and the rail say the same thing about the same phase', () => {
+test.describe('the stage bar and the workspace bar say the same thing about the same phase', () => {
   const EMAIL = `honesty-${Date.now()}@cleancore-test.io`;
   const PASSWORD = 'PhaseHonesty123!';
   const PROJECT_ID = `honesty-${Date.now()}`;
@@ -302,7 +302,7 @@ test.describe('the stepper and the rail say the same thing about the same phase'
     // gone; the phase marks every account reads are the tools bar's — the one
     // under every stage header and the one in the workspace. Those are the two
     // surfaces compared here, the way the stepper and the rail were before.
-    type Mark = { colour: string; tone: string | null; tick: boolean };
+    type Mark = { colour: string; tone: string | null; tick: boolean; name?: string };
     const seen: Record<string, { stage: Mark; workspace: Mark }[]> = {};
 
     const killTransitions = () =>
@@ -322,12 +322,14 @@ test.describe('the stepper and the rail say the same thing about the same phase'
           return {
             key: el.getAttribute('data-workspace-tool') || '',
             colour,
-            tone: el.getAttribute('data-phase-tone'),
+            // The bar marks use, not proof (ADR-060 amended): its meaning, not a tone.
+            tone: el.getAttribute('data-workspace-tool-mark-meaning'),
+            name: (el.textContent || '').trim(),
             tick: kind === 'check',
           };
         }),
       );
-      return Object.fromEntries(rows.map((r) => [r.key, { colour: r.colour, tone: r.tone, tick: r.tick }]));
+      return Object.fromEntries(rows.map((r) => [r.key, { colour: r.colour, tone: r.tone, tick: r.tick, name: r.name }]));
     };
 
     // The workspace's own bar, once: the reference every stage page is held to.
@@ -379,27 +381,26 @@ test.describe('the stepper and the rail say the same thing about the same phase'
     }
     expect(moved, `colour follows the reader instead of the evidence:\n${moved.join('\n')}`).toEqual([]);
 
-    // 3. Green means proven. Verified work and unverified work are not the same
-    //    colour, and a `done` phase nothing checked carries the same tone as a
-    //    `partial` one — because that is what it is.
+    // 3. The bar says "used", never "proven" (ADR-060 amended 02.10.2026):
+    //    a signed run and a generated draft carry the same mark there, in one
+    //    colour, and nothing on either bar claims proof. Proof strength is the
+    //    status line's and the chips' to say — checked above, from the contract.
     const first = (key: string) => seen[key][0].stage;
-    for (const key of PROVEN) expect(first(key).tone, `${key} should be proven`).toBe('proven');
-    for (const key of UNPROVEN) expect(first(key).tone, `${key} should not be proven`).toBe('unproven');
-
-    const tickColour = (keys: string[]) => [...new Set(keys.filter((k) => first(k).tick).map((k) => first(k).colour))];
-    expect(tickColour(PROVEN), 'the proven ticks are not one colour').toHaveLength(1);
-    expect(tickColour(UNPROVEN), 'the unproven ticks are not one colour').toHaveLength(1);
-    expect(
-      first('transformation').colour,
-      `generated code is painted like a signed run: ${first('transformation').colour}`,
-    ).not.toBe(first('analyze').colour);
-    // Economics is `partial`, Transformation is `done` — and neither was checked.
-    expect(first('transformation').tone).toBe(first('tco').tone);
-
-    // 4. Done is done in both: the tick is on exactly the phases the contract calls done.
     for (const key of [...PROVEN, ...UNPROVEN]) {
-      expect(first(key).tick, `${key}: stage bar tick`).toBe(key !== 'tco');
-      expect(seen[key][0].workspace.tick, `${key}: workspace bar tick`).toBe(key !== 'tco');
+      expect(first(key).tone, `${key}: the bar should mark it used`).toBe('used');
+      for (const row of seen[key]) {
+        expect(`${row.stage.name} ${row.workspace.name}`, `${key}: a bar claims proof`).not.toMatch(/prove|proof|verif/i);
+      }
+    }
+    expect(
+      [...new Set([...PROVEN, ...UNPROVEN].map((k) => first(k).colour))],
+      'a used tool is painted differently by what stands behind it',
+    ).toHaveLength(1);
+
+    // 4. Something on record is a check in both, `partial` included (Economics).
+    for (const key of [...PROVEN, ...UNPROVEN]) {
+      expect(first(key).tick, `${key}: stage bar tick`).toBe(true);
+      expect(seen[key][0].workspace.tick, `${key}: workspace bar tick`).toBe(true);
     }
   });
 });

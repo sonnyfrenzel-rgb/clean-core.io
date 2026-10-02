@@ -496,6 +496,16 @@ const DATA_OBJECT_TYPES = new Set(['TABL', 'VIEW', 'DDLS']);
  * the reader reads or writes. Where that decides the level it shows both rather
  * than the stricter one alone; everywhere else there is one answer and this
  * returns nothing.
+ *
+ * Since codex code-engine-05 every SAP object written directly is D, so the
+ * write answer alone no longer tells the page anything about *this* object:
+ * it is the general row on `/method/levels`. Printed here it would sit on
+ * thousands of released objects that cannot be written at all — a CDS view
+ * (ABAP SQL cannot write one) or a structure, which the release file lists as
+ * TABL just like a table. So the page shows two answers only where *reading*
+ * moves the level away from the name — the notToBeReleased read — exactly the
+ * objects it showed them for before; the analysis, which sees the statement,
+ * is where the direct write is graded.
  */
 export function gradeSapObjectUses(objectName: string): { read: GradedObject; write: GradedObject } | null {
   const key = (objectName || '').toUpperCase().trim();
@@ -503,6 +513,7 @@ export function gradeSapObjectUses(objectName: string): { read: GradedObject; wr
   if (!tadir || !DATA_OBJECT_TYPES.has(tadir)) return null;
   const read = gradeSapObjectUse(key, 'read');
   const write = gradeSapObjectUse(key, 'write');
+  if (read.grade === gradeSapObject(key).grade) return null;
   return read.grade === write.grade ? null : { read, write };
 }
 

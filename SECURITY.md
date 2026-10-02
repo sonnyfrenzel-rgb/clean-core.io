@@ -239,6 +239,7 @@ App credential proxy (GET|HEAD /api/s4-proxy/{capability}/sap/…)
 - **No credential ever reaches a runner.** A live run carries a capability; the credential proxy adds the credentials per request, for one host, one run, ten minutes at most, read-only methods.
 - **Node-level layers, kept as defense in depth.** Bundler with one resolver (imports must stay inside the run directory, bare packages become a stub), Permission Model (file system scoped to the run directory; no child processes, workers or addons), `--no-experimental-sqlite`, the module guard (`lib/sandbox-module-guard.ts`) and the network guard (`lib/test-sandbox/net-guard.ts`: closed on mock runs; on live runs exactly one loopback port, DNS closed on both). None of these is claimed as a boundary.
 - **No shell execution, minimal environment, output cap, 15 s timeout, 256 MB child heap.**
+- **A recorded pass is what the owner's suite reported.** The project owner writes the test suite, so a suite can print a passing line as easily as it can contain an empty test that passes. The receipt binds the suite's digest, so either is visible in the suite it names; it records "this server ran this suite and saw these verdicts", never that the code is correct, and a real failure is not hidden by a forged pass (duplicate ids resolve to the worse verdict). Only the owner can start a run (Codex code-runner-01, reviewed 02.10.2026).
 
 ### Requirements
 - Node.js >= 22.8 in the runner image (`node:22-slim`); the runner refuses to execute without the Permission Model.
