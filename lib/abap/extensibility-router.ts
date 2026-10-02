@@ -172,6 +172,12 @@ export function routeExtensibility(
   const unassessedSummary = coverage && coverage.gaps.length
     ? coverage.gaps.map((g) => `${g.count} \u00d7 ${g.label.toLowerCase()} (from line ${g.firstLine})`).join(', ')
     : '';
+  // The includes the source names and does not hold, by name (`coverage.ts`).
+  const includesNotRead = (coverage?.unassessed ?? []).filter((u) => u.gap === 'include-not-read');
+  // Its first sentence names the include and says it is not determined. No
+  // line number: the rationale is prose that formatting must not move; the
+  // anchor is the construct's own `line`.
+  const includesNotReadSentence = includesNotRead.map((u) => `${u.why.split('. ')[0]}.`).join(' ');
 
   // 1. Calculate Clean Core Score deterministically
   // Start at 100%. Deduct per CATEGORY (not per-finding) with diminishing returns.
@@ -263,6 +269,7 @@ export function routeExtensibility(
 
   // Rationale
   let rationale = '';
+  let namedNotRead = false;
   if (modifications.length > 0) {
     rationale = `Detected ${modifications.length} core modification(s) to SAP standard code. Modifications are clean core level D: they must be reset to standard via SPAU and the requirement rebuilt on a released extension point before any cloud target is reachable.`;
     // `!needsBtp` for the same reason the two private branches moved below the
@@ -308,8 +315,19 @@ export function routeExtensibility(
     rationale = `Direct writes to standard SAP tables are present. In Private Edition the write can stay on-stack, but it has to be replaced by a released write API, a BAPI or a RAP action: no wrapper makes a direct modification of SAP's own rows a supported operation.`;
   } else if (findings.length > 0) {
     rationale = `No construct that forces a side-by-side split was detected. What was found — ${presentCategories} — is addressed on-stack, so Developer Extensibility (RAP) is the recommended path.`;
+  } else if (includesNotRead.length > 0) {
+    namedNotRead = true;
+    // G4-F2: "no legacy pattern was detected" over a program whose deciding
+    // logic sits in an include nobody uploaded reads as a clean result. It is
+    // not one: say what was not read, and what the route rests on instead.
+    rationale = `Part of the program was not read. ${includesNotReadSentence} No construct that forces a side-by-side split was found in the part that was read, so On-Stack Developer Extensibility (RAP) is recommended for that part only. Upload the include to have the whole program decided.`;
   } else {
     rationale = `No legacy pattern was detected in the part of the code the engine assessed. On-Stack Developer Extensibility (RAP) is the recommended path.`;
+  }
+  // Every other branch named what it found; with an include not uploaded it
+  // also says what it could not have found.
+  if (includesNotRead.length > 0 && !namedNotRead) {
+    rationale = `${rationale} Part of the program was not read. ${includesNotReadSentence}`;
   }
 
   const targetArtifact = needsBtp ? 'CAP Node.js / Java Application' : 'RAP Business Object';
@@ -467,7 +485,9 @@ export function routeExtensibility(
   if (bdcCalls.length > 0) {
     assumptions.push('BDC screen automations have no equivalent Fiori/API-based replacement yet.');
   }
-  if (findings.length === 0 && coverageIncomplete) {
+  if (findings.length === 0 && includesNotRead.length > 0) {
+    assumptions.push(`Part of the program was not read: the engine did not assess ${unassessedSummary} — the score and the route below describe the part that was read, not the whole object, and finding nothing there is not a clean result.`);
+  } else if (findings.length === 0 && coverageIncomplete) {
     assumptions.push(`No legacy pattern was found, but the engine did not assess ${unassessedSummary} \u2014 the score and the route below describe the part that was read, not the whole object.`);
   } else if (findings.length === 0) {
     assumptions.push('No legacy patterns detected \u2014 code may already be partially modernized or very simple.');

@@ -805,6 +805,8 @@ const GAP_SIGNATURE: Record<string, RegExp> = {
   'classic-list-output': /\bWRITE\b/i,
   macro: /\bDEFINE\b/i,
   'generated-code': /\bINSERT\s+REPORT\b|\bGENERATE\s+SUBROUTINE\s+POOL\b/i,
+  // G4-F2: an include whose source was not uploaded is anchored on its INCLUDE.
+  'include-not-read': /^\s*INCLUDE\b/i,
 };
 
 const CLOSERS: Record<string, string> = {

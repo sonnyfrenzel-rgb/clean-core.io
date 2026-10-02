@@ -40,12 +40,17 @@ test.describe('one table for the score and its explanation', () => {
     expect(compared).toBeGreaterThan(10);
   });
 
-  test('the example the proposal drew: 28, from 100 − 72', () => {
+  // The proposal drew 28, from 100 − 72. Since G4-F2 (02.10.2026) the two
+  // includes the example names and does not hold (Z_MM_PO_NOTIFY, Z_MM_PO_LOG)
+  // are one more kind the engine did not assess: five points more, 23 from
+  // 100 − 77. The deductions for what was found are unchanged.
+  test('the example the proposal drew: 23, from 100 − 77', () => {
     const src = fs.readFileSync(path.join(EXAMPLES, 'Z_MM_PO_APPROVAL.abap'), 'utf8');
     const evidence = buildAbapEvidence(src, 'Z_MM_PO_APPROVAL.abap', 'private');
     const b = scoreBreakdown(evidence.findings, evidence.coverage?.gaps.length ?? 0);
-    expect(b.score).toBe(28);
-    expect(b.lines.reduce((n, l) => n + l.points, 0) + b.unassessedPoints).toBe(72);
+    expect(evidence.coverage.gaps.map((g) => g.gap)).toContain('include-not-read');
+    expect(b.score).toBe(23);
+    expect(b.lines.reduce((n, l) => n + l.points, 0) + b.unassessedPoints).toBe(77);
     expect(b.lines[0]).toMatchObject({ kind: 'standard-table-write', count: 2, points: 23 });
   });
 

@@ -40,7 +40,8 @@ export type CoverageGap =
   | 'dynamic-invocation'
   | 'dynamic-target'
   | 'macro'
-  | 'generated-code';
+  | 'generated-code'
+  | 'include-not-read';
 
 export interface UnassessedConstruct {
   gap: CoverageGap;
@@ -71,10 +72,35 @@ interface Rule {
    * open — a question the text alone cannot answer, because `FROM (lc_tab)` is
    * closed by a constant declared somewhere else.
    */
-  test: (upper: string, at: { unresolved: boolean }) => boolean;
+  test: (upper: string, at: Context) => boolean;
+  /** Read per statement where the sentence has to name what it saw. */
+  whyAt?: (upper: string, at: Context) => string;
+}
+
+interface Context {
+  unresolved: boolean;
+  /** Program includes this statement names whose text the source does not hold. */
+  includesNotRead: string[];
 }
 
 const RULES: Rule[] = [
+  {
+    // G4-F2: `INCLUDE zcc_ref_021_rules.` named a source the upload did not
+    // hold, the rule that decided the result stood in it, and the engine
+    // reported no finding, a score of 95 and "no legacy pattern was detected".
+    // Nothing had been found clean; the deciding part had not been read. The
+    // skeleton (`include-not-read`) and the review tasks already said so; the
+    // score, the route and the Design text, which read this report, did not.
+    gap: 'include-not-read',
+    label: 'Include whose source was not uploaded',
+    why: 'The text of the include is not part of this source, so no detector read the statements in it — what it does is not determined, and nothing found or not found here speaks for it.',
+    whyAt: (_s, at) =>
+      `${at.includesNotRead.map((name) => `Include ${name}`).join(', ')} ${
+        at.includesNotRead.length === 1 ? 'was' : 'were'
+      } not uploaded — what ${at.includesNotRead.length === 1 ? 'it does' : 'they do'} is not determined. ` +
+      'No detector read the statements in it, so nothing found or not found here speaks for them; upload the include with the program to have it read.',
+    test: (_s, at) => at.includesNotRead.length > 0,
+  },
   {
     gap: 'file-io',
     label: 'Application-server file access',
@@ -142,19 +168,62 @@ function trim(text: string): string {
   return flat.length > 160 ? `${flat.slice(0, 157)}...` : flat;
 }
 
+/**
+ * The program includes a statement names: `INCLUDE zfoo.`, `INCLUDE zfoo IF
+ * FOUND.`, the chained `INCLUDE: zfoo, zbar.`. `INCLUDE STRUCTURE` and
+ * `INCLUDE TYPE` are a type component, not a source — a table dependency read
+ * by `table-dependencies.ts` (R29), and no include in this sense (CC-045). The
+ * symbol includes in angle brackets (`INCLUDE <icon>.`) are left out with them:
+ * they declare SAP's icon and list constants, no logic.
+ */
+function programIncludesOf(upper: string): string[] {
+  // The keyword alone: `included_flag = 1.` is an assignment, not an include.
+  const head = /^INCLUDE(?=[\s:])\s*(:?)\s*/.exec(upper);
+  if (!head || /^INCLUDE\s+(?:STRUCTURE|TYPE)\b/.test(upper)) return [];
+  const rest = upper.slice(head[0].length).replace(/\.\s*$/, '');
+  const parts = head[1] ? rest.split(',') : [rest];
+  return parts
+    .map((part) => /^\s*([\w/]+)(?=\s|$)/.exec(part)?.[1] ?? '')
+    .filter((name) => name !== '' && name !== 'STRUCTURE' && name !== 'TYPE');
+}
+
+/**
+ * The includes whose text this source carries anyway: a user who uploads a
+ * program with its includes pastes them into the one source the analysis
+ * takes, and each include then begins with the header the ABAP editor writes —
+ * `*& Include ZFOO`, or SAP's own `***INCLUDE LZFOOF01.`. Apart from that
+ * three-asterisk form, only a comment line whose words *begin* with
+ * `Include <name>` counts, and not one with a period after the name:
+ * `*INCLUDE zfoo.` is a statement commented out, not the text of zfoo, and a
+ * remark such as `* rules (Include ZFOO)` is a remark.
+ */
+function includesCarried(code: string): Set<string> {
+  const carried = new Set<string>();
+  for (const line of code.split(/\r?\n/)) {
+    const header =
+      /^\*{3}INCLUDE\s+([\w/]+)/i.exec(line) ?? /^\*+&?\s*INCLUDE\s+([\w/]+)(?!\s*\.)(?=\s|$)/i.exec(line);
+    if (header) carried.add(header[1].toUpperCase());
+  }
+  return carried;
+}
+
 export function assessCoverage(code: string): CoverageReport {
   const unassessed: UnassessedConstruct[] = [];
   const unresolved = new Set(readTableDependencies(code).unresolved.map((target) => target.statement));
+  const carried = includesCarried(code);
 
   for (const [index, stmt] of tokenize(code).entries()) {
     const upper = maskLiterals(stmt.text).toUpperCase().trim();
-    const at = { unresolved: unresolved.has(index) };
+    const at: Context = {
+      unresolved: unresolved.has(index),
+      includesNotRead: programIncludesOf(upper).filter((name) => !carried.has(name)),
+    };
     for (const rule of RULES) {
       if (!rule.test(upper, at)) continue;
       unassessed.push({
         gap: rule.gap,
         label: rule.label,
-        why: rule.why,
+        why: rule.whyAt ? rule.whyAt(upper, at) : rule.why,
         line: stmt.line,
         snippet: trim(stmt.text),
       });

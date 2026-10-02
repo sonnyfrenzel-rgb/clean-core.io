@@ -2556,7 +2556,7 @@
           "note": "Ein Sollbefund ist vergleichbar, wenn eine Regelbrücke greift und die Anweisung am Anker ihr Konstrukt trägt."
         }
       ],
-      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-018-F01 R16@1.0.0@source.abap:2 — keine Brücke für R16, CC-018-F02 R14@1.0.0@source.abap:8 — keine Brücke für R14."
+      "reason": "0 von 2 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-018-F01 R16@1.0.0@source.abap:2 — R16 ohne Gegenstück an „CLASS lcl_child DEFINITION INHERITING FROM zcl_c\", CC-018-F02 R14@1.0.0@source.abap:8 — keine Brücke für R14."
     },
     {
       "case": "CC-018",
@@ -2988,22 +2988,22 @@
     {
       "case": "CC-021",
       "class": "befunde",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 1,
         "total": 1
       },
       "aspects": [
         {
           "name": "regelbruecke",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 1,
           "note": "Ein Sollbefund ist vergleichbar, wenn eine Regelbrücke greift und die Anweisung am Anker ihr Konstrukt trägt."
         }
       ],
-      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-021-F01 R16@1.0.0@source.abap:4 — keine Brücke für R16."
+      "reason": "1 von 1 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt."
     },
     {
       "case": "CC-021",
@@ -3152,7 +3152,7 @@
           "note": "Ein Sollbefund ist vergleichbar, wenn eine Regelbrücke greift und die Anweisung am Anker ihr Konstrukt trägt."
         }
       ],
-      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-022-F01 R16@1.0.0@source.abap:4 — keine Brücke für R16."
+      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-022-F01 R16@1.0.0@source.abap:4 — R16 ohne Gegenstück an „lv_result = /acme/cl_route=>determine( iv_amount\"."
     },
     {
       "case": "CC-022",
@@ -6266,22 +6266,22 @@
     {
       "case": "CC-043",
       "class": "befunde",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 1,
         "total": 1
       },
       "aspects": [
         {
           "name": "regelbruecke",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 1,
           "note": "Ein Sollbefund ist vergleichbar, wenn eine Regelbrücke greift und die Anweisung am Anker ihr Konstrukt trägt."
         }
       ],
-      "reason": "0 von 1 Sollbefunden vergleichbar; 0 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Die Engine meldet an diesem Fall: —. Ohne Gegenstück: CC-043-F01 R16@1.0.0@source.abap:4 — keine Brücke für R16."
+      "reason": "1 von 1 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt."
     },
     {
       "case": "CC-043",
@@ -9559,7 +9559,7 @@
           "note": "Ein Sollbefund ist vergleichbar, wenn eine Regelbrücke greift und die Anweisung am Anker ihr Konstrukt trägt."
         }
       ],
-      "reason": "1 von 3 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-065-F02 R25@2.1.0 (Fassung nach REV2-01)@caller.abap:3 — R25 ohne Gegenstück an „SUBMIT zce_child AND RETURN\", CC-065-F03 R16@1.0.0@caller.abap:3 — keine Brücke für R16."
+      "reason": "1 von 3 Sollbefunden vergleichbar; 1 auf der Ankerzeile, 0 nur in derselben Anweisung, 0 verfehlt. Ohne Gegenstück: CC-065-F02 R25@2.1.0 (Fassung nach REV2-01)@caller.abap:3 — R25 ohne Gegenstück an „SUBMIT zce_child AND RETURN\", CC-065-F03 R16@1.0.0@caller.abap:3 — R16 ohne Gegenstück an „SUBMIT zce_child AND RETURN\"."
     },
     {
       "case": "CC-065",
