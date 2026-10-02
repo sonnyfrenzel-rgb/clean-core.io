@@ -231,7 +231,7 @@ contract:
 
 ## 7. What is locked, and why (inherited from `G0:R0`)
 
-`docs/roadmap/SCHNITT-0-UMFANG.md` §1: *„Die Grenze steht in `SECURITY.md`; das
+`docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §1: *„Die Grenze steht in `SECURITY.md`; das
 Erhaltungsregister erbt sie in v2.11."* It does, by reference rather than by
 copy — `lib/locked-paths.ts` is the single source, and the guard checks that the
 register still points at it and that the lock is still closed.

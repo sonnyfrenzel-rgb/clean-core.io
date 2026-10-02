@@ -13,7 +13,7 @@ import { signInViaLanding } from './helpers/sign-in';
  * Roadmap step 0.1 (`G0:R0`): live test execution against a connected tenant is
  * a locked path — named, with its reason and the conditions that reopen it.
  *
- * Acceptance (docs/roadmap/SCHNITT-0-UMFANG.md §1): "Die Grenze steht in
+ * Acceptance (docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md §1): "Die Grenze steht in
  * SECURITY.md" and "Kein View, kein Text und kein Export stellt den gesperrten
  * Pfad als verfügbar dar."
  *

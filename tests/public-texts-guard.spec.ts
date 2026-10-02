@@ -149,7 +149,8 @@ test.describe('öffentliche Texte aus einem Guss (3.0.8)', () => {
     const listed = new Set(entries.map((e) => e.path));
     const tracked = trackedTexts();
     // Die Probe gegen einen leeren Umfang: ohne git ls-files wäre (c) grün und leer.
-    expect(tracked.length, 'git ls-files liefert keine Textdateien — der Umfang ist kaputt, nicht leer').toBeGreaterThan(50);
+    // Am 02.10.2026, nach dem Vollzug der Archiv-Entscheidungen, sind es 43 Dateien.
+    expect(tracked.length, 'git ls-files liefert keine Textdateien — der Umfang ist kaputt, nicht leer').toBeGreaterThan(30);
 
     const missing = tracked.filter((f) => !listed.has(f));
     expect(missing, `ohne Eintrag in ${REGISTER} — Zweck, Zielgruppe und Entscheidung nachtragen`).toEqual([]);

@@ -17,7 +17,7 @@ import { signInViaLanding } from './helpers/sign-in';
  * Roadmap step 0.4 (`UX-E13-F01:R0`): no module shows an amount that no approved
  * assumption carries.
  *
- * Acceptance (docs/roadmap/SCHNITT-0-UMFANG.md §4, V25-A06): "Analyze, Brief und
+ * Acceptance (docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md §4, V25-A06): "Analyze, Brief und
  * Export ohne Annahmenrevision zeigen keinen Geldwert; der Prompt enthält keine
  * monetären Felder."
  *

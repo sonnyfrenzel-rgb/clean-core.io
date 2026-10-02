@@ -27,7 +27,7 @@ import { logger, errMessage } from '@/lib/logger';
  * roadmap 8.4 — `decision`.
  *
  * *„Eine Freigabe entsteht auf dem Server oder gar nicht."*
- * (`docs/roadmap/SCHNITT-0-UMFANG.md` §8.) Until this route existed, the design
+ * (`docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §8.) Until this route existed, the design
  * stage wrote all five release fields straight from the browser — `approvedBy`
  * included, taken from `auth.currentUser.email`, which is to say the browser
  * chose whose name went on the sign-off. It now comes off the verified ID

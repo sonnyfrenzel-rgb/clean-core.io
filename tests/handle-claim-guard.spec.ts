@@ -5,7 +5,7 @@ import path from 'path';
 /**
  * The one condition the struck Datensparsamkeit package left behind.
  *
- * `docs/roadmap/SCHNITT-0-UMFANG.md` §8 package 4 ("Datensparsamkeit beginnen")
+ * `docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §8 package 4 ("Datensparsamkeit beginnen")
  * was struck on 12.09.2026 and deferred to Schnitt A, and roadmap Fassung 2.8
  * struck it outright from step 0.7. The profile therefore keeps `firstName`,
  * `lastName`, `tier 'enterprise'`, `orgId`, `maxTeamMembers` and the Okta/Azure

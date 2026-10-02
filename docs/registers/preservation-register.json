@@ -246,7 +246,7 @@
       "stage": "testing",
       "closed": "Executing generated tests against a connected S/4HANA tenant (POST /api/run-tests with s4Environment \"live\").",
       "open": "Running generated tests against mocks in the restricted runner; the tenant connection check, the OData metadata read and one read-only OData call.",
-      "inheritedFrom": "docs/roadmap/SCHNITT-0-UMFANG.md §1 — \"Die Grenze steht in SECURITY.md; das Erhaltungsregister erbt sie in v2.11.\""
+      "inheritedFrom": "docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md §1 — \"Die Grenze steht in SECURITY.md; das Erhaltungsregister erbt sie in v2.11.\""
     }
   ],
   "knownLimits": [

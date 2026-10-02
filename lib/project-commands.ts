@@ -1,7 +1,7 @@
 /**
  * The release fields of a project, and the only commands that write them.
  *
- * Roadmap 0.7 (`docs/roadmap/SCHNITT-0-UMFANG.md` §8, package 1): *„Eine
+ * Roadmap 0.7 (`docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §8, package 1): *„Eine
  * Freigabe entsteht auf dem Server oder gar nicht."* Until this module existed,
  * `firestore.rules` carried five release fields in the client-writable
  * allowlist — `targetArchitecture`, `approvedByArchitect`,
@@ -54,7 +54,7 @@ import { isSideBySideRoute } from '@/lib/sap-naming';
 
 /* ------------------------------------------------------------------ fields */
 
-/** The five release fields of `docs/roadmap/SCHNITT-0-UMFANG.md` §8, package 1. */
+/** The five release fields of `docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §8, package 1. */
 export const RELEASE_FIELDS = [
   'targetArchitecture',
   'approvedByArchitect',

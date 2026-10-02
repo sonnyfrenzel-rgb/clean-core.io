@@ -332,7 +332,7 @@
     {
       "id": "sharing",
       "concept": "Teilen = Einsicht per Einladung an eine bestaetigte E-Mail-Adresse",
-      "source": "CLAUDE.md, ROADMAP Phase 5, docs/CONCEPT-EINSICHT-PER-EINLADUNG.md",
+      "source": "CLAUDE.md, ROADMAP Phase 5, docs/archiv/konzepte/CONCEPT-EINSICHT-PER-EINLADUNG.md",
       "en": "read access by invitation",
       "de": "Einsicht per Einladung",
       "variants": [

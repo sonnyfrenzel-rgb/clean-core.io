@@ -896,7 +896,8 @@
       ],
       "measured": {
         "lines": 132
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/CODEX-DELTA-2026-07-10-REMEDIATION-PART2.md",
@@ -920,7 +921,8 @@
       },
       "measured": {
         "lines": 45
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/CODEX-DELTA-2026-07-10-REMEDIATION.md",
@@ -944,7 +946,8 @@
       },
       "measured": {
         "lines": 45
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/CONCEPT-ADMIN-USAGE-CONSOLE.md",
@@ -968,7 +971,8 @@
       },
       "measured": {
         "lines": 339
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/CONCEPT-DE-LOCALIZATION.md",
@@ -1032,7 +1036,8 @@
       },
       "measured": {
         "lines": 246
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/DATA-RETENTION.md",
@@ -1106,7 +1111,8 @@
       },
       "measured": {
         "lines": 219
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/MAIL-SEED-TEST.md",
@@ -1178,7 +1184,8 @@
       ],
       "measured": {
         "lines": 236
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/PRESERVATION-REGISTER.md",
@@ -1457,7 +1464,8 @@
       },
       "measured": {
         "lines": 108
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/SEO-GEO-PLAN-2026-07.md",
@@ -1485,7 +1493,8 @@
       },
       "measured": {
         "lines": 118
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/UX-REVIEW-AGENT.md",
@@ -1544,7 +1553,8 @@
       },
       "measured": {
         "lines": 164
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/codex-audit-v119.md",
@@ -1584,7 +1594,8 @@
       },
       "measured": {
         "lines": 521
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/design/decisions.md",
@@ -1745,7 +1756,8 @@
       ],
       "measured": {
         "lines": 270
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-26-TRIAGE.md",
@@ -1769,7 +1781,8 @@
       },
       "measured": {
         "lines": 158
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-26-grok-4.6-benefit-wow-raw.md",
@@ -1793,7 +1806,8 @@
       },
       "measured": {
         "lines": 100
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-26-grok-4.6-engine.md",
@@ -1817,7 +1831,8 @@
       },
       "measured": {
         "lines": 142
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-26-grok-4.6-meta.md",
@@ -1845,7 +1860,8 @@
       },
       "measured": {
         "lines": 96
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-26-grok-4.6-security.md",
@@ -1869,7 +1885,8 @@
       },
       "measured": {
         "lines": 118
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-26-grok-4.6-ui1.md",
@@ -1901,7 +1918,8 @@
       },
       "measured": {
         "lines": 150
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-26-grok-4.6-ui2.md",
@@ -1929,7 +1947,8 @@
       },
       "measured": {
         "lines": 125
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-26-grok-4.6-ui3.md",
@@ -1961,7 +1980,8 @@
       },
       "measured": {
         "lines": 220
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-EXTERNAL-AUDIT-V2.md",
@@ -1993,7 +2013,8 @@
       },
       "measured": {
         "lines": 362
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-GLM-INDEX.md",
@@ -2017,7 +2038,8 @@
       },
       "measured": {
         "lines": 122
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-GLM-TRIAGE.md",
@@ -2045,7 +2067,8 @@
       },
       "measured": {
         "lines": 347
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-benefit-consult-glm-5.3.md",
@@ -2069,7 +2092,8 @@
       },
       "measured": {
         "lines": 92
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-benefit-consult-grok-4.20.md",
@@ -2093,7 +2117,8 @@
       },
       "measured": {
         "lines": 129
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-benefit-consult-r2-glm-5.3.md",
@@ -2117,7 +2142,8 @@
       },
       "measured": {
         "lines": 64
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-benefit-consult-r2-grok-4.20.md",
@@ -2141,7 +2167,8 @@
       },
       "measured": {
         "lines": 44
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-benefit-visual-glm-5v.md",
@@ -2165,7 +2192,8 @@
       },
       "measured": {
         "lines": 155
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-benefit-visual-grok-4.20.md",
@@ -2189,7 +2217,8 @@
       },
       "measured": {
         "lines": 64
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-glm-engine-raw.md",
@@ -2217,7 +2246,8 @@
       },
       "measured": {
         "lines": 95
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-glm-meta-raw.md",
@@ -2241,7 +2271,8 @@
       },
       "measured": {
         "lines": 74
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-glm-security-raw.md",
@@ -2265,7 +2296,8 @@
       },
       "measured": {
         "lines": 81
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-glm-ui_app-raw.md",
@@ -2289,7 +2321,8 @@
       },
       "measured": {
         "lines": 61
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-glm-ui_components-raw.md",
@@ -2313,7 +2346,8 @@
       },
       "measured": {
         "lines": 79
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-glm-ui_public-raw.md",
@@ -2337,7 +2371,8 @@
       },
       "measured": {
         "lines": 91
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-gpt-5.6-sol-engine-raw.md",
@@ -2361,7 +2396,8 @@
       },
       "measured": {
         "lines": 69
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-gpt-5.6-sol-meta-raw.md",
@@ -2385,7 +2421,8 @@
       },
       "measured": {
         "lines": 81
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-gpt-5.6-sol-security-raw.md",
@@ -2409,7 +2446,8 @@
       },
       "measured": {
         "lines": 69
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-gpt-5.6-sol-ui_app-raw.md",
@@ -2441,7 +2479,8 @@
       },
       "measured": {
         "lines": 73
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-gpt-5.6-sol-ui_components-raw.md",
@@ -2469,7 +2508,8 @@
       },
       "measured": {
         "lines": 71
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-27-gpt-5.6-sol-ui_public-raw.md",
@@ -2493,7 +2533,8 @@
       },
       "measured": {
         "lines": 54
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-28-UMSETZUNGSPLAN.md",
@@ -2521,7 +2562,8 @@
       },
       "measured": {
         "lines": 354
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-28-ux-bench-glm-5.3-ERROR.txt",
@@ -2544,7 +2586,8 @@
       },
       "measured": {
         "lines": 1
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-28-ux-bench-glm-5.3-flash.md",
@@ -2567,7 +2610,8 @@
       },
       "measured": {
         "lines": 11
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-28-ux-bench-glm-5v-turbo.md",
@@ -2591,7 +2635,8 @@
       },
       "measured": {
         "lines": 145
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-28-ux-bench-gpt-5.6-sol.md",
@@ -2623,7 +2668,8 @@
       },
       "measured": {
         "lines": 294
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-28-ux-bench-grok-4.6.md",
@@ -2651,7 +2697,8 @@
       },
       "measured": {
         "lines": 142
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-28-ux-round2-glm-5v-turbo.md",
@@ -2683,7 +2730,8 @@
       },
       "measured": {
         "lines": 129
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-28-ux-round2-gpt-5.6-sol.md",
@@ -2711,7 +2759,8 @@
       },
       "measured": {
         "lines": 274
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/reviews/2026-08-28-ux-round2-grok-4.6.md",
@@ -2739,7 +2788,8 @@
       },
       "measured": {
         "lines": 99
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/roadmap/SCHNITT-0-UMFANG.md",
@@ -2792,7 +2842,8 @@
       ],
       "measured": {
         "lines": 358
-      }
+      },
+      "executed": "2026-10-02"
     },
     {
       "path": "docs/security/ciso-brief.md",

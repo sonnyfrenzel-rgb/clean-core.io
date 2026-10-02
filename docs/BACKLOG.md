@@ -1198,7 +1198,7 @@ Entscheidungen von Sonny:
    Score-Umbenennung und TCO-Versprechen. Die Spielwiesen-Positionierung auf
    Startseite und README bleibt ein eigener, späterer Auftrag.
 
-Details je Teilschnitt mit Dateien und Abnahmefall: `docs/roadmap/SCHNITT-0-UMFANG.md`.
+Details je Teilschnitt mit Dateien und Abnahmefall: `docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md`.
 
 **Stand 11.09.2026, Feierabend — v2.9.5 → v2.9.11, sieben Releases, alles auf
 `main` und deployt (`clean-core-00298-kvn`, `main` = `dev` = Branch = `c1349b5`).**
@@ -1786,7 +1786,7 @@ entfernt. Was aus der Runde übrig ist:
   Coverage-Werte 0, keine dunkle Hero-Karte, sondern eine Mono-Zeile — und die
   Evidenztabelle direkt unter die drei oberen Karten.
 
-Rohdaten: `docs/reviews/2026-08-28-ux-round2-*.md`.
+Rohdaten: `docs/archiv/reviews-2026-08/2026-08-28-ux-round2-*.md`.
 
 ---
 
@@ -1840,7 +1840,7 @@ bestätigt den echten Schlüssel auf Produktion und dev.
 
 ### Die ungeprüften Findings
 
-`docs/reviews/2026-08-27-GLM-TRIAGE.md` listet 24 namentlich, die Rohdateien von
+`docs/archiv/reviews-2026-08/2026-08-27-GLM-TRIAGE.md` listet 24 namentlich, die Rohdateien von
 GPT enthalten weitere. **Sie sind Hypothesen, keine Befunde** — von 57 GLM-Claims
 waren fünf schlicht falsch, und zwei weitere hatten recht im Defekt und unrecht im
 Mechanismus.
@@ -2018,7 +2018,7 @@ Daten kostet, die nicht nachgeholt werden können.
 das letzte Stück der Aktivierungskette und das einzige, das noch aussteht.
 
 **Wo:** Drei fertige Fassungen plus Notizen zu Zeitpunkt und Hashtags in
-[docs/LINKEDIN-CLEAN-CORE-EXPLAINED.md](./LINKEDIN-CLEAN-CORE-EXPLAINED.md).
+[docs/archiv/kommunikation/LINKEDIN-CLEAN-CORE-EXPLAINED.md](./archiv/kommunikation/LINKEDIN-CLEAN-CORE-EXPLAINED.md).
 Empfehlung ist Version A; Version B eignet sich für einen zweiten Anlauf rund
 eine Woche später.
 
@@ -2068,7 +2068,7 @@ zur EU-Zusage.
 **us-west1** und tragen dieselbe `freeTierLimited`-Deckelung, die den Ausfall am 19.08.
 verursacht hat.
 
-**Aufwand:** gering, der Weg ist erprobt — `docs/PLAN-FIRESTORE-MIGRATION.md` plus die
+**Aufwand:** gering, der Weg ist erprobt — `docs/archiv/betrieb/PLAN-FIRESTORE-MIGRATION.md` plus die
 Skripte unter `scripts/firestore-*`. Enterprise-Edition beim Anlegen nicht vergessen,
 sonst scheitert der Import an der 1500-Byte-Indexgrenze.
 

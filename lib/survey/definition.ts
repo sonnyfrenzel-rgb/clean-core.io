@@ -15,7 +15,7 @@
  *
  * `build_next` is the one that gives something back. Every option on it is a real,
  * documented, unbuilt item — the German version (docs/CONCEPT-DE-LOCALIZATION.md),
- * ATC ingestion (docs/CLEAN_CORE_ENRICHMENT_CONCEPT.md §3), provider choice
+ * ATC ingestion (docs/archiv/konzepte/CLEAN_CORE_ENRICHMENT_CONCEPT.md §3), provider choice
  * (docs/archiv/ROADMAP-2.0.md), and the stacked before/after on a phone (docs/BACKLOG.md).
  * Nothing on the list is invented to make the survey look generous, and nothing
  * already shipped is offered as if it were new.
