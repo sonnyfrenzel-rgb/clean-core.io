@@ -272,7 +272,7 @@ test.describe('own code: the handoff to Analyze', () => {
     const analyze = read('app/(app)/project/[projectId]/analyze/page.tsx');
     // A project's first run — whatever started it — continues in the workspace;
     // a re-run stays on the tool.
-    expect(analyze).toContain('if (!project?.activeRunId) openWorkspaceAfterRunRef.current = true;');
+    expect(analyze).toContain('const firstRunOfProject = !project?.activeRunId;');
     const set = analyze.indexOf('openWorkspaceAfterRunRef.current = true');
     const take = analyze.indexOf('const handoff = takeOwnCodeHandoff(projectId as string);');
     expect(set).toBeGreaterThan(take);
@@ -281,7 +281,7 @@ test.describe('own code: the handoff to Analyze', () => {
     const runId = analyze.indexOf('const activeRunId = runResult.runId;');
     const push = analyze.indexOf("router.push(`/project/${projectId}?first=1`)");
     expect(push).toBeGreaterThan(runId);
-    expect(analyze.slice(runId, push)).toContain('if (openWorkspaceAfterRunRef.current) {');
+    expect(analyze.slice(runId, push)).toContain('if (openWorkspaceAfterRunRef.current || firstRunOfProject) {');
   });
 });
 

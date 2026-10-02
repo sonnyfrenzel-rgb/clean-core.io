@@ -343,7 +343,7 @@ export default function AnalyzePage() {
   ) => {
     setError('');
     // A project's first run continues in the workspace, with the first look.
-    if (!project?.activeRunId) openWorkspaceAfterRunRef.current = true;
+    const firstRunOfProject = !project?.activeRunId;
     // The scan runs here, on exactly the text that is about to leave the
     // browser. The upload path scanned the file, and the screen scanned what
     // was staged — but the textarea can be edited after both, and this is the
@@ -583,7 +583,7 @@ export default function AnalyzePage() {
         // A first run (an example, own code): on to the workspace with the
         // first look. Only once the run is signed — a failed run stays here
         // with its error.
-        if (openWorkspaceAfterRunRef.current) {
+        if (openWorkspaceAfterRunRef.current || firstRunOfProject) {
           router.push(`/project/${projectId}?first=1`);
         }
       } catch (error) {
