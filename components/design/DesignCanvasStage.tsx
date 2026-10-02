@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useState } from 'react';
 import { Cloud, Target, Link2, User, Plus, Minus, Maximize2, X, CircleDashed, RefreshCw } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
@@ -12,7 +12,7 @@ import CcTabs from '@/components/cc/Tabs';
 import CcDateText from '@/components/cc/DateText';
 import CcDialog from '@/components/cc/Dialog';
 import ArchitectureCanvas from '@/components/design/ArchitectureCanvas';
-import { ArchitectureList } from '@/components/design/ArchitectureCanvas';
+import { ArchitectureList, ARCHITECTURE_ZOOM, fitArchitectureScale } from '@/components/design/ArchitectureCanvas';
 import { cn } from '@/lib/utils';
 import { contractForDisplay, type ArchitectureContract, type ContractAlternative, type ContractField } from '@/lib/architecture-contract';
 import type { ArchitectureCanvasModel } from '@/lib/architecture-canvas';
@@ -92,27 +92,18 @@ export interface DesignCanvasStageProps {
 }
 
 /**
- * The stage runs edge to edge, as the proposal draws it, out of the page's
- * centred column. Measured rather than `100vw`, which counts the scrollbar and
- * would make the page scroll sideways by its width. Until measured, the stage
- * sits in the column.
+ * The width the canvas has, measured: "Fit" scales the drawing to it within
+ * `ARCHITECTURE_ZOOM`, never past the drawing's natural size.
  */
-function useFullBleed(ref: React.RefObject<HTMLDivElement | null>): React.CSSProperties | undefined {
-  const [style, setStyle] = useState<React.CSSProperties | undefined>(undefined);
+function useAvailableWidth(el: HTMLDivElement | null): number {
+  const [width, setWidth] = useState(0);
   useEffect(() => {
-    const el = ref.current;
-    const column = el?.parentElement;
-    if (!el || !column) return undefined;
-    const observer = new ResizeObserver(() => {
-      const width = document.documentElement.clientWidth;
-      const left = column.getBoundingClientRect().left;
-      setStyle({ width, marginLeft: -left, maxWidth: 'none' });
-    });
-    observer.observe(document.documentElement);
-    observer.observe(column);
+    if (!el) return undefined;
+    const observer = new ResizeObserver(() => setWidth(el.clientWidth));
+    observer.observe(el);
     return () => observer.disconnect();
-  }, [ref]);
-  return style;
+  }, [el]);
+  return width;
 }
 
 const LABEL = 'm-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase';
@@ -246,7 +237,12 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
   const deviation = Boolean(contract?.route.deviation);
   const [panelTab, setPanelTab] = useState<'decision' | 'contract' | 'alternatives' | 'evidence'>('decision');
   const [selected, setSelected] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
+  // 'fit' follows the column; a number is the reader's own zoom.
+  const [zoomChoice, setZoom] = useState<number | 'fit'>('fit');
+  // A callback ref: the canvas mounts only once the contract has been read.
+  const [canvasEl, setCanvasEl] = useState<HTMLDivElement | null>(null);
+  const available = useAvailableWidth(canvasEl);
+  const zoom = zoomChoice === 'fit' ? fitArchitectureScale(available) : zoomChoice;
   const firstWritten = sections.find((s) => s.written)?.key ?? sections[0]?.key ?? null;
   // The section the reader picked; until then (and when it is not written any
   // more after a regeneration) the first written one.
@@ -262,8 +258,6 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     setLockedBefore(locked);
     if (locked) setSignOffOpen(false);
   }
-  const rootRef = useRef<HTMLDivElement>(null);
-  const bleed = useFullBleed(rootRef);
   const hintId = useId();
 
   const select = (key: string) => {
@@ -331,10 +325,12 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
         {view === 'list' ? (
           <ArchitectureList model={model} targetLine={targetLine} description={description} />
         ) : (
-          <div className="overflow-auto" data-canvas-zoom={zoom}>
-            <div style={{ width: `${zoom * 100}%`, minWidth: '100%' }}>
-              <ArchitectureCanvas model={model} targetLine={targetLine} selected={selected} onSelect={select} description={description} />
-            </div>
+          // The drawing never grows past its natural size, so its labels stay
+          // in the type scale: a wider column leaves the space empty, a
+          // narrower one shrinks it to 0.8 and then pans (owner 02.10.2026 —
+          // at 3400 px the labels had grown to 34 px).
+          <div ref={setCanvasEl} className="overflow-auto" data-canvas-zoom={zoom.toFixed(2)}>
+            <ArchitectureCanvas model={model} targetLine={targetLine} selected={selected} onSelect={select} description={description} zoom={zoom} />
           </div>
         )}
       </>
@@ -746,12 +742,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
   const successorsKpi = model ? `${model.successors.length} · ${model.successorUses} uses` : '—';
 
   return (
-    <div
-      ref={rootRef}
-      style={bleed}
-      data-design-canvas-stage=""
-      className={cn('overflow-clip border-cc-line bg-cc-surface', bleed ? 'border-y' : 'rounded-cc-card border shadow-cc')}
-    >
+    <div data-design-canvas-stage="" className="overflow-clip rounded-cc-card border border-cc-line bg-cc-surface shadow-cc">
       <div className="grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_420px]">
         {/* The stage */}
         <section aria-label="Target architecture canvas" className="relative flex min-w-0 flex-col bg-cc-surface-muted">
@@ -802,13 +793,13 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
           {view === 'canvas' && model ? (
             <div className="relative mt-auto flex items-end justify-between gap-3 px-7 pb-4 max-[719px]:hidden">
               <div className="flex gap-2">
-                <CcIconButton label="Zoom in" onClick={() => setZoom((z) => Math.min(2, z + 0.25))} disabled={zoom >= 2}>
+                <CcIconButton label="Zoom in" onClick={() => setZoom(Math.min(ARCHITECTURE_ZOOM.max, zoom + ARCHITECTURE_ZOOM.step))} disabled={zoom >= ARCHITECTURE_ZOOM.max}>
                   <Plus size={16} aria-hidden={true} />
                 </CcIconButton>
-                <CcIconButton label="Zoom out" onClick={() => setZoom((z) => Math.max(1, z - 0.25))} disabled={zoom <= 1}>
+                <CcIconButton label="Zoom out" onClick={() => setZoom(Math.max(ARCHITECTURE_ZOOM.min, zoom - ARCHITECTURE_ZOOM.step))} disabled={zoom <= ARCHITECTURE_ZOOM.min}>
                   <Minus size={16} aria-hidden={true} />
                 </CcIconButton>
-                <CcIconButton label="Fit to the stage" onClick={() => setZoom(1)}>
+                <CcIconButton label="Fit to the stage" onClick={() => setZoom('fit')}>
                   <Maximize2 size={16} aria-hidden={true} />
                 </CcIconButton>
               </div>
@@ -851,7 +842,9 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
               ]}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2 border-t border-cc-line px-4 py-3 min-[720px]:px-5">
+          {/* The actions stay in reach: beside a canvas taller than the window
+              the footer sticks to the window's bottom edge. */}
+          <div className="flex flex-wrap items-center gap-2 border-t border-cc-line bg-cc-surface px-4 py-3 min-[720px]:px-5 min-[1100px]:sticky min-[1100px]:bottom-0">
             <CcButton
               variant={canSignOff ? 'secondary' : 'primary'}
               icon={<RefreshCw size={16} aria-hidden={true} />}
