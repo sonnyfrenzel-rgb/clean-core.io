@@ -3017,6 +3017,24 @@
       }
     },
     {
+      "path": "docs/release/g4-chain-acceptance.md",
+      "kind": "plan",
+      "purpose": "Protocol of the G4/DW-2 acceptance: the four paths through the chain with their negative probes, the corpus cases, how the spec runs, its results and the findings G4-F1 to G4-F4",
+      "audience": "Owner, agents, external reviewers",
+      "saysToday": "What tests/g4-chain-acceptance.spec.ts proves per path as of 02.10.2026, the run results before and after the G4-F1 fix, and the findings still open.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Release working document for 3.0, referenced from docs/release/3.0-acceptance.md; archived under docs/archiv/ with it once 3.0 has shipped.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 290
+      }
+    },
+    {
       "path": "docs/ux/ux-brief.md",
       "kind": "agent-brief",
       "purpose": "System brief of the UX agent",

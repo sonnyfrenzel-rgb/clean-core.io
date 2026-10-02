@@ -503,6 +503,7 @@ const WAITS_FOR: Partial<Record<DecisionGapCode, (gap: DecisionGap) => string>> 
   'run-not-bound': () => 'a bound analysis run',
   'contract-not-bound': () => 'an architecture contract',
   'contract-blocked': () => 'an architecture contract that can be bound',
+  'sign-off-not-current': () => 'a current architecture sign-off',
   'option-not-chosen': () => 'a chosen option',
 };
 
@@ -510,6 +511,7 @@ const WAIT_ORDER: readonly DecisionGapCode[] = [
   'run-not-bound',
   'contract-not-bound',
   'contract-blocked',
+  'sign-off-not-current',
   'option-not-chosen',
 ];
 

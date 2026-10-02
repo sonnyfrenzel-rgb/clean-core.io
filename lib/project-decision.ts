@@ -355,6 +355,12 @@ export const DECISION_GAP_CODES = [
   'option-not-chosen',
   /** The bound contract is still a draft. */
   'contract-draft',
+  /**
+   * The option generates nothing, so the decision rests on the architecture
+   * sign-off in place of a contract — and that sign-off is not current: given
+   * for a previous source or profile, missing its reason, or unreadable.
+   */
+  'sign-off-not-current',
   /** No confirmed need revision (roadmap 3.5) stands behind the decision. */
   'need-not-confirmed',
   /** No cost revision at all: nothing was priced. */
@@ -403,6 +409,8 @@ const GAP_SENTENCES: Record<DecisionGapCode, (subject: string | null) => string>
     'No option is chosen. A decision that picks nothing is a note, and this record will not present one as a decision.',
   'contract-draft': () =>
     'The architecture contract is still a draft. The decision binds it as it stands and says so; it does not promote it.',
+  'sign-off-not-current': (s) =>
+    `The chosen option generates nothing, so this decision rests on the analysis run and the architecture sign-off instead of a contract — and that sign-off cannot be stood on. ${s ?? 'It is not current.'}`,
   'need-not-confirmed': () =>
     'No confirmed need revision stands behind this decision. It decides what to build without a record of what has to hold, so it is carried as qualified rather than as substantiated.',
   'cost-not-bound': (s) =>
@@ -438,6 +446,53 @@ export interface DecisionCoverage {
 const bindingOf = (decision: ProjectDecision, key: DecisionBindingKey): DecisionBinding | undefined =>
   decision.bindings.find((b) => b.key === key);
 
+/* ------------------------------------- an option that generates nothing (G4-F1) */
+
+/**
+ * The option kinds that generate nothing — every kind but `rebuild`.
+ *
+ * An architecture contract governs a generation: what is built, against which
+ * target, on which inputs (`lib/architecture-contract.ts`). Retiring an object,
+ * adopting the standard in its place or keeping it builds nothing, and
+ * `contractOfProject()` derives no contract for them (`off-track`). Requiring
+ * one anyway made every such decision unconfirmable (finding G4-F1,
+ * `docs/release/g4-chain-acceptance.md`); inventing one would bind a contract
+ * nothing was built under. So the decision's `contract` binding names what it
+ * rests on instead — the account's architecture sign-off — and says that no
+ * contract is required, rather than pretending to bind one.
+ */
+export const NO_GENERATION_OPTION_KINDS: readonly OptionKind[] = Object.freeze(['do-nothing', 'keep', 'standard', 'retire']);
+
+export function optionGeneratesNothing(kind: OptionKind | null | undefined): boolean {
+  return kind !== null && kind !== undefined && NO_GENERATION_OPTION_KINDS.includes(kind);
+}
+
+/** The `contract` binding's revision when no contract is required: `none-required:<kind>/sign-off@<at>+<digest>`. */
+export const NO_CONTRACT_PREFIX = 'none-required:';
+/** Prefixed to it when the sign-off it rests on is not current. Blocks, like `blocked:` on a contract. */
+export const SIGN_OFF_NOT_CURRENT_PREFIX = 'not-current:';
+
+export interface NoContractBasis {
+  kind: string;
+  /** The sign-off's time as recorded, or `null` when it could not be read. */
+  signOffAt: string | null;
+  current: boolean;
+}
+
+/**
+ * The `contract` binding read as "no contract required, rests on the sign-off",
+ * or `null` when it is a contract revision (or anything else).
+ */
+export function noContractBasis(revision: string | null | undefined): NoContractBasis | null {
+  if (typeof revision !== 'string') return null;
+  if (!revision.startsWith(NO_CONTRACT_PREFIX) && !revision.startsWith(SIGN_OFF_NOT_CURRENT_PREFIX)) return null;
+  const m = /^(not-current:)?none-required:([a-z-]+)\/sign-off@([0-9A-Za-z:.-]*)\+[0-9a-f]{12}$/.exec(revision);
+  // Claims the shape and does not have it: read as no kind at all, which blocks.
+  if (!m) return { kind: '', signOffAt: null, current: false };
+  const [, notCurrent, kind, at] = m;
+  return { kind, signOffAt: at && at !== 'unknown' ? at : null, current: !notCurrent };
+}
+
 /**
  * Roadmap 8.4, in one function: **a decision that cannot show what it stands on
  * is never treated like one that can.**
@@ -453,7 +508,10 @@ const bindingOf = (decision: ProjectDecision, key: DecisionBindingKey): Decision
  * into a winner. A decision without a priced comparison is a legitimate
  * decision badly supported — so it is carried, visibly, as qualified. A missing
  * **contract** or a missing **option** does block, because neither leaves
- * anything for the decision to be about.
+ * anything for the decision to be about — with one exception that is not a
+ * softening: an option that generates nothing (`NO_GENERATION_OPTION_KINDS`)
+ * has no contract to bind, and its `contract` binding names the sign-off it
+ * rests on instead (G4-F1). That sign-off blocks in turn when it is not current.
  */
 export function decisionCoverage(decision: ProjectDecision | null | undefined): DecisionCoverage {
   if (!decision) {
@@ -465,8 +523,18 @@ export function decisionCoverage(decision: ProjectDecision | null | undefined): 
   if (!decision.boundRunId || !decision.boundEvidenceDigest) gaps.push(gap('run-not-bound', 'blocks', null));
 
   const contract = bindingOf(decision, 'contract');
+  const noContract = noContractBasis(contract?.revision);
   if (!contract || contract.revision === null) {
     gaps.push(gap('contract-not-bound', 'blocks', contract?.notDeterminedReason ?? null));
+  } else if (noContract) {
+    // G4-F1: an option that generates nothing needs no contract; it rests on
+    // the run (checked above) and the sign-off (here). Only for the kinds that
+    // really generate nothing — a rebuild without a contract stays blocked.
+    if (!optionGeneratesNothing(noContract.kind as OptionKind)) {
+      gaps.push(gap('contract-not-bound', 'blocks', null));
+    } else if (!noContract.current) {
+      gaps.push(gap('sign-off-not-current', 'blocks', contract.note));
+    }
   } else if (contract.revision.startsWith('blocked:')) {
     gaps.push(gap('contract-blocked', 'blocks', contract.revision));
   } else if (contract.revision.startsWith('qualified:') || contract.provenance === 'proposed') {

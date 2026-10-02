@@ -34,6 +34,7 @@ import { testEvidence, staleness } from './workflow-steps';
 import { coveringTestRunReceipt } from './test-receipt';
 import { isEngineDocumentation } from './process-documentation';
 import { readStoredDecision, ARCHITECTURE_OPTION, type StoredDecision } from './decision-draft';
+import { noContractBasis } from './project-decision';
 import { routeLabel, sapNamesForDisplay } from './sap-naming';
 import { buildEvidenceChain, type EvidenceChain } from './evidence-chain';
 import { sha256Hex } from './artefact-digest';
@@ -256,9 +257,15 @@ export function buildHandoverChain(project: HandoverProject, phases: RailStep[])
   const target = signedOffTarget(project);
   const decision = storedDecisionOf(project);
   const contract = decision?.bindings.find((b) => b.key === 'contract');
-  const contractWords = contract?.revision
-    ? `Contract ${contract.revision}.`
-    : 'No architecture contract is bound yet; the decision binds it.';
+  // An option that generates nothing binds no contract and says what it rests on instead (G4-F1).
+  const noContract = noContractBasis(contract?.revision);
+  const contractWords = noContract
+    ? noContract.current
+      ? 'No architecture contract is required: nothing is generated. The decision rests on the analysis run and this sign-off.'
+      : 'No architecture contract is required: nothing is generated. The sign-off the decision rests on is not current.'
+    : contract?.revision
+      ? `Contract ${contract.revision}.`
+      : 'No architecture contract is bound yet; the decision binds it.';
   const design = designPhase.state === 'empty'
     ? link('design', {
         provenance: 'not-determined', provenanceNote: null, value: null, by: null, at: null,
