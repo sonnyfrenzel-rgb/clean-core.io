@@ -83,7 +83,7 @@ test.describe('a stage as a tool, rendered', () => {
       await expect(page.locator('[aria-label^="Workflow progress"], [data-rail-phase]'), `${st}: the rail`).toHaveCount(0);
       await expect(page.locator('body'), `${st}: linear-flow footer`).not.toContainText(/Proceed to |Continue to /);
 
-      // The way across (ADR-059, Sonny 02.10.2026): the seven tools under the
+      // The way across (ADR-060, Sonny 02.10.2026): the seven tools under the
       // way back, the current one marked, every other one a link that keeps
       // the view, the origin and the layer — so the next stage's way back
       // still leads to where the reader left the workspace.

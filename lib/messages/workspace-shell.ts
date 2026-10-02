@@ -38,7 +38,7 @@ export const WORKSPACE_SHELL_MESSAGES = {
   // The tools, the status line and "Next step" — ToolBar, StatusLine, NextStepCard.
   'tools.label': 'Tools',
   // What the mark beside a tool says to a screen reader — the stepper's
-  // reading of the phase (`phaseTone`), in words (Sonny 02.10.2026, ADR-059).
+  // reading of the phase (`phaseTone`), in words (Sonny 02.10.2026, ADR-060).
   'tools.mark.proven': 'done and verified',
   'tools.mark.unproven': 'done, not verified',
   'tools.mark.started': 'started, not done',

@@ -54,10 +54,10 @@ function ToolMark({ tool }: { tool: WorkspaceTool }) {
 
 /**
  * The seven stages as tools — under the workspace header (`DESIGN.md` §2.3
- * item 3) and under "Back to workspace" on every stage (ADR-059). One
+ * item 3) and under "Back to workspace" on every stage (ADR-060). One
  * component for both, so the two bars cannot drift apart.
  *
- *   - **It opens pages, and it says what is on record** (ADR-059, Sonny
+ *   - **It opens pages, and it says what is on record** (ADR-060, Sonny
  *     02.10.2026). A tool opens a stage as its own page; the mark after its
  *     name is the stepper's reading of that phase (`ToolMark`), derived from
  *     `lib/workflow-steps.ts` like every other phase state in the product — so
@@ -68,7 +68,7 @@ function ToolMark({ tool }: { tool: WorkspaceTool }) {
  *     what `lib/workflow-steps.ts` has always said and what a row of seven
  *     equally available links shows without a sentence.
  *
- * Laid out by width (§2.9, ADR-059): from breakpoint L (> 1024 px) the seven
+ * Laid out by width (§2.9, ADR-060): from breakpoint L (> 1024 px) the seven
  * stand side by side, no menu to open. Below that, Business and Management and
  * the stages fold them into a "Tools" menu (§2.11, ADR-026); the workspace's IT
  * view keeps the open bar down to M, where it wraps rather than scrolls. On a

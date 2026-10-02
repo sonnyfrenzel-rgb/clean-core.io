@@ -91,7 +91,7 @@ export default function StageHeader({
   actions?: React.ReactNode;
   align?: 'left' | 'center';
   /**
-   * The seven tools under the way back (ADR-059, Sonny 02.10.2026): the
+   * The seven tools under the way back (ADR-060, Sonny 02.10.2026): the
    * phases from `workflowSteps` (or the demo's rail), the stage the reader is
    * on (defaults to `stage`), and the base of the links (`/demo` for the demo;
    * the project otherwise). Drawn for a workspace account and in the demo —

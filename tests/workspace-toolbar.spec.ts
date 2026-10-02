@@ -13,7 +13,7 @@ import type { Project } from '../lib/types';
 
 /**
  * The workspace's tools, side by side on a wide screen, each with the
- * stepper's mark for its phase — ADR-059, Sonny 02.10.2026: "responsive layout,
+ * stepper's mark for its phase — ADR-060, Sonny 02.10.2026: "responsive layout,
  * in desktop mode always side by side, with small green check marks where I
  * have already used it in the project."
  *

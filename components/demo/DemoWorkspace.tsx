@@ -143,7 +143,7 @@ export default function DemoWorkspace({
       {/* `stage` for the header's identity, `title` because the demo's title
           must carry "Demo ·" — a reader may never mistake it for a project of
           their own (§6.1.2, `tests/demo-project.spec.ts`). The seven tools
-          under it are the bar every real stage carries (ADR-059), in place of
+          under it are the bar every real stage carries (ADR-060), in place of
           the old stepper — one way across, not two. No cast: `DemoRailStep`
           has to stay assignable to the product's own `RailStep`, so a future
           field that drifts apart is a type error here. */}

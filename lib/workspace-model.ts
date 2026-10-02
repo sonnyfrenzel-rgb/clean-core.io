@@ -824,7 +824,7 @@ export function notDetermined(project: Project | null): NotDetermined {
  *
  * Order and labels come from `lib/workflow-steps.ts` and are not restated here
  * — the toolbar is the eighth reader of that contract, not a new copy of it. A
- * tool opens a stage as its own page. Since ADR-059 (Sonny 02.10.2026) each
+ * tool opens a stage as its own page. Since ADR-060 (Sonny 02.10.2026) each
  * tool carries a small mark for what is on record, and it carries the phase
  * state the stepper reads — `state` and `proven` straight from `workflowSteps`,
  * never from a client-set status — so the mark beside a tool and the stepper's
@@ -841,7 +841,7 @@ export function workspaceTools(
  * (`components/Stepper.tsx`): a tick where the stepper ticks (`done`), a dot
  * where it shows a coloured circle without one (started, or stale — stale is
  * never done), nothing where nothing is on record. The tone is `phaseTone`, so
- * green stays the colour of `proven` alone (ADR-007, ADR-059); `words` is the
+ * green stays the colour of `proven` alone (ADR-007, ADR-060); `words` is the
  * catalogue key of what a screen reader hears instead of the colour.
  */
 export function toolMark(tool: { state: PhaseState; proven: boolean }): {
