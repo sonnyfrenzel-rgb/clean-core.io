@@ -235,7 +235,8 @@ test.describe('nothing the audit finds leaks', () => {
     const { REGISTER_PATH, publicRows } = await lib('register.mjs');
     expect(REGISTER_PATH).toMatch(/\.enc\.json$/);
     const rows = publicRows({ entries: [{ id: 'SEC-2026-001', severity: 'hoch', priority: 'P1', step: 'Phase 0 · 0.7', status: 'eingeplant', title: 'SSRF in route X', fingerprint: 'abc', reason: 'secret reason' }, { id: 'SEC-2026-002', severity: 'mittel', status: 'widerlegt', title: 'y' }] });
-    expect(rows).toEqual(['| SEC-2026-001 | hoch | P1 | Phase 0 · 0.7 | eingeplant |']);
+    // The public roadmap is English (3.0.14): the sealed register's German severity and status are mapped.
+    expect(rows).toEqual(['| SEC-2026-001 | high | P1 | Phase 0 · 0.7 | scheduled |']);
   });
 
   test('a finding marked fixed comes back when an audit of a commit containing the fix reports it again', async () => {

@@ -38,7 +38,7 @@ if (cmd === 'list') {
   process.exit(0);
 }
 if (cmd === 'public') {
-  console.log('| ID | Schwere | Priorität | Roadmap-Schritt | Status |\n|---|---|---|---|---|');
+  console.log('| ID | Severity | Priority | Roadmap step | Status |\n|---|---|---|---|---|');
   for (const row of publicRows(register)) console.log(row);
   process.exit(0);
 }

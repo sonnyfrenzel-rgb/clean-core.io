@@ -25,3 +25,59 @@ werden. **Wo eine Datei hier `docs/ROADMAP.md` widerspricht, gilt die Roadmap.**
 
 Ältere Einträge im CHANGELOG nennen noch die früheren Pfade; die Spalte „Früherer
 Pfad" führt von dort hierher.
+
+## Archived on 02.10.2026 (roadmap 3.0.8 / 3.0.14)
+
+The inventory `docs/registers/public-texts.json` decided "archive" for these files: finished concept and plan papers, the raw model reviews of August 2026 and the Phase 0 work packages. They are history and are kept as written (German where they were written in German); they are not maintained. Older entries in the CHANGELOG, the BACKLOG and code comments may still name the former path; the column "Former path" leads from there to here.
+
+| File | Former path | Folder | What it is |
+|---|---|---|---|
+| [`CLEAN_CORE_ENRICHMENT_CONCEPT.md`](konzepte/CLEAN_CORE_ENRICHMENT_CONCEPT.md) | `docs/CLEAN_CORE_ENRICHMENT_CONCEPT.md` | `konzepte/` | Concept paper |
+| [`CODEX-DELTA-2026-07-10-REMEDIATION-PART2.md`](audits/CODEX-DELTA-2026-07-10-REMEDIATION-PART2.md) | `docs/CODEX-DELTA-2026-07-10-REMEDIATION-PART2.md` | `audits/` | Model review / triage (raw) |
+| [`CODEX-DELTA-2026-07-10-REMEDIATION.md`](audits/CODEX-DELTA-2026-07-10-REMEDIATION.md) | `docs/CODEX-DELTA-2026-07-10-REMEDIATION.md` | `audits/` | Model review / triage (raw) |
+| [`CONCEPT-ADMIN-USAGE-CONSOLE.md`](konzepte/CONCEPT-ADMIN-USAGE-CONSOLE.md) | `docs/CONCEPT-ADMIN-USAGE-CONSOLE.md` | `konzepte/` | Concept paper |
+| [`CONCEPT-EINSICHT-PER-EINLADUNG.md`](konzepte/CONCEPT-EINSICHT-PER-EINLADUNG.md) | `docs/CONCEPT-EINSICHT-PER-EINLADUNG.md` | `konzepte/` | Concept paper |
+| [`LINKEDIN-CLEAN-CORE-EXPLAINED.md`](kommunikation/LINKEDIN-CLEAN-CORE-EXPLAINED.md) | `docs/LINKEDIN-CLEAN-CORE-EXPLAINED.md` | `kommunikation/` | Communication draft |
+| [`PLAN-FIRESTORE-MIGRATION.md`](betrieb/PLAN-FIRESTORE-MIGRATION.md) | `docs/PLAN-FIRESTORE-MIGRATION.md` | `betrieb/` | Plan |
+| [`SECURITY-BACKLOG.md`](audits/SECURITY-BACKLOG.md) | `docs/SECURITY-BACKLOG.md` | `audits/` | Model review / triage (raw) |
+| [`SEO-GEO-PLAN-2026-07.md`](betrieb/SEO-GEO-PLAN-2026-07.md) | `docs/SEO-GEO-PLAN-2026-07.md` | `betrieb/` | Plan |
+| [`WEEK2_AUDIT_INTEGRITY_PLAN.md`](konzepte/WEEK2_AUDIT_INTEGRITY_PLAN.md) | `docs/WEEK2_AUDIT_INTEGRITY_PLAN.md` | `konzepte/` | Plan |
+| [`codex-audit-v119.md`](audits/codex-audit-v119.md) | `docs/codex-audit-v119.md` | `audits/` | Model review / triage (raw) |
+| [`2026-08-26-BENEFIT-NEXT-STEPS.md`](reviews-2026-08/2026-08-26-BENEFIT-NEXT-STEPS.md) | `docs/reviews/2026-08-26-BENEFIT-NEXT-STEPS.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-26-TRIAGE.md`](reviews-2026-08/2026-08-26-TRIAGE.md) | `docs/reviews/2026-08-26-TRIAGE.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-26-grok-4.6-benefit-wow-raw.md`](reviews-2026-08/2026-08-26-grok-4.6-benefit-wow-raw.md) | `docs/reviews/2026-08-26-grok-4.6-benefit-wow-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-26-grok-4.6-engine.md`](reviews-2026-08/2026-08-26-grok-4.6-engine.md) | `docs/reviews/2026-08-26-grok-4.6-engine.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-26-grok-4.6-meta.md`](reviews-2026-08/2026-08-26-grok-4.6-meta.md) | `docs/reviews/2026-08-26-grok-4.6-meta.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-26-grok-4.6-security.md`](reviews-2026-08/2026-08-26-grok-4.6-security.md) | `docs/reviews/2026-08-26-grok-4.6-security.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-26-grok-4.6-ui1.md`](reviews-2026-08/2026-08-26-grok-4.6-ui1.md) | `docs/reviews/2026-08-26-grok-4.6-ui1.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-26-grok-4.6-ui2.md`](reviews-2026-08/2026-08-26-grok-4.6-ui2.md) | `docs/reviews/2026-08-26-grok-4.6-ui2.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-26-grok-4.6-ui3.md`](reviews-2026-08/2026-08-26-grok-4.6-ui3.md) | `docs/reviews/2026-08-26-grok-4.6-ui3.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-EXTERNAL-AUDIT-V2.md`](reviews-2026-08/2026-08-27-EXTERNAL-AUDIT-V2.md) | `docs/reviews/2026-08-27-EXTERNAL-AUDIT-V2.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-GLM-INDEX.md`](reviews-2026-08/2026-08-27-GLM-INDEX.md) | `docs/reviews/2026-08-27-GLM-INDEX.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-GLM-TRIAGE.md`](reviews-2026-08/2026-08-27-GLM-TRIAGE.md) | `docs/reviews/2026-08-27-GLM-TRIAGE.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-benefit-consult-glm-5.3.md`](reviews-2026-08/2026-08-27-benefit-consult-glm-5.3.md) | `docs/reviews/2026-08-27-benefit-consult-glm-5.3.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-benefit-consult-grok-4.20.md`](reviews-2026-08/2026-08-27-benefit-consult-grok-4.20.md) | `docs/reviews/2026-08-27-benefit-consult-grok-4.20.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-benefit-consult-r2-glm-5.3.md`](reviews-2026-08/2026-08-27-benefit-consult-r2-glm-5.3.md) | `docs/reviews/2026-08-27-benefit-consult-r2-glm-5.3.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-benefit-consult-r2-grok-4.20.md`](reviews-2026-08/2026-08-27-benefit-consult-r2-grok-4.20.md) | `docs/reviews/2026-08-27-benefit-consult-r2-grok-4.20.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-benefit-visual-glm-5v.md`](reviews-2026-08/2026-08-27-benefit-visual-glm-5v.md) | `docs/reviews/2026-08-27-benefit-visual-glm-5v.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-benefit-visual-grok-4.20.md`](reviews-2026-08/2026-08-27-benefit-visual-grok-4.20.md) | `docs/reviews/2026-08-27-benefit-visual-grok-4.20.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-glm-engine-raw.md`](reviews-2026-08/2026-08-27-glm-engine-raw.md) | `docs/reviews/2026-08-27-glm-engine-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-glm-meta-raw.md`](reviews-2026-08/2026-08-27-glm-meta-raw.md) | `docs/reviews/2026-08-27-glm-meta-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-glm-security-raw.md`](reviews-2026-08/2026-08-27-glm-security-raw.md) | `docs/reviews/2026-08-27-glm-security-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-glm-ui_app-raw.md`](reviews-2026-08/2026-08-27-glm-ui_app-raw.md) | `docs/reviews/2026-08-27-glm-ui_app-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-glm-ui_components-raw.md`](reviews-2026-08/2026-08-27-glm-ui_components-raw.md) | `docs/reviews/2026-08-27-glm-ui_components-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-glm-ui_public-raw.md`](reviews-2026-08/2026-08-27-glm-ui_public-raw.md) | `docs/reviews/2026-08-27-glm-ui_public-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-gpt-5.6-sol-engine-raw.md`](reviews-2026-08/2026-08-27-gpt-5.6-sol-engine-raw.md) | `docs/reviews/2026-08-27-gpt-5.6-sol-engine-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-gpt-5.6-sol-meta-raw.md`](reviews-2026-08/2026-08-27-gpt-5.6-sol-meta-raw.md) | `docs/reviews/2026-08-27-gpt-5.6-sol-meta-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-gpt-5.6-sol-security-raw.md`](reviews-2026-08/2026-08-27-gpt-5.6-sol-security-raw.md) | `docs/reviews/2026-08-27-gpt-5.6-sol-security-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-gpt-5.6-sol-ui_app-raw.md`](reviews-2026-08/2026-08-27-gpt-5.6-sol-ui_app-raw.md) | `docs/reviews/2026-08-27-gpt-5.6-sol-ui_app-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-gpt-5.6-sol-ui_components-raw.md`](reviews-2026-08/2026-08-27-gpt-5.6-sol-ui_components-raw.md) | `docs/reviews/2026-08-27-gpt-5.6-sol-ui_components-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-27-gpt-5.6-sol-ui_public-raw.md`](reviews-2026-08/2026-08-27-gpt-5.6-sol-ui_public-raw.md) | `docs/reviews/2026-08-27-gpt-5.6-sol-ui_public-raw.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-28-UMSETZUNGSPLAN.md`](reviews-2026-08/2026-08-28-UMSETZUNGSPLAN.md) | `docs/reviews/2026-08-28-UMSETZUNGSPLAN.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-28-ux-bench-glm-5v-turbo.md`](reviews-2026-08/2026-08-28-ux-bench-glm-5v-turbo.md) | `docs/reviews/2026-08-28-ux-bench-glm-5v-turbo.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-28-ux-bench-gpt-5.6-sol.md`](reviews-2026-08/2026-08-28-ux-bench-gpt-5.6-sol.md) | `docs/reviews/2026-08-28-ux-bench-gpt-5.6-sol.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-28-ux-bench-grok-4.6.md`](reviews-2026-08/2026-08-28-ux-bench-grok-4.6.md) | `docs/reviews/2026-08-28-ux-bench-grok-4.6.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-28-ux-round2-glm-5v-turbo.md`](reviews-2026-08/2026-08-28-ux-round2-glm-5v-turbo.md) | `docs/reviews/2026-08-28-ux-round2-glm-5v-turbo.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-28-ux-round2-gpt-5.6-sol.md`](reviews-2026-08/2026-08-28-ux-round2-gpt-5.6-sol.md) | `docs/reviews/2026-08-28-ux-round2-gpt-5.6-sol.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`2026-08-28-ux-round2-grok-4.6.md`](reviews-2026-08/2026-08-28-ux-round2-grok-4.6.md) | `docs/reviews/2026-08-28-ux-round2-grok-4.6.md` | `reviews-2026-08/` | Model review / triage (raw) |
+| [`SCHNITT-0-UMFANG.md`](roadmap-2.8/SCHNITT-0-UMFANG.md) | `docs/roadmap/SCHNITT-0-UMFANG.md` | `roadmap-2.8/` | Phase 0 work packages |

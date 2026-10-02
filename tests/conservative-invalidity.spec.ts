@@ -22,7 +22,7 @@ import { STARTER_EXAMPLES } from '../lib/starter-examples';
 /**
  * Roadmap 0.6 — "Konservative Ungültigkeit statt Frischeheuristik".
  *
- * Work package `docs/roadmap/SCHNITT-0-UMFANG.md` §7 (`UX-E07-F03:R0`):
+ * Work package `docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §7 (`UX-E07-F03:R0`):
  * *"Ein altes Ergebnis bleibt an seine Eingaben gebunden — blockieren oder
  * quarantänisieren statt still aktualisieren"*, delivered as *"Manifestvergleich
  * statt Frischeheuristik"*. Acceptance: W22-A06 (*"Neue Analyse trifft nach

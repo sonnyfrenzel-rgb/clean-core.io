@@ -72,7 +72,7 @@
         "write": "never from a client — `allow write: if false`"
       },
       "changedAt": "2026-09-22",
-      "changeReason": "Sicherheits-Audit b88c77b, SEC-b88c77b-61: /abap_examples/{exampleId} bekommt eine delete-Regel (Eigentuemer oder Admin, dieselbe Bedingung wie die update-Regel daneben und wie /files). Das Dashboard bot dem Eigentuemer den Loeschen-Knopf fuer sein eigenes Beispiel an und rief deleteDoc auf; es gab keine delete-Regel, der Aufruf lief auf default-deny und die Zeile blieb stehen. Nichts an /projects/{projectId} aendert sich: weder die Client-Allowlist (hasOnly) noch die Leseregel noch das Verbot, ein Projekt aus dem Browser zu loeschen. Ausgerollt am 22.09.2026 auf alle sechs Datenbanken der Deploy-Konfiguration (Ruleset 6866185e-a6fa-4cd8-962d-10b68abf7874); npm run rules:verify hat direkt danach bestaetigt, dass Produktion, Datensatz und Arbeitskopie uebereinstimmen. CI rollt die Regeln nie aus - ein Mensch tut es, und dieselbe Zeile schreibt es auf. Vorheriger Stand: 7a068dad50bd599bb97ed40744709e9792eea6afc15fb1b76956c65bb377a742 (Roadmap 7.1: atcReport bekommt in isValidProject dieselbe is-map-Pruefung wie usageReport, ohne Aenderung an der Client-Allowlist). Davor: 88b5fe431436d64e9b78577f35ad14aafe4298bc1a6050223a19ae1d09f38d6d (Roadmap 0.7: sechs Felder verlassen die Client-Allowlist und werden nur noch von POST /api/projects/{projectId}/commands geschrieben — die fuenf Freigabefelder (`targetArchitecture`, `approvedByArchitect`, `architectJustifiedOverride`, `architectSignOffAt`, `approvedBy`) und `usageReport`. Der Browser bestimmte bis dahin selbst, welche Adresse in `approvedBy` stand, und `usageReport` war nur als `is map` geprueft. Davor: b1cad225116df03d441bfa86f13197b6cd1d632960dc7a051ce02c5749eae106, davor der Wegfall des Admin-Lesezugriffs am 16.09.2026, 96ece81b991cfeac4c5b0033e333e47ae9459c1fb825292c29e92fc69ec7fbe2). Welche Fassung ausgerollt ist, steht in docs/registers/rules-deployment.json — CI rollt die Regeln nie aus."
+      "changeReason": "Security audit b88c77b, SEC-b88c77b-61: /abap_examples/{exampleId} gets a delete rule (owner or admin, the same condition as the update rule next to it and as /files). The dashboard offered the owner the delete button for their own example and called deleteDoc; there was no delete rule, the call ran into default-deny and the row stayed. Nothing about /projects/{projectId} changes: neither the client allowlist (hasOnly) nor the read rule nor the ban on deleting a project from the browser. Deployed on 22.09.2026 to all six databases of the deploy configuration (ruleset 6866185e-a6fa-4cd8-962d-10b68abf7874); npm run rules:verify confirmed directly afterwards that production, record and working copy match. CI never deploys the rules - a human does, and the same line records it. Previous state: 7a068dad50bd599bb97ed40744709e9792eea6afc15fb1b76956c65bb377a742 (roadmap 7.1: atcReport gets the same is-map check in isValidProject as usageReport, without a change to the client allowlist). Before that: 88b5fe431436d64e9b78577f35ad14aafe4298bc1a6050223a19ae1d09f38d6d (roadmap 0.7: six fields leave the client allowlist and are written only by POST /api/projects/{projectId}/commands — the five approval fields (`targetArchitecture`, `approvedByArchitect`, `architectJustifiedOverride`, `architectSignOffAt`, `approvedBy`) and `usageReport`. Until then the browser itself determined which address stood in `approvedBy`, and `usageReport` was only checked as `is map`. Before that: b1cad225116df03d441bfa86f13197b6cd1d632960dc7a051ce02c5749eae106, before that the removal of the admin read access on 16.09.2026, 96ece81b991cfeac4c5b0033e333e47ae9459c1fb825292c29e92fc69ec7fbe2). Which version is deployed is in docs/registers/rules-deployment.json — CI never deploys the rules."
     }
   },
   "trustChain": {
@@ -170,7 +170,7 @@
       "route": "app/api/projects/[projectId]/commands/route.ts",
       "contract": "lib/project-commands.ts",
       "guard": "tests/project-command-boundary.spec.ts",
-      "journal": "audit_events — geschrieben vom Admin-SDK (logAuditEvent), fuer keinen Client les- oder schreibbar",
+      "journal": "audit_events — written by the Admin SDK (logAuditEvent), readable or writable by no client",
       "roadmapStep": "0.7 (8.4 fuer `decision`)",
       "fields": [
         "approvedBy",
@@ -182,8 +182,8 @@
         "atcReport",
         "decision"
       ],
-      "reason": "Die fuenf Freigabefelder und der Nutzungsimport. Eine Freigabe entsteht auf dem Server oder gar nicht: der Browser schrieb bis Roadmap 0.7 auch `approvedBy`, also die Adresse, die auf der Freigabe steht. Sie kommt jetzt vom verifizierten ID-Token, der Zeitstempel von der Serveruhr. `usageReport` war in den Regeln nur als `is map` geprueft (Security-Audit v2.11.0); die Route haelt ihn auf den Schluesselsatz von lib/abap/usage-model.ts und eine Zeilenobergrenze. `atcReport` (Roadmap 7.1, ATC-Import) kam nie client-schreibbar in die Regeln hinein: gleiche Bauform, gleicher Schluesselsatz-und-Obergrenze-Schutz in lib/project-commands.ts von Anfang an, damit ein importierter ATC-Befund serverseitig auf sein eigenes Modell gehalten wird statt auf `is map`. `decision` (Roadmap 8.4) ebenso: der Entwurf wird von lib/project-decision.ts normalisiert und sein Fingerabdruck neu berechnet statt geglaubt, Status und Bestaetigung setzt ausschliesslich die Route, und die Bestaetigung ist an den gelesenen Run gebunden (8.8, CR-11).",
-      "stillAttestedNotSigned": "Der Audit-Pack fuehrt diese Felder weiterhin in 07-user-attested.md: sie bleiben eine Selbsterklaerung des angemeldeten Kontos. Servervalidiert heisst wahrheitsgemaess aufgezeichnet, nicht amtlich."
+      "reason": "The five approval fields and the usage import. An approval is created on the server or not at all: until roadmap 0.7 the browser also wrote `approvedBy`, i.e. the address that stands on the approval. It now comes from the verified ID token, the timestamp from the server clock. `usageReport` was only checked as `is map` in the rules (security audit v2.11.0); the route holds it to the key set of lib/abap/usage-model.ts and a row limit. `atcReport` (roadmap 7.1, ATC import) never entered the rules as client-writable: same construction, same key-set-and-limit protection in lib/project-commands.ts from the start, so that an imported ATC finding is held server-side to its own model instead of to `is map`. `decision` (roadmap 8.4) likewise: the draft is normalised by lib/project-decision.ts and its fingerprint recomputed instead of believed, status and confirmation are set exclusively by the route, and the confirmation is bound to the run that was read (8.8, CR-11).",
+      "stillAttestedNotSigned": "The audit pack still lists these fields in 07-user-attested.md: they remain a self-declaration of the signed-in account. Server-validated means truthfully recorded, not official."
     },
     "clientWritableFieldsNoStageWrites": {
       "legacyCode": "Reaches the project through POST /api/runs/create and through the dashboard's project creation. Client-writable by the rules, which is precisely why staleness().sourceChanged exists.",
@@ -222,7 +222,7 @@
       {
         "at": "2026-09-16",
         "step": "0.5",
-        "what": "Der Lauf fuehrt ein Eingabemanifest. `inputManifest` steht im signierten Payload: jede Eingabe der Analyse mit Klasse, Kennung, Revision und Hash. Das Projekt bekommt keinen neuen Feldnamen — der serverseitige Spiegel liegt unter `auditMetadata.inputManifest`, also innerhalb eines Feldes, das das Register schon fuehrt.",
+        "what": "The run carries an input manifest. `inputManifest` is in the signed payload: every input of the analysis with class, identifier, revision and hash. The project gets no new field name — the server-side mirror lives under `auditMetadata.inputManifest`, i.e. inside a field the register already lists.",
         "addedToRun": [
           "inputManifest"
         ],
@@ -232,7 +232,7 @@
       {
         "at": "2026-09-24",
         "step": "3.0.5",
-        "what": "Die Dokumentationsstufe schreibt `documentation` aus der Engine (Weg C): Format 'engine-process-documentation' statt L1-L4-JSON eines Modells. Kein neues Feld, keine Migration; alte Blueprints bleiben lesbar und werden als fruehere Form gekennzeichnet. L-04 ist damit behoben.",
+        "what": "The documentation stage writes `documentation` from the engine (Weg C): format 'engine-process-documentation' instead of a model's L1-L4 JSON. No new field, no migration; old blueprints stay readable and are marked as an earlier form. L-04 is thereby fixed.",
         "addedToRun": [],
         "addedToProject": [],
         "caughtBy": "tests/process-documentation.spec.ts"
@@ -246,7 +246,7 @@
       "stage": "testing",
       "closed": "Executing generated tests against a connected S/4HANA tenant (POST /api/run-tests with s4Environment \"live\").",
       "open": "Running generated tests against mocks in the restricted runner; the tenant connection check, the OData metadata read and one read-only OData call.",
-      "inheritedFrom": "docs/roadmap/SCHNITT-0-UMFANG.md §1 — \"Die Grenze steht in SECURITY.md; das Erhaltungsregister erbt sie in v2.11.\""
+      "inheritedFrom": "docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md §1 — \"The boundary is in SECURITY.md; the preservation register inherits it in v2.11.\""
     }
   ],
   "knownLimits": [

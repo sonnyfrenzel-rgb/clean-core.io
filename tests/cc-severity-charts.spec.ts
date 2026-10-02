@@ -115,11 +115,11 @@ test.describe('the chart palettes are tokens, and never green', () => {
   test('every other chart takes the categorical or sequential palette of §1.8', () => {
     const tokens = declaredTokens();
     const design = read('DESIGN.md');
-    const section = design.slice(design.indexOf('### 1.8 Diagramme'), design.indexOf('## 2. Struktur'));
+    const section = design.slice(design.indexOf('### 1.8 Charts'), design.indexOf('## 2. Structure'));
     const hexes = (s: string) => [...s.matchAll(/`(#[0-9a-f]{6})`/gi)].map((m) => m[1].toLowerCase());
     const [categorical, sequential] = [
-      hexes(section.slice(0, section.indexOf('Sequenziell'))),
-      hexes(section.slice(section.indexOf('Sequenziell'))),
+      hexes(section.slice(0, section.indexOf('Sequential'))),
+      hexes(section.slice(section.indexOf('Sequential'))),
     ];
     expect(CATEGORICAL_CHART_COLORS.map((c) => tokens.get(c.token)?.toLowerCase())).toEqual(categorical);
     expect(SEQUENTIAL_CHART_COLORS.map((c) => tokens.get(c.token)?.toLowerCase())).toEqual(sequential);

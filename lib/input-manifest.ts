@@ -2,7 +2,7 @@
  * What a derivation was computed from — by name, revision and hash.
  *
  * Roadmap 0.5 (`docs/ROADMAP.md` §Phase 0, work package
- * `docs/roadmap/SCHNITT-0-UMFANG.md` §6 `UX-E02-F01:R0`): *"Ableitungen sagen,
+ * `docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §6 `UX-E02-F01:R0`): *"Ableitungen sagen,
  * woraus sie entstanden sind — mit Revision und Hash, nicht mit einer
  * Heuristik"*, and, precisely: *"`inputs[]` je abgeleitetem Artefakt: ID,
  * Revision, Hash (QA24-13) — ersetzt den Digest-Vergleich als Wahrheitsquelle"*.

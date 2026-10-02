@@ -25,7 +25,7 @@ import { PROFILE_INPUT_ID } from '../lib/assessment-profile';
 /**
  * Roadmap 0.5 — "Manifest- und Inputvertrag: `inputs[]` mit Revision und Hash".
  *
- * Work package `docs/roadmap/SCHNITT-0-UMFANG.md` §6 (`UX-E02-F01:R0`):
+ * Work package `docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §6 (`UX-E02-F01:R0`):
  * *"Ableitungen sagen, woraus sie entstanden sind — mit Revision und Hash, nicht
  * mit einer Heuristik"*, and as the first work item: *"`inputs[]` je abgeleitetem
  * Artefakt: ID, Revision, Hash (QA24-13) — ersetzt den Digest-Vergleich als

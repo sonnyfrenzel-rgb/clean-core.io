@@ -1,588 +1,588 @@
 # DESIGN.md — Clean-Core.io
 
-**Version 1.7 · 27.09.2026 · abgenommen von Sonny · verbindlich für alles, was zur Oberfläche von 3.0 gehört** (Roadmap-Schritte 1.4–1.7,
-Phasen 2–8, 3.0). Das Zielbild zeigen die Mockups
-[`docs/roadmap/clean-core-mockups-v2_8.html`](docs/roadmap/clean-core-mockups-v2_8.html). Entscheidungen mit Datum
-und Begründung stehen im Entscheidungslog [`docs/design/decisions.md`](docs/design/decisions.md); diese Datei sagt
-nur, was gilt. Bei Widerspruch: `docs/ROADMAP.md` für Umfang und Reihenfolge, diese Datei für Aussehen, Struktur und
-Verhalten. **Verweise:** `§5.1` ist ein Abschnitt dieser Datei, „Roadmap 2.8" oder „Schritt 2.8" ein Schritt in
+**Version 1.7 · 27.09.2026 · accepted by Sonny · binding for everything that belongs to the 3.0 interface** (roadmap steps 1.4–1.7,
+Phases 2–8, 3.0). The target picture is shown by the mockups
+[`docs/roadmap/clean-core-mockups-v2_8.html`](docs/roadmap/clean-core-mockups-v2_8.html). Decisions with date
+and reasoning are in the decision log [`docs/design/decisions.md`](docs/design/decisions.md); this file says
+only what applies. In case of contradiction: `docs/ROADMAP.md` for scope and order, this file for look, structure and
+behaviour. **References:** `§5.1` is a section of this file, "Roadmap 2.8" or "step 2.8" a step in
 `docs/ROADMAP.md`.
 
-Die Leitlinie in einem Satz: **SAP-Fiori-Muster übernehmen, das Fiori-Theme nicht** (ADR-001). Was die SAP-Community
-„zu Hause" fühlen lässt, sind Floorplans, Interaktionsmuster und Vokabular — nicht Farben und die Schrift „72". Der
-Look bleibt der von Clean-Core.io.
+The guideline in one sentence: **adopt SAP Fiori patterns, not the Fiori theme** (ADR-001). What makes the SAP community
+feel "at home" are floorplans, interaction patterns and vocabulary — not colours and the "72" typeface. The
+look stays that of Clean-Core.io.
 
-**Zwei Räume, ein Look.** Die öffentlichen Seiten (Landing, Wissen, Whitepaper) behalten ihre großzügige Ästhetik —
-große Radien, Mesh-Hintergrund, grüne Akzente. Der **Arbeitsraum** ist ein Werkzeug: dicht, ruhig, und Grün heißt dort
-nur eines — belegt. **Ein Look heißt: dieselben Tokens überall** (ADR-051) — auch öffentliche Seiten färben nur mit
-`--cc-*`-Tokens, nie mit der Tailwind-Palette oder Hex-Literalen; auch die Mesh-Farben der Landing sind Tokens. Was
-nur öffentlich gilt, sind die großen Radien (§1.4), Mesh und Raster als Hintergrund und `--cc-space-7`.
+**Two spaces, one look.** The public pages (landing, knowledge, whitepaper) keep their generous aesthetic —
+large radii, mesh background, green accents. The **workspace** is a tool: dense, calm, and green means only one
+thing there — evidenced. **One look means: the same tokens everywhere** (ADR-051) — public pages too colour only with
+`--cc-*` tokens, never with the Tailwind palette or hex literals; the landing's mesh colours are tokens too. What
+applies only publicly are the large radii (§1.4), mesh and grid as background, and `--cc-space-7`.
 
 ---
 
 ## 1. Look & Feel
 
-Heute spricht die App zwei Farbdialekte (Tailwind `green-600`/`gray-950` und `#006b2c`/`#00873a`/`#0b1c30`), 78
-Button-Stile und Schrift bis hinunter auf 8 px. Das wird ein Satz **semantischer Tokens** in `app/globals.css`
-(`@theme`); neue Komponenten verwenden nur diese. Das gilt für jede Seite — Arbeitsraum, Stufen, Konto und
-öffentliche Seiten (ADR-051).
+Today the app speaks two colour dialects (Tailwind `green-600`/`gray-950` and `#006b2c`/`#00873a`/`#0b1c30`), 78
+button styles and type down to 8 px. This becomes one set of **semantic tokens** in `app/globals.css`
+(`@theme`); new components use only these. This applies to every page — workspace, stages, account and
+public pages (ADR-051).
 
-### 1.1 Farbe
+### 1.1 Colour
 
-Alle Paare unten sind nachgerechnet (WCAG 2.2, relative Leuchtdichte); der Kontrast-Guard (§8) rechnet sie bei jedem
-Build erneut.
+All pairs below have been recalculated (WCAG 2.2, relative luminance); the contrast guard (§8) recalculates them on every
+build.
 
-| Token | Wert | Wofür | Kontrast |
+| Token | Value | For | Contrast |
 |---|---|---|---|
-| `--cc-page` | `#f8f9ff` | Seitengrund | — |
-| `--cc-surface` | `#ffffff` | Karten, Tabellen, Dialoge | — |
-| `--cc-surface-muted` | `#f9fafb` | Zeilen, innere Flächen | — |
-| `--cc-ink` | `#0b1c30` | Text, Titel; **ausgewählt/aktiv im Arbeitsraum** | 17,2 : 1 auf Surface |
-| `--cc-ink-muted` | `#4b5563` | Nebentext | 7,6 : 1 auf Surface |
-| `--cc-line` | `#e5e7eb` | Trenner (dekorativ) | — |
-| `--cc-field-border` | `#6b7280` | Rahmen von Eingabefeldern | 4,8 : 1 (≥ 3 : 1 nötig) |
-| `--cc-brand` | `#16a34a` | Logo, Akzente, Landing — **nie Fläche unter Text** | 3,3 : 1 mit Weiß — zu wenig für Text |
-| `--cc-brand-strong` | `#15803d` | Fläche der Primäraktion, grüne Schrift auf Hellgrün | 5,0 : 1 mit Weiß |
-| `--cc-brand-deep` | `#006b2c` | Hover/Pressed der Primäraktion, Marken-Verlauf | 6,7 : 1 mit Weiß |
-| `--cc-focus` | `#1d4ed8` | Fokusring (§1.6) | 6,7 : 1 auf Surface |
+| `--cc-page` | `#f8f9ff` | Page background | — |
+| `--cc-surface` | `#ffffff` | Cards, tables, dialogs | — |
+| `--cc-surface-muted` | `#f9fafb` | Rows, inner surfaces | — |
+| `--cc-ink` | `#0b1c30` | Text, titles; **selected/active in the workspace** | 17.2 : 1 on surface |
+| `--cc-ink-muted` | `#4b5563` | Secondary text | 7.6 : 1 on surface |
+| `--cc-line` | `#e5e7eb` | Dividers (decorative) | — |
+| `--cc-field-border` | `#6b7280` | Borders of input fields | 4.8 : 1 (≥ 3 : 1 required) |
+| `--cc-brand` | `#16a34a` | Logo, accents, landing — **never a surface under text** | 3.3 : 1 with white — too little for text |
+| `--cc-brand-strong` | `#15803d` | Surface of the primary action, green text on light green | 5.0 : 1 with white |
+| `--cc-brand-deep` | `#006b2c` | Hover/pressed of the primary action, brand gradient | 6.7 : 1 with white |
+| `--cc-focus` | `#1d4ed8` | Focus ring (§1.6) | 6.7 : 1 on surface |
 
-**Semantische Zustände** — die Fiori-Kategorien, auf die eigene Palette gemappt:
+**Semantic states** — the Fiori categories, mapped onto our own palette:
 
-| Zustand | Vordergrund | Fläche | Rahmen | Kontrast Vordergrund auf Fläche | Bedeutung |
+| State | Foreground | Surface | Border | Contrast foreground on surface | Meaning |
 |---|---|---|---|---|---|
-| `success` | `#047857` | `#ecfdf5` | `#a7f3d0` | 5,2 : 1 | **belegt** — nur **Proven**, bestanden, signiert |
-| `warning` | `#92400e` | `#fffbeb` | `#fde68a` | 6,8 : 1 | teilweise, Entwurf, Annahme, Simulation, **veraltet (stale)** |
-| `error` | `#b91c1c` | `#fef2f2` | `#fecaca` | 5,9 : 1 | fehlgeschlagen, ungültig, abgelehnt |
-| `information` | `#1d4ed8` | `#eff6ff` | `#bfdbfe` | 6,2 : 1 | Hinweis, importiert, rekonstruiert, **von einer Person bestätigt** |
-| `neutral` | `#4b5563` | `#f9fafb` | `#e5e7eb` | 7,2 : 1 | nicht begonnen, nicht bestimmt |
+| `success` | `#047857` | `#ecfdf5` | `#a7f3d0` | 5.2 : 1 | **evidenced** — only **Proven**, passed, signed |
+| `warning` | `#92400e` | `#fffbeb` | `#fde68a` | 6.8 : 1 | partial, draft, assumption, simulation, **outdated (stale)** |
+| `error` | `#b91c1c` | `#fef2f2` | `#fecaca` | 5.9 : 1 | failed, invalid, rejected |
+| `information` | `#1d4ed8` | `#eff6ff` | `#bfdbfe` | 6.2 : 1 | note, imported, reconstructed, **confirmed by a person** |
+| `neutral` | `#4b5563` | `#f9fafb` | `#e5e7eb` | 7.2 : 1 | not started, not determined |
 
-Drei Regeln, die daraus folgen (ADR-007):
+Three rules that follow from this (ADR-007):
 
-- **Grün heißt belegt — im Arbeitsraum ausschließlich.** Primärbutton, aktiver Reiter, ausgewählte Zeile und Logo sind
-  dort nicht grün in einer Weise, die man mit einem Nachweis verwechseln kann: Auswahl und aktive Zustände tragen
-  `--cc-ink`, die Primäraktion `--cc-brand-strong` als Fläche mit weißer Schrift (eine Form, die kein Chip hat).
-- **Eine Behauptung ist kein Nachweis.** *Confirmed* ist eine Selbstauskunft des Kontos, kein Mandat, und steht
-  deshalb in `information` mit Personen-Icon — nie im Grün von *Proven*. Management muss den Unterschied auf einen Blick
-  sehen.
-- **Veraltet ist nicht falsch.** *Stale* heißt „neu rechnen" und ist `warning`, nie `error`.
+- **Green means evidenced — exclusively, in the workspace.** Primary button, active tab, selected row and logo are
+  not green there in a way that could be mistaken for evidence: selection and active states carry
+  `--cc-ink`, the primary action `--cc-brand-strong` as a surface with white text (a shape no chip has).
+- **A claim is not evidence.** *Confirmed* is a self-declaration of the account, not a mandate, and therefore stands
+  in `information` with a person icon — never in the green of *Proven*. Management must see the difference at a
+  glance.
+- **Outdated is not wrong.** *Stale* means "recalculate" and is `warning`, never `error`.
 
-**Grenzen, die man sehen muss, haben ≥ 3 : 1** (WCAG 1.4.11). Hier zählt der Rahmen gegen die Fläche, auf der das
-Element steht — andere Paare als in der Tabelle oben: Eingabefelder und `ghost`-Buttons `#6b7280` auf Weiß 4,83 : 1;
-`secondary`-Buttons `#15803d` auf ihrer Fläche `#f0fdf4` 4,79 : 1; Value States mit Rahmen in der Vordergrundfarbe auf
-Weiß — `error` `#b91c1c` 6,47 : 1, `warning` `#b45309` 5,02 : 1 (dunkler Text `#92400e` bleibt für Schrift), `success`
-`#047857` 5,48 : 1, `information` `#1d4ed8` 6,70 : 1; ebenso die Rahmen der Umriss- und Strich-Chips (§4). Die hellen Rahmenfarben der Tabelle oben sind nur für Flächen, deren Grenze der Text
-trägt (gefüllte Chips, Message Strips).
+**Boundaries that must be seen have ≥ 3 : 1** (WCAG 1.4.11). What counts here is the border against the surface the
+element sits on — other pairs than in the table above: input fields and `ghost` buttons `#6b7280` on white 4.83 : 1;
+`secondary` buttons `#15803d` on their surface `#f0fdf4` 4.79 : 1; value states with a border in the foreground colour on
+white — `error` `#b91c1c` 6.47 : 1, `warning` `#b45309` 5.02 : 1 (the dark text `#92400e` stays for type), `success`
+`#047857` 5.48 : 1, `information` `#1d4ed8` 6.70 : 1; likewise the borders of the outline and stroke chips (§4). The light border colours of the table above are only for surfaces whose boundary is carried
+by the text (filled chips, message strips).
 
-**Warn-Marken** (Balken, Diagrammsegment, Status-Punkt) nehmen `--cc-warning-mark` `#d97706`, nicht die Schriftfarbe
-`#92400e`: die liegt fast auf der Helligkeit von `error` (L* 37,5 gegen 40) und war im Balken neben Rot ohne Farbsehen
-nicht zu unterscheiden. `#d97706` hat L* 60 und 3,19 : 1 auf Weiß — genug für eine Grafik (WCAG 1.4.11), nie für
-Schrift (D.30).
+**Warning marks** (bars, chart segments, status dots) take `--cc-warning-mark` `#d97706`, not the text colour
+`#92400e`: that sits at almost the lightness of `error` (L* 37.5 against 40) and could not be told apart from red in the bar
+without colour vision. `#d97706` has L* 60 and 3.19 : 1 on white — enough for a graphic (WCAG 1.4.11), never for
+text (D.30).
 
-**Dunkel gibt es genau zweimal** (ADR-028): die **Code-Fläche** `--cc-code-bg` für Quelltext — die einzige dunkle
-Fläche für Inhalt — und die **Überlagerung** `--cc-overlay` = `#0b1c30` (Weiß darauf 17,2 : 1) für vorübergehende
-Schichten über dem Inhalt: Coach Mark und Toast. Ein gewähltes Segment trägt `--cc-ink` als kleine Fläche; das ist
-Auswahl, keine Fläche im Sinne dieser Regel.
+**Dark exists exactly twice** (ADR-028): the **code surface** `--cc-code-bg` for source code — the only dark
+surface for content — and the **overlay** `--cc-overlay` = `#0b1c30` (white on it 17.2 : 1) for temporary
+layers above the content: coach mark and toast. A selected segment carries `--cc-ink` as a small surface; that is
+selection, not a surface in the sense of this rule.
 
-**Code-Fläche** für Quelltext (Quellspalte, Aufbau, Code-Karte):
+**Code surface** for source code (source column, build-up, code card):
 
-| Token | Wert | Wofür | Kontrast auf `#030712` · auf markierter Zeile |
+| Token | Value | For | Contrast on `#030712` · on highlighted line |
 |---|---|---|---|
-| `--cc-code-bg` | `#030712` | Fläche | — |
+| `--cc-code-bg` | `#030712` | Surface | — |
 | `--cc-code-ink` | `#e5e7eb` | Code | 16,3 : 1 · 11,6 : 1 |
-| `--cc-code-muted` | `#9ca3af` | Zeilennummern, Kommentare, Auslassung | 7,9 : 1 · 5,6 : 1 |
-| `--cc-code-keyword` | `#c4b5fd` | ABAP-Schlüsselwörter | 10,9 : 1 · 7,8 : 1 |
-| `--cc-code-literal` | `#fcd34d` | Literale — die Werte versteckter Regeln | 14,0 : 1 · 9,9 : 1 |
-| `--cc-code-name` | `#93c5fd` | Aufrufe, FORM-Namen | 11,2 : 1 · 7,9 : 1 |
-| `--cc-code-hl` | `rgb(59 130 246 / .28)`, links 3 px `#93c5fd` | markierte Zeile (ergibt `#132952`) | — |
+| `--cc-code-muted` | `#9ca3af` | Line numbers, comments, elision | 7.9 : 1 · 5.6 : 1 |
+| `--cc-code-keyword` | `#c4b5fd` | ABAP keywords | 10.9 : 1 · 7.8 : 1 |
+| `--cc-code-literal` | `#fcd34d` | Literals — the values of hidden rules | 14.0 : 1 · 9.9 : 1 |
+| `--cc-code-name` | `#93c5fd` | Calls, FORM names | 11.2 : 1 · 7.9 : 1 |
+| `--cc-code-hl` | `rgb(59 130 246 / .28)`, left 3 px `#93c5fd` | highlighted line (results in `#132952`) | — |
 
-Mehr Syntaxfarben gibt es nicht; die Markierung einer Zeile trägt zusätzlich den linken Balken, nicht nur Farbe.
+There are no further syntax colours; the highlight of a line additionally carries the left bar, not only colour.
 
-**Kein Dark Mode** (ADR-003). Ersatz für Nutzer, die ihn aus Sehgründen brauchen: das Produkt respektiert
-`forced-colors: active` (Windows-Kontrastdesigns) — Zustände bleiben über Wort, Icon und Form (§4) unterscheidbar,
-Fokusringe und Feldgrenzen bleiben sichtbar.
+**No dark mode** (ADR-003). Substitute for users who need it for reasons of eyesight: the product respects
+`forced-colors: active` (Windows contrast themes) — states stay distinguishable through word, icon and shape (§4),
+focus rings and field boundaries stay visible.
 
-### 1.2 Schrift
+### 1.2 Type
 
-- **Inter** (über `next/font`); Monospace für Code, IDs, Zeilenanker und ISO-Datum: `ui-monospace, SFMono-Regular,
+- **Inter** (via `next/font`); monospace for code, IDs, line anchors and ISO dates: `ui-monospace, SFMono-Regular,
   Menlo, Consolas`.
-- Skala im Arbeitsraum:
+- Scale in the workspace:
 
-| Rolle | Größe / Gewicht | Beispiel |
+| Role | Size / weight | Example |
 |---|---|---|
-| Projekttitel (Kopf der Object Page) | 22 px / **800**, `-0.02em` | „Emergency purchase approval" |
-| Abschnittstitel (`h2`) | 15 px / **700** | „Process — reconstructed from code" |
-| Kartentitel (`h3`) | 14 px / **700** | „Not determined" |
-| Fließtext | 14 px / 500, Zeilenhöhe 1,55 | Regeltext |
-| Tabellenzelle, Nebentext | 13 px / **500** | Zeilen |
-| Object Identifier (Titel) | 13 px / **600** | „Vendor block list validation" |
-| Meta/Chip | 12 px / **600** | Chip- und Tag-Text, Metazeile, Hinweis unter einem Feld |
-| Mikro-Label | 11 px / **600**, VERSALIEN, `0.08em` | Spaltenköpfe, Facetten-Label |
+| Project title (object page header) | 22 px / **800**, `-0.02em` | "Emergency purchase approval" |
+| Section title (`h2`) | 15 px / **700** | "Process — reconstructed from code" |
+| Card title (`h3`) | 14 px / **700** | "Not determined" |
+| Body text | 14 px / 500, line height 1.55 | Rule text |
+| Table cell, secondary text | 13 px / **500** | Rows |
+| Object identifier (title) | 13 px / **600** | "Vendor block list validation" |
+| Meta/chip | 12 px / **600** | Chip and tag text, meta line, hint below a field |
+| Micro label | 11 px / **600**, CAPITALS, `0.08em` | Column headers, facet label |
 
-**Untergrenze 11 px.** Kein Inhalt in Versalien, nur Labels. 900 gibt es im Arbeitsraum nicht — es flacht die
-Hierarchie ab. **12 px ist eine eigene Stufe** (ADR-047), nicht die Lücke zwischen 11 und 13: Chips, Kennungen, Tags,
-Metazeilen und Feldhinweise, immer 600 — für Fließtext und Tabellenzellen nie. Der Stufenkopf (`StageHeader`) folgt
-dem Projekttitel, 22 px / 800 (§2.3, ADR-050); Landing-Köpfe bleiben bei `SectionHeader` (§1.7).
+**Lower limit 11 px.** No content in capitals, only labels. 900 does not exist in the workspace — it flattens the
+hierarchy. **12 px is a step of its own** (ADR-047), not the gap between 11 and 13: chips, identifiers, tags,
+meta lines and field hints, always 600 — never for body text and table cells. The stage header (`StageHeader`) follows
+the project title, 22 px / 800 (§2.3, ADR-050); landing headers stay with `SectionHeader` (§1.7).
 
-### 1.3 Abstand
+### 1.3 Spacing
 
-Ein 4-px-Raster als Tokens; andere Abstände gibt es nicht.
+A 4 px grid as tokens; there are no other spacings.
 
-| Token | Wert | Typische Verwendung |
+| Token | Value | Typical use |
 |---|---|---|
-| `--cc-space-1` | 4 px | Icon zu Text, Chip innen vertikal |
-| `--cc-space-2` | 8 px | zwischen Chips, Label zu Feld |
-| `--cc-space-3` | 12 px | Karteninnenabstand *compact*, Zeilenhöhe-Polster |
-| `--cc-space-4` | 16 px | Karteninnenabstand *cozy*, zwischen Karten |
-| `--cc-space-5` | 24 px | zwischen Abschnitten, Seitenrand ab M |
-| `--cc-space-6` | 32 px | Kopf der Object Page zu Inhalt |
-| `--cc-space-7` | 48 px | nur Landing |
+| `--cc-space-1` | 4 px | Icon to text, chip inner vertical |
+| `--cc-space-2` | 8 px | Between chips, label to field |
+| `--cc-space-3` | 12 px | Card padding *compact*, row-height padding |
+| `--cc-space-4` | 16 px | Card padding *cozy*, between cards |
+| `--cc-space-5` | 24 px | Between sections, page margin from M |
+| `--cc-space-6` | 32 px | Object page header to content |
+| `--cc-space-7` | 48 px | Landing only |
 
-**Ein halber Schritt, genau einer** (ADR-048): **2 px** (Tailwind `*-0.5`) nur innerhalb von Chips, Kennungen und Tags
-(Innenabstand vertikal, Abstand Icon zu Wort) und zur optischen Ausrichtung eines Icons an der Textzeile. 6, 10 und
-14 px (`*-1.5`, `*-2.5`, `*-3.5`) gibt es nicht — auch nicht in `components/cc`; der Guard zählt sie als Ratsche bis null.
+**One half step, exactly one** (ADR-048): **2 px** (Tailwind `*-0.5`) only inside chips, identifiers and tags
+(vertical padding, spacing icon to word) and for optically aligning an icon with the line of text. 6, 10 and
+14 px (`*-1.5`, `*-2.5`, `*-3.5`) do not exist — not in `components/cc` either; the guard counts them as a ratchet down to zero.
 
-### 1.4 Form, Tiefe, Hintergrund
+### 1.4 Shape, depth, background
 
-| | Arbeitsraum | Öffentliche Seiten |
+| | Workspace | Public pages |
 |---|---|---|
-| Radius Karte/Panel | **12 px** | 22–28 px |
-| Radius Zeile, Feld, Button | **8 px** | Pille |
-| Radius Chip/Tag | Pille | Pille |
-| Schatten | `0 1px 2px rgb(0 0 0 / .04)`; Dialog `0 16px 48px rgb(11 28 48 / .18)` | wie heute |
-| Hintergrund | einfarbig `--cc-page` — **kein Mesh, kein Raster** | Mesh und Raster, `opacity ≤ .18` |
+| Radius card/panel | **12 px** | 22–28 px |
+| Radius row, field, button | **8 px** | Pill |
+| Radius chip/tag | Pill | Pill |
+| Shadow | `0 1px 2px rgb(0 0 0 / .04)`; dialog `0 16px 48px rgb(11 28 48 / .18)` | as today |
+| Background | plain `--cc-page` — **no mesh, no grid** | Mesh and grid, `opacity ≤ .18` |
 
-### 1.5 Buttons — genau vier
+### 1.5 Buttons — exactly four
 
-| Variante | Aussehen | Regel |
+| Variant | Appearance | Rule |
 |---|---|---|
-| `primary` | Fläche `--cc-brand-strong`, Schrift Weiß, Hover `--cc-brand-deep` | **eine** je Bereich — ein Bereich ist eine Karte, ein Dialog oder eine Leiste; die Hauptaktion der Seite steht in „Next step" |
-| `secondary` | Fläche `#f0fdf4`, Rand `--cc-brand-strong`, Schrift `--cc-brand-strong` (4,8 : 1) | weitere Aktionen |
-| `ghost` | Fläche Weiß, Rand `--cc-field-border`, Schrift `--cc-ink-muted` | Abbrechen, Nebenaktionen; destruktiv mit `error`-Schrift |
-| `dark` | Fläche `#030712`, Schrift Weiß | **nur** für die bindende Bestätigung (Entscheidung) in der Message Box oder der Bearbeitungs-Fußleiste — nie neben einem `primary` in derselben Leiste |
+| `primary` | Surface `--cc-brand-strong`, text white, hover `--cc-brand-deep` | **one** per area — an area is a card, a dialog or a bar; the page's main action is in "Next step" |
+| `secondary` | Surface `#f0fdf4`, border `--cc-brand-strong`, text `--cc-brand-strong` (4.8 : 1) | further actions |
+| `ghost` | Surface white, border `--cc-field-border`, text `--cc-ink-muted` | Cancel, secondary actions; destructive with `error` text |
+| `dark` | Surface `#030712`, text white | **only** for the binding confirmation (decision) in the message box or the edit footer — never next to a `primary` in the same bar |
 
-Höhe 32 px *compact*, 40 px *cozy*. Destruktives läuft über eine **Message Box** (§2.6), nie über `window.confirm`.
+Height 32 px *compact*, 40 px *cozy*. Destructive actions go through a **message box** (§2.6), never through `window.confirm`.
 
-Keine Buttons im Sinne dieser Regel, aber mit festem Aussehen:
+Not buttons in the sense of this rule, but with a fixed appearance:
 
-| Bedienelement | Aussehen | Wo |
+| Control | Appearance | Where |
 |---|---|---|
-| **Segmented Control** | Rahmen `--cc-field-border`; gewähltes Segment Fläche `--cc-ink`, Schrift Weiß, `aria-pressed`/`role="radio"`; übrige Segmente Schrift `--cc-ink-muted` | Sichten, „Map \| Steps", Fokus in IT, Regelentscheidung |
-| **Icon-Button** | wie `ghost`, quadratisch in Button-Höhe, Icon 16 px, `aria-label` Pflicht | Zoom, Schließen, Suche und Menü auf S |
-| **„Why?"-Ziel** | Icon „?" 16 px in `--cc-ink-muted` in einem Ziel von mindestens 24 × 24 px, Name „Why: …" | an Zahl und Status (§2.10) |
+| **Segmented control** | Border `--cc-field-border`; selected segment surface `--cc-ink`, text white, `aria-pressed`/`role="radio"`; other segments text `--cc-ink-muted` | Views, "Map \| Steps", focus in IT, rule decision |
+| **Icon button** | like `ghost`, square at button height, icon 16 px, `aria-label` mandatory | Zoom, close, search and menu on S |
+| **"Why?" target** | Icon "?" 16 px in `--cc-ink-muted` in a target of at least 24 × 24 px, name "Why: …" | on number and status (§2.10) |
 
-### 1.6 Fokus
+### 1.6 Focus
 
-Jedes bedienbare Element zeigt bei Tastaturfokus (`:focus-visible`) einen Ring: **2 px `--cc-focus`, 2 px Abstand**,
-Radius wie das Element. Nie `outline: none` ohne diesen Ersatz. Die Fokusreihenfolge folgt der Lesereihenfolge.
+Every operable element shows a ring on keyboard focus (`:focus-visible`): **2 px `--cc-focus`, 2 px offset**,
+radius like the element. Never `outline: none` without this substitute. The focus order follows the reading order.
 
-### 1.7 Icons, Bewegung, Illustrationen
+### 1.7 Icons, motion, illustrations
 
-- **lucide-react**, 16 px im Arbeitsraum, 20 px im Kopf, Strich 2.
-- SAP-Icons (`@ui5/webcomponents-icons`) und Illustrationen (`@ui5/webcomponents-fiori`) sind laut npm-Metadaten
-  Apache-2.0 (geprüft 15.09.2026). Einbau nur nach Prüfung der einzelnen Assets und der Bundle-Größe (Icons rund 5 MB
-  entpackt) — als SVG-Pfade, nie als Web Components.
-- **Bewegung nur, wo sie einen Zustandswechsel erklärt**, 150–250 ms, mit `prefers-reduced-motion` abschaltbar. Keine
-  Dauerbewegung, kein Blinken, keine pulsierenden Punkte ohne Text. Zwei Inszenierungen sind erlaubt, weil sie etwas
-  erklären: der Aufbau — Knoten wachsen aus ihrer Zeile (§5.1) — und die drei Sichten in „New project" (§6.1.1). Beide
-  laufen einmal, sind überspringbar und stehen bei reduzierter Bewegung still. **Auf der öffentlichen Startseite**
-  (Mockup `docs/roadmap/clean-core-landing-v3_0.html`, abgenommen) gelten dieselben Regeln für ihre Interaktionen:
-  die Sichten-Bühne läuft einmal, alles andere bewegt sich nur auf Handlung des Besuchers.
-- **Fokus auf dunkler Code-Fläche:** der Ring nimmt `--cc-code-name` `#93c5fd` (11,2 : 1 auf `#030712`) statt
-  `--cc-focus`, der dort unsichtbar wäre.
-- **Öffentliche Seiten:** `SectionHeader` behält Pille, Größe und Lead; die Gewichte folgen mit 3.0 der Skala aus §1.2
-  (höchstens 800) — Roadmap 3.0.6 passt `tests/landing-style-guard.spec.ts` dazu an.
+- **lucide-react**, 16 px in the workspace, 20 px in the header, stroke 2.
+- SAP icons (`@ui5/webcomponents-icons`) and illustrations (`@ui5/webcomponents-fiori`) are Apache-2.0 according to npm metadata
+  (checked 15.09.2026). Integration only after checking the individual assets and the bundle size (icons around 5 MB
+  unpacked) — as SVG paths, never as web components.
+- **Motion only where it explains a change of state**, 150–250 ms, can be switched off with `prefers-reduced-motion`. No
+  continuous motion, no blinking, no pulsing dots without text. Two stagings are allowed because they explain
+  something: the build-up — nodes grow out of their line (§5.1) — and the three views in "New project" (§6.1.1). Both
+  run once, can be skipped and stand still under reduced motion. **On the public home page**
+  (mockup `docs/roadmap/clean-core-landing-v3_0.html`, accepted) the same rules apply to its interactions:
+  the views stage runs once, everything else moves only on the visitor's action.
+- **Focus on the dark code surface:** the ring takes `--cc-code-name` `#93c5fd` (11.2 : 1 on `#030712`) instead of
+  `--cc-focus`, which would be invisible there.
+- **Public pages:** `SectionHeader` keeps pill, size and lead; with 3.0 the weights follow the scale from §1.2
+  (at most 800) — roadmap 3.0.6 adjusts `tests/landing-style-guard.spec.ts` accordingly.
 
-### 1.8 Diagramme
+### 1.8 Charts
 
-- **Diagramme, die Zustände zählen** (Level-Verteilung A–D, Befunde je Schwere), verwenden die Zustandsfarben — und
-  beschriften jede Kategorie. Level: A `information`, B `neutral`, C `warning`, D `error`, jeweils mit dem Buchstaben
-  (ADR-024) — die Level stammen aus SAPs Klassifikationsdatei, sind also *Imported*, kein Nachweis, und stehen nie im
-  signierten Audit-Pack; Grün bekommen sie deshalb nicht. Schwere: Critical und High `error`, Medium `warning`, Low
-  `neutral`, Info `information`, jeweils mit dem Wort (ADR-049) — eine Schwere ist kein Nachweis und bekommt kein Grün.
-- Die Warnfarbe einer Marke in einem Diagramm ist `--cc-warning-mark` (§1.1), nicht die Schriftfarbe.
-- **Alle anderen Diagramme** verwenden die kategoriale Palette und nie eine Zustandsfarbe: `#334155`, `#4f46e5`,
-  `#0d9488`, `#9333ea`, `#c026d3`. Sequenziell (Mengen, Verlauf): Indigo `#e0e7ff` → `#a5b4fc` → `#6366f1` → `#3730a3`.
-- Jede Zahl im Diagramm auch als Text erreichbar (Tabelle oder `aria-label`).
+- **Charts that count states** (level distribution A–D, findings per severity) use the state colours — and
+  label every category. Level: A `information`, B `neutral`, C `warning`, D `error`, each with the letter
+  (ADR-024) — the levels come from SAP's classification file, so they are *Imported*, not evidence, and never stand in the
+  signed audit pack; that is why they get no green. Severity: Critical and High `error`, Medium `warning`, Low
+  `neutral`, Info `information`, each with the word (ADR-049) — a severity is not evidence and gets no green.
+- The warning colour of a mark in a chart is `--cc-warning-mark` (§1.1), not the text colour.
+- **All other charts** use the categorical palette and never a state colour: `#334155`, `#4f46e5`,
+  `#0d9488`, `#9333ea`, `#c026d3`. Sequential (quantities, progression): indigo `#e0e7ff` → `#a5b4fc` → `#6366f1` → `#3730a3`.
+- Every number in a chart is also reachable as text (table or `aria-label`).
 
 ---
 
-## 2. Struktur & Interaktion — SAP-Fiori-Muster
+## 2. Structure & interaction — SAP Fiori patterns
 
-„An SAP-Fiori-Mustern orientiert" — so heißt es nach außen. „SAP Fiori" ist eine Marke; die Oberfläche ist keine
-Fiori-App und sagt das nie.
+"Oriented on SAP Fiori patterns" — that is how it is put to the outside. "SAP Fiori" is a trademark; the interface is not a
+Fiori app and never says so.
 
 ### 2.1 Shell
 
-- **Shell Bar** oben: Logo und Produktname links, Pfad (Workspace › Projekt), Suche ⌘K, Hilfe, Kontomenü rechts.
-- Keine Side Navigation in 3.0: ein Projekt ist ein Fall, die Tiefe liegt im Arbeitsraum.
+- **Shell bar** at the top: logo and product name on the left, path (Workspace › Project), search ⌘K, help, account menu on the right.
+- No side navigation in 3.0: a project is one case, the depth lies in the workspace.
 
 ### 2.2 Floorplans
 
-| Floorplan | Wo | Muster |
+| Floorplan | Where | Pattern |
 |---|---|---|
-| **List Report** | „My workspace" (Projektliste) | Filterleiste (§2.5), Toolbar „Projects (23)", Tabelle, Zeilenklick öffnet das Projekt |
-| **Object Page** | der Arbeitsraum eines Projekts | Kopf, Werkzeugleiste, Anchor Bar, Abschnitte, Fußleiste nur beim Bearbeiten (§2.3) |
-| **Overview** | Management-Sicht eines Projekts | Karten mit je einer Antwort, jede Zahl mit „Why?" |
+| **List report** | "My workspace" (project list) | Filter bar (§2.5), toolbar "Projects (23)", table, a row click opens the project |
+| **Object page** | the workspace of a project | Header, toolbar, anchor bar, sections, footer only when editing (§2.3) |
+| **Overview** | Management view of a project | Cards with one answer each, every number with "Why?" |
 
-**Mit 3.0 ist alles neu, aus einem Guss** (ADR-052, Sonny 24.09.2026). Keine alte Oberfläche wird entfernt, statt
-umgebaut zu werden: das **alte Dashboard** (`/dashboard`) und die **alte Stufen-Demo** (`/demo/[stage]`) werden nach
-dieser Datei neu gebaut — Floorplan, Tokens, cc-Komponenten, Sprache — wie jede andere Seite. Was sie heute können,
-geht dabei nicht verloren. Die neue Demo folgt §6.1.2.
+**With 3.0 everything is new, all of a piece** (ADR-052, Sonny 24.09.2026). No old interface is removed instead
+of being rebuilt: the **old dashboard** (`/dashboard`) and the **old stage demo** (`/demo/[stage]`) are rebuilt according to
+this file — floorplan, tokens, cc components, language — like every other page. What they can do today
+is not lost in the process. The new demo follows §6.1.2.
 
-### 2.3 Object Page des Arbeitsraums
+### 2.3 Object page of the workspace
 
-Von oben nach unten:
+From top to bottom:
 
-1. **Kopf:** Projekttitel; Metazeile in Mono (Projekt-ID, Manifest, Revision, Quellstand, Engine, Regelversion);
-   **Kennzahl-Facetten** — Traceability, Rules confirmed, Level distribution, **Not determined** (Anzahl). Rechts im
-   Kopf: der **Sichten-Umschalter** als Segmented Control „Business | IT | Management" (ADR-008, Reihenfolge ADR-044) und die Initialen
-   der Konten mit Einsicht (Roadmap 5.5 — keine weiteren Personendaten).
-2. **Statuszeile** (Roadmap-Schritt 1.4): Provenance · Need · Standard · Costs · Confirmed · Execution · Handover —
-   je ein **Objektstatus**, Text mit Zustandspunkt („not started", „partial", „draft", „mock only"), solange nichts da
-   ist „not started". Der Objektstatus sagt, **wie weit** etwas ist; der Herkunfts-Chip (§4) sagt, **woher** eine
-   Aussage kommt. Beide sehen verschieden aus und werden nie vermischt (ADR-023): ein Objektstatus ist nie ein Chip mit
-   Icon, ein Herkunfts-Chip trägt nur die neun Werte aus `lib/provenance.ts`.
-3. **Werkzeugleiste:** die sieben Stufen als Werkzeuge (Analyze … Delivery), links ausgerichtet; rechts Export und
-   Teilen. In IT offen, in Business und Management als Menü „Tools" (§2.11).
-4. **Anchor Bar:** allein für die Ebenen — Need & process · Standard fit · Costs & assumptions · Architecture &
-   dependencies · Evidence & controls · Changes & commitments. Leere Ebenen stehen unter „More" und sagen dort, was
-   fehlt (§2.11).
-5. **Inhalt:** Abschnitte der gewählten Ebene. **„Next step"** ist eine Karte (regelbasiert, Roadmap-Schritt 6.5),
-   keine Leiste — in Business im Kopf unter Enthüllung und *Not determined*, in Management und IT oben im Inhalt.
-6. **Fußleiste nur im Bearbeitungsmodus** (Prozessmodell, Regeln): `Save` (primary), `Discard` (ghost), der Hinweis
-   „Unsaved changes" und ein **Message Popover** (§2.6) mit der Zahl der Prüfhinweise (Roadmap-Schritt 3.3). Jedes
-   Speichern ist eine Revision (Roadmap-Schritt 3.2). Außerhalb des Bearbeitens gibt es keine Fußleiste.
+1. **Header:** project title; meta line in mono (project ID, manifest, revision, source state, engine, rule version);
+   **KPI facets** — Traceability, Rules confirmed, Level distribution, **Not determined** (count). On the right in the
+   header: the **view switcher** as a segmented control "Business | IT | Management" (ADR-008, order ADR-044) and the initials
+   of the accounts with read access (roadmap 5.5 — no further personal data).
+2. **Status line** (roadmap step 1.4): Provenance · Need · Standard · Costs · Confirmed · Execution · Handover —
+   one **object status** each, text with a state dot ("not started", "partial", "draft", "mock only"); as long as nothing is there,
+   "not started". The object status says **how far along** something is; the provenance chip (§4) says **where** a
+   statement comes from. The two look different and are never mixed (ADR-023): an object status is never a chip with
+   an icon, a provenance chip carries only the nine values from `lib/provenance.ts`.
+3. **Toolbar:** the seven stages as tools (Analyze … Delivery), left-aligned; on the right export and
+   sharing. Open in IT, in Business and Management as a "Tools" menu (§2.11).
+4. **Anchor bar:** for the layers alone — Need & process · Standard fit · Costs & assumptions · Architecture &
+   dependencies · Evidence & controls · Changes & commitments. Empty layers are under "More" and say there what is
+   missing (§2.11).
+5. **Content:** sections of the selected layer. **"Next step"** is a card (rule-based, roadmap step 6.5),
+   not a bar — in Business in the header below the disclosure and *Not determined*, in Management and IT at the top of the content.
+6. **Footer only in edit mode** (process model, rules): `Save` (primary), `Discard` (ghost), the note
+   "Unsaved changes" and a **message popover** (§2.6) with the number of check notes (roadmap step 3.3). Every
+   save is a revision (roadmap step 3.2). Outside editing there is no footer.
 
-**Der Kopf je Sicht** (ADR-026). In **Business** führt der Inhalt, nicht der Projektstand: unter dem Titel stehen
-Klarsprache-Satz, Enthüllungszeile mit *Not determined* und die Karte „Next step"; Facetten und Statuszeile sind zu
-**einer** Zeile „Project status" eingeklappt, in Klarsprache („Steps linked to code 92 % · Rules confirmed 0 of 7 · Show
-project status"), ohne Level-Verteilung und ohne *Not determined* — das steht schon in der Enthüllungszeile. In
-**Management** und **IT** sind Facetten und Statuszeile offen. Anchor Bar und Werkzeuge gibt es in jeder Sicht — die
-Werkzeuge in IT als offene Leiste, in Business und Management als Menü „Tools" (§2.11). Unter dem
-Sichten-Umschalter steht ein Satz, welche Frage die Sicht beantwortet; „About this view" öffnet den Absatz dazu (§6.1).
+**The header per view** (ADR-026). In **Business** the content leads, not the project status: below the title stand the
+plain-language sentence, the disclosure line with *Not determined* and the "Next step" card; facets and status line are collapsed into
+**one** line "Project status", in plain language ("Steps linked to code 92 % · Rules confirmed 0 of 7 · Show
+project status"), without level distribution and without *Not determined* — that is already in the disclosure line. In
+**Management** and **IT** facets and status line are open. Anchor bar and tools exist in every view — the
+tools in IT as an open bar, in Business and Management as a "Tools" menu (§2.11). Below the
+view switcher stands one sentence on which question the view answers; "About this view" opens the paragraph on it (§6.1).
 
-Überschriften: der Projekttitel ist `h1`, jeder Abschnitt `h2`, jede Karte `h3`; keine Ebene wird übersprungen.
+Headings: the project title is `h1`, every section `h2`, every card `h3`; no level is skipped.
 
-**Wie die drei Navigationen zusammenspielen** (ADR-018) — jede hat genau eine Aufgabe:
+**How the three navigations work together** (ADR-018) — each has exactly one job:
 
-| Element | Tut | Tut nicht | Start | Gehalten in |
+| Element | Does | Does not | Start | Held in |
 |---|---|---|---|---|
-| **Sicht** (Segmented Control) | ordnet denselben Inhalt nach einer Frage und wählt die erste Antwort (§5.6) | ändert keine Daten, filtert nichts weg, öffnet keine Seite | Business | URL (`?view=`) und Browser |
-| **Ebene** (Anchor Bar) | springt zu einem Abschnitt der Seite und markiert, wo man ist | wechselt nicht die Sicht | Need & process | URL-Fragment (`#need`) |
-| **Werkzeug** (Werkzeugleiste) | öffnet die Stufe als eigene Seite; „Back to workspace" kehrt zu Sicht und Ebene zurück | ist keine Fortschrittsanzeige | — | URL der Stufe |
+| **View** (segmented control) | orders the same content by a question and selects the first answer (§5.6) | changes no data, filters nothing out, opens no page | Business | URL (`?view=`) and browser |
+| **Layer** (anchor bar) | jumps to a section of the page and marks where you are | does not switch the view | Need & process | URL fragment (`#need`) |
+| **Tool** (toolbar) | opens the stage as a page of its own; "Back to workspace" returns to view and layer | is not a progress indicator | — | URL of the stage |
 
-**Der Kopf einer Stufe** (ADR-050). Eine Stufe ist eine Werkzeug-Seite des Arbeitsraums, kein Landing-Abschnitt. Ihr
-Kopf kommt aus `StageHeader` und steht wie der Projekttitel: **22 px / 800, `-0.02em`, `--cc-ink`**, als `h1`. Das
-Icon steht neutral davor — 20 px, `--cc-ink-muted`, ohne Fläche; keine grüne Blase, denn Grün heißt im Arbeitsraum
-belegt (§1.1). Über dem Titel der Link **„Back to workspace"** (13 px / 600, `--cc-ink-muted`, Pfeil links; ein Link,
-kein Button), der zu Sicht und Ebene zurückführt, von denen die Stufe geöffnet wurde. Eyebrow und Lead bleiben, in der
-Skala von §1.2 (Mikro-Label, Fließtext).
+**The header of a stage** (ADR-050). A stage is a tool page of the workspace, not a landing section. Its
+header comes from `StageHeader` and stands like the project title: **22 px / 800, `-0.02em`, `--cc-ink`**, as `h1`. The
+icon stands neutrally in front of it — 20 px, `--cc-ink-muted`, without a surface; no green bubble, because in the workspace green means
+evidenced (§1.1). Above the title the link **"Back to workspace"** (13 px / 600, `--cc-ink-muted`, arrow left; a link,
+not a button), which leads back to the view and layer from which the stage was opened. Eyebrow and lead stay, in the
+scale of §1.2 (micro label, body text).
 
-Beim Scrollen schrumpft der Kopf auf Titel, Sichten-Umschalter und die Facetten-Zeile — in Business die Zeile „Project
-status"; die Anchor Bar bleibt stehen. **Eine
-Sicht in der URL ist eine Perspektive, keine Freigabe:** ein Link mit `?view=management` öffnet nichts, wofür das Konto
-keine Einsicht hat. Die Sicht lebt nie im Projekt, Run oder Audit-Pack (Roadmap 6.1).
+On scrolling the header shrinks to title, view switcher and the facet line — in Business the "Project
+status" line; the anchor bar stays in place. **A
+view in the URL is a perspective, not an approval:** a link with `?view=management` opens nothing for which the account
+has no read access. The view never lives in the project, run or audit pack (roadmap 6.1).
 
-### 2.4 Tabellen
+### 2.4 Tables
 
-- **Object Identifier:** Titel 600, darunter die ID in Mono (`BR-004`).
-- Zahlen rechtsbündig, Einheit in der Spaltenüberschrift.
-- **Status als Text mit Punkt** (Object Status) — nie nur Farbe.
-- Zeilenaktionen rechts; Toolbar mit Titel und Zähler („Findings (42)").
-- **Leer** (es gibt noch nichts): Empty State mit Satz und einer Primäraktion. **Null Treffer** (Filter schließt alles
-  aus): „No findings match these filters" und „Clear filters" — nie der Empty State.
-- Auf S: Karten statt Spalten.
+- **Object identifier:** title 600, below it the ID in mono (`BR-004`).
+- Numbers right-aligned, unit in the column header.
+- **Status as text with a dot** (object status) — never colour alone.
+- Row actions on the right; toolbar with title and counter ("Findings (42)").
+- **Empty** (there is nothing yet): empty state with a sentence and one primary action. **Zero hits** (filter excludes
+  everything): "No findings match these filters" and "Clear filters" — never the empty state.
+- On S: cards instead of columns.
 
-### 2.5 Filterleiste
+### 2.5 Filter bar
 
-**Live-Filter** (ADR-010): Suchfeld und bis zu vier Filter über der Tabelle, Wirkung sofort (200 ms nach der letzten
-Eingabe), Zähler in der Toolbar, „Clear filters" sobald einer gesetzt ist. Kein „Go", kein „Adapt filters" — die
-Datenmengen eines Projekts und eines Arbeitsbereichs sind klein. Wird eine Liste serverseitig paginiert, wechselt sie
-zu „Go"; das ist dann ein neuer ADR. Der Zähler steht in einer `aria-live="polite"`-Region, damit ein Screenreader die
-Wirkung des Filters ansagt („12 findings").
+**Live filter** (ADR-010): search field and up to four filters above the table, effect immediate (200 ms after the last
+input), counter in the toolbar, "Clear filters" as soon as one is set. No "Go", no "Adapt filters" — the
+data volumes of a project and of a workspace are small. If a list is paginated server-side, it switches
+to "Go"; that is then a new ADR. The counter sits in an `aria-live="polite"` region so that a screen reader announces the
+effect of the filter ("12 findings").
 
-### 2.6 Meldungen
+### 2.6 Messages
 
-| Muster | Wofür |
+| Pattern | For |
 |---|---|
-| **Message Strip** | ein Hinweis im Kontext, oben im Abschnitt: Sperre, veralteter Stand, Beispieldaten, Formularfehler-Zusammenfassung |
-| **Message Popover** | gesammelte Prüfhinweise in der Bearbeitungs-Fußleiste, mit Sprung zum Element |
-| **Message Box** | Bestätigung vor Unumkehrbarem — Löschen, Widerruf, Entscheidung — mit den Folgen im Text. **Modal:** abgedunkelte Seite dahinter, die Seite ist `inert`, der Fokus bleibt in der Box und kehrt beim Schließen an den auslösenden Button zurück; so steht nie eine zweite Bestätigung daneben (ADR-028) |
-| **Toast** | nur für abgeschlossene Nebenaktionen („Export downloaded"): unten rechts, Fläche `--cc-overlay`, `role="status"`, 4 s, höchstens einer zugleich, nie für Fehler |
+| **Message strip** | a note in context, at the top of the section: lock, outdated state, sample data, form error summary |
+| **Message popover** | collected check notes in the edit footer, with a jump to the element |
+| **Message box** | confirmation before something irreversible — deleting, revoking, deciding — with the consequences in the text. **Modal:** darkened page behind it, the page is `inert`, focus stays in the box and returns to the triggering button on closing; so a second confirmation never stands next to it (ADR-028) |
+| **Toast** | only for completed secondary actions ("Export downloaded"): bottom right, surface `--cc-overlay`, `role="status"`, 4 s, at most one at a time, never for errors |
 
-Ein Message Strip, der nach einer Aktion erscheint (Formularfehler, fehlgeschlagener Lauf), ist fokussierbar
-(`tabindex="-1"`) und bekommt den Fokus; ein ohnehin sichtbarer Hinweis (Sperre, Beispieldaten) nicht.
+A message strip that appears after an action (form error, failed run) is focusable
+(`tabindex="-1"`) and receives focus; a note that is visible anyway (lock, sample data) does not.
 
-### 2.7 Formulare und Value States
+### 2.7 Forms and value states
 
-Das meistgenutzte Muster — für Regeln bestätigen, Einladen, Annahmen erfassen:
+The most used pattern — for confirming rules, inviting, capturing assumptions:
 
-- **Label über dem Feld**, 13 px / 600; Hilfetext darunter in `--cc-ink-muted`.
-- **Pflichtfeld:** Sternchen am Label plus `aria-required`; ein Formular mit Pflichtfeldern sagt oben einmal „* required".
-- Felder: Input, Textarea, Select, Checkbox (Label rechts), Radio-Gruppe mit Legende, Segmented Control. Höhe 32 px
-  *compact*, 40 px *cozy*; Rahmen `--cc-field-border`.
-- **Value State am Feld:** Rahmen in der Zustandsfarbe und darunter **Icon + Text** (`error`: was falsch ist und wie es
-  richtig wird; `warning`: was zu prüfen ist; `success` nur, wo eine Prüfung wirklich stattfand; `information`: Hinweis).
-- Prüfen beim Verlassen des Felds und beim Absenden — nicht beim ersten Tippen. Scheitert das Absenden: Message Strip
-  oben mit Links zu den Feldern, Fokus auf den Strip.
+- **Label above the field**, 13 px / 600; help text below it in `--cc-ink-muted`.
+- **Required field:** asterisk on the label plus `aria-required`; a form with required fields says "* required" once at the top.
+- Fields: input, textarea, select, checkbox (label on the right), radio group with legend, segmented control. Height 32 px
+  *compact*, 40 px *cozy*; border `--cc-field-border`.
+- **Value state on the field:** border in the state colour and below it **icon + text** (`error`: what is wrong and how to make it
+  right; `warning`: what to check; `success` only where a check really took place; `information`: note).
+- Validate on leaving the field and on submitting — not on the first keystroke. If submitting fails: message strip
+  at the top with links to the fields, focus on the strip.
 
-### 2.8 Laden
+### 2.8 Loading
 
-- **Skeleton**, wenn das Layout bekannt ist (Kopf, Tabelle, Karten) und das Laden länger als 300 ms dauert.
-- **Busy Indicator am auslösenden Element** für Aktionen; erscheint erst nach 400 ms; die Seite bleibt bedienbar.
-- Keine seitenblockierenden Spinner. Lange Läufe (Analyse, Generierung) zeigen Etappen, keine Prozentzahlen, die es
-  nicht gibt.
+- **Skeleton** when the layout is known (header, table, cards) and loading takes longer than 300 ms.
+- **Busy indicator on the triggering element** for actions; appears only after 400 ms; the page stays operable.
+- No page-blocking spinners. Long runs (analysis, generation) show phases, not percentages that do not
+  exist.
 
-**Lange Läufe** (ADR-019):
+**Long runs** (ADR-019):
 
-- **Vor dem Klick** sagt die Aktion, was sie kostet — nach den Regeln des Kontingents (`COMMUNITY_QUOTA` in
-  `lib/constants.ts`: fünf Analyse-Läufe je Konto, einmalig; gezählt wird ein neuer ABAP-Quellstand in der Analyse,
-  derselbe eigene Quellstand erneut ist frei, die Stufen danach und der Chat zählen nicht; ein eigener Gemini-Schlüssel hebt die
-  Grenze auf; ab Roadmap 0.9 ist jedes Starter-Beispiel einmal frei, jeder weitere Lauf desselben Beispiels zählt nach
-  Abschluss und wird vorher angekündigt): „Uses 1 of your 5 free analysis runs (4 left)", „Free — this source was already analysed", „Not
-  counted" oder „Uses your own Gemini key". Ob ein Modell aufgerufen wird, ist eine zweite, eigene Angabe („No model
-  call"). Nichts verbraucht Kontingent, ohne dass es vorher dasteht; die Zahlen kommen aus dem Konto, nie aus dem
-  Mockup.
-- **Abbrechen** ist während des ganzen Laufs möglich; ein abgebrochener Lauf hinterlässt keinen halben Stand, und was
-  schon verbraucht ist, steht im Hinweis.
-- **Verlassen** ist erlaubt. Läuft die Arbeit auf dem Server weiter, sagt die Seite das und zeigt beim Wiederkommen den
-  Stand; ginge der Lauf verloren, fragt eine Message Box vor dem Verlassen.
-- **Fehler** zeigen einen Message Strip mit dem, was passiert ist, und einer Aktion („Retry", „Run without model") —
-  nie einen rohen Fehlertext und nie still ein leeres Ergebnis.
-- **Etappen werden angesagt:** eine `aria-live="polite"`-Region nennt nur den Wechsel der Etappe mit ihrem Ergebnis
-  („Process recognised: 14 steps, 5 decisions") — nie die laufenden Zähler, höchstens eine Ansage je Etappe.
-- Große Quellen sagen früh, was kommt: „Reading 3 programs, 10,400 lines" — keine Schätzung einer Dauer.
+- **Before the click** the action says what it costs — according to the quota rules (`COMMUNITY_QUOTA` in
+  `lib/constants.ts`: five analysis runs per account, once; what counts is a new ABAP source state in Analyze,
+  the same own source state again is free, the later stages and the chat do not count; an own Gemini key lifts the
+  limit; from roadmap 0.9 every starter example is free once, every further run of the same example counts after
+  completion and is announced beforehand): "Uses 1 of your 5 free analysis runs (4 left)", "Free — this source was already analysed", "Not
+  counted" or "Uses your own Gemini key". Whether a model is called is a second, separate statement ("No model
+  call"). Nothing uses quota without it being stated beforehand; the numbers come from the account, never from the
+  mockup.
+- **Cancel** is possible during the whole run; a cancelled run leaves no half state behind, and what
+  has already been used is stated in the note.
+- **Leaving** is allowed. If the work continues on the server, the page says so and shows the
+  state on return; if the run would be lost, a message box asks before leaving.
+- **Errors** show a message strip with what happened and an action ("Retry", "Run without model") —
+  never a raw error text and never silently an empty result.
+- **Phases are announced:** an `aria-live="polite"` region names only the change of phase with its result
+  ("Process recognised: 14 steps, 5 decisions") — never the running counters, at most one announcement per phase.
+- Large sources say early what is coming: "Reading 3 programs, 10,400 lines" — no estimate of a duration.
 
-### 2.9 Dichte und Breakpoints
+### 2.9 Density and breakpoints
 
-- **Dichte nach Eingabegerät** (ADR-011): `(pointer: fine)` → *compact*, `(pointer: coarse)` → *cozy*. Umschaltbar im
-  Kontomenü, gespeichert im Browser, nie im Konto.
+- **Density by input device** (ADR-011): `(pointer: fine)` → *compact*, `(pointer: coarse)` → *cozy*. Switchable in the
+  account menu, stored in the browser, never in the account.
 
-| Breakpoint | Breite | Layout |
+| Breakpoint | Width | Layout |
 |---|---|---|
-| **S** | ≤ 600 px | eine Spalte, Tabellen als Karten, Werkzeugleiste als Menü, Seitenrand 16 px |
-| **M** | 601–1024 px | eine Spalte, Seitenspalte unter den Inhalt, Seitenrand 24 px |
-| **L** | 1025–1440 px | Inhalt + Seitenspalte 360 px |
-| **XL** | > 1440 px | wie L, Inhalt maximal 1280 px breit, zentriert |
+| **S** | ≤ 600 px | one column, tables as cards, toolbar as a menu, page margin 16 px |
+| **M** | 601–1024 px | one column, side column below the content, page margin 24 px |
+| **L** | 1025–1440 px | content + side column 360 px |
+| **XL** | > 1440 px | like L, content at most 1280 px wide, centred |
 
-- **Zielgrößen:** mindestens 24 × 24 px (WCAG 2.5.8) *compact*, 44 × 44 px *cozy* und auf Touch.
-- **Reihenfolge auf S** in der Business-Sicht: Prozessname und Klarsprache-Satz → Enthüllungszeile und *Not determined*
-  → „Next step" → Prozess als Schrittliste (§5.7) mit „Show map" → Code eingeklappt. Der Vertrauensgrund rutscht nie
-  unter den Inhalt. Beidseitiges Hover wird auf Touch zu „Tippen markiert, zweites Tippen öffnet". Coach Marks
-  erscheinen auf S als ein Hinweis-Strip, nicht als schwebende Blasen; Export liegt im Menü der Werkzeugleiste.
+- **Target sizes:** at least 24 × 24 px (WCAG 2.5.8) *compact*, 44 × 44 px *cozy* and on touch.
+- **Order on S** in the Business view: process name and plain-language sentence → disclosure line and *Not determined*
+  → "Next step" → process as a step list (§5.7) with "Show map" → code collapsed. The basis for trust never slips
+  below the content. Two-way hover becomes "tap highlights, second tap opens" on touch. Coach marks
+  appear on S as a hint strip, not as floating bubbles; export is in the toolbar menu.
 
-### 2.10 Suche, Popover, Glossar
+### 2.10 Search, popover, glossary
 
-- **Suche ⌘K** durchsucht das geöffnete Projekt: Prozesselemente, Regeln, Findings, Codezeilen und Glossarbegriffe —
-  nicht andere Projekte. Treffer gruppiert nach Art, Enter springt hin. Auf Touch ein Such-Button in der Shell Bar.
-- **„Why?"-Popover:** oben der Herkunfts-Chip (§4); darunter, worauf die Aussage beruht (Regel und Regelversion, Engine,
-  Import oder Konto), der Beleg als Anker, das Datum in ISO. Schließt mit Escape, gibt den Fokus an sein Ziel zurück.
-- **Glossar im Text:** gepunktete Unterstreichung in Textfarbe — kein Linkstil; Popover per Tastatur (Enter) und Hover.
-  Ein Glossarbegriff ist keine Navigation.
-- **Auf S** gibt es kein eigenes „?"-Ziel neben jedem Wert: Wert und Anker sind zusammen **ein** 44-px-Ziel, das das
-  „Why?"-Popover öffnet — sonst bricht eine Enthüllungszeile in viele Zeilen.
-- **Initialen im Kopf:** Popover mit Namen und „Read access since" (Roadmap 5.5), nur für den Besitzer.
+- **Search ⌘K** searches the open project: process elements, rules, findings, code lines and glossary terms —
+  not other projects. Hits grouped by kind, Enter jumps there. On touch a search button in the shell bar.
+- **"Why?" popover:** at the top the provenance chip (§4); below it, what the statement is based on (rule and rule version, engine,
+  import or account), the evidence as an anchor, the date in ISO. Closes with Escape, returns focus to its target.
+- **Glossary in the text:** dotted underline in text colour — no link style; popover via keyboard (Enter) and hover.
+  A glossary term is not navigation.
+- **On S** there is no separate "?" target next to every value: value and anchor together are **one** 44 px target that opens the
+  "Why?" popover — otherwise a disclosure line breaks into many lines.
+- **Initials in the header:** popover with names and "Read access since" (roadmap 5.5), only for the owner.
 
-### 2.11 Weniger zeigen, nichts verlieren
+### 2.11 Show less, lose nothing
 
-Für Erstnutzer ist weniger mehr — die Tiefe bleibt, sie steht nur nicht zuerst da (ADR-037, Sonny 15.09.2026):
+For first-time users less is more — the depth stays, it just does not come first (ADR-037, Sonny 15.09.2026):
 
-- **Der erste Bildschirm einer Sicht** zeigt genau: die Antwort auf die Frage der Sicht, **eine** nächste Handlung und
-  höchstens drei stützende Blöcke. Alles andere liegt eine Aktion tiefer — eingeklappt mit Anzahl („Business rules (7)
-  · Show"), nie entfernt.
-- **Nichts doppelt.** Eine Zahl steht an einer Stelle; wer sie an zweiter Stelle braucht, bekommt einen Verweis.
-- **Metadaten auf Abruf.** Die Mono-Metazeile (Projekt-ID, Manifest, Revision, Quellstand, Engine, Regeln) steht in IT
-  offen, in Business und Management hinter „Details".
-- **Werkzeuge nach Sicht.** In IT steht die Werkzeugleiste offen; in Business und Management ist sie ein Menü „Tools".
-- **Ebenen mit Inhalt zuerst.** Die Anchor Bar zeigt Ebenen mit Inhalt; leere stehen unter „More" und sagen dort, was
-  fehlt.
-- **Tabellen** zeigen die ersten fünf Zeilen und „Show all 42"; Filter erscheinen ab zehn Zeilen.
-- **Legenden nur auf Abruf.** Ein Button „Legend" statt einer dauerhaften Chip-Reihe; beim ersten Besuch einmal offen.
-- **Seitenspalte:** höchstens zwei Karten; weitere unter „More about this process".
-- **Overlays** der Karte sind beim ersten Öffnen aus; die Minikarte erscheint erst ab 40 sichtbaren Elementen.
-- **Die Prüfung:** Kann jemand ohne Schulung in zehn Sekunden sagen, worum es geht und was er als Nächstes tut? Wenn
-  nicht, ist etwas zu viel da — nicht zu wenig.
+- **The first screen of a view** shows exactly: the answer to the view's question, **one** next action and
+  at most three supporting blocks. Everything else lies one action deeper — collapsed with a count ("Business rules (7)
+  · Show"), never removed.
+- **Nothing twice.** A number stands in one place; whoever needs it in a second place gets a reference.
+- **Metadata on demand.** The mono meta line (project ID, manifest, revision, source state, engine, rules) is open in IT,
+  in Business and Management behind "Details".
+- **Tools by view.** In IT the toolbar is open; in Business and Management it is a "Tools" menu.
+- **Layers with content first.** The anchor bar shows layers with content; empty ones are under "More" and say there what is
+  missing.
+- **Tables** show the first five rows and "Show all 42"; filters appear from ten rows.
+- **Legends only on demand.** A "Legend" button instead of a permanent row of chips; open once on the first visit.
+- **Side column:** at most two cards; further ones under "More about this process".
+- **Overlays** of the map are off on first opening; the minimap appears only from 40 visible elements.
+- **The check:** Can someone without training say in ten seconds what this is about and what they do next? If
+  not, there is too much — not too little.
 
 ---
 
-## 3. Sprache und Formate
+## 3. Language and formats
 
-- **Alles Englisch** (ADR-009, bestätigt von Sonny am 15.09.2026) — die Oberfläche **und** alles, was das Produkt
-  erzeugt: Prozessname, Klarsprache-Satz, fachliche Namen, „What this process does", Exporte. Deutscher Code bleibt
-  wörtlich, wo er zitiert wird (Literale, Meldungstexte am Anker); was das Modell daraus benennt, ist englisch. Diese
-  Datei ist deutsch; zitierte Oberflächentexte stehen englisch.
-- **Jede sichtbare Zeichenkette neuer Oberflächen läuft über Textschlüssel** (Message-Katalog), auch solange es nur
-  Englisch gibt; die deutsche Oberfläche kommt nach 3.0 (Roadmap §7). Herkunfts-Labels sind Schlüssel in
+- **Everything English** (ADR-009, confirmed by Sonny on 15.09.2026) — the interface **and** everything the product
+  generates: process name, plain-language sentence, business names, "What this process does", exports. German code stays
+  verbatim where it is quoted (literals, message texts at the anchor); what the model names from it is English. This
+  file is English as well (since 02.10.2026, roadmap 3.0.14; until then it was German with quoted interface texts in English).
+- **Every visible string of new interfaces goes through text keys** (message catalogue), even as long as there is only
+  English; the German interface comes after 3.0 (roadmap §7). Provenance labels are keys in
   `lib/provenance.ts`.
-- **Eine Ausnahme, ausdrücklich:** die deutsche Datenschutzerklärung `app/datenschutz/de` ist Rechtstext (ADR-053).
-  Sie bleibt deutsch und wörtlich, läuft nicht über Textschlüssel und ist von den Sprach-Guards ausgenommen; Look
-  (§1) und Struktur gelten für sie wie für jede Seite. Keine weitere Seite wird ohne neuen ADR zur Ausnahme.
-- **Zahlen:** `Intl.NumberFormat('en')`, Tausendertrennung; Prozent ganzzahlig; Einheit in der Spaltenüberschrift.
-- **Geld** (ADR-022): Kostenbeträge **entstehen** nur in Economics, auf Annahmen des Nutzers, mit Währungscode
-  (Roadmap 0.4). Anderswo — Management-Sicht, Entscheidung, Export — erscheinen sie nur als Übernahme mit dem Chip
-  *Simulation*, der Annahmen-Revision und „Open in Economics"; nie ein Betrag ohne diese drei. Ein Betrag, der **im Code
-  steht** (der Grenzwert einer Regel), ist ein Codefakt mit Zeilenanker und keine Kostenangabe.
-- **Datum:** im Text „15 Sep 2026"; in Metazeilen, Tabellen und Exporten ISO 8601 `2026-09-15` in Mono; Uhrzeiten mit
-  Zeitzone.
-- **Zeilenanker** in Mono: `L243`, `L380-412`, Befund-IDs `CC-017`, Regeln `BR-004`.
+- **One exception, explicitly:** the German privacy policy `app/datenschutz/de` is legal text (ADR-053).
+  It stays German and verbatim, does not go through text keys and is exempt from the language guards; look
+  (§1) and structure apply to it as to every page. No further page becomes an exception without a new ADR.
+- **Numbers:** `Intl.NumberFormat('en')`, thousands separator; percentages as whole numbers; unit in the column header.
+- **Money** (ADR-022): cost amounts **arise** only in Economics, on the user's assumptions, with a currency code
+  (roadmap 0.4). Elsewhere — Management view, decision, export — they appear only as a carry-over with the chip
+  *Simulation*, the assumptions revision and "Open in Economics"; never an amount without these three. An amount that **is in the
+  code** (the threshold of a rule) is a code fact with a line anchor and not a cost figure.
+- **Date:** in text "15 Sep 2026"; in meta lines, tables and exports ISO 8601 `2026-09-15` in mono; times with
+  time zone.
+- **Line anchors** in mono: `L243`, `L380-412`, finding IDs `CC-017`, rules `BR-004`.
 
-### 3.1 Keine KI-Spuren
+### 3.1 No AI traces
 
-Was ein Sprachmodell geschrieben hat, erscheint auf dem Schirm, in HTML- und PDF-Exporten und in Mails wie jeder andere
-Text dieses Produkts: gerendert, sachlich, ohne Spuren seiner Herkunft im Text selbst (ADR-014). **Woher ein Text
-kommt, sagt der Chip *Model proposal* — nie der Text.**
+What a language model has written appears on screen, in HTML and PDF exports and in mails like any other
+text of this product: rendered, factual, without traces of its origin in the text itself (ADR-014). **Where a text
+comes from is said by the chip *Model proposal* — never by the text.**
 
-- **Nie rohe Markdown-Zeichen:** `**`, `__`, `#`/`##`/`###` am Zeilenanfang, einzelne Backticks, Code-Zäune, `[Text](url)`
-  als Text, `- ` oder `* ` als sichtbare Aufzählungszeichen in Fließtext, ein wörtliches `\n`. Modelltext wird entweder
-  sicher gerendert oder vor der Anzeige bereinigt. Ausgenommen sind Dateien, deren Format Markdown *ist* (`.md`-Export).
-- **Keine Chatbot-Floskeln und verräterischen Wendungen** — weder in Modellausgaben noch in eigener Copy. Die Liste hat
-  zwei Teile (ADR-020), weil ein Textscan Füllwort und Fachsprache nicht unterscheiden kann:
-  - **Blockliste — nie, der Guard bricht den Build:** „As an AI", „as a language model", „I hope this helps", „Great
-    question", „Certainly!", „Let's dive in", „In today's fast-paced world", „AI is thinking", „AI-powered".
-  - **Stilliste — Hinweis für Menschen, kein Build-Bruch:** „delve into", „It's important to note", „In conclusion",
-    „seamless(ly)", „unlock", „elevate", „empower", „game-changer", „cutting-edge", „robust"/„comprehensive" als
-    Füllwort, Einleitungen mit Ausrufezeichen. QA- und UX-Agent melden Treffer als Befund `low`; im Fachtext („robust
-    error handling") bleiben sie stehen.
-- **Keine KI-Symbolik:** keine Funken (✨), Roboter, Zauberstäbe, Gehirne oder Chips als Icon für Modellarbeit; keine
-  Etiketten wie „AI-powered", „magic", „Smart …"; keine Emojis in Oberflächentext. „Ask AI" heißt „Ask this case".
-- **Keine Ladezustände, die Denken spielen:** kein „AI is thinking…", kein Tipp-Effekt, keine Punkte-Animation — die
-  Etappe sagt, was gerade gelesen oder erzeugt wird (§2.8, §5.4).
-- **Was bleibt:** die sachliche Herkunftsangabe (*Model proposal*, §4) und, wo es rechtlich oder für die Nachvollziehbarkeit
-  nötig ist, der Name des Modells in Metazeile oder Nachweis — als Angabe, nicht als Werbung.
+- **Never raw Markdown characters:** `**`, `__`, `#`/`##`/`###` at the start of a line, single backticks, code fences, `[Text](url)`
+  as text, `- ` or `* ` as visible bullet characters in body text, a literal `\n`. Model text is either
+  rendered safely or cleaned before display. Exempt are files whose format *is* Markdown (`.md` export).
+- **No chatbot phrases and telltale turns of phrase** — neither in model output nor in our own copy. The list has
+  two parts (ADR-020), because a text scan cannot tell filler from technical language:
+  - **Block list — never, the guard breaks the build:** "As an AI", "as a language model", "I hope this helps", "Great
+    question", "Certainly!", "Let's dive in", "In today's fast-paced world", "AI is thinking", "AI-powered".
+  - **Style list — a note for humans, no build break:** "delve into", "It's important to note", "In conclusion",
+    "seamless(ly)", "unlock", "elevate", "empower", "game-changer", "cutting-edge", "robust"/"comprehensive" as
+    filler, introductions with exclamation marks. The QA and UX agents report hits as a `low` finding; in technical text ("robust
+    error handling") they stay.
+- **No AI symbolism:** no sparkles (✨), robots, magic wands, brains or chips as an icon for model work; no
+  labels like "AI-powered", "magic", "Smart …"; no emojis in interface text. "Ask AI" is called "Ask this case".
+- **No loading states that play at thinking:** no "AI is thinking…", no typing effect, no dot animation — the
+  phase says what is being read or generated right now (§2.8, §5.4).
+- **What stays:** the factual provenance statement (*Model proposal*, §4) and, where it is legally necessary or needed for traceability,
+  the name of the model in the meta line or evidence — as a statement, not as advertising.
 
-Technik: Modellausgaben laufen vor Anzeige, Export und Mail durch eine gemeinsame Bereinigung (Schritt 1.5,
-`lib/model-text.ts`: Markdown sicher rendern oder entfernen, Floskelliste prüfen); Prompts verlangen Klartext ohne
-Markdown, wo nicht gerendert wird.
+Technically: model output goes through a shared cleanup before display, export and mail (step 1.5,
+`lib/model-text.ts`: render Markdown safely or remove it, check the phrase list); prompts demand plain text without
+Markdown where nothing is rendered.
 
 ---
 
-## 4. Vokabular — eine feste Liste im Code
+## 4. Vocabulary — one fixed list in the code
 
-Ab Schritt 1.5 gibt es **eine** Liste, `lib/provenance.ts`; der Status-Chip kann nur ihre Werte zeigen, ein Guard
-verbietet frei formulierte Herkunfts-Badges (ADR-006).
+From step 1.5 there is **one** list, `lib/provenance.ts`; the status chip can only show its values, a guard
+forbids freely worded provenance badges (ADR-006).
 
-| Wert | Label (Schlüssel) | Zustand | Icon | Bedeutung | Heute zum Beispiel |
+| Value | Label (key) | State | Icon | Meaning | Today, for example |
 |---|---|---|---|---|---|
-| `proven` | **Proven** | success | Häkchen im Schild | durch Engine, Signatur oder echten Lauf belegt | Signed run, Passed |
-| `confirmed` | **Confirmed** | information | Person | vom Konto bestätigt — Selbstauskunft, kein Mandat | Signed off, bestätigte Regel |
-| `reconstructed` | **Reconstructed** | information | Zahnrad/Code | aus dem Code abgeleitet, nicht bestätigt | Prozessskelett, Lanes aus AUTHORITY-CHECK |
-| `imported` | **Imported** | information | Datei-Pfeil | aus einer Datei übernommen (ATC, BPMN, Nutzung, SAP-Kataloge) | Usage-Import, ATC-Findings, Catalog Match, Level A–D, Readiness (gerechnet aus den Leveln mit Regelversion) |
-| `proposed` | **Model proposal** | warning | Stift (Entwurf) — nie Funken | vom Sprachmodell vorgeschlagen, ungeprüft | AI Generated, fachliche Benennung |
-| `simulation` | **Simulation** | warning | Rechner | gerechnet auf Annahmen | Economics, Model estimate |
-| `demonstrated-mock` | **Demonstrated · mock** | warning | Reagenzglas | gegen Mocks gezeigt, nicht gegen echte Systeme | Simulated, Mock-Testlauf |
-| `stale` | **Stale** | warning | Uhr | nicht mehr aktuell — neu rechnen | Stale-Notice |
-| `not-determined` | **Not determined** | neutral | Fragezeichen | konnte nicht bestimmt werden — mit Grund | not computed, No verdict |
+| `proven` | **Proven** | success | Check mark in a shield | backed by the engine, a signature or a real run | Signed run, Passed |
+| `confirmed` | **Confirmed** | information | Person | confirmed by the account — self-declaration, no mandate | Signed off, confirmed rule |
+| `reconstructed` | **Reconstructed** | information | Gear/code | derived from the code, not confirmed | process skeleton, lanes from AUTHORITY-CHECK |
+| `imported` | **Imported** | information | File arrow | taken over from a file (ATC, BPMN, usage, SAP catalogs) | Usage import, ATC findings, Catalog Match, Level A–D, Readiness (computed from the levels with rule version) |
+| `proposed` | **Model proposal** | warning | Pen (draft) — never sparkles | proposed by the language model, unchecked | AI Generated, business naming |
+| `simulation` | **Simulation** | warning | Calculator | computed on assumptions | Economics, Model estimate |
+| `demonstrated-mock` | **Demonstrated · mock** | warning | Test tube | shown against mocks, not against real systems | Simulated, mock test run |
+| `stale` | **Stale** | warning | Clock | no longer current — recompute | Stale notice |
+| `not-determined` | **Not determined** | neutral | Question mark | could not be determined — with a reason | not computed, No verdict |
 
-Jeder Chip trägt **Wort und Icon** — lesbar ohne Farbe, im Ausdruck und für Screenreader.
+Every chip carries **word and icon** — readable without colour, in print and for screen readers.
 
-**Die Form ist das zweite Merkmal** (ADR-017). Blau trägt drei Werte, Gelb vier; wer nur überfliegt, soll trotzdem
-Selbstauskunft von Ableitung und Annahme von Veraltet trennen können. Deshalb sagt die Form, **wie fest** eine Aussage
-ist:
+**Shape is the second feature** (ADR-017). Blue carries three values, yellow four; someone who only skims should still
+be able to tell self-declaration from derivation and assumption from stale. That is why the shape says **how firm** a
+statement is:
 
-| Form | Aussehen | Werte | Heißt |
+| Shape | Look | Values | Means |
 |---|---|---|---|
-| **gefüllt** | Zustandsfläche, heller Rahmen | `proven`, `confirmed`, `stale` | steht fest — belegt, bestätigt oder sicher veraltet |
-| **Umriss** | weiße Fläche, 1-px-Rahmen in der Vordergrundfarbe | `reconstructed`, `imported`, `not-determined` | übernommen oder abgeleitet, noch nicht bestätigt |
-| **gestrichelt** | weiße Fläche, 1-px-Strichrahmen in der Vordergrundfarbe | `proposed`, `simulation`, `demonstrated-mock` | vorläufig — Vorschlag, Annahme, Mock |
+| **filled** | state fill, light border | `proven`, `confirmed`, `stale` | settled — proven, confirmed or certainly stale |
+| **outline** | white fill, 1 px border in the foreground colour | `reconstructed`, `imported`, `not-determined` | taken over or derived, not yet confirmed |
+| **dashed** | white fill, 1 px dashed border in the foreground colour | `proposed`, `simulation`, `demonstrated-mock` | provisional — proposal, assumption, mock |
 
-Im Druck und unter `forced-colors` fällt die Fläche weg; *gefüllt* wird dort zu einem 2-px-Rahmen, Umriss und Strich
-bleiben — die drei Formen bleiben unterscheidbar.
+In print and under `forced-colors` the fill drops away; *filled* becomes a 2 px border there, outline and dash
+remain — the three shapes stay distinguishable.
 
-### 4.1 Die anderen festen Listen — jede mit eigener Form
+### 4.1 The other fixed lists — each with its own shape
 
-Herkunft ist nicht das einzige feste Vokabular. Damit nichts wie ein Herkunfts-Chip aussieht, was keiner ist, hat jede
-Liste eine eigene Form, eine eigene Datei im Code neben `lib/provenance.ts` und denselben Guard gegen freie Werte
+Provenance is not the only fixed vocabulary. So that nothing looks like a provenance chip that is not one, every
+list has its own shape, its own file in the code next to `lib/provenance.ts` and the same guard against free values
 (ADR-027):
 
-| Liste | Werte | Form | Beispiel |
+| List | Values | Shape | Example |
 |---|---|---|---|
-| **Herkunft** (§4) | die neun Werte | Pille mit Icon, gefüllt/Umriss/gestrichelt | *Model proposal* |
-| **Objektstatus** (§2.3) | not started · partial · draft · open · confirmed · mock only · handed over · done · blocked by SAP · failed — *signed* und *stale* sind Herkunft (§4), kein Status | Text mit Zustandspunkt, keine Umrandung | ● draft |
-| **Evidenzstufe** (Roadmap 7.2) | E0 none · E1 catalog reference · E2 documented · E3 demonstrated · E4 accepted in the target system | Kennung: Rechteck, Radius 4 px, Code in Mono, dahinter das Wort; neutral für alle Stufen — eine Belegreife, kein Zustand | `E1` catalog reference |
-| **Clean-Core-Level** | A · B · C · D | Kennung wie Evidenzstufe, Farbe nach §1.8 | `D` |
-| **Regel-Eigenschaft** | hard-coded in program · customizing · master data | Tag: Rechteck, Radius 4 px, `--cc-surface-muted`, Text `--cc-ink-muted`, kein Icon | hard-coded in program |
-| **Schwere eines Befunds** (ADR-049) | Critical · High · Medium · Low · Info — in `lib/severity.ts` | Kennung wie Level: Rechteck, Radius 4 px, das Wort in 12 px / 600 (§1.2); Farbe nach §1.8 — Critical und High `error`, Medium `warning`, Low `neutral`, Info `information`; nie `success` | `High` |
+| **Provenance** (§4) | the nine values | pill with icon, filled/outline/dashed | *Model proposal* |
+| **Object status** (§2.3) | not started · partial · draft · open · confirmed · mock only · handed over · done · blocked by SAP · failed — *signed* and *stale* are provenance (§4), not a status | text with a state dot, no border | ● draft |
+| **Evidence level** (roadmap 7.2) | E0 none · E1 catalog reference · E2 documented · E3 demonstrated · E4 accepted in the target system | identifier: rectangle, radius 4 px, code in mono, the word after it; neutral for all levels — a maturity of evidence, not a state | `E1` catalog reference |
+| **Clean core level** | A · B · C · D | identifier like evidence level, colour per §1.8 | `D` |
+| **Rule property** | hard-coded in program · customizing · master data | tag: rectangle, radius 4 px, `--cc-surface-muted`, text `--cc-ink-muted`, no icon | hard-coded in program |
+| **Severity of a finding** (ADR-049) | Critical · High · Medium · Low · Info — in `lib/severity.ts` | identifier like level: rectangle, radius 4 px, the word in 12 px / 600 (§1.2); colour per §1.8 — Critical and High `error`, Medium `warning`, Low `neutral`, Info `information`; never `success` | `High` |
 
-Eine Regel-Eigenschaft sagt, **wo** eine Regel steht, und ist nie ein Nachweis; eine Evidenzstufe sagt, **wie stark**
-ein Standard-Kandidat belegt ist, und ist nie eine Herkunft. Eine Schwere sagt, **wie dringend** ein Befund ist — sie
-ist weder Herkunft noch Objektstatus, und kein Befund trägt eine Schwere, die nicht aus dieser Liste kommt.
+A rule property says **where** a rule sits, and is never evidence; an evidence level says **how strongly**
+a standard candidate is backed, and is never a provenance. A severity says **how urgent** a finding is — it
+is neither provenance nor object status, and no finding carries a severity that does not come from this list.
 
 ---
 
-## 5. Der erste Blick — der Arbeitsraum öffnet in der Business-Sicht
+## 5. The first look — the workspace opens in the Business view
 
-Nach Code-Import oder Beispiel öffnet der Arbeitsraum in der **Business-Sicht** und zeigt sofort, um welchen Prozess es
-sich handelt (ADR-002).
+After a code import or an example, the workspace opens in the **Business view** and shows at once which process it
+is (ADR-002).
 
-> **Der Wow-Effekt ist ein Inhalt, den der Nutzer nicht erwartet hat, in unter drei Sekunden, mit Zeilenanker — die
-> Inszenierung macht nur sichtbar, woher er kommt** (ADR-013).
+> **The wow effect is content the user did not expect, in under three seconds, with a line anchor — the
+> staging only makes visible where it comes from** (ADR-013).
 
-Bei einem SAP-Publikum entsteht er nicht durch Bewegung, sondern durch Wiedererkennen: *Das Ding hat meinen Code gelesen
-und weiß, was er tut — inklusive der Regeln, die fest im Programm stehen.* Alles in diesem Abschnitt trägt diesen einen
-Moment.
+With an SAP audience it does not come from motion but from recognition: *The thing read my code
+and knows what it does — including the rules that are hard-coded in the program.* Everything in this section carries this one
+moment.
 
-### 5.1 Was den Moment trägt
+### 5.1 What carries the moment
 
-- **Der Code spricht zuerst — während des Aufbaus.** Kein Spinner, sondern die Quelle: links der ABAP-Text in Mono;
-  eine Zeile leuchtet in dem Moment auf, in dem die Engine dort einen Befund oder einen Prozessknoten setzt. Rechts
-  entsteht die Prozesskarte — jeder Knoten wächst aus seiner markierten Zeile heraus (kurze Verbindungslinie, 200 ms,
-  dann verblasst sie). **Das ist die einzige Animation, weil sie etwas erklärt: Herkunft.** Sie zeigt die echten
-  Ereignisse der Engine in ihrer Reihenfolge, gerafft auf das Zeitbudget — nie eine künstliche Mindestdauer.
-- **Danach führt das Geschäft, der Code tritt zurück** (ADR-015). Mit der letzten Etappe ordnet sich die Seite um:
-  oben Prozessname, Klarsprache-Satz, Enthüllungszeile und *Not determined*; darunter die Prozesskarte; der Code wird
-  zur zweiten Ebene — eine schmale Quellspalte, die sich öffnet, sobald ein Knoten oder Anker gewählt wird, und über
-  „Show source" jederzeit. Wer kein ABAP liest, sieht nach dem Aufbau keine Codezeile, die er verstehen muss.
-- **Der Höhepunkt ist eine Enthüllung, kein Dashboard.** Die Etappe endet mit einem Satz: *„3 business rules
-  hard-coded in the program — tolerance 5 % (L412), plant 1000 (L87), vendor block list (L231)."* Jeder Anker klickbar,
-  jeder Wert mit „Why?" (Roadmap 2.8). Der Satz behauptet nur, was der Code belegt: dass die Regel fest im Programm
-  steht — nicht, dass sie nirgends dokumentiert ist. Das ist der Satz, den jemand an Kollegen weiterschickt.
-- **Ein Satz in Klarsprache, der stimmt.** Unter dem Prozessnamen: *„Approves emergency orders above the limit only when
-  …"* — mit Anker. Ohne Modellaufruf bleibt er technisch (`FORM check_limit → …`); das beeindruckt immer noch, weil belegt.
-- **Der Zweifel wird sofort beantwortet.** Direkt neben der Enthüllung: *„3 not determined — dynamic call in L502 …"*.
-  Für ein skeptisches Publikum ist das Teil des Moments: das Werkzeug behauptet nichts, was es nicht weiß.
-- **Zeit bis zur ersten Einsicht ≤ 3 s, „Skip" immer sichtbar.** Die erste Etappe steht, bevor der Nutzer die Maus
-  bewegt. Ein Zähler erhöht sich nur mit der Zeile, die gerade aufleuchtet — nie ein Hochzählen zur Schau, nie ein
-  Platzhalter. Dauert die Engine länger, sagt die Etappe, was sie liest (*„reading include Z_MM_PO_TOP"*), nicht einen
-  Fortschrittsbalken.
+- **The code speaks first — during the build-up.** No spinner, but the source: on the left the ABAP text in mono;
+  a line lights up at the moment the engine places a finding or a process node there. On the right
+  the process map forms — every node grows out of its marked line (short connecting line, 200 ms,
+  then it fades). **This is the only animation, because it explains something: provenance.** It shows the engine's real
+  events in their order, compressed to the time budget — never an artificial minimum duration.
+- **Afterwards the business leads, the code steps back** (ADR-015). With the last stage the page rearranges:
+  at the top process name, plain-language sentence, reveal line and *Not determined*; below it the process map; the code becomes
+  the second level — a narrow source column that opens as soon as a node or anchor is selected, and via
+  "Show source" at any time. Someone who does not read ABAP sees no code line after the build-up that they have to understand.
+- **The climax is a reveal, not a dashboard.** The stage ends with a sentence: *"3 business rules
+  hard-coded in the program — tolerance 5 % (L412), plant 1000 (L87), vendor block list (L231)."* Every anchor clickable,
+  every value with "Why?" (roadmap 2.8). The sentence only claims what the code proves: that the rule is hard-coded in the program
+  — not that it is documented nowhere. This is the sentence someone forwards to colleagues.
+- **A sentence in plain language that is true.** Below the process name: *"Approves emergency orders above the limit only when
+  …"* — with an anchor. Without a model call it stays technical (`FORM check_limit → …`); that still impresses, because it is proven.
+- **The doubt is answered at once.** Right next to the reveal: *"3 not determined — dynamic call in L502 …"*.
+  For a sceptical audience that is part of the moment: the tool claims nothing it does not know.
+- **Time to first insight ≤ 3 s, "Skip" always visible.** The first stage is there before the user moves the
+  mouse. A counter only rises with the line that is lighting up — never counting up for show, never a
+  placeholder. If the engine takes longer, the stage says what it is reading (*"reading include Z_MM_PO_TOP"*), not a
+  progress bar.
 
-### 5.2 Die Etappen
+### 5.2 The stages
 
-1. **Code read** — Zeilen leuchten, Zähler folgen den Zeilen: lines · programs · tables · findings.
-2. **Process recognised** — das Prozessskelett (Roadmap 2.3) wächst aus den markierten Zeilen; Entscheidungen tragen
-   ihre Bedingung aus dem Code. Ab hier ist der Arbeitsraum bedienbar.
-3. **In business language** — die technischen Namen wechseln einmal zu fachlichen, mit dem Chip *Model proposal*. Ohne
-   Modellaufruf (Modell nicht erreichbar oder abgewählt) entfällt die Etappe; das Skelett bleibt technisch benannt —
-   ein gültiges Ergebnis.
-4. **This is your process** — Prozessname, der Klarsprache-Satz mit Anker, die **Enthüllungszeile** mit den versteckten
-   Regeln und daneben **Not determined**; darunter dieselben Facetten wie im Kopf (§2.3): Traceability · Rules
+1. **Code read** — lines light up, counters follow the lines: lines · programs · tables · findings.
+2. **Process recognised** — the process skeleton (roadmap 2.3) grows out of the marked lines; decisions carry
+   their condition from the code. From here the workspace is usable.
+3. **In business language** — the technical names change once to business names, with the chip *Model proposal*. Without
+   a model call (model unreachable or deselected) the stage is dropped; the skeleton keeps its technical names —
+   a valid result.
+4. **This is your process** — process name, the plain-language sentence with anchor, the **reveal line** with the hidden
+   rules and next to it **Not determined**; below it the same facets as in the header (§2.3): Traceability · Rules
    confirmed · Level distribution · Not determined.
 
-**Das Modell hält den Aufbau nicht auf** (ADR-025). Die ≤ 3 s gelten für Etappen 1, 2 und 4 — sie kommen aus der
-Engine. Etappe 3 braucht einen Modellaufruf und darf länger dauern: nach spätestens 3 s steht Etappe 4 mit technischen
-Namen, die Etappenzeile sagt „Naming in business language …" mit „Cancel". Kommen die Namen, wechseln sie einmal, mit
-Ansage in der Live-Region — nie unter einem offenen Popover oder einem fokussierten Knoten; dort erst, wenn es
-geschlossen ist. Scheitert der Aufruf, bleiben die technischen Namen, und ein Message Strip bietet „Retry" an.
+**The model does not hold up the build-up** (ADR-025). The ≤ 3 s apply to stages 1, 2 and 4 — they come from the
+engine. Stage 3 needs a model call and may take longer: after 3 s at the latest stage 4 is there with technical
+names, the stage line says "Naming in business language …" with "Cancel". When the names arrive, they change once, with
+an announcement in the live region — never under an open popover or a focused node; there only once it is
+closed. If the call fails, the technical names stay, and a message strip offers "Retry".
 
-`prefers-reduced-motion` zeigt den Endzustand sofort — die Enthüllungszeile steht trotzdem oben. „Skip" springt in
-denselben Endzustand. Ein zweiter Besuch hat keinen Aufbau.
+`prefers-reduced-motion` shows the end state at once — the reveal line is still at the top. "Skip" jumps to
+the same end state. A second visit has no build-up.
 
-### 5.3 Die ersten zehn Sekunden danach
+### 5.3 The first ten seconds after
 
-- **Beidseitiges Hover:** Knoten → Codezeilen leuchten; Codezeile → Knoten hebt sich (Roadmap 2.5). Der erste Coach
-  Mark lädt dazu ein: *„Select the decision."*
-- **Eine Frage ist schon beantwortet.** *„Ask this case"* zeigt beim ersten Öffnen eine gestellte Frage mit Antwort und
-  Ankern (*„What happens when the limit is exceeded?"*) — **abgeleitet aus den Verzweigungen des Codes** (Roadmap 2.1,
-  Chip *Reconstructed*), ohne Modellaufruf und ohne das Kontingent des Nutzers anzutasten.
-- **Standard-Fit als zweite Überraschung**, eine Ebene tiefer: *„2 of 7 rules have a standard candidate (scope item … —
-  to verify)"* mit Evidenzstufe (Roadmap 7.2). Nie „deckt der Standard ab", solange die Stufe das nicht trägt.
-- **Mitnehmbar:** „Export PNG" und „Export PDF" der Prozesskarte mit Herkunfts-Chips und Ankern. **Kein öffentlicher
-  Link** — Teilen bleibt Einsicht per Einladung (Roadmap §8); ein Export ist keine Freigabe.
+- **Two-way hover:** node → code lines light up; code line → node lifts (roadmap 2.5). The first coach
+  mark invites it: *"Select the decision."*
+- **One question is already answered.** *"Ask this case"* shows, when first opened, an asked question with answer and
+  anchors (*"What happens when the limit is exceeded?"*) — **derived from the branches of the code** (roadmap 2.1,
+  chip *Reconstructed*), without a model call and without touching the user's quota.
+- **Standard fit as the second surprise**, one level deeper: *"2 of 7 rules have a standard candidate (scope item … —
+  to verify)"* with evidence level (roadmap 7.2). Never "the standard covers it" as long as the level does not carry that.
+- **Take-away:** "Export PNG" and "Export PDF" of the process map with provenance chips and anchors. **No public
+  link** — sharing stays read access by invitation (roadmap §8); an export is not an approval.
 
-### 5.4 Was ausdrücklich nicht
+### 5.4 What explicitly not
 
-Konfetti, dekorative Verläufe, Typewriter-Effekte, pulsierende Punkte, Ladeanimationen ohne Inhalt, *„AI is
-thinking…"*, künstliche Mindestdauern (wie heute die sechs Sekunden des Evidence Scanners). Alles, was Zeit kostet und
-nichts zeigt, senkt die Glaubwürdigkeit, die der Moment braucht.
+Confetti, decorative gradients, typewriter effects, pulsing dots, loading animations without content, *"AI is
+thinking…"*, artificial minimum durations (like the six seconds of the Evidence Scanner today). Everything that costs time and
+shows nothing lowers the credibility the moment needs.
 
 **The one deliberate exception (owner decision, 01.10.2026):** the first look's build-up runs on a fixed budget of
 about 2.4 s (code read to 0.5 s, process recognised to 1.8 s, names to 2.4 s), even when the engine is done in a few
@@ -592,497 +592,497 @@ engine's own nodes with their anchors, counters that only rise with a lit line �
 The limits stay: "Skip" is always visible, `prefers-reduced-motion` and Skip go straight to the end state, a second
 visit has no build-up, and the end state never waits for a model (`lib/first-look-buildup.ts`).
 
-### 5.5 Was danach steht
+### 5.5 What is there afterwards
 
-- **Inhalt, oben:** die Karte „Next step" — „Confirm the 7 rules — about 10 minutes", ein Klick zur ersten Regel.
-- **Kopf des Inhalts:** Prozessname, Klarsprache-Satz, Enthüllungszeile, *Not determined* (§5.1).
-- **Mitte:** die Prozesskarte; Klick oder Enter auf einen Schritt öffnet die Quellspalte mit markierten Zeilen.
-- **Seitenspalte, „What this process does":** fünf Sätze, jeder mit Anker; unbelegte grau (wie `AnchoredNarrative`).
-- **Seitenspalte, „Not determined":** jede offene Stelle mit Grund und nächstem Weg — dynamic call, missing include,
-  usage unknown (nie „unused"). Diese Spalte ist Absicht: sie ist der Grund, einem Ergebnis zu trauen.
+- **Content, at the top:** the card "Next step" — "Confirm the 7 rules — about 10 minutes", one click to the first rule.
+- **Head of the content:** process name, plain-language sentence, reveal line, *Not determined* (§5.1).
+- **Middle:** the process map; click or Enter on a step opens the source column with marked lines.
+- **Side column, "What this process does":** five sentences, each with an anchor; unproven ones grey (like `AnchoredNarrative`).
+- **Side column, "Not determined":** every open spot with a reason and the next way — dynamic call, missing include,
+  usage unknown (never "unused"). This column is intentional: it is the reason to trust a result.
 
-### 5.6 Drei Sichten auf denselben Fall
+### 5.6 Three views of the same case
 
-| Sicht | Die Frage | Die erste Antwort auf dem Schirm |
+| View | The question | The first answer on screen |
 |---|---|---|
-| **Business** | Do I still need this, and what changes for me? | Prozess, Geschäftsregeln (auch versteckte), Standard-Fit mit Scope-Item-ID, Not determined |
-| **IT** | What exactly, where to, and is it right? | Findings mit Zeile und beiden Katalogsichten, Nachfolger-API, Kette Objekt → Bedeutung → Entscheidung → Ziel, Architekturvertrag |
-| **Management** | What do I risk, what do I decide? | Clean-Core readiness mit Regelversion und Verlauf, Public-Cloud fit, vier Töpfe (Retire · Keep · Rebuild · Kein katalogisierter Pfad), offene Entscheidung, Kosten nur als *Simulation* |
+| **Business** | Do I still need this, and what changes for me? | Process, business rules (hidden ones too), standard fit with scope item ID, Not determined |
+| **IT** | What exactly, where to, and is it right? | Findings with line and both catalog views, successor API, chain object → meaning → decision → target, architecture contract |
+| **Management** | What do I risk, what do I decide? | Clean-Core readiness with rule version and history, Public-Cloud fit, four buckets (Retire · Keep · Rebuild · No catalogued path), open decision, costs only as *Simulation* |
 
-Die Kette **Objekt → Bedeutung → Entscheidung → Ziel → Status** ist in jeder Sicht durchklickbar, und jede Zahl nennt
-ihre Abdeckung („42 findings in 907 of 907 lines · 2 includes not read"). Auf S steht die Kette als Liste
-untereinander, ein Glied je Zeile.
+The chain **object → meaning → decision → target → status** can be clicked through in every view, and every number states
+its coverage ("42 findings in 907 of 907 lines · 2 includes not read"). On S the chain is a list
+one below the other, one link per line.
 
-**Die vier Töpfe** (ADR-033, Sonny 15.09.2026) — Regeln je Objekt, keine Prozentschwellen; die erste zutreffende gilt,
-und jede Zuordnung zeigt ihren Beleg:
+**The four buckets** (ADR-033, Sonny 15.09.2026) — rules per object, no percentage thresholds; the first that applies wins,
+and every assignment shows its evidence:
 
-| # | Topf | Regel | Beleg am Objekt |
+| # | Bucket | Rule | Evidence on the object |
 |---|---|---|---|
-| 1 | **Retire** | die Regel, der das Objekt dient, ist bestätigt „Drop" — **oder** der Nutzungsimport zeigt null Ausführungen über mindestens **13 Monate** | Entscheidung mit Revision · oder Nutzungsimport |
-| 2 | **Kein katalogisierter Pfad** | gebraucht, Level C oder D, **ein SAP-Katalogobjekt ohne freigegebenen Nachfolger** und ohne Erweiterungsweg — oder in keiner der beiden SAP-Dateien genannt | Eintrag im Cloudification Repository, mit Datenbasis und Synchronisationsdatum |
-| 3 | **Rebuild** | gebraucht, Level C oder D, und es gibt Nachfolger oder Erweiterungsweg — sowie jede Modifikation und jeder eigene Schreibzugriff auf SAP-Tabellen: das ist eigene Arbeit, nie SAPs | Nachfolger-API · BAdI · Befund |
-| 4 | **Keep** | gebraucht und für die **Zielplattform des Projekts** zulässig: Public Edition nur Level A, Private Edition A oder B | Level und Zielplattform |
-| — | *not assigned* | Level unbekannt oder *Not determined* | mit Grund |
+| 1 | **Retire** | the rule the object serves is confirmed "Drop" — **or** the usage import shows zero executions over at least **13 months** | decision with revision · or usage import |
+| 2 | **No catalogued path** | needed, Level C or D, **an SAP catalog object without a released successor** and without an extension path — or named in neither of the two SAP files | entry in the Cloudification Repository, with data basis and synchronisation date |
+| 3 | **Rebuild** | needed, Level C or D, and there is a successor or extension path — as well as every modification and every own write access to SAP tables: that is own work, never SAP's | successor API · BAdI · finding |
+| 4 | **Keep** | needed and permitted for the **project's target platform**: Public Edition only Level A, Private Edition A or B | level and target platform |
+| — | *not assigned* | level unknown or *Not determined* | with a reason |
 
-- **Die Töpfe hängen an der Zielplattform.** Dasselbe B-Objekt ist in der Private Edition *Keep*, in der Public Edition
-  *Rebuild* oder *Kein katalogisierter Pfad*. Die Karte nennt die Zielplattform im Antwortsatz; ein Wechsel der Zielplattform
-  ordnet neu und sagt, was sich bewegt hat.
-- **Retire ist durchsichtig.** Jede Retire-Zuordnung aus Nutzung zeigt Quelle, Zeitraum mit Datum und ob er einen
-  Jahresabschluss enthält: *„No executions in SUSG, 2025-08-01 to 2026-08-31 (13 months, includes year-end close)"*.
-  Weniger als 13 Monate ergeben nie Retire, sondern *„Usage window too short: 4 months — needs 13"*. Ohne Import gibt es
-  Retire nur über eine Geschäftsentscheidung, nie über „keine Nutzung bekannt". Die Popover-Regel steht wörtlich da:
-  *„Why 13 months: period-end and year-end programs run once a year."*
-- **Unbestätigte Regeln machen die Zuordnung vorläufig:** *„16 Rebuild — 9 on rules not yet confirmed"*.
-- Eine Aussage für das ganze Projekt braucht keine Schwelle: **ein** Objekt ohne Public-Cloud-Weg blockiert die
-  Public-Cloud-Entscheidung.
+- **The buckets depend on the target platform.** The same B object is *Keep* in the Private Edition, in the Public Edition
+  *Rebuild* or *No catalogued path*. The card names the target platform in the answer sentence; changing the target platform
+  re-sorts and says what moved.
+- **Retire is transparent.** Every Retire assignment from usage shows the source, the period with dates and whether it contains
+  a year-end close: *"No executions in SUSG, 2025-08-01 to 2026-08-31 (13 months, includes year-end close)"*.
+  Less than 13 months never yields Retire, but *"Usage window too short: 4 months — needs 13"*. Without an import there is
+  Retire only via a business decision, never via "no usage known". The popover rule is there verbatim:
+  *"Why 13 months: period-end and year-end programs run once a year."*
+- **Unconfirmed rules make the assignment provisional:** *"16 Rebuild — 9 on rules not yet confirmed"*.
+- A statement for the whole project needs no threshold: **one** object without a Public Cloud path blocks the
+  Public Cloud decision.
 
-**Erst die Antwort, dann die Zahl** (ADR-029):
+**First the answer, then the number** (ADR-029):
 
-- **Management** beginnt mit einem Satz über allen Karten, der die Frage der Sicht beantwortet: *„One decision open
-  (DEC-1). It waits for counter-check S2. 4 objects block a Public Cloud decision."* Jede Karte beginnt mit ihrem
-  Antwortsatz als Titel — *„Readiness 58 on rule set 1.3, up from 42 with the same rules"*, *„4 objects block a Public
-  Cloud decision"*, *„No cost winner yet — option C is incomplete"* — und erst darunter Zahl, Diagramm und Tabelle.
-  Einordnungen, die leicht falsch gelesen werden („a grade, not a compliance percentage"; „Simulation, not a quote"),
-  stehen im Antwortsatz oder direkt darunter, nie nur im Popover.
-- **IT:** die Kette gehört zu einem gewählten Befund. Die Tabelle markiert die gewählte Zeile, die Kette steht darüber
-  mit „Chain for CC-017 — select a finding to follow its chain", ein Klick auf ein Kettenglied filtert die Tabelle, und
-  die Abdeckung steht dabei: *„Chain complete for 31 of 42 findings · 11 end at Not determined"*.
+- **Management** begins with a sentence above all cards that answers the view's question: *"One decision open
+  (DEC-1). It waits for counter-check S2. 4 objects block a Public Cloud decision."* Every card begins with its
+  answer sentence as its title — *"Readiness 58 on rule set 1.3, up from 42 with the same rules"*, *"4 objects block a Public
+  Cloud decision"*, *"No cost winner yet — option C is incomplete"* — and only below it number, chart and table.
+  Classifications that are easily misread ("a grade, not a compliance percentage"; "Simulation, not a quote")
+  are in the answer sentence or directly below it, never only in the popover.
+- **IT:** the chain belongs to a selected finding. The table marks the selected row, the chain sits above it
+  with "Chain for CC-017 — select a finding to follow its chain", a click on a chain link filters the table, and
+  the coverage is stated with it: *"Chain complete for 31 of 42 findings · 11 end at Not determined"*.
 
-### 5.7 Die Prozesskarte ohne Maus
+### 5.7 The process map without a mouse
 
-Die Karte ist der Kern der Business-Sicht; jeder Weg zu ihr muss auch ohne Maus, ohne Sehen und auf dem Telefon gehen
+The map is the core of the Business view; every way to it must also work without a mouse, without sight and on the phone
 (ADR-016).
 
-- **Karte und Schrittliste sind gleichwertig.** Ein Umschalter „Map | Steps" über der Karte; die Schrittliste zeigt
-  denselben Inhalt als geordnete Liste: Schritt, Lane, bei Entscheidungen die Bedingung aus dem Code und die Zweige,
-  Anker, Herkunfts-Chip. Auf S ist „Steps" der Start, „Show map" öffnet die Karte.
-- **Tastatur:** die Karte ist **ein** Tab-Halt; darin führen die Pfeiltasten entlang des Ablaufs (→/↓ nächster
-  Schritt, ←/↑ vorheriger; an einer Entscheidung wählen ↓/↑ den Zweig). Enter öffnet die Quellspalte, Escape schließt
-  sie und gibt den Fokus an den Knoten zurück. `+`, `−` und `0` zoomen und passen ein; dieselben Befehle als Buttons.
-- **Fokus ist Hover:** ein fokussierter Knoten markiert seine Codezeilen wie beim Überfahren; eine fokussierte
-  Codezeile hebt ihren Knoten.
-- **Screenreader:** jeder Knoten ist ein Button mit Namen aus Art, Titel, Anker und Herkunft (*„Decision: amount above
-  limit? Lines 243 to 251, reconstructed"*); die Karte als Ganzes ist eine benannte Gruppe mit einem Satz Übersicht
-  (*„Process with 14 steps and 5 decisions"*). Die Etappen des Aufbaus sagt eine Live-Region an (§2.8).
-- **Ziele:** Knoten mindestens 24 × 24 px *compact*, 44 × 44 px auf Touch (§2.9).
-- **Breite:** Die Quellspalte öffnet sich **an der Stelle der Seitenspalte** (L, XL) — deren Inhalte bleiben als Reiter
-  derselben Spalte erreichbar („Source · Not determined · What it does"). Die Auswahl eines Knotens verschiebt also nie
-  die Seite. Die Karte skaliert Beschriftungen nie unter 11 px; was nicht passt, erreicht man durch Verschieben, „Fit"
-  und die Ebenen aus §5.9, und über der Karte steht, was sichtbar ist („Showing 16 of 25 elements").
-- **Druck und Export:** die Karte druckt mit Anker und Chip als Text unter jedem Knoten, eine Ebene (§5.9) je Seite mit
-  dem Pfad als Kopfzeile. Passt eine Ebene nicht lesbar (Schrift ≥ 11 px) auf die Seitenbreite, druckt die
-  Schrittliste statt der Karte — und sagt das in einer Zeile.
+- **Map and step list are equivalent.** A toggle "Map | Steps" above the map; the step list shows
+  the same content as an ordered list: step, lane, for decisions the condition from the code and the branches,
+  anchor, provenance chip. On S "Steps" is the start, "Show map" opens the map.
+- **Keyboard:** the map is **one** tab stop; inside it the arrow keys move along the flow (→/↓ next
+  step, ←/↑ previous; at a decision ↓/↑ choose the branch). Enter opens the source column, Escape closes
+  it and returns focus to the node. `+`, `−` and `0` zoom and fit; the same commands as buttons.
+- **Focus is hover:** a focused node marks its code lines as on hover; a focused
+  code line lifts its node.
+- **Screen reader:** every node is a button with a name from kind, title, anchor and provenance (*"Decision: amount above
+  limit? Lines 243 to 251, reconstructed"*); the map as a whole is a named group with a one-sentence overview
+  (*"Process with 14 steps and 5 decisions"*). A live region announces the stages of the build-up (§2.8).
+- **Targets:** nodes at least 24 × 24 px *compact*, 44 × 44 px on touch (§2.9).
+- **Width:** The source column opens **in place of the side column** (L, XL) — its contents stay reachable as tabs
+  of the same column ("Source · Not determined · What it does"). Selecting a node therefore never shifts
+  the page. The map never scales labels below 11 px; what does not fit is reached by panning, "Fit"
+  and the levels from §5.9, and above the map it says what is visible ("Showing 16 of 25 elements").
+- **Print and export:** the map prints with anchor and chip as text below every node, one level (§5.9) per page with
+  the path as header. If a level does not fit the page width legibly (font ≥ 11 px), the
+  step list prints instead of the map — and says so in one line.
 
-### 5.8 BPMN aus ABAP — die Palette
+### 5.8 BPMN from ABAP — the palette
 
-Mehr als das Minimum (ADR-031, Sonny 15.09.2026), aber nur, was der Code **belegt**: jedes Element entsteht aus einem
-Muster im Code, trägt seinen Zeilenanker und übersteht den Austausch als BPMN 2.0 XML mit SAP Signavio. Maßstab ist das
-komplexeste Beispiel des Produkts, `ZLEGACY_ORDER_FULFILLMENT_AUDIT` (1.000 Zeilen, `public/starter-examples/`).
+More than the minimum (ADR-031, Sonny 15.09.2026), but only what the code **proves**: every element arises from a
+pattern in the code, carries its line anchor and survives the exchange as BPMN 2.0 XML with SAP Signavio. The yardstick is the
+product's most complex example, `ZLEGACY_ORDER_FULFILLMENT_AUDIT` (1,000 lines, `public/starter-examples/`).
 
-| BPMN-Element | entsteht aus | im Beispiel |
+| BPMN element | arises from | in the example |
 |---|---|---|
-| **Startereignis** | Einstieg: `START-OF-SELECTION`, Transaktion, BAdI-Methode, RFC-Baustein — **dazu (2.14): `FUNCTION name.`, eine öffentliche Methode einer *globalen* Klasse, ein Dynpro-Ereignis (`MODULE … OUTPUT` und `… INPUT`), und eine `FORM`, die kein `PERFORM` erreicht** — **und (ADR-054) der Anfang jedes aufklappbaren Teilprozesses:** eine `FORM`/Methode, die als eingeklappter Teilprozess mit eigener Ebene gezeichnet wird, beginnt in dieser Ebene an einem Startereignis auf ihrer `FORM`-/`METHOD`-Zeile. Nur dort: auf der Ebene des Aufrufers bleibt der Teilprozess ein Kasten; eine Routine, die als ein Schritt gezeichnet wird (klein, Entscheidungstabelle, technischer Helfer), und der Körper einer Mehrfach-Instanz bekommen keins | Audit-Lauf gestartet (L161); „Aktionen ausführen" beginnt (L435) |
-| **Endereignis** | normales Ende des Einstiegs oder Teilprozesses, am schließenden Wort — **und (ADR-054) ein eigenes Endereignis je vorzeitigem Ausstieg:** `RETURN`, `EXIT` außerhalb einer Schleife und `STOP` enden auf ihrer eigenen Anweisung; die Bedingung steht wörtlich an der eingehenden Kante. Ein `CHECK`, der die Routine oder den Block verlässt, gehört nicht dazu: er ist ein bedingter Fluss (Zeile *Bedingter Fluss*, Regel 5 der Engine), kein eigenes Element, und führt weiter auf das normale Ende. **Direkt vor dem Blockschluss ist kein früher Ausstieg:** folgt bis zum Blockschluss nichts, was gezeichnet wird, bleibt es das normale Ende; zwei `RETURN` hintereinander im selben Zweig sind eines | Audit abgeschlossen (L176–179); „Aufträge und Positionen sammeln" endet vorzeitig ohne Aufträge (`EXIT`, L252) |
+| **Start event** | entry: `START-OF-SELECTION`, transaction, BAdI method, RFC module — **plus (2.14): `FUNCTION name.`, a public method of a *global* class, a dynpro event (`MODULE … OUTPUT` and `… INPUT`), and a `FORM` that no `PERFORM` reaches** — **and (ADR-054) the beginning of every expandable subprocess:** a `FORM`/method that is drawn as a collapsed subprocess with its own level begins in that level at a start event on its `FORM`/`METHOD` line. Only there: on the caller's level the subprocess stays a box; a routine that is drawn as one step (small, decision table, technical helper), and the body of a multi-instance get none | Audit run started (L161); "Execute actions" begins (L435) |
+| **End event** | normal end of the entry or subprocess, at the closing word — **and (ADR-054) an end event of its own for every early exit:** `RETURN`, `EXIT` outside a loop and `STOP` end on their own statement; the condition is written verbatim on the incoming edge. A `CHECK` that leaves the routine or the block does not count: it is a conditional flow (row *Conditional flow*, rule 5 of the engine), not an element of its own, and leads on to the normal end. **Directly before the end of the block is not an early exit:** if nothing that is drawn follows up to the end of the block, it stays the normal end; two `RETURN`s in a row in the same branch are one | Audit completed (L176–179); "Collect orders and items" ends early without orders (`EXIT`, L252) |
 <!--
-  Die vier neuen Einstiegsformen (2.14, 23.09.2026) und die drei Regeln, die sie
-  eng halten — sie stehen hier, weil die Zeile darüber sonst als Einladung zum
-  Raten gelesen wird.
+  The four new entry forms (2.14, 23.09.2026) and the three rules that keep
+  them narrow — they are here because the row above would otherwise be read as
+  an invitation to guess.
 
-  **Innerhalb einer Beweisart gibt es keine Rangfolge.** Zwei Funktionsbausteine
-  sind zwei Einstiege, PBO und PAI sind zwei Einstiege, zwei User-Exits sind zwei
-  Einstiege. Einen Vorrang gibt es nur *zwischen* Arten, und nur wo die Quelle
-  selbst eindeutig ist: ein Programm, das `START-OF-SELECTION` schreibt, hat
-  gesagt, wo es beginnt.
+  **Within one kind of evidence there is no ranking.** Two function modules
+  are two entries, PBO and PAI are two entries, two user exits are two
+  entries. A precedence exists only *between* kinds, and only where the source
+  itself is unambiguous: a program that writes `START-OF-SELECTION` has
+  said where it begins.
 
-  **„Public" heißt nicht „von außen aufrufbar".** Der erste Entwurf las jede
-  `PUBLIC SECTION` als Einstieg und gab `Z_ORDER_INTEGRITY_CHECK` sechs
-  Startereignisse — aber `CLASS lcl_x DEFINITION` ohne `PUBLIC` ist nur innerhalb
-  des Programms sichtbar. Verlangt wird jetzt `DEFINITION … PUBLIC`. Die eine
-  Ausnahme sind RAP-Handler: dort ist die `FOR …`-Klausel der Beleg, nicht die
-  Sichtbarkeit, und sie steht wörtlich in der Quelle.
+  **"Public" does not mean "callable from outside".** The first draft read every
+  `PUBLIC SECTION` as an entry and gave `Z_ORDER_INTEGRITY_CHECK` six
+  start events — but `CLASS lcl_x DEFINITION` without `PUBLIC` is only visible
+  within the program. Now `DEFINITION … PUBLIC` is required. The one
+  exception is RAP handlers: there the `FOR …` clause is the evidence, not the
+  visibility, and it is written verbatim in the source.
 
-  **Was auslöst, wird nicht geraten.** Jeder Einstieg, der kein Ereignisblock ist,
-  trägt `triggerNotDetermined` — ein Funktionsbaustein namens `z_cc_idoc_input`
-  bekommt kein IDoc-Startereignis. Der Name sagt IDoc; die Engine nicht.
+  **What triggers is not guessed.** Every entry that is not an event block
+  carries `triggerNotDetermined` — a function module named `z_cc_idoc_input`
+  gets no IDoc start event. The name says IDoc; the engine does not.
 
-  **Und „nicht anwendbar" ist ein Ergebnis.** Ein Upload, der nur ein Interface
-  enthält, meldet `entry-not-applicable` mit Erklärung und dem nächsten Schritt
-  („lade die implementierende Klasse hoch") — nicht null Schritte und auch nicht
-  „kein Einstieg gefunden", was nach einem Fehler des Lesers klingt.
+  **And "not applicable" is a result.** An upload that contains only an interface
+  reports `entry-not-applicable` with an explanation and the next step
+  ("upload the implementing class") — not zero steps and not
+  "no entry found" either, which sounds like a fault of the reader.
 -->
 
-| **Fehler-Endereignis** | `MESSAGE … TYPE 'E'/'A'/'X'`, `RAISE`, `LEAVE PROGRAM` nach Fehler | Selektion abgelehnt (L183, L189), nicht berechtigt (L202, L209) |
-| **Eingeklappter Teilprozess** | eine `FORM`/Methode mit eigener Wirkung und mehr als drei Elementen; die Phasen eines Einstiegs | „Kunden anreichern" (L276–301), „Aktionen ausführen" (L435–451) |
-| **Aufruf-Aktivität** | `CALL TRANSACTION`, `SUBMIT … AND RETURN`, Aufruf eines anderen eigenen Programms | Kundenauftrag ändern per Batch-Input, VA02 (L467) |
-| **Task** | Schritt mit Wirkung ohne eigenen Typ | Simulierte Liefersperre vermerken (L442) |
-| **Service-Task** | `CALL FUNCTION` lokal (BAPI, Funktionsbaustein) | Audit-Protokoll im Update-Task schreiben (L509) |
-| **Send-Task** | Mail, Nachricht, IDoc-Ausgang (`SO_NEW_DOCUMENT_SEND_API1`, `MASTER_IDOC_DISTRIBUTE`) | Zusammenfassung mailen (L573) |
-| **User-Task** | ein Mensch handelt im Programm: `CALL SCREEN`, Popup, Liste zur Ansicht im Dialog | Ergebnisliste ansehen, ALV (L616) |
-| **Business-Rule-Task** | eine `FORM`, die aus Literalen einstuft oder punktet (`IF/ELSEIF`-Kette auf Geschäftsdaten); öffnet als **Entscheidungstabelle** | Kundenrisiko ableiten (L303–317), Auftragsrisiko punkten (L335–396) |
-| **Exklusives Gateway** | `IF`/`CASE`/`CHECK` auf Geschäftsdaten, Bedingung wörtlich an jeder Kante | Risikopunkte ≥ 80 · ≥ 50 · sonst (L424–431) |
-| **Paralleles Gateway** | nur wo der Code Parallelität beweist: `STARTING NEW TASK` mit `WAIT UNTIL`/`RECEIVE RESULTS`, bgRFC | — |
-| **Bedingter Fluss** | Schalter des Selektionsbilds (`CHECK p_x = abap_true`) — als Bedingung am Fluss, nicht als eigenes Gateway | Kreditprüfung nur mit „RFC" (L399), Mail nur mit „Mail" (L558) |
-| **Mehrfach-Instanz, sequenziell** | `LOOP AT <Tabelle>` über Geschäftsobjekte, **dessen Körper den Block nicht verlässt**; zeichnet der Körper kein Element, ist es eine Aktivität mit demselben Marker statt einer Ebene | je Auftrag (L423), je Position (L320), je Kunde (L287) |
-| **Schleife** | `DO`/`WHILE` ohne Tabelle — **und jedes `LOOP AT`, das der Körper verlässt** (`EXIT`, `CHECK`, `CONTINUE`, `RETURN`, `STOP`, Fehler-Ende, `SUBMIT` ohne Rückkehr) | — |
-| **Fehler-Randereignis** | behandelte Ausnahme: `EXCEPTIONS … = n` mit `sy-subrc`-Zweig, `TRY/CATCH` | RFC-Fehler: +10 Punkte, Warnung, weiter (L408–415) |
-| **Timer-Zwischenereignis** | `WAIT UP TO n SECONDS` | — |
-| **Nachrichten-Zwischenereignis (senden)** | Workflow-Ereignis (`SAP_WAPI_CREATE_EVENT`, `SWE_EVENT_CREATE`) | — |
+| **Error end event** | `MESSAGE … TYPE 'E'/'A'/'X'`, `RAISE`, `LEAVE PROGRAM` after an error | Selection rejected (L183, L189), not authorised (L202, L209) |
+| **Collapsed subprocess** | a `FORM`/method with an effect of its own and more than three elements; the phases of an entry | "Enrich customers" (L276–301), "Execute actions" (L435–451) |
+| **Call activity** | `CALL TRANSACTION`, `SUBMIT … AND RETURN`, call of another own program | Change sales order via batch input, VA02 (L467) |
+| **Task** | step with an effect without a type of its own | Record simulated delivery block (L442) |
+| **Service task** | `CALL FUNCTION` locally (BAPI, function module) | Write audit log in the update task (L509) |
+| **Send task** | mail, message, outbound IDoc (`SO_NEW_DOCUMENT_SEND_API1`, `MASTER_IDOC_DISTRIBUTE`) | Mail summary (L573) |
+| **User task** | a person acts in the program: `CALL SCREEN`, popup, list for viewing in the dialog | View result list, ALV (L616) |
+| **Business rule task** | a `FORM` that classifies or scores from literals (`IF/ELSEIF` chain on business data); opens as a **decision table** | Derive customer risk (L303–317), score order risk (L335–396) |
+| **Exclusive gateway** | `IF`/`CASE`/`CHECK` on business data, condition verbatim on every edge | Risk points ≥ 80 · ≥ 50 · otherwise (L424–431) |
+| **Parallel gateway** | only where the code proves parallelism: `STARTING NEW TASK` with `WAIT UNTIL`/`RECEIVE RESULTS`, bgRFC | — |
+| **Conditional flow** | switch of the selection screen (`CHECK p_x = abap_true`) — as a condition on the flow, not as a gateway of its own | Credit check only with "RFC" (L399), mail only with "Mail" (L558) |
+| **Multi-instance, sequential** | `LOOP AT <Tabelle>` over business objects, **whose body does not leave the block**; if the body draws no element, it is an activity with the same marker instead of a level | per order (L423), per item (L320), per customer (L287) |
+| **Loop** | `DO`/`WHILE` without a table — **and every `LOOP AT` that the body leaves** (`EXIT`, `CHECK`, `CONTINUE`, `RETURN`, `STOP`, error end, `SUBMIT` without return) | — |
+| **Error boundary event** | handled exception: `EXCEPTIONS … = n` with a `sy-subrc` branch, `TRY/CATCH` | RFC error: +10 points, warning, continue (L408–415) |
+| **Timer intermediate event** | `WAIT UP TO n SECONDS` | — |
+| **Message intermediate event (send)** | workflow event (`SAP_WAPI_CREATE_EVENT`, `SWE_EVENT_CREATE`) | — |
 
-**Die Ausnahme in den zwei Zeilen darüber, weil sie nicht selbstverständlich ist**
-(2.17, 23.09.2026). Eine Mehrfach-Instanz sagt: *derselbe Ablauf, einmal je
-Element*. Ein `LOOP AT`, aus dem ein `EXIT` herausspringt, sagt etwas anderes —
-dort hängt der weitere Verlauf davon ab, **welche** Iteration abgebrochen hat, und
-genau das kann ein Behälter nicht darstellen. Ein Zyklus kann es. Die Regel
-entscheidet deshalb an den **Anweisungen** des Körpers, nicht am gezeichneten
-Graphen, und ein `EXIT` in einer verschachtelten Schleife verlässt nur diese.
+**The exception in the two rows above, because it is not self-evident**
+(2.17, 23.09.2026). A multi-instance says: *the same flow, once per
+element*. A `LOOP AT` that an `EXIT` jumps out of says something else —
+there the further course depends on **which** iteration broke off, and
+that is exactly what a container cannot show. A cycle can. The rule
+therefore decides on the **statements** of the body, not on the drawn
+graph, and an `EXIT` in a nested loop leaves only that loop.
 
-Gemessen an `ZLEGACY_ORDER_FULFILLMENT_AUDIT`: 11 Schleifen, 11 Marker, **0
-Zyklen**, davon 9 mit eigener Ebene und 2 ohne (reine Rechenschleifen). Über alle
-acht Beispiele 17 Schleifen und 17 Marker, und **keine `loop-back`-Kante mehr im
-Export**.
+Measured on `ZLEGACY_ORDER_FULFILLMENT_AUDIT`: 11 loops, 11 markers, **0
+cycles**, 9 of them with a level of their own and 2 without (pure computation loops). Across all
+eight examples 17 loops and 17 markers, and **no `loop-back` edge left in the
+export**.
 
-Der Nebeneffekt, der die Regel fast verdorben hätte: `collapseSmallRegions` sah
-die neuen kleinen Regionen und faltete ganze Iterationen in eine Box —
-`AUDIT_TRAVEL_EXPENSES` verlor 7 von 13 Knoten. Eine Region, die eine
-Mehrfach-Instanz enthält, ist deshalb nie ein Schritt.
+The side effect that nearly spoiled the rule: `collapseSmallRegions` saw
+the new small regions and folded whole iterations into one box —
+`AUDIT_TRAVEL_EXPENSES` lost 7 of 13 nodes. A region that contains a
+multi-instance is therefore never a step.
 
-| **Zugeklappter Pool + Nachrichtenfluss** | anderes System: `CALL FUNCTION … DESTINATION`, Mail-Empfänger, Dateisystem | Kreditsystem `PRD_CREDIT_RFC` (L401–402), Mail-Empfänger |
-| **Datenspeicher** | gelesene/geschriebene Tabellen; SAP-Tabellen und Z-Tabellen unterscheidbar. In Business über das Overlay „Data" (§5.9) eingeblendet, in IT und im Export immer da | liest VBAK, VBAP, KNA1, KNB1, MARA, MARD; schreibt ZSD_ORD_RISK, ZSD_LEGACY_LOG |
-| **Datenobjekt** | Datei, Ergebnisliste | CSV nach `C:\TEMP` (L538) |
-| **Lanes** (Vorschlag) | AUTHORITY-CHECK, Benutzer-/Batchkontext, Benennung — immer *Model proposal* oder *Reconstructed* | Batch-Lauf · Prüfer (außerhalb des Programms) |
-| **Textanmerkung** | was der Code nicht sagt, am Element: *Not determined*, fest verdrahtete Werte | „Review entry is a table row — who works on it is not determined" (L500) |
+| **Collapsed pool + message flow** | another system: `CALL FUNCTION … DESTINATION`, mail recipient, file system | credit system `PRD_CREDIT_RFC` (L401–402), mail recipient |
+| **Data store** | tables read/written; SAP tables and Z tables distinguishable. In Business shown via the overlay "Data" (§5.9), in IT and in the export always there | reads VBAK, VBAP, KNA1, KNB1, MARA, MARD; writes ZSD_ORD_RISK, ZSD_LEGACY_LOG |
+| **Data object** | file, result list | CSV to `C:\TEMP` (L538) |
+| **Lanes** (proposal) | AUTHORITY-CHECK, user/batch context, naming — always *Model proposal* or *Reconstructed* | batch run · reviewer (outside the program) |
+| **Text annotation** | what the code does not say, on the element: *Not determined*, hard-wired values | "Review entry is a table row — who works on it is not determined" (L500) |
 
-**Warum Teilprozess-Start und vorzeitige Enden (ADR-054, Sonny 27.09.2026).** Gemessen am
-Prozess-Benchmark (`tests/prozess-benchmark/`, 200 Fälle) waren Start- und Endereignisse die
-schwächsten Knotenarten: 37 % der Soll-Starts und 65 % der Soll-Enden wurden getroffen, weil
-jede Routine ohne eigenen Anfang gezeichnet wurde und fünf Ausstiege einer Routine auf *einem*
-Ende am `ENDFORM` zusammenliefen. BPMN und SAP Signavio zeichnen beides anders: jede Ebene hat
-einen sichtbaren Anfang, und jeder Weg hinaus endet dort, wo er hinausgeht. Mit der Regel steigt
-die Knoten-Trefferquote von 69,4 % auf 78,7 % (Starts 71 %, Enden 86,5 %); `CHECK` bleibt
-ein bedingter Fluss auf das normale Ende, und ohne ihn in der Regel ist die Quote dieselbe. Für den Nutzer gilt
-dabei: **Ereignisse sind keine Schritte** — keine Schrittzahl, kein Zähler der Übersicht, der
-Laufvarianten, des ersten Blicks oder der Minikarte zählt sie, die Schrittliste nummeriert nur
-Schritte, und die Minikarte zeigt ein Ereignis als runde Zelle. **Ein vorzeitiges Ende ist
-erkennbar:** es heißt *„End (early)"* in Schrittliste, Gliederung, Codekarte und Editor, trägt
-auf der Karte das Wort über dem Kreis, und sein Name nennt die Routine und das Schlüsselwort
-(`SELECT_ITEMS (EXIT)`), die Bedingung steht an der Kante davor.
+**Why subprocess start and early ends (ADR-054, Sonny 27.09.2026).** Measured on the
+process benchmark (`tests/prozess-benchmark/`, 200 cases), start and end events were the
+weakest node kinds: 37 % of the expected starts and 65 % of the expected ends were hit, because
+every routine was drawn without a beginning of its own and five exits of a routine ran together on *one*
+end at the `ENDFORM`. BPMN and SAP Signavio draw both differently: every level has
+a visible beginning, and every way out ends where it goes out. With the rule the
+node hit rate rises from 69.4 % to 78.7 % (starts 71 %, ends 86.5 %); `CHECK` stays
+a conditional flow to the normal end, and without it in the rule the rate is the same. For the user
+this means: **events are not steps** — no step count, no counter of the overview, the
+run variants, the first look or the minimap counts them, the step list numbers only
+steps, and the minimap shows an event as a round cell. **An early end is
+recognisable:** it is called *"End (early)"* in step list, outline, code map and editor, carries
+the word above the circle on the map, and its name gives the routine and the keyword
+(`SELECT_ITEMS (EXIT)`), the condition is on the edge before it.
 
-**Nicht in der Palette:** inklusives, komplexes und ereignisbasiertes Gateway (aus `IF`-Ketten nicht sicher
-ableitbar), Kompensation, Eskalation, Transaktions- und Ereignis-Teilprozess, Choreografie. Commit-Grenzen und
-Update-Task sind IT-Wissen und stehen im Overlay „Technical", nicht als BPMN-Konstrukt.
+**Not in the palette:** inclusive, complex and event-based gateway (not reliably derivable from `IF` chains),
+compensation, escalation, transaction and event subprocess, choreography. Commit boundaries and
+update task are IT knowledge and are in the overlay "Technical", not as a BPMN construct.
 
-**Was nicht gezeichnet wird, wird gesagt:**
+**What is not drawn is said:**
 
-- **Nicht erreichter Code** — Formulare, die von keinem Einstieg aus aufgerufen werden, erscheinen nicht im Ablauf,
-  sondern unter der Karte: *„Not reached from any entry point: 17 forms and 2 screen modules, 341 lines (L653–993)"*, mit Ankern. Im
-  Beispiel: `legacy_business_rule_001` bis `_014`, Native SQL, `SUBMIT`, `CALL SCREEN`.
-- **Klone** — gleich gebaute Formulare werden zusammengefasst: *„14 forms identical except the rule number"*.
-- **Technische Helfer** — Formulare ohne eigene Wirkung (`add_log`, `bdc_dynpro`, `bdc_field`, `append_fieldcat`)
-  werden Teil ihres Aufrufers; die Karte sagt *„4 technical helpers folded in · Show"*. Eine Form ist ein Schritt nur,
-  wenn sie schreibt, ein anderes System aufruft, auf Geschäftsdaten entscheidet oder einen Menschen einbezieht.
+- **Code not reached** — forms that are called from no entry point do not appear in the flow,
+  but below the map: *"Not reached from any entry point: 17 forms and 2 screen modules, 341 lines (L653–993)"*, with anchors. In the
+  example: `legacy_business_rule_001` to `_014`, Native SQL, `SUBMIT`, `CALL SCREEN`.
+- **Clones** — forms built the same way are summarised: *"14 forms identical except the rule number"*.
+- **Technical helpers** — forms without an effect of their own (`add_log`, `bdc_dynpro`, `bdc_field`, `append_fieldcat`)
+  become part of their caller; the map says *"4 technical helpers folded in · Show"*. A form is a step only
+  if it writes, calls another system, decides on business data or involves a person.
 
-### 5.9 Große Prozesse — Navigation
+### 5.9 Large processes — navigation
 
-Das Beispiel ergibt voll aufgeklappt rund 90 Elemente. Kein Bildschirm zeigt das lesbar, und Verkleinern ist keine
-Navigation. Deshalb gilt (ADR-032):
+Fully expanded, the example yields around 90 elements. No screen shows that legibly, and shrinking is not
+navigation. Therefore (ADR-032):
 
-1. **Ebenen statt Zoom.** Die Karte öffnet in der **Übersicht**: die Phasen des Einstiegs als eingeklappte
-   Teilprozesse, höchstens rund zwölf Elemente — im Beispiel Selektion prüfen · Berechtigung prüfen · Aufträge und
-   Positionen sammeln · Kunden anreichern · Bestand prüfen · Risiko punkten · Kredit extern prüfen · Aktionen
-   entscheiden und ausführen · Protokollieren und berichten. Enter oder Doppelklick öffnet einen Teilprozess als eigene
-   Ebene; eine Ebene zeigt höchstens rund 25 Elemente, sonst teilt sie sich an ihren eigenen `PERFORM`s. „Expand here"
-   klappt einen kleinen Teilprozess an Ort und Stelle auf.
-2. **Pfad oben.** Eine Brotkrumenzeile über der Karte zeigt die Ebene — *Order audit › Decide and process actions ›
-   Set delivery block* — jedes Glied springt zurück; `Alt+↑` geht eine Ebene hinauf.
-3. **Gliederung links.** Die Schrittliste aus §5.7 wird zum **Baum** (`role="tree"`) in derselben Verschachtelung,
-   jede Phase mit Zeilenbereich und Zählern (Entscheidungen · Befunde · hard-coded · not determined). Auswahl im Baum
-   zeigt das Element auf der Karte und umgekehrt. Auf S ist der Baum die Karte.
-4. **Die Übersicht ist schon eine Landkarte der Probleme.** Jeder eingeklappte Teilprozess trägt eine Zeile mit Text,
-   nicht nur Farbe: *„2 D · 3 hard-coded · 1 not determined"*. Wer die Übersicht liest, weiß, wo er öffnen muss.
-5. **Minikarte** unten rechts ab L: der sichtbare Ausschnitt als Rahmen, Ziehen verschiebt; Suchtreffer und Auswahl
-   als Marken. `M` blendet sie aus. Nie auf S.
-6. **Pfad hervorheben.** An einem Endereignis oder Knoten: *„Show paths to here"* — alle Wege vom Start dorthin bleiben,
-   alles andere tritt zurück: Linien und Flächen in `--cc-line`, Beschriftungen in `--cc-ink-muted` (7,6 : 1) — nie
-   Transparenz, die Text unter 4,5 : 1 drückt; *„Main path"* zeigt den Weg zum normalen Ende über die
-   Standardzweige. Die Hervorhebung steht als Filterzeile über der Karte und ist mit einem Klick weg.
-7. **Laufvarianten.** Die Schalter des Selektionsbilds stehen als Umschalter über der Karte — *Update mode · Batch input
-   · Remote credit check · Mail · Download · Result list* — mit dem Wert aus dem Code als Vorgabe. Ein Schalter auf
-   „off" blendet die Zweige aus, die dann nicht laufen können, und die Zeile sagt es: *„Showing the run with update
-   mode off: delivery blocks are simulated"*. Nur Schalter, deren Bedingung im Code wörtlich steht.
-8. **Overlays als Filter.** Findings · Level A–D · Hard-coded · Not determined · Data · Technical — je ein Umschalter
-   mit Anzahl; ein Overlay markiert Elemente mit Text-Kennung, es verändert den Ablauf nicht.
-9. **Suche springt.** ⌘K findet Elemente in allen Ebenen, öffnet die Ebene des Treffers, markiert ihn und nennt *„3 of
-   7"*; Enter und Shift+Enter gehen weiter.
-10. **Stabile Anordnung.** Dasselbe Programm ergibt dieselbe Anordnung — Nutzer lernen den Ort eines Schritts. Wer im
-    Bearbeitungsmodus verschiebt, speichert eine Revision.
-11. **Adresse für jede Stelle.** Ebene und Auswahl stehen in der URL (`#map=decide-and-process&node=gw-bdc`); ein Link
-    öffnet genau dort — innerhalb der Einsicht, die das Konto hat.
-12. **Tastatur zusätzlich zu §5.7:** Enter öffnet einen Teilprozess, `Alt+↑` eine Ebene hinauf, `F` passt ein, `M`
-    Minikarte, `P` Pfad zum gewählten Element; alle Kürzel unter „Keyboard shortcuts" im Hilfe-Menü.
+1. **Levels instead of zoom.** The map opens in the **overview**: the phases of the entry as collapsed
+   subprocesses, at most around twelve elements — in the example check selection · check authorisation · collect orders and
+   items · enrich customers · check stock · score risk · check credit externally · decide and execute
+   actions · log and report. Enter or double-click opens a subprocess as a level of its own;
+   a level shows at most around 25 elements, otherwise it splits at its own `PERFORM`s. "Expand here"
+   expands a small subprocess in place.
+2. **Path at the top.** A breadcrumb line above the map shows the level — *Order audit › Decide and process actions ›
+   Set delivery block* — every link jumps back; `Alt+↑` goes up one level.
+3. **Outline on the left.** The step list from §5.7 becomes a **tree** (`role="tree"`) with the same nesting,
+   every phase with line range and counters (decisions · findings · hard-coded · not determined). Selection in the tree
+   shows the element on the map and vice versa. On S the tree is the map.
+4. **The overview is already a map of the problems.** Every collapsed subprocess carries a line with text,
+   not only colour: *"2 D · 3 hard-coded · 1 not determined"*. Whoever reads the overview knows where to open.
+5. **Minimap** bottom right from L: the visible section as a frame, dragging pans; search hits and selection
+   as marks. `M` hides it. Never on S.
+6. **Highlight path.** At an end event or node: *"Show paths to here"* — all paths from the start to there remain,
+   everything else steps back: lines and fills in `--cc-line`, labels in `--cc-ink-muted` (7.6 : 1) — never
+   transparency that pushes text below 4.5 : 1; *"Main path"* shows the way to the normal end via the
+   default branches. The highlight sits as a filter line above the map and is gone with one click.
+7. **Run variants.** The switches of the selection screen sit as toggles above the map — *Update mode · Batch input
+   · Remote credit check · Mail · Download · Result list* — with the value from the code as default. A switch set to
+   "off" hides the branches that then cannot run, and the line says so: *"Showing the run with update
+   mode off: delivery blocks are simulated"*. Only switches whose condition is written verbatim in the code.
+8. **Overlays as filters.** Findings · Level A–D · Hard-coded · Not determined · Data · Technical — one toggle each
+   with a count; an overlay marks elements with a text identifier, it does not change the flow.
+9. **Search jumps.** ⌘K finds elements on all levels, opens the level of the hit, marks it and states *"3 of
+   7"*; Enter and Shift+Enter go on.
+10. **Stable layout.** The same program yields the same layout — users learn where a step is. Whoever
+    moves things in edit mode saves a revision.
+11. **An address for every spot.** Level and selection are in the URL (`#map=decide-and-process&node=gw-bdc`); a link
+    opens exactly there — within the read access the account has.
+12. **Keyboard in addition to §5.7:** Enter opens a subprocess, `Alt+↑` one level up, `F` fits, `M`
+    minimap, `P` path to the selected element; all shortcuts under "Keyboard shortcuts" in the help menu.
 
-Im Export bleiben eingeklappte Teilprozesse echte BPMN-Teilprozesse — Signavio kann in sie hineinspringen wie die
-Karte.
+In the export collapsed subprocesses stay real BPMN subprocesses — Signavio can jump into them like the
+map.
 
-### 5.10 Fachsatz: Vorschlag oben, Beleg darunter, Widerspruch markiert
+### 5.10 Business statement: proposal on top, evidence below, contradiction marked
 
-Am Element und in der Liste aller Fachsätze (ADR-055, Roadmap 17.10):
+On the element and in the list of all business statements (ADR-055, roadmap 17.10):
 
-| Was | Wie |
+| What | How |
 |---|---|
-| **Vorschlag** (Weg B, Modell) | oben, Lesegröße 13 px, `--cc-ink`, dahinter der Chip *Model proposal* |
-| **Beleg** (Weg A, Engine) | direkt darunter, 12 px, `--cc-ink-muted`, davor der Chip *Reconstructed*; fällt für den Vorschlag nie weg. Hat die Engine an diesen Zeilen keinen Satz, steht das da |
-| **Widerspruch** | am Vorschlag, kein Chip: 2-px-Randstrich links und eine Zeile Worte mit Icon — *Contradicts the evidence* (`warning`) oder *Not supported by the code* (`neutral`). Der Grund und die Zeilen stehen eine Aktion tiefer (§2.11, `<details>`) |
-| **Anfordern** | ein Knopf *Propose business sentences* (Secondary), nach dem ersten Vorschlag *Ask the model again* (Ghost); daneben vor dem Klick die Kostenzeile nach §2.8 — ein Modellaufruf, zählt nicht auf die Analyse-Läufe, zählt auf das Stundenlimit der Modellaufrufe; mit eigenem Schlüssel „with your own Gemini key". Nur der Besitzer hat ihn; ein eingeladener Leser sieht, was der Besitzer angefordert hat |
-| **Ohne Vorschlag** | nicht angefordert, verworfen, für eine frühere Quelle oder fehlgeschlagen: die Sätze der Engine allein, wie vorher — keine leere Fläche, kein Fehlerton; ein Grund, wenn einer bekannt ist, in `--cc-ink-muted` |
+| **Proposal** (path B, model) | on top, reading size 13 px, `--cc-ink`, followed by the chip *Model proposal* |
+| **Evidence** (path A, engine) | directly below, 12 px, `--cc-ink-muted`, preceded by the chip *Reconstructed*; never drops away for the proposal. If the engine has no sentence at these lines, that is what it says |
+| **Contradiction** | on the proposal, no chip: a 2-px edge stroke on the left and one line of words with an icon — *Contradicts the evidence* (`warning`) or *Not supported by the code* (`neutral`). The reason and the lines sit one action deeper (§2.11, `<details>`) |
+| **Request** | a button *Propose business sentences* (Secondary), after the first proposal *Ask the model again* (Ghost); next to it, before the click, the cost line per §2.8 — one model call, does not count against the analysis runs, counts against the hourly limit of model calls; with your own key "with your own Gemini key". Only the owner has it; an invited reader sees what the owner requested |
+| **Without proposal** | not requested, discarded, for an earlier source or failed: the engine's sentences alone, as before — no empty area, no error tone; a reason, if one is known, in `--cc-ink-muted` |
 
-Nie automatisch: Öffnen der Stufe kostet keinen Modellaufruf. Bis 3.0 nur mit der Arbeitsraum-Vorschau.
+Never automatic: opening the stage costs no model call. Until 3.0 only with the workspace preview.
 
 ---
 
-## 6. Hilfestellung
+## 6. Assistance
 
-### 6.1 Müssen (Teil von 3.0)
+### 6.1 Must (part of 3.0)
 
-| Hilfe | Gestaltung | Technik |
+| Help | Design | Technology |
 |---|---|---|
-| **Why?** an jeder Zahl und jedem Status | „?"-Ziel, öffnet Herkunft, Regel und Beleg | Popover-Komponente; Daten aus Run und `lib/provenance.ts` |
-| **Leere Zustände, die lehren** | Illustration, ein Satz Voraussetzung, eine Primäraktion | `EmptyState` (Schritt 1.5) |
-| **Not determined** als eigener Bereich | §5.1, §5.5 | Engine-Grenzen (`support-matrix`), Prüfaufträge (Roadmap-Schritt 7.5) |
-| **Fehler mit nächstem Schritt** | Message Strip mit Aktion, nie roher Fehlertext | Fehlerabbildung in der Komponente |
-| **Glossar im Text** (ADR-034) | unterstrichenes Fachwort (§2.10), Erklärung per Tastatur erreichbar: höchstens zwei Sätze, „What it means for your decision", bei SAP-Begriffen die Quelle | `lib/glossary.ts` mit Quelle je Eintrag, zugängliches Popover |
-| **Glossar in „Ask this case"** | Fachwörter in Antworten tragen dieselbe Unterstreichung und dasselbe Popover; eine Frage „What is …?" zu einem Glossarbegriff beantwortet der Eintrag selbst, mit Quelle und „No model call" | dieselbe Quelle wie im Text; die Antwort nennt, wenn sie aus dem Glossar kommt |
-| **Beispiel-Hinweis** | Message Strip „Example project — fictitious code" | Projektfeld der Beispiele |
-| **Der allererste Start** (ADR-030, ADR-041) | weil jeder Arbeitsbereich die Demo enthält, gibt es kein leeres „No projects yet": über der Liste steht die Karte „Your turn — start with an example (free) or your own code" mit `primary` „New project", solange neben der Demo kein eigenes Projekt existiert. Nur wenn die Demo nicht geladen werden kann, erscheint der Empty State „No projects yet" mit „New project" und „Try an example" | List Report |
-| **Import, bevor er passiert** | „New project" sagt vor dem Hochladen: welche Dateien (ABAP-Quelltext, Includes, ZIP), was gelesen und gespeichert wird, was die Analyse kostet („Uses 1 of your 5 free analysis runs" oder eigener Gemini-Schlüssel, nach §2.8; getrennt davon, wo ein Modell aufgerufen wird), was ohne Modellaufruf entsteht, wer den Code sehen kann (nur das Konto, Einsicht nur per Einladung) | Import-Dialog; Kontingent aus dem Konto |
-| **About this view** | ein Satz unter dem Sichten-Umschalter, welche Frage die Sicht beantwortet; der Link öffnet einen Absatz mit dem, was die Sicht zeigt und was nicht | Textschlüssel je Sicht |
-| **Tastatur, Screenreader, Telefon** | §1.6, §2.9, §5.7 | Schritt 3.0.4 |
+| **Why?** on every number and every status | "?" target, opens provenance, rule and evidence | Popover component; data from the run and `lib/provenance.ts` |
+| **Empty states that teach** | Illustration, one sentence of prerequisite, one primary action | `EmptyState` (step 1.5) |
+| **Not determined** as its own area | §5.1, §5.5 | Engine limits (`support-matrix`), check tasks (roadmap step 7.5) |
+| **Errors with a next step** | Message Strip with an action, never raw error text | Error mapping in the component |
+| **Glossary in the text** (ADR-034) | underlined technical term (§2.10), explanation reachable by keyboard: at most two sentences, "What it means for your decision", for SAP terms the source | `lib/glossary.ts` with a source per entry, accessible popover |
+| **Glossary in "Ask this case"** | Technical terms in answers carry the same underline and the same popover; a question "What is …?" about a glossary term is answered by the entry itself, with source and "No model call" | the same source as in the text; the answer states when it comes from the glossary |
+| **Example notice** | Message Strip "Example project — fictitious code" | Project field of the examples |
+| **The very first start** (ADR-030, ADR-041) | because every workspace contains the demo, there is no empty "No projects yet": above the list sits the card "Your turn — start with an example (free) or your own code" with `primary` "New project", as long as no own project exists next to the demo. Only if the demo cannot be loaded does the empty state "No projects yet" appear, with "New project" and "Try an example" | List Report |
+| **Import, before it happens** | "New project" says before the upload: which files (ABAP source, includes, ZIP), what is read and stored, what the analysis costs ("Uses 1 of your 5 free analysis runs" or own Gemini key, per §2.8; separately, where a model is called), what is produced without a model call, who can see the code (only the account, read access only by invitation) | Import dialog; quota from the account |
+| **About this view** | one sentence under the view switcher on which question the view answers; the link opens a paragraph on what the view shows and what it does not | Text key per view |
+| **Keyboard, screen reader, phone** | §1.6, §2.9, §5.7 | Step 3.0.4 |
 
-**Das Glossar zum Start** (ADR-034, Sonny 15.09.2026) — ein Begriff gehört hinein, wenn er auf einem Screen von 3.0
-steht und ein Prozessverantwortlicher oder Manager ihn nicht sicher kennt:
+**The glossary at launch** (ADR-034, Sonny 15.09.2026) — a term belongs in it if it appears on a screen of 3.0
+and a process owner or manager does not know it for certain:
 
-- **A · SAP und Clean Core:** Clean Core · Clean core levels A–D · Released API · Classic API · Cloudification
+- **A · SAP and Clean Core:** Clean Core · Clean core levels A–D · Released API · Classic API · Cloudification
   Repository · Successor · ABAP Cloud · Key user extensibility · Developer extensibility (on-stack) · Side-by-side
   extensibility (SAP BTP) · BAdI · Modification · Customizing · Scope item · Fit-to-standard · Public Edition and
-  Private Edition · ABAP Test Cockpit (ATC) · Usage data (SCMON, SUSG) · BPMN · SAP Signavio — dazu aus dem heutigen
-  Glossar RAP, CDS View, OData, SAP LUW; die doppelten Einträge „BTP" und „SAP BTP" werden einer.
-- **B · Begriffe dieses Produkts** — niemand kann sie anderswo nachschlagen: Line anchor · Traceability · Run and signed
-  run · Provenance · Not determined · Evidence level E0–E4 · Readiness („a grade, not a compliance percentage") · The
-  four buckets · Simulation · Hard-coded rule · Check task · Confirmed („a self-declaration, not a mandate") ·
+  Private Edition · ABAP Test Cockpit (ATC) · Usage data (SCMON, SUSG) · BPMN · SAP Signavio — plus, from today's
+  glossary, RAP, CDS View, OData, SAP LUW; the duplicate entries "BTP" and "SAP BTP" become one.
+- **B · Terms of this product** — nobody can look them up anywhere else: Line anchor · Traceability · Run and signed
+  run · Provenance · Not determined · Evidence level E0–E4 · Readiness ("a grade, not a compliance percentage") · The
+  four buckets · Simulation · Hard-coded rule · Check task · Confirmed ("a self-declaration, not a mandate") ·
   Unreached code · Sub-process level.
-- Fachbegriffe eines einzelnen Prozesses (Freigabestrategie, Infosatz, Werk) gehören nicht ins Produktglossar.
+- Technical terms of a single process (release strategy, info record, plant) do not belong in the product glossary.
 
-### 6.1.1 „New project" — erst verstehen, dann starten
+### 6.1.1 "New project" — understand first, then start
 
-Wer in „My workspace" auf „New project" klickt, bekommt zuerst in wenigen Sekunden, **was Clean-Core.io ist und was es
-anders macht**, sieht **die drei Sichten in Bewegung** und wählt dann **Beispiel oder eigener Code** (ADR-038, Sonny
-15.09.2026). Eine Seite, zwei Teile, kein Wizard mit Fortschrittsbalken.
+Whoever clicks "New project" in "My workspace" first gets, in a few seconds, **what Clean-Core.io is and what it does
+differently**, sees **the three views in motion** and then chooses **example or own code** (ADR-038, Sonny
+15.09.2026). One page, two parts, no wizard with a progress bar.
 
-**Teil 1 — Was es ist** (beim ersten Mal offen; danach eine Zeile „What is Clean-Core.io? · Show", gemerkt im
-Browser):
+**Part 1 — What it is** (open the first time; afterwards one line "What is Clean-Core.io? · Show", remembered in the
+browser):
 
-- **Ein Satz Kern:** *„Understand a piece of custom ABAP and decide what happens to it — every statement tied to a line
+- **One core sentence:** *"Understand a piece of custom ABAP and decide what happens to it — every statement tied to a line
   of your code."*
-- **Drei Zeilen, was anders ist**, je mit Icon, keine Wörter aus der Stilliste (§3.1):
-  1. *„Reads your code before any model does. Every finding points to a line."*
-  2. *„Says what it could not determine — and never passes an assumption off as a fact."*
-  3. *„One case, three views: Business, IT and Management see the same facts, each answering its own question."*
-- **Clean Core in drei Blicken** — beim ersten Mal sichtbar, ohne Klick; eine Zeile hoch, wo es geht (ADR-040,
-  Sonny 15.09.2026). Sachlich, in der Sprache der SAP-Community, jede Angabe mit Quelle:
-  1. **What clean core means.** Ein Satz — *„Keep the SAP core standard: extensions use only released, upgrade-stable
-     interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP."* — und ein kleines Schema: der SAP-Kern als
-     Block mit seiner Grenze aus freigegebenen Schnittstellen, daneben *in-app* und *side-by-side*, eine Modifikation
-     als Eingriff in den Kern.
-  2. **The four levels.** Eine Leiter A → D mit Kennungen und Farben nach §1.8 (A `information`, B `neutral`, C
-     `warning`, D `error`) und je einer Zeile: **A** released SAP APIs and extension points · **B** classic SAP APIs
+- **Three lines on what is different**, each with an icon, no words from the style list (§3.1):
+  1. *"Reads your code before any model does. Every finding points to a line."*
+  2. *"Says what it could not determine — and never passes an assumption off as a fact."*
+  3. *"One case, three views: Business, IT and Management see the same facts, each answering its own question."*
+- **Clean Core at three glances** — visible the first time, without a click; one line high where possible (ADR-040,
+  Sonny 15.09.2026). Factual, in the language of the SAP community, every statement with a source:
+  1. **What clean core means.** One sentence — *"Keep the SAP core standard: extensions use only released, upgrade-stable
+     interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP."* — and a small diagram: the SAP core as a
+     block with its boundary of released interfaces, next to it *in-app* and *side-by-side*, a modification
+     as an intrusion into the core.
+  2. **The four levels.** A ladder A → D with identifiers and colours per §1.8 (A `information`, B `neutral`, C
+     `warning`, D `error`) and one line each: **A** released SAP APIs and extension points · **B** classic SAP APIs
      following SAP's recommendations · **C** internal SAP objects — only with a changelog check before each upgrade ·
-     **D** not recommended — modifications, implicit enhancements, writes to SAP tables. Darunter: *„Levels follow
+     **D** not recommended — modifications, implicit enhancements, writes to SAP tables. Below it: *"Levels follow
      SAP's clean core level concept. The level shown for an SAP object is our reading of SAP's published data; your
      own objects, which SAP has not classified, are graded from your code and labelled as such. Either way it is an
      orientation, never part of a signed audit pack. Confirm with ABAP Test Cockpit."*
-  3. **Where the evidence comes from.** Ein Fluss in Leserichtung — nebeneinander, wo die Breite reicht, sonst von
-     oben nach unten —, jede Station mit Herkunfts-Chip (§4):
-     *Your ABAP source* (jede Aussage mit Zeilenanker) → *deterministic engine* (Regelversion) → *SAP's published
-     data*: Cloudification Repository — release states and successors — und die Klassifikationsdatei von SAP, mit
-     Anzahl und **Stand des letzten Abgleichs** aus dem Katalog, nie fest im Text (*Imported*) → *your imports*,
-     optional: ATC results, usage data (*Imported*) → *a language model* nur für Namen und Formulierungen (*Model
-     proposal*). Eigene Z-Objekte ohne Katalogeintrag tragen *„estimated from the code, no SAP catalog entry"*.
-  Auf L drei Spalten, auf M zwei plus eine, auf S untereinander — die Leiter bleibt senkrecht, der Fluss wird von
-  oben nach unten. Keine Illustrationen mit Personen, keine Stockfotos, keine Verläufe; Linien in `--cc-field-border`,
-  Kennungen wie im Arbeitsraum.
-- **Die drei Sichten in Bewegung** — das Einzige, was sich auf dieser Seite bewegt:
-  - Eine kompakte Bühne mit dem **echten** Sichten-Umschalter darüber (dieselbe Komponente wie im Arbeitsraum — wer
-    ihn hier gesehen hat, kennt ihn dort).
-  - **Eine Tatsache wandert durch drei Sichten.** Aus dem Beispiel „Emergency purchase approval" die Regel *Vendor
-    block list* mit ihrem Anker `L231`. Der Anker bleibt fest an seinem Platz — er ist das Zeichen, dass es dieselbe
-    Tatsache ist —, nur der Inhalt um ihn wechselt:
-    - **Business** — *„Do I still need this?"* · „Rejects requisitions for vendors on the block list" · Tag *hard-coded
+  3. **Where the evidence comes from.** A flow in reading direction — side by side where the width allows, otherwise from
+     top to bottom —, every station with a provenance chip (§4):
+     *Your ABAP source* (every statement with a line anchor) → *deterministic engine* (rule version) → *SAP's published
+     data*: Cloudification Repository — release states and successors — and SAP's classification file, with
+     count and **date of the last sync** from the catalog, never fixed in the text (*Imported*) → *your imports*,
+     optional: ATC results, usage data (*Imported*) → *a language model* only for names and wording (*Model
+     proposal*). Own Z objects without a catalog entry carry *"estimated from the code, no SAP catalog entry"*.
+  On L three columns, on M two plus one, on S stacked — the ladder stays vertical, the flow runs from
+  top to bottom. No illustrations with people, no stock photos, no gradients; lines in `--cc-field-border`,
+  identifiers as in the workspace.
+- **The three views in motion** — the only thing that moves on this page:
+  - A compact stage with the **real** view switcher above it (the same component as in the workspace — whoever has
+    seen it here knows it there).
+  - **One fact travels through three views.** From the example "Emergency purchase approval", the rule *Vendor
+    block list* with its anchor `L231`. The anchor stays fixed in its place — it is the sign that it is the same
+    fact —, only the content around it changes:
+    - **Business** — *"Do I still need this?"* · "Rejects requisitions for vendors on the block list" · Tag *hard-coded
       in program* · Keep · Change · Drop
-    - **IT** — *„What exactly, where to?"* · `Z_MM_PO_APPROVAL` `L225–234` · liest die eigene Tabelle
-      `ZMM_VEND_BLOCK` direkt · *„estimated from the code, no SAP catalog entry"* — kein Level-Buchstabe, weil ein
-      Kundenobjekt keinen Katalogeintrag hat
-    - **Management** — *„What do I risk, what do I decide?"* · „Rebuild — part of decision DEC-1" · Kosten nur mit
+    - **IT** — *"What exactly, where to?"* · `Z_MM_PO_APPROVAL` `L225–234` · reads the own table
+      `ZMM_VEND_BLOCK` directly · *"estimated from the code, no SAP catalog entry"* — no level letter, because a
+      customer object has no catalog entry
+    - **Management** — *"What do I risk, what do I decide?"* · "Rebuild — part of decision DEC-1" · costs only with
       *Simulation*
-  - **Ablauf:** Umschalter-Markierung gleitet, Inhalt blendet über (je 200 ms), jede Sicht steht 3,5 s. **Ein
-    Durchlauf** Business → IT → Management, dann bleibt die Bühne auf Business stehen, mit „Replay". Keine
-    Endlosschleife.
-  - **Bedienung:** Hover oder Fokus hält an; ein Klick auf eine Sicht übernimmt und beendet das automatische Wechseln.
-    „Skip intro" ist immer sichtbar.
-  - **`prefers-reduced-motion` und S:** kein automatisches Wechseln. Mit reduzierter Bewegung stehen die drei Sichten
-    als drei schmale Spalten nebeneinander; auf S wählt man per Umschalter.
-  - **Screenreader:** der Umschalter ist eine Tab-Liste, die Bühne ihr Panel; automatisches Wechseln sagt nichts an.
-  - **Ehrlich:** alle Inhalte aus dem echten Lauf des Beispiels, beschriftet *„Example · Emergency purchase approval ·
-    fictitious code"* — kein gestelltes Marketingbild.
+  - **Sequence:** the switcher marker glides, the content cross-fades (200 ms each), each view stays 3.5 s. **One
+    pass** Business → IT → Management, then the stage stays on Business, with "Replay". No
+    endless loop.
+  - **Operation:** hover or focus pauses; a click on a view takes over and ends the automatic switching.
+    "Skip intro" is always visible.
+  - **`prefers-reduced-motion` and S:** no automatic switching. With reduced motion the three views stand
+    as three narrow columns side by side; on S one chooses via the switcher.
+  - **Screen reader:** the switcher is a tab list, the stage its panel; automatic switching announces nothing.
+  - **Honest:** all content from the real run of the example, labelled *"Example · Emergency purchase approval ·
+    fictitious code"* — no staged marketing picture.
 
-**Teil 2 — Wie starten?** Zwei Auswahlkarten, eine Primäraktion, deren Beschriftung der Wahl folgt:
+**Part 2 — How to start?** Two selection cards, one primary action whose label follows the choice:
 
-- **„Try an example"** — beim ersten Mal vorausgewählt. Die acht Beispiele als kurze Zeilen aus
-  `lib/starter-examples.ts`: Name, ein Satz, was es zeigt, Zeilen, *small*/*large*; das 1.000-Zeilen-Beispiel mit
-  *„large — shows how big processes stay readable"*. Primäraktion „Open example" → Aufbau (§5.2).
-- **„Use your own code"** — Primäraktion „Continue to upload" → Import-Dialog (§6.1, „Import, bevor er passiert").
-- Unter beiden steht, was gezählt wird (§2.8, Roadmap 0.9): bei einem Beispiel *„Free — examples don't use your
-  analysis runs the first time"*; bei einem schon gelaufenen Beispiel vor dem Start der Warnhinweis *„You ran this
-  example before. Running it again uses 1 of your 5 free analysis runs once the analysis completes."* als Message Strip
-  `warning` mit „Run again" und „Open the earlier result"; bei eigenem Code *„Uses 1 of your 5 free analysis runs (4
-  left)"* oder der eigene Gemini-Schlüssel.
+- **"Try an example"** — preselected the first time. The eight examples as short lines from
+  `lib/starter-examples.ts`: name, one sentence on what it shows, lines, *small*/*large*; the 1,000-line example with
+  *"large — shows how big processes stay readable"*. Primary action "Open example" → build-up (§5.2).
+- **"Use your own code"** — primary action "Continue to upload" → import dialog (§6.1, "Import, before it happens").
+- Under both it says what is counted (§2.8, roadmap 0.9): for an example *"Free — examples don't use your
+  analysis runs the first time"*; for an example already run, before the start, the warning *"You ran this
+  example before. Running it again uses 1 of your 5 free analysis runs once the analysis completes."* as a Message Strip
+  `warning` with "Run again" and "Open the earlier result"; for own code *"Uses 1 of your 5 free analysis runs (4
+  left)"* or the own Gemini key.
 
-### 6.1.2 Das Demo-Projekt — warm werden, dann selbst starten
+### 6.1.2 The demo project — warm up, then start yourself
 
-Jedes Konto findet in „My workspace" ein **vollständig durchgespieltes Demo-Projekt**, das es gefahrlos durchklicken
-kann; überall darin steht die Einladung, jetzt ein Beispiel oder eigenen Code zu starten (ADR-041, Sonny 15.09.2026).
-Ziel: die Schwelle zur ersten eigenen Nutzung immer weiter senken.
+Every account finds in "My workspace" a **fully worked demo project** that it can click through without risk;
+everywhere in it stands the invitation to start an example or own code now (ADR-041, Sonny 15.09.2026).
+Goal: keep lowering the threshold to the first own use.
 
-- **Deutlich markiert.** In der Liste die erste Zeile mit Tag *Demo* und *„Fully worked example · fictitious code"*;
-  im Projekt oben ein Message Strip `information`: *„Demo project — fully worked, fictitious code. Nothing you do here
-  is saved."* mit „Reset demo". Das Demo-Projekt ist nie mit einem eigenen Projekt zu verwechseln: sein Titel beginnt
-  mit „Demo ·"; startet das Konto dasselbe Beispiel selbst, trägt das eigene Projekt den Namen des Beispiels ohne
-  diesen Vorsatz.
-- **Vollständig durchgespielt.** Jede Stufe und jede Sicht hat Inhalt: Analyse mit signiertem Lauf, bestätigte Regeln,
-  Standard-Fit mit Evidenzstufen, Kosten als *Simulation* mit Annahmen-Revision, eine bestätigte Entscheidung,
-  Übergabepaket. **Alles aus einem echten Lauf** eines Beispiels — keine erfundenen Zahlen; ändert sich Engine oder
-  Regelversion, wird die Demo mit dem Release neu erzeugt.
-- **Klicken ohne Folgen.** Bestätigen, Entscheiden, Filtern und Bearbeiten funktionieren; der Zustand lebt nur im
-  Browser und verschwindet mit „Reset demo". Nichts wird gespeichert, nichts zählt aufs Kontingent.
-- **Eine Demo für alle, keine Kopie je Konto.** Das Konto bleibt unverändert, es entstehen keine Daten je Nutzer, und
-  die Demo ist immer auf dem Stand des Produkts — auch für Konten, die es schon gibt.
-- **Eine neue Demo, nicht die alte weitergeführt** (ADR-052). Die Stufen der Demo (heute `/demo/[stage]`) werden nach
-  dieser Datei neu gebaut: dieselben Stufenköpfe (§2.3), Tokens, Chips und Meldungen wie im eigenen Projekt. Die Demo
-  bleibt eine eigene Route ohne Pfad zu Signieren, Kontingent und Export — neu ist das Aussehen, nicht diese Grenze.
-- **Die Tour** — mehr Coach Marks als im eigenen Projekt, weil hier gelernt wird: rund zwölf Stationen entlang des
-  Wegs — Enthüllung · Not determined · Prozesskarte und Quellspalte · Ebenen eines großen Prozesses · eine Regel
-  bestätigen · Standard-Fit · IT-Kette · Management-Sicht · vier Töpfe · Kosten als Simulation · Entscheidung ·
-  Übergabe (Sichten in der Reihenfolge Business · IT · Management, ADR-044). Eine Station erscheint erst, wenn man an ihrem Ort ankommt; immer nur eine; *„3 of 12"* als Text; „Next",
-  „Pause tour", „End tour". Fortschritt nur im Browser (ADR-036).
-- **Immer wieder die Einladung — ohne zu drängen:**
-  - im Demo-Strip dauerhaft: *„Try an example or your own code"* als Link zu „New project";
-  - am Ende jeder dritten Tour-Station und am Ende der Tour eine Karte *„Your turn: start with an example (free) or
-    your own code"* mit `primary` „New project";
-  - in „My workspace", solange neben der Demo kein eigenes Projekt existiert, eine Karte über der Liste mit derselben
-    Einladung.
-  - Höchstens **eine** Einladung je Bildschirm, nie als Dialog, nie blockierend — steht die Karte am Ende einer
-    Station, tritt der Link im Demo-Strip so lange zurück. Sobald das Konto ein Beispiel oder eigenen Code gestartet
-    hat, bleibt nur der Link im Demo-Strip.
+- **Clearly marked.** In the list the first row with tag *Demo* and *"Fully worked example · fictitious code"*;
+  in the project at the top a Message Strip `information`: *"Demo project — fully worked, fictitious code. Nothing you do here
+  is saved."* with "Reset demo". The demo project can never be mistaken for an own project: its title begins
+  with "Demo ·"; if the account starts the same example itself, the own project carries the example's name without
+  this prefix.
+- **Fully worked.** Every stage and every view has content: analysis with a signed run, confirmed rules,
+  standard fit with evidence levels, costs as *Simulation* with assumption revision, a confirmed decision,
+  handover package. **Everything from a real run** of an example — no invented numbers; if the engine or
+  rule version changes, the demo is regenerated with the release.
+- **Clicking without consequences.** Confirming, deciding, filtering and editing work; the state lives only in the
+  browser and disappears with "Reset demo". Nothing is saved, nothing counts against the quota.
+- **One demo for everyone, no copy per account.** The account stays unchanged, no data per user is created, and
+  the demo is always at the product's current state — also for accounts that already exist.
+- **A new demo, not the old one carried on** (ADR-052). The demo's stages (today `/demo/[stage]`) are rebuilt according to
+  this file: the same stage headers (§2.3), tokens, chips and messages as in an own project. The demo
+  stays a separate route without a path to signing, quota and export — what is new is the look, not this boundary.
+- **The tour** — more coach marks than in an own project, because this is where one learns: around twelve stations along the
+  way — reveal · Not determined · process map and source column · layers of a large process · confirming a
+  rule · standard fit · IT chain · Management view · four buckets · costs as simulation · decision ·
+  handover (views in the order Business · IT · Management, ADR-044). A station appears only when one arrives at its place; only ever one; *"3 of 12"* as text; "Next",
+  "Pause tour", "End tour". Progress only in the browser (ADR-036).
+- **The invitation again and again — without pushing:**
+  - permanently in the demo strip: *"Try an example or your own code"* as a link to "New project";
+  - at the end of every third tour station and at the end of the tour a card *"Your turn: start with an example (free) or
+    your own code"* with `primary` "New project";
+  - in "My workspace", as long as no own project exists next to the demo, a card above the list with the same
+    invitation.
+  - At most **one** invitation per screen, never as a dialog, never blocking — if the card stands at the end of a
+    station, the link in the demo strip steps back for that time. As soon as the account has started an example or own code,
+    only the link in the demo strip remains.
 
-### 6.1.3 Eigener Code — Vertrauen, bevor hochgeladen wird
+### 6.1.3 Own code — trust before uploading
 
-Wer eigenen Code hochlädt, gibt etwas Wertvolles aus der Hand. Der Import-Dialog sagt deshalb neben dem Hochladen, in
-ruhigem Ton, was gilt und was wir tun — nur Belegtes, jede Aussage mit Link auf die Stelle, die sie trägt (ADR-042,
+Whoever uploads own code hands over something valuable. The import dialog therefore says next to the upload, in a
+calm tone, what applies and what we do — only what is evidenced, every statement with a link to the place that carries it (ADR-042,
 Sonny 15.09.2026):
 
-- **Was du zusagst** — eine Zeile, kein zusätzliches Häkchen (die Nutzungsbedingungen sind bei der Anmeldung
-  akzeptiert): *„By uploading, you confirm you may share this code for analysis, including with the Google Gemini API
+- **What you commit to** — one line, no additional checkbox (the terms of use were accepted at
+  sign-up): *"By uploading, you confirm you may share this code for analysis, including with the Google Gemini API
   (Terms §5 and §8)."*
-- **Was wir tun, damit du uns vertrauen kannst:**
-  - *„Stored in the EU — Google Cloud, Belgium (europe-west1)."* (Privacy Policy)
-  - *„Only your account and the platform's administrator account can open this project. Others see it only if you
-    invite them."* (`firestore.rules`: Besitzer oder Admin — nie ohne den Admin nennen, solange die Regel ihn zulässt;
-    die Datenschutzerklärung soll den Admin-Zugriff nennen, bevor die Karte live geht)
-  - *„Model calls go through our server; keys never reach the browser. Your own key is stored encrypted."* (Terms §5,
-    „How we handle your data" `/trust`)
-  - *„Every analysis is sealed as a signed, unchangeable run."* (`SECURITY.md` §14)
-  - *„No analytics, advertising or tracking cookies."* (Privacy Policy §7)
-  - *„Delete your account and projects at any time; backup copies age out within 30 days."* (Privacy Policy §5, §6)
-  - *„With our community key, Google does not use your code to train its models (paid Gemini API terms). With your
-    own key, your Google account's terms apply."* (Privacy Policy — die den bezahlten Tarif des Community-Schlüssels
-    ausdrücklich nennt, bevor die Karte es sagt; Sonny 15.09.2026: der Community-Schlüssel läuft über einen bezahlten
-    Schlüssel)
-  - *„Our security model is public."* — verlinkt auf **„How we handle your data"** (`/trust`) und auf `SECURITY.md` im
-    öffentlichen Repository
+- **What we do so that you can trust us:**
+  - *"Stored in the EU — Google Cloud, Belgium (europe-west1)."* (Privacy Policy)
+  - *"Only your account and the platform's administrator account can open this project. Others see it only if you
+    invite them."* (`firestore.rules`: owner or admin — never leave out the admin as long as the rule allows it;
+    the privacy policy is to name the admin access before the card goes live)
+  - *"Model calls go through our server; keys never reach the browser. Your own key is stored encrypted."* (Terms §5,
+    "How we handle your data" `/trust`)
+  - *"Every analysis is sealed as a signed, unchangeable run."* (`SECURITY.md` §14)
+  - *"No analytics, advertising or tracking cookies."* (Privacy Policy §7)
+  - *"Delete your account and projects at any time; backup copies age out within 30 days."* (Privacy Policy §5, §6)
+  - *"With our community key, Google does not use your code to train its models (paid Gemini API terms). With your
+    own key, your Google account's terms apply."* (Privacy Policy — which explicitly names the paid tier of the community key
+    before the card says it; Sonny 15.09.2026: the community key runs on a paid
+    key)
+  - *"Our security model is public."* — links to **"How we handle your data"** (`/trust`) and to `SECURITY.md` in the
+    public repository
     (`https://github.com/sonnyfrenzel-rgb/clean-core.io/blob/main/SECURITY.md`)
-- **Kein kommerzielles Projekt:** *„Clean-Core.io is a free community project. There is no paid tier, we accept no
+- **No commercial project:** *"Clean-Core.io is a free community project. There is no paid tier, we accept no
   payment, and we do not sell, rent or commercially use your code."* (Terms §2, Privacy Policy)
-- **Form:** eine Karte „Your code and your trust" in der Seitenspalte des Import-Dialogs, Aussagen als kurze Zeilen
-  mit Icon, Links als Text; auf S unter dem Formular; auf jeder Größe eingeklappt mit „Why you can trust this · Show" (Sonny 30.09.2026: auch auf dem Desktop). Keine Siegel,
-  keine Zertifikats-Logos, keine Superlative.
+- **Form:** a card "Your code and your trust" in the side column of the import dialog, statements as short lines
+  with an icon, links as text; on S below the form; collapsed on every size with "Why you can trust this · Show" (Sonny 30.09.2026: on the desktop too). No seals,
+  no certificate logos, no superlatives.
 
-### 6.2 Wollen (nach Nutzen gereiht)
+### 6.2 Want (ranked by benefit)
 
-1. **Drei Coach Marks beim ersten Arbeitsraum** — „Select the decision", „This is what we could not determine", „Your
-   next step". Abweisbar, gemerkt **nur im Browser** — nie im Konto, nie in der Datenbank, kein Nutzungsprotokoll
-   (ADR-036). „Show tips again" im Hilfe-Menü holt sie zurück.
-2. **„Ask this case"** — immer die eingebettete Hilfe-KI, für 3.0 ausgebaut (ADR-043): im Projekt beschränkt auf die
-   Evidenz des Projekts, antwortet mit Ankern; außerhalb Produkt- und SAP-Hilfe; ein Assistent, kein zweiter Chat; die erste,
-   vorab beantwortete Frage kommt ohne Modellaufruf aus dem Code (§5.3).
-3. **Checkliste bis zur Entscheidung** — aus dem nächsten Schritt abgeleitet, ohne Modellaufruf. Die Muss-Form davon
-   ist die Karte „Next step" (§2.3).
-
----
-
-## 7. Regeln für Agenten und Beiträge
-
-- Ein SAP-Fiori-Guidelines-Skill (falls eingerichtet) wird **nur** für Layout, Verhalten, Benennung und
-  Barrierefreiheit befragt; jede Farb-, Schrift- und Abstandsangabe daraus wird ignoriert — es gelten §1 und die Tokens.
-- Kein SAP-Theme (Horizon, Quartz), keine Schrift „72", keine `sapUi*`-Variablen, keine UI5 Web Components.
-- Eine neue Farbe, ein neuer Radius, ein neuer Abstand oder ein fünfter Button-Stil ist eine Änderung dieser Datei mit
-  ADR, kein Detail im Code.
-- Jede Aussage auf dem Schirm hält die Produktregel: fehlend bleibt fehlend, simuliert bleibt simuliert, rekonstruiert
-  bleibt rekonstruiert (`docs/ROADMAP.md` §11).
-- Der UX-Agent prüft neue Oberflächen gegen diese Datei (`docs/UX-REVIEW-AGENT.md`); vor dem Bau einer neuen Fläche
-  prüft er Entwurf und Mockups (`node scripts/ux/design-review.mjs`).
-
-### 7.1 Druck und Export
-
-- `@media print`: kein Hintergrund, Text `--cc-ink` auf Weiß, Karten mit 1-px-Rahmen statt Schatten, keine Werkzeug-
-  und Fußleisten.
-- Chips drucken **Wort und Icon** (Icons einfarbig), Zustände bleiben ohne Farbe unterscheidbar.
-- Anker und IDs werden als Text gedruckt; Links mit Ziel in Klammern, wo es kein Anker ist.
-- Umbrüche nicht mitten in einer Karte oder Tabellenzeile.
+1. **Three coach marks on the first workspace** — "Select the decision", "This is what we could not determine", "Your
+   next step". Dismissible, remembered **only in the browser** — never in the account, never in the database, no usage log
+   (ADR-036). "Show tips again" in the help menu brings them back.
+2. **"Ask this case"** — always the embedded help AI, expanded for 3.0 (ADR-043): in the project restricted to the
+   project's evidence, answers with anchors; outside it, product and SAP help; one assistant, not a second chat; the first,
+   pre-answered question comes from the code without a model call (§5.3).
+3. **Checklist up to the decision** — derived from the next step, without a model call. Its must form
+   is the "Next step" card (§2.3).
 
 ---
 
-## 8. Wie es gehalten wird
+## 7. Rules for agents and contributions
 
-| Regel | Guard |
+- An SAP Fiori guidelines skill (if set up) is consulted **only** for layout, behaviour, naming and
+  accessibility; every colour, font and spacing value from it is ignored — §1 and the tokens apply.
+- No SAP theme (Horizon, Quartz), no "72" font, no `sapUi*` variables, no UI5 Web Components.
+- A new colour, a new radius, a new spacing or a fifth button style is a change to this file with an
+  ADR, not a detail in the code.
+- Every statement on the screen keeps the product rule: missing stays missing, simulated stays simulated, reconstructed
+  stays reconstructed (`docs/ROADMAP.md` §11).
+- The UX agent checks new surfaces against this file (`docs/UX-REVIEW-AGENT.md`); before a new surface is built
+  it checks the draft and the mockups (`node scripts/ux/design-review.mjs`).
+
+### 7.1 Print and export
+
+- `@media print`: no background, text `--cc-ink` on white, cards with a 1-px border instead of a shadow, no tool
+  bars and footer bars.
+- Chips print **word and icon** (icons monochrome), states remain distinguishable without colour.
+- Anchors and IDs are printed as text; links with the target in parentheses, where it is not an anchor.
+- No breaks in the middle of a card or table row.
+
+---
+
+## 8. How it is held
+
+| Rule | Guard |
 |---|---|
-| Landing- und Stufenköpfe aus einer Komponente; jede Stufe auf der Skala §1.2 | `tests/landing-style-guard.spec.ts`, `tests/workflow-style-guard.spec.ts` — seit D.30 auch die Skala: jeder sichtbare Text einer Stufe auf 11/12/13/14/15/22 px, ≤ 800, ein Seitentitel, keine Überschrift größer als er |
-| **Kontrast aller Token-Paare** (Text ≥ 4,5 : 1; Feld-, Button-, Value-State- und Chip-Rahmen sowie Fokus ≥ 3 : 1 gegen ihre Fläche) | Kontrast-Guard aus Schritt 1.5: rechnet WCAG-Kontraste aus den Tokens in `app/globals.css` — ohne neue Abhängigkeit; axe/pa11y auf gerenderten Seiten danach als eigener Schritt |
-| Chips in drei Formen (gefüllt, Umriss, gestrichelt) nach §4; unter `forced-colors` und im Druck unterscheidbar | Guard aus Schritt 1.5 über `lib/provenance.ts`, gerendert mit `forcedColors: 'active'` |
-| Prozesskarte: ein Tab-Halt, Pfeiltasten, benannte Knoten, Schrittliste gleichwertig (§5.7) | gerenderter Tastatur-Test aus Schritt 2.5 |
-| Überschriftenfolge `h1` → `h2` → `h3` je Sicht; jede Live-Region höchstens eine Ansage je Ereignis; Message Box modal und `inert` dahinter | gerenderter Test aus Schritt 3.0.4 |
-| Objektstatus, Evidenzstufe, Level, Regel-Eigenschaft und Schwere nur aus ihren festen Listen, in ihrer Form (§4.1) | Guard aus Schritt 1.5 |
-| Tokens statt Hex-Literale, vier Button-Stile, Schrift ≥ 11 px, Abstände aus der Skala | `tests/design-source-guard.spec.ts` (R1–R19) und `tests/cc-token-guard.spec.ts` (Hex, Palette, nicht deklarierte Tokens, Klassen des nicht registrierten Typography-Plugins) über ganz `app/**` und `components/**` (ohne die Route-Handler `app/api/**`); gerendert `tests/design-rendered-guard.spec.ts` auf jeder Route. Seit D.30 **null, ohne Ausnahmeliste** — die Obergrenzen `tests/design-baseline/` und `tests/design-rendered-baseline/` sind gelöscht |
-| Herkunft nur aus `lib/provenance.ts`; Grün nur für `proven`/`success` | `tests/cc-provenance-guard.spec.ts` — seit D.30 app-weit: nur der Chip malt Herkunft, nur `CcSeverity` Schwere, kein abgelöstes Wort als Text |
-| Keine Zustandsfarbe ohne Text; Fokusring an jedem bedienbaren Element | Style-Guard, gerendert geprüft |
-| Sichtbare Texte neuer Komponenten nur über Textschlüssel | Guard aus Schritt 1.5 |
-| **Keine KI-Spuren:** keine Markdown-Reste, Blocklisten-Wendungen oder KI-Symbolik in gerenderten Seiten, HTML-/PDF-Exporten und Mails | Guard aus Schritt 1.5: scannt den gerenderten Text und die Exporte gegen Markdown-Reste und die **Blockliste** aus §3.1 (`.md`-Exporte ausgenommen); Copy-Guard über `app/`, `components/`, `lib/`; seit D.30 Symbolik und Emoji über jeden Bildschirm (`app/**` ohne `app/api/**`, `components/**`) und gerendert auf jeder Route des Design-Rundgangs (`tests/model-text-guard.spec.ts`). Die **Stilliste** prüfen QA- und UX-Agent als Hinweis, kein Guard |
-| Druckbild: Chips mit Wort, keine Leisten | gerenderter Test mit `emulateMedia({ media: 'print' })` |
-| Kein Dark Mode | Guard aus Schritt 1.6 |
-| **Benannte Ausnahmen** — die einzigen (D.30) | `.md`-Export (Markdown ist dort Format, kein Rest); `app/datenschutz/de` (Rechtstext auf Deutsch, E-7); Code-Fläche (`CcCodeSurface`, `pre`, `code`: zitierter Code, eigene Mono-Größen); Landing-Mesh und öffentliche Radien (§1.4, E-5: R12 gilt nur im Arbeitsraum); Standalone-Exporte in `lib/` (Farben einmal als Werte in `lib/export-style.ts`, rohe Tabellen in den Vorlagen) — jede als Regel mit Grund im Guard, keine als Listeneintrag |
+| Landing and stage headers from one component; every stage on the scale §1.2 | `tests/landing-style-guard.spec.ts`, `tests/workflow-style-guard.spec.ts` — since D.30 also the scale: every visible text of a stage at 11/12/13/14/15/22 px, ≤ 800, one page title, no heading larger than it |
+| **Contrast of all token pairs** (text ≥ 4.5 : 1; field, button, value state and chip borders as well as focus ≥ 3 : 1 against their surface) | Contrast guard from step 1.5: computes WCAG contrasts from the tokens in `app/globals.css` — without a new dependency; axe/pa11y on rendered pages afterwards as a separate step |
+| Chips in three forms (filled, outline, dashed) per §4; distinguishable under `forced-colors` and in print | Guard from step 1.5 over `lib/provenance.ts`, rendered with `forcedColors: 'active'` |
+| Process map: one tab stop, arrow keys, named nodes, step list equivalent (§5.7) | rendered keyboard test from step 2.5 |
+| Heading order `h1` → `h2` → `h3` per view; every live region at most one announcement per event; Message Box modal and `inert` behind it | rendered test from step 3.0.4 |
+| Object status, evidence level, level, rule property and severity only from their fixed lists, in their form (§4.1) | Guard from step 1.5 |
+| Tokens instead of hex literals, four button styles, font ≥ 11 px, spacings from the scale | `tests/design-source-guard.spec.ts` (R1–R19) and `tests/cc-token-guard.spec.ts` (hex, palette, undeclared tokens, classes of the unregistered Typography plugin) over all of `app/**` and `components/**` (without the route handlers `app/api/**`); rendered `tests/design-rendered-guard.spec.ts` on every route. Since D.30 **zero, without an exception list** — the ceilings `tests/design-baseline/` and `tests/design-rendered-baseline/` are deleted |
+| Provenance only from `lib/provenance.ts`; green only for `proven`/`success` | `tests/cc-provenance-guard.spec.ts` — since D.30 app-wide: only the chip paints provenance, only `CcSeverity` severity, no superseded word as text |
+| No state colour without text; focus ring on every operable element | Style guard, checked rendered |
+| Visible texts of new components only via text keys | Guard from step 1.5 |
+| **No AI traces:** no Markdown remnants, block-list phrases or AI symbolism in rendered pages, HTML/PDF exports and mails | Guard from step 1.5: scans the rendered text and the exports against Markdown remnants and the **block list** from §3.1 (`.md` exports excluded); copy guard over `app/`, `components/`, `lib/`; since D.30 symbolism and emoji over every screen (`app/**` without `app/api/**`, `components/**`) and rendered on every route of the design tour (`tests/model-text-guard.spec.ts`). The **style list** is checked by the QA and UX agents as a hint, not a guard |
+| Print image: chips with a word, no bars | rendered test with `emulateMedia({ media: 'print' })` |
+| No dark mode | Guard from step 1.6 |
+| **Named exceptions** — the only ones (D.30) | `.md` export (Markdown is the format there, not a remnant); `app/datenschutz/de` (legal text in German, E-7); code surface (`CcCodeSurface`, `pre`, `code`: quoted code, own mono sizes); landing mesh and public radii (§1.4, E-5: R12 applies only in the workspace); standalone exports in `lib/` (colours once as values in `lib/export-style.ts`, raw tables in the templates) — each as a rule with a reason in the guard, none as a list entry |
 
 ---
 
-## Änderungen an dieser Datei
+## Changes to this file
 
-| Version | Datum | Was |
+| Version | Date | What |
 |---|---|---|
-| 1.8 (Entwurf, zur Abnahme durch Sonny) | 30.09.2026 | Block D abgeschlossen (D.30): alle Guards gelten für `app/**` und `components/**`, die Ausnahmelisten sind gelöscht, nur benannte Ausnahmen bleiben (§8); `--cc-warning-mark` `#d97706` für Warn-Marken in Balken und Punkten (§1.1, §1.8); generierter Markdown-Text in `.cc-prose` auf der Skala §1.2 |
-| 1.7 | 27.09.2026 | Fachsatz als Vorschlag des Modells über dem Satz der Engine, Widerspruch als Randstrich mit Worten statt Chip, Anfordern nur per Knopf mit Kostenzeile (§5.10, ADR-055, Roadmap 17.10) |
-| 1.6 | 27.09.2026 | Ereignisse in Teilprozessen und an frühen Ausstiegen (ADR-054, Sonny 27.09.2026): jeder aufklappbare Teilprozess beginnt in seiner Ebene an einem Startereignis auf der `FORM`-/`METHOD`-Zeile; `RETURN`, `EXIT` außerhalb von Schleifen und `STOP` enden auf einem eigenen Endereignis mit der Bedingung an der Kante — direkt vor dem Blockschluss bleibt es das normale Ende; ein verlassender `CHECK` bleibt bedingter Fluss auf das normale Ende. Ereignisse zählen nirgends als Schritt, ein vorzeitiges Ende heißt „End (early)" (§5.8) |
-| 1.5 | 24.09.2026 | Entscheidungen E-1 bis E-7 aus Block D („die ganze App aus einem Guss"), Sonny 24.09.2026 (ADR-047 bis ADR-053): 12 px / 600 als Stufe „Meta/Chip" in der Skala (§1.2); 2 px nur in Chips, Kennungen und zur Icon-Ausrichtung, 6/10/14 px nicht (§1.3); Stufenkopf wie Projekttitel 22 px / 800, `--cc-ink`, neutrales Icon, „Back to workspace" (§1.2, §2.3); Schwere eines Befunds als feste Liste `lib/severity.ts` mit Kennungsform und Farben (§1.8, §4.1, §8); Tokens statt Palette auch auf öffentlichen Seiten, große Radien und Mesh nur dort (Einleitung, §1); altes Dashboard und alte Stufen-Demo werden nach dieser Datei neu gebaut, nichts wird entfernt statt umgebaut (§2.2, §6.1.2); deutsche Datenschutzerklärung als Rechtstext-Ausnahme von §3 |
-| 1.4.3 | 15.09.2026 | Abgleich mit der abgenommenen Landingpage 3.0: Vertrauenssatz nennt den Admin-Zugriff, den `firestore.rules` zulässt; Quelle für den verschlüsselten Schlüssel ist Terms §5 und `/trust`, nicht `SECURITY.md` §4 (das sind S/4-Zugangsdaten); Tour-Stationen in der Sichten-Reihenfolge Business · IT · Management; Bewegung auf der Startseite, Fokusring auf Code-Fläche, Gewichte des `SectionHeader` |
-| 1.4.2 | 15.09.2026 | „Ask this case" läuft immer über die eingebettete Hilfe-KI, die für 3.0 ausgebaut wird (ADR-043, §6.2) |
-| 1.4.1 | 15.09.2026 | Klarstellungen aus dem letzten Mockup-Abgleich, keine neue Entscheidung: Projektstatus-Zeile ohne *Not determined* (steht in der Enthüllung); Werkzeuge als Menü in Business und Management, leere Ebenen unter „More" auch in §2.3; Pfad-Hervorhebung über Farbe statt Transparenz (Kontrast); die IT-Sicht der Sichten-Bühne ohne Level-Buchstaben für eine Kundentabelle; Evidenz-Fluss nebeneinander oder untereinander; kein leerer Arbeitsbereich neben der Demo; Demo-Titel „Demo ·"; eine Einladung je Bildschirm auch am Stationsende; Tour-Beispiel „3 of 12"; „derselbe eigene Quellstand" in §2.8 |
-| 1.4 | 15.09.2026 | Entscheidungen von Sonny zu den offenen Fragen der Design-Reviews (ADR-031 bis ADR-042): BPMN-Palette über das Minimum, gemessen am 1.000-Zeilen-Beispiel, mit User-Task, Datenspeicher, Business-Rule-Task, Aufruf-Aktivität, Teilprozessen, Rand- und Nachrichtenereignissen; nicht erreichter Code, Klone und technische Helfer werden gesagt statt gezeichnet (§5.8); Navigation großer Prozesse mit Ebenen, Pfad, Gliederungsbaum, Minikarte, Pfad-Hervorhebung, Laufvarianten, Overlays als Filter und Adressen (§5.9); vier Töpfe als Regeln je Objekt, abhängig von der Zielplattform, Retire aus Nutzung erst ab 13 Monaten und durchsichtig (§5.6); Glossar zum Start mit SAP- und Produktbegriffen, auch in „Ask this case" (§6.1); Coach Marks nur im Browser (§6.2). Lücken aus dem Mockup-Abgleich geschlossen: Ort von „Next step" je Sicht, schrumpfender Business-Kopf, Kartentitel `h3`, Objektstatus „handed over" und „done", Herkunft der Readiness, Quellspalte ohne Umbruch der Seite, „Why?" auf S. Bestätigt: alles Englisch (ADR-009), kein Dark Mode (ADR-003). Entschlackung für Erstnutzer ohne Verlust an Tiefe (ADR-037, §2.11). „New project" erklärt Kern und Unterschied und zeigt die drei Sichten in Bewegung, bevor man Beispiel oder eigenen Code wählt (ADR-038, §6.1.1); Beispiele einmal frei, Wiederholung vorher angekündigt (ADR-039); Clean Core, die vier Level und die Herkunft der Evidenz in drei Blicken beim ersten Ausprobieren (ADR-040); ein vollständig durchgespieltes Demo-Projekt für alle Konten mit Tour und wiederkehrender Einladung (ADR-041, §6.1.2); vor dem Hochladen Zusage und belegte Vertrauensaussagen, „free community project" (ADR-042, §6.1.3) |
-| 1.3 | 15.09.2026 | Zweites Design-Review des UX-Agenten, diesmal mit den Mockups 2.8 (ADR-026 bis ADR-030): Business-Kopf mit eingeklappter Projektstatus-Zeile in Klarsprache, „About this view" als Satz unter dem Umschalter, Überschriftenfolge (§2.3); weitere feste Listen mit eigener Form — Objektstatus, Evidenzstufe, Level, Regel-Eigenschaft (§4.1); Message Box modal, dunkel nur für Code-Fläche und Überlagerung (§1.1, §2.6); „ein Bereich" für die Primäraktion definiert (§1.5); Management antwortet vor der Zahl, IT-Kette je gewähltem Befund mit Abdeckung (§5.6); allererster Start, Import-Erklärung und „About this view" als Muss (§6.1); Live-Ansagen nur je Etappe (§2.8); Kontrast-Paare eindeutig beschriftet. Kontingent-Texte an `COMMUNITY_QUOTA` angeglichen: fünf Analyse-Läufe, Modellaufruf als eigene Angabe (§2.8) |
-| 1.2 | 15.09.2026 | Design-Review des UX-Agenten eingearbeitet (ADR-015 bis ADR-021): nach dem Aufbau führt das Geschäft, der Code wird zweite Ebene (§5.1); Enthüllung sagt „hard-coded in the program" statt „nobody documented" — nur, was der Code belegt; Prozesskarte ohne Maus mit Schrittliste, Pfeiltasten, benannten Knoten und Druckregel (§5.7); Chips mit Form als zweitem Merkmal — gefüllt, Umriss, gestrichelt (§4); Zusammenspiel von Sicht, Ebene und Werkzeug mit Start und URL, Sicht in der URL ist keine Freigabe (§2.3); lange Läufe mit Kontingent vor dem Klick, Abbrechen, Verlassen, Fehler-Strip (§2.8); sichtbare Grenzen ≥ 3 : 1 — Feld, Ghost, Secondary, Value States (§1.1); `forced-colors` als Ersatz für Dark Mode; Live-Regionen für Filter und Etappen, fokussierbarer Strip, Toast mit `role="status"`; Zielgrößen und Reihenfolge auf S (§2.9); Suche, „Why?"-Popover, Glossar und Initialen (§2.10); Floskelliste geteilt in Blockliste (Guard) und Stilliste (Hinweis); Verweise auf Roadmap-Schritte eindeutig. Abgleich mit den Mockups 2.8 (ADR-022 bis ADR-025): Kostenbeträge entstehen nur in Economics und erscheinen anderswo nur mit *Simulation*, Annahmen-Revision und „Open in Economics", Beträge im Code sind Codefakten (§3); Statuszeile als Objektstatus getrennt von Herkunfts-Chips (§2.3); Level A–D und Catalog Match als *Imported*, Level A blau statt grün (§1.8, §4); Etappe 3 hält den Aufbau nicht auf (§5.2); Facetten im Aufbau wie im Kopf; Breite der Karte bei offener Quellspalte (§5.7); Code-Fläche mit Tokens und Kontrasten (§1.1); Segmented Control, Icon-Button und „Why?"-Ziel (§1.5) |
-| 1.1 | 15.09.2026 | Keine KI-Spuren (ADR-014, §3.1): keine Markdown-Reste, Chatbot-Floskeln oder KI-Symbolik; Herkunft nur über den Chip. Erster Blick neu gefasst (ADR-013): Wow als Inhalt mit Zeilenanker — der Code spricht zuerst, Knoten wachsen aus ihren Zeilen, Enthüllungszeile der undokumentierten Regeln, Zweifel sofort beantwortet, eine Frage vorab aus dem Code beantwortet, Standard-Kandidat als zweite Überraschung, Export statt öffentlichem Link; ausdrücklich nicht: Konfetti, Typewriter, Mindestdauern. Externe Durchsicht eingearbeitet (ADR-007 bis ADR-012): Primärfläche `--cc-brand-strong` (Weiß auf `#16a34a` hatte 3,3 : 1); Grün nur für Nachweis, *Confirmed* in `information`; *Stale* als `warning`; Sichten als Segmented Control statt zweiter Navigationsleiste; Stufen in eine Werkzeugleiste, „Next step" als Karte, Fußleiste nur beim Bearbeiten; UI-Sprache Englisch mit Textschlüsseln; Arbeitsraum mit 12/8-px-Radien und ohne Mesh; Dichte nach Eingabegerät; `dark` nur für bindende Bestätigung; Gewichte 800/700/600/500; Aufbau ≤ 3 s; neu: Abstandsskala, Fokus-Token, Formulare und Value States, Filterleiste, Laden, Breakpoints, Diagrammpalette, Formate, Druck, Kontrast-Guard; Entscheidungen ins Entscheidungslog |
-| 1.0 | 15.09.2026 | Erste Fassung |
+| 1.8 (draft, for acceptance by Sonny) | 30.09.2026 | Block D completed (D.30): all guards apply to `app/**` and `components/**`, the exception lists are deleted, only named exceptions remain (§8); `--cc-warning-mark` `#d97706` for warning marks in bars and dots (§1.1, §1.8); generated Markdown text in `.cc-prose` on the scale §1.2 |
+| 1.7 | 27.09.2026 | Business statement as the model's proposal above the engine's sentence, contradiction as an edge stroke with words instead of a chip, requesting only via a button with a cost line (§5.10, ADR-055, roadmap 17.10) |
+| 1.6 | 27.09.2026 | Events in sub-processes and at early exits (ADR-054, Sonny 27.09.2026): every expandable sub-process begins in its layer at a start event on the `FORM`/`METHOD` line; `RETURN`, `EXIT` outside loops and `STOP` end on an end event of their own with the condition on the edge — directly before the end of the block it stays the normal end; a leaving `CHECK` stays a conditional flow to the normal end. Events nowhere count as a step, a premature end is called "End (early)" (§5.8) |
+| 1.5 | 24.09.2026 | Decisions E-1 to E-7 from Block D ("the whole app all of a piece"), Sonny 24.09.2026 (ADR-047 to ADR-053): 12 px / 600 as the step "Meta/Chip" in the scale (§1.2); 2 px only in chips, identifiers and for icon alignment, 6/10/14 px not (§1.3); stage header like the project title 22 px / 800, `--cc-ink`, neutral icon, "Back to workspace" (§1.2, §2.3); severity of a finding as a fixed list `lib/severity.ts` with identifier form and colours (§1.8, §4.1, §8); tokens instead of the palette on public pages too, large radii and mesh only there (introduction, §1); old dashboard and old stage demo are rebuilt according to this file, nothing is removed instead of rebuilt (§2.2, §6.1.2); German Datenschutzerklärung as the legal-text exception to §3 |
+| 1.4.3 | 15.09.2026 | Reconciliation with the accepted landing page 3.0: the trust sentence names the admin access that `firestore.rules` allows; the source for the encrypted key is Terms §5 and `/trust`, not `SECURITY.md` §4 (those are S/4 credentials); tour stations in the view order Business · IT · Management; motion on the start page, focus ring on the code surface, weights of the `SectionHeader` |
+| 1.4.2 | 15.09.2026 | "Ask this case" always runs via the embedded help AI, which is expanded for 3.0 (ADR-043, §6.2) |
+| 1.4.1 | 15.09.2026 | Clarifications from the last mockup reconciliation, no new decision: project status line without *Not determined* (it is in the reveal); tools as a menu in Business and Management, empty layers under "More" also in §2.3; path highlighting via colour instead of transparency (contrast); the IT view of the views stage without level letters for a customer table; evidence flow side by side or stacked; no empty workspace next to the demo; demo title "Demo ·"; one invitation per screen also at the end of a station; tour example "3 of 12"; "the same own source state" in §2.8 |
+| 1.4 | 15.09.2026 | Decisions by Sonny on the open questions of the design reviews (ADR-031 to ADR-042): BPMN palette beyond the minimum, measured against the 1,000-line example, with user task, data store, business rule task, call activity, sub-processes, boundary and message events; unreached code, clones and technical helpers are stated instead of drawn (§5.8); navigation of large processes with layers, path, outline tree, minimap, path highlighting, run variants, overlays as filters and addresses (§5.9); four buckets as rules per object, depending on the target platform, Retire from usage only from 13 months and transparent (§5.6); glossary at launch with SAP and product terms, also in "Ask this case" (§6.1); coach marks only in the browser (§6.2). Gaps from the mockup reconciliation closed: place of "Next step" per view, shrinking Business header, card titles `h3`, object status "handed over" and "done", provenance of the readiness, source column without wrapping the page, "Why?" on S. Confirmed: everything English (ADR-009), no dark mode (ADR-003). Slimming down for first-time users without loss of depth (ADR-037, §2.11). "New project" explains the core and the difference and shows the three views in motion before one chooses example or own code (ADR-038, §6.1.1); examples free once, repetition announced beforehand (ADR-039); Clean Core, the four levels and the provenance of the evidence at three glances on first trying it (ADR-040); a fully worked demo project for all accounts with a tour and recurring invitation (ADR-041, §6.1.2); before the upload, commitment and evidenced trust statements, "free community project" (ADR-042, §6.1.3) |
+| 1.3 | 15.09.2026 | Second design review by the UX agent, this time with the mockups 2.8 (ADR-026 to ADR-030): Business header with a collapsed project status line in plain language, "About this view" as a sentence under the switcher, heading order (§2.3); further fixed lists with their own form — object status, evidence level, level, rule property (§4.1); Message Box modal, dark only for the code surface and overlay (§1.1, §2.6); "one area" for the primary action defined (§1.5); Management answers before the number, IT chain per selected finding with coverage (§5.6); very first start, import explanation and "About this view" as a must (§6.1); live announcements only per stage of progress (§2.8); contrast pairs labelled unambiguously. Quota texts aligned with `COMMUNITY_QUOTA`: five analysis runs, model call as a separate statement (§2.8) |
+| 1.2 | 15.09.2026 | Design review by the UX agent incorporated (ADR-015 to ADR-021): after the build-up the business leads, the code becomes the second layer (§5.1); the reveal says "hard-coded in the program" instead of "nobody documented" — only what the code evidences; process map without a mouse with step list, arrow keys, named nodes and print rule (§5.7); chips with form as a second feature — filled, outline, dashed (§4); interplay of view, layer and tool with start and URL, view in the URL is not a sharing approval (§2.3); long runs with quota before the click, cancel, leave, error strip (§2.8); visible boundaries ≥ 3 : 1 — field, Ghost, Secondary, value states (§1.1); `forced-colors` as a substitute for dark mode; live regions for filters and stages of progress, focusable strip, toast with `role="status"`; target sizes and order on S (§2.9); search, "Why?" popover, glossary and initials (§2.10); phrase list split into block list (guard) and style list (hint); references to roadmap steps unambiguous. Reconciliation with the mockups 2.8 (ADR-022 to ADR-025): cost amounts arise only in Economics and appear elsewhere only with *Simulation*, assumption revision and "Open in Economics", amounts in the code are code facts (§3); status line as object status separate from provenance chips (§2.3); Level A–D and Catalog Match as *Imported*, Level A blue instead of green (§1.8, §4); stage 3 does not hold up the build-up (§5.2); facets in the build-up as in the header; width of the map with the source column open (§5.7); code surface with tokens and contrasts (§1.1); Segmented Control, icon button and "Why?" target (§1.5) |
+| 1.1 | 15.09.2026 | No AI traces (ADR-014, §3.1): no Markdown remnants, chatbot phrases or AI symbolism; provenance only via the chip. First glance reworded (ADR-013): wow as content with a line anchor — the code speaks first, nodes grow out of their lines, reveal line of the undocumented rules, doubts answered immediately, one question answered beforehand from the code, standard candidate as the second surprise, export instead of a public link; explicitly not: confetti, typewriter, minimum durations. External review incorporated (ADR-007 to ADR-012): primary surface `--cc-brand-strong` (white on `#16a34a` had 3.3 : 1); green only for evidence, *Confirmed* in `information`; *Stale* as `warning`; views as a Segmented Control instead of a second navigation bar; stages into a toolbar, "Next step" as a card, footer bar only when editing; UI language English with text keys; workspace with 12/8-px radii and without mesh; density by input device; `dark` only for binding confirmation; weights 800/700/600/500; build-up ≤ 3 s; new: spacing scale, focus token, forms and value states, filter bar, loading, breakpoints, chart palette, formats, print, contrast guard; decisions into the decision log |
+| 1.0 | 15.09.2026 | First version |

@@ -6,7 +6,7 @@
  *
  * Pure, no imports: client components read it.
  *
- * Roadmap step 0.1 (`G0:R0`, decided 12.09.2026 in docs/roadmap/SCHNITT-0-UMFANG.md
+ * Roadmap step 0.1 (`G0:R0`, decided 12.09.2026 in docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md
  * §1, "Weg 2"): a known blocker is either fixed or locked with its reason named.
  * Leaving it unnamed is not an option — and a lock that the interface still
  * offers as a feature is unnamed in the only place users look.

@@ -387,7 +387,7 @@ test.describe('the vote offers real, unbuilt work', () => {
     const fs = require('fs') as typeof import('fs');
     const path = require('path') as typeof import('path');
     const ROOT = path.resolve(__dirname, '..');
-    const corpus = ['docs/BACKLOG.md', 'docs/archiv/ROADMAP-2.0.md', 'docs/CONCEPT-DE-LOCALIZATION.md', 'docs/CLEAN_CORE_ENRICHMENT_CONCEPT.md']
+    const corpus = ['docs/BACKLOG.md', 'docs/archiv/ROADMAP-2.0.md', 'docs/CONCEPT-DE-LOCALIZATION.md', 'docs/archiv/konzepte/CLEAN_CORE_ENRICHMENT_CONCEPT.md']
       .filter((f) => fs.existsSync(path.join(ROOT, f)))
       .map((f) => fs.readFileSync(path.join(ROOT, f), 'utf8'))
       .join('\n')
@@ -395,7 +395,7 @@ test.describe('the vote offers real, unbuilt work', () => {
 
     // One phrase per option that must appear in the written record.
     const evidence: Record<string, string> = {
-      german: 'deutsche',
+      german: 'german version',
       atc_import: 'atc',
       model_choice: 'claude',
       mobile_diff: 'segmented control',

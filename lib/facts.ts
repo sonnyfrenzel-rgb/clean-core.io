@@ -1,7 +1,7 @@
 /**
  * The one place every public figure comes from.
  *
- * Roadmap 0.2 (`docs/roadmap/SCHNITT-0-UMFANG.md` §2, `UX-E14-F01:R0`): Phase 0
+ * Roadmap 0.2 (`docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §2, `UX-E14-F01:R0`): Phase 0
  * is "Belegt" — nothing on a public page claims more than the data behind it
  * supports. Before this module existed, the object count was read live in some
  * places (`app/page.tsx` via `getCatalogStats()`) and typed in by hand elsewhere

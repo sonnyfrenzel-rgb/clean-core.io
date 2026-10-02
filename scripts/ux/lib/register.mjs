@@ -58,11 +58,17 @@ export function untriaged(findings, register, { head, isAncestorOf } = {}) {
   });
 }
 
+/**
+ * The public roadmap is English (3.0.14, 02.10.2026); the register keeps the
+ * German status words the scripts write. An unknown status is shown as it is.
+ */
+const PUBLIC_STATUS = { [STATUSES.accepted]: 'scheduled', [STATUSES.deferred]: 'deferred', [STATUSES.fixed]: 'fixed' };
+
 /** The rows of the roadmap table (docs/ROADMAP.md §13). */
 export function roadmapRows(register) {
   const order = ['critical', 'high', 'medium', 'low'];
   return register.entries
     .filter((e) => e.status !== STATUSES.refuted)
     .sort((a, b) => order.indexOf(a.severity) - order.indexOf(b.severity) || a.id.localeCompare(b.id))
-    .map((e) => `| ${e.id} | ${e.severity} | ${String(e.title).replace(/\|/g, '/')} | ${e.step || '—'} | ${e.status} |`);
+    .map((e) => `| ${e.id} | ${e.severity} | ${String(e.title).replace(/\|/g, '/')} | ${e.step || '—'} | ${PUBLIC_STATUS[e.status] ?? e.status} |`);
 }

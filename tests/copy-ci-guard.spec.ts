@@ -5,7 +5,7 @@ import { FEATURE_SLUGS } from '../lib/features-content';
 import { getAllCatalogObjectNames, getModuleAreas, objectToSlug } from '../lib/abap/catalog-index';
 
 /**
- * The Copy-CI: roadmap 0.2 (`docs/roadmap/SCHNITT-0-UMFANG.md` §2, `UX-E14-F01:R0`).
+ * The Copy-CI: roadmap 0.2 (`docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §2, `UX-E14-F01:R0`).
  *
  * Phase 0 is "Belegt" — nothing on a public page claims more than the data
  * behind it supports. `tests/landing-consistency-guard.spec.ts` and
@@ -64,7 +64,7 @@ const PUBLIC_PAGES: Record<string, string> = {
 
 /**
  * The five pages that state a catalog figure — the four `23,000+` fallbacks
- * named in `docs/roadmap/SCHNITT-0-UMFANG.md` §2, work package 2, plus `/facts`
+ * named in `docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §2, work package 2, plus `/facts`
  * itself, the page they now all read from. `V25-A10` in the archived backlog
  * (`docs/archiv/roadmap-2.7/clean-core-backlog-v2_7.md`) is the same five.
  */

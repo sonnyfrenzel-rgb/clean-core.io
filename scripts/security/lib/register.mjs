@@ -49,9 +49,17 @@ export function nextId(register, year = new Date().getFullYear()) {
 
 export const STATUSES = ['eingeplant', 'widerlegt', 'behoben', 'akzeptiertes Risiko'];
 
+/**
+ * The public roadmap is English (3.0.14, 02.10.2026); the sealed register keeps
+ * the German words the pipeline writes. Only the two closed vocabularies are
+ * mapped — an unknown value is shown as it is rather than guessed.
+ */
+const PUBLIC_SEVERITY = { kritisch: 'critical', hoch: 'high', mittel: 'medium', niedrig: 'low', info: 'info' };
+const PUBLIC_STATUS = { eingeplant: 'scheduled', behoben: 'fixed', 'akzeptiertes Risiko': 'accepted risk' };
+
 /** The rows the public roadmap may show. */
 export function publicRows(register) {
   return register.entries
     .filter((e) => e.status !== 'widerlegt')
-    .map((e) => `| ${e.id} | ${e.severity} | ${e.priority || '—'} | ${e.step || '—'} | ${e.status} |`);
+    .map((e) => `| ${e.id} | ${PUBLIC_SEVERITY[e.severity] ?? e.severity} | ${e.priority || '—'} | ${e.step || '—'} | ${PUBLIC_STATUS[e.status] ?? e.status} |`);
 }

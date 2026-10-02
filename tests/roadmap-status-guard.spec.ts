@@ -63,6 +63,13 @@ test.describe('der Standmesser', () => {
     const { claimsBuilt } = await lib();
     expect(claimsBuilt('**Gebaut 16.09.2026 (`dev`):** der Modellaufruf ist ein Abschnitt')).toBe(true);
     expect(claimsBuilt('**Gebaut in v2.10.3**')).toBe(true);
+    // The English roadmap (3.0.14) reports with the same forms in English.
+    expect(claimsBuilt('**Built 16.09.2026 (`dev`):** the model call is a section')).toBe(true);
+    expect(claimsBuilt('**Built in v2.10.3**')).toBe(true);
+    expect(claimsBuilt('**Shipped in v2.12.0**')).toBe(true);
+    expect(claimsBuilt('what is still to be built is named')).toBe(false);
+    expect(claimsBuilt('built to [`DESIGN.md`]')).toBe(false);
+    expect(claimsBuilt('fixed (dev) — the same defect as UX-012')).toBe(false);
     // Und die drei Formen, die nicht zählen dürfen: eine Absicht, ein Verweis, und
     // das Wort aus den Befundtabellen in §12–§14, das zu einem Befund gehört und
     // nicht zu einem Schritt.
