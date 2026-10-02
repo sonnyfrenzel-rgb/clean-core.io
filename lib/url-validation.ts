@@ -172,11 +172,25 @@ export async function isUrlSafe(urlString: string): Promise<UrlSafeResult> {
   return { safe: true, host, resolvedIp: first.address, family: net.isIP(first.address) as 4 | 6 };
 }
 
+/** Headers that say nothing about who the caller is; anything else may be a secret. */
+const PLAIN_HEADERS = new Set(['accept', 'accept-language', 'accept-encoding', 'user-agent', 'cache-control']);
+
+/** True when the request has a body or any header that is not plainly harmless. */
+function carriesSecrets(init: RequestInit): boolean {
+  if (init.body != null) return true;
+  for (const [name] of new Headers(init.headers)) {
+    if (!PLAIN_HEADERS.has(name.toLowerCase())) return true;
+  }
+  return false;
+}
+
 /**
  * Rebinding-/Redirect-sicherer Fetch:
  *  - validiert jede URL (auch nach Redirect) per isUrlSafe,
  *  - pinnt die TCP-Verbindung an die validierte IP (SNI/TLS bleibt am Hostnamen),
- *  - folgt Redirects nur manuell, begrenzt auf maxRedirects.
+ *  - folgt Redirects nur manuell, begrenzt auf maxRedirects,
+ *  - folgt keinem Redirect auf einen anderen Origin, wenn die Anfrage einen
+ *    Body oder andere als harmlose Header traegt (Credentials).
  * Wirft SsrfError bei blockierten Zielen.
  */
 export async function safeFetch(
@@ -185,6 +199,7 @@ export async function safeFetch(
   maxRedirects = 3,
 ): Promise<Response> {
   let current = url;
+  const origin = new URL(url).origin;
   for (let hop = 0; hop <= maxRedirects; hop++) {
     const check = await isUrlSafe(current);
     if (!check.safe) throw new SsrfError(check.reason || 'Blocked URL.');
@@ -217,7 +232,14 @@ export async function safeFetch(
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get('location');
       if (loc) {
-        current = new URL(loc, current).toString();
+        const next = new URL(loc, current);
+        // The headers and body were written for the origin the caller named,
+        // not for whichever origin it redirects to.
+        if (next.origin !== origin && carriesSecrets(init)) {
+          await res.body?.cancel().catch(() => {});
+          throw new SsrfError('Cross-origin redirect refused for a request that carries credentials.');
+        }
+        current = next.toString();
         continue;
       }
     }
