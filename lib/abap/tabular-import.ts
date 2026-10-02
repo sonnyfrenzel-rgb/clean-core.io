@@ -170,8 +170,20 @@ function isLegacyXlsFile(name: string): boolean {
   return name.toLowerCase().endsWith('.xls');
 }
 
+/**
+ * The largest file an ATC or usage import reads (external review, 02.10.2026).
+ * Both are parsed in the browser; a multi-hundred-megabyte export would freeze
+ * the tab before it said anything. Named, so the message and the test agree.
+ */
+export const MAX_TABULAR_IMPORT_BYTES = 50 * 1024 * 1024;
+
 /** Read any supported tabular file (CSV/TSV or XLSX) into uppercase-keyed rows. */
 export async function parseTabularRows(file: File): Promise<Record<string, string>[]> {
+  if (file.size > MAX_TABULAR_IMPORT_BYTES) {
+    throw new Error(
+      `This file is ${Math.round(file.size / 1024 / 1024)} MB; an import reads at most ${MAX_TABULAR_IMPORT_BYTES / 1024 / 1024} MB. Export only the programs this project covers and upload that file.`,
+    );
+  }
   if (isLegacyXlsFile(file.name)) {
     // Decided by the bytes, not the name: SAP GUI's "spreadsheet" download is
     // tab-delimited text named `.xls`, a renamed workbook may be an XLSX

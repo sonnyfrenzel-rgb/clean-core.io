@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import { resolveApi, primarySuccessor, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses, getObjectDimensions } from '@/lib/abap/catalog-service';
 import { ABCD_META, CLOUD_VIEW_META, CLASSIC_VIEW_META } from '@/lib/abap/abcd-classification';
@@ -77,6 +77,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { object } = await params;
   const name = slugToObject(object);
+  // One address per object: /catalog/VBAK and /catalog/Vbak answer with the
+  // lower-case slug the sitemap and every link use, so search engines see one page.
+  if (object !== objectToSlug(name)) permanentRedirect(`/catalog/${objectToSlug(name)}`);
   const { entry, noPath, successor, curated } = facts(name);
   if (!entry && !noPath) return { title: 'Object not found | Clean-Core.io' };
 
@@ -99,8 +102,8 @@ export async function generateMetadata({
   return withTwitterCard({
     title,
     description,
-    alternates: { canonical: `${BASE}/catalog/${object}` },
-    openGraph: { title, description, url: `${BASE}/catalog/${object}`, type: 'article' },
+    alternates: { canonical: `${BASE}/catalog/${objectToSlug(name)}` },
+    openGraph: { title, description, url: `${BASE}/catalog/${objectToSlug(name)}`, type: 'article' },
     // No-path pages share near-identical boilerplate → keep accessible but out of the index.
     ...(successor ? {} : { robots: { index: false, follow: true } }),
   });
@@ -142,7 +145,7 @@ export default async function CatalogObjectPage({
             '@type': 'ListItem',
             position: areaMeta ? 3 : 2,
             name,
-            item: `${BASE}/catalog/${object}`,
+            item: `${BASE}/catalog/${objectToSlug(name)}`,
           },
         ],
       },
@@ -153,7 +156,7 @@ export default async function CatalogObjectPage({
           ? `Released S/4HANA API successor: ${successor}${curated ? ' (Clean-Core.io curated mapping)' : ''}`
           : 'No released API successor — requires re-architecture for Clean Core.',
         inDefinedTermSet: `${BASE}/catalog`,
-        url: `${BASE}/catalog/${object}`,
+        url: `${BASE}/catalog/${objectToSlug(name)}`,
       },
       {
         '@type': 'FAQPage',
