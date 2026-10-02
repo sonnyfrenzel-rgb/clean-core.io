@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
+import { spawnSync } from 'child_process';
 
 /**
  * What a public Actions log may see.
@@ -156,4 +158,76 @@ test('every mailer reads the recipient instead of holding it', () => {
       `${file} sends mail but never reads REPORT_RECIPIENT — where does its address come from?`,
     ).toMatch(/reportRecipient|REPORT_RECIPIENT/);
   }
+});
+
+/**
+ * The same rule, observed rather than read (codex code-mail-05).
+ *
+ * The structural guard above recognises one shape of leak — a `console.log`
+ * naming the recipient outside an `if (local)` block. `send-usage-report.ts`
+ * prints through a helper, `say`, whose body holds the gate; remove the gate
+ * from the helper and every line it prints goes into the public log while the
+ * source still matches each pattern above. So the sender is run here as the
+ * Friday job runs it — `CI` set, `--apply` — with `fetch` replaced by a trap
+ * that answers Firestore and Resend locally, and its whole output is searched
+ * for the recipient and the figures. The same run without `CI` is the control:
+ * it has to print both, or the assertion could not fail.
+ */
+test.describe('the usage report sender, run as the Friday job runs it', () => {
+  test.describe.configure({ timeout: 120_000 });
+
+  const RECIPIENT = 'public-log-sentinel@example.com';
+
+  function runSender(ci: boolean) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'public-log-'));
+    const trapLog = path.join(dir, 'fetch-calls.jsonl');
+    const trap = path.join(dir, 'trap.cjs');
+    // Nothing leaves the machine: Firestore reads answer with no documents, the
+    // snapshot write and the Resend call answer with an id.
+    fs.writeFileSync(trap, `
+      const fs = require('fs');
+      globalThis.fetch = async (url) => {
+        fs.appendFileSync(${JSON.stringify(trapLog)}, String(url) + '\\n');
+        const body = String(url).endsWith(':runQuery') ? [] : { id: 'trap-message' };
+        return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      };
+    `);
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      NODE_OPTIONS: `--require ${JSON.stringify(trap)}`,
+      // Named so the REST client takes the emulator branch and asks gcloud for
+      // no token; the trap answers before anything is contacted.
+      FIRESTORE_EMULATOR_HOST: '127.0.0.1:1',
+      RESEND_API_KEY: 're_dummy_key_for_the_spec',
+    };
+    delete env.CI;
+    delete env.GITHUB_ACTIONS;
+    if (ci) env.CI = 'true';
+    const r = spawnSync(
+      process.execPath,
+      [path.join(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs'), '--tsconfig', path.join(ROOT, 'tsconfig.json'),
+        path.join(ROOT, 'scripts', 'send-usage-report.ts'), '--apply', '--to', RECIPIENT],
+      { cwd: dir, env, encoding: 'utf8', timeout: 90_000 },
+    );
+    const calls = fs.existsSync(trapLog) ? fs.readFileSync(trapLog, 'utf8').trim().split('\n').filter(Boolean) : [];
+    return { status: r.status, out: `${r.stdout}\n${r.stderr}`, calls };
+  }
+
+  test('in CI its output holds neither the recipient nor a figure', () => {
+    const r = runSender(true);
+    expect(r.status, r.out).toBe(0);
+    expect(r.calls.some((u) => u === 'https://api.resend.com/emails'), 'the run never reached the send').toBe(true);
+    expect(r.out).toContain('figures and recipient withheld');
+    expect(r.out, 'the recipient is in the public log').not.toContain(RECIPIENT);
+    expect(r.out, 'the subject line is in the public log').not.toMatch(/Accounts aktiv/);
+    expect(r.out, 'the weekly figures are in the public log').not.toMatch(/registrations|activations|accounts\s+:/);
+  });
+
+  test('on a developer machine the same run prints both — the control', () => {
+    const r = runSender(false);
+    expect(r.status, r.out).toBe(0);
+    expect(r.out).toContain(RECIPIENT);
+    expect(r.out).toMatch(/Accounts aktiv/);
+    expect(r.out).toMatch(/registrations/);
+  });
 });
