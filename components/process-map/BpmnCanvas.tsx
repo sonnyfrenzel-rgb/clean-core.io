@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import './process-map.css';
-import { fitWithPadding, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
+import { MAP_REVEAL_EVENT, fitWhole, fitWithPadding, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
+import { MapViewTools } from './CanvasViewControls';
+import { useCanvasFullscreen } from './useCanvasFullscreen';
 import { LABEL_FONT, TASK_PADDING } from '@/lib/bpmn/layout';
 import { wrapText } from '@/lib/bpmn/text-metrics';
 
@@ -86,10 +88,19 @@ export interface BpmnCanvasProps {
    * The outline says so in words beside the mark; this is the mark.
    */
   excluded?: ReadonlySet<string>;
+  /**
+   * Zoom, fit and full screen above the canvas, the editor's own controls
+   * (`CanvasViewControls`), and the whole level in view on open rather than
+   * the readable start of it — the Documentation stage (owner 02.10.2026).
+   * A step chosen in full screen closes it, and the map announces the choice
+   * with a bubbling `cc-map-reveal` event so the page can show its detail.
+   */
+  controls?: boolean;
 }
 
 interface CanvasService extends ViewboxCanvas {
-  zoom(level: string | number): void;
+  zoom(level?: string | number, center?: 'auto'): number;
+  resized(): void;
   getContainer(): HTMLElement;
   addMarker(element: string, marker: string): void;
   removeMarker(element: string, marker: string): void;
@@ -186,8 +197,26 @@ export default function BpmnCanvas({
   onKeyDown,
   lit = null,
   excluded,
+  controls = false,
 }: BpmnCanvasProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const [zoom, setZoom] = useState(100);
+  const { filled, toggle: toggleFullscreen, exit: exitFullscreen, toggleRef } = useCanvasFullscreen({ rootRef: frameRef });
+  const filledRef = useRef(filled);
+  const controlsRef = useRef(controls);
+  /**
+   * A step chosen in full screen: full screen closes first, then the choice is
+   * made, then the page is told — so the chapter it opens is on screen.
+   */
+  const chooseOutOfFullscreen = useCallback((choose: () => void) => {
+    void exitFullscreen().then(() => {
+      choose();
+      requestAnimationFrame(() => {
+        frameRef.current?.dispatchEvent(new CustomEvent(MAP_REVEAL_EVENT, { bubbles: true }));
+      });
+    });
+  }, [exitFullscreen]);
   const viewerRef = useRef<ViewerLike | null>(null);
   const rootRef = useRef<{ id: string } | null>(null);
   // The parent's handlers change on every render; the effect that builds the
@@ -206,8 +235,14 @@ export default function BpmnCanvas({
   const refocusRef = useRef(false);
 
   useEffect(() => {
-    handlers.current = { onActivate, onActiveChange, onPlaneChange };
+    handlers.current = {
+      onActivate: (id) => (filledRef.current ? chooseOutOfFullscreen(() => onActivate(id)) : onActivate(id)),
+      onActiveChange,
+      onPlaneChange,
+    };
     activeRef.current = active;
+    filledRef.current = filled;
+    controlsRef.current = controls;
   });
 
   useEffect(() => {
@@ -319,7 +354,13 @@ export default function BpmnCanvas({
         applyRovingTabIndex(host, activeRef.current);
       });
 
-      fitWithPadding(canvas);
+      if (controlsRef.current) {
+        fitWhole(canvas);
+        eventBus.on('canvas.viewbox.changed', () => setZoom(Math.round(canvas.zoom() * 100)));
+        setZoom(Math.round(canvas.zoom() * 100));
+      } else {
+        fitWithPadding(canvas);
+      }
       applyRovingTabIndex(host, activeRef.current);
 
       if (refocusRef.current) {
@@ -358,8 +399,41 @@ export default function BpmnCanvas({
     const current = canvas.getRootElement();
     if (current && (target as { id?: string }).id === current.id) return;
     canvas.setRootElement(target);
-    fitWithPadding(canvas);
+    if (controlsRef.current) fitWhole(canvas);
+    else fitWithPadding(canvas);
   }, [plane]);
+
+  /** Full screen changed the box: measure again, and show the whole level in it. */
+  useEffect(() => {
+    if (!controls) return;
+    const viewer = viewerRef.current;
+    if (!viewer) return;
+    try {
+      const canvas = viewer.get('canvas');
+      canvas.resized();
+      fitWhole(canvas);
+    } catch {
+      /* a viewer still importing has nothing to measure */
+    }
+  }, [filled, controls]);
+
+  const zoomBy = useCallback((factor: number) => {
+    const canvas = viewerRef.current?.get('canvas');
+    if (canvas) canvas.zoom(Math.min(4, Math.max(0.1, canvas.zoom() * factor)), 'auto');
+  }, []);
+  const fit = useCallback(() => {
+    const canvas = viewerRef.current?.get('canvas');
+    if (canvas) fitWhole(canvas);
+  }, []);
+
+  /** Enter or Space on a step in full screen chooses it the way a click does. */
+  const keyDown = useCallback((event: React.KeyboardEvent<HTMLElement>) => {
+    const choosing = event.key === 'Enter' || event.key === ' ';
+    if (controls && filled && choosing && (event.target as HTMLElement).dataset?.mapNode) {
+      chooseOutOfFullscreen(() => undefined);
+    }
+    onKeyDown(event);
+  }, [chooseOutOfFullscreen, controls, filled, onKeyDown]);
 
   /** Roving tabindex and the selection mark, read back off the diagram's own DOM. */
   useEffect(() => {
@@ -408,14 +482,37 @@ export default function BpmnCanvas({
     host.querySelector<HTMLButtonElement>(selector)?.focus();
   }, [focusToken, active]);
 
-  return (
+  const canvasElement = (
     <div
       data-process-map-canvas=""
       role="group"
       aria-label={label}
-      onKeyDown={onKeyDown}
-      className="cc-map-canvas h-[420px] w-full overflow-hidden rounded-cc-card border border-cc-line md:h-[520px]"
+      onKeyDown={controls ? keyDown : onKeyDown}
+      className={
+        controls && filled
+          ? 'cc-map-canvas min-h-0 w-full flex-1 overflow-hidden rounded-cc-card border border-cc-line'
+          : 'cc-map-canvas h-[420px] w-full overflow-hidden rounded-cc-card border border-cc-line md:h-[520px]'
+      }
       ref={hostRef}
     />
+  );
+  if (!controls) return canvasElement;
+  return (
+    <div
+      ref={frameRef}
+      data-map-canvas-frame=""
+      data-map-fullscreen={filled ? 'true' : 'false'}
+      className={filled ? 'cc-editor-fullscreen flex min-w-0 flex-col gap-2 overflow-hidden' : 'flex min-w-0 flex-col gap-2'}
+    >
+      <MapViewTools
+        zoom={zoom}
+        onZoomBy={zoomBy}
+        onFit={fit}
+        filled={filled}
+        onToggleFullscreen={toggleFullscreen}
+        fullscreenRef={toggleRef}
+      />
+      {canvasElement}
+    </div>
   );
 }

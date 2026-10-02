@@ -10,6 +10,10 @@ import CcDisclosure from '@/components/cc/Disclosure';
  * findings — the model's summary and the technical detail — and the real page
  * and the demo draw them with this one component.
  *
+ * Documentation folds its long lists with it too (owner 02.10.2026, through
+ * `components/documentation/FoldedList.tsx`), with a one-line `summary` that
+ * stays visible while closed, and its short lists open (`defaultOpen`).
+ *
  * `aside` stands to the right of the trigger (a provenance chip, say), outside
  * the button, so the chip is seen while the section is closed.
  */
@@ -18,6 +22,9 @@ export default function FoldedSection({
   title,
   count,
   aside,
+  summary,
+  defaultOpen = false,
+  level = 2,
   children,
   ...data
 }: {
@@ -25,13 +32,19 @@ export default function FoldedSection({
   title: string;
   count?: number;
   aside?: React.ReactNode;
+  /** The one line seen while closed (Documentation's long lists, 02.10.2026). */
+  summary?: React.ReactNode;
+  /** Open on first render — a short list on Documentation is not folded. */
+  defaultOpen?: boolean;
+  /** The heading level of the trigger; 2 unless the section sits under an `h3`. */
+  level?: 2 | 3 | 4;
   children: React.ReactNode;
 } & { [key: `data-${string}`]: string | number | undefined }) {
   return (
     <section id={id} className="scroll-mt-32 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc px-4 py-2 sm:px-6" {...data}>
       <div className="flex flex-wrap items-start gap-x-3">
         <div className="min-w-0 flex-1">
-          <CcDisclosure level={2} density="cozy" title={title} count={count}>
+          <CcDisclosure level={level} density="cozy" title={title} count={count} summary={summary} defaultOpen={defaultOpen}>
             <div className="space-y-8 pt-2 pb-2">{children}</div>
           </CcDisclosure>
         </div>
