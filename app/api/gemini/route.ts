@@ -29,6 +29,7 @@ import {
 } from '@/lib/gemini-test-stub';
 import { incompleteAnswerMessage, modelCompletion, MODEL_INCOMPLETE_CODE, type ModelAnswer } from '@/lib/model-completion';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { resolveRequestedModel } from '@/lib/gemini-model-choice';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -219,7 +220,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       prompt,
-      model = productModel(),
+      model: requestedModel,
       jsonResponse = false,
       stage,
     } = body as {
@@ -229,6 +230,9 @@ export async function POST(request: NextRequest) {
       /** Which of the five model stages is asking. Absent for the glossary chatbot and the key test. */
       stage?: string;
     };
+    // The product default, named or omitted, is this deployment's product
+    // model — so `GEMINI_MODEL` reaches the callers that name the constant.
+    const model = resolveRequestedModel(requestedModel, productModel());
 
     // Roadmap 1.2 — the per-stage switch, enforced on the server.
     //

@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { PRODUCT_GEMINI_MODEL, NAMING_GEMINI_MODEL } from '../lib/constants';
+import { resolveRequestedModel } from '../lib/gemini-model-choice';
 
 /**
  * One place decides which model the product calls.
@@ -96,8 +97,23 @@ test('the deploy-time escape hatch cannot run an unreviewed model', async () => 
   expect(route).toMatch(/const override = process\.env\.GEMINI_MODEL\?\.trim\(\);/);
   expect(route).toMatch(/if \(override && ALLOWED_MODELS\.has\(override\)\) return override;/);
   expect(route).toMatch(/return PRODUCT_GEMINI_MODEL;/);
-  // And the body default goes through it rather than around it.
-  expect(route).toMatch(/model = productModel\(\),/);
+  // And the product default goes through it rather than around it — named or
+  // omitted, since every product caller names the constant.
+  expect(route).toMatch(/const model = resolveRequestedModel\(requestedModel, productModel\(\)\);/);
+  expect(route).not.toMatch(/model = productModel\(\),/);
+});
+
+test("a request for the product default runs on the deployment's product model", () => {
+  const replacement = 'gemini-3.5-flash';
+  expect(replacement).not.toBe(PRODUCT_GEMINI_MODEL);
+  // What every product stage sends, and what an older caller omits.
+  expect(resolveRequestedModel(PRODUCT_GEMINI_MODEL, replacement)).toBe(replacement);
+  expect(resolveRequestedModel(undefined, replacement)).toBe(replacement);
+  // Without an override the deployment's model is the constant itself.
+  expect(resolveRequestedModel(PRODUCT_GEMINI_MODEL, PRODUCT_GEMINI_MODEL)).toBe(PRODUCT_GEMINI_MODEL);
+  // A deliberate other choice keeps it; the register still decides after this.
+  expect(resolveRequestedModel(NAMING_GEMINI_MODEL, replacement)).toBe(NAMING_GEMINI_MODEL);
+  expect(resolveRequestedModel('not-a-model', replacement)).toBe('not-a-model');
 });
 
 /**
