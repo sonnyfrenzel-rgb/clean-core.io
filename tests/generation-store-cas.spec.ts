@@ -213,6 +213,26 @@ test('two tabs on the same state storing one after the other: the second is refu
   expect(p.generationBinding?.codeSha256).toBe(sha256Hex(packageNamed('tab-a')));
 });
 
+// Codex code-trust-05: the suite is regenerated on its own (useTestGeneration),
+// with code and design unchanged. A token that did not cover it let a late
+// generation overwrite the newer suite.
+test('a test suite regenerated since the token is refused, and the newer suite stays', async ({ request }) => {
+  const read = await readGeneration(request);
+  const newer = { config: 'config regenerated', spec: 'spec regenerated' };
+  await adminMergeDoc('projects', PROJECT_ID, { testSuite: newer });
+  const moved = await readGeneration(request);
+  expect(moved.fingerprint).toBe(read.fingerprint);
+  expect(moved.token).not.toBe(read.token);
+
+  const before = await project();
+  const res = await store(request, read, 'over-the-suite');
+  expect(res.status(), await res.text()).toBe(409);
+  expect((await res.json()).code).toBe('generation-stale');
+  const after = await project();
+  expect(after.testSuite).toEqual(newer);
+  expect(after.generatedCode).toBe(before.generatedCode);
+});
+
 test('two tabs storing at once: exactly one wins, and its code is under its own binding', async ({ request }) => {
   const read = await readGeneration(request);
   const [x, y] = await Promise.all([store(request, read, 'race-x'), store(request, read, 'race-y')]);

@@ -7,6 +7,7 @@ import {
   verifyAuditPack,
   signatureStateOf,
   verdictHeadline,
+  verdictState,
   ed25519Label,
   type VerifyResult,
   type FileVerifyResult,
@@ -18,15 +19,7 @@ import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import { formatDateTime } from '@/lib/format';
-import type { SemanticState } from '@/lib/provenance';
 import { cn } from '@/lib/utils';
-
-/** The verdict's state (DESIGN.md §1.1): the verifier decides the status, this only names its colour. */
-const VERDICT_STATE: Record<VerifyResult['status'], SemanticState> = {
-  authentic: 'success',
-  'integrity-only': 'warning',
-  failed: 'error',
-};
 
 /**
  * Audit pack verification — a tool page of the workspace (gap audit 3.0, §18).
@@ -189,7 +182,7 @@ export default function VerifyPackPage() {
         <>
           {/* The verdict first, in words with its state colour (§2.6); it
               takes the focus once, as the answer to the reader's action. */}
-          <CcMessageStrip state={VERDICT_STATE[result.status]} headline={verdictHeadline(result)} announce>
+          <CcMessageStrip state={verdictState(result)} headline={verdictHeadline(result)} announce>
             <span className="break-all font-cc-mono text-[12px]">{fileName}</span>
           </CcMessageStrip>
 

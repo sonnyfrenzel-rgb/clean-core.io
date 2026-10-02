@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import {
   generateArchitectureDecisionRecord,
   generateExecutiveSummary,
+  generateFindingsCsv,
   generateModelCard,
   generateProvenanceManifest,
   generateUserAttestations,
@@ -104,4 +105,38 @@ test('a run that recorded no model participation does not credit a model in the 
   expect(legacy).toContain('was not\nrecorded for this run');
   // An attested run still says what the model did.
   expect(generateModelCard(project({ participation: 'narrative-attested' }))).toContain('The model was used for written text');
+});
+
+// Codex code-trust-08: the run stores the router's route name, the sign-off an
+// architecture code. Following the recommendation is not an override.
+test('following the engine recommendation is not exported as an override', () => {
+  const OVERRIDE = "overrides the engine's recommendation";
+  const attest = (targetArchitecture: string, engineRecommendation?: string) =>
+    generateUserAttestations({ targetArchitecture }, { projectId: 'p-1', runId: 'r-1', engineRecommendation });
+  expect(attest('rap', 'In-App (ABAP Cloud)')).not.toContain(OVERRIDE);
+  expect(attest('cap', 'Side-by-Side (SAP BTP)')).not.toContain(OVERRIDE);
+  expect(attest('rap', 'rap')).not.toContain(OVERRIDE);
+  // A real departure still says so; an unknown recommendation never does.
+  expect(attest('cap', 'In-App (ABAP Cloud)')).toContain(OVERRIDE);
+  expect(attest('retire', 'Side-by-Side (SAP BTP)')).toContain(OVERRIDE);
+  expect(attest('rap', 'Something the router never says')).not.toContain(OVERRIDE);
+  expect(attest('rap')).not.toContain(OVERRIDE);
+});
+
+// Codex code-trust-02: the signed run's worklist carries the engine's levels.
+test('an engine finding without a table reaches the findings file and the ADR', () => {
+  const p = {
+    ...project({ participation: 'none' }),
+    dataCoupling: [],
+    worklist: [
+      { id: 'finding-CALL_TRANSACTION-0', title: 'CALL TRANSACTION', category: 'Finding', level: 'not-supported', severity: 'High', location: 'z_tx.abap:12', recommendation: 'Replace with a released API.', status: 'open', effort: 'Medium' },
+      { id: 'finding-OTHER-1', title: 'Obsolete statement', category: 'Finding', level: 'partial', severity: 'Low', location: 'z_tx.abap:3', recommendation: 'Modernise.', status: 'open', effort: 'Low' },
+    ],
+  } as unknown as Project;
+  const csv = generateFindingsCsv(p);
+  expect(csv).toContain('"Engine finding","CALL TRANSACTION","High","z_tx.abap:12"');
+  expect(csv).toContain('"Engine finding","Obsolete statement","Low","z_tx.abap:3"');
+  const adr = generateArchitectureDecisionRecord(p);
+  expect(adr).toContain('Needs expert review — 2');
+  expect(adr).toContain('**CALL TRANSACTION** (High)');
 });

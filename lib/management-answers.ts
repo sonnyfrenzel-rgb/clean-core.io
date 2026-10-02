@@ -496,7 +496,8 @@ function confirmedAnswer(steps: readonly RailStep[]): ManagementAnswer {
       key: `proven-${s.key}`,
       label: s.label,
       detail: s.detail,
-      provenance: 'proven' as ProvenanceValue,
+      // A sandbox run against mocks is a record, not a proof (codex code-trust-04).
+      provenance: (s.mock ? 'demonstrated-mock' : 'proven') as ProvenanceValue,
     })),
     ...selfDeclared.map((s) => ({
       key: `claimed-${s.key}`,

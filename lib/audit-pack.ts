@@ -33,6 +33,7 @@ import { escapeHtml } from '@/lib/export-safety';
 // issued before this change still verifies.
 import { EXPORT_WORD_CSS } from '@/lib/export-style';
 import { BAIP, BAIP_FIRST, routeLabel } from '@/lib/sap-naming';
+import { recommendedArchitecture } from '@/lib/project-commands';
 
 interface ManifestFile {
   path: string;
@@ -533,7 +534,14 @@ export function generateArchitectureDecisionRecord(project: Project): string {
   const fp = project.auditMetadata?.inputFingerprint;
   const mc = project.auditMetadata?.modelCard;
   const worklist: WorklistItem[] = project.worklist || [];
-  const lvlOf = (w: WorklistItem) => w.level || (w.status === 'signed_off' ? 'fully' : w.status === 'in_review' ? 'review' : 'open');
+  const lvlOf = (w: WorklistItem) => {
+    // The signed run writes the engine's own levels (`app/api/runs/create`):
+    // `not-supported` for a Critical/High finding, `partial` for the rest. Both
+    // need an expert, and neither may fall out of the record.
+    const level = w.level as string | undefined;
+    if (level === 'not-supported' || level === 'partial') return 'review';
+    return level || (w.status === 'signed_off' ? 'fully' : w.status === 'in_review' ? 'review' : 'open');
+  };
   const fully = worklist.filter((w) => lvlOf(w) === 'fully');
   const review = worklist.filter((w) => lvlOf(w) === 'review');
   const oos = worklist.filter((w) => w.level === 'out_of_scope');
@@ -601,16 +609,21 @@ ${list(oos)}
 `;
 }
 
+/**
+ * The findings of the signed run: the engine's findings from the run's
+ * worklist (grouped per kind and object, with their line anchors), then the
+ * run's data coupling. Both come from the run; the A-D grade is never here.
+ */
 export function generateFindingsCsv(project: Project): string {
+  const header = 'Kind,Item,Severity,Location,Access Type,Is Custom,Recommendation';
+  const findings = (project.worklist || []).filter((w) => w && w.category === 'Finding');
   const entries = project.dataCoupling || [];
-  if (entries.length === 0) return 'Table Name,Access Type,Is Custom,Risk Level,Recommendation\n(No data coupling entries detected)\n';
+  if (findings.length === 0 && entries.length === 0) return `${header}\n(No engine findings or data coupling entries detected)\n`;
 
-  const header = 'Table Name,Access Type,Is Custom,Risk Level,Recommendation';
-  const rows = entries.map(e =>
-    [e.tableName, e.accessType, e.isCustom ? 'Yes' : 'No', e.riskLevel, e.recommendation]
-      .map(csvCell)
-      .join(',')
-  );
+  const rows = [
+    ...findings.map((w) => ['Engine finding', w.title, w.severity, w.location, '', '', w.recommendation]),
+    ...entries.map((e) => ['Data coupling', e.tableName, e.riskLevel, '', e.accessType, e.isCustom ? 'Yes' : 'No', e.recommendation]),
+  ].map((cells) => cells.map(csvCell).join(','));
   return [header, ...rows].join('\n') + '\n';
 }
 
@@ -897,7 +910,12 @@ export function generateUserAttestations(
 ): string {
   const arch = a.targetArchitecture ? ARCH_LABELS[a.targetArchitecture] || a.targetArchitecture : 'Not chosen';
   const recommended = bound.engineRecommendation ? ARCH_LABELS[bound.engineRecommendation] || bound.engineRecommendation : '—';
-  const overridden = !!a.targetArchitecture && !!bound.engineRecommendation && a.targetArchitecture !== bound.engineRecommendation;
+  // One vocabulary before comparing: the run stores the router's route name
+  // ('In-App (ABAP Cloud)'), the sign-off an architecture code ('rap'). The
+  // translation is the one `approve-architecture` applies; an unknown
+  // recommendation is not an override.
+  const recommendedCode = recommendedArchitecture({ originalRecommendation: bound.engineRecommendation });
+  const overridden = !!a.targetArchitecture && recommendedCode !== null && a.targetArchitecture !== recommendedCode;
   let signOffAt = '—';
   if (a.architectSignOffAt) {
     const ms =

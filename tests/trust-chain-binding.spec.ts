@@ -9,7 +9,7 @@ import { adminSetDoc, adminMergeDoc, adminSetCustomClaim } from './helpers/admin
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { coveringTestRunReceipt, isTestRunReceipt } from '../lib/test-receipt';
-import { testEvidence, workflowSteps } from '../lib/workflow-steps';
+import { phaseTone, testEvidence, workflowSteps } from '../lib/workflow-steps';
 import type { Project } from '../lib/types';
 
 /**
@@ -306,8 +306,13 @@ test.describe('a test result belongs to the project it is reported for', () => {
     ).toEqual(['Passed', 'Passed']);
 
     const byKey = Object.fromEntries(workflowSteps(stored).map((s) => [s.key, s]));
-    expect(byKey.testing).toMatchObject({ state: 'done', proven: true, badge: 'Passed' });
-    expect(byKey.delivery).toMatchObject({ state: 'done', proven: true, badge: 'Ready' });
+    // A record of an execution — against mocks, in the sandbox, which is the
+    // only runner: *Demonstrated · mock*, never green (codex code-trust-04).
+    expect(byKey.testing).toMatchObject({ state: 'done', proven: true, mock: true, badge: 'Passed · mock' });
+    expect(byKey.delivery).toMatchObject({ state: 'done', proven: true, mock: true, badge: 'Ready · mock tests' });
+    expect(phaseTone(byKey.testing)).not.toBe('proven');
+    expect(phaseTone(byKey.delivery)).not.toBe('proven');
+    expect(byKey.testing.detail).toContain('against mocks');
 
     // Rewrite the code the receipt was taken over and the green goes with it —
     // the verdicts are still there and they are no longer about this code.

@@ -128,6 +128,13 @@ export function artefactDigest(key: TrackedArtefact, value: unknown): string | n
   return sha256Hex(canonical(value));
 }
 
+/** Digest of any stored value in the canonical form above; null when there is nothing there. */
+export function valueDigest(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') return value.trim() ? sha256Hex(value) : null;
+  return sha256Hex(canonical(value));
+}
+
 /**
  * A sign-off, reduced to something comparable across SDKs. The design page
  * writes an ISO string; an older record may hold a Firestore Timestamp, which

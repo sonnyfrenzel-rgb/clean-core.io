@@ -399,7 +399,7 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
     from: 'testing',
     provenance:
       staleChip(by.testing) ??
-      (mockOnly || recordedMockRun ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
+      (mockOnly || recordedMockRun || by.testing.mock ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
     restsOn: [evidenceOf(by.testing)],
   };
 

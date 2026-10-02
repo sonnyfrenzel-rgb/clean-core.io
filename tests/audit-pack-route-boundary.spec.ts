@@ -58,11 +58,12 @@ function strings(value: unknown, out: string[] = []): string[] {
   return out;
 }
 // Enum tokens the engine uses too (`retire` is a route, `signed_off`/`fully`
-// are levels, `Low`/`Finding` are effort and category): their absence cannot
+// are levels, `Low`/`High`/`Finding` are effort, severity and category — the
+// run's own findings carry them into the CSV and the ADR): their absence cannot
 // be asserted as bare text, so each is asserted where it would land — field by
 // field in the decision record and the findings CSV, and in the ADR's
 // worklist count — below.
-const ENUM_TOKENS = new Set(['retire', 'signed_off', 'fully', 'Low', 'Finding']);
+const ENUM_TOKENS = new Set(['retire', 'signed_off', 'fully', 'Low', 'High', 'Finding']);
 const NEVER_SIGNED = [
   ...strings(FORGED).filter((v) => !ENUM_TOKENS.has(v)),
   // The chosen architecture as the generators would label it.
@@ -260,7 +261,11 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     // lists, their counts, their bullets. A forged item of any shape — fully,
     // Low, Finding, with or without a title — is not in the stored worklist and
     // therefore not in the projection.
-    const lvlOf = (w: StoredRun['worklist'][number]) => w.level || (w.status === 'signed_off' ? 'fully' : w.status === 'in_review' ? 'review' : 'open');
+    // The run's own levels (`not-supported`, `partial`) are open findings that
+    // need an expert: they are listed there, not dropped (codex code-trust-02).
+    const lvlOf = (w: StoredRun['worklist'][number]) =>
+      w.level === 'not-supported' || w.level === 'partial' ? 'review' : w.level || (w.status === 'signed_off' ? 'fully' : w.status === 'in_review' ? 'review' : 'open');
+    expect(stored.worklist.every((w) => lvlOf(w) === 'review'), 'every engine finding of the run is in the ADR').toBe(true);
     const expectedLists = {
       'Transformed / fully mapped': stored.worklist.filter((w) => lvlOf(w) === 'fully'),
       'Needs expert review': stored.worklist.filter((w) => lvlOf(w) === 'review'),
@@ -270,14 +275,18 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     const bullets = (scope.match(/^- \*\*(.+?)\*\* /gm) ?? []).map((b) => b.slice(4, -3));
     for (const [heading, items] of Object.entries(expectedLists)) expect(scope).toContain(`**${heading} — ${items.length}**`);
     expect(bullets).toEqual(Object.values(expectedLists).flat().map((w) => w.title));
-    expect(bullets, 'the stored run carries no listed level, so the projection is empty').toHaveLength(0);
-    expect(scope.match(/_None\._/g) ?? []).toHaveLength(3);
-    // The findings CSV is the run's data coupling, row for row and field for
-    // field, as the generator writes it (Yes/No for the custom flag).
+    expect(bullets).toHaveLength(stored.worklist.length);
+    expect(scope.match(/_None\._/g) ?? []).toHaveLength(2);
+    // The findings CSV is the run's engine findings, then its data coupling,
+    // row for row and field for field, as the generator writes them.
     const [header, ...csvRows] = parseCsv(csv);
-    expect(header).toEqual(['Table Name', 'Access Type', 'Is Custom', 'Risk Level', 'Recommendation']);
-    expect(csvRows).toEqual(stored.dataCoupling.map((e) => [e.tableName, e.accessType, e.isCustom ? 'Yes' : 'No', e.riskLevel, e.recommendation]));
-    expect(csvRows.length).toBeGreaterThan(0);
+    expect(header).toEqual(['Kind', 'Item', 'Severity', 'Location', 'Access Type', 'Is Custom', 'Recommendation']);
+    expect(csvRows).toEqual([
+      ...stored.worklist.map((w) => ['Engine finding', w.title, w.severity ?? '', w.location ?? '', '', '', w.recommendation]),
+      ...stored.dataCoupling.map((e) => ['Data coupling', e.tableName, e.riskLevel, '', e.accessType, e.isCustom ? 'Yes' : 'No', e.recommendation]),
+    ]);
+    expect(csvRows.filter((r) => r[0] === 'Engine finding').length).toBeGreaterThan(0);
+    expect(csvRows.filter((r) => r[0] === 'Data coupling').length).toBeGreaterThan(0);
     // The decision record is the engine's, key for key and value for value —
     // recursively, against the stored run; there is no room for an owner key.
     expect(record).toEqual({
@@ -336,5 +345,29 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     expect(attested).not.toContain('forged-owner@example.com');
     expect(attested.match(/@example\.com/g)?.length).toBe(1);
     expect(attested).not.toContain('Retire / Decommission');
+  });
+
+  // Codex code-trust-07: the export marker names the run it was exported for,
+  // and a new run of the same source does not inherit it.
+  test('the handover export marker belongs to the exported run, and a new run clears it', async ({ request }) => {
+    const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
+    const db = adminFirestore(app, FIRESTORE_DB_ID);
+    const read = async () => (await db.collection('projects').doc(PROJECT_ID).get()).data()!;
+
+    await openPack(request);
+    const exported = await read();
+    expect(exported.auditMetadata?.auditPackExportedAt).toBeTruthy();
+    expect(exported.auditMetadata?.auditPackExportedRunId).toBe(exported.activeRunId);
+
+    const rerun = await request.post('/api/runs/create', {
+      headers: headers(),
+      data: { projectId: PROJECT_ID, legacyCode: SOURCE, analysis: NARRATIVE, uploadedFileName: 'z_boundary.abap' },
+    });
+    expect(rerun.status(), await rerun.text()).toBe(200);
+    const after = await read();
+    expect(after.activeRunId).not.toBe(exported.activeRunId);
+    expect(after.auditMetadata?.auditPackExportedAt, 'run B inherited run A\'s export').toBeUndefined();
+    expect(after.auditMetadata?.auditPackExportedRunId).toBeUndefined();
+    expect(after.auditMetadata?.inputFingerprint?.sha256, 'the rest of auditMetadata survives').toBeTruthy();
   });
 });

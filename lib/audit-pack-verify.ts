@@ -477,7 +477,25 @@ export function ed25519Label(state: Ed25519State): string {
   }
 }
 
-export function verdictHeadline(result: Pick<VerifyResult, 'status' | 'signatureValid' | 'manifest'>): string {
+/**
+ * Authentic, but not all of it: the signature verified, and the pack carries a
+ * user-attested file whose contents its manifest version does not bind (format
+ * 2). `success` is false for exactly that case; the headline and its colour
+ * must say so too, or the reader gets the full verdict over contents nobody
+ * checked.
+ */
+export function partlyVerified(result: Pick<VerifyResult, 'status' | 'success'>): boolean {
+  return result.status === 'authentic' && result.success !== true;
+}
+
+/** The colour of the verdict: green only for a pack verified in full. */
+export function verdictState(result: Pick<VerifyResult, 'status' | 'success'>): 'success' | 'warning' | 'error' {
+  if (result.status === 'failed') return 'error';
+  return result.status === 'authentic' && !partlyVerified(result) ? 'success' : 'warning';
+}
+
+export function verdictHeadline(result: Pick<VerifyResult, 'status' | 'success' | 'signatureValid' | 'manifest'>): string {
+  if (partlyVerified(result)) return 'Signature Verified (Attested Contents Not Checked)';
   if (result.status === 'authentic') return 'Authenticity & Integrity Verified';
   if (result.status === 'failed') return 'Verification Failed';
   return signatureStateOf(result) === 'unchecked'

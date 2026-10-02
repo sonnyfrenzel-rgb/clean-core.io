@@ -138,6 +138,20 @@ export function storedDecisionOf(project: HandoverProject | null): StoredDecisio
   return project ? readStoredDecision(project.decision) : null;
 }
 
+/**
+ * Was the stored decision read from the run this project analyses now?
+ *
+ * A confirmation binds the run it was drafted on (`boundRunId`, roadmap 8.8),
+ * and `confirm-decision` refuses one whose run is no longer the active one. A
+ * new run leaves the old record on the project, so a confirmation of run A is
+ * history once run B is active — never the current decision (codex
+ * code-trust-03).
+ */
+export function decisionIsCurrent(project: HandoverProject | null, decision: StoredDecision | null): boolean {
+  if (!project || !decision) return false;
+  return decision.boundRunId === (str(project.activeRunId) ?? '');
+}
+
 /** The signed-off target in words, or `null` when nothing is signed off. */
 export function signedOffTarget(project: HandoverProject | null): string | null {
   if (!project?.approvedByArchitect || !project.targetArchitecture) return null;
@@ -358,6 +372,16 @@ export function buildHandoverChain(project: HandoverProject, phases: RailStep[])
           ? 'The decision was withdrawn. Confirm a new one in the Management view.'
           : 'No decision is recorded. It is confirmed in the Management view of the workspace.',
       })
+    : !decisionIsCurrent(project, decision)
+      ? link('decision', {
+          stale: true,
+          provenance: 'stale',
+          provenanceNote: null,
+          value: `${decision.decisionId} · revision ${decision.revision} — ${decision.summary}`,
+          by: decision.status === 'confirmed' && decision.confirmation ? decision.confirmation.account : null,
+          at: decision.status === 'confirmed' && decision.confirmation ? decision.confirmation.at : null,
+          missing: 'Recorded for a previous analysis run. Confirm the decision for the current run in the Management view.',
+        })
     : (() => {
         const open = decision.conditions.filter((c) => c.status === 'open' || c.status === 'not-determined').length;
         const confirmed = decision.status === 'confirmed' && decision.confirmation;
@@ -586,7 +610,7 @@ export function handoverNextStep(
     };
   }
   const decision = storedDecisionOf(project);
-  if (!decision || decision.status !== 'confirmed') {
+  if (!decision || decision.status !== 'confirmed' || !decisionIsCurrent(project, decision)) {
     return {
       kind: 'open',
       headline: 'Confirm the decision',

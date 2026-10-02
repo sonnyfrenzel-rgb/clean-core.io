@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { testRunSubject, TEST_RUN_RECEIPT_VERSION } from '../lib/test-receipt';
-import { testEvidence, workflowSteps } from '../lib/workflow-steps';
+import { phaseTone, testEvidence, workflowSteps } from '../lib/workflow-steps';
+import { managementAnswers } from '../lib/management-answers';
+import { workspaceStatusLine } from '../lib/workspace-model';
 import type { Project } from '../lib/types';
 
 /**
@@ -73,4 +75,29 @@ test('a signed run is described as the baseline, not as an estimate', () => {
   const tco = byKey(project()).tco;
   expect(tco.detail).not.toMatch(/^A model estimate/);
   expect(tco.detail).toContain('The signed run is the baseline');
+});
+
+// Codex code-trust-04: a pass the sandbox recorded against mocks is
+// *Demonstrated · mock* on every shared surface — never green, never Proven.
+test('a mock-only passing run is qualified as mock on Testing, Delivery and every reader of the phases', () => {
+  const testCases = [{ id: 'TC_01', status: 'Passed' }] as unknown as Project['testCases'];
+  const base = project({ testCases, documentation: '# Blueprint' } as Partial<Project>);
+  const subject = testRunSubject(base as Parameters<typeof testRunSubject>[0]);
+  const receipt = {
+    v: TEST_RUN_RECEIPT_VERSION, ...subject, environment: 'mock', scope: { selected: null, cases: 1 }, stubs: [],
+    executedAt: '2026-09-30T08:00:00.000Z', executedBy: 'uid-1', exitCode: 0, verdicts: [{ id: 'TC_01', status: 'Passed' }],
+  };
+  const recorded = { ...base, testRunReceipt: receipt } as unknown as Project;
+  const steps = byKey(recorded);
+  expect(steps.testing).toMatchObject({ state: 'done', proven: true, mock: true, badge: 'Passed · mock' });
+  expect(steps.delivery).toMatchObject({ state: 'done', proven: true, mock: true, badge: 'Ready · mock tests' });
+  for (const s of [steps.testing, steps.delivery]) {
+    expect(phaseTone(s), `${s.key} is painted as proven`).toBe('unproven');
+  }
+  expect(steps.analyze.mock).toBe(false);
+  const items = managementAnswers(recorded, []).answers.flatMap((a) => a.items);
+  const testingItem = items.find((i) => i.key === 'proven-testing');
+  expect(testingItem?.provenance).toBe('demonstrated-mock');
+  const execution = workspaceStatusLine(recorded).find((st) => st.facet === 'execution');
+  expect(execution?.provenance).toBe('demonstrated-mock');
 });

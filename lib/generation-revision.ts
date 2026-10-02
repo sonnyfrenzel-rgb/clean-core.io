@@ -1,4 +1,4 @@
-import { artefactDigest, sha256Hex } from './artefact-digest';
+import { artefactDigest, sha256Hex, valueDigest } from './artefact-digest';
 import { missingArtefacts, usableTestSuite, type GeneratedTestSuite, type ProjectFile } from './transformation-artefacts';
 
 /**
@@ -34,7 +34,7 @@ import { missingArtefacts, usableTestSuite, type GeneratedTestSuite, type Projec
  */
 
 /** Bumped only when the canonical form below changes. */
-export const GENERATION_REVISION_VERSION = 1;
+export const GENERATION_REVISION_VERSION = 2;
 
 /** The project fields a generation is computed from or replaces. */
 export interface GenerationRevisionState {
@@ -42,6 +42,8 @@ export interface GenerationRevisionState {
   solutionDesign?: unknown;
   analysis?: unknown;
   generatedCode?: unknown;
+  /** Replaced by the same store as `generatedCode`, and regenerated on its own (codex code-trust-05). */
+  testSuite?: unknown;
   generationBinding?: unknown;
 }
 
@@ -77,6 +79,7 @@ export function generationStateOf(
     solutionDesign: project.solutionDesign,
     analysis,
     generatedCode: project.generatedCode,
+    testSuite: project.testSuite,
     generationBinding: project.generationBinding,
   };
 }
@@ -102,6 +105,9 @@ export function generationInputsOf(state: GenerationRevisionState): GenerationIn
  * - `stand`, `bound` — the generated package and the digest its binding names.
  *   A second tab that stored first moves both, so the late tab is refused
  *   instead of replacing a newer generation with its own.
+ * - `suite` — the test suite the store replaces as well. It can be regenerated
+ *   without touching the code, and a token that left it out let a late
+ *   generation overwrite a newer suite (version 2).
  */
 export function canonicalGenerationRevision(state: GenerationRevisionState, contractFingerprint: string): string {
   const binding = state.generationBinding as { codeSha256?: unknown } | null | undefined;
@@ -113,6 +119,7 @@ export function canonicalGenerationRevision(state: GenerationRevisionState, cont
     `design=${digestOf(state.solutionDesign)}`,
     `analysis=${digestOf(state.analysis)}`,
     `stand=${artefactDigest('generatedCode', state.generatedCode) ?? 'none'}`,
+    `suite=${valueDigest(state.testSuite) ?? 'none'}`,
     `bound=${bound}`,
   ].join('\n');
 }

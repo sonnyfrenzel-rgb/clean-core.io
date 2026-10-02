@@ -10,7 +10,7 @@ import { applyRunnerVerdicts, parseTapOutput } from '../lib/test-verdicts';
 import { isUrlSafe } from '../lib/url-validation';
 import { diffResultSets } from '../lib/abap/result-diff';
 import JSZip from 'jszip';
-import { verifyAuditPack } from '../lib/audit-pack-verify';
+import { verdictHeadline, verdictState, verifyAuditPack } from '../lib/audit-pack-verify';
 import { canonicalAuditManifest } from '../lib/audit-pack-canonical';
 import { providerErrorShape } from '../lib/logger';
 import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin/app';
@@ -418,6 +418,13 @@ test.describe('verifying a pack sealed in format 2', () => {
       const withAttested = await verifyAuditPack(await pack([{ path: '07-user-attested.md', provenance: 'user-attested' }]));
       expect(withAttested.integrityValid, 'an old pack stopped verifying').toBe(true);
       expect(withAttested.success, 'success over contents nobody sealed').toBe(false);
+      // What the reader sees (codex code-trust-01): neither the full headline
+      // nor its green, for a pack whose attested contents were not checked.
+      expect(verdictHeadline(withAttested)).not.toBe('Authenticity & Integrity Verified');
+      expect(verdictHeadline(withAttested)).toBe('Signature Verified (Attested Contents Not Checked)');
+      expect(verdictState(withAttested)).toBe('warning');
+      expect(verdictHeadline(plain)).toBe('Authenticity & Integrity Verified');
+      expect(verdictState(plain)).toBe('success');
     } finally {
       globalThis.fetch = realFetch;
     }

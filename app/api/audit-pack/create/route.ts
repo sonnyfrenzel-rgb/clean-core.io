@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
 import JSZip from 'jszip';
+import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { verifyRunIntegrity } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
@@ -411,10 +412,17 @@ export async function POST(req: NextRequest) {
     // top-level field called "auditMetadata.auditPackExportedAt" and the real
     // one was never set. Nested + merge is safe here because Firestore merges
     // map fields recursively — sibling auditMetadata keys survive.
-    await db.collection('projects').doc(projectId).set(
-      { auditMetadata: { auditPackExportedAt: generatedAt } },
-      { merge: true },
-    );
+    //
+    // Bound to the exported run (codex code-trust-07): written only while that
+    // run is still the active one, and with its id beside the timestamp. A new
+    // run clears the marker (`/api/runs/create`), so "handed over" never
+    // describes a run nobody exported.
+    const exportRef: DocumentReference = db.collection('projects').doc(projectId);
+    await db.runTransaction(async (tx: Transaction) => {
+      const now = await tx.get(exportRef);
+      if (!now.exists || now.data()?.activeRunId !== runId) return;
+      tx.set(exportRef, { auditMetadata: { auditPackExportedAt: generatedAt, auditPackExportedRunId: runId } }, { merge: true });
+    });
 
     return new NextResponse(new Uint8Array(buf), {
       status: 200,
