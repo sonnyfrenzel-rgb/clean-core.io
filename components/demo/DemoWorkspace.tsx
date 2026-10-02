@@ -6,7 +6,6 @@ import { RotateCcw, ArrowRight } from 'lucide-react';
 import StageHeader from '@/components/StageHeader';
 import DemoTesting from '@/components/demo/DemoTesting';
 import DemoAnalyze from '@/components/demo/DemoAnalyze';
-import Stepper from '@/components/Stepper';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcAnchor from '@/components/cc/Anchor';
@@ -141,15 +140,16 @@ export default function DemoWorkspace({
     <div className="cc w-full pb-24" data-demo-ready={hydrated ? 'true' : 'false'}>
       <DemoStrip onReset={reset} />
 
-      {/* No cast: `DemoRailStep` has to stay assignable to the product's own
-          `RailStep`, so a future field that drifts apart is a type error here. */}
-      <Stepper steps={demo.rail} current={stage} projectId="demo" basePath="/demo" />
-
       {/* `stage` for the header's identity, `title` because the demo's title
           must carry "Demo ·" — a reader may never mistake it for a project of
-          their own (§6.1.2, `tests/demo-project.spec.ts`). */}
+          their own (§6.1.2, `tests/demo-project.spec.ts`). The seven tools
+          under it are the bar every real stage carries (ADR-059), in place of
+          the old stepper — one way across, not two. No cast: `DemoRailStep`
+          has to stay assignable to the product's own `RailStep`, so a future
+          field that drifts apart is a type error here. */}
       <StageHeader
         stage={stage}
+        tools={{ steps: demo.rail, base: '/demo' }}
         title={`${demo.title} — ${current.label}`}
         eyebrow={
           <>

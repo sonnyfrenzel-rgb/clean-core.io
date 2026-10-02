@@ -64,6 +64,10 @@ export default function CcLinkButton(props: CcLinkButtonProps) {
     'no-underline',
     CC_BUTTON_VARIANT_CLASSES[variant],
     CC_BUTTON_DENSITY_CLASSES[density],
+    // The page the reader is on: selection is ink, never green (ADR-007) — the
+    // border and the text take `--cc-ink`, the surface the hover's grey, so
+    // "you are here" reads without a colour that claims anything.
+    current && 'border-cc-ink bg-cc-surface-muted text-cc-ink',
   );
   const common = {
     ...ccDataAttributes(props),

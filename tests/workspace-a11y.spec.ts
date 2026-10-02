@@ -211,7 +211,10 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await page.keyboard.press('ArrowLeft');
     await expect(page).toHaveURL(/view=business/);
 
-    // "Tools" is a disclosure: Escape closes it and returns the focus.
+    // "Tools" is a disclosure: Escape closes it and returns the focus. Since
+    // ADR-059 the tools stand open from breakpoint L, so the menu is measured
+    // where Business still has it — breakpoint M.
+    await page.setViewportSize({ width: 1000, height: 1200 });
     const tools = page.locator('[data-workspace-tools="menu"] button[aria-expanded]');
     await tools.focus();
     await page.keyboard.press('Enter');
@@ -227,6 +230,7 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-workspace-tools-panel]')).toHaveCount(0);
     await expect(tools).toBeFocused();
+    await page.setViewportSize({ width: 1440, height: 1200 });
 
     // The account menu does the same.
     const account = page.locator('[data-account-menu]');

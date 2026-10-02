@@ -1063,7 +1063,7 @@ export default function TestingSandboxPage() {
         ]}
       />
 
-      <StageHeader stage="testing" projectName={project?.name}>
+      <StageHeader stage="testing" tools={{ steps: phases, current: 'testing' }} projectName={project?.name}>
         {/* What the tool does, in one sentence, before anything else (owner
             02.10.2026: "it is a tool, not a tab"). Said per route, because
             the two routes differ in the one thing a reader needs to know: on

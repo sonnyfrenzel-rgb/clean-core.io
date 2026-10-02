@@ -35,7 +35,7 @@
  */
 
 import type { Project } from './types';
-import { workflowSteps, phaseTone, type PhaseKey, type RailStep } from './workflow-steps';
+import { workflowSteps, phaseTone, type PhaseKey, type PhaseState, type PhaseTone, type RailStep } from './workflow-steps';
 import { coveringTestRunReceipt } from './test-receipt';
 import type { ObjectStatusValue } from './object-status';
 import type { ProvenanceValue } from './provenance';
@@ -824,11 +824,36 @@ export function notDetermined(project: Project | null): NotDetermined {
  *
  * Order and labels come from `lib/workflow-steps.ts` and are not restated here
  * — the toolbar is the eighth reader of that contract, not a new copy of it. A
- * tool opens a stage as its own page; it is **not** a progress indicator
- * (ADR-018), which is why nothing in the toolbar carries a state colour.
+ * tool opens a stage as its own page. Since ADR-059 (Sonny 02.10.2026) each
+ * tool carries a small mark for what is on record, and it carries the phase
+ * state the stepper reads — `state` and `proven` straight from `workflowSteps`,
+ * never from a client-set status — so the mark beside a tool and the stepper's
+ * circle cannot disagree.
  */
-export function workspaceTools(project: Project | null): Array<{ key: PhaseKey; label: string; path: string }> {
-  return workflowSteps(project).map((s) => ({ key: s.key, label: s.label, path: s.path }));
+export function workspaceTools(
+  project: Project | null,
+): Array<{ key: PhaseKey; label: string; path: string; state: PhaseState; proven: boolean }> {
+  return workflowSteps(project).map((s) => ({ key: s.key, label: s.label, path: s.path, state: s.state, proven: s.proven }));
+}
+
+/**
+ * The mark after a tool's name, read the way the stepper reads the phase
+ * (`components/Stepper.tsx`): a tick where the stepper ticks (`done`), a dot
+ * where it shows a coloured circle without one (started, or stale — stale is
+ * never done), nothing where nothing is on record. The tone is `phaseTone`, so
+ * green stays the colour of `proven` alone (ADR-007, ADR-059); `words` is the
+ * catalogue key of what a screen reader hears instead of the colour.
+ */
+export function toolMark(tool: { state: PhaseState; proven: boolean }): {
+  kind: 'check' | 'dot' | 'none';
+  tone: PhaseTone;
+  words: 'tools.mark.proven' | 'tools.mark.unproven' | 'tools.mark.started' | 'tools.mark.stale' | null;
+} {
+  const tone = phaseTone(tool);
+  if (tone === 'none') return { kind: 'none', tone, words: null };
+  if (tone === 'stale') return { kind: 'dot', tone, words: 'tools.mark.stale' };
+  if (tool.state === 'done') return { kind: 'check', tone, words: tone === 'proven' ? 'tools.mark.proven' : 'tools.mark.unproven' };
+  return { kind: 'dot', tone, words: 'tools.mark.started' };
 }
 
 /** Re-exported so a screen reading a status never has to reach for the ladder itself. */

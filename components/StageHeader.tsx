@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { PHASES, type PhaseKey } from '@/lib/workflow-steps';
+import { PHASES, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
 import { stageBackLink, stageBackPlace } from '@/lib/workspace-back-href';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
+import { StageToolBar } from '@/components/workspace/ToolBar';
 
 /**
  * The header at the top of a workflow stage. There is exactly one.
@@ -68,6 +69,7 @@ export default function StageHeader({
   icon,
   actions,
   align = 'left',
+  tools,
   children,
 }: {
   /** The stage this header belongs to; its name comes from `PHASES`. */
@@ -88,6 +90,15 @@ export default function StageHeader({
   /** Buttons that belong to the stage as a whole, right-aligned on desktop. */
   actions?: React.ReactNode;
   align?: 'left' | 'center';
+  /**
+   * The seven tools under the way back (ADR-059, Sonny 02.10.2026): the
+   * phases from `workflowSteps` (or the demo's rail), the stage the reader is
+   * on (defaults to `stage`), and the base of the links (`/demo` for the demo;
+   * the project otherwise). Drawn for a workspace account and in the demo —
+   * an account without the workspace still has the stepper (`StageProgress`),
+   * and two navigations over one page would be one too many.
+   */
+  tools?: { steps: RailStep[]; current?: PhaseKey; base?: string };
   /** The lead sentence. */
   children?: React.ReactNode;
 }) {
@@ -115,6 +126,8 @@ export default function StageHeader({
   // opened from (mockup s8). Only for the workspace: the dashboard has neither.
   const place = back.kind === 'link' && back.to === 'workspace' ? stageBackPlace(search) : null;
   const toolEyebrow = shell && projectName ? projectName : null;
+  const toolCurrent = tools?.current ?? stage;
+  const toolBase = tools?.base ?? (shell && !profileLoading && projectId ? `/project/${projectId}` : null);
 
   return (
     <header
@@ -140,6 +153,12 @@ export default function StageHeader({
             </span>
           ) : null}
         </Link>
+      )}
+
+      {tools && toolCurrent && toolBase && (
+        <div data-stage-toolbar="" className="cc-no-print mb-4">
+          <StageToolBar steps={tools.steps} current={toolCurrent} base={toolBase} />
+        </div>
       )}
 
       <div

@@ -1696,7 +1696,7 @@ export default function AnalyzePage() {
 
       <StageProgress steps={phases} current="analyze" projectId={projectId as string} />
 
-      <StageHeader
+      <StageHeader tools={{ steps: phases, current: 'analyze' }}
         projectName={project?.name}
         stage="analyze"
         actions={

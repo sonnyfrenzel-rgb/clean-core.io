@@ -256,7 +256,10 @@ From top to bottom:
    statement comes from. The two look different and are never mixed (ADR-023): an object status is never a chip with
    an icon, a provenance chip carries only the nine values from `lib/provenance.ts`.
 3. **Toolbar:** the seven stages as tools (Analyze … Delivery), left-aligned; on the right export and
-   sharing. Open in IT, in Business and Management as a "Tools" menu (§2.11).
+   sharing. From breakpoint L open side by side in every view; below L open in IT and a "Tools" menu in
+   Business and Management; on S a menu in every view (§2.9, §2.11, ADR-059). Each tool carries the stepper's
+   mark for its phase: a tick where the phase is done (green only where proven, amber otherwise), a dot where it
+   is started or out of date, nothing where nothing is on record — with the state in words for a screen reader.
 4. **Anchor bar:** for the layers alone — Need & process · Standard fit · Costs & assumptions · Architecture &
    dependencies · Evidence & controls · Changes & commitments. Empty layers are under "More" and say there what is
    missing (§2.11).
@@ -271,7 +274,8 @@ plain-language sentence, the disclosure line with *Not determined* and the "Next
 **one** line "Project status", in plain language ("Steps linked to code 92 % · Rules confirmed 0 of 7 · Show
 project status"), without level distribution and without *Not determined* — that is already in the disclosure line. In
 **Management** and **IT** facets and status line are open. Anchor bar and tools exist in every view — the
-tools in IT as an open bar, in Business and Management as a "Tools" menu (§2.11). Below the
+tools open side by side from breakpoint L in every view, below it in IT as an open bar and in Business and
+Management as a "Tools" menu (§2.11, ADR-059). Below the
 view switcher stands one sentence on which question the view answers; "About this view" opens the paragraph on it (§6.1).
 
 Headings: the project title is `h1`, every section `h2`, every card `h3`; no level is skipped.
@@ -282,14 +286,17 @@ Headings: the project title is `h1`, every section `h2`, every card `h3`; no lev
 |---|---|---|---|---|
 | **View** (segmented control) | orders the same content by a question and selects the first answer (§5.6) | changes no data, filters nothing out, opens no page | Business | URL (`?view=`) and browser |
 | **Layer** (anchor bar) | jumps to a section of the page and marks where you are | does not switch the view | Need & process | URL fragment (`#need`) |
-| **Tool** (toolbar) | opens the stage as a page of its own; "Back to workspace" returns to view and layer | is not a progress indicator | — | URL of the stage |
+| **Tool** (toolbar) | opens the stage as a page of its own; "Back to workspace" returns to view and layer; marks what is on record for its phase the way the stepper does (ADR-059) | marks no position — the workspace is no stage | — | URL of the stage |
 
 **The header of a stage** (ADR-050). A stage is a tool page of the workspace, not a landing section. Its
 header comes from `StageHeader` and stands like the project title: **22 px / 800, `-0.02em`, `--cc-ink`**, as `h1`. The
 icon stands neutrally in front of it — 20 px, `--cc-ink-muted`, without a surface; no green bubble, because in the workspace green means
 evidenced (§1.1). Above the title the link **"Back to workspace"** (13 px / 600, `--cc-ink-muted`, arrow left; a link,
-not a button), which leads back to the view and layer from which the stage was opened. Eyebrow and lead stay, in the
-scale of §1.2 (micro label, body text).
+not a button), which leads back to the view and layer from which the stage was opened. Below it the same toolbar as in
+the workspace (ADR-059): the seven tools with their marks, the stage's own tool selected in `--cc-ink` with
+`aria-current="page"`, each link keeping view, origin and layer — side by side from breakpoint L, a "Tools" menu below.
+It replaces the stepper wherever it is drawn (a workspace account, the demo); one way across, not two. Eyebrow and lead
+stay, in the scale of §1.2 (micro label, body text).
 
 On scrolling the header shrinks to title, view switcher and the facet line — in Business the "Project
 status" line; the anchor bar stays in place. **A
@@ -406,7 +413,8 @@ For first-time users less is more — the depth stays, it just does not come fir
 - **Nothing twice.** A number stands in one place; whoever needs it in a second place gets a reference.
 - **Metadata on demand.** The mono meta line (project ID, manifest, revision, source state, engine, rules) is open in IT,
   in Business and Management behind "Details".
-- **Tools by view.** In IT the toolbar is open; in Business and Management it is a "Tools" menu.
+- **Tools by view.** From breakpoint L the toolbar is open in every view (ADR-059); below L it is open in IT and
+  a "Tools" menu in Business and Management.
 - **Layers with content first.** The anchor bar shows layers with content; empty ones are under "More" and say there what is
   missing.
 - **Tables** show the first five rows and "Show all 42"; filters appear from ten rows.
@@ -1088,6 +1096,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.2 | 02.10.2026 | Tools side by side from breakpoint L in every view, each with the stepper's mark for its phase, and the same bar under "Back to workspace" on every stage and demo stage (ADR-059, Sonny 02.10.2026): §2.3 item 3, the header per view, the navigation table, the header of a stage, §2.11 |
 | 1.8 (draft, for acceptance by Sonny) | 30.09.2026 | Block D completed (D.30): all guards apply to `app/**` and `components/**`, the exception lists are deleted, only named exceptions remain (§8); `--cc-warning-mark` `#d97706` for warning marks in bars and dots (§1.1, §1.8); generated Markdown text in `.cc-prose` on the scale §1.2 |
 | 1.7 | 27.09.2026 | Business statement as the model's proposal above the engine's sentence, contradiction as an edge stroke with words instead of a chip, requesting only via a button with a cost line (§5.10, ADR-055, roadmap 17.10) |
 | 1.6 | 27.09.2026 | Events in sub-processes and at early exits (ADR-054, Sonny 27.09.2026): every expandable sub-process begins in its layer at a start event on the `FORM`/`METHOD` line; `RETURN`, `EXIT` outside loops and `STOP` end on an end event of their own with the condition on the edge — directly before the end of the block it stays the normal end; a leaving `CHECK` stays a conditional flow to the normal end. Events nowhere count as a step, a premature end is called "End (early)" (§5.8) |
