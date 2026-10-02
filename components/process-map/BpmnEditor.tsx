@@ -465,7 +465,10 @@ export default function BpmnEditor({
   const [zoom, setZoom] = useState(100);
   const [comparing, setComparing] = useState(false);
   const [minimap, setMinimap] = useState(true);
+  /** The browser's own full screen (Fullscreen API) holds the editor. */
   const [fullscreen, setFullscreen] = useState(false);
+  /** The browser refused full screen (or has none): the editor covers the window instead. */
+  const [overlay, setOverlay] = useState(false);
   const [overlaps, setOverlaps] = useState(0);
   /** The revision the draft was opened from, when it is not the reconstruction. */
   const [startedFrom, setStartedFrom] = useState<OpenedRevision | null>(null);
@@ -1004,14 +1007,48 @@ export default function BpmnEditor({
     document.addEventListener('fullscreenchange', onChange);
     return () => document.removeEventListener('fullscreenchange', onChange);
   }, []);
+  /** Full screen either way — what the layout reads. */
+  const filled = fullscreen || overlay;
   useEffect(() => {
     // The canvas measures its box; after the box changed it has to measure again.
     modeler?.get<CanvasService>('canvas').resized();
-  }, [fullscreen, modeler]);
+  }, [filled, modeler]);
   const toggleFullscreen = useCallback(() => {
-    if (document.fullscreenElement) void document.exitFullscreen();
-    else void rootRef.current?.requestFullscreen?.();
-  }, []);
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+      return;
+    }
+    if (overlay) {
+      setOverlay(false);
+      return;
+    }
+    const root = rootRef.current;
+    // An embedded page, an iPhone or a refused request has no element full
+    // screen; the editor then covers the window, with the same layout.
+    if (root && typeof root.requestFullscreen === 'function') {
+      root.requestFullscreen().catch(() => setOverlay(true));
+    } else {
+      setOverlay(true);
+    }
+  }, [overlay]);
+  useEffect(() => {
+    if (!overlay) return;
+    // The page behind does not scroll under the editor, and Escape leaves it —
+    // unless the keystroke belongs to the canvas, where Escape ends a tool.
+    const html = document.documentElement;
+    const was = html.style.overflow;
+    html.style.overflow = 'hidden';
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      if (hostRef.current?.contains(event.target as Node | null)) return;
+      setOverlay(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      html.style.overflow = was;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [overlay]);
 
   /* ---------------- saving ---------------- */
 
@@ -1056,21 +1093,33 @@ export default function BpmnEditor({
     return 'drawn';
   })();
 
-  const canvasHeight = fullscreen ? 'h-[calc(100vh-16rem)]' : 'h-[460px] md:h-[600px]';
+  /*
+   * Full screen is one column the height of the window (`.cc-editor-fullscreen`
+   * in `process-map.css`): the toolbar, the palette and the footer keep their
+   * own height, the canvas row takes what is left (`flex-1 min-h-0`), so Save
+   * is on screen at any window height and any zoom.
+   */
+  const canvasHeight = filled ? 'h-full' : 'h-[460px] md:h-[600px]';
+  const keep = filled ? 'shrink-0' : '';
 
   return (
     <div
       ref={rootRef}
       data-process-editor=""
-      data-editor-fullscreen={fullscreen ? 'true' : 'false'}
-      className={fullscreen ? 'flex min-w-0 flex-col gap-2 overflow-auto bg-cc-page p-4' : 'flex min-w-0 flex-col gap-2'}
+      data-editor-fullscreen={filled ? 'true' : 'false'}
+      data-editor-fullscreen-mode={fullscreen ? 'browser' : overlay ? 'overlay' : undefined}
+      className={
+        filled
+          ? 'cc-editor-fullscreen flex min-w-0 flex-col gap-2 overflow-hidden'
+          : 'flex min-w-0 flex-col gap-2'
+      }
     >
       {/* ---------------- the toolbar ---------------- */}
       <div
         data-editor-toolbar=""
         role="group"
         aria-label={wt('editor.toolbarLabel')}
-        className="flex flex-wrap items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-2"
+        className={`flex flex-wrap items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-2 ${keep}`}
       >
         <CcIconButton data-editor-undo="" label={wt('editor.undo')} disabled={!canUndo} onClick={undo}>
           <Undo2 size={16} aria-hidden={true} />
@@ -1138,15 +1187,16 @@ export default function BpmnEditor({
         <span className="ml-auto" />
         <CcIconButton
           data-editor-fullscreen-toggle=""
-          label={fullscreen ? wt('editor.exitFullscreen') : wt('editor.fullscreen')}
-          aria-pressed={fullscreen}
+          label={filled ? wt('editor.exitFullscreen') : wt('editor.fullscreen')}
+          aria-pressed={filled}
           onClick={toggleFullscreen}
         >
-          {fullscreen ? <Minimize2 size={16} aria-hidden={true} /> : <Maximize2 size={16} aria-hidden={true} />}
+          {filled ? <Minimize2 size={16} aria-hidden={true} /> : <Maximize2 size={16} aria-hidden={true} />}
         </CcIconButton>
       </div>
 
       {newer ? (
+        <div className={keep}>
         <CcMessageStrip
           state="information"
           actions={
@@ -1158,12 +1208,13 @@ export default function BpmnEditor({
           <span data-editor-newer={newer.revision}>{editorNewerRevision(newer.line)}</span>
           {dirty ? <span data-editor-newer-replaces=""> {wt('editor.newerReplacesUnsaved')}</span> : null}
         </CcMessageStrip>
+        </div>
       ) : startedFrom ? (
-        <p data-editor-started={startedFrom.revision} className="m-0 text-[12px] font-medium text-cc-ink-muted">
+        <p data-editor-started={startedFrom.revision} className="m-0 shrink-0 text-[12px] font-medium text-cc-ink-muted">
           {editorEditingRevision(startedFrom.line)}
         </p>
       ) : (
-        <p data-editor-started="1" className="m-0 text-[12px] font-medium text-cc-ink-muted">
+        <p data-editor-started="1" className="m-0 shrink-0 text-[12px] font-medium text-cc-ink-muted">
           {wt('editor.startedFromIst')}
         </p>
       )}
@@ -1173,11 +1224,17 @@ export default function BpmnEditor({
         data-editor-palette=""
         role="group"
         aria-label={wt('mapEditor.paletteLabel')}
-        className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-cc-card border border-cc-line bg-cc-surface-muted p-2"
+        className={
+          filled
+            ? // Full screen on a short window: one row that scrolls sideways, the height goes to
+              // the canvas. From 860 px of height there is room, and the row wraps instead.
+              'flex shrink-0 flex-nowrap items-center gap-x-4 gap-y-2 overflow-x-auto rounded-cc-card border border-cc-line bg-cc-surface-muted p-2 [@media(min-height:860px)]:flex-wrap'
+            : 'flex flex-wrap items-center gap-x-4 gap-y-2 rounded-cc-card border border-cc-line bg-cc-surface-muted p-2'
+        }
       >
-        <span className="w-full text-[12px] font-medium text-cc-ink-muted">{wt('editor.addLabel')}</span>
+        <span className={filled ? 'sr-only' : 'w-full text-[12px] font-medium text-cc-ink-muted'}>{wt('editor.addLabel')}</span>
         {PALETTE_GROUPS.map((group) => (
-          <div key={group} className="flex flex-wrap items-center gap-1">
+          <div key={group} className={filled ? 'flex shrink-0 items-center gap-1' : 'flex flex-wrap items-center gap-1'}>
             <span className="mr-1 text-[11px] font-semibold tracking-[0.06em] text-cc-ink-muted uppercase">
               {group}
             </span>
@@ -1198,11 +1255,18 @@ export default function BpmnEditor({
       </div>
 
       {note ? (
-        <p data-editor-note className="m-0 text-[12px] font-medium text-cc-ink-muted" role="status">{note}</p>
+        <p data-editor-note className="m-0 shrink-0 text-[12px] font-medium text-cc-ink-muted" role="status">{note}</p>
       ) : null}
 
-      <div className="grid min-w-0 gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]">
-        <div className="relative min-w-0">
+      <div
+        data-editor-body=""
+        className={
+          filled
+            ? 'grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,3fr)_minmax(0,2fr)] gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:grid-rows-[minmax(0,1fr)]'
+            : 'grid min-w-0 gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]'
+        }
+      >
+        <div className={filled ? 'relative min-h-0 min-w-0' : 'relative min-w-0'}>
           <div
             data-process-editor-canvas=""
             role="group"
@@ -1210,10 +1274,10 @@ export default function BpmnEditor({
             className={`cc-editor-canvas w-full overflow-hidden rounded-cc-card border border-cc-line ${canvasHeight}`}
             ref={hostRef}
           />
-          {modeler && minimap ? <EditorMinimap modeler={modeler} /> : null}
+          {modeler && minimap ? <EditorMinimap modeler={modeler} corner={filled ? 'right' : 'left'} /> : null}
         </div>
 
-        <div className={`flex min-w-0 flex-col gap-2 ${fullscreen ? 'max-h-[calc(100vh-16rem)]' : 'lg:max-h-[600px]'} lg:overflow-auto`}>
+        <div className={`flex min-w-0 flex-col gap-2 ${filled ? 'min-h-0 overflow-auto' : 'lg:max-h-[600px] lg:overflow-auto'}`}>
           {diff ? (
             <section
               data-editor-diff=""
@@ -1321,17 +1385,19 @@ export default function BpmnEditor({
         </div>
       </div>
 
+      <div className={keep}>
       <CcDisclosure title={wt('editor.shortcuts')}>
         <p data-editor-shortcuts="" className="m-0 flex items-start gap-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
           <Keyboard size={16} aria-hidden={true} className="mt-0.5 shrink-0" />
           {wt('editor.shortcutsBody')}
         </p>
       </CcDisclosure>
+      </div>
 
       {/* ---------------- the editing footer, `DESIGN.md` §2.3 item 6 ---------------- */}
       <div
         data-process-editor-footer=""
-        className="flex flex-wrap items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-2"
+        className={`flex flex-wrap items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-2 ${keep}`}
       >
         <CcButton variant="primary" data-editor-save="" busy={saving} onClick={() => void onSave()}>
           {wt('mapEditor.save')}
@@ -1355,7 +1421,7 @@ export default function BpmnEditor({
       </div>
 
       {saved ? (
-        <p data-editor-saved className="m-0 text-[12px] font-medium text-cc-ink-muted">{saved}</p>
+        <p data-editor-saved className="m-0 shrink-0 text-[12px] font-medium text-cc-ink-muted">{saved}</p>
       ) : null}
 
       {importing ? (

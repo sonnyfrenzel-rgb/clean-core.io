@@ -306,3 +306,28 @@
 [data-process-editor][data-editor-fullscreen='true'] {
   background: var(--cc-page);
 }
+
+/*
+ * The editor in full screen (owner, 02.10.2026: the footer was cut off).
+ *
+ * One column exactly the height of the window: toolbar, palette and footer keep
+ * their own height and the canvas row takes what is left, so Save is on screen
+ * at any window height and any browser zoom. It is the editor itself filling
+ * the window — the element the Fullscreen API shows, or, where the browser
+ * refuses element full screen, the same element laid over the page — not a
+ * dialog over the page: no scrim, no focus trap, the toolbar's toggle and
+ * Escape leave it.
+ *
+ * `100dvh`, not `100vh`: in a browser window the tab strip and address bar are
+ * not part of the viewport on every device, and `100vh` would push the footer
+ * under them. The padding keeps clear of a notch or a rounded screen corner.
+ */
+.cc-editor-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--cc-z-overlay);
+  height: 100dvh;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background: var(--cc-page);
+}
