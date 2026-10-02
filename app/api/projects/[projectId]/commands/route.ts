@@ -8,7 +8,8 @@ import {
   QuotaError,
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
-import { validateProjectCommand, type ProjectCommandState } from '@/lib/project-commands';
+import { validateProjectCommand, type ProjectCommandState, type RecommendationBasis } from '@/lib/project-commands';
+import { recommendationOfProject } from '@/lib/contract-build';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
 import { deriveProjectDecision } from '@/lib/decision-facts';
 import type { EvidenceChange } from '@/lib/run-evidence-digest';
@@ -131,8 +132,15 @@ export async function POST(
     // conditional on, and a comparison made before the transaction is a window,
     // not a binding.
     type CommandOutcome =
-      | { status: 200; fields: Record<string, unknown> }
-      | { status: number; error: string; code?: string; details?: EvidenceChange[]; activeRunId?: string };
+      | { status: 200; fields: Record<string, unknown>; recommendationBasis?: RecommendationBasis; notice?: string }
+      | {
+          status: number;
+          error: string;
+          code?: string;
+          details?: EvidenceChange[];
+          activeRunId?: string;
+          recommendationBasis?: RecommendationBasis;
+        };
     const outcome: CommandOutcome = await db.runTransaction(
       async (tx: Transaction): Promise<CommandOutcome> => {
         const snap = await tx.get(ref);
@@ -192,6 +200,15 @@ export async function POST(
           derivedDecisionFingerprint = derived.ok ? derived.answer.draft.fingerprint : null;
         }
 
+        // Owner decision 02.10.2026 — the sign-off's "recommended" is the
+        // architecture contract's, derived here from the source this
+        // transaction just read and the project's catalog snapshot
+        // (`recommendationOfProject`, the derivation `GET .../contract` makes),
+        // not the client-writable `extensibilityRoute`. `null` when no contract
+        // can be derived; the validator then falls back and says so.
+        const contractRecommendation =
+          commandName === 'approve-architecture' ? recommendationOfProject(project) : null;
+
         const state: ProjectCommandState = {
           activeRunId: project.activeRunId,
           approvedByArchitect: project.approvedByArchitect,
@@ -205,6 +222,7 @@ export async function POST(
           decision: project.decision,
           derivedDecisionFingerprint,
           profileDrift: profileDriftNow,
+          contractRecommendation,
         };
         const decision = validateProjectCommand(body, state, { email, now: new Date().toISOString() });
         if (!decision.ok) {
@@ -214,6 +232,7 @@ export async function POST(
             code: decision.code,
             ...(decision.details ? { details: decision.details } : {}),
             ...(decision.activeRunId ? { activeRunId: decision.activeRunId } : {}),
+            ...(decision.recommendationBasis ? { recommendationBasis: decision.recommendationBasis } : {}),
           };
         }
 
@@ -230,7 +249,12 @@ export async function POST(
           targetUid: decodedToken.uid,
           timestamp: new Date(),
         });
-        return { status: 200, fields: decision.fields };
+        return {
+          status: 200,
+          fields: decision.fields,
+          ...(decision.recommendationBasis ? { recommendationBasis: decision.recommendationBasis } : {}),
+          ...(decision.notice ? { notice: decision.notice } : {}),
+        };
       },
     );
 
@@ -244,13 +268,21 @@ export async function POST(
               // can show a table and an API caller does not have to parse prose.
               ...(outcome.details ? { details: outcome.details } : {}),
               ...(outcome.activeRunId ? { activeRunId: outcome.activeRunId } : {}),
+              ...(outcome.recommendationBasis ? { recommendationBasis: outcome.recommendationBasis } : {}),
             }
           : { error: outcome.error },
         { status: outcome.status },
       );
     }
 
-    return NextResponse.json({ ok: true, fields: outcome.fields });
+    return NextResponse.json({
+      ok: true,
+      fields: outcome.fields,
+      // Which recommendation a sign-off was checked against, and a sentence when
+      // it was not the contract's (owner decision 02.10.2026).
+      ...(outcome.recommendationBasis ? { recommendationBasis: outcome.recommendationBasis } : {}),
+      ...(outcome.notice ? { notice: outcome.notice } : {}),
+    });
   } catch (err: unknown) {
     // The reason goes to the server log; the caller gets a fixed sentence
     // (SEC-2026-481).

@@ -133,7 +133,7 @@ export default function ItRail({
                   <li key={r.route} className="flex items-baseline justify-between gap-3 py-1 text-[12px] font-medium text-cc-ink">
                     <span className="min-w-0">{r.route}</span>
                     <span className="shrink-0 font-semibold tabular-nums">
-                      {r.count} {r.count === 1 ? wt('it.finding') : wt('it.findings')}
+                      {r.count} {r.count === 1 ? wt('it.place') : wt('it.places')}
                     </span>
                   </li>
                 ))}

@@ -328,7 +328,24 @@ export interface LevelDistribution {
   sentence: string;
 }
 
-const FINDING_BASIS = 'findings in this run';
+/**
+ * The IT view's rows are one per **place in the code** — every line the engine
+ * found a pattern on, each with its own chain and anchor. "Findings" is the
+ * unit Analyze counts, one per pattern and object (`findingRows`), so a count of
+ * these rows is called what it is (owner decision 02.10.2026: one count under
+ * one word).
+ */
+const FINDING_BASIS = 'places in the code in this run';
+
+/** "place in the code" / "places in the code". */
+export function placesInTheCode(n: number): string {
+  return n === 1 ? 'place in the code' : 'places in the code';
+}
+
+/** Findings as Analyze counts them — one per pattern and object — over the IT rows (one per place). */
+export function distinctFindingCount(rows: readonly ItFindingRow[]): number {
+  return new Set(rows.map((r) => `${r.kind}::${r.objectName || r.title}`)).size;
+}
 
 /**
  * The A–D distribution over the findings of this run.
@@ -358,9 +375,9 @@ export function levelDistribution(rows: readonly ItFindingRow[]): LevelDistribut
     rows.length === 0
       ? 'No findings in this run, so there is no distribution to draw.'
       : graded === 0
-        ? `None of the ${rows.length} findings names an object the catalog can be asked about, ` +
+        ? `None of the ${rows.length} ${placesInTheCode(rows.length)} names an object the catalog can be asked about, ` +
           'so no level is shown rather than a bar of zeros.'
-        : `${graded} of ${rows.length} findings carry a level` +
+        : `${graded} of ${rows.length} ${placesInTheCode(rows.length)} carry a level` +
           (unknown > 0
             ? `; ${unknown} of them are Unknown — the catalog places them nowhere, which is its own answer and not a D.`
             : '.');
@@ -452,7 +469,7 @@ export function itFindingsView(
   const requirementNote =
     rows.length === 0
       ? 'No findings, so no requirement was looked for.'
-      : `${neighbourhood} of ${rows.length} findings have a derived business rule in the same routine but none ` +
+      : `${neighbourhood} of ${rows.length} ${placesInTheCode(rows.length)} have a derived business rule in the same routine but none ` +
         'on their own lines. A rule in the same routine is a neighbourhood, not a cause, so it is named as a ' +
         'place to look and never counted as the requirement.';
 
@@ -461,7 +478,7 @@ export function itFindingsView(
   const figures: ItFigure[] = [
     {
       key: 'findings',
-      label: 'findings the engine reported',
+      label: 'places in the code with a finding',
       value: unreadable ? null : String(rows.length),
       ...(unreadable ? { absentReason: 'the findings of this project could not be read' } : {}),
       provenance: unreadable ? 'not-determined' : 'reconstructed',
@@ -471,7 +488,7 @@ export function itFindingsView(
     },
     {
       key: 'chain-complete',
-      label: 'findings the chain is complete for',
+      label: 'places in the code the chain is complete for',
       value: unreadable || rows.length === 0 ? null : String(complete),
       ...(unreadable
         ? { absentReason: 'the findings of this project could not be read' }
@@ -483,7 +500,7 @@ export function itFindingsView(
     },
     {
       key: 'level',
-      label: 'findings that carry a clean core level',
+      label: 'places in the code that carry a clean core level',
       value: unreadable || distribution.graded === 0 ? null : String(distribution.graded),
       ...(unreadable
         ? { absentReason: 'the findings of this project could not be read' }
@@ -499,7 +516,7 @@ export function itFindingsView(
     ? 'The findings of this project could not be read, so nothing here is answered — an empty table would say there were none.'
     : rows.length === 0
       ? 'The engine reported no finding in the source staged on this project, so there is nothing to trace yet.'
-      : `${rows.length} findings, the chain is complete for ${complete} of them, and ${distribution.graded} carry a clean core level.`;
+      : `${distinctFindingCount(rows)} findings at ${rows.length} ${placesInTheCode(rows.length)}, the chain is complete for ${complete} of these places, and ${distribution.graded} carry a clean core level.`;
 
   return {
     question: IT_QUESTION,

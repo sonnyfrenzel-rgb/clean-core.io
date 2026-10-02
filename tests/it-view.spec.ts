@@ -81,7 +81,11 @@ test.describe('the IT answer, derived', () => {
       coverage: { lines: 669, gaps: [{ label: 'Local function-module call', count: 6, firstLine: 121 }] },
     };
     const head = itAnswerHead(src);
-    expect(head.title).toBe('4 findings · 1 at level D');
+    // Findings as Analyze counts them; the rows, and the level count, are places in the code.
+    expect(head.title).toBe('4 findings at 4 places in the code · 1 place at level D');
+    // A second place of the same pattern and object is one finding at two places.
+    const twice = itAnswerHead({ ...src, rows: [...ROWS, row({ id: 'CC-005', lineStart: 400 })] });
+    expect(twice.title).toBe('4 findings at 5 places in the code · 1 place at level D');
     expect(head.coverage).toContain('669 lines');
     expect(head.coverage).toContain('6 constructs it saw but does not assess');
     // Not recorded is said, never a zero.
@@ -91,7 +95,7 @@ test.describe('the IT answer, derived', () => {
 
   test('is it right: the chain coverage with where it stops', () => {
     const view = itFindingsView({ rows: ROWS, sourceSha256: 'a', rulesDerived: 0 });
-    expect(isItRight(view)).toBe('The chain from requirement to target is complete for 0 of 4 findings — 4 stop at Requirement.');
+    expect(isItRight(view)).toBe('The chain from requirement to target is complete for 0 of 4 places in the code — 4 stop at Requirement.');
   });
 
   test('kinds are counted in the router’s words, largest first', () => {
@@ -248,7 +252,7 @@ test.describe('the IT view on a real project', () => {
     // guard above reads, measured on the page (QA review of 247b20c16e38).
     const layerBar = await page.locator('[data-workspace-layers]').first().boundingBox();
     expect(answerTop && layerBar && answerTop.y < layerBar.y, 'the IT answer does not stand above the layer bar').toBe(true);
-    await expect(page.locator('[data-it-headline]')).toContainText(/\d+ findings · /);
+    await expect(page.locator('[data-it-headline]')).toContainText(/\d+ findings at \d+ places in the code · /);
 
     // Four facet tiles, each with its coverage.
     for (const id of ['findings', 'level', 'target', 'not-determined']) {

@@ -105,6 +105,61 @@ export function declaredDeviation(
   };
 }
 
+/**
+ * The most source, in bytes, a contract is derived from in one request. The
+ * contract route refuses a larger one (413), and the sign-off check
+ * (`recommendationOfProject`) then falls back as it does without a contract —
+ * both halves draw the line in the same place, so the Design page and the
+ * server never read the recommendation from two different places.
+ */
+export const MAX_CONTRACT_SOURCE_BYTES = 400_000;
+
+/**
+ * The engine pass a contract is built on: evidence and route over the source on
+ * the project, nothing of the decision. `null` when no source is staged.
+ */
+function routeOfProject(state: ContractProjectState) {
+  const source = typeof state.legacyCode === 'string' ? state.legacyCode : '';
+  if (!source.trim()) return null;
+
+  const fingerprintName = state.auditMetadata?.inputFingerprint?.fileName;
+  const fileName = typeof fingerprintName === 'string' && fingerprintName.trim() ? fingerprintName : 'main.abap';
+  const deployment: 'private' | 'public' | undefined =
+    state.s4Deployment === 'private' ? 'private' : state.s4Deployment === 'public' ? 'public' : undefined;
+
+  // The catalog of the project's target profile, the one the signed run read
+  // (roadmap 7.10; owner decision 30.09.2026). Read from the default list, a
+  // PCE project's contract stood on other object states than its run.
+  const evidence = buildAbapEvidence(source, fileName, deployment, catalogSnapshotKeyForProject(state));
+  // The router needs a model to score with. `private` is the conservative one —
+  // it is the deployment under which fewer constructs are driven off the stack,
+  // so an unbound target cannot produce a *stronger* recommendation than a
+  // bound one. It changes nothing downstream: with no `target:s4-deployment`
+  // in the manifest the contract is blocked and nothing is generated anyway.
+  const route = routeExtensibility(evidence, deployment || 'private');
+  return { source, deployment, evidence, route, recommended: targetRouteOf(route) };
+}
+
+/**
+ * The contract's recommendation for a project, in the sign-off's vocabulary —
+ * owner decision 02.10.2026: `approve-architecture` checks a departure against
+ * this and no longer against `extensibilityRoute`, which the browser writes.
+ *
+ * The same derivation `contractOfProject` (and so `GET /api/projects/{id}/contract`)
+ * makes for `contract.route.recommended`, without the decision: the
+ * recommendation does not depend on what was decided, and a project whose
+ * stored decision is off both tracks still has one. `null` when no contract can
+ * be derived — no source, or more than the contract route reads — and the caller
+ * then says it fell back.
+ */
+export function recommendationOfProject(state: ContractProjectState): TargetArchitectureCode | null {
+  const source = typeof state.legacyCode === 'string' ? state.legacyCode : '';
+  if (Buffer.byteLength(source, 'utf8') > MAX_CONTRACT_SOURCE_BYTES) return null;
+  const routed = routeOfProject(state);
+  if (!routed) return null;
+  return routed.recommended === 'side-by-side-cap' ? 'cap' : 'rap';
+}
+
 export type ContractBuild =
   | { ok: true; contract: ArchitectureContract }
   | { ok: false; code: 'no-source' | 'off-track'; decided?: TargetArchitectureCode };
@@ -123,25 +178,9 @@ export function contractOfProject(
   inputManifest: InputManifest | null,
   contractId: string = FIRST_CONTRACT_ID,
 ): ContractBuild {
-  const source = typeof state.legacyCode === 'string' ? state.legacyCode : '';
-  if (!source.trim()) return { ok: false, code: 'no-source' };
-
-  const fingerprintName = state.auditMetadata?.inputFingerprint?.fileName;
-  const fileName = typeof fingerprintName === 'string' && fingerprintName.trim() ? fingerprintName : 'main.abap';
-  const deployment =
-    state.s4Deployment === 'private' ? 'private' : state.s4Deployment === 'public' ? 'public' : undefined;
-
-  // The catalog of the project's target profile, the one the signed run read
-  // (roadmap 7.10; owner decision 30.09.2026). Read from the default list, a
-  // PCE project's contract stood on other object states than its run.
-  const evidence = buildAbapEvidence(source, fileName, deployment, catalogSnapshotKeyForProject(state));
-  // The router needs a model to score with. `private` is the conservative one —
-  // it is the deployment under which fewer constructs are driven off the stack,
-  // so an unbound target cannot produce a *stronger* recommendation than a
-  // bound one. It changes nothing downstream: with no `target:s4-deployment`
-  // in the manifest the contract is blocked and nothing is generated anyway.
-  const route = routeExtensibility(evidence, deployment || 'private');
-  const recommended = targetRouteOf(route);
+  const routed = routeOfProject(state);
+  if (!routed) return { ok: false, code: 'no-source' };
+  const { source, deployment, evidence, route, recommended } = routed;
 
   const deviation = declaredDeviation(state, recommended);
   if (deviation.kind === 'off-track') return { ok: false, code: 'off-track', decided: deviation.decided };

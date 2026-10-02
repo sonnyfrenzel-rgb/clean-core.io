@@ -8,6 +8,7 @@ import {
   type TargetPlatform,
 } from './abap/public-cloud-fit';
 import type { ItFindingRow, ItFindingsSource, ItView } from './it-findings';
+import { distinctFindingCount, placesInTheCode } from './it-findings';
 
 /**
  * The IT view's arrangement of what `lib/it-findings.ts` already derived —
@@ -64,7 +65,7 @@ export function worstLevel(rows: readonly ItFindingRow[]): { grade: CloudReadine
 /* --------------------------------------------------------------- answer */
 
 export interface ItAnswerHead {
-  /** "31 findings · 2 at level D" — the first line of the IT view. */
+  /** "25 findings at 31 places in the code · 2 places at level D" — the first line of the IT view. */
   title: string;
   /** What the engine read, beside it: "in 669 lines · 9 constructs not assessed". */
   coverage: string;
@@ -80,12 +81,15 @@ export function itAnswerHead(source: ItFindingsSource | null): ItAnswerHead {
   const rows = source.rows;
   const n = rows.length;
   const worst = worstLevel(rows);
+  // Findings as Analyze counts them; the rows, and so the level count, are places in the code.
+  const f = distinctFindingCount(rows);
+  const lead = `${f} ${f === 1 ? 'finding' : 'findings'} at ${n} ${placesInTheCode(n)}`;
   const title =
     n === 0
       ? 'No findings in the staged source'
       : worst
-        ? `${n} ${n === 1 ? 'finding' : 'findings'} · ${worst.count} at level ${worst.grade}`
-        : `${n} ${n === 1 ? 'finding' : 'findings'} · no clean core level determined`;
+        ? `${lead} · ${worst.count} ${worst.count === 1 ? 'place' : 'places'} at level ${worst.grade}`
+        : `${lead} · no clean core level determined`;
   const cov = source.coverage;
   const notAssessed = cov ? cov.gaps.reduce((sum, g) => sum + g.count, 0) : null;
   const coverage = cov
@@ -108,7 +112,7 @@ export function isItRight(view: Pick<ItView, 'rows' | 'unreadable' | 'headline' 
   const complete = view.chainCoverage.counted ?? 0;
   const ends = view.chainEnds.filter((e) => e.count > 0).map((e) => `${e.count} stop at ${e.label}`);
   return (
-    `The chain from requirement to target is complete for ${complete} of ${n} ${n === 1 ? 'finding' : 'findings'}` +
+    `The chain from requirement to target is complete for ${complete} of ${n} ${placesInTheCode(n)}` +
     (ends.length > 0 ? ` — ${ends.join(', ')}.` : '.')
   );
 }

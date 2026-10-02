@@ -23,7 +23,7 @@
 
 import type { CoverageReport } from './abap/coverage';
 import type { EvidenceFinding } from './abap/evidence-model';
-import { calmTitle, kindLabel } from './findings-view';
+import { calmTitle, findingRows, kindLabel } from './findings-view';
 import { BAIP } from './sap-naming';
 
 /* ---------------------------------------------------------------- routes */
@@ -122,8 +122,22 @@ export function findingTarget(finding: EvidenceFinding, track: ProjectTrack): Fi
 
 /* ------------------------------------------------------------ the counts */
 
+/**
+ * One finding per pattern and object — the unit Analyze, the worklist, the
+ * workspace row and the demo count (`findingRows`), here as its most severe
+ * occurrence. The engine's list holds one entry per *place in the code*; a
+ * figure labelled "findings" counts these, and the places are named as places
+ * (owner decision 02.10.2026: one count under one word).
+ */
+export function findingUnits(findings: readonly EvidenceFinding[]): EvidenceFinding[] {
+  return findingRows(findings).map((r) => r.finding);
+}
+
 export interface TransformationFigures {
+  /** Findings — one per pattern and object (`findingUnits`). */
   findings: number;
+  /** Places in the code — the engine's occurrences, one per source line. */
+  places: number;
   /** Findings with at least one target option. */
   planned: number;
   /** Findings with none — left out rather than guessed at. */
@@ -132,10 +146,12 @@ export interface TransformationFigures {
   successorDistinct: number;
 }
 
-export function transformationFigures(findings: readonly EvidenceFinding[]): TransformationFigures {
+export function transformationFigures(occurrences: readonly EvidenceFinding[]): TransformationFigures {
+  const findings = findingUnits(occurrences);
   const named = findings.filter((f) => f.sapReplacement?.objectName);
   return {
     findings: findings.length,
+    places: occurrences.length,
     planned: findings.filter((f) => (f.targetOptions ?? []).length > 0).length,
     unplanned: findings.filter((f) => (f.targetOptions ?? []).length === 0).length,
     successorNamed: named.length,
@@ -155,8 +171,9 @@ export interface KindPlan {
 
 const RANK: Record<string, number> = { Critical: 0, High: 1, Medium: 2, Low: 3, Info: 4 };
 
-/** One row per kind of finding — counted per finding, not per object — the most severe kind first. */
-export function planByKind(findings: readonly EvidenceFinding[]): KindPlan[] {
+/** One row per kind of finding — counted per finding (pattern and object), not per place — the most severe kind first. */
+export function planByKind(occurrences: readonly EvidenceFinding[]): KindPlan[] {
+  const findings = findingUnits(occurrences);
   const map = new Map<string, EvidenceFinding[]>();
   for (const f of findings) map.set(f.kind, [...(map.get(f.kind) ?? []), f]);
   const out: KindPlan[] = [];
@@ -202,7 +219,8 @@ function joinShort(names: string[], max = 5): string {
 }
 
 /** The Sankey of proposal B: kind of finding → target → (the generated package, drawn by the caller). */
-export function transformationFlow(findings: readonly EvidenceFinding[], track: ProjectTrack): TransformationFlow {
+export function transformationFlow(occurrences: readonly EvidenceFinding[], track: ProjectTrack): TransformationFlow {
+  const findings = findingUnits(occurrences);
   const kinds = planByKind(findings);
   const byTarget = new Map<TargetKind, EvidenceFinding[]>();
   const linkCount = new Map<string, number>();
@@ -294,8 +312,9 @@ const SEVERITY_RANK = (f: EvidenceFinding) => RANK[f.severity] ?? 9;
  * (a successor, none published, the route) rather than three reads of one
  * table. The rest follow, most severe first, behind "Show all".
  */
-export function changeOrder(findings: readonly EvidenceFinding[], track: ProjectTrack): EvidenceFinding[] {
-  const sorted = [...findings].sort((a, b) => SEVERITY_RANK(a) - SEVERITY_RANK(b) || a.lineStart - b.lineStart);
+export function changeOrder(occurrences: readonly EvidenceFinding[], track: ProjectTrack): EvidenceFinding[] {
+  // One change per finding; its places in the code travel with it (`findingRows`).
+  const sorted = findingUnits(occurrences).sort((a, b) => SEVERITY_RANK(a) - SEVERITY_RANK(b) || a.lineStart - b.lineStart);
   const first: EvidenceFinding[] = [];
   const seen = new Set<TargetKind>();
   for (const f of sorted) {

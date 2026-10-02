@@ -16,6 +16,7 @@ import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { readModelGaps, gapsUnreadableSentence } from '@/lib/model-gaps';
 import { pinRunOwnedFields } from '@/lib/model-owned-fields';
 import { SIDE_BY_SIDE_ROUTE } from '@/lib/sap-naming';
+import { findingRows } from '@/lib/findings-view';
 
 /**
  * One analysis run, startable from more than one screen.
@@ -165,10 +166,13 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
   const evidenceReport = buildAbapEvidence(legacyCode, fileName, deployment);
   const routeReport = routeExtensibility(evidenceReport, deployment);
   const findingCount = evidenceReport.findings.length;
+  // "Findings" as Analyze counts them, one per pattern and object; the
+  // engine's entries are places in the code (owner decision 02.10.2026).
+  const distinctCount = findingRows(evidenceReport.findings).length;
   move(
     'evidence',
     'done',
-    `${new Intl.NumberFormat('en').format(findingCount)} findings, Clean Core Score ${routeReport.cleanCoreScore}`,
+    `${new Intl.NumberFormat('en').format(distinctCount)} ${distinctCount === 1 ? 'finding' : 'findings'}, Clean Core Score ${routeReport.cleanCoreScore}`,
   );
   if (aborted(signal)) throw new AnalysisRunCancelled();
 

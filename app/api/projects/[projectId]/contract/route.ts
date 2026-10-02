@@ -4,7 +4,7 @@ import { verifyRequestAuth, getAdminDb, assertMfaSatisfied } from '@/lib/firebas
 import { mayReadProject } from '@/lib/project-readers';
 import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
-import { contractOfProject } from '@/lib/contract-build';
+import { contractOfProject, MAX_CONTRACT_SOURCE_BYTES } from '@/lib/contract-build';
 import { generationDirection, generationBinding, offTrackRefusal } from '@/lib/generation-direction';
 import type { InputManifest } from '@/lib/input-manifest';
 import { sha256Hex } from '@/lib/artefact-digest';
@@ -50,8 +50,12 @@ import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
  */
 export const runtime = 'nodejs';
 
-/** The same bound `/api/projects/{id}/findings` sets, for the same reason. */
-const MAX_SOURCE_BYTES = 400_000;
+/**
+ * The same bound `/api/projects/{id}/findings` sets, for the same reason — and
+ * the one the sign-off check (`recommendationOfProject`) stops at, so both read
+ * the recommendation from the same place or both fall back.
+ */
+const MAX_SOURCE_BYTES = MAX_CONTRACT_SOURCE_BYTES;
 
 /** The bound `firestore.rules` sets on a browser-written `generatedCode`, kept for the server's write. */
 const MAX_PACKAGE_CHARS = 1_000_000;

@@ -20,7 +20,7 @@ import { saveAs } from '@/lib/fileSaver';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import ArchitectSignOff, { architectureOptionLabel } from '@/components/ArchitectSignOff';
 import { recommendedArchitecture } from '@/lib/project-commands';
-import { storedRouteOf } from '@/lib/design-recommendation';
+import { signOffRecommendation, storedRouteOf } from '@/lib/design-recommendation';
 import { runProjectCommand } from '@/lib/project-command-client';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
 import { withPreviewPolicy } from '@/lib/export-preview';
@@ -580,7 +580,13 @@ ${responseText.substring(0, 4000)}`;
       : []),
     ...(stale.signOff ? [`The sign-off below was given for ${previousBasis(project)}. Unlock it and confirm the target architecture again.`] : []),
   ];
-  const signOffCurrent = project?.approvedByArchitect === true && !stale.signOff && !designStale;
+  // The sign-off is current when it was given for the code under review —
+  // `stale.signOff` says when it was not (a source or profile change after it).
+  // A design document older than the analysis is the document's state and is
+  // named above; it used to void a sign-off given *after* the analysis moved
+  // on as well, so "Confirm & Lock" landed on the server (Transformation ran
+  // against the contract) while this page kept saying "Not confirmed".
+  const signOffCurrent = project?.approvedByArchitect === true && !stale.signOff;
 
   const regenerate = () => {
     if (stale.sourceChanged) {
@@ -788,17 +794,28 @@ ${responseText.substring(0, 4000)}`;
     </div>
   );
 
-  const recommendation =
-    recommendedArchitecture({
-      originalRecommendation: project?.originalRecommendation,
-      extensibilityRoute: project?.extensibilityRoute,
-    }) || 'rap';
   // What the project stores — the run's recommendation or the route switch. The
   // card's answer is the contract's; this is named only where it differs
-  // (`lib/design-recommendation.ts`). The sign-off below still receives the
-  // stored value: it is the one `approve-architecture` checks a departure
-  // against on the server.
+  // (`lib/design-recommendation.ts`).
   const storedRoute = storedRouteOf(project, recommendedArchitecture);
+  // The sign-off names the contract's recommendation too (owner decision
+  // 02.10.2026): `approve-architecture` checks a departure against the contract
+  // it derives on the server, so the dialog and the card no longer tell two
+  // stories. The stored value stands in only where no contract was read.
+  const contractForSignOff = designEvidence.state === 'ready' ? designEvidence.contract : null;
+  const signOffBasis = signOffRecommendation(contractForSignOff ? contractForSignOff.route : null, storedRoute);
+  const recommendation = signOffBasis.code;
+  // The run's rationale and confidence describe the run's recommendation; they
+  // are shown only when that is the one named here.
+  const runSaysTheSame = storedRoute?.source === 'run' && storedRoute.code === recommendation;
+  const signOffJustification =
+    runSaysTheSame && project?.recommendationJustification
+      ? sapNamesForDisplay(project.recommendationJustification)
+      : signOffBasis.basis === 'contract'
+        ? `The architecture contract, derived from the code on the server, recommends the ${recommendation === 'cap' ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path for this project.`
+        : project?.recommendationJustification
+          ? sapNamesForDisplay(project.recommendationJustification)
+          : `Based on the code analysis, the ${recommendation === 'cap' ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`;
   const canSignOff = Boolean(design) && designIsStructured(design);
 
   // The sign-off, unchanged: the same panel, the same commands, the same
@@ -809,8 +826,8 @@ ${responseText.substring(0, 4000)}`;
       // architecture codes and the router's own route names — are
       // translated in one place, which the server validates against.
       recommendation={recommendation}
-      confidenceScore={project?.recommendationConfidence}
-      justificationText={project?.recommendationJustification ? sapNamesForDisplay(project.recommendationJustification) : `Based on the code analysis, the ${isSideBySideRoute(project?.extensibilityRoute) ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`}
+      confidenceScore={runSaysTheSame || signOffBasis.basis !== 'contract' ? project?.recommendationConfidence : undefined}
+      justificationText={signOffJustification}
       isLocked={project?.approvedByArchitect === true}
       currentArchitecture={project?.targetArchitecture}
       currentJustification={project?.architectJustifiedOverride}
@@ -977,7 +994,9 @@ ${responseText.substring(0, 4000)}`;
           signOffCurrent
             ? 'Continue to Transformation'
             : project?.approvedByArchitect
-              ? 'Regenerate and re-confirm to proceed'
+              ? designStale
+                ? 'Regenerate and re-confirm to proceed'
+                : 'Re-confirm to proceed'
               : 'Confirm architecture to proceed'
         }
       />

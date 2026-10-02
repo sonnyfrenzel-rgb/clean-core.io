@@ -406,7 +406,8 @@ export default function AnalyzePage() {
       setSweepActive(true);
       // Every stage message from here on is said when the thing it names has
       // happened or is starting — never on a timer (DESIGN.md §5.4, D.10b).
-      const findingCount = evidenceReport.findings.length;
+      // Findings as the page counts them below — one per pattern and object.
+      const findingCount = findingRows(evidenceReport.findings).length;
       setLoadingMessage(`Evidence scan complete — ${findingCount} ${findingCount === 1 ? 'finding' : 'findings'}.`);
 
       const prompt = buildAnalysisPrompt({ targetDeployment: deployment, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze });
@@ -1433,12 +1434,13 @@ export default function AnalyzePage() {
                       <span className={STATE_CLASSES[scoreState(routeReport.confidenceScore, 'higher-is-better')].text}>{routeReport.confidenceScore}%</span>
                     </span>
                     <span className="cc-text-meta text-cc-ink">
-                      Based on {routeReport.evidenceCounts.totalFindings} findings
+                      {/* The router counts the engine's entries — places in the code, not findings. */}
+                      Based on {routeReport.evidenceCounts.totalFindings} {routeReport.evidenceCounts.totalFindings === 1 ? 'place' : 'places'} in the code
                       {routeReport.evidenceCounts.criticalFindings > 0 && (
                         <span className="text-cc-error ml-1">({routeReport.evidenceCounts.criticalFindings} critical)</span>
                       )}
                     </span>
-                    <span className="cc-text-meta text-cc-ink">{routeReport.evidenceCounts.supportingFindings} findings drive the route</span>
+                    <span className="cc-text-meta text-cc-ink">{routeReport.evidenceCounts.supportingFindings} {routeReport.evidenceCounts.supportingFindings === 1 ? 'place in the code drives' : 'places in the code drive'} the route</span>
                     {routeReport.assumptions.length > 0 && (
                       <CcDisclosure title="Assumptions" count={routeReport.assumptions.length}>
                         <ul className="mt-1 space-y-1 pl-2">

@@ -196,7 +196,7 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
     figures.push({
       key: 'it-level-distribution',
       group: 'findings',
-      label: 'findings per clean core level',
+      label: 'places in the code per clean core level',
       value: it.distribution.slices.map((s) => `${s.grade} ${s.count}`).join(' · '),
       coverage: it.distribution.coverage.sentence,
       provenance: 'imported',

@@ -298,7 +298,8 @@ export function rulesConfirmedLabel(confirmed: number, total: number): string {
 
 /** My workspace — the spoken name of a level count chip. */
 export function levelCountLabel(level: string, count: number): string {
-  return `${count} ${count === 1 ? 'finding' : 'findings'} at level ${level}`;
+  // The level chips count places in the code (the IT rows), not findings.
+  return `${count} ${count === 1 ? 'place in the code' : 'places in the code'} at level ${level}`;
 }
 
 /** My workspace — the "Your turn" title with how many projects wait. */

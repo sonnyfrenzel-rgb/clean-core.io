@@ -10,6 +10,7 @@ import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
 import CcWhyPopover from '@/components/cc/WhyPopover';
 import { CcSeverity } from '@/components/cc/Identifier';
 import { tokenizeAbapLine } from '@/lib/process-map';
+import { findingRows } from '@/lib/findings-view';
 import type { EvidenceFinding } from '@/lib/abap/evidence-model';
 import type { CoverageReport } from '@/lib/abap/coverage';
 import {
@@ -261,8 +262,22 @@ function GeneratedBox({ finding, files }: { finding: EvidenceFinding; files: rea
   );
 }
 
-function ChangeRow({ finding, track, files }: { finding: EvidenceFinding; track: ProjectTrack; files: readonly GeneratedFile[] | null }) {
+const SHOWN_PLACES = 4;
+
+function ChangeRow({
+  finding,
+  lines,
+  track,
+  files,
+}: {
+  finding: EvidenceFinding;
+  /** Every place in the code this finding occurs on, sorted. */
+  lines: readonly number[];
+  track: ProjectTrack;
+  files: readonly GeneratedFile[] | null;
+}) {
   const target = findingTarget(finding, track);
+  const places = lines.length > 0 ? lines : [finding.lineStart];
   return (
     <li
       className="grid grid-cols-1 items-stretch gap-2 border-t border-cc-line pt-4 first:border-t-0 first:pt-0 md:grid-cols-[minmax(0,1.3fr)_32px_minmax(0,1fr)_32px_minmax(0,0.9fr)] md:gap-0"
@@ -274,7 +289,17 @@ function ChangeRow({ finding, track, files }: { finding: EvidenceFinding; track:
         ) : null}
         <div className="mt-2 flex flex-wrap items-center gap-2 cc-text-cell">
           <CcSeverity value={finding.severity} />
-          <Line n={finding.lineStart} />
+          {places.slice(0, SHOWN_PLACES).map((n) => (
+            <Line key={n} n={n} />
+          ))}
+          {places.length > SHOWN_PLACES ? (
+            <span className="cc-text-meta text-cc-ink-muted">+{places.length - SHOWN_PLACES} more</span>
+          ) : null}
+          {places.length > 1 ? (
+            <span className="cc-text-meta text-cc-ink-muted" data-change-places={places.length}>
+              {places.length} places in the code
+            </span>
+          ) : null}
           <span className="text-cc-ink-muted">{calmTitle(finding.title)}</span>
         </div>
       </div>
@@ -311,6 +336,8 @@ export default function TransformationObjectPage({
   const kinds = useMemo(() => planByKind(findings), [findings]);
   const flow = useMemo(() => transformationFlow(findings, track), [findings, track]);
   const ordered = useMemo(() => changeOrder(findings, track), [findings, track]);
+  // The places in the code of each finding, keyed by the occurrence that stands for it.
+  const linesOf = useMemo(() => new Map(findingRows(findings).map((r) => [r.finding.id, r.lines])), [findings]);
   const reasons = useMemo(() => notGeneratedReasons(findings, coverage), [findings, coverage]);
   const cards = useMemo(() => (files ?? []).map(fileCard), [files]);
   const generated = files !== null && files.length > 0;
@@ -320,7 +347,7 @@ export default function TransformationObjectPage({
   const anchors: Array<[string, string, number | undefined]> = [
     ['tf-flow', 'Code to package', undefined],
     ['tf-package', 'Generated package', files === null ? undefined : files.length],
-    ['tf-changes', 'From finding to change', findings.length],
+    ['tf-changes', 'From finding to change', figures.findings],
     ['tf-plan', 'Plan by kind', kinds.length],
     ...extraAnchors.map(([id, label]) => [id, label, undefined] as [string, string, number | undefined]),
   ];
@@ -355,9 +382,12 @@ export default function TransformationObjectPage({
           figure={figures.planned}
           unit={`of ${figures.findings} findings with a target option`}
           sub={
-            figures.unplanned === 0
-              ? '0 left out — every finding has a target option'
-              : `${figures.unplanned} left out — no target option, not guessed at`
+            <span data-transformation-places={figures.places}>
+              {figures.unplanned === 0
+                ? '0 left out — every finding has a target option'
+                : `${figures.unplanned} left out — no target option, not guessed at`}
+              {figures.places !== figures.findings ? <span className="block">{figures.places} places in the code</span> : null}
+            </span>
           }
           viz={
             figures.findings > 0 ? (
@@ -460,7 +490,7 @@ export default function TransformationObjectPage({
           title="From your code to the generated package"
           right={<span className="cc-text-meta font-medium text-cc-ink-muted">band width = number of findings</span>}
         >
-          <TransformationFlowChart flow={flow} files={files === null ? null : cards} findings={figures.findings} />
+          <TransformationFlowChart flow={flow} files={files === null ? null : cards} findings={figures.findings} places={figures.places} />
         </Section>
 
       </div>
@@ -533,7 +563,7 @@ export default function TransformationObjectPage({
               <>
                 <ol className="m-0 flex list-none flex-col gap-4 p-0" data-finding-changes="">
                   {shown.map((f) => (
-                    <ChangeRow key={f.id} finding={f} track={track} files={files} />
+                    <ChangeRow key={f.id} finding={f} lines={linesOf.get(f.id) ?? []} track={track} files={files} />
                   ))}
                 </ol>
                 {ordered.length > FIRST_CHANGES ? (
@@ -595,7 +625,7 @@ export default function TransformationObjectPage({
             </h2>
             <ol className="m-0 list-none px-4 pb-4 pt-2" data-code-status="">
               {[
-                { done: findings.length > 0, text: 'Plan written by the engine', note: `${figures.findings} findings` },
+                { done: findings.length > 0, text: 'Plan written by the engine', note: `${figures.findings} findings${figures.places !== figures.findings ? ` at ${figures.places} places in the code` : ''}` },
                 {
                   done: generated,
                   text: 'Code generated',

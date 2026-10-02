@@ -250,9 +250,9 @@ test.describe('(d) the level distribution A–D', () => {
     ]);
     expect(card.segments.find((s) => s.key === 'Unknown')!.label).toBe('Not determined');
     for (const g of ['A', 'B', 'C', 'D']) expect(card.segments.find((s) => s.key === g)!.label).toBe(`Level ${g}`);
-    expect(card.title).toBe('4 of 5 findings carry a level: A 1, B 0, C 1, D 1, 1 not determined');
+    expect(card.title).toBe('4 of 5 places in the code carry a level: A 1, B 0, C 1, D 1, 1 not determined');
     // The finding that names no object is an exclusion with its reason, not an Unknown.
-    expect(card.coverage).toContain('4 of 5 findings in this run');
+    expect(card.coverage).toContain('4 of 5 places in the code in this run');
     expect(card.coverage).toContain('1 about a statement');
     expect(card.provenance).toBe('imported');
   });
