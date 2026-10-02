@@ -10,6 +10,7 @@ import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } f
 import { normaliseEmail, suppressionId } from './unsubscribe-token';
 import { withoutAccount } from './usage-snapshot-scrub';
 import { CAPABILITY_COLLECTION } from './s4-proxy-capability-store';
+import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject } from './admin-signup-email';
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
@@ -863,6 +864,20 @@ export async function deleteUserDataAndAccount(
     catch (e: any) { if (!isNotFound(e)) erasureErrors.push(`${label}: ${e?.message || e}`); }
   };
 
+  //    The name the signup notification was sent under, read before step 3
+  //    deletes the registration record that holds it. That notification goes
+  //    to the operator's mailbox, so its delivery record matches neither the
+  //    account's uid (before codex code-mail-02 it carried none) nor its
+  //    address; its subject names the account. See step 3c.
+  let signupName: string | null = null;
+  try {
+    const registration = await db.collection('registration_requests').doc(uid).get();
+    const stored = (registration.data() || {}).name;
+    signupName = typeof stored === 'string' && stored.trim() ? stored : null;
+  } catch (e: any) {
+    erasureErrors.push(`email_events: the signup name could not be read: ${e?.message || e}`);
+  }
+
   //    user_secrets uses recursiveDelete to purge the BYOK `providers/*`
   //    subcollection (encrypted Gemini API keys) — a plain delete would leave it.
   await tryDelete('user_secrets', () => db.recursiveDelete(db.collection('user_secrets').doc(uid)));
@@ -984,6 +999,26 @@ export async function deleteUserDataAndAccount(
         await batch.commit();
         snapshot = await q.get();
       }
+    });
+  }
+
+  //     The operator's signup notification about this account, written before
+  //     it carried the account's uid: found by its subject, which is built from
+  //     the name the registration record kept. Only that kind of record is
+  //     touched; another account registered under the identical name loses its
+  //     notification record too, which names nobody but that name.
+  if (signupName) {
+    const q = db.collection('email_events').where('subject', '==', buildAdminSignupSubject(signupName)).limit(400);
+    await tryDelete('email_events', async () => {
+      const snapshot = await q.get();
+      const batch = db.batch();
+      let writes = 0;
+      snapshot.docs.forEach((eventDoc: ErasableDoc) => {
+        if ((eventDoc.data() || {}).kind !== ADMIN_SIGNUP_MAIL_KIND) return;
+        batch.delete(eventDoc.ref);
+        writes += 1;
+      });
+      if (writes > 0) await batch.commit();
     });
   }
 

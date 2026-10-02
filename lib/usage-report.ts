@@ -46,7 +46,18 @@ export interface PeriodMetrics {
   activeAccounts: number;
   runs: number;
   projects: number;
+  /**
+   * Units the window's runs actually spent: runs whose recorded quota decision
+   * is `charged` (`AnalysisRun.metering`). Free starter examples, re-analyses
+   * and unmetered runs spend none, whatever the account's tier or key is now.
+   */
   units: number;
+  /**
+   * Runs in the window created before the decision was recorded (2026-10-02).
+   * Whether they spent a unit is not known, so they are counted here and not
+   * guessed into `units`. Absent on reports built before.
+   */
+  unitsUndetermined?: number;
 }
 
 export interface UsageReport {
@@ -196,11 +207,14 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
     .filter((u) => !isTestAccount(u.email));
 
   const realUids = new Set(cohort.map((u) => u.uid));
-  const byUid = new Map(cohort.map((u) => [u.uid, u]));
 
   // Runs, oldest first, so the first entry per user is their activation moment.
   const runs = runsSnap.docs
-    .map((d) => ({ userId: (d.data().userId || '') as string, at: toDate(d.data().createdAt) }))
+    .map((d) => ({
+      userId: (d.data().userId || '') as string,
+      at: toDate(d.data().createdAt),
+      metering: typeof d.data().metering === 'string' ? (d.data().metering as string) : null,
+    }))
     .filter((r) => r.at && realUids.has(r.userId))
     .sort((a, b) => a.at!.getTime() - b.at!.getTime());
 
@@ -224,8 +238,10 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
     activeAccounts: new Set(runs.filter((r) => inWindow(r.at, from, to)).map((r) => r.userId)).size,
     runs: runs.filter((r) => inWindow(r.at, from, to)).length,
     projects: projects.filter((p) => inWindow(p.at, from, to)).length,
-    // One metered run is one unit; unmetered accounts consume none.
-    units: runs.filter((r) => inWindow(r.at, from, to) && !byUid.get(r.userId)?.unmetered).length,
+    // What each run was charged when it ran — not what the account's current
+    // tier or key would charge it now (codex code-mail-03).
+    units: runs.filter((r) => inWindow(r.at, from, to) && r.metering === 'charged').length,
+    unitsUndetermined: runs.filter((r) => inWindow(r.at, from, to) && r.metering === null).length,
   });
 
   const activatedUids = new Set(firstRunByUser.keys());

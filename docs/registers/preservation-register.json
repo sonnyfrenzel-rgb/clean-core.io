@@ -106,7 +106,8 @@
         "inputManifest",
         "assessmentProfile",
         "profileCoverage",
-        "assessmentSubject"
+        "assessmentSubject",
+        "metering"
       ],
       "unsignedFieldsOnTheRun": [
         "analysis",

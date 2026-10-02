@@ -95,6 +95,14 @@ place in the code that sends to Resend appears as a type.
    and Resend message ID. Calling again with the same run ID skips
    what has already been sent.
 
+   **Budget:** at most `SEED_DAILY_BUDGET` (20) seed mails in any 24 hours, across
+   every run id logged under `scratch/mail-seed-*/send-log.json` on this machine.
+   The seed spends production's Resend allowance; a plan that does not fit is
+   refused before the key is read, and nothing is sent. The full catalogue to
+   one mailbox is 13 mails, so a run to several mailboxes has to be narrowed
+   with `--only`. The count is per machine: a second machine, or a deleted
+   `scratch/`, does not see the first one's sends.
+
    Only individual types: `--only welcome,survey`.
 
 4. **mail-tester.com** (optional): mail-tester rates one message per

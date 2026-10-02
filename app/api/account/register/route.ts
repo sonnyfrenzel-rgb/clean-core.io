@@ -5,7 +5,7 @@ import { escapeHtml } from '@/lib/utils';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { wrapEmailDocument } from '@/lib/email-layout';
 import { buildWelcomeEmail, WELCOME_EMAIL_SUBJECT } from '@/lib/welcome-email';
-import { buildAdminSignupEmail, buildAdminSignupSubject } from '@/lib/admin-signup-email';
+import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupEmail, buildAdminSignupSubject } from '@/lib/admin-signup-email';
 import { CONTACT_EMAIL, TERMS_VERSION, USER_MAIL_FROM } from '@/lib/constants';
 // The shared converter (roadmap 3.0.9): this route kept a private copy that
 // turned `&szlig;` into a space, so the welcome imprint read "Hellerstra e 9".
@@ -164,9 +164,8 @@ export async function POST(request: NextRequest) {
         subject: WELCOME_EMAIL_SUBJECT,
         html: welcomeHtml,
         label: 'welcome',
-        // Only the welcome mail carries the uid: a bounce on this one is a
-        // person who never got started, and that belongs on their row in the
-        // admin console. The admin notification goes to a mailbox we watch.
+        // The uid is what lets a bounce of this mail reach the person's row in
+        // the admin console (`recordEmailEvent` mirrors kind 'welcome' only).
         uid,
       });
       await sendMail(resendApiKey, {
@@ -174,7 +173,12 @@ export async function POST(request: NextRequest) {
         to: CONTACT_EMAIL,
         subject: buildAdminSignupSubject(rawName),
         html: adminHtml,
-        label: 'admin signup notification',
+        label: ADMIN_SIGNUP_MAIL_KIND,
+        // Not for the mirror — the kind keeps it off the person's row — but
+        // for erasure: its subject names the account and its recipient is the
+        // operator, so without the uid no erasure query matched its delivery
+        // record (codex code-mail-02).
+        uid,
       });
     } else {
       console.log('\n======================================================');
