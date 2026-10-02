@@ -3058,3 +3058,34 @@ ENDFORM.`);
     expect(mapOf(RELEASE).overview).toBe('Process with 5 steps and 1 decision.');
   });
 });
+
+test('a CLEANUP passes the exception on: its end is never the statement after ENDTRY (codex code-engine-04)', () => {
+  // The inner TRY catches nothing; its CLEANUP releases the reservation while
+  // the exception goes on to the outer CATCH. Before the fix the cleanup's last
+  // step led to Z_POST — a release followed by a successful posting, which
+  // ABAP never runs.
+  const skeleton = buildProcessSkeleton([
+    'REPORT z_cleanup.',
+    'START-OF-SELECTION.',
+    '  TRY.',
+    '      TRY.',
+    "          CALL FUNCTION 'Z_RESERVE'.",
+    '        CLEANUP.',
+    "          CALL FUNCTION 'Z_RELEASE'.",
+    '      ENDTRY.',
+    "      CALL FUNCTION 'Z_POST'.",
+    '    CATCH cx_root.',
+    "      CALL FUNCTION 'Z_LOG'.",
+    '  ENDTRY.',
+  ].join('\n'));
+  const byLabel = (label: string) => skeleton.nodes.find((n) => n.label === label && n.kind !== 'error-boundary')!;
+  const release = byLabel('Z_RELEASE');
+  const post = byLabel('Z_POST');
+  const after = skeleton.edges.filter((e) => e.from === release.id).map((e) => skeleton.nodes.find((n) => n.id === e.to)!);
+  expect(after.map((n) => n.id)).not.toContain(post.id);
+  expect(after.map((n) => [n.kind, n.anchor?.lineStart])).toEqual([['end-error', 6]]);
+  // A CATCH still joins the flow after its ENDTRY.
+  const log = byLabel('Z_LOG');
+  const afterLog = skeleton.edges.filter((e) => e.from === log.id).map((e) => skeleton.nodes.find((n) => n.id === e.to)!.kind);
+  expect(afterLog).toEqual(['end']);
+});
