@@ -15,8 +15,8 @@ import firebaseConfig from '../firebase-config.json';
  * S with the order of §2.9, and "Keyboard shortcuts" in the Help menu.
  *
  * Every test here opens the real workspace of a seeded project, signed in as
- * an administrator with the preview switch on — the only account that has the
- * page today (roadmap 3.0.1 opens it). Needs the dev server and the emulators.
+ * its owner (every account has the page since roadmap 3.0.1). Needs the dev
+ * server and the emulators.
  */
 
 const firebaseApp = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
@@ -90,7 +90,7 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await adminSetCustomClaim(cred.user.uid, { admin: true });
     await adminSetDoc('users', cred.user.uid, {
       firstName: 'Access', lastName: 'Ible', email: ADMIN,
-      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
+      tier: 'pilot', status: 'approved', isAdmin: true,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
     await adminSetDoc('projects', PROJECT_ID, {

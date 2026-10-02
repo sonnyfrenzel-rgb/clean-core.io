@@ -16,8 +16,6 @@ import {
   INVITATION_SCOPE_SENTENCE_RECIPIENT,
   invitationLinkPath,
 } from '@/lib/invitations';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { workspaceShellEnabled } from '@/lib/workspace-shell';
 
 /**
  * The page an invitation link opens — roadmap 5.1 and 5.3.
@@ -41,7 +39,6 @@ export default function InvitationPage() {
   const here = invitationLinkPath(projectId, invitationId);
 
   const [user, setUser] = useState<User | null>(null);
-  const { profile } = useUserProfile();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -111,9 +108,9 @@ export default function InvitationPage() {
     }
   }, [user, projectId, invitationId]);
 
-  // A shared project opens where its owner reads it: the 3.0 workspace for an
-  // account with the new interface on, the Analyze stage for everybody else.
-  const openHref = workspaceShellEnabled(profile) ? `/project/${projectId}` : `/project/${projectId}/analyze`;
+  // A shared project opens where its owner reads it: in the workspace, like
+  // every project (roadmap 3.0.1).
+  const openHref = `/project/${projectId}`;
 
   // One card in the app's own language (cc library, 22/800 head, §1.2): what
   // the link is, whose it is, until when, and the one action. No marketing

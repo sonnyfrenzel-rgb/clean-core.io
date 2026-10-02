@@ -404,7 +404,7 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     await adminSetCustomClaim(uidUi, { admin: true });
     await adminDb.doc(`users/${uidUi}`).set({
       firstName: 'View', lastName: 'Switch', email: EMAIL_UI,
-      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
+      tier: 'pilot', status: 'approved', isAdmin: true,
       termsVersionAccepted: TERMS_VERSION, mfaEnabled: false,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });

@@ -4,10 +4,9 @@ import React, { useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { useUserProfile } from '@/hooks/useUserProfile';
 import { PHASES, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
 import { stageBackLink, stageBackPlace } from '@/lib/workspace-back-href';
-import { workspaceShellEnabled } from '@/lib/workspace-shell';
+import { DEMO_ROUTE } from '@/lib/demo-marks';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
 import { StageToolBar } from '@/components/workspace/ToolBar';
 
@@ -36,10 +35,8 @@ import { StageToolBar } from '@/components/workspace/ToolBar';
  * Above the title sits **"Back to workspace"** — a link, not a button, 13 px /
  * 600 in `--cc-ink-muted`. It returns to the view and the layer the stage was
  * opened from when the address carries them (`?view=`, `?from=`), and to the
- * workspace's default view when it does not. The object-page workspace exists
- * only behind the admin switch until 3.0 (`lib/workspace-shell.ts`); for every
- * other account the workspace is still `/dashboard`, and the link goes there —
- * a link into a 404 would be worse than no link.
+ * workspace's default view when it does not. Every account has the workspace
+ * since roadmap 3.0.1 (ADR-061), so the link leads there for every reader.
  *
  * The link is navigation, and navigation does not print (§7.1): it carries
  * `cc-no-print`, so no stage has to hide it on paper by itself — on paper it
@@ -94,9 +91,8 @@ export default function StageHeader({
    * The seven tools under the way back (ADR-060, Sonny 02.10.2026): the
    * phases from `workflowSteps` (or the demo's rail), the stage the reader is
    * on (defaults to `stage`), and the base of the links (`/demo` for the demo;
-   * the project otherwise). Drawn for a workspace account and in the demo —
-   * an account without the workspace still has the stepper (`StageProgress`),
-   * and two navigations over one page would be one too many.
+   * the project otherwise). Drawn for every account and in the demo; it is the
+   * one way across — the old seven-circle stepper went with roadmap 3.0.1.
    */
   tools?: { steps: RailStep[]; current?: PhaseKey; base?: string };
   /** The lead sentence. */
@@ -109,40 +105,32 @@ export default function StageHeader({
   // back to; it renders the header without the link.
   const params = useParams();
   const projectId = typeof params?.projectId === 'string' ? params.projectId : '';
-  const { profile, loading: profileLoading } = useUserProfile();
-  const shell = workspaceShellEnabled(profile);
 
   // Read from the address in the browser only: the query is not part of the
   // server render (`''` there), and a statically generated demo page must not
   // depend on it — `useSearchParams` would force it to render on demand.
   const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
 
-  // Only once the profile is read: before that `shell` is false for every
-  // account, and a click in that moment would send a workspace user to the
-  // dashboard (QA review of 472315d93455, f8d5367e0a00). The place is kept, so
-  // nothing below moves when the link appears.
-  const back = stageBackLink({ projectId, profileLoading, shell, search });
+  // The demo's stages hand their tools the `/demo` base; their way back is
+  // the demo workspace (owner 02.10.2026), by the same rule as a project's.
+  const demo = tools?.base === DEMO_ROUTE;
+  const back = stageBackLink({ projectId, search, demo });
   // Where the link leads, in words — the view and the layer the stage was
-  // opened from (mockup s8). Only for the workspace: the dashboard has neither.
-  const place = back.kind === 'link' && back.to === 'workspace' ? stageBackPlace(search) : null;
-  const toolEyebrow = shell && projectName ? projectName : null;
+  // opened from (mockup s8).
+  const place = back.kind === 'link' ? stageBackPlace(search) : null;
+  const toolEyebrow = projectName || null;
   const toolCurrent = tools?.current ?? stage;
-  const toolBase = tools?.base ?? (shell && !profileLoading && projectId ? `/project/${projectId}` : null);
+  const toolBase = tools?.base ?? (projectId ? `/project/${projectId}` : null);
 
   return (
     <header
       data-stage-header={stage ?? ''}
       className={`mt-6 mb-8 ${centred ? 'text-center' : ''}`}
     >
-      {back.kind === 'pending' && (
-        <span aria-hidden="true" className={`${BACK_LINK_CLASS} cc-no-print mb-3 invisible`}>
-          <ArrowLeft size={16} aria-hidden="true" /> Back to workspace
-        </span>
-      )}
       {back.kind === 'link' && (
         <Link
           href={back.href}
-          data-stage-back={back.to}
+          data-stage-back="workspace"
           className={`${BACK_LINK_CLASS} cc-no-print mb-3`}
         >
           <ArrowLeft size={16} aria-hidden="true" /> Back to workspace

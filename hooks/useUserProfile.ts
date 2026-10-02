@@ -41,15 +41,6 @@ export interface UserProfile {
    */
   modelStages?: Partial<Record<import('@/lib/model-stages').ModelStage, boolean>>;
   /**
-   * The admin-only switch the 3.0 interface grows behind (roadmap 1.4).
-   * Server-written, like `modelStages`: only `POST /api/workspace-shell` puts a
-   * value in here, `userClientUpdateKeys()` in `firestore.rules` keeps the
-   * browser out of it, and screens only read it — through
-   * `workspaceShellEnabled`, never directly, because being on is the flag
-   * *and* still being an administrator.
-   */
-  workspaceShell?: boolean;
-  /**
    * Consent to community mail — surveys and community updates (owner decision
    * 30.09.2026). Server-written, like `modelStages`: only
    * `POST /api/community-mail` and `POST /api/unsubscribe` put a value in here,

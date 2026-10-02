@@ -257,14 +257,13 @@ test('the settings screen offers one switch per stage and the click sticks', asy
   await signIn(page);
   await page.goto('/settings', { waitUntil: 'domcontentloaded' });
 
-  // One switch per stage this account can use. Roadmap 2.4's `naming` names a
-  // process map that only the workspace preview shows, so an account without
-  // the preview — this one — is offered the five it had, and not a sixth for a
-  // screen it cannot open.
+  // One switch per stage. Since roadmap 3.0.1 every account has the workspace,
+  // so this ordinary account is offered the workspace's own stages too — the
+  // business names of 2.4 among them — and nothing it cannot use.
   const rows = page.locator('[data-model-stage]');
-  await expect(rows).toHaveCount(offeredModelStages(false).length, { timeout: 60000 });
-  await expect(page.locator('[data-model-stage="naming"]'), 'a preview stage was offered outside the preview')
-    .toHaveCount(0);
+  await expect(rows).toHaveCount(offeredModelStages().length, { timeout: 60000 });
+  await expect(page.locator('[data-model-stage="naming"]'), 'the workspace stage is offered to every account')
+    .toHaveCount(1);
 
   const documentation = page.locator('[data-model-stage="documentation"]');
   await expect(documentation).toHaveAttribute('data-model-stage-on', 'true');

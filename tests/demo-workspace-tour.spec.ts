@@ -15,7 +15,9 @@ import { signInViaLanding } from './helpers/sign-in';
  * screen does what the model says: one station at a time, at its place, "3 of
  * 12" as text, the invitation after every third and at the end with the strip's
  * link stepping back meanwhile, progress kept in this browser, "Show tips
- * again" in the help menu — and that a community account still gets a 404.
+ * again" in the help menu — and, since roadmap 3.0.1 (ADR-061), that a
+ * community account gets all of it too, while a visitor without an account is
+ * sent through sign-in.
  *
  * Needs the dev server and the emulators, like every signed-in spec.
  */
@@ -60,7 +62,7 @@ test.beforeAll(async () => {
   const admin = await createUserWithEmailAndPassword(auth, ADMIN, PASSWORD);
   await adminSetCustomClaim(admin.user.uid, { admin: true });
   await adminSetDoc('users', admin.user.uid, {
-    ...profile, firstName: 'Demo', lastName: 'Tour', email: ADMIN, isAdmin: true, workspaceShell: true,
+    ...profile, firstName: 'Demo', lastName: 'Tour', email: ADMIN, isAdmin: true,
   });
   const community = await createUserWithEmailAndPassword(auth, COMMUNITY, PASSWORD);
   await adminSetDoc('users', community.user.uid, {
@@ -68,25 +70,31 @@ test.beforeAll(async () => {
   });
 });
 
-test('a community account gets the 404 the workspace gives it', async ({ page }) => {
+test('a community account opens the demo workspace and its tour, and has "Show tips again" (3.0.1)', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await signIn(page, COMMUNITY);
-  await page.goto('/demo/workspace', { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(4000);
-  await expect(page.locator('[data-demo-workspace]')).toHaveCount(0);
-  // The workspace's 404 is the root `app/not-found.tsx`: `notFound()` in the
-  // client shell bubbles past the `(app)` layout, so this page carries no
-  // account menu — exactly as `/project/{id}` for the same account.
-  await expect(page.locator('h1')).toHaveText('404');
-  await expect(page.locator('[data-account-menu]')).toHaveCount(0);
-  // And no help-menu entry for tips that do not exist for it, where the menu is.
+  await openDemo(page);
+  await expect(page.locator('[data-demo-workspace]')).toHaveCount(1);
+  await expect(page.locator('[data-workspace-title]')).toContainText(DEMO_TITLE_PREFIX.trim());
+  // The tour starts for it as for anybody: one stop on screen.
+  await page.evaluate((key) => window.localStorage.removeItem(key), TOUR_STORAGE_KEY);
+  await openDemo(page);
+  await onlyStop(page);
+  // And the help-menu entry for the tips is there, where the menu is.
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
   // The initials say the shell holds this account's profile, so the menu is
   // the one it gets — not the empty shell before the profile arrives.
   await expect(page.locator('[data-account-menu]')).toHaveText('DC', { timeout: 90000 });
   await page.click('[data-account-menu]');
   await expect(page.locator('#account-menu-panel')).toBeVisible();
-  await expect(page.locator('[data-show-tips-again]')).toHaveCount(0);
+  await expect(page.locator('[data-show-tips-again]')).toHaveCount(1);
+});
+
+test('a visitor without an account is sent through sign-in and back, not to a 404', async ({ page }) => {
+  test.setTimeout(120 * 1000);
+  await page.goto('/demo/workspace', { waitUntil: 'domcontentloaded' });
+  await page.waitForURL(/[?&]auth=signin&next=%2Fdemo%2Fworkspace/, { timeout: 60000 });
+  await expect(page.locator('[data-demo-workspace]')).toHaveCount(0);
 });
 
 test('marked as the demo, unsigned, in all three views', async ({ page }) => {

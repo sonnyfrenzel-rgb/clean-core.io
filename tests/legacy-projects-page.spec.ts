@@ -68,7 +68,7 @@ test.describe('historical project forms, opened in the workspace', () => {
     await adminSetCustomClaim(owner, { admin: true });
     await db.doc(`users/${owner}`).set({
       firstName: 'Legacy', lastName: 'Admin', email: ADMIN,
-      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
+      tier: 'pilot', status: 'approved', isAdmin: true,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
 

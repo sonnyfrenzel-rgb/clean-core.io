@@ -394,7 +394,7 @@ test.describe('the first look on screen', () => {
     await adminSetCustomClaim(cred.user.uid, { admin: true });
     await adminSetDoc('users', cred.user.uid, {
       firstName: 'First', lastName: 'Look', email: ADMIN,
-      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
+      tier: 'pilot', status: 'approved', isAdmin: true,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
 

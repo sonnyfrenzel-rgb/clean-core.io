@@ -35,13 +35,12 @@ const COUNT_WORDS: Record<number, string> = { 5: 'Five', 6: 'Six', 7: 'Seven' };
  * extensibility route and the Clean Core Score are computed by the deterministic
  * engine and the run is signed either way.
  *
- * `showPreviewStages` adds the stages of the new workspace (roadmap 2.4's
- * business names). The settings page passes it only for an account whose
- * workspace preview is on; everybody else sees the five rows they saw before.
+ * Every stage is offered to every account, the workspace's own (roadmap 2.4's
+ * business names, 17.10's business sentences) included (roadmap 3.0.1).
  */
-export default function ModelStagesCard({ showPreviewStages = false }: { showPreviewStages?: boolean }) {
+export default function ModelStagesCard() {
   const model = useModelAvailability();
-  const stages = offeredModelStages(showPreviewStages);
+  const stages = offeredModelStages();
   const [saving, setSaving] = useState<ModelStage | null>(null);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState<ModelStage | null>(null);

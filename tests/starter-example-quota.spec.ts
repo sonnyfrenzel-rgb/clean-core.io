@@ -530,6 +530,7 @@ test.describe('the screen says what the click costs, before the click', () => {
 
     // A free one goes straight through, so the warning is not simply a broken card.
     await panel.locator('[data-example-start="Z_INVOICE_EXTRACTOR"]').click();
-    await page.waitForURL(/\/project\/[^/]+\/analyze/, { timeout: 45000 });
+    // Into the workspace, with its first look — every project opens there (3.0.1).
+    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 45000 });
   });
 });

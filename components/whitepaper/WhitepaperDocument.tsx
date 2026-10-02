@@ -48,7 +48,7 @@ import {
 } from '@/lib/abap/public-cloud-fit';
 import { STARTER_EXAMPLES } from '@/lib/starter-examples';
 import { TRUST_CLAIMS, SECURITY_MODEL_URL, type TrustClaim } from '@/lib/trust-claims';
-import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_ROUTE, DEMO_SOURCE_FILE } from '@/lib/demo-marks';
+import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_SOURCE_FILE, DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 import { TOUR_STATIONS } from '@/lib/demo-tour';
 import { landingHero, landingProcess } from '@/lib/landing-process';
 import { landingStages, STAGE_WORKER_LABEL } from '@/lib/landing-stages';
@@ -205,7 +205,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
   const chain = FROM_LANDING.chain.map((c) => ({ ...c, d: c.d.replace('{line}', String(plantRule.line)) }));
   const startLead = FROM_LANDING.startLead.replace('{examples}', String(STARTER_EXAMPLES.length));
 
-  const demoHref = `/?auth=signin&next=${DEMO_ROUTE}`;
+  const demoHref = `/?auth=signin&next=${DEMO_WORKSPACE_ROUTE}`;
 
   return (
     <div className={`lp3 wp3 min-h-screen bg-cc-page text-cc-ink${print ? ' print' : ''}`} data-whitepaper={edition}>

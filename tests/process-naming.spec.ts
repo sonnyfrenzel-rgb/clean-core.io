@@ -125,13 +125,17 @@ function recordFor(ctx: NamingContext, validated: ValidatedNaming, digest = ctx.
  * The stage
  * ================================================================== */
 
-test.describe('naming is a model stage of its own, offered only with the workspace preview', () => {
-  test('the server knows the stage, and the settings screen offers it only where the map exists', () => {
+test.describe('naming is a model stage of its own, offered to every account', () => {
+  test('the server knows the stage, and the settings screen offers it wherever the map exists', () => {
     expect(isModelStage('naming')).toBe(true);
     expect(MODEL_STAGES).toContain('naming');
-    expect(offeredModelStages(true)).toContain('naming');
-    // Everyone else sees the five switches they had before 2.4.
-    expect(offeredModelStages(false)).toEqual(['analyze', 'design', 'transformation', 'documentation', 'testing']);
+    // Since roadmap 3.0.1 every account has the workspace and its map, so every
+    // account is offered the switch for the stage that names it — and the five
+    // older stages are still there, in their order.
+    expect(offeredModelStages()).toContain('naming');
+    expect(offeredModelStages().filter((s) => s !== 'naming' && s !== 'statements')).toEqual([
+      'analyze', 'design', 'transformation', 'documentation', 'testing',
+    ]);
   });
 });
 

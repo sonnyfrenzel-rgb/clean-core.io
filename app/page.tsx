@@ -53,7 +53,7 @@ import { PROVENANCE, type ProvenanceValue } from '@/lib/provenance';
 import { PUBLIC_CLOUD_FIT_BUCKETS, PUBLIC_CLOUD_FIT_BUCKET_LABELS, PUBLIC_CLOUD_FIT_BUCKET_MEANINGS } from '@/lib/abap/public-cloud-fit';
 import { STARTER_EXAMPLES } from '@/lib/starter-examples';
 import { TRUST_CLAIMS, TRUST_PLEDGE, SECURITY_MODEL_URL, type TrustClaim } from '@/lib/trust-claims';
-import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_ROUTE, DEMO_SOURCE_FILE, DEMO_STRIP_NOTICE, DEMO_INVITATION } from '@/lib/demo-marks';
+import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_SOURCE_FILE, DEMO_STRIP_NOTICE, DEMO_INVITATION, DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 import { TOUR_STATIONS, TOUR_INVITATION_TITLE, TOUR_INVITATION_ACTION, tourPositionLabel } from '@/lib/demo-tour';
 import { landingHero, landingProcess } from '@/lib/landing-process';
 import { heroSnippets } from '@/lib/landing-hero';
@@ -496,7 +496,7 @@ export default function Home() {
                 points to the line it came from; what a model suggested is marked; what could not be determined is said.
               </p>
               <div className="cta-row">
-                <AuthLink to={DEMO_ROUTE} testId="hero-demo">
+                <AuthLink to={DEMO_WORKSPACE_ROUTE} testId="hero-demo">
                   See the whole chain in the demo <ArrowRight size={18} aria-hidden="true" />
                 </AuthLink>
                 <Link href="#start" className={publicButton('secondary')}>
@@ -1120,7 +1120,7 @@ export default function Home() {
                   </li>
                 </ul>
                 <div className="dcta">
-                  <AuthLink to={DEMO_ROUTE}>
+                  <AuthLink to={DEMO_WORKSPACE_ROUTE}>
                     Explore the demo <ArrowRight size={18} aria-hidden="true" />
                   </AuthLink>
                   <p>Needs a free account. The demo is the first row in My workspace.</p>
@@ -1145,7 +1145,7 @@ export default function Home() {
           </div>
           <StageTimeline stages={stages} />
           <div className="mx-auto mt-10 max-w-7xl px-4 text-center sm:px-6">
-            <AuthLink to={DEMO_ROUTE} testId="tools-demo">
+            <AuthLink to={DEMO_WORKSPACE_ROUTE} testId="tools-demo">
               Take the tour in the demo <ArrowRight size={18} aria-hidden="true" />
             </AuthLink>
           </div>
@@ -1368,7 +1368,7 @@ export default function Home() {
           <div className="foot-top">
             <p>Read the code before you decide.</p>
             <div className="cta-row">
-              <AuthLink to={DEMO_ROUTE}>
+              <AuthLink to={DEMO_WORKSPACE_ROUTE}>
                 Explore the demo <ArrowRight size={18} aria-hidden="true" />
               </AuthLink>
               <Link href="/whitepaper" className={publicButton('ghost')}>

@@ -49,8 +49,9 @@ export const DEMO_ASSISTANT_NOTICE =
   'A glossary term is answered from its entry; any other question, ask on your dashboard or in a project of your own.';
 
 /**
- * The same demo in the 3.0 workspace, with its tour (roadmap 3.0.7). Behind the
- * workspace switch until 3.0, so it is linked only from screens behind it.
+ * The same demo in the 3.0 workspace, with its tour (roadmap 3.0.7). Every
+ * signed-in account's since roadmap 3.0.1, and where the public pages' "Explore
+ * the demo" leads, through sign-in (`lib/return-path.ts` allows it).
  */
 export const DEMO_WORKSPACE_ROUTE = '/demo/workspace';
 

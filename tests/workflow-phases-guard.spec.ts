@@ -6,6 +6,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { PHASES, workflowSteps, workflowSummary } from '../lib/workflow-steps';
+import { workspaceTools } from '../lib/workspace-model';
 import type { Project, TestCase } from '../lib/types';
 // The current Terms version, not a literal: seeding a stale one makes the
 // account fail `requireCurrentTerms` on every protected route, so a version
@@ -133,48 +134,48 @@ test.describe('every view reads the contract', () => {
   const PAGES = ['analyze', 'design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'];
 
   test('no stepper is driven by position any more', () => {
-    const stepper = read('components/Stepper.tsx');
-    expect(stepper).not.toMatch(/stepNum\s*<\s*currentStep/);
-    expect(stepper).not.toContain("name: 'Upload'");
+    // The seven-circle stepper itself went with roadmap 3.0.1 (ADR-061); the
+    // tools bar reads `workflowSteps` and nothing positional.
+    expect(fs.existsSync(path.resolve(process.cwd(), 'components/Stepper.tsx')), 'the old stepper came back').toBe(false);
+    const bar = read('components/workspace/ToolBar.tsx');
+    expect(bar).not.toMatch(/currentStep|stepNum/);
+    expect(bar).not.toContain("name: 'Upload'");
     for (const p of PAGES) {
       expect(read(stage(p)), `${p} still passes a step number`).not.toContain('currentStep=');
     }
   });
 
-  test('every stepper has its rail beside it — in the loaded page, not only the loading state', () => {
-    // Four pages rendered the rail in their early `loading` return and nowhere
-    // else, so it disappeared as soon as there was something to report. Since
-    // the stages became tools of the workspace (ADR-050, mockup s8) both are
-    // drawn by one component, `StageProgress`, for accounts without the
-    // workspace — so the pair cannot come apart, and every return of every
-    // stage renders it.
-    const progress = read('components/StageProgress.tsx');
-    expect((progress.match(/<Stepper\s/g) || []).length).toBe(1);
-    expect((progress.match(/<VerificationRail\s/g) || []).length).toBe(1);
+  test('every stage header carries the tools bar — in the loaded page, not only the loading state', () => {
+    // Four pages once rendered the rail in their early `loading` return and
+    // nowhere else, so it disappeared as soon as there was something to
+    // report. The stepper and the rail went with roadmap 3.0.1 (ADR-061); the
+    // way across and its marks are the tools bar under every stage header now
+    // (ADR-060), so every return of every stage hands its header the phases.
     for (const p of PAGES) {
       const src = read(stage(p));
-      expect(src, `${p} draws a stepper of its own`).not.toMatch(/<Stepper\s|<VerificationRail\s/);
-      const frames = (src.match(/<StageProgress\s/g) || []).length;
+      expect(src, `${p} draws a stepper of its own`).not.toMatch(/<Stepper\s|<VerificationRail\s|<StageProgress\s/);
       const headers = (src.match(/<StageHeader\s/g) || []).length;
-      expect(frames, `${p} renders no stage progress`).toBeGreaterThan(0);
-      expect(frames, `${p}: ${frames} progress frame(s), ${headers} header(s)`).toBe(headers);
+      const withTools = (src.match(/<StageHeader[^>]*?\btools=\{\{\s*steps:\s*phases/g) || []).length;
+      expect(headers, `${p} renders no stage header`).toBeGreaterThan(0);
+      expect(withTools, `${p}: ${withTools} of ${headers} header(s) carry the tools bar`).toBe(headers);
     }
   });
 
   test('the TCO page is phase 6, not a borrowed step 1', () => {
     const src = read(stage('tco'));
-    expect(src).toContain('current="tco"');
+    // The tools bar under its header names it (the stepper's `current="tco"`
+    // went with roadmap 3.0.1).
+    expect(src).toContain("tools={{ steps: phases, current: 'tco' }}");
     expect(src).not.toMatch(/currentStep=\{1\}/);
   });
 
-  test('the forward buttons follow the canonical order', () => {
-    const order = PHASES.map((p) => p.key);
-    for (let i = 2; i < order.length - 1; i++) {
-      // transformation → documentation → testing → tco → delivery
-      const src = read(stage(order[i]));
-      expect(src, `${order[i]} should proceed to ${order[i + 1]}`).toContain(
-        `proceedPath={\`/project/\${projectId}/${order[i + 1]}\`}`,
-      );
+  test('the way across follows the canonical order, and no stage keeps a forward button of its own', () => {
+    // The forward buttons ("Proceed to …") were the linear flow of accounts
+    // without the workspace; they went with roadmap 3.0.1 (ADR-061). The order
+    // they held is the tools bar's now, taken from the phase contract.
+    expect(workspaceTools(null).map((t) => t.key)).toEqual(PHASES.map((p) => p.key));
+    for (const p of PAGES) {
+      expect(read(stage(p)), `${p} still hands a forward path to its footer`).not.toContain('proceedPath=');
     }
   });
 
@@ -283,16 +284,21 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
     await expect(row).not.toContainText('Completed');
     await expect(row).not.toContainText('100%');
 
-    // Stepper, on a stage page — and Economics is the sixth circle.
+    // The tools bar, on a stage page (it replaced the stepper, roadmap 3.0.1) —
+    // and Economics is the sixth tool. A test draft is started, never done:
+    // `partial` in the phase state; the bar marks it "used" (ADR-060 amended),
+    // because the bar says use, not proof.
     await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
-    const stepper = page.locator('nav[aria-label="Workflow phases"]');
-    await stepper.waitFor({ timeout: 30000 });
-    const circles = stepper.locator('[data-phase]');
-    await expect(circles).toHaveCount(7);
-    await expect(circles.nth(5)).toHaveAttribute('data-phase', 'tco');
-    const stepTesting = stepper.locator('[data-phase="testing"]');
-    await expect(stepTesting).toHaveAttribute('data-phase-state', 'partial');
-    await expect(stepTesting).toHaveAttribute('aria-label', /Test draft/);
+    const bar = page.locator('[data-stage-tools="open"]');
+    await bar.waitFor({ timeout: 30000 });
+    const tools = bar.locator('a[data-workspace-tool]');
+    await expect(tools).toHaveCount(7);
+    await expect(tools.nth(5)).toHaveAttribute('data-workspace-tool', 'tco');
+    const toolTesting = bar.locator('a[data-workspace-tool="testing"]');
+    // The bar stands before the project is read (every phase empty); wait for the reading.
+    await expect(toolTesting).toHaveAttribute('data-phase-state', 'partial', { timeout: 60000 });
+    await expect(toolTesting).toHaveAttribute('data-workspace-tool-mark-meaning', 'used');
+    await expect(toolTesting, 'the bar calls a test draft proven').not.toHaveAccessibleName(/prove|proof|verif/i);
 
     // Delivery
     await page.goto(`/project/${PROJECT_ID}/delivery`, { waitUntil: 'domcontentloaded' });
@@ -304,12 +310,12 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
     const body = page.locator('body');
     await expect(body).not.toContainText('lifecycle is complete');
     await expect(body).not.toContainText('Ready to hand over');
-    await expect(page.locator('nav[aria-label="Workflow phases"] [data-phase="testing"]'))
-      .toHaveAttribute('data-phase-state', 'partial');
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="testing"]'))
+      .toHaveAttribute('data-phase-state', 'partial', { timeout: 60000 });
 
-    // Economics shows itself as phase 6.
+    // Economics shows itself as the current tool on its own page.
     await page.goto(`/project/${PROJECT_ID}/tco`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('nav[aria-label="Workflow phases"] [data-phase="tco"]'))
-      .toHaveAttribute('aria-current', 'step', { timeout: 30000 });
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="tco"]'))
+      .toHaveAttribute('aria-current', 'page', { timeout: 30000 });
   });
 });

@@ -11,9 +11,11 @@ import { DEMO_PROJECT_TITLE, DEMO_STRIP_NOTICE } from '@/lib/demo-marks';
  * layers of the new workspace, with the tour. Built on the server from the
  * example file by the engine of this release; identical for every account.
  *
- * Behind the same switch as `/project/{id}` until 3.0 — the client component
- * answers 404 to an account without it, exactly as the workspace does. The
- * route is a static segment, so it wins over `/demo/[stage]`.
+ * For every signed-in account since roadmap 3.0.1, like `/project/{id}`; the
+ * client component answers 404 without an account, exactly as the workspace
+ * does, and the landing's "Explore the demo" leads here through sign-in
+ * (`lib/return-path.ts`). The route is a static segment, so it wins over
+ * `/demo/[stage]`.
  */
 export const revalidate = 300;
 

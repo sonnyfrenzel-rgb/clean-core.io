@@ -826,9 +826,9 @@ export function notDetermined(project: Project | null): NotDetermined {
  * — the toolbar is the eighth reader of that contract, not a new copy of it. A
  * tool opens a stage as its own page. Since ADR-060 (Sonny 02.10.2026) each
  * tool carries a small mark for whether it has been used in this project, read
- * from the phase state the stepper reads — `state` straight from
- * `workflowSteps`, never from a client-set status — so the bar and the stepper
- * cannot disagree about whether anything is on record.
+ * from the phase contract — `state` straight from `workflowSteps`, never from
+ * a client-set status — so the workspace's bar and every stage's bar cannot
+ * disagree about whether anything is on record.
  */
 export function workspaceTools(
   project: Project | null,
@@ -848,7 +848,7 @@ export function workspaceTools(
  *   - nothing on record: no mark.
  *
  * How strong the record is (proven, demonstrated against mocks, model draft)
- * stays with the stepper and the status chips; the bar does not encode it, and
+ * stays with the status line and the status chips; the bar does not encode it, and
  * its words never say "proven" or "verified". `words` is the catalogue key a
  * screen reader hears instead of the colour, and the bar's legend says the same.
  */

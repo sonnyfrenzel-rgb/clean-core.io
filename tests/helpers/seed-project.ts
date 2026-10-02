@@ -11,9 +11,9 @@
  * Three options, all off by default so the stage-title spec seeds exactly what it
  * always seeded:
  *
- *   - `admin` — `isAdmin`, the `admin` custom claim and the workspace switch
- *     (`workspaceShell`), which is what `/project/[id]` and `/admin/workspace`
- *     need today (`lib/workspace-shell.ts`: flag *and* administrator).
+ *   - `admin` — `isAdmin` and the `admin` custom claim, for the admin console.
+ *     The workspace (`/project/[id]`) needs neither since roadmap 3.0.1
+ *     (ADR-061): every signed-in account opens its projects there.
  *   - `acceptTerms` — the account accepted the current `TERMS_VERSION`, stored
  *     the way `recordConsent` stores it. Without it every signed-in page carries
  *     the Terms re-accept card, and a measurement of the page measures the card.
@@ -160,7 +160,7 @@ export async function seedStageProject(options: SeedOptions): Promise<SeededProj
     firstName: 'Stage', lastName: 'Style', email,
     tier: 'pilot', status: 'approved',
     transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
-    ...(admin ? { isAdmin: true, workspaceShell: true } : {}),
+    ...(admin ? { isAdmin: true } : {}),
     ...consent,
   });
 

@@ -169,8 +169,15 @@ test.describe('own code: choose, check, start', () => {
     const writes = watchWrites(page);
     await page.click('[data-own-code-start]');
 
-    await page.waitForURL(/\/project\/[^/]+\/analyze/, { timeout: 90000 });
-    const projectId = /\/project\/([^/]+)\/analyze/.exec(page.url())![1];
+    // The workspace first, with the first look — never the Analyze tool (owner
+    // 02.10.2026). The run starts from its Next step, in the same session, so
+    // Analyze takes the import's handoff and asks only the operating model.
+    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });
+    expect(page.url()).not.toContain('/analyze');
+    const projectId = new URL(page.url()).pathname.split('/')[2];
+    await expect(page.locator('[data-first-look]')).toBeVisible({ timeout: 60000 });
+    await page.locator(`[data-next-step] a[href*="/project/${projectId}/analyze"]`).first().click({ timeout: 60000 });
+    await page.waitForURL(new RegExp(`/project/${projectId}/analyze`), { timeout: 60000 });
     await expect(page.getByRole('dialog')).toContainText('Confirm Target Operating Model', { timeout: 60000 });
 
     // The control for the test above: the watcher does see the one write.
@@ -208,7 +215,7 @@ test.describe('own code: after the run, the workspace', () => {
     await adminSetCustomClaim(cred.user.uid, { admin: true });
     await adminSetDoc('users', cred.user.uid, {
       firstName: 'Own', lastName: 'Workspace', email: EMAIL,
-      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true, activatedAt: new Date(),
+      tier: 'pilot', status: 'approved', isAdmin: true, activatedAt: new Date(),
       termsVersionAccepted: TERMS_VERSION, mfaEnabled: false,
       transformationsUsed: 0, transformationsLimit: 5, createdAt: new Date(),
       // No model on any machine: the run is the deterministic one, signed.
@@ -231,8 +238,15 @@ test.describe('own code: after the run, the workspace', () => {
     await expect(page.locator('[data-own-code-start]')).toBeEnabled({ timeout: 30000 });
     await page.click('[data-own-code-start]');
 
-    await page.waitForURL(/\/project\/[^/]+\/analyze/, { timeout: 90000 });
-    const projectId = /\/project\/([^/?]+)\/analyze/.exec(page.url())![1];
+    // The workspace first, with the first look — never the Analyze tool (owner
+    // 02.10.2026). The run starts from its Next step, in the same session, so
+    // Analyze takes the import's handoff and asks only the operating model.
+    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });
+    expect(page.url()).not.toContain('/analyze');
+    const projectId = new URL(page.url()).pathname.split('/')[2];
+    await expect(page.locator('[data-first-look]')).toBeVisible({ timeout: 60000 });
+    await page.locator(`[data-next-step] a[href*="/project/${projectId}/analyze"]`).first().click({ timeout: 60000 });
+    await page.waitForURL(new RegExp(`/project/${projectId}/analyze`), { timeout: 60000 });
     const dialog = page.getByRole('dialog');
     await expect(dialog).toContainText('Confirm Target Operating Model', { timeout: 60000 });
     await dialog.getByRole('radio', { name: /Public Cloud/ }).first().check();

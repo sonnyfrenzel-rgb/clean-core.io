@@ -238,7 +238,7 @@ test.describe('the "Next step" card, rendered', () => {
     await adminSetCustomClaim(adminUid, { admin: true });
     await adminSetDoc('users', adminUid, {
       firstName: 'Next', lastName: 'Step', email: ADMIN,
-      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
+      tier: 'pilot', status: 'approved', isAdmin: true,
       // The account itself switched Design off — the card must say so rather
       // than pointing at a button that can only fail.
       modelStages: { design: false },

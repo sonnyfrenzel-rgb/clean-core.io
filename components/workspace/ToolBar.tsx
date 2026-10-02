@@ -15,7 +15,7 @@ export interface WorkspaceTool {
   key: PhaseKey;
   label: string;
   path: string;
-  /** From `workflowSteps` — the stepper's reading of this phase, never a client-set status. */
+  /** From `workflowSteps` — the phase contract's reading, never a client-set status. */
   state: PhaseState;
   proven: boolean;
 }
@@ -23,8 +23,8 @@ export interface WorkspaceTool {
 /**
  * The small mark after a tool's name. It answers one question — has this tool
  * been used in this project? (ADR-060, amended by Sonny 02.10.2026) — and not
- * how strong what it produced is; that stays with the stepper and the status
- * chips ("Proven", "Demonstrated · mock").
+ * how strong what it produced is; that stays with the workspace's status line
+ * and the status chips ("Proven", "Demonstrated · mock").
  *
  *   - a small green check where something of the phase is on record and it is
  *     not out of date (`toolMark` → `used`);
@@ -94,7 +94,7 @@ function ToolsLegend({ inMenu }: { inMenu?: boolean }) {
  *     name says whether the tool has been used in this project, or is out of
  *     date (`ToolMark`), derived from the phase state in
  *     `lib/workflow-steps.ts` like every other phase state in the product — so
- *     the bar and the stepper cannot disagree about one phase. On a stage the
+ *     the bar and the status line cannot disagree about one phase. On a stage the
  *     tool of that stage is the current one (`aria-current="page"`, ink, never
  *     green: being on a page is not evidence); in the workspace none is.
  *   - **It is not a waterfall.** Every stage is reachable at any time, which is

@@ -148,17 +148,19 @@ export default function NewProject({
     );
   }
 
-  // The gate roadmap 1.5 used for the design-system gallery and 1.8 for the list
-  // report, for the same reason: nothing behind it is live product yet.
-  if (!profile || !profile.isAdmin) {
+  // "New project" is the list report's own action, and the list is every
+  // account's since roadmap 3.0.1 (ADR-061): a signed-in account is enough.
+  // What a run costs is decided where it is spent (`quotaExhausted` below and
+  // the server), not by who may see this page.
+  if (!profile) {
     return (
       <div className="mx-auto my-12 max-w-md rounded-cc-card border border-cc-error-border bg-cc-surface p-8 text-center shadow-cc">
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-cc-card border border-cc-error-border bg-cc-error-bg text-cc-error">
           <ShieldAlert className="h-7 w-7" />
         </div>
-        <h2 className="mb-2 text-[15px] font-bold text-cc-ink">{wt('newProject.accessDenied')}</h2>
+        <h2 className="mb-2 text-[15px] font-bold text-cc-ink">{wt('newProject.signInTitle')}</h2>
         <p className="text-[13px] leading-relaxed font-medium text-cc-ink-muted">
-          {wt('newProject.adminOnly')}
+          {wt('newProject.signInBody')}
         </p>
       </div>
     );

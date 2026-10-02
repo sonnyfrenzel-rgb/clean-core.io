@@ -295,10 +295,12 @@ Headings: the project title is `h1`, every section `h2`, every card `h3`; no lev
 header comes from `StageHeader` and stands like the project title: **22 px / 800, `-0.02em`, `--cc-ink`**, as `h1`. The
 icon stands neutrally in front of it — 20 px, `--cc-ink-muted`, without a surface; no green bubble, because in the workspace green means
 evidenced (§1.1). Above the title the link **"Back to workspace"** (13 px / 600, `--cc-ink-muted`, arrow left; a link,
-not a button), which leads back to the view and layer from which the stage was opened. Below it the same toolbar as in
+not a button), which leads back to the view and layer from which the stage was opened — on a demo stage to the demo
+workspace (`/demo/workspace`) by the same rule. Below it the same toolbar as in
 the workspace (ADR-060): the seven tools with their marks and the legend, the stage's own tool selected in `--cc-ink` with
 `aria-current="page"`, each link keeping view, origin and layer — side by side from breakpoint L, a "Tools" menu below.
-It replaces the stepper wherever it is drawn (a workspace account, the demo); one way across, not two. Every stage stands in the **same frame** (`StageFrame`, ADR-063): way back, tools bar, title and content start at the same x on all seven tools and the demo at every width; a stage sets no width of its own, a narrower block is left-aligned to the frame. Eyebrow and lead
+It is the one way across for every account and in the demo; the seven-circle stepper, its rail and the "Proceed to …"
+footer are gone (ADR-061). Every stage stands in the **same frame** (`StageFrame`, ADR-063): way back, tools bar, title and content start at the same x on all seven tools and the demo at every width; a stage sets no width of its own, a narrower block is left-aligned to the frame. Eyebrow and lead
 stay, in the scale of §1.2 (micro label, body text).
 
 On scrolling the header shrinks to title, view switcher and the facet line — in Business the "Project
@@ -860,7 +862,7 @@ On the element and in the list of all business statements (ADR-055, roadmap 17.1
 | **Request** | a button *Propose business sentences* (Secondary), after the first proposal *Ask the model again* (Ghost); next to it, before the click, the cost line per §2.8 — one model call, does not count against the analysis runs, counts against the hourly limit of model calls; with your own key "with your own Gemini key". Only the owner has it; an invited reader sees what the owner requested |
 | **Without proposal** | not requested, discarded, for an earlier source or failed: the engine's sentences alone, as before — no empty area, no error tone; a reason, if one is known, in `--cc-ink-muted` |
 
-Never automatic: opening the stage costs no model call. Until 3.0 only with the workspace preview.
+Never automatic: opening the stage costs no model call. For every account since roadmap 3.0.1 (ADR-061).
 
 ---
 
@@ -1099,6 +1101,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.4 | 02.10.2026 | The switch for everyone (roadmap 3.0.1, ADR-061): every account opens its projects in the workspace and "My workspace" is the list report; the stepper, its rail and the linear stage footer are gone; a demo stage's "Back to workspace" leads to the demo workspace (§2.3, the header of a stage; §5.10) |
 | 1.8.3 | 02.10.2026 | One frame for every stage (ADR-063, owner 02.10.2026): the seven tools and the demo stages stand in the workspace's 1536 px column, header and content at the same x on every tool: §2.3 the header of a stage, §2.9 XL |
 | 1.8.2 | 02.10.2026 | The tools bar marks use, not proof (ADR-060 amended, Sonny 02.10.2026): a green check for a used tool, an amber dot for an out-of-date one, a text legend beside "Tools" and in the phone menu: §2.3 item 3, the navigation table, the header of a stage |
 | 1.8.1 | 02.10.2026 | Tools side by side from breakpoint L in every view, each with the stepper's mark for its phase, and the same bar under "Back to workspace" on every stage and demo stage (ADR-060, Sonny 02.10.2026): §2.3 item 3, the header per view, the navigation table, the header of a stage, §2.11 |

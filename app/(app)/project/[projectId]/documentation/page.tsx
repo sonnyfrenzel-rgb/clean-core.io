@@ -7,10 +7,8 @@ import { checkProjectWrite, projectTooLargeMessage } from '@/lib/firestore-doc-s
 import { getAuth, getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
-import StageProgress from '@/components/StageProgress';
 import StageFooter from '@/components/StageFooter';
 import { Download, RefreshCw, FileCode2, Briefcase, Target, Users, Settings, Activity, Layers, Box, Lock, Rocket, Printer, ExternalLink } from 'lucide-react';
-import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import NotGenerated from '@/components/NotGenerated';
 import dynamic from 'next/dynamic';
@@ -45,7 +43,6 @@ import { sha256Hex } from '@/lib/artefact-digest';
 import { useProcessMap } from '@/hooks/useProcessMap';
 import { useProcessMapAddress } from '@/hooks/useProcessMapAddress';
 import { useStatementProposal } from '@/hooks/useStatementProposal';
-import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { buildNavigation, levelOf, resolveMapAddress } from '@/lib/process-navigation';
 import {
   ensureProcessBaseline,
@@ -192,7 +189,6 @@ const extractJSON = (text: string) => {
 export default function DocumentationPage() {
   const { projectId } = useParams();
   const router = useRouter();
-  const { profile } = useUserProfile();
   /** Roadmap 1.2 — this stage calls a model, so it has a switch and it can be keyless. */
   const modelAvailability = useModelAvailability();
 
@@ -475,9 +471,9 @@ Structure the JSON exactly like this:
   );
 
   /**
-   * Roadmap 17.10 — the model's business sentences over the engine's, behind
-   * the workspace preview until 3.0. Read on opening, asked for only by the
-   * button in the documentation; the owner asks, an invited reader reads.
+   * Roadmap 17.10 — the model's business sentences over the engine's. Read on
+   * opening, asked for only by the button in the documentation; the owner
+   * asks, an invited reader reads.
    */
   /** Owner decision 01.10.2026 — the handbook beside the map, read from the same source. */
   const handbook = useProcessHandbook(signedSource?.source ?? null, processMap.model);
@@ -487,7 +483,6 @@ Structure the JSON exactly like this:
   const statementProposal = useStatementProposal(
     projectIdStr,
     signedSource?.source ?? null,
-    workspaceShellEnabled(profile),
     modelAvailability,
   );
   const isOwner = !!project && getAuth().currentUser?.uid === project.userId;
@@ -888,11 +883,6 @@ Structure the JSON exactly like this:
 
   if (loading) return (
     <StageFrame stage="documentation">
-      {/* Where am I, what is behind me, what is still open — kept on
-          screen while the stepper scrolls away. Both read the same contract;
-          neither decides anything. */}
-
-      <StageProgress steps={phases} current="documentation" projectId={projectId as string} />
       <StageHeader stage="documentation" tools={{ steps: phases, current: 'documentation' }} projectName={project?.name} />
       <CcSkeleton shape="cards" label="documentation" count={2} />
     </StageFrame>
@@ -926,14 +916,14 @@ Structure the JSON exactly like this:
   const technicalPanel = engineDoc ? (
     <ProcessDocumentationView
       doc={engineDoc}
-      proposal={workspaceShellEnabled(profile) ? {
+      proposal={{
         view: statementProposal.view,
         canRequest: isOwner,
         byok: modelAvailability.keySource === 'byok',
         requesting: statementProposal.requesting,
         message: statementProposal.message,
         onRequest: statementProposal.request,
-      } : undefined}
+      }}
     />
   ) : parsedDoc ? (
     <div className="space-y-6">
@@ -1310,8 +1300,6 @@ Structure the JSON exactly like this:
 
   return (
     <StageFrame stage="documentation" className="min-h-screen">
-      <StageProgress steps={phases} current="documentation" projectId={projectId as string} />
-
       <StaleNotice
         title={`Built for ${previousBasis(project)}`}
         reasons={[
@@ -1729,14 +1717,7 @@ Structure the JSON exactly like this:
         )}
       </CcDialog>
 
-      <StageFooter
-        backPath={`/project/${projectId}/transformation`}
-        backLabel="Back to Transformation"
-        proceedPath={`/project/${projectId}/testing`}
-        proceedLabel="Proceed to Testing"
-        incomplete={!documentation}
-        incompleteReason="no process documentation has been read from the code yet"
-      />
+      <StageFooter />
     </StageFrame>
   );
 }

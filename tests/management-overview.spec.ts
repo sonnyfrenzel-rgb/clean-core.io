@@ -462,7 +462,7 @@ test.describe('the overview on the screen — one rendered test per chart', () =
     await adminSetCustomClaim(cred.user.uid, { admin: true });
     await adminSetDoc('users', cred.user.uid, {
       firstName: 'Overview', lastName: 'Admin', email: ADMIN,
-      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
+      tier: 'pilot', status: 'approved', isAdmin: true,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
     await adminSetDoc('projects', ID, {

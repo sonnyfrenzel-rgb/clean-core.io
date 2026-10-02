@@ -43,7 +43,6 @@ test.describe('D.31 in the source', () => {
       'app/(app)/layout.tsx': ['sticky top-0 z-cc-sticky', 'focus:z-cc-float'],
       'components/GlossaryChatbot.tsx': ['bottom-4 z-cc-float', 'bottom-20 z-cc-float'],
       'components/GlossaryTerm.tsx': ['z-cc-popover', 'max-md:z-cc-overlay'],
-      'components/VerificationRail.tsx': ['z-cc-float'],
       'components/CollapsibleAccordion.tsx': ['z-cc-popover'],
     };
     for (const [rel, classes] of Object.entries(expected)) {
@@ -56,8 +55,10 @@ test.describe('D.31 in the source', () => {
 
   test('"Back to workspace" does not print, from the header every stage shares', () => {
     const header = code('components/StageHeader.tsx');
-    // Both forms: the link, and the placeholder that holds its place.
-    expect(header.match(/BACK_LINK_CLASS\} cc-no-print/g) ?? [], 'StageHeader: the back link prints').toHaveLength(2);
+    // One form: the link. The placeholder that held its place while the
+    // profile loaded went with roadmap 3.0.1 — the way back no longer waits.
+    expect(header.match(/BACK_LINK_CLASS\} cc-no-print/g) ?? [], 'StageHeader: the back link prints').toHaveLength(1);
+    expect(header, 'StageHeader: a back link without cc-no-print').not.toMatch(/BACK_LINK_CLASS\}(?! cc-no-print)/);
     const tco = read('app/(app)/project/[projectId]/tco/page.tsx');
     expect(tco, 'Economics still hides the back link by itself').not.toContain('[data-stage-back]');
   });

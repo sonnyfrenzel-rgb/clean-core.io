@@ -8,11 +8,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
-import { initializeFirestore, doc, updateDoc, connectFirestoreEmulator } from 'firebase/firestore';
-import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
+import { adminSetDoc } from './helpers/admin-seed';
 import { receiptFor } from './helpers/test-receipt';
 import firebaseConfig from '../firebase-config.json';
-import { workspaceShellEligible, workspaceShellEnabled } from '../lib/workspace-shell';
 import * as workspaceModel from '../lib/workspace-model';
 import {
   DEFAULT_VIEW,
@@ -40,19 +38,20 @@ import { TERMS_VERSION } from '../lib/constants';
 /**
  * Roadmap 1.4 — the workspace shell, and the two promises it makes.
  *
- * **One: nothing changes for anybody else.** `/project/{id}` has never resolved
- * to anything, and for a signed-out visitor, a community account and an
- * administrator who has not turned the preview on it still does not. That is
- * the acceptance criterion of this phase (`docs/ROADMAP.md` §Phase 1: *"und sich
- * bei ausgeschaltetem Schalter für Nutzer nichts ändert"*), and it is checked
- * from the browser rather than from the source, because a gate that is right in
- * a component and wrong in a route is still a leak.
+ * **One: every account has it, and nobody has somebody else's.** Until roadmap
+ * 3.0.1 the shell was an administrator's preview behind a switch; since then
+ * (ADR-061) every signed-in account opens its projects in it, and there is no
+ * switch left to read. What stays closed is what was always closed: a
+ * signed-out visitor gets the 404, and a project that is not the reader's is a
+ * 404 too — the Firestore rules decide, not the page. It is checked from the
+ * browser rather than from the source, because a gate that is right in a
+ * component and wrong in a route is still a leak.
  *
  * **Two: every chip is honest.** The row asks for it in as many words —
  * *sieben Status-Chips — jeder ehrlich, „nicht begonnen", solange nichts da
  * ist*. A tick, a colour or a percentage for a phase nobody ran is the defect
  * this phase exists to remove. So the check below opens a genuinely empty
- * project as an administrator with the switch on and reads what the browser
+ * project as an ordinary community account and reads what the browser
  * **painted**: seven statuses, all "not started", and no green anywhere. A
  * source guard would be satisfied by a constant; computed colour is not.
  *
@@ -100,40 +99,60 @@ const populated = (over: Partial<Project> = {}): Project => {
 const facetStatus = (project: Project | null) =>
   Object.fromEntries(workspaceStatusLine(project).map((s) => [s.facet, s.status])) as Record<string, string>;
 
-/* --------------------------------------------------------------- the switch */
+/* ----------------------------------------------------------- no switch left */
 
-test.describe('the switch', () => {
-  test('is the flag AND still being an administrator — either alone is off', () => {
-    expect(workspaceShellEnabled({ workspaceShell: true, isAdmin: true })).toBe(true);
+test.describe('there is no switch any more (roadmap 3.0.1, ADR-061)', () => {
+  const root = path.join(__dirname, '..');
+  const exists = (rel: string) => fs.existsSync(path.join(root, rel));
 
-    // The flag left behind on an account whose admin rights were withdrawn does
-    // not keep the preview open.
-    expect(workspaceShellEnabled({ workspaceShell: true, isAdmin: false })).toBe(false);
-    expect(workspaceShellEnabled({ workspaceShell: true })).toBe(false);
-
-    // An administrator who has not turned it on sees the product everybody sees.
-    expect(workspaceShellEnabled({ isAdmin: true })).toBe(false);
-    expect(workspaceShellEnabled({ workspaceShell: false, isAdmin: true })).toBe(false);
-
-    expect(workspaceShellEnabled(null)).toBe(false);
-    expect(workspaceShellEnabled(undefined)).toBe(false);
-  });
-
-  test('anything that is not the boolean true reads as off', () => {
-    // A half-written document, or a string out of a hand-edited console. The
-    // safe direction for an unfinished interface is closed.
-    for (const value of ['true', 1, {}, [], 'yes'] as unknown[]) {
-      expect(
-        workspaceShellEnabled({ workspaceShell: value as boolean, isAdmin: true }),
-        `${JSON.stringify(value)} opened the preview`,
-      ).toBe(false);
+  test('the module, the route and the preview toggle are gone', () => {
+    for (const rel of [
+      'lib/workspace-shell.ts',
+      'app/api/workspace-shell/route.ts',
+      'components/workspace/ShellSwitch.tsx',
+      // The old no-workspace path: the seven-circle stepper, its rail, the
+      // component that drew them, and the "Back to X / Proceed to Y" footer.
+      'components/StageProgress.tsx',
+      'components/Stepper.tsx',
+      'components/VerificationRail.tsx',
+      'components/NavigationButtons.tsx',
+    ]) {
+      expect(exists(rel), `${rel} is still there — the switch was meant to collapse, not linger`).toBe(false);
     }
   });
 
-  test('only an administrator may turn it on at all', () => {
-    expect(workspaceShellEligible({ isAdmin: true })).toBe(true);
-    expect(workspaceShellEligible({ isAdmin: false })).toBe(false);
-    expect(workspaceShellEligible({})).toBe(false);
+  test('nothing in the product decides by the old flag — every branch collapsed to the workspace', () => {
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
+        const rel = path.posix.join(dir, entry.name);
+        if (entry.isDirectory()) walk(rel);
+        else if (/\.(ts|tsx)$/.test(entry.name)) files.push(rel);
+      }
+    };
+    for (const dir of ['app', 'components', 'lib', 'hooks']) walk(dir);
+    files.push('middleware.ts');
+    expect(files.length, 'nothing was scanned — the check would be vacuous').toBeGreaterThan(200);
+
+    const offenders = files.filter((rel) =>
+      /workspaceShellEnabled|workspaceShellEligible|lib\/workspace-shell'|\bworkspaceShell\??\s*[:=)]|\.workspaceShell\b|StageProgress|NavigationButtons/.test(
+        fs.readFileSync(path.join(root, rel), 'utf8'),
+      ),
+    );
+    expect(offenders, `still branching on the old switch:\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  test('the workspace page asks for a signed-in account and nothing else', () => {
+    const page = fs.readFileSync(path.join(root, 'app', '(app)', 'project', '[projectId]', 'page.tsx'), 'utf8');
+    expect(page).toContain('const enabled = profile != null;');
+    expect(page, 'the workspace page reads an admin flag again').not.toMatch(/isAdmin/);
+    const demo = fs.readFileSync(path.join(root, 'components', 'demo', 'DemoWorkspaceShell.tsx'), 'utf8');
+    expect(demo).toContain('const enabled = profile != null;');
+    expect(demo, 'the workspace demo reads an admin flag again').not.toMatch(/isAdmin/);
+    for (const rel of ['components/workspace/NewProject.tsx', 'components/workspace/OwnCodeImport.tsx']) {
+      const src = fs.readFileSync(path.join(root, rel), 'utf8');
+      expect(src, `${rel}: "New project" is the list's own action, and the list is every account's`).not.toMatch(/isAdmin/);
+    }
   });
 });
 
@@ -449,15 +468,9 @@ test.describe('"About this view" (`DESIGN.md` §6.1)', () => {
 /* ------------------------------------------------- the rendered half */
 
 const firebaseApp = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
-const clientDb = initializeFirestore(firebaseApp, {}, firebaseConfig.firestoreDatabaseId);
 const clientAuth = getAuth(firebaseApp);
 try {
   connectAuthEmulator(clientAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
-} catch {
-  /* already connected */
-}
-try {
-  connectFirestoreEmulator(clientDb, '127.0.0.1', 8080);
 } catch {
   /* already connected */
 }
@@ -479,34 +492,34 @@ async function openWorkspace(page: Page, projectId: string, query = ''): Promise
   return (await shell.count()) > 0 ? 'shell' : '404';
 }
 
-test.describe('nothing changes for an account without the switch', () => {
+test.describe('every account opens its own projects in the workspace — and only its own', () => {
   const COMMUNITY = `${unique('shell-community')}@cleancore-test.io`;
-  const ADMIN_OFF = `${unique('shell-adminoff')}@cleancore-test.io`;
-  const PROJECT_ID = unique('shell-closed');
+  const STRANGER = `${unique('shell-stranger')}@cleancore-test.io`;
+  const PROJECT_ID = unique('shell-own');
 
   test.beforeAll(async () => {
     test.setTimeout(120 * 1000);
 
+    // An ordinary community account: no admin claim, no `isAdmin`, no flag.
     const community = await createUserWithEmailAndPassword(clientAuth, COMMUNITY, PASSWORD);
     await adminSetDoc('users', community.user.uid, {
       firstName: 'Community', lastName: 'Account', email: COMMUNITY,
       tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
-      // Deliberately set: the flag alone must not open anything.
-      workspaceShell: true,
     });
 
-    const adminOff = await createUserWithEmailAndPassword(clientAuth, ADMIN_OFF, PASSWORD);
-    await adminSetDoc('users', adminOff.user.uid, {
-      firstName: 'Admin', lastName: 'Off', email: ADMIN_OFF,
-      tier: 'pilot', status: 'approved', isAdmin: true,
+    // A second ordinary account, with no access to the first one's project.
+    const stranger = await createUserWithEmailAndPassword(clientAuth, STRANGER, PASSWORD);
+    await adminSetDoc('users', stranger.user.uid, {
+      firstName: 'Some', lastName: 'Stranger', email: STRANGER,
+      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
 
     await adminSetDoc('projects', PROJECT_ID, {
-      name: 'Closed to everyone', userId: community.user.uid,
+      name: 'A community project', userId: community.user.uid,
       createdAt: new Date(), status: 'created',
-      legacyCode: 'REPORT z_closed.\n',
+      legacyCode: 'REPORT z_own.\n',
     });
   });
 
@@ -515,46 +528,44 @@ test.describe('nothing changes for an account without the switch', () => {
     expect(await openWorkspace(page, PROJECT_ID)).toBe('404');
   });
 
-  test('a community account gets it too — even with the flag set on its own document', async ({ page }) => {
+  test('a community account opens its project in the workspace, and its stages lead back there', async ({ page }) => {
     test.setTimeout(180 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await signIn(page, COMMUNITY);
     expect(
       await openWorkspace(page, PROJECT_ID),
-      'the flag alone opened the preview for a community account',
-    ).toBe('404');
+      'an ordinary account was refused its own workspace',
+    ).toBe('shell');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'business');
 
-    // And the product it does have is still there: the stage pages are untouched.
+    // A stage is a tool of it: the shell path names the project from the
+    // stage's own read (D.29) and leads back to the workspace, the stage's own
+    // way back does too, and the seven tools stand under it.
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 60000 });
-
-    // The shell path names the project from the stage's own read (D.29) and,
-    // without the workspace, leads back to the dashboard — never to the 404.
     const crumb = page.locator('header [data-shell-path] [data-shell-path-project]');
-    await expect(crumb).toHaveText('Closed to everyone', { timeout: 30000 });
-    await expect(crumb).toHaveAttribute('href', '/dashboard');
+    await expect(crumb).toHaveText('A community project', { timeout: 30000 });
+    await expect(crumb).toHaveAttribute('href', `/project/${PROJECT_ID}`);
     await expect(page.locator('header [data-shell-path] [aria-current="page"]')).toHaveText('Analyze');
+    await expect(page.locator('[data-stage-back]')).toHaveAttribute('href', `/project/${PROJECT_ID}`);
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool]')).toHaveCount(7);
+    await expect(page.locator('nav[aria-label="Workflow phases"]'), 'the old stepper').toHaveCount(0);
     // No project search on a stage, so no search button in the shell.
     await expect(page.locator('header [data-command-search-trigger]')).toHaveCount(0);
   });
 
-  test('an administrator who has not turned it on gets it as well', async ({ page }) => {
+  test('another account gets the 404 for a project that is not theirs', async ({ page }) => {
     test.setTimeout(180 * 1000);
-    await signIn(page, ADMIN_OFF);
-    expect(await openWorkspace(page, PROJECT_ID)).toBe('404');
-  });
-
-  test('and the flag is not client-writable — the rules keep the browser out', async () => {
-    test.setTimeout(60 * 1000);
-    const cred = await signInWithEmailAndPassword(clientAuth, ADMIN_OFF, PASSWORD);
-    await expect(
-      updateDoc(doc(clientDb, 'users', cred.user.uid), { workspaceShell: true }),
-      'a browser can set the switch on its own account — the field is in userClientUpdateKeys()',
-    ).rejects.toThrow(/permission|PERMISSION_DENIED/i);
+    await signIn(page, STRANGER);
+    expect(
+      await openWorkspace(page, PROJECT_ID),
+      "the workspace showed a stranger somebody else's project",
+    ).toBe('404');
   });
 });
 
-test.describe('the shell, opened by an administrator who turned it on', () => {
-  const ADMIN = `${unique('shell-admin')}@cleancore-test.io`;
+test.describe('the shell, opened by its owner — an ordinary account', () => {
+  const ADMIN = `${unique('shell-owner')}@cleancore-test.io`;
   const EMPTY_ID = unique('shell-empty');
   const FULL_ID = unique('shell-full');
   const RUN_ID = unique('shell-run');
@@ -581,11 +592,10 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     test.setTimeout(180 * 1000);
     const cred = await createUserWithEmailAndPassword(clientAuth, ADMIN, PASSWORD);
     adminUid = cred.user.uid;
-    // The claim first, so the token minted at sign-in below already carries it.
-    await adminSetCustomClaim(adminUid, { admin: true });
+    // No admin claim and no flag: since roadmap 3.0.1 the owner is enough.
     await adminSetDoc('users', adminUid, {
-      firstName: 'Shell', lastName: 'Admin', email: ADMIN,
-      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
+      firstName: 'Shell', lastName: 'Owner', email: ADMIN, termsVersionAccepted: TERMS_VERSION,
+      tier: 'pilot', status: 'approved',
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
 
@@ -953,66 +963,17 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     }
   });
 
-  test('the switch is written by the server, and refuses a caller who is not an administrator', async ({ request }) => {
-    test.setTimeout(180 * 1000);
-
-    // The admin's own token — minted after the custom claim was set, so it
-    // carries it — turns the switch off and on again through the route.
+  test('the switch route is gone — there is nothing left to turn on', async ({ request }) => {
+    test.setTimeout(60 * 1000);
+    // It used to write `users/{uid}.workspaceShell` for an administrator's own
+    // account. Every account has the workspace since roadmap 3.0.1 (ADR-061);
+    // the route went with the switch, and an old client posting to it reaches
+    // nothing.
     const cred = await signInWithEmailAndPassword(clientAuth, ADMIN, PASSWORD);
-    const idToken = await cred.user.getIdToken(true);
-
-    const off = await request.post('/api/workspace-shell', {
-      headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-      data: { enabled: false },
-    });
-    expect(off.ok(), await off.text()).toBe(true);
-    expect((await off.json()).enabled).toBe(false);
-
-    const badBody = await request.post('/api/workspace-shell', {
-      headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-      data: { enabled: 'yes' },
-    });
-    expect(badBody.status(), 'a misspelled body reported success').toBe(400);
-
-    // A JSON `null` body is the same 400, not a TypeError answered as 500
-    // (carried QA finding 8c778be1d34d, behaviour asked for by QA finding
-    // 85123a06a2b7).
-    const nullBody = await request.post('/api/workspace-shell', {
-      headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-      data: 'null',
-    });
-    expect(nullBody.status(), await nullBody.text()).toBe(400);
-
-    const on = await request.post('/api/workspace-shell', {
-      headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+    const res = await request.post('/api/workspace-shell', {
+      headers: { Authorization: `Bearer ${await cred.user.getIdToken(true)}`, 'Content-Type': 'application/json' },
       data: { enabled: true },
     });
-    expect(on.ok()).toBe(true);
-    expect((await on.json()).enabled).toBe(true);
-
-    // And with no credentials at all.
-    const anonymous = await request.post('/api/workspace-shell', {
-      headers: { 'Content-Type': 'application/json' },
-      data: { enabled: true },
-    });
-    expect([401, 403]).toContain(anonymous.status());
-
-    // A signed-in account that is not an administrator is refused — the switch
-    // is not something a community account can turn on for itself.
-    const outsiderEmail = `${unique('shell-outsider')}@cleancore-test.io`;
-    const outsider = await createUserWithEmailAndPassword(clientAuth, outsiderEmail, PASSWORD);
-    await adminSetDoc('users', outsider.user.uid, {
-      firstName: 'No', lastName: 'Admin', email: outsiderEmail,
-      tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
-      transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
-    });
-    const refused = await request.post('/api/workspace-shell', {
-      headers: {
-        Authorization: `Bearer ${await outsider.user.getIdToken(true)}`,
-        'Content-Type': 'application/json',
-      },
-      data: { enabled: true },
-    });
-    expect(refused.status(), 'a community account turned the preview on for itself').toBe(403);
+    expect(res.status(), await res.text()).toBe(404);
   });
 });

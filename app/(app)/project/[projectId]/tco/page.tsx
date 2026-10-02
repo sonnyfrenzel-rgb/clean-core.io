@@ -6,7 +6,6 @@ import { useParams } from 'next/navigation';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import type { Project } from '@/lib/types';
-import StageProgress from '@/components/StageProgress';
 import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import StageFooter from '@/components/StageFooter';
@@ -305,8 +304,6 @@ export default function TcoCalculatorPage() {
     // print rule (§7.1). The way back to the workspace does not print either;
     // `StageHeader` marks it `cc-no-print` for every stage.
     <StageFrame stage="tco" className="cc min-h-screen print:p-0" data-economics="">
-      <StageProgress steps={phases} current="tco" projectId={projectId as string} />
-
       <StageHeader tools={{ steps: phases, current: 'tco' }} projectName={project?.name} stage="tco" eyebrow={<CcProvenanceChip value="simulation" />}>
         What keeping, changing or retiring this code would cost — priced only from figures you state.
       </StageHeader>
@@ -879,12 +876,7 @@ export default function TcoCalculatorPage() {
       </div>
 
       <div className="mt-6 print:hidden">
-        <StageFooter
-          backPath={`/project/${projectId}/testing`}
-          backLabel="Back to Testing"
-          proceedPath={`/project/${projectId}/delivery`}
-          proceedLabel="Proceed to Delivery"
-        />
+        <StageFooter />
       </div>
     </StageFrame>
   );

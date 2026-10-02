@@ -263,17 +263,25 @@ test.describe('own code: the handoff to Analyze', () => {
     expect(page).not.toContain('CcRadioGroup');
   });
 
-  test('Analyze opens the workspace after the run only for a project the import handed over', () => {
+  test('the import opens the workspace, and Analyze returns there after a project\'s first run', () => {
+    // Owner 02.10.2026: an example or own code always opens the workspace with
+    // the first look first, never the Analyze tool.
+    const importPage = read('components/workspace/OwnCodeImport.tsx');
+    expect(importPage).toContain('router.push(`/project/${docRef.id}?first=1`);');
+    expect(importPage).not.toContain('/analyze`');
     const analyze = read('app/(app)/project/[projectId]/analyze/page.tsx');
+    // A project's first run — whatever started it — continues in the workspace;
+    // a re-run stays on the tool.
+    expect(analyze).toContain('const firstRunOfProject = !project?.activeRunId;');
     const set = analyze.indexOf('openWorkspaceAfterRunRef.current = true');
     const take = analyze.indexOf('const handoff = takeOwnCodeHandoff(projectId as string);');
     expect(set).toBeGreaterThan(take);
     expect(analyze.slice(take, set)).toContain('if (handoff) {');
-    // After the signed run's id is in hand, behind the workspace switch.
+    // After the signed run's id is in hand — for every account since roadmap 3.0.1.
     const runId = analyze.indexOf('const activeRunId = runResult.runId;');
     const push = analyze.indexOf("router.push(`/project/${projectId}?first=1`)");
     expect(push).toBeGreaterThan(runId);
-    expect(analyze.slice(runId, push)).toContain('openWorkspaceAfterRunRef.current && workspaceShellEnabled(profile)');
+    expect(analyze.slice(runId, push)).toContain('if (openWorkspaceAfterRunRef.current || firstRunOfProject) {');
   });
 });
 

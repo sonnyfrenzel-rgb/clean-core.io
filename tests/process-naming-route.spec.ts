@@ -278,7 +278,7 @@ test('an account with the workspace preview is offered the switch — and the cl
   const cred = await createUserWithEmailAndPassword(getAuth(app), PREVIEW_EMAIL, SIGN_IN);
   await adminSetDoc('users', cred.user.uid, {
     firstName: 'Preview', lastName: 'Admin', email: PREVIEW_EMAIL, tier: 'pilot', status: 'approved',
-    isAdmin: true, workspaceShell: true, activatedAt: new Date(),
+    isAdmin: true, activatedAt: new Date(),
     transformationsUsed: 0, transformationsLimit: 50,
     termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
   });

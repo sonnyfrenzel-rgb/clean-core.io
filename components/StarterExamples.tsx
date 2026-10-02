@@ -15,7 +15,6 @@ import {
   type QuotaSubject,
 } from '@/lib/run-quota-rule';
 import { describeStarterExampleCost, starterExampleFootnote } from '@/lib/run-cost';
-import { workspaceShellEnabled, type WorkspaceShellSubject } from '@/lib/workspace-shell';
 import { describeSnippet, exampleTiers, START_HERE_WHY, type ExampleSnippet } from '@/lib/example-catalog';
 import { EXAMPLE_SNIPPETS } from '@/lib/example-snippets';
 import { formatNumber } from '@/lib/format';
@@ -48,7 +47,7 @@ import { CcNoMatches } from '@/components/cc/EmptyState';
  * nothing said here grants anything.
  */
 
-type Account = (QuotaSubject & WorkspaceShellSubject) | null | undefined;
+type Account = QuotaSubject | null | undefined;
 
 type Item =
   | { kind: 'example'; key: string; example: StarterExample; goal?: string }
@@ -132,9 +131,9 @@ export default function StarterExamples({
         createdAt: serverTimestamp(),
         fromExample: true,
       });
-      // The same door "New project" uses: the workspace with its first look
-      // where the new interface is on, the Analyze stage everywhere else.
-      router.push(workspaceShellEnabled(account) ? `/project/${docRef.id}?first=1` : `/project/${docRef.id}/analyze`);
+      // The same door "New project" uses: the workspace with its first look —
+      // every project opens there (roadmap 3.0.1).
+      router.push(`/project/${docRef.id}?first=1`);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'projects');
       setFailed('The project could not be created. Nothing was saved — try again.');

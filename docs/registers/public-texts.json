@@ -1284,7 +1284,6 @@
         "app/(app)/admin/workspace/page.tsx",
         "app/(app)/project/[projectId]/documentation/page.tsx",
         "app/(app)/project/[projectId]/page.tsx",
-        "app/api/workspace-shell/route.ts",
         "lib/abap/call-graph.ts",
         "lib/abap/control-flow.ts",
         "lib/abap/statement-reader.ts",
@@ -1299,7 +1298,6 @@
         "lib/model-stages.ts",
         "lib/process-naming.ts",
         "lib/project-decision.ts",
-        "lib/workspace-shell.ts",
         "scripts/roadmap/status.mjs",
         "scripts/security/inbox.mjs",
         "scripts/ux/inbox.mjs",
@@ -1319,7 +1317,6 @@
         ".github/workflows/usage-report.yml",
         "components/InviteReaderDialog.tsx",
         "components/workspace/NewProject.tsx",
-        "components/workspace/ShellSwitch.tsx",
         "components/workspace/WorkspaceShell.tsx",
         "hooks/useWorkspaceRevision.ts"
       ],

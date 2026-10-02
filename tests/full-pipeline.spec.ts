@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
@@ -29,8 +29,22 @@ const ADMIN_USER_EMAIL = disposableEmail('pipeline-admin');
 const TEST_PASSWORD = 'SuperPassword123!';
 const ADMIN_PASSWORD = EMULATOR_PASSWORD;
 
+/**
+ * The way from one stage to the next: the tool's link in the bar under the
+ * stage header (ADR-060), and then the stage's own address. Waiting on the URL,
+ * not on a stage title: the page being left has one too, and a selector wait
+ * would resolve against it.
+ */
+async function openTool(page: Page, key: string): Promise<void> {
+  await page.locator(`[data-stage-tools="open"] a[data-workspace-tool="${key}"]`).click({ timeout: 45000 });
+  await page.waitForURL(new RegExp(`/project/[^/]+/${key}(\\?|$)`), { timeout: 45000 });
+}
+
 test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', () => {
   
+  // The account the walk signs in as, for the project it seeds (stage 0.5).
+  let ownerUid = '';
+
   test.beforeAll(async ({ request }) => {
     console.log('Initializing test user registration...');
     let uid = '';
@@ -89,6 +103,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // account by itself now; seeding it keeps this test about the pipeline, and
     // the seed helper also raises the quota so CI retries do not run it out.
     await adminApproveUser(uid);
+    ownerUid = uid;
     console.log('Admin approved test user via Admin SDK.');
 
     // 3. Delete all projects and examples belonging to the test user to prevent query congestion
@@ -166,30 +181,34 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     console.log('Successfully logged in and reached /dashboard.');
 
     // --- STAGE 0.5: CREATE PROJECT ---
+    // "My workspace" is the 3.0 list for every account since roadmap 3.0.1
+    // (ADR-061), and its "New project" leads to the example-or-own-code page;
+    // that path, through the import page, is walked by
+    // tests/own-code-import-page.spec.ts. This walk is about the seven stages
+    // from the Analyze stage's own upload on, so it checks that "New project"
+    // is there and then starts from an empty project of this account.
     console.log('Creating a new E2E transformation project...');
-    const createProjectButton = page.locator('button:has-text("Create Project"), button:has-text("Projekt erstellen")').first();
-    await expect(createProjectButton).toBeVisible();
-    await createProjectButton.click();
+    await expect(page.locator('[data-workspace-new-project]').first()).toBeVisible({ timeout: 60000 });
 
-    // Fill project name in modal form
-    await page.waitForSelector('input[placeholder*="Z_FI_INVOICE_REPORT"]');
-    await page.fill('input[placeholder*="Z_FI_INVOICE_REPORT"]', 'Super Duper E2E Invoice Extractor');
-    
-    // Click submit in project creation modal
-    await page.click('button[type="submit"]:has-text("Create"), button[type="submit"]:has-text("Erstellen")');
+    const { adminMergeDoc } = await import('./helpers/admin-seed');
+    const projectId = `e2e-pipeline-${branchSuffix}-${Date.now()}`;
+    await adminSetDoc('projects', projectId, {
+      name: 'Super Duper E2E Invoice Extractor',
+      status: 'created',
+      userId: ownerUid,
+      createdAt: new Date(),
+    });
+    await page.goto(`/project/${projectId}/analyze`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 45000 });
     console.log('Project created. Navigated to analyze page.');
 
     // Seed a test case and suite to bypass live generation flake. The case is
     // seeded as `Pending` with no message, so a verdict on the page later can
     // only come from the run this spec starts.
-    const currentUrl = page.url();
-    const projectId = currentUrl.split('/project/')[1].split('/')[0];
-    console.log(`Extracted project ID for seeding: ${projectId}`);
+    console.log(`Seeding project ${projectId}`);
 
     // Use Admin SDK to bypass security rules (client SDK triggers getUserData()
     // evaluation errors in the emulator)
-    const { adminMergeDoc } = await import('./helpers/admin-seed');
     await adminMergeDoc('projects', projectId, {
       testCases: [
         {
@@ -263,7 +282,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
 
     // --- STAGE 2: SOLUTION DESIGN ---
     console.log('Navigating to Stage 2: Solution Design...');
-    await page.click('button:has-text("Continue to Design")');
+    // A stage is a tool of the workspace since roadmap 3.0.1: the way across is
+    // the tools bar under the stage header, not a "Continue to …" button.
+    await openTool(page, 'design');
     // Since the canvas rebuild (proposal B, 01.10.2026) each section of the
     // model's document opens from its card in the drawer.
     await page.locator('[data-design-section="blueprint"]').click({ timeout: 45000 });
@@ -296,7 +317,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
 
     // --- STAGE 3: TRANSFORMATION ---
     console.log('Navigating to Stage 3: Transformation...');
-    await page.click('button:has-text("Continue to Transformation")');
+    await openTool(page, 'transformation');
     await page.waitForSelector('button:has-text("Sync Scroll:")', { timeout: 45000 });
     
     // Verify proportional side-by-side scrolls toggles
@@ -310,7 +331,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
 
     // --- STAGE 4: PROCESS BLUEPRINTING & DOCUMENTATION ---
     console.log('Navigating to Stage 4: Documentation...');
-    await page.click('button:has-text("Proceed to Documentation")');
+    await openTool(page, 'documentation');
     // One name for the stage everywhere (UX-169): the title is the stepper's label.
     await page.waitForSelector('h1[data-stage-title]:has-text("Documentation")', { timeout: 45000 });
 
@@ -330,7 +351,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
 
     // --- STAGE 5: TESTING SANDBOX ---
     console.log('Navigating to Stage 5: Testing Sandbox...');
-    await page.click('button:has-text("Proceed to Testing")');
+    await openTool(page, 'testing');
     // "Generate Test Suite" is the empty state's own button. This used to look for
     // "Generate Suite" — the card header's — which was the same action offered a
     // second time on the same screen and is now shown only once a suite exists,
@@ -373,16 +394,13 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
 
     // --- STAGE 6: ECONOMICS ---
     console.log('Navigating to Stage 6: Economics...');
-    await page.click('button:has-text("Proceed to Economics")');
-    // Wait on the URL, not on a stage title: the testing page has one too, and
-    // a selector wait would resolve against the page being left.
-    await page.waitForURL(/\/tco$/, { timeout: 45000 });
-    await page.waitForSelector('button:has-text("Proceed to Delivery")', { timeout: 45000 });
+    await openTool(page, 'tco');
+    await page.waitForSelector('[data-stage-header="tco"]', { timeout: 45000 });
     console.log('Stage 6 reached: Economics.');
 
     // --- STAGE 7: MODULAR HANDOVER DELIVERY ---
     console.log('Navigating to Stage 7: Delivery...');
-    await page.click('button:has-text("Proceed to Delivery")');
+    await openTool(page, 'delivery');
     await page.waitForSelector('button:has-text("Download Bundle")', { timeout: 45000 });
 
     // Setup download event listener

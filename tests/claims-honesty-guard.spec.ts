@@ -238,11 +238,13 @@ test.describe('a signed-in account reading its own project', () => {
   });
 
   test('UX-059 · the board does not offer to publish anything', async ({ page }) => {
+    // The board is gone (owner 02.10.2026, outdated; ADR-061). What this
+    // finding forbids — an offer to publish — is checked on the page every
+    // account lands on, and the old page carries no board at all.
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('text=Open announcements', { timeout: 60000 });
-    await page.click('text=Open announcements');
-    await page.waitForSelector('[data-forum-readonly]', { timeout: 30000 });
-    await expect(page.locator('[data-forum-readonly]')).toContainText('read-only');
+    await page.waitForSelector('[data-cc-workspace]', { timeout: 60000 });
+    await expect(page.locator('[data-forum-readonly]')).toHaveCount(0);
+    expect(read('app/(app)/dashboard/page.tsx')).not.toContain('data-forum-readonly');
     const text = await page.locator('body').innerText();
     for (const gone of [
       'Post to Forum',
@@ -622,13 +624,12 @@ test.describe('62c08912d745 · a service guide names the client that service spe
 });
 
 test.describe('64a43c210f49 · the read-only board does not promise a discussion', () => {
-  test('no topic of the board is called Q&A, and the lead says the posts are read-only', () => {
-    // QA review of 4b4586aff273: the list is headed "Announcements" on a
-    // read-only board, yet a "Technical Q&A" topic still filtered and badged a
-    // post there — an offer of questions and answers nobody can join.
+  test('there is no board left to promise one (owner 02.10.2026, ADR-061)', () => {
+    // QA review of 4b4586aff273 caught a "Technical Q&A" topic on a read-only
+    // board. The board itself is gone now, topics and all.
     const src = read('app/(app)/dashboard/page.tsx');
-    expect(src).not.toMatch(/label: 'Technical Q&A'/);
-    expect(src).not.toMatch(/⚙️ Technical Q&A/);
-    expect(src).toContain('Read-only posts from the Clean-Core team, filed by topic.');
+    expect(src).not.toMatch(/Technical Q&A|ForumTopic|TOPIC_LABEL/);
+    expect(src).not.toContain('Read-only posts from the Clean-Core team');
   });
 });
+

@@ -8,13 +8,9 @@ import type { ProposalView, StatementAvailability } from '@/lib/statement-propos
  * Reads what is stored and applies it to the source; asks the model only when
  * `request` is called, which only a button does. Opening the stage never costs
  * a model call.
- *
- * `enabled` is false for an account without the workspace preview: the new
- * business view grows behind that switch until 3.0, and the stage then shows
- * the reconstructed sentences alone, exactly as before.
  */
 export interface StatementProposalState {
-  /** Null until the stored proposal has been read, and always while disabled. */
+  /** Null until the stored proposal has been read. */
   view: ProposalView | null;
   /** A request is running. */
   requesting: boolean;
@@ -26,14 +22,13 @@ export interface StatementProposalState {
 export function useStatementProposal(
   projectId: string | null,
   source: string | null,
-  enabled: boolean,
   availability: StatementAvailability | null,
 ): StatementProposalState {
   const [held, setHeld] = useState<{ key: string; view: ProposalView | null }>({ key: '', view: null });
   const [requesting, setRequesting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const key = enabled && projectId && source ? `${projectId}|${sha256Hex(source)}` : '';
+  const key = projectId && source ? `${projectId}|${sha256Hex(source)}` : '';
 
   useEffect(() => {
     if (!key || !projectId || !source) return;

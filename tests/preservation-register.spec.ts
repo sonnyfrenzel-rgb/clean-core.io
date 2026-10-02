@@ -1029,18 +1029,20 @@ test.describe('the reference cases, seeded and opened', () => {
       const projectId = projectIdOf(rc);
       await page.goto(`/project/${projectId}/${rc.stage}`, { waitUntil: 'domcontentloaded' });
 
-      const stepper = page.locator('nav[aria-label="Workflow phases"]');
-      await stepper.waitFor({ timeout: 60000 });
+      // The tools bar under the stage header — it replaced the stepper with
+      // roadmap 3.0.1 (ADR-061) and reads the same phase contract.
+      const bar = page.locator('[data-stage-tools="open"]');
+      await bar.waitFor({ timeout: 60000 });
 
       // The whole contract, on the screen, after the real hydration: seven
-      // circles, each in the state the register predicted from the seed alone.
+      // tools, each in the state the register predicted from the seed alone.
       for (const phase of PHASES) {
         await expect(
-          stepper.locator(`[data-phase="${phase.key}"]`),
+          bar.locator(`a[data-workspace-tool="${phase.key}"]`),
           `${rc.id}: ${phase.key} on the ${rc.stage} screen`,
         ).toHaveAttribute('data-phase-state', rc.expect.phaseStates[phase.key]);
       }
-      await expect(stepper.locator(`[data-phase="${rc.stage}"]`)).toHaveAttribute('aria-current', 'step');
+      await expect(bar.locator(`a[data-workspace-tool="${rc.stage}"]`)).toHaveAttribute('aria-current', 'page');
 
       const notice = page.locator('[data-stale-notice]');
       if (rc.expect.staleNoticeOnOwnStage) {
@@ -1085,7 +1087,7 @@ test.describe('the reference cases, seeded and opened', () => {
       const seed = seedDocuments(rc, 'uid-not-used-here', projectId);
 
       await page.goto(`/project/${projectId}/${stage.key}`, { waitUntil: 'domcontentloaded' });
-      await page.locator('nav[aria-label="Workflow phases"]').waitFor({ timeout: 60000 });
+      await page.locator('[data-stage-tools="open"]').waitFor({ timeout: 60000 });
 
       let proven = 0;
       for (const entry of stage.rendered.shows) {
