@@ -62,4 +62,23 @@ export function fitWithPadding(canvas: ViewboxCanvas): void {
   canvas.viewbox({ x, y, width, height });
 }
 
+/**
+ * The whole level in the canvas, however small — what the Documentation map
+ * opens with (owner 02.10.2026: "den ganzen Prozess sehen"), and the same
+ * overview the editor's *Fit* gives. Never above 100 %; the + button is there
+ * for reading the names of a wide process.
+ */
+export function fitWhole(canvas: ViewboxCanvas): void {
+  const { inner, outer } = canvas.viewbox();
+  if (!inner.width || !inner.height || !outer.width || !outer.height) return;
+  const scale = Math.min(1, (outer.width - 2 * MARGIN) / inner.width, (outer.height - 2 * MARGIN) / inner.height);
+  if (scale <= 0) return;
+  const width = outer.width / scale;
+  const height = outer.height / scale;
+  canvas.viewbox({ x: inner.x + inner.width / 2 - width / 2, y: inner.y + inner.height / 2 - height / 2, width, height });
+}
+
+/** Dispatched (bubbling) on the map's frame after a step was chosen in full screen. */
+export const MAP_REVEAL_EVENT = 'cc-map-reveal';
+
 export const ANCHOR_STYLE = `font-size:${ANCHOR_FONT}px;line-height:${Math.ceil(ANCHOR_FONT * 1.2)}px`;

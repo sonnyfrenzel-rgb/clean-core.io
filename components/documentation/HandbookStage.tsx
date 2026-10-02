@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -19,6 +19,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcTabs from '@/components/cc/Tabs';
 import { CcTag } from '@/components/cc/Tag';
 import ProcessCodeCard from '@/components/process-map/ProcessCodeCard';
+import { MAP_REVEAL_EVENT } from '@/components/process-map/bpmn-view';
 import type { ProcessMapElement, ProcessMapModel } from '@/lib/process-map';
 import type {
   HandbookAnchor,
@@ -152,8 +153,25 @@ export default function HandbookStage({
 
   const counts = handbook?.counts;
 
+  /**
+   * A step chosen on the map in full screen closes full screen (`BpmnCanvas`)
+   * and the chapter it belongs to is brought on screen — beside the map from
+   * L, under it below.
+   */
+  const stageRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const reveal = () => {
+      stage.querySelector<HTMLElement>('[data-handbook-panel]')?.scrollIntoView({ block: 'nearest' });
+    };
+    stage.addEventListener(MAP_REVEAL_EVENT, reveal);
+    return () => stage.removeEventListener(MAP_REVEAL_EVENT, reveal);
+  }, []);
+
   return (
     <section
+      ref={stageRef}
       data-handbook-stage=""
       aria-label="Process map and handbook"
       className={cn(

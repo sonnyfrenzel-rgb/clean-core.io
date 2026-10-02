@@ -11,6 +11,7 @@ export const PROCESS_MAP_MESSAGES = {
   'map.sectionLabel': 'Process reconstructed from code',
   'map.title': 'Process — reconstructed from code',
   'map.viewLabel': 'Process view',
+  'map.canvasTools': 'Zoom and full screen',
   'map.viewMap': 'Map',
   'map.viewSteps': 'Steps',
   'map.stopEditing': 'Stop editing',
