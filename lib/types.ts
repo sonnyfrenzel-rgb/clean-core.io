@@ -195,6 +195,8 @@ export interface AuditMetadata {
     catalogVersion?: string;
   };
   auditPackExportedAt?: string;
+  /** The run the audit pack was exported for; cleared with the timestamp by a new run. */
+  auditPackExportedRunId?: string;
   /**
    * Written by `/api/runs/create` when the analysed source changes: digests of
    * the artefacts and the sign-off built for the previous source. Anything still

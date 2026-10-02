@@ -807,6 +807,10 @@ export async function POST(req: NextRequest) {
             // Roadmap 7.10 - the subject of the active run, so the next run can
             // tell a profile change from a re-analysis of the same subject.
             assessmentSubject: profileRecord.assessmentSubject,
+            // An audit pack exported for the previous run is not one for this
+            // run (codex code-trust-07): the marker goes with the run it named.
+            auditPackExportedAt: FieldValue.delete(),
+            auditPackExportedRunId: FieldValue.delete(),
           },
         },
         { merge: true },

@@ -346,4 +346,28 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     expect(attested.match(/@example\.com/g)?.length).toBe(1);
     expect(attested).not.toContain('Retire / Decommission');
   });
+
+  // Codex code-trust-07: the export marker names the run it was exported for,
+  // and a new run of the same source does not inherit it.
+  test('the handover export marker belongs to the exported run, and a new run clears it', async ({ request }) => {
+    const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
+    const db = adminFirestore(app, FIRESTORE_DB_ID);
+    const read = async () => (await db.collection('projects').doc(PROJECT_ID).get()).data()!;
+
+    await openPack(request);
+    const exported = await read();
+    expect(exported.auditMetadata?.auditPackExportedAt).toBeTruthy();
+    expect(exported.auditMetadata?.auditPackExportedRunId).toBe(exported.activeRunId);
+
+    const rerun = await request.post('/api/runs/create', {
+      headers: headers(),
+      data: { projectId: PROJECT_ID, legacyCode: SOURCE, analysis: NARRATIVE, uploadedFileName: 'z_boundary.abap' },
+    });
+    expect(rerun.status(), await rerun.text()).toBe(200);
+    const after = await read();
+    expect(after.activeRunId).not.toBe(exported.activeRunId);
+    expect(after.auditMetadata?.auditPackExportedAt, 'run B inherited run A\'s export').toBeUndefined();
+    expect(after.auditMetadata?.auditPackExportedRunId).toBeUndefined();
+    expect(after.auditMetadata?.inputFingerprint?.sha256, 'the rest of auditMetadata survives').toBeTruthy();
+  });
 });
