@@ -34,9 +34,33 @@ export interface ArchitectureCanvasProps {
   onSelect?: (key: string) => void;
   /** Spoken summary for the SVG (`<desc>`). */
   description: string;
+  /**
+   * Scale of the drawing against its natural size, within `ARCHITECTURE_ZOOM`.
+   * The drawing never follows its column past its natural size: its labels are
+   * set in the type scale (11–14 px, DESIGN.md §1.2) and grow no further.
+   */
+  zoom?: number;
 }
 
 const W = 1180;
+
+/** The drawing's natural width — the width at which a label is its own size. */
+export const ARCHITECTURE_CANVAS_WIDTH = W;
+
+/**
+ * The scale range, as on the process map (`components/process-map/bpmn-view.ts`):
+ * "Fit" shrinks to the column down to 0.8 and pans beyond; it never grows past
+ * the natural size. The largest step keeps the largest label (14 px) under
+ * 20 px, below the 22 px project title (owner 02.10.2026: at 3400 px the
+ * labels had grown to 34 px).
+ */
+export const ARCHITECTURE_ZOOM = { min: 0.8, max: 1.4, step: 0.2 } as const;
+
+/** The scale "Fit" picks for a column of `available` px. */
+export function fitArchitectureScale(available: number): number {
+  if (!(available > 0)) return 1;
+  return Math.max(ARCHITECTURE_ZOOM.min, Math.min(1, available / W));
+}
 const MAX_SUCCESSORS = 12;
 const MAX_GAPS = 9;
 const MAX_TABLES = 8;
@@ -128,7 +152,7 @@ function Pin({ x, y, n }: { x: number; y: number; n: number }) {
   );
 }
 
-function WideCanvas({ model, targetLine, selected, onSelect, description }: ArchitectureCanvasProps) {
+function WideCanvas({ model, targetLine, selected, onSelect, description, zoom = 1 }: ArchitectureCanvasProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const hatch = `hatch-${uid}`;
   const arrow = `arrow-${uid}`;
@@ -172,10 +196,11 @@ function WideCanvas({ model, targetLine, selected, onSelect, description }: Arch
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
-      width="100%"
+      width={Math.round(W * zoom)}
+      height={Math.round(H * zoom)}
       role="group"
       aria-labelledby={`t-${uid} d-${uid}`}
-      className="block"
+      className="mx-auto block max-w-none shrink-0"
       data-architecture-canvas={model.route ?? 'none'}
     >
       <title id={`t-${uid}`}>
