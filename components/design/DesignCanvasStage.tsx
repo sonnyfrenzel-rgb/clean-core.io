@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useId, useMemo, useState } from 'react';
-import { Cloud, Target, Link2, User, Plus, Minus, Maximize2, X, CircleDashed, RefreshCw } from 'lucide-react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Cloud, Target, Link2, User, Plus, Minus, Maximize2, Minimize2, Scan, X, CircleDashed, RefreshCw } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcCodeSurface from '@/components/cc/CodeSurface';
@@ -11,6 +11,7 @@ import CcSkeleton from '@/components/cc/Skeleton';
 import CcTabs from '@/components/cc/Tabs';
 import CcDateText from '@/components/cc/DateText';
 import CcDialog from '@/components/cc/Dialog';
+import CcMessageBox from '@/components/cc/MessageBox';
 import ArchitectureCanvas from '@/components/design/ArchitectureCanvas';
 import { ArchitectureList, ARCHITECTURE_ZOOM, fitArchitectureScale } from '@/components/design/ArchitectureCanvas';
 import { cn } from '@/lib/utils';
@@ -21,6 +22,7 @@ import type { DesignEvidence } from '@/hooks/useDesignEvidence';
 import type { ProvenanceValue } from '@/lib/provenance';
 import { architectureOptionLabel } from '@/components/ArchitectSignOff';
 import { designAnswer, type StoredRoute } from '@/lib/design-recommendation';
+import './design-canvas.css';
 
 /**
  * The Design tool, proposal B "Canvas first" (owner decision 01.10.2026,
@@ -89,6 +91,16 @@ export interface DesignCanvasStageProps {
    * says so in these three places instead.
    */
   signOffWording?: { open: string; confirmed: string; dialogLead: string };
+  /**
+   * Confirming the target is a question first (owner 02.10.2026: "sonst kann
+   * man sich schnell verklicken"). Set, "Confirm target" opens a small message
+   * box naming `label`; only its own "Confirm target" calls `onConfirm`, and a
+   * thrown error is shown in the box, which stays open. With `chooseOther`,
+   * "Choose another target…" in the box opens the full sign-off
+   * (`signOffPanel`) instead. Unset, "Confirm target" opens the full sign-off
+   * directly.
+   */
+  confirmTarget?: { label: string; onConfirm: () => Promise<void> | void; chooseOther?: boolean };
 }
 
 /**
@@ -227,6 +239,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     routingRationale,
     view,
     signOffWording,
+    confirmTarget,
   } = props;
 
   const storedContract = evidence.state === 'ready' ? evidence.contract : null;
@@ -259,6 +272,155 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     if (locked) setSignOffOpen(false);
   }
   const hintId = useId();
+
+  // "Confirm target" asks first (owner 02.10.2026). `confirming` holds the
+  // box's write while it runs, so a second click is not a second write.
+  const [askOpen, setAskOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [askRefusal, setAskRefusal] = useState<string | null>(null);
+  const confirmingRef = useRef(false);
+  const closeAsk = () => {
+    if (confirmingRef.current) return;
+    setAskOpen(false);
+    setAskRefusal(null);
+  };
+  const confirmAsked = async () => {
+    if (!confirmTarget || confirmingRef.current) return;
+    confirmingRef.current = true;
+    setConfirming(true);
+    setAskRefusal(null);
+    try {
+      await confirmTarget.onConfirm();
+      setAskOpen(false);
+    } catch (err: unknown) {
+      setAskRefusal(err instanceof Error ? err.message : 'The confirmation was refused.');
+    } finally {
+      confirmingRef.current = false;
+      setConfirming(false);
+    }
+  };
+  const onConfirmButton = () => {
+    if (!locked && confirmTarget) {
+      setAskRefusal(null);
+      setAskOpen(true);
+    } else {
+      setSignOffOpen(true);
+    }
+  };
+
+  /* ---------------- full screen ---------------- */
+  // The editor's mechanism (`components/process-map/BpmnEditor.tsx`): the
+  // browser's own full screen holds the canvas card; where the browser refuses
+  // element full screen, the same card covers the window. The toggle and
+  // Escape leave it, and the focus stays inside while it is open.
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const fullToggleRef = useRef<HTMLButtonElement | null>(null);
+  const [browserFull, setBrowserFull] = useState(false);
+  const [overlayFull, setOverlayFull] = useState(false);
+  const filled = browserFull || overlayFull;
+  useEffect(() => {
+    const onChange = () => setBrowserFull(stageRef.current !== null && document.fullscreenElement === stageRef.current);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+  const toggleFull = useCallback(() => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined);
+      return;
+    }
+    if (overlayFull) {
+      setOverlayFull(false);
+      return;
+    }
+    const root = stageRef.current;
+    if (root && typeof root.requestFullscreen === 'function') {
+      root.requestFullscreen().catch(() => setOverlayFull(true));
+    } else {
+      setOverlayFull(true);
+    }
+  }, [overlayFull]);
+  useEffect(() => {
+    if (!filled) return undefined;
+    const html = document.documentElement;
+    const was = html.style.overflow;
+    if (overlayFull) html.style.overflow = 'hidden';
+    const onKey = (event: KeyboardEvent) => {
+      const root = stageRef.current;
+      if (!root) return;
+      if (event.key === 'Escape' && !event.defaultPrevented) {
+        // The browser leaves its own full screen on Escape itself; this is for
+        // the overlay, and for a browser that hands the key to the page.
+        event.preventDefault();
+        if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+        setOverlayFull(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = [...root.querySelectorAll<HTMLElement>('button:not([disabled]), [tabindex="0"], a[href]')].filter(
+        (el) => el.getClientRects().length > 0,
+      );
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (!root.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      html.style.overflow = was;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [filled, overlayFull]);
+  // Leaving full screen hands the focus back to the toggle that opened it.
+  const wasFilled = useRef(false);
+  useEffect(() => {
+    if (wasFilled.current && !filled) {
+      const active = document.activeElement;
+      if (!active || active === document.body || stageRef.current?.contains(active)) fullToggleRef.current?.focus();
+    }
+    wasFilled.current = filled;
+  }, [filled]);
+
+  /* ---------------- panning ---------------- */
+  // Wider than its column, the drawing pans: drag it, scroll it, or focus it
+  // and use the arrow keys. A drag that moved does not count as a click on a box.
+  const pan = useRef<{ x: number; y: number; left: number; top: number; moved: boolean } | null>(null);
+  const onPanDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'mouse' || event.button !== 0) return;
+    const el = event.currentTarget;
+    if (el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight) return;
+    pan.current = { x: event.clientX, y: event.clientY, left: el.scrollLeft, top: el.scrollTop, moved: false };
+  };
+  const onPanMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const p = pan.current;
+    if (!p) return;
+    const dx = event.clientX - p.x;
+    const dy = event.clientY - p.y;
+    if (!p.moved && Math.hypot(dx, dy) < 5) return;
+    p.moved = true;
+    event.currentTarget.scrollLeft = p.left - dx;
+    event.currentTarget.scrollTop = p.top - dy;
+  };
+  const onPanEnd = () => {
+    // The click that ends a drag still has to see `moved`; it clears it.
+    if (pan.current && !pan.current.moved) pan.current = null;
+  };
+  const onPanClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (pan.current?.moved) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    pan.current = null;
+  };
 
   const select = (key: string) => {
     setSelected(key);
@@ -329,7 +491,24 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
           // in the type scale: a wider column leaves the space empty, a
           // narrower one shrinks it to 0.8 and then pans (owner 02.10.2026 —
           // at 3400 px the labels had grown to 34 px).
-          <div ref={setCanvasEl} className="overflow-auto" data-canvas-zoom={zoom.toFixed(2)}>
+          <div
+            ref={setCanvasEl}
+            data-canvas-zoom={zoom.toFixed(2)}
+            data-canvas-scroll=""
+            // Focusable so a keyboard can pan it with the arrow keys.
+            tabIndex={0}
+            role="region"
+            aria-label="Target architecture drawing — drag or scroll to pan"
+            onPointerDown={onPanDown}
+            onPointerMove={onPanMove}
+            onPointerUp={onPanEnd}
+            onPointerCancel={onPanEnd}
+            onClickCapture={onPanClickCapture}
+            className={cn(
+              'overflow-auto rounded-cc-row',
+              filled && 'min-h-0 flex-1',
+            )}
+          >
             <ArchitectureCanvas model={model} targetLine={targetLine} selected={selected} onSelect={select} description={description} zoom={zoom} />
           </div>
         )}
@@ -775,47 +954,86 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
               <Kpi icon={<User size={16} />} tint="--cc-neutral" label="Sign-off" value={confirmed ? 'Confirmed' : 'Not confirmed'} />
             </div>
 
-            <div className="rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc min-[720px]:p-4">
+            {/* The canvas card. Full screen is this card filling the window —
+                the element the Fullscreen API shows or, where the browser
+                refuses, the same card laid over the page (the BPMN editor's
+                mechanism, `components/process-map/BpmnEditor.tsx`). */}
+            <div
+              ref={stageRef}
+              data-canvas-card=""
+              data-canvas-fullscreen={filled ? (browserFull ? 'browser' : 'overlay') : 'false'}
+              className={
+                filled ? 'cc-canvas-fullscreen' : 'rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc min-[720px]:p-4'
+              }
+            >
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="m-0 flex flex-wrap items-center gap-2 text-[15px] font-bold text-cc-ink">
                   Target architecture
                   {contract ? <CcProvenanceChip value="reconstructed" note={`from contract ${contract.contractId}`} /> : null}
                 </h2>
                 {view === 'canvas' && model ? (
-                  <span id={hintId} className="text-[12px] text-cc-ink-muted">
-                    click a box to see its evidence
-                  </span>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span id={hintId} className="text-[12px] text-cc-ink-muted">
+                      click a box to see its evidence
+                    </span>
+                    {/* The controls sit on the drawing they act on, so they
+                        are in reach in full screen too. The phone form is
+                        HTML that reflows and has no scale. */}
+                    <div role="toolbar" aria-label="Canvas view" data-canvas-controls="" className="flex items-center gap-1 max-[719px]:hidden">
+                      <CcIconButton
+                        label="Zoom out"
+                        title="Zoom out"
+                        data-canvas-zoom-out=""
+                        onClick={() => setZoom(Math.max(ARCHITECTURE_ZOOM.min, zoom - ARCHITECTURE_ZOOM.step))}
+                        disabled={zoom <= ARCHITECTURE_ZOOM.min + 0.001}
+                      >
+                        <Minus size={16} aria-hidden={true} />
+                      </CcIconButton>
+                      <span data-canvas-zoom-value="" aria-live="polite" className="min-w-11 text-center text-[12px] font-semibold text-cc-ink-muted tabular-nums">
+                        {Math.round(zoom * 100)}%
+                      </span>
+                      <CcIconButton
+                        label="Zoom in"
+                        title="Zoom in"
+                        data-canvas-zoom-in=""
+                        onClick={() => setZoom(Math.min(ARCHITECTURE_ZOOM.max, zoom + ARCHITECTURE_ZOOM.step))}
+                        disabled={zoom >= ARCHITECTURE_ZOOM.max - 0.001}
+                      >
+                        <Plus size={16} aria-hidden={true} />
+                      </CcIconButton>
+                      <CcIconButton label="Fit to the width" title="Fit to the width" data-canvas-fit="" onClick={() => setZoom('fit')}>
+                        <Scan size={16} aria-hidden={true} />
+                      </CcIconButton>
+                      <CcIconButton
+                        ref={fullToggleRef}
+                        label={filled ? 'Exit full screen' : 'Full screen'}
+                        title={filled ? 'Exit full screen (Esc)' : 'Full screen'}
+                        aria-pressed={filled}
+                        data-canvas-fullscreen-toggle=""
+                        onClick={toggleFull}
+                      >
+                        {filled ? <Minimize2 size={16} aria-hidden={true} /> : <Maximize2 size={16} aria-hidden={true} />}
+                      </CcIconButton>
+                    </div>
+                  </div>
                 ) : null}
               </div>
               {board}
+              {view === 'canvas' && model ? (
+                <div
+                  aria-label="Legend"
+                  role="note"
+                  className="mt-3 flex flex-wrap gap-3 text-[12px] text-cc-ink-muted max-[719px]:hidden"
+                >
+                  <Swatch bg="color-mix(in srgb, var(--cc-chart-2) 8%, var(--cc-surface))" border="color-mix(in srgb, var(--cc-chart-2) 40%, var(--cc-surface))">OData API</Swatch>
+                  <Swatch bg="color-mix(in srgb, var(--cc-chart-3) 7%, var(--cc-surface))" border="color-mix(in srgb, var(--cc-chart-3) 45%, var(--cc-surface))">CDS view</Swatch>
+                  <Swatch bg="var(--cc-surface)" border="var(--cc-error)">write</Swatch>
+                  <Swatch bg="var(--cc-surface)" border="var(--cc-ink-muted)" dashed>not determined</Swatch>
+                  <Swatch bg="var(--cc-surface)" border="var(--cc-brand-strong)" dashed>clean core boundary</Swatch>
+                </div>
+              ) : null}
             </div>
           </div>
-          {view === 'canvas' && model ? (
-            <div className="relative mt-auto flex items-end justify-between gap-3 px-7 pb-4 max-[719px]:hidden">
-              <div className="flex gap-2">
-                <CcIconButton label="Zoom in" onClick={() => setZoom(Math.min(ARCHITECTURE_ZOOM.max, zoom + ARCHITECTURE_ZOOM.step))} disabled={zoom >= ARCHITECTURE_ZOOM.max}>
-                  <Plus size={16} aria-hidden={true} />
-                </CcIconButton>
-                <CcIconButton label="Zoom out" onClick={() => setZoom(Math.max(ARCHITECTURE_ZOOM.min, zoom - ARCHITECTURE_ZOOM.step))} disabled={zoom <= ARCHITECTURE_ZOOM.min}>
-                  <Minus size={16} aria-hidden={true} />
-                </CcIconButton>
-                <CcIconButton label="Fit to the stage" onClick={() => setZoom('fit')}>
-                  <Maximize2 size={16} aria-hidden={true} />
-                </CcIconButton>
-              </div>
-              <div
-                aria-label="Legend"
-                role="note"
-                className="flex flex-wrap gap-3 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-1 text-[12px] text-cc-ink-muted max-[719px]:hidden"
-              >
-                <Swatch bg="color-mix(in srgb, var(--cc-chart-2) 8%, var(--cc-surface))" border="color-mix(in srgb, var(--cc-chart-2) 40%, var(--cc-surface))">OData API</Swatch>
-                <Swatch bg="color-mix(in srgb, var(--cc-chart-3) 7%, var(--cc-surface))" border="color-mix(in srgb, var(--cc-chart-3) 45%, var(--cc-surface))">CDS view</Swatch>
-                <Swatch bg="var(--cc-surface)" border="var(--cc-error)">write</Swatch>
-                <Swatch bg="var(--cc-surface)" border="var(--cc-ink-muted)" dashed>not determined</Swatch>
-                <Swatch bg="var(--cc-surface)" border="var(--cc-brand-strong)" dashed>clean core boundary</Swatch>
-              </div>
-            </div>
-          ) : null}
         </section>
 
         {/* The side panel */}
@@ -859,7 +1077,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
               disabled={!canSignOff}
               data-design-confirm=""
               aria-haspopup="dialog"
-              onClick={() => setSignOffOpen(true)}
+              onClick={onConfirmButton}
             >
               {locked ? 'Change target' : 'Confirm target'}
             </CcButton>
@@ -877,6 +1095,49 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
       >
         {signOffPanel}
       </CcDialog>
+
+      {/* The question before the decision (owner 02.10.2026). Cancel, Escape
+          and the scrim leave without writing; only its own button confirms. */}
+      {confirmTarget ? (
+        <CcMessageBox
+          open={askOpen}
+          title="Confirm the target?"
+          confirmLabel={confirming ? 'Confirming…' : 'Confirm target'}
+          onConfirm={() => void confirmAsked()}
+          onCancel={closeAsk}
+        >
+          <div data-design-confirm-ask="" className="flex flex-col gap-2">
+            <p className="m-0">
+              You confirm <b>{confirmTarget.label}</b> as the target architecture for this code.
+            </p>
+            <p className="m-0 text-cc-ink-muted">
+              {signOffWording?.dialogLead ?? 'A self-declaration by the signed-in account, bound to the run this page shows — not an organisational mandate.'}
+            </p>
+            {askRefusal ? (
+              <p data-signoff-refusal="" role="alert" className="m-0 rounded-cc-row border-l-4 border-cc-error bg-cc-error-bg px-3 py-2 text-cc-ink">
+                {askRefusal}
+              </p>
+            ) : null}
+            {signOffPanel && confirmTarget.chooseOther ? (
+              <p className="m-0">
+                <button
+                  type="button"
+                  data-design-confirm-other=""
+                  disabled={confirming}
+                  onClick={() => {
+                    setAskOpen(false);
+                    setAskRefusal(null);
+                    setSignOffOpen(true);
+                  }}
+                  className="cursor-pointer rounded-cc-row text-[13px] font-semibold text-cc-information underline-offset-2 hover:underline disabled:cursor-not-allowed"
+                >
+                  Choose another target…
+                </button>
+              </p>
+            ) : null}
+          </div>
+        </CcMessageBox>
+      ) : null}
 
       {/* The drawer */}
       <section aria-label="Design document and contract" data-design-drawer="" className="border-t border-cc-line bg-cc-surface px-4 pt-2 pb-6 min-[720px]:px-6">

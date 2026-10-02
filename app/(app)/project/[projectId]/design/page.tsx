@@ -18,7 +18,7 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import NotGenerated from '@/components/NotGenerated';
 import { saveAs } from '@/lib/fileSaver';
 import GlossaryTerm from '@/components/GlossaryTerm';
-import ArchitectSignOff, { architectureOptionLabel } from '@/components/ArchitectSignOff';
+import ArchitectSignOff, { architectureOptionLabel, type TargetArchitecture } from '@/components/ArchitectSignOff';
 import { recommendedArchitecture } from '@/lib/project-commands';
 import { signOffRecommendation, storedRouteOf } from '@/lib/design-recommendation';
 import { runProjectCommand } from '@/lib/project-command-client';
@@ -831,6 +831,28 @@ ${responseText.substring(0, 4000)}`;
           : `Based on the code analysis, the ${recommendation === 'cap' ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`;
   const canSignOff = Boolean(design) && designIsStructured(design);
 
+  // The sign-off command, one place for both ways to it: the panel's
+  // "Confirm & Lock" and the question "Confirm target" asks first.
+  const lockArchitecture = async (architecture: TargetArchitecture, justification: string) => {
+    const stored = await runProjectCommand(projectId as string, {
+      command: 'approve-architecture',
+      targetArchitecture: architecture,
+      justification: justification || '',
+      // Roadmap 8.8 — which run this page rendered, and what it
+      // said. `loadProjectAndHydrate` spreads the run over the
+      // project (`lib/project-loader.ts:14-22`), so every fact
+      // `evidenceDigest` reads here is the run's own; the three
+      // keys the project keeps on merge are deliberately not
+      // among them. If the server's active run has moved since,
+      // the command comes back 409 with the diff instead of
+      // silently binding the sign-off to a run nobody read.
+      expectedRunId: String(project?.activeRunId || ''),
+      expectedEvidenceDigest: evidenceDigest(project as unknown as Record<string, unknown>),
+    });
+    setProject((prev: Project | null) => prev ? { ...prev, ...stored } as Project : null);
+    setEvidenceVersion((v) => v + 1);
+  };
+
   // The sign-off, unchanged: the same panel, the same commands, the same
   // run binding (roadmap 0.7, 8.8). It sits in the Decision tab now.
   const signOffPanel = canSignOff ? (
@@ -852,25 +874,7 @@ ${responseText.substring(0, 4000)}`;
       // stored — including the address it read off the ID token and
       // the timestamp off its own clock, neither of which this page
       // is entitled to invent.
-      onLock={async (architecture, justification) => {
-        const stored = await runProjectCommand(projectId as string, {
-          command: 'approve-architecture',
-          targetArchitecture: architecture,
-          justification: justification || '',
-          // Roadmap 8.8 — which run this page rendered, and what it
-          // said. `loadProjectAndHydrate` spreads the run over the
-          // project (`lib/project-loader.ts:14-22`), so every fact
-          // `evidenceDigest` reads here is the run's own; the three
-          // keys the project keeps on merge are deliberately not
-          // among them. If the server's active run has moved since,
-          // the command comes back 409 with the diff instead of
-          // silently binding the sign-off to a run nobody read.
-          expectedRunId: String(project?.activeRunId || ''),
-          expectedEvidenceDigest: evidenceDigest(project as unknown as Record<string, unknown>),
-        });
-        setProject((prev: Project | null) => prev ? { ...prev, ...stored } as Project : null);
-        setEvidenceVersion((v) => v + 1);
-      }}
+      onLock={lockArchitecture}
       onUnlock={async () => {
         const stored = await runProjectCommand(projectId as string, { command: 'revoke-architecture' });
         setProject((prev: Project | null) => prev ? {
@@ -975,6 +979,18 @@ ${responseText.substring(0, 4000)}`;
           hasDocument={Boolean(design)}
           canSignOff={canSignOff}
           signOffPanel={signOffPanel}
+          // "Confirm target" asks first and then confirms the recommendation
+          // the panel would (owner 02.10.2026); another target goes through
+          // the panel.
+          confirmTarget={
+            canSignOff
+              ? {
+                  label: architectureOptionLabel(recommendation) ?? recommendation,
+                  onConfirm: () => lockArchitecture(recommendation, ''),
+                  chooseOther: true,
+                }
+              : undefined
+          }
           locked={project?.approvedByArchitect === true}
           onRegenerate={regenerate}
           regenerateDisabled={!designAvailable || stale.sourceChanged}
