@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
  * line behind "Details" in Business and Management; the owner extended it to
  * every stage on 02.10.2026: "can always be hidden behind 'Details'". A
  * process owner reading "catalog 2024.FPS02, SAP release list of …, engine
- * v2.20.0" learns nothing from it, and the line that mattered moves down. The
+ * version" learns nothing from it, and the line that mattered moves down. The
  * line is not removed and not changed — opened, it is exactly the line the
  * stage hands in, with its own `data-*` hooks.
  *

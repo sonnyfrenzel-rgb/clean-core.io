@@ -3812,8 +3812,8 @@ class SkeletonBuilder {
    * Within the window of two, a statement in between is looked past only when
    * it cannot set `sy-subrc` — a declaration or a CLEAR. Any other statement
    * overwrites it: `CALL FUNCTION 'F1' … EXCEPTIONS …. CALL FUNCTION 'F2'. IF
-   * sy-subrc …` checks F2, and hung a boundary on F1 (QA full review of
-   * v2.20.0, 5390fabd4c02).
+   * sy-subrc …` checks F2, and hung a boundary on F1
+   * (QA full review of v2.20.0, 5390fabd4c02).
    */
   private handlesSubrcAfter(index: number): boolean {
     for (let i = index + 1; i <= index + 2 && i < this.statements.length; i++) {

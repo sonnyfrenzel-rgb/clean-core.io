@@ -10,6 +10,100 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.0] — 2026-10-03
+
+3.0 gives every project one workspace, and the seven stages are no longer the product: the
+process reconstructed from the ABAP code as BPMN, three views of it (Business, IT, Management)
+and the seven stages as tools inside it. It is the release the 2.10–2.20 work states were
+building towards (`docs/ROADMAP.md` §4). Sign-up and account are unchanged; the views are
+presentation only and are stored nowhere.
+
+### What everyone notices
+
+- **Every project opens in the workspace** — Business, IT and Management view over the same
+  facts, with layers, the process map and the seven tools side by side, each marked with what
+  is on record and a green check once used (ADR-060). The administrator's preview switch is
+  gone; examples open the first look; the announcements board is dropped (3.0.1, ADR-061).
+  Existing projects open with their IDs, runs and signatures unchanged (3.0.2).
+- **Every stage stands in one frame,** the workspace's, in the product and in the demo, so
+  nothing moves between tools (ADR-063).
+- **A demo project with a tour.** `Z_MM_PO_APPROVAL` in all views, a tour of twelve stations,
+  progress kept only in the browser, "Show tips again" in the help menu (3.0.7). "Explore the
+  demo" on the home page leads to `/demo/workspace` after sign-in (3.0.1).
+- **A new home page** built from captures of the real workspace, not mockups; the catalog and
+  knowledge pages keep their URLs, canonicals and content and take the 3.0 look (3.0.6). The
+  share card shows the reconstructed process with a line anchor; FAQ, JSON-LD and `llms.txt`
+  come from one source; `llms-full.txt` is new.
+- **The Management view answers in one sentence** — at most six cards, the four buckets with
+  *not assigned* as its own area, the readiness history per rule version, level A–D, what
+  blocks the decision and the decision status; every number names its coverage and is
+  reachable as text; costs only as a simulation with their assumption revision (3.0.10).
+- **A professional BPMN editor** with properties, compare, tidy and import of BPMN 2.0 files
+  as a new revision: line anchors are never taken from the file, everything without one is
+  marked "added outside Clean-Core.io" (ADR-056). Whether SAP Signavio accepts our file is
+  still not verified, and the product says so.
+- **Documentation is written from the engine** — process skeleton, business statements,
+  effect states and names — no longer by a model reading only the start of the code (3.0.5).
+  Long lists start folded with a count and a summary.
+- **Analyze shows each answer once:** score and findings on top, route and *not determined*
+  beside them, detail behind closed sections; business value moved to Economics. The score
+  bands are Clean-Core.io's own, derived from its deductions (5–59, 60–80, 81–90, 91–100);
+  SAP publishes no Clean Core Score. Far from clean core reads red, then amber, then indigo
+  (ADR-057).
+- **Analyze, Transformation and the fit panel read the project's evidence from the server,**
+  as the signed run does.
+- **An SAP object written directly is level D,** whatever its own level, and its own level is
+  shown beside it (ADR-062). An include that was not uploaded is named, not read as clean.
+- **Testing is one guided flow;** a mock run reaches the isolated runner or says why not.
+  Delivery is the handover: evidence chain, package, who confirmed what. New packs are titled
+  Audit Pack.
+- **SAP BTP keeps its name:** "SAP BTP, part of the SAP Business AI Platform" at first mention
+  and SAP BTP after it; SAP's own service names are kept (3.0.15, ADR-064).
+- **Accessibility baseline:** keyboard paths, screen-reader headings and live regions,
+  `forced-colors`, phone layout in breakpoint S, print layout, "Keyboard shortcuts" in the
+  help menu (3.0.4).
+- **The whole app on one design system** (Block D): every screen on the `DESIGN.md` tokens and
+  components, the old dashboard rebuilt as My workspace, native dialogs replaced; the design
+  guards now demand zero exceptions.
+- **Terms of Service v2.2.0** take effect on 3 October 2026: section 4.1 says which results the
+  deterministic engine computes and which a model writes. Every existing account accepts it
+  once at its next sign-in; sign-in and data are unchanged.
+
+### Security
+
+- **BYOK hardening (3.0.13):** a truncated or aborted model response is not a result and gets
+  no receipt; the provider is recorded explicitly; the BYOK tier rule is checked on the server;
+  key test, save and removal are limited per account; errors are logged as codes; a missing
+  Terms consent is not treated as accepted; BYOK keys have their own versioned encryption key,
+  and the production deploy stops without it.
+- **Blocked accounts lose Firestore access immediately** — the rules read the account status
+  on project, run and user documents (3.0.12; deployed by the owner before the app).
+- **Generation is stored server-side with compare-and-swap** against a token read before the
+  model call; two tabs cannot overwrite a newer generation (3.0.11).
+- **A project that would outgrow its document is refused** with 413, and the draft is kept.
+- **The external review of 02.10.2026** (Codex, twelve code and architecture passes, plus an
+  external audit of copy, privacy, SEO and security) was verified finding by finding: fixed
+  with a test, refuted with evidence, or scheduled after 3.0 (3.0.16). Details of security
+  findings stay private.
+- **Production gets a sealed smoke check after every `main` deploy**, and the rollback command
+  is documented.
+- The security audit of v2.20.0 (steps B, C and F, rules with field checks), a hardened health
+  check (key floor, audit rows), Ed25519 verification on `verify-pack`, dependency updates
+  (basic-ftp 6.2.1, GHSA-c475-qrg2-pj4r).
+
+### Behind the scenes
+
+- The engine: Codex code-engine pass, target profile as an input through analysis, catalog
+  lookup, result, decision and receipt (7.10), with the PCE catalog shipped; business
+  statements in English. The SAP catalog left every first-load bundle.
+- QA: the carried register went from 254 to 77 open findings (108 fixed with tests, 23 already
+  fixed, 46 refuted); the full review of v2.20.0 fixed 256 medium/low findings.
+- Public repository text: one inventory (`docs/registers/public-texts.json`), 49 documents
+  moved to the archive, everything public in English — documents, code comments and test
+  titles (3.0.8, 3.0.14). The public-text guard is armed and fails on German prose.
+- SECURITY.md 5.0 and the security parts of ARCHITECTURE, OPERATIONS and DATA-RETENTION
+  checked against the code.
+
 ## [v2.20.0] — 2026-09-28
 
 The process gets more accurate: measured against a new benchmark of 300 constructed,

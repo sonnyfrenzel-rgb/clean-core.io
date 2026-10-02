@@ -28,7 +28,7 @@ export default function TermsPage() {
           Terms of Service <span className="text-cc-ink-muted font-medium text-2xl md:text-3xl">&amp; Community Guidelines</span>
         </h1>
         <p className="text-cc-ink-muted leading-relaxed mb-12">
-          Consolidated version — effective 6 October 2026 (v2.2.0). This document is the single authoritative version of the
+          Consolidated version — effective 3 October 2026 (v2.2.0). This document is the single authoritative version of the
           Terms of Service and Community Guidelines for the website and application available at clean-core.io (the
           &ldquo;Platform&rdquo;). It replaces and supersedes any prior text shown in the onboarding gate or the landing
           sign-up modal.

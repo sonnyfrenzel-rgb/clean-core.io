@@ -106,15 +106,18 @@ export const ARCHIVED_TERMS_VERSIONS: readonly ArchivedTermsVersion[] = [
     // day, 6 October 2026, and the text was re-extracted under it before it was
     // ever published — so this is not an edit of a published version. Only the
     // effective date in the opening sentence differs from the placeholder text.
-    version: '2026-10-06',
+    // On 02.10.2026 the release date became the day of the main deploy, and the
+    // effective date moved once more, from 6 to 3 October 2026; the text was
+    // re-extracted under it, again before it was ever published.
+    version: '2026-10-03',
     label: 'v2.2.0',
-    effectiveOn: '6 October 2026',
-    file: 'docs/terms/2026-10-06.md',
-    sha256: '63bf4c81002d3d43dbff51947de26c7fd8ab11dc2a24ab4643ac284596d4b6c8',
+    effectiveOn: '3 October 2026',
+    file: 'docs/terms/2026-10-03.md',
+    sha256: 'cdcc08f4eeefccbf199ba9cd574688e6b7a30d76b4a56c8ba21a3587b1fbb50a',
     source: {
       file: 'app/terms/page.tsx',
-      commit: 'ecddd646da255124861586d078694c500ca161c0',
-      blob: '651c1ebce7f69caff977830764e6bd976645593b',
+      commit: '5f5994eb6501d31d7f2ed4c18692b4faeafc08f4',
+      blob: 'cf2a6e40e73e5ed030d07aaf2d6e2f329a22d3eb',
       method:
         'Rendered in a browser at the recorded commit and read out of the DOM with the walk in ' +
         'scratch/extract-legal.js. The "Published versions" list is navigation, not contract text, and was ' +
