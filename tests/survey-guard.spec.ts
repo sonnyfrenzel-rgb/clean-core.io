@@ -355,8 +355,8 @@ test.describe('the links in the mail go somewhere', () => {
   const ROOT = path.resolve(__dirname, '..');
 
   test('there is no survey workflow left to run', () => {
-    // The survey is discontinued (Sonny, 16.09.2026: "kann generell ausbleiben,
-    // ist eh vorbei ohne Erfolg"), and the two workflows are deleted rather
+    // The survey is discontinued (Sonny, 16.09.2026, translated: "can be dropped
+    // altogether, it is over anyway, without success"), and the two workflows are deleted rather
     // than left switched off. The full review of 52f171091948 had just found
     // that a manual dry run of the send workflow printed the production
     // recipient list into public Actions logs (90d94fa15308), and that the

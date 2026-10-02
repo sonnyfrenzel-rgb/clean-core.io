@@ -12,8 +12,8 @@ import path from 'path';
  * AD fields for now.
  *
  * Deferring the work did not defer the obligation. §13 of the same document:
- * *„Solange das Profil Namen führt, darf keine Oberfläche und kein Text
- * behaupten, es würden nur Handles gespeichert."* The sentence belongs to the
+ * *"As long as the profile holds names, no surface and no text may claim
+ * that only handles are stored."* The sentence belongs to the
  * member list in Schnitt A, after the migration — never before it.
  *
  * This is the smallest thing that keeps that promise: the claim cannot appear in

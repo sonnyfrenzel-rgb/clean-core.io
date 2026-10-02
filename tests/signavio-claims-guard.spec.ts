@@ -8,8 +8,8 @@ import path from 'path';
  * a real Signavio. What ships is BPMN 2.0 XML — and even that export has known
  * escaping defects (CR-21, fixed in step 2.6).
  *
- * Acceptance (docs/ROADMAP.md, Phase 0): "keine Seite und kein Badge mehr einen
- * Signavio-Import verspricht".
+ * Acceptance (docs/ROADMAP.md, Phase 0): "no page and no badge promises a
+ * Signavio import any more".
  *
  * When step 4.3 proves the import, this spec changes in the same release.
  */

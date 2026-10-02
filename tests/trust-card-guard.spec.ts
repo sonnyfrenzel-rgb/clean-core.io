@@ -267,8 +267,8 @@ test.describe('the access line tracks the rule it describes', () => {
 
 test.describe('the privacy policy says it first', () => {
   test('it names the community key as a paid Gemini API key', () => {
-    // Roadmap 0.11: "die Datenschutzerklärung nennt den bezahlten Tarif des
-    // Community-Schlüssels ausdrücklich, bevor die Karte es sagt." Without that
+    // Roadmap 0.11: "the privacy policy names the paid tier of the community key
+    // explicitly, before the card says it." Without that
     // sentence the card's no-training line is a promise with nothing behind it.
     const policy = prose('app/datenschutz/page.tsx');
     expect(policy).toContain('The shared community key is a paid Gemini API key');

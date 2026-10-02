@@ -19,13 +19,12 @@ import { receiptFor } from './helpers/test-receipt';
  * Counter-check scenarios and the receipt that earns them — roadmap 7.3.
  *
  * The phase's acceptance line names W22-A15 and W22-A16, and the 2.7 catalogue
- * spells them out: *Test simuliert, übersprungen oder nur Connectivity → kein
- * View stellt dies als erfolgreiche fachliche Ausführung dar*, and *tatsächlicher
- * Test auf anderem Codehash → Nachweis gilt nicht stillschweigend für die
- * aktuelle Ausgabe*. Two more come with them from UX-E08-F01/F02: *ein
- * bestätigter Szenarioentwurf wird nicht als tatsächlich durchgeführter Test
- * angezeigt*, and *Umgebung und ersetzte Abhängigkeiten sind am Ergebnis
- * sichtbar*.
+ * spells them out: *test simulated, skipped or connectivity only → no view
+ * presents this as a successful business execution*, and *actual test on a
+ * different code hash → the evidence does not silently apply to the current
+ * output*. Two more come with them from UX-E08-F01/F02: *a confirmed scenario
+ * draft is not shown as an actually executed test*, and *the environment and
+ * replaced dependencies are visible on the result*.
  *
  * Every assertion below runs the real derivation on real ABAP — the eight
  * programs this product ships, plus three snippets for the cases none of them

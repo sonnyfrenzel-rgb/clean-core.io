@@ -248,12 +248,12 @@ test.describe('the eight programs this product ships', () => {
       skeleton.nodes.find((n) => n.label === name && n.expandsTo === `form:${name}`);
 
     // DESIGN.md §5.8, right-hand column: the example's own elements.
-    expect(callSite('SEND_SUMMARY_MAIL')?.kind, 'Zusammenfassung mailen (L573)').toBe('send-task');
-    expect(callSite('DISPLAY_ALV')?.kind, 'Ergebnisliste ansehen, ALV (L616)').toBe('user-task');
-    expect(callSite('UPDATE_LEGACY_LOG_TASK')?.kind, 'Audit-Protokoll im Update-Task (L509)').toBe('service-task');
-    expect(callSite('CHANGE_SALES_ORDER_BDC')?.kind, 'Kundenauftrag ändern per Batch-Input (L467)').toBe('transaction');
-    expect(callSite('DERIVE_CUSTOMER_RISK')?.kind, 'Kundenrisiko ableiten (L303–317)').toBe('business-rule-task');
-    expect(callSite('CALCULATE_RISK_SCORES')?.kind, 'Auftragsrisiko punkten (L335–396)').toBe('business-rule-task');
+    expect(callSite('SEND_SUMMARY_MAIL')?.kind, 'mail the summary (L573)').toBe('send-task');
+    expect(callSite('DISPLAY_ALV')?.kind, 'view the result list, ALV (L616)').toBe('user-task');
+    expect(callSite('UPDATE_LEGACY_LOG_TASK')?.kind, 'audit log in the update task (L509)').toBe('service-task');
+    expect(callSite('CHANGE_SALES_ORDER_BDC')?.kind, 'change the sales order by batch input (L467)').toBe('transaction');
+    expect(callSite('DERIVE_CUSTOMER_RISK')?.kind, 'derive the customer risk (L303–317)').toBe('business-rule-task');
+    expect(callSite('CALCULATE_RISK_SCORES')?.kind, 'score the order risk (L335–396)').toBe('business-rule-task');
 
     // A routine that classifies stays a decision table however long it is;
     // sixty lines do not turn it into a phase of the process.
@@ -1256,7 +1256,7 @@ test.describe('roadmap 2.16 — lanes', () => {
     expect(checker.anchor.lineStart).toBe(197);
     // Two checks on one object are one actor.
     expect(checker.evidence.map((e) => e.anchor.lineStart)).toEqual([197, 205]);
-    // §5.8: "Prüfer (außerhalb des Programms)". The checker runs no statement
+    // §5.8: "checker (outside the program)". The checker runs no statement
     // of this program, so the lane holds no flow node — and claiming otherwise
     // would be a sentence the source does not contain.
     expect(checker.nodeIds).toEqual([]);
@@ -1667,7 +1667,7 @@ test.describe('roadmap 2.17 — DESIGN.md §5.8 and the code in agreement', () =
   test('a LOOP AT whose body draws nothing is one activity, not a plane with an end event alone', () => {
     // §5.8 gives a calculation no element, so the region would hold an end event
     // and nothing that reaches it. The other half of the same row answers it:
-    // *eine Aktivität* with the marker.
+    // *an activity* with the marker.
     const skeleton = body('LOOP AT gt_orders INTO ls_order.', 'lv_sum = lv_sum + ls_order-netwr.');
     const loop = skeleton.nodes.find((n) => n.kind === 'loop')!;
     expect(loop.detail?.multiInstance).toBe(true);
@@ -1717,7 +1717,7 @@ test.describe('roadmap 2.17 — DESIGN.md §5.8 and the code in agreement', () =
 
 
 /* ================================================================== *
- * Roadmap 2.14 — "Einstieg wählen" (CR-08)
+ * Roadmap 2.14 — "choose the entry point" (CR-08)
  *
  * On 18.09.2026 nine of the corpus sources ended with `no-entry-point`
  * and zero nodes: a class method, a module pool, a BAdI implementation,
@@ -1875,7 +1875,7 @@ test.describe('roadmap 2.14 — where the process begins', () => {
     expect(starts(excerpt).map((n) => [n.label, n.detail?.trigger])).toEqual([['zif_ex_order_check~before_save', 'interface']]);
 
     // Where the definition **is** here it decides: a local class stays local
-    // (2.14, "Public heißt nicht von außen aufrufbar").
+    // (2.14, "public does not mean callable from outside").
     const local = buildProcessSkeleton([
       'CLASS lcl_check DEFINITION.',
       '  PUBLIC SECTION.',
@@ -1905,7 +1905,7 @@ test.describe('roadmap 2.14 — where the process begins', () => {
   });
 
   test('last resort: a method no call reaches, of a class whose definition is not here, begins like an unperformed FORM', () => {
-    // §5.8, Startereignis: "eine `FORM`, die kein `PERFORM` erreicht" — its
+    // §5.8, start event: "a `FORM` that no `PERFORM` reaches" — its
     // caller is outside the source. A method of a class whose definition this
     // upload does not hold, and which no call of the source reaches, has the
     // same caller. Written for this test.
@@ -2222,7 +2222,7 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
   const startsOf = (skeleton: ProcessSkeleton) => skeleton.nodes.filter((n) => n.kind === 'start');
 
   test('D3 — a FORM that a PERFORM reaches is a step of its caller, not a second beginning', () => {
-    // §5.8, Startereignis: "… und eine `FORM`, die kein `PERFORM` erreicht".
+    // §5.8, start event: "… and a `FORM` that no `PERFORM` reaches".
     const skeleton = buildProcessSkeleton([
       'FORM userexit_save.',
       '  PERFORM post_change.',
@@ -2290,7 +2290,7 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
   });
 
   test('D4 — an information message is a popup the user confirms: a user task', () => {
-    // §5.8, User-Task: "ein Mensch handelt im Programm: `CALL SCREEN`, Popup, …".
+    // §5.8, user task: "a person acts in the program: `CALL SCREEN`, popup, …".
     const skeleton = buildProcessSkeleton([
       'REPORT zcc_msg.',
       'START-OF-SELECTION.',
@@ -2398,7 +2398,7 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
   });
 
   test('D2 — a method call is a step: a sub-process where the source implements it, opaque where not', () => {
-    // §5.8, Eingeklappter Teilprozess: "eine `FORM`/Methode mit eigener Wirkung".
+    // §5.8, collapsed sub-process: "a `FORM`/method with an effect of its own".
     const skeleton = buildProcessSkeleton([
       'REPORT zcc_calls.',
       'CLASS lcl_order DEFINITION.',
@@ -2456,8 +2456,8 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
   });
 
   test('D2 — a method whose step is a call on a method not in the source has an effect, like a PERFORM into another program', () => {
-    // §5.8, Eingeklappter Teilprozess: "eine `FORM`/Methode mit eigener
-    // Wirkung"; a technical helper has none. A call the reader cannot see
+    // §5.8, collapsed sub-process: "a `FORM`/method with an effect of its
+    // own"; a technical helper has none. A call the reader cannot see
     // into is an effect — `PERFORM x IN PROGRAM y` already counts as one — so
     // the routine that makes it is not folded away with it. Written for this test.
     const skeleton = buildProcessSkeleton([
@@ -2790,8 +2790,8 @@ test.describe('ADR-054 — events in sub-processes and at early exits', () => {
   });
 
   test('RAISE EVENT opens the handler SET HANDLER binds as a sub-process; unbound it stays opaque', () => {
-    // §5.8, Eingeklappter Teilprozess: "eine `FORM`/Methode mit eigener
-    // Wirkung". A handler the source both declares (`FOR EVENT … OF`) and
+    // §5.8, collapsed sub-process: "a `FORM`/method with an effect of its
+    // own". A handler the source both declares (`FOR EVENT … OF`) and
     // registers (`SET HANDLER`) is what `RAISE EVENT` runs, right there. Written
     // for this test.
     const source = (registration: string) => [
@@ -2985,7 +2985,7 @@ ENDFORM.`);
   });
 
   test('LEAVE TO SCREEN and LEAVE LIST-PROCESSING end the step where they stand; LEAVE TO LIST-PROCESSING does not', () => {
-    // §5.8 / ADR-054: "jeder Weg hinaus endet dort, wo er hinausgeht". Both
+    // §5.8 / ADR-054: "every way out ends where it goes out". Both
     // statements leave the dialog step on the spot — the statement after them
     // never runs. Written for this test.
     const pool = [

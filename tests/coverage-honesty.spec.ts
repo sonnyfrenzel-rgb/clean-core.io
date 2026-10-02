@@ -2,10 +2,9 @@
  * CR-06 / E03-F04 — unsupported syntax must not read as "100% clean".
  *
  * The roadmap's immediate measure for release 2.9 (section 3.4) is not the
- * missing detectors, which are 2.10 work. It is this: "Ungedeckte Syntax darf
- * nicht als '100% clean' wirken", and from E03-F04-US02, "Die UI zeigt den
- * begrenzten Prüfumfang; kein numerischer Score darf ihn als vollständig geprüft
- * überdecken."
+ * missing detectors, which are 2.10 work. It is this: "uncovered syntax must
+ * not look '100% clean'", and from E03-F04-US02, "the UI shows the limited
+ * scope of the check; no numeric score may cover it up as fully checked."
  *
  * Reproduced before writing any of it: of the seven starter examples,
  * Z_SALES_ORDER_CREATOR returned 0 findings while making three local

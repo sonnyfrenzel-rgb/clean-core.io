@@ -247,9 +247,9 @@ test.describe('a stage as a tool, rendered', () => {
 });
 
 /**
- * One frame for every stage (owner 02.10.2026: "wenn ich von analyze zu design
- * schalte ist der ganze bildschirm nach links gerückt, alle screens müssen je
- * nach formfaktor sich gleich anfühlen"; ADR-063).
+ * One frame for every stage (owner 02.10.2026, translated: "when I switch from
+ * analyze to design the whole screen has moved to the left, all screens have
+ * to feel the same for each form factor"; ADR-063).
  *
  * Each stage used to pick its own container — Analyze `max-w-5xl mx-auto`,
  * Transformation and Delivery `max-w-7xl mx-auto`, Design and Documentation the

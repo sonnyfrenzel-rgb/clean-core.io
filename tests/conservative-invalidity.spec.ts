@@ -20,15 +20,15 @@ import { observedWhile } from './helpers/observed-while';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 
 /**
- * Roadmap 0.6 — "Konservative Ungültigkeit statt Frischeheuristik".
+ * Roadmap 0.6 — "conservative invalidity instead of a freshness heuristic".
  *
  * Work package `docs/archiv/roadmap-2.8/SCHNITT-0-UMFANG.md` §7 (`UX-E07-F03:R0`):
- * *"Ein altes Ergebnis bleibt an seine Eingaben gebunden — blockieren oder
- * quarantänisieren statt still aktualisieren"*, delivered as *"Manifestvergleich
- * statt Frischeheuristik"*. Acceptance: W22-A06 (*"Neue Analyse trifft nach
- * Quellenänderung ein — Ergebnis bleibt an alte Eingabe gebunden; kein stilles
- * Überschreiben des aktuellen Stands"*) and QA24-A13 (*"Berechtigung oder Quelle
- * während Job ändern — kein still aktuelles Ergebnis aus altem Auftrag"*).
+ * *"An old result stays bound to its inputs — block or quarantine instead of
+ * silently updating"*, delivered as *"manifest comparison instead of a
+ * freshness heuristic"*. Acceptance: W22-A06 (*"a new analysis arrives after a
+ * source change — the result stays bound to the old input; no silent overwrite
+ * of the current state"*) and QA24-A13 (*"permission or source changes during
+ * a job — no silently current result from an old job"*).
  *
  * The heuristic being replaced asked whether anything positively proved a result
  * old, and called it current when nothing did: a recorded digest that still

@@ -735,7 +735,7 @@ test('the revocation is immediate, targeted, and closes every route at once', as
 });
 
 /**
- * "Generieren, Bestätigen, Signieren und Exportieren bleiben beim Besitzer" (5.4).
+ * "Generating, confirming, signing and exporting stay with the owner" (5.4).
  *
  * Two of those four live outside `app/api/projects`, and the completeness check
  * above therefore cannot see them: minting a run and building the signed audit

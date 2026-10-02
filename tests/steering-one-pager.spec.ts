@@ -25,8 +25,8 @@ import { signInViaLanding } from './helpers/sign-in';
 /**
  * Roadmap 8.6 — the steering one-pager.
  *
- * *„Eine Seite (PDF) mit ausschließlich Zahlen, die per Link zur Evidenz
- * führen, jede mit ihrer Abdeckung, und der Spalte ‚nicht bestimmt'."*
+ * *"One page (PDF) with nothing but numbers that lead to the evidence by link,
+ * each with its coverage, and the column 'not determined'."*
  *
  * Every clause is a way to lie on one page, so each has its own check:
  *   - **only numbers that exist elsewhere** — each figure on the page is one a

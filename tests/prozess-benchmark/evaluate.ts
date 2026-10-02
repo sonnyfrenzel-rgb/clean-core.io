@@ -1,16 +1,16 @@
 /**
- * Prozess-Benchmark: die Engine über 100 konstruierte ABAP-Fälle.
+ * Process benchmark: the engine over 100 constructed ABAP cases.
  *
- * Aufruf (aus dem Repo-Wurzelverzeichnis):
- *   KORPUS_ROOT=tests/prozess-benchmark npx tsx tests/prozess-benchmark/evaluate.ts [--out <datei.json>]
+ * Invocation (from the repo root):
+ *   KORPUS_ROOT=tests/prozess-benchmark npx tsx tests/prozess-benchmark/evaluate.ts [--out <file.json>]
  *
- * Mit KORPUS_ROOT=tests/korpus läuft dieselbe Messung über den Referenzkorpus —
- * so entstehen die beiden Vergleichszahlen im Bericht.
+ * With KORPUS_ROOT=tests/korpus the same measurement runs over the reference
+ * corpus — that is how the two comparison figures in the report come about.
  *
- * Kein Spec und kein CI-Teil: eine Messung, keine Ratsche. Die Vergleiche je
- * Aussageklasse kommen unverändert aus `tests/helpers/korpus-comparison.ts`;
- * hier kommen nur feinere Zähler dazu (je Knotenart, Lokalisierung ohne
- * Brücke, Zusatzknoten der Engine), die der Vergleicher nur als Prosa führt.
+ * Not a spec and not part of CI: a measurement, not a ratchet. The comparisons
+ * per statement class come unchanged from `tests/helpers/korpus-comparison.ts`;
+ * this only adds finer counters (per node kind, localisation without a bridge,
+ * extra engine nodes) that the comparer carries only as prose.
  */
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
@@ -28,10 +28,10 @@ import type { SkeletonEdgeKind } from '../../lib/abap/process-skeleton';
 const outArg = process.argv.indexOf('--out');
 const OUT = outArg > 0 ? process.argv[outArg + 1] : join(KORPUS_ROOT, 'results.json');
 
-// Der Benchmark bekommt sein Manifest bei jedem Lauf aus seinen Ordnern; der
-// Referenzkorpus behält sein eigenes (dort sind keine BM-Ordner).
+// The benchmark gets its manifest from its folders on every run; the reference
+// corpus keeps its own (it has no BM folders).
 const manifestPath = join(KORPUS_ROOT, 'manifest.json');
-// Ein Ordner ohne expected.json ist ein Fall, der noch geschrieben wird — nicht messen.
+// A folder without expected.json is a case still being written — do not measure it.
 const benchmarkIds = readdirSync(join(KORPUS_ROOT, 'cases'))
   .filter((name) => /^BM-\d{3}$/.test(name) && existsSync(join(KORPUS_ROOT, 'cases', name, 'expected.json')))
   .sort();
@@ -73,7 +73,7 @@ interface NodeOutcome {
   line: number | null;
   /** hit | wrong-kind | missed | no-bridge | no-anchor */
   outcome: string;
-  /** Liegt irgendein Engine-Knoten an dieser Anweisung (unabhängig von der Art)? */
+  /** Does any engine node sit at this statement (regardless of its kind)? */
   located: boolean;
   engineKinds: string[];
   statement: string;
@@ -190,13 +190,12 @@ function evaluate(korpusCase: KorpusCase): CaseOutcome {
 }
 
 /**
- * BM_CONCAT=1: jeder Mehrdateifall wird zu **einer** Quelle zusammengefügt —
- * so, wie ein Nutzer ein Programm mit Includes ins Produkt einfügt (die
- * Analyse-Seite nimmt genau eine Quelle an). Die Datei mit REPORT/PROGRAM/
- * FUNCTION-POOL steht vorn, der Rest in Byte-Reihenfolge der Namen (nicht
- * `localeCompare`: das sortiert `_` je nach Gebietsschema anders als jedes
- * andere Werkzeug, und die Zeilennummern liefen auseinander); jeder Sollanker
- * wird auf die Zeile in der zusammengefügten Quelle umgerechnet.
+ * BM_CONCAT=1: every multi-file case is joined into **one** source — the way
+ * a user pastes a program with includes into the product (the Analyze page
+ * takes exactly one source). The file with REPORT/PROGRAM/FUNCTION-POOL comes
+ * first, the rest in byte order of their names (not `localeCompare`: that sorts
+ * `_` differently per locale from every other tool, and the line numbers drifted
+ * apart); every expected anchor is mapped to its line in the joined source.
  */
 function concatenate(korpusCase: KorpusCase): KorpusCase {
   if (korpusCase.sources.length < 2) return korpusCase;
@@ -228,22 +227,22 @@ const cases = process.env.BM_CONCAT === '1' ? readCases().map(concatenate) : rea
 const outcomes = cases.map(evaluate);
 writeFileSync(OUT, JSON.stringify({ root: KORPUS_ROOT, written: new Date().toISOString(), outcomes }, null, 2));
 
-// --- Kurzbericht auf die Konsole --------------------------------------------
+// --- Short report on the console -------------------------------------------
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
 const pct = (a: number, b: number) => (b === 0 ? '—' : `${((100 * a) / b).toFixed(1)} %`);
 const all = outcomes.flatMap((o) => o.nodes);
 const count = (outcome: string) => all.filter((node) => node.outcome === outcome).length;
 const comparable = count('hit') + count('missed') + count('wrong-kind');
-console.log(`Fälle: ${outcomes.length}, abgestürzt: ${outcomes.filter((o) => o.crashed).length}`);
-console.log(`Sollknoten: ${all.length}; vergleichbar ${comparable} (${pct(comparable, all.length)})`);
-console.log(`  getroffen ${count('hit')} (${pct(count('hit'), comparable)} der vergleichbaren), andere Art ${count('wrong-kind')}, ohne Knoten ${count('missed')}, ohne Brücke ${count('no-bridge')}, ohne Anker ${count('no-anchor')}`);
-console.log(`  lokalisiert (irgendein Engine-Knoten an der Anweisung): ${all.filter((n) => n.located).length} (${pct(all.filter((n) => n.located).length, all.length)})`);
+console.log(`Cases: ${outcomes.length}, crashed: ${outcomes.filter((o) => o.crashed).length}`);
+console.log(`Expected nodes: ${all.length}; comparable ${comparable} (${pct(comparable, all.length)})`);
+console.log(`  hit ${count('hit')} (${pct(count('hit'), comparable)} of the comparable), wrong kind ${count('wrong-kind')}, no node ${count('missed')}, no bridge ${count('no-bridge')}, no anchor ${count('no-anchor')}`);
+console.log(`  located (any engine node at the statement): ${all.filter((n) => n.located).length} (${pct(all.filter((n) => n.located).length, all.length)})`);
 const edges = outcomes.map((o) => o.edges);
-console.log(`Sollkanten: ${sum(edges.map((e) => e.total))}; vergleichbar ${sum(edges.map((e) => e.comparable))}; getroffen ${sum(edges.map((e) => e.hit))} (${pct(sum(edges.map((e) => e.hit)), sum(edges.map((e) => e.comparable)))}), fehlend ${sum(edges.map((e) => e.missing))}, andere Art ${sum(edges.map((e) => e.wrongKind))}`);
+console.log(`Expected edges: ${sum(edges.map((e) => e.total))}; comparable ${sum(edges.map((e) => e.comparable))}; hit ${sum(edges.map((e) => e.hit))} (${pct(sum(edges.map((e) => e.hit)), sum(edges.map((e) => e.comparable)))}), missing ${sum(edges.map((e) => e.missing))}, wrong kind ${sum(edges.map((e) => e.wrongKind))}`);
 for (const cls of ['befunde', 'level', 'objekte', 'skelett', 'fachsaetze']) {
   const states = outcomes.map((o) => o.classes[cls]).filter(Boolean);
   const verdicts: Record<string, number> = {};
   for (const state of states) verdicts[state.verdict ?? 'agree'] = (verdicts[state.verdict ?? 'agree'] ?? 0) + 1;
-  console.log(`Klasse ${cls}: ${JSON.stringify(verdicts)}`);
+  console.log(`Class ${cls}: ${JSON.stringify(verdicts)}`);
 }
-console.log(`Ergebnis: ${OUT}`);
+console.log(`Result: ${OUT}`);

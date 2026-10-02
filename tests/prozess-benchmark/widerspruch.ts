@@ -1,28 +1,28 @@
 /**
- * Das Widerspruchsmodul (Roadmap 17.10) über den Prozess-Benchmark.
+ * The contradiction module (roadmap 17.10) over the process benchmark.
  *
  *   npx tsx tests/prozess-benchmark/widerspruch.ts --half learn    [--show]
  *   npx tsx tests/prozess-benchmark/widerspruch.ts --half holdout
  *
- * Gemessen wird `checkStatementAgainstCode` aus `lib/statement-contradiction.ts`
- * an den Sätzen von Weg B, wie die Schlussrichter sie gesehen haben
- * (`judge/schluss/in`, Zuordnung `judge/schluss/zuordnung.json`), gegen deren
- * Urteile (`judge/schluss/out`):
+ * What is measured is `checkStatementAgainstCode` from `lib/statement-contradiction.ts`
+ * on the sentences of path B as the final judges saw them (`judge/schluss/in`,
+ * assignment `judge/schluss/zuordnung.json`), against their verdicts
+ * (`judge/schluss/out`):
  *
- *   - **Treffer**: je Sollsatz, an dem die Richter Weg B den Mangel `falsch`
- *     gegeben haben, ob einer der B-Sätze dort markiert wird; dazu je Satz aus
- *     `verboten_verletzt` von Weg B, ob er markiert wird.
- *   - **Fehlalarme**: B-Sätze an Sollsätzen mit Urteil `gleich` und ohne
- *     `falsch`, die markiert werden.
+ *   - **Hits**: for each expected sentence where the judges gave path B the
+ *     defect `falsch`, whether one of the B sentences there is flagged; plus, for
+ *     each sentence in path B's `verboten_verletzt`, whether it is flagged.
+ *   - **False alarms**: B sentences at expected sentences with verdict `gleich`
+ *     and without `falsch` that are flagged.
  *
- * **Grenze der Messung:** die Richterdateien tragen je B-Satz nicht seine
- * eigenen Anker, sondern nur die Zeilen des Sollsatzes, unter dem er steht (die
- * Variante nennt alle ihre Sätze, die an einer dieser Zeilen verankert sind).
- * Diese Zeilen stehen hier als Anker. Im Produkt prüft das Modul gegen die
- * Anker, die `validateStatementAnswer` dem Satz gelassen hat.
+ * **Limit of the measurement:** the judge files do not carry each B sentence's
+ * own anchors, only the lines of the expected sentence it sits under (the
+ * variant lists all its sentences anchored at one of those lines). Those lines
+ * serve as anchors here. In the product the module checks against the anchors
+ * `validateStatementAnswer` left the sentence with.
  *
- * Entwickelt wurde nur an der Lernhälfte (`split.json → learn`); die
- * Prüfhälfte (`holdout`) wurde einmal gemessen, am Ende.
+ * Development used only the learning half (`split.json → learn`); the holdout
+ * half (`holdout`) was measured once, at the end.
  */
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
@@ -38,10 +38,10 @@ const SHOW = process.argv.includes('--show');
 
 const split = JSON.parse(readFileSync(join(ROOT, 'split.json'), 'utf8')) as Record<string, string[]>;
 const ids = split[HALF];
-if (!Array.isArray(ids)) throw new Error(`keine Hälfte ${HALF} in split.json`);
+if (!Array.isArray(ids)) throw new Error(`no half ${HALF} in split.json`);
 const zuordnung = JSON.parse(readFileSync(join(ROOT, 'judge/schluss/zuordnung.json'), 'utf8')) as Record<string, { B: string }>;
 
-/** Dieselbe Zusammenfügung wie `weg-b.ts` und `evaluate.ts` (BM_CONCAT=1). */
+/** The same joining as `weg-b.ts` and `evaluate.ts` (BM_CONCAT=1). */
 function source(id: string): string {
   const dir = join(ROOT, 'cases', id);
   const files = readdirSync(dir).filter((f) => f.endsWith('.abap')).sort();
@@ -84,7 +84,7 @@ for (const id of ids) {
   const B = zuordnung[id].B;
   const code = contradictionSourceOf(source(id));
 
-  // Ein Satz kann unter mehreren Sollsätzen stehen; seine Anker sind dann alle ihre Zeilen.
+  // A sentence can sit under several expected sentences; its anchors are then all their lines.
   const anchorsOf = new Map<string, number[]>();
   for (const satz of input.saetze) {
     for (const text of (satz[B] as string[]) ?? []) {
@@ -128,12 +128,12 @@ for (const id of ids) {
 }
 
 const pct = (a: number, b: number) => (b === 0 ? '–' : `${((100 * a) / b).toFixed(1)} %`);
-console.log(`Hälfte ${HALF}: ${ids.length} Fälle`);
-console.log(`Sollsätze mit B-Mangel „falsch“: ${falschHit} von ${falschTotal} markiert (${pct(falschHit, falschTotal)})`);
-console.log(`Verbotene Schlüsse von B: ${verbotenHit} von ${verbotenTotal} markiert (${pct(verbotenHit, verbotenTotal)}), ${verbotenOhneAnker} ohne Anker in den Richterdateien`);
-console.log(`Fehlalarme an „gleich“-Sätzen: ${gleichFlagged} von ${gleichSentences} (${pct(gleichFlagged, gleichSentences)})`);
-console.log(`Alle B-Sätze: ${allFlagged} von ${allSentences} markiert`, verdicts, byRule);
+console.log(`Half ${HALF}: ${ids.length} cases`);
+console.log(`Expected sentences with B defect "falsch": ${falschHit} of ${falschTotal} flagged (${pct(falschHit, falschTotal)})`);
+console.log(`Forbidden conclusions of B: ${verbotenHit} of ${verbotenTotal} flagged (${pct(verbotenHit, verbotenTotal)}), ${verbotenOhneAnker} without anchors in the judge files`);
+console.log(`False alarms at "gleich" sentences: ${gleichFlagged} of ${gleichSentences} (${pct(gleichFlagged, gleichSentences)})`);
+console.log(`All B sentences: ${allFlagged} of ${allSentences} flagged`, verdicts, byRule);
 if (SHOW) {
-  console.log('\nTreffer:\n' + hits.join('\n'));
-  console.log('\nFehlalarme:\n' + alarms.join('\n'));
+  console.log('\nHits:\n' + hits.join('\n'));
+  console.log('\nFalse alarms:\n' + alarms.join('\n'));
 }

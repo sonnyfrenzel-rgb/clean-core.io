@@ -112,8 +112,8 @@ test.describe('the sign-in modal actually uses it', () => {
   });
 
   test('registration and sign-in themselves are untouched', () => {
-    // The roadmap rule above every step of this phase: "Anmeldung und Konto
-    // bleiben, wie sie sind." The only thing 5.1 may change is the destination.
+    // The roadmap rule above every step of this phase: "sign-up and account
+    // stay as they are." The only thing 5.1 may change is the destination.
     for (const unchanged of [
       'createUserWithEmailAndPassword(auth, email, password)',
       'signInWithEmailAndPassword(auth, email, password)',
