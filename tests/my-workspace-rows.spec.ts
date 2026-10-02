@@ -14,9 +14,9 @@ import { yourTurnItems } from '../lib/your-turn';
 import { processStepList } from '../lib/process-step-list';
 import { readSource } from '../lib/first-look';
 import { printHeaderLine } from '../lib/workspace-messages';
-import { projectProgress, SEGMENT_CLASS } from '../lib/project-progress';
+import { projectProgress, PROGRESS_TONE_CLASS } from '../lib/project-progress';
 import { sha256Hex } from '../lib/artefact-digest';
-import { PHASES } from '../lib/workflow-steps';
+import { PHASES, workflowSteps } from '../lib/workflow-steps';
 import type { ItFindingRow } from '../lib/it-findings';
 import type { Project } from '../lib/types';
 
@@ -168,47 +168,85 @@ test.describe('the workspace on paper — lib/process-step-list.ts', () => {
   });
 });
 
-test.describe('a row a business reader understands — lib/project-progress.ts (owner feedback 01.10.2026)', () => {
+test.describe('a row a business reader understands — lib/project-progress.ts (owner feedback 01.10. and 02.10.2026)', () => {
   const staged = { id: 'p', name: 'p', legacyCode: 'REPORT z.' } as Project & { id: string };
   const analysed = {
     id: 'q', name: 'q', legacyCode: 'REPORT z.', activeRunId: 'run-1', status: 'analyzed',
     analysis: '{"cleanCoreScore": 40}', solutionDesign: '# design', worklist: [],
   } as unknown as Project & { id: string };
+  // A project from before the trust chain, as on the owner's account on
+  // 02.10.2026: a design, code, documentation and a test draft on record, and no
+  // signed run. Every downstream page refuses to open without one.
+  const legacy = {
+    id: 'l', name: 'l', legacyCode: 'REPORT z.', status: 'completed',
+    solutionDesign: '# design', generatedCode: 'CLASS zcl DEFINITION. ENDCLASS.', documentation: '# doc',
+    testCases: [{ id: 't1', title: 'a', status: 'Not run' }],
+  } as unknown as Project & { id: string };
 
-  for (const [name, project] of [['staged', staged], ['analysed', analysed], ['empty', { id: 'e', name: 'e' }]] as const) {
-    test(`${name}: the count is the number of done segments, and every segment names its step`, () => {
-      const progress = projectProgress(project as Project);
-      const doneSegments = progress.segments.filter((s) => s.state === 'done' || s.state === 'done-verified').length;
-      expect(progress.done).toBe(doneSegments);
-      expect(progress.countLabel).toBe(`${doneSegments} of ${progress.total} steps done`);
-      expect(progress.segments.map((s) => s.label)).toEqual(PHASES.map((p) => p.label));
-      for (const s of progress.segments) expect(s.label.length).toBeGreaterThan(0);
-    });
-  }
-
-  test('no done segment is drawn in the in-progress amber, and only verified work is green', () => {
-    expect(SEGMENT_CLASS.done).not.toMatch(/warning|success/);
-    expect(SEGMENT_CLASS['done-verified']).toMatch(/success/);
-    expect(SEGMENT_CLASS['done-verified']).not.toMatch(/warning/);
-    expect(SEGMENT_CLASS['in-progress']).toMatch(/warning/);
-    for (const state of ['not-started', 'stale', 'done'] as const) expect(SEGMENT_CLASS[state]).not.toMatch(/success/);
-    expect(SEGMENT_CLASS.stale).toMatch(/border-dashed/);
-    // Five states, five different looks.
-    expect(new Set(Object.values(SEGMENT_CLASS)).size).toBe(5);
+  test('a project with no signed run counts no step as done or in progress, whatever else is on it', () => {
+    const steps = workflowSteps(legacy);
+    expect(steps.map((s) => s.label)).toEqual(PHASES.map((p) => p.label));
+    expect(steps.filter((s) => s.done), 'a step after an un-run analysis is done').toEqual([]);
+    expect(steps.filter((s) => s.proven)).toEqual([]);
+    // Analyze is the one step under way: the code is staged.
+    expect(steps[0].state).toBe('partial');
+    // What is on record without an analysis is out of date, in words.
+    for (const key of ['design', 'transformation', 'documentation', 'testing'] as const) {
+      const step = steps.find((s) => s.key === key)!;
+      expect(step.state, key).toBe('stale');
+      expect(step.badge, key).toBe('Out of date');
+      expect(step.detail, key).toMatch(/signed analysis/);
+    }
+    expect(steps.find((s) => s.key === 'delivery')!.state).toBe('stale');
+    expect(steps.find((s) => s.key === 'tco')!.state).toBe('empty');
+    // A project without leftovers is untouched by this: nothing out of date.
+    expect(workflowSteps(staged).filter((s) => s.state === 'stale')).toEqual([]);
   });
 
-  test('the sentence is plain words — never a bare "draft" — and the next action says what it does', () => {
+  test('the legacy row says "not analysed" once and consistently — no count, out of date in words', () => {
+    const p = projectProgress(legacy);
+    expect(p.stage).toBe('not-analysed');
+    expect(p.sentence).toBe('Not analysed yet — earlier results on it are out of date.');
+    expect(p.sentence).not.toMatch(/steps? done/);
+    expect(p.stepLabel).toBe('Step 1 of 7');
+    expect(p.next).toEqual({ label: 'Run the analysis', path: 'analyze' });
+    expect(p.tone).toBe('outdated');
+    expect(p.stale).toBe(true);
+    // The row and the stepper read one value.
+    expect(p.steps.map((s) => s.phaseState)).toEqual(workflowSteps(legacy).map((s) => s.state));
+    // And the list's own status (the Status filter) agrees with the sentence.
+    expect(toWorkspaceRow(legacy).stage).toBe('not-analysed');
+  });
+
+  test('the dot has three looks, none of them green', () => {
+    const classes = Object.values(PROGRESS_TONE_CLASS);
+    expect(classes).toHaveLength(3);
+    expect(new Set(classes).size).toBe(3);
+    for (const c of classes) expect(c).not.toMatch(/success/);
+    expect(PROGRESS_TONE_CLASS.outdated).toMatch(/warning/);
+    expect(PROGRESS_TONE_CLASS.waiting).not.toMatch(/warning/);
+    expect(PROGRESS_TONE_CLASS.moving).not.toMatch(/warning/);
+  });
+
+  test('the sentence is plain words — never a bare "draft", never a count — and the next action says what it does', () => {
     const s = projectProgress(staged);
     expect(s.stage).toBe('not-analysed');
-    expect(s.sentence).toMatch(/^Not analysed yet/);
+    expect(s.sentence).toBe('Not analysed yet — the code is uploaded.');
     expect(s.sentence).not.toMatch(/\bdraft\b/i);
+    expect(s.tone).toBe('waiting');
+    expect(s.stepLabel).toBe('Step 1 of 7');
     expect(s.next).toEqual({ label: 'Run the analysis', path: 'analyze' });
     const e = projectProgress({ name: 'e' } as Project);
     expect(e.stage).toBe('not-started');
     expect(e.next?.label).toBe('Upload the code');
     const a = projectProgress(analysed);
     expect(a.stage).toBe('in-progress');
-    expect(a.sentence).toContain(a.countLabel);
+    expect(a.sentence).toBe('Analysed — in progress.');
+    expect(a.tone).toBe('moving');
+    // Analyze is done and the design is not confirmed: step 2 is where it is.
+    expect(a.stepLabel).toBe('Step 2 of 7');
+    expect(a.next).toEqual({ label: 'Confirm the design', path: 'design' });
+    for (const p of [s, e, a]) expect(p.sentence).not.toMatch(/of 7 steps/);
   });
 
   test('inputs that cannot be shown to match are not called a code change — QA review of 072f79996d01 (d423380ea229)', () => {
@@ -227,9 +265,9 @@ test.describe('a row a business reader understands — lib/project-progress.ts (
     const p = projectProgress(project);
     expect(p.stale).toBe(true);
     expect(p.sentence).not.toContain('no longer match the code');
-    expect(p.sentence).toContain('Some results no longer match their inputs.');
+    expect(p.sentence).toContain('some results no longer match their inputs.');
     // And a changed source still says so in those words.
     const moved = projectProgress({ ...project, legacyCode: `${SRC}\nWRITE: / 2.` } as Project);
-    expect(moved.sentence).toContain('Some results no longer match the code.');
+    expect(moved.sentence).toContain('some results no longer match the code.');
   });
 });

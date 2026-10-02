@@ -205,8 +205,14 @@ test.describe('historical project forms open in the workspace, unchanged', () =>
     expect(ws.layers.find((l) => l.key === 'evidence')!.count).toBeNull();
     expect(ws.layers.find((l) => l.key === 'costs')!.count).toBeNull();
     expect(ws.management.trend.score).toBeNull();
-    // Two passes without a receipt are self-reported, never proven.
-    expect(workflowSteps(project).find((s) => s.key === 'testing')!.badge).toBe('Self-reported');
+    // Two passes without a receipt and without any signed analysis behind them
+    // are out of date, never done and never proven (owner feedback 02.10.2026:
+    // the list said "Not analysed yet" over "2 of 7 steps done").
+    const testing = workflowSteps(project).find((s) => s.key === 'testing')!;
+    expect(testing.badge).toBe('Out of date');
+    expect(testing.done).toBe(false);
+    expect(testing.proven).toBe(false);
+    expect(workflowSteps(project).filter((s) => s.done)).toEqual([]);
     // The first look's finding count is "not analysed", not the stored worklist's 1.
     const findings = ws.firstLook.stages[0].figures.find((f) => f.key === 'findings');
     expect(findings?.value).toBeNull();
