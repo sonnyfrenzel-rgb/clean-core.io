@@ -17,6 +17,10 @@ import base from './playwright.config';
 const PORT = 4100;
 const server = Array.isArray(base.webServer) ? base.webServer[0] : base.webServer;
 
+// The seed helper runs in the test process, not in the server's, so it needs
+// the port as well: `webServer.env` reaches only the dev server.
+process.env.TEST_BASE_URL = `http://localhost:${PORT}`;
+
 export default defineConfig({
   ...base,
   use: { ...base.use, baseURL: `http://localhost:${PORT}` },

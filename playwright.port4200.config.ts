@@ -11,8 +11,8 @@ import base from './playwright.config';
  * the seed helper — a failure that looks exactly like a broken change and is
  * not one.
  *
- * Use with `npx playwright test -c playwright.port4200.config.ts`. Export
- * `TEST_BASE_URL=http://localhost:4200` in the shell as well: `webServer.env`
+ * Use with `npx playwright test -c playwright.port4200.config.ts`. The file
+ * sets `TEST_BASE_URL` for the test process itself: `webServer.env`
  * reaches the dev server, and `tests/helpers/admin-seed.ts` runs in the test
  * process, which would otherwise seed the app on port 3000.
  *
@@ -21,6 +21,10 @@ import base from './playwright.config';
  */
 const PORT = 4200;
 const server = Array.isArray(base.webServer) ? base.webServer[0] : base.webServer;
+
+// The seed helper runs in the test process, not in the server's, so it needs
+// the port as well: `webServer.env` reaches only the dev server.
+process.env.TEST_BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   ...base,
