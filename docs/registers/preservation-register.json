@@ -139,7 +139,9 @@
       "dataCoupling",
       "originalRecommendation",
       "recommendationConfidence",
-      "recommendationJustification"
+      "recommendationJustification",
+      "auditPackExportedAt",
+      "auditPackExportedRunId"
     ],
     "hydration": {
       "reader": "loadProjectAndHydrate(projectId)",
@@ -150,7 +152,7 @@
         "exports"
       ],
       "onMissingRun": "_runLoadFailed = true, _runLoadError set; in-memory only, never persisted.",
-      "consequence": "Every field in projectFieldsDeletedByRunsCreate reaches a stage only through hydration. A reader that does not hydrate (the dashboard) never sees them."
+      "consequence": "Every field in projectFieldsDeletedByRunsCreate except the two audit-pack export markers reaches a stage only through hydration. A reader that does not hydrate (the dashboard) never sees them. auditPackExportedAt and auditPackExportedRunId are the exception: they sit inside auditMetadata, are not on the run, and runs/create deletes them because an audit pack exported for the previous run is not one for this run (codex code-trust-07); POST /api/audit-pack/create writes them again on the next export."
     },
     "stalenessTrackedArtefacts": [
       "solutionDesign",
@@ -190,6 +192,7 @@
       "legacyCode": "Reaches the project through POST /api/runs/create and through the dashboard's project creation. Client-writable by the rules, which is precisely why staleness().sourceChanged exists.",
       "s4Deployment": "Written by POST /api/runs/create from the deployment the reader chose on Analyze.",
       "updatedAt": "Written by POST /api/runs/create.",
+      "s4Environment": "Written by nothing since the Testing stage became one guided flow (owner 02.10.2026): the tenant tab no longer stores it. Still in the client allowlist and read once by the Testing page, so a project an earlier build left on 'live' opens the tenant section; the run is always against mocks.",
       "presentation": "Written by nothing. Declared on the Project type, size-validated in firestore.rules and in the client-writable allowlist, and no stage or route sets it (see knownLimit L-09)."
     },
     "generationBlockerTargets": [
@@ -1290,10 +1293,6 @@
           }
         ],
         "notShown": [
-          {
-            "field": "s4Environment",
-            "why": "not printed: a project an earlier build left on the tenant tab (live) opens with the tenant section open; the run is always against mocks"
-          },
           {
             "field": "status",
             "why": "no stage renders status: lib/workflow-steps.ts derives every phase state from the artefacts and deliberately does not read it"
