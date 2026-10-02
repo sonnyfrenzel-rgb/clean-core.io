@@ -856,6 +856,47 @@ test.describe('the audit pipeline', () => {
     expect(calls).toBe(1);
   });
 
+  test('an answer without its findings list fails the call: its candidates stay not verified, its files not read', async () => {
+    const { callReviewer } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
+    const { FINDINGS_SCHEMA, CONSULTANT_SCHEMA } = await lib('team.mjs');
+    const { runVerification, coerceFindings, coerceConsultant } = await lib('pipeline.mjs');
+    // The transport as it is, with the body a provider sent: valid JSON, but not an answer.
+    const reply = (content: string) => async () => ({
+      ok: true,
+      status: 200,
+      headers: { get: () => null },
+      json: async () => ({ choices: [{ message: { content }, finish_reason: 'stop' }], usage: { cost: 0.01 }, model: 'some/model' }),
+    });
+    const verify = (content: string) =>
+      runVerification({
+        batches: [[{ id: 'K-001', title: 'T', severity: 'hoch' }]],
+        capUsd: 5,
+        messageFor: () => ({ system: 's', user: 'u' }),
+        fits: () => true,
+        worstCase: () => 1,
+        // Wired as scripts/security/audit.mjs wires the verification call.
+        call: ({ system, user }: { system: string; user: string }) =>
+          callReviewer({ apiKey: 'k', system, user, schema: FINDINGS_SCHEMA, fetchImpl: reply(content), retries: 0, coerce: (answer: { notes?: string }) => ({ findings: coerceFindings(answer), notes: String(answer?.notes || '') }) }),
+      });
+    for (const content of ['{}', 'null', '[]', '{"findings":"none"}', '{"findings":{"title":"x"}}', '{"notes":"all fine"}']) {
+      const run = await verify(content);
+      expect(run.results, `${content} counted as an answer`).toHaveLength(0);
+      expect(run.notVerified.map((n: { candidate: { id: string } }) => n.candidate.id), content).toEqual(['K-001']);
+      expect(run.failureReasons).toEqual([{ reason: 'schema-mismatch', count: 1 }]);
+    }
+    // An empty list is an answer: nothing held, the batch was checked.
+    const empty = await verify('{"findings":[],"notes":""}');
+    expect(empty.results).toHaveLength(1);
+    expect(empty.notVerified).toEqual([]);
+    // The consultants' coercion holds the same line: no list, no review — so the files do not count as read.
+    expect(() => coerceConsultant({})).toThrow(/did not match the schema at findings/);
+    expect(() => coerceConsultant({ findings: 'none' })).toThrow(/did not match the schema at findings/);
+    expect(coerceConsultant({ findings: [] }).findings).toEqual([]);
+    await expect(
+      callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: CONSULTANT_SCHEMA, fetchImpl: reply('{"checked_sound":[]}'), retries: 0, coerce: coerceConsultant }),
+    ).rejects.toThrow(/did not match the schema at findings/);
+  });
+
   test('a failed consultant call leaves a reason in the log — a word from a closed list, never a message', async () => {
     /**
      * Run 35842725923 (2170cf35ea5e, 23.09.2026) lost 51 of 60 consultant calls

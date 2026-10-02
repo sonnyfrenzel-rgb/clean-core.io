@@ -587,7 +587,19 @@ const severity = (v, fallback) => SEVERITY_WORDS[String(v ?? '').trim().toLowerC
 const unit = (v) => Math.min(1, Math.max(0, Number(v) || 0));
 const locations = (v) => list(v).map((l) => ({ file: text(l?.file), line: Number.parseInt(l?.line, 10) || 0 }));
 
+/**
+ * The findings list is the answer, not an optional field: an empty list means "nothing held", an absent or
+ * mistyped one means no answer at all. Coercing the second into the first would count a batch as checked that
+ * nobody checked, so it fails the call the way a schema violation does.
+ */
+function requireFindings(answer) {
+  if (!answer || typeof answer !== 'object' || Array.isArray(answer) || !Array.isArray(answer.findings)) {
+    throw new Error('The review did not match the schema at findings.');
+  }
+}
+
 export function coerceConsultant(answer) {
+  requireFindings(answer);
   return {
     findings: list(answer?.findings).map((f) => ({
       title: text(f?.title),
@@ -690,6 +702,7 @@ export function narrativeMessage({ surface, coverage, findings, notRead, failed,
 
 /** The findings half of a report, coerced on its own (the first CISO call). */
 export function coerceFindings(answer) {
+  requireFindings(answer);
   return coerceReport({ findings: answer?.findings }).findings;
 }
 
