@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { hydrateProject, readerRunFor, RUN_MOVED_ERROR } from '../lib/project-loader';
+import { hydrateProject, readerAnswerOf, readerRunFor, READER_RUN_UNREAD_ERROR, RUN_MOVED_ERROR } from '../lib/project-loader';
 import type { Project } from '../lib/types';
 
 /**
@@ -62,5 +62,16 @@ test.describe('the run an invited reader is shown', () => {
     expect(src).toMatch(/readerRunFor\(data\.activeRunId, await readerAnswer\(projectId\)\)/);
     expect(src).not.toMatch(/json\?\.run \?\? null/);
     expect(src).toMatch(/kind === 'moved'[\s\S]{0,80}continue/);
+  });
+
+  // QA review of 695850c7f838: a refused or unreadable answer said the run did
+  // not exist. It is a read that failed, and the loader's catch says so.
+  test('a refused or unreadable answer is a failed read, not a missing run', () => {
+    for (const [ok, body] of [[false, { activeRunId: 'run-A', run: {} }], [true, undefined], [true, null], [true, 'x']] as const) {
+      expect(() => readerAnswerOf(ok, body), JSON.stringify([ok, body])).toThrow(READER_RUN_UNREAD_ERROR);
+    }
+    const answer = readerAnswerOf(true, { activeRunId: 'run-A', run: { runId: 'run-A' } });
+    expect(readerRunFor('run-A', answer).kind).toBe('found');
+    expect(readerRunFor('run-A', readerAnswerOf(true, { activeRunId: 'run-A', run: null })).kind).toBe('missing');
   });
 });

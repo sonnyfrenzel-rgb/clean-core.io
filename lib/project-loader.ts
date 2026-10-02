@@ -97,12 +97,25 @@ export function readerRunFor(expectedRunId: string, answer: ReaderAnswer): RunRe
  */
 async function readerAnswer(projectId: string): Promise<ReaderAnswer> {
   const token = await getAuth().currentUser?.getIdToken();
-  if (!token) return null;
+  if (!token) throw new Error(READER_RUN_UNREAD_ERROR);
   const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) return null;
-  return (await res.json().catch(() => null)) as ReaderAnswer;
+  return readerAnswerOf(res.ok, await res.json().catch(() => undefined));
+}
+
+/** Said when the server could not be asked for the reader's run, or did not answer. */
+export const READER_RUN_UNREAD_ERROR = 'The analysis run could not be read. Reload the page to try again.';
+
+/**
+ * A refused request or an unreadable body is a run that could not be read, not
+ * a run that does not exist: the first is "failed" with a reason, the second
+ * "missing" (QA review of 695850c7f838). Only a readable answer reaches
+ * `readerRunFor`.
+ */
+export function readerAnswerOf(ok: boolean, body: unknown): NonNullable<ReaderAnswer> {
+  if (!ok || !body || typeof body !== 'object') throw new Error(READER_RUN_UNREAD_ERROR);
+  return body as NonNullable<ReaderAnswer>;
 }
 
 export async function loadProjectAndHydrate(projectId: string): Promise<Project | null> {
