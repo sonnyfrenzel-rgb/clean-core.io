@@ -9,6 +9,7 @@ import { sha256Hex } from '../lib/artefact-digest';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 import { buildReadingExports } from '../lib/bpmn/export';
 import { parseBpmn } from '../lib/process-map';
+import { elementListTabStop } from '../components/process-map/editor-bpmn';
 import type { ProcessRevisionRecord } from '../lib/process-revisions';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
@@ -78,6 +79,38 @@ function anchoredTask(): { id: string; name: string; technicalName: string; line
   if (!element || !element.trace) throw new Error('no anchored task on the top level');
   return { id: element.id, name: element.name, technicalName: element.trace.technicalName!, lineStart: element.trace.lineStart! };
 }
+
+/**
+ * Codex code-ui-04: adding a pool selects it, and the element list has no row
+ * for a pool, a lane or a connection. The tab stop followed the selection
+ * alone, so every row went to -1 and Tab skipped the list.
+ */
+test('the element list keeps one tab stop when the canvas selects what the list does not carry', () => {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="d">
+  <bpmn:collaboration id="c"><bpmn:participant id="Pool_1" processRef="p" /></bpmn:collaboration>
+  <bpmn:process id="p">
+    <bpmn:startEvent id="Start_1" /><bpmn:task id="Task_1" name="Check" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Task_1" />
+  </bpmn:process>
+</bpmn:definitions>`;
+  const rows = parseBpmn(xml).elements.map((e) => e.id);
+  // The reproduction: the pool and the connection are not rows of the list.
+  expect(rows).not.toContain('Pool_1');
+  expect(rows).not.toContain('Flow_1');
+  expect(rows.length).toBeGreaterThan(0);
+
+  for (const selected of ['Pool_1', 'Flow_1', null]) {
+    expect(elementListTabStop(rows, selected), `nothing in the list is reachable by Tab with ${selected} selected`).toBe(rows[0]);
+  }
+  expect(elementListTabStop(rows, 'Task_1')).toBe('Task_1');
+  expect(elementListTabStop([], 'Pool_1')).toBeNull();
+
+  const editor = fs.readFileSync(path.resolve(__dirname, '..', 'components', 'process-map', 'BpmnEditor.tsx'), 'utf8');
+  expect(editor, 'the list rows no longer take their tab stop from elementListTabStop').toContain(
+    'tabIndex={row.id === tabStop ? 0 : -1}',
+  );
+});
 
 test.describe('the professional BPMN editor', () => {
   test.describe.configure({ mode: 'serial' });

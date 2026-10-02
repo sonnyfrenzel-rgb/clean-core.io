@@ -42,6 +42,7 @@ import EditorProperties, { type ElementOrigin } from './EditorProperties';
 import EditorMinimap from './EditorMinimap';
 import EditorImport from './EditorImport';
 import {
+  elementListTabStop,
   overlapsOnLevel,
   svgToPng,
   tidyLevel,
@@ -1076,6 +1077,7 @@ export default function BpmnEditor({
   }, [baseXml, draftXml, fileName, save]);
 
   const activeRow = rows.find((row) => row.id === current) ?? null;
+  const tabStop = elementListTabStop(rows.map((row) => row.id), current);
 
   /* ---------------- the selected element, for the properties ---------------- */
 
@@ -1372,7 +1374,7 @@ export default function BpmnEditor({
                   aria-selected={row.id === current}
                   data-draft-row={row.id}
                   data-drawn={row.drawn ? 'true' : 'false'}
-                  tabIndex={row.id === current || (!current && row === rows[0]) ? 0 : -1}
+                  tabIndex={row.id === tabStop ? 0 : -1}
                   onClick={() => pick(row.id)}
                   className="block w-full truncate rounded-cc-row px-2 py-0.5 text-left text-[12px] font-medium text-cc-ink-muted hover:text-cc-ink aria-selected:bg-cc-surface-muted aria-selected:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
                 >
