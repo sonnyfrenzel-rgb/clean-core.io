@@ -148,12 +148,19 @@ export interface NetworkVerdict {
 }
 
 /**
- * Judges a runner's network probe answer. Held only when the answer names
+ * Judges a runner's network probe answer. Held only when the answer comes
+ * from a runner of the expected mode and names
  * exactly the targets in `RUNNER_NETWORK_PROBES` — each once, none missing,
  * none extra — and every one of them is explicitly `reached: false`. An answer
  * that leaves a probe out proves nothing about that probe, so it is not held.
  */
-export function evaluateNetworkProbe(body: unknown): NetworkVerdict {
+export function evaluateNetworkProbe(body: unknown, expectedMode: 'mock' | 'live'): NetworkVerdict {
+  // The answer names the service that gave it (`mode` in runner/server.ts); an
+  // answer from the other runner says nothing about this one (codex code-runner-06).
+  const mode = body && typeof body === 'object' ? (body as { mode?: unknown }).mode : undefined;
+  if (mode !== expectedMode) {
+    return { held: false, reason: `Asked the ${expectedMode} runner, and the answer came from ${typeof mode === 'string' ? `a ${mode.slice(0, 20)} runner` : 'a runner that did not name its mode'}.` };
+  }
   const probes = (body && typeof body === 'object' ? (body as { probes?: unknown }).probes : undefined);
   if (!Array.isArray(probes)) return { held: false, reason: 'The runner answered without a probe list.' };
   const expected = RUNNER_NETWORK_PROBES.map((p) => p.label as string);

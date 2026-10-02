@@ -36,6 +36,7 @@
 
 import type { Project } from './types';
 import { workflowSteps, phaseTone, type PhaseKey, type RailStep } from './workflow-steps';
+import { coveringTestRunReceipt } from './test-receipt';
 import type { ObjectStatusValue } from './object-status';
 import type { ProvenanceValue } from './provenance';
 import { INPUT_IDS, type InputManifest } from './input-manifest';
@@ -377,6 +378,12 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
   const executed = tests.filter((t) => t?.status === 'Passed' || t?.status === 'Failed').length;
   const failed = tests.filter((t) => t?.status === 'Failed').length;
   const mockOnly = tests.length > 0 && executed === 0 && simulated > 0;
+  // A recorded run is a sandbox run against mocks — `TestRunReceipt.environment`
+  // names it, and today it is always `mock`. The Testing and Handover views say
+  // *Demonstrated · mock* about it (lib/handover.ts); this facet said *Proven*,
+  // the chip for something checked against the real thing (Codex code-runner-02).
+  const receipt = coveringTestRunReceipt(project as Parameters<typeof coveringTestRunReceipt>[0]);
+  const recordedMockRun = receipt !== null && receipt.environment === 'mock' && receipt.verdicts.length > 0;
   const execution: WorkspaceStatus = {
     facet: 'execution',
     label: 'Execution',
@@ -390,7 +397,9 @@ export function workspaceStatusLine(project: Project | null, phaseSteps?: readon
             : statusOfPhase(by.testing),
     detail: by.testing.detail,
     from: 'testing',
-    provenance: staleChip(by.testing) ?? (mockOnly ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
+    provenance:
+      staleChip(by.testing) ??
+      (mockOnly || recordedMockRun ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
     restsOn: [evidenceOf(by.testing)],
   };
 
