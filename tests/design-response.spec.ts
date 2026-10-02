@@ -72,7 +72,8 @@ test.describe('a design is stored only when it is one', () => {
     const src = readFileSync(join(process.cwd(), 'app/(app)/project/[projectId]/design/page.tsx'), 'utf8');
     const start = src.indexOf('const generateDesign = useCallback(');
     const body = src.slice(start, src.indexOf('const generateDesignRef', start));
-    const writes = body.match(/updateDoc\(doc\(db, 'projects', projectId as string\), \{[\s\S]*?\}\);/g) || [];
+    // A direct write or the transactional one (codex usp-02) — either counts.
+    const writes = body.match(/(?:updateDoc\(doc\(db, 'projects', projectId as string\)|tx\.(?:update|set)\(projectDoc), \{[\s\S]*?\}\);/g) || [];
     expect(writes, 'the generation writes the project more than once').toHaveLength(1);
     expect(writes[0]).toContain('solutionDesign: responseText');
     expect(writes[0]).toContain("status: 'designed'");
@@ -80,5 +81,23 @@ test.describe('a design is stored only when it is one', () => {
     expect(writes[0]).toContain('nonFunctionalRequirements: nfrForDesign ?? deleteField()');
     // And the NFR call happens before that write, so it is the write's input.
     expect(body.indexOf('callGemini(nfrPrompt')).toBeLessThan(body.indexOf(writes[0] ?? ''));
+  });
+
+  test('a design is stored only while the run it was generated from is still active (codex usp-02)', () => {
+    // Run A's design landing after another tab activated run B used to be stored
+    // as B's design — and read as current, since it differs from the design B's
+    // source change recorded. The write checks the run inside a transaction.
+    const src = readFileSync(join(process.cwd(), 'app/(app)/project/[projectId]/design/page.tsx'), 'utf8');
+    const start = src.indexOf('const generateDesign = useCallback(');
+    const body = src.slice(start, src.indexOf('const generateDesignRef', start));
+    // Captured before the model call, not re-read after it.
+    const captured = body.indexOf('const writtenFromRun = projectRef.current?.activeRunId');
+    expect(captured, 'the run is not captured before generation').toBeGreaterThan(-1);
+    expect(captured).toBeLessThan(body.indexOf("callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'design')"));
+    // Compared on the stored document, in the same transaction as the write.
+    const tx = body.slice(body.indexOf('await runTransaction(db,'), body.indexOf('tx.update(projectDoc'));
+    expect(tx, 'the design is not written in a transaction').toContain('await tx.get(projectDoc)');
+    expect(tx).toMatch(/activeRunId \?\? null\) !== writtenFromRun\)\s*\{\s*throw new DesignGenerationError\(/);
+    expect(body).not.toMatch(/updateDoc\(doc\(db, 'projects', projectId as string\), \{\s*solutionDesign/);
   });
 });

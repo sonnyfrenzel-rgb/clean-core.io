@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, updateDoc, deleteField } from 'firebase/firestore';
+import { doc, updateDoc, deleteField, runTransaction } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
@@ -198,6 +198,12 @@ export default function DesignPage() {
     setLoading(true);
     setDesignError(null);
     setLoadingMessage('Architecting solution design...');
+    // The run whose analysis the caller handed in, captured before the model
+    // call. The page says a design is built on the run the server signed; a
+    // response that lands after another tab activated a new run would otherwise
+    // be stored as that run's design, and it would not read as stale either,
+    // because it differs from the design the new run recorded (codex usp-02).
+    const writtenFromRun = projectRef.current?.activeRunId ?? null;
     try {
       const db = getDb();
       const projData = await loadProjectAndHydrate(projectId as string);
@@ -353,10 +359,17 @@ ${responseText.substring(0, 4000)}`;
         }
       } catch { /* NFR generation failure is non-critical */ }
 
-      await updateDoc(doc(db, 'projects', projectId as string), {
-        solutionDesign: responseText,
-        status: 'designed',
-        nonFunctionalRequirements: nfrForDesign ?? deleteField(),
+      const projectDoc = doc(db, 'projects', projectId as string);
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(projectDoc);
+        if ((snap.data()?.activeRunId ?? null) !== writtenFromRun) {
+          throw new DesignGenerationError('The analysis of this project changed while the design was being generated, so nothing was saved. Reload the stage and generate it again.');
+        }
+        tx.update(projectDoc, {
+          solutionDesign: responseText,
+          status: 'designed',
+          nonFunctionalRequirements: nfrForDesign ?? deleteField(),
+        });
       });
       setDesign(responseText);
       setNfrData(nfrForDesign as NFRData | null);
