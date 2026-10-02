@@ -87,7 +87,8 @@ export default function TrustPage() {
 
       <Section icon={Network} title="Subprocessors">
         <ul className="list-disc pl-5 space-y-1">
-          <li><strong>Google Cloud / Firebase</strong> (EU) — hosting, database, authentication.</li>
+          <li><strong>Google Cloud / Firebase</strong> (EU, europe-west1) — hosting (Cloud Run) and database (Firestore).</li>
+          <li><strong>Firebase Authentication</strong> — sign-in; a Google service not tied to a region, covered by the international-transfer safeguards in the privacy policy.</li>
           <li><strong>Google Gemini API</strong> — AI transformation of the code you submit for analysis.</li>
           <li><strong>Resend</strong> — transactional email (access approvals/notifications).</li>
         </ul>

@@ -44,12 +44,15 @@ export default async function FeaturePage({ params }: { params: Promise<{ slug: 
 
   return (
     <main className="max-w-3xl mx-auto px-6 py-12 md:py-16">
-      {/* Back to the feature grid on the landing (same spot you came from) */}
+      {/* Back to the landing's overview, the section that lists the deep dives.
+          The 3.0 landing has no feature grid any more: the old features and
+          access fragments landed at the top of the page (codex code-public-04), and
+          tests/landing-fragment-guard.spec.ts now checks every landing fragment. */}
       <Link
-        href="/#features"
+        href="/#what"
         className="inline-flex items-center gap-2 text-sm font-semibold text-cc-ink-muted underline-offset-4 hover:text-cc-ink hover:underline transition-colors mb-8"
       >
-        <ArrowLeft size={16} /> Back to features
+        <ArrowLeft size={16} /> Back to the overview
       </Link>
 
       {/* Hero */}
@@ -124,7 +127,7 @@ export default async function FeaturePage({ params }: { params: Promise<{ slug: 
         <p className="text-cc-ink-muted font-medium mb-1">Free · community-built · complementary to your SAP tooling</p>
         <h3 className="text-2xl font-extrabold text-cc-ink tracking-[-0.02em] mb-6">Try it on your own code.</h3>
         <Link
-          href="/#access"
+          href="/#start"
           className={publicButton('primary')}
         >
           Get free access <ArrowRight size={16} />

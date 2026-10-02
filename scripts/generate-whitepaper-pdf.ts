@@ -29,9 +29,9 @@
  */
 
 import { chromium } from 'playwright';
-import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileDigest, readStamp, sourceFingerprint, stampText } from './lib/pdf-stamp';
 
 const PRINT_PATH = '/whitepaper-print';
 const OUT = path.resolve(process.cwd(), 'public', 'Clean-Core_S4HANA_Modernization_Whitepaper.pdf');
@@ -51,13 +51,7 @@ const SOURCES = [
 ];
 
 function sourceHash(): string {
-  const h = createHash('sha256');
-  for (const rel of SOURCES) {
-    h.update(rel);
-    // LF whatever the checkout did, so a Windows working copy stamps what CI reads.
-    h.update(fs.readFileSync(path.resolve(process.cwd(), rel), 'utf8').replace(/\r\n/g, '\n'));
-  }
-  return h.digest('hex');
+  return sourceFingerprint(process.cwd(), SOURCES);
 }
 
 function argValue(flag: string): string | undefined {
@@ -87,7 +81,14 @@ function check(): void {
   if (!fs.existsSync(OUT) || !fs.existsSync(STAMP)) {
     throw new Error('No whitepaper PDF (or no stamp) has been generated yet. Run: npm run build:whitepaper-pdf');
   }
-  if (fs.readFileSync(STAMP, 'utf8').trim() !== sourceHash()) {
+  const stamp = readStamp(STAMP);
+  if (stamp.pdf !== fileDigest(OUT)) {
+    throw new Error(
+      'public/Clean-Core_S4HANA_Modernization_Whitepaper.pdf is not the file its stamp was written for. ' +
+        'Start the app and run: npm run build:whitepaper-pdf',
+    );
+  }
+  if (stamp.sources !== sourceHash()) {
     throw new Error(
       'public/Clean-Core_S4HANA_Modernization_Whitepaper.pdf is out of date — the whitepaper has changed since it was ' +
         'generated. Start the app and run: npm run build:whitepaper-pdf',
@@ -134,7 +135,7 @@ async function main() {
     throw new Error('PDF is implausibly small — the page probably rendered empty.');
   }
   // Only after a good render, so a failed run never stamps a stale PDF as current.
-  fs.writeFileSync(STAMP, sourceHash(), 'utf8');
+  fs.writeFileSync(STAMP, stampText(sourceHash(), fileDigest(OUT)), 'utf8');
   console.log(`wrote ${path.relative(process.cwd(), OUT)} — ${(bytes / 1024).toFixed(0)} kB`);
 }
 

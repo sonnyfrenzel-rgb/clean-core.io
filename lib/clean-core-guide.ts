@@ -13,7 +13,7 @@
  * likelihood of confusion would be squarely in the same field.
  */
 
-import { BAIP, BAIP_FIRST, BAIP_FORMERLY, BAIP_NAME } from './sap-naming';
+import { BAIP, BAIP_FIRST, BAIP_FORMERLY_SPELLED, BAIP_NAME } from './sap-naming';
 
 export type NoteKind = 'remember' | 'tip' | 'warning' | 'advanced' | 'jargon';
 
@@ -169,7 +169,7 @@ export const GUIDE_PARTS: Part[] = [
           {
             term: `${BAIP_NAME} (${BAIP})`,
             definition:
-              `SAP's cloud platform where side-by-side extensions live, ${BAIP_FORMERLY} (Business Technology Platform). Think of it as the sanctioned place to put things that no longer belong inside the ERP.`,
+              `SAP's cloud platform where side-by-side extensions live, ${BAIP_FORMERLY_SPELLED}. Think of it as the sanctioned place to put things that no longer belong inside the ERP.`,
           },
           {
             term: 'ABAP Cloud',

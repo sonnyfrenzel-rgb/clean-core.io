@@ -26,7 +26,7 @@ export const FEATURES: FeatureContent[] = [
       'Classify custom ABAP against SAP Clean Core guidelines, get a deterministic RAP-vs-CAP recommendation, and gate transformation behind an explicit architect sign-off.',
     stage: 'Stage 2 — Solution Design',
     what: [
-      'Before any code is generated, Clean-Core.io classifies each piece of legacy custom logic against SAP’s Clean Core extensibility guidelines and routes it to the right target track: In-App Developer Extensibility (ABAP Cloud / RAP) or Side-by-Side on SAP Business Technology Platform (CAP).',
+      `Before any code is generated, Clean-Core.io classifies each piece of legacy custom logic against SAP’s Clean Core extensibility guidelines and routes it to the right target track: In-App Developer Extensibility (ABAP Cloud / RAP) or Side-by-Side on ${BAIP_FIRST} (CAP).`,
       'The recommendation is deterministic — derived from the evidence engine (data coupling, released-API usage, transaction semantics) — not guessed by a language model.',
     ],
     capabilities: [

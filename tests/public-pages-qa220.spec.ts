@@ -29,7 +29,10 @@ test.describe('the catalog pages claim a successor only where SAP names one', ()
     const area = getModuleAreas()[0];
     const meta = await moduleMetadata({ params: Promise.resolve({ area: area.code.toLowerCase() }) });
     expect(String(meta.title)).not.toContain('→ released S/4HANA APIs');
-    expect(String(meta.description)).toMatch(/where SAP names one/);
+    // The table also lists curated successors, so "where SAP names one" became
+    // "where one is known", with the curated source named (codex code-public-03).
+    expect(String(meta.description)).toMatch(/where one is known/);
+    expect(String(meta.description)).toMatch(/curated mapping, marked as such/);
   });
 
   test('the module lead names the level C residual instead of claiming a published state for every row (c32080bda7bf)', () => {

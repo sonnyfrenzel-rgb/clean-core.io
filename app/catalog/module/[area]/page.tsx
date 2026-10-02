@@ -9,7 +9,7 @@ import {
   getObjectAppComponent,
   objectToSlug,
 } from '@/lib/abap/catalog-index';
-import { resolveApi, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses } from '@/lib/abap/catalog-service';
+import { primarySuccessor, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses } from '@/lib/abap/catalog-service';
 import CatalogAttribution from '@/components/catalog/CatalogAttribution';
 import CcTable from '@/components/cc/Table';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
@@ -54,7 +54,7 @@ export async function generateMetadata({
 
   const count = getObjectsByModule(meta.code).length;
   const title = `SAP ${meta.name} (${meta.code}) objects: clean core level and released S/4HANA successors | Clean-Core.io`;
-  const description = `${count} SAP ${meta.name} objects with their clean core level and, where SAP names one, their released S/4HANA API successor, from SAP's official Cloudification Repository. ${meta.blurb}`;
+  const description = `${count} SAP ${meta.name} objects with their clean core level and, where one is known, their released S/4HANA API successor: from SAP's official Cloudification Repository, or from Clean-Core.io's curated mapping, marked as such. ${meta.blurb}`;
 
   return withTwitterCard({
     title,
@@ -78,11 +78,12 @@ export default async function CatalogModulePage({
   const areas = getModuleAreas();
 
   const rows = objects.map((name) => {
-    const entry = resolveApi(name);
-    const successor = entry?.successors?.[0]?.name || entry?.view || '';
+    // Who names the successor travels with it: SAP's file, or our curated layer (codex code-public-03).
+    const primary = primarySuccessor(name);
     return {
       name,
-      successor,
+      successor: primary?.name ?? '',
+      curated: primary?.source === 'curated',
       noPath: hasNoReleasedApiPath(name),
       component: getObjectAppComponent(name),
       graded: gradeSapObject(name),
@@ -131,7 +132,8 @@ export default async function CatalogModulePage({
       <p className="text-lg text-cc-ink-muted mb-2">{meta.blurb}</p>
       <p className="text-sm text-cc-ink-muted mb-10">
         {rows.length} object{rows.length === 1 ? '' : 's'} in this area, {rows.filter((r) => r.successor).length} of
-        them with a released S/4HANA successor. Each row shows the clean core level derived from
+        them with a released S/4HANA successor; one marked (curated) comes from Clean-Core.io&apos;s own
+        mapping, not from SAP. Each row shows the clean core level derived from
         SAP&apos;s own published state for that object; an SAP object neither of SAP&apos;s files
         lists is level C, which is how SAP&apos;s level concept defines an internal object.
       </p>
@@ -174,7 +176,10 @@ export default async function CatalogModulePage({
                 </span>
               ) : null,
               successor: r.successor ? (
-                <span key="successor" className="font-cc-mono">{r.successor}</span>
+                <span key="successor" className="font-cc-mono">
+                  {r.successor}
+                  {r.curated && <span className="ml-1 font-sans text-xs text-cc-ink-muted" data-successor-source="curated">(curated)</span>}
+                </span>
               ) : (
                 <span key="successor" className="text-cc-ink-muted">no released path</span>
               ),

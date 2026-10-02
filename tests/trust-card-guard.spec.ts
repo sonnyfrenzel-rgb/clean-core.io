@@ -278,6 +278,110 @@ test.describe('the privacy policy says it first', () => {
 });
 
 /* ---------------------------------------------------------------------- */
+/* The policy's qualifications travel with the claim, wherever it is made. */
+/* ---------------------------------------------------------------------- */
+
+/**
+ * Codex review code-public-01 and -02 (02.10.2026). The card carried the
+ * qualified sentences, but copies maintained elsewhere did not: the explainer
+ * and its PDF promised "not used to train Google's models" with no word about
+ * the user's own key, and /about and /trust put the sign-in in Belgium while the
+ * privacy policy says Firebase Authentication is not tied to a region. A
+ * finding names one occurrence; this sweep reads every text line the product
+ * ships, because the sweep found four training promises where the review named one.
+ */
+const NO_TRAINING = /\b(not|never|no)\b[^.;:]{0,60}\btrain(s|ed|ing)?\b|\bdoes not train\b/i;
+/** The qualification the privacy policy makes: the user's own key brings its own terms. */
+const TRAINING_QUALIFIED = /own key|BYOK|own Gemini key/i;
+/** A sentence about Clean-Core.io itself, not about Google's terms — it needs no key qualification. */
+const OUR_OWN_PRACTICE = /\bwe do not use it to train\b/i;
+const SIGN_IN_WORD = /\b(sign-in|sign in|authentication)\b/i;
+const EU_REGION = /europe-west1|Belgium|\(EU\b/;
+const NOT_REGIONAL = /not tied to (a|an EU) region|an keine EU-Region gebunden/;
+
+/** Shipped source lines with comments left out; `lib/trust-claims.ts` quotes the policy and is checked above. */
+function shippedLines(): { where: string; line: string }[] {
+  const out: { where: string; line: string }[] = [];
+  const walk = (dir: string) => {
+    for (const e of fs.readdirSync(path.resolve(ROOT, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${e.name}`;
+      if (e.isDirectory()) {
+        if (e.name === 'node_modules' || e.name.startsWith('.') || e.name === 'generated') continue;
+        walk(rel);
+      } else if (/\.tsx?$/.test(e.name) && rel !== 'lib/trust-claims.ts') {
+        read(rel).split(/\r?\n/).forEach((line, i) => {
+          if (!/^\s*(\/\/|\*|\/\*)/.test(line)) out.push({ where: `${rel}:${i + 1}`, line });
+        });
+      }
+    }
+  };
+  for (const dir of ['app', 'components', 'lib']) walk(dir);
+  return out;
+}
+
+/**
+ * The no-training promises in a text that name no own-key case, sentence by
+ * sentence. The canonical claim is two sentences (community key, then own key),
+ * so a promise counts as qualified when it or the sentence after it names the
+ * own key. Per sentence, not per line: the explainer's old answer had "Bring
+ * your own Gemini key" two sentences later on the same line, about something
+ * else, and a line-level check took that for the qualification.
+ */
+function unqualifiedTrainingIn(text: string): string[] {
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  return sentences.filter(
+    (s, i) =>
+      NO_TRAINING.test(s) &&
+      !OUR_OWN_PRACTICE.test(s) &&
+      !TRAINING_QUALIFIED.test(s) &&
+      !TRAINING_QUALIFIED.test(sentences[i + 1] ?? ''),
+  );
+}
+const signInInTheEu = (line: string) => SIGN_IN_WORD.test(line) && EU_REGION.test(line) && !NOT_REGIONAL.test(line);
+
+test.describe('the qualifications travel with the claim', () => {
+  test('the sweep recognises what it is for', () => {
+    // The two sentences the review found, as they shipped.
+    const oldAnswer =
+      "It is processed by the Google Gemini API for the AI stages and is not used to train Google's models under those terms. Your data is stored in the EU (europe-west1, Belgium). Bring your own Gemini key and it is used exclusively through a server-side proxy.";
+    expect(unqualifiedTrainingIn(oldAnswer)).toHaveLength(1);
+    expect(signInInTheEu("Hosting, sign-in and the database run in the GCP europe-west1 (Belgium) region.")).toBe(true);
+    expect(signInInTheEu('<strong>Google Cloud / Firebase</strong> (EU) — hosting, database, authentication.')).toBe(true);
+    // And the qualified forms pass.
+    const training = TRUST_CLAIMS.find((c) => c.id === 'training')!.text;
+    expect(unqualifiedTrainingIn(training)).toEqual([]);
+    expect(signInInTheEu('Hosting and database run in europe-west1 (Belgium); the sign-in, Firebase Authentication, is a Google service not tied to a region.')).toBe(false);
+  });
+
+  test('no shipped line promises "no training" without naming the own-key case', () => {
+    const hits = shippedLines().filter((l) => unqualifiedTrainingIn(l.line).length > 0).map((l) => `${l.where}: ${l.line.trim().slice(0, 140)}`);
+    expect(hits, `use the trust card's training sentence (lib/trust-claims.ts):\n${hits.join('\n')}`).toEqual([]);
+  });
+
+  test('no shipped line places the sign-in in the EU region', () => {
+    const hits = shippedLines().filter((l) => signInInTheEu(l.line)).map((l) => `${l.where}: ${l.line.trim().slice(0, 140)}`);
+    expect(hits, `Firebase Authentication is not tied to a region (privacy policy §4):\n${hits.join('\n')}`).toEqual([]);
+  });
+
+  test('the explainer, /about and /trust say it the same way on the page', async ({ page }) => {
+    test.setTimeout(240_000);
+    const training = normalise(TRUST_CLAIMS.find((c) => c.id === 'training')!.text);
+    for (const route of ['/clean-core-explained', '/clean-core-explained-print', '/about', '/trust']) {
+      await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 180_000 });
+      await page.locator('h1').first().waitFor({ timeout: 60_000 });
+      const text = await page.locator('body').innerText();
+      const rendered = normalise(text);
+      // Block by block first, so a header's "Sign in" never joins the next paragraph's sentence.
+      const blocks = text.split(/\n+/).map(normalise);
+      const sentences = blocks.flatMap((block) => block.split(/(?<=[.!?])\s+/));
+      expect(blocks.flatMap(unqualifiedTrainingIn), `${route} promises no training without the own-key case`).toEqual([]);
+      expect(sentences.filter(signInInTheEu), `${route} places the sign-in in the EU`).toEqual([]);
+      if (route.startsWith('/clean-core-explained')) expect(rendered, route).toContain(training);
+    }
+  });
+});
+
+/* ---------------------------------------------------------------------- */
 /* Rendered: what is actually on the screen before the upload.             */
 /* ---------------------------------------------------------------------- */
 

@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { createHash } from 'node:crypto';
 import fs from 'fs';
 import path from 'path';
 import { FROM_LANDING, USP_SHORT, USP_LONG, WHITEPAPER_SECTIONS } from '../lib/whitepaper';
+import { fileDigest, readStamp, sourceFingerprint } from '../scripts/lib/pdf-stamp';
 
 /**
  * The whitepaper says what the landing page says, and the PDF is the page
@@ -67,18 +67,45 @@ test.describe('the PDF is the page', () => {
     expect(read('package.json')).toContain('"build:whitepaper-pdf": "tsx scripts/generate-whitepaper-pdf.ts"');
   });
 
-  test('the committed PDF was rendered from the current sources', () => {
-    const script = read('scripts/generate-whitepaper-pdf.ts');
-    const block = script.slice(script.indexOf('const SOURCES = ['), script.indexOf('];', script.indexOf('const SOURCES = [')));
-    const sources = [...block.matchAll(/'([^']+)'/g)].map((m) => m[1]);
-    expect(sources.length).toBeGreaterThan(3);
-    const h = createHash('sha256');
-    for (const rel of sources) {
-      h.update(rel);
-      h.update(read(rel).replace(/\r\n/g, '\n'));
-    }
-    const stamp = read('public/Clean-Core_S4HANA_Modernization_Whitepaper.pdf.sha256').trim();
-    expect(stamp, 'the whitepaper changed since the PDF was built — run npm run build:whitepaper-pdf').toBe(h.digest('hex'));
+  // Both committed PDFs: the whitepaper and the guide behind /clean-core-explained.
+  // The guide's stamp had no check at all before codex code-public-05.
+  for (const { script, pdf, build } of [
+    { script: 'scripts/generate-whitepaper-pdf.ts', pdf: 'public/Clean-Core_S4HANA_Modernization_Whitepaper.pdf', build: 'build:whitepaper-pdf' },
+    { script: 'scripts/generate-guide-pdf.ts', pdf: 'public/clean-core-explained.pdf', build: 'build:guide-pdf' },
+  ]) {
+    test(`${pdf} was rendered from the current sources`, () => {
+      const src = read(script);
+      const block = src.slice(src.indexOf('const SOURCES = ['), src.indexOf('];', src.indexOf('const SOURCES = [')));
+      const sources = [...block.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+      expect(sources.length).toBeGreaterThanOrEqual(3);
+      const stamp = readStamp(path.resolve(ROOT, `${pdf}.sha256`));
+      expect(stamp.sources, `the sources changed since the PDF was built — run npm run ${build}`).toBe(sourceFingerprint(ROOT, sources));
+    });
+
+    // Codex code-public-05: the source half alone stays green when the PDF
+    // itself is swapped for an older or unrelated one. The second line of the
+    // stamp is the digest of the file the generator wrote with it.
+    test(`${pdf} is the file its stamp was written for`, () => {
+      const stamp = readStamp(path.resolve(ROOT, `${pdf}.sha256`));
+      expect(stamp.pdf, `the stamp does not bind the PDF — run npm run ${build}`).toMatch(/^[0-9a-f]{64}$/);
+      expect(fileDigest(path.resolve(ROOT, pdf)), `${pdf} is not the PDF the generator stamped — run npm run ${build}`).toBe(stamp.pdf);
+      expect(fs.readFileSync(path.resolve(ROOT, pdf)).subarray(0, 5).toString('latin1')).toBe('%PDF-');
+    });
+  }
+
+  test('a swapped PDF under an unchanged stamp fails the binding', () => {
+    // The mutation the review describes, without touching the committed files:
+    // the same stamp, a different PDF.
+    const pdf = path.resolve(ROOT, 'public/clean-core-explained.pdf');
+    const stamp = readStamp(`${pdf}.sha256`);
+    const swapped = path.join(test.info().outputDir, 'swapped.pdf');
+    fs.mkdirSync(path.dirname(swapped), { recursive: true });
+    fs.copyFileSync(path.resolve(ROOT, 'public/Clean-Core_S4HANA_Modernization_Whitepaper.pdf'), swapped);
+    expect(fileDigest(swapped)).not.toBe(stamp.pdf);
+    const bytes = fs.readFileSync(pdf);
+    bytes[bytes.length - 2] ^= 0xff; // one flipped byte is a different file
+    fs.writeFileSync(swapped, bytes);
+    expect(fileDigest(swapped)).not.toBe(stamp.pdf);
   });
 });
 
