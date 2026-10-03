@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, QuotaError } from '@/lib/firebase-admin';
 import { recordConsent } from '@/lib/consent';
 import { TERMS_VERSION } from '@/lib/constants';
 import { logger, errMessage } from '@/lib/logger';
+import { assertRateLimit } from '@/lib/rate-limit';
 
 /**
  * POST /api/consent
@@ -25,6 +26,17 @@ export async function POST(req: NextRequest) {
     const decoded = await verifyRequestAuth(req);
     if (!decoded) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+
+    // Every call appends a record, so the account is metered like its
+    // neighbours (community-mail, fetch-*-metadata).
+    try {
+      await assertRateLimit(`consent:${decoded.uid}`, 30, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      if (rateErr instanceof QuotaError) {
+        return NextResponse.json({ error: rateErr.message }, { status: rateErr.status });
+      }
+      throw rateErr;
     }
 
     const body = await req.json().catch(() => ({}));

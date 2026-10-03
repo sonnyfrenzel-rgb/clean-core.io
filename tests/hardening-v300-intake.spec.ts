@@ -12,6 +12,7 @@ import { build } from 'esbuild';
  */
 
 const ROOT = path.resolve(__dirname, '..');
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
 test.describe('structured data', () => {
   function pagesWithJsonLd(dir: string, out: string[] = []): string[] {
@@ -73,5 +74,14 @@ test.describe('markdown links', () => {
     expect(web).toContain('href="https://www.sap.com/"');
     expect(anchor).toContain('href="#start"');
     expect(script).not.toContain('javascript:');
+  });
+});
+
+test.describe('the consent route', () => {
+  test('the consent route meters the account before it appends a record', () => {
+    const src = read('app/api/consent/route.ts');
+    const limit = src.indexOf('await assertRateLimit(`consent:${decoded.uid}`');
+    expect(limit, 'no account budget on the consent route').toBeGreaterThan(0);
+    expect(limit).toBeLessThan(src.indexOf('await recordConsent('));
   });
 });
