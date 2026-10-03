@@ -229,7 +229,8 @@
  * its path in the toolbar above the canvas (`ProcessBreadcrumb`), so the
  * drawing keeps its corner.
  */
-.cc-map-canvas .bjs-breadcrumbs {
+.cc-map-canvas .bjs-breadcrumbs,
+.cc-editor-canvas .bjs-breadcrumbs {
   display: none;
 }
 

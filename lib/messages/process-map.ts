@@ -11,7 +11,7 @@ export const PROCESS_MAP_MESSAGES = {
   'map.sectionLabel': 'Process reconstructed from code',
   'map.title': 'Process — reconstructed from code',
   'map.viewLabel': 'Process view',
-  'map.canvasTools': 'Zoom and full screen',
+  'map.canvasTools': 'Level, zoom and full screen',
   'map.viewMap': 'Map',
   'map.viewSteps': 'Steps',
   'map.stopEditing': 'Stop editing',
@@ -33,6 +33,10 @@ export const PROCESS_MAP_MESSAGES = {
   // ProcessBreadcrumb
   'map.levelNav': 'Level',
   'map.levelUp': 'One level up (Alt+Up)',
+  'map.levelUpShort': 'One level up',
+  'map.outlineShow': 'Show the outline',
+  'map.outlineHide': 'Hide the outline',
+  'map.keyboardHelp': 'Keyboard and mouse',
 
   // ProcessCodeCard
   'map.sourceFor': 'Source for',

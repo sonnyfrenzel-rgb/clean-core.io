@@ -1,9 +1,10 @@
 ﻿'use client';
 
 import { createDraftHolder, draftFor, type DraftHolder } from '@/lib/process-map-draft';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Code2, List, Map as MapIcon, Pencil } from 'lucide-react';
+import { Code2, Keyboard, List, Map as MapIcon, PanelLeftClose, PanelLeftOpen, Pencil } from 'lucide-react';
+import CcIconButton from '@/components/cc/IconButton';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcButton from '@/components/cc/Button';
@@ -32,7 +33,7 @@ import BpmnCanvas from './BpmnCanvas';
 import { anchorText } from '@/lib/bpmn/layout';
 import type { OpenedRevision, SaveProcessModel } from './BpmnEditor';
 import { useBreakpointS } from '@/hooks/useBreakpointS';
-import ProcessBreadcrumb from './ProcessBreadcrumb';
+import ProcessBreadcrumb, { useLevelUpKey } from './ProcessBreadcrumb';
 import ProcessCodeCard from './ProcessCodeCard';
 import ProcessFilters, { type PathHighlight } from './ProcessFilters';
 import ProcessMapLegend from './ProcessMapLegend';
@@ -41,6 +42,9 @@ import ProcessOutline from './ProcessOutline';
 import ProcessSearch from './ProcessSearch';
 import ProcessStepList from './ProcessStepList';
 import { mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } from '@/lib/workspace-messages';
+
+/** Where a viewer's choice to fold the outline is kept — this browser only. */
+const OUTLINE_KEY = 'cc.processMap.outline';
 
 /**
  * The modeller is loaded when somebody presses *Edit model* and not before: a
@@ -296,6 +300,36 @@ export default function ProcessMap({
   /* ---------------- reader state that is not an address ---------------- */
 
   const [opened, setOpened] = useState<Set<string>>(new Set());
+  /**
+   * The outline column folds away (owner 03.10.2026: "why is so much space
+   * wasted that could go to the BPMN viewer"). Remembered per viewer in this
+   * browser — a reading preference, never stored on the project. Without a
+   * stored choice it starts folded on a desktop narrower than 1280 px, where
+   * the column costs the map the most; in the Documentation stage the outline
+   * stands under the map and costs it no width, so it starts open there. A
+   * phone keeps the mobile pass's order either way: the fold is a desktop one.
+   */
+  const [outlineOpen, setOutlineOpen] = useState<boolean>(() => {
+    try {
+      const kept = window.localStorage.getItem(OUTLINE_KEY);
+      if (kept === 'open' || kept === 'closed') return kept === 'open';
+    } catch {
+      /* no storage: the default below */
+    }
+    return stage || typeof window === 'undefined' || window.innerWidth >= 1280;
+  });
+  const toggleOutline = useCallback(() => {
+    setOutlineOpen((was) => {
+      try {
+        window.localStorage.setItem(OUTLINE_KEY, was ? 'closed' : 'open');
+      } catch {
+        /* the choice holds for this visit */
+      }
+      return !was;
+    });
+  }, []);
+  /** The keyboard hint, behind the map's help button rather than in a column of its own. */
+  const [helpOpen, setHelpOpen] = useState(false);
   const [highlight, setHighlight] = useState<PathHighlight>('none');
   const [activeOverlays, setActiveOverlays] = useState<Set<string>>(new Set());
   const [variantOpen, setVariantOpen] = useState(false);
@@ -436,6 +470,7 @@ export default function ProcessMap({
       earlyLabel: e.early && !e.plainName ? EARLY_END_WORD : null,
       anchor: anchorText(e.anchor),
       fact: e.fact,
+      opensPlane: e.opensPlane,
     }])),
     [model],
   );
@@ -492,18 +527,13 @@ export default function ProcessMap({
     reach(hit.id, true);
   }, [model, nav, reach]);
 
-  /** `Alt+↑` — one level up, from anywhere in the view (`DESIGN.md` §5.9 item 12). */
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (!event.altKey || event.key !== 'ArrowUp') return;
-      const entry = plane ? nav.entries.get(plane) : null;
-      if (!entry) return;
-      event.preventDefault();
-      setPlane(entry.plane);
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [nav, plane, setPlane]);
+  /**
+   * `Alt+↑` — one level up, from anywhere in the view (`DESIGN.md` §5.9 item
+   * 12), in full screen too. While the editor has the canvas, the editor's own
+   * levels are the ones it walks.
+   */
+  const planeEntry = plane ? nav.entries.get(plane) : null;
+  useLevelUpKey(planeEntry && !editing ? () => setPlane(planeEntry.plane) : null);
 
   /* ---------------- the map and the step list, unchanged from 2.5 ---------------- */
 
@@ -520,6 +550,8 @@ export default function ProcessMap({
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLElement>) => {
     const order = planeElements;
     if (!order.length) return;
+    // Alt+↑ is one level up (`useLevelUpKey`), not a step along the flow.
+    if (event.altKey) return;
 
     if (event.key === 'Escape') {
       if (selected === null) return;
@@ -694,7 +726,7 @@ export default function ProcessMap({
 
       <div className={slot('order-2 flex flex-col gap-2')}>
 
-      {editing ? null : <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
+      {editing || view === 'map' ? null : <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
 
       {openProblem && !editing ? (
         <p
@@ -742,6 +774,7 @@ export default function ProcessMap({
             save={save}
             openLatest={openLatest}
             exportable={exportable}
+            processName={model.processName}
           />
         )
       ) : (
@@ -763,15 +796,24 @@ export default function ProcessMap({
       />
       </div>
 
+      {/* The map takes the width (owner 03.10.2026): the outline is a column
+          that folds, and the details of a step take room only once a step is
+          chosen — beside the map from 1280 px, over its right edge below that,
+          under it on a phone, as before. */}
       <div
+        data-process-map-layout=""
+        data-outline={outlineOpen ? 'open' : 'closed'}
         className={stage
           ? 'grid gap-3'
-          : 'grid gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)] xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.5fr)_minmax(0,1fr)]'}
+          : outlineOpen
+            ? 'grid gap-3 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]'
+            : 'grid gap-3'}
       >
         <div
+          data-process-map-outline-column=""
           className={stage
-            ? 'order-2 grid min-w-0 gap-2 lg:max-h-[440px] lg:overflow-y-auto lg:pr-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:grid-rows-[auto_1fr] lg:items-start [&>*:last-child]:lg:col-start-2 [&>*:last-child]:lg:row-span-2 [&>*:last-child]:lg:row-start-1'
-            : 'flex min-w-0 flex-col gap-2'}
+            ? `order-2 grid min-w-0 gap-2 lg:max-h-[440px] lg:overflow-y-auto lg:pr-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:grid-rows-[auto_1fr] lg:items-start [&>*:last-child]:lg:col-start-2 [&>*:last-child]:lg:row-span-2 [&>*:last-child]:lg:row-start-1${outlineOpen ? '' : ' lg:hidden'}`
+            : `flex min-w-0 flex-col gap-2${outlineOpen ? '' : ' lg:hidden'}`}
         >
           <ProcessSearch model={model} nav={nav} onJump={onJump} />
           <ProcessMiniMap
@@ -800,7 +842,8 @@ export default function ProcessMap({
           />
         </div>
 
-        <div className={stage ? 'order-1 min-w-0' : 'min-w-0'}>
+        <div className={stage ? 'order-1 min-w-0' : 'relative min-w-0 xl:flex xl:items-start xl:gap-3'}>
+          <div className="min-w-0 xl:flex-1">
           {view === 'map' ? (
             <BpmnCanvas
               xml={model.xml}
@@ -818,44 +861,89 @@ export default function ProcessMap({
               /* Zoom, fit and full screen on every map — the editor's controls
                  (owner 02.10.2026 for Documentation, 03.10.2026 for the
                  workspace: "get into full screen, and back again easily").
-                 Documentation opens on the whole process; the workspace, as
-                 before, at a readable scale. `canvasControls` is kept as a
-                 prop for callers; every map carries the controls now. */
+                 Every map opens on the whole level (owner 03.10.2026: "so the
+                 whole level is visible on open"). `canvasControls` is kept as
+                 a prop for callers; every map carries the controls now. */
               controls
-              openFit={stage ? 'whole' : 'readable'}
+              openFit="whole"
+              levelPath={<ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
+              tools={(
+                <>
+                  <span className="hidden lg:inline-flex">
+                    <CcIconButton
+                      data-process-outline-toggle=""
+                      label={wt(outlineOpen ? 'map.outlineHide' : 'map.outlineShow')}
+                      aria-pressed={outlineOpen}
+                      onClick={toggleOutline}
+                    >
+                      {outlineOpen
+                        ? <PanelLeftClose size={16} aria-hidden={true} />
+                        : <PanelLeftOpen size={16} aria-hidden={true} />}
+                    </CcIconButton>
+                  </span>
+                  {/* The keyboard help is a desktop one; a phone keeps its row for the map. */}
+                  <span className="hidden md:inline-flex">
+                    <CcIconButton
+                      data-process-map-help-toggle=""
+                      label={wt('map.keyboardHelp')}
+                      aria-expanded={helpOpen}
+                      onClick={() => setHelpOpen((was) => !was)}
+                    >
+                      <Keyboard size={16} aria-hidden={true} />
+                    </CcIconButton>
+                  </span>
+                </>
+              )}
+              toolsPanel={helpOpen ? (
+                <p
+                  data-process-map-hint=""
+                  className="m-0 shrink-0 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3 text-[13px] font-medium text-cc-ink-muted"
+                >
+                  {mapKeyboardHint(true)}
+                </p>
+              ) : null}
             />
           ) : (
-            <ProcessStepList
-              elements={planeElements}
-              label={mapStepsLabel(model.overview)}
-              active={active}
-              selected={selected}
-              onActivate={activate}
-              onActiveChange={setActive}
-              focusToken={focusToken}
-              onKeyDown={handleKeyDown}
-            />
+            <>
+              <ProcessStepList
+                elements={planeElements}
+                label={mapStepsLabel(model.overview)}
+                active={active}
+                selected={selected}
+                onActivate={activate}
+                onActiveChange={setActive}
+                focusToken={focusToken}
+                onKeyDown={handleKeyDown}
+              />
+              {stage || selectedElement ? null : (
+                <p
+                  data-process-map-hint=""
+                  className="mt-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3 text-[13px] font-medium text-cc-ink-muted"
+                >
+                  {mapKeyboardHint(false)}
+                </p>
+              )}
+            </>
+          )}
+          </div>
+
+          {stage || !selectedElement ? null : (
+            <div
+              data-process-map-details=""
+              className="mt-3 lg:absolute lg:top-16 lg:right-2 lg:z-cc-popover lg:mt-0 lg:max-h-[calc(100%-5rem)] lg:w-[340px] lg:overflow-y-auto lg:rounded-cc-card lg:shadow-cc-dialog xl:static xl:max-h-none xl:shrink-0 xl:shadow-none"
+            >
+              <ProcessCodeCard
+                element={selectedElement}
+                source={source}
+                fileName={model.fileName}
+                onClose={() => {
+                  setSelected(null);
+                  setFocusToken((token) => token + 1);
+                }}
+              />
+            </div>
           )}
         </div>
-
-        {stage ? null : selectedElement ? (
-          <ProcessCodeCard
-            element={selectedElement}
-            source={source}
-            fileName={model.fileName}
-            onClose={() => {
-              setSelected(null);
-              setFocusToken((token) => token + 1);
-            }}
-          />
-        ) : (
-          <p
-            data-process-map-hint
-            className="rounded-cc-card border border-cc-line bg-cc-surface-muted p-3 text-[13px] font-medium text-cc-ink-muted"
-          >
-            {mapKeyboardHint(view === 'map')}
-          </p>
-        )}
       </div>
         </>
       )}

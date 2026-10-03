@@ -41,6 +41,19 @@ export interface ProcessMapAddress extends MapAddress {
 
 const NOWHERE: MapAddress = { plane: null, node: null };
 
+/**
+ * What a map in full screen wrote on the entry being replaced
+ * (`useCanvasFullscreen`: which full screen, which level, how deep). A
+ * replace that dropped it would turn that entry into one Back leaves full
+ * screen on. Only those marks are carried: Next copies its own state in
+ * itself, and handing it back would keep its router from seeing the address.
+ */
+function canvasEntryMarks(state: unknown): Record<string, unknown> | null {
+  if (!state || typeof state !== 'object') return null;
+  const marks = Object.entries(state as Record<string, unknown>).filter(([key]) => key.startsWith('ccCanvas'));
+  return marks.length ? Object.fromEntries(marks) : null;
+}
+
 export function useProcessMapAddress(): ProcessMapAddress {
   const [address, setAddress] = useState<MapAddress>(NOWHERE);
   const latest = useRef<MapAddress>(NOWHERE);
@@ -83,7 +96,7 @@ export function useProcessMapAddress(): ProcessMapAddress {
       const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       if (url === current) return;
       if (job.push) window.history.pushState(null, '', url);
-      else window.history.replaceState(null, '', url);
+      else window.history.replaceState(canvasEntryMarks(window.history.state), '', url);
     });
   }, []);
 
