@@ -93,8 +93,14 @@ async function exerciseTheMap(page: Page, label: string) {
   // 4. A step chosen in full screen closes it and opens its chapter.
   await toggle.click();
   await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
-  const step = page.locator('[data-process-map-canvas] [data-map-node]').nth(3);
-  const id = await step.getAttribute('data-map-node');
+  // A step, not a collapsed sub-process: since 03.10.2026 a sub-process
+  // opens its level in place in full screen, and full screen stays.
+  const id = await page.locator('[data-process-map-canvas]').evaluate((root) => {
+    const subs = new Set([...root.querySelectorAll('.bjs-drilldown')].map((a) => a.closest('.djs-overlays')?.getAttribute('data-container-id')));
+    const steps = [...root.querySelectorAll<HTMLElement>('[data-map-node]')].filter((b) => b.getClientRects().length > 0 && !subs.has(b.dataset.mapNode));
+    return (steps[3] ?? steps[0])?.dataset.mapNode ?? '';
+  });
+  const step = page.locator(`[data-process-map-canvas] [data-map-node="${id}"]`);
   await step.click();
   await expect(frame).toHaveAttribute('data-map-fullscreen', 'false');
   await expect(page.locator(`[data-map-node="${id}"]`)).toHaveAttribute('data-selected', 'true');
