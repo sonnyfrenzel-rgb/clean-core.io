@@ -1267,8 +1267,8 @@
           {
             "field": "testCases",
             "locator": "[data-stage-output=\"testCases\"]",
-            "text": "of {count:project.testCases} selected",
-            "why": "the selection line above the case list"
+            "text": "{count:project.testCases} scenario",
+            "why": "the scope summary above the case list: how many scenarios, and where each can be tested"
           },
           {
             "field": "testSuite",

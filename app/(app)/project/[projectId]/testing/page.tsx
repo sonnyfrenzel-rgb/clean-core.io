@@ -11,7 +11,7 @@ import { enforceActiveRun } from '@/lib/run-guard';
 import { useTestGeneration } from '@/hooks/useTestGeneration';
 import { useTestExecution } from '@/hooks/useTestExecution';
 import type { Project } from '@/lib/types';
-import { Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft, Check, Circle, Plug, Lock } from 'lucide-react';
+import { ArrowRight, Play, Terminal as TerminalIcon, RefreshCw, ListChecks, Download, ShieldCheck, AlertTriangle, BarChart3, Globe, Send, Eye, EyeOff, Clock, BookOpen, ExternalLink, HelpCircle, Database, Search, Layers, ChevronRight, MapPin, ArrowLeft, Check, Circle, Plug, Lock } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -22,12 +22,10 @@ import CcDateText from '@/components/cc/DateText';
 import CcStateText from '@/components/cc/StateText';
 import CcMessageBox from '@/components/cc/MessageBox';
 import CcDisclosure from '@/components/cc/Disclosure';
-import CcDialog from '@/components/cc/Dialog';
 import CcTable from '@/components/cc/Table';
 import CcField, { CC_CONTROL_HEIGHT } from '@/components/cc/Field';
 import CcSelect from '@/components/cc/Select';
 import CcTextarea from '@/components/cc/Textarea';
-import { STATE_CLASSES } from '@/components/cc/state';
 import { stateChartColor, NOT_DETERMINED_CHART } from '@/lib/chart-colors';
 import { provenance } from '@/lib/provenance';
 // The runner executes against mocks only, so a pass is "Demonstrated · mock", never "Proven" (QA f2dc77c6c912).
@@ -38,7 +36,6 @@ import Link from 'next/link';
 import { clsx } from 'clsx';
 import { cn } from '@/lib/utils';
 import StageFooter from '@/components/StageFooter';
-import { motion } from 'motion/react';
 
 const ReactMarkdown = nextDynamic(() => import('react-markdown'), { ssr: false });
 const TestingPieChart = nextDynamic(() => import('@/components/TestingCharts').then(mod => mod.TestingPieChart), { ssr: false });
@@ -51,7 +48,7 @@ import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
-import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow-steps';
+import { workflowSteps, generationBlockers, generationPrerequisites, previousBasis } from '@/lib/workflow-steps';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import StaleNotice from '@/components/StaleNotice';
 import { STORED_TEST_SUITE_REJECTED } from './test-suite-schema';
@@ -66,6 +63,8 @@ import { catalogForReader } from '@/lib/messages/demo';
 import { normaliseSeverity } from '@/lib/severity';
 import { lastRun, scenarios } from '@/components/testing/testing-summary';
 import { isAbapUnitRoute, ABAP_UNIT_NOT_RUNNABLE } from '@/lib/test-runnability';
+import ScenarioList, { type ScenarioCase, type ScenarioRunResult } from '@/components/testing/ScenarioList';
+import TestScopeLegend from '@/components/testing/TestScopeLegend';
 
 const renderSafeValue = (val: any): string => {
   if (val === null || val === undefined) return '';
@@ -183,7 +182,6 @@ export default function TestingSandboxPage() {
   /** An export that fails has to say so on the page; see `exportTestCasesToExcel`. */
   const [exportError, setExportError] = useState('');
   const [selectedTestCases, setSelectedTestCases] = useState<number[]>([]);
-  const [selectedResult, setSelectedResult] = useState<any>(null);
 
   /**
    * Whether the tenant section is open. A section of the tool, not a mode of
@@ -743,19 +741,48 @@ export default function TestingSandboxPage() {
     setSelectedTestCases((prev) => (prev.length ? prev : testCases.map((_, i) => i)));
   }, [testCases]);
 
+  /**
+   * What generating the scenarios needs and does not have yet (owner report
+   * 03.10.2026, v3.0.1, the Transformation agent's finding): the button was
+   * enabled, its click returned without a word when an input was stale, and
+   * nothing checked for generated code or a design, so the prompt could carry
+   * `undefined`. Each missing input is now a sentence with one action beside
+   * the button, the button is disabled while one is missing, and an enabled
+   * click always either starts (busy) or says why it did not.
+   */
+  const generatePrerequisites = generationPrerequisites(project, 'testing');
+  const generateStale = generationBlockers(project, 'testing').length > 0;
+  const generateBlocked = generatePrerequisites.length > 0 || generateStale;
+
   const handleGenerate = async () => {
-    // Not against code generated from a previous source (E01-F01-US02). The
-    // notice at the top of the page says which stage to regenerate first.
-    if (generationBlockers(project, 'testing').length > 0) return;
+    // Defensive: the button is disabled in both cases, and says why beside it.
+    if (generateBlocked) {
+      setGenError(
+        generatePrerequisites.length > 0
+          ? generatePrerequisites.map((p) => p.reason).join(' ')
+          : 'The inputs were built for a previous source; the notice at the top of the page names the stage to regenerate first.',
+      );
+      return;
+    }
     // Nor while the testing model stage is off or has no key: the proxy refuses
     // it, and "Regenerate Suite" used to start that request anyway
     // (QA full review of fc787674705f, 55b40120e11b).
-    if (!modelAvailability.enabled('testing')) return;
+    if (!modelAvailability.enabled('testing')) {
+      setGenError(
+        modelAvailability.keyAvailable
+          ? 'Generating is off: turn the testing stage back on in Settings.'
+          : 'Generating needs a model key: add your own Gemini API key in Settings.',
+      );
+      return;
+    }
     setGenError('');
     try {
       const result = await generateTestCases();
       if (result && result.testCases) {
         setSelectedTestCases(result.testCases.map((_: any, i: number) => i));
+        if (result.testCases.length === 0) {
+          setGenError('The testing model answered without a single scenario. Generate again.');
+        }
       }
     } catch (error) {
       // The console was the only place this went. A refused generation leaves
@@ -822,25 +849,6 @@ export default function TestingSandboxPage() {
   };
 
   const stats = getStats();
-  /**
-   * Three outcomes, not two.
-   *
-   * Every surface here read `status === 'Passed'` and painted everything else
-   * red. That was safe while the only other value was `Failed`; with `Not run`
-   * and `Simulated` it turns "we do not know" into "it failed", which is a
-   * different lie in the opposite direction.
-   */
-  const verdictTone = (status?: string): 'pass' | 'fail' | 'none' =>
-    status === 'Passed' ? 'pass' : status === 'Failed' ? 'fail' : 'none';
-
-  /**
-   * The state each verdict is drawn in (DESIGN.md §1.1, §4). Green only where a
-   * test really passed; a failure is `error`; everything without a verdict —
-   * Not run, Skipped, Todo, Simulated — is *not determined*, neutral, and not
-   * the amber it used to be: amber says "watch out", and "we do not know" is
-   * not a warning about the code.
-   */
-  const VERDICT_STATE = { pass: 'success', fail: 'error', none: 'neutral' } as const;
 
   /**
    * A scenario's last verdict, from the same record as the facet tiles: the
@@ -853,6 +861,19 @@ export default function TestingSandboxPage() {
     const id = String(tc.id ?? '');
     const v = run.kind === 'recorded' ? receiptVerdicts.get(id) : run.kind === 'session' ? sessionVerdicts.get(id) : undefined;
     return v ?? null;
+  };
+  /**
+   * A scenario's last mock-run result for its details: the verdict as above,
+   * and the runner's message — from this session's run, or the one
+   * `/api/run-tests` stored on the case beside the receipt that covers it.
+   */
+  const sessionMessages = new Map((testResults ?? []).map((r) => [String(r.id ?? ''), r.message]));
+  const scenarioResultOf = (tc: ScenarioCase): ScenarioRunResult => {
+    const verdict = verdictOf(tc);
+    if (!verdict) return { verdict: null, message: null };
+    const id = String(tc.id ?? '');
+    const message = run.kind === 'session' ? sessionMessages.get(id) : run.kind === 'recorded' ? tc.message : null;
+    return { verdict, message: typeof message === 'string' && message.trim() ? message : null };
   };
 
   // Tests without a verdict get their own slice. Leaving them out would make a
@@ -1032,6 +1053,32 @@ export default function TestingSandboxPage() {
     );
   const STEP = 'bg-cc-ink text-cc-on-dark cc-text-meta w-6 h-6 rounded-cc-row flex items-center justify-center shrink-0';
 
+  /** Why the scenarios cannot be generated now — beside the button, never in a hover title. */
+  const generateWhy = generateBlocked ? (
+    <div id="testing-generate-why" data-generation-prerequisites="" className="w-full">
+      <CcMessageStrip
+        state="information"
+        headline={testCases.length > 0 ? 'The scenarios cannot be regenerated yet.' : 'The scenarios cannot be generated yet.'}
+      >
+        <ul className="m-0 mt-2 flex list-none flex-col gap-3 p-0">
+          {generatePrerequisites.map((p) => (
+            <li key={p.id} data-generation-prerequisite={p.id} className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span className="min-w-0">{p.reason}</span>
+              <CcLinkButton href={`/project/${String(projectId)}/${p.action.stage}`} icon={<ArrowRight size={16} aria-hidden="true" />}>
+                {p.action.label}
+              </CcLinkButton>
+            </li>
+          ))}
+          {generatePrerequisites.length === 0 && generateStale ? (
+            <li data-generation-prerequisite="stale">
+              The inputs were built for a previous source. The notice at the top of the page names the stage to regenerate first.
+            </li>
+          ) : null}
+        </ul>
+      </CcMessageStrip>
+    </div>
+  ) : null;
+
   if (loading) return <StageFrame stage="testing" className="cc-text-body text-cc-ink-muted">Loading...</StageFrame>;
   if (loadError) return (
     <StageFrame stage="testing">
@@ -1138,7 +1185,9 @@ export default function TestingSandboxPage() {
                   </CcButton>
                   <CcButton
                     onClick={handleGenerate}
-                    disabled={isGenerating || !modelAvailability.enabled('testing')}
+                    disabled={isGenerating || !modelAvailability.enabled('testing') || generateBlocked}
+                    aria-describedby={generateBlocked ? 'testing-generate-why' : undefined}
+                    data-generate-scenarios=""
                     icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : undefined}
                   >
                     {isGenerating ? 'Generating...' : 'Regenerate Suite'}
@@ -1179,11 +1228,14 @@ export default function TestingSandboxPage() {
                 ) : null}
                 {/* No bounce, no second copy in a card header: the only action of
                     an empty tool, at the top of it. */}
+                {generateWhy}
                 <CcButton
                   variant="primary"
                   density="cozy"
                   onClick={handleGenerate}
-                  disabled={isGenerating}
+                  disabled={isGenerating || generateBlocked}
+                  aria-describedby={generateBlocked ? 'testing-generate-why' : undefined}
+                  data-generate-scenarios=""
                   icon={isGenerating ? <RefreshCw className="w-4 h-4 motion-safe:animate-spin" /> : <ListChecks className="w-4 h-4" aria-hidden="true" />}
                 >
                   {isGenerating ? 'Generating scenarios...' : 'Generate scenarios'}
@@ -1196,6 +1248,7 @@ export default function TestingSandboxPage() {
               </div>
             ) : (
               <div className="space-y-3">
+                {generateWhy}
                 {/* The same message as in the empty state, because "Regenerate
                     Suite" can be refused too — and there the previous suite is
                     still on the screen, so without this the button simply
@@ -1331,30 +1384,6 @@ export default function TestingSandboxPage() {
         </div>
       )}
 
-      {testResults && (
-        <div className="grid grid-cols-1 gap-4 mb-4">
-          {project?.manualTestingRequirements && project.manualTestingRequirements.length > 0 && (
-            <div className={clsx(CARD, 'p-4 md:p-6')}>
-              <h3 className="cc-text-h2 text-cc-ink mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-cc-warning" aria-hidden="true" />
-                Human-in-the-Loop Verification
-              </h3>
-              <div className="grid grid-cols-1 gap-4">
-                {project.manualTestingRequirements.map((req: any, i: number) => (
-                  <div key={i} className="bg-cc-surface-muted p-4 rounded-cc-row border border-cc-line">
-                    <h4 className="cc-text-h3 text-cc-ink mb-1">{req.area}</h4>
-                    <p className="cc-text-cell text-cc-ink-muted mb-3 leading-relaxed">{req.reason}</p>
-                    <div className="text-[12px] text-cc-ink font-cc-mono bg-cc-surface p-2 rounded-cc-row border border-cc-line">
-                      <strong>VERIFY:</strong> {req.verificationSteps}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {aiExplanation && (
         <div className="mb-4 bg-cc-error-bg border border-cc-error-border rounded-cc-card p-4 md:p-6 flex flex-col sm:flex-row gap-4 items-start">
           <AlertTriangle className="w-6 h-6 text-cc-error shrink-0" aria-hidden="true" />
@@ -1437,53 +1466,6 @@ export default function TestingSandboxPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {testResults.map((res: any, i: number) => {
-              const tone = verdictTone(res.status);
-              const state = STATE_CLASSES[VERDICT_STATE[tone]];
-              return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                data-verdict-tone={tone}
-                className={clsx(
-                  "group relative p-4 rounded-cc-card border transition-colors bg-cc-surface shadow-cc hover:border-cc-field-border",
-                  tone === 'fail' ? 'border-cc-error-border' : tone === 'none' ? 'border-dashed border-cc-field-border' : 'border-cc-line'
-                )}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <span className={state.text}>
-                    {tone === 'pass' ? <ShieldCheck size={20} aria-hidden="true" />
-                      : tone === 'fail' ? <AlertTriangle size={20} aria-hidden="true" />
-                      : <HelpCircle size={20} aria-hidden="true" />}
-                  </span>
-                  <span className="font-cc-mono text-[12px] text-cc-ink-muted">{renderSafeValue(res.id)}</span>
-                </div>
-                {/* The name is the button, stretched over the card: the whole
-                    card still opens the report on click, and the keyboard now
-                    reaches it too — the report dialog hands the focus back
-                    here when it closes. */}
-                <h4 className="cc-text-h3 text-cc-ink mb-2 line-clamp-2 leading-tight">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedResult(res)}
-                    className="text-left cursor-pointer after:absolute after:inset-0 after:rounded-cc-card"
-                  >
-                    {renderSafeValue(res.name)}
-                  </button>
-                </h4>
-                <div className="flex items-center gap-2 pt-2">
-                  <CcTag>{renderSafeValue(res.category)}</CcTag>
-                  <span className={clsx("cc-text-meta ml-auto", state.text)}>
-                    {renderSafeValue(res.status)}
-                  </span>
-                </div>
-              </motion.div>
-              );
-            })}
-          </div>
         </div>
       )}
 
@@ -1507,6 +1489,36 @@ export default function TestingSandboxPage() {
               gaps={program?.gaps ?? []}
               strip={program ? { lines: program.lines, bands: program.bands, marks: program.marks, ticks: findingTicks } : null}
             />
+            {/* What the testing model itself says no unit test here can cover —
+                only your own system can. It used to appear only after a run in
+                this session, and never on the ABAP Cloud route, which has no
+                run; it is part of "what only works outside" and stands here
+                whether anything ran or not. */}
+            {!storedSuiteRejected && Array.isArray(project?.manualTestingRequirements) && project.manualTestingRequirements.length > 0 ? (
+              <div data-manual-requirements="" className="mt-5 border-t border-cc-line pt-4">
+                <h3 className="m-0 flex flex-wrap items-center gap-2 cc-text-h3 text-cc-ink">
+                  Only in your SAP system, as the testing model names it
+                  <CcProvenanceChip value="proposed" />
+                </h3>
+                <ul className="m-0 mt-3 flex list-none flex-col gap-3 p-0">
+                  {project.manualTestingRequirements.map((req, i) => (
+                    <li key={i} className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
+                      <p className="m-0 cc-text-cell font-semibold text-cc-ink">{req.area}</p>
+                      <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{req.reason}</p>
+                      {Array.isArray(req.verificationSteps) ? (
+                        <ol className="m-0 mt-2 list-decimal pl-5 cc-text-cell text-cc-ink">
+                          {req.verificationSteps.map((step, k) => (
+                            <li key={k}>{step}</li>
+                          ))}
+                        </ol>
+                      ) : req.verificationSteps ? (
+                        <p className="m-0 mt-2 cc-text-cell text-cc-ink">{req.verificationSteps}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </ToolSection>
 
           {/* ── The scenarios, one row each — once there are any ── */}
@@ -1519,66 +1531,29 @@ export default function TestingSandboxPage() {
               aside={testCases.length}
               lead={
                 isAbapCloud
-                  ? 'Written by the testing model from the generated code — one row each. They have no verdict here: ABAP Unit runs in your own system.'
-                  : 'Written by the testing model from the generated code — one row each, with its last verdict. Untick a scenario to leave it out of the next run.'
+                  ? 'Written by the testing model from the generated code — one row each; open a row for everything it holds. They have no verdict here: ABAP Unit runs in your own system.'
+                  : 'Written by the testing model from the generated code — one row each, with its last verdict; open a row for everything it holds.'
               }
             >
-              <div className="space-y-3">
-                <p data-stage-output="testCases" className={clsx(LABEL, 'm-0')}>{selectedTestCases.length} of {testCases.length} selected</p>
-                {/* The whole row is the checkbox's label, so a click anywhere on
-                    it ticks the box and the box is what the keyboard reaches —
-                    a clickable row alone was out of reach of Tab and Space. The
-                    label's text (id, category, description) is the box's name. */}
-                <div className="max-h-[640px] space-y-2 overflow-auto">
-                {testCases.map((tc, i) => {
-                  const verdict = verdictOf(tc);
-                  return (
-                  <label
-                    key={i}
-                    className={clsx(
-                      "flex items-start gap-3 p-3 rounded-cc-row border transition-colors cursor-pointer",
-                      selectedTestCases.includes(i) ? "border-cc-ink bg-cc-surface" : "border-cc-line hover:border-cc-field-border hover:bg-cc-surface-muted"
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedTestCases.includes(i)}
-                      onChange={() => toggleTestCase(i)}
-                      className="mt-1 w-4 h-4 shrink-0 cursor-pointer rounded border-cc-field-border accent-cc-ink"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <span className="font-cc-mono text-[12px] font-semibold text-cc-ink">{renderSafeValue(tc.id)}</span>
-                        {tc.category && (
-                          <CcTag>{renderSafeValue(tc.category)}</CcTag>
-                        )}
-                      </div>
-                      {/* The scenario's name first — what it checks, in words — and
-                          its description under it where the model wrote one. */}
-                      <p className="cc-text-cell font-semibold text-cc-ink truncate sm:whitespace-normal">{renderSafeValue(tc.name) || renderSafeValue(tc.description)}</p>
-                      {tc.name && tc.description ? (
-                        <p className="cc-text-meta text-cc-ink-muted truncate sm:whitespace-normal">{renderSafeValue(tc.description)}</p>
-                      ) : null}
-                    </div>
-                    {/* The last verdict, from the receipt or this session — never
-                        the status string stored on the case. */}
-                    <span data-scenario-verdict={verdict ? verdictTone(verdict) : 'not-run'} className="shrink-0">
-                      {verdict === 'Passed' ? (
-                        // A pass here is against mocks — "Demonstrated · mock", never green.
-                        <CcProvenanceChip value="demonstrated-mock" />
-                      ) : verdict === 'Failed' ? (
-                        <CcStateText state="error">Failed</CcStateText>
-                      ) : verdict ? (
-                        <CcStateText state="neutral" hollow>{verdict}</CcStateText>
-                      ) : (
-                        <CcStateText state="neutral" hollow>Not run</CcStateText>
-                      )}
-                    </span>
-                  </label>
-                  );
-                })}
-                </div>
-              </div>
+              {/* Details, scope per scenario and what to do next (owner
+                  03.10.2026). The selection exists only where there is a mock
+                  run to select for — not on the ABAP Cloud route. */}
+              <ScenarioList
+                cases={testCases as unknown as ScenarioCase[]}
+                isAbapCloud={isAbapCloud}
+                suiteCode={!storedSuiteRejected && typeof project?.testSuite?.code === 'string' ? project.testSuite.code : null}
+                selectable={!isAbapCloud}
+                selected={selectedTestCases}
+                onToggle={toggleTestCase}
+                resultOf={scenarioResultOf}
+                runAt={run.kind === 'recorded' ? run.at : null}
+                tenantLocked={LIVE_TEST_EXECUTION.locked}
+                projectName={project?.name}
+                onShowOutput={testResults ? () => {
+                  setShowConsole(true);
+                  requestAnimationFrame(() => document.querySelector('[data-testing-console]')?.scrollIntoView({ block: 'start' }));
+                } : undefined}
+              />
             </ToolSection>
           ) : null}
 
@@ -2440,6 +2415,9 @@ export default function TestingSandboxPage() {
         </div>
 
         <aside aria-label="About this tool" className="flex min-w-0 flex-col gap-4">
+          {/* What can be tested where — once for the whole stage, before
+              anything else in the side column (owner 03.10.2026). */}
+          <TestScopeLegend isAbapCloud={isAbapCloud} tenantLocked={LIVE_TEST_EXECUTION.locked} />
           {/* The tenant in one card: what is open, what stays locked, and the
               way to the section that does it. The lock itself is said once,
               there. */}
@@ -2511,100 +2489,6 @@ export default function TestingSandboxPage() {
       </div>
 
 
-      {/* The report of one test case: the library's dialog (§2.6) — the page
-          behind is inert, Escape and the close button leave, and the focus
-          returns to the card that opened it. A click on the dimmed page no
-          longer closes it: that is the dialog's rule, not this page's. */}
-      <CcDialog
-        open={!!selectedResult}
-        title={selectedResult ? renderSafeValue(selectedResult.name) : ''}
-        onClose={() => setSelectedResult(null)}
-        size="wide"
-        data-test-report=""
-        actions={
-          <CcButton variant="ghost" density="cozy" onClick={() => setSelectedResult(null)}>
-            Close report
-          </CcButton>
-        }
-      >
-        {selectedResult && (
-          <>
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              <span className="font-cc-mono text-[13px] font-semibold text-cc-ink">{renderSafeValue(selectedResult.id)}</span>
-              <CcTag>{renderSafeValue(selectedResult.category)}</CcTag>
-              <span className={clsx(
-                "ml-auto px-3 py-1 rounded-cc-row border cc-text-meta",
-                STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].bg,
-                STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].border,
-                STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].text,
-              )}>
-                {renderSafeValue(selectedResult.status)}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div>
-                  <h3 className={clsx(LABEL, 'mb-2')}>Goal</h3>
-                  <p className="cc-text-body text-cc-ink">{renderSafeValue(selectedResult.description)}</p>
-                </div>
-                <div>
-                  <h3 className={clsx(LABEL, 'mb-2')}>Preconditions</h3>
-                  <div className="bg-cc-surface-muted p-4 rounded-cc-row border border-cc-line">
-                    <p className="cc-text-cell text-cc-ink whitespace-pre-wrap">{renderSafeValue(selectedResult.preconditions)}</p>
-                  </div>
-                </div>
-                <div>
-                  <h3 className={clsx(LABEL, 'mb-2')}>Requirement Metadata</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-cc-surface-muted p-3 rounded-cc-row border border-cc-line">
-                      <span className={clsx(LABEL, 'block mb-1')}>Priority</span>
-                      <span className="cc-text-cell font-semibold text-cc-ink">{renderSafeValue(selectedResult.priority) || 'Medium'}</span>
-                    </div>
-                    <div className="bg-cc-surface-muted p-3 rounded-cc-row border border-cc-line">
-                      <span className={clsx(LABEL, 'block mb-1')}>Test Data</span>
-                      <span className="cc-text-cell font-semibold text-cc-ink truncate block">{renderSafeValue(selectedResult.testData) || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <h3 className={clsx(LABEL, 'mb-2')}>Execution Sequence</h3>
-                  <div className="space-y-2">
-                    {Array.isArray(selectedResult.steps) ? selectedResult.steps.map((step: any, idx: number) => (
-                      <div key={idx} className="flex gap-4 p-3 bg-cc-surface-muted rounded-cc-row border border-cc-line">
-                        <span className="font-bold text-cc-ink cc-text-cell">{idx + 1}.</span>
-                        <span className="cc-text-cell text-cc-ink leading-relaxed">{renderSafeValue(step)}</span>
-                      </div>
-                    )) : <p className="cc-text-cell text-cc-ink">{renderSafeValue(selectedResult.steps)}</p>}
-                  </div>
-                </div>
-                <div>
-                  <h3 className={clsx(LABEL, 'mb-2')}>Validation Logic</h3>
-                  <div className={clsx(
-                    "p-4 rounded-cc-row border font-cc-mono text-[12px] text-cc-ink",
-                    STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].bg,
-                    STATE_CLASSES[VERDICT_STATE[verdictTone(selectedResult.status)]].border,
-                  )}>
-                    <div className="mb-4">
-                      <span className={clsx(LABEL, 'block mb-1')}>Execution Message</span>
-                      <p className="font-semibold">{renderSafeValue(selectedResult.message)}</p>
-                    </div>
-                    {selectedResult.expectedResult && (
-                      <div>
-                        <span className={clsx(LABEL, 'block mb-1')}>Expected Invariant</span>
-                        <p className="font-semibold">{renderSafeValue(selectedResult.expectedResult)}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </CcDialog>
 
 
       {/* Removing the saved connection is asked for first; the box takes the
