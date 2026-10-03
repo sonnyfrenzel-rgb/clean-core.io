@@ -1117,7 +1117,7 @@ Structure the JSON exactly like this:
             </span>
           </div>
         </div>
-        <div className="rounded-cc-card overflow-hidden border border-cc-line h-[400px] md:h-[500px] relative">
+        <div className="relative">
           {parsedDoc.l3_flow && (
             <ProcessFlow flow={parsedDoc.l3_flow} tasks={parsedDoc.l4_tasks} onNodeClick={handleNodeClick} />
           )}

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Maximize2, Minimize2, Scan, ZoomIn, ZoomOut } from 'lucide-react';
+import CcButton from '@/components/cc/Button';
 import CcIconButton from '@/components/cc/IconButton';
 import { editorZoomLabel, wt } from '@/lib/workspace-messages';
 
@@ -62,15 +63,32 @@ export function CanvasFullscreenToggle({
   onToggle: () => void;
   buttonRef?: React.Ref<HTMLButtonElement>;
 }) {
+  // In full screen the way out is said in words (owner 03.10.2026: "get back
+  // again easily"): a labelled button at the right end of the row, top right
+  // of the screen, 44 px on touch — not an icon a reader has to decode.
+  if (filled) {
+    return (
+      <CcButton
+        {...hook(scope, 'fullscreen-toggle')}
+        ref={buttonRef}
+        density="cozy"
+        aria-pressed={true}
+        onClick={onToggle}
+        icon={<Minimize2 size={16} aria-hidden={true} />}
+      >
+        {wt('editor.exitFullscreen')}
+      </CcButton>
+    );
+  }
   return (
     <CcIconButton
       {...hook(scope, 'fullscreen-toggle')}
       ref={buttonRef}
-      label={filled ? wt('editor.exitFullscreen') : wt('editor.fullscreen')}
-      aria-pressed={filled}
+      label={wt('editor.fullscreen')}
+      aria-pressed={false}
       onClick={onToggle}
     >
-      {filled ? <Minimize2 size={16} aria-hidden={true} /> : <Maximize2 size={16} aria-hidden={true} />}
+      <Maximize2 size={16} aria-hidden={true} />
     </CcIconButton>
   );
 }
@@ -99,11 +117,16 @@ export function MapViewTools({
       data-map-view-tools=""
       role="group"
       aria-label={wt('map.canvasTools')}
-      className="flex shrink-0 flex-wrap items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-2"
+      className="flex shrink-0 items-start gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-2"
     >
-      <CanvasZoomControls scope="map" zoom={zoom} onZoomBy={onZoomBy} onFit={onFit} />
-      <span className="ml-auto" />
-      <CanvasFullscreenToggle scope="map" filled={filled} onToggle={onToggleFullscreen} buttonRef={fullscreenRef} />
+      {/* The zoom group wraps on a narrow screen; the full-screen toggle keeps
+          the top right corner, where a reader looks for the way out. */}
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+        <CanvasZoomControls scope="map" zoom={zoom} onZoomBy={onZoomBy} onFit={onFit} />
+      </div>
+      <span className="shrink-0">
+        <CanvasFullscreenToggle scope="map" filled={filled} onToggle={onToggleFullscreen} buttonRef={fullscreenRef} />
+      </span>
     </div>
   );
 }

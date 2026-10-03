@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo, type CSSProperties } from 'react';
 import { MessageSquare, X, Send, PenLine, ShieldCheck } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcIconButton from '@/components/cc/IconButton';
@@ -155,6 +155,22 @@ const greeting = (): Message => ({
   timestamp: clockNow(),
 });
 
+/**
+ * The latest message in view: the end of the list, unless the latest message
+ * is taller than the list — then its first line, where reading starts. On a
+ * phone with the keyboard up the list is a few lines tall, and the end of an
+ * answer is its source line, not its text.
+ */
+function revealLatest(list: HTMLElement, behavior: ScrollBehavior) {
+  const all = list.querySelectorAll<HTMLElement>('[data-chatbot-message]');
+  const last = all[all.length - 1];
+  let top = list.scrollHeight;
+  if (last && last.offsetHeight > list.clientHeight) {
+    top = list.scrollTop + last.getBoundingClientRect().top - list.getBoundingClientRect().top - 4;
+  }
+  list.scrollTo({ top, behavior });
+}
+
 export default function GlossaryChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() => [greeting()]);
@@ -162,6 +178,15 @@ export default function GlossaryChatbot() {
   const [loading, setLoading] = useState(false);
   const { profile } = useUserProfile();
   const chatEndRef = useRef<HTMLDivElement>(null);
+  /** The message list — scrolled to its end on a new message, never the page. */
+  const listRef = useRef<HTMLDivElement>(null);
+  /**
+   * The part of the window the reader can see (`visualViewport`): on a phone
+   * the on-screen keyboard covers the bottom of the window without changing
+   * `100vh` or `100dvh`, so the panel sizes and places itself from this and
+   * its input stays above the keyboard.
+   */
+  const [visible, setVisible] = useState<{ height: number; bottom: number } | null>(null);
   /** Wraps the floating toggle — `CcButton` takes no ref, so the button is found inside. */
   const toggleRef = useRef<HTMLSpanElement>(null);
   /**
@@ -277,10 +302,39 @@ export default function GlossaryChatbot() {
     void ensureCase(projectId);
   }, [isOpen, projectId]);
 
-  // Auto-scroll to bottom of chat when new messages arrive
+  // A new message scrolls the list to its end. The list itself, not
+  // `scrollIntoView`: that also scrolls every scrolling ancestor, and on a
+  // phone it moved the page under the panel.
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (listRef.current) revealLatest(listRef.current, 'smooth');
   }, [messages, loading]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const read = () =>
+      setVisible({
+        height: Math.round(viewport.height),
+        bottom: Math.max(0, Math.round(window.innerHeight - viewport.offsetTop - viewport.height)),
+      });
+    read();
+    viewport.addEventListener('resize', read);
+    viewport.addEventListener('scroll', read);
+    return () => {
+      viewport.removeEventListener('resize', read);
+      viewport.removeEventListener('scroll', read);
+    };
+  }, [isOpen]);
+
+  // The keyboard coming up shrinks the list from below; the latest answer
+  // stays in view rather than the list showing its top.
+  useEffect(() => {
+    if (listRef.current && visible) revealLatest(listRef.current, 'instant');
+  }, [visible]);
+
+  /** Once the reader has asked, the suggestions fold away on a small screen: the answers need the room. */
+  const asked = messages.some((m) => m.sender === 'user');
 
   // UX-045: the panel is not modal (the page stays usable beside it), but
   // Escape closes it and hands focus back to what opened it.
@@ -632,10 +686,23 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
           id="chatbot-panel"
           role="dialog"
           aria-labelledby="chatbot-panel-title"
-          className="cc fixed right-4 bottom-20 z-cc-float flex h-[520px] max-h-[calc(100dvh-7rem)] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog sm:right-6 sm:bottom-24"
+          data-chatbot-panel=""
+          style={
+            visible
+              ? ({ '--cc-chat-vh': `${visible.height}px`, '--cc-chat-bottom': `${visible.bottom}px` } as CSSProperties)
+              : undefined
+          }
+          className={cn(
+            'cc fixed right-4 bottom-20 z-cc-float flex h-[520px] max-h-[calc(100dvh-7rem)] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog sm:right-6 sm:bottom-24',
+            // A phone: a sheet across the width, standing on the keyboard when
+            // it is open, as tall as what is left of the screen allows.
+            'max-sm:right-0 max-sm:bottom-[var(--cc-chat-bottom,0px)] max-sm:left-0 max-sm:h-[min(560px,calc(var(--cc-chat-vh,100dvh)_-_0.5rem))] max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none',
+            // A short window (a phone on its side): top to bottom.
+            '[@media(max-height:480px)]:top-2 [@media(max-height:480px)]:bottom-[calc(var(--cc-chat-bottom,0px)_+_0.5rem)] [@media(max-height:480px)]:h-auto [@media(max-height:480px)]:max-h-none',
+          )}
         >
           {/* Header — light, like every other surface (§1.1); dark is for code. */}
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-cc-line px-4 py-3">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-cc-line px-4 py-3 [@media(max-height:480px)]:py-1">
             <div className="flex min-w-0 items-center gap-2">
               {/* No sparkles: `DESIGN.md` §3.1 forbids them as the icon for
                   model work. A pen is what `lib/provenance.ts` gives the
@@ -645,7 +712,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                 <h2 id="chatbot-panel-title" className="m-0 cc-text-h3 text-cc-ink" data-chatbot-title="">
                   {projectId ? 'Ask this case' : 'Clean-Core.io Assistant'}
                 </h2>
-                <p className="m-0 cc-text-meta text-cc-ink-muted">
+                <p className="m-0 cc-text-meta text-cc-ink-muted [@media(max-height:480px)]:hidden">
                   {projectId ? 'Evidence of this project, and the glossary' : 'Help with Clean-Core.io and its clean core method'}
                 </p>
               </div>
@@ -656,7 +723,11 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
           </div>
 
           {/* Messages (scrollable) */}
-          <div className="flex-grow space-y-4 overflow-y-auto bg-cc-surface-muted p-4">
+          <div
+            ref={listRef}
+            data-chatbot-messages=""
+            className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-cc-surface-muted p-4 [@media(max-height:480px)]:p-1"
+          >
             <div className="flex gap-2 rounded-cc-row border border-cc-line bg-cc-surface p-3 text-[12px] leading-normal text-cc-ink-muted">
               <ShieldCheck size={16} aria-hidden className="mt-px shrink-0 text-cc-ink-muted" />
               {/* Roadmap 6.8 — the reader is told which of the two boundaries
@@ -679,6 +750,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
               return (
                 <div
                   key={idx}
+                  data-chatbot-message={msg.sender}
                   className={cn(
                     'flex max-w-[85%] flex-col space-y-1',
                     isBot ? 'items-start self-start' : 'ml-auto items-end self-end',
@@ -768,24 +840,38 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             <div ref={chatEndRef} />
           </div>
 
-          {/* Quick suggestions */}
-          <div className="flex shrink-0 flex-wrap gap-2 border-t border-cc-line bg-cc-surface px-4 py-2">
+          {/* Quick suggestions — their own row between the answers and the
+              input, never over an answer. On a small screen one row that
+              scrolls sideways, folded away once the reader has asked. */}
+          <div
+            role="group"
+            aria-label="Suggested questions"
+            data-chatbot-suggestions=""
+            className={cn(
+              'flex shrink-0 flex-wrap gap-2 border-t border-cc-line bg-cc-surface px-4 py-2',
+              'max-sm:flex-nowrap max-sm:overflow-x-auto [@media(max-height:480px)]:flex-nowrap [@media(max-height:480px)]:overflow-x-auto',
+              asked && 'max-sm:hidden [@media(max-height:480px)]:hidden',
+            )}
+          >
             {suggestionChips.map((chip, idx) => (
-              <CcButton
-                key={idx}
-                variant="ghost"
-                onClick={() => handleSend(chip)}
-                disabled={loading}
-              >
-                {chip}
-              </CcButton>
+              <span key={idx} className="shrink-0">
+                <CcButton
+                  variant="ghost"
+                  onClick={() => handleSend(chip)}
+                  disabled={loading}
+                >
+                  {chip}
+                </CcButton>
+              </span>
             ))}
           </div>
 
           {/* Message input */}
           <form
             onSubmit={(e) => { e.preventDefault(); handleSend(inputValue); }}
-            className="flex shrink-0 items-end gap-2 border-t border-cc-line bg-cc-surface p-3"
+            // A short window (a phone on its side, keyboard up) keeps the input
+            // and the answer: the label and the note stay for the screen reader.
+            className="flex shrink-0 items-end gap-2 border-t border-cc-line bg-cc-surface p-3 [@media(max-height:480px)]:p-2 [@media(max-height:480px)]:[&_label]:sr-only"
           >
             <div className="min-w-0 flex-grow">
               {/* Owner decision 30.09.2026 (QA 795c0e739916): no conversation
@@ -795,7 +881,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                   one?". Wired to the input through `aria-describedby`. */}
               <CcField
                 label="Your question"
-                help={<span data-chatbot-independent="">{INDEPENDENT_QUESTION_NOTE}</span>}
+                help={<span data-chatbot-independent="" className="[@media(max-height:480px)]:sr-only">{INDEPENDENT_QUESTION_NOTE}</span>}
               >
                 {({ id, describedBy, className }) => (
                   <input

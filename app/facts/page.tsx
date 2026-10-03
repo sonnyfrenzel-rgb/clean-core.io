@@ -151,7 +151,7 @@ export default function FactsPage() {
           {facts.ruleVersion}
         </p>
         <p className="text-sm text-cc-ink-muted leading-relaxed">
-          The fingerprint (<code>{facts.ruleFingerprint}</code>) is a hash over the rule&apos;s own
+          The fingerprint (<code className="[overflow-wrap:anywhere]">{facts.ruleFingerprint}</code>) is a hash over the rule&apos;s own
           decision table — it moves when the rule moves, not on a schedule. Old runs stay stamped with
           the rule version that produced them.
         </p>
@@ -162,7 +162,7 @@ export default function FactsPage() {
         <h2 className="text-lg font-extrabold text-cc-ink">Reference run</h2>
         <p className="text-sm text-cc-ink-muted leading-relaxed">
           One reproducible run over {facts.referenceRun.linesOfCode.toLocaleString('en-US')} lines of
-          legacy ABAP (<code>{facts.referenceRun.fileName}</code>): {facts.referenceRun.totalFindings}{' '}
+          legacy ABAP (<code className="[overflow-wrap:anywhere]">{facts.referenceRun.fileName}</code>): {facts.referenceRun.totalFindings}{' '}
           findings, split {facts.referenceRun.resolvedCount} settled ·{' '}
           {facts.referenceRun.decisionCount} needing a decision ·{' '}
           {facts.referenceRun.handedBackCount} handed back, Clean Core Score{' '}
@@ -177,7 +177,7 @@ export default function FactsPage() {
 
       <footer className="text-xs font-semibold text-cc-ink-muted leading-relaxed border-t border-cc-line pt-6">
         Produced by Clean-Core.io {facts.engineVersion} ({facts.engineReleaseDate}) against catalog{' '}
-        <code>{facts.catalogVersion}</code>. Every figure on this page is computed from the files named
+        <code className="[overflow-wrap:anywhere]">{facts.catalogVersion}</code>. Every figure on this page is computed from the files named
         above when the page is rendered, and the rendered page is reused for up to five minutes; none
         of them is written into the page. Clean-Core.io is not affiliated
         with, or endorsed by, SAP SE.

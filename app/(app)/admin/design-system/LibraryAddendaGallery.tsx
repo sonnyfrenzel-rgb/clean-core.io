@@ -41,7 +41,7 @@ export default function LibraryAddendaGallery() {
   const [refSeen, setRefSeen] = useState<string | null>(null);
 
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <CcCard title="Layers, bottom to top" count={LAYERS.length}>
         <ol className="m-0 flex list-none flex-col gap-1 p-0 text-[13px] font-medium text-cc-ink">
           {LAYERS.map((layer) => (

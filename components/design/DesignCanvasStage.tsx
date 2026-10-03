@@ -22,6 +22,7 @@ import type { DesignEvidence } from '@/hooks/useDesignEvidence';
 import type { ProvenanceValue } from '@/lib/provenance';
 import { architectureOptionLabel } from '@/components/ArchitectSignOff';
 import { designAnswer, type StoredRoute } from '@/lib/design-recommendation';
+import { useTouchViewport } from '@/components/process-map/useTouchViewport';
 import './design-canvas.css';
 
 /**
@@ -449,6 +450,60 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     }
     pan.current = null;
   };
+
+  /* ---------------- touch ---------------- */
+  // The process map's gesture model (`useTouchViewport`): inline a sideways
+  // swipe pans the drawing and a vertical one scrolls the page; in full screen
+  // one finger pans every way; two fingers pinch within the zoom range; a
+  // double tap fits. Only where the drawing is drawn wide (≥ 720 px) — the
+  // phone form reflows and has no scale.
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 720px)');
+    const read = () => setWide(query.matches);
+    read();
+    query.addEventListener('change', read);
+    return () => query.removeEventListener('change', read);
+  }, []);
+  // Several moves of one pinch arrive before React renders the first.
+  const liveZoom = useRef(zoom);
+  useEffect(() => {
+    liveZoom.current = zoom;
+  }, [zoom]);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    canvasRef.current = canvasEl;
+  }, [canvasEl]);
+  useTouchViewport(
+    canvasRef,
+    {
+      pan: (dx, dy) => {
+        const el = canvasRef.current;
+        if (!el) return;
+        el.scrollLeft -= dx;
+        el.scrollTop -= dy;
+      },
+      zoom: (factor, x, y) => {
+        const el = canvasRef.current;
+        if (!el) return;
+        const was = liveZoom.current;
+        const next = Math.min(ARCHITECTURE_ZOOM.max, Math.max(ARCHITECTURE_ZOOM.min, was * factor));
+        if (Math.abs(next - was) < 0.001) return;
+        liveZoom.current = next;
+        // Keep the point between the fingers where it is.
+        const ratio = next / was;
+        const left = (el.scrollLeft + x) * ratio - x;
+        const top = (el.scrollTop + y) * ratio - y;
+        setZoom(next);
+        requestAnimationFrame(() => {
+          el.scrollLeft = left;
+          el.scrollTop = top;
+        });
+      },
+      fit: () => setZoom('fit'),
+    },
+    { free: filled, enabled: wide && view === 'canvas', ignoreDoubleTap: '[data-canvas-box]', rebind: canvasEl },
+  );
 
   const select = (key: string) => {
     setSelected(key);

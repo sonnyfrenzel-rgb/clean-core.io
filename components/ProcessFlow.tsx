@@ -1,22 +1,26 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { processFlowLevels } from './process-flow-levels';
 import {
   ReactFlow,
   Background,
-  Controls,
   Edge,
   Node,
   MarkerType,
   Handle,
   Position,
+  type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import '@/components/process-map/process-map.css';
 import { Play, Square, GitFork, Database, User, Server, Lock, Code2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import CcTag from '@/components/cc/Tag';
 import { categoricalChartColor } from '@/lib/chart-colors';
+import { useTouchViewport } from '@/components/process-map/useTouchViewport';
+import { useCanvasFullscreen } from '@/components/process-map/useCanvasFullscreen';
+import { MapViewTools } from '@/components/process-map/CanvasViewControls';
 
 interface FlowNode {
   id: string;
@@ -161,6 +165,9 @@ const nodeTypes = {
   swimlane: SwimlaneNode,
 };
 
+const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 1.5;
+
 const ProcessFlow: React.FC<ProcessFlowProps> = ({ flow, tasks, onNodeClick }) => {
   const { nodes, edges } = useMemo(() => {
     if (!flow || !Array.isArray(flow)) return { nodes: [], edges: [] };
@@ -272,27 +279,103 @@ const ProcessFlow: React.FC<ProcessFlowProps> = ({ flow, tasks, onNodeClick }) =
     return { nodes: initialNodes, edges: initialEdges };
   }, [flow, tasks]);
 
+  /**
+   * Touch follows the process map's model (`useTouchViewport`), not @xyflow's:
+   * its own one-finger pan holds every swipe, so the page under a 500 px chart
+   * could not be scrolled past it. On a coarse pointer @xyflow keeps the mouse
+   * behaviour off and the hook moves the viewport; a mouse is unchanged.
+   */
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  const [flowApi, setFlowApi] = useState<ReactFlowInstance | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const [zoom, setZoom] = useState(100);
+  const { filled, toggle: toggleFullscreen, toggleRef } = useCanvasFullscreen({ rootRef: frameRef });
+  // Full screen changed the box: the whole flow in it again.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => void flowApi?.fitView());
+    return () => cancelAnimationFrame(id);
+  }, [filled, flowApi]);
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia('(pointer: coarse)');
+    const read = () => setCoarse(query.matches);
+    read();
+    query.addEventListener('change', read);
+    return () => query.removeEventListener('change', read);
+  }, []);
+  useTouchViewport(
+    boxRef,
+    {
+      pan: (dx, dy) => {
+        if (!flowApi) return;
+        const v = flowApi.getViewport();
+        void flowApi.setViewport({ x: v.x + dx, y: v.y + dy, zoom: v.zoom });
+      },
+      zoom: (factor, x, y) => {
+        if (!flowApi) return;
+        const v = flowApi.getViewport();
+        const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v.zoom * factor));
+        const ratio = zoom / v.zoom;
+        void flowApi.setViewport({ x: x - (x - v.x) * ratio, y: y - (y - v.y) * ratio, zoom });
+      },
+      fit: () => void flowApi?.fitView(),
+    },
+    { enabled: coarse, free: filled, ignoreDoubleTap: '.react-flow__node' },
+  );
+
   return (
-    <div className="h-[500px] w-full bg-cc-surface-muted rounded-cc-card border border-cc-line overflow-hidden relative">
+    <div
+      ref={frameRef}
+      data-map-canvas-frame=""
+      data-map-fullscreen={filled ? 'true' : 'false'}
+      className={filled ? 'cc-editor-fullscreen flex min-w-0 flex-col gap-2 overflow-hidden' : 'flex min-w-0 flex-col gap-2'}
+    >
+    {/* The same zoom, fit and full screen as every other map (CanvasViewControls). */}
+    <MapViewTools
+      zoom={zoom}
+      onZoomBy={(factor) => {
+        if (!flowApi) return;
+        const v = flowApi.getViewport();
+        void flowApi.zoomTo(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v.zoom * factor)));
+      }}
+      onFit={() => void flowApi?.fitView()}
+      filled={filled}
+      onToggleFullscreen={toggleFullscreen}
+      fullscreenRef={toggleRef}
+    />
+    <div
+      ref={boxRef}
+      data-process-flow-canvas=""
+      className={clsx(
+        'w-full bg-cc-surface-muted rounded-cc-card border border-cc-line overflow-hidden relative',
+        filled ? 'min-h-0 flex-1' : 'h-[400px] md:h-[500px]',
+      )}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        onInit={setFlowApi}
         onNodeClick={onNodeClick ? (event, node) => {
           if (!node.id.startsWith('lane-')) {
             onNodeClick(node.id);
           }
         } : undefined}
         fitView
-        minZoom={0.2}
-        maxZoom={1.5}
-        nodesDraggable={true}
+        minZoom={MIN_ZOOM}
+        maxZoom={MAX_ZOOM}
+        panOnDrag={!coarse}
+        zoomOnPinch={!coarse}
+        zoomOnDoubleClick={!coarse}
+        preventScrolling={!coarse}
+        nodesDraggable={!coarse}
         nodesConnectable={false}
         elementsSelectable={true}
+        onMove={(_, viewport) => setZoom(Math.round(viewport.zoom * 100))}
       >
         <Background color="var(--cc-line)" gap={20} />
-        <Controls />
       </ReactFlow>
+    </div>
     </div>
   );
 };

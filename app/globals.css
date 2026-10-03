@@ -929,3 +929,21 @@
     content: none;
   }
 }
+
+/* -------------------------------------------------------------
+ * Touch on a map (components/process-map/useTouchViewport.ts)
+ *
+ * The hook sets `touch-action` on the map's own box; a library that sets
+ * its own on an inner layer (@xyflow's pane and nodes say `none`) would
+ * otherwise win and trap the page under the map. Inline, a vertical
+ * swipe belongs to the page; in full screen every gesture is the map's.
+ * ------------------------------------------------------------- */
+[data-touch-viewport='inline'] .react-flow__pane,
+[data-touch-viewport='inline'] .react-flow__node {
+  touch-action: pan-y;
+}
+
+[data-touch-viewport='free'] .react-flow__pane,
+[data-touch-viewport='free'] .react-flow__node {
+  touch-action: none;
+}

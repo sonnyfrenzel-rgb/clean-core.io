@@ -57,6 +57,7 @@ export interface Shape {
 
 export interface CanvasService {
   zoom(level?: string | number, center?: Point | 'auto'): number;
+  scroll(delta: { dx: number; dy: number }): void;
   getRootElement(): Shape | null;
   setRootElement(element: Shape): void;
   findRoot(id: string): Shape | undefined;

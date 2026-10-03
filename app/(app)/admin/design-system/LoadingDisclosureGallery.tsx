@@ -61,7 +61,7 @@ export default function LoadingDisclosureGallery() {
   };
 
   return (
-    <div data-cc-demo="loading" className="grid gap-3 md:grid-cols-2">
+    <div data-cc-demo="loading" className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <CcCard title="Busy on the button">
         <div className="flex flex-col gap-3">
           <p className="m-0 text-[13px] font-medium text-cc-ink-muted">

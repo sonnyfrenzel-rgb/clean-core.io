@@ -294,7 +294,7 @@ export default function DesignSystemGallery() {
       </Section>
 
       <Section id="ds-vocabularies" title="The other fixed lists — each with its own form">
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <CcCard title="Object status" count={OBJECT_STATUS_VALUES.length}>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               {OBJECT_STATUS_VALUES.map((value) => (
@@ -334,7 +334,7 @@ export default function DesignSystemGallery() {
       </Section>
 
       <Section id="ds-anchors" title="Anchors, artefact rows and Why?">
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <CcCard title="Anchors">
             <p className="text-[14px] leading-relaxed font-medium text-cc-ink">
               Tolerance 5 % <CcAnchor>L412</CcAnchor>, plant 1000 <CcAnchor>L87</CcAnchor>, vendor
@@ -418,7 +418,7 @@ export default function DesignSystemGallery() {
       {/* D.5a: the modal for a form or an explanation, and the collected
           checks of an edit with the jump to their element (§2.6). */}
       <Section id="ds-dialog" title="Dialog and message popover">
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <CcCard title="Dialog">
             <p className="text-[13px] leading-relaxed font-medium text-cc-ink">
               For a form or an explanation. Confirmation before something irreversible stays with
@@ -469,7 +469,7 @@ export default function DesignSystemGallery() {
 
       <Section id="ds-form" title="Form and value states">
         <CcCard title="Import usage" actions={<CcRequiredNote />}>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <CcField
               label="SCMON or SUSG export"
               required
@@ -547,7 +547,7 @@ export default function DesignSystemGallery() {
       </Section>
 
       <Section id="ds-filters" title="Filter bar — matches, no matches, empty">
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <CcCard title="Findings">
             <div data-cc-demo="findings">
             <CcFilterBar
