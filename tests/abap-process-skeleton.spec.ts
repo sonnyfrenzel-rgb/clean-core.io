@@ -98,8 +98,9 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 14, 13, 3, 1, 0, 0, 1, 0],
   // ADR-066 residuals (03.10.2026): `CLOSE DATASET` after the TRANSFER loop of
   // EXPORT_TO_APPLICATION_SERVER is a file step of its own, on that routine's
-  // plane: 18→19 nodes, 14→15 edges.
-  ['Z_INVOICE_EXTRACTOR.txt', 19, 15, 4, 1, 0, 0, 0, 0],
+  // plane: 18→19 nodes, 14→15 edges. Back to 18/14 with the note of
+  // 03.10.2026: `CLOSE DATASET` belongs to the file step before it.
+  ['Z_INVOICE_EXTRACTOR.txt', 18, 14, 4, 1, 0, 0, 0, 0],
   ['Z_MATERIAL_STOCK_CALC.txt', 20, 17, 6, 1, 0, 0, 0, 0],
   [PO, 124, 125, 23, 1, 13, 147, 0, 0],
   // Roadmap 2.14: this one had **no** entry point and drew nothing at all.

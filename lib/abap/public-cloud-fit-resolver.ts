@@ -76,6 +76,14 @@ export interface PublicCloudFitResolverInput {
    * here instead of printing one nobody measured.
    */
   catalogBasis?: readonly CatalogSnapshot[] | null;
+  /**
+   * The SAP function modules and BAPIs the code calls by name (ADR-069, note of
+   * 03.10.2026) — `ItUseRow`s of kind `bapi`/`function-module`, customer `Z`/`Y`
+   * modules left out by the caller. A call is no finding, so without this a
+   * program that reaches SAP only through BAPIs had no SAP object to measure.
+   * Each is graded with no read/write use, exactly as the IT view grades it.
+   */
+  calls?: readonly string[];
 }
 
 export interface ResolverDeps {
@@ -97,7 +105,10 @@ interface ObjectFindingFacts {
  * catalog lookups as `deps` rather than fetching them) asks about exactly the
  * `{ name, use }` pairs the resolver itself will grade, not a guess at them.
  */
-export function collectObjectFacts(findings: readonly PublicCloudFitFinding[]): Map<string, ObjectFindingFacts> {
+export function collectObjectFacts(
+  findings: readonly PublicCloudFitFinding[],
+  calls: readonly string[] = [],
+): Map<string, ObjectFindingFacts> {
   const byObject = new Map<string, ObjectFindingFacts>();
   for (const f of findings) {
     const name = (f.objectName || '').trim().toUpperCase();
@@ -116,6 +127,12 @@ export function collectObjectFacts(findings: readonly PublicCloudFitFinding[]): 
     // write" rule).
     if (use === 'write' || (use && facts.use !== 'write')) facts.use = use;
     byObject.set(name, facts);
+  }
+  // A called function module or BAPI is an SAP object of its own, used by a
+  // call: no read/write use. Where a finding already names it, that stands.
+  for (const call of calls) {
+    const name = call.trim().toUpperCase();
+    if (name && !byObject.has(name)) byObject.set(name, { use: null, hasModification: false, hasOwnWriteAccess: false });
   }
   return byObject;
 }
@@ -170,8 +187,9 @@ function usageEvidenceFor(name: string, report: UsageReport | null): ObjectUsage
  */
 export function publicCloudFitLookupObjects(
   findings: readonly PublicCloudFitFinding[],
+  calls: readonly string[] = [],
 ): { name: string; use: ObjectUse | null }[] {
-  return [...collectObjectFacts(findings)].map(([name, f]) => ({ name, use: f.use }));
+  return [...collectObjectFacts(findings, calls)].map(([name, f]) => ({ name, use: f.use }));
 }
 
 /**
@@ -187,7 +205,7 @@ export function resolvePublicCloudFit(
 ): { assignments: PublicCloudFitAssignment[]; summary: PublicCloudFitSummary } {
   const { gradeObjectUse, hasNoPath } = deps;
   const dropDecisions = input.dropDecisions ?? {};
-  const facts = collectObjectFacts(input.findings);
+  const facts = collectObjectFacts(input.findings, input.calls ?? []);
 
   const assignments: PublicCloudFitAssignment[] = [];
   for (const [name, f] of facts) {

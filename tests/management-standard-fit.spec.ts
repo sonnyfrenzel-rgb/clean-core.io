@@ -9,7 +9,11 @@ import {
   type PublicCloudFitObjectInput,
   type TargetPlatform,
 } from '../lib/abap/public-cloud-fit';
-import { fitPercent, standardFit, STANDARD_FIT_DEFINITION, type StandardFitSource } from '../lib/standard-fit';
+import { fitPercent, sapCallsOf, standardFit, STANDARD_FIT_DEFINITION, type StandardFitSource } from '../lib/standard-fit';
+import { resolvePublicCloudFit } from '../lib/abap/public-cloud-fit-resolver';
+import { gradeSapObjectUse, hasNoReleasedApiPath } from '../lib/abap/catalog-service';
+import type { ObjectUse } from '../lib/abap/abcd-classification';
+import { findingsOf } from '../lib/it-findings-build';
 import type { FitByPlatform, FitResult, Loaded } from '../lib/management-overview';
 import type { ItFindingRow, ItFindingsSource } from '../lib/it-findings';
 
@@ -182,6 +186,49 @@ test.describe('the figure is computed from the evidence', () => {
     expect(standardFit(source({ analyzeState: 'stale' }))).toMatchObject({ state: 'not-determined', why: 'source-changed' });
     expect(standardFit(source({ signedSourceSha256: 'b'.repeat(64) }))).toMatchObject({ state: 'not-determined', why: 'source-changed' });
     for (const f of [noRun, noTarget]) expect(JSON.stringify(f)).not.toMatch(/\d\s?%/);
+  });
+
+  test('called SAP function modules and BAPIs are SAP objects; a customer module is not (note of 03.10.2026)', () => {
+    // Z_SALES_ORDER_CREATOR reaches SAP only through three BAPIs: no finding,
+    // and the figure used to say "no SAP object". Its calls are now counted,
+    // from the IT view's own `uses`, with the IT view's levels.
+    const code = read('public/starter-examples/Z_SALES_ORDER_CREATOR.txt')
+      + "\nFORM own_call.\n  CALL FUNCTION 'Z_OWN_MODULE'.\nENDFORM.\n";
+    const findings = findingsOf(code, 'Z_SALES_ORDER_CREATOR.txt', 'public');
+    expect(findings.rows).toEqual([]);
+    const calls = sapCallsOf(findings);
+    expect(calls.sort()).toEqual(['BAPI_SALESORDER_CREATEFROMDAT2', 'BAPI_TRANSACTION_COMMIT', 'BAPI_TRANSACTION_ROLLBACK']);
+    const deps = {
+      gradeObjectUse: (name: string, use: ObjectUse | null) => gradeSapObjectUse(name, use),
+      hasNoPath: (name: string) => hasNoReleasedApiPath(name),
+    };
+    const fitOn = (platform: TargetPlatform) =>
+      resolvePublicCloudFit({ findings: [], calls, usageReport: null, targetPlatform: platform }, deps);
+    const fit: Loaded<FitByPlatform> = { state: 'ready', value: { target: 'public', public: fitOn('public'), private: fitOn('private') } };
+    const src = source({ findings: { state: 'ready', value: findings }, signedSourceSha256: findings.sourceSha256, fit });
+
+    const pub = standardFit(src);
+    if (pub.state !== 'ready') throw new Error(`not ready: ${JSON.stringify(pub)}`);
+    // The level on the fit card is the IT view's level for the same call.
+    const itLevel = new Map(findings.uses!.map((u) => [u.object, u.level]));
+    for (const item of [...pub.blockers, ...pub.clear]) {
+      expect(item.level).toBe(itLevel.get(item.objectName));
+      expect(item.use).toBe('call');
+      expect(item.line).toBe(findings.uses!.find((u) => u.object === item.objectName)!.lines[0]);
+    }
+    // On Public Edition none of the three has a catalogued released path: the
+    // classic BAPI (B) is not in SAP's release file, the two C calls are listed nowhere.
+    expect([pub.fits, pub.counted, pub.percent]).toEqual([0, 3, 0]);
+    expect(pub.blockers.map((b) => [b.objectName, b.level]).sort()).toEqual([
+      ['BAPI_SALESORDER_CREATEFROMDAT2', 'B'],
+      ['BAPI_TRANSACTION_COMMIT', 'C'],
+      ['BAPI_TRANSACTION_ROLLBACK', 'C'],
+    ]);
+    expect(pub.blockers.every((b) => /^Called here; not in SAP's release file/.test(b.why))).toBe(true);
+    // On Private Edition the classic API at B is kept.
+    const priv = standardFit({ ...src, fit: { state: 'ready', value: { ...fit.value, target: 'private' } } });
+    if (priv.state !== 'ready') throw new Error('not ready');
+    expect([priv.fits, priv.counted, priv.clear.map((c) => c.objectName)]).toEqual([1, 3, ['BAPI_SALESORDER_CREATEFROMDAT2']]);
   });
 
   test('the demo is computed without a run and says it is a demo', () => {

@@ -163,6 +163,7 @@ function FitRow({ item }: { item: StandardFitItem }) {
   return (
     <li
       data-standard-fit-item={item.objectName}
+      data-standard-fit-use={item.use}
       className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2"
     >
       <div className="flex flex-wrap items-center gap-2">

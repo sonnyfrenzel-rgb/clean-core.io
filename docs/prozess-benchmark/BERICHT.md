@@ -193,6 +193,13 @@ edges comparable). **Reference corpus:** node matches 312 → 318, edge matches 
 case-classes 132 → 133, no match lost. **Starter examples:** one task more ("Close file") on a
 sub-process plane of `Z_INVOICE_EXTRACTOR`; no top plane moved. The demo and the PDFs are unchanged.
 
+**Later the same day (Sonny's decision): `CLOSE DATASET` folded.** It is no longer a step of its own: it
+belongs to the file step before it on the same file (joining that run when it stands right behind it) and
+draws nothing anywhere else — also not for a file that was read (QA finding 34941d0f691c). Learning half
+(BM_CONCAT=1): node hits 4,554 → 4,549 of 5,557 (82.0 % → 81.9 %), because five expected answers had
+modelled the `CLOSE` as a node of its own; edges 2,780/4,204 → 2,774/4,195 (66.1 %). Reference corpus
+unchanged. `Z_INVOICE_EXTRACTOR` loses "Close file" again.
+
 ## Tools
 
 `evaluate.ts` (measurement; `BM_CONCAT=1` as in the product, `BM_RANGE=a-b`), `report.py` (breakdown),

@@ -61,6 +61,44 @@ test.describe('ALV callbacks named by literal', () => {
     expect(skeleton.notes.filter((n) => n.reason === 'entry-trigger-not-determined')).toEqual([]);
   });
 
+  test('only a FORM literal that fills the event table passed as IT_EVENTS registers a callback', () => {
+    const source = [
+      'REPORT zalv_events_scope.', //                                               1
+      'DATA ls_event TYPE slis_alv_event.', //                                      2
+      'START-OF-SELECTION.', //                                                     3
+      "  CALL FUNCTION 'REUSE_ALV_EVENTS_GET' IMPORTING et_events = lt_events.", // 4
+      '  READ TABLE lt_events INTO DATA(ls_top) WITH KEY name = slis_ev_top_of_page.', // 5
+      "  ls_top-form = 'PAGE_HEADER'.", //                                          6
+      '  MODIFY lt_events FROM ls_top INDEX sy-tabix.', //                          7
+      "  ls_event-form = 'PAGE_FOOTER'.", //                                        8
+      "  ls_job-form = 'PRINT_JOB'.", //                                            9
+      '  APPEND ls_job TO lt_jobs.', //                                             10
+      "  CALL FUNCTION 'REUSE_ALV_LIST_DISPLAY'", //                                11
+      '    EXPORTING', //                                                           12
+      '      i_callback_program = sy-repid', //                                     13
+      '      it_events          = lt_events', //                                    14
+      '    TABLES', //                                                              15
+      '      t_outtab           = gt_out.', //                                      16
+      'FORM page_header.', //                                                       17
+      "  WRITE / 'Orders'.", //                                                     18
+      'ENDFORM.', //                                                                19
+      'FORM page_footer.', //                                                       20
+      "  WRITE / 'End'.", //                                                        21
+      'ENDFORM.', //                                                                22
+      'FORM print_job.', //                                                         23
+      "  WRITE / 'Job'.", //                                                        24
+      'ENDFORM.', //                                                                25
+    ].join('\n');
+    // A row read from the table and modified back, and a work area typed as an
+    // SLIS event row, fill the event table; `ls_job` is another table's row.
+    expect(starts(source)).toEqual([
+      ['START-OF-SELECTION', 3, 'event', undefined],
+      ['PAGE_HEADER', 17, 'callback', 'ALV IT_EVENTS'],
+      ['PAGE_FOOTER', 20, 'callback', 'ALV IT_EVENTS'],
+    ]);
+    expect(buildProcessSkeleton(source).notDrawn.unreached.map((u) => u.name)).toEqual(['PRINT_JOB']);
+  });
+
   test('the callback program named by literal as another program: its FORMs are not this source', () => {
     const skeleton = buildProcessSkeleton(alv("'ZOTHER_PROGRAM'"));
     expect(skeleton.nodes.filter((n) => n.kind === 'start').map((n) => n.label)).toEqual(['START-OF-SELECTION']);
