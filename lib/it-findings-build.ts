@@ -5,8 +5,16 @@ import { containerAt } from '@/lib/abap/block-structure';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
 import { getCatalogSnapshotRef, gradeSapObjectUse } from '@/lib/abap/catalog-service';
 import { routeKindLabel } from '@/lib/abap/extensibility-router';
-import { CLASSIC_VIEW_META, CLOUD_VIEW_META, type ObjectUse } from '@/lib/abap/abcd-classification';
-import type { ItFindingRow, ItFindingsSource } from './it-findings';
+import {
+  CLASSIC_VIEW_META,
+  CLOUD_VIEW_META,
+  isCustomerObject,
+  type CloudReadinessGrade,
+  type ObjectUse,
+} from '@/lib/abap/abcd-classification';
+import { readTableDependencies } from '@/lib/abap/table-dependencies';
+import type { CallGraphReport } from '@/lib/abap/call-graph';
+import type { ItFindingRow, ItFindingsSource, ItUseRow } from './it-findings';
 import { countSourceLines } from '@/lib/source-lines';
 
 /**
@@ -97,7 +105,8 @@ export function findingsOf(
 ): ItFindingsSource {
   const evidence = buildAbapEvidence(source, fileName, deployment, catalogSnapshot);
   const rules = deriveBusinessRules(source);
-  const containers = buildProcessFacts(source).structure.containers;
+  const facts = buildProcessFacts(source);
+  const containers = facts.structure.containers;
 
   // `BR-nnn` by routine, once, rather than per finding.
   const byRoutine = new Map<string, string[]>();
@@ -131,6 +140,7 @@ export function findingsOf(
 
   return {
     rows,
+    uses: usesOf(source, facts.calls, rows, catalogSnapshot),
     sourceSha256: sha256Hex(source),
     rulesDerived: rules.rules.length,
     catalog: getCatalogSnapshotRef(catalogSnapshot),
@@ -139,4 +149,114 @@ export function findingsOf(
       gaps: evidence.coverage.gaps.map((g) => ({ label: g.label, count: g.count, firstLine: g.firstLine })),
     },
   };
+}
+
+/* ------------------------------------------------------------ what the code uses */
+
+const LEVEL_RANK: Record<CloudReadinessGrade, number> = { D: 0, C: 1, B: 2, A: 3, Unknown: 4 };
+
+/**
+ * Every object the code calls, reads or writes — the IT view's answer to "what
+ * exactly", whether or not a detector raised a finding on it (v3.0.1).
+ *
+ * Why it exists: `Z_SALES_ORDER_CREATOR` calls three BAPIs and has no finding,
+ * because the detectors judge violations and a local `CALL FUNCTION` is outside
+ * them (`lib/abap/coverage.ts` lists it as not assessed). The IT view then said
+ * "no findings, 0 places" beside a process that plainly calls SAP. The calls
+ * were known all along — `call-graph.ts` reads them for the process map — they
+ * were just not shown.
+ *
+ * Read from the facts the findings were built from, so the lines agree:
+ *
+ *   - named function modules (`CALL FUNCTION 'X'`), BAPIs marked, a
+ *     `DESTINATION` marked as remote. A computed name is not guessed — it is in
+ *     *Not determined* as a dynamic call;
+ *   - `CALL TRANSACTION` and `SUBMIT` with a name the source closes;
+ *   - table reads and writes as `readTableDependencies` reads them — a type
+ *     reference (`TYPE vbak`) is not a use and is left out;
+ *   - an object a finding names that none of the above reached (a class, say),
+ *     with the use its kind states.
+ *
+ * The level of a use is the finding's level where a finding stands on the same
+ * object and line — one answer per place, never two letters for one statement —
+ * and otherwise `gradeSapObjectUse` for that use under the same snapshot. It is
+ * SAP's published classification, derived here and never stored.
+ */
+function usesOf(
+  source: string,
+  calls: CallGraphReport,
+  rows: readonly ItFindingRow[],
+  catalogSnapshot: string | undefined,
+): ItUseRow[] {
+  type Draft = { object: string; kind: ItUseRow['kind']; use: ItUseRow['use']; lines: Set<number>; remote: boolean };
+  const drafts = new Map<string, Draft>();
+  const add = (object: string | undefined, kind: ItUseRow['kind'], use: ItUseRow['use'], line: number, remote = false) => {
+    const name = (object ?? '').trim().toUpperCase();
+    if (!name) return;
+    const key = `${name}@${use}`;
+    const held = drafts.get(key) ?? { object: name, kind, use, lines: new Set<number>(), remote: false };
+    held.lines.add(line);
+    held.remote = held.remote || remote;
+    drafts.set(key, held);
+  };
+
+  for (const call of calls.functionModules) {
+    if (call.dynamic || !call.name) continue;
+    add(call.name, call.bapi ? 'bapi' : 'function-module', 'call', call.lineStart, Boolean(call.destination));
+  }
+  for (const tx of calls.transactions) if (!tx.dynamic && tx.code) add(tx.code, 'transaction', 'call', tx.lineStart);
+  for (const sub of calls.submits) if (!sub.dynamic && sub.program) add(sub.program, 'program', 'call', sub.lineStart);
+  for (const dep of readTableDependencies(source).dependencies) {
+    if (dep.access === 'reference' || dep.possibleTargetOf) continue;
+    add(dep.table, 'table', dep.access === 'write' ? 'write' : 'read', dep.line);
+  }
+  // An object a finding names that the readers above did not reach.
+  const reached = new Set([...drafts.values()].flatMap((d) => [...d.lines].map((line) => `${d.object}#${line}`)));
+  for (const row of rows) {
+    if (!row.objectName || reached.has(`${row.objectName}#${row.lineStart}`)) continue;
+    const use = accessUseOfKind(row.kind);
+    add(row.objectName, 'object', use === 'read' ? 'read' : use === 'write' ? 'write' : 'use', row.lineStart);
+  }
+
+  const out: ItUseRow[] = [...drafts.values()].map((d) => {
+    const lines = [...d.lines].sort((a, b) => a - b);
+    const onIt = rows.filter((r) => r.objectName === d.object && d.lines.has(r.lineStart));
+    const fromFindings = onIt
+      .map((r) => r.level)
+      .filter((g): g is CloudReadinessGrade => g !== null)
+      .sort((a, b) => LEVEL_RANK[a] - LEVEL_RANK[b])[0];
+    const graded = gradeSapObjectUse(
+      d.object,
+      d.use === 'read' ? 'read' : d.use === 'write' ? 'write' : null,
+      catalogSnapshot,
+    );
+    const worstRow = fromFindings ? onIt.find((r) => r.level === fromFindings) : undefined;
+    return {
+      object: d.object,
+      kind: d.kind,
+      use: d.use,
+      lines,
+      remote: d.remote,
+      custom: isCustomerObject(d.object),
+      level: fromFindings ?? graded.grade,
+      // The finding's own answer where one stands here — said as such.
+      levelBasis: fromFindings ? 'finding' : graded.provenance,
+      releaseView: worstRow ? worstRow.releaseView : graded.cloudView ? CLOUD_VIEW_META[graded.cloudView].label : null,
+      classificationView: worstRow
+        ? worstRow.classificationView
+        : graded.classicView
+          ? CLASSIC_VIEW_META[graded.classicView].label
+          : null,
+      findingIds: onIt.map((r) => r.id),
+    };
+  });
+  // Calls first, in the order the program makes them (the order the process
+  // map reads), then writes and reads, worst level first, then by line.
+  const USE_RANK: Record<ItUseRow['use'], number> = { call: 0, write: 1, read: 2, use: 3 };
+  return out.sort(
+    (a, b) =>
+      USE_RANK[a.use] - USE_RANK[b.use] ||
+      (a.use === 'call' ? 0 : LEVEL_RANK[a.level ?? 'Unknown'] - LEVEL_RANK[b.level ?? 'Unknown']) ||
+      a.lines[0] - b.lines[0],
+  );
 }

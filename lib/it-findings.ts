@@ -139,6 +139,49 @@ export interface ItFindingsSource {
    * but no detector assesses (`CoverageReport.gaps`). Optional, as above.
    */
   coverage?: { lines: number; gaps: Array<{ label: string; count: number; firstLine: number }> };
+  /**
+   * What the code uses — every SAP or customer object it calls, reads or
+   * writes, whether or not a detector raised a finding on it (v3.0.1). A
+   * program that reaches SAP only through BAPIs has no finding and still uses
+   * SAP; without this list the IT view could only say "no findings" beside a
+   * process that plainly calls SAP. Optional: an answer built before it existed
+   * reads as "not recorded", never as "uses nothing".
+   */
+  uses?: ItUseRow[];
+}
+
+/**
+ * One object the code uses, in one way — `lib/it-findings-build.ts` derives it
+ * from the same statement reader the process map and the findings read.
+ *
+ * View-only like the rest of this module: the level is SAP's published
+ * classification for the object, looked up under the project's target profile,
+ * and is never stored on a run, an artefact or an audit pack.
+ */
+export interface ItUseRow {
+  /** Upper-cased object name: `BAPI_SALESORDER_CREATEFROMDAT2`, `VBAK`, `ME21N`. */
+  object: string;
+  kind: 'bapi' | 'function-module' | 'table' | 'transaction' | 'program' | 'object';
+  /** `call` for a function module, transaction or report; `read`/`write` for a table; `use` where the statement does not say. */
+  use: 'call' | 'read' | 'write' | 'use';
+  /** Every line the use stands on, ascending. */
+  lines: number[];
+  /** `CALL FUNCTION … DESTINATION` — the call leaves this system. */
+  remote: boolean;
+  /** A Z/Y or customer-namespace object — the customer's own, not SAP's. */
+  custom: boolean;
+  /** The clean core level for this use, from the target profile's catalog. `null` when the catalog was not asked. */
+  level: CloudReadinessGrade | null;
+  /**
+   * How the level was reached — `finding` (the level of the finding that stands
+   * on this place), else the catalog's provenance: `catalog` (SAP lists it),
+   * `catalog-residual` (an SAP object SAP does not list), `own-object`, `heuristic`.
+   */
+  levelBasis: string | null;
+  releaseView: string | null;
+  classificationView: string | null;
+  /** Ids of the findings that stand on this object at these lines — empty when no detector raised one. */
+  findingIds: string[];
 }
 
 /* ------------------------------------------------------------------ chain */
