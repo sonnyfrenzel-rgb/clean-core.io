@@ -192,9 +192,12 @@ export default function OwnCodeImport() {
   }, []);
 
   const selfFunded = runsAreSelfFunded(profile);
-  // The start signs the engine's reading and calls no model (ADR-072); what it
-  // costs is the run's, said here before the click.
-  const cost = describeRunCost({ profile, metered: true, callsModel: false });
+  // The start signs the engine's reading (ADR-072) and, when the account's
+  // analysis stage is on and a key is available, asks the model for the
+  // narrative of that same run (owner decision 03.10.2026). What it costs is the
+  // run's, said here before the click, with whether the model is called.
+  const startCallsModel = model.enabled('analyze');
+  const cost = describeRunCost({ profile, metered: true, callsModel: startCallsModel });
   const limit =
     typeof profile?.transformationsLimit === 'number' ? profile.transformationsLimit : COMMUNITY_QUOTA_FALLBACK;
   const trimmedName = name.trim();
@@ -595,7 +598,9 @@ export default function OwnCodeImport() {
                 {assembly.rows.length > 0 ? ownCodeSourceSummary(assembly.rows.length, 0) : wt('ownCode.addSource')}
               </p>
             ) : (
-              <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{wt('ownCode.startNext')}</p>
+              <p className="m-0 text-[12px] font-medium text-cc-ink-muted">
+                {startCallsModel ? wt('ownCode.startNextModel') : wt('ownCode.startNext')}
+              </p>
             )}
           </div>
           <span data-own-code-cost="" className="text-[12px] font-medium text-cc-ink">

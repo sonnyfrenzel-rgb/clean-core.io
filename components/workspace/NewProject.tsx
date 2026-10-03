@@ -7,6 +7,7 @@ import { CircleHelp, FileCode, Layers, ShieldAlert } from 'lucide-react';
 import { getAuth } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { describeRunCost } from '@/lib/run-cost';
+import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { quotaExhausted } from '@/lib/run-quota-rule';
 import {
   CLEAN_CORE_LEVEL_CAVEAT,
@@ -117,10 +118,13 @@ export default function NewProject({
   const stations = useMemo(() => evidenceStations(catalogArtifacts), [catalogArtifacts]);
   const ladder = useMemo(() => cleanCoreLadder(), []);
 
+  // The start calls the model for the narrative when the account's analysis
+  // stage is on and a key is available (owner decision 03.10.2026).
+  const model = useModelAvailability();
   const ownCodeCost = describeRunCost({
     profile,
     metered: true,
-    callsModel: false,
+    callsModel: model.enabled('analyze'),
     sameSourceAgain: false,
   });
 

@@ -13,6 +13,7 @@ import { CcEmptyState } from '@/components/cc/EmptyState';
 import CcSkeleton from '@/components/cc/Skeleton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import { CcRunCost } from '@/components/cc/RunIndicator';
+import StartNarrativeWait from './StartNarrativeWait';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { StartRun } from '@/hooks/useStartRun';
 import { describeRunCost } from '@/lib/run-cost';
@@ -259,7 +260,9 @@ export default function WorkspaceProcess({
     if (absence === 'no-run' && startRun && startRun.phase !== 'none' && startRun.phase !== 'signed') {
       const exampleName =
         project?.fromExample === true && STARTER_EXAMPLES.some((e) => e.name === project?.name) ? project?.name : undefined;
-      const cost = describeRunCost({ profile, metered: true, callsModel: false, starterExample: exampleName });
+      // The start calls the model when the account's analysis stage is on and a
+      // key is available (owner decision 03.10.2026) — said here before the click.
+      const cost = describeRunCost({ profile, metered: true, callsModel: startRun.callsModel, starterExample: exampleName });
       return (
         <section
           data-workspace-process={startRun.phase === 'running' ? 'signing' : startRun.phase === 'failed' ? 'sign-failed' : 'unsigned'}
@@ -275,7 +278,13 @@ export default function WorkspaceProcess({
           <CcCard title={wt('biz.mapSignTitle')} level={3}>
             {startRun.phase === 'running' ? (
               <div data-workspace-process-loading="" className="flex flex-col gap-2">
-                <p className="m-0 text-[13px] font-medium text-cc-ink">{wt('biz.mapSigning')}</p>
+                {startRun.step === 'narrative' && startRun.narrativeSince !== null ? (
+                  <StartNarrativeWait since={startRun.narrativeSince} onContinue={startRun.continueWithout} />
+                ) : (
+                  <p className="m-0 text-[13px] font-medium text-cc-ink">
+                    {startRun.callsModel ? wt('biz.mapSigningModel') : wt('biz.mapSigning')}
+                  </p>
+                )}
                 <CcSkeleton shape="text" count={5} label={wt('biz.mapLoadingLabel')} />
               </div>
             ) : startRun.phase === 'failed' ? (
@@ -297,7 +306,9 @@ export default function WorkspaceProcess({
               </CcMessageStrip>
             ) : (
               <div className="flex flex-col gap-3">
-                <p className="m-0 max-w-3xl text-[13px] leading-snug font-medium text-cc-ink">{wt('biz.mapSignLead')}</p>
+                <p className="m-0 max-w-3xl text-[13px] leading-snug font-medium text-cc-ink">
+                  {startRun.callsModel ? wt('biz.mapSignLeadModel') : wt('biz.mapSignLead')}
+                </p>
                 <div className="flex flex-wrap items-center gap-3">
                   <CcButton
                     variant="secondary"

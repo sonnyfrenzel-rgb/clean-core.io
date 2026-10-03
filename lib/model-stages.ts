@@ -118,6 +118,19 @@ export function modelStageEnabled(subject: ModelStageSubject | null | undefined,
 }
 
 /**
+ * How long a new project's start waits for the model's narrative before it
+ * signs the engine's reading without it, in ms (owner decision 03.10.2026,
+ * ADR-072).
+ *
+ * Below the 120 s request timeout of the Cloud Run service, so the wait ends
+ * with a sentence on the screen rather than as a dropped connection; and long
+ * enough for the analysis prompt of a large example, which the proxy may retry
+ * after a transient provider error (`app/api/gemini/route.ts`). Here, in the
+ * import-free module, so the start screens can say it before the click.
+ */
+export const START_NARRATIVE_CEILING_MS = 90_000;
+
+/**
  * The words V25-A12 asks for, in one spelling.
  *
  * A section with no model output says this. It never shows an empty box, a

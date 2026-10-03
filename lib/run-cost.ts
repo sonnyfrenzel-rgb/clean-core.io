@@ -15,6 +15,7 @@
  * ("Free AI analysis"). So: `quota` and `modelCall`, always both.
  */
 
+import { START_NARRATIVE_CEILING_MS } from './model-stages';
 import {
   COMMUNITY_QUOTA_FALLBACK,
   quotaExhausted,
@@ -84,6 +85,21 @@ export function describeRunCost(input: RunCostInput): RunCost {
     modelCall,
     blocked: false,
   };
+}
+
+/**
+ * What a new project's start does with the model, said on the screens that
+ * start one (owner decision 03.10.2026, ADR-072). With the account's analysis
+ * stage on and a key available, the start asks the model for the narrative of
+ * its one signed run — a model call, which no analysis run is counted for —
+ * and the map waits for it at most `START_NARRATIVE_CEILING_MS`. Otherwise it
+ * signs the engine's reading with no model call. The run itself costs what
+ * `describeRunCost` and `describeStarterExampleCost` say, either way.
+ */
+export function startModelLine(callsModel: boolean): string {
+  return callsModel
+    ? `Calls the model once for the analysis narrative while the map is built — not counted against your analysis runs; the map waits for it ${Math.round(START_NARRATIVE_CEILING_MS / 1000)} s at most.`
+    : 'No model call: the start signs the engine’s reading.';
 }
 
 /* ------------------------------------------------------------------ *

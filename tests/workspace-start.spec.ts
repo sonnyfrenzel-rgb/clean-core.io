@@ -87,6 +87,8 @@ async function startExample(page: Page, viewport: { width: number; height: numbe
   if (!(await start.isVisible().catch(() => false))) {
     await list.locator('[data-examples-more] button').first().click({ timeout: 60000 });
   }
+  // Said before the click: with the model off, the start calls none.
+  await expect(page.locator('[data-examples-model="none"]').first()).toContainText('No model call');
   await start.click({ timeout: 60000 });
   await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 120000 });
   return new URL(page.url()).pathname.split('/')[2];

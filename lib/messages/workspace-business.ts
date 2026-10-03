@@ -25,6 +25,15 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.mapSignLead':
     'The map is drawn only from a signed run, so every step keeps its line. Signing reads the same source again on the server and records it — the engine alone, without a model call.',
   'biz.mapSign': 'Sign the reading and draw the map',
+  // The start with the model on (owner decision 03.10.2026, ADR-072).
+  'biz.mapSigningModel':
+    'Signing: the server reads the same source again and signs it as one run, with the narrative if the model wrote one in time. The map is drawn from that signed run, so every step keeps its line.',
+  'biz.mapSignLeadModel':
+    'The map is drawn only from a signed run, so every step keeps its line. Signing reads the same source again on the server and asks the model for the analysis narrative, which goes into the same run.',
+  'biz.narrativeWriting': 'Writing the narrative (model)…',
+  'biz.narrativeContinue': 'Go on without the narrative',
+  'biz.narrativeMissingTitle': 'The narrative was not written',
+  'biz.narrativeWriteLater': 'Write the narrative in Analyze',
   'biz.columnLabel': 'Source column',
   'biz.tabSource': 'Source',
   'biz.tabNotDetermined': 'Not determined',
@@ -51,6 +60,24 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   // The Business order — components/workspace/WorkspaceShell.tsx.
   'biz.notDeterminedRow': 'Not determined',
 } as const;
+
+/**
+ * The wait for the start's narrative, in seconds actually waited — never a
+ * percentage, because nothing knows how far a model is.
+ */
+export function bizNarrativeWaited(seconds: number, ceilingSeconds: number): string {
+  return `${seconds} s so far. The run is signed after ${ceilingSeconds} s at the latest, with the narrative or without it.`;
+}
+
+/** What "Go on without the narrative" does, said beside it. */
+export function bizNarrativeContinueNote(): string {
+  return 'Signs the engine’s reading now. The model call already sent still finishes on the server; it uses none of your analysis runs.';
+}
+
+/** What writing the narrative later costs: a second run of the same source, with the model. */
+export function bizNarrativeLaterCost(quota: string): string {
+  return `Analyze runs the analysis again with the model and signs a new run: ${quota} · Calls the model.`;
+}
 
 /** "L380 to L412", spoken. */
 export function bizLinesLabel(start: number, end: number): string {
