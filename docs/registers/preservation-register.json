@@ -858,15 +858,17 @@
           {
             "field": "solutionDesign",
             "from": "project",
-            "why": "prompt input; auto-generation requires it"
-          },
-          {
-            "field": "analysis",
-            "from": "run",
-            "why": "prompt input; auto-generation requires it"
+            "via": "generationPrerequisites",
+            "why": "prompt input; without it generationPrerequisites names the missing design and the button waits (v3.0.1)"
           }
         ],
         "optional": [
+          {
+            "field": "analysis",
+            "from": "run",
+            "via": "fetchGenerationDecision",
+            "why": "prompt input when the run has a narrative; an engine-only run has none, and the design carries it (v3.0.1)"
+          },
           {
             "field": "extensibilityRoute",
             "from": "project",
@@ -1083,7 +1085,7 @@
           {
             "field": "businessDocumentation",
             "locator": "[data-stage-output=\"businessDocumentation\"]",
-            "why": "the SOP, RACI and audit-control tables behind the Business SOP tab; the reference case has none, so what is asserted here is that the panel is absent"
+            "why": "the SOP step strip, the RACI matrix and the folded full SOP with its control checkpoints, at the top of the stage (ADR-068); the reference case has none, so what is asserted here is that the panel is absent"
           }
         ],
         "onlyAfterARun": [],

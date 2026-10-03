@@ -10,6 +10,9 @@ import { anchorText } from '@/lib/bpmn/layout';
 import { EARLY_END_WORD, type ProcessMapModel } from '@/lib/process-map';
 import { UNANCHORED } from '@/lib/process-naming';
 import { handbookFromData, type ProcessHandbookData } from '@/lib/process-handbook';
+import BusinessGlance from '@/components/documentation/BusinessGlance';
+import { businessCallouts, glanceHeadline, notDeterminedCallout, type GlanceGap } from '@/lib/business-summary';
+import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 
 /**
  * The demo's Documentation stage in the canvas-first layout — the same stage a
@@ -24,10 +27,22 @@ const BpmnCanvas = dynamic(() => import('@/components/process-map/BpmnCanvas'), 
 
 export default function DemoDocumentation({
   process,
+  gaps,
+  levels,
 }: {
   process: { model: ProcessMapModel; handbook: ProcessHandbookData } | null;
+  /** The coverage sweep's constructs — the demo's own, read on the server. */
+  gaps: GlanceGap[];
+  /** Levels by `gradeKey(name, use)`, looked up on the server as a real project's route would. */
+  levels: Record<string, CloudReadinessGrade>;
 }) {
   const handbook = useMemo(() => (process ? handbookFromData(process.handbook) : null), [process]);
+  /** The same glance a real project opens with (owner 03.10.2026). */
+  const glance = useMemo(() => (handbook ? {
+    headline: glanceHeadline(handbook),
+    callouts: businessCallouts(handbook, { status: 'ready', byKey: levels }),
+    notDetermined: notDeterminedCallout(gaps),
+  } : null), [handbook, gaps, levels]);
   const model = process?.model ?? null;
   const [selected, setSelected] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
@@ -79,6 +94,14 @@ export default function DemoDocumentation({
 
   return (
     <div data-demo-documentation="">
+      {glance ? (
+        <BusinessGlance
+          headline={glance.headline}
+          callouts={glance.callouts}
+          notDetermined={glance.notDetermined}
+          reading={false}
+        />
+      ) : null}
       <HandbookStage
         handbook={handbook}
         reading={false}

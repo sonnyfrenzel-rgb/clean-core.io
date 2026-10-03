@@ -164,8 +164,12 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // event inside that plane, and 6 early exits (`RETURN`, `EXIT`) end at an
     // end event of their own. Events are structure — they are never
     // compared, never a step and never carry a standard candidate.
+    //
+    // 340 since the ADR-066 residuals (03.10.2026): the `CLOSE DATASET` of
+    // `Z_INVOICE_EXTRACTOR.txt` is a data object — **+1 `structural`**
+    // (`output` 20 → 21), nothing reclassified.
     expect(byClass).toEqual({
-      structural: 140,
+      structural: 141,
       technical: 104,
       'business-comparable': 71,
       unknown: 24,
@@ -193,7 +197,7 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // 83 since ADR-054: six early exits end on their own line.
     expect(byKind['end']).toEqual({ structural: 83 });
     expect(byKind['end-error']).toEqual({ technical: 10 });
-    expect(byKind['output']).toEqual({ structural: 20 });
+    expect(byKind['output']).toEqual({ structural: 21 });
     expect(byKind['error-boundary']).toEqual({ technical: 22 });
 
     // Every class is actually reached — a table that only ever says one thing
