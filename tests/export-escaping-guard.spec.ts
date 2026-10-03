@@ -78,7 +78,7 @@ test('the engine documentation export escapes every value it prints', () => {
   for (const name of ['lines', 'para', 'item', 'table', 'empty', 'h2', 'proposal']) {
     const at = fn.indexOf(`const ${name} = `);
     expect(at, `helper ${name} is gone`).toBeGreaterThan(-1);
-    const body = fn.slice(at, fn.indexOf(';\n', at));
+    const body = fn.slice(at, at + fn.slice(at).search(/;\r?\n/));
     const raw = [...body.matchAll(/\$\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g)].map((m) => m[1].trim())
       .filter((e) => !e.startsWith('esc(') && !helpers.test(e) && !e.includes('?') && !e.includes('.map('));
     expect(raw, `helper ${name} prints unescaped: ${raw.join(', ')}`).toEqual([]);

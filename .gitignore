@@ -8,7 +8,7 @@ coverage/
 tmp/
 dist/
 playwright-report/
-test-results/
+/test-results/
 *.tsbuildinfo
 scratch/
 .agents/
