@@ -26,14 +26,17 @@ import {
 } from '@/lib/workspace-messages';
 import CcDisclosure from '@/components/cc/Disclosure';
 import { useFitByPlatform } from '@/hooks/useFitByPlatform';
-import ManagementExecutive, { StackedBar, Swatch } from './ManagementExecutive';
+import ManagementExecutive, { ExecutiveEvidence, StackedBar, Swatch, type ExecutivePrimary } from './ManagementExecutive';
+import ManagementFold from './ManagementFold';
+import { standardFit } from '@/lib/standard-fit';
 import {
   costsFromDecision,
   executiveSubject,
   managementExecutive,
   type ExecutiveTarget,
 } from '@/lib/management-executive';
-import { stageHref } from '@/lib/workspace-back-href';
+import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
+import type { NextOpenPoint } from '@/lib/next-step';
 import { workflowSteps } from '@/lib/workflow-steps';
 import type { ItFindingsSource } from '@/lib/it-findings';
 import type { ManagementView } from '@/lib/management-answers';
@@ -281,6 +284,9 @@ export default function ManagementOverview({
   view,
   decisionRevision = 0,
   detailCount,
+  nextStep,
+  coach,
+  evidenceExtra,
   children,
 }: {
   project: Project | null;
@@ -294,6 +300,16 @@ export default function ManagementOverview({
   decisionRevision?: number;
   /** How many detailed answers `children` holds, for the button that unfolds them. */
   detailCount: number;
+  /**
+   * The next open phase (`lib/next-step.ts`), read once by the shell with the
+   * account's model switches — the page's ONE primary action. `undefined` when
+   * the caller has none to give; `null` once nothing is open.
+   */
+  nextStep?: NextOpenPoint | null;
+  /** The coach mark slot for "Your next step", shown on the decision card. */
+  coach?: React.ReactNode;
+  /** What else belongs in the "Evidence" fold — the buckets per object, what could not be determined. */
+  evidenceExtra?: React.ReactNode;
   /** The detailed answers of 6.4, folded under the overview (§2.11: nothing lost, nothing first). */
   children?: React.ReactNode;
 }) {
@@ -354,6 +370,7 @@ export default function ManagementOverview({
   // The four buckets for both editions — one derivation, shared with the demo.
   const fit = useFitByPlatform(findings, project, wt('mgmt.lookupFailed'));
 
+  const steps = useMemo(() => workflowSteps(project), [project]);
   const overview = useMemo(
     () => managementOverview({ view, fit, findings, decision }, { hasSource, hasRun }),
     [view, fit, findings, decision, hasSource, hasRun],
@@ -366,13 +383,34 @@ export default function ManagementOverview({
         mode: 'project',
         hasSource,
         hasRun,
-        steps: workflowSteps(project),
+        steps,
         overview,
         fit,
         costs: costsFromDecision(decision),
       }),
-    [project, hasSource, hasRun, overview, fit, decision],
+    [project, hasSource, hasRun, steps, overview, fit, decision],
   );
+  // Fit to standard (ADR-066): from the signed run's evidence only.
+  const fitFigure = useMemo(
+    () =>
+      standardFit({
+        mode: 'project',
+        hasRun,
+        analyzeState: steps.find((x) => x.key === 'analyze')?.state ?? 'empty',
+        signedSourceSha256: project?.auditMetadata?.inputFingerprint?.sha256 ?? null,
+        findings,
+        fit,
+      }),
+    [hasRun, steps, project, findings, fit],
+  );
+  const primary: ExecutivePrimary | null = nextStep
+    ? {
+        label: nextStep.action,
+        reason: nextStep.reason,
+        href: stageHref({ base: `/project/${projectId}`, path: nextStep.path, view: 'management', from: WORKSPACE_RETURN.nextStep }),
+        key: nextStep.key,
+      }
+    : null;
   const hrefFor = (target: ExecutiveTarget): string =>
     target.kind === 'stage'
       ? stageHref({ base: `/project/${projectId}`, path: target.path, view: 'management' })
@@ -388,10 +426,30 @@ export default function ManagementOverview({
 
   return (
     <div data-management-overview="">
-      <ManagementExecutive summary={executive} hrefFor={hrefFor} headingId="management-answers-heading" />
+      <ManagementExecutive
+        summary={executive}
+        hrefFor={hrefFor}
+        headingId="management-answers-heading"
+        fit={fitFigure}
+        primary={primary}
+        fitDetailsHref="#public-cloud-fit"
+        setTargetHref={stageHref({ base: `/project/${projectId}`, path: 'analyze', view: 'management' })}
+        coach={coach}
+      />
 
-      {/* The five answer cards stand one action deeper (§2.11): every figure
-          above comes out of them, and every number they hold stays here. */}
+      {/* Everything behind the two cards, one action deeper (§2.11, owner
+          03.10.2026: at most three things above the fold). Folded, and on a
+          project without a signed run the summary says what fills it. */}
+      <div className="mt-4">
+      <ManagementFold
+        id="evidence"
+        summary={hasRun ? wt('mgmtFold.evidenceRun') : wt('mgmtFold.evidenceNoRun')}
+      >
+      <ExecutiveEvidence summary={executive} hrefFor={hrefFor} />
+      {evidenceExtra ? <div className="mt-4 flex flex-col gap-4">{evidenceExtra}</div> : null}
+
+      {/* The five answer cards: every figure above comes out of them, and every
+          number they hold stays here. */}
       <div className="mt-4">
         <CcDisclosure
           title={wt('exec.evidenceBehind')}
@@ -680,6 +738,8 @@ export default function ManagementOverview({
           </div>
         </div>
       ) : null}
+      </ManagementFold>
+      </div>
     </div>
   );
 }

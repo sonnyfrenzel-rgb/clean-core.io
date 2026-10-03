@@ -67,6 +67,13 @@ async function signIn(page: Page): Promise<void> {
 async function openWorkspace(page: Page, view: 'business' | 'it' | 'management'): Promise<void> {
   await page.goto(`/project/${PROJECT_ID}?view=${view}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator(`[data-workspace-shell="${view}"]`)).toBeVisible({ timeout: 60000 });
+  // Management keeps the first look in its "Process" fold (ADR-066, owner
+  // 03.10.2026: at most three things above the fold) — open it, so what is
+  // checked below is the whole page.
+  if (view === 'management') {
+    const process = page.locator('[data-management-fold="process"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first();
+    if ((await process.getAttribute('aria-expanded')) !== 'true') await process.click();
+  }
   await expect(page.locator('[data-first-look="end-state"], [data-first-look="complete"]')).toBeVisible({
     timeout: 60000,
   });

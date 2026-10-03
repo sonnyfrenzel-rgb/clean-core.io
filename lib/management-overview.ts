@@ -120,6 +120,7 @@ export type SegmentTone =
   | 'chart-2'
   | 'chart-3'
   | 'chart-4'
+  | 'chart-5'
   | 'level-A'
   | 'level-B'
   | 'level-C'

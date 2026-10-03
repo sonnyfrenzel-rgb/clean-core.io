@@ -296,6 +296,15 @@ export interface PublicCloudFitAssignment {
    * other grounds; it only explains why usage did not, by itself, retire it.
    */
   usageNote: string | null;
+  /**
+   * The level the object was graded with, and where the grade came from —
+   * carried through from the input, unchanged, so a surface can name the level
+   * beside the object and tell an SAP object from the project's own without a
+   * second lookup. Never a bucket input of its own here: the rules above read
+   * the input.
+   */
+  level: CloudReadinessGrade;
+  levelProvenance: PublicCloudFitLevelProvenance;
 }
 
 /** Roughly a calendar month; only used for the sentence a reader reads, never for the >= 13-months decision itself. */
@@ -385,6 +394,8 @@ export function assignPublicCloudFit(
     reviewTask: null as string | null,
     catalogListed,
     usageNote,
+    level: input.level,
+    levelProvenance: input.levelProvenance,
   };
   const settled = (
     bucket: PublicCloudFitBucket,

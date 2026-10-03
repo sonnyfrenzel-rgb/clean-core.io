@@ -6,6 +6,7 @@ import CcCard from '@/components/cc/Card';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcButton from '@/components/cc/Button';
+import CcDisclosure from '@/components/cc/Disclosure';
 import CcTable from '@/components/cc/Table';
 import { CcTag } from '@/components/cc/Tag';
 import { resolvePublicCloudFit, publicCloudFitLookupObjects } from '@/lib/abap/public-cloud-fit-resolver';
@@ -233,13 +234,30 @@ export default function PublicCloudFitPanel({
           </div>
         )}
 
-        <div className="mt-3 space-y-3">
+        {/* What each bucket means — who has the work (CR-18) — one action
+            deeper: four paragraphs above every table read as four warnings
+            (owner 03.10.2026). The sentences are unchanged and print always. */}
+        <div className="mt-3" data-public-cloud-fit-meanings="">
+          <CcDisclosure title={wt('cloudFit.meaningsTitle')} count={PUBLIC_CLOUD_FIT_BUCKETS.length} level={4}>
+            <dl className="m-0 space-y-2">
+              {PUBLIC_CLOUD_FIT_BUCKETS.map((bucket) => (
+                <div key={bucket}>
+                  <dt className="text-[12px] font-bold text-cc-ink">{PUBLIC_CLOUD_FIT_BUCKET_LABELS[bucket]}</dt>
+                  <dd data-public-cloud-fit-meaning={bucket} className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                    {PUBLIC_CLOUD_FIT_BUCKET_MEANINGS[bucket]}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </CcDisclosure>
+        </div>
+
+        <div className="mt-3 grid gap-x-6 gap-y-4 lg:grid-cols-2">
           {PUBLIC_CLOUD_FIT_BUCKETS.map((bucket) => (
             <BucketSection
               key={bucket}
               bucket={bucket}
               label={PUBLIC_CLOUD_FIT_BUCKET_LABELS[bucket]}
-              meaning={PUBLIC_CLOUD_FIT_BUCKET_MEANINGS[bucket]}
               rows={assignments.filter((a) => a.bucket === bucket)}
               footnote={bucket === 'no-catalogued-path' ? summary.catalogBasisNote : null}
             />
@@ -263,36 +281,32 @@ export default function PublicCloudFitPanel({
 }
 
 /**
- * One bucket, with the sentence that says who has the work under its heading.
+ * One bucket and its objects.
  *
- * The `meaning` line is not decoration: four labels in a column read as four
- * severities of the same problem, and the whole point of the fourth bucket is
- * that it is not a severity at all — it is an open question (CR-18). The
- * `reviewTask` on each row is shown as a task, marked as one, and the
- * `footnote` carries the data basis and its date under the bucket that rests
- * on it.
+ * What each bucket means — who has the work — stands once, in the fold above
+ * the buckets, rather than as a paragraph over every table (owner 03.10.2026).
+ * It is not decoration: four labels read as four severities of the same
+ * problem, and the fourth bucket is not a severity at all — it is an open
+ * question (CR-18). The `reviewTask` on each row is shown as a task, marked as
+ * one, and the `footnote` carries the data basis and its date under the bucket
+ * that rests on it.
  */
 function BucketSection({
   bucket,
   label,
-  meaning,
   rows,
   footnote,
 }: {
   bucket: PublicCloudFitBucket;
   label: string;
-  meaning: string;
   rows: PublicCloudFitAssignment[];
   footnote: string | null;
 }) {
   return (
-    <section data-public-cloud-fit-bucket={bucket}>
+    <section data-public-cloud-fit-bucket={bucket} className="min-w-0">
       <h4 className="m-0 text-[12px] font-bold tracking-[0.04em] text-cc-ink uppercase">
         {label} ({rows.length})
       </h4>
-      <p data-public-cloud-fit-meaning className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-        {meaning}
-      </p>
       {rows.length === 0 ? (
         <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">{wt('cloudFit.emptyBucket')}</p>
       ) : (

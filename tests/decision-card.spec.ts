@@ -437,7 +437,10 @@ test.describe('8.4 card — source guards', () => {
 
   test('the card is mounted in the Management view of the workspace only', () => {
     const shell = fs.readFileSync(path.join(ROOT, 'components/workspace/WorkspaceShell.tsx'), 'utf8');
-    expect(shell).toMatch(/view === 'management' && \(\s*<div[^>]*>\s*<DecisionCard/);
+    // Inside the Management branch, in its "Options and the decision" fold
+    // since 03.10.2026 (ADR-066) — still rendered there and nowhere else.
+    expect(shell).toMatch(/view === 'management' && \([\s\S]{0,1500}?<ManagementFold\s+id="options"[\s\S]{0,800}?<DecisionCard/);
+    expect(shell.match(/<DecisionCard\b/g)).toHaveLength(1);
   });
 });
 

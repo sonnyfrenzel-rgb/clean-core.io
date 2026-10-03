@@ -20,7 +20,9 @@ import WorkspaceLayerSection from '@/components/workspace/LayerSection';
 import WorkspaceStatusLine from '@/components/workspace/StatusLine';
 import ItAnswers from '@/components/workspace/ItAnswers';
 import PublicCloudFitPanel from '@/components/workspace/PublicCloudFitPanel';
-import ManagementExecutive from '@/components/workspace/ManagementExecutive';
+import ManagementExecutive, { ExecutiveEvidence } from '@/components/workspace/ManagementExecutive';
+import ManagementFold from '@/components/workspace/ManagementFold';
+import { standardFit } from '@/lib/standard-fit';
 import CcDisclosure from '@/components/cc/Disclosure';
 import { useFitByPlatform } from '@/hooks/useFitByPlatform';
 import { managementExecutive, type ExecutiveTarget } from '@/lib/management-executive';
@@ -237,6 +239,20 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
       proposal: routeLabel(demo.design.recommendedRoute),
     });
   }, [management, fit, findingsRead, demo.rail, demo.design.recommendedRoute]);
+  // Fit to standard (ADR-066) from the demo's own engine reading. A demo can
+  // never be signed, so the card says so beside the figure (`basis: 'demo'`).
+  const demoFit = useMemo(
+    () =>
+      standardFit({
+        mode: 'demo',
+        hasRun: false,
+        analyzeState: demo.rail.find((r) => r.key === 'analyze')?.state ?? 'empty',
+        signedSourceSha256: null,
+        findings: findingsRead,
+        fit,
+      }),
+    [demo.rail, findingsRead, fit],
+  );
   const executiveHref = useCallback(
     (target: ExecutiveTarget): string =>
       target.kind === 'stage'
@@ -616,9 +632,16 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
       {/* ---------------------------------------------------- Management */}
       {view === 'management' ? (
         <>
-          <Place place="management">
+          {/* The whole frame (ADR-063), as in the workspace: the decision beside
+              fit to standard, the rest one action deeper. */}
+          <Place place="management" className="mt-5">
             {stop('management')}
-            <ManagementExecutive summary={executive} hrefFor={executiveHref} />
+            <ManagementExecutive summary={executive} hrefFor={executiveHref} fit={demoFit} />
+            <div className="mt-4">
+              <ManagementFold id="evidence" summary={wt('mgmtFold.evidenceRun')}>
+                <ExecutiveEvidence summary={executive} hrefFor={executiveHref} />
+              </ManagementFold>
+            </div>
             <div className="mt-4">
               <CcDisclosure title={wt('demo.answersDetail')} count={management.answers.length} level={3}>
                 <CcCard title={management.headline}>
@@ -639,12 +662,13 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
             </div>
           </Place>
 
-          <Place place="four-buckets">
+          <Place place="four-buckets" className="mt-5">
             {stop('four-buckets')}
             <PublicCloudFitPanel project={project} findings={demo.analyze.findings} />
           </Place>
 
-          <Place place="costs">
+          <div className="mt-5 grid items-start gap-4 lg:grid-cols-3">
+          <Place place="costs" className="min-w-0">
             {stop('costs')}
             <CcCard title={wt('demo.costsTitle')} meta={<CcProvenanceChip value="simulation" />}>
               <p className="m-0 text-[13px] font-medium text-cc-ink">
@@ -659,7 +683,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
             </CcCard>
           </Place>
 
-          <Place place="decision">
+          <Place place="decision" className="min-w-0">
             {stop('decision')}
             <CcCard title={wt('demo.openDecision')} meta={<CcProvenanceChip value="proposed" />}>
               <p className="m-0 text-[13px] font-medium text-cc-ink">
@@ -682,7 +706,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
             </CcCard>
           </Place>
 
-          <Place place="handover">
+          <Place place="handover" className="min-w-0">
             {stop('handover')}
             <CcCard title={wt('demo.handoverTitle')} count={demo.delivery.missing.length}>
               <ul data-demo-handover="" className="m-0 flex list-disc flex-col gap-1 pl-5 text-[13px] text-cc-ink">
@@ -695,6 +719,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               </div>
             </CcCard>
           </Place>
+          </div>
           {layerBar}
           {layerSection ?? (
             <div className="mt-5" data-workspace-layer-section="need">

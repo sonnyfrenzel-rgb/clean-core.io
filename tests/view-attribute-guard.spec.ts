@@ -464,7 +464,10 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     );
 
     // The layer is the third navigation and is held the same way — in the
-    // address (roadmap 6.2), which is the other half of "nowhere else".
+    // address (roadmap 6.2), which is the other half of "nowhere else". In
+    // Management the layer bar stands in the "Process" fold (ADR-066); opening
+    // a fold is remembered in this browser only, so it writes nothing either.
+    await page.locator('[data-management-fold="process"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first().click();
     await page.locator('[data-workspace-layer-more]').click();
     const changes = page.locator('[data-workspace-layer-more-panel] [data-workspace-layer="changes"]');
     await expect(changes).toBeVisible({ timeout: 15000 });

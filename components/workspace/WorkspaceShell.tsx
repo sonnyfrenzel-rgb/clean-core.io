@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { ChevronDown } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
+import CcLinkButton from '@/components/cc/LinkButton';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import WorkspaceMetaLine from './MetaLine';
@@ -18,6 +19,7 @@ import ManagementAnswers from './ManagementAnswers';
 import ItAnswers from './ItAnswers';
 import DecisionCard from './DecisionCard';
 import SteeringOnePager from './SteeringOnePager';
+import ManagementFold from './ManagementFold';
 import FirstLook from './FirstLook';
 import AskThisCase from './AskThisCase';
 import CoachMarkNote from './CoachMarks';
@@ -49,7 +51,7 @@ import {
   type WorkspaceView,
 } from '@/lib/workspace-model';
 import { recordGaps } from '@/lib/legacy-project';
-import { WORKSPACE_RETURN } from '@/lib/workspace-back-href';
+import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { workspaceEyebrow } from '@/lib/workspace-head';
 import { pageStatusOnRecord, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
@@ -114,14 +116,14 @@ const IT_HEAD: readonly ContentBlock[] = [];
 const IT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'firstLook', 'ask', 'notDetermined'];
 
 /**
- * Management opens with its answer, then "Next step" (ADR-029, §2.3 item 5);
- * its own blocks — steering one-pager, Public-Cloud-Fit, the decision — follow
- * below, and only then the layers and the reading of the code, which answer the
- * other two views' questions. Before this order a manager scrolled past the
- * whole process and every *Not determined* line before reaching the decision.
+ * Management opens with its answer (ADR-029): the decision with the page's ONE
+ * next action, beside fit to standard (ADR-066) — the full width of the frame
+ * (ADR-063), not a narrow column. Everything else stands in four named folds,
+ * collapsed until opened (owner 03.10.2026): Evidence, Options and the
+ * decision, Costs, Process. "Next step" is not a card of its own here: it is
+ * the decision card's button, so the page never says it twice.
  */
-const MANAGEMENT_HEAD: readonly ContentBlock[] = ['answers', 'nextStep'];
-const MANAGEMENT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'firstLook', 'ask', 'notDetermined'];
+const MANAGEMENT_HEAD: readonly ContentBlock[] = ['answers'];
 
 /**
  * The Object Page of a project — `DESIGN.md` §2.3, roadmap step 1.4.
@@ -327,6 +329,8 @@ export default function WorkspaceShell({
   const currentLayer =
     hashLayer ?? (view === 'business' ? 'need' : layers.find((l) => l.count !== null)?.key ?? LAYERS[0]);
   const currentLayerSection = layers.find((l) => l.key === currentLayer) ?? layers[0];
+  // Management's "Costs" fold reads the costs layer straight, whatever layer the bar is on.
+  const costsLayer = layers.find((l) => l.key === 'costs') ?? layers[0];
 
   /**
    * The status line and the toolbar with Export and "Invite to view" — in
@@ -398,8 +402,26 @@ export default function WorkspaceShell({
     // the history is the one thing the hydrated project does not carry.
     answers:
       view === 'management' ? (
-        <div className="mt-5 max-w-3xl">
-          <ManagementAnswers project={project} projectId={projectId} decisionRevision={decisionRevision} />
+        <div className="mt-5">
+          <ManagementAnswers
+            project={project}
+            projectId={projectId}
+            decisionRevision={decisionRevision}
+            nextStep={nextStep}
+            coach={
+              <div className="cc-no-print">
+                <CoachMarkNote mark={currentMark} slot="next-step" onDismiss={marks.dismiss} onDismissAll={marks.dismissAll} />
+              </div>
+            }
+            evidenceExtra={
+              <>
+                <PublicCloudFitPanel project={project} />
+                <div id="not-determined">
+                  <NotDeterminedCard data={open} recorded={recorded} />
+                </div>
+              </>
+            }
+          />
         </div>
       ) : null,
     layerBar: (
@@ -675,44 +697,57 @@ export default function WorkspaceShell({
       )}
       {view === 'it' ? IT_TAIL.map((key) => <React.Fragment key={key}>{contentBlocks[key]}</React.Fragment>) : null}
 
-      {/* The steering one-pager (roadmap 8.6, mockup screen 5: "Steering
-          one-pager" in Management's tool row) — figures only, each with its
-          coverage and a link to its evidence, and a "Not determined" column.
-          A view like Management itself: derived when opened, never stored,
-          not part of the signed audit pack; printed through the browser.
-          Placed after the answer, not above it: Management begins with its
-          answer sentence (ADR-029). */}
+      {/* Management, under its answer: the steering one-pager, then the four
+          folds (owner 03.10.2026: progressive disclosure). Each summary says
+          what is inside — or, on an early project, why it is still empty and
+          what fills it. The process, its rules and "Ask this case" are the
+          Business view's; here a link leads there, and the first look stays
+          mounted inside "Process" because the page's search and layers read
+          from it. */}
       {view === 'management' && (
-        <div className="mt-5 max-w-3xl">
+        <div className="mt-4 flex flex-col gap-3">
+          {/* Figures only, each with its coverage and a link to its evidence —
+              derived when opened, never stored, printed through the browser
+              (roadmap 8.6). */}
           <SteeringOnePager project={project} projectId={projectId} />
+          <ManagementFold
+            id="options"
+            summary={project?.activeRunId ? wt('mgmtFold.optionsSummary') : wt('mgmtFold.optionsNoRun')}
+          >
+            {/* "Open decision" (roadmap 8.4): what a confirmation would bind, the
+                conditions and the timeline; it writes only through the commands
+                route, so the Stand check of 6.9 hangs off it. */}
+            <div id="decision-card">
+              <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} onChanged={onDecisionChanged} />
+            </div>
+          </ManagementFold>
+          <ManagementFold id="costs" summary={costsLayer.count ? wt('mgmtFold.costsEmpty') : costsLayer.missing}>
+            {/* The amounts live in Economics, as a simulation; the costs layer
+                itself is one tab of the bar under "Process". */}
+            <CcLinkButton
+              href={stageHref({ base: `/project/${projectId}`, path: 'tco', view: 'management' })}
+              data-management-open-economics=""
+            >
+              {wt('mgmtFold.openEconomics')}
+            </CcLinkButton>
+          </ManagementFold>
+          <ManagementFold id="process" summary={wt('mgmtFold.processSummary')}>
+            <p className="m-0">
+              <button
+                type="button"
+                onClick={() => onViewChange('business')}
+                data-management-open-business=""
+                className="text-[13px] font-semibold text-cc-ink underline underline-offset-2"
+              >
+                {wt('mgmtFold.openBusiness')}
+              </button>
+            </p>
+            {contentBlocks.layerBar}
+            {contentBlocks.layerSection}
+            {contentBlocks.firstLook}
+          </ManagementFold>
         </div>
       )}
-
-      {/* Public-Cloud-Fit and the four buckets (roadmap 6.7, `DESIGN.md` §5.6) —
-          Management's own answer, so it renders only there rather than a stub
-          appearing in the other two views ahead of its content. */}
-      {view === 'management' && (
-        <div className="mt-5 max-w-3xl">
-          <PublicCloudFitPanel project={project} />
-        </div>
-      )}
-
-      {/* "Open decision" (roadmap 8.4, mockup screen 5) — what a confirmation
-          would bind, reversible or not, the conditions and the folded timeline.
-          Management's answer to "what do I decide?", so it renders only there.
-          It derives the draft through its own route (the contract behind it
-          reaches the SAP catalog) and writes only through the commands route;
-          the confirmation is a write, so the Stand check of 6.9 hangs off it. */}
-      {view === 'management' && (
-        <div id="decision-card" className="mt-5 max-w-3xl">
-          <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} onChanged={onDecisionChanged} />
-        </div>
-      )}
-
-      {/* The layers and the reading of the code, after Management's own answer. */}
-      {view === 'management'
-        ? MANAGEMENT_TAIL.map((key) => <React.Fragment key={key}>{contentBlocks[key]}</React.Fragment>)
-        : null}
 
       {/* Roadmap 5.5 — "Members on this case" (mockup screen 1/4): who has read
           access, since when, and the revocation. Owner only, and not by hiding

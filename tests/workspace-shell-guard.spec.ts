@@ -909,6 +909,9 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     // answers and the access list both arrive from a fetch, and comparing
     // positions while one of them is still `null` would compare two things.
     await expect(page.locator('[data-management-view]')).toBeVisible({ timeout: 60000 });
+    // The bucket panel stands in the "Evidence" fold under the answer (owner
+    // 03.10.2026: at most three things above the fold) — open it to lay it out.
+    await page.locator('[data-management-fold="evidence"] [data-cc-disclosure-trigger]').click();
     await expect(page.locator('[data-public-cloud-fit-panel]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-workspace-access]')).toBeVisible({ timeout: 60000 });
 

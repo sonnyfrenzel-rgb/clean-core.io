@@ -14,6 +14,7 @@ import {
 } from '@/lib/management-answers';
 import { notDetermined } from '@/lib/workspace-model';
 import ManagementOverview from './ManagementOverview';
+import type { NextOpenPoint } from '@/lib/next-step';
 import { wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 
@@ -42,11 +43,18 @@ export default function ManagementAnswers({
   project,
   projectId,
   decisionRevision = 0,
+  nextStep,
+  coach,
+  evidenceExtra,
 }: {
   project: Project | null;
   projectId: string;
   /** Passed through to the overview, which rereads the decision when it changes. */
   decisionRevision?: number;
+  /** Passed through: the page's one next action, the coach mark slot, and the rest of the "Evidence" fold. */
+  nextStep?: NextOpenPoint | null;
+  coach?: React.ReactNode;
+  evidenceExtra?: React.ReactNode;
 }) {
   /**
    * `undefined` while the read is in flight, `null` when it failed or was
@@ -129,6 +137,9 @@ export default function ManagementAnswers({
         view={view}
         decisionRevision={decisionRevision}
         detailCount={view.answers.length}
+        nextStep={nextStep}
+        coach={coach}
+        evidenceExtra={evidenceExtra}
       >
       <div className="space-y-4">
         {view.answers.map((answer) => (

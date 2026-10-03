@@ -261,7 +261,7 @@ export function managementExecutive(src: ExecutiveSource): ExecutiveSummary {
       src.mode === 'demo'
         ? 'No signed run in a demo, so the decision cannot be taken here.' +
           (src.proposal ? ` The evidence proposes ${src.proposal}.` : '')
-        : 'No signed run yet, so the decision cannot be taken. Run the analysis first — every figure here comes from it.';
+        : 'No signed run yet, so the decision cannot be taken — every figure here comes from one.';
     status = 'not-started';
     next = actionFor('view-no-run', 'No signed run', src);
   } else if (decision.state === 'loading') {
@@ -406,7 +406,10 @@ export function managementExecutive(src: ExecutiveSource): ExecutiveSummary {
     bucketsAbsent = buckets.state === 'absent' ? buckets.reason : null;
   }
 
-  const shown = rows.slice(0, 3);
+  // Without a signed run the run is the one thing in the way that a reader can
+  // act on; the decision's own gaps wait behind it and are counted, not listed
+  // (owner 03.10.2026: one clear path, not three cards saying the same thing).
+  const shown = src.hasRun ? rows.slice(0, 3) : rows.filter((r) => r.key === 'view-no-run');
   return {
     question,
     answer,
