@@ -392,7 +392,7 @@ export function generationBlockers(
 
 /** One thing a generation needs that is not on record yet, and the one action that puts it there. */
 export interface GenerationPrerequisite {
-  id: 'source' | 'design' | 'code';
+  id: 'source' | 'run' | 'design' | 'code';
   /** A sentence the page shows as text next to its button — never only as a hover title. */
   reason: string;
   /** The stage whose page resolves it, and the words on the link there. */
@@ -410,24 +410,23 @@ export interface GenerationPrerequisite {
  * was stale. A page shows each entry with its action and keeps its button
  * disabled while the list is not empty.
  *
- * The analysis narrative is not a prerequisite of the generation itself — the
- * design is written from it, so a design on record carries it. It decides only
- * which action resolves a missing design: the Design stage writes one only from
- * a narrative, and an engine-only run has none (`/api/runs/create` stores an
- * empty string), so the way forward is the analysis, not the Design page.
+ * The analysis narrative is not a prerequisite of anything here. Since v3.0.1
+ * (coordinator decision 03.10.2026) the Design stage writes its design from the
+ * signed engine evidence — route, process, rules, SAP objects — and uses a
+ * narrative only as further context where the run has one, so an engine-only
+ * run (`/api/runs/create` stores an empty string) leads to Design like any
+ * other. `design` itself needs a source and a signed run; whether a model can
+ * be called is the stage's own availability, said beside its button.
  *
  * Documentation reads its process from the code without a model and states
  * its own preconditions, so for it only a missing source counts here.
  */
 export function generationPrerequisites(
   project: Project | null,
-  target: 'transformation' | 'documentation' | 'testing',
+  target: 'design' | 'transformation' | 'documentation' | 'testing',
 ): GenerationPrerequisite[] {
   if (!project) return [];
   const has = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
-  // A project from before signed runs may hold the narrative as an object.
-  const analysis: unknown = (project as { analysis?: unknown }).analysis;
-  const narrative = has(analysis) || (typeof analysis === 'object' && analysis !== null);
   if (!has(project.legacyCode)) {
     return [{
       id: 'source',
@@ -435,22 +434,22 @@ export function generationPrerequisites(
       action: { label: 'Open Analyze', stage: 'analyze' },
     }];
   }
+  if (target === 'design') {
+    return has(project.activeRunId)
+      ? []
+      : [{
+          id: 'run',
+          reason: 'There is no signed analysis run yet. The design is written from the evidence the run signs.',
+          action: { label: 'Run the analysis', stage: 'analyze' },
+        }];
+  }
   const out: GenerationPrerequisite[] = [];
   if (target !== 'documentation' && !has(project.solutionDesign)) {
-    out.push(
-      narrative
-        ? {
-            id: 'design',
-            reason: 'No solution design yet. The code is generated from the design, so generate and review it in Design first.',
-            action: { label: 'Open Design', stage: 'design' },
-          }
-        : {
-            id: 'design',
-            reason:
-              'No solution design yet, and none can be written: the design is written from the analysis narrative, and the signed run has none — the engine analysed the code without a model. Run the analysis with the model on, then generate the design.',
-            action: { label: 'Run the analysis', stage: 'analyze' },
-          },
-    );
+    out.push({
+      id: 'design',
+      reason: 'No solution design yet. The code is generated from the design, so generate and review it in Design first.',
+      action: { label: 'Open Design', stage: 'design' },
+    });
   }
   if (target === 'testing' && !hasGeneratedPackage(project.generatedCode)) {
     out.push({

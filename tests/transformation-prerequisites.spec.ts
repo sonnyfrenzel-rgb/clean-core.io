@@ -102,13 +102,15 @@ for (const width of [1280, 390] as const) {
   test.describe(`at ${width} px`, () => {
     test.use({ viewport: { width, height: width === 390 ? 844 : 900 } });
 
-    test('no design and no narrative (the owner state): the reason and "Run the analysis"', async ({ page }) => {
+    // v3.0.1 (coordinator decision 03.10.2026): Design writes from the engine
+    // evidence, so an engine-only run is led to Design like any other.
+    test('no design and no narrative (the owner state): the reason and "Open Design"', async ({ page }) => {
       const account = await seed('tf-prereq-owner', { design: false, narrative: false });
       await keyAvailable(page);
       await signInThroughForm(page, account);
       await openStage(page, account);
       await shot(page, `owner-state-${width}`);
-      await expectReason(page, 'design', /No solution design yet/, /Run the analysis/, new RegExp(`/project/${account.projectId}/analyze$`));
+      await expectReason(page, 'design', /No solution design yet/, /Open Design/, new RegExp(`/project/${account.projectId}/design$`));
       await expect(page.locator('[data-generate-code]')).toHaveText(/Generate code/);
     });
 
@@ -197,9 +199,9 @@ test('a generation that fails says so in the error strip, with Try again', async
 test.describe('generationPrerequisites', () => {
   const base = { legacyCode: 'REPORT z.', activeRunId: 'r' } as Record<string, unknown>;
 
-  test('a missing design names the analysis when the run has no narrative, Design when it has one', () => {
+  test('a missing design names Design, with a narrative or without one (v3.0.1: Design writes from the engine evidence)', () => {
     const noNarrative = generationPrerequisites({ ...base, analysis: '' } as never, 'transformation');
-    expect(noNarrative.map((p) => [p.id, p.action.stage, p.action.label])).toEqual([['design', 'analyze', 'Run the analysis']]);
+    expect(noNarrative.map((p) => [p.id, p.action.stage, p.action.label])).toEqual([['design', 'design', 'Open Design']]);
     const withNarrative = generationPrerequisites({ ...base, analysis: '{"a":1}' } as never, 'transformation');
     expect(withNarrative.map((p) => [p.id, p.action.stage, p.action.label])).toEqual([['design', 'design', 'Open Design']]);
   });

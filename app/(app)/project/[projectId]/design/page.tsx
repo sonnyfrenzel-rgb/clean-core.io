@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { doc, updateDoc, deleteField, runTransaction } from 'firebase/firestore';
 import { checkProjectWrite, projectTooLargeMessage } from '@/lib/firestore-doc-size';
 import { getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
@@ -58,7 +59,7 @@ import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { SourceFile } from '@/lib/abap/findings-detector';
 import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
-import { workflowSteps, staleness, previousBasis } from '@/lib/workflow-steps';
+import { workflowSteps, staleness, previousBasis, generationPrerequisites } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { buildDesignExportHtml, designExportFileName } from '@/lib/design-export';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
@@ -67,7 +68,7 @@ import CcButton from '@/components/cc/Button';
 import { CcEmptyState } from '@/components/cc/EmptyState';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import DesignCanvasStage, { type DesignDocSection } from '@/components/design/DesignCanvasStage';
-import { useDesignEvidence } from '@/hooks/useDesignEvidence';
+import { useDesignEvidence, type DesignEvidence } from '@/hooks/useDesignEvidence';
 import { architectureCanvasModel } from '@/lib/architecture-canvas';
 import { BTP, BTP_FIRST, SIDE_BY_SIDE_ROUTE, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
 
@@ -136,6 +137,38 @@ function modelFailureText(err: unknown): string {
   return message;
 }
 
+/**
+ * The context block of the design prompt: the signed engine evidence always,
+ * the run's narrative only where it has one (v3.0.1, coordinator decision
+ * 03.10.2026). An engine-only run used to leave the design with nothing to be
+ * written from, and Transformation stopped behind it.
+ */
+async function designContextFor(
+  narrative: string | null,
+  { source, evidence }: { source: string | null; evidence: DesignEvidence | null },
+): Promise<string> {
+  const [{ buildRequirementSet }, { engineDesignContext }] = await Promise.all([
+    import('@/lib/functional-requirements'),
+    import('@/lib/design-engine-context'),
+  ]);
+  const ready = evidence && evidence.state === 'ready' ? evidence : null;
+  let requirements: ReturnType<typeof buildRequirementSet> | null = null;
+  try {
+    requirements = source ? buildRequirementSet({ source, levels: ready?.findings ?? null }) : null;
+  } catch (err) {
+    console.warn('[Design] The engine evidence could not be read for the prompt:', err);
+  }
+  const engine = engineDesignContext({ requirements, contract: ready?.contract ?? null, findings: ready?.findings ?? [] });
+  const narrativePart = narrative
+    ? `Analysis Context (the run's model narrative, further context only):
+${prepareAnalysisContext(narrative)}`
+    : 'Analysis Context: none. The signed run was made without a model narrative; design from the engine evidence below.';
+  return `${narrativePart}
+
+Engine Evidence (the signed run, read from the code without a model):
+${engine}`;
+}
+
 const GENERATION_FAILED_TEXT = 'The solution design could not be generated or saved. Nothing was changed — try again.';
 
 export default function DesignPage() {
@@ -197,7 +230,10 @@ export default function DesignPage() {
     projectRef.current = project;
   }, [project]);
 
-  const generateDesign = useCallback(async (analysis: string) => {
+  /** The signed source and the server's evidence, for the design prompt — kept current below. */
+  const engineEvidenceRef = useRef<{ source: string | null; evidence: DesignEvidence | null }>({ source: null, evidence: null });
+
+  const generateDesign = useCallback(async (analysis: string | null) => {
     setLoading(true);
     setDesignError(null);
     setLoadingMessage('Architecting solution design...');
@@ -211,10 +247,11 @@ export default function DesignPage() {
       const db = getDb();
       const projData = await loadProjectAndHydrate(projectId as string);
       const route = projData?.extensibilityRoute || SIDE_BY_SIDE_ROUTE;
+      const designContext = await designContextFor(analysis, engineEvidenceRef.current);
       const isAbapCloud = !isSideBySideRoute(route);
 
       const prompt = isAbapCloud 
-        ? `Act as a Senior SAP Enterprise Architect. Analyze the legacy business analysis results and design a modern, clean SAP RAP (RESTful Application Programming Model) Developer Extensibility target architecture.
+        ? `Act as a Senior SAP Enterprise Architect. Analyze the engine evidence (and the analysis narrative, where there is one) and design a modern, clean SAP RAP (RESTful Application Programming Model) Developer Extensibility target architecture.
 You must return your output strictly in JSON format. Do not include any markdown formatting, HTML, or explanations outside the JSON object. The JSON must exactly match this TypeScript schema:
 
 interface DesignData {
@@ -249,9 +286,8 @@ interface DesignData {
   }>;
 }
 
-Analysis Context:
-${prepareAnalysisContext(analysis)}`
-        : `Act as a Senior SAP Cloud Solutions Architect. Analyze the legacy business analysis results and design a modern, highly professional modular SAP CAP (Cloud Application Programming) side-by-side transformed cloud architecture. Name the platform "${BTP_FIRST}" at its first mention and "${BTP}" after that; keep the names of SAP services exactly as SAP names them.
+${designContext}`
+        : `Act as a Senior SAP Cloud Solutions Architect. Analyze the engine evidence (and the analysis narrative, where there is one) and design a modern, highly professional modular SAP CAP (Cloud Application Programming) side-by-side transformed cloud architecture. Name the platform "${BTP_FIRST}" at its first mention and "${BTP}" after that; keep the names of SAP services exactly as SAP names them.
 You must return your output strictly in JSON format. Do not include any markdown formatting, HTML, or explanations outside the JSON object. The JSON must exactly match this TypeScript schema:
 
 interface DesignData {
@@ -293,11 +329,10 @@ interface DesignData {
   }>;
 }
 
-Analysis Context:
-${prepareAnalysisContext(analysis)}`;
+${designContext}`;
 
       console.log('[Design] Generating solution design for:', projectRef.current?.name);
-      console.log('[Design] Analysis type:', typeof analysis, '| length:', typeof analysis === 'string' ? analysis.length : JSON.stringify(analysis).length);
+      console.log('[Design] Narrative:', analysis ? `${analysis.length} chars` : 'none (engine-only run)');
 
       let responseText: string;
       try {
@@ -459,7 +494,9 @@ ${responseText.substring(0, 4000)}`;
             setDesignError('Could not load the analysis run. This is usually a permissions or connectivity issue — reload the page, or re-run the analysis in stage 1.');
             setLoading(false);
         } else {
-            console.warn('[Design] No analysis data found on project — cannot auto-generate design.');
+            // No narrative (an engine-only run) or no run at all: nothing is
+            // generated on opening. The empty state offers "Generate the design"
+            // from the engine evidence, or names what is missing.
             setLoading(false);
         }
       } else {
@@ -605,6 +642,13 @@ ${responseText.substring(0, 4000)}`;
     if (!signed?.sha256 || sha256Hex(source) !== signed.sha256) return null;
     return { source, fileName: signed.fileName || 'source.abap' };
   }, [project]);
+  // Kept for the prompt, which is built inside a callback created before these exist.
+  useEffect(() => {
+    engineEvidenceRef.current = { source: signedSource?.source ?? null, evidence: designEvidence };
+  }, [signedSource, designEvidence]);
+  /** v3.0.1 — what the design needs on record: a source and a signed run. The narrative is not among them. */
+  const designPrerequisites = generationPrerequisites(project, 'design');
+
   const requirementsMissing = !project?.activeRunId
     ? 'The requirements are read from the source of a signed analysis run. Run the analysis in stage 1 first.'
     : !project?.legacyCode
@@ -636,11 +680,15 @@ ${responseText.substring(0, 4000)}`;
     if (stale.sourceChanged) {
       // The analysis on file describes a previous source (QA f9aea437967e).
       setDesignError('The source changed after the signed run. Re-run the analysis in stage 1 first; a design generated now would describe the previous source.');
-    } else if (project?.analysis) {
-      const analysisStr = typeof project.analysis === 'object' ? JSON.stringify(project.analysis) : project.analysis;
-      generateDesign(analysisStr);
+    } else if (designPrerequisites.length > 0) {
+      setDesignError(designPrerequisites.map((p) => p.reason).join(' '));
     } else {
-      setDesignError('Analysis data not found. Please go back to stage 1 (Analyze) and run the analysis first.');
+      // The narrative is further context where the run has one; the engine
+      // evidence is what the design is written from either way.
+      const narrative = project?.analysis
+        ? typeof project.analysis === 'object' ? JSON.stringify(project.analysis) : project.analysis
+        : null;
+      generateDesign(narrative);
     }
   };
 
@@ -815,19 +863,42 @@ ${responseText.substring(0, 4000)}`;
           : 'Add your own Gemini API key in Settings to generate it. The signed analysis evidence needs no key and is unaffected.'
       }
     />
+  ) : designPrerequisites.length > 0 ? (
+    /* v3.0.1 — never silent: what is missing, in words, with the one action
+       that puts it on record. The button stays away rather than fail. */
+    <div data-design-prerequisites="" className="space-y-4">
+      {designErrorStrip}
+      <CcMessageStrip state="information" headline="The design cannot be generated yet.">
+        <span className="flex flex-col gap-2">
+          {designPrerequisites.map((p) => (
+            <span key={p.id} data-design-prerequisite={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span>{p.reason}</span>
+              <Link
+                href={`/project/${encodeURIComponent(projectId as string)}/${p.action.stage}`}
+                className="font-semibold text-cc-information underline-offset-2 hover:underline"
+              >
+                {p.action.label}
+              </Link>
+            </span>
+          ))}
+        </span>
+      </CcMessageStrip>
+    </div>
   ) : (
     <div className="space-y-4">
       {designErrorStrip}
       <CcEmptyState
         illustration={<FileText size={32} aria-hidden={true} className="text-cc-ink-muted" />}
-        title="No Solution Design Found"
+        title="No solution design yet"
         action={
-          <CcButton variant="primary" density="cozy" icon={<RefreshCw size={16} aria-hidden={true} />} busy={loading} onClick={regenerate}>
-            {designError ? 'Retry Generation' : 'Generate Solution Design'}
+          <CcButton variant="primary" density="cozy" icon={<RefreshCw size={16} aria-hidden={true} />} busy={loading} onClick={regenerate} data-design-generate="">
+            {designError ? 'Try again' : 'Generate the design'}
           </CcButton>
         }
       >
-        The target architecture design is empty or was not generated automatically. Generate it from the signed analysis.
+        {project?.analysis
+          ? 'Generated from the signed engine evidence — route, process, business rules and SAP objects — with the run’s narrative as further context. One model call; the result is a model proposal.'
+          : 'Generated from the signed engine evidence — route, process, business rules and SAP objects. The run has no model narrative, and the design does not need one. One model call; the result is a model proposal.'}
       </CcEmptyState>
     </div>
   );
