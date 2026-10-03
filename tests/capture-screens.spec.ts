@@ -505,7 +505,11 @@ test.describe('capture the landing page views', () => {
       const boxes = dialog.locator('input[type=checkbox]');
       for (let i = 0; i < (await boxes.count()); i++) await boxes.nth(i).check();
       await page.getByRole('button', { name: 'Confirm and start the analysis' }).click();
-      await expect(page.locator('[data-analyze-score]').first()).toBeVisible({ timeout: 600000 });
+      // Since the start lands on the workspace once the run is signed (ADR-072), the
+      // analysis is done when either the score or the done mark on the Analyze tool stands.
+      await expect(
+        page.locator('[data-analyze-score]').or(page.getByRole('link', { name: 'Analyze (done)' })).first(),
+      ).toBeVisible({ timeout: 600000 });
     }
 
     for (const phase of PHASES) {
@@ -548,7 +552,8 @@ test.describe('capture the landing page views', () => {
       const wide = phase.key === 'design';
       const width = wide ? 1408 : 1248;
       const clip = {
-        x: wide ? 16 : 96,
+        // From the frame's left edge (ADR-063: every stage starts at the same x), not a fixed offset.
+        x: Math.max(0, Math.min(Math.round(box.x) - 16, 1440 - width)),
         // The demo's tags, or the real page's eyebrow and back link, above the title.
         y: Math.max(0, Math.round(box.y - (fromRun ? 60 : 48))),
         width,

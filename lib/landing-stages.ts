@@ -77,7 +77,7 @@ export const LANDING_STAGE_TEXT: Readonly<Record<PhaseKey, LandingStageText>> = 
     ],
     worker: 'engine',
     provenance: ['reconstructed', 'proposed'],
-    shows: 'the process map read from the code beside its first chapter, with the lines, the table it reads and the exception it raises',
+    shows: 'what the process does for the business — its hard-coded rules and early ends with their lines — above the process map read from the code beside its first chapter',
   },
   testing: {
     lines: [
@@ -86,7 +86,7 @@ export const LANDING_STAGE_TEXT: Readonly<Record<PhaseKey, LandingStageText>> = 
     ],
     worker: 'model',
     provenance: ['proposed', 'demonstrated-mock', 'imported', 'confirmed'],
-    shows: 'that nothing has run in the demo, the areas a tester checks by hand with their lines, and that tests on a tenant stay locked',
+    shows: 'that nothing has run in the demo, where each kind of test runs — against mocks here on the CAP route, ABAP Unit only in your own SAP system — and the areas a tester checks by hand with their lines',
   },
   tco: {
     lines: [
@@ -95,7 +95,7 @@ export const LANDING_STAGE_TEXT: Readonly<Record<PhaseKey, LandingStageText>> = 
     ],
     worker: 'engine',
     provenance: ['simulation'],
-    shows: 'assumptions entered by hand, none left open, and the maintenance-effort scenario computed from them',
+    shows: 'the four steps to a scenario all done: the codebase measured by the engine run and the day rates entered by hand',
   },
   delivery: {
     lines: [

@@ -87,6 +87,8 @@
 .lp3 .tag { display: inline-flex; align-items: center; font-size: 12px; font-weight: 500; line-height: 20px; color: var(--cc-ink-muted); background: var(--cc-surface-muted); border: 1px solid var(--cc-line); border-radius: 4px; padding: 0 7px; white-space: nowrap; }
 .lp3 .seg { display: inline-flex; border: 1px solid var(--cc-field-border); border-radius: 8px; background: var(--cc-surface-muted); padding: 2px; gap: 2px; flex-wrap: wrap; max-width: 100%; }
 .lp3 .seg span { font-size: 13px; font-weight: 500; color: var(--cc-ink-muted); padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.lp3 .reveal .rl { border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.lp3 .reveal .rl:focus-visible { outline: 2px solid var(--cc-focus); outline-offset: 2px; border-radius: 4px; }
 .lp3 .strip { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; border: 1px solid var(--cc-information-border); background: var(--cc-information-bg); border-radius: var(--cc-radius-row); padding: 8px 12px; font-size: 13px; font-weight: 500; line-height: 1.5; color: var(--cc-ink); }
 .lp3 .strip > .i { color: var(--cc-information); }
 .lp3 .strip b { font-weight: 600; }
