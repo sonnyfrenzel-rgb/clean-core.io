@@ -82,6 +82,12 @@ export interface UsesSummary {
   calls: number;
   reads: number;
   writes: number;
+  /**
+   * Objects a finding names that no call, read or write reached (a class,
+   * say). Counted so the three counts and this one add up to the rows of the
+   * table (QA review of 064f7e90, 0435d9724549).
+   */
+  others: number;
   /** Use rows per level, worst first; only the levels present. */
   levels: Array<{ grade: CloudReadinessGrade; count: number }>;
   /** One sentence on how the program reaches other code and data. */
@@ -102,6 +108,7 @@ export function usesSummary(uses: readonly ItUseRow[] | undefined): UsesSummary 
   const calls = distinct('call');
   const reads = distinct('read');
   const writes = distinct('write');
+  const others = distinct('use');
   const objects = new Set(uses.map((u) => u.object)).size;
   const levels = LEVEL_ORDER.map((grade) => ({ grade, count: uses.filter((u) => u.level === grade).length })).filter(
     (l) => l.count > 0,
@@ -128,7 +135,7 @@ export function usesSummary(uses: readonly ItUseRow[] | undefined): UsesSummary 
     ].filter((p): p is string => p !== null);
     sentence = `It ${listWords(parts)}.`;
   }
-  return { objects, calls, reads, writes, levels, sentence };
+  return { objects, calls, reads, writes, others, levels, sentence };
 }
 
 /* ---------------------------------------------------------------- the answer */

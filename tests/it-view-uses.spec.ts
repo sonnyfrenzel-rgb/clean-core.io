@@ -14,6 +14,8 @@ import { itOpening, itState, usesSummary } from '../lib/it-state';
 import { availableCoachMarks } from '../lib/coach-marks';
 import type { Project } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
+import { itvUsesCoverage } from '../lib/messages/workspace-it';
+import type { ItUseRow } from '../lib/it-findings';
 
 /**
  * The IT view after the v3.0.1 rework — the owner's review of 3.0: *"so empty
@@ -61,6 +63,16 @@ test.describe('what the code uses, derived on the server', () => {
     // No table is read or written directly — and the summary says exactly that.
     expect(uses.filter((u) => u.kind === 'table')).toHaveLength(0);
     expect(usesSummary(uses)!.sentence).toContain('reads and writes no database table directly');
+  });
+
+  test('the uses figure adds up: its parts count the rows a finding named and no reader reached (QA 0435d9724549)', () => {
+    const row = (object: string, use: ItUseRow['use']) => ({ object, use, kind: 'object', lines: [1], level: null }) as unknown as ItUseRow;
+    // One object called, and the same object named by a finding at a line the call reader did not reach.
+    const uses = [row('Z_FM', 'call'), row('Z_FM', 'use'), row('CL_X', 'use')];
+    const summary = usesSummary(uses)!;
+    expect(summary.calls + summary.reads + summary.writes + summary.others).toBe(uses.length);
+    expect(itvUsesCoverage(summary.calls, summary.reads, summary.writes, summary.others)).toBe('1 call · 0 read · 0 written · 2 other uses');
+    expect(itvUsesCoverage(3, 0, 0)).toBe('3 calls · 0 read · 0 written');
   });
 
   test('a type reference is not a use, a table read is, and a finding keeps its own level', () => {
