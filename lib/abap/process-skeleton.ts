@@ -839,6 +839,41 @@ function assignmentTarget(text: string): string | null {
   return clear ? clear[1].toUpperCase() : null;
 }
 
+/**
+ * ADR-066 — the event table an ALV call passes as `IT_EVENTS` and the data
+ * objects that carry its rows, upper-cased: the table itself, every work area
+ * or field symbol that is appended to it, inserted into it, modified into it,
+ * or read from it (`APPEND`/`INSERT … INTO`/`MODIFY … FROM`/`READ TABLE …
+ * INTO|ASSIGNING`/`LOOP AT … INTO|ASSIGNING`), and every data object typed as
+ * a row of the type pool SLIS event table (`slis_alv_event`, `LINE OF
+ * slis_t_event`) or `LIKE LINE OF` the table.
+ */
+function alvEventRows(statements: readonly AbapStatement[], table: string): Set<string> {
+  const rows = new Set<string>([table]);
+  // A work area or field symbol, declared inline or not (`INTO DATA(ls_event)`).
+  const name = String.raw`(?:(?:DATA|FIELD-SYMBOL)\(\s*)?(<?[\w/]+>?)`;
+  // Table names are `[\w/]` with an optional `<…>`: nothing to escape.
+  const tab = String.raw`${table}(?![\w/>])`;
+  const patterns = [
+    new RegExp(String.raw`^(?:APPEND|INSERT)\s+INITIAL\s+LINE\s+(?:TO|INTO(?:\s+TABLE)?)\s+${tab}[\s\S]*?\bASSIGNING\s+${name}`, 'i'),
+    new RegExp(String.raw`^(?:APPEND|INSERT)\s+${name}\s+(?:TO|INTO(?:\s+TABLE)?)\s+${tab}`, 'i'),
+    new RegExp(String.raw`^MODIFY\s+(?:TABLE\s+)?${tab}[\s\S]*?\bFROM\s+${name}`, 'i'),
+    new RegExp(String.raw`^(?:READ\s+TABLE|LOOP\s+AT)\s+${tab}[\s\S]*?\b(?:INTO|ASSIGNING)\s+${name}`, 'i'),
+  ];
+  const typed = new RegExp(
+    String.raw`(<?[\w/]+>?)\s+(?:TYPE|LIKE)\s+(?:SLIS_ALV_EVENT\b|LINE\s+OF\s+(?:SLIS_T_EVENT\b|${tab}))`, 'gi');
+  for (const statement of statements) {
+    for (const pattern of patterns) {
+      const m = pattern.exec(statement.text);
+      if (m) rows.add(m[1].toUpperCase());
+    }
+    if (/^(?:DATA|STATICS|CLASS-DATA|FIELD-SYMBOLS)\b/i.test(statement.text)) {
+      for (const m of statement.text.matchAll(typed)) rows.add(m[1].toUpperCase());
+    }
+  }
+  return rows;
+}
+
 /** `RECEIVE RESULTS FROM FUNCTION …` — the results of an asynchronous RFC (see `walkStatement`). */
 function receivesResults(text: string): boolean {
   return /^RECEIVE\s+RESULTS\s+FROM\s+FUNCTION\b/i.test(text);
@@ -2110,12 +2145,19 @@ class SkeletonBuilder {
       const key = m[2].toUpperCase();
       if (this.formBlocks.has(key)) this.pushCallback(key, m[2], statement, `ALV ${m[1].toUpperCase()}`);
     }
-    if (!/\bIT_EVENTS\s*=/i.test(text)) return;
+    const events = /\bIT_EVENTS\s*=\s*(<?[\w/]+>?)/i.exec(text);
+    if (!events) return;
     // The event table is filled elsewhere in the source: `ls_event-form =
     // 'TOP_OF_PAGE'.` or `VALUE #( ( name = … form = 'TOP_OF_PAGE' ) )`. A
     // literal in a `FORM` component that names a FORM of this source is that
-    // registration; nothing else in ABAP writes a routine name there.
+    // registration — but only in a statement that fills **this** table: one
+    // that assigns the table itself, or a row of it (QA review of 23416af0,
+    // bc85f1d42173: a `FORM = '…'` of any other structure registers nothing).
+    const rows = alvEventRows(this.statements, events[1].toUpperCase());
     for (const other of this.statements) {
+      const target = /^(<?[\w/]+>?)(?:-[\w/-]+)?\s*\??=(?!=)/.exec(other.text)?.[1]?.toUpperCase()
+        ?? assignmentTarget(other.text) ?? /^MODIFY\s+(?:TABLE\s+)?([\w/]+)/i.exec(other.text)?.[1]?.toUpperCase();
+      if (!target || !rows.has(target)) continue;
       for (const m of other.text.matchAll(/(?:-|\s|\()FORM\s*=\s*'([\w/]+)'/gi)) {
         const key = m[1].toUpperCase();
         if (this.formBlocks.has(key)) this.pushCallback(key, m[1], statement, 'ALV IT_EVENTS');
