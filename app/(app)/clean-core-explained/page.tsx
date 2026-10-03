@@ -1,3 +1,4 @@
+import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
@@ -103,7 +104,7 @@ export default function CleanCoreExplainedPage() {
 
   return (
     <div className="space-y-10 text-cc-ink">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(schema) }} />
 
       <div className="flex items-center justify-start">
         <BackLink />

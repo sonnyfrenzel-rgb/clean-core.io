@@ -1,3 +1,4 @@
+import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { BookOpen } from 'lucide-react';
@@ -49,7 +50,7 @@ export default function HowToPage() {
       {/* HowTo JSON-LD Structured Data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(howToSchema) }}
       />
 
       {/* UX-015/UX-104: this page is public and in the sitemap, so the way back

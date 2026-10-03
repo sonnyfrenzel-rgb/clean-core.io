@@ -1,3 +1,4 @@
+import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { getFacts, formatObjectCount } from '@/lib/facts';
@@ -126,11 +127,11 @@ export default function HowItWorksPage() {
     <div className={PAGE}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(faqSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(techArticleSchema) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(techArticleSchema) }}
       />
 
       {/* Navigation */}

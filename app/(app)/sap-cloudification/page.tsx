@@ -1,3 +1,4 @@
+import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { Cloud, Database, Route, ShieldCheck, Check, GitBranch, Layers } from 'lucide-react';
@@ -116,7 +117,7 @@ export default function SapCloudificationPage() {
     <div className={PAGE}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(schemaJson) }}
       />
 
       {/* Navigation */}

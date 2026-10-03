@@ -1,3 +1,4 @@
+import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
@@ -132,7 +133,7 @@ export default function FirstRunPage() {
 
   return (
     <div className="space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(howToSchema) }} />
 
       {/* UX-104: this guide is written for someone who has not signed in yet, and
           it was offering them a way "back" to a page behind the login. */}

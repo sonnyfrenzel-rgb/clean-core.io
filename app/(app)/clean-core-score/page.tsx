@@ -1,3 +1,4 @@
+import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { Activity, Check, ArrowLeftRight } from 'lucide-react';
@@ -247,7 +248,7 @@ export default function CleanCoreScorePage() {
     <div className={PAGE}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(schemaJson) }}
       />
 
       {/* Navigation */}

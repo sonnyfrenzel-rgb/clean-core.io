@@ -84,8 +84,10 @@ const HTML_CONFIG = {
   ALLOWED_ATTR: ['href', 'title', 'class'],
   ALLOW_DATA_ATTR: false,
   FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'form', 'input'],
-  // Block javascript:, data: etc. on href/src.
-  ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|#|\/)/i,
+  // Block javascript:, data: etc. on href/src. A leading `/` means a path on
+  // this site, so `//host` and `/\host` (which browsers read as `//host`) are
+  // not one.
+  ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|#|\/(?![/\\]))/i,
 } as const;
 
 /** Render untrusted markdown to SANITIZED HTML — safe for dangerouslySetInnerHTML. */

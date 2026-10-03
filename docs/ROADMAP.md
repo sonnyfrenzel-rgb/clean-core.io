@@ -1402,6 +1402,29 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-626 | info | P3 | Phase 2 - hardening alongside related work | scheduled |
 | SEC-2026-627 | info | P2 | v2.19 security step B - with the next rules deploy (Sonny's go) | fixed |
 | SEC-2026-629 | info | P3 | Phase 2 · data protection step | fixed |
+| SEC-2026-643 | medium | P2 | own step: CSP without unsafe-inline (nonce), with measurement | scheduled |
+| SEC-2026-644 | medium | P2 | own step: CSP without unsafe-inline (nonce), with measurement | scheduled |
+| SEC-2026-645 | low | P3 | own step: CSP without unsafe-inline (nonce), with measurement | scheduled |
+| SEC-2026-646 | medium | P2 | own step: admin ceilings, needs Sonny's decision | scheduled |
+| SEC-2026-647 | low | P3 | with the next rules deploy (Sonny's go) | scheduled |
+| SEC-2026-648 | medium | P2 | 3.0 audit intake - fixed immediately | fixed |
+| SEC-2026-649 | medium | P2 | 3.0 audit intake - fixed immediately | fixed |
+| SEC-2026-650 | medium | P2 | 3.0 audit intake - fixed immediately | fixed |
+| SEC-2026-651 | low | P3 | 3.0 audit intake - fixed immediately | fixed |
+| SEC-2026-652 | medium | P2 | 3.0 audit intake - fixed immediately | fixed |
+| SEC-2026-653 | low | P3 | 3.0 audit intake - fixed immediately | fixed |
+| SEC-2026-654 | low | P3 | 3.0 audit intake - fixed immediately | fixed |
+| SEC-2026-655 | low | P3 | 3.0 audit intake - fixed immediately | fixed |
+| SEC-2026-656 | low | P3 | 3.0 audit intake - fixed immediately | fixed |
+
+**Audit of v3.0.0 (`ab3dc34`), 03.10.2026: 1 high, 11 medium, 15 low — all 106
+candidates verified; 9 fixed, 5 scheduled, 13 refuted, the inbox is empty.** 27 new
+register entries (SEC-2026-630 to -656), each checked at the cited line of `ab3dc34`. The
+one reported as high is refuted, as were its predecessors SEC-2026-552 and -555; the
+reasons are in the sealed register. Fixed on the 3.0 integration branch, not yet on
+`main`: SEC-2026-648, -649, -650, -652 (P2); -651, -653, -654, -655, -656 (P3). Scheduled:
+SEC-2026-643, -644 (P2) and -645 (P3) to the CSP step; SEC-2026-646 (P2) needs Sonny's
+decision; SEC-2026-647 (P3) goes with the next rules deploy.
 
 **Audit of v2.20.0 (`fc78767`), 28.09.2026: 1 high, 15 medium, 50 low, 13 info — all 188
 candidates verified; 45 scheduled, 30 refuted, the inbox is empty.** 75 new
