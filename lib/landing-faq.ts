@@ -36,7 +36,7 @@ export const LANDING_FAQ: LandingFaq[] = [
   },
   {
     q: 'What does Clean-Core.io do with my ABAP?',
-    a: 'A deterministic engine reads the program before any language model does. It reconstructs the business process with a line anchor on every element, or the reason it has none, lists the business rules hard-coded in the program, shows the clean core level of each SAP object the code uses, and names what it could not determine. The same evidence then carries a target design, a transformed code draft and test scenarios — on the CAP track run against mocks in an isolated runner, on the RAP track an ABAP Unit class for your own system — and every completed analysis is sealed as a signed run. The code is a draft you review, and the tests check it against test scenarios, not in your S/4HANA system.',
+    a: 'A deterministic engine reads the program before any language model does. It reconstructs the business process with a line anchor on every element, or the reason it has none, lists the business rules hard-coded in the program, shows the clean core level of each SAP object the code uses, and names what it could not determine. The same evidence then carries a target design, a transformed code draft and test scenarios — on the CAP track run against mocks in an isolated runner, on the RAP track an ABAP Unit class for your own system, whose result you record from that system — and every completed analysis is sealed as a signed run. The code is a draft you review; a run against mocks checks it against test scenarios, not in your S/4HANA system.',
     more: { href: '/how-it-works', label: 'How it works, and its limits' },
   },
   {
@@ -55,7 +55,7 @@ export const LANDING_FAQ: LandingFaq[] = [
   },
   {
     q: 'Is the generated code ready to go live?',
-    a: 'No. The transformed RAP or CAP code from Clean-Core.io is a draft for a person to review. On the CAP track its test scenarios run in an isolated runner against mocks, so they do not show that the code runs in a real SAP S/4HANA system; on the RAP track they are an ABAP Unit class that runs only in your own system, and nothing is run here. A signed run proves where a result came from and that it has not changed since — not that it is correct. What the engine could not determine is listed as not determined rather than guessed.',
+    a: 'No. The transformed RAP or CAP code from Clean-Core.io is a draft for a person to review. On the CAP track its test scenarios run in an isolated runner against mocks, so they do not show that the code runs in a real SAP S/4HANA system; on the RAP track they are an ABAP Unit class that runs only in your own system, and nothing is run here — you record its result as an imported file or your own confirmation, never as proven. A signed run proves where a result came from and that it has not changed since — not that it is correct. What the engine could not determine is listed as not determined rather than guessed.',
     more: { href: '/how-it-works', label: 'How it works, and its limits' },
   },
   {

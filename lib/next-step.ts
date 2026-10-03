@@ -231,8 +231,23 @@ export function nextOpenPoint(
   project: Project | null,
   account?: ModelStageSubject | null,
 ): NextOpenPoint | null {
-  const steps = workflowSteps(project);
-  const { next } = workflowSummary(steps);
+  return nextOpenPointOf(
+    workflowSteps(project),
+    typeof project?.legacyCode === 'string' && project.legacyCode.trim().length > 0,
+    account,
+  );
+}
+
+/**
+ * The same rule over steps already in hand — the demo's own rail
+ * (`lib/demo-project.ts`), which has no project document behind it.
+ */
+export function nextOpenPointOf(
+  steps: readonly RailStep[],
+  hasSource: boolean,
+  account?: ModelStageSubject | null,
+): NextOpenPoint | null {
+  const { next } = workflowSummary([...steps]);
 
   // `next` never returns `undefined` — see the module doc. `done` is the one
   // question that tells "everything finished" apart from "the cursor landed
@@ -255,7 +270,7 @@ export function nextOpenPoint(
     key: next.key,
     label: next.label,
     path: next.path,
-    action: phaseActionLabel(next, typeof project?.legacyCode === 'string' && project.legacyCode.trim().length > 0),
+    action: phaseActionLabel(next, hasSource),
     reason,
     selection: selectionSentence(steps, next),
     provenance: NEXT_STEP_PROVENANCE,

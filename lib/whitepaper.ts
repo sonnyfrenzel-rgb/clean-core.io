@@ -35,7 +35,7 @@ export const USP_SHORT =
  * every surface — the landing says it the same way.
  */
 export const USP_LONG =
-  'For the person who has to decide what happens to a custom ABAP program, Clean-Core.io is the free workspace that reads the code before any model does, draws the business process as BPMN with a line anchor on every element, or the reason it has none, shows SAP’s clean core level for every SAP object it touches — and then carries the same evidence through the whole way: a target design, a transformed code draft and test scenarios, run in an isolated runner, all traceable to the lines they came from and sealed as signed runs. Other tools explain code, or rewrite it. Clean-Core.io does both on one chain of evidence — and says what it could not determine.';
+  'For the person who has to decide what happens to a custom ABAP program, Clean-Core.io is the free workspace that reads the code before any model does, draws the business process as BPMN with a line anchor on every element, or the reason it has none, shows SAP’s clean core level for every SAP object it touches — and then carries the same evidence through the whole way: a target design, a transformed code draft and test scenarios, run in an isolated runner or in your own SAP system, all traceable to the lines they came from and sealed as signed runs. Other tools explain code, or rewrite it. Clean-Core.io does both on one chain of evidence — and says what it could not determine.';
 
 /**
  * The numbered sections, in reading order: the anchor, the eyebrow over the
@@ -81,7 +81,7 @@ export interface ChainStep {
 export const FROM_LANDING = {
   /** The hero's limits line, and the chain band's closing line. */
   limits:
-    'The code is a draft for review. Tests run in an isolated runner against mocks, not in your S/4HANA system. A signature proves where a run came from and that it is unchanged — not that it is right.',
+    'The code is a draft for review. Tests here run in an isolated runner against mocks, not in your S/4HANA system; an ABAP Unit result from your own system is recorded as imported or self-declared. A signature proves where a run came from and that it is unchanged — not that it is right.',
   whatLead: 'Other tools explain code, or rewrite it. Clean-Core.io does both — on one chain of evidence.',
   contrast: [
     { title: 'Tools that explain code', text: 'Explain what a program does — in words, a summary or a diagram.' },
@@ -96,17 +96,17 @@ export const FROM_LANDING = {
     { key: 'process', t: 'Process', d: 'The business process as BPMN, read from the code. Every element points to its line, or says why it has none — the plant 1000 rule of the demo to L{line}.', pv: 'reconstructed', mark: 'line anchor' },
     { key: 'design', t: 'Design', d: 'A target design for the route the evidence points to, built on the run the server signed — a proposal until you record the target you accept.', pv: 'proposed', mark: 'run reference' },
     { key: 'code', t: 'Code draft', d: 'The transformed code, generated from the source, the analysis and the design; its plan names every finding at its line. A draft you review, not a finished product.', pv: 'proposed', mark: 'line anchor' },
-    { key: 'tests', t: 'Tests', d: 'Test scenarios for the generated code, run in an isolated runner against mocks. The server records what ran, on which code.', pv: 'demonstrated-mock', mark: 'test receipt' },
+    { key: 'tests', t: 'Tests', d: 'Test scenarios for the generated code. On the CAP track they run in an isolated runner against mocks, and the server records what ran, on which code; on the RAP track you record the ABAP Unit result from your own SAP system.', pv: 'demonstrated-mock', mark: 'test receipt' },
     { key: 'handover', t: 'Handover', d: 'An audit pack the server signs over the run, with HMAC and Ed25519, that anyone can verify offline.', pv: 'proven', mark: 'signature' },
   ] as ChainStep[],
   chainHonest:
-    'The code is a draft for review, not a finished product. The tests run in an isolated runner against mocks: they check the generated code against test scenarios, not that it runs in your S/4HANA system. A signature proves where a run came from and that it is unchanged — not that it is right.',
+    'The code is a draft for review, not a finished product. On the CAP track the tests run in an isolated runner against mocks: they check the generated code against test scenarios, not that it runs in your S/4HANA system. On the RAP track nothing runs here: the ABAP Unit result comes from your own system, as an imported file or your own confirmation, never as proven. A signature proves where a run came from and that it is unchanged — not that it is right.',
 
   processLead:
     'Clean-Core.io draws the process as BPMN from what the ABAP code does, puts a line anchor on every element, or the reason it has none, and names what the code cannot show instead of drawing it.',
   processFeatures: [
     { t: 'Every element points to its lines', d: 'Start and end events, tasks, decision points and sub-processes each carry a line anchor. Decision points keep their condition from the code; proposed lanes are marked as proposals, never as your organisation.' },
-    { t: 'Business rules come out of the code', d: 'Literals in conditions — tolerances, plants, vendor lists, date limits — become rule candidates with their anchor. You keep, change or drop each one.' },
+    { t: 'Business rules come out of the code', d: 'Literals in conditions — tolerances, plants, vendor lists, date limits — become rule candidates with their anchor. You keep, change or drop each one, or mark it to clarify.' },
     { t: 'Unreached code is named, not drawn', d: 'Forms no entry point calls stay off the map and are listed underneath with their lines. Identical forms are grouped, technical helpers fold into their caller.' },
     { t: 'Leaves as a BPMN 2.0 XML file', d: 'Export the process as standard BPMN 2.0 XML; collapsed sub-processes stay real sub-processes. Import into SAP Signavio has not been verified yet. There is no connection to a Signavio workspace — only files.' },
   ],
@@ -114,15 +114,15 @@ export const FROM_LANDING = {
   viewsLead:
     'Business, IT and Management look at the same facts. Each view answers its own question — Do I still need this? What exactly, where to? What do I risk, what do I decide? — and none of them changes a result.',
   views: [
-    { key: 'business', name: 'Business', q: 'Do I still need this, and what changes for me?', a: 'Opens with the process, its business rules — the hard-coded ones too — standard fit, and what could not be determined.' },
+    { key: 'business', name: 'Business', q: 'Do I still need this, and what changes for me?', a: 'Opens with one next step, then the process as numbered steps in plain words with their lines, what it decides and what it changes, and the business rules — the hard-coded ones too — unanswered first.' },
     { key: 'it', name: 'IT', q: 'What exactly, where to, and is it right?', a: 'Opens with the findings at their line, the successor named and who names it, and the chain from requirement to anchor, finding and target draft.' },
-    { key: 'management', name: 'Management', q: 'What do I risk, what do I decide?', a: 'Opens with what is backed by evidence, what stands in the way of a decision, the four buckets and the open decision — costs only as a simulation.' },
+    { key: 'management', name: 'Management', q: 'What do I risk, what do I decide?', a: 'Opens with the decision — keep, rebuild, move to SAP standard or retire — what it rests on, the open conditions in plain words and fit to standard as one figure; costs only as a simulation.' },
   ],
   /** The demo rule in three views — the landing's stage card. */
   viewExample: {
     business: { q: 'Do I still need this?', a: 'Requisitions for plant 1000 are approved without the limit check' },
     it: { q: 'What exactly, where to?', a: 'Sets gv_skip_limit, and DECIDE_APPROVAL then leaves out CHECK_LIMIT' },
-    management: { q: 'What do I risk, what do I decide?', a: 'Not decided yet — keep, change or drop is yours' },
+    management: { q: 'What do I risk, what do I decide?', a: 'Not decided yet — keep, rebuild, move to SAP standard or retire is yours' },
   },
   viewsNote:
     'A view orders what you see. It is never stored with a project, a run, a signature or an audit pack, and it changes no result. You confirm as the signed-in account — a self-declaration, not an organisational mandate.',
@@ -156,7 +156,7 @@ export const FROM_LANDING = {
 
   verifySteps: [
     { t: '1 · Import the draft', d: 'Import the generated abapGit package into Eclipse ADT.' },
-    { t: '2 · Compile and test', d: 'Compile the code and run the ABAP Unit tests in your own sandbox.' },
+    { t: '2 · Compile and test', d: 'Compile the code, run the ABAP Unit tests in your own sandbox and record the result in Testing.' },
   ],
 
   toolchain: [
@@ -170,7 +170,7 @@ export const FROM_LANDING = {
   startSteps: [
     { t: 'Create a free account', d: 'Sign up with Google or with e-mail and password. No payment, no card.' },
     { t: 'Open the demo, an example or your code', d: 'The engine reads the source first. The process, its rules and what could not be determined appear with line anchors.' },
-    { t: 'Confirm and decide', d: 'Confirm the rules, decide per object and hand over. Every completed analysis is sealed as a signed, unchangeable run.' },
+    { t: 'Answer and decide', d: 'Answer the rules — keep, change, drop or clarify — record the decision for the program and hand over. Every completed analysis is sealed as a signed, unchangeable run.' },
   ],
   /** `{examples}` is the number of starter examples, read from `lib/starter-examples.ts`. */
   startLead:
@@ -225,13 +225,13 @@ export const PROCESS_MORE = [
   },
   {
     t: 'Decide per rule',
-    d: 'For every business rule the code holds: keep it, change it deliberately, drop it, or mark it to clarify. Each decision is recorded with the account that confirmed it.',
+    d: 'For every business rule the code holds: keep it, change it deliberately, drop it, or mark it to clarify. Each answer is recorded with the account that gave it.',
   },
 ];
 
 /** The workspace around the seven tools. Backed by `components/workspace/*`, `lib/workflow-steps.ts`. */
 export const TOOLS_LEAD =
-  'Every project opens as one workspace: the process, its rules and the open decision on top, the three views, and seven tools behind them. Each tool produces something you can read and check before the next — and a person signs the result, not the tool.';
+  'Every project opens as one workspace: one next step and the process in numbered steps on top, the three views, and seven tools behind them. Each tool produces something you can read and check before the next — and a person signs the result, not the tool.';
 
 export const WORKSPACE_FACTS = [
   {
@@ -244,7 +244,7 @@ export const WORKSPACE_FACTS = [
   },
   {
     t: 'A print sheet per project',
-    d: 'One printable sheet: the process as numbered steps, the business rules with the decision on record, every SAP object the code names with its clean core level A–D, and everything that was not determined. The level prints as orientation — it is not part of the signed run.',
+    d: 'One printable sheet: the process as numbered steps, the business rules with the answer on record, every SAP object the code names with its clean core level A–D, and everything that was not determined. The level prints as orientation — it is not part of the signed run.',
   },
 ];
 

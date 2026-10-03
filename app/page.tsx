@@ -273,10 +273,11 @@ export default function Home() {
       detail: (
         <>
           <span className="tag">hard-coded in program</span>
-          <span className="seg" aria-label="Rule decision: Keep, Change or Drop">
+          <span className="seg" aria-label="Answers to the rule: Keep, Change, Drop or Clarify">
             <span>Keep</span>
             <span>Change</span>
             <span>Drop</span>
+            <span>Clarify</span>
           </span>
         </>
       ),
@@ -299,7 +300,7 @@ export default function Home() {
       key: 'management',
       label: 'Management',
       question: 'What do I risk, what do I decide?',
-      answer: 'Not decided yet — keep, change or drop is yours',
+      answer: 'Not decided yet — keep, rebuild, move to SAP standard or retire is yours',
       detail: (
         <>
           <span>Costs appear only as</span>
@@ -337,7 +338,7 @@ export default function Home() {
     { key: 'process', t: 'Process', d: `The business process as BPMN, read from the code. Every element points to its line, or says why it has none — the plant 1000 rule of the demo to L${plantRule.line}.`, pv: 'reconstructed', mark: 'line anchor', href: '#process' },
     { key: 'design', t: 'Design', d: 'A target design for the route the evidence points to, built on the run the server signed — a proposal until you record the target you accept.', pv: 'proposed', mark: 'run reference', href: '#stage-design' },
     { key: 'code', t: 'Code draft', d: 'The transformed code, generated from the source, the analysis and the design; its plan names every finding at its line. A draft you review, not a finished product.', pv: 'proposed', mark: 'line anchor', href: '#stage-transformation' },
-    { key: 'tests', t: 'Tests', d: 'Test scenarios for the generated code, run in an isolated runner against mocks. The server records what ran, on which code.', pv: 'demonstrated-mock', mark: 'test receipt', href: '#stage-testing' },
+    { key: 'tests', t: 'Tests', d: 'Test scenarios for the generated code. On the CAP track they run in an isolated runner against mocks, and the server records what ran, on which code; on the RAP track you record the ABAP Unit result from your own SAP system.', pv: 'demonstrated-mock', mark: 'test receipt', href: '#stage-testing' },
     { key: 'handover', t: 'Handover', d: 'An audit pack the server signs over the run, with HMAC and Ed25519, that anyone can verify offline.', pv: 'proven', mark: 'signature', href: '#stage-delivery' },
   ];
 
@@ -493,7 +494,8 @@ export default function Home() {
               </h1>
               <p className="hero-lead">
                 Clean-Core.io reads the program before any model does, draws the process it runs — and carries the same
-                evidence on to a target design, a transformed code draft and tests in an isolated runner. Every step
+                evidence on to a target design, a transformed code draft and tests — run against mocks in an isolated runner, or
+                with ABAP Unit in your own SAP system. Every step
                 points to the line it came from; what a model suggested is marked; what could not be determined is said.
               </p>
               <div className="cta-row">
@@ -527,8 +529,8 @@ export default function Home() {
                 </ol>
               </div>
               <p className="hlimits" data-hero-limits="">
-                The code is a draft for review. Tests run in an isolated runner against mocks, not in your S/4HANA
-                system. A signature proves where a run came from and that it is unchanged — not that it is right.
+                The code is a draft for review. Tests here run in an isolated runner against mocks, not in your S/4HANA
+                system; an ABAP Unit result from your own system is recorded as imported or self-declared. A signature proves where a run came from and that it is unchanged — not that it is right.
               </p>
               <p className="cta-note">
                 Free for the SAP community. The demo project is waiting in your workspace after you sign in — nothing you do there is saved.
@@ -541,8 +543,8 @@ export default function Home() {
 
             <figure className="hero-shot" aria-labelledby="shot-cap">
               <figcaption className="shot-cap" id="shot-cap">
-                Demo project · fictitious code — hover or focus a line anchor or a step: its code line and its step light
-                up together. Select one to keep it.
+                Demo project · fictitious code — tap or hover a rule, a line anchor or a step: its code line and its step
+                light up together. A tap keeps it.
               </figcaption>
               <HeroWorkspace
                 program={DEMO_OBJECT_NAME}
@@ -644,9 +646,10 @@ export default function Home() {
                 ))}
               </ol>
               <p className="honest">
-                The code is a draft for review, not a finished product. The tests run in an isolated runner against
-                mocks: they check the generated code against test scenarios, not that it runs in your S/4HANA system. A
-                signature proves where a run came from and that it is unchanged — not that it is right.
+                The code is a draft for review, not a finished product. On the CAP track the tests run in an isolated
+                runner against mocks: they check the generated code against test scenarios, not that it runs in your
+                S/4HANA system. On the RAP track nothing runs here: the ABAP Unit result comes from your own system, as an
+                imported file or your own confirmation, never as proven. A signature proves where a run came from and that it is unchanged — not that it is right.
               </p>
             </div>
             <p className="deep">
@@ -690,7 +693,7 @@ export default function Home() {
                     icon: <Briefcase className="i" aria-hidden="true" />,
                     name: 'Business',
                     q: 'Do I still need this, and what changes for me?',
-                    a: 'Opens with the process, its business rules — the hard-coded ones too — standard fit, and what could not be determined.',
+                    a: 'Opens with one next step, then the process as numbered steps in plain words with their lines, what it decides and what it changes, and the business rules — the hard-coded ones too — unanswered first.',
                   },
                   {
                     icon: <Code2 className="i" aria-hidden="true" />,
@@ -702,7 +705,7 @@ export default function Home() {
                     icon: <BarChart3 className="i" aria-hidden="true" />,
                     name: 'Management',
                     q: 'What do I risk, what do I decide?',
-                    a: 'Opens with what is backed by evidence, what stands in the way of a decision, the four buckets and the open decision — costs only as a simulation.',
+                    a: 'Opens with the decision — keep, rebuild, move to SAP standard or retire — what it rests on, the open conditions in plain words and fit to standard as one figure; costs only as a simulation.',
                   },
                 ].map((v, i) => (
                   <li key={v.name} data-view-item="" className={i === 0 ? 'cur' : undefined}>
@@ -834,7 +837,7 @@ export default function Home() {
             <div className="feat4">
               {[
                 { t: 'Every element points to its lines', d: 'Start and end events, tasks, decision points and sub-processes each carry a line anchor. Decision points keep their condition from the code; proposed lanes are marked as proposals, never as your organisation.' },
-                { t: 'Business rules come out of the code', d: 'Literals in conditions — tolerances, plants, vendor lists, date limits — become rule candidates with their anchor. You keep, change or drop each one.' },
+                { t: 'Business rules come out of the code', d: 'Literals in conditions — tolerances, plants, vendor lists, date limits — become rule candidates with their anchor. You keep, change or drop each one, or mark it to clarify.' },
                 { t: 'Unreached code is named, not drawn', d: 'Forms no entry point calls stay off the map and are listed underneath with their lines. Identical forms are grouped, technical helpers fold into their caller.' },
                 { t: 'Leaves as a BPMN 2.0 XML file', d: 'Export the process as standard BPMN 2.0 XML; collapsed sub-processes stay real sub-processes. Import into SAP Signavio has not been verified yet. There is no connection to a Signavio workspace — only files.' },
               ].map((f) => (
@@ -922,7 +925,7 @@ export default function Home() {
                 <b>1 · Import the draft</b>Import the generated abapGit package into Eclipse ADT.
               </li>
               <li>
-                <b>2 · Compile and test</b>Compile the code and run the ABAP Unit tests in your own sandbox.
+                <b>2 · Compile and test</b>Compile the code, run the ABAP Unit tests in your own sandbox and record the result in Testing.
               </li>
               <li>
                 <b>3 · Check the seal</b>Verify the signed audit pack — <TextLink href="/verify-pack">verify a pack</TextLink>.
@@ -1163,7 +1166,7 @@ export default function Home() {
               {[
                 { t: 'Create a free account', d: 'Sign up with Google or with e-mail and password. No payment, no card.' },
                 { t: 'Open the demo, an example or your code', d: 'The engine reads the source first. The process, its rules and what could not be determined appear with line anchors.' },
-                { t: 'Confirm and decide', d: 'Confirm the rules, decide per object and hand over. Every completed analysis is sealed as a signed, unchangeable run.' },
+                { t: 'Answer and decide', d: 'Answer the rules — keep, change, drop or clarify — record the decision for the program and hand over. Every completed analysis is sealed as a signed, unchangeable run.' },
               ].map((s, i) => (
                 <li key={s.t}>
                   <span className="no" aria-hidden="true">

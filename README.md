@@ -7,13 +7,15 @@ For the person who has to decide what happens to a custom ABAP program, Clean-Co
 the free workspace that reads the code before any model does, draws the business process
 as BPMN with a line anchor on every element, or the reason it has none, shows SAP's clean core level for every SAP
 object it touches — and then carries the same evidence through the whole way: a target
-design, a transformed code draft and test scenarios, run in an isolated runner, all
-traceable to the lines they came from and sealed as signed runs. Other tools explain
+design, a transformed code draft and test scenarios, run in an isolated runner or in your
+own SAP system, all traceable to the lines they came from and sealed as signed runs. Other tools explain
 code, or rewrite it. Clean-Core.io does both on one chain of evidence — and says what it
 could not determine.
 
-The code is a draft for review, not a finished product, and the tests check it against
-test scenarios, not that it runs in a real SAP S/4HANA system. Clean-Core.io is
+The code is a draft for review, not a finished product. On the CAP track the tests check
+it against test scenarios in an isolated runner, not that it runs in a real SAP S/4HANA
+system; on the RAP track the ABAP Unit result comes from your own SAP system, as an
+imported file or your own confirmation, never as proven. Clean-Core.io is
 complementary to SAP's own tooling (ABAP Test Cockpit, ABAP Development Tools, Joule for
 Developers and the Custom Code Migration Agent, SAP Cloud ALM), not a replacement, and it
 is not affiliated with or endorsed by SAP SE.
@@ -21,10 +23,10 @@ is not affiliated with or endorsed by SAP SE.
 [clean-core.io](https://clean-core.io) · source: [github.com/sonnyfrenzel-rgb/clean-core.io](https://github.com/sonnyfrenzel-rgb/clean-core.io) ·
 Apache License 2.0 · release notes: [`CHANGELOG.md`](CHANGELOG.md)
 
-![The Documentation tool of the demo project Z_MM_PO_APPROVAL: the business process reconstructed from the code as BPMN, every element with its line anchor, and the first chapter beside it](public/landing/stage-documentation.jpg)
+![The Documentation tool of the demo project Z_MM_PO_APPROVAL: the process description written from the code — purpose and scope, trigger and inputs, every statement with the lines it was read from](public/landing/stage-documentation.jpg)
 
-*The demo project `Z_MM_PO_APPROVAL` (fictitious code): the process the program runs, read
-from the code and drawn as BPMN. Captured from the workspace by
+*The demo project `Z_MM_PO_APPROVAL` (fictitious code): the process description the Documentation
+tool writes from the code when it opens. Captured from the workspace by
 `tests/capture-screens.spec.ts` (`CAPTURE_LANDING=1`). No mockup images.*
 
 Read more: [the whitepaper](https://clean-core.io/whitepaper) (also as PDF) · [how it works,
@@ -48,9 +50,12 @@ Model proposal.
   me?"*, the IT view *"What exactly, where to, and is it right?"*, the Management view
   *"What do I risk, what do I decide?"*. A view orders and explains; it never changes the
   result and is never stored with it.
-- **Six layers.** Within a view the page is organised in layers: Need & process ·
-  Standard fit · Costs & assumptions · Architecture & dependencies · Evidence & controls ·
-  Changes & commitments.
+- **Business first.** The Business view opens with one next step, then the process as
+  numbered steps in plain words with their lines, what it decides and what it changes, and
+  the business rules, unanswered first — keep, change, drop or clarify. Its sections are
+  Need & process · Standard fit · Evidence & controls; costs live in Economics and the
+  architecture in IT. The Management view opens with the decision — keep, rebuild, move to
+  SAP standard or retire — and what it rests on.
 - **The seven stages as tools.** Analyze · Design · Transformation · Documentation ·
   Testing · Economics · Delivery open from the workspace toolbar. Since 3.0 they follow
   SAP Fiori patterns — object pages with key figures on top and details in tabs, Design
@@ -70,9 +75,10 @@ Model proposal.
   confirmed it: a self-declaration, not a mandate.
 - **One chain of evidence.** Process → design → code draft → tests → handover. The
   process carries line anchors; the design and the code draft are model proposals built
-  on the signed run, and the code's plan names every finding at its line; the test
+  on the signed run, and the code's plan names every finding at its line; on the CAP track the test
   scenarios run against the generated code in an isolated runner, against mocks, and the
-  server records what ran on which code; the handover pack is signed over the run.
+  server records what ran on which code, and on the RAP track the ABAP Unit result is
+  recorded from your own SAP system; the handover pack is signed over the run.
 - **Signed runs.** Every completed analysis is stored as an immutable run, signed by the
   server with HMAC. The audit pack exported from it is signed over the run, with HMAC
   and Ed25519, and the Ed25519 signature can be verified offline against the published
@@ -88,8 +94,8 @@ Model proposal.
   accepts expires.
 - **Costs only as simulation.** Economics calculates on your own assumptions; any amount
   shown elsewhere carries the *Simulation* label and the assumption revision.
-- **A demo project for every account.** The fully worked demo `Z_MM_PO_APPROVAL`, with a
-  guided tour; nothing done there is saved or counted.
+- **A demo project for every account.** The demo `Z_MM_PO_APPROVAL` — the engine's reading
+  of the example on every stage — with a guided tour; nothing done there is saved or counted.
 - **The SAP object catalog.** A free viewer of SAP's Cloudification Repository and object
   classification at [clean-core.io/catalog](https://clean-core.io/catalog), no account
   needed.
@@ -133,7 +139,8 @@ Architecture and runbook: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · desi
 
 Model keys never reach the browser; every mutating route verifies a Firebase ID token;
 S/4HANA credentials are encrypted with AES-256-GCM in a collection no client can read.
-Generated tests run against mocks in an isolated test runner, a service of its own.
+Generated CAP tests run against mocks in an isolated test runner, a service of its own;
+nothing here runs ABAP Unit, whose result is recorded from your own system.
 Running generated tests against a connected tenant is locked until the isolated live
 runner has passed its external review. Account deletion follows GDPR Art. 17; encrypted
 backups age out within 30 days.

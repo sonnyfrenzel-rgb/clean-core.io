@@ -128,7 +128,7 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
       },
       {
         question: 'What if the model returns nothing usable?',
-        answer: 'Nothing is saved, and the previous version stays as it was.',
+        answer: 'The answer is requested once more automatically. If that one is not usable either, nothing is saved, and the previous version stays as it was.',
       },
     ],
   },
@@ -136,7 +136,7 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
     summary:
       'When you open Documentation, the process description is written from the whole analysed source — purpose and scope, trigger and inputs, the main steps, rules, exceptions, effects, integrations, controls and open questions, with the technical trace as an appendix, every statement with its lines — and, where a model is available, a business layer with SOPs, a RACI matrix and control checkpoints is proposed once.',
     details: [
-      'The process can be exported as BPMN 2.0 XML and the documentation as Confluence HTML.',
+      'The process can be exported as BPMN 2.0 XML, and the process description as Confluence HTML, Markdown or Word.',
       'An owner, the roles, performance indicators or durations are not in the source, so the documentation lists them as not determined instead of filling them in.',
       'The business layer can be generated once the documentation exists. It is model output, not a reading of the code.',
     ],
@@ -154,9 +154,9 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
   },
   testing: {
     summary:
-      'A model writes a test suite for the generated code. On the CAP track the suite runs against mocks in an isolated test runner; on the RAP track it is an ABAP Unit class that runs only in your own system, so nothing is run here.',
+      'A model writes a test suite for the generated code. On the CAP track the suite runs against mocks in an isolated test runner; on the RAP track it is an ABAP Unit class that runs only in your own system, so nothing is run here: you record its result from that system, by uploading the result file (JUnit XML or the ADT run result) or by confirming it yourself — marked as imported or self-declared, never as proven.',
     details: [
-      'Verdicts are shown on screen and are not stored with the project.',
+      'The server records each run against mocks as a test receipt: what ran, on which code, with each verdict.',
       'The coverage figure is the test generator’s own estimate, not a measurement.',
       LIVE_TEST_EXECUTION.userNotice,
       'The suite can be exported to Excel.',
@@ -175,7 +175,7 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
       {
         question: 'Does a pass mean the code works in SAP?',
         answer:
-          'No. A pass means a generated test passed against mocks, and an ABAP Unit class is not run here at all.',
+          'No. A pass means a generated test passed against mocks, and an ABAP Unit class is not run here at all; a result recorded from your own system is that system’s result or your own word, not a check made here.',
       },
     ],
   },

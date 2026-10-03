@@ -55,7 +55,7 @@ export const LANDING_STAGE_TEXT: Readonly<Record<PhaseKey, LandingStageText>> = 
   design: {
     lines: [
       `The target architecture as a canvas, drawn from the run: what stays inside SAP S/4HANA behind the clean core boundary, which released API replaces which lines, what has no released successor, and on the side-by-side track what runs on ${BTP_FIRST}.`,
-      'A model writes the design document beside it; you record which target you accept — a self-declaration, not a mandate.',
+      'A model writes the design document beside it when the stage opens; you record which target you accept — a self-declaration, not a mandate.',
     ],
     worker: 'model',
     provenance: ['reconstructed', 'proposed', 'confirmed'],
@@ -72,21 +72,21 @@ export const LANDING_STAGE_TEXT: Readonly<Record<PhaseKey, LandingStageText>> = 
   },
   documentation: {
     lines: [
-      'The process is read out of the analysed source as a map, every step with its line, and written up chapter by chapter with its rules, exceptions and data; what the code does not say is listed as not determined.',
-      'A business layer with SOPs and a RACI matrix is a model draft, written only when you ask for it.',
+      'When the stage opens, the analysed source is written up as a process description a successor can read — purpose and scope, trigger and inputs, the process with its map, decision points and business rules, exceptions, outputs and open questions — every step with its line, the technical trace as an appendix.',
+      'It exports to Confluence, Markdown and Word; a business layer with SOPs and a RACI matrix is a model draft, written only when you ask for it.',
     ],
     worker: 'engine',
     provenance: ['reconstructed', 'proposed'],
-    shows: 'the process map read from the code beside its first chapter, with the lines, the table it reads and the exception it raises',
+    shows: 'the top of the process description written from the code: what the program does and for whom, what is in and out of scope, and the selection screen and tables it starts from, every statement with its lines',
   },
   testing: {
     lines: [
       'A model writes test scenarios for the generated code; on the CAP track they run against mocks in an isolated test runner, never on your system. The engine lists what a tester has to check by hand, with the lines.',
-      'On the RAP track the scenarios are an ABAP Unit class that runs only in your own system, so nothing is run here, and a pass against mocks never means the code works in SAP.',
+      'On the RAP track the scenarios are an ABAP Unit class that runs only in your own system: you upload its result file or confirm the result yourself, marked as imported or self-declared, never as proven. A pass against mocks never means the code works in SAP.',
     ],
     worker: 'model',
-    provenance: ['proposed', 'demonstrated-mock'],
-    shows: 'that nothing has run in the demo, the areas a tester checks by hand with their lines, and that tests on a tenant stay locked',
+    provenance: ['proposed', 'demonstrated-mock', 'imported', 'confirmed'],
+    shows: 'that nothing has run in the demo, where each kind of test runs — against mocks here on the CAP route, ABAP Unit only in your own SAP system — and the areas a tester checks by hand with their lines',
   },
   tco: {
     lines: [
@@ -95,7 +95,7 @@ export const LANDING_STAGE_TEXT: Readonly<Record<PhaseKey, LandingStageText>> = 
     ],
     worker: 'engine',
     provenance: ['simulation'],
-    shows: 'assumptions entered by hand, none left open, and the maintenance-effort scenario computed from them',
+    shows: 'the four steps to a scenario all done: the codebase measured by the engine run and the day rates entered by hand',
   },
   delivery: {
     lines: [

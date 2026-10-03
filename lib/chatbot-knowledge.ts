@@ -47,13 +47,13 @@ export const KNOWLEDGE_HUB_FAQS = `
 ## KNOWLEDGE HUB — FREQUENTLY ASKED QUESTIONS
 
 ### Q: What is the SAP S/4HANA Clean Core strategy?
-A: The Clean Core strategy is an architectural design principle that keeps the SAP standard ERP core software free of custom modifications. Custom extensions are developed either "in-app" using key-user extensibility or "side-by-side" on ${BTP_FIRST}. This decoupling allows businesses to upgrade their core ERP system instantly, reduce technical debt, and ensure continuous innovation without breaking custom business logic.
+A: The Clean Core strategy is an architectural design principle that keeps the SAP standard ERP core software free of custom modifications. Custom extensions are developed either "in-app" using key-user extensibility or "side-by-side" on ${BTP_FIRST}. This decoupling lowers upgrade risk and technical debt: extensions built on released interfaces are far less likely to break on an upgrade, though each upgrade still needs its compatibility and regression testing.
 
 ### Q: What is the difference between In-App RAP and Side-by-Side CAP extensions?
 A: In-App RAP (ABAP RESTful Application Programming Model) runs directly within the S/4HANA tenant. It is ideal for extending standard SAP business objects and UI layers using native ABAP in a cloud-compliant way. Side-by-Side CAP (Cloud Application Programming Model) runs externally on ${BTP}, typically using Node.js or Java. It is designed for standalone cloud-native applications, multi-tenant SaaS products, and integration with non-SAP systems, fully decoupling execution from the ERP core.
 
 ### Q: How does Clean-Core.io secure a side-by-side integration on ${BTP}?
-A: Clean-Core.io configures secure tunnels and authentication pathways on ${BTP}. It implements JSON Web Tokens (JWT) validated by the SAP XSUAA (Extended Services for User Account and Authentication) service. This allows stateless, secure API communication and enforces role-based access control (RBAC). For S/4HANA core connections, it uses the SAP Connectivity and Destination services, routing RFC and OData traffic securely via SAP Cloud Connector without exposing internal endpoints.
+A: Clean-Core.io does not configure anything in your SAP BTP subaccount or S/4HANA tenant. The usual security pattern for a side-by-side extension is JSON Web Tokens (JWT) validated by the SAP XSUAA (Extended Services for User Account and Authentication) service for stateless API calls with role-based access control (RBAC), and the SAP Connectivity and Destination services routing RFC and OData traffic via SAP Cloud Connector without exposing internal endpoints. Setting that up in your tenant is your team's work; the app provides analysis, design drafts and a read-only connection check, not the deployment.
 
 ### Q: What is the BYOT (Bring Your Own Tenant) connectivity model?
 A: BYOT lets a developer connect their own NON-PRODUCTION S/4HANA sandbox to check the connection, read OData metadata and make one read-only call against a real service. ${LIVE_TEST_EXECUTION.userNotice} It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier.
@@ -170,9 +170,10 @@ Side-by-side code conversion from legacy ABAP to modern cloud-native code.
 - **Target Selection**: Choose between ABAP Cloud RAP (in-app) or CAP Node.js (side-by-side) transformation targets
 
 ### Testing Stage (/project/[id]/testing)
-Execute automated tests and validate your modernized code.
+Test scenarios for the generated code, and the result that is on record for them.
 - **Test Case Generation**: AI generates comprehensive test cases covering data models, validation rules, and API endpoints
-- **Mock Environment**: Run tests without an S/4HANA tenant, against mocks in a restricted Node process
+- **Mock Environment** (CAP track): Run tests without an S/4HANA tenant, against mocks in a restricted Node process
+- **Result from your SAP system** (ABAP Cloud / RAP track): nothing here runs ABAP Unit. Upload the ABAP Unit result (JUnit XML or the ADT run result), marked Imported, or confirm the result without a file, marked Confirmed as a self-declaration — never Proven
 - **Tenant Environment**: Connect a real S/4HANA sandbox to check the connection and read OData metadata (requires BYOT setup). Running tests against it is locked.
 - **S/4HANA Live Tenant Bridge**: Configure connection to your S/4HANA system with Basic Auth, OAuth 2.0, SAP API Hub Key, or SAP Destination service JSON
 - **Test Results Dashboard**: TAP-formatted logs with pass/fail status, execution time, and model-written explanations
@@ -184,7 +185,7 @@ Process documentation read out of the whole analysed source by the engine, with 
 - **RACI Matrix** (model-written business layer, on request): responsibility assignment matrix
 - **Standard Operating Procedures (SOPs)** (model-written business layer, on request): step-by-step procedures with exception handling
 - **Risk & Control Framework**: Audit-ready control objectives and risk assessments
-- **Export Options**: BPMN 2.0 XML and Confluence HTML, and nothing else — the page offers no PDF export
+- **Export Options**: BPMN 2.0 XML, and the process description as Confluence HTML, Markdown or Word, and nothing else — the page offers no PDF export
 
 ### Delivery Stage (/project/[id]/delivery)
 What is on record for handover, and the downloads that follow from it. The page has six cards and no others — there is no sprint backlog, no go-live checklist and no deployment guide on it; never offer one.

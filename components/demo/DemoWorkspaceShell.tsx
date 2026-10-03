@@ -12,12 +12,16 @@ import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
-import { CcRulePropertyTag } from '@/components/cc/Tag';
 import FirstLook from '@/components/workspace/FirstLook';
 import NotDeterminedCard from '@/components/workspace/NotDeterminedCard';
 import WorkspaceLayerBar from '@/components/workspace/LayerBar';
 import { BUSINESS_LAYERS } from '@/lib/business-layers';
-import type { RulesStatus } from '@/lib/rules-editor';
+import { editorRules, isConfirmedState, type RuleDraft, type RulesStatus } from '@/lib/rules-editor';
+import { plainWordingFor } from '@/lib/business-card';
+import { ELEMENT_STATES, type ElementState } from '@/lib/process-states';
+import DemoRulesCard from '@/components/demo/DemoRulesCard';
+import BusinessNextStep from '@/components/workspace/BusinessNextStep';
+import { nextOpenPointOf } from '@/lib/next-step';
 import WorkspaceLayerSection from '@/components/workspace/LayerSection';
 import WorkspaceStatusLine from '@/components/workspace/StatusLine';
 import ItAnswers from '@/components/workspace/ItAnswers';
@@ -106,8 +110,8 @@ import {
  * run, a pack, an export or a write (`tests/demo-project.spec.ts`). Where one of
  * them would stand, this file draws the demo's own card from the same data.
  *
- * **What the reader does stays in this browser** — confirmed rules and the
- * confirmed route under the demo's key (shared with `/demo/{stage}`), the tour's
+ * **What the reader does stays in this browser** — the answers to the rules
+ * (Keep, Change, Drop, Clarify, as in the product) and the confirmed route under the demo's key (shared with `/demo/{stage}`), the tour's
  * progress under its own (`lib/demo-tour.ts`). "Reset demo" clears the first.
  */
 
@@ -115,8 +119,35 @@ const ProcessMap = dynamic(() => import('@/components/process-map/ProcessMap'), 
 
 /** The part of the demo's browser state this screen reads; every other field is kept as it is. */
 interface WorkspaceDemoState {
-  confirmedRules: string[];
+  /** The answers to the rules, by rule id — the product's draft shape (`lib/rules-editor.ts`). */
+  ruleAnswers: RuleDraft;
   targetConfirmed: boolean;
+}
+
+const isState = (x: unknown): x is ElementState => typeof x === 'string' && (ELEMENT_STATES as readonly string[]).includes(x);
+
+/** What this browser holds, read defensively — a stored value is never trusted to have the shape. */
+function ruleAnswersOf(raw: Record<string, unknown>): RuleDraft {
+  const out: RuleDraft = {};
+  const answers = raw.ruleAnswers;
+  if (answers && typeof answers === 'object' && !Array.isArray(answers)) {
+    for (const [id, value] of Object.entries(answers as Record<string, unknown>)) {
+      const v = value as Record<string, unknown> | null;
+      if (!v || !isState(v.state)) continue;
+      out[id] = {
+        state: v.state,
+        note: typeof v.note === 'string' ? v.note : '',
+        sourceKind: typeof v.sourceKind === 'string' ? (v.sourceKind as RuleDraft[string]['sourceKind']) : '',
+        sourceNote: typeof v.sourceNote === 'string' ? v.sourceNote : '',
+        appliesTo: Array.isArray(v.appliesTo) ? v.appliesTo.filter((x): x is string => typeof x === 'string') : [],
+      };
+    }
+  }
+  // Before 03.10.2026 the demo only offered "Confirm", which meant the rule is still needed: Keep.
+  if (Array.isArray(raw.confirmedRules)) {
+    for (const id of raw.confirmedRules) if (typeof id === 'string' && !out[id]) out[id] = { state: 'keep', note: '' };
+  }
+  return out;
 }
 
 function readDemoState(): Record<string, unknown> {
@@ -131,16 +162,16 @@ function readDemoState(): Record<string, unknown> {
 
 function workspaceStateOf(raw: Record<string, unknown>): WorkspaceDemoState {
   return {
-    confirmedRules: Array.isArray(raw.confirmedRules)
-      ? raw.confirmedRules.filter((x): x is string => typeof x === 'string')
-      : [],
+    ruleAnswers: ruleAnswersOf(raw),
     targetConfirmed: raw.targetConfirmed === true,
   };
 }
 
 function writeDemoState(patch: Partial<WorkspaceDemoState>): void {
   try {
-    window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify({ ...readDemoState(), ...patch }));
+    const { confirmedRules: _old, ...rest } = readDemoState();
+    void _old;
+    window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify({ ...rest, ...patch }));
   } catch {
     /* A browser that refuses storage still runs the demo; it just forgets. */
   }
@@ -289,8 +320,21 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   );
 
   /* ------------------------------------------------------ the reader's state */
-  const [state, setState] = useState<WorkspaceDemoState>({ confirmedRules: [], targetConfirmed: false });
+  const [state, setState] = useState<WorkspaceDemoState>({ ruleAnswers: {}, targetConfirmed: false });
   const [hydrated, setHydrated] = useState(false);
+  /** The demo's rules card is answering (the product's "Decide on rules"). */
+  const [rulesEditing, setRulesEditing] = useState(false);
+  /**
+   * The next phase of the demo's own rail, by the product's rule (`nextOpenPointOf`).
+   * A demo can never sign a run, so Analyze can never be "done" here; the engine's
+   * reading stands in for it, and the step is the first phase after it — said so
+   * in the step's own selection line rather than claimed as on record.
+   */
+  const demoNextPoint = useMemo(() => {
+    const rail = demo.rail.map((s) => (s.key === 'analyze' ? { ...s, state: 'done' as const, done: true } : s));
+    const point = nextOpenPointOf(rail, true);
+    return point ? { ...point, selection: wt('demo.nextAfterReading') } : null;
+  }, [demo.rail]);
   useEffect(() => {
     setState(workspaceStateOf(readDemoState()));
     setHydrated(true);
@@ -301,25 +345,40 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   }, []);
   const reset = useCallback(() => {
     clearDemoState();
-    setState({ confirmedRules: [], targetConfirmed: false });
+    setState({ ruleAnswers: {}, targetConfirmed: false });
+    setRulesEditing(false);
   }, []);
 
   /* ---------------------------------------------------- the reading, the map */
   const [reading, setReading] = useState<SourceReading | null>(null);
   const onReading = useCallback((next: SourceReading) => setReading(next), []);
   const rules = useMemo(() => (reading ? revealedRules(reading.ruleSet) : []), [reading]);
+  /** The same rules, worded as the product's rules card words them. */
+  const ruleRows = useMemo(
+    () => (reading ? editorRules(reading.ruleSet, plainWordingFor(source, reading.skeleton)) : []),
+    [reading, source],
+  );
+  /** "Decide on n rules" in the opening leads to the demo's own rules card, answering. */
+  const openDemoRules = useCallback(() => {
+    setRulesEditing(true);
+    document.getElementById('demo-rules')?.scrollIntoView({ block: 'start' });
+  }, []);
   /** The demo's answers, kept in this browser, in the shape every rule action reads. */
   const demoRulesStatus = useMemo<RulesStatus | null>(() => {
     if (!reading) return null;
-    const confirmed = rules.filter((r) => state.confirmedRules.includes(r.id));
+    // A Clarify is an open question, as in the product (`rulesStatus`).
+    const answered = (id: string) => {
+      const s = state.ruleAnswers[id]?.state;
+      return !!s && isConfirmedState(s);
+    };
     return {
       total: rules.length,
-      confirmed: confirmed.length,
-      open: rules.filter((r) => !state.confirmedRules.includes(r.id)).map((r) => r.id),
+      confirmed: rules.filter((r) => answered(r.id)).length,
+      open: rules.filter((r) => !answered(r.id)).map((r) => r.id),
       by: [],
       lastAt: null,
     };
-  }, [reading, rules, state.confirmedRules]);
+  }, [reading, rules, state.ruleAnswers]);
   // Need & process holds the map and the rules here; the layer model counts
   // usage imports under it, which a demo has none of, and would mark it "empty".
   const layers = useMemo(
@@ -531,10 +590,29 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         <>
           <Place place="reveal" className="mt-5">
             <div className="max-w-3xl">{stop('reveal')}</div>
-            {/* The rules card stands below, with the confirmations this
-                browser holds — the card reads the same answers instead of a
-                route the demo has no record in, and offers no second rule
-                action of its own (owner, 03.10.2026). */}
+            {/* The product's one next step (owner, 03.10.2026): while a rule has no
+                answer it is to decide on the rules, and it leads to the demo's
+                own rules card. A demo has no phase contract to name the step after. */}
+            {demoRulesStatus ? (
+              <div className="mb-4">
+                <BusinessNextStep
+                  step={
+                    demoRulesStatus.open.length > 0
+                      ? { kind: 'rules', open: demoRulesStatus.open, total: demoRulesStatus.total, then: demoNextPoint }
+                      : demoNextPoint
+                        ? { kind: 'phase', point: demoNextPoint }
+                        : { kind: 'none' }
+                  }
+                  projectId="demo"
+                  base="/demo"
+                  onDecideRules={openDemoRules}
+                />
+              </div>
+            ) : null}
+            {/* The rules card stands below, with the answers this browser
+                holds — the opening reads the same answers instead of a route
+                the demo has no record in, and its "Decide on rules" leads to
+                that card (owner, 03.10.2026). */}
             <FirstLook
               project={project}
               projectId="demo"
@@ -543,6 +621,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               namingFrom="none"
               rulesBelow
               rulesOverride={demoRulesStatus}
+              onReviewRules={openDemoRules}
             />
           </Place>
 
@@ -585,46 +664,21 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
             </CcCard>
           </Place>
 
-          <Place place="confirm-rule">
-            {stop('confirm-rule')}
-            <CcCard title={wt('demo.rules')} count={reading ? rules.length : undefined}>
+          <Place place="confirm-rule" className="mt-5">
+            <div className="max-w-3xl">{stop('confirm-rule')}</div>
+            <div id="demo-rules" className="scroll-mt-24">
               {!reading ? (
                 <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('demo.readingRules')}</p>
               ) : (
-                <ul data-demo-rules="" className="m-0 flex list-none flex-col gap-2 p-0">
-                  {rules.map((rule) => {
-                    const confirmed = state.confirmedRules.includes(rule.id);
-                    return (
-                      <li key={rule.id} data-demo-rule={rule.id} className="flex flex-wrap items-center gap-2 text-[13px]">
-                        <CcProvenanceChip value={confirmed ? 'confirmed' : 'reconstructed'} note={confirmed ? wt('demo.thisBrowser') : undefined} />
-                        <CcRulePropertyTag value={rule.property} />
-                        <code className="font-cc-mono text-[12px] text-cc-ink">{rule.label}</code>
-                        {rule.anchors.map((a) => (
-                          <CcAnchor key={a} label={demoSourceLineLabel(a)}>
-                            {a}
-                          </CcAnchor>
-                        ))}
-                        <span className="ml-auto">
-                          <CcButton
-                            onClick={() =>
-                              patch({
-                                confirmedRules: confirmed
-                                  ? state.confirmedRules.filter((id) => id !== rule.id)
-                                  : [...state.confirmedRules, rule.id],
-                              })
-                            }
-                            aria-pressed={confirmed}
-                            data-demo-confirm-rule={rule.id}
-                          >
-                            {wt(confirmed ? 'demo.withdraw' : 'demo.confirm')}
-                          </CcButton>
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <DemoRulesCard
+                  rules={ruleRows}
+                  answers={state.ruleAnswers}
+                  editing={rulesEditing}
+                  onEditingChange={setRulesEditing}
+                  onRecord={(ruleAnswers) => patch({ ruleAnswers })}
+                />
               )}
-            </CcCard>
+            </div>
           </Place>
 
           <Place place="standard-fit">

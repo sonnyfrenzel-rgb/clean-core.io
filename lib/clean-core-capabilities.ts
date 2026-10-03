@@ -76,7 +76,7 @@ export const CAPABILITIES: Capability[] = [
   {
     stage: 'Stage 5',
     title: 'Test generation and execution',
-    output: 'Test cases against the transformed logic: for CAP, run against mocks in an isolated test runner with per-case results; for ABAP Cloud, ABAP Unit classes that run only in your own system and are never run or counted as passed here. Tests against a connected tenant are locked.',
+    output: 'Test cases against the transformed logic: for CAP, run against mocks in an isolated test runner with per-case results; for ABAP Cloud, ABAP Unit classes that run only in your own system and are never run here; their result is recorded from that system, as an imported file or your own confirmation, never as proven. Tests against a connected tenant are locked.',
     benefit:
       'Modernised code arrives with tests attached, so the review has something to run rather than only something to read.',
     effort: 'Two minutes. Included.',

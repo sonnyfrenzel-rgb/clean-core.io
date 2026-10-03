@@ -29,7 +29,10 @@ import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
 import { readTableDependencies } from '@/lib/abap/table-dependencies';
 import { objectSites, sitesByElement } from '@/lib/process-overlays';
 import { buildProcessDocumentation } from '@/lib/process-documentation-build';
+import type { ProcessDocumentation } from '@/lib/process-documentation';
 import { buildProcessHandbook, handbookToData, type ProcessHandbookData } from '@/lib/process-handbook';
+import { buildProcessDocument } from '@/lib/process-document-build';
+import type { ProcessDocument } from '@/lib/process-document';
 import { routeLabel } from '@/lib/sap-naming';
 import {
   DEMO_OBJECT_NAME,
@@ -229,7 +232,8 @@ export interface DemoProject {
      * plain names, chapters, rules and exceptions are all the engine's.
      * Null when the reader could not get through the file.
      */
-    process: { model: ProcessMapModel; handbook: ProcessHandbookData } | null;
+    /** `document`: the process description the stage writes when it opens (ADR-077), or null if it could not be built. */
+    process: { model: ProcessMapModel; handbook: ProcessHandbookData; document: ProcessDocument | null; engine: ProcessDocumentation } | null;
   };
 
   testing: {
@@ -307,7 +311,7 @@ function buildRail(demo: Omit<DemoProject, 'rail'>): DemoRailStep[] {
       'documentation',
       'partial',
       demo.documentation.process ? 'Read from the code' : 'Inventory only',
-      `${demo.documentation.process ? `${demo.documentation.process.handbook.chapters.length} handbook chapters read from the code, ` : ''}${demo.documentation.inventory.length} objects and ${demo.documentation.coupling.length} tables inventoried. The business layer comes from a model in a real run.`,
+      `${demo.documentation.process ? `${demo.documentation.process.document ? 'A process description and ' : ''}${demo.documentation.process.handbook.chapters.length} handbook chapters read from the code, ` : ''}${demo.documentation.inventory.length} objects and ${demo.documentation.coupling.length} tables inventoried. The business layer comes from a model in a real run.`,
     ),
     railStep(
       'testing',
@@ -407,17 +411,28 @@ function demoProcess(source: string): DemoProject['documentation']['process'] {
     const nav = buildNavigation(full);
     const calls = readCallGraph(source);
     const sites = sitesByElement(full, nav, objectSites(readTableDependencies(source), calls), calls);
+    const engine = buildProcessDocumentation({ source, map: full });
     const handbook = buildProcessHandbook({
       model: full,
       nav,
-      doc: buildProcessDocumentation({ source, map: full }),
+      doc: engine,
       rules: deriveBusinessRules(source),
       sites,
       source,
     });
     // The technical file is the toggle's; the demo draws the plain reading only.
     const model: ProcessMapModel = { ...full, technicalXml: undefined };
-    return { model, handbook: handbookToData(handbook) };
+    // The process description a real project's Documentation stage writes when it
+    // opens (ADR-077) — the same builder over the same source, no narrative.
+    let document: ProcessDocument | null = null;
+    try {
+      const built = buildProcessDocument({ source, map: full, engine });
+      // The product's note names the signed run the source came from; a demo has none.
+      document = { ...built, note: built.note.replace('from the source the signed run analysed', 'from the example source — a demo is never signed') };
+    } catch {
+      document = null;
+    }
+    return { model, handbook: handbookToData(handbook), document, engine };
   } catch {
     return null;
   }
