@@ -9,7 +9,7 @@ import {
   type PublicCloudFitObjectInput,
   type TargetPlatform,
 } from '../lib/abap/public-cloud-fit';
-import { fitPercent, sapCallsOf, standardFit, STANDARD_FIT_DEFINITION, type StandardFitSource } from '../lib/standard-fit';
+import { fitPercent, NO_SAP_DEPENDENCY_TITLE, sapCallsOf, standardFit, STANDARD_FIT_DEFINITION, type StandardFitSource } from '../lib/standard-fit';
 import { resolvePublicCloudFit } from '../lib/abap/public-cloud-fit-resolver';
 import { gradeSapObjectUse, hasNoReleasedApiPath } from '../lib/abap/catalog-service';
 import type { ObjectUse } from '../lib/abap/abcd-classification';
@@ -162,7 +162,7 @@ test.describe('the figure is computed from the evidence', () => {
     expect(priv.counted).toBe(pub.counted);
   });
 
-  test('not determined without a signed run, without a target platform, and without SAP objects', () => {
+  test('not determined without a signed run or a target platform; no SAP object at all is an answer', () => {
     const noRun = standardFit(source({ hasRun: false, analyzeState: 'partial' }));
     expect(noRun).toMatchObject({ state: 'not-determined', why: 'no-run' });
     const noTarget = standardFit(source({ fit: FIT(null) }));
@@ -175,7 +175,16 @@ test.describe('the figure is computed from the evidence', () => {
         public: { assignments: [], summary: summarizePublicCloudFit([], { targetPlatform: 'public', usageImported: false }) },
       },
     };
-    expect(standardFit(source({ fit: empty }))).toMatchObject({ state: 'not-determined', why: 'no-objects' });
+    // Owner, 03.10.2026: code that touches no SAP object is the best case, not a gap —
+    // and it carries no percentage, since 0 of 0 is neither 0 % nor 100 %.
+    const none = standardFit(source({ fit: empty }));
+    expect(none).toMatchObject({ state: 'none-used', basis: 'signed-run' });
+    expect(JSON.stringify(none)).not.toMatch(/\d\s?%/);
+    // The run comes first: without one, nothing is said about dependencies either.
+    expect(standardFit(source({ fit: empty, hasRun: false, analyzeState: 'partial' }))).toMatchObject({
+      state: 'not-determined',
+      why: 'no-run',
+    });
     // Neither while reading nor after a refused read is a figure invented.
     expect(standardFit(source({ fit: { state: 'loading' } }))).toMatchObject({ state: 'not-determined', why: 'reading' });
     expect(standardFit(source({ findings: { state: 'absent', reason: 'refused' } }))).toMatchObject({
@@ -229,6 +238,29 @@ test.describe('the figure is computed from the evidence', () => {
     const priv = standardFit({ ...src, fit: { state: 'ready', value: { ...fit.value, target: 'private' } } });
     if (priv.state !== 'ready') throw new Error('not ready');
     expect([priv.fits, priv.counted, priv.clear.map((c) => c.objectName)]).toEqual([1, 3, ['BAPI_SALESORDER_CREATEFROMDAT2']]);
+  });
+
+  test('Z_EMPLOYEE_EXPENSE_VAL uses no SAP object: "No SAP dependency"; a fresh project without a run stays not determined', () => {
+    const code = read('public/starter-examples/Z_EMPLOYEE_EXPENSE_VAL.txt');
+    const findings = findingsOf(code, 'Z_EMPLOYEE_EXPENSE_VAL.txt', 'private');
+    expect(findings.rows.filter((r) => r.objectName)).toEqual([]);
+    const calls = sapCallsOf(findings);
+    expect(calls).toEqual([]);
+    const deps = {
+      gradeObjectUse: (name: string, use: ObjectUse | null) => gradeSapObjectUse(name, use),
+      hasNoPath: (name: string) => hasNoReleasedApiPath(name),
+    };
+    const fitOn = (platform: TargetPlatform) =>
+      resolvePublicCloudFit({ findings: [], calls, usageReport: null, targetPlatform: platform }, deps);
+    const fit: Loaded<FitByPlatform> = { state: 'ready', value: { target: 'private', public: fitOn('public'), private: fitOn('private') } };
+    const signed = source({ findings: { state: 'ready', value: findings }, signedSourceSha256: findings.sourceSha256, fit });
+    const answer = standardFit(signed);
+    expect(answer).toMatchObject({
+      state: 'none-used',
+      sentence: 'This code reads, writes and calls no SAP object, so nothing in it blocks the standard path.',
+    });
+    expect(NO_SAP_DEPENDENCY_TITLE).toBe('No SAP dependency');
+    expect(standardFit({ ...signed, hasRun: false, analyzeState: 'partial' })).toMatchObject({ state: 'not-determined', why: 'no-run' });
   });
 
   test('the demo is computed without a run and says it is a demo', () => {
@@ -373,7 +405,9 @@ test.describe('Management, rendered', () => {
 
     // One primary action; the rest folded, named, with a summary.
     await expect.poll(() => visiblePrimaries(page)).toHaveLength(1);
-    for (const id of ['evidence', 'options', 'costs', 'process']) {
+    // The decision itself is never folded (owner 03.10.2026): three folds remain.
+    await expect(page.locator('[data-management-fold="options"]')).toHaveCount(0);
+    for (const id of ['evidence', 'costs', 'process']) {
       await expect(page.locator(`[data-management-fold="${id}"] > [data-cc-disclosure="closed"]`)).toHaveCount(1);
       await expect(page.locator(`[data-management-fold="${id}"] > [data-cc-disclosure] > [data-cc-disclosure-summary]`)).not.toBeEmpty();
     }

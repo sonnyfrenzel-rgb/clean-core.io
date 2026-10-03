@@ -41,9 +41,15 @@ import type { ProvenanceValue } from './provenance';
  * **Not determined, never a default.** The figure is `not-determined`, with
  * its reason, when there is no signed run, when the source changed since the
  * signed run, when no target platform is set, while the evidence is read or
- * when it could not be read, and when there is no SAP object to count. It is
- * never 0 % for "nothing measured" and never 100 % for "nothing found"
- * (`tests/unearned-verdicts-guard.spec.ts`, `tests/standard-fit.spec.ts`).
+ * when it could not be read, and when SAP objects are present but none could be
+ * counted. It is never 0 % for "nothing measured" and never 100 % for "nothing
+ * found" (`tests/unearned-verdicts-guard.spec.ts`, `tests/standard-fit.spec.ts`).
+ *
+ * **No SAP dependency is an answer, not a gap** (owner, 03.10.2026). When the
+ * signed run is readable and the code reads, writes and calls no SAP object on
+ * either platform, the state is `none-used`: nothing in the code blocks the
+ * standard path. It carries no percentage — 0 of 0 is neither 0 % nor 100 % —
+ * and stays *Reconstructed*, the engine's reading of the code, never green.
  *
  * **Our measure, not SAP's.** SAP publishes the repository files the buckets
  * read; it publishes no fit-to-standard figure. The card says so beside the
@@ -85,7 +91,19 @@ export interface StandardFitItem {
   use: 'call' | 'object';
 }
 
+/** The one sentence of the `none-used` state — the IT view and the steering one-pager say the same. */
+export const NO_SAP_DEPENDENCY_TITLE = 'No SAP dependency';
+export const NO_SAP_DEPENDENCY_SENTENCE =
+  'This code reads, writes and calls no SAP object, so nothing in it blocks the standard path.';
+
 export type StandardFit =
+  | {
+      state: 'none-used';
+      basis: 'signed-run' | 'demo';
+      /** The target platform, when one is set — the answer holds on either. */
+      platform: TargetPlatform | null;
+      sentence: string;
+    }
   | {
       state: 'not-determined';
       why: StandardFitWhy;
@@ -279,6 +297,17 @@ export function standardFit(src: StandardFitSource): StandardFit {
     return notDetermined('source-changed', 'The source on this project is not the one the signed run read — run the analysis again.');
   }
 
+  // No SAP object on either platform: the answer does not depend on the target.
+  const fitValue = src.fit.value;
+  if ((['private', 'public'] as const).every((p) => fitValue[p].assignments.filter(isSapObject).length === 0)) {
+    return {
+      state: 'none-used',
+      basis: src.mode === 'demo' ? 'demo' : 'signed-run',
+      platform: fitValue.target,
+      sentence: NO_SAP_DEPENDENCY_SENTENCE,
+    };
+  }
+
   const platform = src.fit.value.target;
   if (!platform) {
     return notDetermined('no-target', 'No target platform is set — the figure depends on it. Choose one in Analyze.');
@@ -288,7 +317,7 @@ export function standardFit(src: StandardFitSource): StandardFit {
   const retire = assignments.filter((a) => a.bucket === 'retire').length;
   const inScope = assignments.filter((a) => a.bucket !== 'retire');
   if (inScope.length === 0) {
-    return notDetermined('no-objects', 'The signed run names no SAP object to measure, so there is no figure.', platform);
+    return notDetermined('no-objects', 'Every SAP object this code uses is marked to retire, so there is nothing to measure.', platform);
   }
   const sorted = inScope.filter((a) => a.bucket !== null);
   const notSorted = inScope.length - sorted.length;
