@@ -428,7 +428,9 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
         // The JS SDK sends reads and listens down `/Listen/channel` and writes
         // down `/Write/channel`; the REST fallback commits to `:commit`.
         if (/\/Write\/channel|:commit|:batchWrite/.test(url)) writes.push(`${method} ${url}`);
-      } else if (url.includes('/api/') && method !== 'GET' && method !== 'HEAD') {
+      } else if (url.includes('/api/') && method !== 'GET' && method !== 'HEAD' && !url.includes('/api/csp-report')) {
+        // `/api/csp-report` is the browser's own report-only CSP telemetry: the
+        // browser sends it, not a view switch, and it stores nothing (ADR-065).
         // A route that stored the view server side would be the way around the
         // rules, and it would show up here whatever it was called.
         writes.push(`${method} ${url}`);

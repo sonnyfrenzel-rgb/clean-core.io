@@ -103,7 +103,9 @@ test.describe('the stage meta line is behind "Details"', () => {
       // Economics reads the signed run's manifest (`metaLine`), which this seed
       // does not write — its line says so ("not recorded"); the others read the
       // project's audit metadata.
-      await expectBehindDetails(page, 'body', LINES[stage], stage === 'tco' ? /lines\s*12/ : 'v2.20.0');
+      // 11: the seeded source ends in a newline, which ends its last line
+      // rather than starting a twelfth (UX-182, owner 03.10.2026).
+      await expectBehindDetails(page, 'body', LINES[stage], stage === 'tco' ? /lines\s*11/ : 'v2.20.0');
     }
   });
 });

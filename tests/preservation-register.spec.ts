@@ -19,6 +19,7 @@ import {
 import { TRACKED_ARTEFACTS, sha256Hex, artefactDigest, type TrackedArtefact } from '../lib/artefact-digest';
 import { LIVE_TEST_EXECUTION } from '../lib/locked-paths';
 import type { Project } from '../lib/types';
+import { countSourceLines } from '../lib/source-lines';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -494,7 +495,9 @@ function resolveText(template: string, seed: SeededDocuments): string {
     const dotted = at === -1 ? expr : expr.slice(at + 1);
     const value = dig(seed, dotted);
     if (fn === 'count') return String(Array.isArray(value) ? value.length : 0);
-    if (fn === 'lines') return String(String(value ?? '').split('\n').length.toLocaleString());
+    // The product's line count (UX-182, owner 03.10.2026): a final newline ends
+    // the last line rather than starting an empty one.
+    if (fn === 'lines') return countSourceLines(String(value ?? '')).toLocaleString();
     return String(value);
   });
 }
