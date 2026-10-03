@@ -36,7 +36,12 @@ import type { Project } from '../lib/types';
 const read = (rel: string) => readFileSync(join(process.cwd(), rel), 'utf8');
 
 test('d63333ca74b2 — a success without its fields is a lost answer, not a refusal', async () => {
-  if (getApps().length === 0) initializeApp(firebaseConfig);
+  // The default app, by name: a spec that ran earlier in this worker may have
+  // left a named app behind (qa-e7372791 does), and then `getApps()` is not
+  // empty while `getAuth()` inside the client still throws for want of
+  // '[DEFAULT]' — which the client reports as a lost answer, so the refusal
+  // below read as one too (CI of b879ad8b).
+  if (!getApps().some((a) => a.name === '[DEFAULT]')) initializeApp(firebaseConfig);
   const realFetch = globalThis.fetch;
   globalThis.fetch = (async () => new Response('not json', { status: 200 })) as typeof fetch;
   try {

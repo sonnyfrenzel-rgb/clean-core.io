@@ -127,6 +127,9 @@ test.describe('on screen', () => {
     expect(prompt).toContain('BAPI_SALESORDER_CREATEFROMDAT2');
     expect(prompt).toMatch(/FR-\d{3} \[must\]/);
     expect(prompt).toContain('"route"');
+    // The schema is restated after the evidence, where the model reads last: a
+    // live answer in CI of b879ad8b came back without its nodeAppBlueprint.
+    expect(prompt.lastIndexOf('nodeAppBlueprint'), 'the blueprint is named after the evidence').toBeGreaterThan(prompt.indexOf('Engine Evidence'));
     const stored = await adminGetDoc('projects', seeded.projectId);
     expect(String(stored?.solutionDesign)).toContain('Sales order creation');
   });

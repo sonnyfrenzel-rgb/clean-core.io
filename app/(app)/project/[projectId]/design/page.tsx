@@ -169,6 +169,19 @@ Engine Evidence (the signed run, read from the code without a model):
 ${engine}`;
 }
 
+/**
+ * The last words of the design prompt. Since the prompt carries the engine
+ * evidence as a JSON object after the schema (v3.0.1), the model has answered
+ * in that object's spirit now and then: a design with no `nodeAppBlueprint`,
+ * which `checkDesignResponse` rightly refuses and the reader then has to
+ * regenerate (CI of b879ad8b, one of two live calls). The schema is restated
+ * after the evidence, where the model reads last.
+ */
+const DESIGN_ANSWER_REMINDER =
+  'Answer with the DesignData JSON object only. The evidence above is input, not the answer format: do not echo its keys. ' +
+  'Every top-level key of DesignData must be present, each with the type the schema gives: projectName, architectureOverview, ' +
+  'nodeAppBlueprint (an object with projectStructure and apiEndpoints), cloudServices, dataSync, securityHardening and roadmap (at least one named phase).';
+
 const GENERATION_FAILED_TEXT = 'The solution design could not be generated or saved. Nothing was changed — try again.';
 
 export default function DesignPage() {
@@ -286,7 +299,9 @@ interface DesignData {
   }>;
 }
 
-${designContext}`
+${designContext}
+
+${DESIGN_ANSWER_REMINDER}`
         : `Act as a Senior SAP Cloud Solutions Architect. Analyze the engine evidence (and the analysis narrative, where there is one) and design a modern, highly professional modular SAP CAP (Cloud Application Programming) side-by-side transformed cloud architecture. Name the platform "${BTP_FIRST}" at its first mention and "${BTP}" after that; keep the names of SAP services exactly as SAP names them.
 You must return your output strictly in JSON format. Do not include any markdown formatting, HTML, or explanations outside the JSON object. The JSON must exactly match this TypeScript schema:
 
@@ -329,7 +344,9 @@ interface DesignData {
   }>;
 }
 
-${designContext}`;
+${designContext}
+
+${DESIGN_ANSWER_REMINDER}`;
 
       console.log('[Design] Generating solution design for:', projectRef.current?.name);
       console.log('[Design] Narrative:', analysis ? `${analysis.length} chars` : 'none (engine-only run)');

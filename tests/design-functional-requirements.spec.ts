@@ -9,6 +9,7 @@ import { signInViaLanding } from './helpers/sign-in';
 import { sha256Hex } from '../lib/artefact-digest';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 import { TERMS_VERSION } from '../lib/constants';
+import { buildRequirementSet } from '../lib/functional-requirements';
 
 /**
  * v3.0.1 — the functional requirements on screen, in the demo and on a real
@@ -135,6 +136,7 @@ test.describe('a real project', () => {
   const EMAIL = `func-req-${STAMP}@cleancore-test.io`;
   const SIGNED = `func-req-signed-${STAMP}`;
   const UNSIGNED = `func-req-unsigned-${STAMP}`;
+  const WORDED = 'The system shall read this sentence as the model proposed it (fixture).';
 
   test.beforeAll(async () => {
     test.setTimeout(120_000);
@@ -160,6 +162,16 @@ test.describe('a real project', () => {
       const runHash = recomputeStoredRunHash(unsigned);
       await adminSetDoc(`projects/${id}/runs`, runId, { ...unsigned, runHash, signature: signRunHash(runHash, process.env.AUDIT_SIGNING_KEY!) });
     }
+    // A stored wording proposal for FR-001, as the route would have written it
+    // after a model call: the row shows it with its own chip.
+    await adminSetDoc(`projects/${SIGNED}/requirement_wording`, 'current', {
+      formatVersion: 1,
+      digest: buildRequirementSet({ source }).sourceSha256,
+      wording: { 'FR-001': WORDED },
+      discarded: [],
+      origin: { source: 'model', receipt: 'verified', provider: 'test', modelId: 'test', byok: false, issuedAt: null, textSha256: null },
+      proposedAt: new Date().toISOString(),
+    });
   });
 
   test('a signed source: derived on request, with the commit decision and its lines; without one, the reason instead of a button that does nothing', async ({ page }) => {
@@ -179,6 +191,14 @@ test.describe('a real project', () => {
     const section = await derive(page);
     await expect(section.locator('[data-fr-row]').filter({ hasText: 'Roll back changes' })).toHaveCount(1);
     await expect(section.locator('[data-fr-row]').filter({ hasText: "'TA'" })).toHaveCount(1);
+    // Each sentence wears the chip of where it came from (QA review of
+    // 55b47b8a, e7757800247f): the model's wording "proposed", the engine's
+    // "reconstructed" — never the model chip beside the engine sentence.
+    const worded = section.locator('[data-fr-row="FR-001"]');
+    await expect(worded.locator('[data-fr-statement]')).toHaveText(WORDED);
+    await expect(worded.locator('[data-fr-statement-provenance] [data-provenance="proposed"]')).toBeVisible();
+    await expect(worded.locator('[data-fr-engine-wording] [data-provenance="reconstructed"]')).toBeVisible();
+    await expect(worded.locator('[data-fr-engine-wording] [data-provenance="proposed"]')).toHaveCount(0);
     // The wording proposal is a button with its cost said beside it, never a call on opening.
     await expect(section.locator('[data-fr-wording-cost]')).toContainText('model call');
   });

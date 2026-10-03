@@ -320,7 +320,7 @@ export default function ItAnswers({
               label={wt('itv.factUses')}
               // One per object and use — the rows of the table below, and the sum of the three counts beside it.
               value={uses && read ? String(read.uses?.length ?? 0) : null}
-              coverage={uses ? itvUsesCoverage(uses.calls, uses.reads, uses.writes) : wt('itv.usesNotRecorded')}
+              coverage={uses ? itvUsesCoverage(uses.calls, uses.reads, uses.writes, uses.others) : wt('itv.usesNotRecorded')}
               provenance={uses ? 'reconstructed' : 'not-determined'}
               href="#it-uses"
             />

@@ -59,9 +59,14 @@ export const WORKSPACE_IT_MESSAGES = {
   'itv.importsNoneSummary': 'No ATC results and no usage data imported — both are optional and come from Analyze.',
 } as const;
 
-/** "3 calls · 0 read · 0 written" — the coverage line of the uses figure. */
-export function itvUsesCoverage(calls: number, reads: number, writes: number): string {
-  return `${calls} ${calls === 1 ? 'call' : 'calls'} · ${reads} read · ${writes} written`;
+/**
+ * "3 calls · 0 read · 0 written" — the coverage line of the uses figure, with
+ * "· 1 other use" when a finding names an object no call, read or write
+ * reached, so the parts add up to the figure.
+ */
+export function itvUsesCoverage(calls: number, reads: number, writes: number, others = 0): string {
+  const base = `${calls} ${calls === 1 ? 'call' : 'calls'} · ${reads} read · ${writes} written`;
+  return others > 0 ? `${base} · ${others} other ${others === 1 ? 'use' : 'uses'}` : base;
 }
 
 /** "B 1 · C 2" — the level figure, as text so no meaning rests on colour. */

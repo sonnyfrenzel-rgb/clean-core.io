@@ -84,6 +84,10 @@ export const GATED_ROUTES: GatedRoute[] = [
   // both verbs read the project's code, POST stores what a model said about it.
   { file: 'app/api/projects/[projectId]/statement-proposal/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/statement-proposal` },
   { file: 'app/api/projects/[projectId]/statement-proposal/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/statement-proposal`, body: { digest: 'bs1-0', text: '{}', receipt: null } },
+  // Roadmap 3.0.1 — the model's wording of the functional requirements, built
+  // on the statement-proposal route: both verbs read the project's code.
+  { file: 'app/api/projects/[projectId]/requirement-wording/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/requirement-wording` },
+  { file: 'app/api/projects/[projectId]/requirement-wording/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/requirement-wording`, body: { digest: 'x', text: '{}', receipt: null } },
   // Roadmap 2.5 — the traceability quote of a project's process map. Both verbs
   // read the project's code: GET hands out a measurement of it, POST rebuilds
   // the skeleton and the BPMN from it. A token from before the second factor

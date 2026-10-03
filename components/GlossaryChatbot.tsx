@@ -694,11 +694,18 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
           }
           className={cn(
             'cc fixed right-4 bottom-20 z-cc-float flex h-[520px] max-h-[calc(100dvh-7rem)] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog sm:right-6 sm:bottom-24',
+            // The room the floating toggle needs below the panel, wherever the
+            // toggle is shown: it is the panel's close button too, and a panel
+            // standing on it covered it, so a second tap on the X landed on the
+            // panel instead (CI of b879ad8b). The toggle is at most 44px high,
+            // 16px off the bottom; 4.5rem leaves a gap above it.
+            floatingOffOnDesktop ? '[--cc-chat-clear:0px] max-sm:[--cc-chat-clear:4.5rem]' : '[--cc-chat-clear:4.5rem]',
             // A phone: a sheet across the width, standing on the keyboard when
-            // it is open, as tall as what is left of the screen allows.
-            'max-sm:right-0 max-sm:bottom-[var(--cc-chat-bottom,0px)] max-sm:left-0 max-sm:h-[min(560px,calc(var(--cc-chat-vh,100dvh)_-_0.5rem))] max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none',
-            // A short window (a phone on its side): top to bottom.
-            '[@media(max-height:480px)]:top-2 [@media(max-height:480px)]:bottom-[calc(var(--cc-chat-bottom,0px)_+_0.5rem)] [@media(max-height:480px)]:h-auto [@media(max-height:480px)]:max-h-none',
+            // it is open — or above the toggle when it is not — as tall as what
+            // is left of the screen allows.
+            'max-sm:right-0 max-sm:bottom-[max(var(--cc-chat-bottom,0px),var(--cc-chat-clear))] max-sm:left-0 max-sm:h-[min(560px,calc(var(--cc-chat-vh,100dvh)_-_max(0px,var(--cc-chat-clear)_-_var(--cc-chat-bottom,0px))_-_0.5rem))] max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none',
+            // A short window (a phone on its side): top to bottom, clear of the toggle.
+            '[@media(max-height:480px)]:top-2 [@media(max-height:480px)]:bottom-[max(calc(var(--cc-chat-bottom,0px)_+_0.5rem),var(--cc-chat-clear))] [@media(max-height:480px)]:h-auto [@media(max-height:480px)]:max-h-none',
           )}
         >
           {/* Header — light, like every other surface (§1.1); dark is for code. */}
