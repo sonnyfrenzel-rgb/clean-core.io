@@ -384,23 +384,18 @@ ${DESIGN_ANSWER_REMINDER}`;
       // Whichever generation writes last now writes a matching pair; an NFR
       // failure stores the design without NFRs rather than with stale ones.
       let nfrForDesign: Record<string, unknown> | null = null;
-      setLoadingMessage('Generating non-functional requirements...');
+      setLoadingMessage('Asking for proposals on the non-functional requirements...');
       try {
-        const nfrPrompt = `You are an SAP Enterprise Architect. Based on the following solution design, generate comprehensive Non-Functional Requirements. Return ONLY a JSON object matching this schema exactly:
-
-{
-  "dataMigration": "Z-table migration strategy: how custom data (e.g. ZSD_*, ZLOG_*) will be migrated to the target system. Include data volume assessment, ETL approach, and validation strategy.",
-  "dataRetention": "Archival and retention policies for legacy and new data. Include regulatory requirements (GoBD, SOX) and archiving approach (ILM, SARA, cloud storage).",
-  "auditTrail": "Change tracking and compliance logging strategy. Include which objects need audit logging, format (SAP Change Documents, Application Log, custom), and retention.",
-  "authorizationConcept": "Role and authorization mapping from legacy auth objects to target model. Include IAM business roles, app descriptors, restriction types, and separation of duties.",
-  "errorHandling": "Retry patterns, circuit breakers, dead-letter queues. Include error classification (transient vs permanent), alerting thresholds, and recovery procedures.",
-  "monitoring": "Observability strategy: dashboards, alerts, log aggregation. Include KPIs (response time, error rate, throughput), health checks, and escalation paths.",
-  "slaRequirements": "Availability targets (e.g. 99.5%), latency budgets (p95 < 2s), throughput requirements, and planned maintenance windows.",
-  "cutoverStrategy": "Migration cutover plan including parallel operation phase, feature flags, rollback procedures, data sync during dual-run, and go-live criteria."
-}
-
-Solution Design Context:
-${responseText.substring(0, 4000)}`;
+        // The engine reads the non-functional requirements out of the signed
+        // source; the model is asked only for target values and answers to
+        // the questions the code leaves open, next to them (owner 03.10.2026).
+        const nfrLib = await import('@/lib/non-functional-requirements');
+        const signed = engineEvidenceRef.current.source;
+        let nfrSet: import('@/lib/non-functional-requirements').NfrSet | null = null;
+        try {
+          nfrSet = signed ? nfrLib.buildNfrSet({ source: signed }) : null;
+        } catch { /* the prompt goes without the engine's list */ }
+        const nfrPrompt = nfrLib.nfrProposalPrompt(nfrSet, responseText);
 
         const nfrResponse = await callGemini(nfrPrompt, PRODUCT_GEMINI_MODEL, true, 'design');
         if (nfrResponse) {
@@ -408,7 +403,13 @@ ${responseText.substring(0, 4000)}`;
             const cleaned = nfrResponse.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();
             const parsed: unknown = JSON.parse(cleaned);
             if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-              nfrForDesign = parsed as Record<string, unknown>;
+              // Only the eight topics, only text, only what says something.
+              const kept: Record<string, string> = {};
+              for (const key of Object.values(nfrLib.NFR_MODEL_KEY)) {
+                const value = (parsed as Record<string, unknown>)[key];
+                if (typeof value === 'string' && value.trim()) kept[key] = value.trim();
+              }
+              nfrForDesign = Object.keys(kept).length ? kept : null;
             }
           } catch { /* NFR parse failure is non-critical */ }
         }
@@ -809,7 +810,17 @@ ${responseText.substring(0, 4000)}`;
           title: 'Non-functional requirements',
           written: nfrTopics > 0,
           meta: nfrTopics ? count(nfrTopics, 'topic', 'topics') : undefined,
-          content: proposed(<NonFunctionalRequirements nfr={nfrData} />, 'Non-Functional Requirements'),
+          // The requirements are read from the code below the document; the
+          // model's text stands there, per category, as its proposal.
+          content: (
+            <p data-nfr-moved="" className="m-0 text-[14px] text-cc-ink">
+              The non-functional requirements are read from the code, with their lines, in the section{' '}
+              <a href="#non-functional-requirements" className="font-semibold text-cc-information underline-offset-2 hover:underline">
+                Non-functional requirements
+              </a>{' '}
+              below. The model&rsquo;s proposals{nfrTopics ? ` for ${count(nfrTopics, 'topic', 'topics')}` : ''} stand there under each category, marked as proposals.
+            </p>
+          ),
         },
       ];
     }
@@ -1138,6 +1149,18 @@ ${responseText.substring(0, 4000)}`;
                 ? 'the Design stage is switched off in Settings.'
                 : 'no Gemini key is available for this account; add your own in Settings.',
           }}
+        />
+      </div>
+
+      <div className="mb-12 scroll-mt-24" id="non-functional-requirements">
+        <NonFunctionalRequirements
+          projectId={projectId as string}
+          projectName={project?.name || ''}
+          fileName={signedSource?.fileName || 'source.abap'}
+          source={signedSource?.source ?? null}
+          missingReason={signedSource ? null : requirementsMissing}
+          proposals={nfrData}
+          levels={designEvidence.state === 'ready' ? designEvidence.findings : null}
         />
       </div>
 

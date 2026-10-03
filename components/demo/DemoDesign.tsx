@@ -8,6 +8,7 @@ import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import DesignCanvasStage, { type DesignDocSection } from '@/components/design/DesignCanvasStage';
 import RoutingRationale from '@/components/design/RoutingRationale';
 import FunctionalRequirements from '@/components/design/FunctionalRequirements';
+import NonFunctionalRequirements from '@/components/design/NonFunctionalRequirements';
 import SectionBoundary from '@/components/SectionBoundary';
 import { architectureOptionLabel } from '@/components/ArchitectSignOff';
 import { architectureCanvasModel } from '@/lib/architecture-canvas';
@@ -183,10 +184,20 @@ export default function DemoDesign({
         view={view}
         signOffWording={SIGN_OFF_WORDING}
       />
-      {/* the functional requirements are the engine's, so the demo
-          has them too: read from the example in this browser, no model call. */}
+      {/* the functional and non-functional requirements are the engine's, so
+          the demo has them too: read from the example in this browser, no model call. */}
       <div className="mt-8">
         <FunctionalRequirements
+          projectId={null}
+          projectName={demo.sourceFile.replace(/\.(abap|txt)$/i, '')}
+          fileName={demo.sourceFile}
+          source={data?.source ?? null}
+          missingReason={data ? null : 'The demo could not read its example. Reload the page to try again.'}
+          levels={data?.findings ?? null}
+        />
+      </div>
+      <div className="mt-8">
+        <NonFunctionalRequirements
           projectId={null}
           projectName={demo.sourceFile.replace(/\.(abap|txt)$/i, '')}
           fileName={demo.sourceFile}

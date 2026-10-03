@@ -223,7 +223,8 @@ const NEUTRAL_PHRASES = new Set(['condition met', 'condition met?', '']);
 
 /* --------------------------------------------------------------- anchors */
 
-function quoteOf(lines: readonly string[], start: number, end: number): string {
+/** The lines of an anchor as an anchor quotes them: trimmed, at most four. Exported for the non-functional requirements. */
+export function quoteOf(lines: readonly string[], start: number, end: number): string {
   const out: string[] = [];
   for (let at = start; at <= Math.min(end, start + 3); at++) out.push((lines[at - 1] ?? '').trim());
   return out.join('\n');
