@@ -94,6 +94,12 @@ interface CcDialogOwnProps {
   onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
   /** `default` 32 rem for a form, `wide` 48 rem for a table or a longer explanation. */
   size?: 'default' | 'wide';
+  /**
+   * `side` docks the dialog to the right edge at full height — the details of
+   * one row beside the list it was opened from (the design document's
+   * services, 03.10.2026). Modal all the same; on a phone it fills the screen.
+   */
+  placement?: 'center' | 'side';
 }
 
 const KEEP_OPEN = () => undefined;
@@ -103,7 +109,8 @@ const PHONE_HIDDEN = 'max-sm:hidden [@media(max-height:640px)]:hidden';
 const PHONE_SHOWN = 'max-sm:block [@media(max-height:640px)]:block';
 
 export default function CcDialog(props: CcDialogProps) {
-  const { open, title, lead, children, actions, onSubmit, size = 'default' } = props;
+  const { open, title, lead, children, actions, onSubmit, size = 'default', placement = 'center' } = props;
+  const side = placement === 'side';
   const dismissible = props.dismissible !== false;
   const onClose = props.onClose ?? KEEP_OPEN;
   const layerData: Record<string, string | undefined> = {};
@@ -160,7 +167,12 @@ export default function CcDialog(props: CcDialogProps) {
       {...layerData}
       data-cc-dialog-layer=""
       data-cc-dismissible={dismissible ? undefined : 'false'}
-      className="cc fixed inset-0 z-cc-overlay flex items-center justify-center p-4 max-sm:pt-[max(0.5rem,env(safe-area-inset-top))] max-sm:pr-[max(0.5rem,env(safe-area-inset-right))] max-sm:pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:pl-[max(0.5rem,env(safe-area-inset-left))]"
+      data-cc-dialog-placement={side ? 'side' : undefined}
+      className={
+        side
+          ? 'cc fixed inset-0 z-cc-overlay flex items-stretch justify-end'
+          : 'cc fixed inset-0 z-cc-overlay flex items-center justify-center p-4 max-sm:pt-[max(0.5rem,env(safe-area-inset-top))] max-sm:pr-[max(0.5rem,env(safe-area-inset-right))] max-sm:pb-[max(0.5rem,env(safe-area-inset-bottom))] max-sm:pl-[max(0.5rem,env(safe-area-inset-left))]'
+      }
     >
       {/* Dimmed, and deliberately not a way out — see above. */}
       <div data-cc-scrim="" aria-hidden={true} className="absolute inset-0 bg-cc-overlay/45" />
@@ -174,8 +186,10 @@ export default function CcDialog(props: CcDialogProps) {
         data-cc-dialog=""
         data-cc-dialog-size={size}
         className={
-          'relative flex max-h-[calc(100dvh-2rem)] w-full min-w-0 flex-col max-sm:max-h-full [@media(max-height:640px)]:max-h-full rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog ' +
-          (size === 'wide' ? 'max-w-3xl' : 'max-w-lg')
+          side
+            ? 'relative flex h-full max-h-full w-full min-w-0 max-w-lg flex-col border-l border-cc-line bg-cc-surface shadow-cc-dialog'
+            : 'relative flex max-h-[calc(100dvh-2rem)] w-full min-w-0 flex-col max-sm:max-h-full [@media(max-height:640px)]:max-h-full rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog ' +
+              (size === 'wide' ? 'max-w-3xl' : 'max-w-lg')
         }
       >
         <div className="flex items-start gap-3 border-b border-cc-line px-5 py-4 max-sm:px-4 max-sm:py-3">

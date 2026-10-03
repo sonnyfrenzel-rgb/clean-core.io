@@ -103,7 +103,7 @@ test.describe('on screen', () => {
     });
   }
 
-  test('an engine-only project offers "Generate the design", and the prompt carries the engine evidence', async ({ page }) => {
+  test('an engine-only project writes its design on opening, and the prompt carries the engine evidence', async ({ page }) => {
     test.setTimeout(300_000);
     const seeded = await seedEngineOnly('design-engine-only');
     const prompts: string[] = [];
@@ -111,21 +111,17 @@ test.describe('on screen', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, seeded.email, PASSWORD);
     await page.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
-    const generate = page.locator('[data-design-generate]');
-    await expect(generate).toBeVisible({ timeout: 120_000 });
-    // Nothing was asked of the model on opening.
-    expect(prompts).toEqual([]);
-    await expect(page.getByText('The run has no model narrative, and the design does not need one')).toBeVisible();
-    // The contract has been read, so the route goes into the prompt as well.
-    await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
-    await generate.click();
+    // Written on opening since 03.10.2026 (ADR-070, amended): no button to find.
     await expect(page.locator('[data-design-section="overview"]')).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-design-generate]')).toHaveCount(0);
+    expect(prompts, 'one design call and one for its proposals').toHaveLength(2);
 
     const prompt = prompts[0];
     expect(prompt).toContain('Engine Evidence');
     expect(prompt).toContain('Analysis Context: none');
     expect(prompt).toContain('BAPI_SALESORDER_CREATEFROMDAT2');
     expect(prompt).toMatch(/FR-\d{3} \[must\]/);
+    // The design waits for the contract on opening, so the route is in the prompt.
     expect(prompt).toContain('"route"');
     // The schema is restated after the evidence, where the model reads last: a
     // live answer in CI of b879ad8b came back without its nodeAppBlueprint.

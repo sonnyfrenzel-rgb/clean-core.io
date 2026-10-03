@@ -12,7 +12,9 @@ import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * The non-functional requirements on screen (owner 03.10.2026): read from the
- * code on request, never by a model; the eight categories at a glance and
+ * code as soon as the section opens (since the ADR-074 amendment of the same
+ * day: "when I click Design, everything should be generated directly"), never
+ * by a model; the eight categories at a glance and
  * agreeing with the lists below them; the questions apart; copy and downloads
  * carrying every requirement with its lines; the design model's text only as
  * a folded proposal; no sideways scroll on a phone. No model is called here.
@@ -36,11 +38,11 @@ async function openDemo(page: Page) {
   return section;
 }
 
+/** The requirements are read on opening, without a click (ADR-074, amended 03.10.2026). */
 async function derive(page: Page) {
   const section = page.locator('[data-non-functional-requirements]');
-  await expect(section.locator('[data-nfr-cost]')).toContainText('no model call');
-  await section.locator('[data-nfr-derive]').click();
   await expect(section).toHaveAttribute('data-nfr-state', 'ready', { timeout: 60_000 });
+  await expect(section.locator('[data-nfr-derive]'), 'no button stands between the reader and the requirements').toHaveCount(0);
   return section;
 }
 
@@ -62,12 +64,10 @@ async function readLists(section: Locator) {
 }
 
 test.describe('the demo', () => {
-  test('nothing is read until asked; then every row carries an ID, a category, a sentence, its lines and a priority, and the overview agrees with the lists', async ({ page }) => {
+  test('read on opening, without a click; every row carries an ID, a category, a sentence, its lines and a priority, and the overview agrees with the lists', async ({ page }) => {
     test.setTimeout(180_000);
     await page.setViewportSize({ width: 1440, height: 900 });
-    const before = await openDemo(page);
-    await expect(before).toHaveAttribute('data-nfr-state', 'idle');
-    await expect(before.locator('[data-nfr-row]')).toHaveCount(0);
+    await openDemo(page);
     const section = await derive(page);
 
     const rows = section.locator('[data-nfr-row]');
@@ -235,9 +235,10 @@ test.describe('a real project', () => {
     await expect(specific.getByText(PROPOSALS.dataRetention)).toBeVisible();
     await expect(specific.locator('[data-provenance="proposed"]')).toBeVisible();
 
-    // The design document points here instead of carrying the prose.
-    await page.locator('[data-design-section="nfr"]').click();
-    await expect(page.locator('[data-design-section-body="nfr"] [data-nfr-moved]')).toBeVisible();
+    // The design document points here instead of carrying the prose: the
+    // group "How it is secured and run" links to this section (03.10.2026).
+    await page.locator('[data-design-group-toggle="secure"]').click();
+    await expect(page.locator('[data-design-group="secure"] [data-nfr-moved] a[href="#non-functional-requirements"]')).toBeVisible();
     expect(modelCalls).toEqual([]);
   });
 });

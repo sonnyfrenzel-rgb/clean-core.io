@@ -21,6 +21,11 @@ interface CloudService {
 
 interface CloudServiceIntegrationsProps {
   cloudServices?: CloudService[];
+  /**
+   * Inside a group of the design document (03.10.2026): no provenance chip of
+   * its own — the group carries "Model proposal" once.
+   */
+  embedded?: boolean;
 }
 
 export const cloudServiceDetails: Record<string, {
@@ -346,7 +351,7 @@ export const getCloudServiceDetails = (serviceName: string) => {
   return cloudServiceDetails.default;
 };
 
-export default function CloudServiceIntegrations({ cloudServices }: CloudServiceIntegrationsProps) {
+export default function CloudServiceIntegrations({ cloudServices, embedded = false }: CloudServiceIntegrationsProps) {
   const [activeService, setActiveService] = useState<CloudService | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -365,49 +370,50 @@ export default function CloudServiceIntegrations({ cloudServices }: CloudService
     <div className="space-y-4">
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="cc-text-h2 text-cc-ink">Cloud Service Integrations</h3>
+          <h3 className={embedded ? 'cc-text-h3 text-cc-ink' : 'cc-text-h2 text-cc-ink'}>Cloud Service Integrations</h3>
           {/* Which services, what for and which packages: the model's design.
-              The deep dive behind each card is our own reference text. */}
-          <CcProvenanceChip value="proposed" />
+              The details behind each row are our own reference text. */}
+          {embedded ? null : <CcProvenanceChip value="proposed" />}
         </div>
         <p className="cc-text-cell text-cc-ink-muted mt-1">Platform service bindings and technical dependencies required for the target architecture.</p>
       </div>
 
-      <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* One compact row per service (owner 03.10.2026: five large cards were
+          a wall); the details open beside the list. */}
+      <ul className="m-0 flex list-none flex-col divide-y divide-cc-line rounded-cc-card border border-cc-line p-0">
         {cloudServices.map((service, idx) => {
           const isAbapNative = !service.npmPackages?.length ||
             /CDS|View|RAP|IAM|LUW|BADI|BRF|Fiori|ABAP/i.test(service.serviceName);
-          const label = isAbapNative ? 'Released SAP Objects' : 'NPM Package Dependencies';
+          const label = isAbapNative ? 'Released SAP objects' : 'npm packages';
           const packages = service.npmPackages?.length ? service.npmPackages : ['No external dependencies'];
           return (
             <li
               key={idx}
               data-cloud-service={idx}
-              className="rounded-cc-card border border-cc-line bg-cc-surface p-6 shadow-cc flex flex-col justify-between"
+              data-design-service={service.serviceName}
+              className="grid min-w-0 grid-cols-1 gap-2 px-4 py-3 min-[900px]:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)_auto] min-[900px]:items-center min-[900px]:gap-4"
             >
-              <div>
-                <div className="flex justify-between items-start gap-4 mb-2">
-                  <h4 className="cc-text-h3 text-cc-ink">{service.serviceName}</h4>
-                  <CcButton
-                    variant="ghost"
-                    icon={<ArrowUpRight size={16} aria-hidden={true} />}
-                    onClick={() => setActiveService(service)}
-                    aria-haspopup="dialog"
-                  >
-                    Deep Dive
-                  </CcButton>
-                </div>
-                <p className="cc-text-cell text-cc-ink mb-4">{service.purpose}</p>
+              <div className="min-w-0">
+                <h4 className="m-0 text-[14px] font-bold text-cc-ink [overflow-wrap:anywhere]">{service.serviceName}</h4>
+                <p className="m-0 cc-text-cell text-cc-ink">{service.purpose}</p>
               </div>
-              <div className="border-t border-cc-line pt-3 mt-4">
-                <span className="cc-text-label text-cc-ink-muted block mb-2">{label}</span>
-                <div className="flex flex-wrap gap-2">
-                  {packages.map((pkg, pIdx) => (
-                    <code key={pIdx} className="font-cc-mono cc-text-meta text-cc-ink">
-                      <CcTag>{pkg}</CcTag>
-                    </code>
-                  ))}
-                </div>
+              <div className="flex min-w-0 flex-wrap items-center gap-1">
+                <span className="sr-only">{label}:</span>
+                {packages.map((pkg, pIdx) => (
+                  <code key={pIdx} className="max-w-full font-cc-mono cc-text-meta text-cc-ink [overflow-wrap:anywhere]">
+                    <CcTag>{pkg}</CcTag>
+                  </code>
+                ))}
+              </div>
+              <div className="justify-self-start min-[900px]:justify-self-end">
+                <CcButton
+                  variant="ghost"
+                  icon={<ArrowUpRight size={16} aria-hidden={true} />}
+                  onClick={() => setActiveService(service)}
+                  aria-haspopup="dialog"
+                >
+                  Details<span className="sr-only"> of {service.serviceName}</span>
+                </CcButton>
               </div>
             </li>
           );
@@ -420,10 +426,11 @@ export default function CloudServiceIntegrations({ cloudServices }: CloudService
         title={details?.title ?? ''}
         lead="Service Integration Blueprint"
         size="wide"
+        placement="side"
         onClose={() => setActiveService(null)}
         actions={
           <CcButton variant="ghost" onClick={() => setActiveService(null)}>
-            Return to Design Board
+            Close
           </CcButton>
         }
       >

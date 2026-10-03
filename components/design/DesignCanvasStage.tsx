@@ -78,6 +78,12 @@ export interface DesignCanvasStageProps {
   /** The source, for the lines the Evidence tab quotes. */
   legacyCode: string;
   sections: DesignDocSection[];
+  /**
+   * The structured design as one document (`DesignDocument`, 03.10.2026): an
+   * overview, then groups by question. Set, it replaces the section cards;
+   * `sections` still counts what is written for the tab's label.
+   */
+  document?: React.ReactNode | null;
   /** The document region when there is no document: an empty state, a reason, an error. */
   documentFallback: React.ReactNode | null;
   /** A failed (re)generation, worded for the reader. */
@@ -244,6 +250,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     regenerating,
     legacyCode,
     sections,
+    document: structuredDocument = null,
     documentFallback,
     documentNotice,
     routingRationale,
@@ -864,6 +871,11 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
 
   const documentTab = documentFallback ? (
     <div>{documentFallback}</div>
+  ) : structuredDocument ? (
+    <div data-stage-output="solutionDesign" id="design-report">
+      {documentNotice ? <div className="mb-4">{documentNotice}</div> : null}
+      {structuredDocument}
+    </div>
   ) : (
     <div data-stage-output="solutionDesign" id="design-report">
       {documentNotice ? <div className="mb-4">{documentNotice}</div> : null}
