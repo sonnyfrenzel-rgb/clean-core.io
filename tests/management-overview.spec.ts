@@ -502,8 +502,11 @@ test.describe('the overview on the screen — one rendered test per chart', () =
     await open(page);
     const panel = page.locator('[data-management-executive]');
     await expect(panel.locator('[data-executive-question]')).toContainText('Keep, rebuild, move to SAP standard or retire Z_MGMT_OVERVIEW?');
-    await expect(panel.locator('[data-management-headline]')).toContainText(/Decision DEC-1 is open/, { timeout: 60000 });
-    await expect(panel.locator('[data-executive-blocker]').first()).toBeVisible();
+    // With a run, the decision record is the panel's hero (owner 03.10.2026):
+    // its headline is the option, and what it rests on stands as four pillars.
+    await expect(panel.locator('[data-decision-card][data-decision-status]')).toBeVisible({ timeout: 60000 });
+    await expect(panel.locator('[data-management-headline]')).toHaveText(/No option chosen yet|Rebuild|Retire/);
+    await expect(panel.locator('[data-decision-pillar]')).toHaveCount(4);
     await expect(panel.locator('[data-executive-next-action]')).toHaveCount(1);
     // Beside the decision, fit to standard (ADR-069); the four figures, the
     // bucket bar of every object and the phases one action deeper, in "Evidence".

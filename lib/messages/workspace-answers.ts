@@ -217,13 +217,10 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   // The folds under the Management answer — collapsed until opened, and
   // remembered in this browser only (owner 03.10.2026: progressive disclosure).
   'mgmtFold.evidence': 'Evidence',
-  'mgmtFold.options': 'Options and the decision',
   'mgmtFold.costs': 'Costs',
   'mgmtFold.process': 'Process',
   'mgmtFold.evidenceNoRun': 'Filled by the first signed run — the figures, the buckets per object and what could not be determined.',
   'mgmtFold.evidenceRun': 'The four figures, evidence per phase, every object per bucket, the score history and what could not be determined.',
-  'mgmtFold.optionsSummary': 'The open decision, its options and what confirming it would bind.',
-  'mgmtFold.optionsNoRun': 'Still empty — the options are drawn from the first signed run.',
   'mgmtFold.costsEmpty': 'No cost figures yet — enter your own in Economics; costs are only ever a simulation.',
   'mgmtFold.costsPriced': 'Every option is priced from your own figures — a scenario, not a quote. The amounts stand in Economics.',
   'mgmtFold.costsStarted': 'Your cost figures are stored, and not every option is priced yet — a scenario, not a quote.',

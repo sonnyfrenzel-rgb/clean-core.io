@@ -1,6 +1,9 @@
-import { managementAnswers, type Coverage, type RunHistoryEntry } from './management-answers';
+import { managementAnswers, type RunHistoryEntry } from './management-answers';
 import { itFindingsView, type ItFindingsSource } from './it-findings';
-import { DECISION_BINDINGS, type ProjectDecision } from './project-decision';
+import { decisionManagerView, type DecisionPlace, type PillarKey } from './decision-manager';
+import { decisionCoverage, type DecisionStatus, type ProjectDecision } from './project-decision';
+import type { StandardFit } from './standard-fit';
+import type { CloudReadinessGrade } from './abap/abcd-classification';
 import type { ProvenanceValue } from './provenance';
 import type { NotDetermined } from './workspace-model';
 import type { Project } from './types';
@@ -11,303 +14,435 @@ import { workflowSteps } from './workflow-steps';
  * The steering one-pager — roadmap step 8.6, mockup screen 5 ("Steering
  * one-pager" in the Management tool row).
  *
- * *"One page (PDF) with exclusively figures that lead via link to the
- * evidence, each with its coverage, and the column 'not determined'"* —
- * feedback of 15.09.2026.
+ * **Redesigned 03.10.2026** (owner: "That is not a steering one-pager, far too
+ * complex and confusing"). It had become eleven figure cards in a column — "x
+ * of 7 phases", record counts, a version string as a headline — with every
+ * link's full address printed beside it and a second column of what was
+ * missing. A steering committee reads it in about a minute, on one printed
+ * page:
  *
- * Four rules decide the shape of this module.
+ *   1. **Header** — the program, the date, what the code was reconstructed to
+ *      do, and where the project stands.
+ *   2. **The decision** — the decision card's own headline, status and why,
+ *      and its four pillars as small state chips (`lib/decision-manager.ts`,
+ *      the same derivation, so the page and the card cannot disagree).
+ *   3. **At most four key figures** — fit to standard, the clean core levels,
+ *      the Clean Core Score, and whether the options are priced.
+ *   4. **Risks** — the top three objects that block the standard path.
+ *   5. **Next steps** — at most four, each with who acts: Business, IT or the
+ *      decision maker.
+ *   6. **Footnote** — the provenance legend, the scope sentence and the
+ *      analyzer and catalog versions in small print.
  *
- * **1. It measures nothing.** Every number on the page is a figure another
- * model already derived and the workspace already shows: the Management
- * answers (`lib/management-answers.ts`), the IT findings
- * (`lib/it-findings.ts`) and the decision record (`lib/project-decision.ts`).
- * This module only sorts them into two columns. A number that no model in
- * `lib/` produces cannot appear here, because there is no code path that
- * writes one.
+ * Rules kept from 8.6 and not negotiable:
  *
- * **2. A figure without a value is not a zero.** Where a model hands back
- * `null` and a reason, the entry moves to the *Not determined* column with that
- * reason in words. The column is never a count folded into a remainder; each
- * entry is its own line.
+ * **It measures nothing.** Every value is one another model already derived
+ * and the workspace already shows: the Management answers, the IT findings,
+ * fit to standard (`lib/standard-fit.ts`) and the decision record.
  *
- * **3. Every figure carries its coverage and a link to its evidence.** The
- * coverage sentence is the one the source model built; the link names the
- * place in the workspace (a view, a stage) where the evidence behind it is
- * shown, and — where the evidence is a line of code — the line anchors.
+ * **Not determined is said in place, with its reason** — never a zero, never a
+ * parallel column.
  *
- * **4. No amount of money.** Costs appear only as whether a cost revision is
- * bound to the decision (roadmap 7.4 / 8.4). As long as the decision binds
- * none, costs stand under *Not determined* with the decision's own reason; an
- * amount is never printed here, because the one place that may show one is
- * Economics, next to its approved assumptions (`lib/money-honesty.ts`).
+ * **No amount of money.** Costs appear only as whether the decision binds a
+ * cost revision; amounts live in Economics next to their assumptions
+ * (`lib/money-honesty.ts`).
  *
- * The one-pager is a **view**, like Management itself: it is derived on
- * every render, never stored, and not part of the signed audit pack.
- *
- * **Pure.** No React, no Firestore, no `fetch`: the component hands in what it
- * read, so a spec can drive every state without a browser.
+ * A **view**: derived when opened, never stored, not part of the signed audit
+ * pack. **Pure**: no React, no Firestore, no `fetch`.
  */
-
-/** Where a figure's evidence lives in the workspace. */
-export interface SteeringLink {
-  /** A path inside this app, starting with `/project/`. Printed beside the link. */
-  href: string;
-  /** Where it goes, in words — "IT view · findings". */
-  place: string;
-}
-
-export const STEERING_GROUPS = ['phases', 'findings', 'decision', 'score', 'costs'] as const;
-export type SteeringGroup = (typeof STEERING_GROUPS)[number];
-
-export const STEERING_GROUP_LABELS: Readonly<Record<SteeringGroup, string>> = Object.freeze({
-  phases: 'Phases',
-  findings: 'Code and findings',
-  decision: 'Decision',
-  score: 'Clean Core Score',
-  costs: 'Costs',
-});
-
-export interface SteeringFigure {
-  key: string;
-  group: SteeringGroup;
-  label: string;
-  /** Already formatted by the model it came from. Never null here. */
-  value: string;
-  /** The coverage sentence, as the source model built it. */
-  coverage: string;
-  provenance: ProvenanceValue;
-  evidence: SteeringLink;
-  /** Line anchors (`L502`) where the evidence is a place in the code. Possibly empty. */
-  anchors: string[];
-}
-
-export interface SteeringGap {
-  key: string;
-  group: SteeringGroup;
-  label: string;
-  /** Why there is no number, in words. Never empty. */
-  reason: string;
-  /** Where to look or act, when there is such a place. */
-  evidence: SteeringLink | null;
-}
-
-export interface SteeringOnePager {
-  title: string;
-  /** What the page is and is not, printed under the title. */
-  scope: string;
-  figures: SteeringFigure[];
-  notDetermined: SteeringGap[];
-  /** How far the page itself holds: "12 figures · 4 not determined". */
-  summary: string;
-}
-
-export interface SteeringSource {
-  projectId: string;
-  project: Project | null;
-  /** Runs of this project, `null` when they could not be read. */
-  history: readonly RunHistoryEntry[] | null;
-  /** `notDetermined(project)` from `lib/workspace-model.ts`. */
-  open: NotDetermined | null;
-  /** `GET /api/projects/{id}/findings`, `null` when it could not be read. */
-  findings: ItFindingsSource | null;
-  /** The decision as the card shows it, `null` when it could not be read. */
-  decision: ProjectDecision | null;
-  /** Why the decision could not be read — set when `decision` is null. */
-  decisionUnreadable?: string | null;
-}
 
 export const STEERING_TITLE = 'Steering one-pager';
 
-export const STEERING_SCOPE =
-  'Figures only, each with its coverage and a link to its evidence in the workspace. ' +
-  'What could not be determined stands in its own column with its reason, never as a zero. ' +
-  'Derived when opened; not stored and not part of the signed audit pack.';
+export const STEERING_SCOPE = 'Derived when opened; not stored; not part of the signed audit pack.';
 
-function links(projectId: string) {
-  const base = `/project/${encodeURIComponent(projectId)}`;
+export const STEERING_LEGEND =
+  'Proven: backed by a signature or a real run · Confirmed: your account’s own word, not a mandate · ' +
+  'Reconstructed: read from the code · Imported: from SAP’s files · Simulation: on your own assumptions · ' +
+  'Not determined: said with its reason.';
+
+/** A place in the workspace a line leads to. Rendered as a link, never as its address. */
+export interface SteeringLink {
+  href: string;
+  /** Where it goes, in words — "IT view". */
+  place: string;
+}
+
+export type SteeringOwner = 'Business' | 'IT' | 'Decision maker';
+
+export type SteeringFigureKey = 'fit' | 'levels' | 'score' | 'costs';
+
+export interface SteeringFigure {
+  key: SteeringFigureKey;
+  label: string;
+  /** The value as its own view shows it, or `null` — then `absentReason` says why. */
+  value: string | null;
+  absentReason: string | null;
+  /** One line: what the value means. */
+  meaning: string;
+  provenance: ProvenanceValue;
+  /** The level bar, for the levels figure only. */
+  levels?: Array<{ grade: CloudReadinessGrade; count: number }>;
+  evidence: SteeringLink;
+}
+
+export interface SteeringRisk {
+  object: string;
+  level: CloudReadinessGrade;
+  line: number | null;
+  why: string;
+  provenance: ProvenanceValue;
+}
+
+export interface SteeringStep {
+  key: string;
+  owner: SteeringOwner;
+  text: string;
+  link: SteeringLink | null;
+}
+
+export type SteeringDecision =
+  | {
+      state: 'ready';
+      identity: string;
+      status: DecisionStatus;
+      headline: string;
+      why: string;
+      readiness: string;
+      pillars: Array<{ key: PillarKey; title: string; provenance: ProvenanceValue; draft: boolean }>;
+      link: SteeringLink;
+    }
+  | { state: 'not-determined'; reason: string; link: SteeringLink | null };
+
+export interface SteeringOnePager {
+  title: string;
+  header: {
+    program: string;
+    date: string;
+    /** What the code was reconstructed to do, or why that is not known. */
+    purpose: string;
+    purposeProvenance: ProvenanceValue;
+    status: string;
+  };
+  decision: SteeringDecision;
+  /** At most four, in a fixed order. */
+  figures: SteeringFigure[];
+  risks: SteeringRisk[];
+  /** Said when there is no risk to list: why not. */
+  risksNote: string | null;
+  /** At most four. */
+  nextSteps: SteeringStep[];
+  footnote: { legend: string; scope: string; versions: string | null };
+}
+
+/** The process the signed source reconstructs to — `lib/process-summary.ts`, counted as the map counts. */
+export interface SteeringProcess {
+  steps: number;
+  decisions: number;
+}
+
+export interface SteeringSource {
+  /** `project`, or `demo` on `/demo/workspace`, which is never signed. */
+  mode: 'project' | 'demo';
+  /** Where links start: `/project/<id>`, or `/demo`. */
+  base: string;
+  program: string;
+  /** ISO date of the page — the day it was opened. */
+  date: string;
+  project: Project | null;
+  hasRun: boolean;
+  /** Runs of this project, `null` when they could not be read. */
+  history: readonly RunHistoryEntry[] | null;
+  open: NotDetermined | null;
+  /** The IT findings, `null` when they could not be read. */
+  findings: ItFindingsSource | null;
+  fit: StandardFit;
+  /** The decision as the card shows it, `null` when there is none to read. */
+  decision: ProjectDecision | null;
+  /** Why the decision could not be read — set when `decision` is null. */
+  decisionUnreadable?: string | null;
+  /** `null` when the signed source could not be reconstructed (or is not read yet). */
+  process: SteeringProcess | null;
+}
+
+export const STEERING_FIGURES_MAX = 4;
+export const STEERING_RISKS_MAX = 3;
+export const STEERING_STEPS_MAX = 4;
+
+function linksOf(src: SteeringSource) {
+  const view = (v: string, hash = '') =>
+    src.mode === 'demo' ? `/demo/workspace?view=${v}${hash}` : `${src.base}?view=${v}${hash}`;
+  const stage = (path: string) => (src.mode === 'demo' ? `/demo/${path}` : `${src.base}/${path}`);
   return {
-    management: { href: `${base}?view=management#management-answers-heading`, place: 'Management view · answers' },
-    decision: { href: `${base}?view=management#decision-card`, place: 'Management view · open decision' },
-    it: { href: `${base}?view=it#it-answers-heading`, place: 'IT view · findings' },
-    notDetermined: { href: `${base}?view=business#not-determined`, place: 'Workspace · not determined' },
-    economics: { href: `${base}/tco`, place: 'Economics stage' },
+    decision: { href: view('management', '#decision-card'), place: 'The decision' },
+    fit: { href: view('management', '#standard-fit'), place: 'Fit to standard' },
+    it: { href: view('it'), place: 'IT view' },
+    business: { href: view('business'), place: 'Business view' },
+    management: { href: view('management'), place: 'Management view' },
+    analyze: { href: stage('analyze'), place: 'Analyze' },
+    design: { href: stage('design'), place: 'Design' },
+    economics: { href: stage('tco'), place: 'Economics' },
   } satisfies Record<string, SteeringLink>;
 }
 
-const coverageSentence = (c: Coverage) => c.sentence;
+const notDeterminedWords = (reason: string) => `Not determined — ${reason.replace(/\.$/, '')}.`;
 
-/**
- * The one-pager of one project.
- *
- * The groups come in `STEERING_GROUPS` order in both columns, so a reader can
- * run one eye down the figures and the other down what is missing beside them.
- */
+function ownerOf(place: DecisionPlace | null): SteeringOwner {
+  if (!place) return 'Decision maker';
+  if (place.kind === 'view') return place.view === 'business' ? 'Business' : 'IT';
+  return place.path === 'analyze' ? 'IT' : 'Decision maker';
+}
+
 export function steeringOnePager(src: SteeringSource): SteeringOnePager {
-  const to = links(src.projectId);
+  const to = linksOf(src);
+  const linkOf = (place: DecisionPlace | null): SteeringLink | null =>
+    !place
+      ? null
+      : place.kind === 'view'
+        ? place.view === 'business'
+          ? to.business
+          : to.it
+        : place.path === 'tco'
+          ? to.economics
+          : place.path === 'design'
+            ? to.design
+            : to.analyze;
+
+  /* ------------------------------------------------------------ header */
+  const runDate = src.project?.activeRunId
+    ? (src.history?.find((h) => h.runId === src.project?.activeRunId)?.createdAt ?? null)
+    : null;
+  const purpose = src.process
+    ? `Reconstructed from the code: a process of ${src.process.steps} step${src.process.steps === 1 ? '' : 's'} and ${src.process.decisions} decision point${src.process.decisions === 1 ? '' : 's'}.`
+    : src.hasRun || src.mode === 'demo'
+      ? notDeterminedWords('the process could not be reconstructed from the source')
+      : notDeterminedWords('no signed run, so no process was reconstructed');
+  const decisionWord = src.decision ? `decision ${src.decision.decisionId} ${src.decision.status}` : 'no decision on record';
+  const status =
+    src.mode === 'demo'
+      ? 'Demo — never signed; no decision on record'
+      : src.hasRun
+        ? `Analysis signed${runDate ? ` on ${runDate.slice(0, 10)}` : ''} · ${decisionWord}`
+        : `No signed analysis run yet · ${decisionWord}`;
+
+  /* ---------------------------------------------------------- decision */
+  let decision: SteeringDecision;
+  const manager = src.decision ? decisionManagerView(src.decision) : null;
+  if (src.decision && manager) {
+    decision = {
+      state: 'ready',
+      identity: `${src.decision.decisionId} · revision ${src.decision.revision}`,
+      status: src.decision.status,
+      headline: manager.headline,
+      why: manager.why,
+      readiness: manager.readiness,
+      pillars: manager.pillars.map((p) => ({ key: p.key, title: p.title, provenance: p.provenance, draft: p.draft })),
+      link: to.decision,
+    };
+  } else {
+    decision = {
+      state: 'not-determined',
+      reason:
+        src.decisionUnreadable?.trim() ||
+        (src.mode === 'demo' ? 'A demo is never signed, so it has no decision record.' : 'The decision of this project could not be read.'),
+      link: src.mode === 'demo' ? null : to.decision,
+    };
+  }
+
+  /* ----------------------------------------------------------- figures */
   const figures: SteeringFigure[] = [];
-  const gaps: SteeringGap[] = [];
+  const fit = src.fit;
+  figures.push(
+    fit.state === 'ready'
+      ? {
+          key: 'fit',
+          label: `Fit to standard on ${fit.platformLabel}`,
+          value: `${fit.percent} %`,
+          absentReason: null,
+          meaning: `${fit.fits} of ${fit.counted} SAP objects have a released path. A Clean-Core.io measure, not an SAP figure.`,
+          provenance: 'reconstructed',
+          evidence: to.fit,
+        }
+      : fit.state === 'none-used'
+        ? {
+            key: 'fit',
+            label: 'Fit to standard',
+            value: 'No SAP dependency',
+            absentReason: null,
+            meaning: fit.sentence,
+            provenance: 'reconstructed',
+            evidence: to.fit,
+          }
+        : {
+            key: 'fit',
+            label: 'Fit to standard',
+            value: null,
+            absentReason: fit.reason,
+            meaning: 'A Clean-Core.io measure, not an SAP figure.',
+            provenance: 'not-determined',
+            evidence: to.fit,
+          },
+  );
 
-  const push = (
-    group: SteeringGroup,
-    f: { key: string; label: string; value: string | null; absentReason?: string; provenance: ProvenanceValue; coverage: Coverage },
-    evidence: SteeringLink,
-    anchors: string[] = [],
-  ) => {
-    if (f.value === null) {
-      gaps.push({
-        key: f.key,
-        group,
-        label: f.label,
-        reason: f.absentReason?.trim() || coverageSentence(f.coverage),
-        evidence,
-      });
-      return;
-    }
-    figures.push({
-      key: f.key,
-      group,
-      label: f.label,
-      value: f.value,
-      coverage: coverageSentence(f.coverage),
-      provenance: f.provenance,
-      evidence,
-      anchors,
-    });
-  };
-
-  /* ------------------------------------------------ Management's figures */
-  const management = managementAnswers(src.project, src.history, src.open);
-  const figuresOf = (id: string) => management.answers.find((a) => a.id === id)?.figures ?? [];
-
-  for (const f of figuresOf('confirmed')) push('phases', f, to.management);
-  for (const f of figuresOf('missing')) {
-    if (f.key === 'not-determined') {
-      const anchors = (src.open?.items ?? []).map((i) => i.anchor).filter(Boolean);
-      push('findings', f, to.notDetermined, anchors);
-    } else {
-      push('phases', f, to.management);
-    }
-  }
-  for (const f of figuresOf('decision')) push('decision', { ...f, key: `management-${f.key}` }, to.management);
-  for (const f of figuresOf('score')) push('score', f, to.management);
-
-  /* ------------------------------------------------------- IT's figures */
   const it = itFindingsView(src.findings);
-  for (const f of it.figures) push('findings', { ...f, key: `it-${f.key}` }, to.it);
   if (!it.unreadable && it.distribution.graded > 0) {
+    const levels = it.distribution.slices
+      .filter((s) => s.grade !== 'Unknown')
+      .map((s) => ({ grade: s.grade, count: s.count }));
     figures.push({
-      key: 'it-level-distribution',
-      group: 'findings',
-      label: 'places in the code per clean core level',
+      key: 'levels',
+      label: 'Clean core levels',
       value: it.distribution.slices.map((s) => `${s.grade} ${s.count}`).join(' · '),
-      coverage: it.distribution.coverage.sentence,
+      absentReason: null,
+      meaning: it.distribution.coverage.sentence,
       provenance: 'imported',
+      levels,
       evidence: to.it,
-      anchors: [],
-    });
-  }
-
-  /* --------------------------------------------------- the decision record */
-  const decision = src.decision;
-  if (!decision) {
-    const why = src.decisionUnreadable?.trim() || 'the decision of this project could not be read';
-    gaps.push({ key: 'decision-bindings', group: 'decision', label: 'bindings of the decision', reason: why, evidence: to.decision });
-    gaps.push({ key: 'decision-conditions', group: 'decision', label: 'open conditions of the decision', reason: why, evidence: to.decision });
-    gaps.push({
-      key: 'cost',
-      group: 'costs',
-      label: 'cost revision bound to the decision',
-      reason: `${why}, so no cost revision is known`,
-      evidence: to.economics,
     });
   } else {
-    const bound = decision.bindings.filter((b) => b.revision !== null);
     figures.push({
-      key: 'decision-bindings',
-      group: 'decision',
-      label: `bindings of ${decision.decisionId} that hold`,
-      value: `${bound.length} of ${DECISION_BINDINGS.length}`,
-      coverage:
-        `${bound.length} of ${DECISION_BINDINGS.length} bindings in the decision record` +
-        (bound.length < DECISION_BINDINGS.length
-          ? ` · ${DECISION_BINDINGS.length - bound.length} not determined, each with its reason on the card`
-          : ''),
-      provenance: decision.status === 'confirmed' ? 'confirmed' : 'proposed',
-      evidence: to.decision,
-      anchors: [],
+      key: 'levels',
+      label: 'Clean core levels',
+      value: null,
+      absentReason: it.unreadable
+        ? 'the findings could not be read'
+        : src.findings && src.findings.rows.length === 0
+          ? 'the engine raised no finding to grade'
+          : 'no finding names an SAP object to grade',
+      meaning: 'Level A to D per place in the code, from SAP’s classification.',
+      provenance: 'not-determined',
+      evidence: to.it,
     });
+  }
 
-    const open = decision.conditions.filter((c) => c.status === 'open' || c.status === 'not-determined').length;
-    figures.push({
-      key: 'decision-conditions',
-      group: 'decision',
-      label: `conditions of ${decision.decisionId} still open`,
-      value: `${open} of ${decision.conditions.length}`,
-      coverage: `${open} of ${decision.conditions.length} conditions in the decision record`,
-      provenance: 'reconstructed',
-      evidence: to.decision,
-      anchors: [],
-    });
+  const management = managementAnswers(src.project, src.history, src.open);
+  const score = management.answers.flatMap((a) => a.figures).find((f) => f.key === 'clean-core-score') ?? null;
+  figures.push({
+    key: 'score',
+    label: 'Clean Core Score',
+    value: src.mode === 'demo' ? null : (score?.value ?? null),
+    absentReason:
+      src.mode === 'demo' ? 'a demo is never signed' : score?.value == null ? (score?.absentReason ?? 'no signed run') : null,
+    meaning: 'A grade from the signed run, not a compliance percentage.',
+    provenance: src.mode === 'demo' || !score || score.value === null ? 'not-determined' : score.provenance,
+    evidence: to.management,
+  });
 
-    const cost = decision.bindings.find((b) => b.key === 'cost') ?? null;
-    if (!cost || cost.revision === null) {
-      gaps.push({
-        key: 'cost',
-        group: 'costs',
-        label: 'cost revision bound to the decision',
-        reason: cost?.notDeterminedReason?.trim() || 'the decision binds no cost revision',
-        evidence: to.economics,
+  const cost = src.decision?.bindings.find((b) => b.key === 'cost') ?? null;
+  // The figures stored on the Economics stage (03.10.2026) price the options
+  // whether or not a decision binds them: how many, never an amount (ADR-022).
+  const econ = src.project?._economics ?? null;
+  const econPriced = econ ? pricedOptions(econ) : null;
+  const econStale = econ ? workflowSteps(src.project).find((s) => s.key === 'tco')?.state === 'stale' : false;
+  figures.push(
+    cost && cost.revision !== null
+      ? {
+          key: 'costs',
+          label: 'Cost of the options',
+          value: cost.provenance === 'simulation' ? 'Simulation' : 'No cheapest option',
+          absentReason: null,
+          meaning: 'On your own assumptions; amounts stand in Economics, never here.',
+          provenance: cost.provenance,
+          evidence: to.economics,
+        }
+      : econ && econPriced && econPriced.priced > 0
+        ? {
+            key: 'costs',
+            label: 'Cost of the options',
+            value: `${econPriced.priced} of ${econPriced.total} priced`,
+            absentReason: null,
+            meaning:
+              `A scenario on your own figures (cost assumptions revision ${econ.revision})` +
+              (econStale ? ', stored against an earlier score, to be checked' : '') +
+              '; amounts stand in Economics, never here.',
+            provenance: 'simulation',
+            evidence: to.economics,
+          }
+        : {
+            key: 'costs',
+            label: 'Cost of the options',
+            value: null,
+            absentReason: 'not priced yet',
+            meaning: 'Enter your assumptions in Economics; costs are only ever a simulation.',
+            provenance: 'not-determined',
+            evidence: to.economics,
+          },
+  );
+
+  /* ------------------------------------------------------------- risks */
+  const risks: SteeringRisk[] =
+    fit.state === 'ready'
+      ? fit.blockers.slice(0, STEERING_RISKS_MAX).map((b) => ({
+          object: b.objectName,
+          level: b.level,
+          line: b.line,
+          why: b.why,
+          provenance: b.provenance,
+        }))
+      : [];
+  const risksNote =
+    risks.length > 0
+      ? null
+      : fit.state === 'ready'
+        ? 'Nothing found blocks the standard path.'
+        : fit.state === 'none-used'
+          ? fit.sentence
+          : notDeterminedWords(fit.reason);
+
+  /* -------------------------------------------------------- next steps */
+  const steps: SteeringStep[] = [];
+  if (src.mode === 'demo') {
+    steps.push({ key: 'own-code', owner: 'IT', text: 'Analyse your own code — a demo is never signed.', link: null });
+  } else if (!src.hasRun) {
+    steps.push({ key: 'run', owner: 'IT', text: 'Run the analysis — every figure here comes from a signed run.', link: to.analyze });
+  }
+  if (src.decision && manager) {
+    if (src.decision.status === 'draft' && decisionCoverage(src.decision).state !== 'blocked') {
+      steps.push({
+        key: 'confirm',
+        owner: 'Decision maker',
+        text: `Confirm decision ${src.decision.decisionId}, or revise it.`,
+        link: to.decision,
       });
-    } else {
-      figures.push({
-        key: 'cost',
-        group: 'costs',
-        label: 'cost revision bound to the decision',
-        value: '1 of 1',
-        coverage:
-          '1 of 1 cost revision in the decision record' +
-          (cost.note ? ` · ${cost.note}` : '') +
-          ' · amounts are shown in Economics only, next to their assumptions',
-        provenance: cost.provenance,
-        evidence: to.economics,
-        anchors: [],
-      });
+    }
+    const option = manager.pillars.find((p) => p.key === 'option');
+    if (option && !option.inPlace) {
+      steps.push({ key: 'option', owner: 'Decision maker', text: 'Sign off a target architecture in Design.', link: to.design });
+    }
+    for (const p of manager.points.filter((x) => !x.done)) {
+      steps.push({ key: `point:${p.id}`, owner: ownerOf(p.place), text: p.line, link: linkOf(p.place) });
+    }
+    const costPillar = manager.pillars.find((p) => p.key === 'cost');
+    if (costPillar && !costPillar.inPlace && !(econPriced && econPriced.priced > 0)) {
+      steps.push({ key: 'costs', owner: 'Decision maker', text: 'Enter the cost assumptions in Economics.', link: to.economics });
     }
   }
 
-  /* ------------------------------------------- the scenario in Economics */
-  // The figures stored on the Economics stage (03.10.2026): how many options
-  // they price, and the revision of the assumptions — never an amount, which
-  // stands in Economics next to its assumptions (ADR-022). Bound to a decision
-  // or not, the stored scenario is its own fact.
-  const econ = src.project?._economics ?? null;
-  if (econ) {
-    const { priced, total } = pricedOptions(econ);
-    const tco = workflowSteps(src.project).find((s) => s.key === 'tco');
-    figures.push({
-      key: 'cost-scenario',
-      group: 'costs',
-      label: 'options priced from your figures in Economics',
-      value: `${priced} of ${total}`,
-      coverage:
-        `cost assumptions revision ${econ.revision}` +
-        (tco?.state === 'stale' ? ' · stored against an earlier score, to be checked' : '') +
-        ' · a scenario on your own figures, not a quote · amounts are shown in Economics only, next to their assumptions',
-      provenance: 'simulation',
-      evidence: to.economics,
-      anchors: [],
-    });
-  }
-
-  const order = (g: SteeringGroup) => STEERING_GROUPS.indexOf(g);
-  figures.sort((a, b) => order(a.group) - order(b.group));
-  gaps.sort((a, b) => order(a.group) - order(b.group));
+  /* ---------------------------------------------------------- footnote */
+  const active = src.project?.activeRunId ? src.history?.find((h) => h.runId === src.project?.activeRunId) : null;
+  const versions = active
+    ? [
+        active.rulesetVersion ? `rules ${active.rulesetVersion}` : null,
+        active.analyzerVersion ? `analyzer ${active.analyzerVersion}` : null,
+        active.catalogVersion ? `catalog ${active.catalogVersion}` : null,
+      ]
+        .filter(Boolean)
+        .join(' · ') || null
+    : null;
 
   return {
     title: STEERING_TITLE,
-    scope: STEERING_SCOPE,
-    figures,
-    notDetermined: gaps,
-    summary: `${figures.length} ${figures.length === 1 ? 'figure' : 'figures'} · ${gaps.length} not determined`,
+    header: {
+      program: src.program,
+      date: src.date,
+      purpose,
+      purposeProvenance: src.process ? 'reconstructed' : 'not-determined',
+      status,
+    },
+    decision,
+    figures: figures.slice(0, STEERING_FIGURES_MAX),
+    risks,
+    risksNote,
+    nextSteps: steps.slice(0, STEERING_STEPS_MAX),
+    footnote: { legend: STEERING_LEGEND, scope: STEERING_SCOPE, versions },
   };
 }

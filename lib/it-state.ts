@@ -198,7 +198,9 @@ export function itOpening(
           ? uses.reads === 0 && uses.writes === 0
             ? `No clean core finding — the program works through ${uses.calls} ${uses.calls === 1 ? 'call' : 'calls'} and touches no table directly`
             : `No clean core finding in the ${uses.objects} ${uses.objects === 1 ? 'object' : 'objects'} the code uses`
-          : 'No clean core finding, and no SAP object the engine can name';
+          : uses
+            ? 'No clean core finding, and no SAP dependency — the code reads, writes and calls no SAP object'
+            : 'No clean core finding, and no SAP object the engine can name';
       return {
         state,
         title,

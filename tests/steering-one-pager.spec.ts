@@ -19,7 +19,15 @@ import { isProvenanceValue } from '../lib/provenance';
 import type { ProjectDecision } from '../lib/project-decision';
 import type { NotDetermined } from '../lib/workspace-model';
 import type { Project } from '../lib/types';
-import { steeringOnePager, STEERING_GROUPS, type SteeringSource } from '../lib/steering-one-pager';
+import {
+  steeringOnePager,
+  STEERING_FIGURES_MAX,
+  STEERING_RISKS_MAX,
+  STEERING_STEPS_MAX,
+  type SteeringSource,
+} from '../lib/steering-one-pager';
+import { decisionManagerView } from '../lib/decision-manager';
+import type { StandardFit } from '../lib/standard-fit';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -161,161 +169,217 @@ function decisionFixture(): ProjectDecision {
   return deriveDecisionDraft(facts).draft;
 }
 
+/** Fit to standard as the Management card computes it — a fixed reading for the pure tests. */
+const FIT_READY: StandardFit = {
+  state: 'ready',
+  basis: 'signed-run',
+  platform: 'public',
+  platformLabel: 'Public Edition',
+  fits: 1,
+  counted: 3,
+  percent: 33,
+  released: 1,
+  successor: 0,
+  blocking: 2,
+  notSorted: 0,
+  retire: 0,
+  sentence: '1 of 3 SAP objects this code uses have a released path on Public Edition.',
+  coverage: '',
+  blockers: [
+    { objectName: 'VBAK', bucket: 'no-catalogued-path', level: 'C', line: 228, why: 'No path is named.', provenance: 'imported', use: 'object' },
+    { objectName: 'EKPO', bucket: 'rebuild', level: 'D', line: 40, why: 'The code writes directly to this SAP table.', provenance: 'reconstructed', use: 'object' },
+  ],
+  clear: [],
+  groups: [],
+};
+
 const full = (over: Partial<SteeringSource> = {}): SteeringSource => ({
-  projectId: 'p-1',
+  mode: 'project',
+  base: '/project/p-1',
+  program: 'Emergency purchase approval',
+  date: '2026-10-03',
   project: signed,
+  hasRun: true,
   history: [run()],
   open,
   findings,
+  fit: FIT_READY,
   decision: decisionFixture(),
+  process: { steps: 8, decisions: 2 },
   ...over,
 });
 
+/** Every visible string of the page, for the text checks. */
+function textOf(page: ReturnType<typeof steeringOnePager>): string[] {
+  const d = page.decision;
+  return [
+    page.title,
+    page.header.program,
+    page.header.purpose,
+    page.header.status,
+    ...(d.state === 'ready' ? [d.headline, d.why, d.readiness, ...d.pillars.map((p) => p.title)] : [d.reason]),
+    ...page.figures.flatMap((f) => [f.label, f.value ?? '', f.absentReason ?? '', f.meaning, f.evidence.place]),
+    ...page.risks.flatMap((r) => [r.object, r.why]),
+    page.risksNote ?? '',
+    ...page.nextSteps.flatMap((s) => [s.owner, s.text, s.link?.place ?? '']),
+    page.footnote.legend,
+    page.footnote.scope,
+    page.footnote.versions ?? '',
+  ];
+}
+
 /* ---------------------------------------- 1. only numbers that exist elsewhere */
 
-test.describe('8.6 one-pager — every number comes from a workspace model', () => {
-  test('each Management and IT figure on the page carries the value its own view shows', () => {
+test.describe('8.6 one-pager — every value comes from a workspace model', () => {
+  test('at most four key figures, in a fixed order, and no phase count', () => {
+    const page = steeringOnePager(full());
+    expect(page.figures.length).toBeLessThanOrEqual(STEERING_FIGURES_MAX);
+    expect(page.figures.map((f) => f.key)).toEqual(['fit', 'levels', 'score', 'costs']);
+    for (const line of textOf(page)) expect(line, 'a phase count on the steering page').not.toMatch(/of 7\b|phases?\b/i);
+  });
+
+  test('the score is the Management view’s, the levels are the IT view’s', () => {
     const src = full();
     const page = steeringOnePager(src);
-    const management = managementAnswers(src.project, src.history, src.open).answers.flatMap((a) => a.figures);
-    const it = itFindingsView(src.findings).figures;
-
-    for (const f of management) {
-      const onPage = page.figures.find((p) => p.key === f.key || p.key === `management-${f.key}`);
-      const gap = page.notDetermined.find((g) => g.key === f.key || g.key === `management-${f.key}`);
-      if (f.value === null) {
-        expect(onPage, `${f.key} has no value and still stands among the figures`).toBeUndefined();
-        expect(gap, `${f.key} has no value and is missing from "Not determined"`).toBeDefined();
-      } else {
-        expect(onPage?.value, `${f.key} differs from the Management view`).toBe(f.value);
-        expect(onPage?.coverage).toBe(f.coverage.sentence);
-      }
-    }
-    for (const f of it) {
-      const onPage = page.figures.find((p) => p.key === `it-${f.key}`);
-      if (f.value !== null) expect(onPage?.value, `it-${f.key} differs from the IT view`).toBe(f.value);
-    }
+    const score = managementAnswers(src.project, src.history, src.open).answers
+      .flatMap((a) => a.figures)
+      .find((f) => f.key === 'clean-core-score');
+    expect(page.figures.find((f) => f.key === 'score')?.value).toBe(score?.value);
+    const levels = page.figures.find((f) => f.key === 'levels');
+    expect(levels?.value).toBe('A 1 · B 0 · C 1 · D 0 · Unknown 0');
+    expect(levels?.value).toBe(itFindingsView(src.findings).distribution.slices.map((s) => `${s.grade} ${s.count}`).join(' · '));
+    expect(levels?.meaning).toContain('2 of 3 places in the code in this run');
   });
 
-  test('the level distribution is the IT view’s, Unknown included', () => {
+  test('fit to standard is the card’s figure, and its blockers are the risks', () => {
     const page = steeringOnePager(full());
-    const dist = page.figures.find((f) => f.key === 'it-level-distribution');
-    expect(dist?.value).toBe('A 1 · B 0 · C 1 · D 0 · Unknown 0');
-    expect(dist?.coverage).toContain('2 of 3 places in the code in this run');
+    expect(page.figures.find((f) => f.key === 'fit')?.value).toBe('33 %');
+    expect(page.figures.find((f) => f.key === 'fit')?.meaning).toContain('not an SAP figure');
+    expect(page.risks.length).toBeLessThanOrEqual(STEERING_RISKS_MAX);
+    expect(page.risks.map((r) => r.object)).toEqual(['VBAK', 'EKPO']);
+    expect(page.risks[0]).toMatchObject({ level: 'C', line: 228 });
   });
 
-  test('the decision figures are counted from the record, out of all five bindings', () => {
+  test('the decision block equals the decision card’s headline and status', () => {
     const decision = decisionFixture();
     const page = steeringOnePager(full({ decision }));
-    const bound = decision.bindings.filter((b) => b.revision !== null).length;
-    expect(page.figures.find((f) => f.key === 'decision-bindings')?.value).toBe(`${bound} of 5`);
-    const openConds = decision.conditions.filter((c) => c.status === 'open' || c.status === 'not-determined').length;
-    expect(page.figures.find((f) => f.key === 'decision-conditions')?.value).toBe(
-      `${openConds} of ${decision.conditions.length}`,
-    );
+    const card = decisionManagerView(decision);
+    expect(page.decision.state).toBe('ready');
+    if (page.decision.state !== 'ready') return;
+    expect(page.decision.headline).toBe(card.headline);
+    expect(page.decision.headline).toBe('Rebuild as In-App ABAP Cloud (RAP)');
+    expect(page.decision.status).toBe(decision.status);
+    expect(page.decision.pillars.map((p) => [p.key, p.provenance])).toEqual(card.pillars.map((p) => [p.key, p.provenance]));
   });
 });
 
-/* ------------------------------------------ 2. coverage and link on every figure */
+/* ------------------------------------------ 2. provenance and links on every figure */
 
-test.describe('8.6 one-pager — coverage and evidence', () => {
-  test('every figure has a coverage sentence, a provenance and a link into this project', () => {
+test.describe('8.6 one-pager — provenance and evidence', () => {
+  test('every figure has a meaning, a provenance and a link into this project', () => {
     const page = steeringOnePager(full());
-    expect(page.figures.length).toBeGreaterThan(5);
     for (const f of page.figures) {
-      expect(f.coverage.trim(), `${f.key} has no coverage`).not.toBe('');
+      expect(f.meaning.trim(), `${f.key} has no meaning`).not.toBe('');
       expect(isProvenanceValue(f.provenance), `${f.key}: ${f.provenance}`).toBe(true);
       expect(f.evidence.href.startsWith('/project/p-1'), `${f.key} links outside the project`).toBe(true);
       expect(f.evidence.place.trim()).not.toBe('');
     }
   });
 
-  test('what the engine stepped over carries its line anchors', () => {
-    const page = steeringOnePager(full());
-    const nd = page.figures.find((f) => f.key === 'not-determined');
-    expect(nd?.value).toBe('2');
-    expect(nd?.anchors).toEqual(['L502', 'L88']);
+  test('no visible line is an address: links are links', () => {
+    for (const page of [steeringOnePager(full()), steeringOnePager(full({ decision: null, hasRun: false }))]) {
+      for (const line of textOf(page)) expect(line).not.toMatch(/https?:\/\/|\/project\//);
+    }
   });
 
-  test('both columns come in the same group order', () => {
+  test('at most four next steps, each with who acts', () => {
     const page = steeringOnePager(full());
-    const idx = (g: string) => STEERING_GROUPS.indexOf(g as (typeof STEERING_GROUPS)[number]);
-    for (const list of [page.figures, page.notDetermined]) {
-      const order = list.map((x) => idx(x.group));
-      expect(order).toEqual([...order].sort((a, b) => a - b));
-    }
+    expect(page.nextSteps.length).toBeGreaterThan(0);
+    expect(page.nextSteps.length).toBeLessThanOrEqual(STEERING_STEPS_MAX);
+    for (const s of page.nextSteps) expect(['Business', 'IT', 'Decision maker']).toContain(s.owner);
+  });
+
+  test('the versions stand in the footnote, not as a figure', () => {
+    const page = steeringOnePager(full());
+    expect(page.footnote.versions).toBe('rules rules-v1.0 · analyzer 2.9.0 · catalog cat-2026-08');
+    for (const f of page.figures) expect(f.value ?? '').not.toContain('rules-v1.0');
   });
 });
 
-/* ------------------------------------------------ 3. not determined, never zero */
+/* ------------------------------------------------ 3. not determined, in place */
 
-test.describe('8.6 one-pager — the "Not determined" column', () => {
+test.describe('8.6 one-pager — not determined is said in place', () => {
   test('a project with nothing readable has no zero anywhere, only reasons', () => {
     const page = steeringOnePager({
-      projectId: 'p-2',
+      mode: 'project',
+      base: '/project/p-2',
+      program: 'Nothing analysed yet',
+      date: '2026-10-03',
       project: { name: 'Nothing analysed yet', legacyCode: 'REPORT z.\n' },
+      hasRun: false,
       history: null,
       open: null,
       findings: null,
+      fit: { state: 'not-determined', why: 'no-run', reason: 'No signed run yet — this figure is computed only from a signed run.', platform: null },
       decision: null,
       decisionUnreadable: 'The decision of this project could not be derived (404).',
+      process: null,
     });
-    const keys = page.notDetermined.map((g) => g.key);
-    for (const k of ['clean-core-score', 'it-findings', 'it-chain-complete', 'it-level', 'decision-bindings', 'cost']) {
-      expect(keys, `${k} is not under "Not determined"`).toContain(k);
+    for (const f of page.figures) {
+      expect(f.value, `${f.key} carries a value without a run`).toBeNull();
+      expect(f.absentReason?.trim(), `${f.key} has no reason`).toBeTruthy();
+      expect(f.provenance).toBe('not-determined');
     }
-    for (const g of page.notDetermined) expect(g.reason.trim(), `${g.key} has no reason`).not.toBe('');
-    expect(page.figures.find((f) => f.key.startsWith('it-')), 'an IT figure without findings').toBeUndefined();
-    expect(page.figures.find((f) => f.key.startsWith('decision-')), 'a decision figure without a decision').toBeUndefined();
-    expect(page.notDetermined.find((g) => g.key === 'decision-bindings')?.reason).toContain('404');
+    expect(page.decision).toMatchObject({ state: 'not-determined' });
+    if (page.decision.state === 'not-determined') expect(page.decision.reason).toContain('404');
+    expect(page.header.purpose).toMatch(/^Not determined — /);
+    expect(page.risksNote).toMatch(/^Not determined — /);
+    expect(page.nextSteps[0]).toMatchObject({ owner: 'IT', key: 'run' });
   });
 
-  test('the summary counts both columns', () => {
-    const page = steeringOnePager(full());
-    expect(page.summary).toBe(`${page.figures.length} figures · ${page.notDetermined.length} not determined`);
+  test('no SAP dependency is an answer on the page, not a gap', () => {
+    const page = steeringOnePager(
+      full({
+        fit: {
+          state: 'none-used',
+          basis: 'signed-run',
+          platform: 'private',
+          sentence: 'This code reads, writes and calls no SAP object, so nothing in it blocks the standard path.',
+        },
+      }),
+    );
+    expect(page.figures.find((f) => f.key === 'fit')).toMatchObject({ value: 'No SAP dependency', provenance: 'reconstructed' });
+    expect(page.risksNote).toContain('calls no SAP object');
   });
 });
 
 /* -------------------------------------------------------------- 4. costs */
 
 test.describe('8.6 one-pager — costs', () => {
-  test('while the decision binds no cost revision, costs are not determined with the decision’s reason', () => {
+  test('while the decision binds no cost revision, the options are not priced yet', () => {
     const decision = decisionFixture();
-    const cost = decision.bindings.find((b) => b.key === 'cost');
-    expect(cost?.revision, 'the fixture now binds a cost revision — the premise moved').toBeNull();
+    expect(decision.bindings.find((b) => b.key === 'cost')?.revision, 'the fixture now binds a cost revision — the premise moved').toBeNull();
     const page = steeringOnePager(full({ decision }));
-    const gap = page.notDetermined.find((g) => g.key === 'cost');
-    expect(gap?.reason).toBe(cost?.notDeterminedReason);
-    expect(gap?.evidence?.href).toBe('/project/p-1/tco');
-    expect(page.figures.find((f) => f.group === 'costs')).toBeUndefined();
+    const cost = page.figures.find((f) => f.key === 'costs');
+    expect(cost).toMatchObject({ value: null, absentReason: 'not priced yet', provenance: 'not-determined' });
+    expect(cost?.evidence.href).toBe('/project/p-1/tco');
   });
 
-  test('a bound cost revision is a binding, never an amount', () => {
+  test('a bound cost revision is a word, never an amount', () => {
     const decision = decisionFixture();
     const withCost: ProjectDecision = {
       ...decision,
       bindings: decision.bindings.map((b) =>
-        b.key === 'cost'
-          ? { ...b, revision: 'CS-2', notDeterminedReason: null, note: null, provenance: 'confirmed' }
-          : b,
+        b.key === 'cost' ? { ...b, revision: 'CS-2', notDeterminedReason: null, note: null, provenance: 'simulation' } : b,
       ),
     };
     const page = steeringOnePager(full({ decision: withCost }));
-    const cost = page.figures.find((f) => f.key === 'cost');
-    expect(cost?.value).toBe('1 of 1');
-    expect(page.notDetermined.find((g) => g.key === 'cost')).toBeUndefined();
+    expect(page.figures.find((f) => f.key === 'costs')?.value).toBe('Simulation');
   });
 
   test('no line of the page carries an amount of money', () => {
     for (const page of [steeringOnePager(full()), steeringOnePager(full({ decision: null }))]) {
-      const text = [
-        page.title,
-        page.scope,
-        page.summary,
-        ...page.figures.flatMap((f) => [f.label, f.value, f.coverage, f.evidence.place]),
-        ...page.notDetermined.flatMap((g) => [g.label, g.reason]),
-      ];
-      for (const line of text) expect(containsAmount(line), line).toBe(false);
+      for (const line of textOf(page)) expect(containsAmount(line), line).toBe(false);
     }
   });
 });
@@ -332,15 +396,19 @@ test.describe('8.6 one-pager — a view, not a record', () => {
     expect(component).not.toMatch(/setDoc|updateDoc|addDoc|runProjectCommand|method:\s*['"]POST/);
   });
 
+  test('the scope sentence says it is derived, not stored and not in the audit pack', () => {
+    const page = steeringOnePager(full());
+    expect(page.footnote.scope).toBe('Derived when opened; not stored; not part of the signed audit pack.');
+  });
+
   test('every opening reads anew: an earlier read is dropped before the page or Print can show it', () => {
     // QA review of 4b4586aff273: reopening kept the previous read, so the
     // page (and Print) showed stale figures while the new reads were pending.
     const component = read('components/workspace/SteeringOnePager.tsx');
     expect(component).toMatch(
-      /const openFresh = \(\) => \{\s*setHistory\(undefined\);\s*setFindings\(undefined\);\s*setDecision\(undefined\);\s*setOpen\(true\);/,
+      /const openFresh = \(\) => \{\s*setHistory\(undefined\);\s*setFindings\(undefined\);\s*setDecision\(undefined\);\s*setProcess\(undefined\);\s*setOpen\(true\);/,
     );
     expect(component).toContain('onClick={openFresh}');
-    expect(component).not.toContain('onClick={() => setOpen(true)}');
   });
 
   test('it is not part of the signed audit pack', () => {
@@ -349,9 +417,11 @@ test.describe('8.6 one-pager — a view, not a record', () => {
     }
   });
 
-  test('it prints through the browser: a print rule keeps only the one-pager, and no PDF package was added', () => {
+  test('it prints through the browser on one landscape page, and no PDF package was added', () => {
     const css = read('app/globals.css');
     expect(css).toMatch(/body:has\(\[data-steering-print\]\)/);
+    expect(css).toMatch(/@page steering \{\s*size: A4 landscape;/);
+    expect(css).toMatch(/\[data-steering-print\] a\[href\]::after \{\s*content: none !important;/);
     const pkg = JSON.parse(read('package.json')) as { dependencies?: Record<string, string> };
     for (const name of Object.keys(pkg.dependencies ?? {})) {
       expect(name, 'a PDF package crept in for 8.6').not.toMatch(/pdf/i);
@@ -397,7 +467,7 @@ test.describe('8.6 rendered — the one-pager in the Management view', () => {
     });
   });
 
-  test('opens with figures and reasons, links into the project, and prints alone', async ({ page }) => {
+  test('opens as one page: the decision, four figures, reasons in place, links without addresses', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, OWNER);
     await page.goto(`/project/${PROJECT_ID}?view=management`, { waitUntil: 'domcontentloaded' });
@@ -409,25 +479,33 @@ test.describe('8.6 rendered — the one-pager in the Management view', () => {
     const pager = page.locator('[data-steering-one-pager="open"]');
     await expect(pager.locator('[data-steering-summary]')).toBeVisible({ timeout: 60000 });
 
-    // No signed run: the score is under "Not determined", with a reason, not a zero.
-    const score = pager.locator('[data-steering-not-determined="clean-core-score"]');
-    await expect(score.locator('[data-figure-absent-reason]')).toHaveText('no signed run');
-
-    // Every figure has coverage and a link into this project.
+    // No signed run: the score says so in place, with its reason, not a zero.
+    await expect(pager.locator('[data-steering-figure="score"] [data-figure-absent-reason]')).toContainText('no signed run');
+    // At most four key figures, each with a link into this project.
     const figures = pager.locator('[data-steering-figure]');
-    const n = await figures.count();
-    expect(n).toBeGreaterThan(0);
-    expect(await pager.locator('[data-steering-figure] [data-figure-coverage]').count()).toBe(n);
-    for (const href of await pager.locator('[data-steering-figure] [data-steering-evidence]').evaluateAll((els) =>
+    expect(await figures.count()).toBeLessThanOrEqual(4);
+    for (const href of await pager.locator('[data-steering-evidence]').evaluateAll((els) =>
       els.map((el) => el.getAttribute('href') ?? ''),
     )) {
       expect(href.startsWith(`/project/${PROJECT_ID}`)).toBe(true);
     }
+    // No address is printed as text.
+    expect(await pager.innerText()).not.toMatch(/https?:\/\//);
+    await expect(pager.locator('[data-steering-scope]')).toHaveText('Derived when opened; not stored; not part of the signed audit pack.');
 
-    // On paper, nothing but the one-pager, and no buttons.
+    // A phone: it stacks, and nothing runs off the side.
+    await page.setViewportSize({ width: 390, height: 844 });
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, 'the one-pager runs off a 390 px screen').toBeLessThanOrEqual(0);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+
+    // On paper, nothing but the one-pager, no buttons, and one page.
     await page.emulateMedia({ media: 'print' });
     await expect(pager).toBeVisible();
     await expect(page.locator('[data-management-view=""]')).toBeHidden();
     for (const b of await pager.locator('button').all()) await expect(b).toBeHidden();
+    const pdf = await page.pdf({ preferCSSPageSize: true });
+    const pages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length;
+    expect(pages, 'the one-pager prints on more than one page').toBe(1);
   });
 });

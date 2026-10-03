@@ -21,7 +21,7 @@ import {
 } from '@/lib/workspace-messages';
 import { chartLabel, type ChartSegment, type SegmentTone } from '@/lib/management-overview';
 import type { ExecutiveFigure, ExecutiveSummary, ExecutiveTarget } from '@/lib/management-executive';
-import { STANDARD_FIT_DEFINITION, type StandardFit, type StandardFitItem } from '@/lib/standard-fit';
+import { NO_SAP_DEPENDENCY_TITLE, STANDARD_FIT_DEFINITION, type StandardFit, type StandardFitItem } from '@/lib/standard-fit';
 import { PHASE_TONE_CLASS } from '@/lib/workflow-steps';
 import InfoPopover from './InfoPopover';
 import GlossaryTerm from '@/components/GlossaryTerm';
@@ -279,6 +279,32 @@ export function StandardFitCard({
     );
   }
 
+  if (fit.state === 'none-used') {
+    // The best case, said as one (owner 03.10.2026): no SAP object, nothing in
+    // the way — and no percentage, since 0 of 0 is neither 0 % nor 100 %.
+    return (
+      <section id="standard-fit" data-standard-fit="none-used" className={CARD}>
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="m-0 text-[14px] leading-tight font-bold text-cc-ink">{wt('stdFit.title')}</h3>
+          {info}
+        </div>
+        <p data-standard-fit-value="" className="m-0 mt-3 cc-text-figure leading-none text-cc-ink">
+          {NO_SAP_DEPENDENCY_TITLE}
+        </p>
+        <p data-standard-fit-reason="" className="m-0 mt-2 text-[13px] leading-snug font-medium text-cc-ink">
+          {fit.sentence}
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <CcProvenanceChip value="reconstructed" />
+          <CcTag>{wt('stdFit.ownMeasure')}</CcTag>
+        </div>
+        {fit.basis === 'demo' ? (
+          <p className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('stdFit.demoBasis')}</p>
+        ) : null}
+      </section>
+    );
+  }
+
   const meterParts = fit.groups.flatMap((g) => g.segments);
   const total = meterParts.reduce((n, p) => n + p.count, 0);
   const groupTitle = (key: 'fits' | 'blocks' | 'uncounted') =>
@@ -406,6 +432,7 @@ export default function ManagementExecutive({
   fitDetailsHref = '#public-cloud-fit',
   setTargetHref,
   coach,
+  decision,
 }: {
   summary: ExecutiveSummary;
   /** Turns a target into a link on this surface — a stage of the project, or of the demo. */
@@ -423,6 +450,14 @@ export default function ManagementExecutive({
   setTargetHref?: string;
   /** The coach mark slot for "Your next step" — above the answer, where the tour starts. */
   coach?: React.ReactNode;
+  /**
+   * The decision record itself (`DecisionCard`), when the project has one to
+   * show — a signed run. It takes the card's answer and status, and the list of
+   * what stands in the way gives way to it: the decision's own conditions say
+   * that, and fit to standard beside it names the objects (owner 03.10.2026:
+   * "the decision must be shown, placed prominently").
+   */
+  decision?: React.ReactNode;
 }) {
   const s = summary;
   // The decision's own step stays as a link when it goes somewhere the primary
@@ -432,31 +467,7 @@ export default function ManagementExecutive({
       ? s.next
       : null;
 
-  return (
-    <div data-management-executive="" className="grid items-start gap-4 lg:grid-cols-12">
-      {/* The decision: question, state, the one next action, what is in the way. */}
-      <div data-executive-decision="" className={cn(CARD, 'lg:col-span-5')}>
-        {coach}
-        <p data-executive-question="" className="m-0 text-[13px] leading-snug font-semibold text-cc-ink-muted">
-          <span className={cn(LABEL, 'mr-2')}>
-            {/* "Decision" is the program decision only; a branch in the code is
-                a decision point (owner, 03.10.2026). The term opens by tap or
-                keyboard, never on hover alone. */}
-            <GlossaryTerm termKey="Decision">{wt('exec.questionLabel')}</GlossaryTerm>
-          </span>
-          {s.question}
-        </p>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-          <h2
-            id={headingId}
-            data-management-headline=""
-            className="m-0 min-w-0 flex-1 basis-56 cc-text-h2 leading-snug text-cc-ink"
-          >
-            {s.answer}
-          </h2>
-          <CcObjectStatus facet={wt('exec.statusFacet')} value={s.status} />
-        </div>
-
+  const nextBox = (
         <div
           data-executive-next=""
           data-coach-target="next-step"
@@ -491,7 +502,83 @@ export default function ManagementExecutive({
             </p>
           ) : null}
         </div>
+  );
+  const nextRow = (
+    <div
+      data-executive-next=""
+      data-coach-target="next-step"
+      className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-cc-row border border-l-4 border-cc-line border-l-cc-ink bg-cc-surface-muted px-3 py-2"
+    >
+      <span className={LABEL}>{wt('nextStep.title')}</span>
+      {primary || s.next ? (
+        <>
+          <span className="min-w-0 flex-1 basis-48 text-[12px] leading-snug font-medium text-cc-ink-muted">
+            {primary ? primary.reason : s.next!.reason}
+          </span>
+          <CcLinkButton
+            href={primary ? primary.href : hrefFor(s.next!.target)}
+            variant="primary"
+            data-executive-next-action=""
+            data-next-step-key={primary?.key}
+          >
+            {primary ? primary.label : s.next!.label}
+          </CcLinkButton>
+        </>
+      ) : (
+        <span className="text-[12px] font-medium text-cc-ink-muted">{wt('exec.noNextStep')}</span>
+      )}
+    </div>
+  );
 
+  return (
+    <div data-management-executive="" className="grid items-start gap-4 lg:grid-cols-12">
+      {/* The decision: question, state, the one next action, what is in the way. */}
+      <div
+        data-executive-decision=""
+        data-executive-decision-record={decision ? '' : undefined}
+        className={cn(CARD, decision ? 'lg:col-span-7' : 'lg:col-span-5')}
+      >
+        {coach}
+        {decision ? (
+          <>
+            <h2 id={headingId} data-executive-question="" className="m-0 text-[13px] leading-snug font-semibold text-cc-ink-muted">
+              <span className={cn(LABEL, 'mr-2')}>
+                <GlossaryTerm termKey="Decision">{wt('exec.questionLabel')}</GlossaryTerm>
+              </span>
+              {s.question}
+            </h2>
+            {/* The page's one next step, as one row above the decision, so its
+                tip stands at the top of the page rather than over the folds. */}
+            {nextRow}
+            <div className="mt-3">{decision}</div>
+          </>
+        ) : (
+          <>
+        <p data-executive-question="" className="m-0 text-[13px] leading-snug font-semibold text-cc-ink-muted">
+          <span className={cn(LABEL, 'mr-2')}>
+            {/* "Decision" is the program decision only; a branch in the code is
+                a decision point (owner, 03.10.2026). The term opens by tap or
+                keyboard, never on hover alone. */}
+            <GlossaryTerm termKey="Decision">{wt('exec.questionLabel')}</GlossaryTerm>
+          </span>
+          {s.question}
+        </p>
+        <div className="mt-2 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+          <h2
+            id={headingId}
+            data-management-headline=""
+            className="m-0 min-w-0 flex-1 basis-56 cc-text-h2 leading-snug text-cc-ink"
+          >
+            {s.answer}
+          </h2>
+          <CcObjectStatus facet={wt('exec.statusFacet')} value={s.status} />
+        </div>
+          </>
+        )}
+
+        {decision ? null : nextBox}
+
+        {decision ? null : (
         <div data-executive-blockers="" className="mt-4">
           <h3 className={LABEL}>
             {wt('exec.inTheWay')}
@@ -526,9 +613,10 @@ export default function ManagementExecutive({
             </p>
           ) : null}
         </div>
+        )}
       </div>
 
-      <div className="min-w-0 lg:col-span-7">
+      <div className={cn('min-w-0', decision ? 'lg:col-span-5' : 'lg:col-span-7')}>
         <StandardFitCard fit={fit} detailsHref={fitDetailsHref} setTargetHref={setTargetHref} />
       </div>
     </div>

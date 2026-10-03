@@ -160,9 +160,10 @@ const MANAGEMENT_COACH_MARKS: readonly CoachMarkId[] = ['next-step'];
 /**
  * Management opens with its answer (ADR-029): the decision with the page's ONE
  * next action, beside fit to standard (ADR-069) — the full width of the frame
- * (ADR-063), not a narrow column. Everything else stands in four named folds,
- * collapsed until opened (owner 03.10.2026): Evidence, Options and the
- * decision, Costs, Process. "Next step" is not a card of its own here: it is
+ * (ADR-063), not a narrow column. The decision record itself is that
+ * card's hero, never folded (owner 03.10.2026: "the decision must be shown,
+ * placed prominently"). Everything else stands in three named folds, collapsed
+ * until opened: Evidence, Costs, Process. "Next step" is not a card of its own here: it is
  * the decision card's button, so the page never says it twice.
  */
 const MANAGEMENT_HEAD: readonly ContentBlock[] = ['answers'];
@@ -591,6 +592,15 @@ export default function WorkspaceShell({
             projectId={projectId}
             decisionRevision={decisionRevision}
             nextStep={nextStep}
+            decision={
+              // "Open decision" (roadmap 8.4), the first thing in Management and
+              // never folded (owner 03.10.2026): what a confirmation would bind,
+              // the conditions and the timeline. It writes only through the
+              // commands route, so the Stand check of 6.9 hangs off it.
+              <div id="decision-card">
+                <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} onChanged={onDecisionChanged} />
+              </div>
+            }
             coach={
               <div className="cc-no-print">
                 <CoachMarkNote mark={currentMark} slot="next-step" onDismiss={marks.dismiss} onDismissAll={marks.dismissAll} />
@@ -1001,17 +1011,6 @@ export default function WorkspaceShell({
               derived when opened, never stored, printed through the browser
               (roadmap 8.6). */}
           <SteeringOnePager project={project} projectId={projectId} />
-          <ManagementFold
-            id="options"
-            summary={project?.activeRunId ? wt('mgmtFold.optionsSummary') : wt('mgmtFold.optionsNoRun')}
-          >
-            {/* "Open decision" (roadmap 8.4): what a confirmation would bind, the
-                conditions and the timeline; it writes only through the commands
-                route, so the Stand check of 6.9 hangs off it. */}
-            <div id="decision-card">
-              <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} onChanged={onDecisionChanged} />
-            </div>
-          </ManagementFold>
           <ManagementFold id="costs" summary={costsSummary}>
             {/* The amounts live in Economics, as a simulation; the costs layer
                 itself is one tab of the bar under "Process". */}

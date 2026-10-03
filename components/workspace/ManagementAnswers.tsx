@@ -46,6 +46,7 @@ export default function ManagementAnswers({
   nextStep,
   coach,
   evidenceExtra,
+  decision,
 }: {
   project: Project | null;
   projectId: string;
@@ -55,6 +56,8 @@ export default function ManagementAnswers({
   nextStep?: NextOpenPoint | null;
   coach?: React.ReactNode;
   evidenceExtra?: React.ReactNode;
+  /** The decision record's card — the hero of the Management view. */
+  decision?: React.ReactNode;
 }) {
   /**
    * `undefined` while the read is in flight, `null` when it failed or was
@@ -140,6 +143,7 @@ export default function ManagementAnswers({
         nextStep={nextStep}
         coach={coach}
         evidenceExtra={evidenceExtra}
+        decision={decision}
       >
       <div className="space-y-4">
         {view.answers.map((answer) => (

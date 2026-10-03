@@ -128,12 +128,10 @@ export function bindingShown(key: DecisionBindingKey, revision: string): string 
         ? `none required — nothing is generated; rests on the analysis run and ${when}`
         : `none required — nothing is generated; ${when} is not current`;
     }
-    const c =/^(blocked:)?(qualified:)?([^/]+)\/([a-z-]+?)(\+deviation)?\+[0-9a-f]+$/.exec(revision);
+    const c = contractParts(revision);
     if (!c) return revision;
-    const [, blocked, qualified, id, route, deviation] = c;
-    const routeLabel = alternativeLabelForDisplay(route) ?? route.replace(/-/g, ' ');
-    const state = blocked ? 'blocked by a limit' : qualified ? 'draft with open limits' : 'complete';
-    return `${id}, ${routeLabel}${deviation ? ', deviating from the route the engine named' : ''} — ${state}`;
+    const state = c.state === 'blocked' ? 'blocked by a limit' : c.state === 'qualified' ? 'draft with open limits' : 'complete';
+    return `${c.id}, ${c.routeLabel}${c.deviation ? ', deviating from the route the engine named' : ''} — ${state}`;
   }
   if (key === 'cost') {
     const c = /^(unconfirmed:)?([^@]+)@([^/]+)\/(.+)#(\d+)opt\+[0-9a-f]+$/.exec(revision);
@@ -153,6 +151,21 @@ export function bindingShown(key: DecisionBindingKey, revision: string): string 
   }
   // The option binding carries the stored label bytes (`lib/decision-draft.ts`).
   return sapNamesForDisplay(revision);
+}
+
+/** A contract revision key taken apart: which contract, on which route, in what state. `null` for any other shape. */
+export function contractParts(
+  revision: string,
+): { id: string; routeLabel: string; deviation: boolean; state: 'blocked' | 'qualified' | 'complete' } | null {
+  const c = /^(blocked:)?(qualified:)?([^/]+)\/([a-z-]+?)(\+deviation)?\+[0-9a-f]+$/.exec(revision);
+  if (!c) return null;
+  const [, blocked, qualified, id, route, deviation] = c;
+  return {
+    id,
+    routeLabel: alternativeLabelForDisplay(route) ?? route.replace(/-/g, ' '),
+    deviation: Boolean(deviation),
+    state: blocked ? 'blocked' : qualified ? 'qualified' : 'complete',
+  };
 }
 
 /** "1 open · 2 met" — never a count for a status nobody holds, and never a zero standing for "none". */

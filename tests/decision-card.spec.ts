@@ -12,6 +12,7 @@ import { contractOfProject } from '../lib/contract-build';
 import { validateProjectCommand, type ProjectCommandState } from '../lib/project-commands';
 import { deriveDecisionDraft, readStoredDecision, type DecisionDraftFacts } from '../lib/decision-draft';
 import { bindingShown, conditionsSummary, decisionCardView } from '../lib/decision-card';
+import { decisionHeadline, decisionManagerView, decisionPoint, withoutSourcePaths } from '../lib/decision-manager';
 import { deriveProjectDecision } from '../lib/decision-facts';
 import { PROCESS_STATE_COLLECTION } from '../lib/process-states';
 import { PROCESS_REVISION_COLLECTION } from '../lib/process-revisions';
@@ -437,9 +438,10 @@ test.describe('8.4 card — source guards', () => {
 
   test('the card is mounted in the Management view of the workspace only', () => {
     const shell = fs.readFileSync(path.join(ROOT, 'components/workspace/WorkspaceShell.tsx'), 'utf8');
-    // Inside the Management branch, in its "Options and the decision" fold
-    // since 03.10.2026 (ADR-069) — still rendered there and nowhere else.
-    expect(shell).toMatch(/view === 'management' && \([\s\S]{0,1500}?<ManagementFold\s+id="options"[\s\S]{0,800}?<DecisionCard/);
+    // Handed to the Management answers only, as the hero of the decision
+    // panel and never inside a fold (owner 03.10.2026) — and nowhere else.
+    expect(shell).toMatch(/view === 'management' \? \([\s\S]{0,400}?<ManagementAnswers[\s\S]{0,800}?decision=\{[\s\S]{0,600}?<DecisionCard/);
+    expect(shell).not.toMatch(/<ManagementFold\s+id="options"/);
     expect(shell.match(/<DecisionCard\b/g)).toHaveLength(1);
   });
 });
@@ -690,5 +692,76 @@ test.describe('8.4 card — an option that generates nothing (G4-F1)', () => {
     expect(bindingShown('contract', 'not-current:none-required:retire/sign-off@2026-09-21T08:00:00.000Z+0123456789ab')).toBe(
       'none required — nothing is generated; the sign-off of 2026-09-21 is not current',
     );
+  });
+});
+
+/* -------------------------------------------- what a manager reads first */
+
+test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
+  const CATALOG_SENTENCE =
+    "The catalog that answered is the Public Cloud release list; this build ships no edition-specific snapshot, and the lookup takes no edition (`lib/abap/catalog-service.ts` names neither `deployment` nor `edition`). The S/4HANA Cloud, Private Edition target context is bound as an input, not corroborated by a catalog for that edition.";
+
+  test('the headline is the option, in plain words, and the four pillars carry their state', () => {
+    const draft = deriveDecisionDraft(facts()).draft;
+    const m = decisionManagerView(draft);
+    expect(m.headline).toBe('Rebuild as In-App ABAP Cloud (RAP)');
+    expect(m.pillars.map((p) => p.key)).toEqual(['need', 'option', 'cost', 'contract']);
+    const by = Object.fromEntries(m.pillars.map((p) => [p.key, p]));
+    expect(by.option.provenance).toBe('confirmed');
+    expect(by.need.provenance).toBe('confirmed');
+    // Never invented: the cost revision is not bound, and the pillar says so.
+    expect(by.cost.provenance).toBe('not-determined');
+    expect(by.cost.line).toMatch(/No cost assumptions entered yet/);
+    // Green is reserved for proven: no pillar of a decision is proven.
+    for (const p of m.pillars) expect(p.provenance).not.toBe('proven');
+    expect(decisionHeadline(null)).toBe('No option chosen yet');
+    expect(decisionHeadline('retire · Retire / Decommission')).toBe('Retire this object');
+    expect(decisionManagerView(deriveDecisionDraft(facts({ signedOffArchitecture: null })).draft).readiness).toMatch(
+      /^Cannot be confirmed yet: .*no target architecture is signed off/,
+    );
+  });
+
+  test('a condition is one plain line with the place it is resolved; the record text is kept for the fold', () => {
+    const point = decisionPoint({
+      id: 'contract:catalog-not-edition-specific:S/4HANA Cloud, Private Edition',
+      text: CATALOG_SENTENCE,
+      source: 'contract-limit',
+      status: 'open',
+      statusBasis: 'derived',
+      evidence: 'catalog-not-edition-specific:S/4HANA Cloud, Private Edition',
+      attestation: null,
+      provenance: 'reconstructed',
+    });
+    expect(point.line).toBe('The SAP catalog check is not specific to S/4HANA Cloud, Private Edition.');
+    expect(point.place).toEqual({ kind: 'view', view: 'it' });
+    const need = decisionPoint({
+      id: 'need:undecided', text: 'x', source: 'need-open', status: 'open', statusBasis: 'derived',
+      evidence: 'undecided:15', attestation: null, provenance: 'reconstructed',
+    });
+    expect(need).toMatchObject({ line: '15 process elements have no confirmed state yet.', place: { kind: 'view', view: 'business' } });
+  });
+
+  test('no source file path reaches the reader, not even in the technical fold', () => {
+    const cleaned = withoutSourcePaths(CATALOG_SENTENCE);
+    expect(cleaned).not.toMatch(/lib\/|\.ts\b|`/);
+    expect(cleaned).toContain('the lookup takes no edition.');
+    const draft = deriveDecisionDraft(facts()).draft;
+    for (const e of decisionManagerView(draft).technical) expect(e.text).not.toMatch(/lib\/|\.tsx?\b/);
+  });
+
+  test('a confirmed decision is not offered for confirmation again', () => {
+    const draft = deriveDecisionDraft(facts()).draft;
+    expect(decisionManagerView(draft).readiness).toMatch(/^Can be confirmed/);
+    const confirmed = { ...draft, status: 'confirmed' as const };
+    expect(decisionManagerView(confirmed).readiness).not.toMatch(/Can be confirmed|Cannot be confirmed/);
+  });
+
+  test('what is stored is not touched: the record keeps its own sentences and fingerprint', () => {
+    const draft = deriveDecisionDraft(facts()).draft;
+    const before = JSON.stringify(draft);
+    decisionManagerView(draft);
+    expect(JSON.stringify(draft)).toBe(before);
+    const card = fs.readFileSync(path.resolve(__dirname, '..', 'lib/decision-manager.ts'), 'utf8');
+    expect(card).not.toMatch(/from '\.\/(architecture-contract|contract-build|project-decision-build|decision-draft)'|from '\.\/abap\//);
   });
 });

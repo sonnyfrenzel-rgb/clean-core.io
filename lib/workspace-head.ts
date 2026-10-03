@@ -44,8 +44,12 @@ export function signedFileName(project: Project | null): string | null {
  */
 export function workspaceEyebrow(project: Project | null): string[] {
   const parts: string[] = [];
+  // The source file only when it says something the title does not (owner,
+  // 03.10.2026: "Z_EMPLOYEE_EXPENSE_VAL.TXT" under the title
+  // "Z_EMPLOYEE_EXPENSE_VAL" repeated it), and without its extension.
   const file = signedFileName(project);
-  if (file) parts.push(file);
+  const base = file ? file.replace(/\.[a-z0-9]{1,8}$/i, '') : null;
+  if (base && base.toLowerCase() !== (project?.name ?? '').trim().toLowerCase()) parts.push(base);
   const edition = typeof project?.s4Deployment === 'string' ? EDITION_WORDS[project.s4Deployment] : undefined;
   if (edition) {
     const release = declaredTargetOf(project).release;

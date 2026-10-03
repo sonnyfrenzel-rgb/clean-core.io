@@ -25,6 +25,9 @@ import PublicCloudFitPanel from '@/components/workspace/PublicCloudFitPanel';
 import ManagementExecutive, { ExecutiveEvidence } from '@/components/workspace/ManagementExecutive';
 import ManagementFold from '@/components/workspace/ManagementFold';
 import { standardFit } from '@/lib/standard-fit';
+import { SteeringOnePagerToggle } from '@/components/workspace/SteeringOnePager';
+import { steeringOnePager } from '@/lib/steering-one-pager';
+import { processCounts } from '@/lib/process-map';
 import CcDisclosure from '@/components/cc/Disclosure';
 import { useFitByPlatform } from '@/hooks/useFitByPlatform';
 import { managementExecutive, type ExecutiveTarget } from '@/lib/management-executive';
@@ -254,6 +257,26 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
         fit,
       }),
     [demo.rail, findingsRead, fit],
+  );
+  // The steering one-pager from the same data (redesign 03.10.2026) — no run,
+  // no decision record, and the page says so in place.
+  const buildSteering = useCallback(
+    () =>
+      steeringOnePager({
+        mode: 'demo',
+        base: '/demo',
+        program: DEMO_OBJECT_NAME,
+        date: new Date().toISOString().slice(0, 10),
+        project,
+        hasRun: false,
+        history: [],
+        open,
+        findings: itFindings,
+        fit: demoFit,
+        decision: null,
+        process: demo.documentation.process ? processCounts(demo.documentation.process.model.elements) : null,
+      }),
+    [project, open, itFindings, demoFit, demo.documentation.process],
   );
   const executiveHref = useCallback(
     (target: ExecutiveTarget): string =>
@@ -659,6 +682,9 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
           <Place place="management" className="mt-5">
             {stop('management')}
             <ManagementExecutive summary={executive} hrefFor={executiveHref} fit={demoFit} />
+            <div className="mt-4">
+              <SteeringOnePagerToggle build={buildSteering} />
+            </div>
             <div className="mt-4">
               <ManagementFold id="evidence" summary={wt('mgmtFold.evidenceRun')}>
                 <ExecutiveEvidence summary={executive} hrefFor={executiveHref} />

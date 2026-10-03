@@ -634,6 +634,13 @@
  * high-contrast theme. In both, the fill goes and a filled chip becomes a 2px
  * border — so the three forms stay three.
  * ------------------------------------------------------------- */
+/* The steering one-pager's paper (roadmap 8.6, redesign 03.10.2026): one A4
+   landscape page. A named page, so no other print of the app changes size. */
+@page steering {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
 @media print {
   [data-cc-form] {
     background: #fff !important;
@@ -752,6 +759,34 @@
 
   [data-steering-print] li {
     break-inside: avoid;
+  }
+
+  /* One A4 landscape page (redesign 03.10.2026): links stay links on paper,
+     without their address printed after them. */
+  [data-steering-print] {
+    page: steering;
+    font-size: 12px;
+  }
+
+  [data-steering-print] a[href]::after {
+    content: none !important;
+  }
+
+  /* The page starts at the top of the paper: the frames around it give up
+     their padding, and the four figures and the two lists keep their row. */
+  body:has([data-steering-print]) *:has([data-steering-print]) {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  [data-steering-figures] {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  [data-steering-lists] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
   /* The workspace prints its own short sheet (WorkspacePrintSheet, §7.1 and
