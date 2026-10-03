@@ -23,6 +23,65 @@ export function useCcHydrated(): boolean {
   return useSyncExternalStore(noSubscription, () => true, () => false);
 }
 
+function subscribeFullscreen(onChange: () => void): () => void {
+  document.addEventListener('fullscreenchange', onChange);
+  return () => document.removeEventListener('fullscreenchange', onChange);
+}
+
+/**
+ * Where a layer is portalled: `body`, or the element the browser shows in full
+ * screen while it shows one.
+ *
+ * With the Fullscreen API only the full-screen element's subtree is drawn. A
+ * dialog portalled to `body` while a canvas is in full screen was drawn
+ * nowhere — opened, holding the focus, and invisible (owner 03.10.2026: "in
+ * full screen I can't open the evidence boxes"). Inside the full-screen
+ * element it is on screen, and when full screen ends it moves back to `body`.
+ */
+export function useCcPortalTarget(): HTMLElement | null {
+  return useSyncExternalStore(
+    subscribeFullscreen,
+    () => (document.fullscreenElement as HTMLElement | null) ?? document.body,
+    () => null,
+  );
+}
+
+/** True while a modal layer (`CcDialog`, `CcMessageBox`) is open — Escape is the layer's then. */
+export function ccModalOpen(): boolean {
+  return typeof document !== 'undefined' && document.querySelector('[aria-modal="true"]') !== null;
+}
+
+interface KeyboardLock {
+  lock?(keys: string[]): Promise<void>;
+  unlock?(): void;
+}
+
+/**
+ * Escape for a layer over full screen, not for the browser.
+ *
+ * In the browser's own full screen a real Escape leaves full screen before the
+ * page sees it, so a layer opened in full screen could not be closed with
+ * Escape without throwing the reader out of full screen as well. Where the
+ * browser has the Keyboard Lock API (Chromium), the layer asks for the key
+ * while it is open: Escape closes the layer, a second one leaves full screen,
+ * and holding Escape still leaves it at once, as the browser promises. Where
+ * there is no such API, the browser's own behaviour stands.
+ *
+ * Returns the release, for the layer's cleanup.
+ */
+export function holdEscapeInFullscreen(): () => void {
+  if (typeof document === 'undefined' || !document.fullscreenElement) return () => {};
+  const keyboard = (navigator as Navigator & { keyboard?: KeyboardLock }).keyboard;
+  if (!keyboard?.lock) return () => {};
+  let held = true;
+  void keyboard.lock(['Escape']).catch(() => {
+    held = false;
+  });
+  return () => {
+    if (held) keyboard.unlock?.();
+  };
+}
+
 /**
  * What makes a layer modal — `DESIGN.md` §2.6, ADR-028. Shared by
  * `CcMessageBox` (a confirmation) and `CcDialog` (a form or an explanation), so
@@ -31,9 +90,10 @@ export function useCcHydrated(): boolean {
  * While `open`:
  *
  *   - every child of `body` except the layer goes `inert` — it cannot be tabbed
- *     into, clicked or read by a screen reader. `inert` is inherited, so this
- *     only works because both components portal their layer to `body`; a layer
- *     buried in the tree being switched off would switch itself off with it;
+ *     into, clicked or read by a screen reader. `inert` is inherited, so both
+ *     components portal their layer to `body` (or to the element in full
+ *     screen, `useCcPortalTarget`), and only the siblings on the way up from
+ *     the layer are switched off — never one of its own ancestors;
  *   - the focus moves into the layer and Tab / Shift+Tab wrap inside it;
  *   - Escape calls `onClose`;
  *   - on close, the focus goes back to whatever had it before — the button that
@@ -91,15 +151,20 @@ export function useCcModal<T extends HTMLElement>({
     const box = layerRef.current;
     const container = box?.parentElement ?? null;
 
+    // Everything beside the layer goes inert, at every level up to `body`: the
+    // layer is a child of `body`, or — over a canvas in full screen — a child
+    // of the full-screen element (`useCcPortalTarget`), whose own ancestors
+    // must stay live or the layer would be switched off with them.
     const siblings: HTMLElement[] = [];
-    if (container) {
-      for (const node of Array.from(document.body.children)) {
-        if (node === container || !(node instanceof HTMLElement)) continue;
-        if (node.hasAttribute('inert')) continue;
-        node.setAttribute('inert', '');
-        siblings.push(node);
+    for (let node: HTMLElement | null = container; node && node !== document.body && node.parentElement; node = node.parentElement) {
+      for (const other of Array.from(node.parentElement.children)) {
+        if (other === node || !(other instanceof HTMLElement)) continue;
+        if (other.hasAttribute('inert')) continue;
+        other.setAttribute('inert', '');
+        siblings.push(other);
       }
     }
+    const releaseEscape = holdEscapeInFullscreen();
 
     // A form may name the control the caret belongs on (`data-cc-initial-focus`)
     // — the terms gate has no field, and its one way back into the product is
@@ -150,6 +215,7 @@ export function useCcModal<T extends HTMLElement>({
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
+      releaseEscape();
       for (const node of siblings) node.removeAttribute('inert');
       opener?.focus();
     };
