@@ -784,6 +784,11 @@ function receivesResults(text: string): boolean {
 
 function isFileOutput(statement: AbapStatement): boolean {
   if (statement.keyword === 'TRANSFER') return true;
+  // ABAP keyword documentation, CLOSE DATASET: closes the file on the
+  // application server; for a file opened for output the buffered content is
+  // written and the file is complete only now. Part of the same file step as
+  // OPEN DATASET and TRANSFER — a CLOSE right behind a TRANSFER joins its run.
+  if (statement.keyword === 'CLOSE' && /^CLOSE\s+DATASET\b/i.test(statement.text)) return true;
   return statement.keyword === 'OPEN' && /^OPEN\s+DATASET\b/i.test(statement.text);
 }
 

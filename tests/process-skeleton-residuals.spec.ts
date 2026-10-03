@@ -32,3 +32,25 @@ test('RECEIVE RESULTS in the callback of an asynchronous RFC is the receiving se
   expect(skeleton.edges.some((e) => e.to === receive.id)).toBe(true);
   expect(skeleton.edges.some((e) => e.from === receive.id)).toBe(true);
 });
+
+test('CLOSE DATASET completes the file: a file step, joined to a TRANSFER right before it', () => {
+  const source = [
+    'REPORT zfile_close.', //                                                      1
+    'START-OF-SELECTION.', //                                                      2
+    '  OPEN DATASET gv_path FOR OUTPUT IN TEXT MODE ENCODING DEFAULT.', //          3
+    '  LOOP AT gt_lines INTO gv_line.', //                                         4
+    '    TRANSFER gv_line TO gv_path.', //                                         5
+    '  ENDLOOP.', //                                                               6
+    '  CLOSE DATASET gv_path.', //                                                 7
+    "  WRITE / 'written'.", //                                                     8
+    "  TRANSFER 'END' TO gv_log.", //                                              9
+    '  CLOSE DATASET gv_log.', //                                                  10
+  ].join('\n');
+  const skeleton = buildProcessSkeleton(source);
+  const close = skeleton.nodes.find((n) => n.anchor?.lineStart === 7);
+  expect([close?.kind, close?.detail?.target]).toEqual(['output', 'file']);
+  // Right behind a TRANSFER it is the same run of file output, not a second step.
+  expect(skeleton.nodes.filter((n) => n.anchor?.lineStart === 10 && n.kind !== 'end')).toEqual([]);
+  const run = skeleton.nodes.find((n) => n.anchor?.lineStart === 9)!;
+  expect([run.kind, run.anchor?.lineEnd, run.detail?.statements]).toEqual(['output', 10, 2]);
+});
