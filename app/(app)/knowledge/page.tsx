@@ -1,3 +1,4 @@
+import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { BookOpen, Layers, Check } from 'lucide-react';
@@ -90,7 +91,7 @@ export default function KnowledgePage() {
       {/* JSON-LD Structured Data for AI Crawlers */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(schemaJson) }}
       />
 
       {/* Navigation */}

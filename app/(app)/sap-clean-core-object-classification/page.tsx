@@ -1,3 +1,4 @@
+import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { Layers, Check } from 'lucide-react';
@@ -95,7 +96,7 @@ export default function CleanCoreClassificationPage() {
 
   return (
     <div className={PAGE}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson).replace(/</g, '\\u003c') }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(schemaJson) }} />
 
       {/* Navigation */}
       <div className="flex items-center justify-start">

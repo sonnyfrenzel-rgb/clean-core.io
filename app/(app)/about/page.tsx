@@ -1,3 +1,4 @@
+import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { Globe, ShieldCheck, Server, Users, Linkedin, Github } from 'lucide-react';
@@ -60,7 +61,7 @@ export default function AboutPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-12 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300 min-h-screen text-cc-ink">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(personSchema) }}
       />
 
       {/* Navigation */}

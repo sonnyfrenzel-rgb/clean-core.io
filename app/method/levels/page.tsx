@@ -1,3 +1,4 @@
+import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, FileCode2, GitMerge, AlertTriangle, Fingerprint } from 'lucide-react';
@@ -94,7 +95,7 @@ export default function LevelDerivationPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-12 motion-safe:animate-in fade-in duration-300 text-cc-ink font-sans">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(schemaJson) }} />
 
       <div>
         <Link

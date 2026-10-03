@@ -1,3 +1,4 @@
+import { jsonLdHtml } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
@@ -469,7 +470,7 @@ export default function Home() {
 
   return (
     <div className="lp3 min-h-screen bg-cc-page text-cc-ink">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(schemaJson) }} />
 
       {/* The public header (block D, D.24): logo, the pages with search reach,
           and the sign-in button where it always was — `?auth=signin`. */}
