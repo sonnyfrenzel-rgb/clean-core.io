@@ -1,4 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
 import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import { receiptFor } from './helpers/test-receipt';
@@ -575,4 +577,15 @@ test.describe('pictures', () => {
       }
     }
   });
+});
+
+// Owner, 03.10.2026: the console said "not run here" over "Sandbox initialized.
+// Waiting for execution…". Before a run nothing is initialised, and on the ABAP
+// route nothing runs here at all.
+test('the console never claims a sandbox that is not there', () => {
+  const page = fs.readFileSync(path.resolve(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'testing', 'page.tsx'), 'utf8');
+  const hook = fs.readFileSync(path.resolve(__dirname, '..', 'hooks', 'useTestExecution.ts'), 'utf8');
+  expect(hook).not.toContain('Sandbox initialized');
+  expect(page).not.toContain('Waiting for execution');
+  expect(page).toMatch(/isAbapCloud\s*\?\s*'Nothing runs here\. ABAP Unit runs in your SAP system/);
 });

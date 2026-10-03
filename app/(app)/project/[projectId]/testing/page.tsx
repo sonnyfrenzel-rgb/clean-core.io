@@ -1608,7 +1608,15 @@ export default function TestingSandboxPage() {
                 {(!storedSuiteRejected && project?.testSuite?.code) || (isAbapCloud ? 'No ABAP Unit class written yet. Generate the scenarios (step 1) to see it here.' : 'No test code generated yet.')}
               </pre>
             ) : (
-              <pre className="whitespace-pre-wrap leading-relaxed">{sandboxOutput || '// Waiting for execution...'}</pre>
+              <pre className="whitespace-pre-wrap leading-relaxed" data-console-idle={sandboxOutput ? undefined : ''}>
+                {/* Nothing is initialised before a run, and on the ABAP route
+                    nothing runs here at all (owner, 03.10.2026: the header said
+                    "not run here" over "Sandbox initialized. Waiting for
+                    execution…"). */}
+                {isAbapCloud
+                  ? 'Nothing runs here. ABAP Unit runs in your SAP system: copy the test class into ADT and run it there (Ctrl+Shift+F10).'
+                  : sandboxOutput || 'No run yet. Tick the scenarios and start a mock run; its console output appears here.'}
+              </pre>
             )}
           </div>
         </div>

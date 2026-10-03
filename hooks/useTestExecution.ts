@@ -14,7 +14,7 @@ import { isAbapUnitRoute, ABAP_UNIT_NOT_RUNNABLE } from '@/lib/test-runnability'
 export const useTestExecution = (projectId: string, project: Project | null, setProject?: React.Dispatch<React.SetStateAction<Project | null>>) => {
   const [isRunning, setIsRunning] = useState(false);
   const [testResults, setTestResults] = useState<TestCase[] | null>(null);
-  const [sandboxOutput, setSandboxOutput] = useState<string>('Sandbox initialized. Waiting for execution...');
+  const [sandboxOutput, setSandboxOutput] = useState<string>('');
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   /**
    * npm packages the runner replaced with its universal stub in the last run
