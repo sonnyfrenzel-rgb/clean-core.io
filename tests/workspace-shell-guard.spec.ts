@@ -911,7 +911,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     await expect(page.locator('[data-management-view]')).toBeVisible({ timeout: 60000 });
     // The bucket panel stands in the "Evidence" fold under the answer (owner
     // 03.10.2026: at most three things above the fold) — open it to lay it out.
-    await page.locator('[data-management-fold="evidence"] [data-cc-disclosure-trigger]').click();
+    await page.locator('[data-management-fold="evidence"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first().click();
     await expect(page.locator('[data-public-cloud-fit-panel]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-workspace-access]')).toBeVisible({ timeout: 60000 });
 
