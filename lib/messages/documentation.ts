@@ -59,7 +59,7 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.businessNeedsDocumentation':
     'The business layer is written from the process documentation, and none is saved yet. Read it from the code first; that takes no model call.',
   'doc.businessReadFirst': 'Read the documentation from the code',
-  'doc.businessGenerating': 'Writing the SOP and the RACI…',
+  'doc.businessGenerating': 'Writing the SOP and the RACI (model)…',
   'doc.derivationTitle': 'How this was derived',
 } as const;
 

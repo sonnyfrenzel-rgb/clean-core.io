@@ -12,7 +12,7 @@ import {
   buildLegacyConfluenceHtml,
   STALE_EXPORT_NOTE,
 } from '../lib/documentation-export';
-import type { ProcessDocumentation } from '../lib/process-documentation';
+import { fixtureSource, processDocumentOf } from './helpers/business-layer-fixture';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
 
@@ -46,17 +46,7 @@ const BLUEPRINT = {
   ],
 };
 
-const ENGINE_DOC = {
-  processName: 'Order check',
-  disclaimer: 'Read from the code.',
-  fileName: 'Z_ORDER.abap',
-  lineCount: 3,
-  overview: 'One check.',
-  traceability: { sentence: 'Every step names its lines.' },
-  steps: [],
-  statements: [],
-  notDetermined: [],
-} as unknown as ProcessDocumentation;
+const ENGINE_DOC = processDocumentOf(fixtureSource());
 
 test.describe('the Confluence templates say when they are stale', () => {
   test('a stale legacy blueprint export opens with the note; a current one does not', async () => {

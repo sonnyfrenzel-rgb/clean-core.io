@@ -764,9 +764,9 @@ test.describe('G4 path 2 — targeted extension (CC-031: side-by-side CAP, sandb
     test.setTimeout(300_000);
     await signInThroughForm(page, owner);
     await page.goto(`/project/${projectId}/documentation`);
-    const start = page.locator('[data-generate-blueprint]');
-    await expect(start).toBeEnabled({ timeout: 120_000 });
-    await start.click();
+    // Owner 03.10.2026: opening the stage writes the documentation from the
+    // code — no click, no model call. The trace is drawn only once the stored
+    // document has come back from the transaction.
     await expect(page.locator('[data-engine-documentation]')).toBeVisible({ timeout: 120_000 });
     const h = await handover(projectId);
     expect(h.link('documentation').provenance).toBe('reconstructed');

@@ -59,18 +59,20 @@ test('entries and rendered fields that React cannot draw are refused', () => {
 
 test('the page gates both the generation and the stored layer on the shape check', () => {
   const src = page();
-  const gen = src.slice(src.indexOf('const generateBusinessDocumentation'), src.indexOf('const signedSource = useMemo'));
+  const gen = src.slice(src.indexOf('async function runBusinessGeneration'), src.indexOf('const signedSource = useMemo'));
   expect(gen).toContain('checkBusinessDocShape(extractJSON(responseText))');
   expect(gen, 'the old truthiness check is back').not.toContain('!parsed.raci_matrix');
-  const stored = src.slice(src.indexOf('const parsedBusinessDoc = useMemo'), src.indexOf('const generateBusinessDocumentation'));
+  const stored = src.slice(src.indexOf('const parsedBusinessDoc = useMemo'), src.indexOf('async function runBusinessGeneration'));
   expect(stored).toContain('checkBusinessDocShape(parsed)');
 });
 
 test('the business layer is shown only after the transaction stored it (52487ee4cacc)', () => {
   const src = page();
-  const gen = src.slice(src.indexOf('const generateBusinessDocumentation'), src.indexOf('const signedSource = useMemo'));
+  const gen = src.slice(src.indexOf('async function runBusinessGeneration'), src.indexOf('const signedSource = useMemo'));
   const transaction = gen.indexOf('await runTransaction(');
-  const shown = gen.indexOf('setBusinessDocumentation(responseText)');
+  // What is shown is what the transaction returned: this answer, or a layer another writer stored first.
+  const shown = gen.indexOf('setBusinessDocumentation(storedLayer)');
+  expect(gen).toContain('const storedLayer = updatedCode.kept ?? responseText;');
   expect(transaction).toBeGreaterThan(-1);
   expect(shown).toBeGreaterThan(transaction);
   expect(gen.split('setBusinessDocumentation(').length - 1).toBe(1);
@@ -78,7 +80,7 @@ test('the business layer is shown only after the transaction stored it (52487ee4
 
 test('the business layer is written only while the run and the documentation are unchanged (0f6472d80f3f)', () => {
   const src = page();
-  const gen = src.slice(src.indexOf('const generateBusinessDocumentation'), src.indexOf('const signedSource = useMemo'));
+  const gen = src.slice(src.indexOf('async function runBusinessGeneration'), src.indexOf('const signedSource = useMemo'));
   const body = gen.slice(gen.indexOf('await runTransaction('), gen.indexOf('tx.update('));
   expect(body).toMatch(/current\.activeRunId !== writtenFromRun/);
   expect(body).toMatch(/current\.documentation !== writtenFromDocumentation/);

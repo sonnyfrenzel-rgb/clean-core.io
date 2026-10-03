@@ -11,6 +11,7 @@ import {
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
 import { pairWithEvidence, proposalAt } from '@/lib/statement-proposal';
+import { sentenceKey } from '@/lib/process-document';
 import {
   effectsSummary,
   gapsSummary,
@@ -51,13 +52,32 @@ const STEP_COLUMNS: readonly CcTableColumn[] = [
 export default function ProcessDocumentationView({
   doc,
   proposal,
+  appendix = false,
 }: {
   doc: ProcessDocumentation;
   proposal?: StatementProposalPanelProps;
+  /**
+   * The technical trace under the process description (owner 03.10.2026):
+   * each sentence printed once — a shared sentence stands at the first element
+   * and the others point to it — and no list of gaps, because the description
+   * asks every open question once, in its own section.
+   */
+  appendix?: boolean;
 }) {
   const statementById = new Map(doc.statements.map((s) => [s.id, s]));
   const proposals = proposal?.view?.state === 'proposed' ? proposal.view.statements : [];
-  const rows = proposals.length > 0 ? pairWithEvidence(doc.statements, proposals) : null;
+  // Each sentence once in the appendix; the first statement with a text keeps it.
+  const seenText = new Set<string>();
+  const statements = appendix
+    ? doc.statements.filter((s) => {
+        const key = sentenceKey(s.text);
+        if (seenText.has(key)) return false;
+        seenText.add(key);
+        return true;
+      })
+    : doc.statements;
+  const rows = proposals.length > 0 ? pairWithEvidence(statements, proposals) : null;
+  const firstElementOf = new Map<string, string>();
 
   return (
     <div data-engine-documentation className="space-y-8">
@@ -92,6 +112,9 @@ export default function ProcessDocumentationView({
           rows={doc.steps.map((step) => {
             const sentence = step.statementId ? statementById.get(step.statementId) : undefined;
             const proposed = proposalAt(proposals, step.anchor);
+            const key = sentence ? sentenceKey(sentence.text) : null;
+            const sameAs = appendix && key ? firstElementOf.get(key) ?? null : null;
+            if (key && !firstElementOf.has(key)) firstElementOf.set(key, step.id);
             return {
               key: step.id,
               cells: {
@@ -117,7 +140,9 @@ export default function ProcessDocumentationView({
                     )}
                   </>
                 ),
-                does: proposed ? <StatementPair proposal={proposed} evidence={sentence?.text ?? null} /> : sentence ? sentence.text : '',
+                does: proposed ? <StatementPair proposal={proposed} evidence={sentence?.text ?? null} /> : sameAs ? (
+                  <span className="text-[11px] text-cc-ink-muted">As at {sameAs}</span>
+                ) : sentence ? sentence.text : '',
                 lines: step.anchor ? (
                   <span className="whitespace-nowrap">{rangeWords(step.anchor)}</span>
                 ) : (
@@ -136,14 +161,16 @@ export default function ProcessDocumentationView({
         name="statements"
         data-doc-statements=""
         level={4}
-        title="Business statements, across the whole program"
-        rows={doc.statements.length}
-        summary={statementsSummary(doc.statements)}
+        title={appendix ? 'Statements, across the whole program' : 'Business statements, across the whole program'}
+        rows={statements.length}
+        summary={statementsSummary(statements)}
       >
         <p className="text-xs text-cc-ink-muted mb-4">
-          {doc.statements.length === 0
+          {statements.length === 0
             ? 'The engine formed no business statement from this source.'
-            : `${doc.statements.length} statements, in the order of the program.`}
+            : appendix && statements.length < doc.statements.length
+              ? `${statements.length} statements, in the order of the program; ${doc.statements.length - statements.length} repeats merged.`
+              : `${statements.length} statements, in the order of the program.`}
         </p>
         {proposal && <StatementProposalPanel {...proposal} />}
         <ul className="space-y-2 text-sm text-cc-ink">
@@ -167,7 +194,7 @@ export default function ProcessDocumentationView({
                   <StatementRow key={row.evidence.id} text={row.evidence.text} anchors={row.evidence.anchors} />
                 ) : null,
               )
-            : doc.statements.map((statement) => (
+            : statements.map((statement) => (
                 <StatementRow key={statement.id} text={statement.text} anchors={statement.anchors} />
               ))}
         </ul>
@@ -241,7 +268,7 @@ export default function ProcessDocumentationView({
         </ul>
       </FoldedListSection>
 
-      <FoldedListSection
+      {appendix ? null : <FoldedListSection
         name="gaps"
         data-doc-gaps=""
         level={4}
@@ -260,7 +287,7 @@ export default function ProcessDocumentationView({
             </li>
           ))}
         </ul>
-      </FoldedListSection>
+      </FoldedListSection>}
     </div>
   );
 }
