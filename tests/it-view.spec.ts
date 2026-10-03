@@ -256,8 +256,9 @@ test.describe('the IT view on a real project', () => {
     expect(answerTop && layerBar && answerTop.y < layerBar.y, 'the IT answer does not stand above the layer bar').toBe(true);
     await expect(page.locator('[data-it-headline]')).toContainText(/\d+ findings at \d+ places in the code · /);
 
-    // Four facet tiles, each with its coverage.
-    for (const id of ['findings', 'level', 'target', 'not-determined']) {
+    // Four figures under the answer, each with its coverage (v3.0.1: what the
+    // code uses took the target tile's place; the buckets stand with the findings).
+    for (const id of ['uses', 'findings', 'level', 'not-determined']) {
       await expect(page.locator(`[data-it-figure="${id}"] [data-figure-coverage]`)).toHaveCount(1);
     }
     // Where to resolves under the Private Edition.
@@ -269,8 +270,10 @@ test.describe('the IT view on a real project', () => {
     await expect(page.locator('[data-it-routes] li').first()).toBeVisible();
     await expect(page.locator('[data-it-import="usage-none"]')).toContainText('never “unused”');
 
-    // The filter bar: "Not determined" leaves only findings without a level.
-    await page.locator('[data-it-show-not-determined]').click();
+    // The filter bar: "no level" leaves only findings that name no object. (The
+    // Not determined figure counts the engine's open points since v3.0.1, the
+    // same number as the list — `tests/it-view-uses.spec.ts`.)
+    await page.locator('[data-it-show-no-level]').click();
     await expect(page.locator('[data-cc-filter-bar="active"]')).toBeVisible();
     const absent = page.locator('[data-it-level-absent]');
     const graded = page.locator('[data-it-level]');
@@ -279,8 +282,8 @@ test.describe('the IT view on a real project', () => {
     await page.locator('[data-cc-clear-filters]').first().click();
     await expect(graded.first()).toBeVisible();
 
-    // The level per SAP object.
-    await expect(page.locator('[data-it-object-level]').first()).toBeVisible();
+    // The level per SAP object the code uses.
+    await expect(page.locator('[data-it-use-level]').first()).toBeVisible();
   });
 
   test('on a phone the page does not scroll sideways', async ({ page }) => {

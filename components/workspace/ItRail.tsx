@@ -7,7 +7,6 @@ import CcLinkButton from '@/components/cc/LinkButton';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import CcStateText from '@/components/cc/StateText';
-import { CcEmptyState } from '@/components/cc/EmptyState';
 import { getAuth } from '@/lib/firebase';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { itAtcComparison, wt } from '@/lib/workspace-messages';
@@ -30,8 +29,11 @@ import { joinAtcWithEvidence, summarizeAtcComparison } from '@/lib/abap/atc-join
  *      recommendation, the seven fields and the four alternatives one level
  *      deeper; and beside it the routes the deterministic router named on the
  *      findings. Nothing is decided here — the decision card binds the contract.
- *   3. **Imports** — the usage and ATC imports on record, or the empty state
- *      that says usage is *not determined* until one exists, never "unused".
+ *   3. **Imports** — the usage and ATC imports on record, inside the profile's
+ *      card since v3.0.1 (§2.11: at most two side cards); without either, one
+ *      sentence that says usage is *not determined* until one exists, never
+ *      "unused" — no empty-state box. The routes the router named are drawn
+ *      only where there are findings to name them on.
  *
  * Read-only. The contract route is a GET that writes nothing; the imports are
  * read off the project the page already holds.
@@ -89,6 +91,83 @@ export default function ItRail({
           </dd>
         </dl>
         <p className="m-0 mt-3 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('it.profileNote')}</p>
+        {/* Imports — what the findings can be compared with. In the profile's
+            card rather than a third one (§2.11: at most two side cards), and
+            one sentence when there are none, not an empty-state box. */}
+        <div data-it-imports="" className="mt-4 border-t border-cc-line pt-3">
+          <h4 className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{wt('it.importsTitle')}</h4>
+          {!project?.atcReport && !project?.usageReport ? (
+            <div className="mt-1">
+              <p data-it-import="none" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                {wt('itv.importsNoneSummary')}
+              </p>
+              <p data-it-import="usage-none" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                {wt('it.usageNoneBody')}
+              </p>
+              {demo ? null : (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <CcLinkButton href={toAnalyze} data-it-import-atc="">
+                    {wt('it.atcImport')}
+                  </CcLinkButton>
+                  <CcLinkButton href={toAnalyze} data-it-import-usage="">
+                    {wt('it.usageImport')}
+                  </CcLinkButton>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mt-1 flex flex-col gap-3">
+              {project?.atcReport ? (
+                <div data-it-import="atc">
+                  <p className="m-0 text-[13px] font-semibold text-cc-ink">{wt('it.atcTitle')}</p>
+                  <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                    {project.atcReport.findings.length}{' '}
+                    {project.atcReport.findings.length === 1 ? wt('it.finding') : wt('it.findings')} ·{' '}
+                    {wt('it.importedOn')} {isoDay(project.atcReport.importedAt)}
+                  </p>
+                  {atc ? (
+                    <p data-it-atc-compare="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                      {itAtcComparison(atc.both, atc.atcOnly, atc.engineOnly)}
+                    </p>
+                  ) : null}
+                  <div className="mt-1">
+                    <CcProvenanceChip value="imported" />
+                  </div>
+                </div>
+              ) : (
+                <div data-it-import="atc-none" className="flex flex-wrap items-center gap-2">
+                  <span className="text-[12px] font-medium text-cc-ink-muted">{wt('it.atcNone')}</span>
+                  {demo ? null : (
+                    <CcLinkButton href={toAnalyze} data-it-import-atc="">
+                      {wt('it.atcImport')}
+                    </CcLinkButton>
+                  )}
+                </div>
+              )}
+
+              {project?.usageReport ? (
+                <div data-it-import="usage">
+                  <p className="m-0 text-[13px] font-semibold text-cc-ink">
+                    {wt('it.usageTitle')} · {project.usageReport.source.toUpperCase()}
+                  </p>
+                  <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                    {project.usageReport.records.length} {wt('it.usageRecords')}
+                    {project.usageReport.observedFrom && project.usageReport.observedTo
+                      ? ` · ${wt('it.usageSeen')} ${isoDay(project.usageReport.observedFrom)} ${wt('it.to')} ${isoDay(project.usageReport.observedTo)}`
+                      : ''}
+                  </p>
+                  <div className="mt-1">
+                    <CcProvenanceChip value="imported" />
+                  </div>
+                </div>
+              ) : (
+                <p data-it-import="usage-none" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                  {wt('it.usageNoneBody')}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </CcCard>
 
       {/* 2. The route — architecture contract and the router's routes */}
@@ -123,96 +202,35 @@ export default function ItRail({
             </p>
           )}
 
-          <div className="mt-3 border-t border-cc-line pt-3">
-            <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-              {wt('it.routesNamed')}
-            </p>
-            {routes.length > 0 ? (
-              <ul data-it-routes="" className="m-0 mt-1 list-none p-0">
-                {routes.map((r) => (
-                  <li key={r.route} className="flex items-baseline justify-between gap-3 py-1 text-[12px] font-medium text-cc-ink">
-                    <span className="min-w-0">{r.route}</span>
-                    <span className="shrink-0 font-semibold tabular-nums">
-                      {r.count} {r.count === 1 ? wt('it.place') : wt('it.places')}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('it.routesNone')}</p>
-            )}
-            <div className="mt-1">
-              <CcProvenanceChip value={routes.length > 0 ? 'reconstructed' : 'not-determined'} />
-            </div>
-          </div>
-        </div>
-      </CcCard>
-
-      {/* 3. Imports */}
-      <CcCard title={wt('it.importsTitle')}>
-        <div data-it-imports="" className="flex flex-col gap-3">
-          {project?.atcReport ? (
-            <div data-it-import="atc">
-              <p className="m-0 text-[13px] font-semibold text-cc-ink">{wt('it.atcTitle')}</p>
-              <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                {project.atcReport.findings.length}{' '}
-                {project.atcReport.findings.length === 1 ? wt('it.finding') : wt('it.findings')} ·{' '}
-                {wt('it.importedOn')} {isoDay(project.atcReport.importedAt)}
+          {/* The routes the router named on the findings — nothing to count
+              where there are none, so nothing is drawn. */}
+          {(source?.rows.length ?? 0) > 0 ? (
+            <div className="mt-3 border-t border-cc-line pt-3">
+              <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+                {wt('it.routesNamed')}
               </p>
-              {atc ? (
-                <p data-it-atc-compare="" className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                  {itAtcComparison(atc.both, atc.atcOnly, atc.engineOnly)}
-                </p>
-              ) : null}
-              <div className="mt-1">
-                <CcProvenanceChip value="imported" />
-              </div>
-            </div>
-          ) : (
-            <div data-it-import="atc-none" className="flex flex-wrap items-center gap-2">
-              <span className="text-[12px] font-medium text-cc-ink-muted">{wt('it.atcNone')}</span>
-              {demo ? null : (
-                <CcLinkButton href={toAnalyze} data-it-import-atc="">
-                  {wt('it.atcImport')}
-                </CcLinkButton>
+              {routes.length > 0 ? (
+                <ul data-it-routes="" className="m-0 mt-1 list-none p-0">
+                  {routes.map((r) => (
+                    <li key={r.route} className="flex items-baseline justify-between gap-3 py-1 text-[12px] font-medium text-cc-ink">
+                      <span className="min-w-0">{r.route}</span>
+                      <span className="shrink-0 font-semibold tabular-nums">
+                        {r.count} {r.count === 1 ? wt('it.place') : wt('it.places')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">{wt('it.routesNone')}</p>
               )}
-            </div>
-          )}
-
-          {project?.usageReport ? (
-            <div data-it-import="usage">
-              <p className="m-0 text-[13px] font-semibold text-cc-ink">
-                {wt('it.usageTitle')} · {project.usageReport.source.toUpperCase()}
-              </p>
-              <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                {project.usageReport.records.length} {wt('it.usageRecords')}
-                {project.usageReport.observedFrom && project.usageReport.observedTo
-                  ? ` · ${wt('it.usageSeen')} ${isoDay(project.usageReport.observedFrom)} ${wt('it.to')} ${isoDay(project.usageReport.observedTo)}`
-                  : ''}
-              </p>
               <div className="mt-1">
-                <CcProvenanceChip value="imported" />
+                <CcProvenanceChip value={routes.length > 0 ? 'reconstructed' : 'not-determined'} />
               </div>
             </div>
-          ) : (
-            <div data-it-import="usage-none">
-              <CcEmptyState
-                illustration={<UsageIllustration />}
-                title={wt('it.usageNoneTitle')}
-                action={
-                  demo ? undefined : (
-                    <CcLinkButton href={toAnalyze} variant="secondary" data-it-import-usage="">
-                      {wt('it.usageImport')}
-                    </CcLinkButton>
-                  )
-                }
-              >
-                {wt('it.usageNoneBody')}
-              </CcEmptyState>
-            </div>
-          )}
+          ) : null}
         </div>
       </CcCard>
+
     </aside>
   );
 }
@@ -351,15 +369,4 @@ const VERDICT_WORDS: Record<ArchitectureContract['alternatives'][number]['verdic
 /** `2026-09-04` from an ISO timestamp — the machine form §3 asks for in metadata. */
 function isoDay(value: string): string {
   return typeof value === 'string' && value.length >= 10 ? value.slice(0, 10) : value;
-}
-
-/** A line drawing, as the mockup's empty state has it — a chart frame, no sparkle (§1.7). */
-function UsageIllustration() {
-  return (
-    <svg width="72" height="48" viewBox="0 0 72 48" aria-hidden="true">
-      <rect x="6" y="10" width="60" height="32" rx="6" fill="var(--cc-surface-muted)" stroke="var(--cc-ink-muted)" />
-      <path d="M16 34 L28 24 L38 30 L50 18 L58 22" fill="none" stroke="var(--cc-ink)" strokeWidth="2" />
-      <circle cx="50" cy="18" r="3" fill="var(--cc-information)" />
-    </svg>
-  );
 }

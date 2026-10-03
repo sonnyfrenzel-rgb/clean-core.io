@@ -23,6 +23,7 @@ import ManagementFold from './ManagementFold';
 import FirstLook from './FirstLook';
 import AskThisCase from './AskThisCase';
 import CoachMarkNote from './CoachMarks';
+import type { CoachMarkId } from '@/lib/coach-marks';
 import WorkspaceAccessList from './AccessList';
 import WorkspaceRevisionStand from './RevisionStand';
 import CommandSearch from './CommandSearch';
@@ -113,7 +114,13 @@ const WorkspaceProcess = dynamic(() => import('./WorkspaceProcess'), { ssr: fals
  * answer started some 2,700 px down, under Costs and the Business blocks.
  */
 const IT_HEAD: readonly ContentBlock[] = [];
-const IT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'firstLook', 'ask', 'notDetermined'];
+// *Not determined* is part of IT's own answer since v3.0.1 — a figure at the
+// top and the list beside the findings — so it is not repeated at the foot.
+const IT_TAIL: readonly ContentBlock[] = ['layerBar', 'layerSection', 'firstLook', 'ask'];
+/** In IT the tour starts at the top, where the Not determined figure and "Next step" stand (v3.0.1). */
+const IT_COACH_ORDER: readonly CoachMarkId[] = ['not-determined', 'next-step', 'decision'];
+/** Without a source the answer has no Not determined figure yet; the tour starts at "Next step". */
+const IT_COACH_ORDER_NO_SOURCE: readonly CoachMarkId[] = ['next-step', 'not-determined', 'decision'];
 
 /**
  * Management opens with its answer (ADR-029): the decision with the page's ONE
@@ -293,6 +300,7 @@ export default function WorkspaceShell({
   const marks = useCoachMarks({
     hasDecision: answer?.kind === 'answered',
     hasNextStep: nextStep !== null,
+    order: view === 'it' ? (open.noSource ? IT_COACH_ORDER_NO_SOURCE : IT_COACH_ORDER) : undefined,
   });
 
   /**
@@ -683,13 +691,21 @@ export default function WorkspaceShell({
           <ItAnswers
             projectId={projectId}
             project={project}
+            notDetermined={open}
+            recorded={recorded}
+            signed={Boolean(project?.activeRunId?.trim()) && project?._runLoadFailed !== true}
+            coach={(slot) => (
+              <div className="cc-no-print">
+                <CoachMarkNote mark={currentMark} slot={slot} onDismiss={marks.dismiss} onDismissAll={marks.dismissAll} />
+              </div>
+            )}
             nextStep={
-              // Full width under the answer, as mockup `s4` has it.
+              // One row under the answer, its one primary button on the right (v3.0.1).
               <div className="mt-4">
                 <div className="cc-no-print">
                   <CoachMarkNote mark={currentMark} slot="next-step" onDismiss={marks.dismiss} onDismissAll={marks.dismissAll} />
                 </div>
-                <NextStepCard point={nextStep} projectId={projectId} view={view} level={2} />
+                <NextStepCard point={nextStep} projectId={projectId} view={view} level={3} variant="bar" />
               </div>
             }
           />
