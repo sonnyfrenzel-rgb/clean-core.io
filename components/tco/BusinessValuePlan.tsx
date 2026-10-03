@@ -2,7 +2,6 @@
 
 import React from 'react';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import NotGenerated from '@/components/NotGenerated';
 import FoldedSection from '@/components/analyze/FoldedSection';
 import BusinessValueAudit from '@/components/analyze/BusinessValueAudit';
 import PlainEnglishGuide from '@/components/analyze/PlainEnglishGuide';
@@ -46,25 +45,14 @@ export default function BusinessValuePlan({
   const plan = data ? modelActionPlan(data.businessValueAnalysis?.plainEnglishActionPlan) : null;
   const shownRoute = routeLabel(route || data?.extensibilityRouting?.recommendedRoute || 'Decoupled Extension');
 
+  // Nothing to show is shown as nothing (owner, 03.10.2026): there is no
+  // button that writes the assessment here, so an empty "Not generated" box
+  // only asked a question the page cannot answer. A run with the model's
+  // narrative — the start writes it when the model is on (ADR-072) — fills it.
+  if (!data) return null;
+
   let body: React.ReactNode;
-  if (!data && analysis) {
-    // An analysis stored as a text report, from before the narrative had fields:
-    // there is no assessment to lift out of it, and the report itself is on Analyze.
-    body = (
-      <p className="m-0 cc-text-cell text-cc-ink-muted">
-        This analysis was stored as a text report, before the assessment had fields of its own. There is no separate
-        business value assessment to show here; the whole report is on the Analyze stage.
-      </p>
-    );
-  } else if (!data) {
-    body = (
-      <NotGenerated
-        what="Business value assessment"
-        stage="analyze"
-        hint="Asset score, value drivers and the action plan come from the model narrative of the analysis, which this run does not have. Re-run the analysis once a model is available to add them."
-      />
-    );
-  } else {
+  {
     const biz = {
       legacyAssetScore: data.businessValueAnalysis?.legacyAssetScore ?? null,
       // The model's own level, or none — never a second reading of the score.

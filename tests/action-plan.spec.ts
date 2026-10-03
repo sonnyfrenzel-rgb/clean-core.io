@@ -51,3 +51,12 @@ ${exportModule}`;
   const guarded = page.match(GUARDED)?.length ?? 0;
   expect(reads, 'the plan is read somewhere without modelActionPlan').toBe(guarded);
 });
+
+// Owner, 03.10.2026: without the model's narrative there is nothing to show
+// and no button here that writes it, so the section is left out rather than
+// shown as an empty "Not generated" box.
+test('the business value section is left out when the run has no narrative', () => {
+  const src = read('components', 'tco', 'BusinessValuePlan.tsx');
+  expect(src).toMatch(/if \(!data\) return null;/);
+  expect(src).not.toContain('<NotGenerated');
+});
