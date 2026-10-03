@@ -32,6 +32,7 @@ import { DEMO_WORKSPACE_MESSAGES } from './messages/demo';
 import { OWN_CODE_MESSAGES } from './messages/own-code';
 import { WORKSPACE_BUSINESS_MESSAGES } from './messages/workspace-business';
 import { WORKSPACE_RULES_MESSAGES } from './messages/workspace-rules';
+import { DOCUMENTATION_MESSAGES } from './messages/documentation';
 
 /** The parts, by surface — read by the guard to prove that no two share a key. */
 export const WORKSPACE_MESSAGE_PARTS = {
@@ -44,6 +45,7 @@ export const WORKSPACE_MESSAGE_PARTS = {
   ownCode: OWN_CODE_MESSAGES,
   business: WORKSPACE_BUSINESS_MESSAGES,
   rules: WORKSPACE_RULES_MESSAGES,
+  documentation: DOCUMENTATION_MESSAGES,
 } as const;
 
 export const WORKSPACE_MESSAGES = {
@@ -56,6 +58,7 @@ export const WORKSPACE_MESSAGES = {
   ...OWN_CODE_MESSAGES,
   ...WORKSPACE_BUSINESS_MESSAGES,
   ...WORKSPACE_RULES_MESSAGES,
+  ...DOCUMENTATION_MESSAGES,
 } as const;
 
 export type WorkspaceMessageKey = keyof typeof WORKSPACE_MESSAGES;
@@ -78,3 +81,4 @@ export * from './messages/demo';
 export * from './messages/own-code';
 export * from './messages/workspace-business';
 export * from './messages/workspace-rules';
+export * from './messages/documentation';

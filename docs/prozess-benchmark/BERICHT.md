@@ -1,6 +1,6 @@
 # Process benchmark — how accurately does Clean-Core.io reconstruct the process from ABAP?
 
-As of 28.09.2026 · Basis: `tests/prozess-benchmark/` (cases, expected answers, measuring tools, judge verdicts)
+As of 28.09.2026, §7 of 03.10.2026 · Basis: `tests/prozess-benchmark/` (cases, expected answers, measuring tools, judge verdicts)
 
 ## The result in five sentences
 
@@ -156,6 +156,42 @@ model receipt is bound to its stage.
 - **Language of the generated sentences** (German) versus ADR-009 (English).
 - Sharpen the **contradiction marker**, measured on the test half.
 - **Test suite**: audit of 27.09. — runtime 26 min, of which ~12 min fixed pauses; approval of the stages open.
+
+## 7. Update 03.10.2026 — framework entry points and residual statements (ADR-066)
+
+Two levers of the research note of 03.10.2026, approved by Sonny the same day: routines SAP calls by
+convention become entries (ALV callbacks named by literal, output-control routines with the TNAPR
+interface, `USEREXIT_*` forms, program-level `ENHANCEMENT` blocks), and residual statements draw what
+the ABAP documentation says (`RECEIVE RESULTS`, `CLOSE DATASET`, `LEAVE TO SCREEN` as its own end, an
+early exit that skips a result assignment, AMDP bodies). Nine rules, one commit each, each with a guard
+of newly written ABAP. Developed on the learning halves only; the test halves were measured **once**,
+after the last code change. Polymorphic calls, the `sy-subrc` convention (2.15) and status messages are
+unchanged.
+
+Measured with `BM_CONCAT=1`, i.e. the current comparator (the "corrected comparator" column of §2).
+The column **M1-lite** additionally counts an expected gateway on `IF sy-subrc` as matched where the
+engine draws its error boundary on that `IF` — a comparator correction for the 2.15 convention, not
+engine progress; the half where the boundary sits on the `EXCEPTIONS` of the call before is not in it.
+
+| Group | before | **after** | M1-lite before → after |
+|---|---|---|---|
+| Wave 1+2, learning half | 81.4 % | **85.7 %** | 84.2 % → 88.5 % |
+| Wave 3, learning half | 74.9 % | **76.3 %** | 77.1 % → 78.5 % |
+| all learning (150) | 78.9 % | **82.0 %** | 81.4 % → 84.5 % |
+| Wave 1+2, test half (hidden, measured once) | 83.5 % | **84.7 %** | — → 87.2 % |
+| Wave 3, test half (hidden, measured once) | 70.0 % | **71.0 %** | — → 73.1 % |
+| all test (150, measured once) | 78.5 % | **79.7 %** | — → 82.0 % |
+| all 300 | 78.7 % | **80.8 %** | — → 83.2 % |
+
+Learning +3.1 pp, test half +1.2 pp. Two thirds of the learning gain come from the four entry-point
+rules, and each of them moves a single learning case (lesson 5); the residual rules move one to twelve
+cases each. The test half gains less, as the research note expected (1–2 pp below the learning gain).
+
+**Precision and edges (learning):** engine nodes on statements no expected node claims 178 → 186; edge
+hit rate 66.6 % → 66.1 % (hits 2,674 → 2,780, comparable 4,018 → 4,204: more resolved nodes make more
+edges comparable). **Reference corpus:** node matches 312 → 318, edge matches 146 → 150, agreeing
+case-classes 132 → 133, no match lost. **Starter examples:** one task more ("Close file") on a
+sub-process plane of `Z_INVOICE_EXTRACTOR`; no top plane moved. The demo and the PDFs are unchanged.
 
 ## Tools
 

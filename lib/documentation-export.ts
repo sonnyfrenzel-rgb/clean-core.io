@@ -17,10 +17,22 @@
 import { escapeHtml } from '@/lib/utils';
 import { EXPORT_STYLE_ELEMENT } from '@/lib/export-style';
 import {
+  NOT_DETERMINED_LABEL,
   anchorsWords,
   stepEvidence,
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
+import { provenance, type ProvenanceValue } from '@/lib/provenance';
+import {
+  RACI_LETTERS,
+  lettersOf,
+  processStepsOf,
+  raciMatrix,
+  sopSteps,
+  type GlanceAnchor,
+  type GlanceEvidence,
+  type ProcessStepRef,
+} from '@/lib/business-summary';
 
 /** The stored forms are model JSON, read exactly as the page reads them. */
 type ModelJson = any;
@@ -40,6 +52,21 @@ export const STALE_EXPORT_NOTE =
 export interface ConfluenceExportOptions {
   /** True when the documentation phase is `stale` in `workflowSteps(project)`. */
   stale?: boolean;
+  /**
+   * The glance the stage shows above the map (owner 03.10.2026), already in
+   * words — the callouts need the handbook, the coverage sweep and the levels,
+   * which only the page holds. Absent: the file has no glance table, and loses
+   * nothing else.
+   */
+  glance?: {
+    headline: string;
+    callouts: Array<{ title: string; provenance: ProvenanceValue; evidence: GlanceEvidence[]; more: number }>;
+  };
+  /**
+   * The steps the business layer is keyed to, named as the stage names them.
+   * Absent for the engine page: read from the document itself.
+   */
+  processSteps?: ProcessStepRef[];
 }
 
 /** The note a stale export opens with; empty for a current one. Our own markup, no model value. */
@@ -64,6 +91,7 @@ export function buildLegacyConfluenceHtml(
 ): Blob {
   const esc = escapeHtml;
   const staleSection = staleNoteHtml(options);
+  const glanceSection = glanceHtml(options, parsedBusinessDoc, options?.processSteps ?? []);
 
   // The stylesheet every stage export shares (`lib/export-style.ts`).
   const confluenceCSS = EXPORT_STYLE_ELEMENT;
@@ -80,6 +108,7 @@ export function buildLegacyConfluenceHtml(
           <h1>${esc(parsedDoc.l1_domain?.name || 'Process documentation')}</h1>
           <div class="meta">Enterprise Integration Specifications & Workflow Definition</div>
         </div>
+        ${glanceSection}
         
         <div class="card-grid">
           <div class="card">
@@ -232,6 +261,11 @@ export function buildEngineConfluenceHtml(
 ): Blob {
   const esc = escapeHtml;
   const staleSection = staleNoteHtml(options);
+  const glanceSection = glanceHtml(
+    options,
+    parsedBusinessDoc,
+    options?.processSteps ?? processStepsOf(engine.steps ?? []),
+  );
   // The stylesheet every stage export shares (`lib/export-style.ts`).
   const exportCSS = EXPORT_STYLE_ELEMENT;
   const statementById = new Map(engine.statements.map((s) => [s.id, s]));
@@ -274,6 +308,7 @@ export function buildEngineConfluenceHtml(
     <h1>Process documentation — ${esc(engine.processName)}</h1>
     <p><em>${esc(engine.disclaimer)}</em></p>
     <p>${esc(engine.fileName)}, ${esc(String(engine.lineCount))} lines. ${esc(engine.overview)} ${esc(engine.traceability.sentence)}</p>
+    ${glanceSection}
     <h2>The process, element by element</h2>
     <table><thead><tr><th>Element</th><th>Name</th><th>What it does</th><th>Lines</th></tr></thead><tbody>${stepRows}</tbody></table>
     <h2>Business statements, across the whole program</h2><ul>${statementSection}</ul>
@@ -281,4 +316,51 @@ export function buildEngineConfluenceHtml(
     ${businessSection}
   </body></html>`;
   return new Blob([engineHtml], { type: 'text/html;charset=utf-8' });
+}
+
+/* ------------------------------------------------------------ the glance */
+
+const anchorWords = (a: GlanceAnchor) => (a.lineStart === a.lineEnd ? `L${a.lineStart}` : `L${a.lineStart}-${a.lineEnd}`);
+
+/**
+ * The visual summary of the stage as tables (owner 03.10.2026): the headline
+ * and the callouts with their evidence, the SOP steps in process order, and
+ * the RACI matrix with its gaps. It stands **in addition to** the full
+ * sections below it, which keep every row as stored. Every value is escaped;
+ * the business-layer tables are marked as a model proposal.
+ */
+function glanceHtml(
+  options: ConfluenceExportOptions | undefined,
+  parsedBusinessDoc: ModelJson | null,
+  processSteps: ProcessStepRef[],
+): string {
+  const esc = escapeHtml;
+  const parts: string[] = [];
+  const glance = options?.glance;
+  if (glance) {
+    const rows = glance.callouts.map((c) => {
+      const evidence = c.evidence
+        .map((e) => [e.ref, e.anchor ? anchorWords(e.anchor) : null, e.label, e.level === undefined ? null : `level ${e.level ?? NOT_DETERMINED_LABEL.toLowerCase()}`]
+          .filter((x): x is string => !!x)
+          .map((x) => esc(x))
+          .join(' · '))
+        .concat(c.more > 0 ? [esc(`and ${c.more} more`)] : [])
+        .join('<br>');
+      return `<tr><td><strong>${esc(c.title)}</strong></td><td>${evidence}</td><td>${esc(provenance(c.provenance).label)}</td></tr>`;
+    }).join('');
+    parts.push(`<h2 data-glance-export="">At a glance</h2><p>${esc(glance.headline)}</p>`
+      + (rows ? `<table><thead><tr><th>What the code shows</th><th>Evidence</th><th>Provenance</th></tr></thead><tbody>${rows}</tbody></table>` : ''));
+  }
+  if (parsedBusinessDoc) {
+    const steps = sopSteps(parsedBusinessDoc, processSteps);
+    const stepRowsHtml = steps.map((s) => `<tr data-glance-sop-step="${esc(s.stepId)}"><td>${esc(String(s.number))}</td><td>${esc(s.step?.name ?? s.stepId)}<br><small><code>${esc(s.stepId)}</code></small></td><td>${esc(s.outcome ?? NOT_DETERMINED_LABEL)}</td><td>${esc(s.roles.R.join(', ') || NOT_DETERMINED_LABEL)}</td><td>${esc(s.step?.anchor ? anchorWords(s.step.anchor) : NOT_DETERMINED_LABEL)}</td><td>${esc(provenance(s.step ? s.step.provenance : 'proposed').label)}</td></tr>`).join('');
+    parts.push(`<h3>SOP steps — Model proposal</h3><table><thead><tr><th>#</th><th>Step</th><th>Outcome</th><th>Responsible</th><th>Lines</th><th>Provenance</th></tr></thead><tbody>${stepRowsHtml}</tbody></table>`);
+    const matrix = raciMatrix(steps);
+    if (matrix.steps.length > 0) {
+      const head = matrix.roles.map((r) => `<th>${esc(r.name)}${r.overloaded ? esc(` (Responsible on ${r.counts.R} of ${matrix.steps.length})`) : ''}</th>`).join('');
+      const body = matrix.steps.map((s) => `<tr data-glance-raci-step="${esc(s.stepId)}"><td>${esc(String(s.number))} ${esc(s.step?.name ?? s.stepId)}</td>${matrix.roles.map((r) => `<td class="mono strong">${esc(lettersOf(s, r.name).join(' '))}</td>`).join('')}<td>${esc(s.gaps.map((g) => ({ 'no-accountable': 'No Accountable', 'several-accountable': 'Several Accountable', 'no-responsible': 'No Responsible' })[g]).join(', '))}</td></tr>`).join('');
+      parts.push(`<h3>RACI matrix — Model proposal</h3><p><small>${esc(RACI_LETTERS.map((l) => `${l} ${({ R: 'Responsible', A: 'Accountable', C: 'Consulted', I: 'Informed' })[l]}`).join(' · '))}</small></p><table><thead><tr><th>Step</th>${head}<th>Check</th></tr></thead><tbody>${body}</tbody></table>`);
+    }
+  }
+  return parts.join('\n');
 }

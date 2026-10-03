@@ -674,6 +674,41 @@ function leavesDialogStep(text: string): string | null {
   return m ? `LEAVE ${m[1].replace(/\s+/g, ' ').toUpperCase()}` : null;
 }
 
+/** ADR-066 — the trigger of a FORM called by output control. */
+const OUTPUT_CONTROL = 'output control';
+
+/**
+ * ADR-066 — the SAP convention a `FORM` opener follows, as its trigger, or
+ * `null`.
+ *
+ * Output control (NAST): the output processing program (RSNAST00) performs the
+ * routine an output type names in table TNAPR (fields PGNAM / ROUTN) with two
+ * `USING` parameters, the return code and the screen flag, i.e.
+ * `FORM entry USING return_code us_screen.` The routine name is free; the
+ * two-parameter interface is the convention, in the two spellings SAP's own
+ * print programs use (`return_code us_screen`, e.g. RVADOR01;
+ * `ent_retco ent_screen`, e.g. RVADIN01).
+ */
+const OUTPUT_CONTROL_FORM =
+  /^FORM\s+[\w/]+\s+USING\s+(?:RETURN_CODE|ENT_RETCO)(?:\s+(?:TYPE|LIKE)\s+[\w/-]+)?\s+(?:US_SCREEN|ENT_SCREEN)(?:\s+(?:TYPE|LIKE)\s+[\w/-]+)?\s*\.?$/i;
+
+/**
+ * Form-based user exits (SD, LE, MM): SAP's standard programs perform FORM
+ * routines named `USEREXIT_…` that the customer fills in the user-exit
+ * includes the standard program ships for it — `USEREXIT_SAVE_DOCUMENT_PREPARE`
+ * in MV45AFZZ (SAPMV45A, sales order), `USEREXIT_…` in MV50AFZ1 (deliveries),
+ * RV60AFZZ (billing) and the like. The prefix is the convention: the standard
+ * program, not this source, calls them.
+ */
+const USER_EXIT = 'user exit';
+const USER_EXIT_FORM = /^FORM\s+USEREXIT_\w+/i;
+
+function formConvention(opener: string): string | null {
+  if (OUTPUT_CONTROL_FORM.test(opener.trim())) return OUTPUT_CONTROL;
+  if (USER_EXIT_FORM.test(opener)) return USER_EXIT;
+  return null;
+}
+
 /** `RAISE EXCEPTION …`, `RAISE cx_…`, `RAISE RESUMABLE …` — the `RAISE` that ends the flow. */
 function raisesException(statement: AbapStatement): boolean {
   return statement.keyword === 'RAISE' && !isRaiseEvent(statement.text);
@@ -742,8 +777,80 @@ function isListOutput(statement: AbapStatement): boolean {
   return !/\bTO\b/i.test(statement.text);
 }
 
+/** ADR-066 — `METHOD name BY DATABASE PROCEDURE|FUNCTION …`, an AMDP method; group 1 is the name. */
+const AMDP_METHOD = /^METHOD\s+([\w/~]+)\s+BY\s+DATABASE\s+(?:PROCEDURE|FUNCTION)\b/i;
+
+/**
+ * ADR-066 — the database objects an AMDP method's `USING` clause names,
+ * upper-cased. The ABAP keyword documentation requires every dictionary
+ * object the procedure accesses to be listed there; other AMDP methods named
+ * as `class=>method` are not tables and are left out.
+ */
+function amdpTables(opener: string): string[] {
+  const using = /\bUSING\s+([\s\S]+)$/i.exec(opener.replace(/\.\s*$/, ''))?.[1] ?? '';
+  return using.split(/[\s,]+/).filter((t) => /^[\w/]+$/.test(t)).map((t) => t.toUpperCase());
+}
+
+/** The words that open or close a parameter section of a `FORM` or `METHODS` signature. */
+const SIGNATURE_WORDS = /\b(?:IMPORTING|EXPORTING|CHANGING|RETURNING|RAISING|EXCEPTIONS|USING|TABLES|REDEFINITION|ABSTRACT|FINAL)\b/gi;
+
+/**
+ * ADR-066 — the parameter names, upper-cased, in the signature sections whose
+ * opening word `sections` matches (`CHANGING` of a FORM; `EXPORTING`,
+ * `CHANGING`, `RETURNING` of a method). A typed section is read by its
+ * `TYPE`/`LIKE`/`STRUCTURE` words; an untyped one (`CHANGING cv_ok cv_msg`)
+ * is all names.
+ */
+function resultParameters(signature: string, sections: RegExp): string[] {
+  const text = signature.replace(/\.\s*$/, '');
+  const marks = [...text.matchAll(SIGNATURE_WORDS)];
+  const out: string[] = [];
+  marks.forEach((mark, k) => {
+    if (!sections.test(mark[0])) return;
+    const from = (mark.index ?? 0) + mark[0].length;
+    const body = text.slice(from, k + 1 < marks.length ? marks[k + 1].index : text.length);
+    if (/\b(?:TYPE|LIKE|STRUCTURE)\b/i.test(body)) {
+      for (const p of body.matchAll(/(?:^|\s)(?:(?:VALUE|REFERENCE)\(\s*([\w/]+)\s*\)|([\w/]+))\s+(?:TYPE|LIKE|STRUCTURE)\b/gi)) {
+        out.push((p[1] ?? p[2]).toUpperCase());
+      }
+      return;
+    }
+    for (const token of body.trim().split(/\s+/)) {
+      const name = /^(?:(?:VALUE|REFERENCE)\(\s*)?([\w/]+)\)?$/i.exec(token)?.[1];
+      if (name) out.push(name.toUpperCase());
+    }
+  });
+  return out;
+}
+
+/**
+ * ADR-066 — the data object a statement assigns as a whole or in a component,
+ * upper-cased, or `null`: `x = …`, `x-comp = …`, `APPEND … TO x`, `INSERT …
+ * INTO [TABLE] x`, `COLLECT … INTO x`, `MOVE … TO x`, `CLEAR x`.
+ */
+function assignmentTarget(text: string): string | null {
+  const direct = /^([\w/]+)(?:-[\w/-]+)?\s*\??=(?!=)/.exec(text);
+  if (direct) return direct[1].toUpperCase();
+  const into = /^(?:APPEND|INSERT|COLLECT)\b[\s\S]*?\b(?:TO|INTO(?:\s+TABLE)?)\s+([\w/]+)/i.exec(text);
+  if (into) return into[1].toUpperCase();
+  const move = /^MOVE(?:-CORRESPONDING)?\b[\s\S]*\bTO\s+([\w/]+)/i.exec(text);
+  if (move) return move[1].toUpperCase();
+  const clear = /^(?:CLEAR|FREE|REFRESH)\s+([\w/]+)/i.exec(text);
+  return clear ? clear[1].toUpperCase() : null;
+}
+
+/** `RECEIVE RESULTS FROM FUNCTION …` — the results of an asynchronous RFC (see `walkStatement`). */
+function receivesResults(text: string): boolean {
+  return /^RECEIVE\s+RESULTS\s+FROM\s+FUNCTION\b/i.test(text);
+}
+
 function isFileOutput(statement: AbapStatement): boolean {
   if (statement.keyword === 'TRANSFER') return true;
+  // ABAP keyword documentation, CLOSE DATASET: closes the file on the
+  // application server; for a file opened for output the buffered content is
+  // written and the file is complete only now. Part of the same file step as
+  // OPEN DATASET and TRANSFER — a CLOSE right behind a TRANSFER joins its run.
+  if (statement.keyword === 'CLOSE' && /^CLOSE\s+DATASET\b/i.test(statement.text)) return true;
   return statement.keyword === 'OPEN' && /^OPEN\s+DATASET\b/i.test(statement.text);
 }
 
@@ -848,7 +955,7 @@ interface WalkContext {
  * says "this is callable from outside", and every one of them is a word that
  * stands in the source rather than a reading of what the program means.
  */
-type EntryOrigin = 'event' | 'implicit' | 'function' | 'method' | 'module' | 'form' | 'callback';
+type EntryOrigin = 'event' | 'implicit' | 'function' | 'method' | 'module' | 'form' | 'callback' | 'enhancement';
 
 interface EntryPoint {
   statement: AbapStatement;
@@ -959,6 +1066,8 @@ class SkeletonBuilder {
   private performedFrom = new Map<string, string[]>();
   /** `FUNCTION name.` … `ENDFUNCTION.` — roadmap 2.14. Not a block: ABAP closes it, `block-structure.ts` does not open it. */
   private functionBlocks: Array<{ name: string; openIndex: number; closeIndex: number }> = [];
+  /** `ENHANCEMENT n name.` … `ENDENHANCEMENT.` at program level — ADR-066. */
+  private enhancementBlocks: Array<{ name: string; openIndex: number; closeIndex: number }> = [];
   /**
    * Methods a class **definition** in this source declares callable from outside,
    * keyed `CLASS=>METHOD` (an interface prefix as `CLASS=>ZIF~`; an interface's
@@ -1041,6 +1150,8 @@ class SkeletonBuilder {
    * `settleEarlyEnds` decides afterwards which of them really skip something.
    */
   private earlyEnds: Array<{ node: SkeletonNode; statementIndex: number; region: SkeletonRegion }> = [];
+  /** ADR-066. `resultWrites` per routine opener. */
+  private resultWriteCache = new Map<number, Set<number>>();
   /** ADR-054. The last statement index each region's walk covers — where its normal end takes over. */
   private regionLast = new Map<string, number>();
 
@@ -1066,6 +1177,7 @@ class SkeletonBuilder {
     for (const [name, block] of this.formBlocks) this.routineBlocks.set(name, block);
     this.readMethodImplementations();
     this.readFunctionBlocks();
+    this.readEnhancementBlocks();
     this.readMethodVisibility();
     this.readSelectionScreen();
     this.readMethodCallSites();
@@ -1319,6 +1431,14 @@ class SkeletonBuilder {
 
   private directEffects(block: Block, expanding: Set<string> = new Set()): Set<FormEffect> {
     const out = new Set<FormEffect>();
+    // ADR-066. An AMDP method (`METHOD m BY DATABASE PROCEDURE|FUNCTION …`)
+    // runs its body on the database: it reads the database objects its USING
+    // clause names (or, without one, at least its own parameters there). Its
+    // SQLScript is not read (`statement-reader.ts` keeps it as native code),
+    // so it is not a technical helper with nothing in it but a read step.
+    if (block.kind === 'method' && AMDP_METHOD.test(this.statements[block.openIndex].text)) {
+      out.add(amdpTables(this.statements[block.openIndex].text).length ? 'read' : 'call');
+    }
     const [from, to] = bodyRange(block);
     for (let i = from; i <= to; i++) {
       const statement = this.statements[i];
@@ -1350,6 +1470,7 @@ class SkeletonBuilder {
         else out.add('call');
       }
       if (/^CALL\s+TRANSACTION\b/i.test(text) || statement.keyword === 'SUBMIT') out.add('call');
+      if (receivesResults(text)) out.add('call');
       if (/^CALL\s+SCREEN\b/i.test(text)) out.add('human');
       if (isListOutput(statement) || isFileOutput(statement)) out.add('file');
       if (isErrorMessage(text) || raisesException(statement)) out.add('error');
@@ -1847,6 +1968,8 @@ class SkeletonBuilder {
         ...this.functionEntries(),
         ...this.methodEntries(),
         ...(this.modulesWaitForScreen ? [] : this.moduleEntries()),
+        ...this.conventionFormEntries(),
+        ...this.enhancementEntries(),
       ].sort((a, b) => a.statement.index - b.statement.index);
       return [...events, ...this.noteTriggers(outside)];
     }
@@ -1858,6 +1981,8 @@ class SkeletonBuilder {
       ...this.functionEntries(),
       ...this.methodEntries(),
       ...this.moduleEntries(),
+      ...this.conventionFormEntries(),
+      ...this.enhancementEntries(),
     ].sort((a, b) => a.statement.index - b.statement.index);
     if (calledFromOutside.length) return this.noteTriggers(calledFromOutside);
 
@@ -1920,6 +2045,7 @@ class SkeletonBuilder {
    * order the program does not have.
    */
   private recordCallback(statement: AbapStatement): void {
+    this.recordAlvCallbacks(statement);
     if (!/\bSTARTING\s+NEW\s+TASK\b/i.test(statement.text)) return;
     const code = maskLiterals(statement.text);
     const form = /\bPERFORMING\s+([\w/]+)\s+ON\s+END\s+OF\s+TASK\b/i.exec(code);
@@ -1933,6 +2059,50 @@ class SkeletonBuilder {
     const { key, ambiguous } = this.resolveMethod(method[1] ?? null, (method[2] as '->' | '=>' | undefined) ?? null,
       method[3].toUpperCase(), statement.index);
     if (key && !ambiguous && this.routineBlocks.has(key)) this.pushCallback(key, method[3], statement);
+  }
+
+  /**
+   * SAP convention (ALV list/grid, type pool SLIS): the `REUSE_ALV_*` function
+   * modules call back FORMs of the program named in `I_CALLBACK_PROGRAM`, and
+   * the caller names each FORM as a **literal** — in a parameter
+   * `I_CALLBACK_<event>` (`I_CALLBACK_USER_COMMAND`, `I_CALLBACK_PF_STATUS_SET`,
+   * `I_CALLBACK_TOP_OF_PAGE`, `I_CALLBACK_HTML_TOP_OF_PAGE`, …) or in the
+   * `FORM` column of the event table it passes as `IT_EVENTS` (`slis_alv_event`:
+   * `NAME` is the event, `FORM` the routine, e.g. `TOP_OF_PAGE`).
+   *
+   * The ALV runtime performs those FORMs when the person presses a function
+   * key or the list is drawn — no `PERFORM` of this source names them, so they
+   * were listed as "not reached" although the call says in so many words that
+   * they run. They become callbacks exactly like a FORM named `ON END OF TASK`:
+   * an entry of their own once the walk has passed the call, with the
+   * parameter as their trigger. Only where `I_CALLBACK_PROGRAM` is written
+   * (without it the ALV calls back nothing) and does not name another program
+   * by literal — the FORMs are looked up in that program.
+   */
+  private recordAlvCallbacks(statement: AbapStatement): void {
+    const text = statement.text;
+    if (!/^CALL\s+FUNCTION\s+'REUSE_ALV_[\w]*'/i.test(text)) return;
+    const program = /\bI_CALLBACK_PROGRAM\s*=\s*('[^']*'|[\w/-]+)/i.exec(text);
+    if (!program) return;
+    if (program[1].startsWith("'")) {
+      const own = this.programName()?.name;
+      if (!own || program[1].slice(1, -1).toUpperCase() !== own) return;
+    }
+    for (const m of text.matchAll(/\b(I_CALLBACK_(?!PROGRAM\b)[\w]+)\s*=\s*'([\w/]+)'/gi)) {
+      const key = m[2].toUpperCase();
+      if (this.formBlocks.has(key)) this.pushCallback(key, m[2], statement, `ALV ${m[1].toUpperCase()}`);
+    }
+    if (!/\bIT_EVENTS\s*=/i.test(text)) return;
+    // The event table is filled elsewhere in the source: `ls_event-form =
+    // 'TOP_OF_PAGE'.` or `VALUE #( ( name = … form = 'TOP_OF_PAGE' ) )`. A
+    // literal in a `FORM` component that names a FORM of this source is that
+    // registration; nothing else in ABAP writes a routine name there.
+    for (const other of this.statements) {
+      for (const m of other.text.matchAll(/(?:-|\s|\()FORM\s*=\s*'([\w/]+)'/gi)) {
+        const key = m[1].toUpperCase();
+        if (this.formBlocks.has(key)) this.pushCallback(key, m[1], statement, 'ALV IT_EVENTS');
+      }
+    }
   }
 
   private pushCallback(key: string, label: string, site: AbapStatement, trigger = 'ON END OF TASK'): void {
@@ -1972,6 +2142,7 @@ class SkeletonBuilder {
       // named here: an event block ends where a function module begins.
       return this.isEventStatement(this.statements[i])
         || this.statements[i].keyword === 'FUNCTION'
+        || this.statements[i].keyword === 'ENHANCEMENT'
         || (block !== undefined
           && (block.kind === 'form' || block.kind === 'module' || block.kind === 'class'
             || block.kind === 'interface' || block.kind === 'define'));
@@ -2275,6 +2446,80 @@ class SkeletonBuilder {
   }
 
   /**
+   * ADR-066 — a `FORM` that SAP calls by a documented convention, which no
+   * `PERFORM` of this source names. It is called from outside exactly as a
+   * `MODULE … INPUT` is, so it is an entry **beside** the event blocks and the
+   * other outside entries, not a last resort. The convention is the trigger;
+   * which output type or which standard transaction runs it is configuration
+   * outside the source, and `noteTriggers` says so.
+   */
+  /**
+   * ADR-066 — `ENHANCEMENT n name.` … `ENDENHANCEMENT.` standing at program
+   * level. The ABAP keyword documentation: the block is the source code plug-in
+   * of an enhancement implementation, and the program it enhances runs it at
+   * its enhancement option (an implicit one at the start or end of a routine,
+   * or an `ENHANCEMENT-POINT`/`-SECTION`). That program is not this source, so
+   * it is an entry of its own; which enhancement option is noted, not guessed.
+   * One inside a FORM or method is part of that routine's flow and is not here.
+   */
+  private readEnhancementBlocks(): void {
+    const open: number[] = [];
+    for (let i = 0; i < this.statements.length; i++) {
+      const statement = this.statements[i];
+      if (statement.nativeSql) continue;
+      if (statement.keyword === 'ENHANCEMENT') {
+        if (!(this.structure.enclosing[i] ?? []).length) open.push(i);
+        continue;
+      }
+      if (statement.keyword !== 'ENDENHANCEMENT' || !open.length) continue;
+      const openIndex = open.pop() as number;
+      const name = /^ENHANCEMENT\s+\d+\s+([\w/]+)/i.exec(this.statements[openIndex].text)?.[1];
+      this.enhancementBlocks.push({ name: name ?? 'ENHANCEMENT', openIndex, closeIndex: i });
+    }
+    this.enhancementBlocks.sort((a, b) => a.openIndex - b.openIndex);
+  }
+
+  private enhancementEntries(): EntryPoint[] {
+    return this.enhancementBlocks.map((enh) => {
+      this.entryOfBlock.add(enh.openIndex);
+      return {
+        statement: this.statements[enh.openIndex],
+        lastIndex: enh.closeIndex - 1,
+        endStatement: this.statements[enh.closeIndex],
+        label: enh.name,
+        rank: RUNTIME_ORDER.length,
+        implicit: false,
+        origin: 'enhancement' as const,
+        trigger: 'enhancement',
+      };
+    });
+  }
+
+  private conventionFormEntries(): EntryPoint[] {
+    const out: EntryPoint[] = [];
+    const neverPerformed = new Set(this.calls.neverPerformed);
+    for (const [name, block] of this.formBlocks) {
+      if (!neverPerformed.has(name) || this.entryOfBlock.has(block.openIndex)) continue;
+      const opener = this.statements[block.openIndex];
+      const trigger = formConvention(opener.text);
+      if (!trigger) continue;
+      const written = /^FORM\s+([\w/]+)/i.exec(opener.text);
+      this.entryOfBlock.add(block.openIndex);
+      out.push({
+        statement: opener,
+        lastIndex: block.closeIndex - 1,
+        endStatement: this.statements[Math.min(block.closeIndex, this.statements.length - 1)],
+        label: written ? written[1] : name,
+        rank: RUNTIME_ORDER.length,
+        implicit: false,
+        origin: 'form',
+        trigger,
+      });
+    }
+    return out;
+  }
+
+  /**
    * The bare `FORM` — a user exit, an enhancement include. Last, and only when
    * nothing else in this source answered: a form a report performs is a step of
    * that report, and drawing it as a second beginning would double it.
@@ -2323,11 +2568,19 @@ class SkeletonBuilder {
     for (const entry of entries) {
       const what = entry.origin === 'function' ? 'function module'
         : entry.origin === 'method' ? 'method'
-          : entry.origin === 'module' ? 'screen module' : 'subroutine';
-      const proof = entry.trigger === 'public' ? 'its class declares it in the PUBLIC SECTION'
+          : entry.origin === 'module' ? 'screen module'
+            : entry.origin === 'enhancement' ? 'enhancement implementation' : 'subroutine';
+      const proof = entry.origin === 'enhancement'
+        ? 'it is an ENHANCEMENT … ENDENHANCEMENT block, which the enhanced program runs at its enhancement option'
+        : entry.trigger === 'public' ? 'its class declares it in the PUBLIC SECTION'
         : entry.trigger === 'interface' ? 'its class implements the interface that declares it'
           : entry.trigger === 'dynpro PAI' ? 'the screen runtime raises PAI on it'
             : entry.trigger === 'dynpro PBO' ? 'the screen runtime raises PBO on it'
+              : entry.trigger === USER_EXIT
+                ? 'its name USEREXIT_… is the user-exit convention of the SAP standard program that performs it'
+              : entry.trigger === OUTPUT_CONTROL
+                ? 'its interface (return code, screen flag) is the one output control calls a processing routine '
+                  + 'with (table TNAPR)'
               : entry.trigger?.startsWith('REDEFINITION OF ')
                 ? `it redefines a method of ${entry.trigger.slice(16)}, which is not in this source and is what calls it`
               : entry.trigger ? `it is declared as a ${entry.trigger} handler`
@@ -2429,13 +2682,14 @@ class SkeletonBuilder {
         const block = this.blockAt.get(j);
         const boundary = j > i && (this.isEventStatement(this.statements[j])
           || this.statements[j].keyword === 'FUNCTION'
+          || this.statements[j].keyword === 'ENHANCEMENT'
           || (block !== undefined && (block.kind === 'form' || block.kind === 'module'
             || block.kind === 'class' || block.kind === 'interface' || block.kind === 'define')));
         if (boundary) break;
         inEvent.add(j);
       }
     }
-    for (const fn of this.functionBlocks) {
+    for (const fn of [...this.functionBlocks, ...this.enhancementBlocks]) {
       for (let i = fn.openIndex; i <= Math.min(fn.closeIndex, this.statements.length - 1); i++) inEvent.add(i);
     }
     const out: AbapStatement[] = [];
@@ -3177,7 +3431,23 @@ class SkeletonBuilder {
       return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: null };
     };
 
-    if (statement.nativeSql) return { exits: incoming, outputRun: null };
+    if (statement.nativeSql) {
+      // ADR-066. The body of an AMDP method (`METHOD m BY DATABASE PROCEDURE
+      // … USING mseg.`) is one native statement that runs on the database —
+      // one read step, of the database objects its USING clause names. What
+      // the SQLScript does in detail is not read and not claimed.
+      const opener = this.statements[statement.index - 1];
+      const amdp = opener && AMDP_METHOD.exec(opener.text);
+      if (!amdp) return { exits: incoming, outputRun: null };
+      const tables = amdpTables(opener.text);
+      // Without USING it touches no dictionary object, only what it is handed:
+      // work done by the database, not a read of it.
+      return keep(tables.length
+        ? this.addNode('read', tables[0], anchorOf(statement), ctx.region, ctx.container,
+          { detail: { tables, amdp: true } })
+        : this.addNode('service-task', amdp[1].toUpperCase(), anchorOf(statement), ctx.region, ctx.container,
+          { detail: { amdp: true, returns: true } }));
+    }
     if (DECLARATIVE.has(statement.keyword)) {
       // `DATA(x) = lo->m( ).` declares and assigns in one: the assignment runs,
       // and with it the call on its right (D2).
@@ -3352,6 +3622,17 @@ class SkeletonBuilder {
         }));
     }
 
+    if (receivesResults(text)) {
+      // ABAP keyword documentation, `RECEIVE RESULTS FROM FUNCTION`: the
+      // receiving half of an asynchronous RFC. In the callback routine that
+      // `STARTING NEW TASK … ON END OF TASK` names, it takes over what the
+      // remote function module returned — a step with the other task, drawn
+      // as the service task the starting call is, under the module's name.
+      const name = /^RECEIVE\s+RESULTS\s+FROM\s+FUNCTION\s+'([^']+)'/i.exec(text)?.[1]?.toUpperCase();
+      return keep(this.addNode('service-task', name ?? 'RECEIVE RESULTS', anchorOf(statement, name ? 4 : 0),
+        ctx.region, ctx.container, { detail: { receivesResults: true, returns: true } }));
+    }
+
     if (isListOutput(statement) || isFileOutput(statement)) {
       const target = isFileOutput(statement) ? 'file' : 'list';
       if (outputRun && outputRun.detail?.target === target && outputRun.anchor) {
@@ -3502,11 +3783,81 @@ class SkeletonBuilder {
     for (const { node, statementIndex, region } of this.earlyEnds) {
       const last = this.regionLast.get(region.key);
       if (last === undefined || !region.endNodeId) continue;
-      if (this.skipsSomething(statementIndex, last, drawn.get(region.key) ?? new Set())) continue;
+      // ADR-066. `LEAVE SCREEN`, `LEAVE TO SCREEN n` and `LEAVE LIST-PROCESSING`
+      // are never the routine's normal end, wherever they stand: the ABAP
+      // keyword documentation has them end the current dialog step on the spot
+      // — the rest of the screen's flow logic (the PAI/PBO modules after this
+      // one) does not run, and the runtime goes on with screen n (or back to
+      // the caller for 0). `ENDMODULE` hands back to that flow logic. So the
+      // end stays its own even with nothing drawn behind it in the module.
+      if (leavesDialogStep(this.statements[statementIndex].text)) continue;
+      // ADR-066. An exit that skips an assignment to a result parameter of its
+      // routine (`CHANGING` of a FORM; `EXPORTING`, `CHANGING`, `RETURNING` of
+      // a method) is not the normal end either: the caller gets another result
+      // back — `cv_ok` stays initial — whether or not a step is drawn between.
+      const own = drawn.get(region.key) ?? new Set<number>();
+      const results = this.resultWrites(statementIndex);
+      const counted = results.size ? new Set([...own, ...results]) : own;
+      if (this.skipsSomething(statementIndex, last, counted)) continue;
       for (const edge of this.edges) if (edge.to === node.id) edge.to = region.endNodeId;
       dropped.add(node.id);
     }
     if (dropped.size) this.nodes = this.nodes.filter((n) => !dropped.has(n.id));
+  }
+
+  /**
+   * ADR-066 — the statements of the FORM or method around `index` that assign
+   * one of its result parameters, by statement index. Empty outside a routine,
+   * or where the signature names no result parameter this reader can find.
+   */
+  private resultWrites(index: number): Set<number> {
+    const enclosing = this.structure.enclosing[index] ?? [];
+    const routine = [...enclosing].reverse().find((b) => b.kind === 'form' || b.kind === 'method');
+    if (!routine) return new Set();
+    const cached = this.resultWriteCache.get(routine.openIndex);
+    if (cached) return cached;
+    const opener = this.statements[routine.openIndex].text;
+    const params = new Set(routine.kind === 'form'
+      ? resultParameters(opener, /\bCHANGING\b/i)
+      : this.methodResultParameters(routine.openIndex));
+    const out = new Set<number>();
+    if (params.size) {
+      for (let i = routine.openIndex + 1; i < routine.closeIndex; i++) {
+        const target = assignmentTarget(this.statements[i].text);
+        if (target && params.has(target)) out.add(i);
+      }
+    }
+    this.resultWriteCache.set(routine.openIndex, out);
+    return out;
+  }
+
+  /**
+   * The `EXPORTING`, `CHANGING` and `RETURNING` parameters the declaration of
+   * the method at `openIndex` names — read off `METHODS name …` in its class's
+   * `DEFINITION`, or for `zif~name` in the interface. A declaration this
+   * source does not hold yields none.
+   */
+  private methodResultParameters(openIndex: number): string[] {
+    const written = /^METHOD\s+([\w/~]+)/i.exec(this.statements[openIndex].text)?.[1]?.toUpperCase();
+    if (!written) return [];
+    const tilde = written.indexOf('~');
+    const owner = tilde < 0 ? this.classOf(openIndex) : written.slice(0, tilde);
+    const name = tilde < 0 ? written : written.slice(tilde + 1);
+    if (!owner) return [];
+    for (const block of this.structure.blocks) {
+      if (block.kind !== 'class' && block.kind !== 'interface') continue;
+      const head = this.statements[block.openIndex].text;
+      const declares = block.kind === 'interface'
+        ? new RegExp(`^INTERFACE\\s+${owner.replace(/\//g, '\\/')}\\b(?!\\s+(?:DEFERRED|LOAD)\\b)`, 'i').test(head)
+        : new RegExp(`^CLASS\\s+${owner.replace(/\//g, '\\/')}\\s+DEFINITION\\b(?!\\s+(?:DEFERRED|LOAD)\\b)`, 'i').test(head);
+      if (!declares) continue;
+      for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
+        const text = this.statements[i].text;
+        const m = /^(?:CLASS-)?METHODS\s+([\w/~]+)/i.exec(text);
+        if (m && m[1].toUpperCase() === name) return resultParameters(text, /\b(?:EXPORTING|CHANGING|RETURNING)\b/i);
+      }
+    }
+    return [];
   }
 
   /**
