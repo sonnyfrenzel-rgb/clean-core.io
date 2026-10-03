@@ -484,8 +484,14 @@ test.describe('the overview on the screen — one rendered test per chart', () =
     await signIn(page, ADMIN);
     await page.goto(`/project/${ID}?view=management`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-management-overview]')).toBeVisible({ timeout: 60000 });
-    // The cards stand one action deeper, under the decision panel (§2.11).
-    const fold = page.locator('[data-management-overview] [data-cc-disclosure-trigger]').first();
+    // The cards stand one action deeper, under the decision panel (§2.11) — in
+    // the "Evidence" fold since 03.10.2026, and within it one more fold.
+    const evidence = page.locator('[data-management-fold="evidence"] [data-cc-disclosure-trigger]').first();
+    await evidence.click();
+    await expect(evidence).toHaveAttribute('aria-expanded', 'true');
+    const fold = page.locator('[data-management-fold="evidence"] [data-cc-disclosure-trigger]', {
+      hasText: 'The evidence behind these figures',
+    });
     await expect(fold).toContainText('The evidence behind these figures');
     await fold.click();
     await expect(fold).toHaveAttribute('aria-expanded', 'true');
@@ -499,11 +505,15 @@ test.describe('the overview on the screen — one rendered test per chart', () =
     await expect(panel.locator('[data-management-headline]')).toContainText(/Decision DEC-1 is open/, { timeout: 60000 });
     await expect(panel.locator('[data-executive-blocker]').first()).toBeVisible();
     await expect(panel.locator('[data-executive-next-action]')).toHaveCount(1);
-    await expect(panel.locator('[data-executive-figure]')).toHaveCount(4);
-    const bar = panel.locator('[data-overview-bar="executive-buckets"]');
+    // Beside the decision, fit to standard (ADR-069); the four figures, the
+    // bucket bar of every object and the phases one action deeper, in "Evidence".
+    await expect(panel.locator('#standard-fit')).toBeVisible();
+    const evidence = page.locator('[data-executive-evidence]');
+    await expect(evidence.locator('[data-executive-figure]')).toHaveCount(4);
+    const bar = evidence.locator('[data-overview-bar="executive-buckets"]');
     await expect(bar).toHaveAttribute('role', 'img');
     await expect(bar).toHaveAttribute('aria-label', /Not assigned \d+/);
-    await expect(panel.locator('[data-executive-phase]')).toHaveCount(7);
+    await expect(evidence.locator('[data-executive-phase]')).toHaveCount(7);
     await expect(panel, 'an amount of money in the decision panel').not.toContainText(/€|EUR/);
     // The panel stands above the cards it reads.
     const [p, c] = await Promise.all([

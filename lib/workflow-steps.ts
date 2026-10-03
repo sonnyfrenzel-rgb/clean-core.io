@@ -148,6 +148,105 @@ export const PHASES: ReadonlyArray<{ n: number; key: PhaseKey; label: string }> 
   { n: 7, key: 'delivery', label: 'Delivery' },
 ];
 
+/**
+ * What each tool is for, in one short line — the one source the tools bar, its
+ * phone menu and every "which tool, when" hint read (owner 03.10.2026: "a
+ * completely clear path … and how he uses the tools"). A purpose, not a state:
+ * it never says what is on record, so it cannot disagree with `workflowSteps`.
+ */
+export const PHASE_PURPOSE: Readonly<Record<PhaseKey, string>> = Object.freeze({
+  analyze: 'Reads the code and signs a run — every other figure starts here.',
+  design: 'Chooses the target architecture.',
+  transformation: 'Generates the target code.',
+  documentation: 'Writes the process documentation: SOP and RACI.',
+  testing: 'Prepares and runs the test cases.',
+  tco: 'Compares the costs, as a simulation on your own figures.',
+  delivery: 'Hands the package over.',
+});
+
+/**
+ * Whether a tool has something of its own on record for this project — the
+ * one question its green check answers (ADR-060, amended by the owner on
+ * 03.10.2026: "green check on Analyze, and 'Run the analysis' as the next step
+ * — a contradiction").
+ *
+ * `done` always counts. `partial` counts only where the partial record is the
+ * tool's own output — a generated design waiting for its sign-off, a test
+ * draft nobody ran. It does not count for three phases whose `partial` says
+ * something about *other* inputs:
+ *
+ *   - Analyze `partial` is a staged source (or a run that could not be read) —
+ *     an upload, not an analysis. Its check means a signed run.
+ *   - Economics `partial` is "the signed run is the baseline"; nothing records
+ *     whether a cost estimate was ever made (the figures are not stored).
+ *   - Delivery `partial` is "review material only" — other tools' output;
+ *     nothing was handed over.
+ *
+ * A visit is never a record: nothing here reads where the reader has been.
+ */
+export function toolOnRecord(step: { key: PhaseKey; state: PhaseState }): boolean {
+  if (step.state === 'done') return true;
+  if (step.state !== 'partial') return false;
+  return step.key !== 'analyze' && step.key !== 'tco' && step.key !== 'delivery';
+}
+
+/**
+ * The phase the product recommends next, or `null` once nothing is open — the
+ * rule of `workflowSummary` (Economics passed over, because nothing in this
+ * release can complete it) for any rail, the demo's included.
+ */
+export function nextPhaseKey(steps: ReadonlyArray<{ key: PhaseKey; state: PhaseState }>): PhaseKey | null {
+  const open = steps.find((s) => s.state !== 'done' && s.key !== 'tco');
+  if (open) return open.key;
+  return null;
+}
+
+/**
+ * Why a tool cannot do anything yet, or `null` when it can. Only one reason is
+ * stated, and only the one this contract can see: without a signed run every
+ * later tool has nothing to work from (`enforceActiveRun`). The tool stays
+ * reachable; the sentence says what it will need.
+ */
+export function phaseNeeds(
+  step: { key: PhaseKey; state: PhaseState },
+  steps: ReadonlyArray<{ key: PhaseKey; state: PhaseState }>,
+): string | null {
+  if (step.key === 'analyze' || step.state !== 'empty') return null;
+  const analyze = steps.find((s) => s.key === 'analyze');
+  if (analyze && analyze.state === 'done') return null;
+  return 'Needs a signed run first.';
+}
+
+/**
+ * What pressing the way into a phase starts — "Run the analysis", "Draft the
+ * design". One wording for every place that offers the next step: the list
+ * report, "Next step" in every view, and the Management decision panel.
+ */
+export function phaseActionLabel(step: { key: PhaseKey; state: PhaseState; label: string }, hasSource: boolean): string {
+  if (step.key === 'analyze') {
+    if (!hasSource) return 'Upload the code';
+    return step.state === 'stale' ? 'Run the analysis again' : 'Run the analysis';
+  }
+  if (step.state === 'stale') return `Bring ${step.label} up to date`;
+  const started = step.state === 'partial';
+  switch (step.key) {
+    case 'design':
+      return started ? 'Confirm the design' : 'Draft the design';
+    case 'transformation':
+      return started ? 'Review the generated code' : 'Generate the code';
+    case 'documentation':
+      return started ? 'Review the documentation' : 'Write the documentation';
+    case 'testing':
+      return started ? 'Run the tests' : 'Prepare the tests';
+    case 'tco':
+      return 'Estimate the costs';
+    case 'delivery':
+      return 'Hand over the package';
+    default:
+      return `Open ${step.label}`;
+  }
+}
+
 export interface TestEvidence {
   total: number;
   passed: number;

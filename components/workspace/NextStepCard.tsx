@@ -8,7 +8,7 @@ import { NEXT_STEP_PROVENANCE, NOTHING_OPEN, type NextOpenPoint } from '@/lib/ne
 import type { WorkspaceView } from '@/lib/workspace-model';
 import { useWorkspaceLayer } from '@/hooks/useWorkspaceLayer';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
-import { openStageLabel, wt } from '@/lib/workspace-messages';
+import { wt } from '@/lib/workspace-messages';
 
 /**
  * "Next step" — `DESIGN.md` §2.3 item 5, §5.5, roadmap step 6.5.
@@ -112,7 +112,7 @@ export default function NextStepCard({
               href={stageHref({ base: `/project/${projectId}`, path: point.path, view, from: WORKSPACE_RETURN.nextStep, layer })}
               variant="primary"
             >
-              {openStageLabel(point.label)}
+              {point.action}
             </CcLinkButton>
           ) : null}
         </div>
@@ -150,7 +150,7 @@ export default function NextStepCard({
                 href={stageHref({ base: `/project/${projectId}`, path: point.path, view, from: WORKSPACE_RETURN.nextStep, layer })}
                 variant="primary"
               >
-                {openStageLabel(point.label)}
+                {point.action}
               </CcLinkButton>
             </div>
           </div>

@@ -141,7 +141,9 @@ test.describe('screens that load code on demand throw nothing (owner 02.10.2026)
 
     for (const [name, path, ready] of [
       ['the workspace', '', '[data-workspace-shell]'],
-      ['the workspace, management view', '?view=management', '[data-public-cloud-fit-panel="ready"]'],
+      // The bucket panel stands in the folded "Evidence" since 03.10.2026; the
+      // answer the view opens with is the decision beside fit to standard.
+      ['the workspace, management view', '?view=management', '[data-management-executive]'],
       ['Analyze', '/analyze', '[data-analysis-answer]'],
       ['Transformation', '/transformation', '[data-stage-title]'],
     ] as const) {

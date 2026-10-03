@@ -103,7 +103,7 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'firstLook.openReasons': 'Each point with its reason under Not determined.',
   'firstLook.noRulesInList': 'No hard-coded rule to list.',
   // PublicCloudFitPanel
-  'cloudFit.title': 'Public-Cloud-Fit and the four buckets',
+  'cloudFit.title': 'Every object by bucket',
   'cloudFit.noSource': 'No source has been staged, so no object can be sorted into a bucket yet.',
   'cloudFit.loading':
     "Looking up each object's clean-core level and released path in the Cloudification Repository…",

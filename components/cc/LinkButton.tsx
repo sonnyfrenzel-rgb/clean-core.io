@@ -54,11 +54,13 @@ export interface CcLinkButtonProps extends CcDataAttributes {
    * name ("opens in a new tab"); sighted readers see the external-link icon.
    */
   external?: string;
+  /** The id of an element that describes the link — its accessible description, not its name. */
+  describedBy?: string;
   children: React.ReactNode;
 }
 
 export default function CcLinkButton(props: CcLinkButtonProps) {
-  const { href, variant = 'ghost', density = 'compact', icon, current = false, external, children } = props;
+  const { href, variant = 'ghost', density = 'compact', icon, current = false, external, describedBy, children } = props;
   const className = cn(
     CC_BUTTON_BASE,
     'no-underline',
@@ -75,6 +77,7 @@ export default function CcLinkButton(props: CcLinkButtonProps) {
     'data-cc-density': density,
     'data-cc-tone': 'default',
     'aria-current': current ? ('page' as const) : undefined,
+    'aria-describedby': describedBy,
     className,
   };
 

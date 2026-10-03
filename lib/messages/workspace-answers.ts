@@ -180,7 +180,7 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'exec.notYetRead': 'Still being read.',
   'exec.nothingFoundNotAllRead': 'Nothing found in the way, but not every source could be read.',
   'exec.moreLead': 'and',
-  'exec.moreTail': 'more, each with its evidence, under the figures',
+  'exec.moreTail': 'more, each with its evidence, under Evidence below',
   'exec.nextStep': 'Next step for the decision',
   'exec.noNextStep': 'Nothing to do for the decision right now.',
   'exec.bucketsTitle': 'Where the objects stand',
@@ -192,6 +192,43 @@ export const WORKSPACE_ANSWER_MESSAGES = {
   'exec.phasesTitle': 'Evidence per phase',
   'exec.phasesNote': 'Green only where something other than your account checked the record.',
   'exec.evidenceBehind': 'The evidence behind these figures',
+  'exec.forTheDecision': 'For the decision:',
+
+  // The fit-to-standard card (ADR-069) — ManagementExecutive.
+  'stdFit.title': 'Fit to standard',
+  'stdFit.ownMeasure': 'Clean-Core.io measure, not an SAP figure',
+  'stdFit.notDetermined': 'Not determined',
+  'stdFit.reading': 'Reading…',
+  'stdFit.howMeasured': 'How this is measured',
+  'stdFit.meterLabel': 'SAP objects by bucket',
+  'stdFit.groupFits': 'Has a released path',
+  'stdFit.groupBlocks': 'Blocks the standard path',
+  'stdFit.groupUncounted': 'Not counted',
+  'stdFit.blocksTitle': 'What blocks the standard path',
+  'stdFit.clearTitle': 'What does not block',
+  'stdFit.nothingBlocks': 'Nothing found blocks the standard path for the objects that could be sorted.',
+  'stdFit.nothingClear': 'No SAP object here has a released path yet.',
+  'stdFit.sourceLine': 'Source line',
+  'stdFit.noLine': 'no line',
+  'stdFit.allObjects': 'Every object, with its evidence',
+  'stdFit.demoBasis': 'Demo — from the engine reading of the demo source; a demo is never signed.',
+  'stdFit.setTarget': 'Choose the target platform in Analyze',
+
+  // The folds under the Management answer — collapsed until opened, and
+  // remembered in this browser only (owner 03.10.2026: progressive disclosure).
+  'mgmtFold.evidence': 'Evidence',
+  'mgmtFold.options': 'Options and the decision',
+  'mgmtFold.costs': 'Costs',
+  'mgmtFold.process': 'Process',
+  'mgmtFold.evidenceNoRun': 'Filled by the first signed run — the figures, the buckets per object and what could not be determined.',
+  'mgmtFold.evidenceRun': 'The four figures, evidence per phase, every object per bucket, the score history and what could not be determined.',
+  'mgmtFold.optionsSummary': 'The open decision, its options and what confirming it would bind.',
+  'mgmtFold.optionsNoRun': 'Still empty — the options are drawn from the first signed run.',
+  'mgmtFold.costsEmpty': 'No cost figures yet — enter your own in Economics; costs are only ever a simulation.',
+  'mgmtFold.processSummary': 'The process map, its business rules and "Ask this case" are in the Business view.',
+  'mgmtFold.openBusiness': 'Open the process in the Business view',
+  'mgmtFold.openEconomics': 'Open Economics',
+  'cloudFit.meaningsTitle': 'What the four buckets mean',
   'cloudFit.colObject': 'Object',
   'cloudFit.colStatus': 'What is known',
   'cloudFit.colDetail': 'Detail',
@@ -214,6 +251,36 @@ export const WORKSPACE_ANSWER_MESSAGES = {
 } as const;
 
 const M = WORKSPACE_ANSWER_MESSAGES;
+
+/** "62 %" — the fit-to-standard figure; a number the module computed, never a literal. */
+export function stdFitPercentLabel(percent: number): string {
+  return `${percent} %`;
+}
+
+/** "Fit to standard on Public Edition" — the card's title once a platform is known. */
+export function stdFitTitleOn(platform: string): string {
+  return `${M['stdFit.title']} on ${platform}`;
+}
+
+/** "Has a released path (5)" — a legend group with its count. */
+export function stdFitGroupLabel(label: string, count: number): string {
+  return `${label} (${count})`;
+}
+
+/** "and 4 more" — the rest of a list beyond what the card shows. */
+export function stdFitMoreLabel(count: number): string {
+  return `and ${count} more`;
+}
+
+/** "Source line 412" — the spoken name of a blocker's line anchor. */
+export function stdFitLineLabel(line: number): string {
+  return `${M['stdFit.sourceLine']} ${line}`;
+}
+
+/** "SAP objects by bucket: Keep 3, …" — the meter's text, every number in it. */
+export function stdFitMeterLabel(parts: Array<{ label: string; count: number }>): string {
+  return `${M['stdFit.meterLabel']}: ${parts.map((p) => `${p.label} ${p.count}`).join(', ')}.`;
+}
 
 /**
  * The sentence under the IT findings table. How many rows are on screen is the
@@ -290,7 +357,7 @@ export function mgmtShowDetailLabel(n: number): string {
   return `${M['mgmt.showDetail']} (${n})`;
 }
 
-/** "and 5 more, each with its evidence, under the figures" */
+/** "and 5 more, each with its evidence, under Evidence below" */
 export function execMoreBlockersLabel(n: number): string {
   return `${M['exec.moreLead']} ${n} ${M['exec.moreTail']}`;
 }

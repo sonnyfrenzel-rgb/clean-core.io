@@ -4,7 +4,7 @@ import path from 'path';
 import { adminSetDoc } from './helpers/admin-seed';
 import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
 import { toolMark, workspaceTools } from '../lib/workspace-model';
-import { workflowSteps } from '../lib/workflow-steps';
+import { PHASE_PURPOSE, workflowSteps } from '../lib/workflow-steps';
 import { hydrateProject } from '../lib/project-loader';
 import { analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
 import { sha256Hex } from '../lib/artefact-digest';
@@ -19,15 +19,23 @@ import type { Project } from '../lib/types';
  * the red dots mean, but I also wanted them to have small green ticks for a
  * tool already used once."
  *
+ * Amended 03.10.2026 by the owner: "green check on Analyze, and 'Run the
+ * analysis' as the next step — a contradiction". The check now means the
+ * tool's OWN output is on record (`toolOnRecord`): Analyze a signed run, never
+ * a staged source; Economics and Delivery never for what other tools made.
+ *
  * What holds it:
  *   - the mark is derived from the phase state in `workflowSteps` alone and
- *     never from a client-set `status`: a green check where something is on
- *     record (`done` or `partial`) and not out of date, an amber dot where it is
- *     `stale`, nothing where nothing is on record;
+ *     never from a client-set `status` or a visit: a green check where the
+ *     tool's own output is on record and not out of date, an amber dot where
+ *     it is `stale`, nothing otherwise;
  *   - the mark says "used", never "proven" or "verified" — proof strength stays
  *     with the stepper and the status chips;
  *   - a legend in text explains both marks, beside "Tools" and at the top of
- *     the phone menu; each mark has its words for a screen reader and a tooltip;
+ *     the phone menu; each mark has its words for a screen reader — and no
+ *     hover-only tooltip (owner 03.10.2026: hover does not exist on a phone);
+ *   - every tool has its purpose as an accessible description and behind a
+ *     tap- and keyboard-reachable "i"; exactly one tool is marked next;
  *   - from breakpoint L the seven are visible in every view without opening a
  *     menu; on a phone (390 px) the bar is the menu and nothing scrolls sideways.
  */
@@ -87,17 +95,45 @@ test.describe('the mark is the stepper\'s reading of the phase', () => {
     }
   });
 
-  test('a check where the tool was used, a dot where it is out of date, nothing where nothing is on record', () => {
+  test('a check where the tool\'s own output is on record, a dot where it is out of date, nothing otherwise', () => {
     const used = { kind: 'check', meaning: 'used', words: 'tools.mark.used' };
-    expect(toolMark({ state: 'done' })).toEqual(used);
-    expect(toolMark({ state: 'partial' })).toEqual(used);
-    expect(toolMark({ state: 'stale' })).toEqual({ kind: 'dot', meaning: 'stale', words: 'tools.mark.stale' });
-    expect(toolMark({ state: 'empty' })).toEqual({ kind: 'none', meaning: 'none', words: null });
+    const none = { kind: 'none', meaning: 'none', words: null };
+    expect(toolMark({ key: 'design', state: 'done' })).toEqual(used);
+    // A generated design awaiting its sign-off, a test draft: the tool's own output.
+    expect(toolMark({ key: 'design', state: 'partial' })).toEqual(used);
+    expect(toolMark({ key: 'testing', state: 'partial' })).toEqual(used);
+    // A staged source is an upload, not an analysis; a baseline is not a cost
+    // estimate; review material is other tools' output (owner 03.10.2026).
+    expect(toolMark({ key: 'analyze', state: 'partial' })).toEqual(none);
+    expect(toolMark({ key: 'tco', state: 'partial' })).toEqual(none);
+    expect(toolMark({ key: 'delivery', state: 'partial' })).toEqual(none);
+    expect(toolMark({ key: 'analyze', state: 'done' })).toEqual(used);
+    expect(toolMark({ key: 'analyze', state: 'stale' })).toEqual({ kind: 'dot', meaning: 'stale', words: 'tools.mark.stale' });
+    expect(toolMark({ key: 'design', state: 'empty' })).toEqual(none);
     // Proof strength is not the bar's to say: a proven phase and an unproven one
     // carry the same mark (the stepper and the chips keep telling them apart).
-    const proven = { state: 'done' as const, proven: true };
-    const unproven = { state: 'done' as const, proven: false };
+    const proven = { key: 'testing' as const, state: 'done' as const, proven: true };
+    const unproven = { key: 'testing' as const, state: 'done' as const, proven: false };
     expect(toolMark(proven)).toEqual(toolMark(unproven));
+  });
+
+  test('a fresh project shows no check on Analyze; a signed run earns it', () => {
+    const fresh = workflowSteps({ name: 'fresh', legacyCode: SOURCE } as Project);
+    expect(fresh.find((s) => s.key === 'analyze')?.state).toBe('partial');
+    expect(toolMark(fresh.find((s) => s.key === 'analyze')!).kind).toBe('none');
+    const signed = workflowSteps(
+      hydrateProject('a', { ...analyzedDoc('u'), activeRunId: 'r' } as Project, { kind: 'found', data: analyzedRun('a', 'u', 'r') }),
+    );
+    expect(toolMark(signed.find((s) => s.key === 'analyze')!).kind).toBe('check');
+  });
+
+  test('every tool has a purpose of its own, from one source', () => {
+    const purposes = Object.values(PHASE_PURPOSE);
+    expect(purposes).toHaveLength(7);
+    expect(new Set(purposes).size).toBe(7);
+    for (const p of purposes) expect(p.length).toBeGreaterThan(10);
+    // The bar writes no purpose of its own.
+    expect(read('components/workspace/ToolBar.tsx')).toContain('PHASE_PURPOSE[tool.key]');
   });
 
   test('the marks and the legend never claim proof', () => {
@@ -197,20 +233,32 @@ test.describe('the toolbar, rendered', () => {
       expect(marks.map((m) => [m.key, m.state, m.meaning, m.kind])).toEqual(
         steps.map((s) => [s.key, s.state, toolMark(s).meaning, toolMark(s).kind]),
       );
-      // A check exactly where something is on record — Analyze (signed run)
-      // and Economics (its estimate from the analysis, `partial`) — and a dot
-      // nowhere, since nothing here is out of date.
+      // A check exactly where the tool's own output is on record — Analyze
+      // (the signed run) and nothing else: Economics' `partial` is only the
+      // baseline, not an estimate (owner 03.10.2026) — and a dot nowhere,
+      // since nothing here is out of date.
       expect(
         marks.filter((m) => m.checks === 1 && m.dots === 0).map((m) => m.key),
-        `${view}: the checks are not where the tools were used`,
-      ).toEqual(steps.filter((s) => s.state === 'done' || s.state === 'partial').map((s) => s.key));
-      expect(marks.filter((m) => m.checks > 0).map((m) => m.key)).toEqual(['analyze', 'tco']);
+        `${view}: the checks are not where the tools have something on record`,
+      ).toEqual(steps.filter((s) => toolMark(s).kind === 'check').map((s) => s.key));
+      expect(marks.filter((m) => m.checks > 0).map((m) => m.key)).toEqual(['analyze']);
       expect(marks.filter((m) => m.dots > 0).map((m) => m.key), `${view}: a dot on a project with nothing out of date`).toEqual([]);
       for (const m of marks) {
-        expect(m.title, `${view}: ${m.key} has no tooltip, or one on an untouched tool`).toBe(
-          m.checks ? WORKSPACE_MESSAGES['tools.mark.usedHint'] : null,
+        expect(m.title, `${view}: ${m.key} carries a hover-only tooltip`).toBeNull();
+      }
+
+      // Which tool for what: every tool describes itself, and exactly one is next.
+      for (const s of steps) {
+        const tool = bar.locator(`a[data-workspace-tool="${s.key}"]`);
+        await expect(tool, `${view}: ${s.key} has no description`).toHaveAccessibleDescription(/\S/);
+        const describedBy = await tool.getAttribute('aria-describedby');
+        await expect(page.locator(`[id="${describedBy}"]`), `${view}: ${s.key} does not say what it is for`).toContainText(
+          PHASE_PURPOSE[s.key],
         );
       }
+      await expect(bar.locator('a[data-workspace-tool-next]'), `${view}: not exactly one tool is next`).toHaveCount(1);
+      await expect(bar.locator('a[data-workspace-tool-next]')).toHaveAttribute('data-workspace-tool', 'design');
+      await expect(bar.locator('[data-tools-hint="bar"]')).toContainText(PHASE_PURPOSE.design);
 
       // The legend says what the marks mean, in text, beside "Tools".
       const legend = bar.locator('[data-tools-legend="bar"]');
@@ -226,9 +274,7 @@ test.describe('the toolbar, rendered', () => {
     // The check is green — the success token, not a near-green — and the words say why.
     const analyze = page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]');
     await expect(analyze).toHaveAccessibleName(named('Analyze', 'tools.mark.used'));
-    await expect(page.locator('[data-workspace-tools="open"] a[data-workspace-tool="tco"]')).toHaveAccessibleName(
-      named('Economics', 'tools.mark.used'),
-    );
+    await expect(page.locator('[data-workspace-tools="open"] a[data-workspace-tool="tco"]')).toHaveAccessibleName('Economics');
     const [tick, legendTick, success] = await analyze.evaluate((el) => {
       const toRgb = (value: string) => {
         const probe = document.createElement('span');
@@ -280,13 +326,17 @@ test.describe('the toolbar, rendered', () => {
     const staleKeys = steps.filter((s) => s.state === 'stale').map((s) => s.key);
     expect(staleKeys, 'the fixture has nothing stale').toContain('analyze');
     expect(marks.filter((m) => m.dots === 1 && m.checks === 0).map((m) => m.key), 'a stale tool without its dot').toEqual(staleKeys);
+    // The dot explains itself in words — the description, not a hover tooltip.
     for (const m of marks.filter((x) => x.dots > 0)) {
-      expect(m.title, `${m.key}: the dot explains itself`).toBe(WORKSPACE_MESSAGES['tools.mark.staleHint']);
+      await expect(
+        page.locator(`[data-workspace-tools="open"] a[data-workspace-tool="${m.key}"]`),
+        `${m.key}: the dot explains itself`,
+      ).toHaveAccessibleDescription(/Out of date — inputs changed since/);
     }
     expect(
       marks.filter((m) => m.checks > 0).map((m) => m.key),
       'a check on an out-of-date tool, or none on a used one',
-    ).toEqual(steps.filter((s) => s.state === 'done' || s.state === 'partial').map((s) => s.key));
+    ).toEqual(steps.filter((s) => toolMark(s).kind === 'check').map((s) => s.key));
     expect(marks.find((m) => m.key === 'design')?.checks, 'Design is on record and current').toBe(1);
 
     const analyze = page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]');
@@ -331,8 +381,34 @@ test.describe('the toolbar, rendered', () => {
     await expect(panel.locator('a[data-workspace-tool="analyze"]')).toHaveAccessibleName(named('Analyze', 'tools.mark.used'));
     await expect(panel.locator('a[data-workspace-tool="analyze"] [data-workspace-tool-mark="check"]')).toBeVisible();
     await expect(panel.locator('a[data-workspace-tool="design"]')).toHaveAccessibleName('Design');
+    // In the menu every tool says what it is for, as text — no hover needed.
+    await expect(panel.locator('[data-workspace-tool-purpose]')).toHaveCount(7);
+    await expect(panel.locator('[data-workspace-tool-item="design"] [data-workspace-tool-purpose]')).toContainText(PHASE_PURPOSE.design);
+    await expect(panel.locator('a[data-workspace-tool-next]')).toHaveCount(1);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow, 'the open menu pushes the page sideways').toBeLessThanOrEqual(0);
+    await context.close();
+  });
+
+  test('on a touch screen the "i" of a tool opens its purpose on a tap, and a second tap closes it', async ({ browser }) => {
+    test.setTimeout(240 * 1000);
+    // A tablet in landscape: wide enough for the open bar, and no hover at all.
+    const context = await browser.newContext({ viewport: { width: 1180, height: 820 }, hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    await signInThroughForm(page, acct);
+    await open(page, ANALYZED, 'management');
+    const info = page.locator('[data-workspace-tools="open"] button[data-info-popover="tool-testing"]');
+    await expect(info).toBeVisible();
+    await expect(info).toHaveAccessibleName('About Testing');
+    // The target grows to 44 px under a coarse pointer (DESIGN.md §2.9).
+    const box = await info.boundingBox();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    await info.tap();
+    const panel = page.locator('[data-info-popover-panel="tool-testing"]');
+    await expect(panel).toBeVisible();
+    await expect(panel).toContainText(PHASE_PURPOSE.testing);
+    await info.tap();
+    await expect(panel).toHaveCount(0);
     await context.close();
   });
 
