@@ -2271,9 +2271,10 @@
       "area": "release",
       "firstSeenHead": "69b4f522e5ea5fb0e7a232b433880ce3886200ab",
       "createdAt": "2026-10-03T03:55:30.148Z",
-      "status": "eingeplant",
+      "status": "behoben",
       "step": "3.0",
-      "updatedAt": "2026-10-03T03:55:30.148Z"
+      "updatedAt": "2026-10-03T04:56:22.264Z",
+      "fixedIn": "e808bc2f"
     },
     {
       "id": "UX-183",
