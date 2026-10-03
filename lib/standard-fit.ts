@@ -5,7 +5,7 @@ import {
   type PublicCloudFitBucket,
   type TargetPlatform,
 } from './abap/public-cloud-fit';
-import type { ItFindingRow, ItFindingsSource } from './it-findings';
+import type { ItFindingRow, ItFindingsSource, ItUseRow } from './it-findings';
 import type { ChartSegment, FitByPlatform, Loaded } from './management-overview';
 import type { PhaseState } from './workflow-steps';
 import type { ProvenanceValue } from './provenance';
@@ -29,6 +29,14 @@ import type { ProvenanceValue } from './provenance';
  * object — a direct write to an SAP table (level D, ADR-062) or a
  * modification. The project's own objects (`own-object`, `heuristic` grades)
  * are not in the measure: they are not SAP's standard either way.
+ *
+ * **Calls are SAP objects too** (note of 03.10.2026 to ADR-069). The SAP
+ * function modules and BAPIs the code calls by name — the `bapi` and
+ * `function-module` rows of the IT view's `uses`, graded the same way — are
+ * sorted by the same rule table as every other SAP object: a released API, or
+ * a listed one SAP names a released path for, has a path; a call SAP does not
+ * list, or lists with no path, blocks. Customer `Z`/`Y` modules are not SAP's
+ * and stay out. A blocker that is a call carries the line of the call.
  *
  * **Not determined, never a default.** The figure is `not-determined`, with
  * its reason, when there is no signed run, when the source changed since the
@@ -73,6 +81,8 @@ export interface StandardFitItem {
   why: string;
   /** `imported` where SAP's repository says it, `reconstructed` where the engine read it from the code. */
   provenance: ProvenanceValue;
+  /** `call` where the code calls the object (a function module or BAPI) and no finding names it; else `object`. */
+  use: 'call' | 'object';
 }
 
 export type StandardFit =
@@ -143,6 +153,19 @@ export function fitPercent(fits: number, counted: number): number {
   return Math.min(99, Math.max(1, Math.round((fits / counted) * 100)));
 }
 
+/**
+ * The SAP function modules and BAPIs the code calls by name — what
+ * `useFitByPlatform` hands the resolver beside the findings. From the IT view's
+ * own `uses`, so the two views count the same calls; customer modules are out.
+ */
+export function sapCallsOf(source: Pick<ItFindingsSource, 'uses'>): string[] {
+  return [...new Set(sapCallRows(source.uses ?? []).map((u) => u.object))];
+}
+
+function sapCallRows(uses: readonly ItUseRow[]): ItUseRow[] {
+  return uses.filter((u) => u.use === 'call' && (u.kind === 'bapi' || u.kind === 'function-module') && !u.custom);
+}
+
 const isSapObject = (a: PublicCloudFitAssignment) =>
   a.levelProvenance === 'catalog' || a.levelProvenance === 'catalog-residual';
 
@@ -158,7 +181,12 @@ function rowsByObject(rows: readonly ItFindingRow[]): Map<string, ItFindingRow[]
   return out;
 }
 
-function itemFor(a: PublicCloudFitAssignment, rows: readonly ItFindingRow[], platformLabel: string): StandardFitItem {
+function itemFor(
+  a: PublicCloudFitAssignment,
+  rows: readonly ItFindingRow[],
+  call: ItUseRow | undefined,
+  platformLabel: string,
+): StandardFitItem {
   const write = rows.find((r) => r.kind === 'standard-table-write');
   const modification = rows.find((r) => r.kind === 'modification');
   // The level as the code uses the object: the strictest the engine gave any of
@@ -167,7 +195,10 @@ function itemFor(a: PublicCloudFitAssignment, rows: readonly ItFindingRow[], pla
     (worst, r) => (r.level && LEVEL_RANK[r.level] > LEVEL_RANK[worst] ? r.level : worst),
     a.level,
   );
-  const first = rows.reduce<number | null>((min, r) => (min === null || r.lineStart < min ? r.lineStart : min), null);
+  // A call no finding names is anchored on its first call.
+  const first = rows.reduce<number | null>((min, r) => (min === null || r.lineStart < min ? r.lineStart : min), null)
+    ?? call?.lines[0] ?? null;
+  const asCall = rows.length === 0 && call !== undefined;
 
   let why: string;
   let provenance: ProvenanceValue = 'imported';
@@ -180,10 +211,12 @@ function itemFor(a: PublicCloudFitAssignment, rows: readonly ItFindingRow[], pla
       why = 'SAP names a released successor — known work.';
       break;
     case 'no-catalogued-path-none-named':
-      why = 'SAP names no released successor and no extension path.';
+      why = asCall
+        ? 'Called here; SAP names no released successor and no extension path.'
+        : 'SAP names no released successor and no extension path.';
       break;
     case 'no-catalogued-path-not-listed':
-      why = "Not in SAP's release file — no path is named.";
+      why = asCall ? "Called here; not in SAP's release file — no path is named." : "Not in SAP's release file — no path is named.";
       break;
     default:
       provenance = 'reconstructed';
@@ -197,7 +230,15 @@ function itemFor(a: PublicCloudFitAssignment, rows: readonly ItFindingRow[], pla
         why = "Below what the platform keeps — the project's own rebuild.";
       }
   }
-  return { objectName: a.objectName, bucket: a.bucket as PublicCloudFitBucket, level, line, why, provenance };
+  return {
+    objectName: a.objectName,
+    bucket: a.bucket as PublicCloudFitBucket,
+    level,
+    line,
+    why,
+    provenance,
+    use: asCall ? 'call' : 'object',
+  };
 }
 
 /** Blockers: no path named first, then the project's own work; within each the stricter level, then the line. */
@@ -260,7 +301,9 @@ export function standardFit(src: StandardFitSource): StandardFit {
   }
 
   const rows = rowsByObject(src.findings.value.rows);
-  const items = sorted.map((a) => itemFor(a, rows.get(a.objectName.toUpperCase()) ?? [], platformLabel));
+  const calls = new Map(sapCallRows(src.findings.value.uses ?? []).map((u) => [u.object, u] as const));
+  const items = sorted.map((a) =>
+    itemFor(a, rows.get(a.objectName.toUpperCase()) ?? [], calls.get(a.objectName.toUpperCase()), platformLabel));
   const fitting = (a: PublicCloudFitAssignment) => a.rule === 'keep-platform-level' || a.rule === 'rebuild-path';
   const clear: StandardFitItem[] = [];
   const blockers: StandardFitItem[] = [];

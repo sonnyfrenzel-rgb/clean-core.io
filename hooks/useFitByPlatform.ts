@@ -8,6 +8,7 @@ import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import type { ItFindingsSource } from '@/lib/it-findings';
 import type { FitByPlatform, Loaded } from '@/lib/management-overview';
+import { sapCallsOf } from '@/lib/standard-fit';
 import type { Project } from '@/lib/types';
 
 /**
@@ -33,7 +34,13 @@ export function useFitByPlatform(
         : null,
     [findings],
   );
-  const lookupObjects = useMemo(() => (fitFindings ? publicCloudFitLookupObjects(fitFindings) : []), [fitFindings]);
+  // The SAP function modules and BAPIs the code calls count as SAP objects too
+  // (ADR-069, note of 03.10.2026), from the same `uses` the IT view lists.
+  const calls = useMemo(() => (findings.state === 'ready' ? sapCallsOf(findings.value) : []), [findings]);
+  const lookupObjects = useMemo(
+    () => (fitFindings ? publicCloudFitLookupObjects(fitFindings, calls) : []),
+    [fitFindings, calls],
+  );
   // Graded under the project's target profile, as its run and the IT rows are
   // (owner decision 30.09.2026).
   const lookup = useAbcdCatalogLookup(lookupObjects, project ? catalogLookupTargetOf(project) : null);
@@ -49,7 +56,7 @@ export function useFitByPlatform(
         lookup.grades[gradeKey(name, use)] ?? { grade: 'Unknown' as const, provenance: 'heuristic' as const },
       hasNoPath: (name: string) => lookup.noPath[name] ?? false,
     };
-    const base = { findings: fitFindings, usageReport: project.usageReport ?? null, catalogBasis: null };
+    const base = { findings: fitFindings, calls, usageReport: project.usageReport ?? null, catalogBasis: null };
     return {
       state: 'ready',
       value: {
@@ -58,5 +65,5 @@ export function useFitByPlatform(
         public: resolvePublicCloudFit({ ...base, targetPlatform: 'public' }, deps),
       },
     };
-  }, [findings, fitFindings, project, lookupObjects.length, lookup.status, lookup.grades, lookup.noPath, lookupFailed]);
+  }, [findings, fitFindings, calls, project, lookupObjects.length, lookup.status, lookup.grades, lookup.noPath, lookupFailed]);
 }
