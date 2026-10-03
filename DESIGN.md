@@ -583,6 +583,11 @@ moment.
    rules and next to it **Not determined**; below it the same facets as in the header (§2.3): Traceability · Rules
    confirmed · Level distribution · Not determined.
 
+**The start signs the reading** (ADR-066). Starting an example, a snippet or one's own code signs the engine's reading
+at once — the same signed run every analysis ends in, without a narrative and without a model call, at the cost every
+start screen states before the click. The build-up names it as its last moment, "Process map", and the end state
+stands on the full map, drawn from that signed run; the map is never drawn from source no run signed.
+
 **The model does not hold up the build-up** (ADR-025). The ≤ 3 s apply to stages 1, 2 and 4 — they come from the
 engine. Stage 3 needs a model call and may take longer: after 3 s at the latest stage 4 is there with technical
 names, the stage line says "Naming in business language …" with "Cancel". When the names arrive, they change once, with
@@ -610,20 +615,25 @@ Confetti, decorative gradients, typewriter effects, pulsing dots, loading animat
 thinking…"*, artificial minimum durations (like the six seconds the Evidence Scanner once took). Everything that costs time and
 shows nothing lowers the credibility the moment needs.
 
-**The one deliberate exception (owner decision, 01.10.2026):** the first look's build-up runs on a fixed budget of
-about 2.4 s (code read to 0.5 s, process recognised to 1.8 s, names to 2.4 s), even when the engine is done in a few
-frames. The four moments of mockup `s0` are only worth anything if a reader can see them: lines lighting up, the
-process growing out of them, the names changing once. Every frame shows real content — lit source lines and the
-engine's own nodes with their anchors, counters that only rise with a lit line — so it is not a wait without content.
-The limits stay: "Skip" is always visible, `prefers-reduced-motion` and Skip go straight to the end state, a second
-visit has no build-up, and the end state never waits for a model (`lib/first-look-buildup.ts`).
+**The one deliberate exception (owner decisions, 01.10.2026 and 03.10.2026, ADR-066):** the first look's build-up
+runs at a pace a reader can follow, about 8.4 s, even when the engine is done in a few frames — code read to 1.0 s,
+process recognised to 3.8 s, names to 5.0 s, the rules in the code to 6.2 s, what is not determined to 7.4 s, the map
+to 8.4 s. A rail above the code names each moment and what it found. The moments are only worth anything if a reader
+can see them: lines lighting up, the process growing out of them, the names changing once, the rules and the open
+points with their lines. Every frame shows real content — lit source lines and the engine's own nodes with their
+anchors, counters that only rise with a lit line — so it is not a wait without content. The last moment waits, at
+most 12 s, for the start's signed run, so the build-up ends on the full map. The limits stay: "Skip" is always
+visible, `prefers-reduced-motion` and Skip go straight to the end state, a second visit has no build-up, and the end
+state never waits for a model (`lib/first-look-buildup.ts`).
 
 ### 5.5 What is there afterwards
 
 - **Content, at the top:** the card "Next step" — "Confirm the 7 rules — about 10 minutes", one click to the first rule.
 - **Head of the content:** process name, plain-language sentence, reveal line, *Not determined* (§5.1).
 - **Middle:** the process map; click or Enter on a step opens the source column with marked lines.
-- **The process stays in sight** (ADR-059): the drawing that grew in the build-up stays in the head of the content, whole and in plain names, with a way to the full map; in Business the map follows directly under the head and *Next step*.
+- **The process stays in sight** (ADR-059, ADR-066): in Business the full map follows directly under the head and *Next step*, drawn from the start's signed run; where no signed map stands below (IT, Management, a project with no run), the drawing that grew in the build-up stays in the head of the content, whole and in plain names, with a way to the full map.
+- **The work area under the map** (ADR-066): in Business the status and the tools stand under a title, "Work from this process", with the other two views one click away — the process is the entry, every view and tool starts from it.
+- **The way back** (ADR-066): "← My workspace" above the title of the object page, at every width.
 - **Side column, "What this process does":** five sentences, each with an anchor; unproven ones grey (like `AnchoredNarrative`).
 - **Side column, "Not determined":** every open spot with a reason and the next way — dynamic call, missing include,
   usage unknown (never "unused"). This column is intentional: it is the reason to trust a result.
