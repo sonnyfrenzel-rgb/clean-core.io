@@ -846,12 +846,28 @@ function receivesResults(text: string): boolean {
 
 function isFileOutput(statement: AbapStatement): boolean {
   if (statement.keyword === 'TRANSFER') return true;
-  // ABAP keyword documentation, CLOSE DATASET: closes the file on the
-  // application server; for a file opened for output the buffered content is
-  // written and the file is complete only now. Part of the same file step as
-  // OPEN DATASET and TRANSFER — a CLOSE right behind a TRANSFER joins its run.
-  if (statement.keyword === 'CLOSE' && /^CLOSE\s+DATASET\b/i.test(statement.text)) return true;
   return statement.keyword === 'OPEN' && /^OPEN\s+DATASET\b/i.test(statement.text);
+}
+
+/**
+ * ADR-066, note of 03.10.2026 — `CLOSE DATASET dset`. The ABAP keyword
+ * documentation: it closes the file on the application server; for a file
+ * opened for output the buffered content is written now. It ends the work on
+ * a file that `OPEN DATASET`/`TRANSFER`/`READ DATASET` did — whether the file
+ * was written or read — and is part of that step, never a step of its own.
+ */
+function closesDataset(statement: AbapStatement): boolean {
+  return statement.keyword === 'CLOSE' && /^CLOSE\s+DATASET\b/i.test(statement.text);
+}
+
+/**
+ * The file a file statement works on, upper-cased: the `dset` operand of
+ * `OPEN DATASET dset`, `CLOSE DATASET dset` and `TRANSFER dobj TO dset`.
+ */
+function datasetOf(statement: AbapStatement): string | null {
+  const operand = /^(?:OPEN|CLOSE)\s+DATASET\s+([^\s.]+(?:\.[^\s.]+)*)/i.exec(statement.text)
+    ?? /^TRANSFER\b[\s\S]*?\bTO\s+([^\s.]+(?:\.[^\s.]+)*)/i.exec(statement.text);
+  return operand ? operand[1].toUpperCase() : null;
 }
 
 /** The kind of task a `CALL FUNCTION` is, by the module it names (§5.8). */
@@ -1048,6 +1064,8 @@ class SkeletonBuilder {
   private blockAt = new Map<number, Block>();
   private branchAt = new Map<number, Branch>();
   private formBlocks = new Map<string, Block>();
+  /** ADR-066 (03.10.2026): the files a run of file statements works on, by node id — `CLOSE DATASET` joins only a run of its own file. */
+  private fileRunDatasets = new Map<string, Set<string>>();
   private effects = new Map<string, Set<FormEffect>>();
   private helpers = new Set<string>();
   /** The chain of routines being expanded right now — the floor of `routineRegion`. */
@@ -3633,18 +3651,36 @@ class SkeletonBuilder {
         ctx.region, ctx.container, { detail: { receivesResults: true, returns: true } }));
     }
 
+    if (closesDataset(statement)) {
+      // ADR-066, note of 03.10.2026: `CLOSE DATASET` belongs to the file step
+      // before it of the same file. Right behind that step's run it joins the
+      // run's range; anywhere else (after a `TRANSFER` loop, after reading a
+      // file) the step it belongs to is already drawn, and it draws nothing.
+      const dataset = datasetOf(statement);
+      if (outputRun?.detail?.target === 'file' && outputRun.anchor && dataset
+        && this.fileRunDatasets.get(outputRun.id)?.has(dataset)) {
+        outputRun.anchor.lineEnd = statement.lineEnd;
+        (outputRun.detail as { statements: number }).statements += 1;
+        return { exits: incoming, outputRun };
+      }
+      return { exits: incoming, outputRun: null };
+    }
+
     if (isListOutput(statement) || isFileOutput(statement)) {
       const target = isFileOutput(statement) ? 'file' : 'list';
+      const dataset = target === 'file' ? datasetOf(statement) : null;
       if (outputRun && outputRun.detail?.target === target && outputRun.anchor) {
         // A run of `WRITE` is one result list, not eight data objects. The run
         // keeps the anchor of its first statement (rule 2) and grows its range.
         outputRun.anchor.lineEnd = statement.lineEnd;
         const detail = outputRun.detail as { statements: number };
         detail.statements += 1;
+        if (dataset) this.fileRunDatasets.get(outputRun.id)?.add(dataset);
         return { exits: incoming, outputRun };
       }
       const node = this.addNode('output', statement.keyword, anchorOf(statement), ctx.region,
         ctx.container, { detail: { statements: 1, target } });
+      if (target === 'file') this.fileRunDatasets.set(node.id, new Set(dataset ? [dataset] : []));
       this.connect(incoming, node.id);
       return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: node };
     }

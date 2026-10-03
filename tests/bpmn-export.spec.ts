@@ -173,8 +173,9 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 14, 13, 2, 3, 0, 0, 0],
   // ADR-066 residuals (03.10.2026): the `CLOSE DATASET` behind the TRANSFER
   // loop is a task on the EXPORT_TO_APPLICATION_SERVER plane — one flow node
-  // and one flow more (14→15, 11→12); the top plane does not move.
-  ['Z_INVOICE_EXTRACTOR.txt', 15, 12, 2, 3, 2, 0, 0],
+  // and one flow more (14→15, 11→12); the top plane does not move. Back to
+  // 14/11 with the note of 03.10.2026: no "Close file" step any more.
+  ['Z_INVOICE_EXTRACTOR.txt', 14, 11, 2, 3, 2, 0, 0],
   ['Z_MATERIAL_STOCK_CALC.txt', 18, 16, 4, 5, 4, 0, 0],
   [PO, 84, 81, 9, 10, 11, 0, 0],
   // Roadmap 2.14: the file's `FORM` is now the entry point it never had, so

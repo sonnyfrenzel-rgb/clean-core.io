@@ -33,7 +33,7 @@ test('RECEIVE RESULTS in the callback of an asynchronous RFC is the receiving se
   expect(skeleton.edges.some((e) => e.from === receive.id)).toBe(true);
 });
 
-test('CLOSE DATASET completes the file: a file step, joined to a TRANSFER right before it', () => {
+test('CLOSE DATASET is never a step of its own: it joins the file run of its own file right before it, else draws nothing', () => {
   const source = [
     'REPORT zfile_close.', //                                                      1
     'START-OF-SELECTION.', //                                                      2
@@ -45,14 +45,33 @@ test('CLOSE DATASET completes the file: a file step, joined to a TRANSFER right 
     "  WRITE / 'written'.", //                                                     8
     "  TRANSFER 'END' TO gv_log.", //                                              9
     '  CLOSE DATASET gv_log.', //                                                  10
+    '  CLEAR gv_line.', //                                                         11
+    '  OPEN DATASET gv_in FOR INPUT IN TEXT MODE ENCODING DEFAULT.', //            12
+    '  DO.', //                                                                    13
+    '    READ DATASET gv_in INTO gv_line.', //                                     14
+    '    IF sy-subrc <> 0.', //                                                    15
+    '      EXIT.', //                                                              16
+    '    ENDIF.', //                                                               17
+    '  ENDDO.', //                                                                 18
+    '  CLOSE DATASET gv_in.', //                                                   19
+    "  TRANSFER 'X' TO gv_other.", //                                              20
+    '  CLOSE DATASET gv_path.', //                                                 21
+    "  WRITE / 'done'.", //                                                        22
   ].join('\n');
   const skeleton = buildProcessSkeleton(source);
-  const close = skeleton.nodes.find((n) => n.anchor?.lineStart === 7);
-  expect([close?.kind, close?.detail?.target]).toEqual(['output', 'file']);
-  // Right behind a TRANSFER it is the same run of file output, not a second step.
-  expect(skeleton.nodes.filter((n) => n.anchor?.lineStart === 10 && n.kind !== 'end')).toEqual([]);
+  const steps = (line: number) => skeleton.nodes.filter((n) => n.anchor?.lineStart === line && n.kind !== 'end');
+  // After the TRANSFER loop of an output file and after reading an input file
+  // the step the CLOSE belongs to is drawn already: no "Close file" step.
+  expect(steps(7)).toEqual([]);
+  expect(steps(19)).toEqual([]);
+  // Right behind a TRANSFER to the same file it is the same run, not a second step.
+  expect(steps(10)).toEqual([]);
   const run = skeleton.nodes.find((n) => n.anchor?.lineStart === 9)!;
   expect([run.kind, run.anchor?.lineEnd, run.detail?.statements]).toEqual(['output', 10, 2]);
+  // Behind a TRANSFER to another file it does not join that run either.
+  expect(steps(21)).toEqual([]);
+  const other = skeleton.nodes.find((n) => n.anchor?.lineStart === 20)!;
+  expect([other.kind, other.anchor?.lineEnd, other.detail?.statements]).toEqual(['output', 20, 1]);
 });
 
 test('LEAVE TO SCREEN ends the dialog step: its own end, even as the last statement of a PAI module', () => {
