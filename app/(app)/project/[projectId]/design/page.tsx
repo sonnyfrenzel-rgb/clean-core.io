@@ -46,6 +46,8 @@ import SecurityHardeningChecklist from '@/components/design/SecurityHardeningChe
 import ModernizationRoadmap from '@/components/design/ModernizationRoadmap';
 import RoutingRationale from '@/components/design/RoutingRationale';
 import NonFunctionalRequirements from '@/components/design/NonFunctionalRequirements';
+import FunctionalRequirements from '@/components/design/FunctionalRequirements';
+import { sha256Hex } from '@/lib/artefact-digest';
 import { getRunCapabilities } from '@/lib/run-capabilities';
 import LegacyRunBanner from '@/components/LegacyRunBanner';
 import SectionBoundary from '@/components/SectionBoundary';
@@ -590,6 +592,25 @@ ${responseText.substring(0, 4000)}`;
   );
   const [view, setView] = useState<'canvas' | 'list'>('canvas');
 
+  /**
+   * v3.0.1 — the source the active run signed, and nothing else, for the
+   * functional requirements: the same comparison the Documentation stage makes,
+   * so a line anchor never points into a source the run did not see.
+   */
+  const signedSource = useMemo(() => {
+    const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
+    if (!project?.activeRunId || !source.trim()) return null;
+    const signed = (project as { inputFingerprint?: { sha256?: string; fileName?: string } }).inputFingerprint
+      ?? project.auditMetadata?.inputFingerprint;
+    if (!signed?.sha256 || sha256Hex(source) !== signed.sha256) return null;
+    return { source, fileName: signed.fileName || 'source.abap' };
+  }, [project]);
+  const requirementsMissing = !project?.activeRunId
+    ? 'The requirements are read from the source of a signed analysis run. Run the analysis in stage 1 first.'
+    : !project?.legacyCode
+      ? 'This project has no source to read requirements from.'
+      : 'The source changed after the signed run, or the run carries no fingerprint of it. Re-run the analysis in stage 1; the requirements are read only from the source the run signed.';
+
   const caps = getRunCapabilities(project);
 
   const phases = workflowSteps(project);
@@ -1010,6 +1031,25 @@ ${responseText.substring(0, 4000)}`;
             ) : null
           }
           view={view}
+        />
+      </div>
+
+      <div className="mb-12" id="functional-requirements">
+        <FunctionalRequirements
+          projectId={projectId as string}
+          projectName={project?.name || ''}
+          fileName={signedSource?.fileName || 'source.abap'}
+          source={signedSource?.source ?? null}
+          missingReason={signedSource ? null : requirementsMissing}
+          levels={designEvidence.state === 'ready' ? designEvidence.findings : null}
+          wording={{
+            enabled: designAvailable,
+            reason: designAvailable
+              ? null
+              : modelAvailability.keyAvailable
+                ? 'the Design stage is switched off in Settings.'
+                : 'no Gemini key is available for this account; add your own in Settings.',
+          }}
         />
       </div>
 
