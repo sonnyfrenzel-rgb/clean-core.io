@@ -145,7 +145,7 @@ export interface RuleSentence {
 }
 
 export interface RuleSource {
-  /** `REPORT`/`PROGRAM`/`FUNCTION-POOL`/`CLASS-POOL` name, upper-cased; null when the source names none. */
+  /** `REPORT`/`PROGRAM`/`FUNCTION-POOL`/`CLASS-POOL` name, else the class or interface a class/interface source defines, upper-cased; null when the source names none. */
   program: string | null;
   /**
    * Always null. This source is read as one text: an `INCLUDE` names another
@@ -520,7 +520,24 @@ class RuleSetBuilder {
       const name = /^\S+\s+([\w/]+)/.exec(statement.text)?.[1];
       if (name) return name.toUpperCase();
     }
-    return null;
+    // A class or interface source names itself by its definition (03.10.2026):
+    // `CLASS zcl_x DEFINITION` — not a `DEFINITION DEFERRED`/`LOAD`, which only
+    // announces a class defined elsewhere, and not a local test class `FOR
+    // TESTING` — or `INTERFACE zif_x` (not `DEFERRED`/`LOAD`). The `PUBLIC`
+    // one is the global class or interface of the source; otherwise the first.
+    const named: Array<{ name: string; public: boolean }> = [];
+    for (const statement of this.facts.statements) {
+      const text = statement.text;
+      const cls = statement.keyword === 'CLASS'
+        ? /^CLASS\s+([\w/]+)\s+DEFINITION\b(?![\s\S]*\b(?:DEFERRED|LOAD|FOR\s+TESTING)\b)/i.exec(text)
+        : null;
+      const intf = statement.keyword === 'INTERFACE'
+        ? /^INTERFACE\s+([\w/]+)(?![\s\S]*\b(?:DEFERRED|LOAD)\b)/i.exec(text)
+        : null;
+      const name = (cls ?? intf)?.[1];
+      if (name) named.push({ name: name.toUpperCase(), public: /\bPUBLIC\b/i.test(text) });
+    }
+    return (named.find((n) => n.public) ?? named[0])?.name ?? null;
   }
 
   private anchor(range: SourceRange): RuleAnchor {
