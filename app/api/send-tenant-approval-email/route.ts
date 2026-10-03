@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { recordEmailSent } from '@/lib/email-events';
 import { CONTACT_EMAIL, USER_MAIL_FROM } from '@/lib/constants';
 import { htmlToText } from '@/lib/mail-text';
-import { verifyAdminRequest, assertAdminStepUp, getAdminAuth } from '@/lib/firebase-admin';
+import { verifyAdminRequest, assertAdminStepUp, getAdminAuth, QuotaError } from '@/lib/firebase-admin';
+import { assertRateLimit } from '@/lib/rate-limit';
 import { escapeHtml } from '@/lib/utils';
 import { mockMailAllowed } from '@/lib/mail-delivery-mode';
 import { wrapEmailDocument } from '@/lib/email-layout';
@@ -26,6 +27,18 @@ export async function POST(request: NextRequest) {
         { error: stepUpErr.message || 'Recent administrator step-up verification required.' },
         { status: stepUpErr.status || 403 },
       );
+    }
+
+    // Every call sends a mail from the product domain on the shared Resend
+    // quota, so a step-up session gets a ceiling too, shared by the three
+    // admin mail routes.
+    try {
+      await assertRateLimit(`admin_mail:${adminToken.uid}`, 30, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      if (rateErr instanceof QuotaError) {
+        return NextResponse.json({ error: rateErr.message }, { status: rateErr.status });
+      }
+      throw rateErr;
     }
 
     const body = await request.json();

@@ -93,3 +93,15 @@ test.describe('the model-stages route', () => {
     expect(src).not.toContain('getClientIp');
   });
 });
+
+test.describe('the administrator mail routes', () => {
+  for (const route of ['send-approval-email', 'send-tenant-approval-email', 'send-tenant-revoke-email']) {
+    test(`${route} has an administrator mail budget before it reads the request`, () => {
+      const src = read(`app/api/${route}/route.ts`);
+      const limit = src.indexOf('await assertRateLimit(`admin_mail:${adminToken.uid}`');
+      expect(limit, 'no administrator mail budget').toBeGreaterThan(0);
+      expect(limit).toBeGreaterThan(src.indexOf('await assertAdminStepUp('));
+      expect(limit).toBeLessThan(src.indexOf('await request.json()'));
+    });
+  }
+});
