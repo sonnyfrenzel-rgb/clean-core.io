@@ -11,12 +11,18 @@ import CcLinkButton from '@/components/cc/LinkButton';
 import CcTabs from '@/components/cc/Tabs';
 import { CcEmptyState } from '@/components/cc/EmptyState';
 import CcSkeleton from '@/components/cc/Skeleton';
+import CcMessageStrip from '@/components/cc/MessageStrip';
+import { CcRunCost } from '@/components/cc/RunIndicator';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import type { StartRun } from '@/hooks/useStartRun';
+import { describeRunCost } from '@/lib/run-cost';
+import { STARTER_EXAMPLES } from '@/lib/starter-examples';
 import type { SaveProcessModelInput, SaveProcessModelResult } from '@/components/process-map/BpmnEditor';
 import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { useProcessMap } from '@/hooks/useProcessMap';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
-import { codeCardLabel, codeCardLines, tokenizeAbapLine, type ProcessMapElement } from '@/lib/process-map';
+import { codeCardLabel, codeCardLines, tokenizeAbapLine, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
 import { ensureProcessBaseline, fetchLatestRevision, revisionOutcomeSentence, saveProcessRevision } from '@/lib/process-revisions-client';
 import { newerBase, revisionLine } from '@/lib/process-revisions';
 import type { OpenedRevision } from '@/components/process-map/BpmnEditor';
@@ -68,6 +74,7 @@ export default function WorkspaceProcess({
   beforeWrite,
   onWritten,
   draftHolder,
+  startRun,
 }: {
   project: Project | null;
   projectId: string;
@@ -88,6 +95,13 @@ export default function WorkspaceProcess({
    * carry, stays in the collapsed row of the page (`#not-determined`).
    */
   notDetermined: NotDetermined;
+  /**
+   * The signed engine-only run a project starts with (ADR-066). Where the
+   * project has source and no run, the map's place shows it being signed, why
+   * it was not, or — on a later visit — the one action that signs it here,
+   * with its cost said before the click.
+   */
+  startRun?: StartRun;
 }) {
   const signed = useMemo(() => signedSourceOf(project), [project]);
   const absence = useMemo(() => signedSourceAbsence(project), [project]);
@@ -97,6 +111,7 @@ export default function WorkspaceProcess({
   // from the file either way, and the Documentation stage stores the quote.
   const map = useProcessMap(projectId || null, signed, project?.name || '', availability, { measure: false });
   const isS = useBreakpointS();
+  const { profile } = useUserProfile();
 
   const [plane, setPlane] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -113,6 +128,28 @@ export default function WorkspaceProcess({
     return out;
   }, [model]);
   const selectedElement = selected ? byId.get(selected) ?? null : null;
+
+  /**
+   * Opened where the process is (ADR-066). Many programs read as one start
+   * event, one routine and an end on the top level — the whole process sits
+   * one level down, and a map that opens on "Run starts → Execute BAPI
+   * creation → Done" is the two-node main line the owner rejected
+   * (03.10.2026). Where a level holds exactly one step and that step opens a
+   * level of its own, the map opens there; the path above the map leads back
+   * up. Once per model, and never against a level the reader chose.
+   */
+  const openedFor = useRef<ProcessMapModel | null>(null);
+  useEffect(() => {
+    if (!model || openedFor.current === model) return;
+    openedFor.current = model;
+    let level: string | null = null;
+    for (let depth = 0; depth < 4; depth += 1) {
+      const steps = model.elements.filter((e) => e.plane === level && !e.event);
+      if (steps.length !== 1 || !steps[0].opensPlane) break;
+      level = steps[0].opensPlane;
+    }
+    if (level !== null) setPlane((current) => (current === null ? level : current));
+  }, [model]);
 
   /** Every anchored step, in the order of the code — the column's way back to the map. */
   const stepsByLine = useMemo(
@@ -216,6 +253,68 @@ export default function WorkspaceProcess({
     // empty Need & process layer below already say so — a fourth box saying
     // it again would only push the one action further down.
     if (absence === 'no-source') return <div data-workspace-process="absent" data-absence="no-source" hidden />;
+    // A project with source and no run, whose owner is here: the start run is
+    // being signed, was refused, or — on a later visit — can be started here
+    // (ADR-066). Never an empty box that sends the reader elsewhere.
+    if (absence === 'no-run' && startRun && startRun.phase !== 'none' && startRun.phase !== 'signed') {
+      const exampleName =
+        project?.fromExample === true && STARTER_EXAMPLES.some((e) => e.name === project?.name) ? project?.name : undefined;
+      const cost = describeRunCost({ profile, metered: true, callsModel: false, starterExample: exampleName });
+      return (
+        <section
+          data-workspace-process={startRun.phase === 'running' ? 'signing' : startRun.phase === 'failed' ? 'sign-failed' : 'unsigned'}
+          aria-labelledby="workspace-process-title"
+          className="flex flex-col gap-3"
+        >
+          <h2
+            id="workspace-process-title"
+            className="m-0 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase"
+          >
+            {wt('biz.needAndProcess')}
+          </h2>
+          <CcCard title={wt('biz.mapSignTitle')} level={3}>
+            {startRun.phase === 'running' ? (
+              <div data-workspace-process-loading="" className="flex flex-col gap-2">
+                <p className="m-0 text-[13px] font-medium text-cc-ink">{wt('biz.mapSigning')}</p>
+                <CcSkeleton shape="text" count={5} label={wt('biz.mapLoadingLabel')} />
+              </div>
+            ) : startRun.phase === 'failed' ? (
+              <CcMessageStrip
+                state="error"
+                headline={wt('biz.mapSignFailed')}
+                actions={
+                  <>
+                    <CcButton onClick={startRun.start} data-workspace-sign-retry="">
+                      {wt('biz.mapSignRetry')}
+                    </CcButton>
+                    <CcLinkButton href={analyzeHref} variant="ghost">
+                      {wt('biz.openAnalyze')}
+                    </CcLinkButton>
+                  </>
+                }
+              >
+                {startRun.message}
+              </CcMessageStrip>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <p className="m-0 max-w-3xl text-[13px] leading-snug font-medium text-cc-ink">{wt('biz.mapSignLead')}</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <CcButton
+                    variant="secondary"
+                    onClick={startRun.start}
+                    disabled={cost.blocked}
+                    data-workspace-sign=""
+                  >
+                    {wt('biz.mapSign')}
+                  </CcButton>
+                  <CcRunCost cost={cost} />
+                </div>
+              </div>
+            )}
+          </CcCard>
+        </section>
+      );
+    }
     const reason =
       absence === 'no-run' ? wt('biz.mapNoRun') : wt('biz.mapChanged');
     return (
@@ -386,7 +485,10 @@ export default function WorkspaceProcess({
               onPlaneChange={setPlane}
               selected={selected}
               onSelectedChange={selectStep}
-              defaultView={isS ? 'steps' : 'map'}
+              // The map on every width (ADR-066): on a phone it opens fitted,
+              // never below 40 % (`fitWhole`), with full screen and zoom; the
+              // step list stays one tab away.
+              defaultView="map"
               save={save}
               openLatest={openLatest}
               projectId={projectId || null}

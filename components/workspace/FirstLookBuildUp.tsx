@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { ArrowRight, Check, CircleDashed } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { cn } from '@/lib/utils';
@@ -11,6 +12,7 @@ import type { ProcessSkeleton } from '@/lib/abap/process-skeleton';
 import type { TableDependency } from '@/lib/abap/table-dependencies';
 import type { NamedProcess } from '@/lib/process-naming';
 import {
+  BUILD_UP_STAGES,
   buildUpEvents,
   buildUpFrame,
   codeWindow,
@@ -19,17 +21,28 @@ import {
   type BuildUpStage,
 } from '@/lib/first-look-buildup';
 import { firstLookExcerpt, type ExcerptDrawing, type ExcerptNode } from '@/lib/first-look-excerpt';
+import { headlineLead, type BusinessCard } from '@/lib/business-card';
 import {
   wt,
   buildUpCounter,
   buildUpGrowsOut,
   buildUpLive,
   buildUpMoreNames,
+  buildUpRailOpen,
+  buildUpRailProcess,
+  buildUpRailRead,
+  buildUpRailRules,
   buildUpStageLabel,
+  firstLookOpenGroup,
+  firstLookOpenTitle,
 } from '@/lib/workspace-messages';
 
 /**
- * The build-up of the first look — mockup screen `s0`, moments 1 to 3.
+ * The build-up of the first look — mockup screen `s0`, moments 1 to 3, and
+ * since ADR-066 three more a reader can follow: the rules the program
+ * hard-codes, what could not be determined, and the full map. A rail above
+ * the code names every moment and what it found, so the reader always knows
+ * where the reading is and what is still to come.
  *
  * Left, the code: a window of real source lines that follows the reading, each
  * line lit where the engine set a process node (information blue, with a bar)
@@ -214,6 +227,45 @@ export function ExcerptSvg({
   );
 }
 
+/** What the map moment says, from the start run's phase (ADR-066). */
+export type BuildUpMapState = 'drawn' | 'running' | 'failed' | 'unsigned';
+
+/** One moment of the rail: done, the one on screen, or still to come. */
+function RailStep({
+  stage,
+  state,
+  result,
+}: {
+  stage: BuildUpStage;
+  state: 'done' | 'current' | 'pending';
+  result: string | null;
+}) {
+  return (
+    <li
+      data-first-look-rail-step={stage}
+      data-state={state}
+      aria-current={state === 'current' ? 'step' : undefined}
+      className={cn(
+        'flex min-w-0 items-start gap-2 rounded-cc-row border px-2 py-1.5 text-[12px] leading-snug motion-safe:transition-colors motion-safe:duration-200',
+        state === 'current' ? 'border-cc-ink bg-cc-surface' : 'border-cc-line',
+        state === 'pending' ? 'bg-cc-surface-muted text-cc-ink-muted' : 'bg-cc-surface text-cc-ink',
+      )}
+    >
+      <span aria-hidden={true} className={cn('mt-0.5 shrink-0', state === 'done' ? 'text-cc-success' : 'text-cc-ink-muted')}>
+        {state === 'done' ? <Check size={14} /> : state === 'current' ? <ArrowRight size={14} /> : <CircleDashed size={14} />}
+      </span>
+      <span className="min-w-0">
+        <span className="block font-semibold">{buildUpStageLabel(stage)}</span>
+        {state !== 'pending' && result ? (
+          <span data-first-look-rail-result="" className="block font-medium text-cc-ink-muted">
+            {result}
+          </span>
+        ) : null}
+      </span>
+    </li>
+  );
+}
+
 export default function FirstLookBuildUp({
   source,
   sourceName,
@@ -222,6 +274,8 @@ export default function FirstLookBuildUp({
   named,
   elapsed,
   onSkip,
+  card = null,
+  map = 'unsigned',
 }: {
   source: string;
   sourceName: string;
@@ -230,6 +284,14 @@ export default function FirstLookBuildUp({
   named: NamedProcess | null;
   elapsed: number;
   onSkip: () => void;
+  /**
+   * The answer the end state will show — the rules and the open points the
+   * fourth and fifth moments name, each with its line. `null` while the
+   * engine has not returned it; those moments then say what is being read.
+   */
+  card?: BusinessCard | null;
+  /** Where the full map stands: drawn from a signed run, being signed, refused, or not signed. */
+  map?: BuildUpMapState;
 }) {
   const lines = useMemo(() => source.split(/\r\n|\r|\n/), [source]);
   // The count an editor shows: the final newline ends the last line and adds
@@ -258,10 +320,21 @@ export default function FirstLookBuildUp({
   }, [skeleton, named, proposed, source]);
 
   const stage: BuildUpStage = frame.stage;
+  const stageIndex = BUILD_UP_STAGES.indexOf(stage);
   const lit = events.filter((e) => e.line <= frame.counters.line);
   const litNodeLines = new Set(lit.filter((e) => e.kind === 'node').map((e) => e.line));
   const litDataLines = new Set(lit.filter((e) => e.kind === 'data').map((e) => e.line));
-  const currentLine = withExcerpt ? nodeLines[frame.grown - 1] ?? frame.counters.line : frame.current?.line ?? 1;
+
+  // In the rules and the open moments the code shows the line they name.
+  const focusAnchor =
+    stage === 'rules'
+      ? (card?.rules[0]?.anchors[0] ?? null)
+      : stage === 'not-determined'
+        ? (card?.open.groups[0]?.anchors[0] ?? null)
+        : null;
+  const focusLine = focusAnchor ? Number(/^L(\d+)/.exec(focusAnchor)?.[1] ?? 0) || null : null;
+  const readingLine = withExcerpt ? (nodeLines[frame.grown - 1] ?? frame.counters.line) : (frame.current?.line ?? 1);
+  const currentLine = focusLine ?? readingLine;
   const range = codeWindow(totalLines, currentLine ?? 1, 13, 7);
   const grownNodes = withExcerpt ? drawing.nodes.slice(0, frame.grown) : [];
   const swaps = withExcerpt
@@ -270,6 +343,28 @@ export default function FirstLookBuildUp({
   const container = frame.current?.container ?? null;
   const newest = grownNodes[grownNodes.length - 1] ?? null;
   const fallbackVisible: BuildUpEvent[] = withExcerpt ? [] : lit.filter((e) => e.kind === 'node').slice(-8);
+
+  // What each moment of the rail found — the engine's numbers, said once the
+  // moment has been reached, never before.
+  const ruleCount = card ? card.rules.length : null;
+  const openCount = card ? (card.open.noSource ? null : card.open.count) : null;
+  const results: Record<BuildUpStage, string | null> = {
+    'code-read': buildUpRailRead(totalLines, frame.counters.tables),
+    'process-recognised': buildUpRailProcess(frame.counters.nodes, frame.counters.decisions),
+    'business-language': proposed ? wt('buildUp.railNamesProposed') : wt('buildUp.railNamesPlain'),
+    rules: ruleCount === null ? null : buildUpRailRules(ruleCount),
+    'not-determined': openCount === null ? null : buildUpRailOpen(openCount),
+    map:
+      map === 'drawn'
+        ? wt('buildUp.railMapDrawn')
+        : map === 'running'
+          ? wt('buildUp.railMapRunning')
+          : map === 'failed'
+            ? wt('buildUp.railMapFailed')
+            : wt('buildUp.railMapUnsigned'),
+  };
+
+  const pictureMoment = stage === 'code-read' || stage === 'process-recognised' || stage === 'business-language';
 
   return (
     <div data-first-look-buildup={stage} className="flex flex-col gap-3">
@@ -296,6 +391,23 @@ export default function FirstLookBuildUp({
           </CcButton>
         </span>
       </div>
+
+      {/* The moments, in order — where the reader is, what each one found.
+          Not a progress bar: each entry names a piece of work and its result. */}
+      <ol
+        data-first-look-rail=""
+        aria-label={wt('buildUp.railLabel')}
+        className="m-0 grid list-none grid-cols-2 gap-2 p-0 sm:grid-cols-3 xl:grid-cols-6"
+      >
+        {BUILD_UP_STAGES.map((s, i) => (
+          <RailStep
+            key={s}
+            stage={s}
+            state={i < stageIndex ? 'done' : i === stageIndex ? 'current' : 'pending'}
+            result={results[s]}
+          />
+        ))}
+      </ol>
 
       {/* The counters — each a count of lit lines (ADR-013: "counters only with real events"). */}
       <p
@@ -344,36 +456,41 @@ export default function FirstLookBuildUp({
           </code>
         </pre>
 
-        {/* The process, growing out of the lit lines. */}
+        {/* The process, growing out of the lit lines — then what the reading
+            found in it: the rules, the open points, the map. */}
         <div className="flex min-w-0 flex-col gap-2">
-          {withExcerpt ? (
-            <ExcerptSvg drawing={drawing} grown={frame.grown} named={frame.named} />
-          ) : (
-            <ol data-first-look-growing="" className="m-0 flex list-none flex-col gap-1 p-0">
-              {fallbackVisible.map((e, i) => (
-                <li
-                  key={`${e.nodeId}-${e.line}`}
-                  className={cn(
-                    'flex items-center gap-2 rounded-cc-row border px-2 py-1 text-[12px] font-semibold text-cc-ink',
-                    i === fallbackVisible.length - 1 ? 'border-cc-information bg-cc-information-bg' : 'border-cc-line bg-cc-surface',
-                  )}
-                >
-                  <span className={cn('min-w-0 flex-1 truncate', !frame.named && 'font-cc-mono')}>
-                    {frame.named ? names.get(e.nodeId ?? '') ?? e.label : e.label}
-                  </span>
-                  <span className="shrink-0 font-cc-mono text-[11px] text-cc-ink-muted">{e.anchor}</span>
-                </li>
-              ))}
-            </ol>
-          )}
-          {newest && stage !== 'business-language' && newest.anchor ? (
+          {/* The picture stays through every moment: the process does not
+              vanish while the reading names what it found in it. */}
+          {withExcerpt || fallbackVisible.length > 0 ? (
+            withExcerpt ? (
+              <ExcerptSvg drawing={drawing} grown={frame.grown} named={frame.named} />
+            ) : (
+              <ol data-first-look-growing="" className="m-0 flex list-none flex-col gap-1 p-0">
+                {fallbackVisible.map((e, i) => (
+                  <li
+                    key={`${e.nodeId}-${e.line}`}
+                    className={cn(
+                      'flex items-center gap-2 rounded-cc-row border px-2 py-1 text-[12px] font-semibold text-cc-ink',
+                      i === fallbackVisible.length - 1 ? 'border-cc-information bg-cc-information-bg' : 'border-cc-line bg-cc-surface',
+                    )}
+                  >
+                    <span className={cn('min-w-0 flex-1 truncate', !frame.named && 'font-cc-mono')}>
+                      {frame.named ? (names.get(e.nodeId ?? '') ?? e.label) : e.label}
+                    </span>
+                    <span className="shrink-0 font-cc-mono text-[11px] text-cc-ink-muted">{e.anchor}</span>
+                  </li>
+                ))}
+              </ol>
+            )
+          ) : null}
+          {newest && (stage === 'code-read' || stage === 'process-recognised') && newest.anchor ? (
             <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{buildUpGrowsOut(newest.anchor)}</p>
           ) : null}
           {stage === 'business-language' ? (
             <p data-first-look-swaps="" className="m-0 flex flex-col gap-1 text-[12px] font-medium text-cc-ink">
               {swaps.slice(0, 2).map((s) => {
                 const technical = 'technicalName' in s ? s.technicalName : s.label;
-                const plain = 'technicalName' in s ? s.name : names.get(s.nodeId ?? '') ?? s.label;
+                const plain = 'technicalName' in s ? s.name : (names.get(s.nodeId ?? '') ?? s.label);
                 return (
                   <span key={'id' in s ? s.id : `${s.nodeId}-${s.line}`}>
                     <code className="font-cc-mono text-cc-ink-muted">{technical}</code> → <b className="font-semibold">{plain}</b>
@@ -383,16 +500,79 @@ export default function FirstLookBuildUp({
               {swaps.length > 2 ? <span className="text-cc-ink-muted">{buildUpMoreNames(swaps.length - 2)}</span> : null}
             </p>
           ) : null}
-          <p className="m-0 mt-auto flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-medium text-cc-ink-muted" aria-hidden={true}>
-            <span className="inline-flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-[2px] bg-cc-information" />
-              {wt('buildUp.legendNode')}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-[2px] bg-cc-code-muted" />
-              {wt('buildUp.legendData')}
-            </span>
-          </p>
+
+          {stage === 'rules' ? (
+            <div data-first-look-moment="rules" className="rounded-cc-card border border-cc-line px-3 py-2">
+              <p className="m-0 text-[13px] font-bold text-cc-ink">
+                {card ? headlineLead(card.rules.length) : wt('buildUp.reading')}
+              </p>
+              {card && card.rules.length > 0 ? (
+                <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
+                  {card.rules.slice(0, 3).map((rule) => (
+                    <li key={rule.id} className="flex flex-wrap items-center gap-2 text-[12px] font-medium text-cc-ink">
+                      {rule.phrase ?? <code className="font-cc-mono">{rule.code}</code>}
+                      {rule.anchors[0] ? <span className="font-cc-mono text-[11px] text-cc-ink-muted">{rule.anchors[0]}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
+
+          {stage === 'not-determined' ? (
+            <div data-first-look-moment="not-determined" className="rounded-cc-card border border-cc-line bg-cc-surface-muted px-3 py-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="m-0 text-[13px] font-bold text-cc-ink">
+                  {card ? firstLookOpenTitle(card.open.count) : wt('buildUp.reading')}
+                </p>
+                <CcProvenanceChip value="not-determined" />
+              </div>
+              {card && card.open.groups.length > 0 ? (
+                <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
+                  {card.open.groups.slice(0, 4).map((group) => (
+                    <li key={group.label} className="flex flex-wrap items-center gap-2 text-[12px] font-medium text-cc-ink">
+                      {group.count > 1 ? firstLookOpenGroup(group.label, group.count) : group.label}
+                      {group.anchors.map((a) => (
+                        <span key={a} className="font-cc-mono text-[11px] text-cc-ink-muted">
+                          {a}
+                        </span>
+                      ))}
+                    </li>
+                  ))}
+                </ul>
+              ) : card ? (
+                <p className="m-0 mt-1 text-[12px] font-medium text-cc-ink-muted">{wt('firstLook.nothingOpen')}</p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {stage === 'map' ? (
+            <div data-first-look-moment="map" data-map={map} className="flex flex-col gap-2 rounded-cc-card border border-cc-line px-3 py-2">
+              <p className="m-0 text-[13px] font-bold text-cc-ink">{wt('buildUp.mapTitle')}</p>
+              <p className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                {map === 'drawn'
+                  ? wt('buildUp.mapDrawn')
+                  : map === 'running'
+                    ? wt('buildUp.mapRunning')
+                    : map === 'failed'
+                      ? wt('buildUp.mapFailed')
+                      : wt('buildUp.mapUnsigned')}
+              </p>
+            </div>
+          ) : null}
+
+          {pictureMoment ? (
+            <p className="m-0 mt-auto flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-medium text-cc-ink-muted" aria-hidden={true}>
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block h-2 w-2 rounded-[2px] bg-cc-information" />
+                {wt('buildUp.legendNode')}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block h-2 w-2 rounded-[2px] bg-cc-code-muted" />
+                {wt('buildUp.legendData')}
+              </span>
+            </p>
+          ) : null}
         </div>
       </div>
     </div>

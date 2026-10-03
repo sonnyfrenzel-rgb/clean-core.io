@@ -17,13 +17,15 @@
  *     it has got. The counters are counts of the events shown so far, so a
  *     counter can only rise with a line that is on the screen.
  *
- * **The time budget** (`s0`'s "Zeitbudget ≤ 3 s"): code read to 0.5 s, process
- * recognised to 1.8 s, names to 2.4 s, the end state at 2.4 s. The events are
- * spread over the budget — compressed, never padded: a stage whose data is not
- * there yet says what it is reading instead of waiting with a bar, and the
- * whole build-up never runs past the end state of the engine. Skip and
- * `prefers-reduced-motion` go straight to the end state, which the component
- * renders; this module is not asked.
+ * **The time budget** — at a pace a reader can follow (owner, 03.10.2026: "you
+ * have to be able to follow everything at the right speed, not too fast";
+ * ADR-066, superseding the 2.4 s of 01.10.2026): code read to 1.0 s, process
+ * recognised to 3.8 s, names to 5.0 s, the rules to 6.2 s, what is not
+ * determined to 7.4 s, the map from 7.4 s, the end state at 8.4 s. Every
+ * moment shows the engine's own content — lit lines, grown nodes with their
+ * anchors, the rules and the open points with theirs — so it is not a wait
+ * without content. Skip and `prefers-reduced-motion` go straight to the end
+ * state, which the component renders; this module is not asked.
  */
 import type { ProcessSkeleton, SkeletonNode } from './abap/process-skeleton';
 import type { TableDependency } from './abap/table-dependencies';
@@ -31,12 +33,42 @@ import { anchorLabel } from './first-look';
 
 /** When each stage begins and when the end state takes over, in ms. */
 export const BUILD_UP_BUDGET = Object.freeze({
-  processFrom: 500,
-  namesFrom: 1800,
-  endAt: 2400,
+  processFrom: 1000,
+  namesFrom: 3800,
+  rulesFrom: 5000,
+  openFrom: 6200,
+  mapFrom: 7400,
+  endAt: 8400,
 });
 
-export type BuildUpStage = 'code-read' | 'process-recognised' | 'business-language';
+export type BuildUpStage =
+  | 'code-read'
+  | 'process-recognised'
+  | 'business-language'
+  | 'rules'
+  | 'not-determined'
+  | 'map';
+
+/** The moment of the build-up at `elapsed` ms. */
+export function buildUpStageAt(elapsed: number): BuildUpStage {
+  const t = Math.max(0, elapsed);
+  if (t < BUILD_UP_BUDGET.processFrom) return 'code-read';
+  if (t < BUILD_UP_BUDGET.namesFrom) return 'process-recognised';
+  if (t < BUILD_UP_BUDGET.rulesFrom) return 'business-language';
+  if (t < BUILD_UP_BUDGET.openFrom) return 'rules';
+  if (t < BUILD_UP_BUDGET.mapFrom) return 'not-determined';
+  return 'map';
+}
+
+/** The order of the moments, for the step rail. */
+export const BUILD_UP_STAGES: readonly BuildUpStage[] = Object.freeze([
+  'code-read',
+  'process-recognised',
+  'business-language',
+  'rules',
+  'not-determined',
+  'map',
+]);
 
 /** One lit line. */
 export interface BuildUpEvent {
@@ -130,14 +162,14 @@ export interface BuildUpFrame {
  * What the build-up shows at `elapsed` ms.
  *
  * The events are spread over code read and process recognised together (0 to
- * 1.8 s), so the lines light up in the order the source has them and the
- * process grows in that order. From 1.8 s every event is lit and the names
- * change once; at 2.4 s the component hands over to the end state.
+ * `namesFrom`), so the lines light up in the order the source has them and the
+ * process grows in that order. From `namesFrom` every event is lit and the
+ * names change once; the rules, the open points and the map follow, and at
+ * `endAt` the component hands over to the end state.
  */
 export function buildUpFrame(events: readonly BuildUpEvent[], elapsed: number): BuildUpFrame {
   const t = Math.max(0, elapsed);
-  const stage: BuildUpStage =
-    t < BUILD_UP_BUDGET.processFrom ? 'code-read' : t < BUILD_UP_BUDGET.namesFrom ? 'process-recognised' : 'business-language';
+  const stage = buildUpStageAt(t);
   const progress = Math.min(1, t / BUILD_UP_BUDGET.namesFrom);
   const shown = events.length === 0 ? 0 : Math.max(1, Math.ceil(progress * events.length));
   const lit = events.slice(0, shown);
@@ -153,7 +185,7 @@ export function buildUpFrame(events: readonly BuildUpEvent[], elapsed: number): 
       nodes: nodes.length,
       decisions: nodes.filter((e) => e.nodeKind === 'gateway').length,
     },
-    named: stage === 'business-language',
+    named: t >= BUILD_UP_BUDGET.namesFrom,
   };
 }
 
@@ -189,8 +221,7 @@ export function excerptFrame(
   totalLines: number,
 ): ExcerptFrame {
   const t = Math.max(0, elapsed);
-  const stage: BuildUpStage =
-    t < BUILD_UP_BUDGET.processFrom ? 'code-read' : t < BUILD_UP_BUDGET.namesFrom ? 'process-recognised' : 'business-language';
+  const stage = buildUpStageAt(t);
   const n = nodeLines.length;
   const progress = Math.min(1, t / BUILD_UP_BUDGET.namesFrom);
   const grown = n === 0 ? 0 : Math.max(1, Math.ceil(progress * n));
@@ -213,7 +244,7 @@ export function excerptFrame(
       nodes: nodes.length,
       decisions: nodes.filter((e) => e.nodeKind === 'gateway').length,
     },
-    named: stage === 'business-language',
+    named: t >= BUILD_UP_BUDGET.namesFrom,
     grown,
     fresh: progress < 1 && t - grewAt < 200,
   };

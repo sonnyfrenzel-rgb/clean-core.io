@@ -42,6 +42,7 @@ import type { ProvenanceValue } from './provenance';
 import { INPUT_IDS, type InputManifest } from './input-manifest';
 import { assessCoverage, type UnassessedConstruct } from './abap/coverage';
 import type { BusinessRuleSet } from './abap/business-rule-set';
+import type { ProcessSummary } from './process-summary';
 import { capabilityKeyOf } from './abap/standard-coverage';
 
 /* ------------------------------------------------------------------ views */
@@ -541,6 +542,14 @@ export function workspaceLayers(
    * project, which is what they did before mockup screens s2 and s3 were built.
    */
   reading: { ruleSet: BusinessRuleSet } | null = null,
+  /**
+   * The process map of the signed source, counted the way the map counts it
+   * (`lib/process-summary.ts`). With it *Need & process* says what the signed
+   * run reconstructed instead of "nothing on record" under a map that shows
+   * it (owner, 03.10.2026). `null` while it is not known, or when there is no
+   * signed source to draw from.
+   */
+  process: ProcessSummary | null = null,
 ): WorkspaceLayer[] {
   const usage = project?.usageReport ?? null;
   const usageRecords = Array.isArray(usage?.records) ? usage.records : [];
@@ -582,7 +591,19 @@ export function workspaceLayers(
     anchor: null,
   }));
 
-  const needRows: LayerRow[] = [...ruleRows, ...usageRows];
+  // The process the signed run reconstructed — one row that summarises the
+  // map, never a second drawing of it.
+  const processRows: LayerRow[] = process
+    ? [
+        {
+          key: 'process',
+          label: 'Process',
+          value: processSummarySentence(process, rules.length),
+          anchor: null,
+        },
+      ]
+    : [];
+  const needRows: LayerRow[] = [...processRows, ...ruleRows, ...usageRows];
 
   /* --------------------------------------------------------- standard */
   // One row per capability — the rules that decide the same subject (roadmap
@@ -687,6 +708,8 @@ export function workspaceLayers(
       count:
         needRows.length > 0
           ? [
+              process ? plural(process.steps, 'step') : null,
+              process ? plural(process.decisions, 'decision') : null,
               ruleRows.length > 0 ? plural(ruleRows.length, 'rule') : null,
               usageRows.length > 0 ? plural(usageRows.length, 'object with usage') : null,
             ]
@@ -696,7 +719,8 @@ export function workspaceLayers(
       missing: 'The process reconstructed from the code, and the rules hidden in it, are not here yet.',
       rows: needRows.slice(0, FIRST),
       total: needRows.length,
-      provenance: ruleRows.length > 0 ? 'reconstructed' : usageRows.length > 0 ? 'imported' : 'not-determined',
+      provenance:
+        processRows.length > 0 || ruleRows.length > 0 ? 'reconstructed' : usageRows.length > 0 ? 'imported' : 'not-determined',
     },
     {
       key: 'standard',
@@ -864,3 +888,13 @@ export function toolMark(tool: { state: PhaseState }): {
 
 /** Re-exported so a screen reading a status never has to reach for the ladder itself. */
 export { phaseTone };
+
+/**
+ * "Reconstructed: 6 steps, 1 decision, 2 rules hard-coded" — the Need &
+ * process row for the map of the signed source. The numbers are the map's own
+ * (`lib/process-summary.ts`); the rules are the rule reader's.
+ */
+export function processSummarySentence(process: ProcessSummary, rules: number): string {
+  const n = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+  return `Reconstructed: ${n(process.steps, 'step', 'steps')}, ${n(process.decisions, 'decision', 'decisions')}, ${n(rules, 'rule', 'rules')} hard-coded`;
+}

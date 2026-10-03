@@ -47,7 +47,8 @@ export const OWN_CODE_MESSAGES = {
   'ownCode.narrativeTitle': 'Analysis narrative',
   'ownCode.narrativeBody':
     'The prose around the evidence. The findings, the levels and the line anchors are computed without it.',
-  'ownCode.narrativeCost': 'Model call · part of this analysis',
+  'ownCode.narrativeCost':
+    'Not part of the start: the start signs the engine’s reading without a model call, so this first run has no narrative.',
   'ownCode.narrativeOff': 'Switched off in Settings — the analysis runs without it.',
   'ownCode.withoutTitle': 'Without a model call',
   'ownCode.withoutBefore': 'Technical names (',
@@ -62,7 +63,7 @@ export const OWN_CODE_MESSAGES = {
   'ownCode.tryExample': 'Try an example instead',
   'ownCode.start': 'Start analysis',
   'ownCode.startNext':
-    'Next: the Analyze step asks for the target system, then runs. Nothing is counted before the run completes.',
+    'Next: your workspace reads the code and signs the reading — no model call, assessed against the Private Edition. Counted only once the run is signed.',
   'ownCode.addSource': 'Add the ABAP source to start.',
   'ownCode.createFailed': 'The project could not be created. Nothing was saved.',
   'ownCode.nothingCreated': 'Nothing was created.',

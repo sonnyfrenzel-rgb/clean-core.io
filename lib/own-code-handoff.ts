@@ -26,6 +26,12 @@ export interface OwnCodeHandoff {
    * can never cover a different text. `''` when there was nothing to tick.
    */
   personalDataKey: string;
+  /**
+   * The main file the reader uploaded (`Z_CREDIT_CHECK.abap`), so the signed
+   * run the workspace starts with records the file's own name rather than a
+   * placeholder (ADR-066). Absent from older callers.
+   */
+  fileName?: string;
 }
 
 let pending: OwnCodeHandoff | null = null;
@@ -40,4 +46,13 @@ export function takeOwnCodeHandoff(projectId: string): OwnCodeHandoff | null {
   const handoff = pending;
   pending = null;
   return handoff;
+}
+
+/**
+ * The file name the import recorded for this project, without taking the
+ * handoff — the workspace's start run reads it, and Analyze still takes the
+ * rest once. `null` for any other project, or after a reload.
+ */
+export function ownCodeFileName(projectId: string): string | null {
+  return pending && pending.projectId === projectId && pending.fileName ? pending.fileName : null;
 }

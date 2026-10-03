@@ -219,6 +219,16 @@ export default function BpmnCanvas({
   }, [exitFullscreen]);
   const viewerRef = useRef<ViewerLike | null>(null);
   const rootRef = useRef<{ id: string } | null>(null);
+  /**
+   * The level the parent asked for, read when a new viewer has finished its
+   * import. The effect below applies a change of level to a viewer that
+   * exists; a level asked for while the viewer was still importing (the
+   * workspace opens a one-step top level on that step, ADR-066) was lost.
+   */
+  const planeRef = useRef(plane);
+  useEffect(() => {
+    planeRef.current = plane;
+  }, [plane]);
   // The parent's handlers change on every render; the effect that builds the
   // diagram must not, or the viewer would be torn down on every keystroke.
   const handlers = useRef<Handlers>({ onActivate, onActiveChange, onPlaneChange });
@@ -353,6 +363,11 @@ export default function BpmnCanvas({
         // A new plane brings new drill-down arrows with it, each focusable.
         applyRovingTabIndex(host, activeRef.current);
       });
+
+      if (planeRef.current) {
+        const asked = canvas.findRoot(`${planeRef.current}_plane`) ?? canvas.findRoot(planeRef.current);
+        if (asked) canvas.setRootElement(asked);
+      }
 
       if (controlsRef.current) {
         fitWhole(canvas);

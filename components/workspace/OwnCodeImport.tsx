@@ -192,7 +192,9 @@ export default function OwnCodeImport() {
   }, []);
 
   const selfFunded = runsAreSelfFunded(profile);
-  const cost = describeRunCost({ profile, metered: true, callsModel: model.enabled('analyze') });
+  // The start signs the engine's reading and calls no model (ADR-066); what it
+  // costs is the run's, said here before the click.
+  const cost = describeRunCost({ profile, metered: true, callsModel: false });
   const limit =
     typeof profile?.transformationsLimit === 'number' ? profile.transformationsLimit : COMMUNITY_QUOTA_FALLBACK;
   const trimmedName = name.trim();
@@ -211,17 +213,22 @@ export default function OwnCodeImport() {
         userId: user.uid,
         createdAt: serverTimestamp(),
       });
-      leaveOwnCodeHandoff({ projectId: docRef.id, personalDataKey: hintKey });
+      leaveOwnCodeHandoff({
+        projectId: docRef.id,
+        personalDataKey: hintKey,
+        ...(assembly.main?.file ? { fileName: assembly.main.file.split('/').pop() } : {}),
+      });
       // The workspace first, with the first look (owner 02.10.2026) — never
-      // the Analyze tool. The run starts from there (Next step), and Analyze
-      // takes the handoff above so nothing is asked twice in this session.
+      // the Analyze tool. The workspace signs the engine's reading at once, so
+      // the full map stands after the build-up (ADR-066); Analyze takes the
+      // handoff above for a later run, so nothing is asked twice.
       router.push(`/project/${docRef.id}?first=1`);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'projects');
       setError(err instanceof Error ? err.message : wt('ownCode.createFailed'));
       setBusy(false);
     }
-  }, [busy, user, ready, nameMissing, hintsPending, cost.blocked, trimmedName, assembly.source, hintKey, router]);
+  }, [busy, user, ready, nameMissing, hintsPending, cost.blocked, trimmedName, assembly.source, assembly.main, hintKey, router]);
 
   const toggleNaming = useCallback(
     async (next: boolean) => {
@@ -592,7 +599,7 @@ export default function OwnCodeImport() {
             )}
           </div>
           <span data-own-code-cost="" className="text-[12px] font-medium text-cc-ink">
-            {cost.quota}
+            {cost.quota} · {cost.modelCall}
           </span>
           <div className="flex flex-wrap items-center gap-2">
             <CcLinkButton href="/dashboard" density="cozy" data-own-code-cancel="">

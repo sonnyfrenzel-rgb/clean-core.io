@@ -8,6 +8,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { viewFromParam, type WorkspaceView } from '@/lib/workspace-model';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
+import { useStartRun } from '@/hooks/useStartRun';
 import WorkspaceShell from '@/components/workspace/WorkspaceShell';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -122,6 +123,32 @@ export default function ProjectWorkspacePage() {
     };
   }, [enabled, projectId]);
 
+  /**
+   * The project read again after the start run signed it, so the map, the
+   * tools and Next step read the run rather than the source alone (ADR-066).
+   * A failed read leaves the page as it was; the run is signed either way.
+   */
+  const reload = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      const loaded = await loadProjectAndHydrate(projectId);
+      if (loaded) setProject(loaded);
+    } catch {
+      /* the next visit reads it */
+    }
+  }, [projectId]);
+
+  // The signed engine-only run a new project starts with (ADR-066): asked for
+  // by the first look of a project that has source and no run, and offered by
+  // hand on any later visit. No model call; what it costs was said on the
+  // screen that started the project.
+  const startRun = useStartRun({
+    project,
+    projectId,
+    auto: state === 'ready' && buildUp === true,
+    onSigned: reload,
+  });
+
   // Nothing of the shell is rendered before the profile has arrived — without
   // one there is no page here, and a skeleton would promise one.
   // A status for screen readers, not a skeleton: as an aria-hidden div the
@@ -172,6 +199,7 @@ export default function ProjectWorkspacePage() {
       onViewChange={setView}
       account={profile}
       buildUp={buildUp}
+      startRun={startRun}
     />
   );
 }

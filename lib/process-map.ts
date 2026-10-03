@@ -528,9 +528,20 @@ export function traceabilityOf(stats: { flowNodes: number; anchored: number; una
   return { flowNodes: stats.flowNodes, anchored: stats.anchored, unanchored: stats.unanchored, percent, sentence };
 }
 
+/**
+ * The steps and decisions a map draws — the one count of them, so the map's
+ * own overview line and anything that summarises the map elsewhere (the Need &
+ * process layer, `lib/process-summary.ts`) cannot disagree.
+ */
+export function processCounts(elements: readonly Pick<ProcessMapElement, 'tag'>[]): { steps: number; decisions: number } {
+  return {
+    steps: elements.filter((e) => ACTIVITY_TAGS.has(e.tag)).length,
+    decisions: elements.filter((e) => DECISION_TAGS.has(e.tag)).length,
+  };
+}
+
 function overviewOf(elements: ProcessMapElement[]): string {
-  const steps = elements.filter((e) => ACTIVITY_TAGS.has(e.tag)).length;
-  const decisions = elements.filter((e) => DECISION_TAGS.has(e.tag)).length;
+  const { steps, decisions } = processCounts(elements);
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   return `Process with ${plural(steps, 'step', 'steps')} and ${plural(decisions, 'decision', 'decisions')}.`;
 }
