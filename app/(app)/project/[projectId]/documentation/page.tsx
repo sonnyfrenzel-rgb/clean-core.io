@@ -582,11 +582,10 @@ Structure the JSON exactly like this:
           addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, DOCUMENTATION_WORKSPACE_FILE, processDocumentationToMarkdown(built)),
           BUSINESS_WORKSPACE_FILE,
         );
-        const fields = { documentation: stored, generatedCode: merged, status: 'documented', businessDocumentation: '' };
         // Codex architecture-02, as for the business layer above.
-        const size = checkProjectWrite(current, fields, projectDoc.path, 'update');
+        const size = checkProjectWrite(current, { documentation: stored, generatedCode: merged, status: 'documented', businessDocumentation: '' }, projectDoc.path, 'update');
         if (!size.ok) throw new Error(projectTooLargeMessage(size, 'this documentation'));
-        tx.update(projectDoc, fields);
+        tx.update(projectDoc, { documentation: stored, generatedCode: merged, status: 'documented', businessDocumentation: '' });
         return merged;
       });
 

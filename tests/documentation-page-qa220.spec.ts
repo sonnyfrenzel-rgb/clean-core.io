@@ -103,8 +103,7 @@ test('replacing the documentation drops the business layer written from the old 
   expect(start, 'the documentation generator').toBeGreaterThan(-1);
   const body = src.slice(start, src.indexOf('}, [projectId, project, signedSource', start));
   // One write: the new document, and the layer that described the old one cleared.
-  expect(body).toMatch(/const fields = \{ documentation: stored, generatedCode: merged, status: 'documented', businessDocumentation: '' \}/);
-  expect(body).toContain('tx.update(projectDoc, fields)');
+  expect(body).toContain("tx.update(projectDoc, { documentation: stored, generatedCode: merged, status: 'documented', businessDocumentation: '' })");
   // …from the package as well, so the handover carries no stale SOP file.
   expect(body).toMatch(/removeFileFromWorkspace\([\s\S]*?BUSINESS_WORKSPACE_FILE/);
   expect(src).toContain("const BUSINESS_WORKSPACE_FILE = 'docs/business-documentation.md'");
