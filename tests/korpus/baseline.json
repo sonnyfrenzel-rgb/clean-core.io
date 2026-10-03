@@ -3,7 +3,7 @@
     "path": "docs/korpus/referenzkorpus-v2.1.md",
     "sha256": "910c62dce72232a0f866b71ad22c4f2dc1e8c72e790b6ad06945f45ebda9fd6c"
   },
-  "written": "2026-10-02",
+  "written": "2026-10-03",
   "entries": [
     {
       "case": "CC-001",
@@ -7981,8 +7981,8 @@
         },
         {
           "name": "kanten",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 4,
           "total": 10,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -8008,7 +8008,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "5 von 9 Sollknoten verglichen (2 getroffen, 3 ohne Knoten, 0 mit anderer Art); 0 von 10 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 10 ohne aufgelöste Enden). Die Engine baut an diesem Fall 3 Knoten. Ohne Knoten: g/gateway@source.abap:23 erwartet gateway in source.abap:23–23, m/output@source.abap:24 erwartet output|send-task|user-task|end-error in source.abap:24–24, r/end@source.abap:26 erwartet end|end-error in source.abap:26–26. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: d/action@source.abap:10 — keine Brücke für „action\" an „gt_rows = VALUE #( ( kunnr = '0000001000\", f/action@source.abap:12 — keine Brücke für „action\" an „gt_fcat = VALUE #( ( fieldname = 'KUNNR'\", ev/event@source.abap:21 — keine Brücke für „event\" an „FORM user_command USING iv_ucomm LIKE sy\", x/end@source.abap:14 — keine Brücke für „end\" an „CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY' E\"."
+      "reason": "5 von 9 Sollknoten verglichen (5 getroffen, 0 ohne Knoten, 0 mit anderer Art); 4 von 10 Sollkanten verglichen (3 getroffen, 1 fehlend, 0 mit anderer Art, 6 ohne aufgelöste Enden). Die Engine baut an diesem Fall 7 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: r→alv („always\", unbedingt). Andere Kantenart: —. Nicht vergleichbar: d/action@source.abap:10 — keine Brücke für „action\" an „gt_rows = VALUE #( ( kunnr = '0000001000\", f/action@source.abap:12 — keine Brücke für „action\" an „gt_fcat = VALUE #( ( fieldname = 'KUNNR'\", ev/event@source.abap:21 — keine Brücke für „event\" an „FORM user_command USING iv_ucomm LIKE sy\", x/end@source.abap:14 — keine Brücke für „end\" an „CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY' E\"."
     },
     {
       "case": "CC-054",

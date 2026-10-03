@@ -1920,6 +1920,7 @@ class SkeletonBuilder {
    * order the program does not have.
    */
   private recordCallback(statement: AbapStatement): void {
+    this.recordAlvCallbacks(statement);
     if (!/\bSTARTING\s+NEW\s+TASK\b/i.test(statement.text)) return;
     const code = maskLiterals(statement.text);
     const form = /\bPERFORMING\s+([\w/]+)\s+ON\s+END\s+OF\s+TASK\b/i.exec(code);
@@ -1933,6 +1934,50 @@ class SkeletonBuilder {
     const { key, ambiguous } = this.resolveMethod(method[1] ?? null, (method[2] as '->' | '=>' | undefined) ?? null,
       method[3].toUpperCase(), statement.index);
     if (key && !ambiguous && this.routineBlocks.has(key)) this.pushCallback(key, method[3], statement);
+  }
+
+  /**
+   * SAP convention (ALV list/grid, type pool SLIS): the `REUSE_ALV_*` function
+   * modules call back FORMs of the program named in `I_CALLBACK_PROGRAM`, and
+   * the caller names each FORM as a **literal** — in a parameter
+   * `I_CALLBACK_<event>` (`I_CALLBACK_USER_COMMAND`, `I_CALLBACK_PF_STATUS_SET`,
+   * `I_CALLBACK_TOP_OF_PAGE`, `I_CALLBACK_HTML_TOP_OF_PAGE`, …) or in the
+   * `FORM` column of the event table it passes as `IT_EVENTS` (`slis_alv_event`:
+   * `NAME` is the event, `FORM` the routine, e.g. `TOP_OF_PAGE`).
+   *
+   * The ALV runtime performs those FORMs when the person presses a function
+   * key or the list is drawn — no `PERFORM` of this source names them, so they
+   * were listed as "not reached" although the call says in so many words that
+   * they run. They become callbacks exactly like a FORM named `ON END OF TASK`:
+   * an entry of their own once the walk has passed the call, with the
+   * parameter as their trigger. Only where `I_CALLBACK_PROGRAM` is written
+   * (without it the ALV calls back nothing) and does not name another program
+   * by literal — the FORMs are looked up in that program.
+   */
+  private recordAlvCallbacks(statement: AbapStatement): void {
+    const text = statement.text;
+    if (!/^CALL\s+FUNCTION\s+'REUSE_ALV_[\w]*'/i.test(text)) return;
+    const program = /\bI_CALLBACK_PROGRAM\s*=\s*('[^']*'|[\w/-]+)/i.exec(text);
+    if (!program) return;
+    if (program[1].startsWith("'")) {
+      const own = this.programName()?.name;
+      if (!own || program[1].slice(1, -1).toUpperCase() !== own) return;
+    }
+    for (const m of text.matchAll(/\b(I_CALLBACK_(?!PROGRAM\b)[\w]+)\s*=\s*'([\w/]+)'/gi)) {
+      const key = m[2].toUpperCase();
+      if (this.formBlocks.has(key)) this.pushCallback(key, m[2], statement, `ALV ${m[1].toUpperCase()}`);
+    }
+    if (!/\bIT_EVENTS\s*=/i.test(text)) return;
+    // The event table is filled elsewhere in the source: `ls_event-form =
+    // 'TOP_OF_PAGE'.` or `VALUE #( ( name = … form = 'TOP_OF_PAGE' ) )`. A
+    // literal in a `FORM` component that names a FORM of this source is that
+    // registration; nothing else in ABAP writes a routine name there.
+    for (const other of this.statements) {
+      for (const m of other.text.matchAll(/(?:-|\s|\()FORM\s*=\s*'([\w/]+)'/gi)) {
+        const key = m[1].toUpperCase();
+        if (this.formBlocks.has(key)) this.pushCallback(key, m[1], statement, 'ALV IT_EVENTS');
+      }
+    }
   }
 
   private pushCallback(key: string, label: string, site: AbapStatement, trigger = 'ON END OF TASK'): void {
