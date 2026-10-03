@@ -128,3 +128,33 @@ test('a call result labels its own output only, not a same-named variable elsewh
   )).join(' ');
   expect(same, 'the control: straight after the call it is the returned field').toMatch(FROM_FUNCTION);
 });
+
+test.describe('QA full review of 69b4f522e5ea — write targets and select loops', () => {
+  test('a Y* customer table is a database table, not an internal table (d1b665735c9b)', () => {
+    const said = texts(src('REPORT z.', 'DATA ls_mara TYPE ymara.', 'START-OF-SELECTION.', '  MODIFY ymara FROM ls_mara.')).join(' ');
+    expect(said).not.toContain('internal table');
+    expect(said).toContain('ymara');
+  });
+
+  test('a y table paired with its x table is still the before-image of an exit', () => {
+    const said = texts(src('FORM userexit_save_document.', '  MODIFY xvbap INDEX 1.', '  MODIFY yvbap FROM xvbap.', 'ENDFORM.')).join(' ');
+    expect(said).toContain('A row of the internal table yvbap is changed');
+  });
+
+  test('a PACKAGE SIZE select loop does not pop the subroutine it sits in (026f3b950bcc)', () => {
+    const said = texts(src(
+      'REPORT z.',
+      'START-OF-SELECTION.',
+      '  PERFORM run.',
+      'FORM run.',
+      '  SELECT matnr FROM mara INTO TABLE lt_pack PACKAGE SIZE 50.',
+      '    WRITE / lt_pack[ 1 ]-matnr.',
+      '  ENDSELECT.',
+      "  CHECK lv_ok = 'X'.",
+      '  WRITE done.',
+      'ENDFORM.',
+    )).join(' ');
+    expect(said).toContain('otherwise the subroutine run is exited');
+    expect(said).not.toContain('START-OF-SELECTION is exited');
+  });
+});

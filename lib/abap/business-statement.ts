@@ -317,7 +317,11 @@ function selectLoops(statements: readonly AbapStatement[]): Set<number> {
       const table = /\b(?:INTO|APPENDING)\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?TABLE\b/i.test(text);
       const aggregateOnly =
         /^SELECT\s+(?:SINGLE\s+)?(?:COUNT|MAX|MIN|SUM|AVG)\s*\(/i.test(text) && !/\bGROUP\s+BY\b/i.test(text);
-      if (!table && !/\bSINGLE\b/i.test(text) && !aggregateOnly) open.push(statement.index);
+      // `INTO TABLE … PACKAGE SIZE n` fetches package by package and is a loop
+      // with its own ENDSELECT, as block-structure's selectCanLoop reads it
+      // (QA full review 026f3b950bcc).
+      const packaged = /\bPACKAGE\s+SIZE\b/i.test(text);
+      if ((!table || packaged) && !/\bSINGLE\b/i.test(text) && !aggregateOnly) open.push(statement.index);
     } else if (keyword === 'ENDSELECT') {
       const head = open.pop();
       if (head !== undefined) loops.add(head);
@@ -343,7 +347,12 @@ function blockStacks(statements: readonly AbapStatement[], loops: ReadonlySet<nu
   const stack: Block[] = [];
   for (const statement of statements) {
     const keyword = statement.keyword.toUpperCase();
-    if (CLOSERS.has(keyword)) stack.pop();
+    // An ENDSELECT closes only a SELECT loop that was opened: one whose SELECT
+    // was not read as a loop must not pop the routine around it.
+    if (keyword === 'ENDSELECT') {
+      const top = stack[stack.length - 1];
+      if (top?.kind === 'loop' && top.head.keyword.toUpperCase() === 'SELECT') stack.pop();
+    } else if (CLOSERS.has(keyword)) stack.pop();
     if (keyword === 'ELSEIF' || keyword === 'ELSE' || keyword === 'WHEN') {
       const previous = stack.pop();
       stack.push({
@@ -1042,6 +1051,10 @@ function internalTables(statements: readonly AbapStatement[]): Set<string> {
       }
     }
   }
+  // The before/after images of an exit come in pairs, `xvbap` and `yvbap`:
+  // a `y` name is that before-image only where its `x` twin is in the source.
+  const words = new Set(statements.flatMap((statement) => statement.text.toLowerCase().match(/\b[xy][a-z]\w*/g) ?? []));
+  for (const word of words) if (word.startsWith('y') && words.has(`x${word.slice(1)}`)) names.add(word);
   return names;
 }
 
@@ -1056,9 +1069,11 @@ function writesInternally(statement: AbapStatement, tables: ReadonlySet<string>)
   const target =
     /^(?:INSERT\s+INTO|DELETE\s+FROM|MODIFY|INSERT|DELETE)\s+(\(?[A-Za-z0-9_/<>~-]+\)?)/i.exec(text)?.[1] ?? '';
   const name = target.replace(/[()]/g, '').toLowerCase();
-  if (/^</.test(name) || INTERNAL_TABLE.test(name) || /^[mgl]t_|^[xy][a-z]/.test(name) || tables.has(name)) {
-    // `xvbap`, `yvbap` are the before/after tables of the exits; a
-    // database table does not start with x or y, a Z table starts with z.
+  if (/^</.test(name) || INTERNAL_TABLE.test(name) || /^[mgl]t_|^x[a-z]/.test(name) || tables.has(name)) {
+    // `xvbap` is the after-image table of an exit; X is not a customer
+    // namespace. Y is (Y* and Z* are the customer database tables), so a
+    // `y` name is internal only as the before-image paired with its `x`
+    // table, which internalTables records (QA full review d1b665735c9b).
     return tableTerm(name) === null;
   }
   return false;
