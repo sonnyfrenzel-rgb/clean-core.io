@@ -29,8 +29,8 @@ For the person who has to decide what happens to a custom ABAP program, Clean-Co
 is the free workspace that reads the code before any model does, draws the business
 process as BPMN with a line anchor on every element, or the reason it has none, shows SAP's clean core level for
 every SAP object it touches — and then carries the same evidence through the whole way:
-a target design, a transformed code draft and test scenarios, run in an isolated runner,
-all traceable to the lines they came from and sealed as signed runs. Other tools explain
+a target design, a transformed code draft and test scenarios, run in an isolated runner or
+in the user's own SAP system, all traceable to the lines they came from and sealed as signed runs. Other tools explain
 code, or rewrite it. Clean-Core.io does both on one chain of evidence — and says what it
 could not determine.
 
@@ -42,7 +42,8 @@ drafts the target design, the transformed code, documentation and test scenarios
 person to review; on the CAP track the test scenarios run against the generated code in
 an isolated runner, against mocks — they do not show that the code runs in a real SAP
 S/4HANA system; on the RAP track they are an ABAP Unit class that runs only in the
-user's own system, and nothing is run here. Economics calculates on the user's own figures. Every completed analysis is
+user's own system, and nothing is run here — the user records its result as an imported
+result file or a self-declared confirmation, never as proven. Economics calculates on the user's own figures. Every completed analysis is
 sealed as an immutable, signed run, and the handover pack is signed over it.
 
 One workspace, three views of the same facts: the Business view ("Do I still need this,
@@ -149,7 +150,8 @@ product. It is a measure of code structure, not of money.
   Joule for Developers or SAP's Custom Code Migration Agent.
 - Its tests check generated CAP code against test scenarios in an isolated runner; they
   do not show that the code runs in a real SAP S/4HANA system. Generated ABAP Unit
-  classes for the RAP track are not run here at all.
+  classes for the RAP track are not run here at all; their result is recorded from the
+  user's own system as imported or self-declared, never as proven.
 - It does not claim SAP certification, endorsement, or affiliation.
 - Its Level A–D is a derived orientation, not an authoritative SAP ATC classification,
   and is deliberately excluded from the signed audit pack.

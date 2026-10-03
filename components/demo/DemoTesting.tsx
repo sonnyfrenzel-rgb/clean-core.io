@@ -70,7 +70,7 @@ export default function DemoTesting({ demo }: { demo: DemoProject }) {
             data-testing-step="run"
             step={{ n: 2, state: 'unavailable', word: 'Not in the demo' }}
             title="Run them against mocks"
-            lead="In a project the scenarios run in an isolated runner against SAP mocks — not in your S/4HANA system. Running tests on a tenant is locked."
+            lead="In a project on the CAP route the scenarios run in an isolated runner against SAP mocks — not in your S/4HANA system. On the ABAP Cloud route nothing here runs ABAP Unit: you record the result from your own SAP system, as a result file or your confirmation. Running tests on a tenant is locked."
           >
             <p
               data-not-determined=""

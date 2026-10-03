@@ -77,33 +77,33 @@ const STEPS: Step[] = [
     where: 'Dashboard',
     action: 'Press Start on the card under "Start here" — Z_MM_PO_APPROVAL, the case the demo project is built on',
     detail:
-      'One click creates the project, stages the source, and takes you straight to stage 1, Analyze. At 668 lines it is a real approval process — vendor block list, price tolerance, approval by department head or manager — and it shows the honest gaps too: two includes the code names but does not contain are marked Not determined, never guessed.',
-    see: 'The Analyze stage, with a green "Source Code Ready" panel confirming the source is staged.',
-  },
-  {
-    n: 4,
-    where: 'Stage 1 — Analyze',
-    action: 'Start the analysis',
-    detail:
-      'The deterministic engine parses the source first — findings, database coupling, code inventory, complexity and criticality — and only then does the AI write the narrative around that evidence. Takes a minute or two.',
-    see: `A Clean Core Score, a findings list with line numbers, and a recommended route: in-app ABAP Cloud (RAP) or side-by-side CAP on ${BTP_FIRST}.`,
+      'One click creates the project and opens its workspace, and the start is the analysis: the deterministic engine reads the source and the result is sealed as a signed run. With the model on, the narrative is written into the same run while you watch; without it, the engine’s reading is signed alone. At 668 lines it is a real approval process — vendor block list, price tolerance, approval by department head or manager — and it shows the honest gaps too: two includes the code names but does not contain are marked Not determined, never guessed.',
+    see: 'The first look, about 20 seconds in six steps — the code read, the process recognised, plain names, the rules hard-coded in the program, what could not be determined, and your process as numbered steps beside the map. Pause or skip it at any time.',
     note: 'This is the one step that costs a transformation — except the starter examples, which are free the first time you run each of them. Everything after it is included, and re-running the analysis on the same source is free; starting the same example a second time is an ordinary analysis, counted once it completes.',
   },
   {
+    n: 4,
+    where: 'Workspace — Business view',
+    action: 'Decide on the rules',
+    detail:
+      'The Business view opens with one next step — "Decide on n rules" — then the process as numbered steps in plain words, what it decides and what it changes. For each rule the program hard-codes, answer Keep, Change, Drop or Clarify; a Clarify names the question and who should answer it.',
+    see: 'The business rules, unanswered first, and the next step moving on once every rule has an answer.',
+  },
+  {
     n: 5,
-    where: 'Stage 1 — Analyze',
-    action: 'Read the findings before moving on',
+    where: 'Analyze',
+    action: 'Open Analyze and read the findings',
     detail:
       'Each finding names the offending construct, where it sits, and what to do instead. This is the part worth judging the platform on — if the findings do not match what you know about the object, tell us.',
-    see: 'A worklist of findings, each with a severity, a location and a recommendation.',
+    see: `A Clean Core Score, a worklist of findings, each with a severity, a location and a recommendation, and a recommended route: in-app ABAP Cloud (RAP) or side-by-side CAP on ${BTP_FIRST}.`,
   },
   {
     n: 6,
     where: 'Stages 2 to 7',
-    action: 'Walk the rest of the workflow with the stepper',
+    action: 'Open the other tools from the workspace',
     detail:
-      'Design drafts the target architecture against released APIs. Transformation generates the RAP or CAP implementation next to the original. Documentation produces BPMN 2.0 and the business-facing procedures. Testing generates test cases and runs them where a runner exists — against mocks, never in your system. Economics models the upgrade cost on assumptions it shows you. Delivery hands you the package.',
-    see: 'The numbered stepper at the top of every stage, from Analyze through to Delivery — a tick where a phase is done, amber where something exists that is not yet its evidence.',
+      'Design drafts the target architecture against released APIs when it opens. Transformation generates the RAP or CAP implementation next to the original. Documentation writes a process description from the code when it opens, with BPMN 2.0 beside it. Testing generates test cases: on the CAP route it runs them against mocks, never in your system; on the ABAP Cloud route you record the ABAP Unit result from your own SAP system. Economics models the upgrade cost on assumptions you enter. Delivery hands you the package.',
+    see: 'The tools bar of the workspace and of every tool, from Analyze through to Delivery — a check where a phase is done, its own mark where work has started, amber where something on record is out of date.',
   },
   {
     n: 7,
