@@ -10,6 +10,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v3.0.1] — 2026-10-04
+
+The first release after the 3.0 soft go-live. It works through what the owner found using
+3.0 as a business reader, a manager and an IT reader, and through the full QA, security and
+UX reviews of 3.0.0. Externally this is still 3.0. Sign-up and account are unchanged.
+
+### What everyone notices
+
+- **A project starts on its signed engine run and opens on the full process map** (ADR-072).
+  The first look builds the process up in about 20 seconds, one headline per step — code
+  read, process recognised, plain names, hard-coded rules, what is not determined, your
+  process — can be paused or skipped, and ends on the process as numbered steps. With the
+  model on, the narrative is written in parallel into the same signed run.
+- **The Business view opens business-first:** one next step, the process in five to eight
+  numbered plain-language steps with their lines, what it decides and what it changes; the
+  figures are folded under "How this was read". Business keeps three sections (Need &
+  process, Standard fit, Evidence & controls); costs and architecture live in Economics and
+  IT.
+- **Decide on rules:** every hard-coded rule is answered with Keep, Change, Drop or Clarify;
+  Clarify asks its question and stays open. Steps of the process can be confirmed from the
+  Business view, one by one or by walking through the process; the Confirmed count follows.
+  Proven is not offered where nothing can prove it.
+- **A branch in the code is a *decision point*;** *decision* means only the program decision
+  — keep, rebuild, move to SAP standard or retire (ADR-073). Explanations open by tap.
+- **Management leads with the decision:** its headline in plain words, the four things it
+  rests on (need, option, costs, architecture contract), the open conditions as plain lines,
+  and fit to standard as one figure — or "No SAP dependency" where the code uses no SAP
+  object (ADR-069). The steering one-pager is one A4 page.
+- **The IT view** states one honest state, what the code uses with its levels, and one
+  not-determined count.
+- **Design writes its content when it opens** (the functional requirements stay on a
+  button): functional and non-functional requirements are read from the code, with questions
+  for the business apart (ADR-070, ADR-074); the design document is an overview and four
+  groups.
+- **Documentation is a process description** a successor can read — purpose and scope,
+  trigger and inputs, the process overview, decision points and business rules, exceptions,
+  effects, integrations, controls, open questions, the technical trace as appendix — built
+  when the stage opens and exported as Confluence HTML, Markdown or Word (ADR-077). The
+  business layer (SOP, RACI) comes first as a picture (ADR-068).
+- **Testing:** every scenario shows its details, where it can be tested and what it was
+  derived from, checked against the source (ADR-071). On the ABAP Cloud route the result
+  comes from your own SAP system — an uploaded ABAP Unit result or your confirmation, a
+  self-declaration, never Proven (ADR-075).
+- **Economics** is four guided steps with proposals taken over in one action, no raw
+  floats, and the figures are stored: they survive leaving the tool and a reload. Keep and
+  Do nothing get a maintenance-baseline proposal. Costs stay a simulation, never a quote.
+- **Transformation** survives a model answer that is not clean JSON and tries once more on
+  its own; the generate button names what is missing and never does nothing silently.
+- **Tool marks:** a check only when the phase is done, a separate mark for started work
+  (ADR-060).
+- **Process maps** go one level up and down inline and in full screen, with the level path
+  in the control row; details and dialogs stay visible over a canvas in full screen.
+- **On a phone:** touch on every map, full screen with a clear exit, no page wider than the
+  screen, the Terms gate readable and answerable, the assistant readable.
+- **The assistant is the Clean-Core.io Assistant** — help with Clean-Core.io and the clean
+  core method it works with, not SAP product support.
+- **The home page, the demo and the public texts** describe and show the product as it is:
+  new captures of the workspace, the demo answers rules as the product does and shows the
+  process description.
+
+### Engine
+
+- Framework entry points that SAP calls by a documented contract are read as entry points,
+  and residual constructs are named (ADR-066). `CLOSE DATASET` is folded, ALV events keep
+  their scope, BAPI and function-module calls count in the fit figure.
+- One line count, the editor's (668 for the 668-line example).
+
+### Security and quality
+
+- A report-only Content Security Policy without `unsafe-inline`, a nonce on per-request
+  pages and `/api/csp-report` (SEC-2026-336, stage 1, ADR-065).
+- The findings of the QA full review, the security audit and the UX review of 3.0.0 are
+  triaged; confirmed ones are fixed or scheduled in `docs/ROADMAP.md`.
+- Deployment skew protection: a page from an older build reloads once instead of failing.
+
 ## [v3.0.0] — 2026-10-03
 
 3.0 gives every project one workspace, and the seven stages are no longer the product: the
